@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from bayesian_phystwin import MarkovReliabilityConfig, smooth_markov_reliability
+from bayesian_phystwin import (
+    MarkovReliabilityConfig,
+    markov_log_evidence_batch,
+    smooth_markov_reliability,
+)
 
 
 def test_markov_smoothing_uses_future_evidence_for_persistent_corruption() -> None:
@@ -54,3 +58,37 @@ def test_invalid_persistence_raises() -> None:
             [0],
             config=MarkovReliabilityConfig(inlier_persistence=1.0),
         )
+
+
+def test_batched_evidence_matches_scalar_sequence_evidence() -> None:
+    prior = np.array([0.8, 0.7, 0.6, 0.9])
+    log_inlier = np.array(
+        [
+            [0.0, -0.1, -2.0, -3.0],
+            [-1.0, -0.5, -0.2, -0.1],
+        ]
+    )
+    log_outlier = np.array(
+        [
+            [-2.0, -1.0, -0.1, 0.0],
+            [-0.2, -0.2, -1.0, -2.0],
+        ]
+    )
+    ids = ["a", "a", "b", "b"]
+    times = [0, 1, 0, 1]
+
+    batched = markov_log_evidence_batch(prior, log_inlier, log_outlier, ids, times)
+    scalar = np.array(
+        [
+            smooth_markov_reliability(
+                prior,
+                log_inlier[index],
+                log_outlier[index],
+                ids,
+                times,
+            ).total_log_evidence
+            for index in range(2)
+        ]
+    )
+
+    assert np.allclose(batched, scalar)

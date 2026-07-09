@@ -187,3 +187,95 @@ def smooth_markov_reliability(
         posterior_inlier_probability=np.clip(posterior, 0.0, 1.0),
         sequence_log_evidence=sequence_log_evidence,
     )
+
+
+def markov_log_evidence_batch(
+    prior_reliability: np.ndarray,
+    log_inlier_density: np.ndarray,
+    log_outlier_density: np.ndarray,
+    sequence_ids: Sequence[str | int],
+    time_values: Sequence[str | int | float],
+    *,
+    config: MarkovReliabilityConfig | None = None,
+) -> np.ndarray:
+    """Compute normalized Markov log evidence for many predictions at once.
+
+    The density arrays have shape ``(p, n)`` for ``p`` candidate physical
+    parameter settings and ``n`` pseudo-measurements. This vectorized path is
+    used by grid/particle parameter inference.
+    """
+
+    cfg = config or MarkovReliabilityConfig()
+    _validate_config(cfg)
+    prior = np.asarray(prior_reliability, dtype=float)
+    log_inlier = np.asarray(log_inlier_density, dtype=float)
+    log_outlier = np.asarray(log_outlier_density, dtype=float)
+    ids = np.asarray(sequence_ids)
+    times = np.asarray(time_values)
+    if log_inlier.ndim != 2 or log_outlier.shape != log_inlier.shape:
+        raise ValueError("log density arrays must have equal shape (p, n)")
+    particle_count, measurement_count = log_inlier.shape
+    for name, values in (
+        ("prior_reliability", prior),
+        ("sequence_ids", ids),
+        ("time_values", times),
+    ):
+        if values.shape != (measurement_count,):
+            raise ValueError(
+                f"{name} must have shape ({measurement_count},), got {values.shape}"
+            )
+    if particle_count == 0 or measurement_count == 0:
+        raise ValueError("at least one particle and measurement are required")
+    if not np.all(np.isfinite(prior)):
+        raise ValueError("prior_reliability must contain finite values")
+    if not np.all(np.isfinite(log_inlier)) or not np.all(np.isfinite(log_outlier)):
+        raise ValueError("log densities must contain finite values")
+
+    prior = np.clip(prior, cfg.probability_floor, 1.0 - cfg.probability_floor)
+    transition = np.array(
+        [
+            [cfg.outlier_persistence, 1.0 - cfg.outlier_persistence],
+            [1.0 - cfg.inlier_persistence, cfg.inlier_persistence],
+        ],
+        dtype=float,
+    )
+    log_transition = np.log(transition)
+    stationary_inlier = (1.0 - cfg.outlier_persistence) / (
+        2.0 - cfg.inlier_persistence - cfg.outlier_persistence
+    )
+    log_initial = np.log([1.0 - stationary_inlier, stationary_inlier])
+    cue_unary = np.column_stack([np.log1p(-prior), np.log(prior)])
+    evidence = np.zeros(particle_count, dtype=float)
+
+    for _, indexes in _ordered_group_indices(ids, times):
+        cue_sequence = cue_unary[indexes]
+        _, cue_log_partition = _forward(cue_sequence, log_initial, log_transition)
+
+        alpha = np.empty((particle_count, 2), dtype=float)
+        alpha[:, 0] = (
+            log_initial[0] + cue_sequence[0, 0] + log_outlier[:, indexes[0]]
+        )
+        alpha[:, 1] = log_initial[1] + cue_sequence[0, 1] + log_inlier[:, indexes[0]]
+        for offset in range(1, indexes.size):
+            index = indexes[offset]
+            next_alpha = np.empty_like(alpha)
+            next_alpha[:, 0] = (
+                cue_sequence[offset, 0]
+                + log_outlier[:, index]
+                + np.logaddexp(
+                    alpha[:, 0] + log_transition[0, 0],
+                    alpha[:, 1] + log_transition[1, 0],
+                )
+            )
+            next_alpha[:, 1] = (
+                cue_sequence[offset, 1]
+                + log_inlier[:, index]
+                + np.logaddexp(
+                    alpha[:, 0] + log_transition[0, 1],
+                    alpha[:, 1] + log_transition[1, 1],
+                )
+            )
+            alpha = next_alpha
+        evidence += np.logaddexp(alpha[:, 0], alpha[:, 1]) - cue_log_partition
+
+    return evidence

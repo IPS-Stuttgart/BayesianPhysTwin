@@ -19,7 +19,13 @@ from .robust_likelihood import (
 from .structured_reliability import (
     MarkovReliabilityConfig,
     MarkovReliabilityResult,
+    markov_log_evidence_batch,
     smooth_markov_reliability,
+)
+from .synthetic_benchmark import (
+    SyntheticBenchmarkConfig,
+    run_synthetic_benchmark,
+    run_synthetic_case,
 )
 
 __all__ = [
@@ -31,13 +37,17 @@ __all__ = [
     "ResidualReplayResult",
     "RobustLikelihoodConfig",
     "RobustLikelihoodResult",
+    "SyntheticBenchmarkConfig",
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "binary_calibration_metrics",
     "measurement_variance",
+    "markov_log_evidence_batch",
     "reliability_weighted_loss",
     "replay_residual_csv",
     "robust_mixture_likelihood",
+    "run_synthetic_benchmark",
+    "run_synthetic_case",
     "score_reliability",
     "smooth_markov_reliability",
 ]

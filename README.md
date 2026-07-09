@@ -62,6 +62,21 @@ bpt-replay-residuals examples/residuals_demo.csv \
 See [docs/residual_replay.md](docs/residual_replay.md) for the canonical export
 schema, statistical model, and output metrics.
 
+Run the controlled fixed-graph benchmark used for parameter recovery,
+calibration, correlated corruption, and action-informativeness ablations:
+
+```bash
+bpt-synthetic-benchmark \
+  --seeds 0:20 \
+  --conditions clean,iid,correlated \
+  --action-modes dynamic,quasi_static \
+  --output-json runs/synthetic_v1/results.json \
+  --output-csv runs/synthetic_v1/aggregate.csv
+```
+
+See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete
+protocol and baseline definitions.
+
 ## Compute
 
 GPU experiments are intended to run on:

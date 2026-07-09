@@ -16,3 +16,17 @@ python3 -m bayesian_phystwin.cli.residual_replay \
     >/dev/null
 test -s "$tmp_dir/summary.json"
 test -s "$tmp_dir/scored.csv"
+python3 -m bayesian_phystwin.cli.synthetic_benchmark \
+    --seeds 0 \
+    --conditions correlated \
+    --action-modes dynamic \
+    --steps 30 \
+    --train-steps 20 \
+    --stiffness-count 5 \
+    --damping-count 5 \
+    --control-scale-count 5 \
+    --output-json "$tmp_dir/synthetic.json" \
+    --output-csv "$tmp_dir/synthetic.csv" \
+    >/dev/null
+test -s "$tmp_dir/synthetic.json"
+test -s "$tmp_dir/synthetic.csv"
