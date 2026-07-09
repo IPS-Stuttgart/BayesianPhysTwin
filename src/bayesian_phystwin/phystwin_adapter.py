@@ -50,8 +50,10 @@ class PhysTwinExportConfig:
 class PhysTwinMotionCueConfig:
     """Configuration for continuous local track-motion consistency cues."""
 
-    neighbor_count: int = 8
-    minimum_valid_neighbors: int = 3
+    neighbor_count: int = 16
+    minimum_valid_neighbors: int = 4
+    neighbor_radius: float | None = 0.01
+    neighbor_reference: str = "current"
     insufficient_neighbor_value: float = 0.10
     nearest_chunk_size: int = 1024
 
@@ -98,17 +100,26 @@ def _nearest_track_neighbors(
     *,
     neighbor_count: int,
     chunk_size: int,
+    candidate_valid: np.ndarray | None = None,
 ) -> np.ndarray:
     track_count = first_frame.shape[0]
     if not 1 <= neighbor_count < track_count:
         raise ValueError("neighbor_count must be in [1, track_count)")
     if chunk_size <= 0:
         raise ValueError("nearest_chunk_size must be positive")
+    if candidate_valid is not None:
+        candidate_valid = np.asarray(candidate_valid, dtype=bool)
+        if candidate_valid.shape != (track_count,):
+            raise ValueError(f"candidate_valid must have shape ({track_count},)")
+        if int(np.sum(candidate_valid)) <= neighbor_count:
+            raise ValueError("not enough valid tracks to build the requested neighborhood")
     neighbors = np.empty((track_count, neighbor_count), dtype=int)
     for start in range(0, track_count, chunk_size):
         stop = min(start + chunk_size, track_count)
         delta = first_frame[start:stop, None, :] - first_frame[None, :, :]
         distance_sq = np.sum(np.square(delta), axis=2)
+        if candidate_valid is not None:
+            distance_sq[:, ~candidate_valid] = np.inf
         local_rows = np.arange(stop - start)
         distance_sq[local_rows, np.arange(start, stop)] = np.inf
         partition = np.argpartition(distance_sq, neighbor_count - 1, axis=1)
@@ -146,6 +157,10 @@ def build_phystwin_motion_cues(
         raise ValueError("minimum_valid_neighbors must be positive")
     if cfg.minimum_valid_neighbors > cfg.neighbor_count:
         raise ValueError("minimum_valid_neighbors cannot exceed neighbor_count")
+    if cfg.neighbor_radius is not None and cfg.neighbor_radius <= 0.0:
+        raise ValueError("neighbor_radius must be positive when provided")
+    if cfg.neighbor_reference not in {"first", "current"}:
+        raise ValueError("neighbor_reference must be 'first' or 'current'")
     if cfg.insufficient_neighbor_value < 0.0:
         raise ValueError("insufficient_neighbor_value must be nonnegative")
 
@@ -169,22 +184,41 @@ def build_phystwin_motion_cues(
     if not np.all(np.isfinite(points)):
         raise ValueError("object_points must contain finite values")
 
-    neighbors = _nearest_track_neighbors(
-        points[0],
-        neighbor_count=cfg.neighbor_count,
-        chunk_size=cfg.nearest_chunk_size,
-    )
+    fixed_neighbors = None
+    if cfg.neighbor_reference == "first":
+        fixed_neighbors = _nearest_track_neighbors(
+            points[0],
+            neighbor_count=cfg.neighbor_count,
+            chunk_size=cfg.nearest_chunk_size,
+        )
     flow_inconsistency = np.zeros((frame_count - 1, track_count), dtype=float)
     valid_neighbor_count = np.zeros((frame_count - 1, track_count), dtype=np.int16)
     motion_visible = np.logical_and(visible[:-1], visible[1:])
 
     for frame in range(frame_count - 1):
         motion = points[frame + 1] - points[frame]
+        reference_points = points[0] if fixed_neighbors is not None else points[frame]
+        neighbors = (
+            fixed_neighbors
+            if fixed_neighbors is not None
+            else _nearest_track_neighbors(
+                reference_points,
+                neighbor_count=cfg.neighbor_count,
+                chunk_size=cfg.nearest_chunk_size,
+                candidate_valid=motion_visible[frame],
+            )
+        )
         for track in range(track_count):
             if not motion_visible[frame, track]:
                 continue
             candidate_neighbors = neighbors[track]
             valid_neighbors = candidate_neighbors[motion_visible[frame, candidate_neighbors]]
+            if cfg.neighbor_radius is not None:
+                distances = np.linalg.norm(
+                    reference_points[valid_neighbors] - reference_points[track],
+                    axis=1,
+                )
+                valid_neighbors = valid_neighbors[distances <= cfg.neighbor_radius]
             valid_neighbor_count[frame, track] = len(valid_neighbors)
             if len(valid_neighbors) < cfg.minimum_valid_neighbors:
                 flow_inconsistency[frame, track] = cfg.insufficient_neighbor_value

@@ -183,6 +183,8 @@ def test_motion_cue_sidecar_detects_local_track_inconsistency(tmp_path: Path) ->
         config=PhysTwinMotionCueConfig(
             neighbor_count=3,
             minimum_valid_neighbors=2,
+            neighbor_radius=None,
+            neighbor_reference="first",
         ),
     )
     with np.load(cues_path) as cues:

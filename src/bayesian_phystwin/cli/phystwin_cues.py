@@ -19,8 +19,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("final_data_pickle")
     parser.add_argument("output_npz")
-    parser.add_argument("--neighbor-count", type=int, default=8)
-    parser.add_argument("--minimum-valid-neighbors", type=int, default=3)
+    parser.add_argument("--neighbor-count", type=int, default=16)
+    parser.add_argument("--minimum-valid-neighbors", type=int, default=4)
+    parser.add_argument("--neighbor-radius", type=float, default=0.01)
+    parser.add_argument("--neighbor-reference", choices=("first", "current"), default="current")
     parser.add_argument("--insufficient-neighbor-value", type=float, default=0.10)
     parser.add_argument("--summary-json")
     return parser
@@ -34,6 +36,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         config=PhysTwinMotionCueConfig(
             neighbor_count=args.neighbor_count,
             minimum_valid_neighbors=args.minimum_valid_neighbors,
+            neighbor_radius=args.neighbor_radius,
+            neighbor_reference=args.neighbor_reference,
             insufficient_neighbor_value=args.insufficient_neighbor_value,
         ),
     )

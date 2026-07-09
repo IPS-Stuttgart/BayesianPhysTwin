@@ -66,10 +66,12 @@ bpt-build-phystwin-cues \
   --summary-json runs/CASE/cues.json
 ```
 
-The cue compares each visible track motion with the median motion of its
-first-frame neighbors. It retains the magnitude that PhysTwin's binary local
-motion filter discards. Use a meter-scale replay decay appropriate for the
-case, for example:
+The default cue rebuilds a 1 cm neighborhood at every frame, matching the
+geometry used by PhysTwin's hard local-motion filter, then compares each visible
+track motion with the neighborhood median. It retains the continuous magnitude
+that the binary filter discards. `--neighbor-reference first` is available for
+a fixed material-neighborhood ablation. Use a meter-scale replay decay
+appropriate for the case, for example:
 
 ```bash
 bpt-export-phystwin-residuals \
