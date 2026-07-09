@@ -56,9 +56,34 @@ boundary_distance
 flow_inconsistency
 ```
 
-The processed PhysTwin artifact currently discards richer CoTracker confidence,
-mask-boundary distance, and flow consistency. A later preprocessing patch should
-preserve them in a sidecar rather than infer them from simulator residuals.
+Build a simulator-independent continuous motion-consistency sidecar directly
+from the tracked geometry:
+
+```bash
+bpt-build-phystwin-cues \
+  data/different_types/CASE/final_data.pkl \
+  runs/CASE/cues.npz \
+  --summary-json runs/CASE/cues.json
+```
+
+The cue compares each visible track motion with the median motion of its
+first-frame neighbors. It retains the magnitude that PhysTwin's binary local
+motion filter discards. Use a meter-scale replay decay appropriate for the
+case, for example:
+
+```bash
+bpt-export-phystwin-residuals \
+  data/different_types/CASE/final_data.pkl \
+  experiments/CASE/inference.pkl \
+  runs/CASE/residuals.csv \
+  --cues-npz runs/CASE/cues.npz \
+  --replay-flow-scale 0.01 \
+  --replay-summary-json runs/CASE/replay.json
+```
+
+The processed artifact still discards richer raw CoTracker confidence and
+mask-boundary distance. A later preprocessing patch should preserve them rather
+than infer them from simulator residuals.
 
 ## Model Boundary
 

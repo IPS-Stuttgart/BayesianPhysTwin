@@ -7,6 +7,8 @@ import numpy as np
 
 from bayesian_phystwin import (
     PhysTwinExportConfig,
+    PhysTwinMotionCueConfig,
+    build_phystwin_motion_cues,
     export_phystwin_residuals,
     replay_residual_csv,
     write_export_summary,
@@ -152,3 +154,47 @@ def test_export_summary_is_json_serializable(tmp_path: Path) -> None:
     loaded = json.loads(summary_path.read_text(encoding="utf-8"))
     assert loaded["schema_version"] == 1
     assert loaded["config"]["correspondence"] == "direct"
+
+
+def test_motion_cue_sidecar_detects_local_track_inconsistency(tmp_path: Path) -> None:
+    frame_count = 4
+    track_count = 6
+    points = np.zeros((frame_count, track_count, 3), dtype=float)
+    points[0, :, 0] = np.arange(track_count) * 0.01
+    for frame in range(1, frame_count):
+        points[frame] = points[frame - 1] + np.array([0.01, 0.0, 0.0])
+    points[2:, 3, 1] += 0.04
+    visible = np.ones((frame_count, track_count), dtype=bool)
+    visible[2, 5] = False
+    final_data_path = tmp_path / "cue_final_data.pkl"
+    with final_data_path.open("wb") as handle:
+        pickle.dump(
+            {
+                "object_points": points,
+                "object_visibilities": visible,
+            },
+            handle,
+        )
+    cues_path = tmp_path / "cues.npz"
+
+    summary = build_phystwin_motion_cues(
+        final_data_path,
+        cues_path,
+        config=PhysTwinMotionCueConfig(
+            neighbor_count=3,
+            minimum_valid_neighbors=2,
+        ),
+    )
+    with np.load(cues_path) as cues:
+        flow = cues["flow_inconsistency"]
+        confidence = cues["confidence"]
+        occluded = cues["occluded"]
+
+    assert flow.shape == (frame_count - 1, track_count)
+    assert flow[1, 3] > 0.03
+    assert np.median(np.delete(flow[1], 3)) < 1e-9
+    assert confidence[2, 5] == 0.0
+    assert bool(occluded[2, 5])
+    assert summary["visible_motion_count"] == int(
+        np.sum(np.logical_and(visible[:-1], visible[1:]))
+    )

@@ -11,7 +11,9 @@ from bayesian_phystwin.phystwin_adapter import (
     export_phystwin_residuals,
     write_export_summary,
 )
+from bayesian_phystwin.pseudo_measurements import ReliabilityConfig
 from bayesian_phystwin.residual_replay import replay_residual_csv
+from bayesian_phystwin.robust_likelihood import RobustLikelihoodConfig
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,6 +32,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--summary-json")
     parser.add_argument("--replay-summary-json")
     parser.add_argument("--scored-csv")
+    parser.add_argument("--replay-flow-scale", type=float, default=0.10)
+    parser.add_argument("--replay-boundary-scale", type=float, default=0.03)
+    parser.add_argument("--replay-model-discrepancy-variance", type=float, default=0.0)
     return parser
 
 
@@ -53,7 +58,16 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     output: dict[str, object] = {"export": summary}
     if args.replay_summary_json or args.scored_csv:
-        replay = replay_residual_csv(args.output_csv)
+        replay = replay_residual_csv(
+            args.output_csv,
+            reliability_config=ReliabilityConfig(
+                flow_scale=args.replay_flow_scale,
+                boundary_scale=args.replay_boundary_scale,
+            ),
+            likelihood_config=RobustLikelihoodConfig(
+                model_discrepancy_variance=args.replay_model_discrepancy_variance,
+            ),
+        )
         if args.replay_summary_json:
             replay.write_summary_json(args.replay_summary_json)
         if args.scored_csv:

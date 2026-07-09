@@ -13,6 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
+bpt-build-phystwin-cues = "bayesian_phystwin.cli.phystwin_cues:main"
 bpt-export-phystwin-residuals = "bayesian_phystwin.cli.phystwin_export:main"
 bpt-replay-residuals = "bayesian_phystwin.cli.residual_replay:main"
 bpt-synthetic-benchmark = "bayesian_phystwin.cli.synthetic_benchmark:main"

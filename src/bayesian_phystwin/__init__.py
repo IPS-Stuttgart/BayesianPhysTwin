@@ -10,6 +10,8 @@ from .drift_bias import (
 from .parameter_posterior import ParameterEnsemble
 from .phystwin_adapter import (
     PhysTwinExportConfig,
+    PhysTwinMotionCueConfig,
+    build_phystwin_motion_cues,
     export_phystwin_residuals,
     write_export_summary,
 )
@@ -43,6 +45,7 @@ __all__ = [
     "BinaryCalibrationMetrics",
     "ParameterEnsemble",
     "PhysTwinExportConfig",
+    "PhysTwinMotionCueConfig",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
     "RandomWalkBiasResult",
@@ -55,6 +58,7 @@ __all__ = [
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "binary_calibration_metrics",
+    "build_phystwin_motion_cues",
     "filter_random_walk_bias",
     "export_phystwin_residuals",
     "measurement_variance",

@@ -96,6 +96,15 @@ bpt-export-phystwin-residuals \
   --scored-csv runs/CASE/scored.csv
 ```
 
+Generate a continuous neighbor-motion cue sidecar before replay when only
+PhysTwin's processed boolean validity mask is available:
+
+```bash
+bpt-build-phystwin-cues \
+  data/different_types/CASE/final_data.pkl \
+  runs/CASE/cues.npz
+```
+
 See [docs/phystwin_integration.md](docs/phystwin_integration.md) for the pinned
 upstream contract, optional cue sidecar, and likelihood boundary.
 

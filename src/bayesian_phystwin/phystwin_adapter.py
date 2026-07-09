@@ -46,6 +46,16 @@ class PhysTwinExportConfig:
     nearest_chunk_size: int = 1024
 
 
+@dataclass(frozen=True)
+class PhysTwinMotionCueConfig:
+    """Configuration for continuous local track-motion consistency cues."""
+
+    neighbor_count: int = 8
+    minimum_valid_neighbors: int = 3
+    insufficient_neighbor_value: float = 0.10
+    nearest_chunk_size: int = 1024
+
+
 def _to_numpy(value: Any, *, name: str) -> np.ndarray:
     if hasattr(value, "detach"):
         value = value.detach()
@@ -81,6 +91,134 @@ def _nearest_vertex_indices(
         )
         indexes[start:stop] = np.argmin(np.sum(np.square(delta), axis=2), axis=1)
     return indexes
+
+
+def _nearest_track_neighbors(
+    first_frame: np.ndarray,
+    *,
+    neighbor_count: int,
+    chunk_size: int,
+) -> np.ndarray:
+    track_count = first_frame.shape[0]
+    if not 1 <= neighbor_count < track_count:
+        raise ValueError("neighbor_count must be in [1, track_count)")
+    if chunk_size <= 0:
+        raise ValueError("nearest_chunk_size must be positive")
+    neighbors = np.empty((track_count, neighbor_count), dtype=int)
+    for start in range(0, track_count, chunk_size):
+        stop = min(start + chunk_size, track_count)
+        delta = first_frame[start:stop, None, :] - first_frame[None, :, :]
+        distance_sq = np.sum(np.square(delta), axis=2)
+        local_rows = np.arange(stop - start)
+        distance_sq[local_rows, np.arange(start, stop)] = np.inf
+        partition = np.argpartition(distance_sq, neighbor_count - 1, axis=1)
+        neighbors[start:stop] = partition[:, :neighbor_count]
+    return neighbors
+
+
+def _distribution(values: np.ndarray) -> dict[str, float]:
+    return {
+        "mean": float(np.mean(values)),
+        "std": float(np.std(values)),
+        "min": float(np.min(values)),
+        "median": float(np.median(values)),
+        "p95": float(np.quantile(values, 0.95)),
+        "max": float(np.max(values)),
+    }
+
+
+def build_phystwin_motion_cues(
+    final_data_path: str | Path,
+    output_npz_path: str | Path,
+    *,
+    config: PhysTwinMotionCueConfig | None = None,
+) -> dict[str, Any]:
+    """Build continuous neighbor-motion cues without simulator residuals.
+
+    This retains the magnitude discarded by PhysTwin's binary
+    ``object_motions_valid`` filtering. The cue is the distance between each
+    visible track's motion and the component-wise median motion of its visible
+    first-frame neighbors.
+    """
+
+    cfg = config or PhysTwinMotionCueConfig()
+    if cfg.minimum_valid_neighbors < 1:
+        raise ValueError("minimum_valid_neighbors must be positive")
+    if cfg.minimum_valid_neighbors > cfg.neighbor_count:
+        raise ValueError("minimum_valid_neighbors cannot exceed neighbor_count")
+    if cfg.insufficient_neighbor_value < 0.0:
+        raise ValueError("insufficient_neighbor_value must be nonnegative")
+
+    final_data = _load_pickle(final_data_path)
+    if not isinstance(final_data, dict):
+        raise ValueError("final_data pickle must contain a dictionary")
+    required = {"object_points", "object_visibilities"}
+    missing = required - set(final_data)
+    if missing:
+        raise ValueError(f"final_data is missing keys: {', '.join(sorted(missing))}")
+    points = _to_numpy(final_data["object_points"], name="object_points").astype(float)
+    visible = _to_numpy(
+        final_data["object_visibilities"],
+        name="object_visibilities",
+    ).astype(bool)
+    if points.ndim != 3 or points.shape[2] != 3:
+        raise ValueError(f"object_points must have shape (T, N, 3), got {points.shape}")
+    frame_count, track_count, _ = points.shape
+    if visible.shape != (frame_count, track_count):
+        raise ValueError("object_visibilities must match object_points first two axes")
+    if not np.all(np.isfinite(points)):
+        raise ValueError("object_points must contain finite values")
+
+    neighbors = _nearest_track_neighbors(
+        points[0],
+        neighbor_count=cfg.neighbor_count,
+        chunk_size=cfg.nearest_chunk_size,
+    )
+    flow_inconsistency = np.zeros((frame_count - 1, track_count), dtype=float)
+    valid_neighbor_count = np.zeros((frame_count - 1, track_count), dtype=np.int16)
+    motion_visible = np.logical_and(visible[:-1], visible[1:])
+
+    for frame in range(frame_count - 1):
+        motion = points[frame + 1] - points[frame]
+        for track in range(track_count):
+            if not motion_visible[frame, track]:
+                continue
+            candidate_neighbors = neighbors[track]
+            valid_neighbors = candidate_neighbors[motion_visible[frame, candidate_neighbors]]
+            valid_neighbor_count[frame, track] = len(valid_neighbors)
+            if len(valid_neighbors) < cfg.minimum_valid_neighbors:
+                flow_inconsistency[frame, track] = cfg.insufficient_neighbor_value
+                continue
+            expected_motion = np.median(motion[valid_neighbors], axis=0)
+            flow_inconsistency[frame, track] = np.linalg.norm(
+                motion[track] - expected_motion
+            )
+
+    output_path = Path(output_npz_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        output_path,
+        confidence=visible.astype(float),
+        occluded=np.logical_not(visible),
+        flow_inconsistency=flow_inconsistency,
+        valid_neighbor_count=valid_neighbor_count,
+    )
+    valid_values = flow_inconsistency[motion_visible]
+    if valid_values.size == 0:
+        raise ValueError("final_data contains no visible inter-frame motions")
+    return {
+        "schema_version": 1,
+        "final_data_path": str(Path(final_data_path).resolve()),
+        "output_npz_path": str(output_path.resolve()),
+        "config": asdict(cfg),
+        "frame_count": frame_count,
+        "track_count": track_count,
+        "visible_motion_count": int(np.sum(motion_visible)),
+        "insufficient_neighbor_count": int(
+            np.sum(motion_visible & (valid_neighbor_count < cfg.minimum_valid_neighbors))
+        ),
+        "flow_inconsistency": _distribution(valid_values),
+    }
 
 
 def _load_cues(
