@@ -68,14 +68,17 @@ calibration, correlated corruption, and action-informativeness ablations:
 
 ```bash
 bpt-synthetic-benchmark \
-  --seeds 100:120 \
+  --seeds 1000:1020 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
   --bias-process-variance 1e-5 \
   --bias-initial-variance 1e-7 \
-  --output-json runs/synthetic_v2/results.json \
-  --output-csv runs/synthetic_v2/aggregate.csv \
-  --output-reliability-csv runs/synthetic_v2/reliability.csv
+  --bias-cue-persistence 0.85 \
+  --bias-cue-threshold 0.20 \
+  --bias-minimum-run-length 5 \
+  --output-json runs/synthetic_v3/results.json \
+  --output-csv runs/synthetic_v3/aggregate.csv \
+  --output-reliability-csv runs/synthetic_v3/reliability.csv
 ```
 
 See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete

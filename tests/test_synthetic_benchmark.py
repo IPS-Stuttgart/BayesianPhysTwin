@@ -7,6 +7,7 @@ import numpy as np
 from bayesian_phystwin.synthetic_benchmark import (
     METHODS,
     SyntheticBenchmarkConfig,
+    _temporally_smoothed_bias_probability,
     make_action,
     parameter_grid,
     run_synthetic_benchmark,
@@ -41,6 +42,21 @@ def test_fixed_graph_simulation_is_finite_and_parameter_dependent() -> None:
     assert trajectories.shape == (2, config.step_count, config.node_count)
     assert np.all(np.isfinite(trajectories))
     assert not np.allclose(trajectories[0], trajectories[1])
+
+
+def test_bias_gate_rejects_isolated_cue_and_accepts_persistent_cue() -> None:
+    raw = np.zeros((30, 3), dtype=float)
+    raw[10, 0] = 1.0
+    raw[8:22, 1] = 1.0
+
+    probability = _temporally_smoothed_bias_probability(
+        raw.reshape(-1),
+        step_count=30,
+        node_count=3,
+    ).reshape(30, 3)
+
+    assert probability[:, 0].max() < 0.05
+    assert probability[:, 1].max() > 0.5
 
 
 def test_correlated_benchmark_runs_all_required_baselines() -> None:
@@ -85,7 +101,7 @@ def test_benchmark_writes_json_and_aggregate_csv(tmp_path: Path) -> None:
         rows = list(csv.DictReader(handle))
     with reliability_path.open("r", encoding="utf-8", newline="") as handle:
         reliability_rows = list(csv.DictReader(handle))
-    assert loaded["schema_version"] == 1
+    assert loaded["schema_version"] == 2
     assert len(rows) == len(METHODS)
     assert "state_future_rmse_mean" in rows[0]
     assert len(reliability_rows) == 3

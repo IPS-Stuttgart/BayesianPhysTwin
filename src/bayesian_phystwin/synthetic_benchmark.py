@@ -63,6 +63,11 @@ class SyntheticBenchmarkConfig:
     state_variance_floor: float = 1e-8
     bias_process_variance: float = 1.0e-5
     bias_initial_variance: float = 1.0e-7
+    bias_cue_persistence: float = 0.85
+    bias_cue_threshold: float = 0.20
+    bias_minimum_run_length: int = 5
+    bias_activation_offset: float = 0.05
+    bias_activation_scale: float = 0.45
 
 
 @dataclass(frozen=True)
@@ -99,6 +104,14 @@ def _validate_config(config: SyntheticBenchmarkConfig) -> None:
         raise ValueError("huber_delta and state_variance_floor must be positive")
     if config.bias_process_variance < 0.0 or config.bias_initial_variance < 0.0:
         raise ValueError("bias variances must be nonnegative")
+    if not 0.0 <= config.bias_cue_persistence < 1.0:
+        raise ValueError("bias_cue_persistence must be in [0, 1)")
+    if not 0.0 <= config.bias_cue_threshold <= 1.0:
+        raise ValueError("bias_cue_threshold must be in [0, 1]")
+    if config.bias_minimum_run_length < 1:
+        raise ValueError("bias_minimum_run_length must be positive")
+    if config.bias_activation_scale <= 0.0:
+        raise ValueError("bias_activation_scale must be positive")
 
 
 def spring_graph_laplacian(node_count: int) -> np.ndarray:
@@ -255,14 +268,21 @@ def generate_observations(
         corrupt((occlusion_window, occlusion_node), "occlusion")
 
         drift_window = _window(0.35, 1.0, train)
-        drift_node = min(3, config.node_count - 1)
         drift_count = drift_window.stop - drift_window.start
         drift_fraction = np.linspace(0.0, 1.0, drift_count)
         drift_bias = 0.065 * np.square(drift_fraction)
-        observed[drift_window, drift_node] += drift_bias
-        confidence[drift_window, drift_node] = 0.88 - 0.30 * drift_fraction
-        flow_inconsistency[drift_window, drift_node] = 0.005 + 0.08 * drift_fraction
-        corrupt((drift_window, drift_node), "drift")
+        drift_nodes = sorted(
+            {
+                min(2, config.node_count - 1),
+                min(3, config.node_count - 1),
+            }
+        )
+        for node_offset, drift_node in enumerate(drift_nodes):
+            bias_scale = 1.0 - 0.2 * node_offset
+            observed[drift_window, drift_node] += bias_scale * drift_bias
+            confidence[drift_window, drift_node] = 0.90 - 0.08 * drift_fraction
+            flow_inconsistency[drift_window, drift_node] = 0.03
+            corrupt((drift_window, drift_node), "drift")
 
         boundary_window = _window(0.08, 0.24, train)
         boundary_node = config.node_count - 1
@@ -308,6 +328,48 @@ def _log_densities(
         + np.square(residual) / outlier_variance
     )
     return inlier, outlier
+
+
+def _temporally_smoothed_bias_probability(
+    raw_probability: np.ndarray,
+    *,
+    step_count: int,
+    node_count: int,
+    persistence: float = 0.85,
+    cue_threshold: float = 0.2,
+    minimum_run_length: int = 5,
+    activation_offset: float = 0.05,
+    activation_scale: float = 0.45,
+) -> np.ndarray:
+    """Suppress isolated drift cues while retaining persistent track evidence."""
+
+    raw = np.asarray(raw_probability, dtype=float).reshape(step_count, node_count)
+    forward = np.zeros_like(raw)
+    backward = np.zeros_like(raw)
+    for node in range(node_count):
+        state = 0.0
+        for step in range(step_count):
+            state = persistence * state + (1.0 - persistence) * raw[step, node]
+            forward[step, node] = state
+        state = 0.0
+        for step in range(step_count - 1, -1, -1):
+            state = persistence * state + (1.0 - persistence) * raw[step, node]
+            backward[step, node] = state
+    smoothed = 0.5 * (forward + backward)
+    probability = np.clip(
+        (smoothed - activation_offset) / activation_scale,
+        0.0,
+        1.0,
+    )
+    for node in range(node_count):
+        longest_run = 0
+        current_run = 0
+        for active in raw[:, node] >= cue_threshold:
+            current_run = current_run + 1 if active else 0
+            longest_run = max(longest_run, current_run)
+        if longest_run < minimum_run_length:
+            probability[:, node] = 0.0
+    return probability.reshape(-1)
 
 
 def _normalize_log_weights(log_weights: np.ndarray) -> np.ndarray:
@@ -507,9 +569,19 @@ def run_synthetic_case(
     flow = observations.flow_inconsistency[:train].reshape(-1)
     occluded = observations.occluded[:train].reshape(-1)
     boundary = observations.boundary_distance[:train].reshape(-1)
-    bias_probability = np.clip((flow - 0.005) / 0.08, 0.0, 1.0)
-    bias_probability *= (~occluded).astype(float)
-    bias_probability *= np.clip(boundary / 0.01, 0.0, 1.0)
+    raw_bias_probability = np.clip((flow - 0.005) / 0.08, 0.0, 1.0)
+    raw_bias_probability *= (~occluded).astype(float)
+    raw_bias_probability *= np.clip(boundary / 0.01, 0.0, 1.0)
+    bias_probability = _temporally_smoothed_bias_probability(
+        raw_bias_probability,
+        step_count=train,
+        node_count=config.node_count,
+        persistence=config.bias_cue_persistence,
+        cue_threshold=config.bias_cue_threshold,
+        minimum_run_length=config.bias_minimum_run_length,
+        activation_offset=config.bias_activation_offset,
+        activation_scale=config.bias_activation_scale,
+    )
     sequence_ids = np.tile(np.arange(config.node_count), train)
     time_values = np.repeat(np.arange(train), config.node_count)
 
@@ -721,7 +793,7 @@ def run_synthetic_benchmark(
         for seed in seeds
     ]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "config": asdict(cfg),
         "parameter_grid_size": int(particles.shape[0]),
         "seeds": [int(seed) for seed in seeds],

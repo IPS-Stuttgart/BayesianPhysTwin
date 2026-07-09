@@ -16,8 +16,9 @@ future state against the known trajectory.
 
 - `clean`: Gaussian observation noise only
 - `iid`: independent gross outliers with imperfect observable confidence
-- `correlated`: contiguous occlusion, slowly accumulating track drift,
-  boundary-localized noise, and a temporally coherent flow inconsistency
+- `correlated`: contiguous occlusion, a slowly accumulating drift shared by a
+  neighboring two-node region, boundary-localized noise, and a temporally
+  coherent flow inconsistency
 
 The correlated condition is the primary test of the structured-reliability
 claim. Drift begins below the single-frame detection threshold and accumulates,
@@ -49,21 +50,25 @@ informative excitation.
 - Brier score, log loss, ECE, and AUROC for cue prior, i.i.d. posterior, and
   Markov-smoothed inlier probability
 
-## Registered V2 Run
+## Registered V3 Run
 
-Bias hyperparameters were selected on development seeds `0:5`. The registered
-V2 evaluation freezes them and uses disjoint seeds `100:120`:
+Bias hyperparameters and the duration gate were selected on development seeds
+`0:5` and validation seeds `100:120`. The registered V3 evaluation freezes all
+settings and uses untouched seeds `1000:1020`:
 
 ```bash
 bpt-synthetic-benchmark \
-  --seeds 100:120 \
+  --seeds 1000:1020 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
   --bias-process-variance 1e-5 \
   --bias-initial-variance 1e-7 \
-  --output-json runs/synthetic_v2/results.json \
-  --output-csv runs/synthetic_v2/aggregate.csv \
-  --output-reliability-csv runs/synthetic_v2/reliability.csv
+  --bias-cue-persistence 0.85 \
+  --bias-cue-threshold 0.20 \
+  --bias-minimum-run-length 5 \
+  --output-json runs/synthetic_v3/results.json \
+  --output-csv runs/synthetic_v3/aggregate.csv \
+  --output-reliability-csv runs/synthetic_v3/reliability.csv
 ```
 
 Use `scripts/remote/run_synthetic_benchmark.sh` to execute the same registered

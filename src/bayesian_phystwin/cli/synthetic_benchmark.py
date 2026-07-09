@@ -52,6 +52,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--control-scale-count", type=int, default=9)
     parser.add_argument("--bias-process-variance", type=float, default=1e-5)
     parser.add_argument("--bias-initial-variance", type=float, default=1e-7)
+    parser.add_argument("--bias-cue-persistence", type=float, default=0.85)
+    parser.add_argument("--bias-cue-threshold", type=float, default=0.20)
+    parser.add_argument("--bias-minimum-run-length", type=int, default=5)
     return parser
 
 
@@ -68,6 +71,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         control_scale_count=args.control_scale_count,
         bias_process_variance=args.bias_process_variance,
         bias_initial_variance=args.bias_initial_variance,
+        bias_cue_persistence=args.bias_cue_persistence,
+        bias_cue_threshold=args.bias_cue_threshold,
+        bias_minimum_run_length=args.bias_minimum_run_length,
     )
     result = run_synthetic_benchmark(
         seeds=seeds,
