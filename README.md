@@ -24,6 +24,7 @@ learned perception observations
 Initial scope:
 
 - reliability-weighted pseudo-measurements for tracks, depth, masks, and flow
+- reliability-conditioned Gaussian/outlier mixture likelihoods
 - robust residual losses for inverse-physics fitting
 - ensemble/posterior utilities for low-dimensional physical parameters
 - reproducible experiment configs and remote-run scripts
@@ -49,6 +50,17 @@ servers; these paths are ignored by default.
 python3 -m pip install -e ".[dev]"
 bash scripts/local_smoke_test.sh
 ```
+
+Replay an exported residual table through the robust likelihood:
+
+```bash
+bpt-replay-residuals examples/residuals_demo.csv \
+  --summary-json outputs/residuals_demo/summary.json \
+  --scored-csv outputs/residuals_demo/scored.csv
+```
+
+See [docs/residual_replay.md](docs/residual_replay.md) for the canonical export
+schema, statistical model, and output metrics.
 
 ## Compute
 

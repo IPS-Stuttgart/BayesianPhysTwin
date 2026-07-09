@@ -12,6 +12,9 @@ dependencies = [
     "numpy>=1.23",
 ]
 
+[project.scripts]
+bpt-replay-residuals = "bayesian_phystwin.cli.residual_replay:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",

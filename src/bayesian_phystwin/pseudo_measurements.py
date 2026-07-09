@@ -56,11 +56,17 @@ class PseudoMeasurementBatch:
 
 @dataclass(frozen=True)
 class ReliabilityConfig:
-    """Parameters for converting perception cues into reliability weights."""
+    """Parameters for converting perception cues into prior reliability.
+
+    ``residual_scale`` is optional because a residual is evidence about whether
+    a measurement is an inlier, not an independent perception cue. Leave it at
+    ``None`` for the robust-mixture model and set it only for the
+    residual-gated baseline.
+    """
 
     min_weight: float = 1e-3
     confidence_power: float = 1.0
-    residual_scale: float = 0.10
+    residual_scale: float | None = None
     boundary_scale: float = 0.03
     flow_scale: float = 0.10
     occlusion_weight: float = 0.05
@@ -114,13 +120,41 @@ def _variance_array(values: ArrayLike | float, shape: tuple[int, int]) -> np.nda
     raise ValueError(f"variance must be scalar, shape ({n},), or {shape}, got {arr.shape}")
 
 
+def measurement_variance(batch: PseudoMeasurementBatch) -> np.ndarray:
+    """Return validated per-coordinate variance with shape ``(n, d)``."""
+
+    observed, _ = batch.arrays()
+    variance = _variance_array(batch.variance, observed.shape)
+    if not np.all(np.isfinite(variance)) or np.any(variance <= 0.0):
+        raise ValueError("variance values must be finite and positive")
+    return variance
+
+
+def _validate_config(config: ReliabilityConfig) -> None:
+    if not 0.0 < config.min_weight <= 1.0:
+        raise ValueError("min_weight must be in (0, 1]")
+    if config.confidence_power < 0.0:
+        raise ValueError("confidence_power must be nonnegative")
+    if config.residual_scale is not None and config.residual_scale <= 0.0:
+        raise ValueError("residual_scale must be positive when provided")
+    if config.boundary_scale <= 0.0:
+        raise ValueError("boundary_scale must be positive")
+    if config.flow_scale <= 0.0:
+        raise ValueError("flow_scale must be positive")
+    if not 0.0 <= config.occlusion_weight <= 1.0:
+        raise ValueError("occlusion_weight must be in [0, 1]")
+    if config.covariance_inflation_at_min_weight < 1.0:
+        raise ValueError("covariance inflation cap must be at least 1")
+
+
 def score_reliability(
     batch: PseudoMeasurementBatch,
     config: ReliabilityConfig | None = None,
 ) -> ReliabilityResult:
-    """Score pseudo-measurement reliability from residuals and learned cues."""
+    """Score prior reliability from learned cues and optional residual gating."""
 
     cfg = config or ReliabilityConfig()
+    _validate_config(cfg)
     observed, predicted = batch.arrays()
     residual = observed - predicted
     residual_norm = np.linalg.norm(residual, axis=1)
@@ -141,7 +175,10 @@ def score_reliability(
         0.0,
     )
 
-    residual_weight = np.exp(-0.5 * np.square(residual_norm / cfg.residual_scale))
+    if cfg.residual_scale is None:
+        residual_weight = np.ones(n, dtype=float)
+    else:
+        residual_weight = np.exp(-0.5 * np.square(residual_norm / cfg.residual_scale))
     confidence_weight = np.power(confidence, cfg.confidence_power)
     boundary_weight = 1.0 - np.exp(-boundary_distance / cfg.boundary_scale)
     flow_weight = np.exp(-flow_inconsistency / cfg.flow_scale)
@@ -151,8 +188,8 @@ def score_reliability(
     weights *= occlusion_weight
     weights = np.clip(weights, cfg.min_weight, 1.0)
 
-    base_variance = _variance_array(batch.variance, observed.shape)
-    inflation = 1.0 + (1.0 / weights - 1.0)
+    base_variance = measurement_variance(batch)
+    inflation = 1.0 / weights
     inflation = np.minimum(inflation, cfg.covariance_inflation_at_min_weight)
     inflated_variance = base_variance * inflation[:, None]
 
@@ -174,5 +211,4 @@ def reliability_weighted_loss(
     residual = observed - predicted
     variance = np.maximum(result.inflated_variance, 1e-12)
     normalized_sq = np.sum(np.square(residual) / variance, axis=1)
-    return float(np.mean(result.weights * normalized_sq))
-
+    return float(np.mean(normalized_sq))

@@ -9,6 +9,7 @@ from bayesian_phystwin import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
     reliability_weighted_loss,
+    robust_mixture_likelihood,
     score_reliability,
 )
 
@@ -37,8 +38,12 @@ def main() -> None:
         boundary_distance=boundary_distance,
         flow_inconsistency=flow_inconsistency,
     )
-    cfg = ReliabilityConfig(residual_scale=0.08)
+    cfg = ReliabilityConfig()
     reliability = score_reliability(batch, cfg)
+    likelihood = robust_mixture_likelihood(
+        batch,
+        prior_reliability=reliability.weights,
+    )
     loss = reliability_weighted_loss(batch, cfg)
 
     stiffness_particles = rng.normal(loc=1.0, scale=0.25, size=(200, 1))
@@ -47,17 +52,24 @@ def main() -> None:
     ensemble.update_from_residuals(
         residuals,
         variance=0.05,
-        reliability=np.full(stiffness_particles.shape[0], reliability.weights.mean()),
+        reliability=np.full(
+            stiffness_particles.shape[0],
+            likelihood.posterior_inlier_probability.mean(),
+        ),
     )
 
     print(f"mean reliability: {reliability.weights.mean():.3f}")
     print(f"minimum reliability: {reliability.weights.min():.3f}")
+    print(
+        "mean posterior inlier probability: "
+        f"{likelihood.posterior_inlier_probability.mean():.3f}"
+    )
     print(f"effective track count: {reliability.effective_sample_size:.1f}/{n_tracks}")
     print(f"weighted loss: {loss:.3f}")
+    print(f"robust mixture NLL: {likelihood.mean_negative_log_likelihood:.3f}")
     print(f"posterior stiffness mean: {ensemble.mean()[0]:.3f}")
     print(f"posterior stiffness std: {np.sqrt(ensemble.covariance()[0, 0]):.3f}")
 
 
 if __name__ == "__main__":
     main()
-
