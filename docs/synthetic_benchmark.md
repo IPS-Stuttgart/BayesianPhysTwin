@@ -33,6 +33,7 @@ decisions.
 | `cue_weighted` | Heuristic confidence/covariance weighting |
 | `iid_mixture` | Reliability-conditioned pointwise mixture |
 | `markov_mixture` | Proposed temporally structured reliability |
+| `structured_bias_filter` | Robust per-track random-walk drift-bias model |
 | `oracle_covariates` | True corruption labels used as reliability priors |
 | `oracle_inliers` | Upper bound that removes corrupted measurements |
 
@@ -48,18 +49,21 @@ informative excitation.
 - Brier score, log loss, ECE, and AUROC for cue prior, i.i.d. posterior, and
   Markov-smoothed inlier probability
 
-## Registered Run
+## Registered V2 Run
 
-Run all conditions, both action modes, and 20 deterministic seeds:
+Bias hyperparameters were selected on development seeds `0:5`. The registered
+V2 evaluation freezes them and uses disjoint seeds `100:120`:
 
 ```bash
 bpt-synthetic-benchmark \
-  --seeds 0:20 \
+  --seeds 100:120 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
-  --output-json runs/synthetic_v1/results.json \
-  --output-csv runs/synthetic_v1/aggregate.csv \
-  --output-reliability-csv runs/synthetic_v1/reliability.csv
+  --bias-process-variance 1e-5 \
+  --bias-initial-variance 1e-7 \
+  --output-json runs/synthetic_v2/results.json \
+  --output-csv runs/synthetic_v2/aggregate.csv \
+  --output-reliability-csv runs/synthetic_v2/reliability.csv
 ```
 
 Use `scripts/remote/run_synthetic_benchmark.sh` to execute the same registered

@@ -1,6 +1,12 @@
 """Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
 
 from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
+from .drift_bias import (
+    RandomWalkBiasConfig,
+    RandomWalkBiasResult,
+    filter_random_walk_bias,
+    robust_random_walk_log_evidence_batch,
+)
 from .parameter_posterior import ParameterEnsemble
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
@@ -32,6 +38,8 @@ __all__ = [
     "BinaryCalibrationMetrics",
     "ParameterEnsemble",
     "PseudoMeasurementBatch",
+    "RandomWalkBiasConfig",
+    "RandomWalkBiasResult",
     "ReliabilityConfig",
     "ReliabilityResult",
     "ResidualReplayResult",
@@ -41,11 +49,13 @@ __all__ = [
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "binary_calibration_metrics",
+    "filter_random_walk_bias",
     "measurement_variance",
     "markov_log_evidence_batch",
     "reliability_weighted_loss",
     "replay_residual_csv",
     "robust_mixture_likelihood",
+    "robust_random_walk_log_evidence_batch",
     "run_synthetic_benchmark",
     "run_synthetic_case",
     "score_reliability",

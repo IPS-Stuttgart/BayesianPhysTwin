@@ -25,6 +25,7 @@ Initial scope:
 
 - reliability-weighted pseudo-measurements for tracks, depth, masks, and flow
 - reliability-conditioned Gaussian/outlier mixture likelihoods
+- per-track Markov reliability and robust random-walk drift bias
 - robust residual losses for inverse-physics fitting
 - ensemble/posterior utilities for low-dimensional physical parameters
 - reproducible experiment configs and remote-run scripts
@@ -67,12 +68,14 @@ calibration, correlated corruption, and action-informativeness ablations:
 
 ```bash
 bpt-synthetic-benchmark \
-  --seeds 0:20 \
+  --seeds 100:120 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
-  --output-json runs/synthetic_v1/results.json \
-  --output-csv runs/synthetic_v1/aggregate.csv \
-  --output-reliability-csv runs/synthetic_v1/reliability.csv
+  --bias-process-variance 1e-5 \
+  --bias-initial-variance 1e-7 \
+  --output-json runs/synthetic_v2/results.json \
+  --output-csv runs/synthetic_v2/aggregate.csv \
+  --output-reliability-csv runs/synthetic_v2/reliability.csv
 ```
 
 See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete

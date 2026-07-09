@@ -11,6 +11,7 @@ from typing import Any, Sequence
 import numpy as np
 
 from .calibration import binary_calibration_metrics
+from .drift_bias import RandomWalkBiasConfig, robust_random_walk_log_evidence_batch
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
@@ -29,6 +30,7 @@ METHODS = (
     "cue_weighted",
     "iid_mixture",
     "markov_mixture",
+    "structured_bias_filter",
     "oracle_covariates",
     "oracle_inliers",
 )
@@ -59,6 +61,8 @@ class SyntheticBenchmarkConfig:
     outlier_variance_multiplier: float = 100.0
     huber_delta: float = 1.5
     state_variance_floor: float = 1e-8
+    bias_process_variance: float = 1.0e-5
+    bias_initial_variance: float = 1.0e-7
 
 
 @dataclass(frozen=True)
@@ -93,6 +97,8 @@ def _validate_config(config: SyntheticBenchmarkConfig) -> None:
         raise ValueError("outlier_variance_multiplier must be greater than 1")
     if config.huber_delta <= 0.0 or config.state_variance_floor <= 0.0:
         raise ValueError("huber_delta and state_variance_floor must be positive")
+    if config.bias_process_variance < 0.0 or config.bias_initial_variance < 0.0:
+        raise ValueError("bias variances must be nonnegative")
 
 
 def spring_graph_laplacian(node_count: int) -> np.ndarray:
@@ -498,6 +504,12 @@ def run_synthetic_case(
         config.outlier_variance_multiplier,
     )
     target = observations.inlier_target[:train].reshape(-1)
+    flow = observations.flow_inconsistency[:train].reshape(-1)
+    occluded = observations.occluded[:train].reshape(-1)
+    boundary = observations.boundary_distance[:train].reshape(-1)
+    bias_probability = np.clip((flow - 0.005) / 0.08, 0.0, 1.0)
+    bias_probability *= (~occluded).astype(float)
+    bias_probability *= np.clip(boundary / 0.01, 0.0, 1.0)
     sequence_ids = np.tile(np.arange(config.node_count), train)
     time_values = np.repeat(np.arange(train), config.node_count)
 
@@ -528,6 +540,19 @@ def run_synthetic_case(
             sequence_ids,
             time_values,
             config=markov_config,
+        ),
+        "structured_bias_filter": robust_random_walk_log_evidence_batch(
+            prior,
+            residual,
+            variance,
+            sequence_ids,
+            time_values,
+            config=RandomWalkBiasConfig(
+                process_variance=config.bias_process_variance,
+                initial_variance=config.bias_initial_variance,
+                outlier_variance_multiplier=config.outlier_variance_multiplier,
+            ),
+            bias_probability=bias_probability,
         ),
         "oracle_covariates": np.sum(
             np.logaddexp(

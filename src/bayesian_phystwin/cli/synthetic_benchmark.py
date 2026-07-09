@@ -50,6 +50,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--stiffness-count", type=int, default=17)
     parser.add_argument("--damping-count", type=int, default=11)
     parser.add_argument("--control-scale-count", type=int, default=9)
+    parser.add_argument("--bias-process-variance", type=float, default=1e-5)
+    parser.add_argument("--bias-initial-variance", type=float, default=1e-7)
     return parser
 
 
@@ -64,6 +66,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         stiffness_count=args.stiffness_count,
         damping_count=args.damping_count,
         control_scale_count=args.control_scale_count,
+        bias_process_variance=args.bias_process_variance,
+        bias_initial_variance=args.bias_initial_variance,
     )
     result = run_synthetic_benchmark(
         seeds=seeds,
