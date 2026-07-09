@@ -1,0 +1,74 @@
+# Bayesian PhysTwin
+
+Reliability-aware Bayesian state and parameter estimation for PhysTwin-style
+deformable digital twins.
+
+The first target is a lightweight layer around PhysTwin outputs: lifted point
+tracks, masks, depth points, scene flow, and point-cloud residuals are treated
+as noisy pseudo-measurements with explicit reliability. The longer-term goal is
+posterior inference over deformable state, material/contact parameters, and
+possibly spring-graph topology.
+
+## Research Direction
+
+PhysTwin estimates a physical digital twin from sparse video. This repository
+adds the estimation layer needed for robust robotics:
+
+```text
+learned perception observations
++ spring-mass physical prior
++ Bayesian reliability / uncertainty layer
+= robust deformable-object state and parameter estimation
+```
+
+Initial scope:
+
+- reliability-weighted pseudo-measurements for tracks, depth, masks, and flow
+- robust residual losses for inverse-physics fitting
+- ensemble/posterior utilities for low-dimensional physical parameters
+- reproducible experiment configs and remote-run scripts
+
+## Repository Layout
+
+```text
+src/bayesian_phystwin/   reusable Python package
+tests/                   unit tests for estimation utilities
+examples/                small synthetic demos
+configs/compute/         host-specific run defaults
+scripts/remote/          GPU-server helpers
+docs/                    notes on compute and integration
+```
+
+Large datasets, checkpoints, rendered videos, and raw runs should stay out of
+git. Use `runs/`, `outputs/`, `checkpoints/`, and `data/` locally or on the GPU
+servers; these paths are ignored by default.
+
+## Quick Start
+
+```bash
+python3 -m pip install -e ".[dev]"
+bash scripts/local_smoke_test.sh
+```
+
+## Compute
+
+GPU experiments are intended to run on:
+
+- `gpuserver6000`
+- `gpuserver4090`
+
+Both hosts are expected to be configured in SSH config and reachable through
+the jumpserver:
+
+```bash
+ssh gpuserver6000
+ssh gpuserver4090
+```
+
+See [docs/compute.md](docs/compute.md) for the current run conventions.
+
+## Paper Repository
+
+Notes, figures, and result artifacts are tracked separately in:
+
+<https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper>

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bayesian-phystwin"
+version = "0.1.0"
+description = "Reliability-aware Bayesian estimation utilities for PhysTwin-style deformable digital twins."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

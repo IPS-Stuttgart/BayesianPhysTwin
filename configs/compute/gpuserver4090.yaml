@@ -1,0 +1,7 @@
+host: gpuserver4090
+role: single-gpu development and smoke tests
+default_run_root: runs/gpuserver4090
+notes:
+  - Use for short reliability-weighting and adapter checks.
+  - Keep raw outputs on the server unless they are curated for the paper repo.
+
