@@ -13,6 +13,7 @@ from bayesian_phystwin.synthetic_benchmark import (
     simulate_parameter_particles,
     write_benchmark_csv,
     write_benchmark_json,
+    write_reliability_csv,
 )
 
 
@@ -55,6 +56,7 @@ def test_correlated_benchmark_runs_all_required_baselines() -> None:
     assert result["parameter_grid_size"] == parameter_grid(config).shape[0]
     assert set(result["runs"][0]["methods"]) == set(METHODS)
     assert len(result["aggregate"]) == len(METHODS)
+    assert len(result["reliability_aggregate"]) == 3
     assert result["runs"][0]["corruption_counts"]["drift"] > 0
     assert np.isfinite(
         result["runs"][0]["reliability"]["markov_posterior"]["brier_score"]
@@ -72,13 +74,19 @@ def test_benchmark_writes_json_and_aggregate_csv(tmp_path: Path) -> None:
     )
     json_path = tmp_path / "result.json"
     csv_path = tmp_path / "aggregate.csv"
+    reliability_path = tmp_path / "reliability.csv"
 
     write_benchmark_json(result, json_path)
     write_benchmark_csv(result, csv_path)
+    write_reliability_csv(result, reliability_path)
 
     loaded = json.loads(json_path.read_text(encoding="utf-8"))
     with csv_path.open("r", encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
+    with reliability_path.open("r", encoding="utf-8", newline="") as handle:
+        reliability_rows = list(csv.DictReader(handle))
     assert loaded["schema_version"] == 1
     assert len(rows) == len(METHODS)
     assert "state_future_rmse_mean" in rows[0]
+    assert len(reliability_rows) == 3
+    assert "brier_score_mean" in reliability_rows[0]

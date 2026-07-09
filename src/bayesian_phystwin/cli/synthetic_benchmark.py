@@ -11,6 +11,7 @@ from bayesian_phystwin.synthetic_benchmark import (
     run_synthetic_benchmark,
     write_benchmark_csv,
     write_benchmark_json,
+    write_reliability_csv,
 )
 
 
@@ -43,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--action-modes", default="dynamic,quasi_static")
     parser.add_argument("--output-json")
     parser.add_argument("--output-csv")
+    parser.add_argument("--output-reliability-csv")
     parser.add_argument("--steps", type=int, default=90)
     parser.add_argument("--train-steps", type=int, default=60)
     parser.add_argument("--stiffness-count", type=int, default=17)
@@ -73,6 +75,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         write_benchmark_json(result, args.output_json)
     if args.output_csv:
         write_benchmark_csv(result, args.output_csv)
+    if args.output_reliability_csv:
+        write_reliability_csv(result, args.output_reliability_csv)
     print(json.dumps(result["aggregate"], indent=2, sort_keys=True))
     return 0
 

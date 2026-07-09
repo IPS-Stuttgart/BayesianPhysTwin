@@ -621,6 +621,45 @@ def _aggregate_runs(runs: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     return aggregate
 
 
+def _aggregate_reliability(runs: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for run in runs:
+        for estimator in ("prior", "iid_posterior", "markov_posterior"):
+            groups.setdefault(
+                (run["condition"], run["action_mode"], estimator),
+                [],
+            ).append(run["reliability"][estimator])
+
+    aggregate: list[dict[str, Any]] = []
+    for (condition, action_mode, estimator), metrics_list in groups.items():
+        auc_values = [
+            metrics["roc_auc"]
+            for metrics in metrics_list
+            if metrics["roc_auc"] is not None
+        ]
+        aggregate.append(
+            {
+                "condition": condition,
+                "action_mode": action_mode,
+                "estimator": estimator,
+                "replicate_count": len(metrics_list),
+                "brier_score_mean": float(
+                    np.mean([metrics["brier_score"] for metrics in metrics_list])
+                ),
+                "log_loss_mean": float(
+                    np.mean([metrics["log_loss"] for metrics in metrics_list])
+                ),
+                "expected_calibration_error_mean": float(
+                    np.mean(
+                        [metrics["expected_calibration_error"] for metrics in metrics_list]
+                    )
+                ),
+                "roc_auc_mean": None if not auc_values else float(np.mean(auc_values)),
+            }
+        )
+    return aggregate
+
+
 def run_synthetic_benchmark(
     *,
     seeds: Sequence[int],
@@ -665,6 +704,7 @@ def run_synthetic_benchmark(
         "action_modes": list(action_modes),
         "runs": runs,
         "aggregate": _aggregate_runs(runs),
+        "reliability_aggregate": _aggregate_reliability(runs),
     }
 
 
@@ -683,6 +723,18 @@ def write_benchmark_csv(result: dict[str, Any], path: str | Path) -> None:
     rows = result["aggregate"]
     if not rows:
         raise ValueError("benchmark result has no aggregate rows")
+    with output_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_reliability_csv(result: dict[str, Any], path: str | Path) -> None:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    rows = result["reliability_aggregate"]
+    if not rows:
+        raise ValueError("benchmark result has no reliability aggregate rows")
     with output_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()

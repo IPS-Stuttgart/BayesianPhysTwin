@@ -71,7 +71,8 @@ bpt-synthetic-benchmark \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
   --output-json runs/synthetic_v1/results.json \
-  --output-csv runs/synthetic_v1/aggregate.csv
+  --output-csv runs/synthetic_v1/aggregate.csv \
+  --output-reliability-csv runs/synthetic_v1/reliability.csv
 ```
 
 See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete

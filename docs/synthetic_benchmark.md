@@ -58,7 +58,8 @@ bpt-synthetic-benchmark \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
   --output-json runs/synthetic_v1/results.json \
-  --output-csv runs/synthetic_v1/aggregate.csv
+  --output-csv runs/synthetic_v1/aggregate.csv \
+  --output-reliability-csv runs/synthetic_v1/reliability.csv
 ```
 
 Use `scripts/remote/run_synthetic_benchmark.sh` to execute the same registered

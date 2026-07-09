@@ -27,6 +27,8 @@ python3 -m bayesian_phystwin.cli.synthetic_benchmark \
     --control-scale-count 5 \
     --output-json "$tmp_dir/synthetic.json" \
     --output-csv "$tmp_dir/synthetic.csv" \
+    --output-reliability-csv "$tmp_dir/synthetic-reliability.csv" \
     >/dev/null
 test -s "$tmp_dir/synthetic.json"
 test -s "$tmp_dir/synthetic.csv"
+test -s "$tmp_dir/synthetic-reliability.csv"
