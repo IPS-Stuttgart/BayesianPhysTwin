@@ -26,6 +26,8 @@ def test_replay_reports_robustness_calibration_and_frame_metrics(tmp_path: Path)
     assert result.summary["measurement_dimension"] == 2
     assert result.summary["labels"] == {"inlier_count": 2, "outlier_count": 1}
     assert result.summary["calibration"]["prior_reliability"]["roc_auc"] == 1.0
+    assert result.summary["calibration"]["structured_inlier_probability"]["roc_auc"] == 1.0
+    assert result.summary["structured_reliability"]["sequence_count"] == 2
     assert len(result.summary["per_frame"]) == 2
     assert len(result.scored_rows) == 3
     assert float(result.scored_rows[-1]["posterior_inlier_probability"]) < 1e-6
@@ -48,6 +50,7 @@ def test_replay_writes_machine_readable_artifacts(tmp_path: Path) -> None:
     assert summary["schema_version"] == 1
     assert len(rows) == 3
     assert "prior_reliability" in rows[0]
+    assert "structured_inlier_probability" in rows[0]
     assert "robust_negative_log_likelihood" in rows[0]
 
 

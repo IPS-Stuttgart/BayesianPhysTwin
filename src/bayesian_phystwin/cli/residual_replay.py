@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from bayesian_phystwin.pseudo_measurements import ReliabilityConfig
 from bayesian_phystwin.residual_replay import replay_residual_csv
 from bayesian_phystwin.robust_likelihood import RobustLikelihoodConfig
+from bayesian_phystwin.structured_reliability import MarkovReliabilityConfig
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,6 +34,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--covariance-inflation-cap", type=float, default=100.0)
     parser.add_argument("--outlier-variance-multiplier", type=float, default=100.0)
     parser.add_argument("--model-discrepancy-variance", type=float, default=0.0)
+    parser.add_argument("--inlier-persistence", type=float, default=0.98)
+    parser.add_argument("--outlier-persistence", type=float, default=0.90)
+    parser.add_argument("--sequence-column", default="track_id")
+    parser.add_argument("--time-column", default="frame")
+    parser.add_argument(
+        "--disable-markov",
+        action="store_true",
+        help="Disable per-sequence temporal smoothing even when columns are present",
+    )
     parser.add_argument("--calibration-bins", type=int, default=10)
     return parser
 
@@ -52,12 +62,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         outlier_variance_multiplier=args.outlier_variance_multiplier,
         model_discrepancy_variance=args.model_discrepancy_variance,
     )
+    markov_config = MarkovReliabilityConfig(
+        inlier_persistence=args.inlier_persistence,
+        outlier_persistence=args.outlier_persistence,
+    )
     result = replay_residual_csv(
         args.input_csv,
         reliability_config=reliability_config,
         likelihood_config=likelihood_config,
+        markov_config=markov_config,
         default_variance=args.default_variance,
         calibration_bins=args.calibration_bins,
+        sequence_column=None if args.disable_markov else args.sequence_column,
+        time_column=args.time_column,
     )
     if args.summary_json:
         result.write_summary_json(args.summary_json)

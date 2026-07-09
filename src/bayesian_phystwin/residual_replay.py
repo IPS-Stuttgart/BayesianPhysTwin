@@ -22,12 +22,17 @@ from .robust_likelihood import (
     RobustLikelihoodConfig,
     robust_mixture_likelihood,
 )
+from .structured_reliability import (
+    MarkovReliabilityConfig,
+    smooth_markov_reliability,
+)
 
 
 SCORE_COLUMNS = (
     "residual_norm",
     "prior_reliability",
     "posterior_inlier_probability",
+    "structured_inlier_probability",
     "inflated_variance_mean",
     "robust_negative_log_likelihood",
 )
@@ -278,6 +283,7 @@ def _per_frame_summary(
     residual_norm: np.ndarray,
     prior: np.ndarray,
     posterior: np.ndarray,
+    structured: np.ndarray | None,
 ) -> list[dict[str, Any]]:
     groups: dict[str, list[int]] = {}
     for index, row in enumerate(rows):
@@ -286,17 +292,23 @@ def _per_frame_summary(
     summaries: list[dict[str, Any]] = []
     for frame, indexes in groups.items():
         selected = np.asarray(indexes, dtype=int)
-        summaries.append(
-            {
-                "frame": frame,
-                "count": int(selected.size),
-                "mean_residual_norm": float(np.mean(residual_norm[selected])),
-                "mean_prior_reliability": float(np.mean(prior[selected])),
-                "mean_posterior_inlier_probability": float(np.mean(posterior[selected])),
-                "prior_effective_sample_size": _effective_sample_size(prior[selected]),
-                "posterior_effective_sample_size": _effective_sample_size(posterior[selected]),
-            }
-        )
+        frame_summary = {
+            "frame": frame,
+            "count": int(selected.size),
+            "mean_residual_norm": float(np.mean(residual_norm[selected])),
+            "mean_prior_reliability": float(np.mean(prior[selected])),
+            "mean_posterior_inlier_probability": float(np.mean(posterior[selected])),
+            "prior_effective_sample_size": _effective_sample_size(prior[selected]),
+            "posterior_effective_sample_size": _effective_sample_size(posterior[selected]),
+        }
+        if structured is not None:
+            frame_summary["mean_structured_inlier_probability"] = float(
+                np.mean(structured[selected])
+            )
+            frame_summary["structured_effective_sample_size"] = _effective_sample_size(
+                structured[selected]
+            )
+        summaries.append(frame_summary)
     return summaries
 
 
@@ -305,13 +317,17 @@ def replay_residual_csv(
     *,
     reliability_config: ReliabilityConfig | None = None,
     likelihood_config: RobustLikelihoodConfig | None = None,
+    markov_config: MarkovReliabilityConfig | None = None,
     default_variance: float = 1e-4,
     calibration_bins: int = 10,
+    sequence_column: str | None = "track_id",
+    time_column: str = "frame",
 ) -> ResidualReplayResult:
     """Score one canonical residual CSV and return paper-ready summaries."""
 
     reliability_cfg = reliability_config or ReliabilityConfig()
     likelihood_cfg = likelihood_config or RobustLikelihoodConfig()
+    markov_cfg = markov_config or MarkovReliabilityConfig()
     loaded = _load_residual_csv(path, default_variance=default_variance)
     observed, predicted = loaded.batch.arrays()
     variance = measurement_variance(loaded.batch)
@@ -325,6 +341,22 @@ def replay_residual_csv(
     residual = observed - predicted
     unweighted_mahalanobis = np.sum(np.square(residual) / variance, axis=1)
     posterior = likelihood.posterior_inlier_probability
+    structured_result = None
+    structured = None
+    if (
+        sequence_column is not None
+        and sequence_column in loaded.fieldnames
+        and time_column in loaded.fieldnames
+    ):
+        structured_result = smooth_markov_reliability(
+            reliability.weights,
+            likelihood.log_inlier_density,
+            likelihood.log_outlier_density,
+            sequence_ids=[row[sequence_column] for row in loaded.rows],
+            time_values=[row[time_column] for row in loaded.rows],
+            config=markov_cfg,
+        )
+        structured = structured_result.posterior_inlier_probability
     summary: dict[str, Any] = {
         "schema_version": 1,
         "input_csv": str(Path(path).resolve()),
@@ -334,6 +366,7 @@ def replay_residual_csv(
         "config": {
             "reliability": asdict(reliability_cfg),
             "robust_likelihood": asdict(likelihood_cfg),
+            "markov_reliability": asdict(markov_cfg),
             "default_variance": default_variance,
         },
         "residual_norm": _distribution_summary(reliability.residual_norm),
@@ -354,6 +387,18 @@ def replay_residual_csv(
         },
     }
 
+    if structured_result is not None and structured is not None:
+        summary["structured_reliability"] = {
+            "sequence_column": sequence_column,
+            "time_column": time_column,
+            "sequence_count": structured_result.sequence_count,
+            "mean_negative_log_evidence": (
+                -structured_result.total_log_evidence / observed.shape[0]
+            ),
+            "inlier_probability": _distribution_summary(structured),
+            "effective_sample_size": _effective_sample_size(structured),
+        }
+
     if loaded.inlier_target is not None:
         summary["labels"] = {
             "inlier_count": int(np.sum(loaded.inlier_target)),
@@ -371,6 +416,14 @@ def replay_residual_csv(
                 n_bins=calibration_bins,
             ).as_dict(),
         }
+        if structured is not None:
+            summary["calibration"]["structured_inlier_probability"] = (
+                binary_calibration_metrics(
+                    structured,
+                    loaded.inlier_target,
+                    n_bins=calibration_bins,
+                ).as_dict()
+            )
 
     if "frame" in loaded.fieldnames:
         summary["per_frame"] = _per_frame_summary(
@@ -378,6 +431,7 @@ def replay_residual_csv(
             reliability.residual_norm,
             reliability.weights,
             posterior,
+            structured,
         )
 
     scored_rows: list[dict[str, str]] = []
@@ -388,6 +442,9 @@ def replay_residual_csv(
                 "residual_norm": f"{reliability.residual_norm[index]:.12g}",
                 "prior_reliability": f"{reliability.weights[index]:.12g}",
                 "posterior_inlier_probability": f"{posterior[index]:.12g}",
+                "structured_inlier_probability": (
+                    "" if structured is None else f"{structured[index]:.12g}"
+                ),
                 "inflated_variance_mean": (
                     f"{np.mean(reliability.inflated_variance[index]):.12g}"
                 ),

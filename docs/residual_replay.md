@@ -23,6 +23,13 @@ set for the residual-gated baseline. Additive model-discrepancy variance is a
 separate CLI/config value so physics mismatch is not folded into perception
 confidence.
 
+When `track_id` and `frame` are present, replay also places a binary Markov
+model over each track's inlier state. Cue reliability remains the observable
+unary evidence, while `--inlier-persistence` and `--outlier-persistence`
+control temporal coupling. The implementation normalizes the cue-conditioned
+Markov prior, so the resulting sequence evidence can be used for parameter
+inference rather than only as a smoothing heuristic.
+
 ## Canonical CSV
 
 Each row represents one pseudo-measurement. Required vector columns use either
@@ -46,7 +53,8 @@ columns are:
 | `flow_inconsistency` | Nonnegative 4D-flow inconsistency | `0` |
 | `is_inlier` | Optional ground-truth calibration label | no calibration metrics |
 | `is_corrupted` | Inverse alias for `is_inlier` | no calibration metrics |
-| `frame` | Optional frame identifier | no per-frame summary |
+| `track_id` | Optional persistent sequence identifier | no Markov smoothing |
+| `frame` | Optional frame identifier | no Markov smoothing or per-frame summary |
 
 All other provenance columns, for example `track_id`, `source`, object, camera,
 or run identifiers, are preserved in the scored CSV.
@@ -67,6 +75,7 @@ PYTHONPATH=src python3 -m bayesian_phystwin.cli.residual_replay \
 ```
 
 The summary contains residual, prior-reliability, and posterior-inlier
-distributions; effective sample sizes; unweighted, covariance-weighted, and
-robust objectives; per-frame summaries; and Brier score, log loss, expected
-calibration error, and AUROC when labels are present.
+distributions; i.i.d. and Markov-smoothed inlier probabilities; effective
+sample sizes; unweighted, covariance-weighted, and robust objectives; per-frame
+summaries; and Brier score, log loss, expected calibration error, and AUROC when
+labels are present.

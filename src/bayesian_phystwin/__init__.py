@@ -16,6 +16,11 @@ from .robust_likelihood import (
     RobustLikelihoodResult,
     robust_mixture_likelihood,
 )
+from .structured_reliability import (
+    MarkovReliabilityConfig,
+    MarkovReliabilityResult,
+    smooth_markov_reliability,
+)
 
 __all__ = [
     "BinaryCalibrationMetrics",
@@ -26,10 +31,13 @@ __all__ = [
     "ResidualReplayResult",
     "RobustLikelihoodConfig",
     "RobustLikelihoodResult",
+    "MarkovReliabilityConfig",
+    "MarkovReliabilityResult",
     "binary_calibration_metrics",
     "measurement_variance",
     "reliability_weighted_loss",
     "replay_residual_csv",
     "robust_mixture_likelihood",
     "score_reliability",
+    "smooth_markov_reliability",
 ]
