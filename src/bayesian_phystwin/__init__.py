@@ -8,6 +8,11 @@ from .drift_bias import (
     robust_random_walk_log_evidence_batch,
 )
 from .parameter_posterior import ParameterEnsemble
+from .phystwin_adapter import (
+    PhysTwinExportConfig,
+    export_phystwin_residuals,
+    write_export_summary,
+)
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
@@ -37,6 +42,7 @@ from .synthetic_benchmark import (
 __all__ = [
     "BinaryCalibrationMetrics",
     "ParameterEnsemble",
+    "PhysTwinExportConfig",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
     "RandomWalkBiasResult",
@@ -50,6 +56,7 @@ __all__ = [
     "MarkovReliabilityResult",
     "binary_calibration_metrics",
     "filter_random_walk_bias",
+    "export_phystwin_residuals",
     "measurement_variance",
     "markov_log_evidence_batch",
     "reliability_weighted_loss",
@@ -60,4 +67,5 @@ __all__ = [
     "run_synthetic_case",
     "score_reliability",
     "smooth_markov_reliability",
+    "write_export_summary",
 ]

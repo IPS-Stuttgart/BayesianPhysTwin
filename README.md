@@ -84,6 +84,21 @@ bpt-synthetic-benchmark \
 See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete
 protocol and baseline definitions.
 
+Export the exact tracked-point residuals from an official PhysTwin case and
+immediately replay them through the reliability model:
+
+```bash
+bpt-export-phystwin-residuals \
+  data/different_types/CASE/final_data.pkl \
+  experiments/CASE/inference.pkl \
+  runs/CASE/residuals.csv \
+  --replay-summary-json runs/CASE/replay.json \
+  --scored-csv runs/CASE/scored.csv
+```
+
+See [docs/phystwin_integration.md](docs/phystwin_integration.md) for the pinned
+upstream contract, optional cue sidecar, and likelihood boundary.
+
 ## Compute
 
 GPU experiments are intended to run on:
