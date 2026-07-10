@@ -88,10 +88,10 @@ The runner supports either the released per-spring parameterization (`dense`)
 or two log scales around the released checkpoint (`grouped`): one for object
 springs and one for controller springs. Both are point refits, with optional
 contact parameters. Dashpot and drag damping remain fixed because
-the official kernel takes them as non-differentiable scalar inputs. It is not
-yet a parameter posterior, and the processed motion cue is not a calibrated
-replacement for raw tracker confidence or mask-boundary uncertainty. Those are
-explicit next-stage requirements, not claims supplied by this integration.
+the official kernel takes them as non-differentiable scalar inputs. The grouped
+grid below is a two-scale profile posterior, not a posterior over dense springs,
+damping, contact, or topology. The processed motion cue is not a calibrated
+replacement for raw tracker confidence or mask-boundary uncertainty.
 
 The input files are Python pickles. Load only trusted official or locally
 generated artifacts.
@@ -120,3 +120,28 @@ posterior mean trajectory, and epistemic variance; `summary.json` adds parameter
 credible intervals and 90% observation-predictive coverage on fit, validation,
 and test intervals. Temperature and prior scales are recorded configuration,
 not hidden calibration constants.
+
+## Causal Model Discrepancy
+
+Calibrate a saved profile without rerunning the simulator:
+
+```bash
+bpt-calibrate-phystwin-discrepancy \
+  final_data.pkl parameter_profile.npz runs/CASE/discrepancy.json \
+  --fit-end-frame 48 \
+  --test-start-frame 64 \
+  --observation-variance 2.5e-5 \
+  --reference-trajectory inference.pkl
+```
+
+The fixed observation variance remains the perception term. A separate model
+discrepancy variance is estimated from residual moments after subtracting the
+observation and epistemic terms. For frame `t`, the estimate uses residuals only
+through frame `t-1`; current-frame observations never set their own interval.
+The exponential decay is selected by validation NEES from an explicit candidate
+list, with smoother estimates winning exact ties.
+
+This output is online one-step calibration. It may update during the test
+sequence from prior test observations and must not be described as open-loop
+future uncertainty. Static zero-discrepancy metrics remain beside it in the
+summary so the contribution is auditable.

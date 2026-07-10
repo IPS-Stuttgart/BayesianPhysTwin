@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.phystwin_profile import (
+    causal_model_discrepancy_variance,
     clustered_track_log_likelihood,
     grid_parameter_posterior,
     predictive_observation_calibration,
@@ -93,3 +94,40 @@ def test_weighted_moments_and_predictive_calibration():
     np.testing.assert_allclose(variance, 7.5e-5)
     assert calibration["count"] == 2
     assert calibration["coordinate_coverage_90"] == 1.0
+
+
+def test_causal_discrepancy_does_not_use_current_frame_residual():
+    observed = np.zeros((4, 1, 3))
+    mean = np.zeros_like(observed)
+    mean[2, 0] = 0.02
+    mask = np.ones((4, 1), dtype=bool)
+
+    discrepancy = causal_model_discrepancy_variance(
+        observed,
+        mean,
+        np.zeros_like(observed),
+        mask,
+        observation_variance=2.5e-5,
+        decay=0.0,
+    )
+
+    assert discrepancy[2] == 0.0
+    assert discrepancy[3] == pytest.approx(0.000375)
+
+
+def test_predictive_calibration_accepts_framewise_discrepancy():
+    observed = np.zeros((2, 1, 3))
+    mean = np.full_like(observed, 0.01)
+    frame_variance = np.array([0.0, 1e-3])
+
+    calibration = predictive_observation_calibration(
+        observed,
+        mean,
+        np.zeros_like(observed),
+        np.ones((2, 1), dtype=bool),
+        observation_variance=2.5e-5,
+        model_discrepancy_variance=frame_variance,
+    )
+
+    assert calibration["count"] == 2
+    assert calibration["coordinate_coverage_90"] == 0.5

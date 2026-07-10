@@ -217,7 +217,7 @@ def predictive_observation_calibration(
     mask: np.ndarray,
     *,
     observation_variance: float,
-    model_discrepancy_variance: float = 0.0,
+    model_discrepancy_variance: float | np.ndarray = 0.0,
 ) -> dict[str, float | int]:
     """Evaluate 90% Gaussian observation intervals and normalized residuals."""
 
@@ -229,14 +229,31 @@ def predictive_observation_calibration(
         raise ValueError("observed, mean, and variance must have the same shape")
     if mask_array.shape != observed_array.shape[:2]:
         raise ValueError("mask must match the trajectory's first two axes")
-    if observation_variance <= 0.0 or model_discrepancy_variance < 0.0:
-        raise ValueError("predictive variances are invalid")
+    if observation_variance <= 0.0:
+        raise ValueError("observation_variance must be positive")
+    discrepancy = np.asarray(model_discrepancy_variance, dtype=float)
+    if discrepancy.shape == ():
+        discrepancy_array = np.full_like(observed_array, discrepancy.item())
+    elif discrepancy.shape == (len(observed_array),):
+        discrepancy_array = np.broadcast_to(
+            discrepancy[:, None, None],
+            observed_array.shape,
+        )
+    elif discrepancy.shape == observed_array.shape:
+        discrepancy_array = discrepancy
+    else:
+        raise ValueError(
+            "model_discrepancy_variance must be scalar, shape (T,), or trajectory-shaped"
+        )
+    if not np.all(np.isfinite(discrepancy_array)) or np.any(discrepancy_array < 0.0):
+        raise ValueError("model_discrepancy_variance must be finite and nonnegative")
     selected_residual = (observed_array - mean_array)[mask_array]
     selected_epistemic = epistemic[mask_array]
+    selected_discrepancy = discrepancy_array[mask_array]
     if len(selected_residual) == 0:
         return {"count": 0}
     total_variance = (
-        selected_epistemic + observation_variance + model_discrepancy_variance
+        selected_epistemic + observation_variance + selected_discrepancy
     )
     normalized_sq = np.square(selected_residual) / total_variance
     covered = np.abs(selected_residual) <= 1.6448536269514722 * np.sqrt(
@@ -251,3 +268,47 @@ def predictive_observation_calibration(
             np.quantile(np.sqrt(selected_epistemic), 0.95)
         ),
     }
+
+
+def causal_model_discrepancy_variance(
+    observed: np.ndarray,
+    mean: np.ndarray,
+    epistemic_variance: np.ndarray,
+    mask: np.ndarray,
+    *,
+    observation_variance: float,
+    decay: float,
+    initial_variance: float = 0.0,
+) -> np.ndarray:
+    """Estimate one-step model discrepancy using only previous-frame residuals."""
+
+    observed_array = np.asarray(observed, dtype=float)
+    mean_array = np.asarray(mean, dtype=float)
+    epistemic = np.asarray(epistemic_variance, dtype=float)
+    mask_array = np.asarray(mask, dtype=bool)
+    if observed_array.shape != mean_array.shape or observed_array.shape != epistemic.shape:
+        raise ValueError("observed, mean, and epistemic_variance must have equal shape")
+    if mask_array.shape != observed_array.shape[:2]:
+        raise ValueError("mask must match the trajectory's first two axes")
+    if observation_variance <= 0.0 or initial_variance < 0.0:
+        raise ValueError("variance values are invalid")
+    if not 0.0 <= decay < 1.0:
+        raise ValueError("decay must be in [0, 1)")
+
+    residual = observed_array - mean_array
+    predicted = np.empty(len(observed_array), dtype=float)
+    current = float(initial_variance)
+    for frame in range(len(observed_array)):
+        predicted[frame] = current
+        selected = mask_array[frame]
+        if not np.any(selected):
+            continue
+        residual_variance = float(
+            np.mean(
+                np.square(residual[frame, selected])
+                - epistemic[frame, selected]
+            )
+        )
+        target = max(residual_variance - observation_variance, 0.0)
+        current = decay * current + (1.0 - decay) * target
+    return predicted
