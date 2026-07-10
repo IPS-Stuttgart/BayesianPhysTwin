@@ -17,6 +17,7 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=10000)
     parser.add_argument("--block-length", type=int, default=5)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--cluster-by-phystwin-object", action="store_true")
     args = parser.parse_args()
     result = compare_phystwin_manifest(
         args.manifest,
@@ -24,6 +25,7 @@ def main() -> None:
         samples=args.samples,
         block_length=args.block_length,
         seed=args.seed,
+        cluster_by_phystwin_object=args.cluster_by_phystwin_object,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

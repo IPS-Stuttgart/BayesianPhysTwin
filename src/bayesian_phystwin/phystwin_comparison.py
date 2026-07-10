@@ -111,12 +111,35 @@ def _interval(values: np.ndarray) -> dict[str, float]:
     }
 
 
+def phystwin_physical_object_cluster(case_name: str) -> str:
+    """Map released interaction names to conservative physical-object groups."""
+
+    for object_name in (
+        "cloth_1",
+        "cloth_3",
+        "cloth_4",
+        "sloth",
+        "zebra",
+        "dinosor",
+        "rope_1",
+        "rope_4",
+        "rope",
+        "weird_package",
+    ):
+        if object_name in case_name:
+            return object_name
+    if case_name == "single_lift_cloth":
+        return "cloth"
+    raise ValueError(f"cannot infer a released PhysTwin object for {case_name}")
+
+
 def paired_block_bootstrap(
     cases: Mapping[str, tuple[dict[str, np.ndarray], dict[str, np.ndarray]]],
     *,
     samples: int = 10000,
     block_length: int = 5,
     seed: int = 0,
+    clusters: Mapping[str, str] | None = None,
 ) -> dict[str, object]:
     """Bootstrap paired percent changes per case and across equal-weighted cases."""
 
@@ -182,13 +205,62 @@ def paired_block_bootstrap(
             "observed_macro_percent_change": float(np.mean(observed)),
             "case_and_frame_bootstrap_percent_change": _interval(draws),
         }
-    return {
+    result: dict[str, object] = {
         "samples": samples,
         "block_length": block_length,
         "seed": seed,
         "per_case": per_case,
         "macro": macro,
     }
+    if clusters is not None:
+        if set(clusters) != set(case_names):
+            raise ValueError("clusters must assign every case exactly once")
+        grouped: dict[str, list[str]] = {}
+        for case_name in case_names:
+            grouped.setdefault(str(clusters[case_name]), []).append(case_name)
+        cluster_names = tuple(grouped)
+        cluster_macro: dict[str, object] = {}
+        for metric in metric_names:
+            observed_by_cluster = np.array(
+                [
+                    np.mean(
+                        [
+                            per_case[case_name][metric]["observed_percent_change"]
+                            for case_name in grouped[cluster]
+                        ]
+                    )
+                    for cluster in cluster_names
+                ],
+                dtype=float,
+            )
+            draws = np.empty(samples, dtype=float)
+            for sample in range(samples):
+                selected = rng.integers(0, len(cluster_names), size=len(cluster_names))
+                draws[sample] = np.mean(
+                    [
+                        np.mean(
+                            [
+                                bootstrap_by_case[case_name][metric][sample]
+                                for case_name in grouped[cluster_names[index]]
+                            ]
+                        )
+                        for index in selected
+                    ]
+                )
+            cluster_macro[metric] = {
+                "observed_equal_cluster_percent_change": float(
+                    np.mean(observed_by_cluster)
+                ),
+                "cluster_and_frame_bootstrap_percent_change": _interval(draws),
+            }
+        result["cluster_macro"] = {
+            "cluster_count": len(cluster_names),
+            "case_counts": {
+                cluster: len(grouped[cluster]) for cluster in cluster_names
+            },
+            "metrics": cluster_macro,
+        }
+    return result
 
 
 def compare_phystwin_manifest(
@@ -198,6 +270,7 @@ def compare_phystwin_manifest(
     samples: int = 10000,
     block_length: int = 5,
     seed: int = 0,
+    cluster_by_phystwin_object: bool = False,
 ) -> dict[str, object]:
     """Evaluate and bootstrap the baseline/candidate pairs in a JSON manifest."""
 
@@ -206,6 +279,10 @@ def compare_phystwin_manifest(
     if not raw_cases:
         raise ValueError("manifest must contain a nonempty cases list")
     cases: dict[str, tuple[dict[str, np.ndarray], dict[str, np.ndarray]]] = {}
+    clusters: dict[str, str] = {}
+    has_cluster = ["cluster" in case for case in raw_cases]
+    if any(has_cluster) and not all(has_cluster):
+        raise ValueError("manifest must assign either all clusters or none")
     inputs: dict[str, object] = {}
     for case in raw_cases:
         name = str(case["name"])
@@ -244,6 +321,8 @@ def compare_phystwin_manifest(
                 end_frame=end,
             ),
         )
+        if all(has_cluster):
+            clusters[name] = str(case["cluster"])
         inputs[name] = {
             key: {"path": str(path.resolve()), "sha256": _sha256(path)}
             for key, path in {
@@ -254,6 +333,18 @@ def compare_phystwin_manifest(
             }.items()
         }
         inputs[name]["frame_interval"] = [start, end]
+    if cluster_by_phystwin_object:
+        if clusters:
+            raise ValueError(
+                "do not combine explicit clusters with PhysTwin object inference"
+            )
+        clusters = {
+            case_name: phystwin_physical_object_cluster(case_name)
+            for case_name in cases
+        }
+    if clusters:
+        for case_name, cluster in clusters.items():
+            inputs[case_name]["cluster"] = cluster
     result = {
         "schema_version": 1,
         "manifest": {
@@ -261,11 +352,17 @@ def compare_phystwin_manifest(
             "sha256": _sha256(manifest_path),
         },
         "inputs": inputs,
+        "cluster_weighting": (
+            "equal physical object, with equal interactions within object"
+            if clusters
+            else None
+        ),
         "bootstrap": paired_block_bootstrap(
             cases,
             samples=samples,
             block_length=block_length,
             seed=seed,
+            clusters=clusters if clusters else None,
         ),
     }
     output = Path(output_path)
