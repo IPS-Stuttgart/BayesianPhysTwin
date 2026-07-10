@@ -27,6 +27,9 @@ def _build_archives(root: Path) -> tuple[Path, Path, Path]:
     with zipfile.ZipFile(experiments_path, "w") as archive:
         for case in ("case_a", "case_b"):
             archive.writestr(f"experiments/{case}/inference.pkl", b"trajectory")
+            archive.writestr(
+                f"experiments/{case}/train/best_99.pth", b"checkpoint"
+            )
     with zipfile.ZipFile(optimization_path, "w") as archive:
         for case in ("case_a", "case_b"):
             archive.writestr(
@@ -61,6 +64,7 @@ def test_fetches_selected_evaluation_subset_and_reuses_valid_files(tmp_path: Pat
     assert first["available_cases"] == ["case_a", "case_b"]
     assert first["selected_cases"] == ["case_b"]
     assert (output / "case_b" / "inference.pkl").read_bytes() == b"trajectory"
+    assert (output / "case_b" / "checkpoint.pth").read_bytes() == b"checkpoint"
     assert (output / "case_b" / "optimal_params.pkl").read_bytes() == b"parameters"
     assert all(
         record["reused"]
@@ -94,6 +98,10 @@ def test_fetches_label_free_additional_subset(tmp_path: Path):
             b"trajectory",
         )
         archive.writestr(
+            "additional_data/experiments/cloth_blue_fold/train/best_20.pth",
+            b"checkpoint",
+        )
+        archive.writestr(
             "additional_data/experiments_optimization/cloth_blue_fold/"
             "optimal_params.pkl",
             b"parameters",
@@ -109,4 +117,5 @@ def test_fetches_label_free_additional_subset(tmp_path: Path):
     assert manifest["selected_cases"] == ["cloth_blue_fold"]
     assert manifest["manual_track_labels"] is False
     assert (output / "cloth_blue_fold" / "inference.pkl").read_bytes() == b"trajectory"
+    assert (output / "cloth_blue_fold" / "checkpoint.pth").read_bytes() == b"checkpoint"
     assert (output / "cloth_blue_fold" / "optimal_params.pkl").read_bytes() == b"parameters"

@@ -29,6 +29,20 @@ EVALUATION_FILENAMES = ("final_data.pkl", "gt_track_3d.pkl", "split.json")
 ADDITIONAL_EVALUATION_FILENAMES = ("final_data.pkl", "split.json")
 
 
+def _best_checkpoint_member(names: Iterable[str], prefix: str) -> str:
+    matches = sorted(
+        name
+        for name in names
+        if name.startswith(f"{prefix}/train/best_") and name.endswith(".pth")
+    )
+    if len(matches) != 1:
+        raise ValueError(
+            f"expected one released best checkpoint under {prefix}, "
+            f"found {len(matches)}"
+        )
+    return matches[0]
+
+
 def _archive_factory(source: str) -> Any:
     try:
         from remotezip import RemoteZip
@@ -54,7 +68,18 @@ def _available_cases(data_archive: Any, experiments_archive: Any) -> tuple[str, 
         required = {
             f"{prefix}{case}/{filename}" for filename in EVALUATION_FILENAMES
         }
-        if required <= data_names and f"experiments/{case}/inference.pkl" in experiment_names:
+        checkpoint_prefix = f"experiments/{case}"
+        checkpoints = [
+            name
+            for name in experiment_names
+            if name.startswith(f"{checkpoint_prefix}/train/best_")
+            and name.endswith(".pth")
+        ]
+        if (
+            required <= data_names
+            and f"experiments/{case}/inference.pkl" in experiment_names
+            and len(checkpoints) == 1
+        ):
             complete.append(case)
     return tuple(complete)
 
@@ -74,10 +99,22 @@ def _available_additional_cases(archive: Any) -> tuple[str, ...]:
             for filename in ADDITIONAL_EVALUATION_FILENAMES
         }
         inference = f"additional_data/experiments/{case}/inference.pkl"
+        checkpoint_prefix = f"additional_data/experiments/{case}"
+        checkpoints = [
+            name
+            for name in names
+            if name.startswith(f"{checkpoint_prefix}/train/best_")
+            and name.endswith(".pth")
+        ]
         optimal = (
             f"additional_data/experiments_optimization/{case}/optimal_params.pkl"
         )
-        if required <= names and inference in names and optimal in names:
+        if (
+            required <= names
+            and inference in names
+            and optimal in names
+            and len(checkpoints) == 1
+        ):
             complete.append(case)
     return tuple(complete)
 
@@ -134,7 +171,7 @@ def fetch_phystwin_evaluation_subset(
     optimization_archive_url: str | None = DEFAULT_OPTIMIZATION_ARCHIVE,
     archive_factory: Callable[[str], Any] | None = None,
 ) -> dict[str, object]:
-    """Retrieve only the files needed for released 3D trajectory evaluation."""
+    """Retrieve compact released trajectory, graph, and checkpoint inputs."""
 
     factory = _archive_factory if archive_factory is None else archive_factory
     output = Path(output_dir)
@@ -174,6 +211,14 @@ def fetch_phystwin_evaluation_subset(
                 experiments_archive,
                 inference_member,
                 case_dir / "inference.pkl",
+            )
+            checkpoint_member = _best_checkpoint_member(
+                experiments_archive.namelist(), f"experiments/{case}"
+            )
+            files["checkpoint.pth"] = _retrieve_member(
+                experiments_archive,
+                checkpoint_member,
+                case_dir / "checkpoint.pth",
             )
             if optimization_archive is not None:
                 optimal_member = (
@@ -248,6 +293,14 @@ def fetch_phystwin_additional_evaluation_subset(
                 archive,
                 inference_member,
                 case_dir / "inference.pkl",
+            )
+            checkpoint_member = _best_checkpoint_member(
+                archive.namelist(), f"additional_data/experiments/{case}"
+            )
+            files["checkpoint.pth"] = _retrieve_member(
+                archive,
+                checkpoint_member,
+                case_dir / "checkpoint.pth",
             )
             optimal_member = (
                 f"additional_data/experiments_optimization/{case}/"
