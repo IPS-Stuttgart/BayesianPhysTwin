@@ -46,6 +46,18 @@ The Markov variants use fixed inlier/outlier persistence `0.98/0.90`. Filtering
 is causal: reliability at frame `t` uses cue values only through `t`, never
 future cues or simulator residuals.
 
+Audit static and Markov priors on the exact target-visible refit support:
+
+```bash
+bpt-evaluate-phystwin-priors final_data.pkl cues.npz prior_evaluation.json \
+  --flow-scale 0.005 \
+  --inlier-persistence 0.98 \
+  --outlier-persistence 0.90
+```
+
+The reported hard-gate calibration is a consistency diagnostic only. The gate
+uses related local-motion logic and is not independent corruption truth.
+
 ## Runtime
 
 The official low-level simulator requires compatible CUDA builds of PyTorch and

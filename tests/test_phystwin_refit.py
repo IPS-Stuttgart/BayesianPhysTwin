@@ -2,6 +2,9 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.cli.phystwin_refit import build_parser
+from bayesian_phystwin.phystwin_prior_evaluation import (
+    evaluate_phystwin_prior_arrays,
+)
 from bayesian_phystwin.phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -177,3 +180,21 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
     )
 
     assert args.spring_parameterization == "grouped"
+
+
+def test_prior_evaluation_uses_target_visible_refit_support():
+    visible, motion_valid = _masks()
+    cues = {
+        "flow_inconsistency": np.array(
+            [[0.0, 0.1], [0.02, 0.1], [0.0, 0.1]]
+        )
+    }
+
+    result = evaluate_phystwin_prior_arrays(
+        visible,
+        motion_valid,
+        cues,
+    )
+
+    assert result["measurement_count"] == int(np.sum(visible[1:]))
+    assert set(result["variants"]) == {"mixture", "markov_mixture"}
