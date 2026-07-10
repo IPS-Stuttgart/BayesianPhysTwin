@@ -31,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model-discrepancy-variance", type=float, default=0.0)
     parser.add_argument("--outlier-variance-multiplier", type=float, default=100.0)
     parser.add_argument("--flow-scale", type=float, default=0.005)
+    parser.add_argument("--boundary-scale", type=float, default=0.03)
     parser.add_argument("--dt", type=float, default=5e-5)
     parser.add_argument("--num-substeps", type=int, default=667)
     parser.add_argument("--track-weight", type=float, default=1.0)
@@ -91,6 +92,7 @@ def main() -> None:
             model_discrepancy_variance=args.model_discrepancy_variance,
             outlier_variance_multiplier=args.outlier_variance_multiplier,
             flow_scale=args.flow_scale,
+            boundary_scale=args.boundary_scale,
             dt=args.dt,
             num_substeps=args.num_substeps,
             track_weight=args.track_weight,

@@ -48,6 +48,7 @@ class HeadlessPhysTwinRefitConfig:
     model_discrepancy_variance: float = 0.0
     outlier_variance_multiplier: float = 100.0
     flow_scale: float = 0.005
+    boundary_scale: float = 0.03
     dt: float = 5e-5
     num_substeps: int = 667
     track_weight: float = 1.0
@@ -200,6 +201,8 @@ def run_headless_phystwin_refit(
         raise ValueError("model_discrepancy_variance must be nonnegative")
     if config.outlier_variance_multiplier <= 1.0:
         raise ValueError("outlier_variance_multiplier must be greater than one")
+    if config.flow_scale <= 0.0 or config.boundary_scale <= 0.0:
+        raise ValueError("cue scales must be positive")
     if config.num_substeps < 1 or config.dt <= 0.0:
         raise ValueError("simulator time discretization must be positive")
     if config.spring_parameterization not in {"dense", "grouped"}:
@@ -304,7 +307,10 @@ def run_headless_phystwin_refit(
         motion_valid,
         cues=cues,
         variant=config.variant,
-        config=PhysTwinRefitReliabilityConfig(flow_scale=config.flow_scale),
+        config=PhysTwinRefitReliabilityConfig(
+            flow_scale=config.flow_scale,
+            boundary_scale=config.boundary_scale,
+        ),
     )
 
     structure_points = np.concatenate(
@@ -728,7 +734,10 @@ def run_headless_phystwin_refit(
         motion_valid,
         cues=cues,
         variant="cue",
-        config=PhysTwinRefitReliabilityConfig(flow_scale=config.flow_scale),
+        config=PhysTwinRefitReliabilityConfig(
+            flow_scale=config.flow_scale,
+            boundary_scale=config.boundary_scale,
+        ),
     )
     common_metrics = _common_objective_metrics(
         object_points,

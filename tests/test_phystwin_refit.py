@@ -182,6 +182,8 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
             "manual.pkl",
             "--profile-prediction-mass",
             "0.999",
+            "--boundary-scale",
+            "0.004",
         ]
     )
 
@@ -189,6 +191,7 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
     assert args.selection_metric == "official_3d"
     assert args.gt_track_3d == "manual.pkl"
     assert args.profile_prediction_mass == pytest.approx(0.999)
+    assert args.boundary_scale == pytest.approx(0.004)
 
 
 def test_prior_evaluation_uses_target_visible_refit_support():
