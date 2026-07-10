@@ -407,6 +407,7 @@ def run_additional_anchor_confirmation(
             "future_corrected_chamfer_m": future["corrected_chamfer_m"],
             "future_percent_change": future["percent_change"],
             "correction": summary["correction"],
+            "transform": summary.get("transform"),
         }
         paired[case] = (
             {
