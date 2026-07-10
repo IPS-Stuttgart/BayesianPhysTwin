@@ -790,7 +790,7 @@ def run_headless_phystwin_refit(
             object_prior_std=config.profile_object_prior_std,
             controller_prior_std=config.profile_controller_prior_std,
         )
-        state_shape = (frame_count, len(graph.vertices), 3)
+        state_shape = trajectory.shape
         posterior_mean_accumulator = np.zeros(state_shape, dtype=np.float64)
         posterior_second_moment = np.zeros(state_shape, dtype=np.float64)
         map_flat_index = int(np.argmax(posterior.weights))
@@ -865,7 +865,7 @@ def run_headless_phystwin_refit(
             )
         profile_summary = {
             "particle_count": int(config.profile_grid_count**2),
-            "state_vertex_count": int(len(graph.vertices)),
+            "state_vertex_count": int(trajectory.shape[1]),
             "fit_frame_interval": [1, fit_end_frame],
             "likelihood_variant": config.variant,
             "cluster_contract": "mean tracks within frame, sum frames",
