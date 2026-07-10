@@ -248,7 +248,11 @@ def build_phystwin_motion_cues(
             neighbor_count=cfg.neighbor_count,
             chunk_size=cfg.nearest_chunk_size,
         )
-    flow_inconsistency = np.zeros((frame_count - 1, track_count), dtype=float)
+    flow_inconsistency = np.full(
+        (frame_count - 1, track_count),
+        cfg.insufficient_neighbor_value,
+        dtype=float,
+    )
     valid_neighbor_count = np.zeros((frame_count - 1, track_count), dtype=np.int16)
     motion_visible = np.logical_and(visible[:-1], visible[1:])
 
@@ -300,6 +304,7 @@ def build_phystwin_motion_cues(
         occluded=np.logical_not(visible),
         flow_inconsistency=flow_inconsistency,
         valid_neighbor_count=valid_neighbor_count,
+        motion_observed=motion_visible,
     )
     valid_values = flow_inconsistency[motion_visible]
     if valid_values.size == 0:
@@ -312,6 +317,7 @@ def build_phystwin_motion_cues(
         "frame_count": frame_count,
         "track_count": track_count,
         "visible_motion_count": int(np.sum(motion_visible)),
+        "undefined_motion_count": int(np.sum(np.logical_not(motion_visible))),
         "insufficient_neighbor_count": int(
             np.sum(motion_visible & (valid_neighbor_count < cfg.minimum_valid_neighbors))
         ),

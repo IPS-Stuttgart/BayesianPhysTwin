@@ -195,6 +195,8 @@ def test_motion_cue_sidecar_detects_local_track_inconsistency(tmp_path: Path) ->
     assert flow.shape == (frame_count - 1, track_count)
     assert flow[1, 3] > 0.03
     assert np.median(np.delete(flow[1], 3)) < 1e-9
+    assert flow[1, 5] == 0.10
+    assert flow[2, 5] == 0.10
     assert confidence[2, 5] == 0.0
     assert bool(occluded[2, 5])
     assert summary["visible_motion_count"] == int(
