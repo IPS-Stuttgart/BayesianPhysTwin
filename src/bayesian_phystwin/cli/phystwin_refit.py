@@ -42,6 +42,20 @@ def build_parser() -> argparse.ArgumentParser:
         default="dense",
     )
     parser.add_argument("--early-stopping-patience", type=int, default=3)
+    parser.add_argument("--profile-grid-count", type=int, default=0)
+    parser.add_argument(
+        "--profile-object-log-scale-half-width",
+        type=float,
+        default=0.15,
+    )
+    parser.add_argument(
+        "--profile-controller-log-scale-half-width",
+        type=float,
+        default=0.50,
+    )
+    parser.add_argument("--profile-object-prior-std", type=float, default=0.15)
+    parser.add_argument("--profile-controller-prior-std", type=float, default=0.50)
+    parser.add_argument("--profile-likelihood-temperature", type=float, default=1.0)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--released-trajectory")
     return parser
@@ -74,6 +88,16 @@ def main() -> None:
             optimize_collision=not args.freeze_collision,
             spring_parameterization=args.spring_parameterization,
             early_stopping_patience=args.early_stopping_patience,
+            profile_grid_count=args.profile_grid_count,
+            profile_object_log_scale_half_width=(
+                args.profile_object_log_scale_half_width
+            ),
+            profile_controller_log_scale_half_width=(
+                args.profile_controller_log_scale_half_width
+            ),
+            profile_object_prior_std=args.profile_object_prior_std,
+            profile_controller_prior_std=args.profile_controller_prior_std,
+            profile_likelihood_temperature=args.profile_likelihood_temperature,
             device=args.device,
         ),
     )

@@ -19,6 +19,12 @@ from .phystwin_graph import (
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
 )
+from .phystwin_profile import (
+    clustered_track_log_likelihood,
+    grid_parameter_posterior,
+    predictive_observation_calibration,
+    weighted_trajectory_moments,
+)
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -48,6 +54,12 @@ class HeadlessPhysTwinRefitConfig:
     optimize_collision: bool = True
     spring_parameterization: str = "dense"
     early_stopping_patience: int = 3
+    profile_grid_count: int = 0
+    profile_object_log_scale_half_width: float = 0.15
+    profile_controller_log_scale_half_width: float = 0.50
+    profile_object_prior_std: float = 0.15
+    profile_controller_prior_std: float = 0.50
+    profile_likelihood_temperature: float = 1.0
     device: str = "cuda:0"
 
 
@@ -189,6 +201,26 @@ def run_headless_phystwin_refit(
         raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
     if config.early_stopping_patience < 1:
         raise ValueError("early_stopping_patience must be positive")
+    if config.profile_grid_count < 0:
+        raise ValueError("profile_grid_count must be nonnegative")
+    if config.profile_grid_count and config.profile_grid_count < 3:
+        raise ValueError("profile_grid_count must be zero or at least three")
+    profile_positive_values = (
+        config.profile_object_log_scale_half_width,
+        config.profile_controller_log_scale_half_width,
+        config.profile_object_prior_std,
+        config.profile_controller_prior_std,
+        config.profile_likelihood_temperature,
+    )
+    if any(value <= 0.0 for value in profile_positive_values):
+        raise ValueError("profile widths, prior scales, and temperature must be positive")
+    if config.profile_grid_count:
+        if config.spring_parameterization != "grouped":
+            raise ValueError("parameter profiling requires grouped springs")
+        if config.epochs != 0:
+            raise ValueError("parameter profiling requires epochs=0")
+        if config.optimize_collision:
+            raise ValueError("parameter profiling requires frozen collision parameters")
     if config.device != "cuda:0":
         raise ValueError(
             "the pinned official simulator selects cuda:0 at import; use "
@@ -242,6 +274,8 @@ def run_headless_phystwin_refit(
     )
     if config.fit_end_frame is not None and not 1 < fit_end_frame < config.train_end_frame:
         raise ValueError("fit_end_frame must be between 2 and train_end_frame-1")
+    if config.profile_grid_count and config.fit_end_frame is None:
+        raise ValueError("parameter profiling requires fit_end_frame")
 
     with np.load(cues_path) as archive:
         cues = {name: np.asarray(archive[name]) for name in archive.files}
@@ -591,6 +625,125 @@ def run_headless_phystwin_refit(
         prior=common_objective.prior_inlier_probability,
     )
 
+    profile_summary = None
+    profile_artifact: dict[str, np.ndarray] | None = None
+    if config.profile_grid_count:
+        object_scale_grid = np.linspace(
+            -config.profile_object_log_scale_half_width,
+            config.profile_object_log_scale_half_width,
+            config.profile_grid_count,
+        )
+        controller_scale_grid = np.linspace(
+            -config.profile_controller_log_scale_half_width,
+            config.profile_controller_log_scale_half_width,
+            config.profile_grid_count,
+        )
+        log_likelihood = np.empty(
+            (config.profile_grid_count, config.profile_grid_count),
+            dtype=float,
+        )
+        trajectory_particles: list[np.ndarray] = []
+        for object_index, object_scale in enumerate(object_scale_grid):
+            for controller_index, controller_scale in enumerate(
+                controller_scale_grid
+            ):
+                with torch.no_grad():
+                    simulator.group_log_scale_tensor.copy_(
+                        torch.tensor(
+                            [object_scale, controller_scale],
+                            dtype=torch.float32,
+                            device=config.device,
+                        )
+                    )
+                candidate = simulate_trajectory(frame_count)[
+                    :, :original_count
+                ]
+                trajectory_particles.append(candidate)
+                log_likelihood[object_index, controller_index] = (
+                    clustered_track_log_likelihood(
+                        object_points,
+                        candidate,
+                        objective,
+                        start_frame=1,
+                        end_frame=fit_end_frame,
+                        variance=(
+                            config.observation_variance
+                            + config.model_discrepancy_variance
+                        ),
+                        outlier_variance_multiplier=(
+                            config.outlier_variance_multiplier
+                        ),
+                        temperature=config.profile_likelihood_temperature,
+                    )
+                )
+        posterior = grid_parameter_posterior(
+            object_scale_grid,
+            controller_scale_grid,
+            log_likelihood,
+            object_prior_std=config.profile_object_prior_std,
+            controller_prior_std=config.profile_controller_prior_std,
+        )
+        particle_array = np.stack(trajectory_particles)
+        posterior_mean, epistemic_variance = weighted_trajectory_moments(
+            particle_array,
+            posterior.weights,
+        )
+        posterior_mean = posterior_mean.astype(np.float32)
+        epistemic_variance = epistemic_variance.astype(np.float32)
+        posterior_evaluation = evaluate_phystwin_trajectory_splits(
+            object_points,
+            posterior_mean,
+            visible,
+            motion_valid,
+            splits={
+                "fit": (1, fit_end_frame),
+                "validation": (fit_end_frame, config.train_end_frame),
+                "test": (config.train_end_frame, frame_count),
+            },
+        )
+        posterior_calibration: dict[str, dict[str, float | int]] = {}
+        for split_name, split_start, split_stop in (
+            ("fit", 1, fit_end_frame),
+            ("validation", fit_end_frame, config.train_end_frame),
+            ("test", config.train_end_frame, frame_count),
+        ):
+            split_mask = np.zeros_like(visible)
+            split_mask[split_start:split_stop] = hard_objective.support[
+                split_start:split_stop
+            ].astype(bool)
+            posterior_calibration[split_name] = predictive_observation_calibration(
+                object_points,
+                posterior_mean,
+                epistemic_variance,
+                split_mask,
+                observation_variance=config.observation_variance,
+                model_discrepancy_variance=(
+                    config.model_discrepancy_variance
+                ),
+            )
+        profile_summary = {
+            "particle_count": int(config.profile_grid_count**2),
+            "fit_frame_interval": [1, fit_end_frame],
+            "likelihood_variant": config.variant,
+            "cluster_contract": "mean tracks within frame, sum frames",
+            "posterior": posterior.summary,
+            "log_likelihood_minimum": float(np.min(log_likelihood)),
+            "log_likelihood_maximum": float(np.max(log_likelihood)),
+            "posterior_mean_evaluation": posterior_evaluation,
+            "posterior_predictive_calibration": posterior_calibration,
+        }
+        profile_artifact = {
+            "object_log_scales": object_scale_grid,
+            "controller_log_scales": controller_scale_grid,
+            "log_likelihood": log_likelihood,
+            "log_posterior": posterior.log_posterior,
+            "posterior_weights": posterior.weights,
+            "posterior_mean_trajectory": posterior_mean,
+            "epistemic_variance": epistemic_variance,
+        }
+        with torch.no_grad():
+            simulator.group_log_scale_tensor.zero_()
+
     released_evaluation = None
     released_parity = None
     if released_trajectory_path is not None:
@@ -612,6 +765,10 @@ def run_headless_phystwin_refit(
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    profile_path = None
+    if profile_artifact is not None:
+        profile_path = output_path / "parameter_profile.npz"
+        np.savez_compressed(profile_path, **profile_artifact)
     trajectory_path = output_path / "trajectory.pkl"
     with trajectory_path.open("wb") as handle:
         pickle.dump(trajectory, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -713,12 +870,16 @@ def run_headless_phystwin_refit(
         "evaluation": evaluation,
         "split_evaluation": selection_evaluation,
         "common_cue_evaluation": common_metrics,
+        "parameter_profile": profile_summary,
         "released_evaluation": released_evaluation,
         "released_trajectory_parity": released_parity,
         "outputs": {
             "trajectory": str(trajectory_path.resolve()),
             "history": str(history_path.resolve()),
             "checkpoint": str(refit_checkpoint_path.resolve()),
+            "parameter_profile": (
+                None if profile_path is None else str(profile_path.resolve())
+            ),
         },
     }
     summary_path = output_path / "summary.json"

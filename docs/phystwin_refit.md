@@ -95,3 +95,28 @@ explicit next-stage requirements, not claims supplied by this integration.
 
 The input files are Python pickles. Load only trusted official or locally
 generated artifacts.
+
+## Grouped Parameter Profile
+
+A zero-update grouped run can evaluate a two-dimensional profile posterior over
+object- and controller-spring log scales:
+
+```bash
+bpt-phystwin-refit ... \
+  --variant mixture \
+  --fit-end-frame 48 \
+  --train-end-frame 64 \
+  --epochs 0 \
+  --freeze-collision \
+  --spring-parameterization grouped \
+  --profile-grid-count 9
+```
+
+The profile uses only fit frames for its likelihood. It averages track NLLs
+within each frame before summing frame contributions, making the spatial
+correlation tempering explicit. Independent zero-mean Gaussian priors apply to
+both log scales. `parameter_profile.npz` stores the grid, posterior weights,
+posterior mean trajectory, and epistemic variance; `summary.json` adds parameter
+credible intervals and 90% observation-predictive coverage on fit, validation,
+and test intervals. Temperature and prior scales are recorded configuration,
+not hidden calibration constants.
