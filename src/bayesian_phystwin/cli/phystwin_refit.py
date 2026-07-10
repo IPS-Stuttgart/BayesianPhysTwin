@@ -61,6 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--profile-object-prior-std", type=float, default=0.15)
     parser.add_argument("--profile-controller-prior-std", type=float, default=0.50)
     parser.add_argument("--profile-likelihood-temperature", type=float, default=1.0)
+    parser.add_argument("--profile-prediction-mass", type=float, default=1.0)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--released-trajectory")
     parser.add_argument("--gt-track-3d")
@@ -108,6 +109,7 @@ def main() -> None:
             profile_object_prior_std=args.profile_object_prior_std,
             profile_controller_prior_std=args.profile_controller_prior_std,
             profile_likelihood_temperature=args.profile_likelihood_temperature,
+            profile_prediction_mass=args.profile_prediction_mass,
             device=args.device,
         ),
     )

@@ -210,6 +210,41 @@ def weighted_trajectory_moments(
     return mean, variance
 
 
+def truncate_profile_prediction_weights(
+    weights: np.ndarray,
+    *,
+    retained_mass: float,
+) -> tuple[np.ndarray, float, int]:
+    """Keep the smallest highest-probability set reaching ``retained_mass``.
+
+    The returned weights are renormalized. This lets expensive simulator
+    prediction ignore numerically irrelevant profile corners while preserving
+    an explicit accounting of the omitted posterior mass.
+    """
+
+    values = np.asarray(weights, dtype=float)
+    if values.ndim != 2:
+        raise ValueError("weights must be a two-dimensional grid")
+    if not np.all(np.isfinite(values)) or np.any(values < 0.0):
+        raise ValueError("weights must be finite and nonnegative")
+    if not 0.0 < retained_mass <= 1.0:
+        raise ValueError("retained_mass must be in (0, 1]")
+    total = float(np.sum(values))
+    if total <= 0.0:
+        raise ValueError("weights must have positive mass")
+
+    normalized = values / total
+    flat = normalized.reshape(-1)
+    order = np.argsort(-flat, kind="stable")
+    cumulative = np.cumsum(flat[order])
+    count = min(int(np.searchsorted(cumulative, retained_mass, side="left")) + 1, len(flat))
+    selected = order[:count]
+    kept_mass = float(np.sum(flat[selected]))
+    truncated = np.zeros_like(flat)
+    truncated[selected] = flat[selected] / kept_mass
+    return truncated.reshape(values.shape), kept_mass, count
+
+
 def predictive_observation_calibration(
     observed: np.ndarray,
     mean: np.ndarray,

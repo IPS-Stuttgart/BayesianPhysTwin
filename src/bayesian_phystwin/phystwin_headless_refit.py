@@ -23,6 +23,7 @@ from .phystwin_profile import (
     clustered_track_log_likelihood,
     grid_parameter_posterior,
     predictive_observation_calibration,
+    truncate_profile_prediction_weights,
 )
 from .phystwin_official_evaluation import evaluate_official_phystwin_interval
 from .phystwin_refit import (
@@ -61,6 +62,7 @@ class HeadlessPhysTwinRefitConfig:
     profile_object_prior_std: float = 0.15
     profile_controller_prior_std: float = 0.50
     profile_likelihood_temperature: float = 1.0
+    profile_prediction_mass: float = 1.0
     device: str = "cuda:0"
 
 
@@ -225,6 +227,8 @@ def run_headless_phystwin_refit(
     )
     if any(value <= 0.0 for value in profile_positive_values):
         raise ValueError("profile widths, prior scales, and temperature must be positive")
+    if not 0.0 < config.profile_prediction_mass <= 1.0:
+        raise ValueError("profile_prediction_mass must be in (0, 1]")
     if config.profile_grid_count:
         if config.spring_parameterization != "grouped":
             raise ValueError("parameter profiling requires grouped springs")
@@ -842,6 +846,13 @@ def run_headless_phystwin_refit(
             if weight_sum <= 0.0:
                 raise ValueError("external posterior_weights must have positive mass")
             prediction_weights = prediction_weights / weight_sum
+        source_prediction_weights = prediction_weights.copy()
+        prediction_weights, retained_prediction_mass, prediction_particle_count = (
+            truncate_profile_prediction_weights(
+                prediction_weights,
+                retained_mass=config.profile_prediction_mass,
+            )
+        )
         state_shape = trajectory.shape
         posterior_mean_accumulator = np.zeros(state_shape, dtype=np.float64)
         posterior_second_moment = np.zeros(state_shape, dtype=np.float64)
@@ -860,8 +871,11 @@ def run_headless_phystwin_refit(
                             device=config.device,
                         )
                     )
-                candidate = simulate_trajectory(frame_count).astype(np.float64)
                 weight = float(prediction_weights[object_index, controller_index])
+                if weight <= 0.0:
+                    flat_index += 1
+                    continue
+                candidate = simulate_trajectory(frame_count).astype(np.float64)
                 posterior_mean_accumulator += weight * candidate
                 posterior_second_moment += weight * np.square(candidate)
                 if flat_index == map_flat_index:
@@ -930,6 +944,9 @@ def run_headless_phystwin_refit(
             "prediction_effective_grid_points": float(
                 1.0 / np.sum(np.square(prediction_weights))
             ),
+            "prediction_requested_mass": float(config.profile_prediction_mass),
+            "prediction_retained_mass": retained_prediction_mass,
+            "prediction_particle_count": prediction_particle_count,
             "prediction_object_log_scale_mean": float(
                 np.sum(np.sum(prediction_weights, axis=1) * object_scale_grid)
             ),
@@ -953,6 +970,7 @@ def run_headless_phystwin_refit(
             "log_likelihood": log_likelihood,
             "log_posterior": posterior.log_posterior,
             "posterior_weights": posterior.weights,
+            "source_prediction_weights": source_prediction_weights,
             "prediction_weights": prediction_weights,
             "posterior_mean_trajectory": posterior_mean,
             "epistemic_variance": epistemic_variance,

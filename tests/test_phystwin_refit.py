@@ -180,12 +180,15 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
             "official_3d",
             "--gt-track-3d",
             "manual.pkl",
+            "--profile-prediction-mass",
+            "0.999",
         ]
     )
 
     assert args.spring_parameterization == "grouped"
     assert args.selection_metric == "official_3d"
     assert args.gt_track_3d == "manual.pkl"
+    assert args.profile_prediction_mass == pytest.approx(0.999)
 
 
 def test_prior_evaluation_uses_target_visible_refit_support():

@@ -6,6 +6,7 @@ from bayesian_phystwin.phystwin_profile import (
     clustered_track_log_likelihood,
     grid_parameter_posterior,
     predictive_observation_calibration,
+    truncate_profile_prediction_weights,
     weighted_trajectory_moments,
 )
 from bayesian_phystwin.phystwin_refit import build_phystwin_track_objective
@@ -124,6 +125,29 @@ def test_weighted_moments_and_predictive_calibration():
     np.testing.assert_allclose(variance, 7.5e-5)
     assert calibration["count"] == 2
     assert calibration["coordinate_coverage_90"] == 1.0
+
+
+def test_profile_prediction_truncation_keeps_minimum_highest_mass_set():
+    weights = np.array([[0.50, 0.30], [0.15, 0.05]])
+
+    truncated, retained, count = truncate_profile_prediction_weights(
+        weights,
+        retained_mass=0.80,
+    )
+
+    assert retained == pytest.approx(0.80)
+    assert count == 2
+    assert np.sum(truncated) == pytest.approx(1.0)
+    np.testing.assert_allclose(truncated, [[0.625, 0.375], [0.0, 0.0]])
+
+
+@pytest.mark.parametrize("retained_mass", [0.0, 1.01])
+def test_profile_prediction_truncation_rejects_invalid_mass(retained_mass):
+    with pytest.raises(ValueError):
+        truncate_profile_prediction_weights(
+            np.ones((2, 2)),
+            retained_mass=retained_mass,
+        )
 
 
 def test_causal_discrepancy_does_not_use_current_frame_residual():
