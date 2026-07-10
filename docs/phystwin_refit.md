@@ -57,6 +57,7 @@ bpt-phystwin-refit \
   /path/to/cues.npz \
   runs/CASE/refit_mixture \
   --variant mixture \
+  --fit-end-frame 48 \
   --train-end-frame 64 \
   --epochs 20 \
   --learning-rate 1e-3 \
@@ -65,6 +66,7 @@ bpt-phystwin-refit \
   --outlier-variance-multiplier 100 \
   --flow-scale 0.005 \
   --spring-parameterization grouped \
+  --early-stopping-patience 3 \
   --released-trajectory /path/to/inference.pkl
 ```
 
@@ -73,6 +75,12 @@ contains `trajectory.pkl`, `refit_checkpoint.pt`, `history.json`, and
 `summary.json`. The summary records input hashes, both code commits, graph
 hashes, runtime versions, parameter movement, train/test errors, and a common
 cue-weighted evaluation shared by all variants.
+
+When `--fit-end-frame` is set below `--train-end-frame`, only the earlier
+interval receives gradient updates. The runner evaluates the intervening
+frames after every epoch, stops after the requested patience, and restores the
+lowest hard-valid validation-RMSE parameters. The final summary reports fit,
+validation, and untouched test intervals separately.
 
 ## Interpretation Boundary
 

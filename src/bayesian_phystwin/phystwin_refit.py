@@ -210,15 +210,39 @@ def evaluate_phystwin_trajectory(
 ) -> dict[str, dict[str, dict[str, float | int]]]:
     """Evaluate train/test errors for visible, hard-valid, and rejected tracks."""
 
-    visible_array, valid_by_frame = _frame_arrays(visible, motion_valid)
-    frame_count = visible_array.shape[0]
+    frame_count = np.asarray(visible).shape[0]
     if not 1 < train_end_frame < frame_count:
         raise ValueError("train_end_frame must be between 2 and T-1")
+    return evaluate_phystwin_trajectory_splits(
+        observed,
+        trajectory,
+        visible,
+        motion_valid,
+        splits={
+            "train": (1, train_end_frame),
+            "test": (train_end_frame, frame_count),
+        },
+    )
+
+
+def evaluate_phystwin_trajectory_splits(
+    observed: np.ndarray,
+    trajectory: np.ndarray,
+    visible: np.ndarray,
+    motion_valid: np.ndarray,
+    *,
+    splits: Mapping[str, tuple[int, int]],
+) -> dict[str, dict[str, dict[str, float | int]]]:
+    """Evaluate direct tracking groups over named half-open frame intervals."""
+
+    visible_array, valid_by_frame = _frame_arrays(visible, motion_valid)
+    frame_count = visible_array.shape[0]
     result: dict[str, dict[str, dict[str, float | int]]] = {}
-    for split, start, stop in (
-        ("train", 1, train_end_frame),
-        ("test", train_end_frame, frame_count),
-    ):
+    for split, (start, stop) in splits.items():
+        if not 0 <= start < stop <= frame_count:
+            raise ValueError(
+                f"split {split} must satisfy 0 <= start < stop <= {frame_count}"
+            )
         split_mask = np.zeros_like(visible_array)
         split_mask[start:stop] = True
         groups = {

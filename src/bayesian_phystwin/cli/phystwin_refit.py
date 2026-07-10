@@ -24,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("output_dir")
     parser.add_argument("--variant", choices=REFIT_VARIANTS, required=True)
     parser.add_argument("--train-end-frame", type=int, required=True)
+    parser.add_argument("--fit-end-frame", type=int)
     parser.add_argument("--epochs", type=int, default=0)
     parser.add_argument("--learning-rate", type=float, default=1e-4)
     parser.add_argument("--observation-variance", type=float, default=2.5e-5)
@@ -40,6 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("dense", "grouped"),
         default="dense",
     )
+    parser.add_argument("--early-stopping-patience", type=int, default=3)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--released-trajectory")
     return parser
@@ -58,6 +60,7 @@ def main() -> None:
         config=HeadlessPhysTwinRefitConfig(
             variant=args.variant,
             train_end_frame=args.train_end_frame,
+            fit_end_frame=args.fit_end_frame,
             epochs=args.epochs,
             learning_rate=args.learning_rate,
             observation_variance=args.observation_variance,
@@ -70,6 +73,7 @@ def main() -> None:
             acceleration_weight=args.acceleration_weight,
             optimize_collision=not args.freeze_collision,
             spring_parameterization=args.spring_parameterization,
+            early_stopping_patience=args.early_stopping_patience,
             device=args.device,
         ),
     )

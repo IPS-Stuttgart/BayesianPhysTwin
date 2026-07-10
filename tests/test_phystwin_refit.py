@@ -6,6 +6,7 @@ from bayesian_phystwin.phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
     evaluate_phystwin_trajectory,
+    evaluate_phystwin_trajectory_splits,
     phystwin_tracking_metrics,
 )
 
@@ -89,6 +90,24 @@ def test_tracking_metrics_and_split_evaluation_use_direct_correspondence():
 
     assert metrics["count"] == 2
     assert metrics["vector_rmse_m"] == pytest.approx(0.0353553391)
+    assert evaluation["test"]["visible"]["count"] == 2
+
+
+def test_split_evaluation_supports_fit_validation_and_test_ranges():
+    observed = np.zeros((4, 2, 3))
+    trajectory = np.zeros((4, 2, 3))
+    visible, motion_valid = _masks()
+
+    evaluation = evaluate_phystwin_trajectory_splits(
+        observed,
+        trajectory,
+        visible,
+        motion_valid,
+        splits={"fit": (1, 2), "validation": (2, 3), "test": (3, 4)},
+    )
+
+    assert evaluation["fit"]["visible"]["count"] == 1
+    assert evaluation["validation"]["visible"]["count"] == 2
     assert evaluation["test"]["visible"]["count"] == 2
 
 

@@ -23,6 +23,7 @@ from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
     evaluate_phystwin_trajectory,
+    evaluate_phystwin_trajectory_splits,
     phystwin_tracking_metrics,
 )
 
@@ -33,6 +34,7 @@ class HeadlessPhysTwinRefitConfig:
 
     variant: str
     train_end_frame: int
+    fit_end_frame: int | None = None
     epochs: int = 0
     learning_rate: float = 1e-4
     observation_variance: float = 2.5e-5
@@ -45,6 +47,7 @@ class HeadlessPhysTwinRefitConfig:
     acceleration_weight: float = 0.01
     optimize_collision: bool = True
     spring_parameterization: str = "dense"
+    early_stopping_patience: int = 3
     device: str = "cuda:0"
 
 
@@ -184,6 +187,8 @@ def run_headless_phystwin_refit(
         raise ValueError("simulator time discretization must be positive")
     if config.spring_parameterization not in {"dense", "grouped"}:
         raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
+    if config.early_stopping_patience < 1:
+        raise ValueError("early_stopping_patience must be positive")
     if config.device != "cuda:0":
         raise ValueError(
             "the pinned official simulator selects cuda:0 at import; use "
@@ -230,6 +235,13 @@ def run_headless_phystwin_refit(
         raise ValueError("object_points must have shape (T, N, 3)")
     if not 1 < config.train_end_frame < frame_count:
         raise ValueError("train_end_frame must be between 2 and T-1")
+    fit_end_frame = (
+        config.train_end_frame
+        if config.fit_end_frame is None
+        else config.fit_end_frame
+    )
+    if config.fit_end_frame is not None and not 1 < fit_end_frame < config.train_end_frame:
+        raise ValueError("fit_end_frame must be between 2 and train_end_frame-1")
 
     with np.load(cues_path) as archive:
         cues = {name: np.asarray(archive[name]) for name in archive.files}
@@ -348,7 +360,106 @@ def run_headless_phystwin_refit(
     wp.synchronize()
     initial_spring_y = checkpoint_spring_y.detach().cpu().numpy().copy()
 
+    def simulate_trajectory(stop_frame: int) -> np.ndarray:
+        simulator.set_init_state(
+            simulator.wp_init_vertices,
+            simulator.wp_init_velocities,
+            pure_inference=True,
+        )
+        frames = [
+            wp.to_torch(simulator.wp_states[0].wp_x)
+            .detach()
+            .cpu()
+            .numpy()
+            .copy()
+        ]
+        for frame in range(1, stop_frame):
+            simulator.set_controller_target(frame, pure_inference=True)
+            if simulator.object_collision_flag:
+                simulator.update_collision_graph()
+            wp.capture_launch(simulator.forward_graph)
+            wp.synchronize()
+            frames.append(
+                wp.to_torch(simulator.wp_states[-1].wp_x)
+                .detach()
+                .cpu()
+                .numpy()
+                .copy()
+            )
+            simulator.set_init_state(
+                simulator.wp_states[-1].wp_x,
+                simulator.wp_states[-1].wp_v,
+                pure_inference=True,
+            )
+        return np.stack(frames).astype(np.float32)
+
+    def snapshot_parameters() -> dict[str, Any]:
+        return {
+            "spring_log_y": wp.to_torch(simulator.wp_spring_Y).detach().clone(),
+            "group_log_scales": wp.to_torch(simulator.wp_group_log_scales)
+            .detach()
+            .clone(),
+            "collide_elas": wp.to_torch(simulator.wp_collide_elas).detach().clone(),
+            "collide_fric": wp.to_torch(simulator.wp_collide_fric).detach().clone(),
+            "collide_object_elas": wp.to_torch(simulator.wp_collide_object_elas)
+            .detach()
+            .clone(),
+            "collide_object_fric": wp.to_torch(simulator.wp_collide_object_fric)
+            .detach()
+            .clone(),
+        }
+
+    def restore_parameters(parameters: dict[str, Any]) -> None:
+        if config.spring_parameterization == "grouped":
+            with torch.no_grad():
+                simulator.group_log_scale_tensor.copy_(
+                    parameters["group_log_scales"]
+                )
+        else:
+            simulator.set_spring_Y(parameters["spring_log_y"])
+        simulator.set_collide(
+            parameters["collide_elas"],
+            parameters["collide_fric"],
+        )
+        simulator.set_collide_object(
+            parameters["collide_object_elas"],
+            parameters["collide_object_fric"],
+        )
+        wp.synchronize()
+
+    hard_objective = build_phystwin_track_objective(
+        visible,
+        motion_valid,
+        variant="hard",
+    )
+
+    def validation_rmse(trajectory_value: np.ndarray) -> float:
+        mask = np.zeros((config.train_end_frame, original_count), dtype=bool)
+        mask[fit_end_frame : config.train_end_frame] = hard_objective.support[
+            fit_end_frame : config.train_end_frame
+        ].astype(bool)
+        metrics = phystwin_tracking_metrics(
+            object_points[: config.train_end_frame],
+            trajectory_value,
+            mask,
+        )
+        if metrics["count"] == 0:
+            raise ValueError("validation interval contains no hard-valid tracks")
+        return float(metrics["vector_rmse_m"])
+
     history: list[dict[str, float | int]] = []
+    selected_epoch = config.epochs - 1
+    baseline_validation_rmse = None
+    best_validation_rmse = None
+    best_parameters = None
+    stale_epochs = 0
+    if config.fit_end_frame is not None:
+        baseline_validation_rmse = validation_rmse(
+            simulate_trajectory(config.train_end_frame)
+        )
+        best_validation_rmse = baseline_validation_rmse
+        best_parameters = snapshot_parameters()
+        selected_epoch = -1
     if config.epochs:
         if config.spring_parameterization == "grouped":
             optimizer_parameters = [wp.to_torch(simulator.wp_group_log_scales)]
@@ -375,7 +486,7 @@ def run_headless_phystwin_refit(
             )
             total_loss = 0.0
             total_track_loss = 0.0
-            for frame in range(1, config.train_end_frame):
+            for frame in range(1, fit_end_frame):
                 simulator.set_controller_target(frame)
                 if simulator.object_collision_flag:
                     simulator.update_collision_graph()
@@ -390,42 +501,36 @@ def run_headless_phystwin_refit(
                     simulator.wp_states[-1].wp_x,
                     simulator.wp_states[-1].wp_v,
                 )
-            denominator = config.train_end_frame - 1
-            history.append(
-                {
-                    "epoch": epoch,
-                    "mean_loss": total_loss / denominator,
-                    "mean_track_loss": total_track_loss / denominator,
-                }
-            )
+            denominator = fit_end_frame - 1
+            epoch_result: dict[str, float | int] = {
+                "epoch": epoch,
+                "mean_loss": total_loss / denominator,
+                "mean_track_loss": total_track_loss / denominator,
+            }
+            if config.fit_end_frame is not None:
+                current_validation_rmse = validation_rmse(
+                    simulate_trajectory(config.train_end_frame)
+                )
+                epoch_result["validation_hard_valid_vector_rmse_m"] = (
+                    current_validation_rmse
+                )
+                if current_validation_rmse < float(best_validation_rmse):
+                    best_validation_rmse = current_validation_rmse
+                    best_parameters = snapshot_parameters()
+                    selected_epoch = epoch
+                    stale_epochs = 0
+                else:
+                    stale_epochs += 1
+            history.append(epoch_result)
+            if (
+                config.fit_end_frame is not None
+                and stale_epochs >= config.early_stopping_patience
+            ):
+                break
 
-    simulator.set_init_state(
-        simulator.wp_init_vertices,
-        simulator.wp_init_velocities,
-        pure_inference=True,
-    )
-    trajectory_frames = [
-        wp.to_torch(simulator.wp_states[0].wp_x).detach().cpu().numpy().copy()
-    ]
-    for frame in range(1, frame_count):
-        simulator.set_controller_target(frame, pure_inference=True)
-        if simulator.object_collision_flag:
-            simulator.update_collision_graph()
-        wp.capture_launch(simulator.forward_graph)
-        wp.synchronize()
-        trajectory_frames.append(
-            wp.to_torch(simulator.wp_states[-1].wp_x)
-            .detach()
-            .cpu()
-            .numpy()
-            .copy()
-        )
-        simulator.set_init_state(
-            simulator.wp_states[-1].wp_x,
-            simulator.wp_states[-1].wp_v,
-            pure_inference=True,
-        )
-    trajectory = np.stack(trajectory_frames).astype(np.float32)
+    if best_parameters is not None:
+        restore_parameters(best_parameters)
+    trajectory = simulate_trajectory(frame_count)
 
     final_spring_y = (
         torch.exp(wp.to_torch(simulator.wp_spring_Y)).detach().cpu().numpy().copy()
@@ -453,6 +558,19 @@ def run_headless_phystwin_refit(
         motion_valid,
         train_end_frame=config.train_end_frame,
     )
+    selection_evaluation = None
+    if config.fit_end_frame is not None:
+        selection_evaluation = evaluate_phystwin_trajectory_splits(
+            object_points,
+            trajectory,
+            visible,
+            motion_valid,
+            splits={
+                "fit": (1, fit_end_frame),
+                "validation": (fit_end_frame, config.train_end_frame),
+                "test": (config.train_end_frame, frame_count),
+            },
+        )
     common_objective = build_phystwin_track_objective(
         visible,
         motion_valid,
@@ -584,7 +702,16 @@ def run_headless_phystwin_refit(
             "fixed_drag_damping": float(optimal["drag_damping"]),
         },
         "history": history,
+        "selection": {
+            "selected_epoch": selected_epoch,
+            "baseline_validation_hard_valid_vector_rmse_m": (
+                baseline_validation_rmse
+            ),
+            "best_validation_hard_valid_vector_rmse_m": best_validation_rmse,
+            "restored_best_parameters": best_parameters is not None,
+        },
         "evaluation": evaluation,
+        "split_evaluation": selection_evaluation,
         "common_cue_evaluation": common_metrics,
         "released_evaluation": released_evaluation,
         "released_trajectory_parity": released_parity,
