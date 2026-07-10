@@ -17,11 +17,15 @@ def main() -> None:
     parser.add_argument("data_root")
     parser.add_argument("output_dir")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--global-translation", action="store_true")
     args = parser.parse_args()
     summary = run_additional_anchor_confirmation(
         args.data_root,
         args.output_dir,
         force=args.force,
+        spatial_mode=(
+            "global_translation" if args.global_translation else "per_point"
+        ),
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

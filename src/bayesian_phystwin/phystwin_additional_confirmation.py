@@ -54,6 +54,7 @@ def apply_persistent_residual_anchor(
     train_end_frame: int,
     maximum_residual_m: float = 0.01,
     interpolation_neighbors: int = 4,
+    spatial_mode: str = "per_point",
 ) -> dict[str, object]:
     """Hold the final valid training residual without labels or model selection."""
 
@@ -61,6 +62,8 @@ def apply_persistent_residual_anchor(
         raise ValueError("train_end_frame must include at least two frames")
     if maximum_residual_m <= 0.0:
         raise ValueError("maximum_residual_m must be positive")
+    if spatial_mode not in {"per_point", "global_translation"}:
+        raise ValueError("spatial_mode must be per_point or global_translation")
     data = _load_pickle(final_data_path)
     baseline = np.asarray(_load_pickle(baseline_trajectory_path), dtype=float)
     observed = np.asarray(data["object_points"], dtype=float)
@@ -76,6 +79,11 @@ def apply_persistent_residual_anchor(
     valid = _target_validity(visible, motion_valid)
     filled = _temporally_fill(residual, valid, train_end_frame)
     tracked_endpoint = filled[-1]
+    if spatial_mode == "global_translation":
+        translation = np.median(tracked_endpoint, axis=0)
+        tracked_endpoint = np.broadcast_to(
+            translation, tracked_endpoint.shape
+        ).copy()
     future_count = frame_count - train_end_frame
     tracked_future = np.repeat(tracked_endpoint[None], future_count, axis=0)
     lift_indices, lift_weights = _lift_map(
@@ -119,6 +127,7 @@ def apply_persistent_residual_anchor(
             "train_end_frame": train_end_frame,
             "maximum_residual_m": maximum_residual_m,
             "interpolation_neighbors": interpolation_neighbors,
+            "spatial_mode": spatial_mode,
         },
         "contract": {
             "training_inputs": "released pseudo-measurements through train_end_frame",
@@ -126,6 +135,7 @@ def apply_persistent_residual_anchor(
             "manual_labels": "none",
             "selection": "none",
             "future_mean": "final temporally filled residual held constant",
+            "spatial_model": spatial_mode,
         },
         "inputs": {
             "final_data": {
@@ -170,6 +180,7 @@ def run_additional_anchor_confirmation(
     *,
     maximum_residual_m: float = 0.01,
     interpolation_neighbors: int = 4,
+    spatial_mode: str = "per_point",
     bootstrap_samples: int = 10000,
     bootstrap_block_length: int = 5,
     bootstrap_seed: int = 20260710,
@@ -187,6 +198,7 @@ def run_additional_anchor_confirmation(
     output = Path(output_dir)
     specification = {
         "method": "ungated capped persistent residual anchor",
+        "spatial_mode": spatial_mode,
         "maximum_residual_m": maximum_residual_m,
         "interpolation_neighbors": interpolation_neighbors,
         "future_inputs": "none",
@@ -222,6 +234,7 @@ def run_additional_anchor_confirmation(
                 "train_end_frame": train_end,
                 "maximum_residual_m": maximum_residual_m,
                 "interpolation_neighbors": interpolation_neighbors,
+                "spatial_mode": spatial_mode,
             }
             if summary["config"] != expected:
                 raise RuntimeError(f"cached case uses a different protocol: {case}")
@@ -233,6 +246,7 @@ def run_additional_anchor_confirmation(
                 train_end_frame=train_end,
                 maximum_residual_m=maximum_residual_m,
                 interpolation_neighbors=interpolation_neighbors,
+                spatial_mode=spatial_mode,
             )
         future = summary["future"]
         case_results[case] = {
