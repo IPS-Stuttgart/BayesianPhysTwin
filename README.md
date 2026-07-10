@@ -31,7 +31,9 @@ Initial scope:
 - exact and hierarchical multi-interaction parameter pooling
 - regularized spatial spring regions and explicit damping sweeps
 - causal, action-conditioned low-rank simulator discrepancy
+- capped persistent and robust Bayesian endpoint discrepancy anchors
 - raw camera/mask cue recovery and paired moving-block evaluation
+- selective release-archive retrieval and physical-object clustered bootstrap
 - reproducible experiment configs and remote-run scripts
 
 ## Repository Layout
@@ -52,7 +54,7 @@ servers; these paths are ignored by default.
 ## Quick Start
 
 ```bash
-python3 -m pip install -e ".[dev]"
+python3 -m pip install -e ".[dev,data]"
 bash scripts/local_smoke_test.sh
 ```
 
@@ -130,15 +132,33 @@ requirements, matched baseline definitions, provenance outputs, and current
 inference limitations.
 
 The current advanced workflow combines fit-only profile likelihoods across
-interactions, recovers any available raw camera cues, fits a validation-selected
-capped residual, and evaluates paired future trajectories:
+interactions, recovers any available raw camera cues, compares matched residual
+dynamics, and evaluates persistent/Bayesian endpoint anchors:
 
 ```bash
 bpt-combine-phystwin-profiles ...
 bpt-build-phystwin-raw-cues ...
 bpt-fit-phystwin-residual-dynamics ...
 bpt-compare-phystwin-trajectories manifest.json comparison.json
+bpt-fit-phystwin-bayesian-anchor ...
 ```
+
+The full release evaluation subset can be fetched without downloading the
+archives wholesale, and the separately released label-free cloth cohort has a
+frozen confirmation command:
+
+```bash
+bpt-fetch-phystwin-eval-data data/phystwin-eval
+bpt-fetch-phystwin-eval-data data/phystwin-additional --additional
+bpt-confirm-phystwin-additional-anchor \
+  data/phystwin-additional runs/additional-anchor
+bpt-confirm-phystwin-additional-bayesian \
+  data/phystwin-additional runs/additional-bayesian
+```
+
+Both additional-cohort methods use only released training pseudo-measurements,
+apply no per-case selection, consume no future actions or observations, and
+write locked protocol IDs plus paired interaction/object bootstrap summaries.
 
 See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
 for the causal split contract, complete commands, and interpretation boundary.

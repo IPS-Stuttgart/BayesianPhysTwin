@@ -77,6 +77,56 @@ corrections are capped.
 This is a simulator-discrepancy mean model. It does not calibrate discrepancy
 uncertainty and must not be interpreted as a learned physical parameter.
 
+## Persistent and Bayesian endpoint anchors
+
+The full benchmark shows that extrapolating residual dynamics is not required
+for the strongest transfer. A persistent anchor holds the final temporally
+filled training residual under the same 10 mm pointwise cap. The robust
+Bayesian version filters each 3D residual with a random-walk state and a
+Gaussian/outlier mixture before taking the endpoint posterior mean:
+
+```bash
+bpt-fit-phystwin-bayesian-anchor \
+  final_data.pkl inference.pkl gt_track_3d.pkl runs/CASE/bayesian_anchor \
+  --fit-end-frame 60 \
+  --train-end-frame 81 \
+  --maximum-residual-m 0.01
+```
+
+Binary visibility/motion validity enters as missingness. The output posterior
+contains per-track mean, variance, final inlier probability, and update count.
+Future variance is propagated without future observations; its calibration is
+not yet established.
+
+Retrieve only the compact released inputs and reproduce the locked full-cohort
+comparisons with:
+
+```bash
+bpt-fetch-phystwin-eval-data /path/to/phystwin-eval
+bpt-confirm-phystwin-residual \
+  /path/to/phystwin-eval runs/phystwin-confirmatory
+bpt-confirm-phystwin-residual-baselines \
+  /path/to/phystwin-eval runs/phystwin-baselines
+bpt-confirm-phystwin-bayesian-anchor \
+  /path/to/phystwin-eval runs/phystwin-bayesian-anchor
+```
+
+For the separate label-free cloth release, the protocols use the full released
+training interval, no validation labels or selection, and no future inputs:
+
+```bash
+bpt-fetch-phystwin-eval-data /path/to/phystwin-additional --additional
+bpt-confirm-phystwin-additional-anchor \
+  /path/to/phystwin-additional runs/additional-anchor
+bpt-confirm-phystwin-additional-bayesian \
+  /path/to/phystwin-additional runs/additional-bayesian
+```
+
+The additional-cohort per-point and fixed Bayesian anchors improve all 11
+future CD results. Use `--global-translation` with the first confirmation
+command for the spatial control; its interval crosses zero. All confirmation
+commands write `locked_protocol.json` before evaluating a case.
+
 ## Bias attribution diagnostic
 
 Before interpreting simulator residual as perception drift, test the implied
