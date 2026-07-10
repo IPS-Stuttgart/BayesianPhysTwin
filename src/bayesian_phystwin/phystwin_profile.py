@@ -61,7 +61,7 @@ def clustered_track_log_likelihood(
     squared_norm = np.sum(np.square(residual), axis=2)
     total_negative_log_likelihood = 0.0
     for frame in range(start_frame, end_frame):
-        if objective.variant == "mixture":
+        if objective.variant.endswith("mixture"):
             support = objective.support[frame].astype(bool)
             if not np.any(support):
                 continue

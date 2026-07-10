@@ -33,12 +33,18 @@ correspondences:
 - `cue`: visible tracks receive continuous residual-independent cue weights.
 - `mixture`: cue values are prior inlier probabilities in a Gaussian/broad-
   Gaussian mixture.
+- `markov_cue`: cue weights pass through a causal persistent-state filter.
+- `markov_mixture`: filtered cue probabilities condition the robust mixture.
 
 The mixture NLL is zero-shifted and scaled by the effective inlier variance so
 its local quadratic term matches PhysTwin's smooth-L1 scale. Observation noise
 and model discrepancy remain separate command-line parameters; the likelihood
 uses their sum. Continuous cues must be computed before simulator residuals are
 observed.
+
+The Markov variants use fixed inlier/outlier persistence `0.98/0.90`. Filtering
+is causal: reliability at frame `t` uses cue values only through `t`, never
+future cues or simulator residuals.
 
 ## Runtime
 

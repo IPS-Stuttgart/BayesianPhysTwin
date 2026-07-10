@@ -8,7 +8,14 @@ from typing import Mapping
 import numpy as np
 
 
-REFIT_VARIANTS = ("hard", "visible", "cue", "mixture")
+REFIT_VARIANTS = (
+    "hard",
+    "visible",
+    "cue",
+    "mixture",
+    "markov_cue",
+    "markov_mixture",
+)
 
 
 @dataclass(frozen=True)
@@ -20,6 +27,8 @@ class PhysTwinRefitReliabilityConfig:
     boundary_scale: float = 0.03
     flow_scale: float = 0.005
     occlusion_probability: float = 1e-3
+    markov_inlier_persistence: float = 0.98
+    markov_outlier_persistence: float = 0.90
 
 
 @dataclass(frozen=True)
@@ -79,6 +88,65 @@ def _aligned_cue(
     return aligned
 
 
+def causal_markov_cue_reliability(
+    prior_reliability: np.ndarray,
+    *,
+    inlier_persistence: float = 0.98,
+    outlier_persistence: float = 0.90,
+    probability_floor: float = 1e-3,
+) -> np.ndarray:
+    """Filter persistent inlier states using current and previous cues only."""
+
+    prior = np.asarray(prior_reliability, dtype=float)
+    if prior.ndim != 2:
+        raise ValueError("prior_reliability must have shape (T, N)")
+    if not np.all(np.isfinite(prior)):
+        raise ValueError("prior_reliability must contain finite values")
+    if not 0.0 < inlier_persistence < 1.0:
+        raise ValueError("inlier_persistence must be in (0, 1)")
+    if not 0.0 < outlier_persistence < 1.0:
+        raise ValueError("outlier_persistence must be in (0, 1)")
+    if not 0.0 < probability_floor < 0.5:
+        raise ValueError("probability_floor must be in (0, 0.5)")
+
+    clipped = np.clip(prior, probability_floor, 1.0 - probability_floor)
+    transition = np.array(
+        [
+            [outlier_persistence, 1.0 - outlier_persistence],
+            [1.0 - inlier_persistence, inlier_persistence],
+        ],
+        dtype=float,
+    )
+    log_transition = np.log(transition)
+    stationary_inlier = (1.0 - outlier_persistence) / (
+        2.0 - inlier_persistence - outlier_persistence
+    )
+    log_initial = np.log([1.0 - stationary_inlier, stationary_inlier])
+    filtered = np.empty_like(clipped)
+    alpha_outlier = log_initial[0] + np.log1p(-clipped[0])
+    alpha_inlier = log_initial[1] + np.log(clipped[0])
+    normalizer = np.logaddexp(alpha_outlier, alpha_inlier)
+    alpha_outlier -= normalizer
+    alpha_inlier -= normalizer
+    filtered[0] = np.exp(alpha_inlier)
+    for frame in range(1, len(clipped)):
+        predicted_outlier = np.logaddexp(
+            alpha_outlier + log_transition[0, 0],
+            alpha_inlier + log_transition[1, 0],
+        )
+        predicted_inlier = np.logaddexp(
+            alpha_outlier + log_transition[0, 1],
+            alpha_inlier + log_transition[1, 1],
+        )
+        alpha_outlier = predicted_outlier + np.log1p(-clipped[frame])
+        alpha_inlier = predicted_inlier + np.log(clipped[frame])
+        normalizer = np.logaddexp(alpha_outlier, alpha_inlier)
+        alpha_outlier -= normalizer
+        alpha_inlier -= normalizer
+        filtered[frame] = np.exp(alpha_inlier)
+    return np.clip(filtered, probability_floor, 1.0 - probability_floor)
+
+
 def build_phystwin_track_objective(
     visible: np.ndarray,
     motion_valid: np.ndarray,
@@ -100,6 +168,10 @@ def build_phystwin_track_objective(
         raise ValueError("cue scales must be positive")
     if not 0.0 <= cfg.occlusion_probability <= 1.0:
         raise ValueError("occlusion_probability must be in [0, 1]")
+    if not 0.0 < cfg.markov_inlier_persistence < 1.0:
+        raise ValueError("markov_inlier_persistence must be in (0, 1)")
+    if not 0.0 < cfg.markov_outlier_persistence < 1.0:
+        raise ValueError("markov_outlier_persistence must be in (0, 1)")
 
     visible_array, valid_by_frame = _frame_arrays(visible, motion_valid)
     shape = visible_array.shape
@@ -134,6 +206,13 @@ def build_phystwin_track_objective(
         cfg.minimum_probability,
         1.0 - cfg.minimum_probability,
     )
+    if variant.startswith("markov_"):
+        cue_prior = causal_markov_cue_reliability(
+            cue_prior,
+            inlier_persistence=cfg.markov_inlier_persistence,
+            outlier_persistence=cfg.markov_outlier_persistence,
+            probability_floor=cfg.minimum_probability,
+        )
 
     if variant == "hard":
         support = valid_by_frame
@@ -148,7 +227,7 @@ def build_phystwin_track_objective(
         prior = cue_prior
         weights = support.astype(float) * cue_prior
 
-    if variant == "mixture":
+    if variant.endswith("mixture"):
         normalizer = np.sum(support, axis=1, dtype=float)
     else:
         normalizer = np.sum(weights, axis=1, dtype=float)

@@ -5,6 +5,7 @@ from bayesian_phystwin.cli.phystwin_refit import build_parser
 from bayesian_phystwin.phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
+    causal_markov_cue_reliability,
     evaluate_phystwin_trajectory,
     evaluate_phystwin_trajectory_splits,
     phystwin_tracking_metrics,
@@ -64,6 +65,42 @@ def test_mixture_normalizes_by_visible_support_not_prior_mass():
     np.testing.assert_allclose(objective.normalizer, visible.sum(axis=1))
     assert np.all(objective.prior_inlier_probability > 0.0)
     assert np.all(objective.prior_inlier_probability < 1.0)
+
+
+def test_causal_markov_cue_does_not_use_future_values():
+    prior = np.full((6, 2), 0.9)
+    changed = prior.copy()
+    changed[4:, 0] = 0.01
+
+    original_filtered = causal_markov_cue_reliability(prior)
+    changed_filtered = causal_markov_cue_reliability(changed)
+
+    np.testing.assert_allclose(original_filtered[:4], changed_filtered[:4])
+    assert changed_filtered[-1, 0] < original_filtered[-1, 0]
+
+
+def test_markov_mixture_uses_persistent_prior_and_visible_normalizer():
+    visible, motion_valid = _masks()
+    flow = np.zeros((3, 2))
+    flow[1, 0] = 0.02
+
+    static = build_phystwin_track_objective(
+        visible,
+        motion_valid,
+        cues={"flow_inconsistency": flow},
+        variant="mixture",
+    )
+    markov = build_phystwin_track_objective(
+        visible,
+        motion_valid,
+        cues={"flow_inconsistency": flow},
+        variant="markov_mixture",
+    )
+
+    np.testing.assert_allclose(markov.normalizer, visible.sum(axis=1))
+    assert markov.prior_inlier_probability[2, 0] != pytest.approx(
+        static.prior_inlier_probability[2, 0]
+    )
 
 
 def test_tracking_metrics_and_split_evaluation_use_direct_correspondence():

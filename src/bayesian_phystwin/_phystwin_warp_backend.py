@@ -302,7 +302,7 @@ def make_reliability_simulator_class(official_module: Any):
             )
 
         def calculate_loss(self):
-            if self.loss_variant == "mixture":
+            if self.loss_variant.endswith("mixture"):
                 wp.launch(
                     compute_reliability_mixture_track_loss,
                     dim=self.num_original_points,
