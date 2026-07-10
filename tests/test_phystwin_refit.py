@@ -213,12 +213,18 @@ def test_refit_cli_accepts_regularized_regional_springs():
             "4",
             "--spring-scale-weight-decay",
             "0.1",
+            "--dashpot-log-scale",
+            "-0.2",
+            "--drag-log-scale",
+            "0.1",
         ]
     )
 
     assert args.spring_parameterization == "regional"
     assert args.spring_region_count == 4
     assert args.spring_scale_weight_decay == pytest.approx(0.1)
+    assert args.dashpot_log_scale == pytest.approx(-0.2)
+    assert args.drag_log_scale == pytest.approx(0.1)
 
 
 def test_prior_evaluation_uses_target_visible_refit_support():

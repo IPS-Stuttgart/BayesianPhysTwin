@@ -58,6 +58,8 @@ class HeadlessPhysTwinRefitConfig:
     spring_parameterization: str = "dense"
     spring_region_count: int = 4
     spring_scale_weight_decay: float = 0.0
+    dashpot_log_scale: float = 0.0
+    drag_log_scale: float = 0.0
     selection_metric: str = "hard_valid_rmse"
     early_stopping_patience: int = 3
     profile_grid_count: int = 0
@@ -216,6 +218,10 @@ def run_headless_phystwin_refit(
         raise ValueError("spring_region_count must be at least two")
     if config.spring_scale_weight_decay < 0.0:
         raise ValueError("spring_scale_weight_decay must be nonnegative")
+    if not np.isfinite(config.dashpot_log_scale) or not np.isfinite(
+        config.drag_log_scale
+    ):
+        raise ValueError("damping log scales must be finite")
     if config.selection_metric not in {"hard_valid_rmse", "official_3d"}:
         raise ValueError(
             "selection_metric must be 'hard_valid_rmse' or 'official_3d'"
@@ -396,8 +402,12 @@ def run_headless_phystwin_refit(
         spring_Y=float(optimal["global_spring_Y"]),
         collide_elas=float(optimal["collide_elas"]),
         collide_fric=float(optimal["collide_fric"]),
-        dashpot_damping=float(optimal["dashpot_damping"]),
-        drag_damping=float(optimal["drag_damping"]),
+        dashpot_damping=float(
+            optimal["dashpot_damping"] * np.exp(config.dashpot_log_scale)
+        ),
+        drag_damping=float(
+            optimal["drag_damping"] * np.exp(config.drag_log_scale)
+        ),
         collide_object_elas=float(optimal["collide_object_elas"]),
         collide_object_fric=float(optimal["collide_object_fric"]),
         collision_dist=float(optimal["collision_dist"]),
@@ -1215,8 +1225,12 @@ def run_headless_phystwin_refit(
                 }
             ),
             "final_collision": final_collision,
-            "fixed_dashpot_damping": float(optimal["dashpot_damping"]),
-            "fixed_drag_damping": float(optimal["drag_damping"]),
+            "fixed_dashpot_damping": float(
+                optimal["dashpot_damping"] * np.exp(config.dashpot_log_scale)
+            ),
+            "fixed_drag_damping": float(
+                optimal["drag_damping"] * np.exp(config.drag_log_scale)
+            ),
         },
         "history": history,
         "selection": {

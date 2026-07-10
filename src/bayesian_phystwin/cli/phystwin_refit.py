@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--spring-region-count", type=int, default=4)
     parser.add_argument("--spring-scale-weight-decay", type=float, default=0.0)
+    parser.add_argument("--dashpot-log-scale", type=float, default=0.0)
+    parser.add_argument("--drag-log-scale", type=float, default=0.0)
     parser.add_argument("--early-stopping-patience", type=int, default=3)
     parser.add_argument(
         "--selection-metric",
@@ -103,6 +105,8 @@ def main() -> None:
             spring_parameterization=args.spring_parameterization,
             spring_region_count=args.spring_region_count,
             spring_scale_weight_decay=args.spring_scale_weight_decay,
+            dashpot_log_scale=args.dashpot_log_scale,
+            drag_log_scale=args.drag_log_scale,
             early_stopping_patience=args.early_stopping_patience,
             selection_metric=args.selection_metric,
             profile_grid_count=args.profile_grid_count,
