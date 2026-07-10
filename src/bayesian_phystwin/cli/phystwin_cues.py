@@ -24,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--neighbor-radius", type=float, default=0.01)
     parser.add_argument("--neighbor-reference", choices=("first", "current"), default="current")
     parser.add_argument("--insufficient-neighbor-value", type=float, default=0.10)
+    parser.add_argument("--evaluation-flow-scale", type=float)
     parser.add_argument("--summary-json")
     return parser
 
@@ -39,6 +40,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             neighbor_radius=args.neighbor_radius,
             neighbor_reference=args.neighbor_reference,
             insufficient_neighbor_value=args.insufficient_neighbor_value,
+            evaluation_flow_scale=args.evaluation_flow_scale,
         ),
     )
     if args.summary_json:

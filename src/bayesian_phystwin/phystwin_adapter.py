@@ -12,6 +12,8 @@ from typing import Any
 
 import numpy as np
 
+from .calibration import binary_calibration_metrics
+
 
 EXPORT_COLUMNS = (
     "frame",
@@ -57,6 +59,7 @@ class PhysTwinMotionCueConfig:
     neighbor_reference: str = "current"
     insufficient_neighbor_value: float = 0.10
     nearest_chunk_size: int = 1024
+    evaluation_flow_scale: float | None = None
 
 
 def _to_numpy(value: Any, *, name: str) -> np.ndarray:
@@ -215,6 +218,8 @@ def build_phystwin_motion_cues(
         raise ValueError("neighbor_reference must be 'first' or 'current'")
     if cfg.insufficient_neighbor_value < 0.0:
         raise ValueError("insufficient_neighbor_value must be nonnegative")
+    if cfg.evaluation_flow_scale is not None and cfg.evaluation_flow_scale <= 0.0:
+        raise ValueError("evaluation_flow_scale must be positive when provided")
 
     final_data = _load_pickle(final_data_path)
     if not isinstance(final_data, dict):
@@ -299,7 +304,7 @@ def build_phystwin_motion_cues(
     valid_values = flow_inconsistency[motion_visible]
     if valid_values.size == 0:
         raise ValueError("final_data contains no visible inter-frame motions")
-    return {
+    summary = {
         "schema_version": 1,
         "final_data_path": str(Path(final_data_path).resolve()),
         "output_npz_path": str(output_path.resolve()),
@@ -312,6 +317,51 @@ def build_phystwin_motion_cues(
         ),
         "flow_inconsistency": _distribution(valid_values),
     }
+    if cfg.evaluation_flow_scale is not None:
+        if "object_motions_valid" not in final_data:
+            raise ValueError(
+                "evaluation_flow_scale requires object_motions_valid in final_data"
+            )
+        motion_valid = _to_numpy(
+            final_data["object_motions_valid"],
+            name="object_motions_valid",
+        ).astype(bool)
+        if motion_valid.shape not in {
+            (frame_count, track_count),
+            (frame_count - 1, track_count),
+        }:
+            raise ValueError(
+                "object_motions_valid must have shape (T, N) or (T-1, N)"
+            )
+        labels = motion_valid[: frame_count - 1][motion_visible]
+        values = flow_inconsistency[motion_visible]
+        prior = np.clip(
+            np.exp(-values / cfg.evaluation_flow_scale),
+            1e-3,
+            1.0 - 1e-3,
+        )
+        group_summary: dict[str, dict[str, float | int]] = {}
+        for name, selected in (
+            ("hard_valid", labels),
+            ("hard_invalid", np.logical_not(labels)),
+        ):
+            selected_values = values[selected]
+            group_summary[name] = (
+                {"count": 0}
+                if len(selected_values) == 0
+                else {
+                    "count": int(len(selected_values)),
+                    **_distribution(selected_values),
+                    "mean_prior": float(np.mean(prior[selected])),
+                }
+            )
+        summary["hard_gate_comparison"] = {
+            "warning": "PhysTwin's hard gate is a heuristic label, not corruption ground truth.",
+            "flow_scale": cfg.evaluation_flow_scale,
+            "calibration": binary_calibration_metrics(prior, labels).as_dict(),
+            "groups": group_summary,
+        }
+    return summary
 
 
 def _load_cues(

@@ -213,18 +213,21 @@ def test_current_radius_motion_cue_detects_jump_with_cell_neighbors(
     points[2] = points[1] + np.array([0.002, 0.0, 0.0])
     points[2, 4, 1] += 0.03
     visible = np.ones((frame_count, track_count), dtype=bool)
+    motion_valid = np.ones((frame_count, track_count), dtype=bool)
+    motion_valid[1, 4] = False
     final_data_path = tmp_path / "radius_final_data.pkl"
     with final_data_path.open("wb") as handle:
         pickle.dump(
             {
                 "object_points": points,
                 "object_visibilities": visible,
+                "object_motions_valid": motion_valid,
             },
             handle,
         )
     cues_path = tmp_path / "radius_cues.npz"
 
-    build_phystwin_motion_cues(
+    summary = build_phystwin_motion_cues(
         final_data_path,
         cues_path,
         config=PhysTwinMotionCueConfig(
@@ -232,6 +235,7 @@ def test_current_radius_motion_cue_detects_jump_with_cell_neighbors(
             minimum_valid_neighbors=3,
             neighbor_radius=0.01,
             neighbor_reference="current",
+            evaluation_flow_scale=0.005,
         ),
     )
 
@@ -241,3 +245,5 @@ def test_current_radius_motion_cue_detects_jump_with_cell_neighbors(
     assert flow[1, 4] > 0.02
     assert np.median(np.delete(flow[1], 4)) < 1e-9
     assert np.all(neighbor_count[1] >= 3)
+    assert summary["hard_gate_comparison"]["calibration"]["roc_auc"] == 1.0
+    assert summary["hard_gate_comparison"]["groups"]["hard_invalid"]["count"] == 1
