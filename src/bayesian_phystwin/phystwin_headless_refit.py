@@ -757,6 +757,7 @@ def run_headless_phystwin_refit(
             simulator.group_log_scale_tensor.zero_()
 
     released_evaluation = None
+    released_split_evaluation = None
     released_parity = None
     if released_trajectory_path is not None:
         released = np.asarray(_load_pickle(released_trajectory_path), dtype=np.float32)
@@ -767,6 +768,18 @@ def run_headless_phystwin_refit(
             motion_valid,
             train_end_frame=config.train_end_frame,
         )
+        if config.fit_end_frame is not None:
+            released_split_evaluation = evaluate_phystwin_trajectory_splits(
+                object_points,
+                released,
+                visible,
+                motion_valid,
+                splits={
+                    "fit": (1, fit_end_frame),
+                    "validation": (fit_end_frame, config.train_end_frame),
+                    "test": (config.train_end_frame, frame_count),
+                },
+            )
         parity_frames = min(len(released), len(trajectory))
         parity_vertices = min(released.shape[1], trajectory.shape[1])
         released_parity = phystwin_tracking_metrics(
@@ -884,6 +897,7 @@ def run_headless_phystwin_refit(
         "common_cue_evaluation": common_metrics,
         "parameter_profile": profile_summary,
         "released_evaluation": released_evaluation,
+        "released_split_evaluation": released_split_evaluation,
         "released_trajectory_parity": released_parity,
         "outputs": {
             "trajectory": str(trajectory_path.resolve()),
