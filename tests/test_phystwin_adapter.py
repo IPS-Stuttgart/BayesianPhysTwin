@@ -200,3 +200,44 @@ def test_motion_cue_sidecar_detects_local_track_inconsistency(tmp_path: Path) ->
     assert summary["visible_motion_count"] == int(
         np.sum(np.logical_and(visible[:-1], visible[1:]))
     )
+
+
+def test_current_radius_motion_cue_detects_jump_with_cell_neighbors(
+    tmp_path: Path,
+) -> None:
+    frame_count = 3
+    track_count = 8
+    points = np.zeros((frame_count, track_count, 3), dtype=float)
+    points[0, :, 0] = np.arange(track_count) * 0.001
+    points[1] = points[0] + np.array([0.002, 0.0, 0.0])
+    points[2] = points[1] + np.array([0.002, 0.0, 0.0])
+    points[2, 4, 1] += 0.03
+    visible = np.ones((frame_count, track_count), dtype=bool)
+    final_data_path = tmp_path / "radius_final_data.pkl"
+    with final_data_path.open("wb") as handle:
+        pickle.dump(
+            {
+                "object_points": points,
+                "object_visibilities": visible,
+            },
+            handle,
+        )
+    cues_path = tmp_path / "radius_cues.npz"
+
+    build_phystwin_motion_cues(
+        final_data_path,
+        cues_path,
+        config=PhysTwinMotionCueConfig(
+            neighbor_count=4,
+            minimum_valid_neighbors=3,
+            neighbor_radius=0.01,
+            neighbor_reference="current",
+        ),
+    )
+
+    with np.load(cues_path) as cues:
+        flow = cues["flow_inconsistency"]
+        neighbor_count = cues["valid_neighbor_count"]
+    assert flow[1, 4] > 0.02
+    assert np.median(np.delete(flow[1], 4)) < 1e-9
+    assert np.all(neighbor_count[1] >= 3)

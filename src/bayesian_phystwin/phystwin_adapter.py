@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import itertools
 import json
 import pickle
 from dataclasses import asdict, dataclass
@@ -127,6 +128,57 @@ def _nearest_track_neighbors(
     return neighbors
 
 
+def _radius_track_neighbors(
+    points: np.ndarray,
+    *,
+    radius: float,
+    neighbor_count: int,
+    candidate_valid: np.ndarray,
+) -> np.ndarray:
+    """Find local neighbors with a cell list instead of an all-pairs matrix."""
+
+    track_count = len(points)
+    valid = np.asarray(candidate_valid, dtype=bool)
+    if valid.shape != (track_count,):
+        raise ValueError(f"candidate_valid must have shape ({track_count},)")
+    cell_coordinates = np.floor(points / radius).astype(np.int64)
+    cells: dict[tuple[int, int, int], list[int]] = {}
+    for index in np.flatnonzero(valid):
+        key = tuple(int(value) for value in cell_coordinates[index])
+        cells.setdefault(key, []).append(int(index))
+
+    offsets = tuple(itertools.product((-1, 0, 1), repeat=3))
+    neighbors = np.full((track_count, neighbor_count), -1, dtype=int)
+    radius_sq = radius * radius
+    for track in range(track_count):
+        center = cell_coordinates[track]
+        candidates: list[int] = []
+        for offset in offsets:
+            key = (
+                int(center[0] + offset[0]),
+                int(center[1] + offset[1]),
+                int(center[2] + offset[2]),
+            )
+            candidates.extend(cells.get(key, ()))
+        if not candidates:
+            continue
+        candidate_indices = np.asarray(candidates, dtype=int)
+        candidate_indices = candidate_indices[candidate_indices != track]
+        if len(candidate_indices) == 0:
+            continue
+        delta = points[candidate_indices] - points[track]
+        distance_sq = np.einsum("ij,ij->i", delta, delta)
+        inside = distance_sq <= radius_sq
+        candidate_indices = candidate_indices[inside]
+        distance_sq = distance_sq[inside]
+        if len(candidate_indices) == 0:
+            continue
+        order = np.lexsort((candidate_indices, distance_sq))[:neighbor_count]
+        selected = candidate_indices[order]
+        neighbors[track, : len(selected)] = selected
+    return neighbors
+
+
 def _distribution(values: np.ndarray) -> dict[str, float]:
     return {
         "mean": float(np.mean(values)),
@@ -198,20 +250,27 @@ def build_phystwin_motion_cues(
     for frame in range(frame_count - 1):
         motion = points[frame + 1] - points[frame]
         reference_points = points[0] if fixed_neighbors is not None else points[frame]
-        neighbors = (
-            fixed_neighbors
-            if fixed_neighbors is not None
-            else _nearest_track_neighbors(
+        if fixed_neighbors is not None:
+            neighbors = fixed_neighbors
+        elif cfg.neighbor_radius is not None:
+            neighbors = _radius_track_neighbors(
+                reference_points,
+                radius=cfg.neighbor_radius,
+                neighbor_count=cfg.neighbor_count,
+                candidate_valid=motion_visible[frame],
+            )
+        else:
+            neighbors = _nearest_track_neighbors(
                 reference_points,
                 neighbor_count=cfg.neighbor_count,
                 chunk_size=cfg.nearest_chunk_size,
                 candidate_valid=motion_visible[frame],
             )
-        )
         for track in range(track_count):
             if not motion_visible[frame, track]:
                 continue
             candidate_neighbors = neighbors[track]
+            candidate_neighbors = candidate_neighbors[candidate_neighbors >= 0]
             valid_neighbors = candidate_neighbors[motion_visible[frame, candidate_neighbors]]
             if cfg.neighbor_radius is not None:
                 distances = np.linalg.norm(
