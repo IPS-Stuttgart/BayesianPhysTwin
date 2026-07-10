@@ -36,6 +36,7 @@ class HeadlessPhysTwinRefitConfig:
     epochs: int = 0
     learning_rate: float = 1e-4
     observation_variance: float = 2.5e-5
+    model_discrepancy_variance: float = 0.0
     outlier_variance_multiplier: float = 100.0
     flow_scale: float = 0.005
     dt: float = 5e-5
@@ -174,6 +175,8 @@ def run_headless_phystwin_refit(
         raise ValueError("learning_rate must be positive")
     if config.observation_variance <= 0.0:
         raise ValueError("observation_variance must be positive")
+    if config.model_discrepancy_variance < 0.0:
+        raise ValueError("model_discrepancy_variance must be nonnegative")
     if config.outlier_variance_multiplier <= 1.0:
         raise ValueError("outlier_variance_multiplier must be greater than one")
     if config.num_substeps < 1 or config.dt <= 0.0:
@@ -318,7 +321,9 @@ def run_headless_phystwin_refit(
         self_collision=False,
         disable_backward=config.epochs == 0,
         objective=objective,
-        observation_variance=config.observation_variance,
+        observation_variance=(
+            config.observation_variance + config.model_discrepancy_variance
+        ),
         outlier_variance_multiplier=config.outlier_variance_multiplier,
     )
     simulator.set_spring_Y(torch.log(checkpoint_spring_y).detach().clone())
@@ -444,7 +449,9 @@ def run_headless_phystwin_refit(
         common_objective.weights,
         common_objective.support,
         train_end_frame=config.train_end_frame,
-        observation_variance=config.observation_variance,
+        observation_variance=(
+            config.observation_variance + config.model_discrepancy_variance
+        ),
         outlier_variance_multiplier=config.outlier_variance_multiplier,
         prior=common_objective.prior_inlier_probability,
     )
@@ -501,7 +508,14 @@ def run_headless_phystwin_refit(
         "schema_version": 1,
         "config": asdict(config),
         "runtime_seconds": float(time.time() - started),
+        "code_commit": _git_commit(Path(__file__).resolve().parents[2]),
         "official_commit": _git_commit(official_repo),
+        "runtime": {
+            "torch_version": torch.__version__,
+            "warp_version": wp.__version__,
+            "cuda_version": torch.version.cuda,
+            "device_name": torch.cuda.get_device_name(config.device),
+        },
         "inputs": {
             "final_data": {
                 "path": str(Path(final_data_path).resolve()),

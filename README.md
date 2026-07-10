@@ -108,6 +108,23 @@ bpt-build-phystwin-cues \
 See [docs/phystwin_integration.md](docs/phystwin_integration.md) for the pinned
 upstream contract, optional cue sidecar, and likelihood boundary.
 
+Run a checkpoint-restoration parity check or a reliability-aware parameter
+refit directly inside the official Warp simulator:
+
+```bash
+bpt-phystwin-refit \
+  /path/to/PhysTwin final_data.pkl optimal_params.pkl best_199.pth cues.npz \
+  runs/CASE/refit_mixture \
+  --variant mixture \
+  --train-end-frame 64 \
+  --epochs 20 \
+  --learning-rate 1e-3
+```
+
+See [docs/phystwin_refit.md](docs/phystwin_refit.md) for optional CUDA runtime
+requirements, matched baseline definitions, provenance outputs, and current
+inference limitations.
+
 ## Compute
 
 GPU experiments are intended to run on:

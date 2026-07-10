@@ -27,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--epochs", type=int, default=0)
     parser.add_argument("--learning-rate", type=float, default=1e-4)
     parser.add_argument("--observation-variance", type=float, default=2.5e-5)
+    parser.add_argument("--model-discrepancy-variance", type=float, default=0.0)
     parser.add_argument("--outlier-variance-multiplier", type=float, default=100.0)
     parser.add_argument("--flow-scale", type=float, default=0.005)
     parser.add_argument("--dt", type=float, default=5e-5)
@@ -55,6 +56,7 @@ def main() -> None:
             epochs=args.epochs,
             learning_rate=args.learning_rate,
             observation_variance=args.observation_variance,
+            model_discrepancy_variance=args.model_discrepancy_variance,
             outlier_variance_multiplier=args.outlier_variance_multiplier,
             flow_scale=args.flow_scale,
             dt=args.dt,
