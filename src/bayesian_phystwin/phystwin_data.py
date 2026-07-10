@@ -18,6 +18,10 @@ DEFAULT_DATA_ARCHIVE = (
 DEFAULT_EXPERIMENTS_ARCHIVE = (
     "https://huggingface.co/datasets/Jianghanxiao/PhysTwin/resolve/main/experiments.zip"
 )
+DEFAULT_OPTIMIZATION_ARCHIVE = (
+    "https://huggingface.co/datasets/Jianghanxiao/PhysTwin/resolve/main/"
+    "experiments_optimization.zip"
+)
 DEFAULT_ADDITIONAL_ARCHIVE = (
     "https://huggingface.co/datasets/Jianghanxiao/PhysTwin/resolve/main/additional_data.zip"
 )
@@ -70,7 +74,10 @@ def _available_additional_cases(archive: Any) -> tuple[str, ...]:
             for filename in ADDITIONAL_EVALUATION_FILENAMES
         }
         inference = f"additional_data/experiments/{case}/inference.pkl"
-        if required <= names and inference in names:
+        optimal = (
+            f"additional_data/experiments_optimization/{case}/optimal_params.pkl"
+        )
+        if required <= names and inference in names and optimal in names:
             complete.append(case)
     return tuple(complete)
 
@@ -124,6 +131,7 @@ def fetch_phystwin_evaluation_subset(
     cases: Iterable[str] | None = None,
     data_archive_url: str = DEFAULT_DATA_ARCHIVE,
     experiments_archive_url: str = DEFAULT_EXPERIMENTS_ARCHIVE,
+    optimization_archive_url: str | None = DEFAULT_OPTIMIZATION_ARCHIVE,
     archive_factory: Callable[[str], Any] | None = None,
 ) -> dict[str, object]:
     """Retrieve only the files needed for released 3D trajectory evaluation."""
@@ -133,6 +141,16 @@ def fetch_phystwin_evaluation_subset(
     with ExitStack() as stack:
         data_archive = stack.enter_context(factory(data_archive_url))
         experiments_archive = stack.enter_context(factory(experiments_archive_url))
+        optimization_archive = (
+            None
+            if optimization_archive_url is None
+            else stack.enter_context(factory(optimization_archive_url))
+        )
+        optimization_names = (
+            set()
+            if optimization_archive is None
+            else set(optimization_archive.namelist())
+        )
         available = _available_cases(data_archive, experiments_archive)
         selected = available if cases is None else tuple(dict.fromkeys(cases))
         unknown = sorted(set(selected) - set(available))
@@ -157,6 +175,17 @@ def fetch_phystwin_evaluation_subset(
                 inference_member,
                 case_dir / "inference.pkl",
             )
+            if optimization_archive is not None:
+                optimal_member = (
+                    f"experiments_optimization/{case}/optimal_params.pkl"
+                )
+                if optimal_member not in optimization_names:
+                    raise ValueError(f"missing graph parameters for {case}")
+                files["optimal_params.pkl"] = _retrieve_member(
+                    optimization_archive,
+                    optimal_member,
+                    case_dir / "optimal_params.pkl",
+                )
             records[case] = {"files": files}
 
     manifest: dict[str, object] = {
@@ -165,6 +194,7 @@ def fetch_phystwin_evaluation_subset(
         "sources": {
             "data": data_archive_url,
             "experiments": experiments_archive_url,
+            "optimization": optimization_archive_url,
         },
         "available_cases": list(available),
         "selected_cases": list(selected),
@@ -218,6 +248,15 @@ def fetch_phystwin_additional_evaluation_subset(
                 archive,
                 inference_member,
                 case_dir / "inference.pkl",
+            )
+            optimal_member = (
+                f"additional_data/experiments_optimization/{case}/"
+                "optimal_params.pkl"
+            )
+            files["optimal_params.pkl"] = _retrieve_member(
+                archive,
+                optimal_member,
+                case_dir / "optimal_params.pkl",
             )
             records[case] = {"files": files}
 

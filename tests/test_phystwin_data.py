@@ -10,9 +10,10 @@ from bayesian_phystwin.phystwin_data import (
 )
 
 
-def _build_archives(root: Path) -> tuple[Path, Path]:
+def _build_archives(root: Path) -> tuple[Path, Path, Path]:
     data_path = root / "data.zip"
     experiments_path = root / "experiments.zip"
+    optimization_path = root / "experiments_optimization.zip"
     with zipfile.ZipFile(data_path, "w") as archive:
         for case in ("case_a", "case_b"):
             prefix = f"data/different_types/{case}"
@@ -26,11 +27,17 @@ def _build_archives(root: Path) -> tuple[Path, Path]:
     with zipfile.ZipFile(experiments_path, "w") as archive:
         for case in ("case_a", "case_b"):
             archive.writestr(f"experiments/{case}/inference.pkl", b"trajectory")
-    return data_path, experiments_path
+    with zipfile.ZipFile(optimization_path, "w") as archive:
+        for case in ("case_a", "case_b"):
+            archive.writestr(
+                f"experiments_optimization/{case}/optimal_params.pkl",
+                b"parameters",
+            )
+    return data_path, experiments_path, optimization_path
 
 
 def test_fetches_selected_evaluation_subset_and_reuses_valid_files(tmp_path: Path):
-    data_path, experiments_path = _build_archives(tmp_path)
+    data_path, experiments_path, optimization_path = _build_archives(tmp_path)
     factory = lambda source: zipfile.ZipFile(source)
     output = tmp_path / "output"
 
@@ -39,6 +46,7 @@ def test_fetches_selected_evaluation_subset_and_reuses_valid_files(tmp_path: Pat
         cases=("case_b",),
         data_archive_url=str(data_path),
         experiments_archive_url=str(experiments_path),
+        optimization_archive_url=str(optimization_path),
         archive_factory=factory,
     )
     second = fetch_phystwin_evaluation_subset(
@@ -46,12 +54,14 @@ def test_fetches_selected_evaluation_subset_and_reuses_valid_files(tmp_path: Pat
         cases=("case_b",),
         data_archive_url=str(data_path),
         experiments_archive_url=str(experiments_path),
+        optimization_archive_url=str(optimization_path),
         archive_factory=factory,
     )
 
     assert first["available_cases"] == ["case_a", "case_b"]
     assert first["selected_cases"] == ["case_b"]
     assert (output / "case_b" / "inference.pkl").read_bytes() == b"trajectory"
+    assert (output / "case_b" / "optimal_params.pkl").read_bytes() == b"parameters"
     assert all(
         record["reused"]
         for record in second["cases"]["case_b"]["files"].values()
@@ -59,7 +69,7 @@ def test_fetches_selected_evaluation_subset_and_reuses_valid_files(tmp_path: Pat
 
 
 def test_rejects_unknown_or_incomplete_case(tmp_path: Path):
-    data_path, experiments_path = _build_archives(tmp_path)
+    data_path, experiments_path, optimization_path = _build_archives(tmp_path)
     factory = lambda source: zipfile.ZipFile(source)
 
     with pytest.raises(ValueError, match="incomplete"):
@@ -68,6 +78,7 @@ def test_rejects_unknown_or_incomplete_case(tmp_path: Path):
             cases=("incomplete",),
             data_archive_url=str(data_path),
             experiments_archive_url=str(experiments_path),
+            optimization_archive_url=str(optimization_path),
             archive_factory=factory,
         )
 
@@ -82,6 +93,11 @@ def test_fetches_label_free_additional_subset(tmp_path: Path):
             "additional_data/experiments/cloth_blue_fold/inference.pkl",
             b"trajectory",
         )
+        archive.writestr(
+            "additional_data/experiments_optimization/cloth_blue_fold/"
+            "optimal_params.pkl",
+            b"parameters",
+        )
     output = tmp_path / "additional"
 
     manifest = fetch_phystwin_additional_evaluation_subset(
@@ -93,3 +109,4 @@ def test_fetches_label_free_additional_subset(tmp_path: Path):
     assert manifest["selected_cases"] == ["cloth_blue_fold"]
     assert manifest["manual_track_labels"] is False
     assert (output / "cloth_blue_fold" / "inference.pkl").read_bytes() == b"trajectory"
+    assert (output / "cloth_blue_fold" / "optimal_params.pkl").read_bytes() == b"parameters"

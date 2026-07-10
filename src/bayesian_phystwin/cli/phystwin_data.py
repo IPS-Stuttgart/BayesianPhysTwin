@@ -9,6 +9,7 @@ from bayesian_phystwin.phystwin_data import (
     DEFAULT_ADDITIONAL_ARCHIVE,
     DEFAULT_DATA_ARCHIVE,
     DEFAULT_EXPERIMENTS_ARCHIVE,
+    DEFAULT_OPTIMIZATION_ARCHIVE,
     fetch_phystwin_additional_evaluation_subset,
     fetch_phystwin_evaluation_subset,
 )
@@ -22,6 +23,9 @@ def main() -> None:
     parser.add_argument("--case", action="append", dest="cases")
     parser.add_argument("--data-archive", default=DEFAULT_DATA_ARCHIVE)
     parser.add_argument("--experiments-archive", default=DEFAULT_EXPERIMENTS_ARCHIVE)
+    parser.add_argument(
+        "--optimization-archive", default=DEFAULT_OPTIMIZATION_ARCHIVE
+    )
     parser.add_argument("--additional", action="store_true")
     parser.add_argument("--additional-archive", default=DEFAULT_ADDITIONAL_ARCHIVE)
     args = parser.parse_args()
@@ -37,6 +41,7 @@ def main() -> None:
             cases=args.cases,
             data_archive_url=args.data_archive,
             experiments_archive_url=args.experiments_archive,
+            optimization_archive_url=args.optimization_archive,
         )
     print(json.dumps(manifest, indent=2, sort_keys=True))
 
