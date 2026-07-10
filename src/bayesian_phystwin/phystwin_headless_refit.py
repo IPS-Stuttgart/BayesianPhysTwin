@@ -765,7 +765,7 @@ def run_headless_phystwin_refit(
                             device=config.device,
                         )
                     )
-                candidate = simulate_trajectory(frame_count)[:, :original_count]
+                candidate = simulate_trajectory(fit_end_frame)[:, :original_count]
                 log_likelihood[object_index, controller_index] = (
                     clustered_track_log_likelihood(
                         object_points,
