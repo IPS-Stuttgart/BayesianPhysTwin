@@ -55,8 +55,8 @@ def clustered_track_log_likelihood(
     if temperature <= 0.0:
         raise ValueError("temperature must be positive")
 
-    residual = observed_array - trajectory_array[
-        : len(observed_array), : observed_array.shape[1]
+    residual = observed_array[:end_frame] - trajectory_array[
+        :end_frame, : observed_array.shape[1]
     ]
     squared_norm = np.sum(np.square(residual), axis=2)
     total_negative_log_likelihood = 0.0

@@ -51,6 +51,36 @@ def test_clustered_likelihood_prefers_lower_residual(variant):
     assert exact_log_likelihood > offset_log_likelihood
 
 
+def test_clustered_likelihood_accepts_trajectory_truncated_at_end_frame():
+    observed = np.zeros((4, 2, 3))
+    trajectory = np.zeros_like(observed)
+    visible = np.ones((4, 2), dtype=bool)
+    objective = build_phystwin_track_objective(
+        visible,
+        visible,
+        variant="hard",
+    )
+
+    full = clustered_track_log_likelihood(
+        observed,
+        trajectory,
+        objective,
+        start_frame=1,
+        end_frame=3,
+        variance=1e-4,
+    )
+    truncated = clustered_track_log_likelihood(
+        observed,
+        trajectory[:3],
+        objective,
+        start_frame=1,
+        end_frame=3,
+        variance=1e-4,
+    )
+
+    assert truncated == pytest.approx(full)
+
+
 def test_grid_posterior_normalizes_and_summarizes_correlation():
     object_scales = np.array([-0.1, 0.0, 0.1])
     controller_scales = np.array([-0.2, 0.0, 0.2])
