@@ -121,6 +121,49 @@ saved action and persistent trajectories, and correlates the 10 mm capped
 training-endpoint residual with future residual fields after removing global
 translation. It does not refit either trajectory.
 
+## Spring-graph discrepancy posterior
+
+The endpoint posterior can be conditioned jointly on the exact released
+PhysTwin object spring graph. The random-walk normalized Laplacian is
+dimensionless and leaves constant displacement unpenalized. With endpoint mean
+`m`, variance-derived weights `W`, and graph displacement `b`, the solver uses
+
+```text
+0.5 * ||W^(1/2) (b - m)||^2 + lambda * ||L b||^2
+```
+
+and exposes the implicit spatial covariance
+
+```text
+v_ref * (W + 2 * lambda * L.T L + ridge * I)^-1.
+```
+
+The graph extra supplies SciPy's sparse matrices and conjugate-gradient solver:
+
+```bash
+python3 -m pip install -e ".[data,graph]"
+bpt-fetch-phystwin-eval-data /path/to/phystwin-eval
+bpt-compare-phystwin-graph-anchors \
+  /path/to/phystwin-eval runs/graph-development \
+  --cohort development --select-prior-strength
+bpt-compare-phystwin-graph-anchors \
+  /path/to/phystwin-eval runs/graph-confirmation \
+  --cohort confirmation --prior-strength 0.1 --covariance-probes 16
+bpt-compare-phystwin-graph-anchors \
+  /path/to/phystwin-additional runs/graph-additional \
+  --cohort all --prior-strength 0.1 --covariance-probes 16
+```
+
+The matched methods share the fixed robust endpoint posterior and 10 mm cap.
+Raw leaves untracked state vertices at zero, kNN uses inverse-distance lifting,
+and graph smoothing conditions all vertices jointly. The seven-value strength
+grid selected `lambda = 0.1` only on the three designated development cases.
+Frozen evaluation reduces equal-case Laplacian energy by 67.83% on the 19-case
+cohort and 61.29% on the additional cohort. Relative to kNN, however, main
+CD/track change by +0.81%/-0.97% and additional CD by +0.22%; every paired
+interval crosses zero. The covariance diagonal is a fixed-seed stochastic
+diagnostic and has not been calibrated as future coverage.
+
 For the separate label-free cloth release, the protocols use the full released
 training interval, no validation labels or selection, and no future inputs:
 

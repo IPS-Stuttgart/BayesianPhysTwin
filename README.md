@@ -32,6 +32,7 @@ Initial scope:
 - regularized spatial spring regions and explicit damping sweeps
 - causal, action-conditioned low-rank simulator discrepancy
 - capped persistent and robust Bayesian endpoint discrepancy anchors
+- sparse spring-graph discrepancy smoothing and covariance solves
 - raw camera/mask cue recovery and paired moving-block evaluation
 - selective release-archive retrieval and physical-object clustered bootstrap
 - reproducible experiment configs and remote-run scripts
@@ -54,7 +55,7 @@ servers; these paths are ignored by default.
 ## Quick Start
 
 ```bash
-python3 -m pip install -e ".[dev,data]"
+python3 -m pip install -e ".[dev,data,graph]"
 bash scripts/local_smoke_test.sh
 ```
 
@@ -144,6 +145,12 @@ bpt-fit-phystwin-bayesian-anchor ...
 bpt-analyze-phystwin-horizon \
   data/phystwin-eval runs/phystwin-confirmatory \
   runs/phystwin-baselines runs/phystwin-horizon.json
+bpt-compare-phystwin-graph-anchors \
+  data/phystwin-eval runs/phystwin-graph-development \
+  --cohort development --select-prior-strength
+bpt-compare-phystwin-graph-anchors \
+  data/phystwin-eval runs/phystwin-graph-confirmation \
+  --cohort confirmation --prior-strength 0.1 --covariance-probes 16
 ```
 
 The full release evaluation subset can be fetched without downloading the
@@ -169,6 +176,12 @@ Post-hoc endpoint controls are available through `--spatial-mode` with
 `global_translation`, `se3`, `sim3`, or `affine`; each fits one training-endpoint
 transform and applies it unchanged to the future trajectory under the same
 10 mm cap.
+
+The graph command compares raw tracked-point anchors, kNN lifting, and a sparse
+Bayesian Laplacian posterior on the exact released object spring graph. The
+development-selected `lambda = 0.1` strongly reduces spatial roughness, but its
+frozen graph-over-kNN CD and track intervals cross zero; treat it as a coherent
+uncertainty-bearing regularizer, not a confirmed accuracy improvement.
 
 See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
 for the causal split contract, complete commands, and interpretation boundary.
