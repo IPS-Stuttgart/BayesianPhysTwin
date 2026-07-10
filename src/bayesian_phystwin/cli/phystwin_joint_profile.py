@@ -32,6 +32,14 @@ def main() -> None:
     parser.add_argument("--temperature", action="append", default=[], metavar="CASE=VALUE")
     parser.add_argument("--object-prior-std", type=float, default=0.15)
     parser.add_argument("--controller-prior-std", type=float, default=0.50)
+    parser.add_argument(
+        "--object-deviation-std",
+        action="append",
+        type=float,
+        dest="object_deviation_stds",
+        help="Enable hierarchical pooling with this candidate trial-deviation scale.",
+    )
+    parser.add_argument("--object-deviation-prior-scale", type=float, default=0.15)
     args = parser.parse_args()
     summary = combine_joint_profile_files(
         _assignments(args.profiles),
@@ -42,6 +50,8 @@ def main() -> None:
             args.temperature,
             value_type=float,
         ),
+        object_deviation_stds=args.object_deviation_stds,
+        object_deviation_prior_scale=args.object_deviation_prior_scale,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

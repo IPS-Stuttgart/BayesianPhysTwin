@@ -73,3 +73,34 @@ def test_joint_profiles_require_matching_grids(tmp_path: Path) -> None:
             {"first": first, "second": second},
             tmp_path / "joint",
         )
+
+
+def test_hierarchical_profiles_partially_pool_conflicting_object_scales(
+    tmp_path: Path,
+) -> None:
+    first = tmp_path / "first.npz"
+    second = tmp_path / "second.npz"
+    _profile(first, -0.2, -0.4)
+    _profile(second, 0.2, 0.4)
+
+    summary = combine_joint_profile_files(
+        {"first": first, "second": second},
+        tmp_path / "hierarchical",
+        object_prior_std=0.3,
+        controller_prior_std=0.5,
+        object_deviation_stds=(0.05, 0.2, 0.5),
+        object_deviation_prior_scale=0.2,
+    )
+
+    with np.load(summary["outputs"]["first"]) as first_profile:
+        first_weights = first_profile["posterior_weights"]
+        assert "population_hyper_weights" in first_profile.files
+    with np.load(summary["outputs"]["second"]) as second_profile:
+        second_weights = second_profile["posterior_weights"]
+
+    object_grid = np.array([-0.2, 0.0, 0.2])
+    first_mean = float(np.sum(first_weights.sum(axis=1) * object_grid))
+    second_mean = float(np.sum(second_weights.sum(axis=1) * object_grid))
+    assert first_mean < 0.0 < second_mean
+    assert summary["pooling"] == "hierarchical"
+    assert summary["object_deviation_std"]["mean"] > 0.0
