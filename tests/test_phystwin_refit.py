@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from bayesian_phystwin.cli.phystwin_refit import build_parser
 from bayesian_phystwin.phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -99,3 +100,24 @@ def test_refit_objective_rejects_unknown_variant():
             motion_valid,
             variant="residual-gated",
         )
+
+
+def test_refit_cli_accepts_grouped_spring_parameterization():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "mixture",
+            "--train-end-frame",
+            "64",
+            "--spring-parameterization",
+            "grouped",
+        ]
+    )
+
+    assert args.spring_parameterization == "grouped"

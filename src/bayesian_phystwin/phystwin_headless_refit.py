@@ -44,6 +44,7 @@ class HeadlessPhysTwinRefitConfig:
     track_weight: float = 1.0
     acceleration_weight: float = 0.01
     optimize_collision: bool = True
+    spring_parameterization: str = "dense"
     device: str = "cuda:0"
 
 
@@ -181,6 +182,8 @@ def run_headless_phystwin_refit(
         raise ValueError("outlier_variance_multiplier must be greater than one")
     if config.num_substeps < 1 or config.dt <= 0.0:
         raise ValueError("simulator time discretization must be positive")
+    if config.spring_parameterization not in {"dense", "grouped"}:
+        raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
     if config.device != "cuda:0":
         raise ValueError(
             "the pinned official simulator selects cuda:0 at import; use "
@@ -325,8 +328,12 @@ def run_headless_phystwin_refit(
             config.observation_variance + config.model_discrepancy_variance
         ),
         outlier_variance_multiplier=config.outlier_variance_multiplier,
+        spring_parameterization=config.spring_parameterization,
+        num_object_springs=graph.num_object_springs,
     )
-    simulator.set_spring_Y(torch.log(checkpoint_spring_y).detach().clone())
+    simulator.set_reference_spring_y(
+        torch.log(checkpoint_spring_y).detach().clone()
+    )
 
     def checkpoint_value(name: str) -> Any:
         return torch.as_tensor(
@@ -343,7 +350,10 @@ def run_headless_phystwin_refit(
 
     history: list[dict[str, float | int]] = []
     if config.epochs:
-        optimizer_parameters = [wp.to_torch(simulator.wp_spring_Y)]
+        if config.spring_parameterization == "grouped":
+            optimizer_parameters = [wp.to_torch(simulator.wp_group_log_scales)]
+        else:
+            optimizer_parameters = [wp.to_torch(simulator.wp_spring_Y)]
         if config.optimize_collision:
             optimizer_parameters.extend(
                 [
@@ -419,6 +429,13 @@ def run_headless_phystwin_refit(
 
     final_spring_y = (
         torch.exp(wp.to_torch(simulator.wp_spring_Y)).detach().cpu().numpy().copy()
+    )
+    final_group_log_scales = (
+        wp.to_torch(simulator.wp_group_log_scales)
+        .detach()
+        .cpu()
+        .numpy()
+        .copy()
     )
     final_collision = {
         name: float(wp.to_torch(getattr(simulator, f"wp_{name}")).item())
@@ -499,6 +516,8 @@ def run_headless_phystwin_refit(
             ),
             "num_object_springs": graph.num_object_springs,
             "variant": config.variant,
+            "spring_parameterization": config.spring_parameterization,
+            "group_log_scales": torch.as_tensor(final_group_log_scales),
             "source_checkpoint": str(Path(checkpoint_path).resolve()),
         },
         refit_checkpoint_path,
@@ -556,6 +575,10 @@ def run_headless_phystwin_refit(
                     )
                 )
             ),
+            "group_log_scales": {
+                "object": float(final_group_log_scales[0]),
+                "controller": float(final_group_log_scales[1]),
+            },
             "final_collision": final_collision,
             "fixed_dashpot_damping": float(optimal["dashpot_damping"]),
             "fixed_drag_damping": float(optimal["drag_damping"]),

@@ -64,6 +64,7 @@ bpt-phystwin-refit \
   --model-discrepancy-variance 0 \
   --outlier-variance-multiplier 100 \
   --flow-scale 0.005 \
+  --spring-parameterization grouped \
   --released-trajectory /path/to/inference.pkl
 ```
 
@@ -75,8 +76,10 @@ cue-weighted evaluation shared by all variants.
 
 ## Interpretation Boundary
 
-This runner currently produces a point refit over individual spring constants
-and optional contact parameters. Dashpot and drag damping remain fixed because
+The runner supports either the released per-spring parameterization (`dense`)
+or two log scales around the released checkpoint (`grouped`): one for object
+springs and one for controller springs. Both are point refits, with optional
+contact parameters. Dashpot and drag damping remain fixed because
 the official kernel takes them as non-differentiable scalar inputs. It is not
 yet a parameter posterior, and the processed motion cue is not a calibrated
 replacement for raw tracker confidence or mask-boundary uncertainty. Those are

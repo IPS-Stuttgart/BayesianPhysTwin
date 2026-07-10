@@ -97,6 +97,20 @@ def compute_reliability_mixture_track_loss(
         wp.atomic_add(track_loss, 0, loss_weight * value / denominator)
 
 
+@wp.kernel
+def expand_grouped_spring_log_y(
+    reference_log_y: wp.array(dtype=wp.float32),
+    group_log_scales: wp.array(dtype=wp.float32),
+    num_object_springs: int,
+    spring_log_y: wp.array(dtype=wp.float32),
+):
+    spring = wp.tid()
+    group = int(0)
+    if spring >= num_object_springs:
+        group = 1
+    spring_log_y[spring] = reference_log_y[spring] + group_log_scales[group]
+
+
 def load_official_spring_mass_module(
     official_repo: str | Path,
     *,
@@ -143,10 +157,40 @@ def make_reliability_simulator_class(official_module: Any):
             objective: Any,
             observation_variance: float,
             outlier_variance_multiplier: float,
+            spring_parameterization: str,
+            num_object_springs: int,
             **kwargs: Any,
         ) -> None:
             self.loss_variant = objective.variant
+            if spring_parameterization not in {"dense", "grouped"}:
+                raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
+            self.spring_parameterization = spring_parameterization
+            self.grouped_num_object_springs = int(num_object_springs)
             device = kwargs["gt_object_points"].device
+            spring_count = int(args[1].shape[0])
+            if not 0 <= self.grouped_num_object_springs <= spring_count:
+                raise ValueError("num_object_springs is inconsistent with init_springs")
+            self.reference_spring_log_y_tensor = torch.zeros(
+                spring_count,
+                dtype=torch.float32,
+                device=device,
+            )
+            self.group_log_scale_tensor = torch.zeros(
+                2,
+                dtype=torch.float32,
+                device=device,
+                requires_grad=True,
+            )
+            self.wp_reference_spring_log_y = wp.from_torch(
+                self.reference_spring_log_y_tensor,
+                dtype=wp.float32,
+                requires_grad=False,
+            )
+            self.wp_group_log_scales = wp.from_torch(
+                self.group_log_scale_tensor,
+                dtype=wp.float32,
+                requires_grad=True,
+            )
             self.track_prior_frames = torch.as_tensor(
                 objective.prior_inlier_probability,
                 dtype=torch.float32,
@@ -190,6 +234,43 @@ def make_reliability_simulator_class(official_module: Any):
             self.observation_variance = float(observation_variance)
             self.outlier_variance_multiplier = float(outlier_variance_multiplier)
             super().__init__(*args, **kwargs)
+
+        def step(self):
+            if self.spring_parameterization == "grouped":
+                wp.launch(
+                    expand_grouped_spring_log_y,
+                    dim=self.n_springs,
+                    inputs=[
+                        self.wp_reference_spring_log_y,
+                        self.wp_group_log_scales,
+                        self.grouped_num_object_springs,
+                    ],
+                    outputs=[self.wp_spring_Y],
+                )
+            super().step()
+
+        def set_reference_spring_y(self, spring_log_y: Any):
+            if self.spring_parameterization == "dense":
+                self.set_spring_Y(spring_log_y)
+                return
+            wp.launch(
+                official_module.copy_float,
+                dim=self.n_springs,
+                inputs=[spring_log_y],
+                outputs=[self.wp_reference_spring_log_y],
+            )
+            with torch.no_grad():
+                self.group_log_scale_tensor.zero_()
+            wp.launch(
+                expand_grouped_spring_log_y,
+                dim=self.n_springs,
+                inputs=[
+                    self.wp_reference_spring_log_y,
+                    self.wp_group_log_scales,
+                    self.grouped_num_object_springs,
+                ],
+                outputs=[self.wp_spring_Y],
+            )
 
         def set_controller_target(self, frame_idx: int, pure_inference: bool = False):
             super().set_controller_target(frame_idx, pure_inference=pure_inference)

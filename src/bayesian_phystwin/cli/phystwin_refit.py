@@ -35,6 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--track-weight", type=float, default=1.0)
     parser.add_argument("--acceleration-weight", type=float, default=0.01)
     parser.add_argument("--freeze-collision", action="store_true")
+    parser.add_argument(
+        "--spring-parameterization",
+        choices=("dense", "grouped"),
+        default="dense",
+    )
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--released-trajectory")
     return parser
@@ -64,6 +69,7 @@ def main() -> None:
             track_weight=args.track_weight,
             acceleration_weight=args.acceleration_weight,
             optimize_collision=not args.freeze_collision,
+            spring_parameterization=args.spring_parameterization,
             device=args.device,
         ),
     )
