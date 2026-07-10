@@ -120,12 +120,28 @@ bpt-confirm-phystwin-additional-anchor \
   /path/to/phystwin-additional runs/additional-anchor
 bpt-confirm-phystwin-additional-bayesian \
   /path/to/phystwin-additional runs/additional-bayesian
+bpt-confirm-phystwin-additional-anchor \
+  /path/to/phystwin-additional runs/additional-se3 --spatial-mode se3
+bpt-confirm-phystwin-additional-anchor \
+  /path/to/phystwin-additional runs/additional-sim3 --spatial-mode sim3
+bpt-confirm-phystwin-additional-anchor \
+  /path/to/phystwin-additional runs/additional-affine --spatial-mode affine
 ```
 
 The additional-cohort per-point and fixed Bayesian anchors improve all 11
-future CD results. Use `--global-translation` with the first confirmation
-command for the spatial control; its interval crosses zero. All confirmation
-commands write `locked_protocol.json` before evaluating a case.
+future CD results. Translation, SE(3), Sim(3), and affine are post-hoc spatial
+controls; use `--global-translation` for the backward-compatible translation
+alias or `--spatial-mode` for any control. All confirmation commands write
+`locked_protocol.json` before evaluating a case.
+
+Compare the frozen per-point run directly with all controls using:
+
+```bash
+bpt-compare-phystwin-additional-controls \
+  runs/additional-anchor runs/additional-spatial-comparison.json \
+  runs/additional-global runs/additional-se3 \
+  runs/additional-sim3 runs/additional-affine
+```
 
 ## Bias attribution diagnostic
 

@@ -154,11 +154,18 @@ bpt-confirm-phystwin-additional-anchor \
   data/phystwin-additional runs/additional-anchor
 bpt-confirm-phystwin-additional-bayesian \
   data/phystwin-additional runs/additional-bayesian
+bpt-confirm-phystwin-additional-anchor \
+  data/phystwin-additional runs/additional-se3 --spatial-mode se3
 ```
 
-Both additional-cohort methods use only released training pseudo-measurements,
-apply no per-case selection, consume no future actions or observations, and
-write locked protocol IDs plus paired interaction/object bootstrap summaries.
+The per-point and Bayesian additional-cohort methods use only released training
+pseudo-measurements, apply no per-case selection, consume no future actions or
+observations, and write locked protocol IDs plus paired interaction/object
+bootstrap summaries.
+Post-hoc endpoint controls are available through `--spatial-mode` with
+`global_translation`, `se3`, `sim3`, or `affine`; each fits one training-endpoint
+transform and applies it unchanged to the future trajectory under the same
+10 mm cap.
 
 See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
 for the causal split contract, complete commands, and interpretation boundary.
