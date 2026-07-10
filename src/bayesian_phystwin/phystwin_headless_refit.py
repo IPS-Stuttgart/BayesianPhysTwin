@@ -7,6 +7,7 @@ import json
 import pickle
 import subprocess
 import time
+import warnings
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -129,7 +130,7 @@ def _common_objective_metrics(
                 np.log1p(-selected_prior)
                 - 1.5 * np.log(outlier_variance_multiplier),
             )
-            shifted_nll = -2.0 * observation_variance * (
+            shifted_nll = -observation_variance * (
                 np.logaddexp(log_inlier, log_outlier) - zero_log_mixture
             )
             mixture_loss = float(np.mean(np.maximum(shifted_nll, 0.0)) / 3.0)
@@ -274,6 +275,13 @@ def run_headless_phystwin_refit(
         runtime_config=runtime_cfg,
     )
     simulator_class = make_reliability_simulator_class(official)
+    warnings.filterwarnings(
+        "ignore",
+        message=(
+            "Running the tape backwards may produce incorrect gradients because "
+            "recorded kernel set_control_points.*"
+        ),
+    )
 
     def tensor(values: np.ndarray, dtype: Any) -> Any:
         return torch.as_tensor(values, dtype=dtype, device=config.device).contiguous()

@@ -90,7 +90,7 @@ def compute_reliability_mixture_track_loss(
 
         # Scale and zero-shift the NLL to match the local units of smooth L1.
         value = wp.max(
-            -2.0 * observation_variance * (log_mixture - zero_log_mixture),
+            -observation_variance * (log_mixture - zero_log_mixture),
             0.0,
         )
         denominator = wp.max(normalizer[0] * 3.0, 1.0)
