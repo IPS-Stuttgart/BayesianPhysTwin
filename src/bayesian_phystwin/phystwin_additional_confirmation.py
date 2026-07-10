@@ -16,6 +16,7 @@ from .phystwin_comparison import (
 )
 from .phystwin_confirmatory import _lock_protocol
 from .phystwin_residual_dynamics import (
+    _clip_residual,
     _lift_map,
     _lift_residual,
     _load_pickle,
@@ -23,6 +24,122 @@ from .phystwin_residual_dynamics import (
     _target_validity,
     _temporally_fill,
 )
+
+
+SPATIAL_MODES = (
+    "per_point",
+    "global_translation",
+    "se3",
+    "sim3",
+    "affine",
+)
+
+
+def fit_endpoint_transform(
+    source: np.ndarray,
+    target: np.ndarray,
+    *,
+    mode: str,
+) -> dict[str, object]:
+    """Fit a fixed row-vector transform from endpoint correspondences."""
+
+    source_points = np.asarray(source, dtype=float)
+    target_points = np.asarray(target, dtype=float)
+    if source_points.shape != target_points.shape or source_points.ndim != 2:
+        raise ValueError("source and target must have matching shape (N, D)")
+    if source_points.shape[1] != 3 or len(source_points) < 1:
+        raise ValueError("endpoint transforms require 3D points")
+    if not np.all(np.isfinite(source_points)) or not np.all(
+        np.isfinite(target_points)
+    ):
+        raise ValueError("endpoint transform points must be finite")
+    if mode not in {"global_translation", "se3", "sim3", "affine"}:
+        raise ValueError("unsupported endpoint transform mode")
+
+    centered_rank = int(
+        np.linalg.matrix_rank(source_points - np.mean(source_points, axis=0))
+    )
+    if mode in {"se3", "sim3"} and (
+        len(source_points) < 3 or centered_rank < 2
+    ):
+        raise ValueError("rigid transforms require three noncollinear points")
+    if mode == "affine" and len(source_points) < 4:
+        raise ValueError("affine transforms require at least four points")
+
+    if mode == "global_translation":
+        linear = np.eye(3)
+        translation = np.median(target_points - source_points, axis=0)
+        rotation = np.eye(3)
+        scale: float | None = 1.0
+        design_rank = 1
+    elif mode == "affine":
+        design = np.concatenate(
+            (source_points, np.ones((len(source_points), 1), dtype=float)),
+            axis=1,
+        )
+        coefficients, _, design_rank, _ = np.linalg.lstsq(
+            design, target_points, rcond=None
+        )
+        if design_rank < 4:
+            raise ValueError("affine transform is undefined for rank-deficient points")
+        linear = coefficients[:3]
+        translation = coefficients[3]
+        rotation = None
+        scale = None
+    else:
+        source_mean = np.mean(source_points, axis=0)
+        target_mean = np.mean(target_points, axis=0)
+        centered_source = source_points - source_mean
+        centered_target = target_points - target_mean
+        covariance = centered_source.T @ centered_target
+        left, singular_values, right_transpose = np.linalg.svd(covariance)
+        orientation = np.ones(3, dtype=float)
+        if np.linalg.det(left @ right_transpose) < 0.0:
+            orientation[-1] = -1.0
+        rotation = left @ np.diag(orientation) @ right_transpose
+        if mode == "sim3":
+            denominator = float(np.sum(np.square(centered_source)))
+            if denominator <= 1e-15:
+                raise ValueError("similarity scale is undefined for collapsed points")
+            scale = float(np.sum(singular_values * orientation) / denominator)
+            if not np.isfinite(scale) or scale <= 0.0:
+                raise ValueError("similarity fit produced a nonpositive scale")
+        else:
+            scale = 1.0
+        linear = scale * rotation
+        translation = target_mean - source_mean @ linear
+        design_rank = centered_rank
+
+    fitted = source_points @ linear + translation
+    residual = fitted - target_points
+    return {
+        "mode": mode,
+        "point_count": len(source_points),
+        "source_centered_rank": centered_rank,
+        "fit_design_rank": int(design_rank),
+        "linear": linear,
+        "translation": translation,
+        "rotation": rotation,
+        "scale": scale,
+        "linear_determinant": float(np.linalg.det(linear)),
+        "endpoint_fit_rmse_m": float(
+            np.sqrt(np.mean(np.sum(np.square(residual), axis=1)))
+        ),
+    }
+
+
+def apply_endpoint_transform(
+    points: np.ndarray,
+    transform: dict[str, object],
+) -> np.ndarray:
+    """Apply a transform returned by :func:`fit_endpoint_transform`."""
+
+    values = np.asarray(points, dtype=float)
+    if values.ndim < 2 or values.shape[-1] != 3:
+        raise ValueError("points must end in a 3D coordinate axis")
+    linear = np.asarray(transform["linear"], dtype=float)
+    translation = np.asarray(transform["translation"], dtype=float)
+    return values @ linear + translation
 
 
 def _chamfer_by_frame(
@@ -62,8 +179,8 @@ def apply_persistent_residual_anchor(
         raise ValueError("train_end_frame must include at least two frames")
     if maximum_residual_m <= 0.0:
         raise ValueError("maximum_residual_m must be positive")
-    if spatial_mode not in {"per_point", "global_translation"}:
-        raise ValueError("spatial_mode must be per_point or global_translation")
+    if spatial_mode not in SPATIAL_MODES:
+        raise ValueError("unsupported spatial_mode")
     data = _load_pickle(final_data_path)
     baseline = np.asarray(_load_pickle(baseline_trajectory_path), dtype=float)
     observed = np.asarray(data["object_points"], dtype=float)
@@ -79,23 +196,35 @@ def apply_persistent_residual_anchor(
     valid = _target_validity(visible, motion_valid)
     filled = _temporally_fill(residual, valid, train_end_frame)
     tracked_endpoint = filled[-1]
-    if spatial_mode == "global_translation":
-        translation = np.median(tracked_endpoint, axis=0)
-        tracked_endpoint = np.broadcast_to(
-            translation, tracked_endpoint.shape
-        ).copy()
     future_count = frame_count - train_end_frame
-    tracked_future = np.repeat(tracked_endpoint[None], future_count, axis=0)
-    lift_indices, lift_weights = _lift_map(
-        baseline[0], original_count, interpolation_neighbors
-    )
-    correction = _lift_residual(
-        tracked_future,
-        baseline.shape[1],
-        lift_indices,
-        lift_weights,
-        maximum_norm=maximum_residual_m,
-    )
+    transform: dict[str, object] | None = None
+    if spatial_mode == "per_point":
+        tracked_future = np.repeat(tracked_endpoint[None], future_count, axis=0)
+        lift_indices, lift_weights = _lift_map(
+            baseline[0], original_count, interpolation_neighbors
+        )
+        correction = _lift_residual(
+            tracked_future,
+            baseline.shape[1],
+            lift_indices,
+            lift_weights,
+            maximum_norm=maximum_residual_m,
+        )
+    else:
+        endpoint_source = baseline[train_end_frame - 1, :original_count]
+        endpoint_target = endpoint_source + tracked_endpoint
+        transform = fit_endpoint_transform(
+            endpoint_source,
+            endpoint_target,
+            mode=spatial_mode,
+        )
+        transformed_future = apply_endpoint_transform(
+            baseline[train_end_frame:], transform
+        )
+        correction = _clip_residual(
+            transformed_future - baseline[train_end_frame:],
+            maximum_residual_m,
+        )
     corrected = baseline.copy()
     corrected[train_end_frame:] += correction
     num_surface_points = original_count + len(np.asarray(data["surface_points"]))
@@ -134,7 +263,11 @@ def apply_persistent_residual_anchor(
             "future_inputs": "none",
             "manual_labels": "none",
             "selection": "none",
-            "future_mean": "final temporally filled residual held constant",
+            "future_mean": (
+                "final temporally filled residual held constant"
+                if spatial_mode == "per_point"
+                else "fixed endpoint transform applied to each future PhysTwin state"
+            ),
             "spatial_model": spatial_mode,
         },
         "inputs": {
@@ -163,6 +296,16 @@ def apply_persistent_residual_anchor(
                 np.mean(correction_norm >= 0.999 * maximum_residual_m)
             ),
         },
+        "transform": (
+            None
+            if transform is None
+            else {
+                key: (
+                    value.tolist() if isinstance(value, np.ndarray) else value
+                )
+                for key, value in transform.items()
+            }
+        ),
         "outputs": {"trajectory": str(trajectory_path.resolve())},
     }
     summary_path = output / "summary.json"
@@ -196,8 +339,13 @@ def run_additional_anchor_confirmation(
         case: phystwin_physical_object_cluster(case) for case in selected
     }
     output = Path(output_dir)
+    is_confirmation = spatial_mode == "per_point"
     specification = {
-        "method": "ungated capped persistent residual anchor",
+        "method": (
+            "ungated capped persistent residual anchor"
+            if is_confirmation
+            else "capped fixed endpoint spatial control"
+        ),
         "spatial_mode": spatial_mode,
         "maximum_residual_m": maximum_residual_m,
         "interpolation_neighbors": interpolation_neighbors,
@@ -212,7 +360,11 @@ def run_additional_anchor_confirmation(
             "block_length": bootstrap_block_length,
             "seed": bootstrap_seed,
         },
-        "status": "untouched confirmatory additional release",
+        "status": (
+            "untouched confirmatory additional release"
+            if is_confirmation
+            else "post-hoc spatial control on additional release"
+        ),
     }
     locked = _lock_protocol(output, specification)
     case_results: dict[str, object] = {}
@@ -282,6 +434,9 @@ def run_additional_anchor_confirmation(
     result = {
         "schema_version": 1,
         "protocol_id": locked["protocol_id"],
+        "method": specification["method"],
+        "spatial_mode": spatial_mode,
+        "protocol_status": specification["status"],
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "case_count": len(selected),
         "physical_object_count": len(set(clusters.values())),

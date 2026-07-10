@@ -4,8 +4,64 @@ from pathlib import Path
 import numpy as np
 
 from bayesian_phystwin.phystwin_additional_confirmation import (
+    apply_endpoint_transform,
     apply_persistent_residual_anchor,
+    fit_endpoint_transform,
 )
+
+
+def test_endpoint_transform_controls_recover_known_transforms() -> None:
+    source = np.array(
+        [
+            [0.00, 0.00, 0.00],
+            [0.02, 0.00, 0.00],
+            [0.00, 0.03, 0.00],
+            [0.00, 0.00, 0.04],
+            [0.01, 0.015, 0.02],
+            [-0.01, 0.01, 0.03],
+        ]
+    )
+    angle = 0.37
+    rotation = np.array(
+        [
+            [np.cos(angle), -np.sin(angle), 0.0],
+            [np.sin(angle), np.cos(angle), 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    translation = np.array([0.004, -0.006, 0.003])
+
+    rigid_target = source @ rotation + translation
+    rigid = fit_endpoint_transform(source, rigid_target, mode="se3")
+    np.testing.assert_allclose(
+        apply_endpoint_transform(source, rigid), rigid_target, atol=1e-12
+    )
+    assert rigid["scale"] == 1.0
+    assert np.linalg.det(np.asarray(rigid["rotation"])) > 0.0
+
+    similarity_target = 1.15 * source @ rotation + translation
+    similarity = fit_endpoint_transform(source, similarity_target, mode="sim3")
+    np.testing.assert_allclose(
+        apply_endpoint_transform(source, similarity),
+        similarity_target,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(similarity["scale"], 1.15, atol=1e-12)
+
+    affine_linear = np.array(
+        [
+            [1.05, 0.10, -0.02],
+            [-0.04, 0.95, 0.03],
+            [0.01, -0.06, 1.10],
+        ]
+    )
+    affine_target = source @ affine_linear + translation
+    affine = fit_endpoint_transform(source, affine_target, mode="affine")
+    np.testing.assert_allclose(
+        apply_endpoint_transform(source, affine), affine_target, atol=1e-12
+    )
+    assert affine["rotation"] is None
+    assert affine["scale"] is None
 
 
 def test_label_free_anchor_uses_only_training_residual(tmp_path: Path) -> None:
