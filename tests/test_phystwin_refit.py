@@ -176,10 +176,16 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
             "64",
             "--spring-parameterization",
             "grouped",
+            "--selection-metric",
+            "official_3d",
+            "--gt-track-3d",
+            "manual.pkl",
         ]
     )
 
     assert args.spring_parameterization == "grouped"
+    assert args.selection_metric == "official_3d"
+    assert args.gt_track_3d == "manual.pkl"
 
 
 def test_prior_evaluation_uses_target_visible_refit_support():

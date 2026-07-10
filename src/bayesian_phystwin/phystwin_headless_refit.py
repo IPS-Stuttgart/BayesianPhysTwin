@@ -23,8 +23,8 @@ from .phystwin_profile import (
     clustered_track_log_likelihood,
     grid_parameter_posterior,
     predictive_observation_calibration,
-    weighted_trajectory_moments,
 )
+from .phystwin_official_evaluation import evaluate_official_phystwin_interval
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -53,6 +53,7 @@ class HeadlessPhysTwinRefitConfig:
     acceleration_weight: float = 0.01
     optimize_collision: bool = True
     spring_parameterization: str = "dense"
+    selection_metric: str = "hard_valid_rmse"
     early_stopping_patience: int = 3
     profile_grid_count: int = 0
     profile_object_log_scale_half_width: float = 0.30
@@ -182,6 +183,7 @@ def run_headless_phystwin_refit(
     output_dir: str | Path,
     config: HeadlessPhysTwinRefitConfig,
     released_trajectory_path: str | Path | None = None,
+    gt_track_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run one refit and write its trajectory, checkpoint, history, and summary."""
 
@@ -199,6 +201,12 @@ def run_headless_phystwin_refit(
         raise ValueError("simulator time discretization must be positive")
     if config.spring_parameterization not in {"dense", "grouped"}:
         raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
+    if config.selection_metric not in {"hard_valid_rmse", "official_3d"}:
+        raise ValueError(
+            "selection_metric must be 'hard_valid_rmse' or 'official_3d'"
+        )
+    if config.selection_metric == "official_3d" and gt_track_path is None:
+        raise ValueError("official_3d selection requires gt_track_path")
     if config.early_stopping_patience < 1:
         raise ValueError("early_stopping_patience must be positive")
     if config.profile_grid_count < 0:
@@ -262,6 +270,11 @@ def run_headless_phystwin_refit(
     controller_points = np.asarray(final_data["controller_points"], dtype=np.float32)
     surface_points = np.asarray(final_data["surface_points"], dtype=np.float32)
     interior_points = np.asarray(final_data["interior_points"], dtype=np.float32)
+    gt_track_3d = (
+        None
+        if gt_track_path is None
+        else np.asarray(_load_pickle(gt_track_path), dtype=np.float32)
+    )
     frame_count, original_count, coordinate_count = object_points.shape
     if coordinate_count != 3:
         raise ValueError("object_points must have shape (T, N, 3)")
@@ -291,6 +304,7 @@ def run_headless_phystwin_refit(
         (object_points[0], surface_points, interior_points),
         axis=0,
     )
+    num_surface_points = original_count + len(surface_points)
     graph = build_phystwin_spring_graph(
         structure_points,
         controller_points[0],
@@ -358,7 +372,7 @@ def run_headless_phystwin_refit(
         collide_object_fric=float(optimal["collide_object_fric"]),
         collision_dist=float(optimal["collision_dist"]),
         num_object_points=len(structure_points),
-        num_surface_points=original_count + len(surface_points),
+        num_surface_points=num_surface_points,
         num_original_points=original_count,
         controller_points=torch_controller,
         reverse_z=True,
@@ -467,7 +481,7 @@ def run_headless_phystwin_refit(
         variant="hard",
     )
 
-    def validation_rmse(trajectory_value: np.ndarray) -> float:
+    def validation_metrics(trajectory_value: np.ndarray) -> dict[str, float]:
         mask = np.zeros((config.train_end_frame, original_count), dtype=bool)
         mask[fit_end_frame : config.train_end_frame] = hard_objective.support[
             fit_end_frame : config.train_end_frame
@@ -479,19 +493,56 @@ def run_headless_phystwin_refit(
         )
         if metrics["count"] == 0:
             raise ValueError("validation interval contains no hard-valid tracks")
-        return float(metrics["vector_rmse_m"])
+        result = {
+            "hard_valid_vector_rmse_m": float(metrics["vector_rmse_m"]),
+        }
+        if gt_track_3d is not None:
+            official_metrics = evaluate_official_phystwin_interval(
+                trajectory_value,
+                object_points,
+                visible,
+                gt_track_3d,
+                num_surface_points=num_surface_points,
+                start_frame=fit_end_frame,
+                end_frame=config.train_end_frame,
+            )
+            result["official_chamfer_distance_m"] = float(
+                official_metrics["chamfer_distance_m"]
+            )
+            result["official_track_error_m"] = float(
+                official_metrics["track_error_m"]
+            )
+        return result
+
+    def validation_score(
+        metrics: dict[str, float],
+        baseline: dict[str, float],
+    ) -> float:
+        if config.selection_metric == "hard_valid_rmse":
+            return metrics["hard_valid_vector_rmse_m"]
+        return 0.5 * (
+            metrics["official_chamfer_distance_m"]
+            / baseline["official_chamfer_distance_m"]
+            + metrics["official_track_error_m"]
+            / baseline["official_track_error_m"]
+        )
 
     history: list[dict[str, float | int]] = []
     selected_epoch = config.epochs - 1
-    baseline_validation_rmse = None
-    best_validation_rmse = None
+    baseline_trajectory = None
+    baseline_validation_metrics = None
+    best_validation_metrics = None
+    best_validation_score = None
     best_parameters = None
     stale_epochs = 0
     if config.fit_end_frame is not None:
-        baseline_validation_rmse = validation_rmse(
-            simulate_trajectory(config.train_end_frame)
+        baseline_trajectory = simulate_trajectory(frame_count)
+        baseline_validation_metrics = validation_metrics(baseline_trajectory)
+        best_validation_metrics = baseline_validation_metrics
+        best_validation_score = validation_score(
+            baseline_validation_metrics,
+            baseline_validation_metrics,
         )
-        best_validation_rmse = baseline_validation_rmse
         best_parameters = snapshot_parameters()
         selected_epoch = -1
     if config.epochs:
@@ -542,14 +593,25 @@ def run_headless_phystwin_refit(
                 "mean_track_loss": total_track_loss / denominator,
             }
             if config.fit_end_frame is not None:
-                current_validation_rmse = validation_rmse(
+                current_validation_metrics = validation_metrics(
                     simulate_trajectory(config.train_end_frame)
                 )
-                epoch_result["validation_hard_valid_vector_rmse_m"] = (
-                    current_validation_rmse
+                current_validation_score = validation_score(
+                    current_validation_metrics,
+                    baseline_validation_metrics,
                 )
-                if current_validation_rmse < float(best_validation_rmse):
-                    best_validation_rmse = current_validation_rmse
+                epoch_result.update(
+                    {
+                        f"validation_{name}": value
+                        for name, value in current_validation_metrics.items()
+                    }
+                )
+                epoch_result["validation_selection_score"] = (
+                    current_validation_score
+                )
+                if current_validation_score < float(best_validation_score):
+                    best_validation_score = current_validation_score
+                    best_validation_metrics = current_validation_metrics
                     best_parameters = snapshot_parameters()
                     selected_epoch = epoch
                     stale_epochs = 0
@@ -593,6 +655,7 @@ def run_headless_phystwin_refit(
         train_end_frame=config.train_end_frame,
     )
     selection_evaluation = None
+    baseline_evaluation = None
     if config.fit_end_frame is not None:
         selection_evaluation = evaluate_phystwin_trajectory_splits(
             object_points,
@@ -605,6 +668,54 @@ def run_headless_phystwin_refit(
                 "test": (config.train_end_frame, frame_count),
             },
         )
+        baseline_evaluation = evaluate_phystwin_trajectory_splits(
+            object_points,
+            baseline_trajectory,
+            visible,
+            motion_valid,
+            splits={
+                "fit": (1, fit_end_frame),
+                "validation": (fit_end_frame, config.train_end_frame),
+                "test": (config.train_end_frame, frame_count),
+            },
+        )
+
+    def official_split_evaluation(
+        trajectory_value: np.ndarray,
+    ) -> dict[str, dict[str, object]] | None:
+        if gt_track_3d is None:
+            return None
+        split_intervals = (
+            {
+                "train": (1, config.train_end_frame),
+                "test": (config.train_end_frame, frame_count),
+            }
+            if config.fit_end_frame is None
+            else {
+                "fit": (1, fit_end_frame),
+                "validation": (fit_end_frame, config.train_end_frame),
+                "test": (config.train_end_frame, frame_count),
+            }
+        )
+        return {
+            name: evaluate_official_phystwin_interval(
+                trajectory_value,
+                object_points,
+                visible,
+                gt_track_3d,
+                num_surface_points=num_surface_points,
+                start_frame=start,
+                end_frame=stop,
+            )
+            for name, (start, stop) in split_intervals.items()
+        }
+
+    official_evaluation = official_split_evaluation(trajectory)
+    baseline_official_evaluation = (
+        None
+        if baseline_trajectory is None
+        else official_split_evaluation(baseline_trajectory)
+    )
     common_objective = build_phystwin_track_objective(
         visible,
         motion_valid,
@@ -642,7 +753,6 @@ def run_headless_phystwin_refit(
             (config.profile_grid_count, config.profile_grid_count),
             dtype=float,
         )
-        trajectory_particles: list[np.ndarray] = []
         for object_index, object_scale in enumerate(object_scale_grid):
             for controller_index, controller_scale in enumerate(
                 controller_scale_grid
@@ -655,10 +765,7 @@ def run_headless_phystwin_refit(
                             device=config.device,
                         )
                     )
-                candidate = simulate_trajectory(frame_count)[
-                    :, :original_count
-                ]
-                trajectory_particles.append(candidate)
+                candidate = simulate_trajectory(frame_count)[:, :original_count]
                 log_likelihood[object_index, controller_index] = (
                     clustered_track_log_likelihood(
                         object_points,
@@ -683,13 +790,37 @@ def run_headless_phystwin_refit(
             object_prior_std=config.profile_object_prior_std,
             controller_prior_std=config.profile_controller_prior_std,
         )
-        particle_array = np.stack(trajectory_particles)
-        posterior_mean, epistemic_variance = weighted_trajectory_moments(
-            particle_array,
-            posterior.weights,
-        )
-        posterior_mean = posterior_mean.astype(np.float32)
-        epistemic_variance = epistemic_variance.astype(np.float32)
+        state_shape = (frame_count, len(graph.vertices), 3)
+        posterior_mean_accumulator = np.zeros(state_shape, dtype=np.float64)
+        posterior_second_moment = np.zeros(state_shape, dtype=np.float64)
+        map_flat_index = int(np.argmax(posterior.weights))
+        map_trajectory = None
+        flat_index = 0
+        for object_index, object_scale in enumerate(object_scale_grid):
+            for controller_index, controller_scale in enumerate(
+                controller_scale_grid
+            ):
+                with torch.no_grad():
+                    simulator.group_log_scale_tensor.copy_(
+                        torch.tensor(
+                            [object_scale, controller_scale],
+                            dtype=torch.float32,
+                            device=config.device,
+                        )
+                    )
+                candidate = simulate_trajectory(frame_count).astype(np.float64)
+                weight = float(posterior.weights[object_index, controller_index])
+                posterior_mean_accumulator += weight * candidate
+                posterior_second_moment += weight * np.square(candidate)
+                if flat_index == map_flat_index:
+                    map_trajectory = candidate.astype(np.float32)
+                flat_index += 1
+        posterior_mean = posterior_mean_accumulator.astype(np.float32)
+        epistemic_variance = np.maximum(
+            posterior_second_moment - np.square(posterior_mean_accumulator),
+            0.0,
+        ).astype(np.float32)
+        assert map_trajectory is not None
         posterior_evaluation = evaluate_phystwin_trajectory_splits(
             object_points,
             posterior_mean,
@@ -714,8 +845,8 @@ def run_headless_phystwin_refit(
             ].astype(bool)
             posterior_calibration[split_name] = predictive_observation_calibration(
                 object_points,
-                posterior_mean,
-                epistemic_variance,
+                posterior_mean[:, :original_count],
+                epistemic_variance[:, :original_count],
                 split_mask,
                 observation_variance=config.observation_variance,
                 model_discrepancy_variance=(
@@ -734,6 +865,7 @@ def run_headless_phystwin_refit(
             )
         profile_summary = {
             "particle_count": int(config.profile_grid_count**2),
+            "state_vertex_count": int(len(graph.vertices)),
             "fit_frame_interval": [1, fit_end_frame],
             "likelihood_variant": config.variant,
             "cluster_contract": "mean tracks within frame, sum frames",
@@ -741,6 +873,9 @@ def run_headless_phystwin_refit(
             "log_likelihood_minimum": float(np.min(log_likelihood)),
             "log_likelihood_maximum": float(np.max(log_likelihood)),
             "posterior_mean_evaluation": posterior_evaluation,
+            "posterior_mean_official_evaluation": official_split_evaluation(
+                posterior_mean
+            ),
             "posterior_predictive_calibration": posterior_calibration,
             "reference_predictive_calibration": reference_calibration,
         }
@@ -752,13 +887,23 @@ def run_headless_phystwin_refit(
             "posterior_weights": posterior.weights,
             "posterior_mean_trajectory": posterior_mean,
             "epistemic_variance": epistemic_variance,
+            "map_trajectory": map_trajectory,
         }
         with torch.no_grad():
             simulator.group_log_scale_tensor.zero_()
 
     released_evaluation = None
     released_split_evaluation = None
+    released_official_evaluation = None
     released_parity = None
+    released_baseline_parity = None
+    selected_baseline_parity = None
+    if baseline_trajectory is not None:
+        selected_baseline_parity = phystwin_tracking_metrics(
+            baseline_trajectory,
+            trajectory,
+            np.ones(baseline_trajectory.shape[:2], dtype=bool),
+        )
     if released_trajectory_path is not None:
         released = np.asarray(_load_pickle(released_trajectory_path), dtype=np.float32)
         released_evaluation = evaluate_phystwin_trajectory(
@@ -780,6 +925,7 @@ def run_headless_phystwin_refit(
                     "test": (config.train_end_frame, frame_count),
                 },
             )
+        released_official_evaluation = official_split_evaluation(released)
         parity_frames = min(len(released), len(trajectory))
         parity_vertices = min(released.shape[1], trajectory.shape[1])
         released_parity = phystwin_tracking_metrics(
@@ -787,6 +933,16 @@ def run_headless_phystwin_refit(
             trajectory[:parity_frames, :parity_vertices],
             np.ones((parity_frames, parity_vertices), dtype=bool),
         )
+        if baseline_trajectory is not None:
+            baseline_frames = min(len(released), len(baseline_trajectory))
+            baseline_vertices = min(
+                released.shape[1], baseline_trajectory.shape[1]
+            )
+            released_baseline_parity = phystwin_tracking_metrics(
+                released[:baseline_frames, :baseline_vertices],
+                baseline_trajectory[:baseline_frames, :baseline_vertices],
+                np.ones((baseline_frames, baseline_vertices), dtype=bool),
+            )
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -797,6 +953,15 @@ def run_headless_phystwin_refit(
     trajectory_path = output_path / "trajectory.pkl"
     with trajectory_path.open("wb") as handle:
         pickle.dump(trajectory, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    baseline_trajectory_path = None
+    if baseline_trajectory is not None:
+        baseline_trajectory_path = output_path / "baseline_trajectory.pkl"
+        with baseline_trajectory_path.open("wb") as handle:
+            pickle.dump(
+                baseline_trajectory,
+                handle,
+                protocol=pickle.HIGHEST_PROTOCOL,
+            )
     history_path = output_path / "history.json"
     history_path.write_text(
         json.dumps(history, indent=2, sort_keys=True) + "\n",
@@ -852,6 +1017,14 @@ def run_headless_phystwin_refit(
                 "path": str(Path(cues_path).resolve()),
                 "sha256": _sha256(cues_path),
             },
+            "gt_track_3d": (
+                None
+                if gt_track_path is None
+                else {
+                    "path": str(Path(gt_track_path).resolve()),
+                    "sha256": _sha256(gt_track_path),
+                }
+            ),
         },
         "graph": {
             "vertex_count": int(len(graph.vertices)),
@@ -886,21 +1059,50 @@ def run_headless_phystwin_refit(
         "history": history,
         "selection": {
             "selected_epoch": selected_epoch,
-            "baseline_validation_hard_valid_vector_rmse_m": (
-                baseline_validation_rmse
+            "metric": config.selection_metric,
+            "baseline_metrics": baseline_validation_metrics,
+            "best_metrics": best_validation_metrics,
+            "baseline_score": (
+                None
+                if baseline_validation_metrics is None
+                else validation_score(
+                    baseline_validation_metrics,
+                    baseline_validation_metrics,
+                )
             ),
-            "best_validation_hard_valid_vector_rmse_m": best_validation_rmse,
+            "best_score": best_validation_score,
+            "baseline_validation_hard_valid_vector_rmse_m": (
+                None
+                if baseline_validation_metrics is None
+                else baseline_validation_metrics["hard_valid_vector_rmse_m"]
+            ),
+            "best_validation_hard_valid_vector_rmse_m": (
+                None
+                if best_validation_metrics is None
+                else best_validation_metrics["hard_valid_vector_rmse_m"]
+            ),
             "restored_best_parameters": best_parameters is not None,
         },
         "evaluation": evaluation,
         "split_evaluation": selection_evaluation,
+        "official_evaluation": official_evaluation,
+        "baseline_evaluation": baseline_evaluation,
+        "baseline_official_evaluation": baseline_official_evaluation,
         "common_cue_evaluation": common_metrics,
         "parameter_profile": profile_summary,
         "released_evaluation": released_evaluation,
         "released_split_evaluation": released_split_evaluation,
+        "released_official_evaluation": released_official_evaluation,
         "released_trajectory_parity": released_parity,
+        "released_baseline_trajectory_parity": released_baseline_parity,
+        "selected_baseline_trajectory_parity": selected_baseline_parity,
         "outputs": {
             "trajectory": str(trajectory_path.resolve()),
+            "baseline_trajectory": (
+                None
+                if baseline_trajectory_path is None
+                else str(baseline_trajectory_path.resolve())
+            ),
             "history": str(history_path.resolve()),
             "checkpoint": str(refit_checkpoint_path.resolve()),
             "parameter_profile": (

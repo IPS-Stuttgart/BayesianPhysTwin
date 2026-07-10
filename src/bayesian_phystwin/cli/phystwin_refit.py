@@ -42,6 +42,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="dense",
     )
     parser.add_argument("--early-stopping-patience", type=int, default=3)
+    parser.add_argument(
+        "--selection-metric",
+        choices=("hard_valid_rmse", "official_3d"),
+        default="hard_valid_rmse",
+    )
     parser.add_argument("--profile-grid-count", type=int, default=0)
     parser.add_argument(
         "--profile-object-log-scale-half-width",
@@ -58,6 +63,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--profile-likelihood-temperature", type=float, default=1.0)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--released-trajectory")
+    parser.add_argument("--gt-track-3d")
     return parser
 
 
@@ -71,6 +77,7 @@ def main() -> None:
         cues_path=args.cues,
         output_dir=args.output_dir,
         released_trajectory_path=args.released_trajectory,
+        gt_track_path=args.gt_track_3d,
         config=HeadlessPhysTwinRefitConfig(
             variant=args.variant,
             train_end_frame=args.train_end_frame,
@@ -88,6 +95,7 @@ def main() -> None:
             optimize_collision=not args.freeze_collision,
             spring_parameterization=args.spring_parameterization,
             early_stopping_patience=args.early_stopping_patience,
+            selection_metric=args.selection_metric,
             profile_grid_count=args.profile_grid_count,
             profile_object_log_scale_half_width=(
                 args.profile_object_log_scale_half_width

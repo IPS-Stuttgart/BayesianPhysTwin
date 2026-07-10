@@ -7,6 +7,7 @@ import numpy as np
 from bayesian_phystwin.phystwin_official_evaluation import (
     evaluate_official_phystwin_arrays,
     evaluate_official_phystwin_files,
+    evaluate_official_phystwin_interval,
     write_official_evaluation,
 )
 
@@ -47,6 +48,24 @@ def test_official_metrics_match_released_averaging_contract() -> None:
     assert np.isclose(result["train"]["track_error_m"], 0.1)
     assert result["test"]["chamfer_distance_m"] == 0.0
     assert result["test"]["track_error_m"] == 0.0
+
+
+def test_official_interval_supports_causal_validation_slice() -> None:
+    vertices, object_points, visibility, gt_track_3d = _official_fixture()
+
+    result = evaluate_official_phystwin_interval(
+        vertices,
+        object_points,
+        visibility,
+        gt_track_3d,
+        num_surface_points=2,
+        start_frame=2,
+        end_frame=3,
+    )
+
+    assert result["frame_count"] == 1
+    assert np.isclose(result["chamfer_distance_m"], 0.2)
+    assert np.isclose(result["track_error_m"], 0.2)
 
 
 def test_file_evaluation_records_hashes_and_split(tmp_path: Path) -> None:
