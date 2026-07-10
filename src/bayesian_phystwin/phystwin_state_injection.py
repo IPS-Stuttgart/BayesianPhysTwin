@@ -97,6 +97,12 @@ DIRECT_COMPARISONS = {
 _SIMULATOR_CLASS_CACHE: dict[tuple[str, str], object] = {}
 
 
+def _released_self_collision_for_case(case_name: str) -> bool:
+    """Return the self-collision setting selected by PhysTwin's CLI."""
+
+    return "cloth" in case_name or "package" in case_name
+
+
 def estimate_endpoint_velocity_delta(
     correction_history: np.ndarray,
     *,
@@ -254,6 +260,7 @@ def _initialize_simulator(
     original_count: int,
     dt: float,
     num_substeps: int,
+    self_collision: bool,
     device: str,
 ):
     try:
@@ -335,7 +342,7 @@ def _initialize_simulator(
         gt_object_motions_valid=tensor(
             motion_valid.astype(np.int32), torch.int32
         ),
-        self_collision=False,
+        self_collision=self_collision,
         disable_backward=True,
         objective=objective,
         observation_variance=FIXED_OBSERVATION_STD_M**2,
@@ -457,6 +464,7 @@ def apply_phystwin_state_injection(
     dt: float = 5e-5,
     num_substeps: int = 667,
     replay_endpoint_tolerance_m: float = 0.002,
+    self_collision: bool | None = None,
     device: str = "cuda:0",
 ) -> dict[str, object]:
     """Compare output correction with position/velocity simulator state resets."""
@@ -475,6 +483,9 @@ def apply_phystwin_state_injection(
             "CUDA_VISIBLE_DEVICES to remap a GPU"
         )
     data = _load_pickle(final_data_path)
+    if self_collision is None:
+        case_name = Path(final_data_path).resolve().parent.name
+        self_collision = _released_self_collision_for_case(case_name)
     optimal = _load_pickle(optimal_params_path)
     baseline = np.asarray(_load_pickle(baseline_trajectory_path), dtype=float)
     observed = np.asarray(data["object_points"], dtype=float)
@@ -540,6 +551,7 @@ def apply_phystwin_state_injection(
         original_count=original_count,
         dt=dt,
         num_substeps=num_substeps,
+        self_collision=self_collision,
         device=device,
     )
     replay_positions, replay_velocities = _rollout_initial(
@@ -667,6 +679,7 @@ def apply_phystwin_state_injection(
             "dt": dt,
             "num_substeps": num_substeps,
             "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
+            "self_collision": self_collision,
             "device": device,
         },
         "contract": {
@@ -681,6 +694,11 @@ def apply_phystwin_state_injection(
             "future_controls": "recorded released controller trajectory",
             "future_observations": "none",
             "rest_state": "original released spring rest lengths retained",
+            "self_collision": (
+                "released PhysTwin cloth/package case configuration"
+                if self_collision
+                else "released PhysTwin default configuration"
+            ),
         },
         "inputs": {
             "final_data": {
@@ -830,6 +848,9 @@ def run_phystwin_state_injection_comparison(
         if not (root / case / "checkpoint.pth").is_file():
             raise FileNotFoundError(f"released checkpoint is missing for {case}")
     clusters = {case: phystwin_physical_object_cluster(case) for case in selected}
+    self_collision_by_case = {
+        case: _released_self_collision_for_case(case) for case in selected
+    }
     code_commit = _git_commit(Path(__file__).resolve().parents[2])
     specification = {
         "method": "PhysTwin endpoint state injection",
@@ -851,6 +872,11 @@ def run_phystwin_state_injection_comparison(
         "maximum_residual_m": maximum_residual_m,
         "dt": dt,
         "num_substeps": num_substeps,
+        "self_collision_rule": (
+            "enabled when the case name contains 'cloth' or 'package', "
+            "matching PhysTwin train_warp.py and inference_warp.py"
+        ),
+        "self_collision_by_case": self_collision_by_case,
         "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
         "future_inputs": "recorded controller positions only",
         "primary_method": PRIMARY_STATE_INJECTION_METHOD,
@@ -870,7 +896,7 @@ def run_phystwin_state_injection_comparison(
     }
     output = Path(output_dir)
     locked = _lock_protocol(output, specification)
-    expected_config = {
+    expected_base_config = {
         "graph_prior_strength": graph_prior_strength,
         "velocity_history_frames": velocity_history_frames,
         "interpolation_neighbors": interpolation_neighbors,
@@ -894,6 +920,10 @@ def run_phystwin_state_injection_comparison(
             raise ValueError(f"future split does not end at frame_len for {case}")
         case_output = output / "cases" / case
         summary_path = case_output / "summary.json"
+        expected_config = {
+            **expected_base_config,
+            "self_collision": self_collision_by_case[case],
+        }
         if summary_path.exists() and not force:
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             cached = dict(summary["config"])
@@ -918,6 +948,7 @@ def run_phystwin_state_injection_comparison(
                 dt=dt,
                 num_substeps=num_substeps,
                 replay_endpoint_tolerance_m=replay_endpoint_tolerance_m,
+                self_collision=self_collision_by_case[case],
             )
         case_results[case] = {
             "physical_object": clusters[case],
