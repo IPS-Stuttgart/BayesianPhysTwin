@@ -830,8 +830,10 @@ def run_phystwin_state_injection_comparison(
         if not (root / case / "checkpoint.pth").is_file():
             raise FileNotFoundError(f"released checkpoint is missing for {case}")
     clusters = {case: phystwin_physical_object_cluster(case) for case in selected}
+    code_commit = _git_commit(Path(__file__).resolve().parents[2])
     specification = {
         "method": "PhysTwin endpoint state injection",
+        "code_commit": code_commit,
         "dataset": "additional" if is_additional else "main",
         "cohort": cohort,
         "cases": list(selected),
@@ -974,6 +976,7 @@ def run_phystwin_state_injection_comparison(
     }
     result = {
         "schema_version": 1,
+        "code_commit": code_commit,
         "protocol_id": locked["protocol_id"],
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": specification["status"],
