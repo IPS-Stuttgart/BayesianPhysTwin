@@ -166,12 +166,18 @@ def grid_parameter_posterior(
             "std": float(np.sqrt(object_variance)),
             "q05": _weighted_quantile(flat_object, flat_weights, 0.05),
             "q95": _weighted_quantile(flat_object, flat_weights, 0.95),
+            "mean_multiplier": float(
+                np.sum(flat_weights * np.exp(flat_object))
+            ),
         },
         "controller_log_scale": {
             "mean": controller_mean,
             "std": float(np.sqrt(controller_variance)),
             "q05": _weighted_quantile(flat_controller, flat_weights, 0.05),
             "q95": _weighted_quantile(flat_controller, flat_weights, 0.95),
+            "mean_multiplier": float(
+                np.sum(flat_weights * np.exp(flat_controller))
+            ),
         },
         "correlation": float(correlation),
         "effective_grid_points": float(1.0 / np.sum(np.square(weights))),

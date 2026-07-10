@@ -46,12 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--profile-object-log-scale-half-width",
         type=float,
-        default=0.15,
+        default=0.30,
     )
     parser.add_argument(
         "--profile-controller-log-scale-half-width",
         type=float,
-        default=0.50,
+        default=1.00,
     )
     parser.add_argument("--profile-object-prior-std", type=float, default=0.15)
     parser.add_argument("--profile-controller-prior-std", type=float, default=0.50)

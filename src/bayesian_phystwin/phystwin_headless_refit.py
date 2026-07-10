@@ -55,8 +55,8 @@ class HeadlessPhysTwinRefitConfig:
     spring_parameterization: str = "dense"
     early_stopping_patience: int = 3
     profile_grid_count: int = 0
-    profile_object_log_scale_half_width: float = 0.15
-    profile_controller_log_scale_half_width: float = 0.50
+    profile_object_log_scale_half_width: float = 0.30
+    profile_controller_log_scale_half_width: float = 1.00
     profile_object_prior_std: float = 0.15
     profile_controller_prior_std: float = 0.50
     profile_likelihood_temperature: float = 1.0
@@ -702,6 +702,7 @@ def run_headless_phystwin_refit(
             },
         )
         posterior_calibration: dict[str, dict[str, float | int]] = {}
+        reference_calibration: dict[str, dict[str, float | int]] = {}
         for split_name, split_start, split_stop in (
             ("fit", 1, fit_end_frame),
             ("validation", fit_end_frame, config.train_end_frame),
@@ -721,6 +722,16 @@ def run_headless_phystwin_refit(
                     config.model_discrepancy_variance
                 ),
             )
+            reference_calibration[split_name] = predictive_observation_calibration(
+                object_points,
+                trajectory[:, :original_count],
+                np.zeros_like(object_points),
+                split_mask,
+                observation_variance=config.observation_variance,
+                model_discrepancy_variance=(
+                    config.model_discrepancy_variance
+                ),
+            )
         profile_summary = {
             "particle_count": int(config.profile_grid_count**2),
             "fit_frame_interval": [1, fit_end_frame],
@@ -731,6 +742,7 @@ def run_headless_phystwin_refit(
             "log_likelihood_maximum": float(np.max(log_likelihood)),
             "posterior_mean_evaluation": posterior_evaluation,
             "posterior_predictive_calibration": posterior_calibration,
+            "reference_predictive_calibration": reference_calibration,
         }
         profile_artifact = {
             "object_log_scales": object_scale_grid,
