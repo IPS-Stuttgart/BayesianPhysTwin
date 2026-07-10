@@ -102,14 +102,18 @@ validation, and untouched test intervals separately.
 
 ## Interpretation Boundary
 
-The runner supports either the released per-spring parameterization (`dense`)
-or two log scales around the released checkpoint (`grouped`): one for object
-springs and one for controller springs. Both are point refits, with optional
-contact parameters. Dashpot and drag damping remain fixed because
-the official kernel takes them as non-differentiable scalar inputs. The grouped
-grid below is a two-scale profile posterior, not a posterior over dense springs,
-damping, contact, or topology. The processed motion cue is not a calibrated
-replacement for raw tracker confidence or mask-boundary uncertainty.
+The runner supports the released per-spring parameterization (`dense`), two log
+scales around the released checkpoint (`grouped`), or regularized principal-axis
+material bands (`regional`). The regional mode reserves one final group for
+controller springs and records the complete group assignment in the checkpoint
+and summary. It remains a point refit, not a spatial posterior.
+
+Dashpot and drag damping are non-differentiable scalar inputs in the official
+kernel. They can be changed between runs with `--dashpot-log-scale` and
+`--drag-log-scale` for causal profile sweeps, but cannot receive Warp gradients.
+The grouped grid below is a two-scale profile posterior, not a posterior over
+dense springs, damping, contact, or topology. The processed motion cue is not a
+calibrated replacement for raw tracker confidence or mask-boundary uncertainty.
 
 The input files are Python pickles. Load only trusted official or locally
 generated artifacts.
@@ -127,7 +131,8 @@ bpt-phystwin-refit ... \
   --epochs 0 \
   --freeze-collision \
   --spring-parameterization grouped \
-  --profile-grid-count 9
+  --profile-grid-count 9 \
+  --profile-prediction-mass 0.999
 ```
 
 The profile uses only fit frames for its likelihood. It averages track NLLs
@@ -138,6 +143,12 @@ posterior mean trajectory, and epistemic variance; `summary.json` adds parameter
 credible intervals and 90% observation-predictive coverage on fit, validation,
 and test intervals. Temperature and prior scales are recorded configuration,
 not hidden calibration constants.
+
+`--profile-prediction-mass` evaluates the smallest highest-probability particle
+set reaching the requested mass and renormalizes it for prediction. The summary
+records requested mass, actual retained mass, and evaluated particle count.
+This avoids spending full simulator rollouts on numerically irrelevant or
+unstable extreme grid corners.
 
 ## Causal Model Discrepancy
 

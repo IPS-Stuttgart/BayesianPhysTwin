@@ -28,6 +28,10 @@ Initial scope:
 - per-track Markov reliability and robust random-walk drift bias
 - robust residual losses for inverse-physics fitting
 - ensemble/posterior utilities for low-dimensional physical parameters
+- exact and hierarchical multi-interaction parameter pooling
+- regularized spatial spring regions and explicit damping sweeps
+- causal, action-conditioned low-rank simulator discrepancy
+- raw camera/mask cue recovery and paired moving-block evaluation
 - reproducible experiment configs and remote-run scripts
 
 ## Repository Layout
@@ -124,6 +128,20 @@ bpt-phystwin-refit \
 See [docs/phystwin_refit.md](docs/phystwin_refit.md) for optional CUDA runtime
 requirements, matched baseline definitions, provenance outputs, and current
 inference limitations.
+
+The current advanced workflow combines fit-only profile likelihoods across
+interactions, recovers any available raw camera cues, fits a validation-selected
+capped residual, and evaluates paired future trajectories:
+
+```bash
+bpt-combine-phystwin-profiles ...
+bpt-build-phystwin-raw-cues ...
+bpt-fit-phystwin-residual-dynamics ...
+bpt-compare-phystwin-trajectories manifest.json comparison.json
+```
+
+See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
+for the causal split contract, complete commands, and interpretation boundary.
 
 ## Compute
 
