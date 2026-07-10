@@ -99,3 +99,19 @@ def test_released_case_names_map_to_conservative_object_clusters() -> None:
     assert phystwin_physical_object_cluster("single_lift_cloth") == "cloth"
     assert phystwin_physical_object_cluster("single_push_rope_1") == "rope_1"
     assert phystwin_physical_object_cluster("rope_double_hand") == "rope"
+    assert phystwin_physical_object_cluster("cloth_blue_fold") == "cloth_blue"
+    assert phystwin_physical_object_cluster("cloth_blue_lift") == "cloth_blue"
+
+
+def test_bootstrap_supports_a_single_metric() -> None:
+    baseline = {"chamfer_distance_m": np.ones(8)}
+    candidate = {"chamfer_distance_m": np.full(8, 0.8)}
+
+    result = paired_block_bootstrap(
+        {"case": (baseline, candidate)},
+        samples=20,
+        block_length=2,
+        seed=1,
+    )
+
+    assert tuple(result["macro"]) == ("chamfer_distance_m",)

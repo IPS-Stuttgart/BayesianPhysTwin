@@ -4,7 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from bayesian_phystwin.phystwin_data import fetch_phystwin_evaluation_subset
+from bayesian_phystwin.phystwin_data import (
+    fetch_phystwin_additional_evaluation_subset,
+    fetch_phystwin_evaluation_subset,
+)
 
 
 def _build_archives(root: Path) -> tuple[Path, Path]:
@@ -67,3 +70,26 @@ def test_rejects_unknown_or_incomplete_case(tmp_path: Path):
             experiments_archive_url=str(experiments_path),
             archive_factory=factory,
         )
+
+
+def test_fetches_label_free_additional_subset(tmp_path: Path):
+    archive_path = tmp_path / "additional.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        prefix = "additional_data/data/different_types/cloth_blue_fold"
+        archive.writestr(f"{prefix}/final_data.pkl", b"data")
+        archive.writestr(f"{prefix}/split.json", b"{}")
+        archive.writestr(
+            "additional_data/experiments/cloth_blue_fold/inference.pkl",
+            b"trajectory",
+        )
+    output = tmp_path / "additional"
+
+    manifest = fetch_phystwin_additional_evaluation_subset(
+        output,
+        archive_url=str(archive_path),
+        archive_factory=lambda source: zipfile.ZipFile(source),
+    )
+
+    assert manifest["selected_cases"] == ["cloth_blue_fold"]
+    assert manifest["manual_track_labels"] is False
+    assert (output / "cloth_blue_fold" / "inference.pkl").read_bytes() == b"trajectory"

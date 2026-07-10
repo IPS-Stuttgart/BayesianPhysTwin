@@ -18,7 +18,11 @@ DEFAULT_DATA_ARCHIVE = (
 DEFAULT_EXPERIMENTS_ARCHIVE = (
     "https://huggingface.co/datasets/Jianghanxiao/PhysTwin/resolve/main/experiments.zip"
 )
+DEFAULT_ADDITIONAL_ARCHIVE = (
+    "https://huggingface.co/datasets/Jianghanxiao/PhysTwin/resolve/main/additional_data.zip"
+)
 EVALUATION_FILENAMES = ("final_data.pkl", "gt_track_3d.pkl", "split.json")
+ADDITIONAL_EVALUATION_FILENAMES = ("final_data.pkl", "split.json")
 
 
 def _archive_factory(source: str) -> Any:
@@ -47,6 +51,26 @@ def _available_cases(data_archive: Any, experiments_archive: Any) -> tuple[str, 
             f"{prefix}{case}/{filename}" for filename in EVALUATION_FILENAMES
         }
         if required <= data_names and f"experiments/{case}/inference.pkl" in experiment_names:
+            complete.append(case)
+    return tuple(complete)
+
+
+def _available_additional_cases(archive: Any) -> tuple[str, ...]:
+    names = set(archive.namelist())
+    prefix = "additional_data/data/different_types/"
+    cases = {
+        name[len(prefix) :].split("/", 1)[0]
+        for name in names
+        if name.startswith(prefix) and name.endswith("/split.json")
+    }
+    complete = []
+    for case in sorted(cases):
+        required = {
+            f"{prefix}{case}/{filename}"
+            for filename in ADDITIONAL_EVALUATION_FILENAMES
+        }
+        inference = f"additional_data/experiments/{case}/inference.pkl"
+        if required <= names and inference in names:
             complete.append(case)
     return tuple(complete)
 
@@ -148,6 +172,66 @@ def fetch_phystwin_evaluation_subset(
     }
     output.mkdir(parents=True, exist_ok=True)
     manifest_path = output / "evaluation_subset_manifest.json"
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    manifest["manifest_path"] = str(manifest_path.resolve())
+    return manifest
+
+
+def fetch_phystwin_additional_evaluation_subset(
+    output_dir: str | Path,
+    *,
+    cases: Iterable[str] | None = None,
+    archive_url: str = DEFAULT_ADDITIONAL_ARCHIVE,
+    archive_factory: Callable[[str], Any] | None = None,
+) -> dict[str, object]:
+    """Retrieve the label-free additional cloth trajectory evaluation subset."""
+
+    factory = _archive_factory if archive_factory is None else archive_factory
+    output = Path(output_dir)
+    with factory(archive_url) as archive:
+        available = _available_additional_cases(archive)
+        selected = available if cases is None else tuple(dict.fromkeys(cases))
+        unknown = sorted(set(selected) - set(available))
+        if unknown:
+            raise ValueError(
+                "unknown or incomplete additional PhysTwin cases: "
+                + ", ".join(unknown)
+            )
+        records: dict[str, dict[str, object]] = {}
+        for case in selected:
+            case_dir = output / case
+            files: dict[str, object] = {}
+            for filename in ADDITIONAL_EVALUATION_FILENAMES:
+                member = (
+                    f"additional_data/data/different_types/{case}/{filename}"
+                )
+                files[filename] = _retrieve_member(
+                    archive,
+                    member,
+                    case_dir / filename,
+                )
+            inference_member = f"additional_data/experiments/{case}/inference.pkl"
+            files["inference.pkl"] = _retrieve_member(
+                archive,
+                inference_member,
+                case_dir / "inference.pkl",
+            )
+            records[case] = {"files": files}
+
+    manifest: dict[str, object] = {
+        "schema_version": 1,
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "source": archive_url,
+        "available_cases": list(available),
+        "selected_cases": list(selected),
+        "cases": records,
+        "manual_track_labels": False,
+    }
+    output.mkdir(parents=True, exist_ok=True)
+    manifest_path = output / "additional_evaluation_subset_manifest.json"
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

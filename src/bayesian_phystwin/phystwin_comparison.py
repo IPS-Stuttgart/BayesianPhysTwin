@@ -114,6 +114,8 @@ def _interval(values: np.ndarray) -> dict[str, float]:
 def phystwin_physical_object_cluster(case_name: str) -> str:
     """Map released interaction names to conservative physical-object groups."""
 
+    if case_name.startswith("cloth_") and case_name.endswith(("_fold", "_lift")):
+        return case_name.rsplit("_", 1)[0]
     for object_name in (
         "cloth_1",
         "cloth_3",
@@ -148,10 +150,15 @@ def paired_block_bootstrap(
     if samples < 1 or block_length < 1:
         raise ValueError("samples and block_length must be positive")
     rng = np.random.default_rng(seed)
-    metric_names = ("chamfer_distance_m", "track_error_m")
+    first_baseline, first_candidate = next(iter(cases.values()))
+    metric_names = tuple(first_baseline)
+    if not metric_names or set(first_candidate) != set(metric_names):
+        raise ValueError("baseline and candidate metric names must match")
     per_case: dict[str, object] = {}
     bootstrap_by_case: dict[str, dict[str, np.ndarray]] = {}
     for case_name, (baseline, candidate) in cases.items():
+        if set(baseline) != set(metric_names) or set(candidate) != set(metric_names):
+            raise ValueError("all cases must expose the same paired metrics")
         bootstrap_by_case[case_name] = {}
         case_summary: dict[str, object] = {}
         for metric in metric_names:
