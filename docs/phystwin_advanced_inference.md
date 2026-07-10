@@ -109,7 +109,17 @@ bpt-confirm-phystwin-residual-baselines \
   /path/to/phystwin-eval runs/phystwin-baselines
 bpt-confirm-phystwin-bayesian-anchor \
   /path/to/phystwin-eval runs/phystwin-bayesian-anchor
+bpt-analyze-phystwin-horizon \
+  /path/to/phystwin-eval \
+  runs/phystwin-confirmatory runs/phystwin-baselines \
+  runs/phystwin-horizon.json
 ```
+
+The horizon command is a post-hoc mechanism analysis. It splits each official
+future interval into contiguous early, middle, and late thirds, reevaluates the
+saved action and persistent trajectories, and correlates the 10 mm capped
+training-endpoint residual with future residual fields after removing global
+translation. It does not refit either trajectory.
 
 For the separate label-free cloth release, the protocols use the full released
 training interval, no validation labels or selection, and no future inputs:

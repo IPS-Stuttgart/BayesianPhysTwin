@@ -141,6 +141,9 @@ bpt-build-phystwin-raw-cues ...
 bpt-fit-phystwin-residual-dynamics ...
 bpt-compare-phystwin-trajectories manifest.json comparison.json
 bpt-fit-phystwin-bayesian-anchor ...
+bpt-analyze-phystwin-horizon \
+  data/phystwin-eval runs/phystwin-confirmatory \
+  runs/phystwin-baselines runs/phystwin-horizon.json
 ```
 
 The full release evaluation subset can be fetched without downloading the
