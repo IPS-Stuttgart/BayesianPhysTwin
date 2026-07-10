@@ -4,6 +4,7 @@ import pytest
 from bayesian_phystwin.phystwin_graph import (
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
+    spatial_spring_region_ids,
 )
 
 
@@ -98,3 +99,36 @@ def test_graph_rejects_invalid_configuration(field, value):
             None,
             config=_config(**{field: value}),
         )
+
+
+def test_spatial_regions_are_deterministic_balanced_and_reserve_controller_group():
+    vertices = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [2.0, 0.0, 0.0],
+            [3.0, 0.0, 0.0],
+            [4.0, 0.0, 0.0],
+        ]
+    )
+    springs = np.array(
+        [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0]],
+        dtype=np.int32,
+    )
+
+    first = spatial_spring_region_ids(
+        vertices,
+        springs,
+        num_object_springs=4,
+        region_count=2,
+    )
+    second = spatial_spring_region_ids(
+        vertices,
+        springs,
+        num_object_springs=4,
+        region_count=2,
+    )
+
+    np.testing.assert_array_equal(first, second)
+    np.testing.assert_array_equal(np.bincount(first[:4]), [2, 2])
+    assert first[-1] == 2

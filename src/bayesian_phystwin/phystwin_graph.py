@@ -28,6 +28,58 @@ class PhysTwinSpringGraph:
     num_object_springs: int
 
 
+def spatial_spring_region_ids(
+    vertices: np.ndarray,
+    springs: np.ndarray,
+    *,
+    num_object_springs: int,
+    region_count: int,
+) -> np.ndarray:
+    """Partition object springs into equal principal-axis material bands.
+
+    The final group is reserved for controller springs. Principal-axis
+    coordinates make the partition invariant to rigid camera/world rotation,
+    while a skewness sign convention keeps the band order deterministic.
+    """
+
+    points = _points(vertices, name="vertices").astype(float)
+    edges = np.asarray(springs, dtype=int)
+    if edges.ndim != 2 or edges.shape[1] != 2:
+        raise ValueError("springs must have shape (S, 2)")
+    if not 0 < num_object_springs <= len(edges):
+        raise ValueError("num_object_springs must lie in (0, S]")
+    if not 2 <= region_count <= num_object_springs:
+        raise ValueError("region_count must lie in [2, num_object_springs]")
+    if np.any(edges < 0) or np.any(edges >= len(points)):
+        raise ValueError("spring endpoint exceeds the vertex array")
+
+    object_edges = edges[:num_object_springs]
+    midpoints = 0.5 * (
+        points[object_edges[:, 0]] + points[object_edges[:, 1]]
+    )
+    centered = midpoints - np.mean(midpoints, axis=0, keepdims=True)
+    _, singular_values, right = np.linalg.svd(centered, full_matrices=False)
+    if singular_values[0] <= 0.0:
+        raise ValueError("object spring midpoints have no spatial extent")
+    axis = right[0]
+    coordinate = centered @ axis
+    skewness = float(np.sum(np.power(coordinate, 3)))
+    if skewness < 0.0:
+        coordinate = -coordinate
+    elif abs(skewness) < 1e-12:
+        dominant = int(np.argmax(np.abs(axis)))
+        if axis[dominant] < 0.0:
+            coordinate = -coordinate
+
+    order = np.lexsort((np.arange(num_object_springs), coordinate))
+    object_regions = np.empty(num_object_springs, dtype=np.int32)
+    for region, selected in enumerate(np.array_split(order, region_count)):
+        object_regions[selected] = region
+    group_ids = np.full(len(edges), region_count, dtype=np.int32)
+    group_ids[:num_object_springs] = object_regions
+    return group_ids
+
+
 def _points(value: np.ndarray, *, name: str) -> np.ndarray:
     points = np.asarray(value)
     if points.ndim != 2 or points.shape[1] != 3:

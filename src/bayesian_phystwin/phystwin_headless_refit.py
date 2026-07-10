@@ -18,6 +18,7 @@ import numpy as np
 from .phystwin_graph import (
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
+    spatial_spring_region_ids,
 )
 from .phystwin_profile import (
     clustered_track_log_likelihood,
@@ -55,6 +56,8 @@ class HeadlessPhysTwinRefitConfig:
     acceleration_weight: float = 0.01
     optimize_collision: bool = True
     spring_parameterization: str = "dense"
+    spring_region_count: int = 4
+    spring_scale_weight_decay: float = 0.0
     selection_metric: str = "hard_valid_rmse"
     early_stopping_patience: int = 3
     profile_grid_count: int = 0
@@ -205,8 +208,14 @@ def run_headless_phystwin_refit(
         raise ValueError("cue scales must be positive")
     if config.num_substeps < 1 or config.dt <= 0.0:
         raise ValueError("simulator time discretization must be positive")
-    if config.spring_parameterization not in {"dense", "grouped"}:
-        raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
+    if config.spring_parameterization not in {"dense", "grouped", "regional"}:
+        raise ValueError(
+            "spring_parameterization must be 'dense', 'grouped', or 'regional'"
+        )
+    if config.spring_region_count < 2:
+        raise ValueError("spring_region_count must be at least two")
+    if config.spring_scale_weight_decay < 0.0:
+        raise ValueError("spring_scale_weight_decay must be nonnegative")
     if config.selection_metric not in {"hard_valid_rmse", "official_3d"}:
         raise ValueError(
             "selection_metric must be 'hard_valid_rmse' or 'official_3d'"
@@ -328,6 +337,14 @@ def run_headless_phystwin_refit(
             controller_max_neighbours=int(optimal["controller_max_neighbours"]),
         ),
     )
+    spring_group_ids = None
+    if config.spring_parameterization == "regional":
+        spring_group_ids = spatial_spring_region_ids(
+            graph.vertices,
+            graph.springs,
+            num_object_springs=graph.num_object_springs,
+            region_count=config.spring_region_count,
+        )
     checkpoint = _load_checkpoint(torch, checkpoint_path, config.device)
     checkpoint_spring_y = torch.as_tensor(
         checkpoint["spring_Y"], dtype=torch.float32, device=config.device
@@ -403,6 +420,7 @@ def run_headless_phystwin_refit(
         outlier_variance_multiplier=config.outlier_variance_multiplier,
         spring_parameterization=config.spring_parameterization,
         num_object_springs=graph.num_object_springs,
+        spring_group_ids=spring_group_ids,
     )
     simulator.set_reference_spring_y(
         torch.log(checkpoint_spring_y).detach().clone()
@@ -471,7 +489,7 @@ def run_headless_phystwin_refit(
         }
 
     def restore_parameters(parameters: dict[str, Any]) -> None:
-        if config.spring_parameterization == "grouped":
+        if config.spring_parameterization != "dense":
             with torch.no_grad():
                 simulator.group_log_scale_tensor.copy_(
                     parameters["group_log_scales"]
@@ -559,21 +577,32 @@ def run_headless_phystwin_refit(
         best_parameters = snapshot_parameters()
         selected_epoch = -1
     if config.epochs:
-        if config.spring_parameterization == "grouped":
-            optimizer_parameters = [wp.to_torch(simulator.wp_group_log_scales)]
+        optimizer_parameter_groups: list[dict[str, object]] = []
+        if config.spring_parameterization != "dense":
+            optimizer_parameter_groups.append(
+                {
+                    "params": [wp.to_torch(simulator.wp_group_log_scales)],
+                    "weight_decay": config.spring_scale_weight_decay,
+                }
+            )
         else:
-            optimizer_parameters = [wp.to_torch(simulator.wp_spring_Y)]
+            optimizer_parameter_groups.append(
+                {"params": [wp.to_torch(simulator.wp_spring_Y)]}
+            )
         if config.optimize_collision:
-            optimizer_parameters.extend(
-                [
-                    wp.to_torch(simulator.wp_collide_elas),
-                    wp.to_torch(simulator.wp_collide_fric),
-                    wp.to_torch(simulator.wp_collide_object_elas),
-                    wp.to_torch(simulator.wp_collide_object_fric),
-                ]
+            optimizer_parameter_groups.append(
+                {
+                    "params": [
+                        wp.to_torch(simulator.wp_collide_elas),
+                        wp.to_torch(simulator.wp_collide_fric),
+                        wp.to_torch(simulator.wp_collide_object_elas),
+                        wp.to_torch(simulator.wp_collide_object_fric),
+                    ],
+                    "weight_decay": 0.0,
+                }
             )
         optimizer = torch.optim.Adam(
-            optimizer_parameters,
+            optimizer_parameter_groups,
             lr=config.learning_rate,
             betas=(0.9, 0.99),
         )
@@ -1079,6 +1108,11 @@ def run_headless_phystwin_refit(
             "variant": config.variant,
             "spring_parameterization": config.spring_parameterization,
             "group_log_scales": torch.as_tensor(final_group_log_scales),
+            "spring_group_ids": (
+                None
+                if spring_group_ids is None
+                else torch.as_tensor(spring_group_ids)
+            ),
             "source_checkpoint": str(Path(checkpoint_path).resolve()),
         },
         refit_checkpoint_path,
@@ -1139,6 +1173,16 @@ def run_headless_phystwin_refit(
             ),
             "springs_sha256": _array_hash(graph.springs),
             "rest_lengths_sha256": _array_hash(graph.rest_lengths),
+            "spring_group_ids_sha256": (
+                None
+                if spring_group_ids is None
+                else _array_hash(spring_group_ids)
+            ),
+            "spring_group_counts": (
+                None
+                if spring_group_ids is None
+                else np.bincount(spring_group_ids).astype(int).tolist()
+            ),
         },
         "parameters": {
             "initial_spring_y": _spring_summary(initial_spring_y),
@@ -1152,10 +1196,24 @@ def run_headless_phystwin_refit(
                     )
                 )
             ),
-            "group_log_scales": {
-                "object": float(final_group_log_scales[0]),
-                "controller": float(final_group_log_scales[1]),
-            },
+            "group_log_scales": (
+                {
+                    "regions": [
+                        float(value)
+                        for value in final_group_log_scales[
+                            : config.spring_region_count
+                        ]
+                    ],
+                    "controller": float(
+                        final_group_log_scales[config.spring_region_count]
+                    ),
+                }
+                if config.spring_parameterization == "regional"
+                else {
+                    "object": float(final_group_log_scales[0]),
+                    "controller": float(final_group_log_scales[1]),
+                }
+            ),
             "final_collision": final_collision,
             "fixed_dashpot_damping": float(optimal["dashpot_damping"]),
             "fixed_drag_damping": float(optimal["drag_damping"]),

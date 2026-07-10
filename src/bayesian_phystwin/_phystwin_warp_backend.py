@@ -98,16 +98,14 @@ def compute_reliability_mixture_track_loss(
 
 
 @wp.kernel
-def expand_grouped_spring_log_y(
+def expand_spring_group_log_y(
     reference_log_y: wp.array(dtype=wp.float32),
     group_log_scales: wp.array(dtype=wp.float32),
-    num_object_springs: int,
+    spring_group_ids: wp.array(dtype=wp.int32),
     spring_log_y: wp.array(dtype=wp.float32),
 ):
     spring = wp.tid()
-    group = int(0)
-    if spring >= num_object_springs:
-        group = 1
+    group = spring_group_ids[spring]
     spring_log_y[spring] = reference_log_y[spring] + group_log_scales[group]
 
 
@@ -159,24 +157,46 @@ def make_reliability_simulator_class(official_module: Any):
             outlier_variance_multiplier: float,
             spring_parameterization: str,
             num_object_springs: int,
+            spring_group_ids: Any | None = None,
             **kwargs: Any,
         ) -> None:
             self.loss_variant = objective.variant
-            if spring_parameterization not in {"dense", "grouped"}:
-                raise ValueError("spring_parameterization must be 'dense' or 'grouped'")
+            if spring_parameterization not in {"dense", "grouped", "regional"}:
+                raise ValueError(
+                    "spring_parameterization must be 'dense', 'grouped', or 'regional'"
+                )
             self.spring_parameterization = spring_parameterization
             self.grouped_num_object_springs = int(num_object_springs)
             device = kwargs["gt_object_points"].device
             spring_count = int(args[1].shape[0])
             if not 0 <= self.grouped_num_object_springs <= spring_count:
                 raise ValueError("num_object_springs is inconsistent with init_springs")
+            if spring_group_ids is None:
+                group_ids = torch.zeros(
+                    spring_count,
+                    dtype=torch.int32,
+                    device=device,
+                )
+                group_ids[self.grouped_num_object_springs :] = 1
+            else:
+                group_ids = torch.as_tensor(
+                    spring_group_ids,
+                    dtype=torch.int32,
+                    device=device,
+                ).reshape(-1)
+                if len(group_ids) != spring_count:
+                    raise ValueError("spring_group_ids must match the spring count")
+                if int(torch.min(group_ids).item()) < 0:
+                    raise ValueError("spring_group_ids must be nonnegative")
+            self.spring_group_ids_tensor = group_ids.contiguous()
+            group_count = int(torch.max(group_ids).item()) + 1
             self.reference_spring_log_y_tensor = torch.zeros(
                 spring_count,
                 dtype=torch.float32,
                 device=device,
             )
             self.group_log_scale_tensor = torch.zeros(
-                2,
+                group_count,
                 dtype=torch.float32,
                 device=device,
                 requires_grad=True,
@@ -190,6 +210,11 @@ def make_reliability_simulator_class(official_module: Any):
                 self.group_log_scale_tensor,
                 dtype=wp.float32,
                 requires_grad=True,
+            )
+            self.wp_spring_group_ids = wp.from_torch(
+                self.spring_group_ids_tensor,
+                dtype=wp.int32,
+                requires_grad=False,
             )
             self.track_prior_frames = torch.as_tensor(
                 objective.prior_inlier_probability,
@@ -236,14 +261,14 @@ def make_reliability_simulator_class(official_module: Any):
             super().__init__(*args, **kwargs)
 
         def step(self):
-            if self.spring_parameterization == "grouped":
+            if self.spring_parameterization != "dense":
                 wp.launch(
-                    expand_grouped_spring_log_y,
+                    expand_spring_group_log_y,
                     dim=self.n_springs,
                     inputs=[
                         self.wp_reference_spring_log_y,
                         self.wp_group_log_scales,
-                        self.grouped_num_object_springs,
+                        self.wp_spring_group_ids,
                     ],
                     outputs=[self.wp_spring_Y],
                 )
@@ -262,12 +287,12 @@ def make_reliability_simulator_class(official_module: Any):
             with torch.no_grad():
                 self.group_log_scale_tensor.zero_()
             wp.launch(
-                expand_grouped_spring_log_y,
+                expand_spring_group_log_y,
                 dim=self.n_springs,
                 inputs=[
                     self.wp_reference_spring_log_y,
                     self.wp_group_log_scales,
-                    self.grouped_num_object_springs,
+                    self.wp_spring_group_ids,
                 ],
                 outputs=[self.wp_spring_Y],
             )
