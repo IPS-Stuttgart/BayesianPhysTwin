@@ -184,6 +184,7 @@ def run_headless_phystwin_refit(
     config: HeadlessPhysTwinRefitConfig,
     released_trajectory_path: str | Path | None = None,
     gt_track_path: str | Path | None = None,
+    profile_weights_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run one refit and write its trajectory, checkpoint, history, and summary."""
 
@@ -213,6 +214,8 @@ def run_headless_phystwin_refit(
         raise ValueError("profile_grid_count must be nonnegative")
     if config.profile_grid_count and config.profile_grid_count < 3:
         raise ValueError("profile_grid_count must be zero or at least three")
+    if profile_weights_path is not None and not config.profile_grid_count:
+        raise ValueError("profile_weights_path requires profile_grid_count")
     profile_positive_values = (
         config.profile_object_log_scale_half_width,
         config.profile_controller_log_scale_half_width,
@@ -749,40 +752,74 @@ def run_headless_phystwin_refit(
             config.profile_controller_log_scale_half_width,
             config.profile_grid_count,
         )
-        log_likelihood = np.empty(
-            (config.profile_grid_count, config.profile_grid_count),
-            dtype=float,
-        )
-        for object_index, object_scale in enumerate(object_scale_grid):
-            for controller_index, controller_scale in enumerate(
-                controller_scale_grid
+        external_profile = None
+        if profile_weights_path is not None:
+            with np.load(profile_weights_path) as archive:
+                external_profile = {
+                    name: np.asarray(archive[name]) for name in archive.files
+                }
+            required_external = {
+                "object_log_scales",
+                "controller_log_scales",
+                "log_likelihood",
+                "posterior_weights",
+            }
+            missing_external = required_external - set(external_profile)
+            if missing_external:
+                raise ValueError(
+                    "profile weights are missing: "
+                    + ", ".join(sorted(missing_external))
+                )
+            if not (
+                np.array_equal(
+                    external_profile["object_log_scales"], object_scale_grid
+                )
+                and np.array_equal(
+                    external_profile["controller_log_scales"],
+                    controller_scale_grid,
+                )
             ):
-                with torch.no_grad():
-                    simulator.group_log_scale_tensor.copy_(
-                        torch.tensor(
-                            [object_scale, controller_scale],
-                            dtype=torch.float32,
-                            device=config.device,
+                raise ValueError("external profile weights do not match config grids")
+            log_likelihood = np.asarray(
+                external_profile["log_likelihood"], dtype=float
+            )
+        else:
+            log_likelihood = np.empty(
+                (config.profile_grid_count, config.profile_grid_count),
+                dtype=float,
+            )
+            for object_index, object_scale in enumerate(object_scale_grid):
+                for controller_index, controller_scale in enumerate(
+                    controller_scale_grid
+                ):
+                    with torch.no_grad():
+                        simulator.group_log_scale_tensor.copy_(
+                            torch.tensor(
+                                [object_scale, controller_scale],
+                                dtype=torch.float32,
+                                device=config.device,
+                            )
+                        )
+                    candidate = simulate_trajectory(fit_end_frame)[
+                        :, :original_count
+                    ]
+                    log_likelihood[object_index, controller_index] = (
+                        clustered_track_log_likelihood(
+                            object_points,
+                            candidate,
+                            objective,
+                            start_frame=1,
+                            end_frame=fit_end_frame,
+                            variance=(
+                                config.observation_variance
+                                + config.model_discrepancy_variance
+                            ),
+                            outlier_variance_multiplier=(
+                                config.outlier_variance_multiplier
+                            ),
+                            temperature=config.profile_likelihood_temperature,
                         )
                     )
-                candidate = simulate_trajectory(fit_end_frame)[:, :original_count]
-                log_likelihood[object_index, controller_index] = (
-                    clustered_track_log_likelihood(
-                        object_points,
-                        candidate,
-                        objective,
-                        start_frame=1,
-                        end_frame=fit_end_frame,
-                        variance=(
-                            config.observation_variance
-                            + config.model_discrepancy_variance
-                        ),
-                        outlier_variance_multiplier=(
-                            config.outlier_variance_multiplier
-                        ),
-                        temperature=config.profile_likelihood_temperature,
-                    )
-                )
         posterior = grid_parameter_posterior(
             object_scale_grid,
             controller_scale_grid,
@@ -790,10 +827,25 @@ def run_headless_phystwin_refit(
             object_prior_std=config.profile_object_prior_std,
             controller_prior_std=config.profile_controller_prior_std,
         )
+        prediction_weights = posterior.weights
+        if external_profile is not None:
+            prediction_weights = np.asarray(
+                external_profile["posterior_weights"], dtype=float
+            )
+            if prediction_weights.shape != posterior.weights.shape:
+                raise ValueError("external posterior_weights have the wrong shape")
+            if not np.all(np.isfinite(prediction_weights)) or np.any(
+                prediction_weights < 0.0
+            ):
+                raise ValueError("external posterior_weights must be finite and nonnegative")
+            weight_sum = float(np.sum(prediction_weights))
+            if weight_sum <= 0.0:
+                raise ValueError("external posterior_weights must have positive mass")
+            prediction_weights = prediction_weights / weight_sum
         state_shape = trajectory.shape
         posterior_mean_accumulator = np.zeros(state_shape, dtype=np.float64)
         posterior_second_moment = np.zeros(state_shape, dtype=np.float64)
-        map_flat_index = int(np.argmax(posterior.weights))
+        map_flat_index = int(np.argmax(prediction_weights))
         map_trajectory = None
         flat_index = 0
         for object_index, object_scale in enumerate(object_scale_grid):
@@ -809,7 +861,7 @@ def run_headless_phystwin_refit(
                         )
                     )
                 candidate = simulate_trajectory(frame_count).astype(np.float64)
-                weight = float(posterior.weights[object_index, controller_index])
+                weight = float(prediction_weights[object_index, controller_index])
                 posterior_mean_accumulator += weight * candidate
                 posterior_second_moment += weight * np.square(candidate)
                 if flat_index == map_flat_index:
@@ -870,6 +922,22 @@ def run_headless_phystwin_refit(
             "likelihood_variant": config.variant,
             "cluster_contract": "mean tracks within frame, sum frames",
             "posterior": posterior.summary,
+            "prediction_weight_source": (
+                "local_posterior"
+                if profile_weights_path is None
+                else str(Path(profile_weights_path).resolve())
+            ),
+            "prediction_effective_grid_points": float(
+                1.0 / np.sum(np.square(prediction_weights))
+            ),
+            "prediction_object_log_scale_mean": float(
+                np.sum(np.sum(prediction_weights, axis=1) * object_scale_grid)
+            ),
+            "prediction_controller_log_scale_mean": float(
+                np.sum(
+                    np.sum(prediction_weights, axis=0) * controller_scale_grid
+                )
+            ),
             "log_likelihood_minimum": float(np.min(log_likelihood)),
             "log_likelihood_maximum": float(np.max(log_likelihood)),
             "posterior_mean_evaluation": posterior_evaluation,
@@ -885,6 +953,7 @@ def run_headless_phystwin_refit(
             "log_likelihood": log_likelihood,
             "log_posterior": posterior.log_posterior,
             "posterior_weights": posterior.weights,
+            "prediction_weights": prediction_weights,
             "posterior_mean_trajectory": posterior_mean,
             "epistemic_variance": epistemic_variance,
             "map_trajectory": map_trajectory,
@@ -1023,6 +1092,14 @@ def run_headless_phystwin_refit(
                 else {
                     "path": str(Path(gt_track_path).resolve()),
                     "sha256": _sha256(gt_track_path),
+                }
+            ),
+            "profile_weights": (
+                None
+                if profile_weights_path is None
+                else {
+                    "path": str(Path(profile_weights_path).resolve()),
+                    "sha256": _sha256(profile_weights_path),
                 }
             ),
         },

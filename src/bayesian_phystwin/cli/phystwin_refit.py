@@ -64,6 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--released-trajectory")
     parser.add_argument("--gt-track-3d")
+    parser.add_argument("--profile-weights")
     return parser
 
 
@@ -78,6 +79,7 @@ def main() -> None:
         output_dir=args.output_dir,
         released_trajectory_path=args.released_trajectory,
         gt_track_path=args.gt_track_3d,
+        profile_weights_path=args.profile_weights,
         config=HeadlessPhysTwinRefitConfig(
             variant=args.variant,
             train_end_frame=args.train_end_frame,
