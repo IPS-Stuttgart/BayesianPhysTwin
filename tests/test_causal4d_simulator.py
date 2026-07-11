@@ -95,3 +95,42 @@ def test_shifted_contact_is_a_world_change_hidden_from_plan_model() -> None:
     assert np.array_equal(matched_plan, shifted_plan)
     assert shifted.shift_contact_nodes
     assert shifted.contact_delay_steps > 0
+
+
+def test_contact_spread_is_physical_and_oracle_view_preserves_it() -> None:
+    config = _config()
+    protocol = build_protocol(config)[1]
+    action = protocol.test_action
+    parameters = protocol.graph_object.true_parameters
+    concentrated = protocol.test_conditions[0]
+    spread = type(concentrated)(
+        name="spread",
+        contact_gain_multiplier=0.8,
+        contact_delay_steps=1,
+        contact_spread=0.3,
+        control_rotation_radians=0.1,
+        nonlinear_stiffening=0.2,
+    )
+
+    concentrated_trajectory = simulate(
+        protocol.graph_object,
+        action,
+        parameters,
+        concentrated,
+        config.simulator,
+    )
+    spread_trajectory = simulate(
+        protocol.graph_object,
+        action,
+        parameters,
+        spread,
+        config.simulator,
+    )
+    oracle = spread.oracle_contact_model()
+
+    assert not np.allclose(concentrated_trajectory, spread_trajectory)
+    assert oracle.contact_spread == spread.contact_spread
+    assert oracle.contact_delay_steps == spread.contact_delay_steps
+    assert oracle.control_rotation_radians == spread.control_rotation_radians
+    assert oracle.nonlinear_stiffening == 0.0
+    assert spread.plan_model().contact_spread == 0.0

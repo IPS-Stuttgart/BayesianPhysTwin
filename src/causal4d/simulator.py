@@ -141,6 +141,7 @@ class WorldCondition:
     contact_gain_multiplier: float = 1.0
     contact_delay_steps: int = 0
     shift_contact_nodes: bool = False
+    contact_spread: float = 0.0
     control_rotation_radians: float = 0.0
     nonlinear_stiffening: float = 0.0
 
@@ -149,6 +150,8 @@ class WorldCondition:
             raise ValueError("contact_gain_multiplier must be positive")
         if self.contact_delay_steps < 0:
             raise ValueError("contact_delay_steps must be non-negative")
+        if not 0.0 <= self.contact_spread < 1.0:
+            raise ValueError("contact_spread must be in [0, 1)")
         if not np.isfinite(self.control_rotation_radians):
             raise ValueError("control_rotation_radians must be finite")
         if self.nonlinear_stiffening < 0.0:
@@ -162,9 +165,15 @@ class WorldCondition:
             contact_gain_multiplier=1.0,
             contact_delay_steps=0,
             shift_contact_nodes=False,
+            contact_spread=0.0,
             control_rotation_radians=0.0,
             nonlinear_stiffening=0.0,
         )
+
+    def oracle_contact_model(self) -> WorldCondition:
+        """Expose realized contact while retaining plan-model structural mismatch."""
+
+        return replace(self, nonlinear_stiffening=0.0)
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -231,6 +240,16 @@ def resolved_contact_nodes(
     return tuple(shifted)
 
 
+def graph_adjacency(graph_object: GraphObject) -> tuple[tuple[int, ...], ...]:
+    """Return sorted one-hop graph neighbours for every material node."""
+
+    adjacency: list[list[int]] = [[] for _ in range(graph_object.node_count)]
+    for first, second in graph_object.edges:
+        adjacency[first].append(second)
+        adjacency[second].append(first)
+    return tuple(tuple(sorted(neighbours)) for neighbours in adjacency)
+
+
 def _nonlinear_force(
     displacement: np.ndarray,
     graph_object: GraphObject,
@@ -274,6 +293,7 @@ def simulate(
     trajectory = np.empty((config.frame_count, graph_object.node_count, 2), dtype=float)
     trajectory[0] = graph_object.rest_positions
     contact_nodes = resolved_contact_nodes(graph_object, action, condition)
+    adjacency = graph_adjacency(graph_object)
 
     for frame in range(1, config.frame_count):
         external_force = np.zeros_like(displacement)
@@ -290,7 +310,19 @@ def simulate(
                 rotation = np.asarray(((cosine, -sine), (sine, cosine)))
                 scaled_forces = scaled_forces @ rotation.T
             for contact_index, node in enumerate(contact_nodes):
-                external_force[node] += scaled_forces[contact_index]
+                contact_force = scaled_forces[contact_index]
+                neighbours = adjacency[node]
+                if condition.contact_spread and neighbours:
+                    external_force[node] += (
+                        1.0 - condition.contact_spread
+                    ) * contact_force
+                    shared_force = (
+                        condition.contact_spread / len(neighbours)
+                    ) * contact_force
+                    for neighbour in neighbours:
+                        external_force[neighbour] += shared_force
+                else:
+                    external_force[node] += contact_force
 
         force = external_force
         force -= parameters.stiffness * (laplacian @ displacement)

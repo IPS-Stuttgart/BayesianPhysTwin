@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesian-phystwin"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reliability-aware Bayesian estimation utilities for PhysTwin-style deformable digital twins."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -52,6 +52,7 @@ bpt-fetch-phystwin-eval-data = "bayesian_phystwin.cli.phystwin_data:main"
 bpt-replay-residuals = "bayesian_phystwin.cli.residual_replay:main"
 bpt-synthetic-benchmark = "bayesian_phystwin.cli.synthetic_benchmark:main"
 causal4d-counterfactual-benchmark = "causal4d.cli.counterfactual_benchmark:main"
+causal4d-latent-contact-benchmark = "causal4d.cli.latent_contact_benchmark:main"
 
 [project.optional-dependencies]
 dev = [

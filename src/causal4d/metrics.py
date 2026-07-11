@@ -135,8 +135,12 @@ def intervention_metrics(
     early, middle, late = _horizon_rmse(error)
     standard_deviation = np.sqrt(prediction.variance)
     z_score = NormalDist().inv_cdf(0.5 * (1.0 + confidence_level))
-    lower = prediction.mean - z_score * standard_deviation
-    upper = prediction.mean + z_score * standard_deviation
+    if prediction.interval_lower is not None and prediction.interval_upper is not None:
+        lower = prediction.interval_lower
+        upper = prediction.interval_upper
+    else:
+        lower = prediction.mean - z_score * standard_deviation
+        upper = prediction.mean + z_score * standard_deviation
     coverage = float(np.mean((truth >= lower) & (truth <= upper)))
     nees = float(np.mean(np.square(error) / prediction.variance))
     gaussian_nll = float(
@@ -163,7 +167,7 @@ def intervention_metrics(
         "gross_failure": bool(fde > gross_failure_threshold_m),
         "coverage": coverage,
         "coverage_error": abs(coverage - confidence_level),
-        "mean_interval_width_m": float(np.mean(2.0 * z_score * standard_deviation)),
+        "mean_interval_width_m": float(np.mean(upper - lower)),
         "nees": nees,
         "gaussian_nll": gaussian_nll,
     }

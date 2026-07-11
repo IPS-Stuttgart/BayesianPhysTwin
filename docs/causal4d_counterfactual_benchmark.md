@@ -152,3 +152,9 @@ yet integrate MolmoMotion, MotionCrafter, a diffusion world model, PhysTwin's
 Warp simulator, or real video. Those integrations should begin only after a
 candidate method can state which information it consumes and beat these
 baselines without test-action leakage.
+
+The second controlled milestone is documented in
+[`causal4d_latent_contact_inference.md`](causal4d_latent_contact_inference.md).
+It treats realized contact as a latent cause, evaluates pre-intervention
+marginalization and online adaptation, and transfers the contact model to a
+held-out graph topology.

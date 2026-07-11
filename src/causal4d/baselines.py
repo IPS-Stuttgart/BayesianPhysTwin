@@ -53,6 +53,8 @@ class PredictiveDistribution:
     method: str
     mean: np.ndarray
     variance: np.ndarray
+    interval_lower: np.ndarray | None = None
+    interval_upper: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         mean = np.asarray(self.mean, dtype=float)
@@ -65,6 +67,19 @@ class PredictiveDistribution:
             raise ValueError("predictive arrays must be finite")
         if np.any(variance <= 0.0):
             raise ValueError("predictive variances must be positive")
+        if (self.interval_lower is None) != (self.interval_upper is None):
+            raise ValueError("predictive interval bounds must be provided together")
+        if self.interval_lower is not None and self.interval_upper is not None:
+            lower = np.asarray(self.interval_lower, dtype=float)
+            upper = np.asarray(self.interval_upper, dtype=float)
+            if lower.shape != mean.shape or upper.shape != mean.shape:
+                raise ValueError("predictive interval bounds must match the mean")
+            if not np.all(np.isfinite(lower)) or not np.all(np.isfinite(upper)):
+                raise ValueError("predictive interval bounds must be finite")
+            if np.any(lower > upper):
+                raise ValueError("predictive interval lower bound exceeds upper bound")
+            object.__setattr__(self, "interval_lower", lower)
+            object.__setattr__(self, "interval_upper", upper)
         object.__setattr__(self, "mean", mean)
         object.__setattr__(self, "variance", variance)
 

@@ -108,6 +108,22 @@ shifted contact worlds. See
 [docs/causal4d_counterfactual_benchmark.md](docs/causal4d_counterfactual_benchmark.md)
 for the locked split, information boundary, metrics, and artifact schema.
 
+Run the next Causal4D milestone, which infers realized contact on a topology
+excluded from contact-model fitting:
+
+```bash
+causal4d-latent-contact-benchmark \
+  --seeds 0:5 \
+  --require-gates \
+  --output-dir runs/causal4d-latent-contact-v1
+```
+
+The model marginalizes graph contact location, transmission gain, delay, slip,
+control-frame bias, and physical parameters before intervention, then updates
+their joint posterior from the first 20% of motion. See
+[docs/causal4d_latent_contact_inference.md](docs/causal4d_latent_contact_inference.md)
+for the transfer protocol, oracle controls, and pre-registered success gates.
+
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
 
