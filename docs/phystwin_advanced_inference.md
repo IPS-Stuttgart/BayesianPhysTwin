@@ -137,6 +137,43 @@ correlation `0.854`. Matched case-mean automatic-minus-manual error is
 identity. Describe this as a confirmed automatic visible-surface surrogate,
 not a full replacement for manual identities.
 
+### Framewise anonymous assimilation control
+
+An additional control lets PhysTwin retain persistent graph identity while
+MotionCrafter supplies anonymous measurements. At every frame it:
+
+1. finds candidate released PhysTwin vertices for each valid MotionCrafter 3D
+   point;
+2. scores candidates with current-position and forward-flow endpoint residuals;
+3. converts candidate costs and assignment entropy into bounded reliability;
+4. re-associates from scratch, so one occluded frame does not permanently kill
+   an identity; and
+5. interpolates direct innovations with the exact spring-graph Laplacian under
+   a 10 mm correction cap.
+
+Position-only, position-plus-flow, graph-smoothed, denser-pixel, hard-nearest,
+and calibrated three-view controls share one fixed released PhysTwin
+association prior. Direct measurement coverage is reported separately from
+graph-imputed support. Future MotionCrafter frames make this a reconstruction
+or state-estimation experiment, never a future-prediction result.
+
+The three development interactions favored camera 0, 4-pixel sampling, four
+candidates, graph strength 0.3, and the 10 mm cap. Denser sampling raised direct
+support but reduced the development gain; three-view fusion raised support only
+from 5.0% to 6.2% and slightly worsened equal-case error. With the fixed setting
+on the other 19 interactions, graph assimilation changes future manual error by
+`+0.62 mm [-0.96, +2.17]` (`+2.76%`, 6/19 wins). Position-only changes it by
+`+0.56 mm [-1.07, +2.18]`; adding scene flow contributes a further
+`+0.06 mm [-0.07, +0.19]`. Mean direct future graph support is only
+`3.85% [2.97%, 4.78%]`.
+
+A causal safeguard that applies assimilation only when it improves the
+available automatic training tracks rejects all 19 cases. Thus occasional
+future gains cannot be selected without evaluation labels. The control is a
+locked null: do not use it for simulator state injection, do not call imputed
+vertices directly observed, and retain the earlier persistent association only
+as a coverage-qualified visible-surface evaluator.
+
 ## Constrained action residual
 
 Fit a low-rank residual to a baseline or posterior-mean trajectory:

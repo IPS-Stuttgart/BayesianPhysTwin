@@ -163,6 +163,26 @@ audit. See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inferenc
 for the pinned MotionCrafter revision, leakage boundary, controls, and current
 claim limit.
 
+Re-associate anonymous MotionCrafter positions and scene flow against one fixed
+PhysTwin trajectory at every frame, then apply a bounded spring-Laplacian state
+observation:
+
+```bash
+bpt-assimilate-phystwin-motioncrafter \
+  /path/to/CASE /path/to/RAW_CASE /path/to/camera0_native/0.npz \
+  runs/CASE/motioncrafter-assimilation
+
+bpt-evaluate-phystwin-motioncrafter-assimilation \
+  runs/motioncrafter-assimilation-evaluation \
+  runs/*/motioncrafter-assimilation/summary.json
+```
+
+This is an offline reconstruction control because future MotionCrafter frames
+enter the state observations. On the frozen 19-case cohort it does not improve
+PhysTwin: the equal-case future manual error change is `+0.62 mm`
+`[-0.96, +2.17]`, only 6/19 cases improve, and direct graph support is `3.85%`.
+Do not inject this update into a predictive rollout.
+
 Run a checkpoint-restoration parity check or a reliability-aware parameter
 refit directly inside the official Warp simulator:
 
