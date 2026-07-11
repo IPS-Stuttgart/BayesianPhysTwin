@@ -1,11 +1,23 @@
+import json
+from dataclasses import asdict
+
 import numpy as np
 import pytest
 
 from bayesian_phystwin.phystwin_combined_confirmation import (
+    CombinedFullCohortProtocol,
+    _canonical_json,
     balanced_profile_temperatures,
     combined_profile_fit_end,
     matched_hierarchical_trajectory,
 )
+
+
+def test_combined_protocol_payload_survives_json_round_trip() -> None:
+    payload = json.loads(_canonical_json(asdict(CombinedFullCohortProtocol())))
+
+    assert json.loads(json.dumps(payload)) == payload
+    assert isinstance(payload["object_deviation_stds"], list)
 
 
 def test_balanced_profile_temperatures_normalize_fit_lengths() -> None:

@@ -237,7 +237,9 @@ def _specification(
         "cohort": cohort,
         "cases": list(cases),
         "case_contracts": contracts,
-        "protocol": asdict(protocol),
+        # Normalize tuples before the lock is written so a later JSON reload
+        # compares equal to the in-memory specification.
+        "protocol": json.loads(_canonical_json(asdict(protocol))),
         "hierarchy": {
             "scope": "one random-effects population across the full cohort",
             "relative_parameter": (
