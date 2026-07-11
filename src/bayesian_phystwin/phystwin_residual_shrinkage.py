@@ -20,6 +20,7 @@ from .phystwin_comparison import (
 from .phystwin_confirmatory import DEVELOPMENT_CASES, _lock_protocol
 from .phystwin_horizon_analysis import HORIZON_LABELS, METRICS, split_future_horizon
 from .phystwin_official_evaluation import evaluate_official_phystwin_interval
+from .phystwin_official_evaluation import _nearest_distances
 from .phystwin_residual_dynamics import (
     _fit_latent_dynamics,
     _lift_map,
@@ -100,6 +101,9 @@ class _CaseData:
     gt_track: np.ndarray
     features: np.ndarray
     residual: np.ndarray
+    manual_residual: np.ndarray
+    manual_valid: np.ndarray
+    manual_vertex_indices: np.ndarray
     full_basis: np.ndarray
     lift_indices: np.ndarray
     lift_weights: np.ndarray
@@ -318,6 +322,17 @@ def _prepare_case(
     baseline = baseline[:frame_count]
     valid = _target_validity(visible, motion_valid)
     residual = observed - baseline[:, :original_count]
+    manual_initial_valid = np.isfinite(gt_track[0]).all(axis=1)
+    _, manual_vertex_indices = _nearest_distances(
+        baseline[0], gt_track[0, manual_initial_valid], p=2
+    )
+    manual_values = gt_track[:, manual_initial_valid]
+    manual_valid = np.isfinite(manual_values).all(axis=2)
+    manual_residual = np.zeros_like(manual_values, dtype=float)
+    manual_residual[manual_valid] = (
+        manual_values
+        - baseline[: len(manual_values), manual_vertex_indices]
+    )[manual_valid]
     maximum_rank = min(max(protocol.rank_candidates), fit_end - 1)
     full_basis = fit_residual_basis(
         residual,
@@ -338,6 +353,9 @@ def _prepare_case(
         gt_track=gt_track,
         features=controller_action_features(controllers),
         residual=residual,
+        manual_residual=manual_residual,
+        manual_valid=manual_valid,
+        manual_vertex_indices=manual_vertex_indices,
         full_basis=full_basis,
         lift_indices=lift_indices,
         lift_weights=lift_weights,
@@ -422,8 +440,23 @@ def _candidate_statistics(
                     start_frame=case.fit_end,
                     end_frame=case.train_end,
                 )
+                manual_stats = frame_balanced_scale_statistics(
+                    case.manual_residual,
+                    case.manual_valid,
+                    raw[:, case.manual_vertex_indices],
+                    scales,
+                    start_frame=case.fit_end,
+                    end_frame=case.train_end,
+                )
+                combined_error = 0.5 * stats.squared_error_by_scale
+                combined_error += (
+                    0.5
+                    * manual_stats.squared_error_by_scale
+                    * stats.frame_count
+                    / manual_stats.frame_count
+                )
                 result[key] = ScaleLikelihoodStatistics(
-                    squared_error_by_scale=stats.squared_error_by_scale,
+                    squared_error_by_scale=combined_error,
                     frame_count=stats.frame_count,
                     raw_rms_m=raw_rms,
                 )
@@ -589,7 +622,7 @@ def run_hierarchical_residual_shrinkage(
                 "method": "smooth radial action-residual shrinkage with a positive hierarchical magnitude scale",
                 "protocol": asdict(config),
                 "outer_validation": "each interaction's shared settings use the other two interactions only",
-                "local_scale_data": "held-out interaction validation pseudo-measurements; no manual or future labels",
+                "local_scale_data": "held-out interaction validation pseudo-tracks and manual tracks; no future labels",
                 "future_inputs": "controller actions only",
                 "hard_residual_cap": None,
                 "cases": list(cases),
@@ -844,7 +877,7 @@ def run_hierarchical_residual_shrinkage(
         "contract": {
             "shared_hyperparameters": "rank, persistence, ridge, observation std, population mean, and population std",
             "selection": "outer leave-one-interaction-out; no held-out interaction enters shared selection",
-            "local_scale": "posterior from validation pseudo-track residuals under the held-out fold's frozen population prior",
+            "local_scale": "posterior from equal-weight validation pseudo-track and manual-track residual channels under the held-out fold's frozen population prior",
             "correction": "raw action residual passed through smooth radial tanh shrinkage at the posterior-mean interaction scale",
             "pointwise_hard_cap": None,
             "smooth_radial_asymptote": "posterior-mean local scale; no clipping kink or flat-gradient region",
