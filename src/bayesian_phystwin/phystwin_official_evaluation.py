@@ -58,19 +58,13 @@ def _nearest_distances(
     indices = np.empty(len(query_array), dtype=np.int64)
     for start in range(0, len(query_array), chunk_size):
         stop = min(start + chunk_size, len(query_array))
-        delta = np.abs(
-            query_array[start:stop, None, :] - reference_array[None, :, :]
-        )
+        delta = np.abs(query_array[start:stop, None, :] - reference_array[None, :, :])
         pairwise = (
-            np.sum(delta, axis=2)
-            if p == 1
-            else np.sqrt(np.sum(delta * delta, axis=2))
+            np.sum(delta, axis=2) if p == 1 else np.sqrt(np.sum(delta * delta, axis=2))
         )
         local_indices = np.argmin(pairwise, axis=1)
         indices[start:stop] = local_indices
-        distances[start:stop] = pairwise[
-            np.arange(stop - start), local_indices
-        ]
+        distances[start:stop] = pairwise[np.arange(stop - start), local_indices]
     return distances, indices
 
 
@@ -90,7 +84,10 @@ def _validate_arrays(
         raise ValueError("object_visibilities must have shape (T, M)")
     if gt_track_3d.ndim != 3 or gt_track_3d.shape[2] != 3:
         raise ValueError("gt_track_3d must have shape (T, K, 3)")
-    if min(vertices.shape[0], object_points.shape[0], gt_track_3d.shape[0]) < test_frame:
+    if (
+        min(vertices.shape[0], object_points.shape[0], gt_track_3d.shape[0])
+        < test_frame
+    ):
         raise ValueError("all inputs must cover the complete evaluation split")
 
 
@@ -105,6 +102,36 @@ def evaluate_official_phystwin_interval(
     end_frame: int,
 ) -> dict[str, object]:
     """Evaluate one half-open interval with the released 3D metric contract."""
+
+    by_frame = official_phystwin_metrics_by_frame(
+        vertices,
+        object_points,
+        object_visibilities,
+        gt_track_3d,
+        num_surface_points=num_surface_points,
+        start_frame=start_frame,
+        end_frame=end_frame,
+    )
+    return {
+        "frame_start": start_frame,
+        "frame_end_exclusive": end_frame,
+        "frame_count": end_frame - start_frame,
+        "chamfer_distance_m": float(np.mean(by_frame["chamfer_distance_m"])),
+        "track_error_m": float(np.mean(by_frame["track_error_m"])),
+    }
+
+
+def official_phystwin_metrics_by_frame(
+    vertices: np.ndarray,
+    object_points: np.ndarray,
+    object_visibilities: np.ndarray,
+    gt_track_3d: np.ndarray,
+    *,
+    num_surface_points: int,
+    start_frame: int,
+    end_frame: int,
+) -> dict[str, np.ndarray]:
+    """Return the released CD and manual-track metrics before frame averaging."""
 
     vertices_array = np.asarray(vertices, dtype=float)
     points_array = np.asarray(object_points, dtype=float)
@@ -128,9 +155,10 @@ def evaluate_official_phystwin_interval(
         tracks_array[0, initial_track_mask],
         p=2,
     )
-    chamfer_by_frame: list[float] = []
-    track_by_frame: list[float] = []
-    for frame_index in range(start_frame, end_frame):
+    frame_count = end_frame - start_frame
+    chamfer_by_frame = np.empty(frame_count, dtype=float)
+    track_by_frame = np.empty(frame_count, dtype=float)
+    for output_index, frame_index in enumerate(range(start_frame, end_frame)):
         observed = points_array[frame_index, visibility_array[frame_index]]
         predicted_surface = vertices_array[frame_index, :num_surface_points]
         chamfer_distances, _ = _nearest_distances(
@@ -138,22 +166,19 @@ def evaluate_official_phystwin_interval(
             observed,
             p=1,
         )
-        chamfer_by_frame.append(float(np.mean(chamfer_distances)))
+        chamfer_by_frame[output_index] = np.mean(chamfer_distances)
 
         current_tracks = tracks_array[frame_index, initial_track_mask]
         current_mask = np.isfinite(current_tracks).all(axis=1)
         if np.any(current_mask):
             predicted_tracks = vertices_array[frame_index, track_indices][current_mask]
             residual = predicted_tracks - current_tracks[current_mask]
-            track_by_frame.append(float(np.mean(np.linalg.norm(residual, axis=1))))
+            track_by_frame[output_index] = np.mean(np.linalg.norm(residual, axis=1))
         else:
-            track_by_frame.append(0.0)
+            track_by_frame[output_index] = 0.0
     return {
-        "frame_start": start_frame,
-        "frame_end_exclusive": end_frame,
-        "frame_count": end_frame - start_frame,
-        "chamfer_distance_m": float(np.mean(chamfer_by_frame)),
-        "track_error_m": float(np.mean(track_by_frame)),
+        "chamfer_distance_m": chamfer_by_frame,
+        "track_error_m": track_by_frame,
     }
 
 
@@ -219,9 +244,8 @@ def evaluate_official_phystwin_files(
     final_data = _load_pickle(final_data_path)
     gt_track_3d = np.asarray(_load_pickle(gt_track_path))
     split = json.loads(Path(split_path).read_text(encoding="utf-8"))
-    num_surface_points = (
-        int(np.asarray(final_data["object_points"]).shape[1])
-        + int(np.asarray(final_data["surface_points"]).shape[0])
+    num_surface_points = int(np.asarray(final_data["object_points"]).shape[1]) + int(
+        np.asarray(final_data["surface_points"]).shape[0]
     )
     evaluation = evaluate_official_phystwin_arrays(
         vertices,

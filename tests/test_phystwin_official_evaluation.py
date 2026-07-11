@@ -8,6 +8,7 @@ from bayesian_phystwin.phystwin_official_evaluation import (
     evaluate_official_phystwin_arrays,
     evaluate_official_phystwin_files,
     evaluate_official_phystwin_interval,
+    official_phystwin_metrics_by_frame,
     write_official_evaluation,
 )
 
@@ -68,6 +69,23 @@ def test_official_interval_supports_causal_validation_slice() -> None:
     assert np.isclose(result["track_error_m"], 0.2)
 
 
+def test_official_metrics_expose_per_frame_values() -> None:
+    vertices, object_points, visibility, gt_track_3d = _official_fixture()
+
+    result = official_phystwin_metrics_by_frame(
+        vertices,
+        object_points,
+        visibility,
+        gt_track_3d,
+        num_surface_points=2,
+        start_frame=1,
+        end_frame=4,
+    )
+
+    assert np.allclose(result["chamfer_distance_m"], [0.0, 0.2, 0.0])
+    assert np.allclose(result["track_error_m"], [0.0, 0.2, 0.0])
+
+
 def test_file_evaluation_records_hashes_and_split(tmp_path: Path) -> None:
     vertices, object_points, visibility, gt_track_3d = _official_fixture()
     paths = {
@@ -107,6 +125,7 @@ def test_file_evaluation_records_hashes_and_split(tmp_path: Path) -> None:
     assert loaded["schema_version"] == 1
     assert loaded["split"]["test"] == [3, 4]
     assert len(loaded["inputs"]["gt_track_3d"]["sha256"]) == 64
-    assert loaded["evaluation"]["train"]["track_error_m"] == summary[
-        "evaluation"
-    ]["train"]["track_error_m"]
+    assert (
+        loaded["evaluation"]["train"]["track_error_m"]
+        == summary["evaluation"]["train"]["track_error_m"]
+    )
