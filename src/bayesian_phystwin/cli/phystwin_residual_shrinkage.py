@@ -13,7 +13,7 @@ from bayesian_phystwin.phystwin_residual_shrinkage import (
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Replace the residual cap with a hierarchical RMS scale."
+        description="Replace the residual cap with hierarchical radial shrinkage."
     )
     parser.add_argument("data_root")
     parser.add_argument("output_dir")

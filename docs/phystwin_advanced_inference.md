@@ -77,6 +77,41 @@ corrections are capped.
 This is a simulator-discrepancy mean model. It does not calibrate discrepancy
 uncertainty and must not be interpreted as a learned physical parameter.
 
+## Hierarchical residual magnitude
+
+The development-only hierarchical alternative removes the hard clipping kink.
+For a raw lifted residual vector `r` and positive interaction scale `s`, it
+uses smooth radial shrinkage:
+
+```text
+r_shrunk = s * tanh(||r|| / s) * r / ||r||.
+```
+
+Its magnitude approaches `s` smoothly while preserving direction. For every
+held-out development interaction, rank, persistence, ridge, observation noise,
+population mean, and population standard deviation are selected using only the
+other two interactions. The held-out local scale posterior then uses the
+interaction's validation pseudo-track and manual-track residual channels with
+equal channel weight. Future frames never enter selection.
+
+```bash
+bpt-fit-phystwin-hierarchical-residual \
+  /path/to/phystwin-eval runs/phystwin-hierarchical-residual
+
+bpt-compare-phystwin-residual-scales \
+  /path/to/phystwin-eval \
+  runs/phystwin-hierarchical-residual \
+  runs/phystwin-residual-cap-controls \
+  runs/phystwin-residual-scale-comparison.json
+```
+
+The comparison reevaluates matched 10 mm and 30 mm hard-cap trajectories and
+the hierarchical trajectory over the whole released future and contiguous
+early, middle, and late thirds. It reports equal-interaction paired
+moving-block intervals. With only three interactions from one object, this is
+an exploratory prior comparison, not evidence that the selected population
+scale transfers to a broader cohort.
+
 ## Persistent and Bayesian endpoint anchors
 
 The full benchmark shows that extrapolating residual dynamics is not required

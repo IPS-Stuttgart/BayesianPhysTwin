@@ -260,6 +260,21 @@ def _auroc(labels: np.ndarray, score: np.ndarray) -> float | None:
     return (rank_sum - positive * (positive + 1) / 2.0) / (positive * negative)
 
 
+def _mean_ignoring_nonfinite(
+    values: np.ndarray | list[float], *, axis: int | None = None
+) -> np.ndarray:
+    array = np.asarray(values, dtype=float)
+    finite = np.isfinite(array)
+    count = np.sum(finite, axis=axis)
+    total = np.sum(np.where(finite, array, 0.0), axis=axis)
+    return np.divide(
+        total,
+        count,
+        out=np.full(np.shape(total), np.nan, dtype=float),
+        where=count > 0,
+    )
+
+
 def reliability_error_metrics(
     reliability: np.ndarray,
     error_m: np.ndarray,
@@ -389,8 +404,8 @@ def _aggregate_cases(
                 ],
                 dtype=float,
             )
-            mean = float(np.nanmean(values))
-            boot = np.nanmean(values[bootstrap_indices], axis=1)
+            mean = float(_mean_ignoring_nonfinite(values))
+            boot = _mean_ignoring_nonfinite(values[bootstrap_indices], axis=1)
             method_summary[metric] = {
                 "case_mean": mean,
                 "case_bootstrap_95_interval": [
@@ -415,9 +430,9 @@ def _aggregate_cases(
                 ],
                 dtype=float,
             )
-            boot = np.nanmean(values[bootstrap_indices], axis=1)
+            boot = _mean_ignoring_nonfinite(values[bootstrap_indices], axis=1)
             auroc_summary[name] = {
-                "case_mean": float(np.nanmean(values)),
+                "case_mean": float(_mean_ignoring_nonfinite(values)),
                 "case_bootstrap_95_interval": [
                     float(np.nanquantile(boot, 0.025)),
                     float(np.nanquantile(boot, 0.975)),
@@ -542,7 +557,9 @@ def run_perception_cue_confirmation(
             per_case[case]["spearman_reliability_vs_error"] for case in development
         ]
         mean_correlation = float(
-            np.nanmean([np.nan if value is None else value for value in correlations])
+            _mean_ignoring_nonfinite(
+                [np.nan if value is None else value for value in correlations]
+            )
         )
         complexity = int(candidate.forward_backward_scale_px is not None) + int(
             candidate.multiview_scale_px is not None

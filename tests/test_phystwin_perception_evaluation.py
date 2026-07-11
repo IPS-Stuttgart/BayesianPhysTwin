@@ -2,6 +2,7 @@ import numpy as np
 
 from bayesian_phystwin.phystwin_perception_evaluation import (
     ReliabilityTransform,
+    _mean_ignoring_nonfinite,
     compose_perception_reliability,
     reliability_error_metrics,
 )
@@ -43,3 +44,12 @@ def test_reliability_error_metrics_rewards_correct_ranking() -> None:
     assert metrics["highest_reliability_quartile_error_m"] == 0.001
     assert metrics["highest_reliability_half_error_ratio"] < 0.2
     assert metrics["unreliability_auroc"]["error_at_least_0.005_m"] == 1.0
+
+
+def test_mean_ignoring_nonfinite_keeps_undefined_bootstrap_rows() -> None:
+    values = np.array([[np.nan, np.nan], [0.6, np.nan], [0.4, 0.8]])
+
+    result = _mean_ignoring_nonfinite(values, axis=1)
+
+    np.testing.assert_allclose(result[1:], [0.6, 0.6])
+    assert np.isnan(result[0])
