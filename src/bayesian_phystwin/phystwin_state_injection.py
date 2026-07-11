@@ -8,6 +8,7 @@ import json
 import subprocess
 import warnings
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Iterable
@@ -47,8 +48,7 @@ from .phystwin_residual_dynamics import (
     _target_validity,
 )
 
-
-SIMULATOR_REPLAY = "simulator_replay"
+ENDPOINT_RESTART = "endpoint_restart"
 OUTPUT_KNN = "output_knn"
 OUTPUT_GRAPH = "output_graph"
 INJECT_KNN_POSITION = "inject_knn_position"
@@ -57,7 +57,7 @@ INJECT_GRAPH_POSITION = "inject_graph_position"
 INJECT_GRAPH_POSITION_VELOCITY = "inject_graph_position_velocity"
 PRIMARY_STATE_INJECTION_METHOD = INJECT_GRAPH_POSITION_VELOCITY
 STATE_INJECTION_METHODS = (
-    SIMULATOR_REPLAY,
+    ENDPOINT_RESTART,
     OUTPUT_KNN,
     OUTPUT_GRAPH,
     INJECT_KNN_POSITION,
@@ -103,20 +103,43 @@ def _released_self_collision_for_case(case_name: str) -> bool:
     return "cloth" in case_name or "package" in case_name
 
 
+@lru_cache(maxsize=1)
+def _simulator_runtime() -> dict[str, object]:
+    """Identify the numerical runtime used for the simulator comparison."""
+
+    try:
+        import torch
+        import warp as wp
+    except ImportError as error:
+        raise RuntimeError(
+            "state injection requires compatible torch and warp installations"
+        ) from error
+    warp_binary = Path(wp.__file__).resolve().parent / "bin" / "warp.so"
+    return {
+        "warp_version": str(getattr(wp, "__version__", "unknown")),
+        "warp_binary_sha256": (_sha256(warp_binary) if warp_binary.is_file() else None),
+        "torch_version": str(torch.__version__),
+        "torch_cuda_version": str(torch.version.cuda),
+        "cuda_device_name": (
+            torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+        ),
+    }
+
+
 def estimate_endpoint_velocity_delta(
-    correction_history: np.ndarray,
+    state_history: np.ndarray,
     *,
     frame_dt: float,
 ) -> np.ndarray:
-    """Estimate the endpoint correction velocity by local linear regression."""
+    """Estimate endpoint velocity from state history by local regression."""
 
-    values = np.asarray(correction_history, dtype=float)
+    values = np.asarray(state_history, dtype=float)
     if values.ndim != 3 or values.shape[2] != 3 or len(values) < 2:
-        raise ValueError("correction_history must have shape (T>=2, N, 3)")
+        raise ValueError("state_history must have shape (T>=2, N, 3)")
     if frame_dt <= 0.0 or not np.isfinite(frame_dt):
         raise ValueError("frame_dt must be positive and finite")
     if not np.all(np.isfinite(values)):
-        raise ValueError("correction_history must be finite")
+        raise ValueError("state_history must be finite")
     times = frame_dt * np.arange(len(values), dtype=float)
     centered = times - np.mean(times)
     denominator = float(np.dot(centered, centered))
@@ -238,9 +261,7 @@ def _correction_history(
             laplacian,
             prior_strength=graph_prior_strength,
         )
-        graph = _clip_residual(
-            graph_posterior.mean[None], maximum_residual_m
-        )[0]
+        graph = _clip_residual(graph_posterior.mean[None], maximum_residual_m)[0]
         histories["knn"].append(knn)
         histories["graph"].append(graph)
         final_endpoint = endpoint
@@ -308,9 +329,7 @@ def _initialize_simulator(
         )
         simulator_class = make_reliability_simulator_class(official)
         _SIMULATOR_CLASS_CACHE[cache_key] = simulator_class
-    objective = build_phystwin_track_objective(
-        visible, motion_valid, variant="hard"
-    )
+    objective = build_phystwin_track_objective(visible, motion_valid, variant="hard")
 
     def tensor(values: np.ndarray, dtype):
         return torch.as_tensor(values, dtype=dtype, device=device).contiguous()
@@ -339,9 +358,7 @@ def _initialize_simulator(
         spring_Y_max=1e5,
         gt_object_points=tensor(object_points, torch.float32),
         gt_object_visibilities=tensor(visible.astype(np.int32), torch.int32),
-        gt_object_motions_valid=tensor(
-            motion_valid.astype(np.int32), torch.int32
-        ),
+        gt_object_motions_valid=tensor(motion_valid.astype(np.int32), torch.int32),
         self_collision=self_collision,
         disable_backward=True,
         objective=objective,
@@ -380,7 +397,6 @@ def _rollout_initial(
     simulator.set_init_state(
         simulator.wp_init_vertices,
         simulator.wp_init_velocities,
-        pure_inference=True,
     )
     wp.synchronize()
     positions = []
@@ -400,7 +416,6 @@ def _rollout_initial(
         simulator.set_init_state(
             simulator.wp_states[-1].wp_x,
             simulator.wp_states[-1].wp_v,
-            pure_inference=True,
         )
     return np.stack(positions), np.stack(velocities)
 
@@ -422,13 +437,9 @@ def _rollout_restart(
     velocity_tensor = torch.as_tensor(
         velocity, dtype=torch.float32, device=device
     ).contiguous()
-    position_wp = wp.from_torch(
-        position_tensor, dtype=wp.vec3, requires_grad=False
-    )
-    velocity_wp = wp.from_torch(
-        velocity_tensor, dtype=wp.vec3, requires_grad=False
-    )
-    simulator.set_init_state(position_wp, velocity_wp, pure_inference=True)
+    position_wp = wp.from_torch(position_tensor, dtype=wp.vec3, requires_grad=False)
+    velocity_wp = wp.from_torch(velocity_tensor, dtype=wp.vec3, requires_grad=False)
+    simulator.set_init_state(position_wp, velocity_wp)
     wp.synchronize()
     future = []
     for frame in range(start_frame, stop_frame):
@@ -442,7 +453,6 @@ def _rollout_restart(
         simulator.set_init_state(
             simulator.wp_states[-1].wp_x,
             simulator.wp_states[-1].wp_v,
-            pure_inference=True,
         )
     return np.stack(future)
 
@@ -534,6 +544,11 @@ def apply_phystwin_state_injection(
         mode: estimate_endpoint_velocity_delta(values, frame_dt=frame_dt)
         for mode, values in histories.items()
     }
+    endpoint_index = train_end_frame - 1
+    estimated_endpoint_velocity = estimate_endpoint_velocity_delta(
+        baseline[train_end_frame - velocity_history_frames : train_end_frame],
+        frame_dt=frame_dt,
+    )
     warnings.filterwarnings(
         "ignore",
         message=(
@@ -557,7 +572,6 @@ def apply_phystwin_state_injection(
     replay_positions, replay_velocities = _rollout_initial(
         simulator, wp, frame_count=frame_count
     )
-    endpoint_index = train_end_frame - 1
     parity = {
         "all_frames": _trajectory_error(baseline, replay_positions),
         "training_frames": _trajectory_error(
@@ -574,13 +588,33 @@ def apply_phystwin_state_injection(
     parity["passed"] = bool(
         parity["endpoint"]["vector_rmse_m"] <= replay_endpoint_tolerance_m
     )
-    if not parity["passed"]:
-        raise RuntimeError(
-            "released simulator replay misses the endpoint tolerance: "
-            f"{parity['endpoint']['vector_rmse_m']:.6f} m"
-        )
+    parity["role"] = "diagnostic only; no candidate state uses replayed state"
 
-    candidates = {SIMULATOR_REPLAY: replay_positions}
+    endpoint_restart = baseline.copy()
+    endpoint_restart[train_end_frame:] = _rollout_restart(
+        simulator,
+        torch,
+        wp,
+        baseline[endpoint_index],
+        estimated_endpoint_velocity,
+        start_frame=train_end_frame,
+        stop_frame=frame_count,
+        device=device,
+    )
+    endpoint_restart_repeat_future = _rollout_restart(
+        simulator,
+        torch,
+        wp,
+        baseline[endpoint_index],
+        estimated_endpoint_velocity,
+        start_frame=train_end_frame,
+        stop_frame=frame_count,
+        device=device,
+    )
+    restart_repeatability = _trajectory_error(
+        endpoint_restart[train_end_frame:], endpoint_restart_repeat_future
+    )
+    candidates = {ENDPOINT_RESTART: endpoint_restart}
     for mode, output_method, position_method, velocity_method in (
         (
             "knn",
@@ -600,10 +634,12 @@ def apply_phystwin_state_injection(
         output_candidate[train_end_frame:] += correction[None]
         candidates[output_method] = output_candidate
         restart_position = baseline[endpoint_index] + correction
-        latent_velocity = replay_velocities[endpoint_index]
         for method, restart_velocity in (
-            (position_method, latent_velocity),
-            (velocity_method, latent_velocity + velocity_delta[mode]),
+            (position_method, estimated_endpoint_velocity),
+            (
+                velocity_method,
+                estimated_endpoint_velocity + velocity_delta[mode],
+            ),
         ):
             future = _rollout_restart(
                 simulator,
@@ -662,14 +698,17 @@ def apply_phystwin_state_injection(
         "correction_history__graph": histories["graph"],
         "velocity_delta__knn": velocity_delta["knn"],
         "velocity_delta__graph": velocity_delta["graph"],
-        "replay_endpoint_velocity": replay_velocities[endpoint_index],
+        "estimated_endpoint_velocity": estimated_endpoint_velocity,
+        "diagnostic_replay_endpoint_velocity": replay_velocities[endpoint_index],
+        "diagnostic_replay_future": replay_positions[train_end_frame:],
+        "diagnostic_endpoint_restart_repeat_future": (endpoint_restart_repeat_future),
     }
     for method, trajectory in candidates.items():
         archive_values[f"future__{method}"] = trajectory[train_end_frame:]
     np.savez_compressed(archive_path, **archive_values)
     updated = endpoint.update_count > 0
     summary: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "config": {
             "train_end_frame": train_end_frame,
             "graph_prior_strength": graph_prior_strength,
@@ -681,19 +720,30 @@ def apply_phystwin_state_injection(
             "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
             "self_collision": self_collision,
             "device": device,
+            "runtime": _simulator_runtime(),
         },
         "contract": {
             "endpoint_position": (
                 "released endpoint plus fixed robust Bayesian correction"
             ),
-            "position_only_velocity": "replayed released latent endpoint velocity",
+            "endpoint_restart": (
+                "released endpoint with velocity estimated from the released "
+                f"trajectory over {velocity_history_frames} frames"
+            ),
+            "position_only_velocity": (
+                "same released-trajectory endpoint velocity estimate as the "
+                "uncorrected endpoint restart"
+            ),
             "position_velocity": (
-                "replayed latent velocity plus "
+                "released-trajectory endpoint velocity estimate plus "
                 f"{velocity_history_frames}-frame local-linear correction velocity"
             ),
             "future_controls": "recorded released controller trajectory",
             "future_observations": "none",
             "rest_state": "original released spring rest lengths retained",
+            "frame_zero_replay": (
+                "diagnostic only; never supplies candidate position or velocity"
+            ),
             "self_collision": (
                 "released PhysTwin cloth/package case configuration"
                 if self_collision
@@ -734,16 +784,25 @@ def apply_phystwin_state_injection(
         "graph": {
             "object_vertex_count": len(structure_points),
             "object_spring_count": graph.num_object_springs,
-            "controller_spring_count": len(graph.springs)
-            - graph.num_object_springs,
+            "controller_spring_count": len(graph.springs) - graph.num_object_springs,
             "springs_sha256": _array_hash(graph.springs),
         },
         "replay_parity": parity,
+        "endpoint_restart_repeatability": restart_repeatability,
         "endpoint_posterior": {
             "updated_track_count": int(np.sum(updated)),
             "median_std_m": float(np.median(np.sqrt(endpoint.variance[updated]))),
             "median_final_inlier_probability": float(
                 np.median(endpoint.final_inlier_probability[updated])
+            ),
+        },
+        "endpoint_velocity_estimate": {
+            "history_frames": velocity_history_frames,
+            "rms_m_per_s": float(
+                np.sqrt(np.mean(np.sum(np.square(estimated_endpoint_velocity), axis=1)))
+            ),
+            "maximum_m_per_s": float(
+                np.max(np.linalg.norm(estimated_endpoint_velocity, axis=1), initial=0.0)
             ),
         },
         "state_update": {
@@ -851,6 +910,7 @@ def run_phystwin_state_injection_comparison(
     self_collision_by_case = {
         case: _released_self_collision_for_case(case) for case in selected
     }
+    runtime = _simulator_runtime()
     code_commit = _git_commit(Path(__file__).resolve().parents[2])
     specification = {
         "method": "PhysTwin endpoint state injection",
@@ -867,7 +927,9 @@ def run_phystwin_state_injection_comparison(
         },
         "graph_prior_strength": graph_prior_strength,
         "velocity_history_frames": velocity_history_frames,
-        "velocity_estimator": "local linear slope of correction posterior",
+        "velocity_estimator": (
+            "local linear slope over the released state and correction posterior"
+        ),
         "interpolation_neighbors": interpolation_neighbors,
         "maximum_residual_m": maximum_residual_m,
         "dt": dt,
@@ -877,7 +939,14 @@ def run_phystwin_state_injection_comparison(
             "matching PhysTwin train_warp.py and inference_warp.py"
         ),
         "self_collision_by_case": self_collision_by_case,
-        "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
+        "diagnostic_replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
+        "endpoint_state_source": (
+            "released endpoint position and released-trajectory velocity estimate; "
+            "frame-zero replay is diagnostic only"
+        ),
+        "restart_repeatability_control": (
+            "duplicate uncorrected endpoint restart with identical state and controls"
+        ),
         "future_inputs": "recorded controller positions only",
         "primary_method": PRIMARY_STATE_INJECTION_METHOD,
         "primary_selection": (
@@ -886,13 +955,14 @@ def run_phystwin_state_injection_comparison(
         ),
         "official_repo": str(Path(official_repo).resolve()),
         "official_commit": _git_commit(official_repo),
+        "runtime": runtime,
         "bootstrap": {
             "samples": bootstrap_samples,
             "block_length": bootstrap_block_length,
             "seed": bootstrap_seed,
         },
         "data_manifest": str(manifest_path.resolve()),
-        "status": "post-hoc frozen state-injection evaluation",
+        "status": "post-hoc frozen matched-endpoint state-injection evaluation",
     }
     output = Path(output_dir)
     locked = _lock_protocol(output, specification)
@@ -905,11 +975,12 @@ def run_phystwin_state_injection_comparison(
         "num_substeps": num_substeps,
         "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
         "device": "cuda:0",
+        "runtime": runtime,
     }
     case_results = {}
     paired_vs_released = {method: {} for method in STATE_INJECTION_METHODS}
-    paired_vs_replay = {
-        method: {} for method in STATE_INJECTION_METHODS if method != SIMULATOR_REPLAY
+    paired_vs_restart = {
+        method: {} for method in STATE_INJECTION_METHODS if method != ENDPOINT_RESTART
     }
     paired_direct = {name: {} for name in DIRECT_COMPARISONS}
     for case in selected:
@@ -953,6 +1024,8 @@ def run_phystwin_state_injection_comparison(
         case_results[case] = {
             "physical_object": clusters[case],
             "replay_parity": summary["replay_parity"],
+            "endpoint_restart_repeatability": summary["endpoint_restart_repeatability"],
+            "endpoint_velocity_estimate": summary["endpoint_velocity_estimate"],
             "state_update": summary["state_update"],
             "methods": {
                 method: summary["methods"][method] for method in STATE_INJECTION_METHODS
@@ -960,9 +1033,9 @@ def run_phystwin_state_injection_comparison(
         }
         released_metrics = {
             metric: np.asarray(values["baseline_by_frame_m"], dtype=float)
-            for metric, values in summary["methods"][SIMULATOR_REPLAY]["future"].items()
+            for metric, values in summary["methods"][ENDPOINT_RESTART]["future"].items()
         }
-        replay_metrics = _candidate_metrics(summary, SIMULATOR_REPLAY)
+        restart_metrics = _candidate_metrics(summary, ENDPOINT_RESTART)
         method_metrics = {
             method: _candidate_metrics(summary, method)
             for method in STATE_INJECTION_METHODS
@@ -972,14 +1045,15 @@ def run_phystwin_state_injection_comparison(
                 released_metrics,
                 method_metrics[method],
             )
-            if method != SIMULATOR_REPLAY:
-                paired_vs_replay[method][case] = (
-                    replay_metrics,
+            if method != ENDPOINT_RESTART:
+                paired_vs_restart[method][case] = (
+                    restart_metrics,
                     method_metrics[method],
                 )
-        for comparison, (baseline_method, candidate_method) in (
-            DIRECT_COMPARISONS.items()
-        ):
+        for comparison, (
+            baseline_method,
+            candidate_method,
+        ) in DIRECT_COMPARISONS.items():
             paired_direct[comparison][case] = (
                 method_metrics[baseline_method],
                 method_metrics[candidate_method],
@@ -999,14 +1073,14 @@ def run_phystwin_state_injection_comparison(
     comparisons_vs_released = {
         method: bootstrap(paired) for method, paired in paired_vs_released.items()
     }
-    comparisons_vs_replay = {
-        method: bootstrap(paired) for method, paired in paired_vs_replay.items()
+    comparisons_vs_restart = {
+        method: bootstrap(paired) for method, paired in paired_vs_restart.items()
     }
     direct_comparisons = {
         name: bootstrap(paired) for name, paired in paired_direct.items()
     }
     result = {
-        "schema_version": 1,
+        "schema_version": 2,
         "code_commit": code_commit,
         "protocol_id": locked["protocol_id"],
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -1017,9 +1091,12 @@ def run_phystwin_state_injection_comparison(
         "physical_object_count": len(set(clusters.values())),
         "methods": list(STATE_INJECTION_METHODS),
         "primary_method": PRIMARY_STATE_INJECTION_METHOD,
+        "replay_diagnostic_pass_count": sum(
+            bool(value["replay_parity"]["passed"]) for value in case_results.values()
+        ),
         "case_results": case_results,
         "comparisons_vs_released": comparisons_vs_released,
-        "comparisons_vs_simulator_replay": comparisons_vs_replay,
+        "comparisons_vs_endpoint_restart": comparisons_vs_restart,
         "direct_comparisons": direct_comparisons,
     }
     result_path = output / "state_injection_comparison_summary.json"
