@@ -245,6 +245,14 @@ def _specification(
             ),
             "trial_specific_parameter": "controller-spring log scale",
             "likelihood_balancing": "fit frame count divided by cohort mean",
+            "matched_mechanical_update": (
+                "released trajectory + deterministic hierarchical posterior "
+                "trajectory - deterministic zero-scale trajectory"
+            ),
+            "matched_update_reason": (
+                "remove fixed-order versus historical atomic replay as a control "
+                "variate before adding discrepancy"
+            ),
         },
         "discrepancy": {
             "main": "locked validation-gated action-conditioned residual",
@@ -402,14 +410,51 @@ def run_combined_pool_stage(
     }
 
 
-def _export_posterior_mean(profile_dir: Path) -> Path:
+def matched_hierarchical_trajectory(
+    released: np.ndarray,
+    zero_replay: np.ndarray,
+    posterior: np.ndarray,
+) -> np.ndarray:
+    """Transport a paired deterministic parameter delta onto released PhysTwin."""
+
+    released_values = np.asarray(released, dtype=float)
+    zero_values = np.asarray(zero_replay, dtype=float)
+    posterior_values = np.asarray(posterior, dtype=float)
+    if not (
+        released_values.shape == zero_values.shape == posterior_values.shape
+        and released_values.ndim == 3
+        and released_values.shape[2] == 3
+    ):
+        raise ValueError("released, zero, and posterior trajectories must match")
+    if not (
+        np.all(np.isfinite(released_values))
+        and np.all(np.isfinite(zero_values))
+        and np.all(np.isfinite(posterior_values))
+    ):
+        raise ValueError("matched hierarchy trajectories must be finite")
+    return released_values + posterior_values - zero_values
+
+
+def _export_posterior_mean(profile_dir: Path, released_path: Path) -> tuple[Path, Path]:
     source = profile_dir / "parameter_profile.npz"
-    destination = profile_dir / "posterior_mean_trajectory.pkl"
+    posterior_path = profile_dir / "posterior_mean_trajectory.pkl"
+    matched_path = profile_dir / "matched_hierarchical_trajectory.pkl"
     with np.load(source) as archive:
-        trajectory = np.asarray(archive["posterior_mean_trajectory"], dtype=np.float32)
-    with destination.open("wb") as handle:
-        pickle.dump(trajectory, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    return destination
+        posterior = np.asarray(archive["posterior_mean_trajectory"], dtype=np.float32)
+    zero_replay = np.asarray(
+        _load_pickle(profile_dir / "baseline_trajectory.pkl"), dtype=np.float32
+    )
+    released = np.asarray(_load_pickle(released_path), dtype=np.float32)
+    matched = matched_hierarchical_trajectory(
+        released,
+        zero_replay,
+        posterior,
+    ).astype(np.float32)
+    with posterior_path.open("wb") as handle:
+        pickle.dump(posterior, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with matched_path.open("wb") as handle:
+        pickle.dump(matched, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    return posterior_path, matched_path
 
 
 def run_combined_prediction_stage(
@@ -451,7 +496,7 @@ def run_combined_prediction_stage(
             config,
             profile_weights_path=weights,
         )
-        _export_posterior_mean(profile_dir)
+        _export_posterior_mean(profile_dir, root / case / "inference.pkl")
         completed.append(case)
     return {
         "stage": "predictions",
@@ -508,7 +553,7 @@ def run_combined_discrepancy_stage(
             / "cases"
             / case
             / "profile_hierarchical"
-            / "posterior_mean_trajectory.pkl"
+            / "matched_hierarchical_trajectory.pkl"
         )
         if not baseline.is_file():
             raise FileNotFoundError(f"missing hierarchical trajectory for {case}")
@@ -639,8 +684,9 @@ def run_combined_summary_stage(
     case_results: dict[str, object] = {}
     comparison_names = {
         "zero_replay_vs_released": ("released", "zero_replay"),
+        "hierarchical_raw_vs_released": ("released", "hierarchical_raw"),
+        "hierarchical_raw_vs_zero_replay": ("zero_replay", "hierarchical_raw"),
         "hierarchical_vs_released": ("released", "hierarchical"),
-        "hierarchical_vs_zero_replay": ("zero_replay", "hierarchical"),
         "component_vs_released": ("released", "component"),
         "combined_vs_released": ("released", "combined"),
         "combined_vs_component": ("component", "combined"),
@@ -654,7 +700,8 @@ def run_combined_summary_stage(
         paths = {
             "released": case_dir / "inference.pkl",
             "zero_replay": profile_dir / "baseline_trajectory.pkl",
-            "hierarchical": profile_dir / "posterior_mean_trajectory.pkl",
+            "hierarchical_raw": profile_dir / "posterior_mean_trajectory.pkl",
+            "hierarchical": profile_dir / "matched_hierarchical_trajectory.pkl",
             "component": component / "cases" / case / "trajectory.pkl",
             "combined": output / "cases" / case / "combined" / "trajectory.pkl",
         }
@@ -775,6 +822,10 @@ def run_combined_summary_stage(
             "primary_incremental_test": "combined_vs_component",
             "replay_control": (
                 "zero-scale fixed-order replay is reported separately from released"
+            ),
+            "matched_hierarchy": (
+                "primary hierarchy is released plus paired posterior-minus-zero "
+                "deterministic delta; raw posterior is diagnostic"
             ),
             "main_selection": (
                 "locked validation CD and manual-track selection; future held out"

@@ -1,8 +1,10 @@
+import numpy as np
 import pytest
 
 from bayesian_phystwin.phystwin_combined_confirmation import (
     balanced_profile_temperatures,
     combined_profile_fit_end,
+    matched_hierarchical_trajectory,
 )
 
 
@@ -46,3 +48,25 @@ def test_combined_profile_end_rejects_unknown_cohort() -> None:
             main_fit_fraction=0.75,
             additional_holdout_frames=1,
         )
+
+
+def test_matched_hierarchy_is_identity_at_zero_parameter_update() -> None:
+    released = np.arange(24, dtype=float).reshape(2, 4, 3)
+    zero = released + 0.4
+    posterior = zero.copy()
+
+    matched = matched_hierarchical_trajectory(released, zero, posterior)
+
+    np.testing.assert_allclose(matched, released, atol=2e-15)
+
+
+def test_matched_hierarchy_transports_only_the_paired_parameter_delta() -> None:
+    released = np.zeros((3, 2, 3), dtype=float)
+    zero = np.full_like(released, 2.0)
+    posterior = zero.copy()
+    posterior[:, :, 1] += 0.25
+
+    matched = matched_hierarchical_trajectory(released, zero, posterior)
+
+    np.testing.assert_allclose(matched[:, :, 0], 0.0)
+    np.testing.assert_allclose(matched[:, :, 1], 0.25)
