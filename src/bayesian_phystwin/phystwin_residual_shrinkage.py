@@ -69,11 +69,9 @@ class HierarchicalResidualShrinkageProtocol:
 
 @dataclass(frozen=True)
 class ScaleLikelihoodStatistics:
-    """Frame-balanced quadratic error for a unit-RMS residual shape."""
+    """Frame-balanced error curve for a smoothly shrunk residual field."""
 
-    quadratic: float
-    linear: float
-    constant: float
+    squared_error_by_scale: np.ndarray
     frame_count: int
     raw_rms_m: float
 
@@ -149,58 +147,74 @@ def lift_residual_unclipped(
     return lifted
 
 
-def normalize_residual_shape(values: np.ndarray) -> tuple[np.ndarray, float]:
-    """Normalize a correction to unit RMS vector magnitude, without clipping."""
+def smooth_radial_shrinkage(values: np.ndarray, scale_m: float) -> np.ndarray:
+    """Smoothly shrink vector norms toward an asymptote set by ``scale_m``."""
 
     array = np.asarray(values, dtype=float)
     if array.ndim != 3 or array.shape[2] != 3:
         raise ValueError("values must have shape (T, N, 3)")
-    raw_rms = float(np.sqrt(np.mean(np.sum(np.square(array), axis=2))))
-    if not np.isfinite(raw_rms) or raw_rms <= 1e-12:
-        raise ValueError("residual shape has zero or non-finite RMS magnitude")
-    return array / raw_rms, raw_rms
+    if scale_m < 0.0:
+        raise ValueError("scale_m must be nonnegative")
+    if scale_m == 0.0:
+        return np.zeros_like(array)
+    norms = np.linalg.norm(array, axis=2, keepdims=True)
+    shrunk_norm = scale_m * np.tanh(norms / scale_m)
+    return array * shrunk_norm / np.maximum(norms, 1e-12)
 
 
 def frame_balanced_scale_statistics(
     target_residual: np.ndarray,
     valid: np.ndarray,
-    unit_shape: np.ndarray,
+    raw_prediction: np.ndarray,
+    scales_m: np.ndarray,
     *,
     start_frame: int,
     end_frame: int,
 ) -> ScaleLikelihoodStatistics:
-    """Reduce validation error to a scalar-scale quadratic with equal frame weight."""
+    """Evaluate smooth-shrinkage errors with equal weight per validation frame."""
 
     target = np.asarray(target_residual, dtype=float)
     support = np.asarray(valid, dtype=bool)
-    shape = np.asarray(unit_shape, dtype=float)
+    prediction = np.asarray(raw_prediction, dtype=float)
+    scales = np.asarray(scales_m, dtype=float)
     if target.ndim != 3 or target.shape[2] != 3:
         raise ValueError("target_residual must have shape (T, N, 3)")
     if support.shape != target.shape[:2]:
         raise ValueError("valid must match target_residual")
-    if shape.shape != (end_frame - start_frame, target.shape[1], 3):
-        raise ValueError("unit_shape does not match the requested interval")
-    quadratic = linear = constant = 0.0
+    if prediction.shape != (end_frame - start_frame, target.shape[1], 3):
+        raise ValueError("raw_prediction does not match the requested interval")
+    if scales.ndim != 1 or len(scales) == 0 or np.any(scales < 0.0):
+        raise ValueError("scales_m must be a nonempty nonnegative vector")
+    squared_error = np.zeros(len(scales), dtype=float)
     used_frames = 0
     for offset, frame in enumerate(range(start_frame, end_frame)):
         mask = support[frame]
         if not np.any(mask):
             continue
-        prediction = shape[offset, mask]
         observed = target[frame, mask]
-        quadratic += float(np.mean(np.sum(np.square(prediction), axis=1)))
-        linear += float(np.mean(np.sum(prediction * observed, axis=1)))
-        constant += float(np.mean(np.sum(np.square(observed), axis=1)))
+        frame_prediction = prediction[offset, mask]
+        norms = np.linalg.norm(frame_prediction, axis=1)
+        direction_dot_target = np.sum(frame_prediction * observed, axis=1) / np.maximum(
+            norms, 1e-12
+        )
+        shrunk_norms = np.zeros((len(scales), len(norms)), dtype=float)
+        positive = scales > 0.0
+        shrunk_norms[positive] = scales[positive, None] * np.tanh(
+            norms[None] / scales[positive, None]
+        )
+        squared_error += (
+            float(np.mean(np.sum(np.square(observed), axis=1)))
+            - 2.0 * np.mean(
+                shrunk_norms * direction_dot_target[None], axis=1
+            )
+            + np.mean(np.square(shrunk_norms), axis=1)
+        )
         used_frames += 1
     if used_frames == 0:
         raise ValueError("validation interval contains no supported frames")
-    raw_rms = float(
-        np.sqrt(np.mean(np.sum(np.square(shape), axis=2)))
-    )
+    raw_rms = float(np.sqrt(np.mean(np.sum(np.square(prediction), axis=2))))
     return ScaleLikelihoodStatistics(
-        quadratic=quadratic,
-        linear=linear,
-        constant=constant,
+        squared_error_by_scale=squared_error,
         frame_count=used_frames,
         raw_rms_m=raw_rms,
     )
@@ -216,12 +230,9 @@ def scale_log_likelihood(
     if observation_std_m <= 0.0:
         raise ValueError("observation_std_m must be positive")
     scales = np.asarray(scales_m, dtype=float)
-    squared_error = (
-        statistics.quadratic * np.square(scales)
-        - 2.0 * statistics.linear * scales
-        + statistics.constant
-    )
-    squared_error = np.maximum(squared_error, 0.0)
+    squared_error = np.asarray(statistics.squared_error_by_scale, dtype=float)
+    if squared_error.shape != scales.shape:
+        raise ValueError("statistics error curve must match scales_m")
     return (
         -0.5 * squared_error / observation_std_m**2
         - 3.0 * statistics.frame_count * math.log(observation_std_m)
@@ -339,7 +350,7 @@ def _prepare_case(
     )
 
 
-def _validation_shape(
+def _validation_raw_correction(
     case: _CaseData,
     key: DynamicsKey,
     protocol: HierarchicalResidualShrinkageProtocol,
@@ -380,12 +391,12 @@ def _validation_shape(
     lifted = lift_residual_unclipped(
         tracked, case.state_count, case.lift_indices, case.lift_weights
     )
-    shape, raw_rms = normalize_residual_shape(lifted)
+    raw_rms = float(np.sqrt(np.mean(np.sum(np.square(lifted), axis=2))))
     model = np.array(
         [rank, persistence, ridge, raw_rms], dtype=float
     )
     actions = np.concatenate([action_mean, action_scale])
-    return shape, raw_rms, model, actions
+    return lifted, raw_rms, model, actions
 
 
 def _candidate_statistics(
@@ -393,24 +404,26 @@ def _candidate_statistics(
     protocol: HierarchicalResidualShrinkageProtocol,
 ) -> dict[DynamicsKey, ScaleLikelihoodStatistics]:
     result = {}
+    scales = _scale_grid(protocol)
     for rank in sorted(set(protocol.rank_candidates)):
         if rank > len(case.full_basis):
             continue
         for persistence in protocol.persistence_candidates:
             for ridge in protocol.ridge_candidates:
                 key = (rank, persistence, ridge)
-                shape, raw_rms, _, _ = _validation_shape(case, key, protocol)
+                raw, raw_rms, _, _ = _validation_raw_correction(
+                    case, key, protocol
+                )
                 stats = frame_balanced_scale_statistics(
                     case.residual,
                     case.valid,
-                    shape[:, : case.original_count],
+                    raw[:, : case.original_count],
+                    scales,
                     start_frame=case.fit_end,
                     end_frame=case.train_end,
                 )
                 result[key] = ScaleLikelihoodStatistics(
-                    quadratic=stats.quadratic,
-                    linear=stats.linear,
-                    constant=stats.constant,
+                    squared_error_by_scale=stats.squared_error_by_scale,
                     frame_count=stats.frame_count,
                     raw_rms_m=raw_rms,
                 )
@@ -483,7 +496,7 @@ def select_shared_hyperparameters(
     return best[1], rows
 
 
-def _final_future_shape(
+def _final_future_raw_correction(
     case: _CaseData,
     selection: SharedShrinkageSelection,
     protocol: HierarchicalResidualShrinkageProtocol,
@@ -521,8 +534,8 @@ def _final_future_shape(
     lifted = lift_residual_unclipped(
         tracked, case.state_count, case.lift_indices, case.lift_weights
     )
-    shape, raw_rms = normalize_residual_shape(lifted)
-    return shape, raw_rms, {
+    raw_rms = float(np.sqrt(np.mean(np.sum(np.square(lifted), axis=2))))
+    return lifted, raw_rms, {
         "basis": basis,
         "dynamics": dynamics,
         "action_mean": action_mean,
@@ -573,7 +586,7 @@ def run_hierarchical_residual_shrinkage(
     specification = json.loads(
         json.dumps(
             {
-                "method": "unit-RMS action residual with a positive hierarchical magnitude scale",
+                "method": "smooth radial action-residual shrinkage with a positive hierarchical magnitude scale",
                 "protocol": asdict(config),
                 "outer_validation": "each interaction's shared settings use the other two interactions only",
                 "local_scale_data": "held-out interaction validation pseudo-measurements; no manual or future labels",
@@ -620,12 +633,12 @@ def run_hierarchical_residual_shrinkage(
         scale_std = float(
             np.sqrt(np.sum(posterior_weights * np.square(scales - scale_mean)))
         )
-        validation_shape, validation_raw_rms, _, _ = _validation_shape(
+        validation_raw, validation_raw_rms, _, _ = _validation_raw_correction(
             case, key, config
         )
         validation_candidate = case.baseline.copy()
         validation_candidate[case.fit_end : case.train_end] += (
-            scale_mean * validation_shape
+            smooth_radial_shrinkage(validation_raw, scale_mean)
         )
         baseline_validation = evaluate_official_phystwin_interval(
             case.baseline,
@@ -645,10 +658,10 @@ def run_hierarchical_residual_shrinkage(
             start_frame=case.fit_end,
             end_frame=case.train_end,
         )
-        future_shape, future_raw_rms, model = _final_future_shape(
+        future_raw, future_raw_rms, model = _final_future_raw_correction(
             case, selection, config
         )
-        correction = scale_mean * future_shape
+        correction = smooth_radial_shrinkage(future_raw, scale_mean)
         corrected = case.baseline.copy()
         corrected[case.train_end :] += correction
         trajectory_path = case_output / "trajectory.pkl"
@@ -740,8 +753,8 @@ def run_hierarchical_residual_shrinkage(
                 "std_m": scale_std,
                 "q05_m": _weighted_quantile(scales, posterior_weights, 0.05),
                 "q95_m": _weighted_quantile(scales, posterior_weights, 0.95),
-                "validation_raw_shape_rms_m": validation_raw_rms,
-                "future_raw_shape_rms_m": future_raw_rms,
+                "validation_raw_prediction_rms_m": validation_raw_rms,
+                "future_raw_prediction_rms_m": future_raw_rms,
             },
             "validation_diagnostic_not_used_for_selection": {
                 "baseline": baseline_validation,
@@ -832,8 +845,9 @@ def run_hierarchical_residual_shrinkage(
             "shared_hyperparameters": "rank, persistence, ridge, observation std, population mean, and population std",
             "selection": "outer leave-one-interaction-out; no held-out interaction enters shared selection",
             "local_scale": "posterior from validation pseudo-track residuals under the held-out fold's frozen population prior",
-            "correction": "posterior-mean RMS magnitude times a unit-RMS action-residual shape",
-            "pointwise_cap": None,
+            "correction": "raw action residual passed through smooth radial tanh shrinkage at the posterior-mean interaction scale",
+            "pointwise_hard_cap": None,
+            "smooth_radial_asymptote": "posterior-mean local scale; no clipping kink or flat-gradient region",
             "future_observations_or_labels_used": False,
         },
     }

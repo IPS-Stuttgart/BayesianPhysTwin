@@ -4,22 +4,21 @@ from bayesian_phystwin.phystwin_residual_shrinkage import (
     HierarchicalResidualShrinkageProtocol,
     ScaleLikelihoodStatistics,
     frame_balanced_scale_statistics,
-    normalize_residual_shape,
     scale_posterior,
     select_shared_hyperparameters,
+    smooth_radial_shrinkage,
 )
 
 
-def test_normalize_residual_shape_sets_rms_without_pointwise_clipping() -> None:
+def test_smooth_radial_shrinkage_is_continuous_and_below_scale() -> None:
     values = np.array([[[3.0, 0.0, 0.0], [0.0, 4.0, 0.0]]])
 
-    shape, raw_rms = normalize_residual_shape(values)
+    shrunk = smooth_radial_shrinkage(values, 2.0)
 
-    assert raw_rms == np.sqrt(12.5)
-    np.testing.assert_allclose(
-        np.sqrt(np.mean(np.sum(np.square(shape), axis=2))), 1.0
-    )
-    assert np.max(np.linalg.norm(shape, axis=2)) > 1.0
+    norms = np.linalg.norm(shrunk, axis=2)
+    assert np.all(norms < 2.0)
+    assert norms[0, 1] > norms[0, 0]
+    np.testing.assert_array_equal(smooth_radial_shrinkage(values, 0.0), 0.0)
 
 
 def test_frame_balanced_statistics_match_direct_squared_error() -> None:
@@ -30,41 +29,41 @@ def test_frame_balanced_statistics_match_direct_squared_error() -> None:
             [[0.02, 0.0, 0.0], [0.04, 0.0, 0.0]],
         ]
     )
-    shape = np.array(
+    raw = np.array(
         [
             [[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]],
             [[1.0, 0.0, 0.0], [2.0, 0.0, 0.0]],
         ]
     )
     valid = np.ones((3, 2), dtype=bool)
-    scale = 0.012
+    scales = np.array([0.005, 0.012, 0.02])
 
     stats = frame_balanced_scale_statistics(
         target,
         valid,
-        shape,
+        raw,
+        scales,
         start_frame=1,
         end_frame=3,
     )
-    quadratic_error = (
-        stats.quadratic * scale**2
-        - 2.0 * stats.linear * scale
-        + stats.constant
-    )
-    direct_error = sum(
-        np.mean(np.sum(np.square(target[frame] - scale * shape[frame - 1]), axis=1))
-        for frame in range(1, 3)
-    )
-
-    np.testing.assert_allclose(quadratic_error, direct_error)
+    for index, scale in enumerate(scales):
+        corrected = smooth_radial_shrinkage(raw, float(scale))
+        direct_error = sum(
+            np.mean(
+                np.sum(
+                    np.square(target[frame] - corrected[frame - 1]),
+                    axis=1,
+                )
+            )
+            for frame in range(1, 3)
+        )
+        np.testing.assert_allclose(stats.squared_error_by_scale[index], direct_error)
 
 
 def test_scale_posterior_shrinks_likelihood_toward_population() -> None:
     scales = np.linspace(0.0, 0.03, 61)
     statistics = ScaleLikelihoodStatistics(
-        quadratic=10.0,
-        linear=0.2,
-        constant=0.01,
+        squared_error_by_scale=np.square(scales - 0.02),
         frame_count=10,
         raw_rms_m=1.0,
     )
@@ -95,10 +94,9 @@ def test_shared_selection_does_not_use_held_out_statistics() -> None:
     key = (1, 0.0, 1.0)
 
     def stats(optimum: float) -> ScaleLikelihoodStatistics:
+        scales = np.linspace(0.0, 0.03, 31)
         return ScaleLikelihoodStatistics(
-            quadratic=20.0,
-            linear=20.0 * optimum,
-            constant=20.0 * optimum**2 + 1e-4,
+            squared_error_by_scale=20.0 * np.square(scales - optimum) + 1e-4,
             frame_count=10,
             raw_rms_m=1.0,
         )
