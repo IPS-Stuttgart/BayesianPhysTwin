@@ -95,8 +95,9 @@ bpt-fit-phystwin-bayesian-anchor \
 
 Binary visibility/motion validity enters as missingness. The output posterior
 contains per-track mean, variance, final inlier probability, and update count.
-Future variance is propagated without future observations; its calibration is
-not yet established.
+Future variance is propagated without future observations. A direct
+manual-track NEES audit rejects calibration of the validation-selected raw
+variance; use the strict conformal command below for coverage-bearing outputs.
 
 Retrieve only the compact released inputs and reproduce the locked full-cohort
 comparisons with:
@@ -109,11 +110,32 @@ bpt-confirm-phystwin-residual-baselines \
   /path/to/phystwin-eval runs/phystwin-baselines
 bpt-confirm-phystwin-bayesian-anchor \
   /path/to/phystwin-eval runs/phystwin-bayesian-anchor
+bpt-audit-phystwin-calibration \
+  /path/to/phystwin-eval runs/phystwin-calibration \
+  --anchor-run-dir runs/phystwin-bayesian-anchor
 bpt-analyze-phystwin-horizon \
   /path/to/phystwin-eval \
   runs/phystwin-confirmatory runs/phystwin-baselines \
   runs/phystwin-horizon.json
 ```
+
+The calibration command preserves a strict split. It uses fixed anchor
+hyperparameters, fits state only on `[0, fit_end)`, calibrates per-frame metric
+scores on `[fit_end, train_end)`, and never refits the predictor on calibration
+frames. Finite-sample one-sided coverage is distribution-free only when the
+calibration and future scores are exchangeable. With 90% nominal bounds on the
+19 nondevelopment cases, the posterior-scaled point estimate is 90.63% macro
+coverage for manual-track error and 75.36% for CD; track coverage falls from
+98.66% early to 82.28% late. Additive wrapping covers 100.00%/97.84% CD/track
+but widens median case-mean bounds to 38.87/42.68 mm.
+
+The same output reports 3D NEES against manual correspondences. The operational
+selected posterior has pooled mean NEES 1355.05 versus the calibrated
+expectation of 3 and 38.31% coverage under its nominal 90% ellipsoid. Six cases
+selected zero process noise and have 0.13% coverage. A separate strict fixed
+5 mm process-noise posterior overdisperses instead (mean NEES 0.62; 99.63%
+coverage). These are calibration results, not permission to interpret every
+Bayesian covariance in the pipeline as frequentist coverage.
 
 The horizon command is a post-hoc mechanism analysis. It splits each official
 future interval into contiguous early, middle, and late thirds, reevaluates the

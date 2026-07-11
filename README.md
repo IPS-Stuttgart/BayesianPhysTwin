@@ -142,6 +142,9 @@ bpt-build-phystwin-raw-cues ...
 bpt-fit-phystwin-residual-dynamics ...
 bpt-compare-phystwin-trajectories manifest.json comparison.json
 bpt-fit-phystwin-bayesian-anchor ...
+bpt-audit-phystwin-calibration \
+  data/phystwin-eval runs/phystwin-calibration \
+  --anchor-run-dir runs/phystwin-bayesian-anchor
 bpt-analyze-phystwin-horizon \
   data/phystwin-eval runs/phystwin-confirmatory \
   runs/phystwin-baselines runs/phystwin-horizon.json
@@ -188,6 +191,16 @@ Bayesian Laplacian posterior on the exact released object spring graph. The
 development-selected `lambda = 0.1` strongly reduces spatial roughness, but its
 frozen graph-over-kNN CD and track intervals cross zero; treat it as a coherent
 uncertainty-bearing regularizer, not a confirmed accuracy improvement.
+
+The calibration audit fits a fixed robust anchor only before each validation
+interval, freezes it, calibrates per-case finite-sample future CD/track upper
+bounds, and tests lifted anchor covariance against manual tracks with 3D NEES.
+On the 19-case audit, posterior-scaled 90% track bounds reach 90.63% equal-case
+future coverage, while CD reaches only 75.36%. The operational selected
+posterior has mean 3D NEES 1355.05 and 38.31% nominal-90% ellipsoid coverage;
+its raw variance must not be described as calibrated. The conformal guarantee
+is conditional on exchangeable frame scores, an assumption tested by the saved
+early/middle/late coverage readout.
 
 The spatial-mode analysis applies the same capped endpoint anchor as a
 per-point field, translation, SE(3), Sim(3), and affine transform on one paired
