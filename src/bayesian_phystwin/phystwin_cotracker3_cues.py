@@ -505,8 +505,8 @@ def build_phystwin_cotracker3_cues(
         ) & (reverse_quality[:, raw_ids] >= config.minimum_cycle_quality)
         cycle_error[: config.train_end_frame, selected] = selected_cycle_error
         cycle_valid[: config.train_end_frame, selected] = selected_cycle_valid
-        multiview_tracks[camera, :, selected] = selected_forward_tracks
-        multiview_quality[camera, :, selected] = selected_forward_quality
+        multiview_tracks[camera][:, selected] = selected_forward_tracks
+        multiview_quality[camera][:, selected] = selected_forward_quality
 
         for frame in range(config.train_end_frame):
             object_mask = np.asarray(
@@ -536,8 +536,8 @@ def build_phystwin_cotracker3_cues(
         cross_view = np.flatnonzero(eligible & (mapping.source_camera != camera))
         if len(cross_view):
             cross_prediction = runner.track(video, projected[cross_view].astype(np.float32))
-            multiview_tracks[camera, :, cross_view] = cross_prediction.tracks_xy
-            multiview_quality[camera, :, cross_view] = (
+            multiview_tracks[camera][:, cross_view] = cross_prediction.tracks_xy
+            multiview_quality[camera][:, cross_view] = (
                 cross_prediction.visibility_probability
                 * cross_prediction.confidence_probability
             )
