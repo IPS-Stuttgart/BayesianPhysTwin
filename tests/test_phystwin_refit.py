@@ -56,6 +56,35 @@ def test_cue_objective_aligns_interframe_flow_to_target_frame():
     assert objective.weights[3, 0] == pytest.approx(np.exp(-4.0), rel=1e-6)
 
 
+def test_cue_objective_composes_regenerated_probabilities_and_residuals():
+    visible = np.ones((2, 1), dtype=bool)
+    motion_valid = np.ones((2, 1), dtype=bool)
+    cues = {
+        "confidence": np.array([[0.8], [1.0]]),
+        "visibility_probability": np.array([[0.5], [1.0]]),
+        "forward_backward_error_px": np.array([[2.0], [100.0]]),
+        "forward_backward_valid": np.array([[True], [False]]),
+        "multiview_reprojection_error_px": np.array([[1.0], [2.0]]),
+        "multiview_valid": np.array([[True], [True]]),
+    }
+
+    objective = build_phystwin_track_objective(
+        visible,
+        motion_valid,
+        cues=cues,
+        variant="cue",
+        config=PhysTwinRefitReliabilityConfig(
+            boundary_scale=None,
+            flow_scale=None,
+            forward_backward_scale_px=2.0,
+            multiview_scale_px=1.0,
+        ),
+    )
+
+    assert objective.weights[0, 0] == pytest.approx(0.4 * np.exp(-2.0))
+    assert objective.weights[1, 0] == pytest.approx(np.exp(-2.0))
+
+
 def test_mixture_normalizes_by_visible_support_not_prior_mass():
     visible, motion_valid = _masks()
     objective = build_phystwin_track_objective(
@@ -193,6 +222,34 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
     assert args.profile_prediction_mass == pytest.approx(0.999)
     assert args.boundary_scale == pytest.approx(0.004)
     assert not args.atomic_spring_forces
+
+
+def test_refit_cli_accepts_regenerated_cue_controls():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "cue",
+            "--train-end-frame",
+            "64",
+            "--disable-flow-cue",
+            "--disable-boundary-cue",
+            "--forward-backward-scale-px",
+            "16",
+            "--multiview-scale-px",
+            "2",
+        ]
+    )
+
+    assert args.disable_flow_cue
+    assert args.disable_boundary_cue
+    assert args.forward_backward_scale_px == pytest.approx(16.0)
+    assert args.multiview_scale_px == pytest.approx(2.0)
 
 
 def test_refit_cli_accepts_regularized_regional_springs():

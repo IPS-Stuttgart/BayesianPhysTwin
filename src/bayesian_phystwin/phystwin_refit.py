@@ -24,8 +24,11 @@ class PhysTwinRefitReliabilityConfig:
 
     minimum_probability: float = 1e-3
     confidence_power: float = 1.0
-    boundary_scale: float = 0.03
-    flow_scale: float = 0.005
+    visibility_power: float = 1.0
+    boundary_scale: float | None = 0.03
+    flow_scale: float | None = 0.005
+    forward_backward_scale_px: float | None = None
+    multiview_scale_px: float | None = None
     occlusion_probability: float = 1e-3
     markov_inlier_persistence: float = 0.98
     markov_outlier_persistence: float = 0.90
@@ -162,10 +165,16 @@ def build_phystwin_track_objective(
     cfg = config or PhysTwinRefitReliabilityConfig()
     if not 0.0 < cfg.minimum_probability < 0.5:
         raise ValueError("minimum_probability must be in (0, 0.5)")
-    if cfg.confidence_power < 0.0:
-        raise ValueError("confidence_power must be nonnegative")
-    if cfg.boundary_scale <= 0.0 or cfg.flow_scale <= 0.0:
-        raise ValueError("cue scales must be positive")
+    if cfg.confidence_power < 0.0 or cfg.visibility_power < 0.0:
+        raise ValueError("confidence and visibility powers must be nonnegative")
+    optional_scales = (
+        cfg.boundary_scale,
+        cfg.flow_scale,
+        cfg.forward_backward_scale_px,
+        cfg.multiview_scale_px,
+    )
+    if any(value is not None and value <= 0.0 for value in optional_scales):
+        raise ValueError("enabled cue scales must be positive")
     if not 0.0 <= cfg.occlusion_probability <= 1.0:
         raise ValueError("occlusion_probability must be in [0, 1]")
     if not 0.0 < cfg.markov_inlier_persistence < 1.0:
@@ -178,6 +187,16 @@ def build_phystwin_track_objective(
     cue_arrays = cues or {}
     confidence = np.clip(
         _aligned_cue(cue_arrays, "confidence", shape, default=1.0),
+        0.0,
+        1.0,
+    )
+    visibility_probability = np.clip(
+        _aligned_cue(
+            cue_arrays,
+            "visibility_probability",
+            shape,
+            default=1.0,
+        ),
         0.0,
         1.0,
     )
@@ -195,10 +214,60 @@ def build_phystwin_track_objective(
         _aligned_cue(cue_arrays, "flow_inconsistency", shape, default=0.0),
         0.0,
     )
+    forward_backward_error = np.maximum(
+        _aligned_cue(
+            cue_arrays,
+            "forward_backward_error_px",
+            shape,
+            default=0.0,
+        ),
+        0.0,
+    )
+    forward_backward_valid = _aligned_cue(
+        cue_arrays,
+        "forward_backward_valid",
+        shape,
+        default=0.0,
+    ).astype(bool)
+    multiview_error = np.maximum(
+        _aligned_cue(
+            cue_arrays,
+            "multiview_reprojection_error_px",
+            shape,
+            default=0.0,
+        ),
+        0.0,
+    )
+    multiview_valid = _aligned_cue(
+        cue_arrays,
+        "multiview_valid",
+        shape,
+        default=0.0,
+    ).astype(bool)
+    boundary_factor = np.ones(shape, dtype=float)
+    if cfg.boundary_scale is not None:
+        boundary_factor = 1.0 - np.exp(-boundary_distance / cfg.boundary_scale)
+    flow_factor = np.ones(shape, dtype=float)
+    if cfg.flow_scale is not None:
+        flow_factor = np.exp(-flow_inconsistency / cfg.flow_scale)
+    forward_backward_factor = np.ones(shape, dtype=float)
+    if cfg.forward_backward_scale_px is not None:
+        forward_backward_factor[forward_backward_valid] = np.exp(
+            -forward_backward_error[forward_backward_valid]
+            / cfg.forward_backward_scale_px
+        )
+    multiview_factor = np.ones(shape, dtype=float)
+    if cfg.multiview_scale_px is not None:
+        multiview_factor[multiview_valid] = np.exp(
+            -multiview_error[multiview_valid] / cfg.multiview_scale_px
+        )
     cue_prior = (
         np.power(confidence, cfg.confidence_power)
-        * (1.0 - np.exp(-boundary_distance / cfg.boundary_scale))
-        * np.exp(-flow_inconsistency / cfg.flow_scale)
+        * np.power(visibility_probability, cfg.visibility_power)
+        * boundary_factor
+        * flow_factor
+        * forward_backward_factor
+        * multiview_factor
         * np.where(occluded, cfg.occlusion_probability, 1.0)
     )
     cue_prior = np.clip(

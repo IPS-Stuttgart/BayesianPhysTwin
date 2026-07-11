@@ -48,8 +48,12 @@ class HeadlessPhysTwinRefitConfig:
     observation_variance: float = 2.5e-5
     model_discrepancy_variance: float = 0.0
     outlier_variance_multiplier: float = 100.0
-    flow_scale: float = 0.005
-    boundary_scale: float = 0.03
+    flow_scale: float | None = 0.005
+    boundary_scale: float | None = 0.03
+    confidence_power: float = 1.0
+    visibility_power: float = 1.0
+    forward_backward_scale_px: float | None = None
+    multiview_scale_px: float | None = None
     dt: float = 5e-5
     num_substeps: int = 667
     track_weight: float = 1.0
@@ -207,8 +211,16 @@ def run_headless_phystwin_refit(
         raise ValueError("model_discrepancy_variance must be nonnegative")
     if config.outlier_variance_multiplier <= 1.0:
         raise ValueError("outlier_variance_multiplier must be greater than one")
-    if config.flow_scale <= 0.0 or config.boundary_scale <= 0.0:
-        raise ValueError("cue scales must be positive")
+    cue_scales = (
+        config.flow_scale,
+        config.boundary_scale,
+        config.forward_backward_scale_px,
+        config.multiview_scale_px,
+    )
+    if any(value is not None and value <= 0.0 for value in cue_scales):
+        raise ValueError("enabled cue scales must be positive")
+    if config.confidence_power < 0.0 or config.visibility_power < 0.0:
+        raise ValueError("cue probability powers must be nonnegative")
     if config.num_substeps < 1 or config.dt <= 0.0:
         raise ValueError("simulator time discretization must be positive")
     if config.spring_parameterization not in {"dense", "grouped", "regional"}:
@@ -326,6 +338,10 @@ def run_headless_phystwin_refit(
         config=PhysTwinRefitReliabilityConfig(
             flow_scale=config.flow_scale,
             boundary_scale=config.boundary_scale,
+            confidence_power=config.confidence_power,
+            visibility_power=config.visibility_power,
+            forward_backward_scale_px=config.forward_backward_scale_px,
+            multiview_scale_px=config.multiview_scale_px,
         ),
     )
 
@@ -778,6 +794,10 @@ def run_headless_phystwin_refit(
         config=PhysTwinRefitReliabilityConfig(
             flow_scale=config.flow_scale,
             boundary_scale=config.boundary_scale,
+            confidence_power=config.confidence_power,
+            visibility_power=config.visibility_power,
+            forward_backward_scale_px=config.forward_backward_scale_px,
+            multiview_scale_px=config.multiview_scale_px,
         ),
     )
     common_metrics = _common_objective_metrics(

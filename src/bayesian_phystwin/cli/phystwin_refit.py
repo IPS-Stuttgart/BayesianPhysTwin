@@ -32,6 +32,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--outlier-variance-multiplier", type=float, default=100.0)
     parser.add_argument("--flow-scale", type=float, default=0.005)
     parser.add_argument("--boundary-scale", type=float, default=0.03)
+    parser.add_argument("--disable-flow-cue", action="store_true")
+    parser.add_argument("--disable-boundary-cue", action="store_true")
+    parser.add_argument("--confidence-power", type=float, default=1.0)
+    parser.add_argument("--visibility-power", type=float, default=1.0)
+    parser.add_argument("--forward-backward-scale-px", type=float)
+    parser.add_argument("--multiview-scale-px", type=float)
     parser.add_argument("--dt", type=float, default=5e-5)
     parser.add_argument("--num-substeps", type=int, default=667)
     parser.add_argument("--track-weight", type=float, default=1.0)
@@ -96,8 +102,14 @@ def main() -> None:
             observation_variance=args.observation_variance,
             model_discrepancy_variance=args.model_discrepancy_variance,
             outlier_variance_multiplier=args.outlier_variance_multiplier,
-            flow_scale=args.flow_scale,
-            boundary_scale=args.boundary_scale,
+            flow_scale=None if args.disable_flow_cue else args.flow_scale,
+            boundary_scale=(
+                None if args.disable_boundary_cue else args.boundary_scale
+            ),
+            confidence_power=args.confidence_power,
+            visibility_power=args.visibility_power,
+            forward_backward_scale_px=args.forward_backward_scale_px,
+            multiview_scale_px=args.multiview_scale_px,
             dt=args.dt,
             num_substeps=args.num_substeps,
             track_weight=args.track_weight,
