@@ -3,7 +3,10 @@ from pathlib import Path
 
 import numpy as np
 
-from bayesian_phystwin.phystwin_raw_cues import build_phystwin_raw_camera_cues
+from bayesian_phystwin.phystwin_raw_cues import (
+    build_phystwin_raw_camera_cues,
+    load_phystwin_raw_track_map,
+)
 
 
 def test_raw_camera_cues_map_tracks_and_measure_boundary(tmp_path: Path) -> None:
@@ -55,3 +58,10 @@ def test_raw_camera_cues_map_tracks_and_measure_boundary(tmp_path: Path) -> None
         np.testing.assert_array_equal(cues["raw_visibility"][1], [False, True])
         assert np.all(cues["boundary_distance"] >= 0.0)
     assert summary["mapping"]["maximum_distance_m"] == 0.0
+
+    mapping = load_phystwin_raw_track_map(final_path, raw)
+    np.testing.assert_array_equal(mapping.source_track, [1, 0])
+    np.testing.assert_allclose(
+        mapping.source_world_points,
+        [[0.02, 0.02, 0.0], [0.01, 0.01, 0.0]],
+    )
