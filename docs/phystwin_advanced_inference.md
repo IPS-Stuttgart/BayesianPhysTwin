@@ -53,6 +53,90 @@ source query, raw visibility, and normalized inside-mask boundary distance.
 Use `--boundary-scale` in `bpt-phystwin-refit` to match the cue's normalized
 pixel units.
 
+## Automatic MotionCrafter graph association
+
+The dense evaluator pins the official MotionCrafter repository at revision
+`1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257`. It consumes the released
+`point_map`, `valid_mask`, `scene_flow`, and `deform_mask` arrays. MotionCrafter
+predicts Eulerian forward scene flow, not persistent point identities, so the
+adapter constructs identities explicitly:
+
+1. resize the calibrated PhysTwin object mask and frame-zero depth with the
+   same cover-resize transform used by MotionCrafter;
+2. fit a trimmed frame-zero Sim(3) from same-pixel object depth pairs;
+3. chain forward scene flow by gated nearest point-map transport, rejecting
+   collisions and recording transport error and survival;
+4. infer a sparse soft map from PhysTwin surface vertices to MotionCrafter
+   trajectories using frame-zero distance, training-prefix persistence, the
+   exact spring graph, and a local injectivity penalty;
+5. freeze the map before reporting future dense graph error.
+
+The optional training-motion likelihood compares relative MotionCrafter motion
+with PhysTwin's automatic CoTracker graph trajectories. Development controls
+did not justify enabling it, so the frozen confirmation uses
+`--motion-strength 0`, one transport candidate, an 8-candidate graph map, and a
+4-pixel seed stride. `gt_track_3d.pkl` is never required. When present, it is
+opened only after association and supplies an audit of the automatic map.
+
+Run the pinned native-rate extraction and frozen association with:
+
+```bash
+BPT_MOTIONCRAFTER_CAMERAS=0,1,2 \
+  bash scripts/remote/run_phystwin_motioncrafter.sh CASE
+
+bpt-select-phystwin-motioncrafter-view \
+  runs/motioncrafter-selection.json \
+  /path/to/CASE/camera0_native/association_frozen/summary.json \
+  /path/to/CASE/camera1_native/association_frozen/summary.json \
+  /path/to/CASE/camera2_native/association_frozen/summary.json
+```
+
+Camera selection minimizes
+
+```text
+training dense graph error / training-end graph coverage.
+```
+
+This score uses no future values and no sparse manual tracks. Coverage is in
+the denominator because a view that retains only a tiny easy subset can report
+a misleadingly low error. The development rule selected camera 0 in all three
+interactions; confirmation therefore runs camera 0 only.
+
+Because the primary score compares against the released training simulation,
+the report also evaluates a perception-only sensitivity score,
+
+```text
+(frame-zero association error + training motion disagreement)
+/ training-end graph coverage.
+```
+
+It independently selects camera 0 in all three development interactions. The
+confirmation decision is therefore unchanged without simulator-error input.
+
+The upstream pipeline supports overlapping temporal windows, but its public
+`run.py` currently forwards `overlap=0` regardless of the CLI value. The
+`run_motioncrafter_overlap.py` adapter repairs that forwarding at runtime while
+checking the pinned revision. Overlap, multi-candidate transport, naive
+multiview pooling, training-motion matching, and reverse-video tracking are
+development controls, not parts of the frozen method. In development, reverse
+tracking restored coverage but raised sparse future audit error to 102.65 mm;
+it must not be used as an accuracy result.
+
+The output `summary.json` records every input hash, transform, transport error,
+per-frame graph coverage, automatic dense error, and optional manual audit.
+The associated NPZ retains graph observations, validity, reliability,
+candidate weights, dense trajectories, camera IDs, and any explicitly run
+backward control.
+
+On the frozen 19-case camera-0 confirmation, 17 cases retain at least three
+paired future manual frames. Their equal-case mean within-sequence correlation
+is `0.661 [0.449, 0.843]`, with 15/17 positive correlations and pooled frame
+correlation `0.854`. Matched case-mean automatic-minus-manual error is
+`-1.28 mm [-11.19, +8.26]`. Mean future graph coverage is only
+`31.42% [22.03%, 41.88%]`, and two cases retain no future sparse audited
+identity. Describe this as a confirmed automatic visible-surface surrogate,
+not a full replacement for manual identities.
+
 ## Constrained action residual
 
 Fit a low-rank residual to a baseline or posterior-mean trajectory:

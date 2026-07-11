@@ -34,6 +34,7 @@ Initial scope:
 - capped persistent and robust Bayesian endpoint discrepancy anchors
 - sparse spring-graph discrepancy smoothing and covariance solves
 - raw camera/mask cue recovery and paired moving-block evaluation
+- automatic dense MotionCrafter-to-spring-graph association and view gating
 - selective release-archive retrieval and physical-object clustered bootstrap
 - reproducible experiment configs and remote-run scripts
 
@@ -142,6 +143,25 @@ bpt-evaluate-phystwin-perception-cues \
 
 See [docs/phystwin_integration.md](docs/phystwin_integration.md) for the pinned
 upstream contract, optional cue sidecar, and likelihood boundary.
+
+Generate MotionCrafter point maps/scene flow at native frame rate, associate
+them with the PhysTwin spring graph without manual identities, and select one
+camera using training data only:
+
+```bash
+bash scripts/remote/run_phystwin_motioncrafter.sh CASE
+bpt-select-phystwin-motioncrafter-view \
+  runs/motioncrafter-selection.json \
+  /path/to/CASE/camera0_native/association_frozen/summary.json \
+  /path/to/CASE/camera1_native/association_frozen/summary.json \
+  /path/to/CASE/camera2_native/association_frozen/summary.json
+```
+
+The selector minimizes training dense error divided by training-end graph
+coverage. Sparse manual tracks are optional and are read only for a post-lock
+audit. See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
+for the pinned MotionCrafter revision, leakage boundary, controls, and current
+claim limit.
 
 Run a checkpoint-restoration parity check or a reliability-aware parameter
 refit directly inside the official Warp simulator:
