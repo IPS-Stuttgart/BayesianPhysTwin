@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import pickle
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ from .phystwin_official_evaluation import _nearest_distances
 class PerceptionCueEvaluationProtocol:
     """Frozen development selection and case-held-out evaluation choices."""
 
+    fit_fraction: float = 0.75
     forward_backward_scale_candidates_px: tuple[float, ...] = (
         1.0,
         2.0,
@@ -390,6 +392,33 @@ def _aggregate_cases(
                     float(np.nanquantile(boot, 0.975)),
                 ],
             }
+        auroc_summary = {}
+        auroc_names = tuple(
+            case_results[cases[0]][method]["unreliability_auroc"]
+        )
+        for name in auroc_names:
+            values = np.array(
+                [
+                    np.nan
+                    if case_results[case][method]["unreliability_auroc"][name]
+                    is None
+                    else float(
+                        case_results[case][method]["unreliability_auroc"][name]
+                    )
+                    for case in cases
+                ],
+                dtype=float,
+            )
+            boot = np.nanmean(values[bootstrap_indices], axis=1)
+            auroc_summary[name] = {
+                "case_mean": float(np.nanmean(values)),
+                "case_bootstrap_95_interval": [
+                    float(np.nanquantile(boot, 0.025)),
+                    float(np.nanquantile(boot, 0.975)),
+                ],
+                "defined_case_count": int(np.sum(np.isfinite(values))),
+            }
+        method_summary["unreliability_auroc"] = auroc_summary
         aggregate[method] = method_summary
     selected = np.array(
         [case_results[case]["selected_rich"]["highest_reliability_half_error_ratio"] for case in cases]
@@ -423,6 +452,8 @@ def run_perception_cue_confirmation(
     """Select cue transforms on development cases and lock-test other cases."""
 
     config = protocol or PerceptionCueEvaluationProtocol()
+    if not 0.0 < config.fit_fraction < 1.0:
+        raise ValueError("fit_fraction must lie in (0, 1)")
     if config.maximum_initial_manual_match_m <= 0.0:
         raise ValueError("maximum_initial_manual_match_m must be positive")
     if config.boundary_scale <= 0.0:
@@ -445,7 +476,8 @@ def run_perception_cue_confirmation(
         "candidate_transforms": [
             asdict(candidate) for candidate in _candidate_transforms(config)
         ],
-        "selection_objective": "case-mean highest-reliability-half error ratio",
+        "selection_objective": "case-mean highest-reliability-half error ratio on development fit frames",
+        "development_evaluation_interval": "validation frames excluded from cue-scale selection",
         "evaluation_interval": "released training video only; no future frames decoded",
         "cohorts": {
             "development": list(development),
@@ -462,17 +494,25 @@ def run_perception_cue_confirmation(
         )
         for case in selected_cases
     }
+    fit_end_by_case = {}
+    for case in selected_cases:
+        split = json.loads((root / case / "split.json").read_text(encoding="utf-8"))
+        train_start, train_end = (int(value) for value in split["train"])
+        if train_start != 0:
+            raise ValueError(f"unsupported nonzero training start for {case}")
+        fit_end_by_case[case] = math.floor(config.fit_fraction * train_end)
     candidate_results = []
     best: tuple[tuple[float, float, int, str], ReliabilityTransform] | None = None
     for candidate in _candidate_transforms(config):
         per_case = {}
         for case in development:
-            reliability = compose_perception_reliability(
+            all_reliability = compose_perception_reliability(
                 _observation_cues(observations[case]), candidate
             )
+            selection = observations[case].frame_index < fit_end_by_case[case]
             per_case[case] = reliability_error_metrics(
-                reliability,
-                observations[case].error_m,
+                all_reliability[selection],
+                observations[case].error_m[selection],
                 corruption_thresholds_m=config.corruption_thresholds_m,
             )
         ratio = float(
@@ -515,17 +555,26 @@ def run_perception_cue_confirmation(
             selected_transform,
             boundary_scale=config.boundary_scale,
         )
+        if case in development:
+            evaluation = observation.frame_index >= fit_end_by_case[case]
+            evaluation_interval = "development_validation"
+        else:
+            evaluation = np.ones(len(observation.error_m), dtype=bool)
+            evaluation_interval = "case_held_out_training"
         case_results[case] = {
             method: reliability_error_metrics(
-                score,
-                observation.error_m,
+                score[evaluation],
+                observation.error_m[evaluation],
                 corruption_thresholds_m=config.corruption_thresholds_m,
             )
             for method, score in scores.items()
         }
         case_metadata[case] = {
             "manual_track_count": int(len(observation.initial_match_distance_m)),
-            "manual_observation_count": int(len(observation.error_m)),
+            "manual_observation_count_total": int(len(observation.error_m)),
+            "manual_observation_count_evaluated": int(np.sum(evaluation)),
+            "evaluation_interval": evaluation_interval,
+            "fit_end_frame": fit_end_by_case[case],
             "initial_match_distance_m": {
                 "median": float(np.median(observation.initial_match_distance_m)),
                 "maximum": float(np.max(observation.initial_match_distance_m)),

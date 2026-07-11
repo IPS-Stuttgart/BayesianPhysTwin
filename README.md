@@ -112,6 +112,34 @@ bpt-build-phystwin-cues \
   runs/CASE/cues.npz
 ```
 
+Regenerate the probabilities discarded by the release from the raw camera
+streams, while preserving all 5,000 archived frame-zero queries per camera:
+
+```bash
+bpt-build-phystwin-cotracker3-cues \
+  data/phystwin-eval/CASE/final_data.pkl \
+  data/different_types/CASE \
+  /path/to/co-tracker/checkpoints/scaled_online.pth \
+  /path/to/co-tracker \
+  runs/cotracker3-cues/CASE/cues.npz \
+  --train-end-frame TRAIN_END \
+  --summary-json runs/cotracker3-cues/CASE/summary.json
+```
+
+The frozen extraction uses official CoTracker revision
+`82e02e8029753ad4ef13cf06be7f4fc5facdda4d`, checkpoint SHA-256
+`205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218`,
+and retains separate visibility/confidence probabilities, training-prefix
+forward/backward disagreement, and calibrated-camera multiview reprojection
+error. It never decodes a held-out frame. Run the complete cohort with
+`scripts/remote/run_phystwin_cotracker3_cues.sh`, then lock cue scales on the
+three development cases and evaluate them on the other 19 cases:
+
+```bash
+bpt-evaluate-phystwin-perception-cues \
+  data/phystwin-eval runs/cotracker3-cues runs/perception-cue-confirmation
+```
+
 See [docs/phystwin_integration.md](docs/phystwin_integration.md) for the pinned
 upstream contract, optional cue sidecar, and likelihood boundary.
 
@@ -127,6 +155,11 @@ bpt-phystwin-refit \
   --epochs 20 \
   --learning-rate 1e-3
 ```
+
+Rich-cue refits can disable the recovered proxy fields and consume the frozen
+continuous transform directly with `--disable-flow-cue`,
+`--disable-boundary-cue`, `--forward-backward-scale-px`, and
+`--multiview-scale-px`.
 
 See [docs/phystwin_refit.md](docs/phystwin_refit.md) for optional CUDA runtime
 requirements, matched baseline definitions, provenance outputs, and current
