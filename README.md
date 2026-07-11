@@ -145,6 +145,9 @@ bpt-fit-phystwin-bayesian-anchor ...
 bpt-analyze-phystwin-horizon \
   data/phystwin-eval runs/phystwin-confirmatory \
   runs/phystwin-baselines runs/phystwin-horizon.json
+bpt-analyze-phystwin-spatial-modes \
+  data/phystwin-eval runs/phystwin-spatial-modes \
+  --cohort confirmation
 bpt-compare-phystwin-graph-anchors \
   data/phystwin-eval runs/phystwin-graph-development \
   --cohort development --select-prior-strength
@@ -182,6 +185,12 @@ Bayesian Laplacian posterior on the exact released object spring graph. The
 development-selected `lambda = 0.1` strongly reduces spatial roughness, but its
 frozen graph-over-kNN CD and track intervals cross zero; treat it as a coherent
 uncertainty-bearing regularizer, not a confirmed accuracy improvement.
+
+The spatial-mode analysis applies the same capped endpoint anchor as a
+per-point field, translation, SE(3), Sim(3), and affine transform on one paired
+main-release cohort. It scores both official future metrics and records
+endpoint variance explained, graph coherence, and residual concentration near
+the optimized controller neighborhood and PhysTwin's `z = 0` ground plane.
 
 See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
 for the causal split contract, complete commands, and interpretation boundary.
