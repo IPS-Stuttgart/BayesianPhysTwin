@@ -69,6 +69,7 @@ class HeadlessPhysTwinRefitConfig:
     profile_controller_prior_std: float = 0.50
     profile_likelihood_temperature: float = 1.0
     profile_prediction_mass: float = 1.0
+    deterministic_spring_forces: bool = True
     device: str = "cuda:0"
 
 
@@ -431,6 +432,7 @@ def run_headless_phystwin_refit(
         spring_parameterization=config.spring_parameterization,
         num_object_springs=graph.num_object_springs,
         spring_group_ids=spring_group_ids,
+        deterministic_spring_forces=config.deterministic_spring_forces,
     )
     simulator.set_reference_spring_y(
         torch.log(checkpoint_spring_y).detach().clone()
