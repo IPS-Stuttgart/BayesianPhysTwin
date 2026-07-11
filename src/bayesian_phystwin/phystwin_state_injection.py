@@ -950,8 +950,8 @@ def run_phystwin_state_injection_comparison(
         "future_inputs": "recorded controller positions only",
         "primary_method": PRIMARY_STATE_INJECTION_METHOD,
         "primary_selection": (
-            "lowest equal-case mean official-metric ratio among injected "
-            "variants on the three designated development interactions"
+            "preselected requested full graph-smoothed position-and-velocity "
+            "state update; position-only and raw-kNN variants are ablations"
         ),
         "official_repo": str(Path(official_repo).resolve()),
         "official_commit": _git_commit(official_repo),
