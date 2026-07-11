@@ -1,11 +1,29 @@
 import numpy as np
 import pytest
+import pytest
 
 from bayesian_phystwin.phystwin_state_injection import (
     _released_self_collision_for_case,
     _trajectory_error,
     estimate_endpoint_velocity_delta,
 )
+
+
+def test_deterministic_vertex_spring_adjacency_has_fixed_sign_order() -> None:
+    pytest.importorskip("torch")
+    pytest.importorskip("warp")
+    from bayesian_phystwin._phystwin_warp_backend import (
+        deterministic_vertex_spring_adjacency,
+    )
+
+    offsets, spring_ids, signs = deterministic_vertex_spring_adjacency(
+        np.array([[0, 1], [2, 0], [3, 1]], dtype=np.int32),
+        num_object_points=3,
+    )
+
+    np.testing.assert_array_equal(offsets, [0, 2, 4, 5])
+    np.testing.assert_array_equal(spring_ids, [0, 1, 0, 2, 1])
+    np.testing.assert_array_equal(signs, [1, -1, -1, -1, 1])
 
 
 def test_velocity_delta_recovers_linear_correction_motion() -> None:

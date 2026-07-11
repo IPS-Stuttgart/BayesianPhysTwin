@@ -282,6 +282,7 @@ def _initialize_simulator(
     dt: float,
     num_substeps: int,
     self_collision: bool,
+    deterministic_spring_forces: bool = False,
     device: str,
 ):
     try:
@@ -366,6 +367,7 @@ def _initialize_simulator(
         outlier_variance_multiplier=FIXED_OUTLIER_VARIANCE_MULTIPLIER,
         spring_parameterization="dense",
         num_object_springs=graph.num_object_springs,
+        deterministic_spring_forces=deterministic_spring_forces,
     )
     simulator.set_reference_spring_y(torch.log(checkpoint_spring_y))
 
@@ -474,7 +476,9 @@ def apply_phystwin_state_injection(
     dt: float = 5e-5,
     num_substeps: int = 667,
     replay_endpoint_tolerance_m: float = 0.002,
+    repeatability_replays: int = 3,
     self_collision: bool | None = None,
+    deterministic_spring_forces: bool = True,
     device: str = "cuda:0",
 ) -> dict[str, object]:
     """Compare output correction with position/velocity simulator state resets."""
@@ -487,6 +491,8 @@ def apply_phystwin_state_injection(
         raise ValueError("residual cap and replay tolerance must be positive")
     if dt <= 0.0 or num_substeps < 1:
         raise ValueError("simulator time step settings must be positive")
+    if repeatability_replays < 2:
+        raise ValueError("repeatability_replays must be at least two")
     if device != "cuda:0":
         raise ValueError(
             "the pinned official simulator selects cuda:0; use "
@@ -567,6 +573,7 @@ def apply_phystwin_state_injection(
         dt=dt,
         num_substeps=num_substeps,
         self_collision=self_collision,
+        deterministic_spring_forces=deterministic_spring_forces,
         device=device,
     )
     replay_positions, replay_velocities = _rollout_initial(
@@ -601,18 +608,38 @@ def apply_phystwin_state_injection(
         stop_frame=frame_count,
         device=device,
     )
-    endpoint_restart_repeat_future = _rollout_restart(
-        simulator,
-        torch,
-        wp,
-        baseline[endpoint_index],
-        estimated_endpoint_velocity,
-        start_frame=train_end_frame,
-        stop_frame=frame_count,
-        device=device,
-    )
-    restart_repeatability = _trajectory_error(
-        endpoint_restart[train_end_frame:], endpoint_restart_repeat_future
+    endpoint_restart_repeat_futures = [
+        _rollout_restart(
+            simulator,
+            torch,
+            wp,
+            baseline[endpoint_index],
+            estimated_endpoint_velocity,
+            start_frame=train_end_frame,
+            stop_frame=frame_count,
+            device=device,
+        )
+        for _ in range(repeatability_replays - 1)
+    ]
+    repeatability_errors = [
+        _trajectory_error(endpoint_restart[train_end_frame:], repeated)
+        for repeated in endpoint_restart_repeat_futures
+    ]
+    restart_repeatability = {
+        key: max(error[key] for error in repeatability_errors)
+        for key in repeatability_errors[0]
+    }
+    restart_repeatability.update(
+        {
+            "ensemble_size": repeatability_replays,
+            "bitwise_identical": bool(
+                all(
+                    np.array_equal(endpoint_restart[train_end_frame:], repeated)
+                    for repeated in endpoint_restart_repeat_futures
+                )
+            ),
+            "per_repeat": repeatability_errors,
+        }
     )
     candidates = {ENDPOINT_RESTART: endpoint_restart}
     for mode, output_method, position_method, velocity_method in (
@@ -701,7 +728,10 @@ def apply_phystwin_state_injection(
         "estimated_endpoint_velocity": estimated_endpoint_velocity,
         "diagnostic_replay_endpoint_velocity": replay_velocities[endpoint_index],
         "diagnostic_replay_future": replay_positions[train_end_frame:],
-        "diagnostic_endpoint_restart_repeat_future": (endpoint_restart_repeat_future),
+        **{
+            f"diagnostic_endpoint_restart_repeat_future__{index + 1}": repeated
+            for index, repeated in enumerate(endpoint_restart_repeat_futures)
+        },
     }
     for method, trajectory in candidates.items():
         archive_values[f"future__{method}"] = trajectory[train_end_frame:]
@@ -718,7 +748,9 @@ def apply_phystwin_state_injection(
             "dt": dt,
             "num_substeps": num_substeps,
             "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
+            "repeatability_replays": repeatability_replays,
             "self_collision": self_collision,
+            "deterministic_spring_forces": deterministic_spring_forces,
             "device": device,
             "runtime": _simulator_runtime(),
         },
@@ -748,6 +780,11 @@ def apply_phystwin_state_injection(
                 "released PhysTwin cloth/package case configuration"
                 if self_collision
                 else "released PhysTwin default configuration"
+            ),
+            "spring_force_accumulation": (
+                "fixed per-vertex incident-spring order without GPU atomics"
+                if deterministic_spring_forces
+                else "released per-spring GPU atomic accumulation"
             ),
         },
         "inputs": {
@@ -868,6 +905,8 @@ def run_phystwin_state_injection_comparison(
     dt: float = 5e-5,
     num_substeps: int = 667,
     replay_endpoint_tolerance_m: float = 0.002,
+    repeatability_replays: int = 3,
+    deterministic_spring_forces: bool = True,
     bootstrap_samples: int = 10000,
     bootstrap_block_length: int = 5,
     bootstrap_seed: int = 20260711,
@@ -940,12 +979,14 @@ def run_phystwin_state_injection_comparison(
         ),
         "self_collision_by_case": self_collision_by_case,
         "diagnostic_replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
+        "deterministic_spring_forces": deterministic_spring_forces,
         "endpoint_state_source": (
             "released endpoint position and released-trajectory velocity estimate; "
             "frame-zero replay is diagnostic only"
         ),
         "restart_repeatability_control": (
-            "duplicate uncorrected endpoint restart with identical state and controls"
+            f"{repeatability_replays} uncorrected endpoint restarts with identical "
+            "state and controls"
         ),
         "future_inputs": "recorded controller positions only",
         "primary_method": PRIMARY_STATE_INJECTION_METHOD,
@@ -974,6 +1015,8 @@ def run_phystwin_state_injection_comparison(
         "dt": dt,
         "num_substeps": num_substeps,
         "replay_endpoint_tolerance_m": replay_endpoint_tolerance_m,
+        "repeatability_replays": repeatability_replays,
+        "deterministic_spring_forces": deterministic_spring_forces,
         "device": "cuda:0",
         "runtime": runtime,
     }
@@ -1019,7 +1062,9 @@ def run_phystwin_state_injection_comparison(
                 dt=dt,
                 num_substeps=num_substeps,
                 replay_endpoint_tolerance_m=replay_endpoint_tolerance_m,
+                repeatability_replays=repeatability_replays,
                 self_collision=self_collision_by_case[case],
+                deterministic_spring_forces=deterministic_spring_forces,
             )
         case_results[case] = {
             "physical_object": clusters[case],

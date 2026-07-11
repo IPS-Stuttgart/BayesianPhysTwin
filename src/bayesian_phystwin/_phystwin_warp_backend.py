@@ -10,6 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import numpy as np
 import torch
 import warp as wp
 
@@ -109,6 +110,101 @@ def expand_spring_group_log_y(
     spring_log_y[spring] = reference_log_y[spring] + group_log_scales[group]
 
 
+@wp.kernel
+def eval_springs_deterministic(
+    x: wp.array(dtype=wp.vec3),
+    v: wp.array(dtype=wp.vec3),
+    control_x: wp.array(dtype=wp.vec3),
+    control_v: wp.array(dtype=wp.vec3),
+    num_object_points: int,
+    springs: wp.array(dtype=wp.vec2i),
+    rest_lengths: wp.array(dtype=wp.float32),
+    spring_y: wp.array(dtype=wp.float32),
+    vertex_spring_offsets: wp.array(dtype=wp.int32),
+    vertex_spring_ids: wp.array(dtype=wp.int32),
+    vertex_spring_signs: wp.array(dtype=wp.int32),
+    dashpot_damping: float,
+    spring_y_min: float,
+    spring_y_max: float,
+    forces: wp.array(dtype=wp.vec3),
+):
+    """Sum incident springs in fixed index order without GPU atomics."""
+
+    vertex = wp.tid()
+    total = wp.vec3(0.0, 0.0, 0.0)
+    start = vertex_spring_offsets[vertex]
+    stop = vertex_spring_offsets[vertex + 1]
+    for adjacency_index in range(start, stop):
+        spring = vertex_spring_ids[adjacency_index]
+        if wp.exp(spring_y[spring]) > spring_y_min:
+            first = springs[spring][0]
+            second = springs[spring][1]
+            if first >= num_object_points:
+                x1 = control_x[first - num_object_points]
+                v1 = control_v[first - num_object_points]
+            else:
+                x1 = x[first]
+                v1 = v[first]
+            if second >= num_object_points:
+                x2 = control_x[second - num_object_points]
+                v2 = control_v[second - num_object_points]
+            else:
+                x2 = x[second]
+                v2 = v[second]
+            rest = rest_lengths[spring]
+            displacement = x2 - x1
+            length = wp.length(displacement)
+            direction = displacement / wp.max(length, 1e-6)
+            spring_force = (
+                wp.clamp(
+                    wp.exp(spring_y[spring]),
+                    low=spring_y_min,
+                    high=spring_y_max,
+                )
+                * (length / rest - 1.0)
+                * direction
+            )
+            relative_speed = wp.dot(v2 - v1, direction)
+            dashpot_force = dashpot_damping * relative_speed * direction
+            sign = float(vertex_spring_signs[adjacency_index])
+            total += sign * (spring_force + dashpot_force)
+    forces[vertex] = total
+
+
+def deterministic_vertex_spring_adjacency(
+    springs: np.ndarray,
+    *,
+    num_object_points: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return CSR incident-spring arrays in deterministic spring-index order."""
+
+    edges = np.asarray(springs, dtype=np.int64)
+    if edges.ndim != 2 or edges.shape[1] != 2:
+        raise ValueError("springs must have shape (S, 2)")
+    if num_object_points < 1 or np.any(edges < 0):
+        raise ValueError("object point count and spring endpoints must be valid")
+    incident: list[list[tuple[int, int]]] = [
+        [] for _ in range(num_object_points)
+    ]
+    for spring, (first, second) in enumerate(edges):
+        if first < num_object_points:
+            incident[int(first)].append((spring, 1))
+        if second < num_object_points:
+            incident[int(second)].append((spring, -1))
+    offsets = np.zeros(num_object_points + 1, dtype=np.int32)
+    for vertex, values in enumerate(incident):
+        values.sort(key=lambda value: value[0])
+        offsets[vertex + 1] = offsets[vertex] + len(values)
+    spring_ids = np.empty(int(offsets[-1]), dtype=np.int32)
+    signs = np.empty_like(spring_ids)
+    for vertex, values in enumerate(incident):
+        start = int(offsets[vertex])
+        for local, (spring, sign) in enumerate(values):
+            spring_ids[start + local] = spring
+            signs[start + local] = sign
+    return offsets, spring_ids, signs
+
+
 def load_official_spring_mass_module(
     official_repo: str | Path,
     *,
@@ -158,6 +254,7 @@ def make_reliability_simulator_class(official_module: Any):
             spring_parameterization: str,
             num_object_springs: int,
             spring_group_ids: Any | None = None,
+            deterministic_spring_forces: bool = False,
             **kwargs: Any,
         ) -> None:
             self.loss_variant = objective.variant
@@ -166,6 +263,7 @@ def make_reliability_simulator_class(official_module: Any):
                     "spring_parameterization must be 'dense', 'grouped', or 'regional'"
                 )
             self.spring_parameterization = spring_parameterization
+            self.deterministic_spring_forces = bool(deterministic_spring_forces)
             self.grouped_num_object_springs = int(num_object_springs)
             device = kwargs["gt_object_points"].device
             spring_count = int(args[1].shape[0])
@@ -216,6 +314,35 @@ def make_reliability_simulator_class(official_module: Any):
                 dtype=wp.int32,
                 requires_grad=False,
             )
+            if self.deterministic_spring_forces:
+                offsets, spring_ids, signs = deterministic_vertex_spring_adjacency(
+                    args[1].detach().cpu().numpy(),
+                    num_object_points=int(kwargs["num_object_points"]),
+                )
+                self.vertex_spring_offsets_tensor = torch.as_tensor(
+                    offsets, dtype=torch.int32, device=device
+                ).contiguous()
+                self.vertex_spring_ids_tensor = torch.as_tensor(
+                    spring_ids, dtype=torch.int32, device=device
+                ).contiguous()
+                self.vertex_spring_signs_tensor = torch.as_tensor(
+                    signs, dtype=torch.int32, device=device
+                ).contiguous()
+                self.wp_vertex_spring_offsets = wp.from_torch(
+                    self.vertex_spring_offsets_tensor,
+                    dtype=wp.int32,
+                    requires_grad=False,
+                )
+                self.wp_vertex_spring_ids = wp.from_torch(
+                    self.vertex_spring_ids_tensor,
+                    dtype=wp.int32,
+                    requires_grad=False,
+                )
+                self.wp_vertex_spring_signs = wp.from_torch(
+                    self.vertex_spring_signs_tensor,
+                    dtype=wp.int32,
+                    requires_grad=False,
+                )
             self.track_prior_frames = torch.as_tensor(
                 objective.prior_inlier_probability,
                 dtype=torch.float32,
@@ -272,7 +399,93 @@ def make_reliability_simulator_class(official_module: Any):
                     ],
                     outputs=[self.wp_spring_Y],
                 )
-            super().step()
+            if not self.deterministic_spring_forces:
+                super().step()
+                return
+            for substep in range(self.num_substeps):
+                if self.controller_points is not None:
+                    wp.launch(
+                        official_module.set_control_points,
+                        dim=self.num_control_points,
+                        inputs=[
+                            self.num_substeps,
+                            self.wp_original_control_point,
+                            self.wp_target_control_point,
+                            substep,
+                        ],
+                        outputs=[self.wp_states[substep].wp_control_x],
+                    )
+                wp.launch(
+                    eval_springs_deterministic,
+                    dim=self.num_object_points,
+                    inputs=[
+                        self.wp_states[substep].wp_x,
+                        self.wp_states[substep].wp_v,
+                        self.wp_states[substep].wp_control_x,
+                        self.wp_states[substep].wp_control_v,
+                        self.num_object_points,
+                        self.wp_springs,
+                        self.wp_rest_lengths,
+                        self.wp_spring_Y,
+                        self.wp_vertex_spring_offsets,
+                        self.wp_vertex_spring_ids,
+                        self.wp_vertex_spring_signs,
+                        self.dashpot_damping,
+                        self.spring_Y_min,
+                        self.spring_Y_max,
+                    ],
+                    outputs=[self.wp_states[substep].wp_vertice_forces],
+                )
+                if self.object_collision_flag:
+                    output_velocity = self.wp_states[substep].wp_v_before_collision
+                else:
+                    output_velocity = self.wp_states[substep].wp_v_before_ground
+                wp.launch(
+                    official_module.update_vel_from_force,
+                    dim=self.num_object_points,
+                    inputs=[
+                        self.wp_states[substep].wp_v,
+                        self.wp_states[substep].wp_vertice_forces,
+                        self.wp_masses,
+                        self.dt,
+                        self.drag_damping,
+                        self.reverse_factor,
+                    ],
+                    outputs=[output_velocity],
+                )
+                if self.object_collision_flag:
+                    wp.launch(
+                        official_module.object_collision,
+                        dim=self.num_object_points,
+                        inputs=[
+                            self.wp_states[substep].wp_x,
+                            self.wp_states[substep].wp_v_before_collision,
+                            self.wp_masses,
+                            self.wp_masks,
+                            self.wp_collide_object_elas,
+                            self.wp_collide_object_fric,
+                            self.collision_dist,
+                            self.wp_collision_indices,
+                            self.wp_collision_number,
+                        ],
+                        outputs=[self.wp_states[substep].wp_v_before_ground],
+                    )
+                wp.launch(
+                    official_module.integrate_ground_collision,
+                    dim=self.num_object_points,
+                    inputs=[
+                        self.wp_states[substep].wp_x,
+                        self.wp_states[substep].wp_v_before_ground,
+                        self.wp_collide_elas,
+                        self.wp_collide_fric,
+                        self.dt,
+                        self.reverse_factor,
+                    ],
+                    outputs=[
+                        self.wp_states[substep + 1].wp_x,
+                        self.wp_states[substep + 1].wp_v,
+                    ],
+                )
 
         def set_reference_spring_y(self, spring_log_y: Any):
             if self.spring_parameterization == "dense":
