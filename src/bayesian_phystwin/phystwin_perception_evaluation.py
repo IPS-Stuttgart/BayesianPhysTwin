@@ -338,20 +338,26 @@ def _candidate_transforms(
 
 def _method_scores(
     observations: ManualCueObservations,
-    transform: ReliabilityTransform,
+    transforms: Mapping[str, ReliabilityTransform],
     *,
     boundary_scale: float,
 ) -> dict[str, np.ndarray]:
     cues = _observation_cues(observations)
-    return {
+    scores = {
         "hard_binary": observations.hard_valid.astype(float),
         "boundary_proxy": 1.0
         - np.exp(-np.maximum(observations.boundary_distance, 0.0) / boundary_scale),
         "network": compose_perception_reliability(
             cues, ReliabilityTransform("network")
         ),
-        "selected_rich": compose_perception_reliability(cues, transform),
     }
+    scores.update(
+        {
+            method: compose_perception_reliability(cues, transform)
+            for method, transform in transforms.items()
+        }
+    )
+    return scores
 
 
 def _aggregate_cases(
@@ -420,25 +426,31 @@ def _aggregate_cases(
             }
         method_summary["unreliability_auroc"] = auroc_summary
         aggregate[method] = method_summary
-    selected = np.array(
-        [case_results[case]["selected_rich"]["highest_reliability_half_error_ratio"] for case in cases]
-    )
     comparisons = {}
-    for baseline in ("hard_binary", "boundary_proxy", "network"):
-        base = np.array(
-            [case_results[case][baseline]["highest_reliability_half_error_ratio"] for case in cases]
+    for method in (
+        "network_fb_locked",
+        "network_mv_locked",
+        "network_fb_mv_locked",
+        "selected_rich",
+    ):
+        selected = np.array(
+            [case_results[case][method]["highest_reliability_half_error_ratio"] for case in cases]
         )
-        difference = selected - base
-        boot = np.mean(difference[bootstrap_indices], axis=1)
-        comparisons[f"selected_rich_minus_{baseline}"] = {
-            "case_mean_difference": float(np.mean(difference)),
-            "case_bootstrap_95_interval": [
-                float(np.quantile(boot, 0.025)),
-                float(np.quantile(boot, 0.975)),
-            ],
-            "improved_case_count": int(np.sum(difference < 0.0)),
-            "case_count": len(cases),
-        }
+        for baseline in ("hard_binary", "boundary_proxy", "network"):
+            base = np.array(
+                [case_results[case][baseline]["highest_reliability_half_error_ratio"] for case in cases]
+            )
+            difference = selected - base
+            boot = np.mean(difference[bootstrap_indices], axis=1)
+            comparisons[f"{method}_minus_{baseline}"] = {
+                "case_mean_difference": float(np.mean(difference)),
+                "case_bootstrap_95_interval": [
+                    float(np.quantile(boot, 0.025)),
+                    float(np.quantile(boot, 0.975)),
+                ],
+                "improved_case_count": int(np.sum(difference < 0.0)),
+                "case_count": len(cases),
+            }
     return {"methods": aggregate, "comparisons": comparisons}
 
 
@@ -503,6 +515,9 @@ def run_perception_cue_confirmation(
         fit_end_by_case[case] = math.floor(config.fit_fraction * train_end)
     candidate_results = []
     best: tuple[tuple[float, float, int, str], ReliabilityTransform] | None = None
+    ranked_candidates: list[
+        tuple[tuple[float, float, int, str], ReliabilityTransform]
+    ] = []
     for candidate in _candidate_transforms(config):
         per_case = {}
         for case in development:
@@ -541,10 +556,32 @@ def run_perception_cue_confirmation(
             }
         )
         ranking = (ratio, mean_correlation, complexity, candidate.name)
+        ranked_candidates.append((ranking, candidate))
         if best is None or ranking < best[0]:
             best = (ranking, candidate)
     assert best is not None
     selected_transform = best[1]
+    selected_transforms = {
+        "network_fb_locked": min(
+            item
+            for item in ranked_candidates
+            if item[1].forward_backward_scale_px is not None
+            and item[1].multiview_scale_px is None
+        )[1],
+        "network_mv_locked": min(
+            item
+            for item in ranked_candidates
+            if item[1].forward_backward_scale_px is None
+            and item[1].multiview_scale_px is not None
+        )[1],
+        "network_fb_mv_locked": min(
+            item
+            for item in ranked_candidates
+            if item[1].forward_backward_scale_px is not None
+            and item[1].multiview_scale_px is not None
+        )[1],
+        "selected_rich": selected_transform,
+    }
 
     case_results: dict[str, dict[str, dict[str, Any]]] = {}
     case_metadata: dict[str, Any] = {}
@@ -552,7 +589,7 @@ def run_perception_cue_confirmation(
         observation = observations[case]
         scores = _method_scores(
             observation,
-            selected_transform,
+            selected_transforms,
             boundary_scale=config.boundary_scale,
         )
         if case in development:
@@ -586,6 +623,10 @@ def run_perception_cue_confirmation(
         "protocol_id": locked["protocol_id"],
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "selected_transform": asdict(selected_transform),
+        "selected_component_transforms": {
+            method: asdict(transform)
+            for method, transform in selected_transforms.items()
+        },
         "development_selection": candidate_results,
         "case_metadata": case_metadata,
         "case_results": case_results,
