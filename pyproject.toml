@@ -51,6 +51,7 @@ bpt-diagnose-phystwin-bias = "bayesian_phystwin.cli.phystwin_bias_diagnostic:mai
 bpt-fetch-phystwin-eval-data = "bayesian_phystwin.cli.phystwin_data:main"
 bpt-replay-residuals = "bayesian_phystwin.cli.residual_replay:main"
 bpt-synthetic-benchmark = "bayesian_phystwin.cli.synthetic_benchmark:main"
+causal4d-counterfactual-benchmark = "causal4d.cli.counterfactual_benchmark:main"
 
 [project.optional-dependencies]
 dev = [

@@ -42,6 +42,7 @@ Initial scope:
 
 ```text
 src/bayesian_phystwin/   reusable Python package
+src/causal4d/            independent counterfactual world-model benchmark
 tests/                   unit tests for estimation utilities
 examples/                small synthetic demos
 configs/compute/         host-specific run defaults
@@ -91,6 +92,21 @@ bpt-synthetic-benchmark \
 
 See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete
 protocol and baseline definitions.
+
+Run the independent Causal4D milestone without changing the Bayesian PhysTwin
+pipeline:
+
+```bash
+causal4d-counterfactual-benchmark \
+  --seeds 0:5 \
+  --output-dir runs/causal4d-counterfactual-v1
+```
+
+This evaluates generative-only, physics-only, and hybrid predictors on one
+untouched action per rope, cloth, and soft-block object under matched and
+shifted contact worlds. See
+[docs/causal4d_counterfactual_benchmark.md](docs/causal4d_counterfactual_benchmark.md)
+for the locked split, information boundary, metrics, and artifact schema.
 
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
