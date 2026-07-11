@@ -148,6 +148,9 @@ bpt-analyze-phystwin-horizon \
 bpt-analyze-phystwin-spatial-modes \
   data/phystwin-eval runs/phystwin-spatial-modes \
   --cohort confirmation
+bpt-analyze-phystwin-controller-sensitivity \
+  /path/to/PhysTwin data/phystwin-eval runs/phystwin-controller-sensitivity \
+  --cohort development
 bpt-compare-phystwin-graph-anchors \
   data/phystwin-eval runs/phystwin-graph-development \
   --cohort development --select-prior-strength
@@ -191,6 +194,20 @@ per-point field, translation, SE(3), Sim(3), and affine transform on one paired
 main-release cohort. It scores both official future metrics and records
 endpoint variance explained, graph coherence, and residual concentration near
 the optimized controller neighborhood and PhysTwin's `z = 0` ground plane.
+
+The controller-sensitivity command restarts every candidate from the same
+released endpoint state and applies endpoint-zero, temporally correlated,
+antithetic translations to one inferred trajectory per hand. Its default
+1/2/5 mm sweep plus 10 mm stress test reports object-motion gain, both official
+future metrics, and a future-label oracle only as an explicitly post-hoc upper
+bound. Random jitter is a sensitivity diagnostic, not a correction method.
+
+Simulator restarts use a deterministic per-vertex spring-force kernel by
+default. It sums incident springs in fixed index order and avoids the released
+GPU atomic accumulation whose roundoff ordering can amplify into millimeter
+trajectory differences. `--atomic-spring-forces` retains the released kernel
+as a diagnostic control; deterministic runs still report repeated identical
+endpoint restarts and keep frame-zero replay parity separate.
 
 See [docs/phystwin_advanced_inference.md](docs/phystwin_advanced_inference.md)
 for the causal split contract, complete commands, and interpretation boundary.
