@@ -31,6 +31,7 @@ from .phystwin_residual_dynamics import (
 
 
 METRICS = ("chamfer_distance_m", "track_error_m")
+HORIZON_LABELS = ("early", "middle", "late")
 CONFORMAL_METHODS = (
     "posterior_scaled",
     "posterior_additive",
@@ -41,6 +42,7 @@ CHI_SQUARE_3_THRESHOLDS = {
     "90": 6.251388631170325,
     "95": 7.814727903251179,
 }
+CALIBRATION_IMPLEMENTATION_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -290,6 +292,21 @@ def _conformal_case_readout(
             )
             finite = bool(np.all(np.isfinite(upper)))
             covered = future_target <= upper
+            horizon_readout: dict[str, object] = {}
+            for horizon, indices in zip(
+                HORIZON_LABELS,
+                np.array_split(np.arange(len(future_target)), 3),
+                strict=True,
+            ):
+                horizon_readout[horizon] = {
+                    "future_frame_count": int(len(indices)),
+                    "covered_frame_count": (
+                        int(np.sum(covered[indices])) if finite else None
+                    ),
+                    "future_coverage": (
+                        float(np.mean(covered[indices])) if finite else None
+                    ),
+                }
             method_output[label] = {
                 "nominal_coverage": coverage,
                 "calibration_count": int(len(calibration_target)),
@@ -304,6 +321,7 @@ def _conformal_case_readout(
                 "p95_upper_bound_m": float(np.quantile(upper, 0.95))
                 if finite
                 else None,
+                "future_by_horizon": horizon_readout,
             }
             arrays[f"{method}_{label}_upper_m"] = upper
         output[method] = method_output
@@ -367,6 +385,31 @@ def _aggregate_conformal(
                     + 10 * metric_index
                     + coverage_index
                 )
+                horizon_output: dict[str, object] = {}
+                for horizon in HORIZON_LABELS:
+                    horizon_records = [
+                        record["future_by_horizon"][horizon] for record in finite
+                    ]
+                    horizon_case_coverage = np.asarray(
+                        [record["future_coverage"] for record in horizon_records],
+                        dtype=float,
+                    )
+                    horizon_covered = sum(
+                        int(record["covered_frame_count"]) for record in horizon_records
+                    )
+                    horizon_count = sum(
+                        int(record["future_frame_count"]) for record in horizon_records
+                    )
+                    horizon_output[horizon] = {
+                        "macro_case_coverage": (
+                            float(np.mean(horizon_case_coverage))
+                            if len(horizon_case_coverage)
+                            else None
+                        ),
+                        "micro_frame_coverage": (
+                            horizon_covered / horizon_count if horizon_count else None
+                        ),
+                    }
                 metric_output[label] = {
                     "nominal_coverage": coverage,
                     "finite_case_count": len(finite),
@@ -391,6 +434,7 @@ def _aggregate_conformal(
                     "mean_case_mean_upper_bound_m": (
                         float(np.mean(mean_bounds)) if len(finite) else None
                     ),
+                    "future_by_horizon": horizon_output,
                 }
             method_output[metric] = metric_output
         output[method] = method_output
@@ -424,6 +468,40 @@ def _aggregate_nees(
         ),
     }
     return result
+
+
+def _aggregate_point_metrics(
+    cases: tuple[str, ...],
+    case_results: dict[str, dict[str, object]],
+) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for metric in METRICS:
+        baseline = np.asarray(
+            [
+                case_results[case]["future_point_metrics"][metric]["baseline_mean_m"]
+                for case in cases
+            ],
+            dtype=float,
+        )
+        anchor = np.asarray(
+            [
+                case_results[case]["future_point_metrics"][metric][
+                    "strict_split_anchor_mean_m"
+                ]
+                for case in cases
+            ],
+            dtype=float,
+        )
+        percent_change = 100.0 * (anchor / baseline - 1.0)
+        output[metric] = {
+            "case_count": len(cases),
+            "baseline_equal_case_mean_m": float(np.mean(baseline)),
+            "strict_split_anchor_equal_case_mean_m": float(np.mean(anchor)),
+            "median_case_percent_change": float(np.median(percent_change)),
+            "mean_case_percent_change": float(np.mean(percent_change)),
+            "improved_case_count": int(np.sum(percent_change < 0.0)),
+        }
+    return output
 
 
 def _operational_anchor_nees(
@@ -540,6 +618,7 @@ def run_phystwin_calibration_audit(
     output = Path(output_dir)
     specification = {
         "method": "strict split-conformal Bayesian-anchor calibration audit",
+        "implementation_version": CALIBRATION_IMPLEMENTATION_VERSION,
         "status": "post-hoc calibration audit",
         "protocol": asdict(config),
         "data_manifest": {
@@ -800,9 +879,35 @@ def run_phystwin_calibration_audit(
                 case_arrays,
                 "operational_future_nees_3d",
             )
+            zero_process = tuple(
+                case
+                for case in cohort
+                if case_results[case]["nees"]["operational_future_nees_3d"][
+                    "process_std_m"
+                ]
+                == 0.0
+            )
+            positive_process = tuple(
+                case for case in cohort if case not in zero_process
+            )
+            nees_output["operational_zero_process_future_nees_3d"] = _aggregate_nees(
+                zero_process,
+                case_results,
+                case_arrays,
+                "operational_future_nees_3d",
+            )
+            nees_output["operational_positive_process_future_nees_3d"] = (
+                _aggregate_nees(
+                    positive_process,
+                    case_results,
+                    case_arrays,
+                    "operational_future_nees_3d",
+                )
+            )
         return {
             "cases": list(cohort),
             "case_count": len(cohort),
+            "future_point_metrics": _aggregate_point_metrics(cohort, case_results),
             "conformal": _aggregate_conformal(
                 cohort,
                 case_results,

@@ -115,5 +115,14 @@ def test_calibration_audit_keeps_validation_out_of_state_fit(tmp_path: Path) -> 
     assert case_result["conformal"]["track_error_m"]["posterior_scaled"]["50"][
         "finite_bound"
     ]
+    assert set(
+        case_result["conformal"]["track_error_m"]["posterior_scaled"]["50"][
+            "future_by_horizon"
+        ]
+    ) == {"early", "middle", "late"}
     assert case_result["nees"]["strict_future_nees_3d"]["count"] == 4
+    assert (
+        result["confirmation"]["future_point_metrics"]["track_error_m"]["case_count"]
+        == 1
+    )
     assert Path(result["summary_path"]).exists()
