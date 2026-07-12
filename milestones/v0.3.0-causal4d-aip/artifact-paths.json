@@ -1,0 +1,456 @@
+{
+  "schema_version": 1,
+  "milestone": "v0.3.0-causal4d-aip",
+  "captured_at": "2026-07-12T08:15:05+02:00",
+  "host": "gpuserver6000",
+  "entries": [
+    {
+      "id": "dataset.real.final_data",
+      "category": "dataset",
+      "source_path": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/final_data.pkl"
+    },
+    {
+      "id": "dataset.real.inference",
+      "category": "dataset",
+      "source_path": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/inference.pkl"
+    },
+    {
+      "id": "dataset.real.optimal_params",
+      "category": "dataset",
+      "source_path": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/optimal_params.pkl"
+    },
+    {
+      "id": "dataset.real.split",
+      "category": "dataset",
+      "source_path": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/split.json"
+    },
+    {
+      "id": "dataset.real.parameter_profile",
+      "category": "dataset",
+      "source_path": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_single_lift_sloth/profile_full_v1_cue_9x9/parameter_profile.npz"
+    },
+    {
+      "id": "dataset.real.refit_checkpoint",
+      "category": "dataset",
+      "source_path": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_single_lift_sloth/profile_full_v1_cue_9x9/refit_checkpoint.pt"
+    },
+    {
+      "id": "dataset.molmo.metadata",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/metadata.json"
+    },
+    {
+      "id": "dataset.molmo.calibration",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/calibrate.pkl"
+    },
+    {
+      "id": "dataset.molmo.initial_point_cloud",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/pcd/0.npz"
+    },
+    {
+      "id": "dataset.molmo.cotracker_camera_0",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/cotracker/0.npz"
+    },
+    {
+      "id": "dataset.molmo.cotracker_camera_1",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/cotracker/1.npz"
+    },
+    {
+      "id": "dataset.molmo.cotracker_camera_2",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/cotracker/2.npz"
+    },
+    {
+      "id": "dataset.molmo.rgb_camera_2_frame_56",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/color/2/56.png"
+    },
+    {
+      "id": "dataset.molmo.rgb_camera_2_frame_57",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/color/2/57.png"
+    },
+    {
+      "id": "dataset.molmo.rgb_camera_2_frame_58",
+      "category": "molmo_raw_input",
+      "source_path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/color/2/58.png"
+    },
+    {
+      "id": "checkpoint.molmomotion.config",
+      "category": "checkpoint",
+      "source_path": "/mnt/corsair/florianpfaff/molmomotion-field-20260711/assets/checkpoints/MolmoMotion-4B-H3-F30/config.yaml",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/checkpoint/MolmoMotion-4B-H3-F30/config.yaml"
+    },
+    {
+      "id": "checkpoint.molmomotion.model",
+      "category": "checkpoint",
+      "source_path": "/mnt/corsair/florianpfaff/molmomotion-field-20260711/assets/checkpoints/MolmoMotion-4B-H3-F30/model.pt",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/checkpoint/MolmoMotion-4B-H3-F30/model.pt"
+    },
+    {
+      "id": "artifact.molmomotion.single_lift_sloth",
+      "category": "molmo_input_output",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/molmo_single_lift_sloth.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/molmo/molmo_single_lift_sloth.npz"
+    },
+    {
+      "id": "archive.molmomotion.query_inputs",
+      "category": "molmo_input_archive",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/molmo/molmo_single_lift_sloth_query_inputs.tar"
+    },
+    {
+      "id": "result.controlled.latent.summary",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/summary.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/summary.json"
+    },
+    {
+      "id": "result.controlled.latent.protocol",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/protocol.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/protocol.json"
+    },
+    {
+      "id": "result.controlled.latent.interventions",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/interventions.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/interventions.csv"
+    },
+    {
+      "id": "result.controlled.latent.contact_recovery",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/contact_recovery.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/contact_recovery.csv"
+    },
+    {
+      "id": "result.controlled.latent.fold_calibration",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/fold_calibration.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/fold_calibration.csv"
+    },
+    {
+      "id": "result.controlled.latent.success_gates",
+      "category": "registered_gates",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/success_gates.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/success_gates.json"
+    },
+    {
+      "id": "result.controlled.latent.manifest",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-latent-contact-roadmap-v1/manifest.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled/manifest.json"
+    },
+    {
+      "id": "result.controlled.counterfactual.summary",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/controlled/counterfactual/summary.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled-counterfactual/summary.json"
+    },
+    {
+      "id": "result.controlled.counterfactual.protocol",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/controlled/counterfactual/protocol.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled-counterfactual/protocol.json"
+    },
+    {
+      "id": "result.controlled.counterfactual.interventions",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/controlled/counterfactual/interventions.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled-counterfactual/interventions.csv"
+    },
+    {
+      "id": "result.controlled.counterfactual.parameter_recovery",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/controlled/counterfactual/parameter_recovery.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled-counterfactual/parameter_recovery.csv"
+    },
+    {
+      "id": "result.controlled.counterfactual.fit_diagnostics",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/controlled/counterfactual/fit_diagnostics.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled-counterfactual/fit_diagnostics.csv"
+    },
+    {
+      "id": "result.controlled.counterfactual.manifest",
+      "category": "controlled_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/controlled/counterfactual/manifest.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/controlled-counterfactual/manifest.json"
+    },
+    {
+      "id": "artifact.real.twin_belief",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known.twin_belief.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_known.twin_belief.npz"
+    },
+    {
+      "id": "artifact.real.known_bank",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_bank.npz"
+    },
+    {
+      "id": "artifact.real.factual",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_factual.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_factual.npz"
+    },
+    {
+      "id": "result.real.factual_evaluation",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_factual_eval.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_factual_eval.json"
+    },
+    {
+      "id": "artifact.real.known_query",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_same_grasp.physical.query.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_known_same_grasp.physical.query.npz"
+    },
+    {
+      "id": "artifact.real.known_physical",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_same_grasp.physical.npz"
+    },
+    {
+      "id": "result.real.beta_zero_evaluation",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_same_grasp.beta0_eval.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_known_same_grasp.beta0_eval.json"
+    },
+    {
+      "id": "artifact.real.history_reverse_bank",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.bank.npz"
+    },
+    {
+      "id": "artifact.real.history_reverse_query",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.physical.query.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_history_reverse.physical.query.npz"
+    },
+    {
+      "id": "artifact.real.history_reverse_physical",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.physical.npz"
+    },
+    {
+      "id": "artifact.real.expanded_bank",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_expanded108.bank.npz"
+    },
+    {
+      "id": "result.real.oracle_audit",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_real_oracle_audit_v1.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_real_oracle_audit_v1.json"
+    },
+    {
+      "id": "result.real.oracle_components",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_real_oracle_components_v1.csv",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_real_oracle_components_v1.csv"
+    },
+    {
+      "id": "result.real.semantic_trust_calibration",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/semantic_trust_calibration.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/semantic_trust_calibration.json"
+    },
+    {
+      "id": "result.real.semantic_trust_source_manifest",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/semantic_trust_source_manifest.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/semantic_trust_source_manifest.json"
+    },
+    {
+      "id": "artifact.real.task_beta_zero",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.task_beta0.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_history_reverse.task_beta0.npz"
+    },
+    {
+      "id": "artifact.real.task_beta_12",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.task_beta12.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_history_reverse.task_beta12.npz"
+    },
+    {
+      "id": "artifact.real.task_adaptive_reverse",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.task_adaptive.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_history_reverse.task_adaptive.npz"
+    },
+    {
+      "id": "artifact.real.task_adaptive_known",
+      "category": "typed_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_same_grasp.task_adaptive.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_known_same_grasp.task_adaptive.npz"
+    },
+    {
+      "id": "result.real.task_adaptive_reverse_decision",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_history_reverse.task_adaptive_decision.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_history_reverse.task_adaptive_decision.json"
+    },
+    {
+      "id": "result.real.task_adaptive_known_decision",
+      "category": "real_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/runs/causal4d-full-belief/single_lift_sloth_known_same_grasp.task_adaptive_decision.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/real/single_lift_sloth_known_same_grasp.task_adaptive_decision.json"
+    },
+    {
+      "id": "artifact.molmo.known_bank",
+      "category": "molmo_pilot_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/full/known_p4.npz"
+    },
+    {
+      "id": "artifact.molmo.hidden_bank",
+      "category": "molmo_pilot_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/full/hidden_p4.npz"
+    },
+    {
+      "id": "artifact.molmo.ambiguous_bank",
+      "category": "molmo_pilot_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/full/ambiguous_p4.npz"
+    },
+    {
+      "id": "result.molmo.known",
+      "category": "molmo_pilot_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/full/known_p4_result.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/molmo/known_p4_result.json"
+    },
+    {
+      "id": "result.molmo.hidden",
+      "category": "molmo_pilot_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/full/hidden_p4_result.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/molmo/hidden_p4_result.json"
+    },
+    {
+      "id": "result.molmo.ambiguous",
+      "category": "molmo_pilot_result",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-pilot-20260712/full/ambiguous_p4_result.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/molmo/ambiguous_p4_result.json"
+    },
+    {
+      "id": "artifact.reproduced.molmo.forecast",
+      "category": "reproduced_real_artifact",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/molmo-pilot/molmo.npz",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/molmo/molmo.npz"
+    },
+    {
+      "id": "result.reproduced.molmo.known",
+      "category": "reproduced_real_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/molmo-pilot/known_result.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/molmo/known_result.json"
+    },
+    {
+      "id": "result.reproduced.molmo.hidden",
+      "category": "reproduced_real_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/molmo-pilot/hidden_result.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/molmo/hidden_result.json"
+    },
+    {
+      "id": "result.reproduced.molmo.ambiguous",
+      "category": "reproduced_real_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/molmo-pilot/ambiguous_result.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/molmo/ambiguous_result.json"
+    },
+    {
+      "id": "result.reproduced.real.factual",
+      "category": "reproduced_real_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/aip/factual_evaluation.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/aip/factual_evaluation.json"
+    },
+    {
+      "id": "result.reproduced.real.beta_zero",
+      "category": "reproduced_real_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/aip/known_action.beta0_evaluation.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/aip/known_action.beta0_evaluation.json"
+    },
+    {
+      "id": "result.reproduced.real.oracle_audit",
+      "category": "reproduced_real_result",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/aip/oracle-audit/real_oracle_audit.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/results/reproduced-real/oracle/real_oracle_audit.json"
+    },
+    {
+      "id": "environment.bpt.freeze",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/bpt-gpu-pip-freeze.txt"
+    },
+    {
+      "id": "environment.bpt.inspect",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/bpt-gpu-pip-inspect.json"
+    },
+    {
+      "id": "environment.molmo.freeze",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/molmomotion-pip-freeze.txt"
+    },
+    {
+      "id": "environment.molmo.inspect",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/molmomotion-pip-inspect.json"
+    },
+    {
+      "id": "environment.molmo.editable_source",
+      "category": "environment_source_archive",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/MolmoMotion-Field-source.tar"
+    },
+    {
+      "id": "source.molmomotion.git_bundle",
+      "category": "source_archive",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/molmo-motion-61f5b21.bundle"
+    },
+    {
+      "id": "source.phystwin.git_bundle",
+      "category": "source_archive",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/phystwin-2b66305.bundle"
+    },
+    {
+      "id": "environment.bpt.python_version",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/bpt-python-version.txt"
+    },
+    {
+      "id": "environment.molmo.python_version",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/molmomotion-python-version.txt"
+    },
+    {
+      "id": "environment.system.nvidia",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/nvidia-smi.txt"
+    },
+    {
+      "id": "environment.system.nvidia_query",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/nvidia-smi-query.csv"
+    },
+    {
+      "id": "environment.system.cpu",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/lscpu.txt"
+    },
+    {
+      "id": "environment.system.os_release",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/os-release.txt"
+    },
+    {
+      "id": "environment.system.uname",
+      "category": "environment_lock",
+      "source_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/environment/uname.txt"
+    },
+    {
+      "id": "release.test_summary",
+      "category": "release_record",
+      "source_path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/milestones/v0.3.0-causal4d-aip/test-summary.json",
+      "archive_path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/test-summary.json"
+    }
+  ]
+}

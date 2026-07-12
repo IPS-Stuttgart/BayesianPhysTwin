@@ -1,0 +1,109 @@
+{
+  "derived": {
+    "matched_relative_degradation": -0.16907334871144816,
+    "minimum_topology_oracle_gap_closure": 0.608376411655671,
+    "online_latent_coverages": [
+      0.8823593073593072,
+      0.9083814333814335
+    ],
+    "shifted_latent_rmse_m": 0.0008051938837368797,
+    "shifted_nominal_rmse_m": 0.004131595565314381,
+    "shifted_oracle_gap_closure": 0.8061115447752581,
+    "shifted_oracle_gap_m": 0.004126478156946498,
+    "shifted_oracle_rmse_m": 5.117408367883986e-06
+  },
+  "gates": [
+    {
+      "comparison": ">=",
+      "name": "shifted_oracle_gap_closure",
+      "passed": true,
+      "threshold": 0.5,
+      "value": 0.8061115447752581
+    },
+    {
+      "comparison": "<=",
+      "name": "matched_contact_relative_degradation",
+      "passed": true,
+      "threshold": 0.1,
+      "value": -0.16907334871144816
+    },
+    {
+      "comparison": "<=",
+      "name": "maximum_online_coverage_error",
+      "passed": true,
+      "threshold": 0.05,
+      "value": 0.01764069264069279
+    },
+    {
+      "comparison": ">=",
+      "name": "shifted_node_accuracy",
+      "passed": true,
+      "threshold": 0.8,
+      "value": 0.8666666666666667
+    },
+    {
+      "comparison": ">=",
+      "name": "shifted_node_credible_coverage",
+      "passed": true,
+      "threshold": 0.8,
+      "value": 0.9333333333333333
+    },
+    {
+      "comparison": "<=",
+      "name": "shifted_node_calibration_error",
+      "passed": true,
+      "threshold": 0.15,
+      "value": 0.07019181387991802
+    },
+    {
+      "comparison": "<=",
+      "name": "shifted_gain_mae",
+      "passed": true,
+      "threshold": 0.15,
+      "value": 0.08394219096139392
+    },
+    {
+      "comparison": ">=",
+      "name": "shifted_gain_coverage",
+      "passed": true,
+      "threshold": 0.8,
+      "value": 0.9333333333333333
+    },
+    {
+      "comparison": "<=",
+      "name": "shifted_delay_mae_steps",
+      "passed": true,
+      "threshold": 0.5,
+      "value": 0.4031970819097204
+    },
+    {
+      "comparison": ">=",
+      "name": "shifted_delay_map_accuracy",
+      "passed": true,
+      "threshold": 0.8,
+      "value": 0.9333333333333333
+    },
+    {
+      "comparison": ">=",
+      "name": "shifted_delay_coverage",
+      "passed": true,
+      "threshold": 0.8,
+      "value": 0.9333333333333333
+    },
+    {
+      "comparison": ">=",
+      "name": "held_out_topology_count",
+      "passed": true,
+      "threshold": 3,
+      "value": 3
+    },
+    {
+      "comparison": ">=",
+      "name": "minimum_topology_oracle_gap_closure",
+      "passed": true,
+      "threshold": 0.0,
+      "value": 0.608376411655671
+    }
+  ],
+  "overall_passed": true
+}

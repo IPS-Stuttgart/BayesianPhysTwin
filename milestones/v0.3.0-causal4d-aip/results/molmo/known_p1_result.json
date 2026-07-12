@@ -1,0 +1,898 @@
+{
+  "action_setting": "known",
+  "case": "single_lift_sloth",
+  "configuration": {
+    "dynamic_likelihood_weight": 0.5,
+    "molmo_likelihood_weight": 12.0,
+    "molmo_scale_m": 0.1,
+    "observation_fraction": 0.2,
+    "observation_likelihood_power": 8.0,
+    "observation_scale_m": 0.006
+  },
+  "contracts": {
+    "contact_support": "Causal4D attachment/gain/delay/slip/rotation hypotheses",
+    "evaluation": "future frames [6, 27)",
+    "molmo_role": "robust proposal/ranking evidence over rollouts",
+    "molmo_statistical_role": "product of experts, not an independent likelihood",
+    "online_update": "prefix frames [1, 6) only",
+    "parameter_support": "Bayesian-PhysTwin weighted profile particles",
+    "physics_backend": "official PhysTwin Warp simulator"
+  },
+  "evidence_diagnostics": {
+    "generic": {
+      "caption": "The sloth moves.",
+      "compared_future_frames": 26,
+      "displacement_ade_m": 0.06012947179477593,
+      "displacement_fde_m": 0.11071072974908505
+    },
+    "instruction": {
+      "caption": "A person lifts the sloth upward with one hand.",
+      "compared_future_frames": 26,
+      "displacement_ade_m": 0.06012947179477593,
+      "displacement_fde_m": 0.11071072974908505
+    },
+    "shuffled": {
+      "caption": "A person pushes the sloth sideways across the table with one hand.",
+      "compared_future_frames": 26,
+      "displacement_ade_m": 0.06019313057155374,
+      "displacement_fde_m": 0.11081111102441149
+    }
+  },
+  "experiment": "causal4d-phystwin-molmo-pilot-v1",
+  "headline": {
+    "combined_percent_change_vs_online": 0.036837021334834574,
+    "instruction_forecast_id": "instruction",
+    "language_controls": {
+      "generic": {
+        "instruction_minus_control_rmse_m": 0.0,
+        "vector_rmse_m": 0.04243636260668533
+      },
+      "shuffled": {
+        "instruction_minus_control_rmse_m": 8.716065887093283e-08,
+        "vector_rmse_m": 0.04243627544602646
+      }
+    },
+    "molmo_improves_online": false,
+    "molmo_improves_prior": true,
+    "molmo_percent_change_vs_prior": -0.0025531424441060935,
+    "molmo_plus_online_vector_rmse_m": 0.04212336166523118,
+    "molmo_vector_rmse_m": 0.04243636260668533,
+    "online_vector_rmse_m": 0.042107850387400336,
+    "physics_prior_vector_rmse_m": 0.04243744609513378
+  },
+  "methods": {
+    "molmo_generic": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.060901022145103303,
+        "0": 0.8860421306952198,
+        "1": 0.05305684715967707
+      },
+      "full_future": {
+        "ade_m": 0.03192600388093187,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.02261759099474032,
+        "early_vector_rmse_m": 0.025370386248559054,
+        "fde_m": 0.043295029468492355,
+        "late_vector_rmse_m": 0.04965269050802612,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04123924061529598,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.03917481674770255
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.0352447756391843,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.024500645374398344,
+        "early_vector_rmse_m": 0.03262251546960263,
+        "fde_m": 0.043295029468492355,
+        "late_vector_rmse_m": 0.05019606934405541,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04387575128133417,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04243636260668533
+      },
+      "joint_effective_sample_size": 7.013301310012596,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.03387901238012519,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.02386901773557305,
+        "early_vector_rmse_m": 0.02916960256292114,
+        "fde_m": 0.039461346417696455,
+        "late_vector_rmse_m": 0.04939441383041651,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.043594054927033686,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.041342351444775154
+      }
+    },
+    "molmo_generic_plus_online": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.08244894399545614,
+        "0": 0.7938444339710253,
+        "1": 0.12370662203351865
+      },
+      "full_future": {
+        "ade_m": 0.03155721072641175,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.02244039565191747,
+        "early_vector_rmse_m": 0.02483825201771293,
+        "fde_m": 0.04348639193816641,
+        "late_vector_rmse_m": 0.0497108659147414,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04070001670088373,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.03886790541106878
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.034839736753877935,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.024319934196593184,
+        "early_vector_rmse_m": 0.03189680119922114,
+        "fde_m": 0.04348639193816641,
+        "late_vector_rmse_m": 0.05029058429254927,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04345635270749852,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04212336166523118
+      },
+      "joint_effective_sample_size": 7.8523647148967965,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.033266442937908494,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.023590656631469496,
+        "early_vector_rmse_m": 0.028077048115084345,
+        "fde_m": 0.03930272075965073,
+        "late_vector_rmse_m": 0.04936806642040298,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.04300560721761051,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.040860215869616835
+      }
+    },
+    "molmo_instruction": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.060901022145103303,
+        "0": 0.8860421306952198,
+        "1": 0.05305684715967707
+      },
+      "full_future": {
+        "ade_m": 0.03192600388093187,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.02261759099474032,
+        "early_vector_rmse_m": 0.025370386248559054,
+        "fde_m": 0.043295029468492355,
+        "late_vector_rmse_m": 0.04965269050802612,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04123924061529598,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.03917481674770255
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.0352447756391843,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.024500645374398344,
+        "early_vector_rmse_m": 0.03262251546960263,
+        "fde_m": 0.043295029468492355,
+        "late_vector_rmse_m": 0.05019606934405541,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04387575128133417,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04243636260668533
+      },
+      "joint_effective_sample_size": 7.013301310012596,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.03387901238012519,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.02386901773557305,
+        "early_vector_rmse_m": 0.02916960256292114,
+        "fde_m": 0.039461346417696455,
+        "late_vector_rmse_m": 0.04939441383041651,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.043594054927033686,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.041342351444775154
+      }
+    },
+    "molmo_instruction_plus_online": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.08244894399545614,
+        "0": 0.7938444339710253,
+        "1": 0.12370662203351865
+      },
+      "full_future": {
+        "ade_m": 0.03155721072641175,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.02244039565191747,
+        "early_vector_rmse_m": 0.02483825201771293,
+        "fde_m": 0.04348639193816641,
+        "late_vector_rmse_m": 0.0497108659147414,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04070001670088373,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.03886790541106878
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.034839736753877935,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.024319934196593184,
+        "early_vector_rmse_m": 0.03189680119922114,
+        "fde_m": 0.04348639193816641,
+        "late_vector_rmse_m": 0.05029058429254927,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04345635270749852,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04212336166523118
+      },
+      "joint_effective_sample_size": 7.8523647148967965,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.033266442937908494,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.023590656631469496,
+        "early_vector_rmse_m": 0.028077048115084345,
+        "fde_m": 0.03930272075965073,
+        "late_vector_rmse_m": 0.04936806642040298,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.04300560721761051,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.040860215869616835
+      }
+    },
+    "molmo_shuffled": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.060904052118526904,
+        "0": 0.8860320222645202,
+        "1": 0.05306392561695292
+      },
+      "full_future": {
+        "ade_m": 0.031925943889248756,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.022617543995787092,
+        "early_vector_rmse_m": 0.025370293116857432,
+        "fde_m": 0.04329508097389657,
+        "late_vector_rmse_m": 0.049652648497342265,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04123912270606444,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.03917473534312765
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.035244710240264966,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.024500595052168478,
+        "early_vector_rmse_m": 0.03262237727626406,
+        "fde_m": 0.04329508097389657,
+        "late_vector_rmse_m": 0.05019602941616018,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.043875652684756426,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04243627544602646
+      },
+      "joint_effective_sample_size": 7.013772839319954,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.03387890302250029,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.023868933770217912,
+        "early_vector_rmse_m": 0.029169398704224477,
+        "fde_m": 0.03946131199586932,
+        "late_vector_rmse_m": 0.04939430870683829,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.043593897825937776,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.04134220601251398
+      }
+    },
+    "molmo_shuffled_plus_online": {
+      "action_marginal": {
+        "known_action": 1.0000000000000002
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.08245152125914108,
+        "0": 0.7938276406348663,
+        "1": 0.12372083810599267
+      },
+      "full_future": {
+        "ade_m": 0.031557134833323966,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.02244034240110081,
+        "early_vector_rmse_m": 0.02483812261409806,
+        "fde_m": 0.043486469937244025,
+        "late_vector_rmse_m": 0.04971084606546372,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04069987023062738,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.038867813177948775
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.034839654580915654,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.024319878229642492,
+        "early_vector_rmse_m": 0.031896614635175714,
+        "fde_m": 0.043486469937244025,
+        "late_vector_rmse_m": 0.050290569770138106,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04345623625557251,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04212326472762904
+      },
+      "joint_effective_sample_size": 7.8527182817893575,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.033266298562190696,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.02359055897499361,
+        "early_vector_rmse_m": 0.02807675834277575,
+        "fde_m": 0.03930269290553391,
+        "late_vector_rmse_m": 0.04936797993200614,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.04300541799302337,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.04086004672363891
+      }
+    },
+    "online_prefix": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.0783089005953995,
+        "0": 0.7868252102092348,
+        "1": 0.1348658891953659
+      },
+      "full_future": {
+        "ade_m": 0.03151527455438787,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.022430632710491376,
+        "early_vector_rmse_m": 0.024790503748269094,
+        "fde_m": 0.043466251523854235,
+        "late_vector_rmse_m": 0.04973651502637414,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.04066003931031762,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.038850995500487456
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.03479237510209109,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.02431097875616207,
+        "early_vector_rmse_m": 0.03183763023978719,
+        "fde_m": 0.043466251523854235,
+        "late_vector_rmse_m": 0.05032167075079827,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04342638366211097,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.042107850387400336
+      },
+      "joint_effective_sample_size": 7.678803089955716,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.03320884305242891,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.02358526294451836,
+        "early_vector_rmse_m": 0.027985770039557732,
+        "fde_m": 0.03928536231418787,
+        "late_vector_rmse_m": 0.04942261921633061,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.04298133815663739,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.04085087372977734
+      }
+    },
+    "oracle_rollout": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.0,
+        "0": 1.0,
+        "1": 0.0
+      },
+      "full_future": {
+        "ade_m": 0.032087776303382755,
+        "coordinate_coverage": 0.40305946327519265,
+        "coordinate_rmse_m": 0.022436147029545907,
+        "early_vector_rmse_m": 0.0248108908856653,
+        "fde_m": 0.043901855694721416,
+        "late_vector_rmse_m": 0.04947862091796446,
+        "mean_interval_width_m": 0.0164485362695147,
+        "middle_vector_rmse_m": 0.040915310518310606,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.038860546581259064
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.035469837273352685,
+        "coordinate_coverage": 0.3639043373458986,
+        "coordinate_rmse_m": 0.02430882969940149,
+        "early_vector_rmse_m": 0.031786170760355364,
+        "fde_m": 0.043901855694721416,
+        "late_vector_rmse_m": 0.04995557142562165,
+        "mean_interval_width_m": 0.016448536269514702,
+        "middle_vector_rmse_m": 0.043808696888088,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04210412811190265
+      },
+      "joint_effective_sample_size": 1.0,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.0338408625383469,
+        "coordinate_coverage": 0.32629107981220656,
+        "coordinate_rmse_m": 0.023305916581053656,
+        "early_vector_rmse_m": 0.027935456775979226,
+        "fde_m": 0.03948023999711685,
+        "late_vector_rmse_m": 0.04838491612069559,
+        "mean_interval_width_m": 0.016448536269514702,
+        "middle_vector_rmse_m": 0.04276875956179452,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.040367031635346884
+      }
+    },
+    "physics_prior": {
+      "action_marginal": {
+        "known_action": 1.0
+      },
+      "attachment_shift_marginal": {
+        "-1": 0.05801451345987737,
+        "0": 0.8839709730802452,
+        "1": 0.05801451345987737
+      },
+      "full_future": {
+        "ade_m": 0.031904967066991786,
+        "coordinate_coverage": 0.5998223587499951,
+        "coordinate_rmse_m": 0.022617489134199115,
+        "early_vector_rmse_m": 0.02535759383716872,
+        "fde_m": 0.04326126605648117,
+        "late_vector_rmse_m": 0.049667463080014386,
+        "mean_interval_width_m": 0.028186763004566722,
+        "middle_vector_rmse_m": 0.041232845722286963,
+        "start_frame": 1,
+        "valid_node_frames": 85941,
+        "vector_rmse_m": 0.039174640320069884
+      },
+      "future_after_online_prefix": {
+        "ade_m": 0.03522007468541717,
+        "coordinate_coverage": 0.575534484344219,
+        "coordinate_rmse_m": 0.02450127092674572,
+        "early_vector_rmse_m": 0.032610459627004706,
+        "fde_m": 0.04326126605648117,
+        "late_vector_rmse_m": 0.050213683300388404,
+        "mean_interval_width_m": 0.029839836206670755,
+        "middle_vector_rmse_m": 0.04387060353274364,
+        "start_frame": 6,
+        "valid_node_frames": 68867,
+        "vector_rmse_m": 0.04243744609513378
+      },
+      "joint_effective_sample_size": 6.86254431487954,
+      "parameter_marginal": [
+        1.0
+      ],
+      "query_future_after_online_prefix": {
+        "ade_m": 0.03386012926847734,
+        "coordinate_coverage": 0.6267605633802817,
+        "coordinate_rmse_m": 0.02387913567074981,
+        "early_vector_rmse_m": 0.02915290081159618,
+        "fde_m": 0.03945406997229206,
+        "late_vector_rmse_m": 0.049441302691248246,
+        "mean_interval_width_m": 0.030076445163314362,
+        "middle_vector_rmse_m": 0.04360480456388317,
+        "start_frame": 6,
+        "valid_node_frames": 142,
+        "vector_rmse_m": 0.04135987622256899
+      }
+    }
+  },
+  "source_manifests": {
+    "molmo": {
+      "captions": {
+        "generic": "The sloth moves.",
+        "instruction": "A person lifts the sloth upward with one hand.",
+        "shuffled": "A person pushes the sloth sideways across the table with one hand."
+      },
+      "checkpoint": "/mnt/corsair/florianpfaff/molmomotion-field-20260711/assets/checkpoints/MolmoMotion-4B-H3-F30",
+      "forecast_ids": [
+        "instruction",
+        "shuffled",
+        "generic"
+      ],
+      "future_horizon": 30,
+      "model": "MolmoMotion",
+      "output_coordinate_frames": {
+        "future_camera_m": "camera at t0",
+        "future_world_m": "PhysTwin calibrated world"
+      },
+      "query": {
+        "camera_index": 2,
+        "case": "single_lift_sloth",
+        "history_frame_indices": [
+          56,
+          57,
+          58
+        ],
+        "image_paths": [
+          "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/color/2/56.png",
+          "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/color/2/57.png",
+          "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/color/2/58.png"
+        ],
+        "node_indices": [
+          3331,
+          3290,
+          5014,
+          302,
+          5066,
+          2727,
+          1477,
+          3846
+        ],
+        "point_coordinate_contract": "raw row/column tracks converted to x/y pixels",
+        "raw_case_dir": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth",
+        "raw_track_indices": [
+          1305,
+          1769,
+          4950,
+          4208,
+          2242,
+          1821,
+          684,
+          10
+        ],
+        "t0_frame": 58,
+        "trajectory_coordinate_contract": "metric world coordinates"
+      }
+    },
+    "rollout_bank": {
+      "action_proposals": [
+        {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        }
+      ],
+      "action_setting": "known",
+      "attachment_shift_diagnostics": {
+        "-1": {
+          "changed_controller_springs": 236,
+          "controller_spring_count": 236
+        },
+        "0": {
+          "changed_controller_springs": 0,
+          "controller_spring_count": 236
+        },
+        "1": {
+          "changed_controller_springs": 236,
+          "controller_spring_count": 236
+        }
+      },
+      "backend": "official_phystwin_warp",
+      "case": "single_lift_sloth",
+      "contact_state_count": 9,
+      "controller_groups": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "hypotheses": [
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.2707343961460944,
+            "delay_steps": 0,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+          "prior_weight": 0.2707343961460944
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              -1
+            ],
+            "contact_prior_weight": 0.05801451345987737,
+            "delay_steps": 0,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_-1__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+          "prior_weight": 0.05801451345987737
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              1
+            ],
+            "contact_prior_weight": 0.05801451345987737,
+            "delay_steps": 0,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+1__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+          "prior_weight": 0.05801451345987737
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.12395123873477432,
+            "delay_steps": 0,
+            "gain_multiplier": 0.85,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_0.850__delay_0__slip_0.000__rot_+0.0",
+          "prior_weight": 0.12395123873477432
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.12395123873477447,
+            "delay_steps": 0,
+            "gain_multiplier": 1.15,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_1.150__delay_0__slip_0.000__rot_+0.0",
+          "prior_weight": 0.12395123873477447
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.07136481201359993,
+            "delay_steps": 2,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_2__slip_0.000__rot_+0.0",
+          "prior_weight": 0.07136481201359993
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.07136481201359991,
+            "delay_steps": 0,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": 0.0,
+            "slip_fraction": 0.2
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.200__rot_+0.0",
+          "prior_weight": 0.07136481201359991
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.11130223771870112,
+            "delay_steps": 0,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": -8.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_-8.0",
+          "prior_weight": 0.11130223771870112
+        },
+        {
+          "action": {
+            "future_action_observed": true,
+            "prior_weight": 1.0,
+            "proposal_id": "known_action",
+            "provenance": "released future controller trajectory"
+          },
+          "contact": {
+            "attachment_shifts": [
+              0
+            ],
+            "contact_prior_weight": 0.11130223771870112,
+            "delay_steps": 0,
+            "gain_multiplier": 1.0,
+            "rotation_degrees": 8.0,
+            "slip_fraction": 0.0
+          },
+          "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_+8.0",
+          "prior_weight": 0.11130223771870112
+        }
+      ],
+      "hypothesis_count": 9,
+      "parameter_particles": {
+        "count": 1,
+        "grid_indices": [
+          [
+            4,
+            4
+          ]
+        ],
+        "log_scale_names": [
+          "object_springs",
+          "controller_springs"
+        ],
+        "log_scales": [
+          [
+            0.0,
+            0.0
+          ]
+        ],
+        "retained_probability_mass": 0.1398358481429889,
+        "source_weight_key": "posterior_weights",
+        "weights": [
+          1.0
+        ]
+      },
+      "rollout_frame_interval": [
+        58,
+        85
+      ],
+      "rollout_shape": [
+        9,
+        1,
+        27,
+        5203,
+        3
+      ],
+      "runtime": {
+        "confidence_level": 0.9,
+        "deterministic_spring_forces": true,
+        "device": "cuda:0",
+        "dt": 5e-05,
+        "num_substeps": 667,
+        "self_collision": null,
+        "variance_floor_m2": 2.5e-05,
+        "velocity_history_frames": 3
+      },
+      "source_paths": {
+        "baseline_trajectory": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/inference.pkl",
+        "checkpoint": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_single_lift_sloth/profile_full_v1_cue_9x9/refit_checkpoint.pt",
+        "final_data": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/final_data.pkl",
+        "official_repo": "/home/florianpfaff/PhysTwin-upstream",
+        "optimal_params": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/optimal_params.pkl",
+        "parameter_profile": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_single_lift_sloth/profile_full_v1_cue_9x9/parameter_profile.npz"
+      },
+      "train_end_frame": 59
+    }
+  }
+}

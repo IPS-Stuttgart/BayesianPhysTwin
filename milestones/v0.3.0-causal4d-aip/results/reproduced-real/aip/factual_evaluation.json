@@ -1,0 +1,424 @@
+{
+  "abduction_prefix_frame_count_including_endpoint": 7,
+  "bpt_plus_causal4d_z": {
+    "coordinate_rmse_m": 0.022259611730131457,
+    "track_error_m": 0.031693781549625474,
+    "valid_point_frames": 68867
+  },
+  "bpt_without_z": {
+    "coordinate_rmse_m": 0.022494456279719754,
+    "track_error_m": 0.03212961366524153,
+    "valid_point_frames": 68867
+  },
+  "case": "single_lift_sloth",
+  "causal_context": {
+    "o_minus": {
+      "case_id": "single_lift_sloth",
+      "content_sha256": "257376db65ddb6401f9c10d4629426e21a76bd29489d4136573f48da6750c4a2",
+      "frame_start": 0,
+      "frame_stop": 59,
+      "stream_id": "released_object_points_m"
+    },
+    "o_plus": {
+      "case_id": "single_lift_sloth",
+      "content_sha256": "0ab99db5fe90714016372048e9c41d9dcca76c3d06c784e11e3084964e6f3387",
+      "frame_start": 59,
+      "frame_stop": 85,
+      "stream_id": "released_object_points_m"
+    },
+    "protocol_id": "causal4d_phystwin_v1",
+    "u_cf": {
+      "action_id": "known_action",
+      "case_id": "single_lift_sloth",
+      "frame_start": 59,
+      "frame_stop": 85,
+      "provenance": "ordered Causal4D counterfactual action proposal library",
+      "trajectory_sha256": "10399e71962920731641b0139760e70cd1a99f53a446b66f2fc53b6eee3cdb2e"
+    },
+    "u_obs": {
+      "action_id": "released_u_obs",
+      "case_id": "single_lift_sloth",
+      "frame_start": 0,
+      "frame_stop": 85,
+      "provenance": "released factual controller trajectory",
+      "trajectory_sha256": "10d452c5861944c7d5f033ad1cc71dc908d564ee042ce5665ddde0b5687ac5da"
+    }
+  },
+  "factual_intervention_id": "bf21981d6a47bfbc9d454a48cd9bcecb889e76160820bda98614f5fb89b6fdc0",
+  "held_out_rollout_interval": [
+    7,
+    27
+  ],
+  "map_hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+  "map_hypothesis_probability": 0.25285775750700207,
+  "nominal_hypothesis_probability": 0.25285775750700207,
+  "parameter_marginal": [
+    0.2630622933726507,
+    0.3101134554496655,
+    0.1747589766924602,
+    0.2520652744852235
+  ],
+  "relative_track_error_improvement": 0.013564810338430822,
+  "rollout_bank_manifest": {
+    "action_proposals": [
+      {
+        "future_action_observed": true,
+        "prior_weight": 1.0,
+        "proposal_id": "known_action",
+        "provenance": "released future controller trajectory"
+      }
+    ],
+    "action_setting": "known",
+    "attachment_shift_diagnostics": {
+      "-1": {
+        "changed_controller_springs": 236,
+        "controller_spring_count": 236
+      },
+      "0": {
+        "changed_controller_springs": 0,
+        "controller_spring_count": 236
+      },
+      "1": {
+        "changed_controller_springs": 236,
+        "controller_spring_count": 236
+      }
+    },
+    "backend": "official_phystwin_warp",
+    "case": "single_lift_sloth",
+    "causal_context": {
+      "o_minus": {
+        "case_id": "single_lift_sloth",
+        "content_sha256": "257376db65ddb6401f9c10d4629426e21a76bd29489d4136573f48da6750c4a2",
+        "frame_start": 0,
+        "frame_stop": 59,
+        "stream_id": "released_object_points_m"
+      },
+      "o_plus": {
+        "case_id": "single_lift_sloth",
+        "content_sha256": "0ab99db5fe90714016372048e9c41d9dcca76c3d06c784e11e3084964e6f3387",
+        "frame_start": 59,
+        "frame_stop": 85,
+        "stream_id": "released_object_points_m"
+      },
+      "protocol_id": "causal4d_phystwin_v1",
+      "u_cf": {
+        "action_id": "known_action",
+        "case_id": "single_lift_sloth",
+        "frame_start": 59,
+        "frame_stop": 85,
+        "provenance": "ordered Causal4D counterfactual action proposal library",
+        "trajectory_sha256": "10399e71962920731641b0139760e70cd1a99f53a446b66f2fc53b6eee3cdb2e"
+      },
+      "u_obs": {
+        "action_id": "released_u_obs",
+        "case_id": "single_lift_sloth",
+        "frame_start": 0,
+        "frame_stop": 85,
+        "provenance": "released factual controller trajectory",
+        "trajectory_sha256": "10d452c5861944c7d5f033ad1cc71dc908d564ee042ce5665ddde0b5687ac5da"
+      }
+    },
+    "contact_state_count": 9,
+    "controller_groups": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "discrepancy_injected_into_warp_state": false,
+    "hypotheses": [
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.2707343961460944,
+          "delay_steps": 0,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+        "prior_weight": 0.2707343961460944
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            -1
+          ],
+          "contact_prior_weight": 0.05801451345987737,
+          "delay_steps": 0,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_-1__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+        "prior_weight": 0.05801451345987737
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            1
+          ],
+          "contact_prior_weight": 0.05801451345987737,
+          "delay_steps": 0,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+1__gain_1.000__delay_0__slip_0.000__rot_+0.0",
+        "prior_weight": 0.05801451345987737
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.12395123873477432,
+          "delay_steps": 0,
+          "gain_multiplier": 0.85,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_0.850__delay_0__slip_0.000__rot_+0.0",
+        "prior_weight": 0.12395123873477432
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.12395123873477447,
+          "delay_steps": 0,
+          "gain_multiplier": 1.15,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_1.150__delay_0__slip_0.000__rot_+0.0",
+        "prior_weight": 0.12395123873477447
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.07136481201359993,
+          "delay_steps": 2,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_2__slip_0.000__rot_+0.0",
+        "prior_weight": 0.07136481201359993
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.07136481201359991,
+          "delay_steps": 0,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": 0.0,
+          "slip_fraction": 0.2
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.200__rot_+0.0",
+        "prior_weight": 0.07136481201359991
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.11130223771870112,
+          "delay_steps": 0,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": -8.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_-8.0",
+        "prior_weight": 0.11130223771870112
+      },
+      {
+        "action": {
+          "future_action_observed": true,
+          "prior_weight": 1.0,
+          "proposal_id": "known_action",
+          "provenance": "released future controller trajectory"
+        },
+        "contact": {
+          "attachment_shifts": [
+            0
+          ],
+          "contact_prior_weight": 0.11130223771870112,
+          "delay_steps": 0,
+          "gain_multiplier": 1.0,
+          "rotation_degrees": 8.0,
+          "slip_fraction": 0.0
+        },
+        "hypothesis_id": "known_action__shift_+0__gain_1.000__delay_0__slip_0.000__rot_+8.0",
+        "prior_weight": 0.11130223771870112
+      }
+    ],
+    "hypothesis_count": 9,
+    "parameter_particles": {
+      "count": 4,
+      "grid_indices": [
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "log_scale_names": [
+        "object_springs",
+        "controller_springs"
+      ],
+      "log_scales": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -0.375
+        ],
+        [
+          0.0,
+          0.375
+        ],
+        [
+          -0.15000000000000002,
+          0.0
+        ]
+      ],
+      "retained_probability_mass": 0.42333254826954503,
+      "source_weight_key": "posterior_weights",
+      "weights": [
+        0.3303215137002704,
+        0.261649038778014,
+        0.24212756674790178,
+        0.16590188077381385
+      ]
+    },
+    "particle_state_source": "particle-specific TwinBelief endpoint",
+    "rollout_frame_interval": [
+      58,
+      85
+    ],
+    "rollout_shape": [
+      9,
+      4,
+      27,
+      5203,
+      3
+    ],
+    "runtime": {
+      "confidence_level": 0.9,
+      "deterministic_spring_forces": true,
+      "device": "cuda:0",
+      "dt": 5e-05,
+      "num_substeps": 667,
+      "self_collision": null,
+      "variance_floor_m2": 2.5e-05,
+      "velocity_history_frames": 3
+    },
+    "shared_endpoint_state": false,
+    "source_paths": {
+      "baseline_trajectory": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/inference.pkl",
+      "checkpoint": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_single_lift_sloth/profile_full_v1_cue_9x9/refit_checkpoint.pt",
+      "final_data": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/final_data.pkl",
+      "official_repo": "/home/florianpfaff/PhysTwin-upstream",
+      "optimal_params": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/optimal_params.pkl",
+      "parameter_profile": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_single_lift_sloth/profile_full_v1_cue_9x9/parameter_profile.npz"
+    },
+    "train_end_frame": 59,
+    "twin_belief_id": "ac7765d5e2aedc2caaf547270c58cc1072e89f549a993d5193c540d9b01f1d3a"
+  },
+  "twin_belief_id": "ac7765d5e2aedc2caaf547270c58cc1072e89f549a993d5193c540d9b01f1d3a"
+}
