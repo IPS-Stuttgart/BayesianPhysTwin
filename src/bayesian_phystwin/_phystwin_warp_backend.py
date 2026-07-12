@@ -171,6 +171,19 @@ def eval_springs_deterministic(
     forces[vertex] = total
 
 
+@wp.kernel
+def add_opt_in_external_forces(
+    forces: wp.array(dtype=wp.vec3),
+    external_forces: wp.array(dtype=wp.vec3),
+    enabled: wp.array(dtype=wp.int32),
+):
+    """Add generalized forces while leaving the disabled path untouched."""
+
+    vertex = wp.tid()
+    if enabled[0] == 1:
+        forces[vertex] = forces[vertex] + external_forces[vertex]
+
+
 def deterministic_vertex_spring_adjacency(
     springs: np.ndarray,
     *,
@@ -266,6 +279,27 @@ def make_reliability_simulator_class(official_module: Any):
             self.deterministic_spring_forces = bool(deterministic_spring_forces)
             self.grouped_num_object_springs = int(num_object_springs)
             device = kwargs["gt_object_points"].device
+            object_point_count = int(kwargs["num_object_points"])
+            self.external_forces_tensor = torch.zeros(
+                (object_point_count, 3),
+                dtype=torch.float32,
+                device=device,
+            ).contiguous()
+            self.external_force_enabled_tensor = torch.zeros(
+                1,
+                dtype=torch.int32,
+                device=device,
+            ).contiguous()
+            self.wp_external_forces = wp.from_torch(
+                self.external_forces_tensor,
+                dtype=wp.vec3,
+                requires_grad=False,
+            )
+            self.wp_external_force_enabled = wp.from_torch(
+                self.external_force_enabled_tensor,
+                dtype=wp.int32,
+                requires_grad=False,
+            )
             spring_count = int(args[1].shape[0])
             if not 0 <= self.grouped_num_object_springs <= spring_count:
                 raise ValueError("num_object_springs is inconsistent with init_springs")
@@ -436,6 +470,15 @@ def make_reliability_simulator_class(official_module: Any):
                     ],
                     outputs=[self.wp_states[substep].wp_vertice_forces],
                 )
+                wp.launch(
+                    add_opt_in_external_forces,
+                    dim=self.num_object_points,
+                    inputs=[
+                        self.wp_states[substep].wp_vertice_forces,
+                        self.wp_external_forces,
+                        self.wp_external_force_enabled,
+                    ],
+                )
                 if self.object_collision_flag:
                     output_velocity = self.wp_states[substep].wp_v_before_collision
                 else:
@@ -530,6 +573,36 @@ def make_reliability_simulator_class(official_module: Any):
             if tuple(controller_points.shape) != tuple(self.controller_points.shape):
                 raise ValueError("controller trajectory shape changed")
             self.controller_points = controller_points
+
+        def set_external_forces(self, external_forces: Any):
+            """Set a constant per-object-node force for captured inference steps."""
+
+            values = torch.as_tensor(
+                external_forces,
+                dtype=torch.float32,
+                device=self.external_forces_tensor.device,
+            ).contiguous()
+            if tuple(values.shape) != tuple(self.external_forces_tensor.shape):
+                raise ValueError(
+                    "external_forces must have shape (num_object_points, 3)"
+                )
+            if not bool(torch.all(torch.isfinite(values)).item()):
+                raise ValueError("external_forces must be finite")
+            enabled = bool(torch.any(values != 0.0).item())
+            if enabled and not self.deterministic_spring_forces:
+                raise ValueError(
+                    "external forces require deterministic_spring_forces=True"
+                )
+            with torch.no_grad():
+                self.external_forces_tensor.copy_(values)
+                self.external_force_enabled_tensor.fill_(int(enabled))
+
+        def clear_external_forces(self):
+            """Disable and zero the opt-in generalized-force input."""
+
+            with torch.no_grad():
+                self.external_force_enabled_tensor.zero_()
+                self.external_forces_tensor.zero_()
 
         def set_controller_target(self, frame_idx: int, pure_inference: bool = False):
             super().set_controller_target(frame_idx, pure_inference=pure_inference)

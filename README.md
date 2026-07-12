@@ -216,6 +216,19 @@ rest geometry changes equal-case CD/track by `+0.18%/+1.38%`, while graph
 persistence remains much stronger at `-10.59%/-13.76%`. The structural
 candidate is therefore not promoted before the locked multi-action protocol.
 
+That negative result now feeds a discrepancy-localization diagnostic rather
+than another structural model. A typed `DynamicDiscrepancyCorrection` uses one
+frozen rank-4 graph basis, the same first six O-plus frames, the same four BPT
+particles, and the same untouched continuation to compare graph-persistent
+readout correction, a position-and-velocity prefix state restart, constant
+generalized force inside Warp, and a matched rest-geometry negative control.
+The deterministic simulator has an opt-in per-node force input whose disabled
+path performs no force-buffer write; every real run must pass bitwise zero-force
+parity. Released fused tracks do not identify camera-specific residuals, so the
+observation audit reports cross-view tests as unavailable unless per-view 3D
+identities are supplied. See
+[docs/phystwin_discrepancy_localization.md](docs/phystwin_discrepancy_localization.md).
+
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
 the temporal contract in every forecast artifact. On `single_lift_sloth`, the
