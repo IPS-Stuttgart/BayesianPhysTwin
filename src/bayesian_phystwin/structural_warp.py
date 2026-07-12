@@ -325,12 +325,12 @@ def apply_structural_configuration_to_simulator(
     """Apply rest lengths, controls, and gravity before a Warp restart."""
 
     rest_lengths = torch.as_tensor(
-        configuration.corrected_rest_lengths_m,
+        np.asarray(configuration.corrected_rest_lengths_m).copy(),
         dtype=torch.float32,
         device=device,
     ).contiguous()
     controls = torch.as_tensor(
-        configuration.controller_points_m,
+        np.asarray(configuration.controller_points_m).copy(),
         dtype=torch.float32,
         device=device,
     ).contiguous()
@@ -350,7 +350,7 @@ def apply_structural_configuration_to_simulator(
             )
         simulator.set_gravity(
             torch.as_tensor(
-                configuration.gravity_mps2,
+                np.asarray(configuration.gravity_mps2).copy(),
                 dtype=torch.float32,
                 device=device,
             ).contiguous()

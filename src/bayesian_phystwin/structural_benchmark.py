@@ -198,11 +198,13 @@ def _omitted_offset(
     session_index: int,
     columns: int,
 ) -> np.ndarray:
-    rows, columns = np.unravel_index(
+    row_indices, column_indices = np.unravel_index(
         np.arange(len(graph.positions)),
         (int(np.round(len(graph.positions) / columns)), columns),
     )
-    checker = np.where((rows + columns) % 2 == 0, 1.0, -1.0)
+    checker = np.where(
+        (row_indices + column_indices) % 2 == 0, 1.0, -1.0
+    )
     result = np.zeros((frame_count, len(graph.positions), 3), dtype=float)
     for frame in range(frame_count):
         phase = np.sin(0.75 * frame + 0.4 * session_index)

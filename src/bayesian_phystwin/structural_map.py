@@ -550,6 +550,7 @@ def fit_hierarchical_structural_map(
     session_corrections = []
     predictions = {}
     session_metrics = {}
+    validation_frame_values = []
     for session in evidence:
         rotation_vector = (
             np.zeros(3)
@@ -582,14 +583,36 @@ def fit_hierarchical_structural_map(
         )
         prediction = _predict_session(session, parameters, layout, settings)
         predictions[session.session_id] = prediction
-        residual = np.linalg.norm(prediction - session.observations_m, axis=2)
+        squared = np.square(prediction - session.observations_m)
+        weights = session.observation_weights
+        if weights.ndim == 2:
+            weights = np.repeat(weights[..., None], 3, axis=2)
+
+        def weighted_rmse(frame_mask: np.ndarray) -> float:
+            selected_weights = weights[frame_mask]
+            denominator = float(np.sum(selected_weights))
+            if denominator <= 0.0:
+                raise ValueError("structural evaluation window has no weighted support")
+            return float(
+                np.sqrt(np.sum(selected_weights * squared[frame_mask]) / denominator)
+            )
+
+        per_validation_frame = []
+        for frame in np.flatnonzero(session.validation_frame_mask):
+            frame_weight = weights[frame]
+            denominator = float(np.sum(frame_weight))
+            if denominator <= 0.0:
+                continue
+            per_validation_frame.append(
+                float(np.sqrt(np.sum(frame_weight * squared[frame]) / denominator))
+            )
+        if not per_validation_frame:
+            raise ValueError("structural validation window has no weighted support")
+        validation_frame_values.extend(per_validation_frame)
         session_metrics[session.session_id] = {
-            "fit_rmse_m": float(
-                np.sqrt(np.mean(np.square(residual[session.fit_frame_mask])))
-            ),
-            "validation_rmse_m": float(
-                np.sqrt(np.mean(np.square(residual[session.validation_frame_mask])))
-            ),
+            "fit_rmse_m": weighted_rmse(session.fit_frame_mask),
+            "validation_rmse_m": float(np.mean(per_validation_frame)),
+            "validation_rmse_by_frame_m": per_validation_frame,
         }
     source_checksums = {
         f"o_minus_session:{session.session_id}": session.source_checksum
@@ -636,6 +659,14 @@ def fit_hierarchical_structural_map(
     validation_values = [
         value["validation_rmse_m"] for value in session_metrics.values()
     ]
+    validation_standard_error = (
+        0.0
+        if len(validation_frame_values) < 2
+        else float(
+            np.std(validation_frame_values, ddof=1)
+            / np.sqrt(len(validation_frame_values))
+        )
+    )
     diagnostics = {
         **solver_diagnostics,
         "variant": settings.variant,
@@ -645,6 +676,8 @@ def fit_hierarchical_structural_map(
         "persistent_edge_strain_scale": strain_scale,
         "maximum_absolute_edge_strain": maximum_strain,
         "mean_validation_rmse_m": float(np.mean(validation_values)),
+        "validation_standard_error_m": validation_standard_error,
+        "validation_frame_count": len(validation_frame_values),
         "session_metrics": session_metrics,
         "posterior_uncertainty_estimated": False,
         "information_boundary": correction.information_boundary,
@@ -665,15 +698,25 @@ def select_structural_map_result(
     candidates = tuple(results)
     if not candidates:
         raise ValueError("at least one structural MAP result is required")
-    candidates = tuple(
-        sorted(
-            candidates,
-            key=lambda value: (
-                value.diagnostics["mean_validation_rmse_m"],
-                value.diagnostics["parameter_count"],
-                value.config.rank,
-                STRUCTURAL_VARIANTS.index(value.config.variant),
-            ),
-        )
+    best = min(
+        candidates,
+        key=lambda value: value.diagnostics["mean_validation_rmse_m"],
     )
-    return candidates[0]
+    threshold = (
+        best.diagnostics["mean_validation_rmse_m"]
+        + best.diagnostics["validation_standard_error_m"]
+    )
+    eligible = [
+        value
+        for value in candidates
+        if value.diagnostics["mean_validation_rmse_m"] <= threshold + 1e-15
+    ]
+    return min(
+        eligible,
+        key=lambda value: (
+            value.diagnostics["parameter_count"],
+            value.config.rank,
+            STRUCTURAL_VARIANTS.index(value.config.variant),
+            value.diagnostics["mean_validation_rmse_m"],
+        ),
+    )

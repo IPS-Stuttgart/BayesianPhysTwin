@@ -40,6 +40,7 @@ from .structural_map import (
     StructuralMAPConfig,
     StructuralMAPResult,
     fit_hierarchical_structural_map,
+    select_structural_map_result,
 )
 from .structural_warp import (
     apply_structural_configuration_to_simulator,
@@ -646,21 +647,9 @@ def evaluate_phystwin_structural_case(
     selected_by_variant = {}
     for variant in STRUCTURAL_VARIANTS:
         candidates = [value for value in results if value.config.variant == variant]
-        selected_by_variant[variant] = min(
-            candidates,
-            key=lambda value: (
-                value.diagnostics["mean_validation_rmse_m"]
-                + 2e-6 * np.sqrt(value.diagnostics["parameter_count"]),
-                value.config.rank,
-            ),
-        )
-    selected_physical = min(
-        selected_by_variant.values(),
-        key=lambda value: (
-            value.diagnostics["mean_validation_rmse_m"]
-            + 2e-6 * np.sqrt(value.diagnostics["parameter_count"]),
-            value.diagnostics["parameter_count"],
-        ),
+        selected_by_variant[variant] = select_structural_map_result(candidates)
+    selected_physical = select_structural_map_result(
+        tuple(selected_by_variant.values())
     )
 
     trajectories = {RELEASED: baseline, EQUILIBRIUM_BASELINE: nominal_trajectory}
@@ -734,6 +723,9 @@ def evaluate_phystwin_structural_case(
         variant_linear_selection[variant] = {
             "rank": result.config.rank,
             "validation_rmse_m": result.diagnostics["mean_validation_rmse_m"],
+            "validation_standard_error_m": result.diagnostics[
+                "validation_standard_error_m"
+            ],
             "parameter_count": result.diagnostics["parameter_count"],
             "artifact_id": result.correction.artifact_id,
         }
