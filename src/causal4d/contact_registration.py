@@ -12,7 +12,7 @@ import numpy as np
 from causal4d.real_protocol import validate_protocol
 
 
-CONTACT_REGISTRATION_SCHEMA_VERSION = 2
+CONTACT_REGISTRATION_SCHEMA_VERSION = 3
 
 
 def _require(condition: bool, message: str) -> None:
@@ -86,7 +86,7 @@ def build_contact_registration_template(
     camera_ids: Sequence[str],
     object_node_count: int,
 ) -> dict[str, Any]:
-    """Build an explicitly incomplete version-2 registration template."""
+    """Build an explicitly incomplete version-3 registration template."""
 
     validate_protocol(protocol)
     cameras = [str(value) for value in camera_ids]
@@ -152,6 +152,11 @@ def build_contact_registration_template(
                     "weights": None,
                     "centroid_covariance_world_m2": None,
                 },
+                "attachment_provenance": {
+                    "selected_candidate_id": None,
+                    "selection_rule": None,
+                    "candidates": [],
+                },
                 "per_view_overlays": {
                     camera_id: {
                         "centroid_px": None,
@@ -188,7 +193,8 @@ def validate_contact_registration(
 
     validate_protocol(protocol)
     _require(
-        artifact.get("schema_version") == 2, "unsupported contact registration schema"
+        artifact.get("schema_version") in {2, 3},
+        "unsupported contact registration schema",
     )
     _require(
         artifact.get("artifact_kind") == "PhysicalContactRegistration",
@@ -325,6 +331,128 @@ def validate_contact_registration(
             and np.isclose(np.sum(weights), 1.0, atol=1e-8),
             f"{region_id} attachment weights are invalid",
         )
+        if artifact["schema_version"] == 3:
+            provenance = region.get("attachment_provenance", {})
+            selected_candidate_id = provenance.get("selected_candidate_id")
+            _require(
+                isinstance(selected_candidate_id, str) and selected_candidate_id,
+                f"{region_id} selected attachment candidate is missing",
+            )
+            _require(
+                isinstance(provenance.get("selection_rule"), str)
+                and bool(provenance["selection_rule"]),
+                f"{region_id} attachment selection rule is missing",
+            )
+            candidates = list(provenance.get("candidates", []))
+            _require(
+                len(candidates) >= 2,
+                f"{region_id} must record selected and rejected attachment candidates",
+            )
+            candidate_ids = [candidate.get("candidate_id") for candidate in candidates]
+            _require(
+                all(isinstance(value, str) and value for value in candidate_ids)
+                and len(set(candidate_ids)) == len(candidate_ids),
+                f"{region_id} attachment candidate ids are invalid",
+            )
+            selected_records = []
+            rejected_count = 0
+            for candidate in candidates:
+                disposition = candidate.get("disposition")
+                _require(
+                    disposition in {"selected", "rejected"},
+                    f"{region_id} attachment candidate disposition is invalid",
+                )
+                candidate_indices = np.asarray(
+                    candidate.get("node_indices"), dtype=int
+                ).reshape(-1)
+                candidate_weights = np.asarray(
+                    candidate.get("weights"), dtype=float
+                ).reshape(-1)
+                _require(
+                    len(candidate_indices) >= 2
+                    and len(candidate_indices) == len(candidate_weights)
+                    and len(np.unique(candidate_indices)) == len(candidate_indices)
+                    and np.all(
+                        (0 <= candidate_indices) & (candidate_indices < node_count)
+                    ),
+                    f"{region_id} attachment candidate patch is invalid",
+                )
+                _require(
+                    np.all(np.isfinite(candidate_weights))
+                    and np.all(candidate_weights > 0.0)
+                    and np.isclose(np.sum(candidate_weights), 1.0, atol=1e-8),
+                    f"{region_id} attachment candidate weights are invalid",
+                )
+                _vector(
+                    candidate.get("centroid_world_m"),
+                    3,
+                    f"{region_id} attachment candidate centroid",
+                )
+                _require(
+                    candidate.get("target_outcomes_used") is False,
+                    f"{region_id} attachment candidate used target outcomes",
+                )
+                _require(
+                    isinstance(candidate.get("rationale"), str)
+                    and bool(candidate["rationale"]),
+                    f"{region_id} attachment candidate rationale is missing",
+                )
+                _validate_descriptor(
+                    candidate.get("artifact", {}),
+                    f"{region_id} attachment candidate artifact",
+                )
+                if disposition == "selected":
+                    selected_records.append(candidate)
+                else:
+                    rejected_count += 1
+            _require(
+                len(selected_records) == 1
+                and selected_records[0]["candidate_id"] == selected_candidate_id,
+                f"{region_id} selected attachment provenance is inconsistent",
+            )
+            selected = selected_records[0]
+            _require(
+                np.array_equal(np.asarray(selected["node_indices"], dtype=int), indices)
+                and np.allclose(
+                    np.asarray(selected["weights"], dtype=float),
+                    weights,
+                    atol=1e-12,
+                    rtol=0.0,
+                ),
+                f"{region_id} selected candidate does not match approved attachment",
+            )
+            _require(
+                np.allclose(
+                    np.asarray(selected["centroid_world_m"], dtype=float),
+                    centroid,
+                    atol=1e-12,
+                    rtol=0.0,
+                ),
+                f"{region_id} selected candidate centroid does not match approval",
+            )
+            _require(
+                rejected_count >= 1,
+                f"{region_id} must retain at least one rejected attachment candidate",
+            )
+            distinct_rejected = any(
+                candidate["disposition"] == "rejected"
+                and (
+                    not np.array_equal(
+                        np.asarray(candidate["node_indices"], dtype=int), indices
+                    )
+                    or not np.allclose(
+                        np.asarray(candidate["weights"], dtype=float),
+                        weights,
+                        atol=1e-12,
+                        rtol=0.0,
+                    )
+                )
+                for candidate in candidates
+            )
+            _require(
+                distinct_rejected,
+                f"{region_id} rejected attachment candidates are not distinct",
+            )
         covariance = _covariance(
             attachment["centroid_covariance_world_m2"],
             3,
@@ -401,7 +529,7 @@ def validate_contact_registration(
     )
     return {
         "passed": True,
-        "schema_version": 2,
+        "schema_version": artifact["schema_version"],
         "camera_count": len(cameras),
         "contact_region_count": len(regions),
         "object_node_count": node_count,

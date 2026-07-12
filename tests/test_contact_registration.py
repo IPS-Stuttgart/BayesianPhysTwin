@@ -93,6 +93,41 @@ def _approved_artifact() -> tuple[dict, dict]:
                 "multiview_reprojection_rmse_px": 0.5,
             }
         )
+        selected_nodes = region["attachment"]["node_indices"]
+        selected_weights = region["attachment"]["weights"]
+        region["attachment_provenance"] = {
+            "selected_candidate_id": f"{region_id}-candidate-selected",
+            "selection_rule": "multiview geometry before any action outcome",
+            "candidates": [
+                {
+                    "candidate_id": f"{region_id}-candidate-selected",
+                    "disposition": "selected",
+                    "node_indices": selected_nodes,
+                    "weights": selected_weights,
+                    "centroid_world_m": centroids[region_id],
+                    "target_outcomes_used": False,
+                    "rationale": "lowest preregistered multiview reprojection error",
+                    "artifact": _descriptor(f"candidate-{region_id}-selected"),
+                },
+                {
+                    "candidate_id": f"{region_id}-candidate-rejected",
+                    "disposition": "rejected",
+                    "node_indices": [
+                        node_offsets[region_id] + 2,
+                        node_offsets[region_id] + 3,
+                    ],
+                    "weights": [0.5, 0.5],
+                    "centroid_world_m": [
+                        centroids[region_id][0] + 0.01,
+                        centroids[region_id][1],
+                        centroids[region_id][2],
+                    ],
+                    "target_outcomes_used": False,
+                    "rationale": "higher preregistered multiview reprojection error",
+                    "artifact": _descriptor(f"candidate-{region_id}-rejected"),
+                },
+            ],
+        }
         for camera_id, overlay in region["per_view_overlays"].items():
             overlay["centroid_px"] = [100.0, 120.0]
             overlay["artifact"] = _descriptor(f"overlay-{region_id}-{camera_id}")
@@ -127,3 +162,25 @@ def test_contact_registration_rejects_exact_node_or_bad_weights() -> None:
     mutated["contact_regions"]["left_forepaw"]["attachment"]["weights"] = [1.0]
     with pytest.raises(ValueError, match="node patch is invalid"):
         validate_contact_registration(mutated, protocol)
+
+
+def test_contact_registration_requires_rejected_candidate_provenance() -> None:
+    protocol, artifact = _approved_artifact()
+    mutated = deepcopy(artifact)
+    provenance = mutated["contact_regions"]["left_forepaw"]["attachment_provenance"]
+    provenance["candidates"] = [provenance["candidates"][0]]
+
+    with pytest.raises(ValueError, match="selected and rejected"):
+        validate_contact_registration(mutated, protocol)
+
+
+def test_contact_registration_keeps_approved_schema2_artifacts_readable() -> None:
+    protocol, artifact = _approved_artifact()
+    legacy = deepcopy(artifact)
+    legacy["schema_version"] = 2
+    for region in legacy["contact_regions"].values():
+        region.pop("attachment_provenance")
+
+    result = validate_contact_registration(legacy, protocol)
+    assert result["passed"] is True
+    assert result["schema_version"] == 2

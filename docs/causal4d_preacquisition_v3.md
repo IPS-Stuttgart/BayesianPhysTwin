@@ -1,5 +1,10 @@
 # Causal4D Pre-Acquisition Amendment v3
 
+> **Superseded before acquisition:** v3 remains immutable at tag
+> `causal4d-preacquisition-v3`. The unchanged acquisition design, controlled
+> gate audit, state/reset prediction, and contact-provenance extension are in
+> [causal4d_preacquisition_v4.md](causal4d_preacquisition_v4.md).
+
 ## Status
 
 This amendment supersedes v2 before any physical execution. It preserves the

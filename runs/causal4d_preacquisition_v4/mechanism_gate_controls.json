@@ -1,0 +1,236 @@
+{
+  "acceptance_checks": {
+    "placebo_null_full_gate_upper_below_5_percent": true,
+    "positive_control_full_gate_lower_above_80_percent": true,
+    "wrong_family_on_positive_upper_below_5_percent": true
+  },
+  "arms": {
+    "placebo_null": {
+      "fitted_parameter_quantiles": {
+        "0.05": 1.0,
+        "0.5": 1.0,
+        "0.95": 1.0
+      },
+      "full_eligibility_pass_count": 0,
+      "full_eligibility_pass_rate": 0.0,
+      "full_eligibility_wilson_95": [
+        0.0,
+        0.007447247372
+      ],
+      "positive_session_count_quantiles": {
+        "0.05": 0.0,
+        "0.5": 0.0,
+        "0.95": 0.0
+      },
+      "primary_shrinkage_gate_pass_count": 0,
+      "primary_shrinkage_gate_pass_rate": 0.0,
+      "primary_shrinkage_gate_wilson_95": [
+        0.0,
+        0.007447247372
+      ],
+      "shrinkage_fraction_quantiles": {
+        "0.05": 0.0,
+        "0.5": 0.0,
+        "0.95": 0.0
+      },
+      "simulation_count": 512
+    },
+    "placebo_on_positive": {
+      "fitted_parameter_quantiles": {
+        "0.05": 1.0,
+        "0.5": 1.0,
+        "0.95": 1.0
+      },
+      "full_eligibility_pass_count": 0,
+      "full_eligibility_pass_rate": 0.0,
+      "full_eligibility_wilson_95": [
+        0.0,
+        0.007447247372
+      ],
+      "positive_session_count_quantiles": {
+        "0.05": 0.0,
+        "0.5": 0.0,
+        "0.95": 0.0
+      },
+      "primary_shrinkage_gate_pass_count": 0,
+      "primary_shrinkage_gate_pass_rate": 0.0,
+      "primary_shrinkage_gate_wilson_95": [
+        0.0,
+        0.007447247372
+      ],
+      "shrinkage_fraction_quantiles": {
+        "0.05": 0.0,
+        "0.5": 0.0,
+        "0.95": 0.0
+      },
+      "simulation_count": 512
+    },
+    "positive_control": {
+      "fitted_parameter_quantiles": {
+        "0.05": 0.9,
+        "0.5": 0.9,
+        "0.95": 0.9
+      },
+      "full_eligibility_pass_count": 478,
+      "full_eligibility_pass_rate": 0.93359375,
+      "full_eligibility_wilson_95": [
+        0.908636119037,
+        0.952093221132
+      ],
+      "positive_session_count_quantiles": {
+        "0.05": 8.0,
+        "0.5": 10.0,
+        "0.95": 12.0
+      },
+      "primary_shrinkage_gate_pass_count": 478,
+      "primary_shrinkage_gate_pass_rate": 0.93359375,
+      "primary_shrinkage_gate_wilson_95": [
+        0.908636119037,
+        0.952093221132
+      ],
+      "shrinkage_fraction_quantiles": {
+        "0.05": 0.097710421942,
+        "0.5": 0.147504054423,
+        "0.95": 0.203871620212
+      },
+      "simulation_count": 512
+    }
+  },
+  "artifact_kind": "MechanismGateControlEvidence",
+  "claim_boundary": "Controlled operating-point evidence only; no released or prospective physical outcome is used, and no real-world false-positive guarantee is claimed.",
+  "config": {
+    "actuation_gain_grid": [
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0,
+      1.05,
+      1.1,
+      1.15,
+      1.2
+    ],
+    "dt_s": 0.03,
+    "force_magnitude_n": 1.0,
+    "frame_count": 48,
+    "graph_rank": 4,
+    "interval_z": 1.96,
+    "maximum_placebo_false_positive_rate": 0.05,
+    "minimum_positive_control_power": 0.8,
+    "minimum_positive_sessions": 8,
+    "minimum_shrinkage_fraction": 0.1,
+    "persistent_offset_std_m": 2e-05,
+    "placebo_response_rotation_deg": 90.0,
+    "positive_actuation_gain": 0.9,
+    "prefix_frame_count": 6,
+    "random_seed": 20260712,
+    "simulation_count": 512,
+    "temporal_noise_correlation": 0.7,
+    "temporal_noise_std_m": 3e-05
+  },
+  "design": {
+    "common_noise_draws_across_arms": true,
+    "crossfit": "three folds with 8 fit and 4 held out",
+    "future_used_for_heldout_correction_fit": false,
+    "heldout_readout_correction_refit": true,
+    "placebo": "the exact scalar actuation-response bank rotated 90 degrees, preserving candidate norms and the identical nine-value grid",
+    "positive_control": "known 10 percent actuation-gain loss, fitted on a scalar grid",
+    "prefix_frames": 6,
+    "source_sessions": 12
+  },
+  "frozen_v3_gate_supported_in_controlled_benchmark": true,
+  "result_sha256": "f48e1fbc650daf7b81a317085e3bf038087dda3d459299a4e34c61777e4a5761",
+  "schema_version": 1,
+  "threshold_sensitivity": [
+    {
+      "minimum_positive_sessions": 7,
+      "minimum_shrinkage_fraction": 0.05,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.99609375,
+      "positive_control_primary_rate": 0.99609375
+    },
+    {
+      "minimum_positive_sessions": 8,
+      "minimum_shrinkage_fraction": 0.05,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.990234375,
+      "positive_control_primary_rate": 0.990234375
+    },
+    {
+      "minimum_positive_sessions": 9,
+      "minimum_shrinkage_fraction": 0.05,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.93359375,
+      "positive_control_primary_rate": 0.93359375
+    },
+    {
+      "minimum_positive_sessions": 7,
+      "minimum_shrinkage_fraction": 0.1,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.9375,
+      "positive_control_primary_rate": 0.9375
+    },
+    {
+      "minimum_positive_sessions": 8,
+      "minimum_shrinkage_fraction": 0.1,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.93359375,
+      "positive_control_primary_rate": 0.93359375
+    },
+    {
+      "minimum_positive_sessions": 9,
+      "minimum_shrinkage_fraction": 0.1,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.888671875,
+      "positive_control_primary_rate": 0.888671875
+    },
+    {
+      "minimum_positive_sessions": 7,
+      "minimum_shrinkage_fraction": 0.15,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.4765625,
+      "positive_control_primary_rate": 0.4765625
+    },
+    {
+      "minimum_positive_sessions": 8,
+      "minimum_shrinkage_fraction": 0.15,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.474609375,
+      "positive_control_primary_rate": 0.474609375
+    },
+    {
+      "minimum_positive_sessions": 9,
+      "minimum_shrinkage_fraction": 0.15,
+      "placebo_null_full_rate": 0.0,
+      "placebo_null_primary_rate": 0.0,
+      "placebo_on_positive_full_rate": 0.0,
+      "placebo_on_positive_primary_rate": 0.0,
+      "positive_control_full_rate": 0.4609375,
+      "positive_control_primary_rate": 0.4609375
+    }
+  ]
+}

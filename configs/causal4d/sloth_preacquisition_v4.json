@@ -1,0 +1,329 @@
+{
+  "amendment_sha256": "0e167538a7824e5ec053031d8359d4e9b4ff89ad61a85666400a86c2a88ac42f",
+  "base_protocol": {
+    "action_contact_grid_unchanged": true,
+    "confirmatory_execution_count": 36,
+    "design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+    "protocol_id": "causal4d-sloth-multi-action-v1",
+    "target_execution_ids_unchanged": true
+  },
+  "collection_gate": {
+    "actuator_sync_passed": false,
+    "analysis_code_frozen": false,
+    "contact_registration_approved": false,
+    "end_to_end_dry_run_passed": false,
+    "first_confirmatory_execution_allowed": false,
+    "signature_panel_complete": false,
+    "slip_pilot_passed_or_versioned_out": false,
+    "support_registration_passed": false,
+    "v3_analysis_code_frozen": false,
+    "v4_analysis_code_frozen": false
+  },
+  "collection_sequence": [
+    "approve_contact_registration",
+    "run_preregistered_slip_pilot",
+    "collect_12_execution_signature_and_repeatability_panel",
+    "validate_commanded_vs_measured_actuation",
+    "validate_support_and_gravity_registration",
+    "run_one_nonconfirmatory_end_to_end_dry_run",
+    "seal_analysis_implementation_and_environment",
+    "collect_36_unchanged_confirmatory_executions"
+  ],
+  "contact_registration_contract": {
+    "approval_required_before_slip_pilot": true,
+    "artifact_kind": "PhysicalContactRegistration",
+    "minimum_calibrated_camera_views": 3,
+    "minimum_independent_reviews": 2,
+    "minimum_rejected_candidates_per_region": 1,
+    "schema_version": 3,
+    "se3_covariance_and_closure_required": true,
+    "selected_and_rejected_candidates_required": true,
+    "support_geometry_required": true,
+    "target_outcomes_may_revise_registration": false,
+    "weighted_node_patch_required": true
+  },
+  "mechanism_gate_control_lock": {
+    "claim_boundary": "Controlled operating-point evidence only; no released or prospective physical outcome is used, and no real-world false-positive guarantee is claimed.",
+    "evidence_artifact": "runs/causal4d_preacquisition_v4/mechanism_gate_controls.json",
+    "evidence_sha256": "f48e1fbc650daf7b81a317085e3bf038087dda3d459299a4e34c61777e4a5761",
+    "frozen_threshold": {
+      "minimum_geometric_mean_shrinkage_fraction": 0.1,
+      "minimum_sessions_with_positive_shrinkage": 8,
+      "session_count": 12
+    },
+    "placebo": {
+      "definition": "the exact scalar actuation-response bank rotated 90 degrees, preserving candidate norms and the identical nine-value grid",
+      "full_gate_pass_count": 0,
+      "full_gate_pass_rate": 0.0,
+      "wilson_95": [
+        0.0,
+        0.007447247372
+      ]
+    },
+    "positive_control": {
+      "definition": "known 10 percent actuation-gain loss, fitted on a scalar grid",
+      "full_gate_pass_count": 478,
+      "full_gate_pass_rate": 0.93359375,
+      "wilson_95": [
+        0.908636119037,
+        0.952093221132
+      ]
+    },
+    "real_world_false_positive_rate_claimed": false,
+    "simulation_count_per_arm": 512,
+    "threshold_changed_after_controls": false
+  },
+  "mechanism_ladder_addition": {
+    "definition": "Infer a prefix state update, propagate its basis through the frozen action/contact-conditioned simulator, and cross-fit every mechanism parameter on 8 source sessions before evaluation on 4 held-out sessions.",
+    "implementation_may_use_target_sessions": false,
+    "name": "action_dependent_propagated_state_correction",
+    "promoted_before_source_panel": false,
+    "role": "source_panel_candidate_not_released_case_model_selection",
+    "same_v3_shrinkage_and_prediction_gates_required": true
+  },
+  "plan_id": "causal4d-sloth-preacquisition-v4",
+  "prospective_mode0_reset_crosscheck": {
+    "action_outcomes_may_revise_mapping": false,
+    "decision_rule": {
+      "compatibility_confirms_cause": false,
+      "reset_scale_explanation_weakened": "released mode-0 RMS exceeds twice the pilot statistic",
+      "scale_compatible": "released mode-0 RMS is no more than twice the pilot statistic"
+    },
+    "hypothesis": "If the single-lift mode-0 component is primarily initial pose, reset, or registration error, independently measured reset mode-0 variation should be commensurate with the released inferred correction.",
+    "pilot_statistic": "95th percentile across fresh-reset sessions of per-node vector RMS in mode 0, expressed in the locked world frame before any per-reset best-fit alignment, plus the preregistered 95 percent registration uncertainty.",
+    "released_reference": {
+      "initial_mode_energy_m2": 1.3009828632847338,
+      "mode": 0,
+      "object_node_count": 6895,
+      "per_node_vector_rms_m": 0.013736264750447176
+    },
+    "secondary_decomposition": [
+      "locked-frame rigid translation",
+      "best-fit SE3 registration component",
+      "post-SE3 low-rank nonrigid component"
+    ],
+    "status": "preregistered_before_slip_reset_pilot"
+  },
+  "schema_version": 1,
+  "state_propagation_interpretation_lock": {
+    "attachment_correlations_inferential": false,
+    "cross_case_claim": "A prefix state error may matter interaction by interaction, but one generic state reset is not a transferable persistent-discrepancy model.",
+    "double_lift": {
+      "final_outside_injected_rank4_fraction": 0.7356,
+      "interpretation": "contraction_and_basis_leakage"
+    },
+    "double_stretch": {
+      "interpretation": "spatial redistribution or cancellation; contact switching remains an alternative to a smooth rotation interpretation",
+      "near_middle_far_aligned_retention": [
+        0.0555,
+        -0.3638,
+        0.4798
+      ]
+    },
+    "empirical_description": "delta_x_T approximately Phi_a(T,t_p) delta_x_t_p",
+    "linearization_boundary": "Phi_a is an empirical secant or local linearization at the injected magnitude, not a globally valid state-transition matrix. Contact-mode switching can make propagation nonsmooth.",
+    "released_case_source": {
+      "aggregate_artifact": "data/paper_evidence/phystwin_discrepancy_localization_v1/state_correction_modes_aggregate.json",
+      "aggregate_file_sha256": "97eafb9a64a51faac4fd92d8aff9fffb89b28143b4e5f1e91189ff6572b91df7",
+      "git_tag": "phystwin-discrepancy-localization-v1"
+    },
+    "single_lift": {
+      "dominant_retained_mode": 0,
+      "readout_cd_gain_captured_fraction": 0.8267,
+      "readout_track_gain_captured_fraction": 0.8738,
+      "state_error_interpretation": "plausible_for_this_interaction"
+    }
+  },
+  "status": "supersedes_v3_before_any_physical_execution",
+  "supersedes": {
+    "amendment_sha256": "5dd12d62242d672789e802ed6ed4365922e607932d15ef02a76b3208cdb9a1e2",
+    "git_tag": "causal4d-preacquisition-v3",
+    "physical_executions_completed_before_supersession": 0,
+    "plan_id": "causal4d-sloth-preacquisition-v3"
+  },
+  "unchanged_acquisition_design": {
+    "confirmatory_execution_count": 36,
+    "confirmatory_target_ids_unchanged": true,
+    "new_physical_executions_added_by_v3": 0,
+    "source_panel_execution_count": 12,
+    "source_panel_execution_ids": [
+      "sloth-pre-v2-lift_high-r1",
+      "sloth-pre-v2-lift_high-r2",
+      "sloth-pre-v2-lift_high-r3",
+      "sloth-pre-v2-lower_high-r1",
+      "sloth-pre-v2-lower_high-r2",
+      "sloth-pre-v2-lower_high-r3",
+      "sloth-pre-v2-lift_high_slow-r1",
+      "sloth-pre-v2-lift_high_slow-r2",
+      "sloth-pre-v2-lift_high_slow-r3",
+      "sloth-pre-v2-lift_high_long_hold-r1",
+      "sloth-pre-v2-lift_high_long_hold-r2",
+      "sloth-pre-v2-lift_high_long_hold-r3"
+    ]
+  },
+  "unchanged_v3_analysis": {
+    "calibration_resolution": {
+      "achievable_nominal_grid": [
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9
+      ],
+      "calibration_unit": "one preregistered execution per independent session",
+      "calibration_units_per_outer_fold": 9,
+      "claim": "Finite marginal execution-block split-conformal coverage under session exchangeability; coarse rank-9-of-9 calibration.",
+      "fragility_diagnostics": [
+        "maximum_to_median_score_ratio",
+        "largest_and_second_largest_scores",
+        "leave_one_calibration_session_out_thresholds",
+        "interval_width_by_outer_fold"
+      ],
+      "fragility_diagnostics_may_select_threshold": false,
+      "pooled_coordinate_conformal_claim_allowed": false,
+      "resolution": 0.1,
+      "selected_nominal_coverage": 0.9,
+      "selected_order_statistic_rank_one_based": 9,
+      "selected_threshold_is_maximum_calibration_score": true,
+      "worst_group_coverage_guarantee_claimed": false
+    },
+    "signature_eligibility_gates": {
+      "camera_observation": {
+        "magnitude_threshold": "at least 1.5 times camera-specific repeatability floor",
+        "minimum_view_count": 3,
+        "required_direction": "held-view transfer worse than object-frame transfer",
+        "statistic": "leave-one-view-out correction transfer ratio"
+      },
+      "common": {
+        "effect_below_threshold_interpretation": "not_eligible_for_confirmatory_mechanism",
+        "minimum_consistent_repetitions": 2,
+        "p_values_or_null_rejection_allowed": false,
+        "repetition_count": 3
+      },
+      "hold_relaxation": {
+        "amplitude_definition": "difference between the first-three and last-three hold-frame object-frame residual means",
+        "minimum_exponential_log_r_squared": 0.8,
+        "minimum_relaxation_amplitude_over_sigma_repeat": 1.5,
+        "observable_time_constant_s": [
+          0.0667,
+          0.5
+        ],
+        "profiles": [
+          "lift_high",
+          "lift_high_long_hold"
+        ]
+      },
+      "reset_state": {
+        "minimum_crossfit_effect_over_sigma_repeat": 1.5,
+        "statistic": "residual covariance explained by measured reset deviation"
+      },
+      "speed": {
+        "matched": [
+          "direction",
+          "amplitude",
+          "hold_duration",
+          "contact"
+        ],
+        "minimum_effect_rms_over_sigma_repeat": 1.5,
+        "profiles": [
+          "lift_high",
+          "lift_high_slow"
+        ],
+        "required_measured_slow_to_fast_peak_speed_ratio": [
+          0.35,
+          0.65
+        ]
+      }
+    },
+    "source_panel_crossfit": {
+      "all_12_sessions_held_out_exactly_once": true,
+      "folds": [
+        {
+          "fold_id": "source-panel-hold-replicate-1",
+          "heldout_future_used_for_coefficient_fit": false,
+          "heldout_session_count": 4,
+          "heldout_shrinkage_execution_ids": [
+            "sloth-pre-v2-lift_high-r1",
+            "sloth-pre-v2-lower_high-r1",
+            "sloth-pre-v2-lift_high_slow-r1",
+            "sloth-pre-v2-lift_high_long_hold-r1"
+          ],
+          "mechanism_fit_execution_ids": [
+            "sloth-pre-v2-lift_high-r2",
+            "sloth-pre-v2-lift_high-r3",
+            "sloth-pre-v2-lower_high-r2",
+            "sloth-pre-v2-lower_high-r3",
+            "sloth-pre-v2-lift_high_slow-r2",
+            "sloth-pre-v2-lift_high_slow-r3",
+            "sloth-pre-v2-lift_high_long_hold-r2",
+            "sloth-pre-v2-lift_high_long_hold-r3"
+          ],
+          "mechanism_fit_session_count": 8,
+          "readout_coefficients_refit_on_heldout_prefix": true
+        },
+        {
+          "fold_id": "source-panel-hold-replicate-2",
+          "heldout_future_used_for_coefficient_fit": false,
+          "heldout_session_count": 4,
+          "heldout_shrinkage_execution_ids": [
+            "sloth-pre-v2-lift_high-r2",
+            "sloth-pre-v2-lower_high-r2",
+            "sloth-pre-v2-lift_high_slow-r2",
+            "sloth-pre-v2-lift_high_long_hold-r2"
+          ],
+          "mechanism_fit_execution_ids": [
+            "sloth-pre-v2-lift_high-r1",
+            "sloth-pre-v2-lift_high-r3",
+            "sloth-pre-v2-lower_high-r1",
+            "sloth-pre-v2-lower_high-r3",
+            "sloth-pre-v2-lift_high_slow-r1",
+            "sloth-pre-v2-lift_high_slow-r3",
+            "sloth-pre-v2-lift_high_long_hold-r1",
+            "sloth-pre-v2-lift_high_long_hold-r3"
+          ],
+          "mechanism_fit_session_count": 8,
+          "readout_coefficients_refit_on_heldout_prefix": true
+        },
+        {
+          "fold_id": "source-panel-hold-replicate-3",
+          "heldout_future_used_for_coefficient_fit": false,
+          "heldout_session_count": 4,
+          "heldout_shrinkage_execution_ids": [
+            "sloth-pre-v2-lift_high-r3",
+            "sloth-pre-v2-lower_high-r3",
+            "sloth-pre-v2-lift_high_slow-r3",
+            "sloth-pre-v2-lift_high_long_hold-r3"
+          ],
+          "mechanism_fit_execution_ids": [
+            "sloth-pre-v2-lift_high-r1",
+            "sloth-pre-v2-lift_high-r2",
+            "sloth-pre-v2-lower_high-r1",
+            "sloth-pre-v2-lower_high-r2",
+            "sloth-pre-v2-lift_high_slow-r1",
+            "sloth-pre-v2-lift_high_slow-r2",
+            "sloth-pre-v2-lift_high_long_hold-r1",
+            "sloth-pre-v2-lift_high_long_hold-r2"
+          ],
+          "mechanism_fit_session_count": 8,
+          "readout_coefficients_refit_on_heldout_prefix": true
+        }
+      ],
+      "graph_correction_refit_boundary": "Refit c_base and c_M independently from the permitted prefix of each held-out source execution, after mechanism parameters are frozen.",
+      "heldout_shrinkage_sessions_per_fold": 4,
+      "mechanism_fit_sessions_per_fold": 8,
+      "mechanism_may_not_fit_heldout_session": true
+    },
+    "source_panel_role": {
+      "confirmatory_claim_allowed": false,
+      "decision_rule": "predeclared_effect_direction_and_noise_scaled_magnitude",
+      "exact_repetitions_per_profile": 3,
+      "replication_unit": "fresh_reset_session",
+      "role": "discovery_and_model_family_eligibility_only",
+      "significance_test_allowed": false
+    }
+  }
+}

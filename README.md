@@ -249,7 +249,12 @@ PyRecEst 2.4.1 as an optional source-only actuator synchronization diagnostic.
 The superseding v3 lock adds leave-one-replicate-out mechanism fitting,
 held-out correction shrinkage, exact rank-9-of-9 conformal arithmetic, and
 noise-scaled discovery thresholds without adding or changing an execution. See
-[docs/causal4d_preacquisition_v3.md](docs/causal4d_preacquisition_v3.md).
+[docs/causal4d_preacquisition_v3.md](docs/causal4d_preacquisition_v3.md). The
+v4 addendum leaves those thresholds and executions unchanged, validates the
+10%/8-of-12 mechanism gate with matched placebo and positive controls, locks a
+prospective mode-0/reset-scale prediction, and requires rejected contact-patch
+alternatives to remain in the registration artifact. See
+[docs/causal4d_preacquisition_v4.md](docs/causal4d_preacquisition_v4.md).
 
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records

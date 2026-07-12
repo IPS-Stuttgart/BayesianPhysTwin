@@ -3,9 +3,10 @@
 Status: preregistered software protocol; physical acquisition has not started.
 
 The versioned pre-acquisition amendment in
-[`causal4d_preacquisition_v3.md`](causal4d_preacquisition_v3.md) adds exact
+[`causal4d_preacquisition_v4.md`](causal4d_preacquisition_v4.md) adds exact
 repeatability/signature pilots, cross-fitted correction shrinkage,
-session-clustered inference, and explicit finite-sample calibration arithmetic.
+session-clustered inference, explicit finite-sample calibration arithmetic, and
+controlled placebo/power evidence for the frozen mechanism gate.
 It leaves the 36 confirmatory executions and target IDs unchanged and must pass
 before the first confirmatory execution.
 

@@ -161,6 +161,10 @@ directional retentions are `+5.55%`, `-36.38%`, and `+47.98%`, respectively.
 The frozen synthesis is therefore interaction-dependent contraction, rotation,
 and mode transfer. Online state estimation remains justified for slow retained
 modes, but one generic prefix reset is not a transferable discrepancy model.
+Here, the state-transition operator is an empirical secant or local
+linearization at the injected magnitude. Contact-mode switching can make the
+response nonsmooth, so the double-stretch sign changes do not uniquely identify
+a smooth rotation.
 
 ## Observation audit
 
