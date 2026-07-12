@@ -1,7 +1,9 @@
 import itertools
+from pathlib import Path
 
 import numpy as np
 
+from causal4d.cli.audit_real_oracle_gap import _write_component_csv
 from causal4d.contracts import (
     PhysicalPosterior,
     TwinBelief,
@@ -277,3 +279,23 @@ def test_gap_report_identifies_the_dominant_subsystem() -> None:
         sum(track["fraction_of_total_diagnostic_headroom"].values()),
         1.0,
     )
+
+
+def test_component_csv_uses_repository_native_lf(tmp_path: Path) -> None:
+    output = tmp_path / "components.csv"
+    _write_component_csv(
+        output,
+        [
+            {
+                "bank": "current",
+                "component_id": "component",
+                "hypothesis_id": "hypothesis",
+                "particle_id": "particle",
+                "hypothesis_index": 0,
+                "particle_index": 0,
+                "contact": {"shift": 0},
+                "action": {"known": True},
+            }
+        ],
+    )
+    assert b"\r" not in output.read_bytes()
