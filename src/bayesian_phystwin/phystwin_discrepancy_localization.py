@@ -126,10 +126,14 @@ def _rollout_state_segment(
     """Return the initial state and every subsequent official Warp frame."""
 
     position_tensor = torch.as_tensor(
-        position_m, dtype=torch.float32, device=device
+        np.array(position_m, dtype=np.float32, copy=True),
+        dtype=torch.float32,
+        device=device,
     ).contiguous()
     velocity_tensor = torch.as_tensor(
-        velocity_mps, dtype=torch.float32, device=device
+        np.array(velocity_mps, dtype=np.float32, copy=True),
+        dtype=torch.float32,
+        device=device,
     ).contiguous()
     position_wp = wp.from_torch(position_tensor, dtype=wp.vec3, requires_grad=False)
     velocity_wp = wp.from_torch(velocity_tensor, dtype=wp.vec3, requires_grad=False)
@@ -886,7 +890,7 @@ def evaluate_phystwin_discrepancy_localization_case(
             "kinetic_delta_proxy_j": float(
                 0.5
                 * np.sum(
-                    graph.masses[:, None]
+                    graph.masses[: len(structure), None]
                     * (
                         2.0
                         * _weighted_mean(
