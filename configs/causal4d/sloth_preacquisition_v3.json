@@ -1,0 +1,286 @@
+{
+  "amendment_sha256": "5dd12d62242d672789e802ed6ed4365922e607932d15ef02a76b3208cdb9a1e2",
+  "base_protocol": {
+    "action_contact_grid_unchanged": true,
+    "confirmatory_execution_count": 36,
+    "design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+    "protocol_id": "causal4d-sloth-multi-action-v1",
+    "target_execution_ids_unchanged": true
+  },
+  "calibration_resolution": {
+    "achievable_nominal_grid": [
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ],
+    "calibration_unit": "one preregistered execution per independent session",
+    "calibration_units_per_outer_fold": 9,
+    "claim": "Finite marginal execution-block split-conformal coverage under session exchangeability; coarse rank-9-of-9 calibration.",
+    "fragility_diagnostics": [
+      "maximum_to_median_score_ratio",
+      "largest_and_second_largest_scores",
+      "leave_one_calibration_session_out_thresholds",
+      "interval_width_by_outer_fold"
+    ],
+    "fragility_diagnostics_may_select_threshold": false,
+    "pooled_coordinate_conformal_claim_allowed": false,
+    "resolution": 0.1,
+    "selected_nominal_coverage": 0.9,
+    "selected_order_statistic_rank_one_based": 9,
+    "selected_threshold_is_maximum_calibration_score": true,
+    "worst_group_coverage_guarantee_claimed": false
+  },
+  "collection_gate": {
+    "actuator_sync_passed": false,
+    "analysis_code_frozen": false,
+    "contact_registration_approved": false,
+    "end_to_end_dry_run_passed": false,
+    "first_confirmatory_execution_allowed": false,
+    "signature_panel_complete": false,
+    "slip_pilot_passed_or_versioned_out": false,
+    "support_registration_passed": false,
+    "v3_analysis_code_frozen": false
+  },
+  "collection_sequence": [
+    "approve_contact_registration",
+    "run_preregistered_slip_pilot",
+    "collect_12_execution_signature_and_repeatability_panel",
+    "validate_commanded_vs_measured_actuation",
+    "validate_support_and_gravity_registration",
+    "run_one_nonconfirmatory_end_to_end_dry_run",
+    "seal_analysis_implementation_and_environment",
+    "collect_36_unchanged_confirmatory_executions"
+  ],
+  "contact_registration_contract": {
+    "approval_required_before_slip_pilot": true,
+    "artifact_kind": "PhysicalContactRegistration",
+    "minimum_calibrated_camera_views": 3,
+    "minimum_independent_reviews": 2,
+    "schema_version": 2,
+    "se3_covariance_and_closure_required": true,
+    "support_geometry_required": true,
+    "target_outcomes_may_revise_registration": false,
+    "weighted_node_patch_required": true
+  },
+  "heldout_mechanism_eligibility": {
+    "correction_metric": "graph_weighted_readout_correction_rms_m",
+    "maximum_cd_degradation_over_metric_repeatability_sd": 0.5,
+    "mechanism_parameters_frozen_before_heldout_prefix": true,
+    "minimum_geometric_mean_shrinkage_fraction": 0.1,
+    "minimum_late_track_gain_over_metric_repeatability_sd": 1.0,
+    "minimum_sessions_with_positive_shrinkage": 8,
+    "minimum_track_gain_over_metric_repeatability_sd": 1.0,
+    "passing_meaning": "Eligible for locked confirmatory evaluation, not a confirmed mechanism.",
+    "readout_correction_refit_on_heldout_prefix": true,
+    "session_count": 12,
+    "target_folds_used": false
+  },
+  "plan_id": "causal4d-sloth-preacquisition-v3",
+  "repeatability_floor": {
+    "camera_specific_floor_reported_separately": true,
+    "definition": "Square root of the equal-profile mean between-repeat variance of object-frame residual coordinates, computed separately by horizon or metric when used for standardization.",
+    "name": "sigma_repeat",
+    "point_frames_are_not_replications": true,
+    "profiles_weighted_equally": true
+  },
+  "reversal_design": {
+    "continuous": {
+      "minimum_consistent_repetitions": 2,
+      "minimum_nonclosure_rms_over_sigma_repeat": 1.5,
+      "minimum_persistence_frames": 3,
+      "nonclosure_statistic": "object-frame RMS of post-return-settle residual minus pre-action residual",
+      "purpose": "hysteresis and non-closure within one uninterrupted run",
+      "repetition_count": 3,
+      "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+    },
+    "interpretation_lock": "Reset-separated reversal diagnoses direction dependence; continuous out-and-return diagnoses path dependence. Neither substitutes for the other.",
+    "reset_separated": {
+      "minimum_consistent_replicate_pairs": 2,
+      "minimum_odd_component_rms_over_sigma_repeat": 1.5,
+      "minimum_sign_flip_cosine": 0.5,
+      "pairing": "same replicate index after independent fresh resets",
+      "profiles": [
+        "lift_high",
+        "lower_high"
+      ],
+      "purpose": "direction dependence from matched initial conditions",
+      "replicate_pair_count": 3,
+      "sign_flip_statistic": "negative cosine between time-normalized action-axis residual vectors in the common controller/world frame"
+    }
+  },
+  "schema_version": 1,
+  "signature_eligibility_gates": {
+    "camera_observation": {
+      "magnitude_threshold": "at least 1.5 times camera-specific repeatability floor",
+      "minimum_view_count": 3,
+      "required_direction": "held-view transfer worse than object-frame transfer",
+      "statistic": "leave-one-view-out correction transfer ratio"
+    },
+    "common": {
+      "effect_below_threshold_interpretation": "not_eligible_for_confirmatory_mechanism",
+      "minimum_consistent_repetitions": 2,
+      "p_values_or_null_rejection_allowed": false,
+      "repetition_count": 3
+    },
+    "hold_relaxation": {
+      "amplitude_definition": "difference between the first-three and last-three hold-frame object-frame residual means",
+      "minimum_exponential_log_r_squared": 0.8,
+      "minimum_relaxation_amplitude_over_sigma_repeat": 1.5,
+      "observable_time_constant_s": [
+        0.0667,
+        0.5
+      ],
+      "profiles": [
+        "lift_high",
+        "lift_high_long_hold"
+      ]
+    },
+    "reset_state": {
+      "minimum_crossfit_effect_over_sigma_repeat": 1.5,
+      "statistic": "residual covariance explained by measured reset deviation"
+    },
+    "speed": {
+      "matched": [
+        "direction",
+        "amplitude",
+        "hold_duration",
+        "contact"
+      ],
+      "minimum_effect_rms_over_sigma_repeat": 1.5,
+      "profiles": [
+        "lift_high",
+        "lift_high_slow"
+      ],
+      "required_measured_slow_to_fast_peak_speed_ratio": [
+        0.35,
+        0.65
+      ]
+    }
+  },
+  "source_panel_crossfit": {
+    "all_12_sessions_held_out_exactly_once": true,
+    "folds": [
+      {
+        "fold_id": "source-panel-hold-replicate-1",
+        "heldout_future_used_for_coefficient_fit": false,
+        "heldout_session_count": 4,
+        "heldout_shrinkage_execution_ids": [
+          "sloth-pre-v2-lift_high-r1",
+          "sloth-pre-v2-lower_high-r1",
+          "sloth-pre-v2-lift_high_slow-r1",
+          "sloth-pre-v2-lift_high_long_hold-r1"
+        ],
+        "mechanism_fit_execution_ids": [
+          "sloth-pre-v2-lift_high-r2",
+          "sloth-pre-v2-lift_high-r3",
+          "sloth-pre-v2-lower_high-r2",
+          "sloth-pre-v2-lower_high-r3",
+          "sloth-pre-v2-lift_high_slow-r2",
+          "sloth-pre-v2-lift_high_slow-r3",
+          "sloth-pre-v2-lift_high_long_hold-r2",
+          "sloth-pre-v2-lift_high_long_hold-r3"
+        ],
+        "mechanism_fit_session_count": 8,
+        "readout_coefficients_refit_on_heldout_prefix": true
+      },
+      {
+        "fold_id": "source-panel-hold-replicate-2",
+        "heldout_future_used_for_coefficient_fit": false,
+        "heldout_session_count": 4,
+        "heldout_shrinkage_execution_ids": [
+          "sloth-pre-v2-lift_high-r2",
+          "sloth-pre-v2-lower_high-r2",
+          "sloth-pre-v2-lift_high_slow-r2",
+          "sloth-pre-v2-lift_high_long_hold-r2"
+        ],
+        "mechanism_fit_execution_ids": [
+          "sloth-pre-v2-lift_high-r1",
+          "sloth-pre-v2-lift_high-r3",
+          "sloth-pre-v2-lower_high-r1",
+          "sloth-pre-v2-lower_high-r3",
+          "sloth-pre-v2-lift_high_slow-r1",
+          "sloth-pre-v2-lift_high_slow-r3",
+          "sloth-pre-v2-lift_high_long_hold-r1",
+          "sloth-pre-v2-lift_high_long_hold-r3"
+        ],
+        "mechanism_fit_session_count": 8,
+        "readout_coefficients_refit_on_heldout_prefix": true
+      },
+      {
+        "fold_id": "source-panel-hold-replicate-3",
+        "heldout_future_used_for_coefficient_fit": false,
+        "heldout_session_count": 4,
+        "heldout_shrinkage_execution_ids": [
+          "sloth-pre-v2-lift_high-r3",
+          "sloth-pre-v2-lower_high-r3",
+          "sloth-pre-v2-lift_high_slow-r3",
+          "sloth-pre-v2-lift_high_long_hold-r3"
+        ],
+        "mechanism_fit_execution_ids": [
+          "sloth-pre-v2-lift_high-r1",
+          "sloth-pre-v2-lift_high-r2",
+          "sloth-pre-v2-lower_high-r1",
+          "sloth-pre-v2-lower_high-r2",
+          "sloth-pre-v2-lift_high_slow-r1",
+          "sloth-pre-v2-lift_high_slow-r2",
+          "sloth-pre-v2-lift_high_long_hold-r1",
+          "sloth-pre-v2-lift_high_long_hold-r2"
+        ],
+        "mechanism_fit_session_count": 8,
+        "readout_coefficients_refit_on_heldout_prefix": true
+      }
+    ],
+    "graph_correction_refit_boundary": "Refit c_base and c_M independently from the permitted prefix of each held-out source execution, after mechanism parameters are frozen.",
+    "heldout_shrinkage_sessions_per_fold": 4,
+    "mechanism_fit_sessions_per_fold": 8,
+    "mechanism_may_not_fit_heldout_session": true
+  },
+  "source_panel_role": {
+    "confirmatory_claim_allowed": false,
+    "decision_rule": "predeclared_effect_direction_and_noise_scaled_magnitude",
+    "exact_repetitions_per_profile": 3,
+    "replication_unit": "fresh_reset_session",
+    "role": "discovery_and_model_family_eligibility_only",
+    "significance_test_allowed": false
+  },
+  "state_update_design_statement": {
+    "fast_transient_modes": "treated as effectively memoryless at 30 Hz",
+    "material_time_constant_claimed": false,
+    "mode_assignment_source": "frozen trajectory-only mode-retention audit",
+    "role": "online_Bayesian_update_channel",
+    "slow_retained_modes": "retain posterior state uncertainty and propagate it"
+  },
+  "status": "supersedes_v2_before_any_physical_execution",
+  "supersedes": {
+    "amendment_sha256": "57d9788c4de31ff3f103d487fcf7b2080523e69ead402e38961f47d0e749a719",
+    "git_tag": "causal4d-preacquisition-v2",
+    "physical_executions_completed_before_supersession": 0,
+    "plan_id": "causal4d-sloth-preacquisition-v2"
+  },
+  "unchanged_acquisition_design": {
+    "confirmatory_execution_count": 36,
+    "confirmatory_target_ids_unchanged": true,
+    "new_physical_executions_added_by_v3": 0,
+    "source_panel_execution_count": 12,
+    "source_panel_execution_ids": [
+      "sloth-pre-v2-lift_high-r1",
+      "sloth-pre-v2-lift_high-r2",
+      "sloth-pre-v2-lift_high-r3",
+      "sloth-pre-v2-lower_high-r1",
+      "sloth-pre-v2-lower_high-r2",
+      "sloth-pre-v2-lower_high-r3",
+      "sloth-pre-v2-lift_high_slow-r1",
+      "sloth-pre-v2-lift_high_slow-r2",
+      "sloth-pre-v2-lift_high_slow-r3",
+      "sloth-pre-v2-lift_high_long_hold-r1",
+      "sloth-pre-v2-lift_high_long_hold-r2",
+      "sloth-pre-v2-lift_high_long_hold-r3"
+    ]
+  }
+}

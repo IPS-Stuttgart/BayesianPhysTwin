@@ -131,6 +131,37 @@ direction while the other two rotate and largely lose it. This strengthens the
 claim that a single state reset cannot reproduce persistent readout correction;
 it does not establish that no state error existed.
 
+### Mode and constraint resolution
+
+A second trajectory-only audit rebuilds the frame-zero spring/controller graph,
+requires an exact match to the frozen spring and basis hashes, and projects the
+state difference onto the same four graph modes. It never reads future
+residuals, manual tracks, or outcome metrics.
+
+| Case | Nodes within 5 attachment hops | Final in rank-4 basis | Dominant retained mode | Far-graph directional retention |
+| --- | ---: | ---: | ---: | ---: |
+| `single_lift_sloth` | 7.01% | 88.65% | mode 0 (75.73%) | 49.34% |
+| `double_lift_sloth` | 17.84% | 26.44% | modes 0/2, tiny absolute retention | 0.90% |
+| `double_stretch_sloth` | 11.92% | 75.27% | mode 3 (84.86%) | 47.98% |
+
+Across only three cases, attachment coverage has descriptive correlation
+`-0.882` with absolute global directional retention and `-0.903` with
+far-graph retention. This is consistent with stronger constraint coverage
+suppressing an injected direction, but has no sampling interpretation.
+
+The result does **not** support an inexpressibility explanation for single
+lift. There, state injection captures 82.67% of the readout CD gain and 87.38%
+of the readout track gain, and the surviving component is mostly the lowest
+graph mode. State error is plausible for that interaction. In double lift, the
+injected rank-4 field is largely contracted and 73.56% of the remaining state
+difference lies outside the original basis. Double stretch instead shows
+mode-3 retention and spatial sign cancellation: near, middle, and far
+directional retentions are `+5.55%`, `-36.38%`, and `+47.98%`, respectively.
+
+The frozen synthesis is therefore interaction-dependent contraction, rotation,
+and mode transfer. Online state estimation remains justified for slow retained
+modes, but one generic prefix reset is not a transferable discrepancy model.
+
 ## Observation audit
 
 The released `final_data.pkl` normally stores fused 3D object tracks. Without
@@ -177,6 +208,20 @@ bpt-audit-phystwin-state-decay \
   /path/to/case/localization_rollouts.npz \
   /path/to/case/dynamic_discrepancy_correction.json \
   /path/to/case/state_correction_decay.json
+```
+
+Resolve the same trajectory by graph mode and distance from controller
+attachments:
+
+```bash
+bpt-audit-phystwin-state-modes \
+  /path/to/case/summary.json \
+  /path/to/case/localization_rollouts.npz \
+  /path/to/case/dynamic_discrepancy_correction.json \
+  /path/to/case/dynamic_discrepancy_correction.npz \
+  /path/to/case/final_data.pkl \
+  /path/to/case/optimal_params.pkl \
+  /path/to/case/state_correction_modes.json
 ```
 
 ## Claim boundary

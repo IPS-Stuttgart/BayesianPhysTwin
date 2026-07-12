@@ -246,7 +246,10 @@ repeat/signature executions, session-clustered inference, a factorial
 readout-shrinkage gate, and nine independent calibration units per outer fold
 without changing any of the 36 confirmatory target executions. It also locks
 PyRecEst 2.4.1 as an optional source-only actuator synchronization diagnostic.
-See [docs/causal4d_preacquisition_v2.md](docs/causal4d_preacquisition_v2.md).
+The superseding v3 lock adds leave-one-replicate-out mechanism fitting,
+held-out correction shrinkage, exact rank-9-of-9 conformal arithmetic, and
+noise-scaled discovery thresholds without adding or changing an execution. See
+[docs/causal4d_preacquisition_v3.md](docs/causal4d_preacquisition_v3.md).
 
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records

@@ -1,0 +1,226 @@
+{
+  "acceptance": {
+    "attachment_uncertainty_separates_regions": null,
+    "frame_closure_recorded": null,
+    "independent_review_passed": null,
+    "multiview_agreement_passed": null,
+    "target_outcomes_used": false
+  },
+  "approval": {
+    "approved": false,
+    "approved_at_utc": null,
+    "approver_id": null
+  },
+  "artifact_kind": "PhysicalContactRegistration",
+  "contact_regions": {
+    "left_forepaw": {
+      "attachment": {
+        "centroid_covariance_world_m2": null,
+        "node_indices": null,
+        "representation": "weighted_node_patch",
+        "weights": null
+      },
+      "independent_reviews": [],
+      "interreview_rms_m": null,
+      "multiview_reprojection_rmse_px": null,
+      "per_view_overlays": {
+        "camera_0": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        },
+        "camera_1": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        },
+        "camera_2": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        }
+      },
+      "physical_centroid_world_m": null,
+      "physical_normal_world": null,
+      "tangent_basis_world": null
+    },
+    "right_forepaw": {
+      "attachment": {
+        "centroid_covariance_world_m2": null,
+        "node_indices": null,
+        "representation": "weighted_node_patch",
+        "weights": null
+      },
+      "independent_reviews": [],
+      "interreview_rms_m": null,
+      "multiview_reprojection_rmse_px": null,
+      "per_view_overlays": {
+        "camera_0": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        },
+        "camera_1": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        },
+        "camera_2": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        }
+      },
+      "physical_centroid_world_m": null,
+      "physical_normal_world": null,
+      "tangent_basis_world": null
+    },
+    "upper_torso": {
+      "attachment": {
+        "centroid_covariance_world_m2": null,
+        "node_indices": null,
+        "representation": "weighted_node_patch",
+        "weights": null
+      },
+      "independent_reviews": [],
+      "interreview_rms_m": null,
+      "multiview_reprojection_rmse_px": null,
+      "per_view_overlays": {
+        "camera_0": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        },
+        "camera_1": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        },
+        "camera_2": {
+          "artifact": {
+            "bytes": null,
+            "path": null,
+            "sha256": null
+          },
+          "centroid_px": null
+        }
+      },
+      "physical_centroid_world_m": null,
+      "physical_normal_world": null,
+      "tangent_basis_world": null
+    }
+  },
+  "frames": {
+    "cameras": {
+      "camera_0": {
+        "calibration_artifact": {
+          "bytes": null,
+          "path": null,
+          "sha256": null
+        },
+        "camera_to_world": {
+          "covariance_se3": null,
+          "matrix": null
+        }
+      },
+      "camera_1": {
+        "calibration_artifact": {
+          "bytes": null,
+          "path": null,
+          "sha256": null
+        },
+        "camera_to_world": {
+          "covariance_se3": null,
+          "matrix": null
+        }
+      },
+      "camera_2": {
+        "calibration_artifact": {
+          "bytes": null,
+          "path": null,
+          "sha256": null
+        },
+        "camera_to_world": {
+          "covariance_se3": null,
+          "matrix": null
+        }
+      }
+    },
+    "closure": {
+      "camera_0": {
+        "rotation_error_deg": null,
+        "translation_error_m": null
+      },
+      "camera_1": {
+        "rotation_error_deg": null,
+        "translation_error_m": null
+      },
+      "camera_2": {
+        "rotation_error_deg": null,
+        "translation_error_m": null
+      }
+    },
+    "controller_to_world": {
+      "covariance_se3": null,
+      "matrix": null
+    },
+    "gravity_direction_world": null,
+    "support_to_world": {
+      "covariance_se3": null,
+      "matrix": null
+    }
+  },
+  "object": {
+    "geometry_artifact": {
+      "bytes": null,
+      "path": null,
+      "sha256": null
+    },
+    "object_id": "sloth_plush_instance_1",
+    "object_node_count": 6895,
+    "physical_instance_serial": null,
+    "twin_geometry_sha256": null
+  },
+  "protocol_design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+  "protocol_id": "causal4d-sloth-multi-action-v1",
+  "schema_version": 2,
+  "source_checksums": {},
+  "status": "template",
+  "support_geometry": {
+    "artifact": {
+      "bytes": null,
+      "path": null,
+      "sha256": null
+    },
+    "contact_state_changes_recorded": null,
+    "kind": null,
+    "normal_world": null,
+    "origin_world_m": null,
+    "surface_id": null,
+    "uncertainty_m": null
+  }
+}

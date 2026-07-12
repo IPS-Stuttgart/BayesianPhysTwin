@@ -1,5 +1,10 @@
 # Causal4D Pre-Acquisition Amendment v2
 
+> **Superseded before acquisition:** v2 remains immutable at tag
+> `causal4d-preacquisition-v2`. The unchanged acquisition design and tightened
+> cross-fitting, discovery, and calibration rules are locked in
+> [causal4d_preacquisition_v3.md](causal4d_preacquisition_v3.md).
+
 ## Why an amendment is required
 
 The original 36-execution protocol remains the confirmatory contact/action
