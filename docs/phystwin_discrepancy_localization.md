@@ -86,6 +86,29 @@ track, Chamfer, late horizon, and far graph without hitting its force limit;
 whether a state restart matches readout; and whether cross-view evidence can
 support an observation-bias interpretation.
 
+## Released diagnostic result
+
+All three cases pass exact zero-force parity. An independent single-lift rerun
+also reproduces the correction artifact ID and full rollout archive hash
+exactly. The equal-case result is:
+
+| Method | Future CD | Future track | Late track | Far-graph error |
+| --- | ---: | ---: | ---: | ---: |
+| Graph-persistent readout | **-17.42%** | **-13.52%** | **-8.59%** | **18.51 mm** |
+| Prefix state | -3.43% | +1.04% | +2.08% | 26.78 mm |
+| Constant generalized force | -1.89% | -1.27% | -1.16% | 26.95 mm |
+| Matched rest control | -1.40% | -2.66% | -1.74% | 26.86 mm |
+
+Relative to readout, force is `1.144x` worse on track, `1.209x` worse on CD,
+and `1.432x` worse far from contact. It also reaches the predeclared force limit
+in two cases. State is `1.173x` worse on track and degrades track overall. The
+rest control reaches its geometry limit in every case. None is promoted.
+
+The aggregate conclusion is
+`readout_is_best_but_physical_vs_observation_location_unresolved`. The exact
+aggregate SHA-256 is
+`ec3d7c21e706d2ef2f9fb447730d3416067a5a42702644fd5b24fcc5cb9333f2`.
+
 ## Observation audit
 
 The released `final_data.pkl` normally stores fused 3D object tracks. Without

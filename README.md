@@ -228,6 +228,13 @@ parity. Released fused tracks do not identify camera-specific residuals, so the
 observation audit reports cross-view tests as unavailable unless per-view 3D
 identities are supplied. See
 [docs/phystwin_discrepancy_localization.md](docs/phystwin_discrepancy_localization.md).
+On the three released sloth diagnostics, readout persistence remains strongest
+at `-17.42%/-13.52%` equal-case CD/track. Prefix state changes CD/track by
+`-3.43%/+1.04%`, constant force by `-1.89%/-1.27%`, and the matched rest
+control by `-1.40%/-2.66%`. Force fails every promotion gate and hits its
+predeclared limit in two cases. The result localizes the useful correction to
+the readout level but does not identify observation bias, because the release
+lacks the per-view evidence needed to separate it from richer dynamics.
 
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
