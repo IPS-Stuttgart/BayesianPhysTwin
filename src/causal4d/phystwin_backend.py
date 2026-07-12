@@ -22,6 +22,13 @@ from bayesian_phystwin.phystwin_graph import (
     build_phystwin_spring_graph,
 )
 
+from causal4d.contracts import (
+    ActionWindow,
+    CausalContext,
+    ObservationWindow,
+    TwinBelief,
+    array_sha256,
+)
 from causal4d.rollout_bank import JointRolloutBank
 
 
@@ -674,10 +681,103 @@ class OfficialPhysTwinBackend:
             "runtime": asdict(self.config),
         }
 
+    def causal_context(
+        self,
+        action_proposals: Sequence[PhysTwinActionProposal],
+        *,
+        protocol_id: str = "causal4d_phystwin_v1",
+    ) -> CausalContext:
+        """Identify the factual split and complete counterfactual action library."""
+
+        if not action_proposals:
+            raise ValueError("at least one action proposal is required")
+        if any(
+            proposal.controller_points_m.shape != self.controller_points.shape
+            for proposal in action_proposals
+        ):
+            raise ValueError("action proposal controls must match the PhysTwin case")
+        endpoint = self.train_end_frame
+        proposal_ids = tuple(proposal.proposal_id for proposal in action_proposals)
+        if len(set(proposal_ids)) != len(proposal_ids):
+            raise ValueError("action proposal ids must be unique")
+        counterfactual_values = [
+            proposal.controller_points_m[endpoint : self.frame_count]
+            for proposal in action_proposals
+        ]
+        if len(counterfactual_values) == 1:
+            counterfactual_digest_values = counterfactual_values[0]
+            counterfactual_action_id = proposal_ids[0]
+        else:
+            counterfactual_digest_values = np.stack(counterfactual_values)
+            counterfactual_action_id = (
+                "action_library[" + ",".join(proposal_ids) + "]"
+            )
+        return CausalContext(
+            protocol_id=protocol_id,
+            o_minus=ObservationWindow(
+                case_id=self.case_name,
+                stream_id="released_object_points_m",
+                frame_start=0,
+                frame_stop=endpoint,
+                content_sha256=array_sha256(self.object_points[:endpoint]),
+            ),
+            o_plus=ObservationWindow(
+                case_id=self.case_name,
+                stream_id="released_object_points_m",
+                frame_start=endpoint,
+                frame_stop=self.frame_count,
+                content_sha256=array_sha256(self.object_points[endpoint:]),
+            ),
+            u_obs=ActionWindow(
+                action_id="released_u_obs",
+                case_id=self.case_name,
+                frame_start=0,
+                frame_stop=self.frame_count,
+                trajectory_sha256=array_sha256(self.controller_points),
+                provenance="released factual controller trajectory",
+            ),
+            u_cf=ActionWindow(
+                action_id=counterfactual_action_id,
+                case_id=self.case_name,
+                frame_start=endpoint,
+                frame_stop=self.frame_count,
+                trajectory_sha256=array_sha256(counterfactual_digest_values),
+                provenance="ordered Causal4D counterfactual action proposal library",
+            ),
+        )
+
+    def _validate_twin_belief(
+        self,
+        belief: TwinBelief,
+        action_proposals: Sequence[PhysTwinActionProposal],
+    ) -> None:
+        expected_context = self.causal_context(
+            action_proposals,
+            protocol_id=belief.context.protocol_id,
+        )
+        if (
+            belief.context.protocol_id != expected_context.protocol_id
+            or belief.context.o_minus != expected_context.o_minus
+            or belief.context.o_plus != expected_context.o_plus
+            or belief.context.u_obs != expected_context.u_obs
+        ):
+            raise ValueError("TwinBelief factual context does not match this rollout query")
+        if belief.endpoint_position_m.shape != (
+            len(self.particles.weights),
+            self.baseline.shape[1],
+            3,
+        ):
+            raise ValueError("TwinBelief endpoint state does not match the backend")
+        if not np.array_equal(belief.theta, self.particles.log_scales):
+            raise ValueError("TwinBelief theta particles do not match the backend profile")
+        if not np.array_equal(belief.weights, self.particles.weights):
+            raise ValueError("TwinBelief weights do not match the backend profile")
+
     def build_rollout_bank(
         self,
         action_proposals: Sequence[PhysTwinActionProposal],
         *,
+        twin_belief: TwinBelief,
         hypothesis_config: PhysTwinHypothesisConfig | None = None,
     ) -> tuple[JointRolloutBank, dict[str, Any]]:
         """Simulate all action/contact hypotheses under selected theta particles."""
@@ -687,6 +787,7 @@ class OfficialPhysTwinBackend:
             raise ValueError("action proposal ids must be unique")
         if any(proposal.controller_points_m.shape != self.controller_points.shape for proposal in action_proposals):
             raise ValueError("action proposal controls must match the PhysTwin case")
+        self._validate_twin_belief(twin_belief, action_proposals)
         contact_states = build_contact_states(self.hand_count, hypothesis_config)
         hypotheses = build_rollout_hypotheses(action_proposals, contact_states)
         trajectory_shape = (
@@ -698,20 +799,10 @@ class OfficialPhysTwinBackend:
         )
         trajectories = np.empty(trajectory_shape, dtype=np.float32)
         endpoint_index = self.train_end_frame - 1
-        frame_dt = self.config.dt * self.config.num_substeps
         from bayesian_phystwin.phystwin_state_injection import (
             _initialize_simulator,
             _released_self_collision_for_case,
             _rollout_restart,
-            estimate_endpoint_velocity_delta,
-        )
-
-        endpoint_velocity = estimate_endpoint_velocity_delta(
-            self.baseline[
-                self.train_end_frame
-                - self.config.velocity_history_frames : self.train_end_frame
-            ],
-            frame_dt=frame_dt,
         )
         self_collision = (
             _released_self_collision_for_case(self.case_name)
@@ -787,15 +878,17 @@ class OfficialPhysTwinBackend:
                         simulator,
                         torch,
                         wp,
-                        self.baseline[endpoint_index],
-                        endpoint_velocity,
+                        twin_belief.endpoint_position_m[particle_index].copy(),
+                        twin_belief.endpoint_velocity_mps[particle_index].copy(),
                         start_frame=self.train_end_frame,
                         stop_frame=self.frame_count,
                         device=self.config.device,
                     )
-                    trajectories[hypothesis_index, particle_index, 0] = self.baseline[
-                        endpoint_index, : self.original_count
-                    ]
+                    trajectories[hypothesis_index, particle_index, 0] = (
+                        twin_belief.endpoint_position_m[
+                            particle_index, : self.original_count
+                        ]
+                    )
                     trajectories[hypothesis_index, particle_index, 1:] = future[
                         :, : self.original_count
                     ]
@@ -829,6 +922,14 @@ class OfficialPhysTwinBackend:
                 "attachment_shift_diagnostics": shift_diagnostics,
                 "rollout_shape": list(trajectories.shape),
                 "rollout_frame_interval": [endpoint_index, self.frame_count],
+                "causal_context": self.causal_context(
+                    action_proposals,
+                    protocol_id=twin_belief.context.protocol_id,
+                ).as_dict(),
+                "twin_belief_id": twin_belief.artifact_id,
+                "particle_state_source": "particle-specific TwinBelief endpoint",
+                "shared_endpoint_state": False,
+                "discrepancy_injected_into_warp_state": False,
             }
         )
         return bank, manifest

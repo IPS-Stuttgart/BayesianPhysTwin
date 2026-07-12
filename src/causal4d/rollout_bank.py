@@ -267,6 +267,8 @@ class JointRolloutBank:
         mask: np.ndarray | None = None,
         observed_nodes: Sequence[int] | None = None,
         base_weights: np.ndarray | None = None,
+        particle_discrepancy_m: np.ndarray | None = None,
+        particle_discrepancy_variance_m2: np.ndarray | None = None,
     ) -> np.ndarray:
         """Update only from frames before ``prefix_frame_count``."""
 
@@ -292,10 +294,48 @@ class JointRolloutBank:
         selected_observed = observations[1:prefix_frame_count, nodes]
         selected_valid = coordinate_valid[1:prefix_frame_count, nodes]
         predicted = self.trajectories[:, :, 1:prefix_frame_count, nodes]
+        likelihood_scale: np.ndarray | float = scale_m
+        if particle_discrepancy_m is not None:
+            discrepancy = np.asarray(particle_discrepancy_m, dtype=float)
+            expected_discrepancy_shape = (
+                len(self.parameter_weights),
+                self.node_count,
+                self.coordinate_count,
+            )
+            if discrepancy.shape != expected_discrepancy_shape:
+                raise ValueError(
+                    "particle_discrepancy_m must have shape "
+                    f"{expected_discrepancy_shape}"
+                )
+            if not np.all(np.isfinite(discrepancy)):
+                raise ValueError("particle discrepancy must be finite")
+            predicted = predicted + discrepancy[None, :, None, nodes]
+        if particle_discrepancy_variance_m2 is not None:
+            discrepancy_variance = np.asarray(
+                particle_discrepancy_variance_m2,
+                dtype=float,
+            )
+            expected_variance_shape = (
+                len(self.parameter_weights),
+                self.node_count,
+                self.coordinate_count,
+            )
+            if discrepancy_variance.shape != expected_variance_shape:
+                raise ValueError(
+                    "particle_discrepancy_variance_m2 must have shape "
+                    f"{expected_variance_shape}"
+                )
+            if not np.all(np.isfinite(discrepancy_variance)) or np.any(
+                discrepancy_variance < 0.0
+            ):
+                raise ValueError("particle discrepancy variance must be nonnegative")
+            likelihood_scale = np.sqrt(
+                scale_m**2 + discrepancy_variance[None, :, None, nodes]
+            )
         score = _student_t_mean_log_score(
             predicted - selected_observed[None, None],
             selected_valid,
-            scale_m=scale_m,
+            scale_m=likelihood_scale,
             degrees_of_freedom=degrees_of_freedom,
             reduction_axes=(2, 3, 4),
         )

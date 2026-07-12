@@ -4,6 +4,9 @@ import numpy as np
 
 from bayesian_phystwin.phystwin_graph import PhysTwinSpringGraph
 from causal4d.phystwin_backend import (
+    BayesianPhysTwinParticles,
+    OfficialPhysTwinBackend,
+    PhysTwinActionProposal,
     PhysTwinContactState,
     PhysTwinHypothesisConfig,
     build_contact_states,
@@ -12,6 +15,7 @@ from causal4d.phystwin_backend import (
     shift_phystwin_attachment_graph,
     transform_controller_trajectory,
 )
+from causal4d.contracts import TwinBelief, array_sha256
 
 
 def test_profile_loader_selects_and_renormalizes_high_mass_particles(tmp_path: Path) -> None:
@@ -94,3 +98,81 @@ def test_controller_transform_applies_future_delay_and_slip_only() -> None:
     assert np.isclose(transformed[3, 0, 0], controls[2, 0, 0])
     assert np.isclose(transformed[4, 0, 0], 2.5)
 
+
+def test_backend_context_identifies_the_ordered_counterfactual_library() -> None:
+    backend = object.__new__(OfficialPhysTwinBackend)
+    backend.case_name = "unit_case"
+    backend.train_end_frame = 3
+    backend.frame_count = 6
+    backend.object_points = np.zeros((6, 2, 3), dtype=float)
+    backend.controller_points = np.zeros((6, 1, 3), dtype=float)
+    first = PhysTwinActionProposal(
+        proposal_id="first",
+        controller_points_m=backend.controller_points.copy(),
+        prior_weight=0.5,
+        future_action_observed=False,
+        provenance="unit",
+    )
+    second_controls = backend.controller_points.copy()
+    second_controls[3:, 0, 0] = 1.0
+    second = PhysTwinActionProposal(
+        proposal_id="second",
+        controller_points_m=second_controls,
+        prior_weight=0.5,
+        future_action_observed=False,
+        provenance="unit",
+    )
+    context = backend.causal_context((first, second), protocol_id="unit")
+    expected = np.stack(
+        [first.controller_points_m[3:], second.controller_points_m[3:]]
+    )
+    assert context.u_cf.action_id == "action_library[first,second]"
+    assert context.u_cf.trajectory_sha256 == array_sha256(expected)
+
+
+def test_backend_reuses_factual_belief_for_a_new_counterfactual_query() -> None:
+    backend = object.__new__(OfficialPhysTwinBackend)
+    backend.case_name = "unit_case"
+    backend.train_end_frame = 3
+    backend.frame_count = 6
+    backend.object_points = np.zeros((6, 2, 3), dtype=float)
+    backend.controller_points = np.zeros((6, 1, 3), dtype=float)
+    backend.baseline = np.zeros((6, 4, 3), dtype=float)
+    backend.particles = BayesianPhysTwinParticles(
+        log_scales=np.asarray([[0.0, 0.0], [0.2, -0.1]]),
+        weights=np.asarray([0.6, 0.4]),
+        grid_indices=np.asarray([[0, 0], [1, 0]]),
+        source_weight_key="posterior_weights",
+        retained_probability_mass=1.0,
+    )
+    proposal = PhysTwinActionProposal(
+        proposal_id="future",
+        controller_points_m=backend.controller_points.copy(),
+        prior_weight=1.0,
+        future_action_observed=False,
+        provenance="unit",
+    )
+    context = backend.causal_context((proposal,), protocol_id="unit")
+    endpoints = np.zeros((2, 4, 3), dtype=float)
+    endpoints[1, :, 0] = 0.01
+    belief = TwinBelief(
+        context=context,
+        endpoint_frame=2,
+        particle_ids=("p0", "p1"),
+        theta_names=("object", "controller"),
+        endpoint_position_m=endpoints,
+        endpoint_velocity_mps=np.zeros_like(endpoints),
+        theta=backend.particles.log_scales,
+        discrepancy_mean_m=np.zeros_like(endpoints),
+        discrepancy_variance_m2=np.ones_like(endpoints) * 1e-5,
+        weights=backend.particles.weights,
+    )
+    backend._validate_twin_belief(belief, (proposal,))
+    changed = PhysTwinActionProposal(
+        proposal_id="changed",
+        controller_points_m=backend.controller_points.copy(),
+        prior_weight=1.0,
+        future_action_observed=False,
+        provenance="unit",
+    )
+    backend._validate_twin_belief(belief, (changed,))

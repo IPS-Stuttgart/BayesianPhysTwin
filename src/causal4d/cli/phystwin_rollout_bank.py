@@ -7,6 +7,8 @@ import json
 from collections.abc import Sequence
 from pathlib import Path
 
+from causal4d.bpt_belief import export_official_phystwin_twin_belief
+from causal4d.contracts import TwinBelief, load_contract, save_contract
 from causal4d.phystwin_backend import (
     OfficialPhysTwinBackend,
     OfficialPhysTwinBackendConfig,
@@ -37,6 +39,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--train-end-frame", type=int)
     parser.add_argument("--parameter-particles", type=int, default=4)
+    parser.add_argument(
+        "--twin-belief",
+        help=(
+            "Existing TwinBelief NPZ. If omitted, every theta particle is replayed "
+            "through O- and a sibling .twin_belief.npz artifact is written."
+        ),
+    )
     parser.add_argument("--maximum-contact-states", type=int, default=12)
     parser.add_argument("--dt", type=float, default=5e-5)
     parser.add_argument("--num-substeps", type=int, default=667)
@@ -102,8 +111,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         backend.controller_points,
         train_end_frame=train_end,
     )
+    context = backend.causal_context(proposals)
+    if args.twin_belief:
+        loaded = load_contract(args.twin_belief)
+        if not isinstance(loaded, TwinBelief):
+            raise TypeError("--twin-belief must contain a TwinBelief artifact")
+        twin_belief = loaded
+        twin_belief_path = Path(args.twin_belief)
+    else:
+        twin_belief = export_official_phystwin_twin_belief(
+            backend,
+            context=context,
+        )
+        output_path = Path(args.output_npz)
+        twin_belief_path = output_path.with_name(
+            output_path.stem + ".twin_belief.npz"
+        )
+        save_contract(twin_belief_path, twin_belief)
     bank, manifest = backend.build_rollout_bank(
         proposals,
+        twin_belief=twin_belief,
         hypothesis_config=PhysTwinHypothesisConfig(
             maximum_contact_states=args.maximum_contact_states
         ),
@@ -118,6 +145,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "action_setting": args.action_setting,
                 "rollout_shape": list(bank.trajectories.shape),
                 "retained_parameter_mass": backend.particles.retained_probability_mass,
+                "twin_belief": str(twin_belief_path.resolve()),
+                "twin_belief_id": twin_belief.artifact_id,
             },
             indent=2,
             sort_keys=True,
@@ -128,4 +157,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

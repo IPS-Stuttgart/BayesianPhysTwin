@@ -3,17 +3,31 @@
 from causal4d.benchmark import CounterfactualBenchmarkConfig, build_protocol
 from causal4d.contact_evaluation import run_latent_contact_benchmark
 from causal4d.contact_inference import LatentContactConfig
+from causal4d.contracts import (
+    CounterfactualQuery,
+    FactualIntervention,
+    PhysicalPosterior,
+    TaskPosterior,
+    TwinBelief,
+)
+from causal4d.counterfactual import apply_counterfactual_operator
 from causal4d.evaluation import run_counterfactual_benchmark
 from causal4d.rollout_bank import JointRolloutBank, SparseTrajectoryEvidence
 
 __all__ = [
     "CounterfactualBenchmarkConfig",
+    "CounterfactualQuery",
+    "FactualIntervention",
     "LatentContactConfig",
     "JointRolloutBank",
+    "PhysicalPosterior",
     "SparseTrajectoryEvidence",
+    "TaskPosterior",
+    "TwinBelief",
+    "apply_counterfactual_operator",
     "build_protocol",
     "run_counterfactual_benchmark",
     "run_latent_contact_benchmark",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

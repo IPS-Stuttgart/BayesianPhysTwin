@@ -1,5 +1,10 @@
 # Causal4D with PhysTwin and MolmoMotion
 
+This document records the original finite-bank pilot. The subsequent typed
+abduction-intervention-prediction architecture, full particle-specific state
+belief, adaptive semantic trust gate, and closed-loop runner are documented in
+[`causal4d_abduction_intervention_prediction.md`](causal4d_abduction_intervention_prediction.md).
+
 This milestone replaces the controlled Causal4D simulator with the pinned
 official PhysTwin Warp backend while preserving the finite Bayesian inference
 problem:

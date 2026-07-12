@@ -133,6 +133,15 @@ controls. See
 [docs/causal4d_phystwin_molmo.md](docs/causal4d_phystwin_molmo.md) for the
 three-environment artifact pipeline and information boundary.
 
+The complete Causal4D architecture now exports particle-specific endpoint
+state and discrepancy beliefs, abduces persistent actuation and factual
+contact variables, applies explicit `do(u_cf)` queries with fresh-contact
+semantics, separates physical and language-conditioned posteriors, gates
+MolmoMotion trust on source validation and target OOD diagnostics, and supports
+constrained receding-horizon replanning. See
+[docs/causal4d_abduction_intervention_prediction.md](docs/causal4d_abduction_intervention_prediction.md)
+for the artifact contracts, commands, audited results, and claim boundary.
+
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
 
