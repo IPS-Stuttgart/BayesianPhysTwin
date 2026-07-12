@@ -201,6 +201,21 @@ nodes/topology must stay fixed while controller attachments may vary. The notes
 and exact development artifacts live in the
 [Bayesian-PhysTwin paper repository](https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper/blob/main/paper_notes/causal4d_rest_geometry_v1.md).
 
+The follow-up structural milestone now has a separate opt-in path. It fits a
+hierarchical MAP decomposition of object-persistent rest geometry, session
+frame/settled state, and gravity using rigid-free graph ranks `4/8/16`, then
+exports the exact corrected embedded geometry and rest lengths consumed by
+Warp. `bpt-structural-recovery-benchmark` runs the controlled mechanism and
+leakage gates; `bpt-diagnose-phystwin-structure` builds official-Warp
+sensitivities and reruns the physical ladder; and `bpt-structural-protocol`
+installs the measurement-only amendment before acquisition. The tagged
+`v0.3.0-causal4d-aip` path remains unchanged. See
+[docs/phystwin_structural_calibration.md](docs/phystwin_structural_calibration.md).
+On the three released sloth diagnostics, baseline is selected in every case;
+rest geometry changes equal-case CD/track by `+0.18%/+1.38%`, while graph
+persistence remains much stronger at `-10.59%/-13.76%`. The structural
+candidate is therefore not promoted before the locked multi-action protocol.
+
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
 the temporal contract in every forecast artifact. On `single_lift_sloth`, the

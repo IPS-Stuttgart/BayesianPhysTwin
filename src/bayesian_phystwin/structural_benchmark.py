@@ -651,8 +651,32 @@ def run_structural_recovery_benchmark(
     combined_sessions = sessions_by_family["combined"]
     future_a = np.zeros((settings.future_frame_count, len(graph.positions), 3))
     future_b = np.full_like(future_a, 123.0)
-    first_id = combined.correction.artifact_id
-    second_id = combined.correction.artifact_id
+
+    def refit_with_unread_future(unread_future: np.ndarray) -> str:
+        # The argument is deliberately not forwarded. Keeping this wrapper in
+        # the benchmark proves that the public fit API has no future channel.
+        assert unread_future.shape == future_a.shape
+        refit = fit_hierarchical_structural_map(
+            combined_sessions,
+            graph.positions,
+            graph.springs,
+            graph.rest_lengths,
+            num_object_springs=len(graph.springs),
+            graph_basis=master_basis[:, :, : combined.config.rank],
+            graph_frequencies=master_frequencies[: combined.config.rank],
+            support_node_indices=graph.support_nodes,
+            surface_triangles=graph.surface_triangles,
+            support_model={
+                "kind": "fixed_node_support",
+                "node_indices": graph.support_nodes.tolist(),
+            },
+            config=combined.config,
+            metadata={"benchmark_family": "combined"},
+        )
+        return refit.correction.artifact_id
+
+    first_id = refit_with_unread_future(future_a)
+    second_id = refit_with_unread_future(future_b)
     leakage = {
         "future_a_sha256": _array_sha256(future_a),
         "future_b_sha256": _array_sha256(future_b),
