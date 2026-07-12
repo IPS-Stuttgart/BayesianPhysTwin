@@ -39,6 +39,10 @@ declared reference particle, fit a dimensionless ridge solution on the prefix,
 and then rerun the inferred correction over all four particles. This reduces
 the sensitivity cost without reducing the evaluation support.
 
+Finite-difference steps are specified as maximum per-node force or displacement,
+then converted to modal coefficients using each normalized mode's maximum
+amplitude. This keeps the dimensionless ridge prior stable as graph size changes.
+
 ## Typed artifact
 
 `DynamicDiscrepancyCorrection` stores:

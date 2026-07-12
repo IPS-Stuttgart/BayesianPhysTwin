@@ -122,7 +122,7 @@ def _rollout_state_segment(
     start_frame: int,
     stop_frame: int,
     device: str,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Return the initial state and every subsequent official Warp frame."""
 
     position_tensor = torch.as_tensor(
@@ -187,13 +187,20 @@ def _correction_response(
         (*baseline_prefix_m.shape, parameter_count), dtype=np.float32
     )
     structural_response = np.empty_like(force_response)
+    maximum_basis_amplitude = np.max(np.abs(graph_basis), axis=0)
+    if np.any(maximum_basis_amplitude <= 0.0):
+        raise ValueError("every graph mode must have nonzero amplitude")
+    force_coefficient_steps_n = force_step_n / maximum_basis_amplitude
+    structural_coefficient_steps_m = structural_step_m / maximum_basis_amplitude
     zero_force = np.zeros((object_count, 3), dtype=np.float32)
     stop_frame = train_end_frame + prefix_frame_count - 1
     for mode in range(LOCALIZATION_GRAPH_RANK):
         for coordinate in range(3):
             parameter = 3 * mode + coordinate
             force = np.zeros((object_count, 3), dtype=np.float32)
-            force[:, coordinate] = force_step_n * graph_basis[:, mode]
+            force[:, coordinate] = (
+                force_coefficient_steps_n[mode] * graph_basis[:, mode]
+            )
             _configure_rollout(
                 simulator,
                 torch,
@@ -216,7 +223,9 @@ def _correction_response(
             force_response[..., parameter] = trajectory - baseline_prefix_m
 
             rest_field = np.zeros_like(structure_m, dtype=np.float32)
-            rest_field[:, coordinate] = structural_step_m * graph_basis[:, mode]
+            rest_field[:, coordinate] = (
+                structural_coefficient_steps_m[mode] * graph_basis[:, mode]
+            )
             perturbed_positions = structure_m + rest_field
             perturbed_lengths = _object_rest_lengths(
                 perturbed_positions,
@@ -244,7 +253,12 @@ def _correction_response(
                 device=device,
             )
             structural_response[..., parameter] = trajectory - baseline_prefix_m
-    return force_response, structural_response
+    return (
+        force_response,
+        structural_response,
+        force_coefficient_steps_n,
+        structural_coefficient_steps_m,
+    )
 
 
 def _particle_rollouts(
@@ -471,7 +485,7 @@ def evaluate_phystwin_discrepancy_localization_case(
     dimensionless_ridge: float = 1e-4,
     force_step_n: float = 0.01,
     structural_step_m: float = 0.002,
-    maximum_position_correction_m: float = 0.03,
+    maximum_position_correction_m: float = 0.10,
     maximum_velocity_correction_mps: float = 0.50,
     maximum_force_per_node_n: float = 0.50,
     maximum_structural_correction_m: float = 0.01,
@@ -683,7 +697,12 @@ def evaluate_phystwin_discrepancy_localization_case(
     prefix_reference = baseline_positions[
         reference_particle, :prefix_frame_count
     ]
-    force_response, structural_response = _correction_response(
+    (
+        force_response,
+        structural_response,
+        force_coefficient_steps_n,
+        structural_coefficient_steps_m,
+    ) = _correction_response(
         simulator,
         torch,
         wp,
@@ -716,12 +735,12 @@ def evaluate_phystwin_discrepancy_localization_case(
             ridge=dimensionless_ridge,
         )
     )
-    force_coefficients = force_step_n * force_dimensionless.reshape(
+    force_coefficients = force_dimensionless.reshape(
         LOCALIZATION_GRAPH_RANK, 3
-    )
-    structural_coefficients = structural_step_m * structural_dimensionless.reshape(
+    ) * force_coefficient_steps_n[:, None]
+    structural_coefficients = structural_dimensionless.reshape(
         LOCALIZATION_GRAPH_RANK, 3
-    )
+    ) * structural_coefficient_steps_m[:, None]
     force_coefficients, force_limit = scale_coefficients_to_field_limit(
         graph_basis,
         force_coefficients,
@@ -778,8 +797,12 @@ def evaluate_phystwin_discrepancy_localization_case(
         },
         metadata={
             "experiment": "phystwin_discrepancy_localization_v1",
-            "constant_force_step_n": force_step_n,
-            "structural_step_m": structural_step_m,
+            "maximum_per_node_force_step_n": force_step_n,
+            "maximum_per_node_structural_step_m": structural_step_m,
+            "force_modal_coefficient_steps_n": force_coefficient_steps_n.tolist(),
+            "structural_modal_coefficient_steps_m": (
+                structural_coefficient_steps_m.tolist()
+            ),
             "structural_branch_role": "information_matched_negative_control",
         },
     )
