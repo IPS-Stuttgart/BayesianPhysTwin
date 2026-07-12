@@ -349,7 +349,7 @@ def write_dynamic_discrepancy_correction(
     manifest = {
         **correction._scalar_payload(),
         "artifact_id": correction.artifact_id,
-        "arrays_path": str(arrays_path.resolve()),
+        "arrays_path": arrays_path.name,
         "arrays_sha256": _file_sha256(arrays_path),
     }
     manifest_path.write_text(
@@ -377,6 +377,8 @@ def load_dynamic_discrepancy_correction(
     if int(manifest.get("schema_version", -1)) != DYNAMIC_DISCREPANCY_SCHEMA_VERSION:
         raise ValueError("unsupported dynamic discrepancy schema version")
     arrays_path = Path(manifest["arrays_path"])
+    if not arrays_path.is_absolute():
+        arrays_path = manifest_path.parent / arrays_path
     if _file_sha256(arrays_path) != manifest["arrays_sha256"]:
         raise ValueError("dynamic discrepancy arrays checksum mismatch")
     with np.load(arrays_path, allow_pickle=False) as archive:
