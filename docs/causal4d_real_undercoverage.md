@@ -193,3 +193,7 @@ causal4d-real-calibration evaluate \
    same-object multi-action folds. Report action, contact, horizon,
    graph-region, calibration-curve, NLL, energy-score, interval-width, NEES,
    and worst-group results.
+5. Do not begin physical closed-loop execution while nominal 90% coverage is
+   67.78% raw or 43.03% after the rejected source transform. The first hardware
+   pilot is gated by `configs/causal4d/hardware_execution_gate_v1.json`; the
+   existing real-artifact replay remains a software result only.

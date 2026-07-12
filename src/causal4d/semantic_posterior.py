@@ -83,14 +83,20 @@ def molmo_task_evidence(
     if bundle.query.case_name != physical.context.case_id:
         raise ValueError("MolmoMotion and PhysicalPosterior cases differ")
     forecast_index = bundle.forecast_ids.index(forecast_id)
-    available = min(bundle.future_horizon, physical.state_trajectories_m.shape[1] - 1)
+    physical_horizon = physical.state_trajectories_m.shape[1] - 1
+    available = min(
+        bundle.future_horizon,
+        physical_horizon // bundle.query.frame_stride,
+    )
     if available < 1:
         raise ValueError("MolmoMotion and PhysicalPosterior have no common future")
     future_world = bundle.future_world_m[forecast_index, :, :available]
     return SparseSemanticEvidence(
         positions_m=np.transpose(future_world, (1, 0, 2)),
         node_indices=bundle.query.node_indices,
-        physical_frame_indices=np.arange(1, available + 1, dtype=float),
+        physical_frame_indices=(
+            np.arange(1, available + 1, dtype=float) * bundle.query.frame_stride
+        ),
         scale_m=scale_m,
         degrees_of_freedom=degrees_of_freedom,
         compare_displacements=True,

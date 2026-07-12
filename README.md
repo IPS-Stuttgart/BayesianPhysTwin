@@ -171,6 +171,15 @@ coverage to 67.8%, but a locked affine scale from one held-out source action
 transfers harmfully. The real posterior therefore remains explicitly
 uncalibrated pending an expanded multi-action calibration protocol.
 
+MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
+samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
+the temporal contract in every forecast artifact. On `single_lift_sloth`, the
+corrected forecast still fails zero-motion, constant-velocity, motion-scale,
+action-ranking, and stability gates; the true lift ranks fifth of five for all
+three paraphrases. See
+[docs/causal4d_molmo_acceptance.md](docs/causal4d_molmo_acceptance.md). Semantic
+reweighting remains disabled with `beta=0`.
+
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
 

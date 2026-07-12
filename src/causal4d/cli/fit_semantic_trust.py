@@ -12,6 +12,10 @@ import numpy as np
 
 from bayesian_phystwin.phystwin_residual_dynamics import _target_validity
 from causal4d.contracts import PhysicalPosterior, load_contract
+from causal4d.molmo_acceptance import (
+    gate_beta_candidates,
+    load_molmo_acceptance_result,
+)
 from causal4d.molmo_adapter import load_molmo_forecasts
 from causal4d.semantic_posterior import molmo_task_evidence
 from causal4d.semantic_trust import (
@@ -28,6 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("source_manifest_json")
     parser.add_argument("output_calibration_json")
     parser.add_argument("--betas", default="0,1,3,6,12")
+    parser.add_argument(
+        "--molmo-acceptance-json",
+        help="required to unlock positive beta candidates; rejection forces beta=0",
+    )
     parser.add_argument("--minimum-relative-improvement", type=float, default=0.0)
     parser.add_argument("--support-margin", type=float, default=1.5)
     return parser
@@ -83,7 +91,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 start_frame=int(entry.get("start_frame", 1)),
             )
         )
-    betas = tuple(float(value) for value in args.betas.split(",") if value)
+    requested_betas = tuple(float(value) for value in args.betas.split(",") if value)
+    acceptance = (
+        load_molmo_acceptance_result(args.molmo_acceptance_json)
+        if args.molmo_acceptance_json
+        else None
+    )
+    betas = gate_beta_candidates(requested_betas, acceptance)
     calibration = fit_semantic_trust_calibration(
         source_cases,
         beta_candidates=betas,
@@ -97,6 +111,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "calibration_id": calibration.calibration_id,
                 "output": str(Path(args.output_calibration_json).resolve()),
                 "selected_beta": calibration.selected_beta,
+                "requested_beta_candidates": list(requested_betas),
+                "evaluated_beta_candidates": list(betas),
+                "molmo_acceptance_passed": bool(
+                    acceptance
+                    and acceptance["decision"][
+                        "accepted_for_semantic_reweighting"
+                    ]
+                ),
                 "source_case_ids": list(calibration.source_case_ids),
                 "source_mean_rmse_m": dict(
                     zip(

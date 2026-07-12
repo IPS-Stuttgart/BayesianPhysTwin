@@ -29,6 +29,7 @@ PYTHONPATH="${repo_root}/src:${molmo_checkout}/src" \
   "${molmo_checkpoint}" \
   "${output_root}/molmo.npz" \
   --train-end-frame "${train_end}" \
+  --forecast-fps 15 \
   --caption 'instruction=A person lifts the sloth upward with one hand.' \
   --caption 'shuffled=A person pushes the sloth sideways across the table with one hand.' \
   --caption 'generic=The sloth moves.'
@@ -53,4 +54,3 @@ for setting in known hidden ambiguous; do
     "${output_root}/molmo.npz" \
     "${output_root}/${setting}_result.json"
 done
-

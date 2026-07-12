@@ -52,6 +52,9 @@ class MolmoPhysTwinQuery:
     points_3d_world_history_m: np.ndarray
     camera_to_world: np.ndarray
     intrinsics: np.ndarray
+    source_fps: float
+    forecast_fps: float
+    frame_stride: int
 
     def __post_init__(self) -> None:
         history = np.asarray(self.history_frame_indices, dtype=int)
@@ -62,8 +65,15 @@ class MolmoPhysTwinQuery:
         camera_to_world = np.asarray(self.camera_to_world, dtype=float)
         intrinsics = np.asarray(self.intrinsics, dtype=float)
         point_count = len(nodes)
-        if history.ndim != 1 or tuple(history) != tuple(range(history[0], self.t0_frame + 1)):
-            raise ValueError("history frames must be contiguous and end at t0")
+        expected_history = tuple(
+            range(
+                self.t0_frame - self.frame_stride * (len(history) - 1),
+                self.t0_frame + 1,
+                self.frame_stride,
+            )
+        )
+        if history.ndim != 1 or tuple(history) != expected_history:
+            raise ValueError("history frames must be regularly sampled and end at t0")
         if len(self.image_paths) != len(history):
             raise ValueError("one image path is required for each history frame")
         if raw_tracks.shape != (point_count,) or points_2d.shape != (point_count, 2):
@@ -72,6 +82,16 @@ class MolmoPhysTwinQuery:
             raise ValueError("3D history must have shape (H, P, 3)")
         if camera_to_world.shape != (4, 4) or intrinsics.shape != (3, 3):
             raise ValueError("camera matrices must be 4x4 and 3x3")
+        if (
+            not np.isfinite(self.source_fps)
+            or not np.isfinite(self.forecast_fps)
+            or self.source_fps <= 0.0
+            or self.forecast_fps <= 0.0
+            or self.frame_stride < 1
+        ):
+            raise ValueError("source/forecast rates and frame stride must be positive")
+        if not np.isclose(self.source_fps / self.forecast_fps, self.frame_stride):
+            raise ValueError("frame stride must match source_fps / forecast_fps")
         if np.any(nodes < 0) or np.any(raw_tracks < 0):
             raise ValueError("track indices must be nonnegative")
         for path in self.image_paths:
@@ -99,8 +119,12 @@ class MolmoPhysTwinQuery:
             "image_paths": [str(path.resolve()) for path in self.image_paths],
             "node_indices": self.node_indices.tolist(),
             "raw_track_indices": self.raw_track_indices.tolist(),
+            "source_fps": self.source_fps,
+            "forecast_fps": self.forecast_fps,
+            "frame_stride": self.frame_stride,
             "point_coordinate_contract": "raw row/column tracks converted to x/y pixels",
             "trajectory_coordinate_contract": "metric world coordinates",
+            "temporal_contract": "history and future sampled at forecast_fps",
         }
 
 
@@ -112,6 +136,7 @@ def prepare_molmo_phystwin_query(
     history_size: int = 3,
     point_count: int = 8,
     camera_index: int | None = None,
+    forecast_fps: float = 15.0,
 ) -> MolmoPhysTwinQuery:
     """Recover exact raw identities and choose visible material query points."""
 
@@ -129,10 +154,24 @@ def prepare_molmo_phystwin_query(
         raise ValueError("train_end_frame cannot provide the requested history")
     if point_count < 1:
         raise ValueError("point_count must be positive")
-    t0 = train_end_frame - 1
-    history_frames = np.arange(t0 - history_size + 1, t0 + 1, dtype=int)
-    mapping = load_phystwin_raw_track_map(final_path, raw_path)
+    if not np.isfinite(forecast_fps) or forecast_fps <= 0.0:
+        raise ValueError("forecast_fps must be finite and positive")
     metadata = json.loads((raw_path / "metadata.json").read_text(encoding="utf-8"))
+    source_fps = float(metadata["fps"])
+    ratio = source_fps / float(forecast_fps)
+    frame_stride = int(round(ratio))
+    if frame_stride < 1 or not np.isclose(ratio, frame_stride):
+        raise ValueError("raw source fps must be an integer multiple of forecast_fps")
+    t0 = train_end_frame - 1
+    history_frames = np.arange(
+        t0 - frame_stride * (history_size - 1),
+        t0 + 1,
+        frame_stride,
+        dtype=int,
+    )
+    if history_frames[0] < 0:
+        raise ValueError("train_end_frame cannot provide the requested sampled history")
+    mapping = load_phystwin_raw_track_map(final_path, raw_path)
     intrinsics = np.asarray(metadata["intrinsics"], dtype=float)
     width, height = map(int, metadata["WH"])
     with (raw_path / "calibrate.pkl").open("rb") as handle:
@@ -198,6 +237,9 @@ def prepare_molmo_phystwin_query(
         points_3d_world_history_m=object_points[history_frames][:, nodes],
         camera_to_world=camera_to_world[camera],
         intrinsics=intrinsics[camera],
+        source_fps=source_fps,
+        forecast_fps=float(forecast_fps),
+        frame_stride=frame_stride,
     )
 
 
@@ -352,6 +394,9 @@ def save_molmo_forecasts(path: str | Path, bundle: MolmoForecastBundle) -> None:
         points_3d_world_history_m=bundle.query.points_3d_world_history_m.astype(np.float32),
         camera_to_world=bundle.query.camera_to_world,
         intrinsics=bundle.query.intrinsics,
+        source_fps=np.asarray(bundle.query.source_fps),
+        forecast_fps=np.asarray(bundle.query.forecast_fps),
+        frame_stride=np.asarray(bundle.query.frame_stride),
         camera_index=np.asarray(bundle.query.camera_index),
         t0_frame=np.asarray(bundle.query.t0_frame),
         history_frame_indices=bundle.query.history_frame_indices,
@@ -365,9 +410,23 @@ def save_molmo_forecasts(path: str | Path, bundle: MolmoForecastBundle) -> None:
 
 def load_molmo_forecasts(path: str | Path) -> MolmoForecastBundle:
     with np.load(path, allow_pickle=False) as archive:
+        raw_case_dir = Path(str(archive["raw_case_dir"]))
+        if "source_fps" in archive.files:
+            source_fps = float(archive["source_fps"])
+            forecast_fps = float(archive["forecast_fps"])
+            frame_stride = int(archive["frame_stride"])
+        else:
+            metadata_path = raw_case_dir / "metadata.json"
+            source_fps = (
+                float(json.loads(metadata_path.read_text(encoding="utf-8"))["fps"])
+                if metadata_path.is_file()
+                else 1.0
+            )
+            forecast_fps = source_fps
+            frame_stride = 1
         query = MolmoPhysTwinQuery(
             case_name=str(archive["case_name"]),
-            raw_case_dir=Path(str(archive["raw_case_dir"])),
+            raw_case_dir=raw_case_dir,
             camera_index=int(archive["camera_index"]),
             t0_frame=int(archive["t0_frame"]),
             history_frame_indices=np.asarray(archive["history_frame_indices"], dtype=int),
@@ -380,6 +439,9 @@ def load_molmo_forecasts(path: str | Path) -> MolmoForecastBundle:
             ),
             camera_to_world=np.asarray(archive["camera_to_world"], dtype=float),
             intrinsics=np.asarray(archive["intrinsics"], dtype=float),
+            source_fps=source_fps,
+            forecast_fps=forecast_fps,
+            frame_stride=frame_stride,
         )
         return MolmoForecastBundle(
             query=query,
@@ -390,4 +452,3 @@ def load_molmo_forecasts(path: str | Path) -> MolmoForecastBundle:
             raw_text=tuple(map(str, archive["raw_text"])),
             checkpoint=str(archive["checkpoint"]),
         )
-

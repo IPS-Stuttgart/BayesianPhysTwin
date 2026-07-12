@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "protocol_id": "causal4d-molmo-acceptance-v1",
+  "claim_boundary": "MolmoMotion must pass this benchmark before semantic beta selection or any semantic improvement claim.",
+  "thresholds": {
+    "expected_forecast_fps": 15.0,
+    "maximum_ade_ratio_vs_zero": 0.95,
+    "maximum_ade_ratio_vs_constant_velocity": 0.95,
+    "minimum_motion_scale_ratio": 0.5,
+    "maximum_motion_scale_ratio": 2.0,
+    "maximum_anchor_alignment_rmse_m": 0.00001,
+    "maximum_first_step_error_m": 0.02,
+    "maximum_frame_transform_error_m": 0.00001,
+    "required_correct_action_rank": 1,
+    "ranking_top_k": 2,
+    "minimum_paraphrase_top_k_recall": 0.6666666666666666,
+    "minimum_prompt_top1_agreement": 0.6666666666666666,
+    "maximum_prompt_pairwise_motion_ratio": 0.5,
+    "minimum_query_subset_top1_agreement": 0.75,
+    "minimum_query_subset_top_k_recall": 0.75,
+    "minimum_paraphrases": 3,
+    "minimum_independent_cases": 3,
+    "minimum_case_pass_fraction": 0.8,
+    "semantic_scale_m": 0.1,
+    "semantic_degrees_of_freedom": 3.0
+  },
+  "cases": [
+    {
+      "case_id": "single_lift_sloth/held_out_future/15fps",
+      "final_data": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/final_data.pkl",
+      "molmo_forecast": "/mnt/corsair/florianpfaff/causal4d-molmo-acceptance-v1/molmo_single_lift_sloth_15fps.npz",
+      "physical_rollout_bank": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/molmo-pilot/ambiguous.npz",
+      "primary_forecast_id": "instruction",
+      "paraphrase_forecast_ids": [
+        "instruction",
+        "paraphrase_one",
+        "paraphrase_two"
+      ],
+      "independence_unit": "one real execution",
+      "domain_note": "Real deformable sloth interaction; checkpoint in-domain status is not asserted."
+    }
+  ]
+}

@@ -34,6 +34,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--train-end-frame", type=int, required=True)
     parser.add_argument("--history-size", type=int, default=3)
     parser.add_argument("--future-horizon", type=int, default=30)
+    parser.add_argument(
+        "--forecast-fps",
+        type=float,
+        default=15.0,
+        help="Molmo timestamp rate; the released H3/F30 checkpoint uses 15 fps",
+    )
     parser.add_argument("--camera-index", type=int)
     parser.add_argument(
         "--caption",
@@ -57,6 +63,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         history_size=args.history_size,
         point_count=8,
         camera_index=args.camera_index,
+        forecast_fps=args.forecast_fps,
     )
     bundle = run_molmo_motion_forecasts(
         query,
@@ -74,6 +81,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "node_indices": query.node_indices.tolist(),
                 "forecast_ids": list(bundle.forecast_ids),
                 "future_shape": list(bundle.future_world_m.shape),
+                "source_fps": query.source_fps,
+                "forecast_fps": query.forecast_fps,
+                "frame_stride": query.frame_stride,
             },
             indent=2,
             sort_keys=True,
@@ -84,4 +94,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

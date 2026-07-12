@@ -1,0 +1,724 @@
+{
+  "acceptance_result_id": "db2301a4dedebdc39a92423b5568065d371016ea6c24e4d1001e3d45523f29bb",
+  "cases": [
+    {
+      "case_id": "single_lift_sloth/held_out_future/15fps",
+      "checkpoint": "/mnt/corsair/florianpfaff/molmomotion-field-20260711/assets/checkpoints/MolmoMotion-4B-H3-F30",
+      "direct_forecast": {
+        "anchor_and_frame": {
+          "camera_to_world_max_abs_error_m": 1.1659006537989569e-08,
+          "first_step_displacement_error_m": 0.0038724972940852383,
+          "query_anchor_alignment_rmse_m": 3.949318680912435e-09
+        },
+        "caption": "A person lifts the sloth upward with one hand.",
+        "compared_future_frames": 13,
+        "forecast_id": "instruction",
+        "gates": {
+          "beats_constant_velocity": false,
+          "beats_zero_motion": false,
+          "motion_scale": false,
+          "query_anchor": true,
+          "temporal_sampling": true
+        },
+        "metrics": {
+          "constant_velocity": {
+            "ade_m": 0.025085824810584335,
+            "fde_m": 0.04675262320760577,
+            "vector_rmse_m": 0.03471452792626295
+          },
+          "molmo": {
+            "ade_m": 0.032372167892758534,
+            "fde_m": 0.06180885055105364,
+            "vector_rmse_m": 0.04289426790766389
+          },
+          "zero_motion": {
+            "ade_m": 0.03246146547636232,
+            "fde_m": 0.06193553394498598,
+            "vector_rmse_m": 0.04310776352783218
+          }
+        },
+        "motion": {
+          "predicted_rms_m": 0.0007066068892223802,
+          "true_rms_m": 0.043107763527832174
+        },
+        "ratios": {
+          "ade_vs_constant_velocity": 1.290456588020973,
+          "ade_vs_zero_motion": 0.9972491203864838,
+          "predicted_to_true_motion_scale": 0.016391638799961528
+        },
+        "target_frame_indices": [
+          60,
+          62,
+          64,
+          66,
+          68,
+          70,
+          72,
+          74,
+          76,
+          78,
+          80,
+          82,
+          84
+        ],
+        "temporal_sampling": {
+          "expected_forecast_fps": 15.0,
+          "forecast_fps": 15.0,
+          "frame_stride": 2,
+          "source_fps": 30.0
+        }
+      },
+      "gates": {
+        "beats_constant_velocity": false,
+        "beats_zero_motion": false,
+        "correct_rollout_ranking": false,
+        "motion_scale": false,
+        "prompt_and_query_stability": false,
+        "query_anchor": true,
+        "temporal_sampling": true
+      },
+      "passed": false,
+      "primary_forecast_id": "instruction",
+      "ranking_and_stability": {
+        "correct_action_id": "known_action",
+        "gates": {
+          "correct_rollout_ranking": false,
+          "prompt_and_query_stability": false
+        },
+        "physical_bank_contract": "all candidates completed PhysTwin simulation; hardware feasibility is not asserted",
+        "prompt_ids": [
+          "instruction",
+          "paraphrase_one",
+          "paraphrase_two"
+        ],
+        "prompt_pairwise_motion": {
+          "instruction__paraphrase_one": {
+            "displacement_vector_rms_m": 0.0021213304695025504,
+            "ratio_to_true_motion_rms": 0.04920994029608914
+          },
+          "instruction__paraphrase_two": {
+            "displacement_vector_rms_m": 0.0021213304695025504,
+            "ratio_to_true_motion_rms": 0.04920994029608914
+          },
+          "paraphrase_one__paraphrase_two": {
+            "displacement_vector_rms_m": 0.0,
+            "ratio_to_true_motion_rms": 0.0
+          }
+        },
+        "prompt_results": {
+          "instruction": {
+            "caption": "A person lifts the sloth upward with one hand.",
+            "leave_one_query_out_correct_top_k_recall": 0.0,
+            "leave_one_query_out_top1_agreement": 1.0,
+            "subsets": {
+              "all": {
+                "action_log_scores": {
+                  "history_continue": -0.019109863987411213,
+                  "history_orthogonal": -0.02415828762378114,
+                  "history_persist": -0.0009299133531581738,
+                  "history_reverse": -0.010582136176655599,
+                  "known_action": -0.04664181088163
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_0": {
+                "action_log_scores": {
+                  "history_continue": -0.01629302915391362,
+                  "history_orthogonal": -0.01854556567557175,
+                  "history_persist": -0.001046118441547339,
+                  "history_reverse": -0.0016919024114980807,
+                  "known_action": -0.03701421609601718
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_1": {
+                "action_log_scores": {
+                  "history_continue": -0.021723854821920963,
+                  "history_orthogonal": -0.02579869394754608,
+                  "history_persist": -0.0010560965076389373,
+                  "history_reverse": -0.012086498774551924,
+                  "known_action": -0.0517354689490106
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_2": {
+                "action_log_scores": {
+                  "history_continue": -0.012891039616025779,
+                  "history_orthogonal": -0.020538402346812923,
+                  "history_persist": -0.0003021795137607697,
+                  "history_reverse": -0.011742500268633549,
+                  "known_action": -0.039066651013139886
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_3": {
+                "action_log_scores": {
+                  "history_continue": -0.019891193956443676,
+                  "history_orthogonal": -0.025867159610246215,
+                  "history_persist": -0.0009974368387193344,
+                  "history_reverse": -0.011657514857020601,
+                  "known_action": -0.04794941010887488
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_4": {
+                "action_log_scores": {
+                  "history_continue": -0.020715179852746513,
+                  "history_orthogonal": -0.027024149879053105,
+                  "history_persist": -0.001001111729455051,
+                  "history_reverse": -0.012084568024642639,
+                  "known_action": -0.05295231155577129
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_5": {
+                "action_log_scores": {
+                  "history_continue": -0.019360765980008576,
+                  "history_orthogonal": -0.02427433754063202,
+                  "history_persist": -0.0009480747885368679,
+                  "history_reverse": -0.011275860792129055,
+                  "known_action": -0.04427201879729736
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_6": {
+                "action_log_scores": {
+                  "history_continue": -0.020905867261663325,
+                  "history_orthogonal": -0.024700044717186564,
+                  "history_persist": -0.0010533895247166747,
+                  "history_reverse": -0.01207264348387671,
+                  "known_action": -0.04820594455763905
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_7": {
+                "action_log_scores": {
+                  "history_continue": -0.021096460940647432,
+                  "history_orthogonal": -0.02651659768657444,
+                  "history_persist": -0.0010348217061486586,
+                  "history_reverse": -0.012045052480345042,
+                  "known_action": -0.051934610412372795
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              }
+            }
+          },
+          "paraphrase_one": {
+            "caption": "Lift the sloth upward using one hand.",
+            "leave_one_query_out_correct_top_k_recall": 0.0,
+            "leave_one_query_out_top1_agreement": 1.0,
+            "subsets": {
+              "all": {
+                "action_log_scores": {
+                  "history_continue": -0.01853550830347972,
+                  "history_orthogonal": -0.02367023644249011,
+                  "history_persist": -0.0009089202163408139,
+                  "history_reverse": -0.010558886611541585,
+                  "known_action": -0.04574142861306951
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_0": {
+                "action_log_scores": {
+                  "history_continue": -0.015636617753282955,
+                  "history_orthogonal": -0.017987788548980532,
+                  "history_persist": -0.0010221290200371769,
+                  "history_reverse": -0.0016653401007040713,
+                  "known_action": -0.03598516924972728
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_1": {
+                "action_log_scores": {
+                  "history_continue": -0.02114726544258927,
+                  "history_orthogonal": -0.025577788221315956,
+                  "history_persist": -0.000993612768620089,
+                  "history_reverse": -0.012020754619495033,
+                  "known_action": -0.050972577377648154
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_2": {
+                "action_log_scores": {
+                  "history_continue": -0.012493692333298778,
+                  "history_orthogonal": -0.02013305765528628,
+                  "history_persist": -0.00035174462391118766,
+                  "history_reverse": -0.011742450461697196,
+                  "known_action": -0.03834111744971214
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_3": {
+                "action_log_scores": {
+                  "history_continue": -0.01938507398837741,
+                  "history_orthogonal": -0.025295013178003423,
+                  "history_persist": -0.0009634830612323952,
+                  "history_reverse": -0.011650874364682373,
+                  "known_action": -0.04712393704896245
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_4": {
+                "action_log_scores": {
+                  "history_continue": -0.020058775068824364,
+                  "history_orthogonal": -0.02646637837279142,
+                  "history_persist": -0.0009771132564253548,
+                  "history_reverse": -0.01205800150165004,
+                  "known_action": -0.05192332269083044
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_5": {
+                "action_log_scores": {
+                  "history_continue": -0.018710558505113717,
+                  "history_orthogonal": -0.023723326258664468,
+                  "history_persist": -0.0009109110385638886,
+                  "history_reverse": -0.011277554089825337,
+                  "known_action": -0.04326479607758049
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_6": {
+                "action_log_scores": {
+                  "history_continue": -0.020335114677058286,
+                  "history_orthogonal": -0.024239970377914588,
+                  "history_persist": -0.00103293375309077,
+                  "history_reverse": -0.012053733958600432,
+                  "known_action": -0.04733065678125614
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_7": {
+                "action_log_scores": {
+                  "history_continue": -0.020515491574044642,
+                  "history_orthogonal": -0.02593726023412657,
+                  "history_persist": -0.0010193653651380252,
+                  "history_reverse": -0.012001843028978776,
+                  "known_action": -0.05098607501056307
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              }
+            }
+          },
+          "paraphrase_two": {
+            "caption": "With one hand, raise the sloth vertically.",
+            "leave_one_query_out_correct_top_k_recall": 0.0,
+            "leave_one_query_out_top1_agreement": 1.0,
+            "subsets": {
+              "all": {
+                "action_log_scores": {
+                  "history_continue": -0.01853550830347972,
+                  "history_orthogonal": -0.02367023644249011,
+                  "history_persist": -0.0009089202163408139,
+                  "history_reverse": -0.010558886611541585,
+                  "known_action": -0.04574142861306951
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_0": {
+                "action_log_scores": {
+                  "history_continue": -0.015636617753282955,
+                  "history_orthogonal": -0.017987788548980532,
+                  "history_persist": -0.0010221290200371769,
+                  "history_reverse": -0.0016653401007040713,
+                  "known_action": -0.03598516924972728
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_1": {
+                "action_log_scores": {
+                  "history_continue": -0.02114726544258927,
+                  "history_orthogonal": -0.025577788221315956,
+                  "history_persist": -0.000993612768620089,
+                  "history_reverse": -0.012020754619495033,
+                  "known_action": -0.050972577377648154
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_2": {
+                "action_log_scores": {
+                  "history_continue": -0.012493692333298778,
+                  "history_orthogonal": -0.02013305765528628,
+                  "history_persist": -0.00035174462391118766,
+                  "history_reverse": -0.011742450461697196,
+                  "known_action": -0.03834111744971214
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_3": {
+                "action_log_scores": {
+                  "history_continue": -0.01938507398837741,
+                  "history_orthogonal": -0.025295013178003423,
+                  "history_persist": -0.0009634830612323952,
+                  "history_reverse": -0.011650874364682373,
+                  "known_action": -0.04712393704896245
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_4": {
+                "action_log_scores": {
+                  "history_continue": -0.020058775068824364,
+                  "history_orthogonal": -0.02646637837279142,
+                  "history_persist": -0.0009771132564253548,
+                  "history_reverse": -0.01205800150165004,
+                  "known_action": -0.05192332269083044
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_5": {
+                "action_log_scores": {
+                  "history_continue": -0.018710558505113717,
+                  "history_orthogonal": -0.023723326258664468,
+                  "history_persist": -0.0009109110385638886,
+                  "history_reverse": -0.011277554089825337,
+                  "known_action": -0.04326479607758049
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_6": {
+                "action_log_scores": {
+                  "history_continue": -0.020335114677058286,
+                  "history_orthogonal": -0.024239970377914588,
+                  "history_persist": -0.00103293375309077,
+                  "history_reverse": -0.012053733958600432,
+                  "known_action": -0.04733065678125614
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              },
+              "leave_out_query_7": {
+                "action_log_scores": {
+                  "history_continue": -0.020515491574044642,
+                  "history_orthogonal": -0.02593726023412657,
+                  "history_persist": -0.0010193653651380252,
+                  "history_reverse": -0.012001843028978776,
+                  "known_action": -0.05098607501056307
+                },
+                "correct_action_in_top_k": false,
+                "correct_action_rank": 5,
+                "ranking": [
+                  "history_persist",
+                  "history_reverse",
+                  "history_continue",
+                  "history_orthogonal",
+                  "known_action"
+                ],
+                "top1_action_id": "history_persist"
+              }
+            }
+          }
+        },
+        "semantic_action_prior_removed": true,
+        "summary": {
+          "maximum_prompt_pairwise_motion_ratio": 0.04920994029608914,
+          "minimum_query_subset_correct_top_k_recall": 0.0,
+          "minimum_query_subset_top1_agreement": 1.0,
+          "paraphrase_correct_top_k_recall": 0.0,
+          "primary_correct_action_rank": 5,
+          "prompt_top1_mode_agreement": 1.0
+        }
+      }
+    }
+  ],
+  "claim_boundary": "MolmoMotion is evaluated before beta selection; failure preserves beta=0.",
+  "decision": {
+    "accepted_for_semantic_reweighting": false,
+    "blocking_reasons": [
+      "insufficient_independent_source_cases",
+      "failed_gate:beats_constant_velocity",
+      "failed_gate:beats_zero_motion",
+      "failed_gate:correct_rollout_ranking",
+      "failed_gate:motion_scale",
+      "failed_gate:prompt_and_query_stability"
+    ],
+    "case_pass_fraction": 0.0,
+    "decision": "keep_beta_zero_and_exclude_semantic_improvement_claim",
+    "independent_case_count": 1,
+    "minimum_case_pass_fraction": 0.8,
+    "minimum_independent_cases": 3,
+    "passed_case_count": 0,
+    "safe_fallback_frequency": 1.0
+  },
+  "experiment": "causal4d-molmo-acceptance-v1",
+  "schema_version": 1,
+  "source_artifacts": [
+    {
+      "case_id": "single_lift_sloth/held_out_future/15fps",
+      "final_data": {
+        "bytes": 22231501,
+        "path": "/home/florianpfaff/bayesian-phystwin-data/single_lift_sloth/final_data.pkl",
+        "sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2"
+      },
+      "molmo_forecast": {
+        "bytes": 8369,
+        "path": "/mnt/corsair/florianpfaff/causal4d-molmo-acceptance-v1/molmo_single_lift_sloth_15fps.npz",
+        "sha256": "0e08cb2eb93db8561fa701e6c0550d62fa84f9907e711bccaa8475cd610eccb1"
+      },
+      "physical_rollout_bank": {
+        "bytes": 364712797,
+        "path": "/mnt/corsair/florianpfaff/research-milestones/v0.3.0-causal4d-aip/reproduction/real-validation-2/molmo-pilot/ambiguous.npz",
+        "sha256": "8064b00be84fa668a03c869c0cde6dda2927e7d0b72981bd42e019f1d42c73f1"
+      }
+    }
+  ],
+  "source_manifest": {
+    "bytes": 1836,
+    "path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/configs/causal4d/molmo_acceptance_v1.json",
+    "sha256": "071144bd2e8e0c930b3a580f5aa75d2511e4365dadbc0be488e5285512eef529"
+  },
+  "thresholds": {
+    "expected_forecast_fps": 15.0,
+    "maximum_ade_ratio_vs_constant_velocity": 0.95,
+    "maximum_ade_ratio_vs_zero": 0.95,
+    "maximum_anchor_alignment_rmse_m": 1e-05,
+    "maximum_first_step_error_m": 0.02,
+    "maximum_frame_transform_error_m": 1e-05,
+    "maximum_motion_scale_ratio": 2.0,
+    "maximum_prompt_pairwise_motion_ratio": 0.5,
+    "minimum_case_pass_fraction": 0.8,
+    "minimum_independent_cases": 3,
+    "minimum_motion_scale_ratio": 0.5,
+    "minimum_paraphrase_top_k_recall": 0.6666666666666666,
+    "minimum_paraphrases": 3,
+    "minimum_prompt_top1_agreement": 0.6666666666666666,
+    "minimum_query_subset_top1_agreement": 0.75,
+    "minimum_query_subset_top_k_recall": 0.75,
+    "ranking_top_k": 2,
+    "required_correct_action_rank": 1,
+    "semantic_degrees_of_freedom": 3.0,
+    "semantic_scale_m": 0.1
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "protocol_id": "causal4d-hardware-execution-gate-v1",
+  "nominal_coverage": 0.9,
+  "required_before_physical_closed_loop": {
+    "minimum_independent_calibration_executions": 10,
+    "minimum_target_coordinate_coverage": 0.85,
+    "minimum_worst_group_coverage": 0.8,
+    "source_only_calibration_frozen_before_target": true,
+    "closed_loop_state_handoff_tests_pass": true,
+    "constraint_rejection_tests_pass": true,
+    "replay_variance_included_in_predictive_risk": true,
+    "emergency_stop_and_workspace_limits_registered": true
+  },
+  "semantic_branch": {
+    "optional": true,
+    "beta_zero_does_not_block_hardware": true,
+    "positive_beta_requires_molmo_acceptance": true,
+    "molmo_acceptance_protocol": "causal4d-molmo-acceptance-v1"
+  },
+  "first_authorized_experiment": {
+    "objects": 1,
+    "grippers": 1,
+    "initial_grasp": "known_and_fixed",
+    "candidate_action_count_maximum": 4,
+    "receding_horizon": "short",
+    "induced_errors": [
+      "one_gain_or_delay_error",
+      "one_mid_execution_perturbation"
+    ],
+    "required_comparisons": [
+      "nominal_phystwin",
+      "bayesian_phystwin",
+      "causal4d_closed_loop"
+    ],
+    "required_metrics": [
+      "task_success",
+      "constraint_violations",
+      "replanning_count",
+      "predictive_coverage",
+      "final_configuration_error",
+      "control_effort",
+      "perturbation_recovery"
+    ]
+  }
+}

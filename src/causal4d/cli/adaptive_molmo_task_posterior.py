@@ -9,6 +9,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from causal4d.contracts import PhysicalPosterior, load_contract, save_contract
+from causal4d.molmo_acceptance import load_molmo_acceptance_result
 from causal4d.molmo_adapter import load_molmo_forecasts
 from causal4d.semantic_posterior import molmo_task_evidence
 from causal4d.semantic_trust import (
@@ -29,6 +30,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("output_decision_json")
     parser.add_argument("--scale-m", type=float, default=0.10)
     parser.add_argument("--degrees-of-freedom", type=float, default=3.0)
+    parser.add_argument(
+        "--molmo-acceptance-json",
+        help="required when the source calibration selected a positive beta",
+    )
     return parser
 
 
@@ -46,6 +51,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         degrees_of_freedom=args.degrees_of_freedom,
     )
     calibration = load_semantic_trust_calibration(args.semantic_trust_json)
+    if calibration.selected_beta > 0.0:
+        if not args.molmo_acceptance_json:
+            raise ValueError(
+                "positive semantic beta requires a passed Molmo acceptance result"
+            )
+        acceptance = load_molmo_acceptance_result(args.molmo_acceptance_json)
+        if not acceptance["decision"]["accepted_for_semantic_reweighting"]:
+            raise ValueError(
+                "positive semantic beta is blocked by the Molmo acceptance result"
+            )
     task, decision = apply_adaptive_semantic_trust(
         physical_artifact,
         evidence,

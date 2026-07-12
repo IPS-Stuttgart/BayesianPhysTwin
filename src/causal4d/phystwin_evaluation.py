@@ -105,7 +105,10 @@ def molmo_sparse_evidence(
     if forecast_id not in bundle.forecast_ids:
         raise ValueError(f"unknown MolmoMotion forecast id {forecast_id!r}")
     forecast_index = bundle.forecast_ids.index(forecast_id)
-    available = min(bundle.future_horizon, bank.frame_count - 1)
+    available = min(
+        bundle.future_horizon,
+        (bank.frame_count - 1) // bundle.query.frame_stride,
+    )
     if available < 1:
         raise ValueError("MolmoMotion and rollout bank have no overlapping future")
     # Both released datasets are frame-indexed. Do not stretch a short learned
@@ -114,7 +117,9 @@ def molmo_sparse_evidence(
     return SparseTrajectoryEvidence(
         positions_m=np.transpose(future_world, (1, 0, 2)),
         node_indices=bundle.query.node_indices,
-        rollout_frame_indices=np.arange(1, available + 1, dtype=float),
+        rollout_frame_indices=(
+            np.arange(1, available + 1, dtype=float) * bundle.query.frame_stride
+        ),
         scale_m=scale_m,
         degrees_of_freedom=degrees_of_freedom,
         likelihood_weight=likelihood_weight,
@@ -247,7 +252,8 @@ def evaluate_phystwin_rollout_bank(
         weight_sets[f"molmo_{forecast_id}"] = molmo_weights
         weight_sets[f"molmo_{forecast_id}_plus_online"] = combined_weights
         available = len(evidence.rollout_frame_indices)
-        query_truth = truth[1 : available + 1, evidence.node_indices]
+        truth_frames = np.asarray(evidence.rollout_frame_indices, dtype=int)
+        query_truth = truth[truth_frames[:, None], evidence.node_indices[None]]
         target = evidence.positions_m
         target_displacement = target - evidence.anchor_positions_m[None]
         truth_displacement = query_truth - truth[0, evidence.node_indices][None]

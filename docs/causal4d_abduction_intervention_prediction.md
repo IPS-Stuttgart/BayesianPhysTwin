@@ -183,6 +183,13 @@ On the real source validation action, the strongest beta improves RMSE by only
 The hidden-action query is rejected with byte-identical fallback weights. This
 formalizes the earlier MolmoMotion null instead of accepting a harmful prior.
 
+A subsequent direct competence audit corrects the original 30/15 fps temporal
+mismatch and evaluates Molmo before beta selection. The corrected instruction
+still reaches only `0.0164` times the real motion scale, does not beat zero or
+constant velocity, and ranks the true lift fifth of five for all three
+paraphrases. See `docs/causal4d_molmo_acceptance.md`. The semantic branch remains
+optional and disabled; no beta tuning is warranted for this checkpoint.
+
 ## Closed-loop planning
 
 `causal4d.closed_loop` provides a constrained receding-horizon runner. Each
@@ -201,6 +208,11 @@ The controlled closed-loop test rejects an unreachable action, completes a
 language-conditioned task with two replans, and updates the correct physical
 particle. A real-artifact replay also completes two update/replan cycles. This
 is software validation, not a real-robot success claim.
+
+Physical closed-loop execution is blocked until the source-only calibration and
+safety criteria in `configs/causal4d/hardware_execution_gate_v1.json` pass. A
+positive semantic beta is an additional optional gate, not a substitute for
+calibrated physical risk.
 
 ## Commands
 
@@ -241,7 +253,8 @@ causal4d-build-molmo-task-posterior \
   physical.npz molmo.npz instruction task.npz --beta 0
 
 causal4d-fit-semantic-trust source_manifest.json semantic_trust.json \
-  --minimum-relative-improvement 0.005
+  --minimum-relative-improvement 0.005 \
+  --molmo-acceptance-json molmo_acceptance_result.json
 
 causal4d-adaptive-molmo-task-posterior \
   physical.npz molmo.npz instruction semantic_trust.json \
