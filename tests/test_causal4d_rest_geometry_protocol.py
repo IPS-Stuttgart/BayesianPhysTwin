@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+import numpy as np
 import pytest
 
 from causal4d.real_protocol import (
@@ -10,7 +11,10 @@ from causal4d.rest_geometry_protocol import (
     audit_rest_geometry_dataset_readiness,
     build_rest_geometry_analysis_plan,
     validate_rest_geometry_fold_result,
+    validate_rest_geometry_registration,
+    write_rest_geometry_registration,
 )
+from causal4d.rest_geometry_transfer import write_canonical_material_graph
 
 
 def test_analysis_plan_preserves_all_locked_fold_roles() -> None:
@@ -47,7 +51,37 @@ def test_scaffold_fails_closed_until_real_manifests_exist(tmp_path) -> None:
     assert readiness["missing_top_level_artifacts"] == [
         "object_registration.json",
         "slip_pilot.json",
+        "rest_geometry_registration.json",
     ]
+
+
+def test_canonical_graph_registration_is_locked_inside_dataset_root(tmp_path) -> None:
+    protocol = build_same_object_real_protocol()
+    scaffold_dataset(protocol, tmp_path)
+    graph_path = tmp_path / "canonical_material_graph.npz"
+    write_canonical_material_graph(
+        graph_path,
+        np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]]),
+        np.array([[0, 1]], dtype=np.int32),
+        np.array([1.0]),
+    )
+
+    registration = write_rest_geometry_registration(
+        tmp_path / "protocol.json",
+        tmp_path,
+        graph_path,
+    )
+
+    assert validate_rest_geometry_registration(
+        protocol,
+        registration,
+        dataset_root=tmp_path,
+        verify_file=True,
+    )["passed"] is True
+    changed = deepcopy(registration)
+    changed["controller_attachments_execution_specific"] = False
+    with pytest.raises(ValueError, match="identity contract"):
+        validate_rest_geometry_registration(protocol, changed)
 
 
 def _valid_fold_result(protocol, fold):

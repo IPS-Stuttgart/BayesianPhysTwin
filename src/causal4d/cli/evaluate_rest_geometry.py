@@ -57,6 +57,7 @@ def main() -> None:
     parser.add_argument("--maximum-nonrigid-norm-m", type=float, default=0.01)
     parser.add_argument("--maximum-rest-ratio", type=float, default=1.15)
     parser.add_argument("--atomic-spring-forces", action="store_true")
+    parser.add_argument("--canonical-material-graph")
     parser.add_argument("--bootstrap-samples", type=int, default=10000)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
@@ -95,6 +96,7 @@ def main() -> None:
         deterministic_spring_forces=not args.atomic_spring_forces,
         bootstrap_samples=args.bootstrap_samples,
         force=args.force,
+        canonical_material_graph_path=args.canonical_material_graph,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

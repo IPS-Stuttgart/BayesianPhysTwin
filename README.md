@@ -186,10 +186,19 @@ and attachment-geometry ablations. Development evidence is mixed: the physical
 update helps `single_lift_sloth` substantially but fails on
 `double_stretch_sloth`, so it is not promoted to a confirmatory method. The
 locked 12-fold same-object analysis gate is ready, while acquisition remains at
-`0/36` completed manifests. Run it with
-`causal4d-evaluate-rest-geometry` and audit acquisition with
-`causal4d-rest-geometry-protocol`; the notes and exact result artifacts live in
-the
+`0/36` completed manifests. `causal4d-evaluate-rest-geometry` produces the
+per-frame-mode Warp summaries; `causal4d-rest-geometry-candidate-evidence` strips
+them to pre-holdout scores; and `causal4d-rest-geometry-cross-action` selects 12
+fit-only fold locks plus the 36 factual, 18 same-grasp, and 12 new-contact
+records. Persistent source corrections are exported with
+`causal4d-rest-geometry-source-correction`, executed on targets with
+`causal4d-phystwin-rest-geometry-transfer`, and aggregated only when all 66
+records pass `causal4d-rest-geometry-protocol-result`. Audit acquisition with
+`causal4d-rest-geometry-protocol`. Before collection,
+`causal4d-build-phystwin-canonical-graph` freezes the object-only graph and
+`causal4d-rest-geometry-register-graph` locks it into the dataset; material
+nodes/topology must stay fixed while controller attachments may vary. The notes
+and exact development artifacts live in the
 [Bayesian-PhysTwin paper repository](https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper/blob/main/paper_notes/causal4d_rest_geometry_v1.md).
 
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter

@@ -56,6 +56,11 @@ from causal4d.rest_geometry import (
     reattach_controller_rest_lengths,
     rotate_vectors,
 )
+from causal4d.rest_geometry_transfer import (
+    attach_target_controller_to_canonical_graph,
+    canonical_material_graph_sha256,
+    load_canonical_material_graph,
+)
 
 
 RELEASED = "released"
@@ -302,6 +307,7 @@ def evaluate_phystwin_rest_geometry_case(
     self_collision: bool | None = None,
     deterministic_spring_forces: bool = True,
     device: str = "cuda:0",
+    canonical_material_graph_path: str | Path | None = None,
 ) -> dict[str, object]:
     """Select on an inner training suffix, refit, and rerun the future in Warp."""
 
@@ -344,16 +350,29 @@ def evaluate_phystwin_rest_geometry_case(
         self_collision = _released_self_collision_for_case(
             Path(final_data_path).resolve().parent.name
         )
-    graph = build_phystwin_spring_graph(
-        structure_points,
-        controller[0],
-        config=PhysTwinSpringGraphConfig(
-            object_radius=float(optimal["object_radius"]),
-            object_max_neighbours=int(optimal["object_max_neighbours"]),
-            controller_radius=float(optimal["controller_radius"]),
-            controller_max_neighbours=int(optimal["controller_max_neighbours"]),
-        ),
+    graph_config = PhysTwinSpringGraphConfig(
+        object_radius=float(optimal["object_radius"]),
+        object_max_neighbours=int(optimal["object_max_neighbours"]),
+        controller_radius=float(optimal["controller_radius"]),
+        controller_max_neighbours=int(optimal["controller_max_neighbours"]),
     )
+    if canonical_material_graph_path is None:
+        graph = build_phystwin_spring_graph(
+            structure_points,
+            controller[0],
+            config=graph_config,
+        )
+    else:
+        canonical_graph = load_canonical_material_graph(
+            canonical_material_graph_path
+        )
+        if len(canonical_graph.vertices) != len(structure_points):
+            raise ValueError("canonical graph and execution object size disagree")
+        graph = attach_target_controller_to_canonical_graph(
+            canonical_graph,
+            controller[0],
+            config=graph_config,
+        )
     object_springs = graph.springs[: graph.num_object_springs]
     laplacian = normalized_spring_laplacian(len(structure_points), object_springs)
     residual = observed - baseline[:, :original_count]
@@ -637,7 +656,9 @@ def evaluate_phystwin_rest_geometry_case(
         "endpoint_correction": correction.endpoint_correction,
         "frame_linear": correction.frame.linear,
         "frame_translation": correction.frame.translation,
+        "canonical_reference_vertices": graph.vertices[: len(structure_points)],
         "corrected_reference_vertices": correction.corrected_reference_vertices,
+        "object_springs": object_springs,
         "released_rest_lengths": graph.rest_lengths,
         "corrected_rest_lengths": correction.corrected_rest_lengths,
         "reattached_rest_lengths": reattached_rest_lengths,
@@ -729,11 +750,25 @@ def evaluate_phystwin_rest_geometry_case(
                 else {"path": str(Path(gt_track_path).resolve()), "sha256": _sha256(gt_track_path)}
             ),
             "official_repo": {"path": str(Path(official_repo).resolve()), "commit": _git_commit(official_repo)},
+            "canonical_material_graph": (
+                None
+                if canonical_material_graph_path is None
+                else {
+                    "path": str(Path(canonical_material_graph_path).resolve()),
+                    "sha256": _sha256(canonical_material_graph_path),
+                }
+            ),
         },
         "graph": {
             "object_vertex_count": len(structure_points),
             "object_spring_count": graph.num_object_springs,
             "controller_spring_count": len(graph.springs) - graph.num_object_springs,
+            "canonical_material_graph_sha256": canonical_material_graph_sha256(
+                graph.vertices[: len(structure_points)],
+                graph.springs,
+                graph.rest_lengths,
+                num_object_springs=graph.num_object_springs,
+            ),
         },
         "endpoint_posterior": {
             "updated_track_count": int(np.sum(updated)),
@@ -807,6 +842,7 @@ def run_phystwin_rest_geometry_comparison(
     bootstrap_block_length: int = 5,
     bootstrap_seed: int = 20260712,
     force: bool = False,
+    canonical_material_graph_path: str | Path | None = None,
 ) -> dict[str, object]:
     """Run the locked development or confirmation rest-geometry comparison."""
 
@@ -887,6 +923,14 @@ def run_phystwin_rest_geometry_comparison(
             "seed": bootstrap_seed,
         },
         "data_manifest": str(manifest_path.resolve()),
+        "canonical_material_graph": (
+            None
+            if canonical_material_graph_path is None
+            else {
+                "path": str(Path(canonical_material_graph_path).resolve()),
+                "sha256": _sha256(canonical_material_graph_path),
+            }
+        ),
         "status": "development" if cohort == "development" else "locked evaluation",
     }
     output = Path(output_dir)
@@ -932,6 +976,7 @@ def run_phystwin_rest_geometry_comparison(
                 num_substeps=num_substeps,
                 self_collision=self_collision_by_case[case],
                 deterministic_spring_forces=deterministic_spring_forces,
+                canonical_material_graph_path=canonical_material_graph_path,
             )
         case_results[case] = {
             "physical_object": clusters[case],

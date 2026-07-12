@@ -71,6 +71,13 @@ causal4d-real-calibration = "causal4d.cli.real_calibration:main"
 causal4d-evaluate-graph-temporal-discrepancy = "causal4d.cli.evaluate_graph_temporal_discrepancy:main"
 causal4d-evaluate-rest-geometry = "causal4d.cli.evaluate_rest_geometry:main"
 causal4d-rest-geometry-protocol = "causal4d.cli.rest_geometry_protocol:main"
+causal4d-rest-geometry-cross-action = "causal4d.cli.rest_geometry_cross_action:main"
+causal4d-rest-geometry-candidate-evidence = "causal4d.cli.rest_geometry_candidate_evidence:main"
+causal4d-rest-geometry-source-correction = "causal4d.cli.rest_geometry_source_correction:main"
+causal4d-phystwin-rest-geometry-transfer = "causal4d.cli.phystwin_rest_geometry_transfer:main"
+causal4d-rest-geometry-protocol-result = "causal4d.cli.rest_geometry_protocol_result:main"
+causal4d-build-phystwin-canonical-graph = "causal4d.cli.phystwin_canonical_graph:main"
+causal4d-rest-geometry-register-graph = "causal4d.cli.rest_geometry_register_graph:main"
 
 [project.optional-dependencies]
 dev = [
