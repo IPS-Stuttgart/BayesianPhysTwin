@@ -256,6 +256,13 @@ prospective mode-0/reset-scale prediction, and requires rejected contact-patch
 alternatives to remain in the registration artifact. See
 [docs/causal4d_preacquisition_v4.md](docs/causal4d_preacquisition_v4.md).
 
+A separate public-only Causal4D track is prepared for PokeFlex while gated
+dataset access is pending. It pins the public loader revision, validates raw or
+processed episode schemas, assigns object/take splits from metadata hashes, and
+keeps geometry-only metrics separate from unverified material identities. No
+PokeFlex outcome or raw data is in this repository. See
+[docs/causal4d_pokeflex_public_readiness.md](docs/causal4d_pokeflex_public_readiness.md).
+
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
 the temporal contract in every forecast artifact. On `single_lift_sloth`, the

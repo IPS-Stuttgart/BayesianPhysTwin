@@ -1,0 +1,53 @@
+{
+  "access": {
+    "raw_data_committed_to_git": false,
+    "redistribution_allowed": false,
+    "request_status": "access_requested_pending",
+    "terms_url": "https://pokeflex.ait.ethz.ch/"
+  },
+  "artifact_kind": "PublicPokeFlexReadinessConfig",
+  "config": {
+    "calibration_fraction": 0.2,
+    "development_fraction": 0.6,
+    "expected_mesh_unit": "millimetre",
+    "expected_robot_translation_unit": "metre",
+    "maximum_plausible_mesh_extent_mm": 2000.0,
+    "maximum_plausible_robot_translation_m": 10.0,
+    "minimum_calibrated_camera_count": 3,
+    "minimum_future_frame_count": 6,
+    "minimum_plausible_mesh_extent_mm": 10.0,
+    "minimum_takes_per_object_for_cross_take": 5,
+    "prefix_frame_count": 6,
+    "protocol_id": "causal4d-pokeflex-public-readiness-v1",
+    "public_force_axis_index": 1,
+    "public_force_threshold_n": 3.0,
+    "split_seed": "causal4d-pokeflex-public-v1",
+    "target_fraction": 0.2,
+    "topology_sample_count": 9,
+    "upstream_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "upstream_repository": "https://github.com/pokeflex-dataset/reconstruction"
+  },
+  "config_sha256": "256f6c0585a1eb592583b0a0c017e116baed9126f12119e80f866cd174b58070",
+  "information_boundary": {
+    "directory_and_schema_metadata_may_be_read": true,
+    "mesh_geometry_may_be_sampled_for_topology_and_units": true,
+    "model_fitting_allowed": false,
+    "outcome_based_take_selection_allowed": false,
+    "prediction_metric_computation_allowed": false,
+    "split_source": "SHA-256 rank of object/take identifiers only"
+  },
+  "schema_version": 1,
+  "upstream_inspection": {
+    "commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "commit_date": "2025-08-10T22:19:56+02:00",
+    "license_file_present": false,
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "source_files": {
+      "README.md": "fb5125745de8d959b44429a9e2be1466099b443c18542e4999d3cf5375b8ce6f",
+      "config/preprocessing.yml": "dc4dfc1454dd9685772833d0aa3ab3a19f9b046969751adbeb4bb7107658e6cc",
+      "dataset/dataset_meshes.py": "929450f3e0cc6dac2b67c2d672ccfb65738d8d016f9147d18d0cb503b05e08e3",
+      "dataset/dataset_robot_data.py": "3f8f1890655fd6060c73aa3a6046a255bad50008c07b44350f039855617c2274",
+      "dataset/preprocess.py": "f4e45e54c11058ad2dcd3f5c5c0ff50b2af9c70b97d00d2666d05ef10bfd5b68"
+    }
+  }
+}
