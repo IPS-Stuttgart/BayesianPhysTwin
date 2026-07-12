@@ -125,6 +125,31 @@ The real typed physical posterior improves mean prediction but is not
 calibrated: nominal 90% coordinate coverage is only `50.6%`, with NEES `7.23`.
 This is recorded as a limitation, not repaired post hoc.
 
+## Real oracle-gap diagnosis
+
+A leakage-explicit audit freezes the six-frame `O+` evidence boundary and
+compares the current 9-state intervention bank with the complete nested
+108-state grid. All nine current trajectories are bit-identical in the
+expanded bank.
+
+On the untouched future, current Causal4D track error is `31.694 mm`, the
+current-bank component oracle is `29.378 mm`, the expanded-bank oracle is
+`29.071 mm`, and an expanded component plus an in-sample constant per-node
+discrepancy ceiling reaches `8.399 mm`. The resulting headroom is `9.94%`
+inference, `1.32%` proposal, and `88.74%` model discrepancy. With every point
+correction capped at `10 mm`, model discrepancy remains dominant at `76.29%`.
+
+The current posterior variance is dominated by conditional discrepancy
+(`60.66%`) and the configured conditional floor (`22.92%`). Shapley-allocated
+state uncertainty contributes `10.97%` from `kappa`, `3.82%` from `theta`, and
+`2.15%` from `phi`. Empirical residual MSE is 4.54 times total predictive
+variance and the ratio worsens across the horizon.
+
+This rules out wider handcrafted intervention enumeration as the next priority.
+The next test moves a graph-regularized rest-geometry/frame correction inside
+the physical twin and reruns Warp using only pre-holdout evidence. Full method,
+limitations, and commands are in `docs/causal4d_real_oracle_audit.md`.
+
 ## Semantic posterior and trust
 
 MolmoMotion is applied only through `H_Q`. On the real `history_reverse`
@@ -214,11 +239,16 @@ The real belief, abduction, counterfactual, and beta-zero sequence is also
 available as `scripts/remote/run_causal4d_abduction_pipeline.sh` for the two
 configured GPU servers.
 
+The expanded-bank diagnostic is available as
+`scripts/remote/run_causal4d_real_oracle_audit.sh`.
+
 ## Claim boundary
 
 The controlled causal result is strong. The real backend integration is also
 complete, but the real evidence is one interaction, a truncated parameter
-posterior, a handcrafted action/contact beam, undercovered uncertainty, and no
-robot execution. MolmoMotion remains rejected in its current checkpoint and
-input regime. These results motivate a larger Causal4D project; they do not
-expand the Bayesian-PhysTwin paper's claim set.
+posterior, dominant simulator/state discrepancy, undercovered uncertainty, and
+no robot execution. The complete intervention grid closes only 1.32% of
+diagnostic headroom, so beam width is no longer listed as the primary real
+limitation. MolmoMotion remains rejected in its current checkpoint and input
+regime. These results motivate a larger Causal4D project; they do not expand
+the Bayesian-PhysTwin paper's claim set.
