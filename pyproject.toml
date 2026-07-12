@@ -57,6 +57,7 @@ bpt-diagnose-phystwin-structure = "bayesian_phystwin.cli.phystwin_structural_dia
 bpt-aggregate-phystwin-structure = "bayesian_phystwin.cli.structural_diagnostic_aggregate:main"
 bpt-diagnose-phystwin-discrepancy-location = "bayesian_phystwin.cli.phystwin_discrepancy_localization:main"
 bpt-aggregate-phystwin-discrepancy-location = "bayesian_phystwin.cli.discrepancy_localization_aggregate:main"
+bpt-audit-phystwin-state-decay = "bayesian_phystwin.cli.phystwin_state_decay:main"
 causal4d-counterfactual-benchmark = "causal4d.cli.counterfactual_benchmark:main"
 causal4d-latent-contact-benchmark = "causal4d.cli.latent_contact_benchmark:main"
 causal4d-phystwin-rollout-bank = "causal4d.cli.phystwin_rollout_bank:main"
@@ -84,6 +85,8 @@ causal4d-phystwin-rest-geometry-transfer = "causal4d.cli.phystwin_rest_geometry_
 causal4d-rest-geometry-protocol-result = "causal4d.cli.rest_geometry_protocol_result:main"
 causal4d-build-phystwin-canonical-graph = "causal4d.cli.phystwin_canonical_graph:main"
 causal4d-rest-geometry-register-graph = "causal4d.cli.rest_geometry_register_graph:main"
+causal4d-preacquisition-protocol = "causal4d.cli.preacquisition_protocol:main"
+causal4d-calibrate-actuator-realization = "causal4d.cli.actuator_realization:main"
 
 [project.optional-dependencies]
 dev = [
@@ -94,6 +97,9 @@ data = [
 ]
 graph = [
     "scipy>=1.10",
+]
+pyrecest = [
+    "pyrecest==2.4.1",
 ]
 
 [tool.setuptools.packages.find]

@@ -109,6 +109,28 @@ The aggregate conclusion is
 aggregate SHA-256 is
 `ec3d7c21e706d2ef2f9fb447730d3416067a5a42702644fd5b24fcc5cb9333f2`.
 
+## State-correction decay audit
+
+The frozen state rollouts support one additional post-hoc diagnostic without
+opening observations or selecting a model. The audit measures the RMS distance
+between the prefix-state and nominal trajectories, its component along the
+injected field, and the orthogonal component. It fits an exponential only to
+the transient above a tail floor and requires log-space `R^2 >= 0.80` before
+reporting that fit as adequate.
+
+| Case | Peak state deviation | Final/peak | Final aligned retention | Transient half-life | Tail floor |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `single_lift_sloth` | 23.46 mm | 59.47% | 61.80% | 81.5 ms | 15.01 mm |
+| `double_lift_sloth` | 24.80 mm | 9.54% | 1.39% | 45.0 ms | 2.39 mm |
+| `double_stretch_sloth` | 9.12 mm | 37.59% | 7.18% | 32.3 ms | 3.57 mm |
+
+The state perturbation is therefore not uniformly erased by one contractive
+time constant. All cases have a short transient toward a nonzero empirical
+floor, but `single_lift_sloth` retains a large component in the injected
+direction while the other two rotate and largely lose it. This strengthens the
+claim that a single state reset cannot reproduce persistent readout correction;
+it does not establish that no state error existed.
+
 ## Observation audit
 
 The released `final_data.pkl` normally stores fused 3D object tracks. Without
@@ -145,6 +167,16 @@ bpt-aggregate-phystwin-discrepancy-location \
   /path/to/output/single_lift_sloth/summary.json \
   /path/to/output/double_lift_sloth/summary.json \
   /path/to/output/double_stretch_sloth/summary.json
+```
+
+Audit one already-frozen state rollout:
+
+```bash
+bpt-audit-phystwin-state-decay \
+  /path/to/case/summary.json \
+  /path/to/case/localization_rollouts.npz \
+  /path/to/case/dynamic_discrepancy_correction.json \
+  /path/to/case/state_correction_decay.json
 ```
 
 ## Claim boundary

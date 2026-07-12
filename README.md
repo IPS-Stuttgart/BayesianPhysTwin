@@ -236,6 +236,18 @@ predeclared limit in two cases. The result localizes the useful correction to
 the readout level but does not identify observation bias, because the release
 lacks the per-view evidence needed to separate it from richer dynamics.
 
+The released milestone is frozen at tag
+`phystwin-discrepancy-localization-v1`. A post-hoc trajectory-only audit shows
+that injected state corrections have short transients but nonzero and
+case-dependent floors; this rejects the stronger claim that one common
+contractive time constant explains the failed state branch. Before physical
+collection, the versioned pre-acquisition amendment adds 12 source-only exact
+repeat/signature executions, session-clustered inference, a factorial
+readout-shrinkage gate, and nine independent calibration units per outer fold
+without changing any of the 36 confirmatory target executions. It also locks
+PyRecEst 2.4.1 as an optional source-only actuator synchronization diagnostic.
+See [docs/causal4d_preacquisition_v2.md](docs/causal4d_preacquisition_v2.md).
+
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
 the temporal contract in every forecast artifact. On `single_lift_sloth`, the

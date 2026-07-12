@@ -1,0 +1,1438 @@
+{
+  "actuator_realization_lock": {
+    "commanded_trajectory_role": "intervention_command_and_diagnostic_reference",
+    "hardware_timestamp_alignment_is_authoritative": true,
+    "maximum_rgbd_actuator_sync_error_ms": 5.0,
+    "pyrecest": {
+      "allowed_functions": [
+        "pyrecest.calibration.fit_time_offset",
+        "pyrecest.calibration.fit_sensor_bias_correction",
+        "pyrecest.metrics.nis",
+        "pyrecest.metrics.anees"
+      ],
+      "locked_version": "2.4.1",
+      "repository": "https://github.com/FlorianPfaff/PyRecEst",
+      "role": "source-only synchronization/bias diagnostics and consistency statistics; never a replacement for hardware timestamps"
+    },
+    "simulator_primary_input": "measured_registered_actuator_trajectory"
+  },
+  "amended_cross_action_calibration_folds": [
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s5-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s5"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s6-e1",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s6"
+      ],
+      "fold_id": "hold-left_forepaw-lift_low",
+      "held_out_command_profile_id": "lift_low",
+      "held_out_contact_region_id": "left_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s3-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s3"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s5-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s3-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s5-e2",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s5",
+        "sloth-v1-c3-s6"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s4-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s4"
+      ],
+      "fold_id": "hold-left_forepaw-lift_high",
+      "held_out_command_profile_id": "lift_high",
+      "held_out_contact_region_id": "left_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s5-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s5"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s5-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s3-e1"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s3"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s5-e2",
+        "sloth-v1-c3-s6-e1",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s5",
+        "sloth-v1-c3-s6"
+      ],
+      "fold_id": "hold-left_forepaw-lower_high",
+      "held_out_command_profile_id": "lower_high",
+      "held_out_contact_region_id": "left_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s6-e2"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s6"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s3-e2"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s6-e1"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s6"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s5-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s5"
+      ],
+      "fold_id": "hold-left_forepaw-lateral_low",
+      "held_out_command_profile_id": "lateral_low",
+      "held_out_contact_region_id": "left_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c1-s6-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c1-s6"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s6-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s5-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s5"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s6-e1",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s6"
+      ],
+      "fold_id": "hold-right_forepaw-lift_low",
+      "held_out_command_profile_id": "lift_low",
+      "held_out_contact_region_id": "right_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s6-e2"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s6"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s5-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s6-e1"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s5-e2",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s5",
+        "sloth-v1-c3-s6"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s4-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s4"
+      ],
+      "fold_id": "hold-right_forepaw-lift_high",
+      "held_out_command_profile_id": "lift_high",
+      "held_out_contact_region_id": "right_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s6-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s6"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s6-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s3-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s3"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s5-e2",
+        "sloth-v1-c3-s6-e1",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s5",
+        "sloth-v1-c3-s6"
+      ],
+      "fold_id": "hold-right_forepaw-lower_high",
+      "held_out_command_profile_id": "lower_high",
+      "held_out_contact_region_id": "right_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s5-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s5"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s3-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s5-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s6"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s5-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s5"
+      ],
+      "fold_id": "hold-right_forepaw-lateral_low",
+      "held_out_command_profile_id": "lateral_low",
+      "held_out_contact_region_id": "right_forepaw",
+      "target_execution_ids": [
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s5-e2"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s5"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s5-e1"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s6"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c2-s5-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s5"
+      ],
+      "fold_id": "hold-upper_torso-lift_low",
+      "held_out_command_profile_id": "lift_low",
+      "held_out_contact_region_id": "upper_torso",
+      "target_execution_ids": [
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s5-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s5"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s5-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s6-e2",
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s4-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s6",
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s4"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c2-s5-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s5"
+      ],
+      "fold_id": "hold-upper_torso-lift_high",
+      "held_out_command_profile_id": "lift_high",
+      "held_out_contact_region_id": "upper_torso",
+      "target_execution_ids": [
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s5-e2",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s5",
+        "sloth-v1-c3-s6"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s4-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s6-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s5-e2",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s5",
+        "sloth-v1-c3-s6"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c2-s6-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s6"
+      ],
+      "fold_id": "hold-upper_torso-lower_high",
+      "held_out_command_profile_id": "lower_high",
+      "held_out_contact_region_id": "upper_torso",
+      "target_execution_ids": [
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s3-e1"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s3"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s6-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s3-e2"
+      ]
+    },
+    {
+      "calibration_execution_ids": [
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c2-s2-e2",
+        "sloth-v1-c2-s4-e2",
+        "sloth-v1-c2-s5-e2",
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s5-e2"
+      ],
+      "calibration_plan": {
+        "calibration_units": 9,
+        "coverage": 0.9,
+        "finite_without_infinite_sentinel": true,
+        "minimum_calibration_units_for_finite_interval": 9,
+        "order_statistic_rank_one_based": 9
+      },
+      "calibration_session_ids": [
+        "sloth-v1-c1-s3",
+        "sloth-v1-c1-s5",
+        "sloth-v1-c1-s6",
+        "sloth-v1-c2-s2",
+        "sloth-v1-c2-s4",
+        "sloth-v1-c2-s5",
+        "sloth-v1-c3-s2",
+        "sloth-v1-c3-s3",
+        "sloth-v1-c3-s5"
+      ],
+      "fit_execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s1-e2",
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s2-e2",
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s4-e2",
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s1-e2",
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s3-e2",
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c2-s6-e2"
+      ],
+      "fit_session_ids": [
+        "sloth-v1-c1-s1",
+        "sloth-v1-c1-s2",
+        "sloth-v1-c1-s4",
+        "sloth-v1-c2-s1",
+        "sloth-v1-c2-s3",
+        "sloth-v1-c2-s6"
+      ],
+      "fold_id": "hold-upper_torso-lateral_low",
+      "held_out_command_profile_id": "lateral_low",
+      "held_out_contact_region_id": "upper_torso",
+      "target_execution_ids": [
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s4-e2",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "target_session_ids": [
+        "sloth-v1-c3-s1",
+        "sloth-v1-c3-s4",
+        "sloth-v1-c3-s6"
+      ],
+      "unused_execution_ids_in_calibration_sessions": [
+        "sloth-v1-c1-s3-e2",
+        "sloth-v1-c1-s5-e2",
+        "sloth-v1-c1-s6-e2",
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c3-s2-e2",
+        "sloth-v1-c3-s3-e2",
+        "sloth-v1-c3-s5-e1"
+      ],
+      "unused_sibling_execution_ids_in_target_sessions": [
+        "sloth-v1-c3-s1-e2",
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s6-e1"
+      ]
+    }
+  ],
+  "amendment_sha256": "57d9788c4de31ff3f103d487fcf7b2080523e69ead402e38961f47d0e749a719",
+  "analysis_lock": {
+    "bootstrap_replicates": 20000,
+    "bootstrap_seed": 20260712,
+    "calibration": {
+      "calibration_unit": "one preregistered execution from each independent session",
+      "calibration_units_per_fold": 9,
+      "fit_on": "amended calibration executions only",
+      "method": "execution-block split conformal",
+      "nominal_coverage": 0.9,
+      "order_statistic_rank_one_based": 9,
+      "score": "per-execution 0.90 quantile of absolute coordinate error divided by raw predictive standard deviation",
+      "target_adaptation_allowed": false
+    },
+    "confidence_level": 0.95,
+    "factorial_ladder": [
+      "M0_nominal",
+      "M1_measured_actuation_registered_contact",
+      "M2_readout_persistence",
+      "M3_hybrid_support_contact_regime",
+      "M4_rate_dependent_material",
+      "M5_self_contact_or_topology"
+    ],
+    "factorial_requirement": "Fit every physical candidate both with and without the identical prefix-only graph readout persistence correction.",
+    "paired_interval_method": "equal-session cluster bootstrap",
+    "persistence_shrinkage_gate": "upper_95_percent_session_cluster_bootstrap_log_ratio_below_zero",
+    "persistence_shrinkage_metric": "graph_readout_correction_rms_m",
+    "regression_covariance": "CR1 session-clustered sandwich",
+    "replication_unit": "grasp_session",
+    "required_covariates": [
+      "measured_reset_deviation",
+      "action_direction",
+      "measured_action_speed",
+      "hold_duration",
+      "contact_relative_tangential_motion",
+      "support_proximity_and_normal",
+      "camera_id_visibility_and_view_angle"
+    ]
+  },
+  "base_protocol": {
+    "action_contact_grid_unchanged": true,
+    "confirmatory_execution_count": 36,
+    "design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+    "protocol_id": "causal4d-sloth-multi-action-v1",
+    "target_execution_ids_unchanged": true
+  },
+  "collection_gate": {
+    "actuator_sync_passed": false,
+    "analysis_code_frozen": false,
+    "contact_registration_approved": false,
+    "end_to_end_dry_run_passed": false,
+    "first_confirmatory_execution_allowed": false,
+    "signature_panel_complete": false,
+    "slip_pilot_passed_or_versioned_out": false,
+    "support_registration_passed": false
+  },
+  "collection_sequence": [
+    "approve_contact_registration",
+    "run_preregistered_slip_pilot",
+    "collect_12_execution_signature_and_repeatability_panel",
+    "validate_commanded_vs_measured_actuation",
+    "validate_support_and_gravity_registration",
+    "run_one_nonconfirmatory_end_to_end_dry_run",
+    "seal_analysis_implementation_and_environment",
+    "collect_36_unchanged_confirmatory_executions"
+  ],
+  "frozen_released_data_milestone": {
+    "allowed_followup": "post_hoc_state_correction_decay_diagnostic_only",
+    "git_tag": "phystwin-discrepancy-localization-v1",
+    "released_cases_available_for_further_model_selection": false
+  },
+  "plan_id": "causal4d-sloth-preacquisition-v2",
+  "preacquisition_signature_panel": {
+    "camera_signature": {
+      "analysis": "leave_one_camera_out_material_point_residual_transfer",
+      "minimum_synchronized_rgbd_views": 3,
+      "signature": "view_or_visibility_dependence_at_fixed_action"
+    },
+    "contact_region_id": "upper_torso",
+    "contrasts": [
+      {
+        "changed": [
+          "direction_controller"
+        ],
+        "contrast_profile_id": "lower_high",
+        "id": "direction_reversal",
+        "matched": [
+          "amplitude_m",
+          "outbound_duration_s",
+          "hold_duration_s",
+          "return_duration_s"
+        ],
+        "reference_profile_id": "lift_high",
+        "signature": "tangential_or_directional_residual_sign_change"
+      },
+      {
+        "changed": [
+          "outbound_duration_s",
+          "return_duration_s"
+        ],
+        "contrast_profile_id": "lift_high_slow",
+        "id": "rate_dependence",
+        "matched": [
+          "direction_controller",
+          "amplitude_m",
+          "hold_duration_s"
+        ],
+        "reference_profile_id": "lift_high",
+        "signature": "residual_changes_with_speed_at_fixed_amplitude"
+      },
+      {
+        "changed": [
+          "hold_duration_s"
+        ],
+        "contrast_profile_id": "lift_high_long_hold",
+        "id": "hold_relaxation",
+        "matched": [
+          "direction_controller",
+          "amplitude_m",
+          "outbound_duration_s",
+          "return_duration_s"
+        ],
+        "reference_profile_id": "lift_high",
+        "signature": "residual_relaxation_or_hysteresis_during_hold"
+      }
+    ],
+    "exact_repetitions_per_profile": 3,
+    "execution_count": 12,
+    "executions": [
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high-r1",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 1,
+        "session_id": "sloth-pre-v2-lift_high-r1"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high-r2",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 2,
+        "session_id": "sloth-pre-v2-lift_high-r2"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high-r3",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 3,
+        "session_id": "sloth-pre-v2-lift_high-r3"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lower_high",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lower_high-r1",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 1,
+        "session_id": "sloth-pre-v2-lower_high-r1"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lower_high",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lower_high-r2",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 2,
+        "session_id": "sloth-pre-v2-lower_high-r2"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lower_high",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lower_high-r3",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 3,
+        "session_id": "sloth-pre-v2-lower_high-r3"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high_slow",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high_slow-r1",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 1,
+        "session_id": "sloth-pre-v2-lift_high_slow-r1"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high_slow",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high_slow-r2",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 2,
+        "session_id": "sloth-pre-v2-lift_high_slow-r2"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high_slow",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high_slow-r3",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 3,
+        "session_id": "sloth-pre-v2-lift_high_slow-r3"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high_long_hold",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high_long_hold-r1",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 1,
+        "session_id": "sloth-pre-v2-lift_high_long_hold-r1"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high_long_hold",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high_long_hold-r2",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 2,
+        "session_id": "sloth-pre-v2-lift_high_long_hold-r2"
+      },
+      {
+        "allowed_uses": [
+          "noise_floor_estimation",
+          "reset_repeatability",
+          "source_only_mechanism_signature_diagnosis",
+          "analysis_pipeline_testing"
+        ],
+        "command_profile_id": "lift_high_long_hold",
+        "confirmatory_fold_member": false,
+        "contact_region_id": "upper_torso",
+        "execution_id": "sloth-pre-v2-lift_high_long_hold-r3",
+        "forbidden_uses": [
+          "confirmatory_target_evaluation",
+          "target_threshold_selection"
+        ],
+        "fresh_reset_and_fresh_grasp": true,
+        "realization_condition_id": "nominal",
+        "replicate": 3,
+        "session_id": "sloth-pre-v2-lift_high_long_hold-r3"
+      }
+    ],
+    "independent_reset_per_execution": true,
+    "independent_session_count": 12,
+    "profiles": [
+      {
+        "amplitude_m": 0.08,
+        "direction_controller": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "hold_duration_s": 0.25,
+        "id": "lift_high",
+        "outbound_duration_s": 0.75,
+        "post_return_settle_s": 1.5,
+        "return_duration_s": 0.75,
+        "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+      },
+      {
+        "amplitude_m": 0.08,
+        "direction_controller": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "hold_duration_s": 0.25,
+        "id": "lower_high",
+        "outbound_duration_s": 0.75,
+        "post_return_settle_s": 1.5,
+        "return_duration_s": 0.75,
+        "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+      },
+      {
+        "amplitude_m": 0.08,
+        "direction_controller": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "hold_duration_s": 0.25,
+        "id": "lift_high_slow",
+        "outbound_duration_s": 1.5,
+        "post_return_settle_s": 1.5,
+        "return_duration_s": 1.5,
+        "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+      },
+      {
+        "amplitude_m": 0.08,
+        "direction_controller": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "hold_duration_s": 1.0,
+        "id": "lift_high_long_hold",
+        "outbound_duration_s": 0.75,
+        "post_return_settle_s": 1.5,
+        "return_duration_s": 0.75,
+        "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "status": "locked_before_first_physical_execution"
+}

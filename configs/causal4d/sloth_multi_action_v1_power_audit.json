@@ -1,0 +1,31 @@
+{
+  "calibration": {
+    "minimum_independent_sessions_per_fold": 2,
+    "nominal_90_percent": {
+      "calibration_units": 2,
+      "coverage": 0.9,
+      "finite_without_infinite_sentinel": false,
+      "minimum_calibration_units_for_finite_interval": 9,
+      "order_statistic_rank_one_based": 3
+    }
+  },
+  "exact_replication": {
+    "cells_with_at_least_three_repeats": 0,
+    "maximum_same_contact_profile_condition_count": 1,
+    "passed": false
+  },
+  "passed_for_first_locked_execution": false,
+  "protocol_design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+  "protocol_id": "causal4d-sloth-multi-action-v1",
+  "required_action": "Apply the versioned pre-acquisition amendment; do not reinterpret the original 36-execution grid as adequately replicated or calibrated.",
+  "signature_contrasts": {
+    "distinct_hold_durations_s": [
+      0.25
+    ],
+    "distinct_outbound_durations_s": [
+      0.75
+    ],
+    "independent_hold_contrast": false,
+    "independent_speed_contrast": false
+  }
+}

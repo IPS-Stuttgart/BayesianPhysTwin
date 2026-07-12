@@ -2,6 +2,12 @@
 
 Status: preregistered software protocol; physical acquisition has not started.
 
+The versioned pre-acquisition amendment in
+[`causal4d_preacquisition_v2.md`](causal4d_preacquisition_v2.md) adds exact
+repeatability/signature pilots, session-clustered inference, and a finite
+execution-level calibration plan. It leaves the 36 confirmatory executions and
+target IDs unchanged and must pass before the first confirmatory execution.
+
 The authoritative design is
 `configs/causal4d/sloth_multi_action_v1.json`, with canonical design SHA-256
 `6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968`.
