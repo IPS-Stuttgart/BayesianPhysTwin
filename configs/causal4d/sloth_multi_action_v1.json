@@ -1,0 +1,2051 @@
+{
+  "acquisition_session_order": [
+    "sloth-v1-c1-s6",
+    "sloth-v1-c2-s1",
+    "sloth-v1-c3-s6",
+    "sloth-v1-c2-s2",
+    "sloth-v1-c3-s4",
+    "sloth-v1-c1-s3",
+    "sloth-v1-c3-s3",
+    "sloth-v1-c1-s2",
+    "sloth-v1-c2-s4",
+    "sloth-v1-c1-s1",
+    "sloth-v1-c2-s6",
+    "sloth-v1-c3-s5",
+    "sloth-v1-c2-s3",
+    "sloth-v1-c3-s2",
+    "sloth-v1-c1-s5",
+    "sloth-v1-c3-s1",
+    "sloth-v1-c1-s4",
+    "sloth-v1-c2-s5"
+  ],
+  "analysis_lock": {
+    "exclusions_locked_before_target_evaluation": true,
+    "no_held_contact_or_profile_in_fold_source_sessions": true,
+    "no_session_shared_between_fit_and_calibration": true,
+    "split_unit": "grasp_session",
+    "target_outcomes_may_not_select_hyperparameters": true
+  },
+  "command_profiles": [
+    {
+      "amplitude_m": 0.04,
+      "direction_controller": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "hold_duration_s": 0.25,
+      "id": "lift_low",
+      "outbound_duration_s": 0.75,
+      "post_return_settle_s": 1.5,
+      "return_duration_s": 0.75,
+      "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+    },
+    {
+      "amplitude_m": 0.08,
+      "direction_controller": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "hold_duration_s": 0.25,
+      "id": "lift_high",
+      "outbound_duration_s": 0.75,
+      "post_return_settle_s": 1.5,
+      "return_duration_s": 0.75,
+      "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+    },
+    {
+      "amplitude_m": 0.08,
+      "direction_controller": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "hold_duration_s": 0.25,
+      "id": "lower_high",
+      "outbound_duration_s": 0.75,
+      "post_return_settle_s": 1.5,
+      "return_duration_s": 0.75,
+      "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+    },
+    {
+      "amplitude_m": 0.04,
+      "direction_controller": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "hold_duration_s": 0.25,
+      "id": "lateral_low",
+      "outbound_duration_s": 0.75,
+      "post_return_settle_s": 1.5,
+      "return_duration_s": 0.75,
+      "waveform": "minimum_jerk_out_hold_minimum_jerk_return"
+    }
+  ],
+  "contact_regions": [
+    {
+      "id": "left_forepaw",
+      "label": "Anatomical left forepaw/wrist",
+      "registration": "fixed canonical PhysTwin node set"
+    },
+    {
+      "id": "right_forepaw",
+      "label": "Anatomical right forepaw/wrist",
+      "registration": "fixed canonical PhysTwin node set"
+    },
+    {
+      "id": "upper_torso",
+      "label": "Upper torso between the shoulders, below the neck seam",
+      "registration": "fixed canonical PhysTwin node set"
+    }
+  ],
+  "design_sha256": "6d61f2bea96af0ba04faaf3476990b58cd87e0a9c826420c254a012dec647968",
+  "executions": [
+    {
+      "acquisition_execution_index": 18,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s1-e1",
+      "pair_order": 0,
+      "realization_condition_id": "nominal",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c1-s1"
+    },
+    {
+      "acquisition_execution_index": 19,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s1-e2",
+      "pair_order": 1,
+      "realization_condition_id": "nominal",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c1-s1"
+    },
+    {
+      "acquisition_execution_index": 14,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s2-e1",
+      "pair_order": 0,
+      "realization_condition_id": "gain_low",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c1-s2"
+    },
+    {
+      "acquisition_execution_index": 15,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s2-e2",
+      "pair_order": 1,
+      "realization_condition_id": "gain_low",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c1-s2"
+    },
+    {
+      "acquisition_execution_index": 10,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s3-e1",
+      "pair_order": 0,
+      "realization_condition_id": "gain_high",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c1-s3"
+    },
+    {
+      "acquisition_execution_index": 11,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s3-e2",
+      "pair_order": 1,
+      "realization_condition_id": "gain_high",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c1-s3"
+    },
+    {
+      "acquisition_execution_index": 32,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s4-e1",
+      "pair_order": 0,
+      "realization_condition_id": "delay_2_frames",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c1-s4"
+    },
+    {
+      "acquisition_execution_index": 33,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s4-e2",
+      "pair_order": 1,
+      "realization_condition_id": "delay_2_frames",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c1-s4"
+    },
+    {
+      "acquisition_execution_index": 28,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s5-e1",
+      "pair_order": 0,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c1-s5"
+    },
+    {
+      "acquisition_execution_index": 29,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s5-e2",
+      "pair_order": 1,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c1-s5"
+    },
+    {
+      "acquisition_execution_index": 0,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s6-e1",
+      "pair_order": 0,
+      "realization_condition_id": "slip_low_force",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c1-s6"
+    },
+    {
+      "acquisition_execution_index": 1,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "left_forepaw",
+      "execution_id": "sloth-v1-c1-s6-e2",
+      "pair_order": 1,
+      "realization_condition_id": "slip_low_force",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c1-s6"
+    },
+    {
+      "acquisition_execution_index": 2,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s1-e1",
+      "pair_order": 0,
+      "realization_condition_id": "nominal",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c2-s1"
+    },
+    {
+      "acquisition_execution_index": 3,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s1-e2",
+      "pair_order": 1,
+      "realization_condition_id": "nominal",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c2-s1"
+    },
+    {
+      "acquisition_execution_index": 6,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s2-e1",
+      "pair_order": 0,
+      "realization_condition_id": "gain_low",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c2-s2"
+    },
+    {
+      "acquisition_execution_index": 7,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s2-e2",
+      "pair_order": 1,
+      "realization_condition_id": "gain_low",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c2-s2"
+    },
+    {
+      "acquisition_execution_index": 24,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s3-e1",
+      "pair_order": 0,
+      "realization_condition_id": "gain_high",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c2-s3"
+    },
+    {
+      "acquisition_execution_index": 25,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s3-e2",
+      "pair_order": 1,
+      "realization_condition_id": "gain_high",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c2-s3"
+    },
+    {
+      "acquisition_execution_index": 16,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s4-e1",
+      "pair_order": 0,
+      "realization_condition_id": "delay_2_frames",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c2-s4"
+    },
+    {
+      "acquisition_execution_index": 17,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s4-e2",
+      "pair_order": 1,
+      "realization_condition_id": "delay_2_frames",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c2-s4"
+    },
+    {
+      "acquisition_execution_index": 34,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s5-e1",
+      "pair_order": 0,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c2-s5"
+    },
+    {
+      "acquisition_execution_index": 35,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s5-e2",
+      "pair_order": 1,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c2-s5"
+    },
+    {
+      "acquisition_execution_index": 20,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s6-e1",
+      "pair_order": 0,
+      "realization_condition_id": "slip_low_force",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c2-s6"
+    },
+    {
+      "acquisition_execution_index": 21,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "right_forepaw",
+      "execution_id": "sloth-v1-c2-s6-e2",
+      "pair_order": 1,
+      "realization_condition_id": "slip_low_force",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c2-s6"
+    },
+    {
+      "acquisition_execution_index": 30,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s1-e1",
+      "pair_order": 0,
+      "realization_condition_id": "nominal",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c3-s1"
+    },
+    {
+      "acquisition_execution_index": 31,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s1-e2",
+      "pair_order": 1,
+      "realization_condition_id": "nominal",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c3-s1"
+    },
+    {
+      "acquisition_execution_index": 26,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s2-e1",
+      "pair_order": 0,
+      "realization_condition_id": "gain_low",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c3-s2"
+    },
+    {
+      "acquisition_execution_index": 27,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s2-e2",
+      "pair_order": 1,
+      "realization_condition_id": "gain_low",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c3-s2"
+    },
+    {
+      "acquisition_execution_index": 12,
+      "command_profile_id": "lower_high",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s3-e1",
+      "pair_order": 0,
+      "realization_condition_id": "gain_high",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c3-s3"
+    },
+    {
+      "acquisition_execution_index": 13,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s3-e2",
+      "pair_order": 1,
+      "realization_condition_id": "gain_high",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c3-s3"
+    },
+    {
+      "acquisition_execution_index": 8,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s4-e1",
+      "pair_order": 0,
+      "realization_condition_id": "delay_2_frames",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c3-s4"
+    },
+    {
+      "acquisition_execution_index": 9,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s4-e2",
+      "pair_order": 1,
+      "realization_condition_id": "delay_2_frames",
+      "replicate_block": 2,
+      "session_id": "sloth-v1-c3-s4"
+    },
+    {
+      "acquisition_execution_index": 22,
+      "command_profile_id": "lift_low",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s5-e1",
+      "pair_order": 0,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c3-s5"
+    },
+    {
+      "acquisition_execution_index": 23,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s5-e2",
+      "pair_order": 1,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "replicate_block": 0,
+      "session_id": "sloth-v1-c3-s5"
+    },
+    {
+      "acquisition_execution_index": 4,
+      "command_profile_id": "lift_high",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s6-e1",
+      "pair_order": 0,
+      "realization_condition_id": "slip_low_force",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c3-s6"
+    },
+    {
+      "acquisition_execution_index": 5,
+      "command_profile_id": "lateral_low",
+      "contact_region_id": "upper_torso",
+      "execution_id": "sloth-v1-c3-s6-e2",
+      "pair_order": 1,
+      "realization_condition_id": "slip_low_force",
+      "replicate_block": 1,
+      "session_id": "sloth-v1-c3-s6"
+    }
+  ],
+  "neutral_state": {
+    "description": "standardized suspended neutral pose with at least 0.10 m table clearance, reached without releasing the registered grasp",
+    "pre_execution_stabilization_s": 2.0,
+    "return_to_neutral_between_same_grasp_commands": true
+  },
+  "object": {
+    "canonical_contact_registration_required": true,
+    "object_id": "sloth_plush_instance_1",
+    "object_instance_must_remain_fixed": true,
+    "source_case": "single_lift_sloth"
+  },
+  "protocol_id": "causal4d-sloth-multi-action-v1",
+  "quality_gates": {
+    "maximum_contact_centroid_error_m": 0.005,
+    "maximum_dropped_rgbd_frames": 0,
+    "maximum_end_effector_reset_error_m": 0.002,
+    "maximum_initial_state_chamfer_m": 0.003,
+    "maximum_rgbd_actuator_sync_error_ms": 5.0
+  },
+  "realization_conditions": [
+    {
+      "id": "nominal",
+      "injection": {
+        "kappa": {
+          "gripper_force_scale": 1.0,
+          "slip_mode": "locked_grip"
+        },
+        "phi": {
+          "frame_rotation_axis_controller": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "frame_rotation_deg": 0.0,
+          "frame_translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gain_multiplier": 1.0,
+          "software_delay_frames": 0,
+          "software_delay_s": 0.0
+        }
+      }
+    },
+    {
+      "id": "gain_low",
+      "injection": {
+        "kappa": {
+          "gripper_force_scale": 1.0,
+          "slip_mode": "locked_grip"
+        },
+        "phi": {
+          "frame_rotation_axis_controller": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "frame_rotation_deg": 0.0,
+          "frame_translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gain_multiplier": 0.85,
+          "software_delay_frames": 0,
+          "software_delay_s": 0.0
+        }
+      }
+    },
+    {
+      "id": "gain_high",
+      "injection": {
+        "kappa": {
+          "gripper_force_scale": 1.0,
+          "slip_mode": "locked_grip"
+        },
+        "phi": {
+          "frame_rotation_axis_controller": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "frame_rotation_deg": 0.0,
+          "frame_translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gain_multiplier": 1.15,
+          "software_delay_frames": 0,
+          "software_delay_s": 0.0
+        }
+      }
+    },
+    {
+      "id": "delay_2_frames",
+      "injection": {
+        "kappa": {
+          "gripper_force_scale": 1.0,
+          "slip_mode": "locked_grip"
+        },
+        "phi": {
+          "frame_rotation_axis_controller": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "frame_rotation_deg": 0.0,
+          "frame_translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gain_multiplier": 1.0,
+          "software_delay_frames": 2,
+          "software_delay_s": 0.06666666666666667
+        }
+      }
+    },
+    {
+      "id": "frame_pitch_pos_3deg",
+      "injection": {
+        "kappa": {
+          "gripper_force_scale": 1.0,
+          "slip_mode": "locked_grip"
+        },
+        "phi": {
+          "frame_rotation_axis_controller": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "frame_rotation_deg": 3.0,
+          "frame_translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gain_multiplier": 1.0,
+          "software_delay_frames": 0,
+          "software_delay_s": 0.0
+        }
+      }
+    },
+    {
+      "id": "slip_low_force",
+      "injection": {
+        "kappa": {
+          "gripper_force_scale": 0.55,
+          "slip_mode": "bounded_low_force",
+          "target_slip_interval_m": [
+            0.005,
+            0.015
+          ]
+        },
+        "phi": {
+          "frame_rotation_axis_controller": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "frame_rotation_deg": 0.0,
+          "frame_translation_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "gain_multiplier": 1.0,
+          "software_delay_frames": 0,
+          "software_delay_s": 0.0
+        }
+      }
+    }
+  ],
+  "recording_contract": {
+    "artifact_descriptor_fields": [
+      "path",
+      "sha256",
+      "bytes"
+    ],
+    "commanded_and_measured_actuator_trajectories_are_distinct": true,
+    "required_artifacts": [
+      "synchronized_rgbd_manifest",
+      "commanded_control_trajectory",
+      "measured_end_effector_trajectory",
+      "measured_gripper_state",
+      "camera_calibration",
+      "controller_frame_calibration",
+      "initial_object_state",
+      "injected_intervention",
+      "contact_region_annotation",
+      "trial_reset_metadata",
+      "drift_metadata"
+    ],
+    "slip_condition_any_of": [
+      "force_torque",
+      "gripper_normal_force"
+    ],
+    "timestamped_artifacts": [
+      "synchronized_rgbd_manifest",
+      "commanded_control_trajectory",
+      "measured_end_effector_trajectory",
+      "measured_gripper_state",
+      "force_torque",
+      "gripper_normal_force"
+    ]
+  },
+  "sampling": {
+    "command_and_actuator_minimum_rate_hz": 100,
+    "preferred_force_torque_rate_hz": 250,
+    "rgbd_rate_hz": 30,
+    "shared_monotonic_clock_required": true
+  },
+  "schema_version": 1,
+  "sessions": [
+    {
+      "acquisition_session_index": 9,
+      "contact_region_id": "left_forepaw",
+      "execution_ids": [
+        "sloth-v1-c1-s1-e1",
+        "sloth-v1-c1-s1-e2"
+      ],
+      "profile_pair_index": 0,
+      "realization_condition_id": "nominal",
+      "release_between_executions": false,
+      "replicate_block": 0,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c1-s1"
+    },
+    {
+      "acquisition_session_index": 7,
+      "contact_region_id": "left_forepaw",
+      "execution_ids": [
+        "sloth-v1-c1-s2-e1",
+        "sloth-v1-c1-s2-e2"
+      ],
+      "profile_pair_index": 1,
+      "realization_condition_id": "gain_low",
+      "release_between_executions": false,
+      "replicate_block": 1,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c1-s2"
+    },
+    {
+      "acquisition_session_index": 5,
+      "contact_region_id": "left_forepaw",
+      "execution_ids": [
+        "sloth-v1-c1-s3-e1",
+        "sloth-v1-c1-s3-e2"
+      ],
+      "profile_pair_index": 2,
+      "realization_condition_id": "gain_high",
+      "release_between_executions": false,
+      "replicate_block": 2,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c1-s3"
+    },
+    {
+      "acquisition_session_index": 16,
+      "contact_region_id": "left_forepaw",
+      "execution_ids": [
+        "sloth-v1-c1-s4-e1",
+        "sloth-v1-c1-s4-e2"
+      ],
+      "profile_pair_index": 3,
+      "realization_condition_id": "delay_2_frames",
+      "release_between_executions": false,
+      "replicate_block": 2,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c1-s4"
+    },
+    {
+      "acquisition_session_index": 14,
+      "contact_region_id": "left_forepaw",
+      "execution_ids": [
+        "sloth-v1-c1-s5-e1",
+        "sloth-v1-c1-s5-e2"
+      ],
+      "profile_pair_index": 4,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "release_between_executions": false,
+      "replicate_block": 1,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c1-s5"
+    },
+    {
+      "acquisition_session_index": 0,
+      "contact_region_id": "left_forepaw",
+      "execution_ids": [
+        "sloth-v1-c1-s6-e1",
+        "sloth-v1-c1-s6-e2"
+      ],
+      "profile_pair_index": 5,
+      "realization_condition_id": "slip_low_force",
+      "release_between_executions": false,
+      "replicate_block": 0,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c1-s6"
+    },
+    {
+      "acquisition_session_index": 1,
+      "contact_region_id": "right_forepaw",
+      "execution_ids": [
+        "sloth-v1-c2-s1-e1",
+        "sloth-v1-c2-s1-e2"
+      ],
+      "profile_pair_index": 1,
+      "realization_condition_id": "nominal",
+      "release_between_executions": false,
+      "replicate_block": 1,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c2-s1"
+    },
+    {
+      "acquisition_session_index": 3,
+      "contact_region_id": "right_forepaw",
+      "execution_ids": [
+        "sloth-v1-c2-s2-e1",
+        "sloth-v1-c2-s2-e2"
+      ],
+      "profile_pair_index": 2,
+      "realization_condition_id": "gain_low",
+      "release_between_executions": false,
+      "replicate_block": 2,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c2-s2"
+    },
+    {
+      "acquisition_session_index": 12,
+      "contact_region_id": "right_forepaw",
+      "execution_ids": [
+        "sloth-v1-c2-s3-e1",
+        "sloth-v1-c2-s3-e2"
+      ],
+      "profile_pair_index": 3,
+      "realization_condition_id": "gain_high",
+      "release_between_executions": false,
+      "replicate_block": 2,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c2-s3"
+    },
+    {
+      "acquisition_session_index": 8,
+      "contact_region_id": "right_forepaw",
+      "execution_ids": [
+        "sloth-v1-c2-s4-e1",
+        "sloth-v1-c2-s4-e2"
+      ],
+      "profile_pair_index": 4,
+      "realization_condition_id": "delay_2_frames",
+      "release_between_executions": false,
+      "replicate_block": 1,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c2-s4"
+    },
+    {
+      "acquisition_session_index": 17,
+      "contact_region_id": "right_forepaw",
+      "execution_ids": [
+        "sloth-v1-c2-s5-e1",
+        "sloth-v1-c2-s5-e2"
+      ],
+      "profile_pair_index": 5,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "release_between_executions": false,
+      "replicate_block": 0,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c2-s5"
+    },
+    {
+      "acquisition_session_index": 10,
+      "contact_region_id": "right_forepaw",
+      "execution_ids": [
+        "sloth-v1-c2-s6-e1",
+        "sloth-v1-c2-s6-e2"
+      ],
+      "profile_pair_index": 0,
+      "realization_condition_id": "slip_low_force",
+      "release_between_executions": false,
+      "replicate_block": 0,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c2-s6"
+    },
+    {
+      "acquisition_session_index": 15,
+      "contact_region_id": "upper_torso",
+      "execution_ids": [
+        "sloth-v1-c3-s1-e1",
+        "sloth-v1-c3-s1-e2"
+      ],
+      "profile_pair_index": 5,
+      "realization_condition_id": "nominal",
+      "release_between_executions": false,
+      "replicate_block": 0,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c3-s1"
+    },
+    {
+      "acquisition_session_index": 13,
+      "contact_region_id": "upper_torso",
+      "execution_ids": [
+        "sloth-v1-c3-s2-e1",
+        "sloth-v1-c3-s2-e2"
+      ],
+      "profile_pair_index": 3,
+      "realization_condition_id": "gain_low",
+      "release_between_executions": false,
+      "replicate_block": 2,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c3-s2"
+    },
+    {
+      "acquisition_session_index": 6,
+      "contact_region_id": "upper_torso",
+      "execution_ids": [
+        "sloth-v1-c3-s3-e1",
+        "sloth-v1-c3-s3-e2"
+      ],
+      "profile_pair_index": 1,
+      "realization_condition_id": "gain_high",
+      "release_between_executions": false,
+      "replicate_block": 1,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c3-s3"
+    },
+    {
+      "acquisition_session_index": 4,
+      "contact_region_id": "upper_torso",
+      "execution_ids": [
+        "sloth-v1-c3-s4-e1",
+        "sloth-v1-c3-s4-e2"
+      ],
+      "profile_pair_index": 2,
+      "realization_condition_id": "delay_2_frames",
+      "release_between_executions": false,
+      "replicate_block": 2,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c3-s4"
+    },
+    {
+      "acquisition_session_index": 11,
+      "contact_region_id": "upper_torso",
+      "execution_ids": [
+        "sloth-v1-c3-s5-e1",
+        "sloth-v1-c3-s5-e2"
+      ],
+      "profile_pair_index": 0,
+      "realization_condition_id": "frame_pitch_pos_3deg",
+      "release_between_executions": false,
+      "replicate_block": 0,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c3-s5"
+    },
+    {
+      "acquisition_session_index": 2,
+      "contact_region_id": "upper_torso",
+      "execution_ids": [
+        "sloth-v1-c3-s6-e1",
+        "sloth-v1-c3-s6-e2"
+      ],
+      "profile_pair_index": 4,
+      "realization_condition_id": "slip_low_force",
+      "release_between_executions": false,
+      "replicate_block": 1,
+      "return_to_neutral_between_executions": true,
+      "same_grasp": true,
+      "session_id": "sloth-v1-c3-s6"
+    }
+  ],
+  "slip_activation_gate": {
+    "applies_to": "slip_low_force",
+    "bounded_slip_interval_m": [
+      0.005,
+      0.015
+    ],
+    "complete_release_allowed": false,
+    "failure_action": "stop collection and issue a new protocol version without the slip condition; do not substitute after seeing target outcomes",
+    "maximum_slip_coefficient_of_variation": 0.35,
+    "minimum_bounded_slip_successes": 4,
+    "minimum_pilot_executions": 5,
+    "must_pass_before_confirmatory_collection": true
+  },
+  "splits": {
+    "cross_action_contact_calibration_folds": [
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c2-s3-e1",
+          "sloth-v1-c2-s3-e2",
+          "sloth-v1-c3-s2-e1",
+          "sloth-v1-c3-s2-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c2-s3",
+          "sloth-v1-c3-s2"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c2-s4-e1",
+          "sloth-v1-c2-s4-e2",
+          "sloth-v1-c2-s5-e1",
+          "sloth-v1-c2-s5-e2",
+          "sloth-v1-c3-s1-e1",
+          "sloth-v1-c3-s1-e2",
+          "sloth-v1-c3-s6-e1",
+          "sloth-v1-c3-s6-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c2-s4",
+          "sloth-v1-c2-s5",
+          "sloth-v1-c3-s1",
+          "sloth-v1-c3-s6"
+        ],
+        "fold_id": "hold-left_forepaw-lift_low",
+        "held_out_command_profile_id": "lift_low",
+        "held_out_contact_region_id": "left_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c1-s1-e1",
+          "sloth-v1-c1-s2-e2",
+          "sloth-v1-c1-s3-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c2-s2-e1",
+          "sloth-v1-c2-s2-e2",
+          "sloth-v1-c3-s4-e1",
+          "sloth-v1-c3-s4-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c2-s2",
+          "sloth-v1-c3-s4"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c2-s1-e1",
+          "sloth-v1-c2-s1-e2",
+          "sloth-v1-c2-s5-e1",
+          "sloth-v1-c2-s5-e2",
+          "sloth-v1-c3-s1-e1",
+          "sloth-v1-c3-s1-e2",
+          "sloth-v1-c3-s3-e1",
+          "sloth-v1-c3-s3-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c2-s1",
+          "sloth-v1-c2-s5",
+          "sloth-v1-c3-s1",
+          "sloth-v1-c3-s3"
+        ],
+        "fold_id": "hold-left_forepaw-lift_high",
+        "held_out_command_profile_id": "lift_high",
+        "held_out_contact_region_id": "left_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c1-s1-e2",
+          "sloth-v1-c1-s4-e2",
+          "sloth-v1-c1-s5-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c2-s2-e1",
+          "sloth-v1-c2-s2-e2",
+          "sloth-v1-c3-s4-e1",
+          "sloth-v1-c3-s4-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c2-s2",
+          "sloth-v1-c3-s4"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c2-s4-e1",
+          "sloth-v1-c2-s4-e2",
+          "sloth-v1-c2-s6-e1",
+          "sloth-v1-c2-s6-e2",
+          "sloth-v1-c3-s5-e1",
+          "sloth-v1-c3-s5-e2",
+          "sloth-v1-c3-s6-e1",
+          "sloth-v1-c3-s6-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c2-s4",
+          "sloth-v1-c2-s6",
+          "sloth-v1-c3-s5",
+          "sloth-v1-c3-s6"
+        ],
+        "fold_id": "hold-left_forepaw-lower_high",
+        "held_out_command_profile_id": "lower_high",
+        "held_out_contact_region_id": "left_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c1-s2-e1",
+          "sloth-v1-c1-s4-e1",
+          "sloth-v1-c1-s6-e2"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c2-s3-e1",
+          "sloth-v1-c2-s3-e2",
+          "sloth-v1-c3-s2-e1",
+          "sloth-v1-c3-s2-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c2-s3",
+          "sloth-v1-c3-s2"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c2-s1-e1",
+          "sloth-v1-c2-s1-e2",
+          "sloth-v1-c2-s6-e1",
+          "sloth-v1-c2-s6-e2",
+          "sloth-v1-c3-s3-e1",
+          "sloth-v1-c3-s3-e2",
+          "sloth-v1-c3-s5-e1",
+          "sloth-v1-c3-s5-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c2-s1",
+          "sloth-v1-c2-s6",
+          "sloth-v1-c3-s3",
+          "sloth-v1-c3-s5"
+        ],
+        "fold_id": "hold-left_forepaw-lateral_low",
+        "held_out_command_profile_id": "lateral_low",
+        "held_out_contact_region_id": "left_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c1-s3-e2",
+          "sloth-v1-c1-s5-e2",
+          "sloth-v1-c1-s6-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s4-e1",
+          "sloth-v1-c1-s4-e2",
+          "sloth-v1-c3-s2-e1",
+          "sloth-v1-c3-s2-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s4",
+          "sloth-v1-c3-s2"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s5-e1",
+          "sloth-v1-c1-s5-e2",
+          "sloth-v1-c1-s6-e1",
+          "sloth-v1-c1-s6-e2",
+          "sloth-v1-c3-s1-e1",
+          "sloth-v1-c3-s1-e2",
+          "sloth-v1-c3-s6-e1",
+          "sloth-v1-c3-s6-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s5",
+          "sloth-v1-c1-s6",
+          "sloth-v1-c3-s1",
+          "sloth-v1-c3-s6"
+        ],
+        "fold_id": "hold-right_forepaw-lift_low",
+        "held_out_command_profile_id": "lift_low",
+        "held_out_contact_region_id": "right_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c2-s1-e1",
+          "sloth-v1-c2-s2-e2",
+          "sloth-v1-c2-s6-e2"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s3-e1",
+          "sloth-v1-c1-s3-e2",
+          "sloth-v1-c3-s4-e1",
+          "sloth-v1-c3-s4-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s3",
+          "sloth-v1-c3-s4"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s2-e1",
+          "sloth-v1-c1-s2-e2",
+          "sloth-v1-c1-s6-e1",
+          "sloth-v1-c1-s6-e2",
+          "sloth-v1-c3-s1-e1",
+          "sloth-v1-c3-s1-e2",
+          "sloth-v1-c3-s3-e1",
+          "sloth-v1-c3-s3-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s2",
+          "sloth-v1-c1-s6",
+          "sloth-v1-c3-s1",
+          "sloth-v1-c3-s3"
+        ],
+        "fold_id": "hold-right_forepaw-lift_high",
+        "held_out_command_profile_id": "lift_high",
+        "held_out_contact_region_id": "right_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c2-s3-e1",
+          "sloth-v1-c2-s4-e2",
+          "sloth-v1-c2-s6-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s3-e1",
+          "sloth-v1-c1-s3-e2",
+          "sloth-v1-c3-s4-e1",
+          "sloth-v1-c3-s4-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s3",
+          "sloth-v1-c3-s4"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s1-e1",
+          "sloth-v1-c1-s1-e2",
+          "sloth-v1-c1-s5-e1",
+          "sloth-v1-c1-s5-e2",
+          "sloth-v1-c3-s5-e1",
+          "sloth-v1-c3-s5-e2",
+          "sloth-v1-c3-s6-e1",
+          "sloth-v1-c3-s6-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s1",
+          "sloth-v1-c1-s5",
+          "sloth-v1-c3-s5",
+          "sloth-v1-c3-s6"
+        ],
+        "fold_id": "hold-right_forepaw-lower_high",
+        "held_out_command_profile_id": "lower_high",
+        "held_out_contact_region_id": "right_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c2-s1-e2",
+          "sloth-v1-c2-s3-e2",
+          "sloth-v1-c2-s5-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s4-e1",
+          "sloth-v1-c1-s4-e2",
+          "sloth-v1-c3-s2-e1",
+          "sloth-v1-c3-s2-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s4",
+          "sloth-v1-c3-s2"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s1-e1",
+          "sloth-v1-c1-s1-e2",
+          "sloth-v1-c1-s2-e1",
+          "sloth-v1-c1-s2-e2",
+          "sloth-v1-c3-s3-e1",
+          "sloth-v1-c3-s3-e2",
+          "sloth-v1-c3-s5-e1",
+          "sloth-v1-c3-s5-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s1",
+          "sloth-v1-c1-s2",
+          "sloth-v1-c3-s3",
+          "sloth-v1-c3-s5"
+        ],
+        "fold_id": "hold-right_forepaw-lateral_low",
+        "held_out_command_profile_id": "lateral_low",
+        "held_out_contact_region_id": "right_forepaw",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c2-s2-e1",
+          "sloth-v1-c2-s4-e1",
+          "sloth-v1-c2-s5-e2"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s4-e1",
+          "sloth-v1-c1-s4-e2",
+          "sloth-v1-c2-s3-e1",
+          "sloth-v1-c2-s3-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s4",
+          "sloth-v1-c2-s3"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s5-e1",
+          "sloth-v1-c1-s5-e2",
+          "sloth-v1-c1-s6-e1",
+          "sloth-v1-c1-s6-e2",
+          "sloth-v1-c2-s4-e1",
+          "sloth-v1-c2-s4-e2",
+          "sloth-v1-c2-s5-e1",
+          "sloth-v1-c2-s5-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s5",
+          "sloth-v1-c1-s6",
+          "sloth-v1-c2-s4",
+          "sloth-v1-c2-s5"
+        ],
+        "fold_id": "hold-upper_torso-lift_low",
+        "held_out_command_profile_id": "lift_low",
+        "held_out_contact_region_id": "upper_torso",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c3-s3-e2",
+          "sloth-v1-c3-s4-e1",
+          "sloth-v1-c3-s5-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s3-e1",
+          "sloth-v1-c1-s3-e2",
+          "sloth-v1-c2-s2-e1",
+          "sloth-v1-c2-s2-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s3",
+          "sloth-v1-c2-s2"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s2-e1",
+          "sloth-v1-c1-s2-e2",
+          "sloth-v1-c1-s6-e1",
+          "sloth-v1-c1-s6-e2",
+          "sloth-v1-c2-s1-e1",
+          "sloth-v1-c2-s1-e2",
+          "sloth-v1-c2-s5-e1",
+          "sloth-v1-c2-s5-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s2",
+          "sloth-v1-c1-s6",
+          "sloth-v1-c2-s1",
+          "sloth-v1-c2-s5"
+        ],
+        "fold_id": "hold-upper_torso-lift_high",
+        "held_out_command_profile_id": "lift_high",
+        "held_out_contact_region_id": "upper_torso",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c3-s2-e2",
+          "sloth-v1-c3-s5-e2",
+          "sloth-v1-c3-s6-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s3-e1",
+          "sloth-v1-c1-s3-e2",
+          "sloth-v1-c2-s2-e1",
+          "sloth-v1-c2-s2-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s3",
+          "sloth-v1-c2-s2"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s1-e1",
+          "sloth-v1-c1-s1-e2",
+          "sloth-v1-c1-s5-e1",
+          "sloth-v1-c1-s5-e2",
+          "sloth-v1-c2-s4-e1",
+          "sloth-v1-c2-s4-e2",
+          "sloth-v1-c2-s6-e1",
+          "sloth-v1-c2-s6-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s1",
+          "sloth-v1-c1-s5",
+          "sloth-v1-c2-s4",
+          "sloth-v1-c2-s6"
+        ],
+        "fold_id": "hold-upper_torso-lower_high",
+        "held_out_command_profile_id": "lower_high",
+        "held_out_contact_region_id": "upper_torso",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c3-s1-e2",
+          "sloth-v1-c3-s2-e1",
+          "sloth-v1-c3-s3-e1"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      },
+      {
+        "calibration_execution_ids": [
+          "sloth-v1-c1-s4-e1",
+          "sloth-v1-c1-s4-e2",
+          "sloth-v1-c2-s3-e1",
+          "sloth-v1-c2-s3-e2"
+        ],
+        "calibration_session_ids": [
+          "sloth-v1-c1-s4",
+          "sloth-v1-c2-s3"
+        ],
+        "fit_execution_ids": [
+          "sloth-v1-c1-s1-e1",
+          "sloth-v1-c1-s1-e2",
+          "sloth-v1-c1-s2-e1",
+          "sloth-v1-c1-s2-e2",
+          "sloth-v1-c2-s1-e1",
+          "sloth-v1-c2-s1-e2",
+          "sloth-v1-c2-s6-e1",
+          "sloth-v1-c2-s6-e2"
+        ],
+        "fit_session_ids": [
+          "sloth-v1-c1-s1",
+          "sloth-v1-c1-s2",
+          "sloth-v1-c2-s1",
+          "sloth-v1-c2-s6"
+        ],
+        "fold_id": "hold-upper_torso-lateral_low",
+        "held_out_command_profile_id": "lateral_low",
+        "held_out_contact_region_id": "upper_torso",
+        "locked_hyperparameters": [
+          "likelihood_temperature",
+          "discrepancy_hyperparameters",
+          "coverage_transform",
+          "semantic_beta"
+        ],
+        "target_execution_ids": [
+          "sloth-v1-c3-s1-e1",
+          "sloth-v1-c3-s4-e2",
+          "sloth-v1-c3-s6-e2"
+        ],
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions"
+      }
+    ],
+    "factual_continuation": [
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s1-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s1-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s2-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s2-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s3-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s3-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s4-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s4-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s5-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s5-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s6-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c1-s6-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s1-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s1-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s2-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s2-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s3-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s3-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s4-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s4-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s5-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s5-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s6-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c2-s6-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s1-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s1-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s2-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s2-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s3-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s3-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s4-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s4-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s5-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s5-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s6-e1",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      },
+      {
+        "evaluation_window": "all untouched frames after the O+ prefix",
+        "execution_id": "sloth-v1-c3-s6-e2",
+        "label_use": "evaluation_only",
+        "o_plus_prefix_frames": 6
+      }
+    ],
+    "new_contact_intervention_prediction": [
+      {
+        "command_profile_id": "lift_low",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "nominal",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "right_forepaw",
+        "source_execution_id": "sloth-v1-c2-s1-e1",
+        "target_contact_region_id": "left_forepaw",
+        "target_execution_id": "sloth-v1-c1-s1-e1",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lower_high",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "nominal",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "right_forepaw",
+        "source_execution_id": "sloth-v1-c2-s1-e2",
+        "target_contact_region_id": "upper_torso",
+        "target_execution_id": "sloth-v1-c3-s1-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lift_low",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "gain_low",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "right_forepaw",
+        "source_execution_id": "sloth-v1-c2-s2-e2",
+        "target_contact_region_id": "left_forepaw",
+        "target_execution_id": "sloth-v1-c1-s2-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lower_high",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "gain_low",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "left_forepaw",
+        "source_execution_id": "sloth-v1-c1-s2-e1",
+        "target_contact_region_id": "upper_torso",
+        "target_execution_id": "sloth-v1-c3-s2-e1",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lower_high",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "gain_high",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "upper_torso",
+        "source_execution_id": "sloth-v1-c3-s3-e1",
+        "target_contact_region_id": "right_forepaw",
+        "target_execution_id": "sloth-v1-c2-s3-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lift_low",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "gain_high",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "left_forepaw",
+        "source_execution_id": "sloth-v1-c1-s3-e1",
+        "target_contact_region_id": "upper_torso",
+        "target_execution_id": "sloth-v1-c3-s3-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lift_high",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "delay_2_frames",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "right_forepaw",
+        "source_execution_id": "sloth-v1-c2-s4-e2",
+        "target_contact_region_id": "left_forepaw",
+        "target_execution_id": "sloth-v1-c1-s4-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lateral_low",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "delay_2_frames",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "upper_torso",
+        "source_execution_id": "sloth-v1-c3-s4-e2",
+        "target_contact_region_id": "right_forepaw",
+        "target_execution_id": "sloth-v1-c2-s4-e1",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lateral_low",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "frame_pitch_pos_3deg",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "left_forepaw",
+        "source_execution_id": "sloth-v1-c1-s5-e2",
+        "target_contact_region_id": "right_forepaw",
+        "target_execution_id": "sloth-v1-c2-s5-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lift_high",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "frame_pitch_pos_3deg",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "upper_torso",
+        "source_execution_id": "sloth-v1-c3-s5-e2",
+        "target_contact_region_id": "left_forepaw",
+        "target_execution_id": "sloth-v1-c1-s5-e1",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lift_high",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "slip_low_force",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "upper_torso",
+        "source_execution_id": "sloth-v1-c3-s6-e1",
+        "target_contact_region_id": "right_forepaw",
+        "target_execution_id": "sloth-v1-c2-s6-e1",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "command_profile_id": "lateral_low",
+        "contact_policy": "new_contact",
+        "realization_condition_id": "slip_low_force",
+        "resample_kappa_cf": true,
+        "reuse_kappa": false,
+        "source_contact_region_id": "left_forepaw",
+        "source_execution_id": "sloth-v1-c1-s6-e1",
+        "target_contact_region_id": "upper_torso",
+        "target_execution_id": "sloth-v1-c3-s6-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      }
+    ],
+    "same_grasp_intervention_prediction": [
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "left_forepaw",
+        "realization_condition_id": "nominal",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c1-s1-e1",
+        "target_execution_id": "sloth-v1-c1-s1-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "left_forepaw",
+        "realization_condition_id": "gain_low",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c1-s2-e1",
+        "target_execution_id": "sloth-v1-c1-s2-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "left_forepaw",
+        "realization_condition_id": "gain_high",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c1-s3-e1",
+        "target_execution_id": "sloth-v1-c1-s3-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "left_forepaw",
+        "realization_condition_id": "delay_2_frames",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c1-s4-e1",
+        "target_execution_id": "sloth-v1-c1-s4-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "left_forepaw",
+        "realization_condition_id": "frame_pitch_pos_3deg",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c1-s5-e1",
+        "target_execution_id": "sloth-v1-c1-s5-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "left_forepaw",
+        "realization_condition_id": "slip_low_force",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c1-s6-e1",
+        "target_execution_id": "sloth-v1-c1-s6-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "right_forepaw",
+        "realization_condition_id": "nominal",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c2-s1-e1",
+        "target_execution_id": "sloth-v1-c2-s1-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "right_forepaw",
+        "realization_condition_id": "gain_low",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c2-s2-e1",
+        "target_execution_id": "sloth-v1-c2-s2-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "right_forepaw",
+        "realization_condition_id": "gain_high",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c2-s3-e1",
+        "target_execution_id": "sloth-v1-c2-s3-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "right_forepaw",
+        "realization_condition_id": "delay_2_frames",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c2-s4-e1",
+        "target_execution_id": "sloth-v1-c2-s4-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "right_forepaw",
+        "realization_condition_id": "frame_pitch_pos_3deg",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c2-s5-e1",
+        "target_execution_id": "sloth-v1-c2-s5-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "right_forepaw",
+        "realization_condition_id": "slip_low_force",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c2-s6-e1",
+        "target_execution_id": "sloth-v1-c2-s6-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "upper_torso",
+        "realization_condition_id": "nominal",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c3-s1-e1",
+        "target_execution_id": "sloth-v1-c3-s1-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "upper_torso",
+        "realization_condition_id": "gain_low",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c3-s2-e1",
+        "target_execution_id": "sloth-v1-c3-s2-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "upper_torso",
+        "realization_condition_id": "gain_high",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c3-s3-e1",
+        "target_execution_id": "sloth-v1-c3-s3-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "upper_torso",
+        "realization_condition_id": "delay_2_frames",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c3-s4-e1",
+        "target_execution_id": "sloth-v1-c3-s4-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "upper_torso",
+        "realization_condition_id": "frame_pitch_pos_3deg",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c3-s5-e1",
+        "target_execution_id": "sloth-v1-c3-s5-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      },
+      {
+        "contact_policy": "same_grasp",
+        "contact_region_id": "upper_torso",
+        "realization_condition_id": "slip_low_force",
+        "reuse_kappa": true,
+        "source_execution_id": "sloth-v1-c3-s6-e1",
+        "target_execution_id": "sloth-v1-c3-s6-e2",
+        "target_semantics": "held_out_interventional_prediction_from_matched_initial_conditions",
+        "transfer_phi": true
+      }
+    ]
+  },
+  "status": "preregistered_before_confirmatory_collection",
+  "terminology": {
+    "individual_counterfactual_ground_truth_available": false,
+    "individual_counterfactual_validation_domain": "controlled_simulator_only",
+    "real_target_name": "held_out_interventional_prediction_from_matched_initial_conditions"
+  }
+}

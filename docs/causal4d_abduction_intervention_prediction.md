@@ -145,10 +145,14 @@ state uncertainty contributes `10.97%` from `kappa`, `3.82%` from `theta`, and
 `2.15%` from `phi`. Empirical residual MSE is 4.54 times total predictive
 variance and the ratio worsens across the horizon.
 
-This rules out wider handcrafted intervention enumeration as the next priority.
-The next test moves a graph-regularized rest-geometry/frame correction inside
-the physical twin and reruns Warp using only pre-holdout evidence. Full method,
-limitations, and commands are in `docs/causal4d_real_oracle_audit.md`.
+This rules out wider handcrafted intervention enumeration as the next modeling
+priority. A graph-regularized rest-geometry/frame correction remains the first
+model-discrepancy test. The main evidence work package is now the preregistered
+same-object multi-action real protocol in
+`docs/causal4d_same_object_multi_action_protocol.md`, so model quality,
+intervention transfer, and held-out calibration can be measured separately.
+Full oracle-audit methods and commands remain in
+`docs/causal4d_real_oracle_audit.md`.
 
 ## Semantic posterior and trust
 

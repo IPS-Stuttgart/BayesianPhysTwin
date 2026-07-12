@@ -142,6 +142,27 @@ constrained receding-horizon replanning. See
 [docs/causal4d_abduction_intervention_prediction.md](docs/causal4d_abduction_intervention_prediction.md)
 for the artifact contracts, commands, audited results, and claim boundary.
 
+The next real-data work package is a preregistered 36-execution protocol on the
+same sloth instance. It crosses three registered contacts with four command
+profiles and three replicate blocks while preserving 18 two-command
+same-grasp sessions. Generate acquisition templates and validate the locked
+split with:
+
+```bash
+causal4d-real-protocol validate-protocol \
+  configs/causal4d/sloth_multi_action_v1.json
+
+causal4d-real-protocol scaffold \
+  configs/causal4d/sloth_multi_action_v1.json \
+  /path/to/causal4d-sloth-multi-action-v1
+```
+
+See
+[docs/causal4d_same_object_multi_action_protocol.md](docs/causal4d_same_object_multi_action_protocol.md)
+for the contact/action design, slip gate, required actuator measurements,
+matched-reset semantics, and leave-one-contact-and-action-out calibration
+folds. Physical acquisition is not yet claimed complete.
+
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
 
