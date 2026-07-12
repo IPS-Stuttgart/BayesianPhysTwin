@@ -53,6 +53,9 @@ bpt-replay-residuals = "bayesian_phystwin.cli.residual_replay:main"
 bpt-synthetic-benchmark = "bayesian_phystwin.cli.synthetic_benchmark:main"
 causal4d-counterfactual-benchmark = "causal4d.cli.counterfactual_benchmark:main"
 causal4d-latent-contact-benchmark = "causal4d.cli.latent_contact_benchmark:main"
+causal4d-phystwin-rollout-bank = "causal4d.cli.phystwin_rollout_bank:main"
+causal4d-molmo-phystwin-forecast = "causal4d.cli.molmo_phystwin_forecast:main"
+causal4d-evaluate-phystwin-molmo = "causal4d.cli.evaluate_phystwin_molmo:main"
 
 [project.optional-dependencies]
 dev = [

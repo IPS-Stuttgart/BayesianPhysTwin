@@ -283,6 +283,7 @@ def _initialize_simulator(
     num_substeps: int,
     self_collision: bool,
     deterministic_spring_forces: bool = False,
+    spring_parameterization: str = "dense",
     device: str,
 ):
     try:
@@ -365,7 +366,7 @@ def _initialize_simulator(
         objective=objective,
         observation_variance=FIXED_OBSERVATION_STD_M**2,
         outlier_variance_multiplier=FIXED_OUTLIER_VARIANCE_MULTIPLIER,
-        spring_parameterization="dense",
+        spring_parameterization=spring_parameterization,
         num_object_springs=graph.num_object_springs,
         deterministic_spring_forces=deterministic_spring_forces,
     )

@@ -124,6 +124,15 @@ their joint posterior from the first 20% of motion. See
 [docs/causal4d_latent_contact_inference.md](docs/causal4d_latent_contact_inference.md)
 for the transfer protocol, oracle controls, and pre-registered success gates.
 
+The real-backend milestone replaces the controlled simulator with official
+PhysTwin Warp rollouts, crosses Causal4D contact/action hypotheses with saved
+Bayesian-PhysTwin parameter particles, and uses MolmoMotion trajectories only
+as robust ranking evidence over those physical futures. It includes known,
+hidden, and ambiguous future-action settings plus shuffled and generic language
+controls. See
+[docs/causal4d_phystwin_molmo.md](docs/causal4d_phystwin_molmo.md) for the
+three-environment artifact pipeline and information boundary.
+
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
 
