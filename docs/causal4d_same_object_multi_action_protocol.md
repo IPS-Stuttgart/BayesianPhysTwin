@@ -265,3 +265,8 @@ publication-scale generality. The real claim advances only if:
 If the expanded intervention oracle remains weak while discrepancy dominates,
 the protocol supports the model-discrepancy diagnosis rather than a claim that
 intervention abduction is the main real-world bottleneck.
+
+This protocol is the missing real-evidence link for the narrow first-paper
+claim in `docs/causal4d_paper_scope.md`. MolmoMotion and closed-loop planning are
+not part of its success criteria and cannot compensate for a failed factual,
+same-grasp, new-contact, or calibration result.

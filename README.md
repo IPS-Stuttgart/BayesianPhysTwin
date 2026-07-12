@@ -142,6 +142,14 @@ constrained receding-horizon replanning. See
 [docs/causal4d_abduction_intervention_prediction.md](docs/causal4d_abduction_intervention_prediction.md)
 for the artifact contracts, commands, audited results, and claim boundary.
 
+The first Causal4D paper is deliberately narrower than the complete software
+architecture: **Bayesian abduction of realized interventions for counterfactual
+prediction of deformable-object dynamics.** Its locked core/optional/application
+hierarchy and current evidence status are in
+[docs/causal4d_paper_scope.md](docs/causal4d_paper_scope.md). MolmoMotion is
+excluded from the main claim, and closed-loop planning remains an application
+without genuine robot execution.
+
 The next real-data work package is a preregistered 36-execution protocol on the
 same sloth instance. It crosses three registered contacts with four command
 profiles and three replicate blocks while preserving 18 two-command

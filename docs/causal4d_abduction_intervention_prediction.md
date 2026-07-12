@@ -1,6 +1,7 @@
 # Causal4D Abduction, Intervention, and Prediction
 
-Status: implemented and audited on 2026-07-12.
+Software status: implemented and audited on 2026-07-12. Paper status: not yet
+claim-ready because the locked multi-action real protocol remains unexecuted.
 
 This track is independent of the Bayesian-PhysTwin estimation paper. It turns
 the earlier rollout-bank pilot into an explicit causal architecture in which a
@@ -16,7 +17,24 @@ and controller-frame rotation. `kappa_t` contains event variables: graph
 attachment and slip. The physical belief also retains model discrepancy
 `delta` separately from simulator state.
 
-## Two posteriors
+## First-paper claim
+
+The first paper makes one claim:
+
+> **Bayesian abduction of realized interventions for counterfactual prediction
+> of deformable-object dynamics.**
+
+Its evidence chain is the command/realization distinction, joint posterior
+inference, explicit abduction-intervention-prediction, controlled held-out
+contact/action gains, same-object multi-action real validation, and calibrated
+uncertainty or a bounded calibration limitation. The locked hierarchy and
+current readiness decision are in `docs/causal4d_paper_scope.md`.
+
+MolmoMotion is not part of the core method or main experiment matrix. The
+closed-loop runner is an application, not a robotics contribution without
+genuine robot execution.
+
+## Optional semantic posterior boundary
 
 The implementation never uses language as evidence about the present twin.
 It maintains two distinct distributions:
@@ -270,11 +288,15 @@ The expanded-bank diagnostic is available as
 
 ## Claim boundary
 
-The controlled causal result is strong. The real backend integration is also
-complete, but the real evidence is one interaction, a truncated parameter
-posterior, dominant simulator/state discrepancy, undercovered uncertainty, and
-no robot execution. The complete intervention grid closes only 1.32% of
-diagnostic headroom, so beam width is no longer listed as the primary real
-limitation. MolmoMotion remains rejected in its current checkpoint and input
-regime. These results motivate a larger Causal4D project; they do not expand
-the Bayesian-PhysTwin paper's claim set.
+The controlled causal result supports the core mechanism. The complete
+first-paper claim is not ready until the same-object multi-action real protocol
+is executed and independent-execution calibration is evaluated. Current real
+evidence is one interaction, a truncated parameter posterior, dominant
+simulator/state discrepancy, and undercovered uncertainty. The complete
+intervention grid closes only 1.32% of diagnostic headroom, so beam width is not
+the primary real limitation.
+
+MolmoMotion remains rejected and cannot enlarge the claim. Closed-loop replay
+establishes software behavior only. These components stay optional/application
+material, and neither expands the Bayesian-PhysTwin estimation paper's claim
+set.
