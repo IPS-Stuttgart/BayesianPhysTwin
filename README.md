@@ -179,6 +179,19 @@ coverage to 67.8%, but a locked affine scale from one held-out source action
 transfers harmfully. The real posterior therefore remains explicitly
 uncalibrated pending an expanded multi-action calibration protocol.
 
+The next simulator-discrepancy milestone now injects a bounded,
+graph-regularized frame/rest-geometry correction inside PhysTwin and reruns
+Warp. It uses only pre-holdout evidence and retains output, frame, state, rest,
+and attachment-geometry ablations. Development evidence is mixed: the physical
+update helps `single_lift_sloth` substantially but fails on
+`double_stretch_sloth`, so it is not promoted to a confirmatory method. The
+locked 12-fold same-object analysis gate is ready, while acquisition remains at
+`0/36` completed manifests. Run it with
+`causal4d-evaluate-rest-geometry` and audit acquisition with
+`causal4d-rest-geometry-protocol`; the notes and exact result artifacts live in
+the
+[Bayesian-PhysTwin paper repository](https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper/blob/main/paper_notes/causal4d_rest_geometry_v1.md).
+
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
 the temporal contract in every forecast artifact. On `single_lift_sloth`, the

@@ -510,6 +510,27 @@ def make_reliability_simulator_class(official_module: Any):
                 outputs=[self.wp_spring_Y],
             )
 
+        def set_rest_lengths(self, rest_lengths: Any):
+            """Replace spring rest lengths without rebuilding captured graphs."""
+
+            if tuple(rest_lengths.shape) != (self.n_springs,):
+                raise ValueError("rest_lengths must match the spring count")
+            wp.launch(
+                official_module.copy_float,
+                dim=self.n_springs,
+                inputs=[rest_lengths],
+                outputs=[self.wp_rest_lengths],
+            )
+
+        def set_controller_trajectory(self, controller_points: Any):
+            """Replace the recorded controls used by subsequent inference steps."""
+
+            if self.controller_points is None:
+                raise ValueError("simulator has no controller trajectory")
+            if tuple(controller_points.shape) != tuple(self.controller_points.shape):
+                raise ValueError("controller trajectory shape changed")
+            self.controller_points = controller_points
+
         def set_controller_target(self, frame_idx: int, pure_inference: bool = False):
             super().set_controller_target(frame_idx, pure_inference=pure_inference)
             if pure_inference:
