@@ -1,0 +1,37 @@
+{
+  "calibration_case_ids": [
+    "double_stretch_sloth"
+  ],
+  "calibration_id": "a4f9a6ab2dd7df27c3d45a0d07c40971c4b777d48574931ed1f33cb0e84e370f",
+  "calibration_trial_count": 1,
+  "calibration_unit": "independent execution with equal trial weight",
+  "claim_ready": false,
+  "confidence_level": 0.9,
+  "dependence_warning": "Point-frames within an execution are correlated and are not counted as independent calibration trials.",
+  "diagnostics": {
+    "blocking_reason": "requires at least 10 independent calibration executions; received 1",
+    "calibration_coordinate_count": 626427,
+    "calibration_equal_trial_weighted_standardized_quantile": 0.5191760852882822,
+    "calibration_trial_count": 1,
+    "claim_ready": false,
+    "fit_mean_trial_gaussian_nll": -3.0010414769432825,
+    "gaussian_reference_quantile": 1.6448536269514715,
+    "source_manifest": {
+      "path": "/mnt/corsair/florianpfaff/causal4d-phystwin-integration/configs/causal4d/sloth_real_calibration_sources_v1.json",
+      "sha256": "05260d0d7b362003991e2364a282936755a93dee4b4d8886707f0c570268fa45"
+    }
+  },
+  "fit_case_ids": [
+    "double_lift_sloth"
+  ],
+  "minimum_calibration_trials": 10,
+  "schema_version": 1,
+  "transform": {
+    "floor_b_m2": 1.891864570939584e-06,
+    "formula": "variance_cal = a * variance_raw + b",
+    "heldout_inflation": 0.09962649357091427,
+    "nll_floor_b_m2": 1.8989572985352057e-05,
+    "nll_scale_a": 2.154434690031882,
+    "scale_a": 0.214638773795416
+  }
+}

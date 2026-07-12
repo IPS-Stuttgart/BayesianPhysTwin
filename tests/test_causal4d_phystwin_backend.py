@@ -18,7 +18,9 @@ from causal4d.phystwin_backend import (
 from causal4d.contracts import TwinBelief, array_sha256
 
 
-def test_profile_loader_selects_and_renormalizes_high_mass_particles(tmp_path: Path) -> None:
+def test_profile_loader_selects_and_renormalizes_high_mass_particles(
+    tmp_path: Path,
+) -> None:
     profile = tmp_path / "profile.npz"
     np.savez(
         profile,
@@ -31,6 +33,16 @@ def test_profile_loader_selects_and_renormalizes_high_mass_particles(tmp_path: P
     assert np.allclose(particles.weights, [0.75, 0.25])
     assert np.isclose(particles.retained_probability_mass, 0.8)
 
+    coreset = load_bayesian_phystwin_particles(
+        profile,
+        maximum_count=2,
+        support_method="weighted_coreset",
+    )
+    assert coreset.selection_method == "weighted_coreset"
+    assert coreset.represented_probability_mass == 1.0
+    assert coreset.source_particle_count == 4
+    assert np.isclose(np.sum(coreset.weights), 1.0)
+
 
 def test_hidden_action_proposals_never_read_withheld_future() -> None:
     controls = np.zeros((12, 3, 3), dtype=float)
@@ -39,7 +51,9 @@ def test_hidden_action_proposals_never_read_withheld_future() -> None:
     changed[6:] = 1000.0
     first = hidden_action_proposals(controls, start_frame=6)
     second = hidden_action_proposals(changed, start_frame=6)
-    assert [value.proposal_id for value in first] == [value.proposal_id for value in second]
+    assert [value.proposal_id for value in first] == [
+        value.proposal_id for value in second
+    ]
     for left, right in zip(first, second, strict=True):
         assert np.array_equal(left.controller_points_m, right.controller_points_m)
 
@@ -50,7 +64,9 @@ def test_contact_beam_preserves_every_latent_channel() -> None:
         PhysTwinHypothesisConfig(maximum_contact_states=14),
     )
     assert np.isclose(sum(state.prior_weight for state in states), 1.0)
-    assert {-1, 0, 1} <= {shift for state in states for shift in state.attachment_shifts}
+    assert {-1, 0, 1} <= {
+        shift for state in states for shift in state.attachment_shifts
+    }
     assert {0, 2} <= {state.delay_steps for state in states}
     assert {0.0, 0.2} <= {state.slip_fraction for state in states}
     assert {-8.0, 0.0, 8.0} <= {state.rotation_degrees for state in states}
@@ -59,7 +75,13 @@ def test_contact_beam_preserves_every_latent_channel() -> None:
 
 def test_attachment_shift_is_one_hop_and_keeps_spring_contract() -> None:
     vertices = np.asarray(
-        [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0], [1.0, 1.0, 0.0]],
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [2.0, 0.0, 0.0],
+            [3.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+        ],
         dtype=np.float32,
     )
     springs = np.asarray([[0, 1], [1, 2], [2, 3], [4, 1]], dtype=np.int32)
@@ -123,9 +145,7 @@ def test_backend_context_identifies_the_ordered_counterfactual_library() -> None
         provenance="unit",
     )
     context = backend.causal_context((first, second), protocol_id="unit")
-    expected = np.stack(
-        [first.controller_points_m[3:], second.controller_points_m[3:]]
-    )
+    expected = np.stack([first.controller_points_m[3:], second.controller_points_m[3:]])
     assert context.u_cf.action_id == "action_library[first,second]"
     assert context.u_cf.trajectory_sha256 == array_sha256(expected)
 

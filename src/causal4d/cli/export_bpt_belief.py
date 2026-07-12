@@ -32,6 +32,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--train-end-frame", type=int)
     parser.add_argument("--parameter-particles", type=int, default=4)
     parser.add_argument(
+        "--parameter-support-method",
+        choices=("top_mass", "weighted_coreset"),
+        default="top_mass",
+    )
+    parser.add_argument(
         "--counterfactual-action-id",
         choices=(
             "known_action",
@@ -70,6 +75,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         profile_path=args.profile_path,
         train_end_frame=train_end,
         parameter_particle_count=args.parameter_particles,
+        parameter_support_method=args.parameter_support_method,
         config=OfficialPhysTwinBackendConfig(
             dt=args.dt,
             num_substeps=args.num_substeps,
@@ -106,6 +112,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ],
                 "output": str(Path(args.output_npz).resolve()),
                 "particle_count": len(belief.weights),
+                "parameter_support_method": args.parameter_support_method,
             },
             indent=2,
             sort_keys=True,

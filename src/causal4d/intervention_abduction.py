@@ -44,7 +44,12 @@ def _belief_readout(
         raise ValueError("TwinBelief discrepancy does not match the rollout bank")
     if not np.array_equal(belief.theta, bank.parameter_particles):
         raise ValueError("TwinBelief theta does not match the rollout bank")
-    if not np.array_equal(belief.weights, bank.parameter_weights):
+    if not np.allclose(
+        belief.weights,
+        bank.parameter_weights,
+        rtol=0.0,
+        atol=1e-15,
+    ):
         raise ValueError("TwinBelief weights do not match the rollout bank")
     return discrepancy, variance
 

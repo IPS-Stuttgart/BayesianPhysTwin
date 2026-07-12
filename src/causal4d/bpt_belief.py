@@ -68,7 +68,10 @@ def lift_isotropic_discrepancy_variance(
     if state_count < len(tracked):
         raise ValueError("state_count cannot be smaller than the tracked state")
     extra_count = state_count - len(tracked)
-    if neighbor_indices.shape != neighbor_weights.shape or neighbor_indices.shape[0] != extra_count:
+    if (
+        neighbor_indices.shape != neighbor_weights.shape
+        or neighbor_indices.shape[0] != extra_count
+    ):
         raise ValueError("lift map must identify every untracked state node")
     if np.any(neighbor_indices < 0) or np.any(neighbor_indices >= len(tracked)):
         raise ValueError("lift map references an unavailable tracked node")
@@ -139,8 +142,7 @@ def build_twin_belief_from_replays(
     final_inlier_probabilities: list[float] = []
     for particle_index in range(particle_count):
         residual = (
-            observed[:train_end]
-            - positions[particle_index, :train_end, :tracked_count]
+            observed[:train_end] - positions[particle_index, :train_end, :tracked_count]
         )
         posterior = robust_random_walk_endpoint(
             residual,
@@ -184,8 +186,7 @@ def build_twin_belief_from_replays(
                     np.sqrt(
                         np.mean(
                             np.square(
-                                endpoint_positions[first]
-                                - endpoint_positions[second]
+                                endpoint_positions[first] - endpoint_positions[second]
                             )
                         )
                     )
@@ -230,7 +231,10 @@ def export_official_phystwin_twin_belief(
 
     if context.case_id != backend.case_name:
         raise ValueError("causal context case does not match the PhysTwin backend")
-    if context.o_minus.frame_start != 0 or context.o_minus.frame_stop != backend.train_end_frame:
+    if (
+        context.o_minus.frame_start != 0
+        or context.o_minus.frame_stop != backend.train_end_frame
+    ):
         raise ValueError("causal context O- does not match the backend training split")
     from bayesian_phystwin.phystwin_state_injection import (
         _initialize_simulator,
@@ -300,7 +304,11 @@ def export_official_phystwin_twin_belief(
         metadata={
             "profile_path": str(backend.profile_path.resolve()),
             "profile_weight_key": backend.particles.source_weight_key,
+            "profile_support_method": backend.particles.selection_method,
             "profile_retained_probability_mass": backend.particles.retained_probability_mass,
+            "profile_represented_probability_mass": (
+                backend.particles.represented_probability_mass
+            ),
             "official_backend": backend.default_manifest(),
         },
         config=config,

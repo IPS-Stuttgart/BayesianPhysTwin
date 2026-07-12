@@ -58,6 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="new_contact",
     )
     parser.add_argument("--maximum-contact-states", type=int, default=9)
+    parser.add_argument(
+        "--parameter-support-method",
+        choices=("top_mass", "weighted_coreset"),
+        help="support reduction; inherited from the TwinBelief when omitted",
+    )
     parser.add_argument("--query-output")
     parser.add_argument("--rollout-bank-output")
     parser.add_argument("--dt", type=float, default=5e-5)
@@ -77,6 +82,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise TypeError("factual_intervention_npz must contain a FactualIntervention")
     train_end = belief_artifact.endpoint_frame + 1
     case_dir = Path(args.case_dir)
+    support_method = args.parameter_support_method or str(
+        belief_artifact.metadata.get("profile_support_method", "top_mass")
+    )
     backend = OfficialPhysTwinBackend(
         official_repo=args.official_repo,
         final_data_path=case_dir / "final_data.pkl",
@@ -86,6 +94,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         profile_path=args.profile_path,
         train_end_frame=train_end,
         parameter_particle_count=len(belief_artifact.weights),
+        parameter_support_method=support_method,
         config=OfficialPhysTwinBackendConfig(
             dt=args.dt,
             num_substeps=args.num_substeps,
@@ -150,12 +159,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "action": proposal.proposal_id,
                 "contact_policy": query.contact_policy,
                 "effective_components": effective_components,
-                "factual_kappa_reused": posterior.metadata[
-                    "factual_kappa_reused"
-                ],
-                "fresh_kappa_cf_sampled": posterior.metadata[
-                    "fresh_kappa_cf_sampled"
-                ],
+                "factual_kappa_reused": posterior.metadata["factual_kappa_reused"],
+                "fresh_kappa_cf_sampled": posterior.metadata["fresh_kappa_cf_sampled"],
                 "physical_posterior": str(output_path.resolve()),
                 "physical_posterior_id": posterior.artifact_id,
                 "query": str(query_path.resolve()),

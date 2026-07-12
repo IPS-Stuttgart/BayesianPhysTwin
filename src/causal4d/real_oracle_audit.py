@@ -43,7 +43,12 @@ def _validate_bank_belief(bank: JointRolloutBank, belief: TwinBelief) -> None:
         raise ValueError("TwinBelief discrepancy variance does not match the bank")
     if not np.array_equal(belief.theta, bank.parameter_particles):
         raise ValueError("TwinBelief theta does not match the rollout bank")
-    if not np.array_equal(belief.weights, bank.parameter_weights):
+    if not np.allclose(
+        belief.weights,
+        bank.parameter_weights,
+        rtol=0.0,
+        atol=1e-15,
+    ):
         raise ValueError("TwinBelief weights do not match the rollout bank")
 
 
@@ -262,11 +267,7 @@ def evaluate_prediction(
         "coordinate_rmse_m": float(np.sqrt(np.mean(np.square(vectors)))),
         "track_error_m": float(np.mean(np.linalg.norm(vectors, axis=1))),
         "fde_m": (
-            float(
-                np.mean(
-                    np.linalg.norm(residual[final_frame, final_valid], axis=1)
-                )
-            )
+            float(np.mean(np.linalg.norm(residual[final_frame, final_valid], axis=1)))
             if np.any(final_valid)
             else None
         ),
@@ -333,7 +334,9 @@ def _best_component(
         "action": best["action"],
         "metrics": {
             "coordinate_rmse_m": best[coordinate_key],
-            "track_error_m": best[metric_key.replace(selection_metric, "track_error_m")],
+            "track_error_m": best[
+                metric_key.replace(selection_metric, "track_error_m")
+            ],
             "fde_m": best[f"{metric_prefix}_fde_m"],
             "valid_point_frames": best["valid_point_frames"],
             "evaluation_frame_interval": best["evaluation_frame_interval"],
@@ -427,18 +430,14 @@ def audit_oracle_bank(
                     "oracle_global_bias_x_m": float(global_bias[0]),
                     "oracle_global_bias_y_m": float(global_bias[1]),
                     "oracle_global_bias_z_m": float(global_bias[2]),
-                    "oracle_point_bias_mean_norm_m": float(
-                        np.mean(visible_bias_norms)
-                    ),
+                    "oracle_point_bias_mean_norm_m": float(np.mean(visible_bias_norms)),
                     "oracle_point_bias_p95_norm_m": float(
                         np.quantile(visible_bias_norms, 0.95)
                     ),
                     "oracle_point_bias_capped_fraction": float(
                         np.mean(visible_bias_norms > discrepancy_cap_m)
                     ),
-                    "oracle_point_bias_valid_node_count": int(
-                        np.sum(visible_nodes)
-                    ),
+                    "oracle_point_bias_valid_node_count": int(np.sum(visible_nodes)),
                 }
             )
     report = {
@@ -619,9 +618,7 @@ def _variance_window(
             3,
         ),
     )[:, coordinate_mask]
-    conditional_delta = float(
-        np.mean(np.einsum("k,km->m", weights, conditional))
-    )
+    conditional_delta = float(np.mean(np.einsum("k,km->m", weights, conditional)))
     total_predictive = readout_epistemic + conditional_delta + variance_floor_m2
     mean_prediction = np.einsum("k,km->m", weights, readout_values)
     empirical_mse = float(np.mean(np.square(mean_prediction - truth_values)))
@@ -662,9 +659,7 @@ def _variance_window(
             total_predictive,
         ),
     }
-    allocated_total = sum(
-        entry["variance_m2"] for entry in contributions.values()
-    )
+    allocated_total = sum(entry["variance_m2"] for entry in contributions.values())
     return {
         "frame_interval": [int(frame_indices[0]), int(frame_indices[-1] + 1)],
         "valid_coordinate_count": int(np.sum(coordinate_mask)),
@@ -683,11 +678,7 @@ def _variance_window(
         ),
         "closure": {
             "state_family_absolute_error_m2": float(
-                abs(
-                    state_epistemic
-                    - sum(shapley.values())
-                    - unallocated_state
-                )
+                abs(state_epistemic - sum(shapley.values()) - unallocated_state)
             ),
             "readout_algebra_absolute_error_m2": float(
                 abs(
@@ -779,9 +770,7 @@ def oracle_gap_report(
             expanded_oracle["best"]["discrepancy_aware"]["metrics"][metric]
         )
         ceiling_error = float(
-            expanded_oracle["best"]["per_node_constant_uncapped"]["metrics"][
-                metric
-            ]
+            expanded_oracle["best"]["per_node_constant_uncapped"]["metrics"][metric]
         )
         capped_error = float(
             expanded_oracle["best"]["per_node_constant_capped"]["metrics"][metric]

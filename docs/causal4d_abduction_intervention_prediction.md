@@ -154,6 +154,15 @@ intervention transfer, and held-out calibration can be measured separately.
 Full oracle-audit methods and commands remain in
 `docs/causal4d_real_oracle_audit.md`.
 
+The subsequent undercoverage audit confirms that conclusion. Full 81-particle
+support reaches only `55.05%` coverage. A rank-16 graph-persistent discrepancy
+reduces track error to `23.105 mm` and raises coverage to `67.78%`, while learned
+AR residual dynamics transfers poorly. A prelocked affine calibration fitted on
+`double_lift_sloth` and calibrated on `double_stretch_sloth` is harmful on the
+single-lift target (`43.03%` coverage), so it is rejected rather than retuned.
+See `docs/causal4d_real_undercoverage.md` for the complete metrics and claim
+gate.
+
 ## Semantic posterior and trust
 
 MolmoMotion is applied only through `H_Q`. On the real `history_reverse`

@@ -29,6 +29,7 @@ from causal4d.contracts import (
     TwinBelief,
     array_sha256,
 )
+from causal4d.parameter_support import SupportMethod, reduce_parameter_support
 from causal4d.rollout_bank import JointRolloutBank
 
 
@@ -46,6 +47,9 @@ class BayesianPhysTwinParticles:
     grid_indices: np.ndarray
     source_weight_key: str
     retained_probability_mass: float
+    selection_method: SupportMethod = "top_mass"
+    represented_probability_mass: float | None = None
+    source_particle_count: int | None = None
 
     def __post_init__(self) -> None:
         particles = np.asarray(self.log_scales, dtype=float)
@@ -61,9 +65,27 @@ class BayesianPhysTwinParticles:
             raise ValueError("particle weights must be nonnegative and sum to one")
         if not 0.0 < self.retained_probability_mass <= 1.0 + 1e-12:
             raise ValueError("retained probability mass must lie in (0, 1]")
+        if self.selection_method not in {"top_mass", "weighted_coreset"}:
+            raise ValueError("unknown parameter support selection method")
+        represented = (
+            self.retained_probability_mass
+            if self.represented_probability_mass is None
+            else self.represented_probability_mass
+        )
+        if not 0.0 < represented <= 1.0 + 1e-12:
+            raise ValueError("represented probability mass must lie in (0, 1]")
+        source_count = (
+            len(particles)
+            if self.source_particle_count is None
+            else int(self.source_particle_count)
+        )
+        if source_count < len(particles):
+            raise ValueError("source particle count cannot be below selected count")
         object.__setattr__(self, "log_scales", particles)
         object.__setattr__(self, "weights", weights)
         object.__setattr__(self, "grid_indices", indices)
+        object.__setattr__(self, "represented_probability_mass", represented)
+        object.__setattr__(self, "source_particle_count", source_count)
 
 
 def load_bayesian_phystwin_particles(
@@ -71,8 +93,9 @@ def load_bayesian_phystwin_particles(
     *,
     maximum_count: int,
     weight_key: str | None = None,
+    support_method: SupportMethod = "top_mass",
 ) -> BayesianPhysTwinParticles:
-    """Load the highest-mass spring particles from a Bayesian-PhysTwin grid."""
+    """Load a deterministic reduction of a Bayesian-PhysTwin grid."""
 
     if maximum_count < 1:
         raise ValueError("maximum_count must be positive")
@@ -80,7 +103,9 @@ def load_bayesian_phystwin_particles(
         required = {"object_log_scales", "controller_log_scales"}
         missing = required - set(archive.files)
         if missing:
-            raise ValueError("parameter profile is missing: " + ", ".join(sorted(missing)))
+            raise ValueError(
+                "parameter profile is missing: " + ", ".join(sorted(missing))
+            )
         object_grid = np.asarray(archive["object_log_scales"], dtype=float)
         controller_grid = np.asarray(archive["controller_log_scales"], dtype=float)
         if weight_key is None:
@@ -116,16 +141,22 @@ def load_bayesian_phystwin_particles(
         np.unravel_index(np.arange(weight_grid.size), weight_grid.shape)
     )
     flat_weights = normalized.reshape(-1)
-    order = np.lexsort((np.arange(len(flat_weights)), -flat_weights))
-    selected = order[: min(maximum_count, len(order))]
-    retained = float(np.sum(flat_weights[selected]))
-    weights = flat_weights[selected] / retained
+    reduction = reduce_parameter_support(
+        particles,
+        flat_weights,
+        maximum_count=maximum_count,
+        method=support_method,
+    )
+    selected = reduction.indices
     return BayesianPhysTwinParticles(
         log_scales=particles[selected],
-        weights=weights,
+        weights=reduction.weights,
         grid_indices=grid_indices[selected],
         source_weight_key=selected_weight_key,
-        retained_probability_mass=retained,
+        retained_probability_mass=reduction.directly_retained_probability_mass,
+        selection_method=support_method,
+        represented_probability_mass=reduction.represented_probability_mass,
+        source_particle_count=reduction.source_particle_count,
     )
 
 
@@ -238,7 +269,9 @@ class PhysTwinContactState:
     prior_weight: float
 
     def __post_init__(self) -> None:
-        if not self.attachment_shifts or any(value not in {-1, 0, 1} for value in self.attachment_shifts):
+        if not self.attachment_shifts or any(
+            value not in {-1, 0, 1} for value in self.attachment_shifts
+        ):
             raise ValueError("attachment shifts must be -1, 0, or 1 per hand")
         if self.gain_multiplier <= 0.0 or self.delay_steps < 0:
             raise ValueError("contact gain and delay must be valid")
@@ -277,13 +310,29 @@ class PhysTwinHypothesisConfig:
     maximum_contact_states: int = 12
 
     def __post_init__(self) -> None:
-        if set(self.attachment_shift_values) - {-1, 0, 1} or 0 not in self.attachment_shift_values:
+        if (
+            set(self.attachment_shift_values) - {-1, 0, 1}
+            or 0 not in self.attachment_shift_values
+        ):
             raise ValueError("attachment shift values must include zero and use -1/0/1")
-        if not self.gain_values or min(self.gain_values) <= 0.0 or 1.0 not in self.gain_values:
+        if (
+            not self.gain_values
+            or min(self.gain_values) <= 0.0
+            or 1.0 not in self.gain_values
+        ):
             raise ValueError("gain values must be positive and include 1")
-        if not self.delay_values or min(self.delay_values) < 0 or 0 not in self.delay_values:
+        if (
+            not self.delay_values
+            or min(self.delay_values) < 0
+            or 0 not in self.delay_values
+        ):
             raise ValueError("delay values must be nonnegative and include 0")
-        if not self.slip_values or min(self.slip_values) < 0.0 or max(self.slip_values) >= 1.0 or 0.0 not in self.slip_values:
+        if (
+            not self.slip_values
+            or min(self.slip_values) < 0.0
+            or max(self.slip_values) >= 1.0
+            or 0.0 not in self.slip_values
+        ):
             raise ValueError("slip values must lie in [0, 1) and include 0")
         if not self.rotation_values_degrees or 0.0 not in self.rotation_values_degrees:
             raise ValueError("rotation values must include zero")
@@ -320,9 +369,7 @@ def build_contact_states(
     cfg = config or PhysTwinHypothesisConfig()
     if hand_count < 1:
         raise ValueError("hand_count must be positive")
-    candidates: dict[
-        tuple[tuple[int, ...], float, int, float, float], float
-    ] = {}
+    candidates: dict[tuple[tuple[int, ...], float, int, float, float], float] = {}
     for shifts, gain, delay, slip, rotation in product(
         product(cfg.attachment_shift_values, repeat=hand_count),
         cfg.gain_values,
@@ -505,7 +552,9 @@ def shift_phystwin_attachment_graph(
     shifts = tuple(int(value) for value in attachment_shifts)
     if groups.ndim != 1 or not len(groups):
         raise ValueError("controller_groups must be a nonempty vector")
-    if len(shifts) != int(np.max(groups)) + 1 or any(value not in {-1, 0, 1} for value in shifts):
+    if len(shifts) != int(np.max(groups)) + 1 or any(
+        value not in {-1, 0, 1} for value in shifts
+    ):
         raise ValueError("attachment_shifts must provide -1/0/1 for every group")
     object_count = len(graph.vertices) - len(groups)
     if object_count <= 0:
@@ -528,7 +577,9 @@ def shift_phystwin_attachment_graph(
         elif second >= object_count and first < object_count:
             control_vertex, object_vertex, object_column = second, first, 0
         else:
-            raise ValueError("controller spring must connect one object and one control")
+            raise ValueError(
+                "controller spring must connect one object and one control"
+            )
         control_index = control_vertex - object_count
         shift = shifts[int(groups[control_index])]
         if shift and adjacency[object_vertex]:
@@ -592,6 +643,7 @@ class OfficialPhysTwinBackend:
         profile_path: str | Path,
         train_end_frame: int,
         parameter_particle_count: int,
+        parameter_support_method: SupportMethod = "top_mass",
         config: OfficialPhysTwinBackendConfig | None = None,
     ) -> None:
         self.official_repo = Path(official_repo)
@@ -613,9 +665,18 @@ class OfficialPhysTwinBackend:
             self.data["controller_points"], dtype=np.float32
         )
         self.surface_points = np.asarray(self.data["surface_points"], dtype=np.float32)
-        self.interior_points = np.asarray(self.data["interior_points"], dtype=np.float32)
-        self.frame_count, self.original_count, coordinate_count = self.object_points.shape
-        if coordinate_count != 3 or not self.config.velocity_history_frames <= train_end_frame < self.frame_count:
+        self.interior_points = np.asarray(
+            self.data["interior_points"], dtype=np.float32
+        )
+        self.frame_count, self.original_count, coordinate_count = (
+            self.object_points.shape
+        )
+        if (
+            coordinate_count != 3
+            or not self.config.velocity_history_frames
+            <= train_end_frame
+            < self.frame_count
+        ):
             raise ValueError("train_end_frame is incompatible with the PhysTwin case")
         self.train_end_frame = int(train_end_frame)
         structure = np.concatenate(
@@ -631,7 +692,9 @@ class OfficialPhysTwinBackend:
                 object_radius=float(self.optimal["object_radius"]),
                 object_max_neighbours=int(self.optimal["object_max_neighbours"]),
                 controller_radius=float(self.optimal["controller_radius"]),
-                controller_max_neighbours=int(self.optimal["controller_max_neighbours"]),
+                controller_max_neighbours=int(
+                    self.optimal["controller_max_neighbours"]
+                ),
             ),
         )
         self.case_name = self.final_data_path.resolve().parent.name
@@ -642,6 +705,7 @@ class OfficialPhysTwinBackend:
         self.particles = load_bayesian_phystwin_particles(
             self.profile_path,
             maximum_count=parameter_particle_count,
+            support_method=parameter_support_method,
         )
 
     @property
@@ -672,7 +736,12 @@ class OfficialPhysTwinBackend:
                 "count": len(self.particles.weights),
                 "log_scale_names": ["object_springs", "controller_springs"],
                 "source_weight_key": self.particles.source_weight_key,
+                "selection_method": self.particles.selection_method,
                 "retained_probability_mass": self.particles.retained_probability_mass,
+                "represented_probability_mass": (
+                    self.particles.represented_probability_mass
+                ),
+                "source_particle_count": self.particles.source_particle_count,
                 "grid_indices": self.particles.grid_indices.tolist(),
                 "log_scales": self.particles.log_scales.tolist(),
                 "weights": self.particles.weights.tolist(),
@@ -709,9 +778,7 @@ class OfficialPhysTwinBackend:
             counterfactual_action_id = proposal_ids[0]
         else:
             counterfactual_digest_values = np.stack(counterfactual_values)
-            counterfactual_action_id = (
-                "action_library[" + ",".join(proposal_ids) + "]"
-            )
+            counterfactual_action_id = "action_library[" + ",".join(proposal_ids) + "]"
         return CausalContext(
             protocol_id=protocol_id,
             o_minus=ObservationWindow(
@@ -761,7 +828,9 @@ class OfficialPhysTwinBackend:
             or belief.context.o_plus != expected_context.o_plus
             or belief.context.u_obs != expected_context.u_obs
         ):
-            raise ValueError("TwinBelief factual context does not match this rollout query")
+            raise ValueError(
+                "TwinBelief factual context does not match this rollout query"
+            )
         if belief.endpoint_position_m.shape != (
             len(self.particles.weights),
             self.baseline.shape[1],
@@ -769,8 +838,15 @@ class OfficialPhysTwinBackend:
         ):
             raise ValueError("TwinBelief endpoint state does not match the backend")
         if not np.array_equal(belief.theta, self.particles.log_scales):
-            raise ValueError("TwinBelief theta particles do not match the backend profile")
-        if not np.array_equal(belief.weights, self.particles.weights):
+            raise ValueError(
+                "TwinBelief theta particles do not match the backend profile"
+            )
+        if not np.allclose(
+            belief.weights,
+            self.particles.weights,
+            rtol=0.0,
+            atol=1e-15,
+        ):
             raise ValueError("TwinBelief weights do not match the backend profile")
 
     def build_rollout_bank(
@@ -782,10 +858,15 @@ class OfficialPhysTwinBackend:
     ) -> tuple[JointRolloutBank, dict[str, Any]]:
         """Simulate all action/contact hypotheses under selected theta particles."""
 
-        proposal_by_id = {proposal.proposal_id: proposal for proposal in action_proposals}
+        proposal_by_id = {
+            proposal.proposal_id: proposal for proposal in action_proposals
+        }
         if len(proposal_by_id) != len(action_proposals):
             raise ValueError("action proposal ids must be unique")
-        if any(proposal.controller_points_m.shape != self.controller_points.shape for proposal in action_proposals):
+        if any(
+            proposal.controller_points_m.shape != self.controller_points.shape
+            for proposal in action_proposals
+        ):
             raise ValueError("action proposal controls must match the PhysTwin case")
         self._validate_twin_belief(twin_belief, action_proposals)
         contact_states = build_contact_states(self.hand_count, hypothesis_config)
@@ -804,6 +885,7 @@ class OfficialPhysTwinBackend:
             _released_self_collision_for_case,
             _rollout_restart,
         )
+
         self_collision = (
             _released_self_collision_for_case(self.case_name)
             if self.config.self_collision is None
@@ -811,7 +893,9 @@ class OfficialPhysTwinBackend:
         )
         shift_diagnostics: dict[str, Any] = {}
         unique_shifts = tuple(
-            dict.fromkeys(hypothesis.contact.attachment_shifts for hypothesis in hypotheses)
+            dict.fromkeys(
+                hypothesis.contact.attachment_shifts for hypothesis in hypotheses
+            )
         )
         for shifts in unique_shifts:
             variant = shift_phystwin_attachment_graph(
@@ -917,7 +1001,9 @@ class OfficialPhysTwinBackend:
             {
                 "hypothesis_count": len(hypotheses),
                 "contact_state_count": len(contact_states),
-                "action_proposals": [proposal.metadata() for proposal in action_proposals],
+                "action_proposals": [
+                    proposal.metadata() for proposal in action_proposals
+                ],
                 "hypotheses": list(metadata),
                 "attachment_shift_diagnostics": shift_diagnostics,
                 "rollout_shape": list(trajectories.shape),

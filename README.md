@@ -163,6 +163,14 @@ for the contact/action design, slip gate, required actuator measurements,
 matched-reset semantics, and leave-one-contact-and-action-out calibration
 folds. Physical acquisition is not yet claimed complete.
 
+The post-oracle real-undercoverage audit is documented in
+[docs/causal4d_real_undercoverage.md](docs/causal4d_real_undercoverage.md).
+Full 81-particle support raises coverage only from 50.6% to 55.1%. A
+low-frequency graph-persistent discrepancy improves track error to 23.1 mm and
+coverage to 67.8%, but a locked affine scale from one held-out source action
+transfers harmfully. The real posterior therefore remains explicitly
+uncalibrated pending an expanded multi-action calibration protocol.
+
 Export the exact tracked-point residuals from an official PhysTwin case and
 immediately replay them through the reliability model:
 

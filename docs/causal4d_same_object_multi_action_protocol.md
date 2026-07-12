@@ -230,6 +230,14 @@ Likelihood temperature, discrepancy scales, coverage transforms, and semantic
 beta are refit or selected only from that fold's fit/calibration sets. Target
 results never choose a shared hyperparameter.
 
+The four calibration executions in each v1 fold support an exploratory frozen
+transform and an out-of-fold target test. They do not pass the later
+undercoverage audit's ten-independent-execution gate for a real calibration
+claim. Before physical acquisition, a calibration-headline protocol must either
+pre-register a pooled source transform that still excludes every target action
+and contact, or issue a higher-repetition v2. The 36-run v1 remains valid for
+factual, same-grasp, new-contact, and calibration-transfer diagnosis.
+
 ## Counterfactual Language
 
 Real repetitions are not individual-level counterfactual ground truth. A

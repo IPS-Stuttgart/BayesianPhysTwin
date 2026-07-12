@@ -40,6 +40,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--train-end-frame", type=int)
     parser.add_argument("--parameter-particles", type=int, default=4)
     parser.add_argument(
+        "--parameter-support-method",
+        choices=("top_mass", "weighted_coreset"),
+        help="support reduction; inherited from --twin-belief when omitted",
+    )
+    parser.add_argument(
         "--twin-belief",
         help=(
             "Existing TwinBelief NPZ. If omitted, every theta particle is replayed "
@@ -90,6 +95,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     case_dir = Path(args.case_dir)
     train_end = _train_end(case_dir, args.train_end_frame)
+    loaded_belief = None
+    if args.twin_belief:
+        loaded = load_contract(args.twin_belief)
+        if not isinstance(loaded, TwinBelief):
+            raise TypeError("--twin-belief must contain a TwinBelief artifact")
+        loaded_belief = loaded
+    support_method = args.parameter_support_method or (
+        str(loaded_belief.metadata.get("profile_support_method", "top_mass"))
+        if loaded_belief is not None
+        else "top_mass"
+    )
     backend = OfficialPhysTwinBackend(
         official_repo=args.official_repo,
         final_data_path=case_dir / "final_data.pkl",
@@ -99,6 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         profile_path=args.profile_path,
         train_end_frame=train_end,
         parameter_particle_count=args.parameter_particles,
+        parameter_support_method=support_method,
         config=OfficialPhysTwinBackendConfig(
             dt=args.dt,
             num_substeps=args.num_substeps,
@@ -112,11 +129,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         train_end_frame=train_end,
     )
     context = backend.causal_context(proposals)
-    if args.twin_belief:
-        loaded = load_contract(args.twin_belief)
-        if not isinstance(loaded, TwinBelief):
-            raise TypeError("--twin-belief must contain a TwinBelief artifact")
-        twin_belief = loaded
+    if loaded_belief is not None:
+        twin_belief = loaded_belief
         twin_belief_path = Path(args.twin_belief)
     else:
         twin_belief = export_official_phystwin_twin_belief(
@@ -124,9 +138,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             context=context,
         )
         output_path = Path(args.output_npz)
-        twin_belief_path = output_path.with_name(
-            output_path.stem + ".twin_belief.npz"
-        )
+        twin_belief_path = output_path.with_name(output_path.stem + ".twin_belief.npz")
         save_contract(twin_belief_path, twin_belief)
     bank, manifest = backend.build_rollout_bank(
         proposals,
@@ -145,6 +157,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "action_setting": args.action_setting,
                 "rollout_shape": list(bank.trajectories.shape),
                 "retained_parameter_mass": backend.particles.retained_probability_mass,
+                "represented_parameter_mass": (
+                    backend.particles.represented_probability_mass
+                ),
+                "parameter_support_method": support_method,
                 "twin_belief": str(twin_belief_path.resolve()),
                 "twin_belief_id": twin_belief.artifact_id,
             },

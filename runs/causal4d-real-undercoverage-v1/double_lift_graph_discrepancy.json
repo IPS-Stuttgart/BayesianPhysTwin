@@ -1,0 +1,1161 @@
+{
+  "case": "double_lift_sloth",
+  "evaluation": "causal4d_graph_temporal_discrepancy_v1",
+  "inputs": {
+    "final_data": {
+      "path": "/home/florianpfaff/bayesian-phystwin-data/double_lift_sloth/final_data.pkl",
+      "sha256": "6bbb1245812a9b6c760f6881b8b6174343fd0df717c168b09fb7b365caabb33c"
+    },
+    "optimal_params": {
+      "path": "/home/florianpfaff/bayesian-phystwin-data/double_lift_sloth/optimal_params.pkl",
+      "sha256": "0d2a512ddc68fa21ce52b2e86257f78fd66536450ed334e8d8eded13f898c17f"
+    },
+    "parameter_profile": {
+      "path": "/home/florianpfaff/Bayesian-PhysTwin/runs/phystwin_double_lift_sloth/profile_full_v1_cue_9x9/parameter_profile.npz",
+      "sha256": "d4e3d1e46c42b7f0a6d49b28ee62c68ddc2804c470ebdbcbbb729885fec00758"
+    },
+    "physical_posterior": {
+      "path": "/mnt/corsair/florianpfaff/causal4d-undercoverage-v1/sources/double_lift_sloth/known_action.physical.npz",
+      "sha256": "b4e50003d4f6a248a323d8b9296fd50653182a471efe2f7ccf69b863ab0740fa"
+    }
+  },
+  "label_use": {
+    "basis_and_dynamics_fit": "O-minus only",
+    "future": "evaluation only",
+    "rank_selection": "O-minus validation suffix only",
+    "target_initialization": "first 6 O-plus frames"
+  },
+  "model": {
+    "candidate_validation_rmse_m": [
+      {
+        "rank": 4,
+        "rmse_m": 0.009088064389254415
+      },
+      {
+        "rank": 8,
+        "rmse_m": 0.008420524178804387
+      },
+      {
+        "rank": 16,
+        "rmse_m": 0.007687219908651786
+      },
+      {
+        "rank": 32,
+        "rmse_m": 0.007834324261179477
+      }
+    ],
+    "fit_frame_count": 42,
+    "model_npz": "/mnt/corsair/florianpfaff/causal4d-undercoverage-v1/sources/double_lift_sloth/graph_temporal_discrepancy.model.npz",
+    "model_sha256": "8c4a6bcb1be33501f49e1689c857125e783a6f21af3b021ca4f3ea04b28a8066",
+    "moments_npz": "/mnt/corsair/florianpfaff/causal4d-undercoverage-v1/sources/double_lift_sloth/graph_temporal_discrepancy.moments.npz",
+    "moments_sha256": "3942ac80d9d47d3336d46155c7c341d9451857f258ccc120438f060f9ade260b",
+    "projection_variance_m2": [
+      1.4450964603688207e-05,
+      2.0371016416383117e-05,
+      1.3919016440562211e-05
+    ],
+    "selected_rank": 16,
+    "spectral_radius": 0.9949999999999996,
+    "spectral_radius_before_clipping": 1.0882192563774107
+  },
+  "node_groups": {
+    "counts": {
+      "contact_attachment": 133,
+      "contact_neighborhood": 282,
+      "far_graph": 4534
+    },
+    "path": "/mnt/corsair/florianpfaff/causal4d-undercoverage-v1/sources/double_lift_sloth/graph_temporal_discrepancy.node_groups.json",
+    "sha256": "204ef6bdcf3785e901ee6953b5955609875f7cf14ffad75d1f8824123de009c0"
+  },
+  "schema_version": 1,
+  "variants": [
+    {
+      "groups": {
+        "all": {
+          "calibration_curve": [
+            {
+              "empirical": 0.2279266398361929,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.33870825390100967,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.40765551083809926,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.49992056767633974,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.572027465932359,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6900903763326979,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.01761554414840484,
+          "coverage": 0.49992056767633974,
+          "gaussian_energy_score_m": 0.02140345920935511,
+          "gaussian_nll": -0.4892551266222725,
+          "mean_coordinate_nees": 7.373095961751446,
+          "mean_interval_width_m": 0.020721547693910877,
+          "mean_vector_nees": 22.119287885254337,
+          "track_error_m": 0.02571438487193564,
+          "valid_point_frames": 37768
+        },
+        "graph_region:contact_attachment": {
+          "calibration_curve": [
+            {
+              "empirical": 0.4059161873459326,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.6042180224596001,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.6962476033963297,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.7978635990139687,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.860586140783347,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.9156395508079979,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.009345354768456346,
+          "coverage": 0.7978635990139687,
+          "gaussian_energy_score_m": 0.010817822850096498,
+          "gaussian_nll": -3.0293780332534936,
+          "mean_coordinate_nees": 2.1691795574064114,
+          "mean_interval_width_m": 0.02280082394559034,
+          "mean_vector_nees": 6.507538672219235,
+          "track_error_m": 0.013964355825519135,
+          "valid_point_frames": 1217
+        },
+        "graph_region:contact_neighborhood": {
+          "calibration_curve": [
+            {
+              "empirical": 0.33009499136442144,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.48715457685664937,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.586139896373057,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.7015328151986183,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.7823834196891192,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.8921632124352331,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.010665798565196827,
+          "coverage": 0.7015328151986183,
+          "gaussian_energy_score_m": 0.012350268461511821,
+          "gaussian_nll": -2.7442024215149856,
+          "mean_coordinate_nees": 2.8094412790735404,
+          "mean_interval_width_m": 0.02112798184275546,
+          "mean_vector_nees": 8.42832383722062,
+          "track_error_m": 0.01610623970623477,
+          "valid_point_frames": 3088
+        },
+        "graph_region:far_graph": {
+          "calibration_curve": [
+            {
+              "empirical": 0.21202522188686013,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.3153532757573041,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.38068911932582256,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.47047983344788774,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.5421211487314347,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6632399964139497,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.018345413953456027,
+          "coverage": 0.47047983344788774,
+          "gaussian_energy_score_m": 0.022623880943167314,
+          "gaussian_nll": -0.1887857477859789,
+          "mean_coordinate_nees": 7.983493473157991,
+          "mean_interval_width_m": 0.02060842132000758,
+          "mean_vector_nees": 23.950480419473976,
+          "track_error_m": 0.027028365615478455,
+          "valid_point_frames": 33463
+        },
+        "horizon:early": {
+          "calibration_curve": [
+            {
+              "empirical": 0.2661297019015196,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.3930360652107725,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.4684602396966426,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.5625397879819536,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.6321237786819452,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.741509590633563,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.01486241073198271,
+          "coverage": 0.5625397879819536,
+          "gaussian_energy_score_m": 0.01806142389676792,
+          "gaussian_nll": -1.4509792911226815,
+          "mean_coordinate_nees": 5.5592105184851235,
+          "mean_interval_width_m": 0.019530340787018693,
+          "mean_vector_nees": 16.67763155545537,
+          "track_error_m": 0.0215958358995048,
+          "valid_point_frames": 12043
+        },
+        "horizon:late": {
+          "calibration_curve": [
+            {
+              "empirical": 0.19153632990465455,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.2911793715654502,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.35759240993847163,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.4535014794983796,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.5321732187309192,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6609130618571227,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.019965848541242174,
+          "coverage": 0.4535014794983796,
+          "gaussian_energy_score_m": 0.024424725828017187,
+          "gaussian_nll": 0.3623745823201479,
+          "mean_coordinate_nees": 8.954589722497952,
+          "mean_interval_width_m": 0.02207896956901922,
+          "mean_vector_nees": 26.86376916749385,
+          "track_error_m": 0.029471022468529912,
+          "valid_point_frames": 14194
+        },
+        "horizon:middle": {
+          "calibration_curve": [
+            {
+              "empirical": 0.23282166912381116,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.34047350620067646,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.405775734975284,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.4916601624606134,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.5583210476107883,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.672303645246148,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.017174616376210764,
+          "coverage": 0.4916601624606134,
+          "gaussian_energy_score_m": 0.021174881712537647,
+          "gaussian_nll": -0.5331357940102082,
+          "mean_coordinate_nees": 7.320793468751743,
+          "mean_interval_width_m": 0.0202947381096957,
+          "mean_vector_nees": 21.962380406255228,
+          "track_error_m": 0.02539160031109318,
+          "valid_point_frames": 11531
+        }
+      },
+      "method": "current_random_walk_readout",
+      "worst_group_coverage": 0.4535014794983796
+    },
+    {
+      "groups": {
+        "all": {
+          "calibration_curve": [
+            {
+              "empirical": 0.15061251147355786,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.23353103156110994,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.28551507448986796,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.3571983336863659,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.41801701616889075,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.5365300430699711,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.020865720891845147,
+          "coverage": 0.3571983336863659,
+          "gaussian_energy_score_m": 0.027552854511305496,
+          "gaussian_nll": 1.4656501476810624,
+          "mean_coordinate_nees": 11.386280093514882,
+          "mean_interval_width_m": 0.01932113274015443,
+          "mean_vector_nees": 34.158840280544645,
+          "track_error_m": 0.032183865306848476,
+          "valid_point_frames": 37768
+        },
+        "graph_region:contact_attachment": {
+          "calibration_curve": [
+            {
+              "empirical": 0.1796768008764722,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.2881402355519036,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.37825253355245136,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.473021090112298,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.5524513831826897,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.726650232812928,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.013977754786148634,
+          "coverage": 0.473021090112298,
+          "gaussian_energy_score_m": 0.018568546136808656,
+          "gaussian_nll": -1.204539095661096,
+          "mean_coordinate_nees": 6.045343659735589,
+          "mean_interval_width_m": 0.019273812099031496,
+          "mean_vector_nees": 18.136030979206765,
+          "track_error_m": 0.02257652954547026,
+          "valid_point_frames": 1217
+        },
+        "graph_region:contact_neighborhood": {
+          "calibration_curve": [
+            {
+              "empirical": 0.15155440414507773,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.26295336787564766,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.33117443868739205,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.42530224525043175,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.4997841105354059,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6534974093264249,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.015483943070442588,
+          "coverage": 0.42530224525043175,
+          "gaussian_energy_score_m": 0.02026609596092498,
+          "gaussian_nll": -0.8555885355154608,
+          "mean_coordinate_nees": 6.677727442811506,
+          "mean_interval_width_m": 0.019941607881886887,
+          "mean_vector_nees": 20.033182328434517,
+          "track_error_m": 0.024966860317932348,
+          "valid_point_frames": 3088
+        },
+        "graph_region:far_graph": {
+          "calibration_curve": [
+            {
+              "empirical": 0.14946856727330685,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.22882985187620158,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.2779288567472532,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.34670133181922325,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.4055822849116935,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.5188217832631065,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.021497891303561473,
+          "coverage": 0.34670133181922325,
+          "gaussian_energy_score_m": 0.028552030129012734,
+          "gaussian_nll": 1.7769672849030174,
+          "mean_coordinate_nees": 12.015032154755101,
+          "mean_interval_width_m": 0.019265595638955395,
+          "mean_vector_nees": 36.045096464265306,
+          "track_error_m": 0.0331992625822682,
+          "valid_point_frames": 33463
+        },
+        "horizon:early": {
+          "calibration_curve": [
+            {
+              "empirical": 0.15976085692933653,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.25325915469567384,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.30831188242132357,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.38066373273547566,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.4460405768219436,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.5779014088405436,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.01850499658018324,
+          "coverage": 0.38066373273547566,
+          "gaussian_energy_score_m": 0.024597530505210394,
+          "gaussian_nll": 0.6143235085920751,
+          "mean_coordinate_nees": 9.7929175793543,
+          "mean_interval_width_m": 0.018230483287993073,
+          "mean_vector_nees": 29.378752738062904,
+          "track_error_m": 0.028691389520598975,
+          "valid_point_frames": 12043
+        },
+        "horizon:late": {
+          "calibration_curve": [
+            {
+              "empirical": 0.1405523460617162,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.2198111878258419,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.2728852566812268,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.34568597059790523,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.4072143159081302,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.5228735146305951,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.022877081963418065,
+          "coverage": 0.34568597059790523,
+          "gaussian_energy_score_m": 0.029958012768505078,
+          "gaussian_nll": 2.11544020159264,
+          "mean_coordinate_nees": 12.56418109160096,
+          "mean_interval_width_m": 0.020573366779918126,
+          "mean_vector_nees": 37.69254327480287,
+          "track_error_m": 0.035114882826111166,
+          "valid_point_frames": 14194
+        },
+        "horizon:middle": {
+          "calibration_curve": [
+            {
+              "empirical": 0.15344144769172954,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.22981528054808775,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.27725262336310813,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.3468620819240887,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.40204665683808866,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.510132107651837,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.020594831746527823,
+          "coverage": 0.3468620819240887,
+          "gaussian_energy_score_m": 0.027678789009849582,
+          "gaussian_nll": 1.5549231239474524,
+          "mean_coordinate_nees": 11.600462557412389,
+          "mean_interval_width_m": 0.018918780939961324,
+          "mean_vector_nees": 34.80138767223716,
+          "track_error_m": 0.032223499616569055,
+          "valid_point_frames": 11531
+        }
+      },
+      "method": "state_only",
+      "worst_group_coverage": 0.34568597059790523
+    },
+    {
+      "groups": {
+        "all": {
+          "calibration_curve": [
+            {
+              "empirical": 0.3944432676692791,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.5649315116853774,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.6571877427098779,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.7656040386923675,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.8350014121301984,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.9147249876438608,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.012406207107084219,
+          "coverage": 0.7656040386923675,
+          "gaussian_energy_score_m": 0.01297192558687998,
+          "gaussian_nll": -2.6905750925750778,
+          "mean_coordinate_nees": 2.574397754230477,
+          "mean_interval_width_m": 0.024702897188059684,
+          "mean_vector_nees": 7.723193262691431,
+          "track_error_m": 0.017451059183026633,
+          "valid_point_frames": 37768
+        },
+        "graph_region:contact_attachment": {
+          "calibration_curve": [
+            {
+              "empirical": 0.3251164064639825,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.47000821692686934,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.5560120514927417,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.6680361544782252,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.7666392769104355,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.8915365653245686,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.012241399744142194,
+          "coverage": 0.6680361544782252,
+          "gaussian_energy_score_m": 0.014706430168165452,
+          "gaussian_nll": -2.6110577942398083,
+          "mean_coordinate_nees": 2.7124960716768767,
+          "mean_interval_width_m": 0.024916739234847895,
+          "mean_vector_nees": 8.137488215030631,
+          "track_error_m": 0.019262577207176217,
+          "valid_point_frames": 1217
+        },
+        "graph_region:contact_neighborhood": {
+          "calibration_curve": [
+            {
+              "empirical": 0.33624784110535405,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.503346286701209,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.5989853195164075,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.7244170984455959,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.8162780656303973,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.9312392055267703,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.011523056153949926,
+          "coverage": 0.7244170984455959,
+          "gaussian_energy_score_m": 0.013439886556178716,
+          "gaussian_nll": -2.831501104075461,
+          "mean_coordinate_nees": 2.191425074730715,
+          "mean_interval_width_m": 0.025980058188980505,
+          "mean_vector_nees": 6.574275224192145,
+          "track_error_m": 0.018573227644822516,
+          "valid_point_frames": 3088
+        },
+        "graph_region:far_graph": {
+          "calibration_curve": [
+            {
+              "empirical": 0.40233491717220016,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.5740668798374324,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.6662383328850771,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.7729532120052994,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.8392154518921395,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.9140443674107721,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.01249047223156097,
+          "coverage": 0.7729532120052994,
+          "gaussian_energy_score_m": 0.012865660292416873,
+          "gaussian_nll": -2.6804622224965087,
+          "mean_coordinate_nees": 2.6047164340249664,
+          "mean_interval_width_m": 0.024577262339367544,
+          "mean_vector_nees": 7.8141493020749,
+          "track_error_m": 0.017281622083979455,
+          "valid_point_frames": 33463
+        },
+        "horizon:early": {
+          "calibration_curve": [
+            {
+              "empirical": 0.501120983143735,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.6846854327548507,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.7736997979462482,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.8648730936366907,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.9154418887874007,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.9670624705914916,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.008666537495932906,
+          "coverage": 0.8648730936366907,
+          "gaussian_energy_score_m": 0.009098254787976684,
+          "gaussian_nll": -3.3036549953310965,
+          "mean_coordinate_nees": 1.4826043855546973,
+          "mean_interval_width_m": 0.023039302649442366,
+          "mean_vector_nees": 4.447813156664092,
+          "track_error_m": 0.012115529768653481,
+          "valid_point_frames": 12043
+        },
+        "horizon:late": {
+          "calibration_curve": [
+            {
+              "empirical": 0.2943497252360152,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.44953266638485745,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.5497158423747123,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.6775163214503781,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.7639378140998544,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.863416467051806,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.01564778185286579,
+          "coverage": 0.6775163214503781,
+          "gaussian_energy_score_m": 0.0170531615348981,
+          "gaussian_nll": -2.0143519161449013,
+          "mean_coordinate_nees": 3.791490439748771,
+          "mean_interval_width_m": 0.02642055820699514,
+          "mean_vector_nees": 11.374471319246316,
+          "track_error_m": 0.022858975594207135,
+          "valid_point_frames": 14194
+        },
+        "horizon:middle": {
+          "calibration_curve": [
+            {
+              "empirical": 0.40623825629462607,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.5819096348972336,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.6677940623825629,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.7703581649466655,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.8384644292197844,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.9232214609892174,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.011147975757430735,
+          "coverage": 0.7703581649466655,
+          "gaussian_energy_score_m": 0.011993827797011213,
+          "gaussian_nll": -2.88266515391921,
+          "mean_coordinate_nees": 2.2164976554286158,
+          "mean_interval_width_m": 0.024326016477436006,
+          "mean_vector_nees": 6.649492966285847,
+          "track_error_m": 0.01636666192320527,
+          "valid_point_frames": 11531
+        }
+      },
+      "method": "graph_persistence",
+      "worst_group_coverage": 0.6680361544782252
+    },
+    {
+      "groups": {
+        "all": {
+          "calibration_curve": [
+            {
+              "empirical": 0.21900374214502577,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.3328479135776319,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.4046370825390101,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.5035214996822707,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.5785409164724987,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6932147143966674,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.02202652314703519,
+          "coverage": 0.5035214996822707,
+          "gaussian_energy_score_m": 0.02656936310935549,
+          "gaussian_nll": 0.20828614149541916,
+          "mean_coordinate_nees": 8.409400710595078,
+          "mean_interval_width_m": 0.024219762931276412,
+          "mean_vector_nees": 25.22820213178523,
+          "track_error_m": 0.03329315494892903,
+          "valid_point_frames": 37768
+        },
+        "graph_region:contact_attachment": {
+          "calibration_curve": [
+            {
+              "empirical": 0.3177211722815667,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.46453026568063543,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.5324568611339359,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.6283210079430293,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.7093946863872912,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.8175842235004108,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.014113154025791046,
+          "coverage": 0.6283210079430293,
+          "gaussian_energy_score_m": 0.01826439117576357,
+          "gaussian_nll": -2.034303502576406,
+          "mean_coordinate_nees": 3.951766057024875,
+          "mean_interval_width_m": 0.02385191406424224,
+          "mean_vector_nees": 11.855298171074624,
+          "track_error_m": 0.022012966497205407,
+          "valid_point_frames": 1217
+        },
+        "graph_region:contact_neighborhood": {
+          "calibration_curve": [
+            {
+              "empirical": 0.30947754749568224,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.46124784110535405,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.554080310880829,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.667098445595855,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.7521588946459413,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.8659326424870466,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.013427975601504097,
+          "coverage": 0.667098445595855,
+          "gaussian_energy_score_m": 0.016961023931859807,
+          "gaussian_nll": -2.3047027106900466,
+          "mean_coordinate_nees": 3.3553131347543017,
+          "mean_interval_width_m": 0.02453926685251904,
+          "mean_vector_nees": 10.065939404262906,
+          "track_error_m": 0.020986884547798387,
+          "valid_point_frames": 3088
+        },
+        "graph_region:far_graph": {
+          "calibration_curve": [
+            {
+              "empirical": 0.20706451902100828,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.3162099433204833,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.38619769098207973,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.4838876769367162,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.557760312384823,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6727529908655331,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.022884518089336968,
+          "coverage": 0.4838876769367162,
+          "gaussian_energy_score_m": 0.02775807010583782,
+          "gaussian_nll": 0.5217470138733927,
+          "mean_coordinate_nees": 9.037914705383091,
+          "mean_interval_width_m": 0.02420365690259947,
+          "mean_vector_nees": 27.11374411614927,
+          "track_error_m": 0.03483903404956074,
+          "valid_point_frames": 33463
+        },
+        "horizon:early": {
+          "calibration_curve": [
+            {
+              "empirical": 0.31686456862907914,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.4667718453320048,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.5546237094854549,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.6627363060145589,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.7348113703672949,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.8348418168230507,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.01463745939611987,
+          "coverage": 0.6627363060145589,
+          "gaussian_energy_score_m": 0.0164196937781071,
+          "gaussian_nll": -1.80604332585965,
+          "mean_coordinate_nees": 4.486953882188133,
+          "mean_interval_width_m": 0.02293012585986531,
+          "mean_vector_nees": 13.460861646564403,
+          "track_error_m": 0.022123624548326996,
+          "valid_point_frames": 12043
+        },
+        "horizon:late": {
+          "calibration_curve": [
+            {
+              "empirical": 0.15976234089521393,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.246066413038373,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.30472969799445776,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.3909398337325631,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.4641867455732469,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.5883941571556056,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.026995817640665786,
+          "coverage": 0.3909398337325631,
+          "gaussian_energy_score_m": 0.034624718155490994,
+          "gaussian_nll": 1.7927176427840337,
+          "mean_coordinate_nees": 11.467416606325537,
+          "mean_interval_width_m": 0.025599042514347015,
+          "mean_vector_nees": 34.402249818976614,
+          "track_error_m": 0.04216621192896928,
+          "valid_point_frames": 14194
+        },
+        "horizon:middle": {
+          "calibration_curve": [
+            {
+              "empirical": 0.18972046367762263,
+              "nominal": 0.5
+            },
+            {
+              "empirical": 0.2998005376810337,
+              "nominal": 0.7
+            },
+            {
+              "empirical": 0.37097100569479374,
+              "nominal": 0.8
+            },
+            {
+              "empirical": 0.47581880727314774,
+              "nominal": 0.9
+            },
+            {
+              "empirical": 0.5560951637614546,
+              "nominal": 0.95
+            },
+            {
+              "empirical": 0.6743271760182696,
+              "nominal": 0.99
+            }
+          ],
+          "confidence_level": 0.9,
+          "coordinate_rmse_m": 0.021638939963633263,
+          "coverage": 0.47581880727314774,
+          "gaussian_energy_score_m": 0.02725401823305482,
+          "gaussian_nll": 0.36171160728906276,
+          "mean_coordinate_nees": 8.741769935337656,
+          "mean_interval_width_m": 0.0238688484268015,
+          "mean_vector_nees": 26.225309806012966,
+          "track_error_m": 0.03403641085386,
+          "valid_point_frames": 11531
+        }
+      },
+      "method": "graph_temporal",
+      "worst_group_coverage": 0.3909398337325631
+    }
+  ]
+}
