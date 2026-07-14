@@ -1,0 +1,161 @@
+{
+  "artifact_kind": "Deform360ReplicationPooledSourceWarpFit",
+  "candidate_quality_filter": {
+    "finite_chamfer_required": true,
+    "maximum_p99_relative_edge_strain": 0.5,
+    "pooled_candidate_must_pass_every_source_episode": true,
+    "single_source_candidate_must_pass_its_fit_episode": true
+  },
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "source_candidate_scores_read": true,
+    "target_future_read": false,
+    "target_prefix_read": false
+  },
+  "leave_one_source": [
+    {
+      "candidate_chamfer_m": 0.15715071568578984,
+      "held_out_episode_id": "085-scarf-cloth/episode_0001",
+      "persistence_chamfer_m": 0.028696712783705353,
+      "selected_candidate_index": 31,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.07918032174685811,
+      "held_out_episode_id": "085-scarf-cloth/episode_0003",
+      "persistence_chamfer_m": 0.044057160262584716,
+      "selected_candidate_index": 61,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.07014353571034551,
+      "held_out_episode_id": "085-scarf-cloth/episode_0004",
+      "persistence_chamfer_m": 0.04251604910316201,
+      "selected_candidate_index": 31,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.08018512512699262,
+      "held_out_episode_id": "085-scarf-cloth/episode_0006",
+      "persistence_chamfer_m": 0.0326253643982884,
+      "selected_candidate_index": 31,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.05188885204770586,
+      "held_out_episode_id": "085-scarf-cloth/episode_0008",
+      "persistence_chamfer_m": 0.03958606863267152,
+      "selected_candidate_index": 61,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": null,
+      "held_out_episode_id": "085-scarf-cloth/episode_0009",
+      "persistence_chamfer_m": 0.034522273255469534,
+      "selected_candidate_index": 27,
+      "win": false
+    }
+  ],
+  "leave_one_source_win_fraction": 0.0,
+  "object_id": "085-scarf-cloth",
+  "persistence_source_mean_chamfer_m": 0.03700060473931359,
+  "pooled_source_mean_chamfer_m": 0.07942669296949338,
+  "pooled_source_relative_improvement_vs_persistence": -1.1466322923393077,
+  "result_sha256": "f0807740373943911b642a2137e0f5aa19bd2b0ae16d49a2010105df90f6acf0",
+  "schema_version": 2,
+  "sealed_candidate_indices": [
+    1,
+    21,
+    27,
+    31,
+    51,
+    61,
+    117
+  ],
+  "sealed_candidate_parameters": {
+    "1": {
+      "bend_spring_y": 1e-06,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "117": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 1000.0
+    },
+    "21": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "27": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "31": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "51": {
+      "bend_spring_y": 10.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 300.0
+    },
+    "61": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 300.0
+    }
+  },
+  "selection": {
+    "candidate_count": 200,
+    "pooled_candidate_index": 61,
+    "single_source_candidate_indices": [
+      27,
+      51,
+      21,
+      1,
+      117,
+      31
+    ],
+    "source_count": 6,
+    "unique_single_source_candidate_indices": [
+      1,
+      21,
+      27,
+      31,
+      51,
+      117
+    ]
+  },
+  "source_backend_competence": {
+    "minimum_leave_one_source_win_fraction": 0.6,
+    "minimum_relative_improvement": 0.05,
+    "passed": false
+  },
+  "source_episode_ids": [
+    "085-scarf-cloth/episode_0001",
+    "085-scarf-cloth/episode_0003",
+    "085-scarf-cloth/episode_0004",
+    "085-scarf-cloth/episode_0006",
+    "085-scarf-cloth/episode_0008",
+    "085-scarf-cloth/episode_0009"
+  ],
+  "source_grid_result_sha256": [
+    "b782fc289a66a29183c04188b2000aa07ba9cd37ddf86f922b6bbdd374e39482",
+    "21a8b01104ede45f08d631a6eb76a2c80abb78bfc39e87e23c37792babb39a4f",
+    "6b8befed9b0feaaacb5b58f2e701e20e8dbbc3c46cc75ad71c8568a9e83b9fd1",
+    "a1721dd0512bd53d5c7c849294cad67f70c7bf4f91027aff3e9eb2ff1f87928c",
+    "652e4d6d3c08db7b4e7fce9ead6538f0ccf96e32259974d4b603d737d384d751",
+    "578c77b129168ec4cb15e446d08006f2dd7ddb6a485fd0067533d8b25f150bc2"
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "artifact_kind": "Deform360ReplicationPooledSourceWarpFit",
+  "candidate_quality_filter": {
+    "finite_chamfer_required": true,
+    "maximum_p99_relative_edge_strain": 0.5,
+    "pooled_candidate_must_pass_every_source_episode": true,
+    "single_source_candidate_must_pass_its_fit_episode": true
+  },
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "source_candidate_scores_read": true,
+    "target_future_read": false,
+    "target_prefix_read": false
+  },
+  "leave_one_source": [
+    {
+      "candidate_chamfer_m": 0.07094119743394418,
+      "held_out_episode_id": "081-stripe-rope/episode_0001",
+      "persistence_chamfer_m": 0.03288659563546273,
+      "selected_candidate_index": 185,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.02165647268122944,
+      "held_out_episode_id": "081-stripe-rope/episode_0003",
+      "persistence_chamfer_m": 0.03146134684219616,
+      "selected_candidate_index": 21,
+      "win": true
+    },
+    {
+      "candidate_chamfer_m": 0.04005441169007123,
+      "held_out_episode_id": "081-stripe-rope/episode_0004",
+      "persistence_chamfer_m": 0.03343657230377275,
+      "selected_candidate_index": 21,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.04281352981636888,
+      "held_out_episode_id": "081-stripe-rope/episode_0006",
+      "persistence_chamfer_m": 0.027445850781033624,
+      "selected_candidate_index": 21,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.03283857729087891,
+      "held_out_episode_id": "081-stripe-rope/episode_0007",
+      "persistence_chamfer_m": 0.04524593204355199,
+      "selected_candidate_index": 21,
+      "win": true
+    },
+    {
+      "candidate_chamfer_m": 0.02462838407180157,
+      "held_out_episode_id": "081-stripe-rope/episode_0009",
+      "persistence_chamfer_m": 0.05941019734954079,
+      "selected_candidate_index": 21,
+      "win": true
+    }
+  ],
+  "leave_one_source_win_fraction": 0.5,
+  "object_id": "081-stripe-rope",
+  "persistence_source_mean_chamfer_m": 0.03831441582592634,
+  "pooled_source_mean_chamfer_m": 0.03788027000045512,
+  "pooled_source_relative_improvement_vs_persistence": 0.011331135190568173,
+  "result_sha256": "25966e2074770bfb5b2ee520a8531d4567cc97e8ec0201170b6f551e14771ba3",
+  "schema_version": 2,
+  "sealed_candidate_indices": [
+    1,
+    15,
+    21,
+    147,
+    151,
+    185,
+    196
+  ],
+  "sealed_candidate_parameters": {
+    "1": {
+      "bend_spring_y": 1e-06,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "147": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 3000.0
+    },
+    "15": {
+      "bend_spring_y": 10.0,
+      "controller_spring_y": 1000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "151": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 3000.0
+    },
+    "185": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 1000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 10000.0
+    },
+    "196": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.0,
+      "stretch_spring_y": 10000.0
+    },
+    "21": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    }
+  },
+  "selection": {
+    "candidate_count": 200,
+    "pooled_candidate_index": 21,
+    "single_source_candidate_indices": [
+      196,
+      147,
+      151,
+      1,
+      21,
+      15
+    ],
+    "source_count": 6,
+    "unique_single_source_candidate_indices": [
+      1,
+      15,
+      21,
+      147,
+      151,
+      196
+    ]
+  },
+  "source_backend_competence": {
+    "minimum_leave_one_source_win_fraction": 0.6,
+    "minimum_relative_improvement": 0.05,
+    "passed": false
+  },
+  "source_episode_ids": [
+    "081-stripe-rope/episode_0001",
+    "081-stripe-rope/episode_0003",
+    "081-stripe-rope/episode_0004",
+    "081-stripe-rope/episode_0006",
+    "081-stripe-rope/episode_0007",
+    "081-stripe-rope/episode_0009"
+  ],
+  "source_grid_result_sha256": [
+    "b40cc2c8d2b8945622f472b55128bb68b34c2f676126d5c1cc9ea6c699a56fac",
+    "767217b9e3c7c9ad047be4aba5406dbbf93b97bfd7f5e7fbad992b4590397ffc",
+    "aa6f7f64be9297d3235c8e92f2193f05b600e8eeba0ca6f09857761ffc05b02b",
+    "67eac2523c808c901bede4dc4b729509e9f85dc067d89c2c02682a4320d6eae0",
+    "1545757acbc5bc53b2529d1d2e24f7c8312e004641753093486d539ad948bc0e",
+    "ebc3b63763a6f0b042d4972fb3d93091b6a07b64a46cc0e07e6e06cba162b259"
+  ]
+}

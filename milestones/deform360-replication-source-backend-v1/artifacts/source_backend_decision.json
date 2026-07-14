@@ -1,0 +1,112 @@
+{
+  "admitted_object_ids": [],
+  "artifact_kind": "Deform360ReplicationSourceBackendDecision",
+  "backend_policy_config_sha256": "96e9a99d4b1052e97e53c28281af0af45b4c5cd3fee9b07dac06b722b460d478",
+  "cohort_aggregate_diagnostic": {
+    "complete_cohort": false,
+    "leave_one_source_win_fraction": 0.25,
+    "passed": false,
+    "persistence_source_mean_chamfer_m": 0.034826144831812025,
+    "pooled_fit_object_count": 4,
+    "pooled_source_mean_chamfer_m": 0.057732437192688744,
+    "relative_improvement_vs_persistence": -0.65773264515781,
+    "source_stage_failure_object_count": 2
+  },
+  "decision_scope": "per-object competence before the six-object target phase",
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "source_geometry_and_tactile_read": true,
+    "target_future_geometry_read": false,
+    "target_future_tactile_read": false,
+    "target_prefix_read": false
+  },
+  "object_results": [
+    {
+      "competence_passed": false,
+      "leave_one_source_win_fraction": 0.5,
+      "object_id": "002-rope-silk",
+      "outcome_kind": "pooled-source-fit",
+      "persistence_source_mean_chamfer_m": 0.03969221750798403,
+      "pooled_candidate_index": 21,
+      "pooled_fit_result_sha256": "23574faf4bd3202a1aff7ce726f995f3cce8c3750abc8565047e5352b9746d48",
+      "pooled_source_mean_chamfer_m": 0.05173285664871943,
+      "relative_improvement_vs_persistence": -0.30335012495367497,
+      "stratum": "filament"
+    },
+    {
+      "competence_passed": false,
+      "leave_one_source_win_fraction": 0.5,
+      "object_id": "081-stripe-rope",
+      "outcome_kind": "pooled-source-fit",
+      "persistence_source_mean_chamfer_m": 0.03831441582592634,
+      "pooled_candidate_index": 21,
+      "pooled_fit_result_sha256": "25966e2074770bfb5b2ee520a8531d4567cc97e8ec0201170b6f551e14771ba3",
+      "pooled_source_mean_chamfer_m": 0.03788027000045512,
+      "relative_improvement_vs_persistence": 0.011331135190568173,
+      "stratum": "filament"
+    },
+    {
+      "competence_passed": false,
+      "leave_one_source_win_fraction": 0.0,
+      "object_id": "085-scarf-cloth",
+      "outcome_kind": "pooled-source-fit",
+      "persistence_source_mean_chamfer_m": 0.03700060473931359,
+      "pooled_candidate_index": 61,
+      "pooled_fit_result_sha256": "f0807740373943911b642a2137e0f5aa19bd2b0ae16d49a2010105df90f6acf0",
+      "pooled_source_mean_chamfer_m": 0.07942669296949338,
+      "relative_improvement_vs_persistence": -1.1466322923393077,
+      "stratum": "sheet"
+    },
+    {
+      "competence_passed": false,
+      "error_message": "no candidate is valid on every source",
+      "error_type": "ValueError",
+      "failed_episode_id": null,
+      "failed_stage": "source-pooling",
+      "object_id": "083-blanket-cloth",
+      "outcome_kind": "source-stage-failure",
+      "source_stage_failure_result_sha256": "35a5edc9a23fedd725100b03423568536ca2aa10b24a47ff8b91346606eb1dc8",
+      "stratum": "sheet"
+    },
+    {
+      "competence_passed": false,
+      "error_message": "too many future hull observations are unavailable",
+      "error_type": "ValueError",
+      "failed_episode_id": "092-squirrel/episode_0007",
+      "failed_stage": "source-geometry",
+      "object_id": "092-squirrel",
+      "outcome_kind": "source-stage-failure",
+      "source_stage_failure_result_sha256": "d01989ea2a260404c193ff2a1c7b02d5ee3ea3afb9b1f04c3dcdfe56ae30754e",
+      "stratum": "volumetric"
+    },
+    {
+      "competence_passed": false,
+      "leave_one_source_win_fraction": 0.0,
+      "object_id": "170-spider",
+      "outcome_kind": "pooled-source-fit",
+      "persistence_source_mean_chamfer_m": 0.02429734125402414,
+      "pooled_candidate_index": 25,
+      "pooled_fit_result_sha256": "aa849a9bb57ec2a6baedc1ca45243fe58c5bd81fe94a69706806ea7e997fe1af",
+      "pooled_source_mean_chamfer_m": 0.06188992915208704,
+      "relative_improvement_vs_persistence": -1.5471893613807146,
+      "stratum": "volumetric"
+    }
+  ],
+  "protocol_config_sha256": "f0aab308345807b2183f653306a062d4ad0295584b6b283deb99d29b3c247934",
+  "rejected_object_ids": [
+    "002-rope-silk",
+    "081-stripe-rope",
+    "085-scarf-cloth",
+    "083-blanket-cloth",
+    "092-squirrel",
+    "170-spider"
+  ],
+  "result_sha256": "3603d273f6263dfe682631b9d9c72ae73b11ec2707a649f6d065cb6855e343a2",
+  "schema_version": 2,
+  "target_decision": {
+    "full_six_object_official_warp_replication_admitted": false,
+    "rule": "every object-level source backend must pass before target-prefix access",
+    "target_future_access_permitted": false,
+    "target_prefix_access_permitted": false
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "artifact_kind": "Deform360ReplicationPooledSourceWarpFit",
+  "candidate_quality_filter": {
+    "finite_chamfer_required": true,
+    "maximum_p99_relative_edge_strain": 0.5,
+    "pooled_candidate_must_pass_every_source_episode": true,
+    "single_source_candidate_must_pass_its_fit_episode": true
+  },
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "source_candidate_scores_read": true,
+    "target_future_read": false,
+    "target_prefix_read": false
+  },
+  "leave_one_source": [
+    {
+      "candidate_chamfer_m": 0.020241873826406336,
+      "held_out_episode_id": "002-rope-silk/episode_0000",
+      "persistence_chamfer_m": 0.028922007535582158,
+      "selected_candidate_index": 21,
+      "win": true
+    },
+    {
+      "candidate_chamfer_m": 0.08902013574359724,
+      "held_out_episode_id": "002-rope-silk/episode_0002",
+      "persistence_chamfer_m": 0.030219513739461027,
+      "selected_candidate_index": 21,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.047520289780084865,
+      "held_out_episode_id": "002-rope-silk/episode_0005",
+      "persistence_chamfer_m": 0.04774689141426006,
+      "selected_candidate_index": 21,
+      "win": true
+    },
+    {
+      "candidate_chamfer_m": 0.05538203493955811,
+      "held_out_episode_id": "002-rope-silk/episode_0006",
+      "persistence_chamfer_m": 0.030913138948885217,
+      "selected_candidate_index": 21,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.05364166869540751,
+      "held_out_episode_id": "002-rope-silk/episode_0007",
+      "persistence_chamfer_m": 0.04389392165284289,
+      "selected_candidate_index": 21,
+      "win": false
+    },
+    {
+      "candidate_chamfer_m": 0.044591136907262525,
+      "held_out_episode_id": "002-rope-silk/episode_0009",
+      "persistence_chamfer_m": 0.056457831756872835,
+      "selected_candidate_index": 21,
+      "win": true
+    }
+  ],
+  "leave_one_source_win_fraction": 0.5,
+  "object_id": "002-rope-silk",
+  "persistence_source_mean_chamfer_m": 0.03969221750798403,
+  "pooled_source_mean_chamfer_m": 0.05173285664871943,
+  "pooled_source_relative_improvement_vs_persistence": -0.30335012495367497,
+  "result_sha256": "23574faf4bd3202a1aff7ce726f995f3cce8c3750abc8565047e5352b9746d48",
+  "schema_version": 2,
+  "sealed_candidate_indices": [
+    17,
+    21,
+    23,
+    171,
+    176
+  ],
+  "sealed_candidate_parameters": {
+    "17": {
+      "bend_spring_y": 10.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "171": {
+      "bend_spring_y": 10.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 10000.0
+    },
+    "176": {
+      "bend_spring_y": 10.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.0,
+      "stretch_spring_y": 10000.0
+    },
+    "21": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "23": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 300.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    }
+  },
+  "selection": {
+    "candidate_count": 200,
+    "pooled_candidate_index": 21,
+    "single_source_candidate_indices": [
+      21,
+      21,
+      17,
+      171,
+      23,
+      176
+    ],
+    "source_count": 6,
+    "unique_single_source_candidate_indices": [
+      17,
+      21,
+      23,
+      171,
+      176
+    ]
+  },
+  "source_backend_competence": {
+    "minimum_leave_one_source_win_fraction": 0.6,
+    "minimum_relative_improvement": 0.05,
+    "passed": false
+  },
+  "source_episode_ids": [
+    "002-rope-silk/episode_0000",
+    "002-rope-silk/episode_0002",
+    "002-rope-silk/episode_0005",
+    "002-rope-silk/episode_0006",
+    "002-rope-silk/episode_0007",
+    "002-rope-silk/episode_0009"
+  ],
+  "source_grid_result_sha256": [
+    "1376a244b01c1c2b091facf919005e329f87a1aadf9d1f630c9daf54cfb4b4f8",
+    "6aa83404d3e70d5547f98e29dd0cd573d49b34220ede990e678e1346e23281b3",
+    "d3567b93bd5820307db23875530f4eeab8fb18f60be433eebbe6d58ff4f3896a",
+    "3f2e1cd7b7ccfb29bdcb2fbb924d0f4165543b8a58750a3443fd9d39132b7bc0",
+    "de734461499bbc074667841c67fb2bf4df3960ef2757ac6ddbb4a93106f20cbb",
+    "f8b37e22e55ef757091a9989d752ff11246d2e5cb8c60979c1ade97398e6a704"
+  ]
+}

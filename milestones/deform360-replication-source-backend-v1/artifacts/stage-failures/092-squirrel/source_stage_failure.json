@@ -1,0 +1,68 @@
+{
+  "artifact_kind": "Deform360ReplicationSourceStageFailure",
+  "backend_policy_config_sha256": "96e9a99d4b1052e97e53c28281af0af45b4c5cd3fee9b07dac06b722b460d478",
+  "decision": {
+    "competence_passed": false,
+    "fallback_used": false,
+    "target_prefix_access_permitted": false
+  },
+  "episode_status": [
+    {
+      "episode_id": "092-squirrel/episode_0000",
+      "status": "completed"
+    },
+    {
+      "episode_id": "092-squirrel/episode_0004",
+      "status": "completed"
+    },
+    {
+      "episode_id": "092-squirrel/episode_0005",
+      "status": "completed"
+    },
+    {
+      "episode_id": "092-squirrel/episode_0007",
+      "status": "failed"
+    },
+    {
+      "episode_id": "092-squirrel/episode_0008",
+      "status": "not-attempted"
+    },
+    {
+      "episode_id": "092-squirrel/episode_0009",
+      "status": "not-attempted"
+    }
+  ],
+  "error_message": "too many future hull observations are unavailable",
+  "error_type": "ValueError",
+  "evidence": [
+    {
+      "path": "failures/092-squirrel/episode_0007_source_geometry.log",
+      "sha256": "e1ac396153f3c0fdb1851685709ab1fbc67f094b0739299a01ba0e7c79a2a674",
+      "size_bytes": 1313
+    },
+    {
+      "path": "observations/092-squirrel/episode_0007/sampled_masks.json",
+      "sha256": "d90a5404da0c07e2c9f25c53bd7cada265ca4858288e9e47c4bd941963280a0d",
+      "size_bytes": 142270
+    },
+    {
+      "path": "observations/092-squirrel/episode_0007/sampled_masks.npz",
+      "sha256": "dbbe17c14e260899b9da86194da27f2000b97b3df5760b5c943aad1a08bf6050",
+      "size_bytes": 493263
+    }
+  ],
+  "failed_episode_id": "092-squirrel/episode_0007",
+  "failed_stage": "source-geometry",
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "source_geometry_and_tactile_read": true,
+    "target_future_geometry_read": false,
+    "target_future_tactile_read": false,
+    "target_prefix_read": false
+  },
+  "object_id": "092-squirrel",
+  "protocol_config_sha256": "f0aab308345807b2183f653306a062d4ad0295584b6b283deb99d29b3c247934",
+  "result_sha256": "d01989ea2a260404c193ff2a1c7b02d5ee3ea3afb9b1f04c3dcdfe56ae30754e",
+  "schema_version": 1,
+  "stratum": "volumetric"
+}
