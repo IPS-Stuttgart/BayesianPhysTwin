@@ -10,6 +10,11 @@ from causal4d_public.deform360_contact import (
     fit_contact_model,
     seal_target_contact_predictions,
 )
+from causal4d_public.deform360_replication import (
+    load_deform360_replication_protocol,
+    replication_config_sha256,
+    validate_deform360_replication_protocol,
+)
 from causal4d_public.deform360_sam2 import (
     RopeSam2MaskConfig,
     build_sam2_mask_audit,
@@ -141,6 +146,7 @@ __all__ = [
     "fit_forward_rope_dynamics",
     "gaussian_splat_geometry_diagnostics",
     "load_deform360_protocol_config",
+    "load_deform360_replication_protocol",
     "load_source_rope_dynamics_observation",
     "load_forward_rope_fit_parameters",
     "load_sam2_view_audit",
@@ -148,6 +154,7 @@ __all__ = [
     "preflight_deform360_001_rope",
     "preflight_pokeflex_dataset",
     "propagate_prefix_contact_state",
+    "replication_config_sha256",
     "rope_mask_candidate_diagnostics",
     "rope_chain_edges",
     "rollout_rope_dynamics",
@@ -155,6 +162,7 @@ __all__ = [
     "seal_held_out_rope_predictions",
     "select_source_locked_prefix_cameras",
     "target_prefix_bounds",
+    "validate_deform360_replication_protocol",
     "validate_sam2_episode_access",
     "validate_sam2_mask_artifact",
     "validate_sam2_prefix_mask_artifact",
