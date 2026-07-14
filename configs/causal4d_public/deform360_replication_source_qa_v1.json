@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "config": {
+    "policy_id": "deform360-replication-source-geometry-qa-v1",
+    "status": "source-only-policy-frozen-after-first-frame-exploration",
+    "replication_config_sha256": "f0aab308345807b2183f653306a062d4ad0295584b6b283deb99d29b3c247934",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "exploratory_source_artifact_sha256": "5d2880c286cedb558dd7b36e929ce95091eab0c3c8587b66af516ed9020b26c9",
+    "source_episode_by_object": {
+      "002-rope-silk": 0,
+      "081-stripe-rope": 1,
+      "083-blanket-cloth": 1,
+      "085-scarf-cloth": 1,
+      "092-squirrel": 0,
+      "170-spider": 0
+    },
+    "reference_camera": "brics-odroid-001_cam0",
+    "candidate_camera_policy": "intersection of calibrated cameras across all six objects",
+    "expected_candidate_camera_count": 31,
+    "candidate_input_policy": "one exact-stem source recording staged per candidate camera is permitted",
+    "sam2": {
+      "points_per_side": 24,
+      "points_per_batch": 64,
+      "predicted_iou_threshold": 0.7,
+      "stability_score_threshold": 0.8,
+      "minimum_mask_region_area": 100,
+      "minimum_area_fraction": 0.0005,
+      "maximum_area_fraction": 0.65,
+      "minimum_foreground_contrast": 0.06,
+      "maximum_normalized_center_distance": 0.9,
+      "border_side_penalty": 0.55,
+      "minimum_reference_appearance_similarity": 0.35
+    },
+    "cross_view": {
+      "cube_half_extent_m": 0.5,
+      "voxel_resolution": 120,
+      "consensus_fraction_of_peak": 0.55,
+      "minimum_consensus_votes": 8,
+      "minimum_leave_one_out_recall": 0.3
+    },
+    "minimum_cross_view_camera_count": 12,
+    "selected_camera_count": 12,
+    "selected_camera_rule": "reference camera followed by deterministic farthest-point sampling over accepted camera centers",
+    "information_boundary": {
+      "source_first_frames_only": true,
+      "target_media_allowed": false,
+      "target_outcomes_allowed": false,
+      "selection_metrics_allowed": false
+    }
+  },
+  "config_sha256": "f5c3f4577bab648bf3da2537c28b7a77e87c055b32e1284c179a192e7569909b"
+}

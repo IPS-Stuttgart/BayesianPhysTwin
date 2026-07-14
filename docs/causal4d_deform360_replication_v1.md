@@ -123,3 +123,20 @@ changing the reduced-model replication.
 
 Any failed source QA may exclude an object only under a rule declared in the
 lock. Outcomes cannot be used to replace a selected object or target.
+
+## Source Geometry QA
+
+The post-preregistration source-only camera policy is frozen separately in
+`configs/causal4d_public/deform360_replication_source_qa_v1.json`. It reads the
+first frame of one declared source episode per object, uses a pinned SAM 2.1
+automatic mask from `brics-odroid-001_cam0` as an appearance anchor, and rejects
+other views that do not produce a reference-consistent mask. A calibrated 3D
+leave-one-view hull gate then selects reliable cameras. The final 12 cameras per
+object are chosen by deterministic farthest-point sampling over camera centers,
+with the reference camera retained.
+
+This QA read no calibration-split or target episode and computed no prediction
+metric.
+All six objects passed with 23--27 cross-view-consistent cameras. The locked
+artifact is archived under
+`milestones/deform360-replication-source-qa-v1/`.
