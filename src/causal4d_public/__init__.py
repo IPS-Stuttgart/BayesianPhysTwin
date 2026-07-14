@@ -20,6 +20,14 @@ from causal4d_public.deform360_replication import (
     replication_config_sha256,
     validate_deform360_replication_protocol,
 )
+from causal4d_public.deform360_replication_backend import (
+    backend_policy_sha256,
+    build_source_backend_decision_artifact,
+    load_backend_policy,
+    validate_backend_policy,
+    validate_source_backend_decision_artifact,
+    write_source_backend_decision_artifact,
+)
 from causal4d_public.deform360_replication_source_qa import (
     load_source_qa_policy,
     run_source_geometry_qa,
@@ -46,6 +54,13 @@ from causal4d_public.deform360_replication_controls import (
     select_pooling_controls,
     validate_pooling_control_selection_artifact,
     write_pooling_control_selection_artifact,
+)
+from causal4d_public.deform360_replication_transition import (
+    build_transition_episode_artifact,
+    build_transition_fit_artifact,
+    load_transition_episode_artifact,
+    validate_transition_fit_artifact,
+    write_transition_artifact,
 )
 from causal4d_public.deform360_sam2 import (
     RopeSam2MaskConfig,
@@ -164,10 +179,14 @@ __all__ = [
     "ThinRopeSplatProbeConfig",
     "WarpRopeFeasibilityConfig",
     "build_sam2_mask_audit",
+    "backend_policy_sha256",
     "build_pooling_control_selection_artifact",
     "build_sam2_prefix_mask_audit",
     "build_sam2_suffix_mask_audit",
     "build_source_rope_observation",
+    "build_source_backend_decision_artifact",
+    "build_transition_episode_artifact",
+    "build_transition_fit_artifact",
     "build_forward_rope_fit_artifact",
     "build_target_prefix_rope_geometry",
     "build_target_future_rope_geometry",
@@ -190,8 +209,10 @@ __all__ = [
     "gaussian_splat_geometry_diagnostics",
     "load_deform360_protocol_config",
     "load_deform360_replication_protocol",
+    "load_backend_policy",
     "load_source_qa_policy",
     "load_source_rope_dynamics_observation",
+    "load_transition_episode_artifact",
     "load_forward_rope_fit_parameters",
     "load_sam2_view_audit",
     "multiview_mask_consistency",
@@ -214,8 +235,10 @@ __all__ = [
     "select_diverse_cameras",
     "target_prefix_bounds",
     "validate_deform360_replication_protocol",
+    "validate_backend_policy",
     "validate_source_qa_artifact",
     "validate_source_qa_policy",
+    "validate_source_backend_decision_artifact",
     "validate_official_warp_feasibility_artifact",
     "validate_pooling_control_selection_artifact",
     "validate_sam2_episode_access",
@@ -228,8 +251,11 @@ __all__ = [
     "validate_forward_rope_fit_artifact",
     "validate_target_prefix_rope_geometry",
     "validate_target_future_rope_geometry",
+    "validate_transition_fit_artifact",
     "validate_rope_sequence_artifact",
     "validate_source_rope_observation_artifact",
     "write_synthetic_pokeflex_fixture",
     "write_pooling_control_selection_artifact",
+    "write_source_backend_decision_artifact",
+    "write_transition_artifact",
 ]

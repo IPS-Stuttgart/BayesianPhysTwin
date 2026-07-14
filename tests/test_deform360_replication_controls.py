@@ -33,6 +33,19 @@ def test_pooling_control_preserves_every_single_source_selection() -> None:
     assert result["pooled_better_than_single_source_median"] is True
 
 
+def test_single_source_selection_does_not_require_other_source_validity() -> None:
+    scores = np.asarray(
+        [
+            [0.1, np.inf],
+            [np.inf, 0.2],
+            [0.3, 0.3],
+        ]
+    )
+    selection = select_pooling_controls(scores)
+    assert selection.pooled_candidate_index == 2
+    assert selection.single_source_candidate_indices == (0, 1)
+
+
 def test_pooling_control_artifact_seals_source_selected_candidates_only() -> None:
     fit = {
         "artifact_kind": "unit-source-fit",

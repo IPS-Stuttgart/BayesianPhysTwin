@@ -41,24 +41,28 @@ def select_pooling_controls(
     _require(scores.ndim == 2, "source scores must have shape (candidate, source)")
     candidate_count, source_count = scores.shape
     _require(candidate_count >= 1 and source_count >= 2, "too few source scores")
-    valid = np.all(np.isfinite(scores), axis=1)
-    _require(np.any(valid), "no candidate is finite on every source")
-    valid_indices = np.flatnonzero(valid)
+    pooled_valid = np.all(np.isfinite(scores), axis=1)
+    _require(np.any(pooled_valid), "no candidate is valid on every source")
+    pooled_valid_indices = np.flatnonzero(pooled_valid)
     pooled = int(
         min(
-            valid_indices,
+            pooled_valid_indices,
             key=lambda index: (float(np.mean(scores[index])), int(index)),
         )
     )
-    single = tuple(
-        int(
-            min(
-                valid_indices,
-                key=lambda index: (float(scores[index, source]), int(index)),
+    single_values = []
+    for source in range(source_count):
+        valid_indices = np.flatnonzero(np.isfinite(scores[:, source]))
+        _require(len(valid_indices) > 0, f"source {source} has no valid candidate")
+        single_values.append(
+            int(
+                min(
+                    valid_indices,
+                    key=lambda index: (float(scores[index, source]), int(index)),
+                )
             )
         )
-        for source in range(source_count)
-    )
+    single = tuple(single_values)
     return PoolingControlSelection(
         pooled_candidate_index=pooled,
         single_source_candidate_indices=single,
