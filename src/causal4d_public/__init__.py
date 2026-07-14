@@ -23,10 +23,13 @@ from causal4d_public.deform360_replication import (
 from causal4d_public.deform360_replication_backend import (
     backend_policy_sha256,
     build_source_backend_decision_artifact,
+    build_source_stage_failure_artifact,
     load_backend_policy,
     validate_backend_policy,
     validate_source_backend_decision_artifact,
+    validate_source_stage_failure_artifact,
     write_source_backend_decision_artifact,
+    write_source_stage_failure_artifact,
 )
 from causal4d_public.deform360_replication_source_qa import (
     load_source_qa_policy,
@@ -185,6 +188,7 @@ __all__ = [
     "build_sam2_suffix_mask_audit",
     "build_source_rope_observation",
     "build_source_backend_decision_artifact",
+    "build_source_stage_failure_artifact",
     "build_transition_episode_artifact",
     "build_transition_fit_artifact",
     "build_forward_rope_fit_artifact",
@@ -239,6 +243,7 @@ __all__ = [
     "validate_source_qa_artifact",
     "validate_source_qa_policy",
     "validate_source_backend_decision_artifact",
+    "validate_source_stage_failure_artifact",
     "validate_official_warp_feasibility_artifact",
     "validate_pooling_control_selection_artifact",
     "validate_sam2_episode_access",
@@ -257,5 +262,6 @@ __all__ = [
     "write_synthetic_pokeflex_fixture",
     "write_pooling_control_selection_artifact",
     "write_source_backend_decision_artifact",
+    "write_source_stage_failure_artifact",
     "write_transition_artifact",
 ]

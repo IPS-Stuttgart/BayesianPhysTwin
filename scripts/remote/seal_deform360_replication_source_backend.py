@@ -23,10 +23,16 @@ def main() -> None:
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--backend-policy", type=Path, required=True)
+    parser.add_argument("--source-stage-failure", type=Path, action="append")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     protocol = load_deform360_replication_protocol(args.protocol)
     backend_policy = load_backend_policy(args.backend_policy)
+    failures = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in (args.source_stage_failure or [])
+    ]
+    failed_objects = {failure["object_id"] for failure in failures}
     fits = [
         json.loads(
             (
@@ -37,9 +43,10 @@ def main() -> None:
             ).read_text(encoding="utf-8")
         )
         for record in protocol["config"]["cohort"]
+        if record["object_id"] not in failed_objects
     ]
     payload = build_source_backend_decision_artifact(
-        protocol, fits, backend_policy
+        protocol, fits, backend_policy, failures
     )
     write_source_backend_decision_artifact(args.output, payload)
     print(

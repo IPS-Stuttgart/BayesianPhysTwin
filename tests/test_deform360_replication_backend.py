@@ -9,9 +9,11 @@ import pytest
 from causal4d_public.deform360_replication_backend import (
     backend_policy_sha256,
     build_source_backend_decision_artifact,
+    build_source_stage_failure_artifact,
     load_backend_policy,
     validate_backend_policy,
     validate_source_backend_decision_artifact,
+    validate_source_stage_failure_artifact,
 )
 from causal4d_public.deform360_replication_fit import (
     _artifact_sha256,
@@ -97,3 +99,106 @@ def test_backend_policy_is_canonical_and_fail_closed() -> None:
     changed["config"]["geometry"]["minimum_consensus_votes"] = 7
     with pytest.raises(ValueError, match="checksum"):
         validate_backend_policy(changed)
+
+
+def test_source_stage_failure_blocks_targets_without_a_fabricated_fit() -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = json.loads(
+        (
+            root / "configs/causal4d_public/deform360_replication_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    backend_policy = load_backend_policy(
+        root / "configs/causal4d_public/deform360_replication_backend_v1.json"
+    )
+    failed_cohort = protocol["config"]["cohort"][-1]
+    source_ids = list(map(int, failed_cohort["source_episode_ids"]))
+    failure = build_source_stage_failure_artifact(
+        protocol,
+        backend_policy,
+        object_id=failed_cohort["object_id"],
+        stage="source-geometry",
+        failed_episode_id=(
+            f"{failed_cohort['object_id']}/episode_{source_ids[1]:04d}"
+        ),
+        error_type="ValueError",
+        error_message="too many future hull observations are unavailable",
+        episode_status=[
+            {
+                "episode_id": (
+                    f"{failed_cohort['object_id']}/episode_{episode_id:04d}"
+                ),
+                "status": (
+                    "completed"
+                    if offset == 0
+                    else "failed"
+                    if offset == 1
+                    else "not-attempted"
+                ),
+            }
+            for offset, episode_id in enumerate(source_ids)
+        ],
+        evidence=[
+            {"path": "failures/source-geometry.log", "size_bytes": 12, "sha256": "0" * 64}
+        ],
+    )
+    assert validate_source_stage_failure_artifact(failure)["passed"] is True
+
+    fits = []
+    for cohort in protocol["config"]["cohort"][:-1]:
+        fits.append(
+            pool_source_warp_candidate_grids(
+                [
+                    _source_grid(cohort["object_id"], int(episode_id), 0.8)
+                    for episode_id in cohort["source_episode_ids"]
+                ]
+            )
+        )
+    artifact = build_source_backend_decision_artifact(
+        protocol, fits, backend_policy, [failure]
+    )
+    validation = validate_source_backend_decision_artifact(artifact)
+    assert validation["full_replication_admitted"] is False
+    assert failed_cohort["object_id"] in artifact["rejected_object_ids"]
+    assert artifact["cohort_aggregate_diagnostic"]["complete_cohort"] is False
+    assert artifact["target_decision"]["target_prefix_access_permitted"] is False
+
+
+def test_source_pooling_failure_requires_all_episode_grids() -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = json.loads(
+        (
+            root / "configs/causal4d_public/deform360_replication_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    backend_policy = load_backend_policy(
+        root / "configs/causal4d_public/deform360_replication_backend_v1.json"
+    )
+    cohort = protocol["config"]["cohort"][0]
+    statuses = [
+        {
+            "episode_id": f"{cohort['object_id']}/episode_{int(index):04d}",
+            "status": "completed",
+        }
+        for index in cohort["source_episode_ids"]
+    ]
+    failure = build_source_stage_failure_artifact(
+        protocol,
+        backend_policy,
+        object_id=cohort["object_id"],
+        stage="source-pooling",
+        failed_episode_id=None,
+        error_type="ValueError",
+        error_message="no candidate is valid on every source",
+        episode_status=statuses,
+        evidence=[
+            {"path": "failures/source-pooling.log", "size_bytes": 12, "sha256": "0" * 64}
+        ],
+    )
+    assert validate_source_stage_failure_artifact(failure)["passed"] is True
+
+    changed = copy.deepcopy(failure)
+    changed["episode_status"][0]["status"] = "not-attempted"
+    changed["result_sha256"] = _artifact_sha256(changed)
+    with pytest.raises(ValueError, match="pooling failure status"):
+        validate_source_stage_failure_artifact(changed)
