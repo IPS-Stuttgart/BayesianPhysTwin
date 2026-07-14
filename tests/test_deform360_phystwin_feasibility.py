@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -9,6 +13,7 @@ from causal4d_public.deform360_phystwin_feasibility import (
     _source_forecast_case,
     _summarize_candidate_scores,
     deform360_xyz_to_warp_xzy,
+    validate_official_warp_feasibility_artifact,
     warp_rope_candidates,
 )
 from causal4d_public.deform360_rope_dynamics import RopeDynamicsObservation
@@ -105,3 +110,23 @@ def test_source_gate_summary_rejects_nonfinite_candidates() -> None:
         config=config,
     )
     assert summary["selected_candidate_index"] == 1
+
+
+def test_archived_official_warp_gate_is_internally_and_file_hash_locked() -> None:
+    root = (
+        Path(__file__).resolve().parents[1]
+        / "milestones"
+        / "deform360-official-warp-source-gate-v1"
+    )
+    manifest = json.loads((root / "artifact-manifest.json").read_text())
+    result_path = root / manifest["artifacts"][0]["path"]
+    payload = json.loads(result_path.read_text())
+    validated = validate_official_warp_feasibility_artifact(
+        payload, verify_archive=False
+    )
+    assert validated["gate_passed"] is True
+    assert validated["result_sha256"] == manifest["result_sha256"]
+    for record in manifest["artifacts"]:
+        path = root / record["path"]
+        assert path.stat().st_size == record["bytes"]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == record["sha256"]
