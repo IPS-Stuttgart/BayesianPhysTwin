@@ -419,6 +419,16 @@ def _first_key(record: Mapping[str, Any], candidates: Sequence[str]) -> str | No
     return next((key for key in candidates if key in record), None)
 
 
+def _nonnegative_frame_id(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, str) and value.isascii() and value.isdigit():
+        return int(value)
+    return None
+
+
 def _robot_summary(path: Path, config: PokeFlexReadinessConfig) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, list) or not payload:
@@ -449,8 +459,8 @@ def _robot_summary(path: Path, config: PokeFlexReadinessConfig) -> dict[str, Any
     for index, item in enumerate(payload):
         if not isinstance(item, Mapping):
             continue
-        frame = item.get("frame", index)
-        if isinstance(frame, int) and not isinstance(frame, bool) and frame >= 0:
+        frame = _nonnegative_frame_id(item.get("frame", index))
+        if frame is not None:
             frames.append(frame)
         force = _finite_vector(item.get("forces"), 3)
         if force is not None:

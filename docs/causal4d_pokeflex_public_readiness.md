@@ -2,10 +2,11 @@
 
 ## Status
 
-This is an access-independent public-data track. It does not replace or modify
-the frozen `causal4d-preacquisition-v4` physical protocol. Dataset access is
-pending, no PokeFlex data have been downloaded, and no PokeFlex outcome has
-been inspected.
+This public-data track does not replace or modify the frozen
+`causal4d-preacquisition-v4` physical protocol. The v1 readiness config was
+locked while access was pending and remains immutable. Access was subsequently
+granted, and a server-side download began on 2026-07-14. Raw data remain outside
+Git. No prediction outcome has been inspected.
 
 The public interface is pinned to:
 
@@ -119,9 +120,42 @@ one skipped test. The compact verification record contains no PokeFlex data.
 The preflight may reject individual malformed takes using schema metadata, but
 it never hides them. All exclusions remain in the output manifest.
 
+## First real-data preflight
+
+An outcome-free preflight was run on the seven completed `3dPrintedBunny`
+`poking` archives while the remaining download continued. All seven archives
+passed ZIP integrity. Only robot records, camera calibrations, and OBJ meshes
+were staged; RGB-D images and target prediction outcomes were not opened.
+
+The public robot records encode frame IDs as zero-padded strings such as
+`"00001"`. The adapter now accepts either nonnegative JSON integers or ASCII
+digit strings, with a regression test for the public encoding.
+
+The locked metadata split contains five development takes, one calibration
+take, and one sealed target take. The preflight enables:
+
+- factual geometry continuation;
+- cross-take interventional evaluation;
+- pose/wrench-based contact proposals.
+
+It continues to disable:
+
+- material-track and per-vertex metrics without verified identities;
+- delay inference without timestamps;
+- commanded-versus-measured separation without command logs;
+- explicit-contact claims without contact annotations;
+- nominal 90% session-level conformal calibration with only one calibration
+  take.
+
+The preflight result SHA-256 is
+`56ff6606c3c90234f5945c23fa3999c45cc4490a0d6530b2086c79f80018b89a`.
+The isolated `gpuserver6000` suite passed 433 tests with four skips using
+PyRecEst 2.4.1. Compact evidence is recorded in
+`milestones/pokeflex-001-public-preflight-v1`.
+
 ## Claim boundary
 
-This track can eventually support held-out interventional prediction across
-publicly recorded pokes. It cannot supply individual counterfactual ground
-truth. Until the real preflight passes, it supports only software readiness and
-an outcome-free protocol lock.
+This track supports held-out interventional prediction across publicly recorded
+pokes. It cannot supply individual counterfactual ground truth. The first real
+preflight establishes schema and split readiness only; it is not a prediction,
+calibration, contact-identification, or Bayesian-PhysTwin result.

@@ -119,6 +119,23 @@ def test_missing_timestamps_blocks_delay_but_not_frame_aligned_continuation(
     assert result["capability_gates"]["factual_geometry_continuation_ready"]
 
 
+def test_zero_padded_public_frame_ids_are_accepted(tmp_path: Path) -> None:
+    root = tmp_path / "pokeflex"
+    write_synthetic_pokeflex_fixture(root, takes_per_object=5, frame_count=16)
+    for robot_path in root.glob("*/*/robot_data.json"):
+        records = json.loads(robot_path.read_text(encoding="utf-8"))
+        for record in records:
+            record["frame"] = f"{record['frame']:05d}"
+        robot_path.write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
+
+    result = preflight_pokeflex_dataset(root)
+
+    assert result["preflight_passed"] is True
+    assert all(take["robot"]["frames_unique"] for take in result["takes"])
+    assert all(take["robot"]["first_frame"] == 1 for take in result["takes"])
+    assert all(take["robot"]["last_frame"] == 16 for take in result["takes"])
+
+
 def test_fixture_and_preflight_are_location_independent(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
