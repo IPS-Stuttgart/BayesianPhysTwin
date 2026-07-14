@@ -10,6 +10,11 @@ from causal4d_public.deform360_contact import (
     fit_contact_model,
     seal_target_contact_predictions,
 )
+from causal4d_public.deform360_phystwin_feasibility import (
+    WarpRopeFeasibilityConfig,
+    run_official_warp_feasibility_gate,
+    validate_official_warp_feasibility_artifact,
+)
 from causal4d_public.deform360_replication import (
     load_deform360_replication_protocol,
     replication_config_sha256,
@@ -124,6 +129,7 @@ __all__ = [
     "RopeSourceObservationConfig",
     "SharedRopeDynamicsParameters",
     "ThinRopeSplatProbeConfig",
+    "WarpRopeFeasibilityConfig",
     "build_sam2_mask_audit",
     "build_sam2_prefix_mask_audit",
     "build_sam2_suffix_mask_audit",
@@ -158,11 +164,13 @@ __all__ = [
     "rope_mask_candidate_diagnostics",
     "rope_chain_edges",
     "rollout_rope_dynamics",
+    "run_official_warp_feasibility_gate",
     "seal_target_contact_predictions",
     "seal_held_out_rope_predictions",
     "select_source_locked_prefix_cameras",
     "target_prefix_bounds",
     "validate_deform360_replication_protocol",
+    "validate_official_warp_feasibility_artifact",
     "validate_sam2_episode_access",
     "validate_sam2_mask_artifact",
     "validate_sam2_prefix_mask_artifact",
