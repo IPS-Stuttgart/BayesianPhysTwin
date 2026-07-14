@@ -47,6 +47,12 @@ The leave-one-source wins were episodes 0, 4, and 8. Episodes 3 and 5 remained
 negative. The gate therefore clears the preregistered threshold exactly rather
 than establishing a uniformly superior backend.
 
+The matched pooling control was selected source-only before target use. The
+pooled candidate is 115. Independent single-source fitting selects candidates
+197, 112, 29, 117, and 98 for source episodes 0, 3, 4, 5, and 8 respectively.
+All six unique candidate identities and parameters are sealed in the pooling
+control artifact; target errors cannot choose among them.
+
 ## Artifacts
 
 The JSON contains the complete candidate table, leave-one-source folds,

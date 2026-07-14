@@ -1,0 +1,86 @@
+{
+  "artifact_kind": "Deform360PoolingControlSelection",
+  "information_boundary": {
+    "source_candidate_scores_read": true,
+    "target_future_geometry_read": false,
+    "target_metrics_computed": false,
+    "target_prefix_read": false
+  },
+  "result_sha256": "e735ef243fe2722896f140368ae4816acdbd84b70939ca0614f5d02396fae032",
+  "schema_version": 1,
+  "sealed_candidate_indices": [
+    29,
+    98,
+    112,
+    115,
+    117,
+    197
+  ],
+  "sealed_candidate_parameters": {
+    "112": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 300.0,
+      "ground_friction": 0.0,
+      "stretch_spring_y": 1000.0
+    },
+    "115": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 1000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 1000.0
+    },
+    "117": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 1000.0
+    },
+    "197": {
+      "bend_spring_y": 1000.0,
+      "controller_spring_y": 3000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 10000.0
+    },
+    "29": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 10000.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "98": {
+      "bend_spring_y": 10.0,
+      "controller_spring_y": 10000.0,
+      "ground_friction": 0.0,
+      "stretch_spring_y": 1000.0
+    }
+  },
+  "selection": {
+    "candidate_count": 200,
+    "pooled_candidate_index": 115,
+    "single_source_candidate_indices": [
+      197,
+      112,
+      29,
+      117,
+      98
+    ],
+    "source_count": 5,
+    "unique_single_source_candidate_indices": [
+      29,
+      98,
+      112,
+      117,
+      197
+    ]
+  },
+  "source_episode_ids": [
+    "001-rope/episode_0000",
+    "001-rope/episode_0003",
+    "001-rope/episode_0004",
+    "001-rope/episode_0005",
+    "001-rope/episode_0008"
+  ],
+  "source_fit_artifact_kind": "Deform360OfficialWarpSourceFeasibilityGate",
+  "source_fit_result_sha256": "dd5838f880ec84a18f7d55dd09c6bb14296c614778ee3e177ecf19a9ad388a33",
+  "target_summary_rule": "median target metric over every source-selected candidate, with source multiplicity preserved"
+}
