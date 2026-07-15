@@ -12,7 +12,10 @@ import pytest
 from causal4d_public.deform360_phystwin_trust import (
     CausalTrustEpisode,
     CausalTrustWeights,
+    PhysicalTrustParameters,
+    apply_cardinality_physical_grid_source_gate,
     causal_control_variate_prediction,
+    fit_cardinality_normalized_physical_grid_source_trust,
     fit_cardinality_normalized_source_causal_trust,
     fit_regime_gated_source_causal_trust,
     fit_source_causal_trust,
@@ -20,6 +23,7 @@ from causal4d_public.deform360_phystwin_trust import (
     load_cardinality_trust_protocol,
     load_official_phystwin_trust_episode,
     validate_cardinality_normalized_source_causal_trust_artifact,
+    validate_cardinality_physical_grid_source_trust_artifact,
     validate_regime_gated_source_causal_trust_artifact,
     validate_source_causal_trust_artifact,
 )
@@ -202,6 +206,92 @@ def test_cardinality_normalization_transfers_to_bimanual_response() -> None:
     assert bimanual_fold["controller_count"] == 2
     assert bimanual_fold["effective_action_response"] == 0.25
     validate_cardinality_normalized_source_causal_trust_artifact(result)
+
+
+def test_physical_grid_is_selected_inside_each_outer_source_fold() -> None:
+    source_ids = ("0", "2", "5", "6", "7", "9")
+    controller_counts = (1, 1, 2, 2, 2, 2)
+    good = PhysicalTrustParameters(10_000.0, 1.0, 50.0)
+    bad = PhysicalTrustParameters(80_000.0, 10.0, 100.0)
+    good_episodes = tuple(
+        _episode(
+            episode_id,
+            offset=index * 0.001,
+            controller_count=controller_count,
+        )
+        for index, (episode_id, controller_count) in enumerate(
+            zip(source_ids, controller_counts, strict=True)
+        )
+    )
+    bad_episodes = tuple(
+        replace(
+            episode,
+            driven_m=episode.zero_action_m
+            - 0.5 * (episode.driven_m - episode.zero_action_m),
+            driven_trajectory_sha256="d" * 64,
+        )
+        for episode in good_episodes
+    )
+
+    result = fit_cardinality_normalized_physical_grid_source_trust(
+        {bad: bad_episodes, good: good_episodes},
+        action_response_grid=(0.0, 0.5, 1.0),
+        autonomous_drift_grid=(0.0, 0.2, 1.0),
+    )
+
+    assert result["selected_physical_parameters"] == good.as_dict()
+    assert all(
+        fold["selected_physical_parameters"] == good.as_dict()
+        and fold["beats_persistence_track"]
+        and fold["beats_persistence_chamfer"]
+        for fold in result["leave_one_action_out"]
+    )
+    validate_cardinality_physical_grid_source_trust_artifact(result)
+
+    mutated_candidates = {}
+    for physical, episodes in {bad: bad_episodes, good: good_episodes}.items():
+        mutated = []
+        for episode in episodes:
+            target = episode.target_m.copy()
+            target[episode.train_stop_frame :] += 0.5
+            mutated.append(replace(episode, target_m=target))
+        mutated_candidates[physical] = tuple(mutated)
+    mutated_result = fit_cardinality_normalized_physical_grid_source_trust(
+        mutated_candidates,
+        action_response_grid=(0.0, 0.5, 1.0),
+        autonomous_drift_grid=(0.0, 0.2, 1.0),
+    )
+    assert (
+        mutated_result["selected_physical_parameters"]
+        == result["selected_physical_parameters"]
+    )
+    assert mutated_result["selected_weights"] == result["selected_weights"]
+    assert [
+        (
+            fold["selected_physical_parameters"],
+            fold["selected_weights"],
+        )
+        for fold in mutated_result["leave_one_action_out"]
+    ] == [
+        (
+            fold["selected_physical_parameters"],
+            fold["selected_weights"],
+        )
+        for fold in result["leave_one_action_out"]
+    ]
+
+    gate = apply_cardinality_physical_grid_source_gate(
+        result,
+        load_cardinality_trust_protocol(_cardinality_protocol_path()),
+        load_cardinality_source_execution_protocol(
+            _cardinality_source_execution_path()
+        ),
+        registered_qa_by_episode={episode_id: True for episode_id in source_ids},
+        tail_mutation_invariant=True,
+    )
+    assert gate["passed"]
+    assert gate["joint_win_count"] == 6
+    assert gate["bimanual_joint_win_count"] == 4
 
 
 def test_regime_gate_cross_fits_prehensile_and_falls_back_exactly() -> None:

@@ -80,6 +80,33 @@ class CausalTrustWeights:
         }
 
 
+@dataclass(frozen=True, order=True)
+class PhysicalTrustParameters:
+    """One preregistered PhysTwin parameter tuple in the source grid."""
+
+    init_spring_y: float
+    drag_damping: float
+    dashpot_damping: float
+
+    def __post_init__(self) -> None:
+        values = (self.init_spring_y, self.drag_damping, self.dashpot_damping)
+        _require(
+            all(np.isfinite(value) for value in values), "physical grid is non-finite"
+        )
+        _require(self.init_spring_y > 0.0, "spring stiffness must be positive")
+        _require(
+            self.drag_damping >= 0.0 and self.dashpot_damping >= 0.0,
+            "physical damping must be non-negative",
+        )
+
+    def as_dict(self) -> dict[str, float]:
+        return {
+            "init_spring_y": float(self.init_spring_y),
+            "drag_damping": float(self.drag_damping),
+            "dashpot_damping": float(self.dashpot_damping),
+        }
+
+
 @dataclass(frozen=True)
 class CausalTrustEpisode:
     """One source execution with driven and matched zero-action Warp rollouts."""
@@ -340,8 +367,7 @@ def load_cardinality_source_execution_protocol(
         "cardinality source execution protocol id changed",
     )
     _require(
-        config.get("parent_config_sha256")
-        == CANONICAL_CARDINALITY_TRUST_CONFIG_SHA256,
+        config.get("parent_config_sha256") == CANONICAL_CARDINALITY_TRUST_CONFIG_SHA256,
         "cardinality source execution parent changed",
     )
     frame_slice = config.get("frame_slice", {})
@@ -797,6 +823,363 @@ def fit_cardinality_normalized_source_causal_trust(
     return payload
 
 
+def _cardinality_normalized_episode(
+    episode: CausalTrustEpisode,
+) -> CausalTrustEpisode:
+    return replace(
+        episode,
+        driven_m=episode.zero_action_m
+        + (episode.driven_m - episode.zero_action_m) / float(episode.controller_count),
+    )
+
+
+def _validate_physical_candidate_sources(
+    episodes_by_candidate: Mapping[
+        PhysicalTrustParameters, Sequence[CausalTrustEpisode]
+    ],
+) -> tuple[tuple[PhysicalTrustParameters, ...], tuple[str, ...]]:
+    physical_candidates = tuple(sorted(episodes_by_candidate))
+    _require(
+        len(physical_candidates) >= 2,
+        "physical-grid trust needs at least two parameter candidates",
+    )
+    reference = tuple(episodes_by_candidate[physical_candidates[0]])
+    _require(
+        len(reference) >= 3,
+        "physical-grid trust needs at least three source actions",
+    )
+    episode_ids = tuple(episode.episode_id for episode in reference)
+    _require(
+        len(set(episode_ids)) == len(episode_ids),
+        "physical-grid source episode is repeated",
+    )
+    reference_by_id = {episode.episode_id: episode for episode in reference}
+    for physical in physical_candidates:
+        episodes = tuple(episodes_by_candidate[physical])
+        _require(
+            tuple(episode.episode_id for episode in episodes) == episode_ids,
+            "physical candidates use different source episode ordering",
+        )
+        for episode in episodes:
+            expected = reference_by_id[episode.episode_id]
+            _require(
+                episode.source_data_sha256 == expected.source_data_sha256
+                and episode.train_stop_frame == expected.train_stop_frame
+                and episode.controller_count == expected.controller_count,
+                "physical candidates use different source provenance",
+            )
+            _require(
+                np.array_equal(episode.target_m, expected.target_m)
+                and np.array_equal(episode.visibility, expected.visibility)
+                and np.array_equal(episode.validity, expected.validity),
+                "physical candidates use different source observations",
+            )
+    return physical_candidates, episode_ids
+
+
+def _candidate_subset_score(
+    episode_ids: Sequence[str],
+    weights: CausalTrustWeights,
+    candidates: Sequence[CausalTrustWeights],
+    table: Sequence[Mapping[str, Any]],
+) -> float:
+    index = candidates.index(weights)
+    by_episode = table[index]["train_by_episode"]
+    return float(
+        np.mean(
+            [
+                float(by_episode[episode_id]["relative_score_vs_persistence"])
+                for episode_id in episode_ids
+            ]
+        )
+    )
+
+
+def fit_cardinality_normalized_physical_grid_source_trust(
+    episodes_by_candidate: Mapping[
+        PhysicalTrustParameters, Sequence[CausalTrustEpisode]
+    ],
+    *,
+    action_response_grid: Sequence[float] = tuple(np.linspace(0.0, 1.0, 11)),
+    autonomous_drift_grid: Sequence[float] = tuple(np.linspace(0.0, 1.0, 11)),
+) -> dict[str, Any]:
+    """Cross-fit physical parameters and trust without reading source tails."""
+
+    physical_candidates, episode_ids = _validate_physical_candidate_sources(
+        episodes_by_candidate
+    )
+    trust_candidates = _candidate_grid(action_response_grid, autonomous_drift_grid)
+    normalized_by_candidate = {
+        physical: tuple(
+            _cardinality_normalized_episode(episode)
+            for episode in episodes_by_candidate[physical]
+        )
+        for physical in physical_candidates
+    }
+    episode_lookup = {
+        physical: {episode.episode_id: episode for episode in episodes}
+        for physical, episodes in normalized_by_candidate.items()
+    }
+    tables = {
+        physical: _evaluate_candidate_table(episodes, trust_candidates)
+        for physical, episodes in normalized_by_candidate.items()
+    }
+
+    def select_joint(
+        fitting_ids: Sequence[str],
+    ) -> tuple[
+        PhysicalTrustParameters,
+        CausalTrustWeights,
+        list[dict[str, Any]],
+    ]:
+        rows = []
+        for physical in physical_candidates:
+            weights = _select_candidate(fitting_ids, trust_candidates, tables[physical])
+            rows.append(
+                {
+                    "physical_parameters": physical.as_dict(),
+                    "weights": weights.as_dict(),
+                    "train_relative_score_vs_persistence": (
+                        _candidate_subset_score(
+                            fitting_ids,
+                            weights,
+                            trust_candidates,
+                            tables[physical],
+                        )
+                    ),
+                }
+            )
+        selected_index = min(
+            range(len(rows)),
+            key=lambda index: (
+                rows[index]["train_relative_score_vs_persistence"],
+                rows[index]["weights"]["action_response"]
+                + rows[index]["weights"]["autonomous_drift"],
+                rows[index]["weights"]["action_response"],
+                rows[index]["weights"]["autonomous_drift"],
+                physical_candidates[index].init_spring_y,
+                physical_candidates[index].drag_damping,
+                physical_candidates[index].dashpot_damping,
+            ),
+        )
+        return (
+            physical_candidates[selected_index],
+            CausalTrustWeights(**rows[selected_index]["weights"]),
+            rows,
+        )
+
+    selected_physical, selected_weights, all_source_table = select_joint(episode_ids)
+    leave_one_action_out = []
+    fold_selection_tables: dict[str, list[dict[str, Any]]] = {}
+    for held_out_id in episode_ids:
+        fitting_ids = [
+            episode_id for episode_id in episode_ids if episode_id != held_out_id
+        ]
+        fold_physical, fold_weights, fold_table = select_joint(fitting_ids)
+        fold_selection_tables[held_out_id] = fold_table
+        held_metrics = _candidate_metrics(
+            episode_lookup[fold_physical][held_out_id],
+            fold_weights,
+            interval="tail",
+        )
+        controller_count = episode_lookup[fold_physical][held_out_id].controller_count
+        leave_one_action_out.append(
+            {
+                "held_out_episode_id": held_out_id,
+                "selected_physical_parameters": fold_physical.as_dict(),
+                "selected_weights": fold_weights.as_dict(),
+                "controller_count": int(controller_count),
+                "effective_action_response": (
+                    fold_weights.action_response / float(controller_count)
+                ),
+                "tail_metrics": held_metrics,
+                "beats_persistence_track": float(held_metrics["track_rmse_m"])
+                < float(held_metrics["persistence_track_rmse_m"]),
+                "beats_persistence_chamfer": float(held_metrics["chamfer_m"])
+                < float(held_metrics["persistence_chamfer_m"]),
+            }
+        )
+    pooled_tail = {
+        name: float(
+            np.mean(
+                [float(fold["tail_metrics"][name]) for fold in leave_one_action_out]
+            )
+        )
+        for name in (
+            "track_rmse_m",
+            "chamfer_m",
+            "persistence_track_rmse_m",
+            "persistence_chamfer_m",
+        )
+    }
+    pooled_tail["track_improvement_fraction_vs_persistence"] = float(
+        (pooled_tail["persistence_track_rmse_m"] - pooled_tail["track_rmse_m"])
+        / pooled_tail["persistence_track_rmse_m"]
+    )
+    pooled_tail["chamfer_improvement_fraction_vs_persistence"] = float(
+        (pooled_tail["persistence_chamfer_m"] - pooled_tail["chamfer_m"])
+        / pooled_tail["persistence_chamfer_m"]
+    )
+    payload: dict[str, Any] = {
+        "schema_version": PHYSTWIN_TRUST_SCHEMA_VERSION,
+        "artifact_kind": (
+            "Deform360PhysTwinCardinalityNormalizedPhysicalGridSourceFit"
+        ),
+        "source_episode_ids": list(episode_ids),
+        "physical_candidates": [physical.as_dict() for physical in physical_candidates],
+        "source_inputs_by_candidate": {
+            json.dumps(physical.as_dict(), sort_keys=True): {
+                episode.episode_id: {
+                    "data_sha256": episode.source_data_sha256,
+                    "driven_trajectory_sha256": episode.driven_trajectory_sha256,
+                    "zero_action_trajectory_sha256": (
+                        episode.zero_action_trajectory_sha256
+                    ),
+                    "controller_count": int(episode.controller_count),
+                    "train_frame_range": [1, episode.train_stop_frame],
+                    "untouched_tail_frame_range": [
+                        episode.train_stop_frame,
+                        len(episode.target_m),
+                    ],
+                }
+                for episode in episodes_by_candidate[physical]
+            }
+            for physical in physical_candidates
+        },
+        "method": {
+            "selection": (
+                "joint physical-parameter and cardinality-normalized trust "
+                "selection on fitting episodes' train frames only"
+            ),
+            "selection_score": (
+                "execution-balanced mean normalized track RMSE and symmetric Chamfer"
+            ),
+            "outer_evaluation": "leave-one-action-out untouched source tails",
+            "trust_candidate_count": len(trust_candidates),
+        },
+        "selected_physical_parameters": selected_physical.as_dict(),
+        "selected_weights": selected_weights.as_dict(),
+        "all_source_selection_table": all_source_table,
+        "fold_selection_tables": fold_selection_tables,
+        "leave_one_action_out": leave_one_action_out,
+        "pooled_leave_one_action_out_tail": pooled_tail,
+        "information_boundary": {
+            "physical_and_trust_selection_use_source_train_frames_only": True,
+            "source_tails_used_for_selection": False,
+            "source_tails_used_for_outer_evaluation": True,
+            "calibration_episode_read": False,
+            "target_episode_read": False,
+            "future_observation_required_at_prediction_time": False,
+        },
+        "claim_boundary": (
+            "independent source-only competence test; calibration and target "
+            "remain sealed until the registered source gate passes"
+        ),
+    }
+    payload["result_sha256"] = _result_sha256(payload)
+    return payload
+
+
+def apply_cardinality_physical_grid_source_gate(
+    fit: Mapping[str, Any],
+    parent_protocol: Mapping[str, Any],
+    source_execution_protocol: Mapping[str, Any],
+    *,
+    registered_qa_by_episode: Mapping[str, bool],
+    tail_mutation_invariant: bool,
+) -> dict[str, Any]:
+    """Apply the canonical independent source gate to outer held-out tails."""
+
+    validate_cardinality_physical_grid_source_trust_artifact(fit)
+    source_ids = [
+        str(value) for value in parent_protocol["config"]["source_episode_ids"]
+    ]
+    _require(
+        list(fit["source_episode_ids"]) == source_ids,
+        "source gate episode ordering changed",
+    )
+    _require(
+        source_execution_protocol["config"]["physical_arm_roles"]["primary_gate_arm"]
+        == "source_pooled_grid",
+        "source gate is not applied to the primary arm",
+    )
+    _require(
+        set(registered_qa_by_episode) == set(source_ids),
+        "registered QA does not cover every source episode",
+    )
+    folds = {fold["held_out_episode_id"]: fold for fold in fit["leave_one_action_out"]}
+    bimanual = {
+        str(value)
+        for value in source_execution_protocol["config"]["source_gate_scope"][
+            "bimanual_episode_ids"
+        ]
+    }
+
+    def joint_win(fold: Mapping[str, Any]) -> bool:
+        return bool(fold["beats_persistence_track"]) and bool(
+            fold["beats_persistence_chamfer"]
+        )
+
+    joint_win_count = sum(joint_win(folds[episode_id]) for episode_id in source_ids)
+    bimanual_joint_win_count = sum(
+        joint_win(folds[episode_id])
+        for episode_id in source_ids
+        if episode_id in bimanual
+    )
+    maximum_degradation = max(
+        max(
+            float(folds[episode_id]["tail_metrics"][metric])
+            / float(folds[episode_id]["tail_metrics"][f"persistence_{metric}"])
+            - 1.0
+            for metric in ("track_rmse_m", "chamfer_m")
+        )
+        for episode_id in source_ids
+    )
+    thresholds = parent_protocol["config"]["source_gate"]
+    pooled = fit["pooled_leave_one_action_out_tail"]
+    checks = {
+        "joint_track_and_chamfer_win_count": joint_win_count
+        >= int(thresholds["minimum_joint_track_and_chamfer_win_count"]),
+        "bimanual_joint_win_count": bimanual_joint_win_count
+        >= int(thresholds["minimum_bimanual_joint_win_count"]),
+        "pooled_track_improvement": float(
+            pooled["track_improvement_fraction_vs_persistence"]
+        )
+        >= float(thresholds["minimum_pooled_track_improvement_fraction"]),
+        "pooled_chamfer_improvement": float(
+            pooled["chamfer_improvement_fraction_vs_persistence"]
+        )
+        >= float(thresholds["minimum_pooled_chamfer_improvement_fraction"]),
+        "maximum_any_metric_degradation": maximum_degradation
+        <= float(thresholds["maximum_any_metric_degradation_fraction"]),
+        "tail_mutation_invariance": bool(tail_mutation_invariant),
+        "all_registered_qa": all(
+            bool(registered_qa_by_episode[episode_id]) for episode_id in source_ids
+        ),
+    }
+    payload: dict[str, Any] = {
+        "schema_version": PHYSTWIN_TRUST_SCHEMA_VERSION,
+        "artifact_kind": "Deform360PhysTwinCardinalityPhysicalGridSourceGate",
+        "fit_result_sha256": fit["result_sha256"],
+        "parent_config_sha256": parent_protocol["config_sha256"],
+        "source_execution_config_sha256": source_execution_protocol["config_sha256"],
+        "joint_win_count": joint_win_count,
+        "bimanual_joint_win_count": bimanual_joint_win_count,
+        "maximum_any_metric_degradation_fraction": maximum_degradation,
+        "pooled_leave_one_action_out_tail": pooled,
+        "registered_qa_by_episode": dict(registered_qa_by_episode),
+        "checks": checks,
+        "passed": all(checks.values()),
+        "decision": (
+            "open_declared_calibration_only"
+            if all(checks.values())
+            else "freeze_negative_and_keep_calibration_and_target_sealed"
+        ),
+    }
+    payload["result_sha256"] = _result_sha256(payload)
+    return payload
+
+
 def fit_regime_gated_source_causal_trust(
     episodes: Sequence[CausalTrustEpisode],
     regimes: Mapping[str, str],
@@ -1085,6 +1468,42 @@ def validate_cardinality_normalized_source_causal_trust_artifact(
         and boundary.get("calibration_episode_read") is False
         and boundary.get("target_episode_read") is False,
         "cardinality-normalized information boundary changed",
+    )
+
+
+def validate_cardinality_physical_grid_source_trust_artifact(
+    payload: Mapping[str, Any],
+) -> None:
+    _require(
+        payload.get("schema_version") == PHYSTWIN_TRUST_SCHEMA_VERSION,
+        "physical-grid trust schema changed",
+    )
+    _require(
+        payload.get("artifact_kind")
+        == "Deform360PhysTwinCardinalityNormalizedPhysicalGridSourceFit",
+        "physical-grid trust artifact kind changed",
+    )
+    _require(
+        payload.get("result_sha256") == _result_sha256(payload),
+        "physical-grid trust checksum mismatch",
+    )
+    source_ids = payload.get("source_episode_ids", [])
+    folds = payload.get("leave_one_action_out", [])
+    _require(
+        isinstance(source_ids, list)
+        and len(source_ids) >= 3
+        and [fold.get("held_out_episode_id") for fold in folds] == source_ids,
+        "physical-grid outer folds changed",
+    )
+    boundary = payload.get("information_boundary", {})
+    _require(
+        boundary.get("physical_and_trust_selection_use_source_train_frames_only")
+        is True
+        and boundary.get("source_tails_used_for_selection") is False
+        and boundary.get("source_tails_used_for_outer_evaluation") is True
+        and boundary.get("calibration_episode_read") is False
+        and boundary.get("target_episode_read") is False,
+        "physical-grid trust information boundary changed",
     )
 
 
