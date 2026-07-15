@@ -101,9 +101,7 @@ def _precision_solver(
         rmatvec=precision_product,
         dtype=float,
     )
-    laplacian_square_diagonal = np.asarray(
-        laplacian.power(2).sum(axis=0)
-    ).ravel()
+    laplacian_square_diagonal = np.asarray(laplacian.power(2).sum(axis=0)).ravel()
     diagonal = weights + prior_scale * laplacian_square_diagonal + ridge
     preconditioner = LinearOperator(
         (size, size),
@@ -157,6 +155,7 @@ def graph_smoothed_discrepancy_posterior(
     maximum_iterations: int = 2000,
     covariance_probes: int = 0,
     covariance_seed: int = 20260711,
+    covariance_indices: np.ndarray | None = None,
 ) -> GraphDiscrepancyPosterior:
     """Condition a Laplacian discrepancy prior on robust endpoint posteriors.
 
@@ -188,6 +187,17 @@ def graph_smoothed_discrepancy_posterior(
         raise ValueError("Laplacian does not cover observed nodes")
     if covariance_probes < 0:
         raise ValueError("covariance_probes must be nonnegative")
+    selected_covariance_indices = (
+        np.empty(0, dtype=np.int64)
+        if covariance_indices is None
+        else np.unique(np.asarray(covariance_indices, dtype=np.int64))
+    )
+    if np.any(selected_covariance_indices < 0) or np.any(
+        selected_covariance_indices >= node_count
+    ):
+        raise ValueError("covariance_indices exceed the graph")
+    if covariance_probes and len(selected_covariance_indices):
+        raise ValueError("choose covariance probes or exact covariance indices")
 
     reference_variance = float(np.median(variances[observation_mask]))
     weights = np.zeros(node_count, dtype=float)
@@ -215,7 +225,20 @@ def graph_smoothed_discrepancy_posterior(
 
     marginal_variance = None
     negative_fraction = None
-    if covariance_probes:
+    if len(selected_covariance_indices):
+        diagonal = np.full(node_count, np.nan, dtype=float)
+        for index in selected_covariance_indices:
+            unit = np.zeros(node_count, dtype=float)
+            unit[index] = 1.0
+            inverse_unit, count, residual = solve(unit)
+            diagonal[index] = reference_variance * inverse_unit[index]
+            iterations.append(count)
+            residuals.append(residual)
+        selected_diagonal = diagonal[selected_covariance_indices]
+        negative_fraction = float(np.mean(selected_diagonal < 0.0))
+        diagonal[selected_covariance_indices] = np.maximum(selected_diagonal, 0.0)
+        marginal_variance = diagonal
+    elif covariance_probes:
         rng = np.random.default_rng(covariance_seed)
         diagonal = np.zeros(node_count, dtype=float)
         for _ in range(covariance_probes):

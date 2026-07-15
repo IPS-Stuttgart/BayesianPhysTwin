@@ -60,6 +60,11 @@ class MotionCrafterPrediction:
     valid_mask: np.ndarray
     scene_flow: np.ndarray
     deform_mask: np.ndarray
+    frame_indices: np.ndarray | None = None
+    point_covariance_m2: np.ndarray | None = None
+    flow_covariance_m2: np.ndarray | None = None
+    contributors: np.ndarray | None = None
+    source_confidence: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -167,10 +172,43 @@ def _nearest_neighbors(
             order = np.argsort(local_squared, axis=1, kind="mergesort")
             local = np.take_along_axis(local, order, axis=1)
         indices[start:stop] = local
-        distance[start:stop] = np.sqrt(
-            np.take_along_axis(squared, local, axis=1)
-        )
+        distance[start:stop] = np.sqrt(np.take_along_axis(squared, local, axis=1))
     return distance, indices
+
+
+def _unpack_symmetric_covariance(packed: np.ndarray) -> np.ndarray:
+    values = np.asarray(packed, dtype=np.float32)
+    if values.shape[-1] != 6:
+        raise ValueError("packed covariance must end in six values")
+    covariance = np.empty(values.shape[:-1] + (3, 3), dtype=np.float32)
+    covariance[..., 0, 0] = values[..., 0]
+    covariance[..., 0, 1] = covariance[..., 1, 0] = values[..., 1]
+    covariance[..., 0, 2] = covariance[..., 2, 0] = values[..., 2]
+    covariance[..., 1, 1] = values[..., 3]
+    covariance[..., 1, 2] = covariance[..., 2, 1] = values[..., 4]
+    covariance[..., 2, 2] = values[..., 5]
+    return covariance
+
+
+def _validate_optional_covariance(
+    covariance: np.ndarray | None,
+    valid: np.ndarray,
+    *,
+    name: str,
+) -> np.ndarray | None:
+    if covariance is None:
+        return None
+    values = np.asarray(covariance, dtype=np.float32)
+    expected = valid.shape + (3, 3)
+    if values.shape != expected:
+        raise ValueError(f"{name} must have shape {expected}")
+    selected = values[valid]
+    if not np.all(np.isfinite(selected)):
+        raise ValueError(f"{name} must be finite where its measurement is valid")
+    selected = 0.5 * (selected + np.swapaxes(selected, -1, -2))
+    if len(selected) and np.min(np.linalg.eigvalsh(selected)) < -1e-8:
+        raise ValueError(f"{name} must be positive semidefinite")
+    return 0.5 * (values + np.swapaxes(values, -1, -2))
 
 
 def load_motioncrafter_prediction(path: str | Path) -> MotionCrafterPrediction:
@@ -185,6 +223,31 @@ def load_motioncrafter_prediction(path: str | Path) -> MotionCrafterPrediction:
         valid_mask = np.asarray(archive["valid_mask"], dtype=bool)
         scene_flow = np.asarray(archive["scene_flow"], dtype=np.float32)
         deform_mask = np.asarray(archive["deform_mask"], dtype=bool)
+        frame_indices = (
+            np.asarray(archive["frame_indices"], dtype=np.int64)
+            if "frame_indices" in archive
+            else None
+        )
+        point_covariance = (
+            _unpack_symmetric_covariance(archive["point_covariance_packed"])
+            if "point_covariance_packed" in archive
+            else None
+        )
+        flow_covariance = (
+            _unpack_symmetric_covariance(archive["flow_covariance_packed"])
+            if "flow_covariance_packed" in archive
+            else None
+        )
+        contributors = (
+            np.asarray(archive["contributors"], dtype=np.uint16)
+            if "contributors" in archive
+            else None
+        )
+        source_confidence = (
+            np.asarray(archive["source_confidence"], dtype=np.float32)
+            if "source_confidence" in archive
+            else None
+        )
     if point_map.ndim != 4 or point_map.shape[-1] != 3:
         raise ValueError("point_map must have shape (T, H, W, 3)")
     if valid_mask.shape != point_map.shape[:3]:
@@ -195,11 +258,43 @@ def load_motioncrafter_prediction(path: str | Path) -> MotionCrafterPrediction:
         raise ValueError("deform_mask must match point_map")
     if len(point_map) < 2:
         raise ValueError("MotionCrafter output must contain at least two frames")
+    if frame_indices is not None:
+        if frame_indices.shape != (len(point_map),):
+            raise ValueError("frame_indices must match the MotionCrafter frame count")
+        if np.any(frame_indices < 0) or np.any(np.diff(frame_indices) <= 0):
+            raise ValueError(
+                "frame_indices must be nonnegative and strictly increasing"
+            )
+    point_covariance = _validate_optional_covariance(
+        point_covariance,
+        valid_mask,
+        name="point_covariance_packed",
+    )
+    flow_covariance = _validate_optional_covariance(
+        flow_covariance,
+        deform_mask,
+        name="flow_covariance_packed",
+    )
+    if contributors is not None:
+        if contributors.shape != valid_mask.shape:
+            raise ValueError("contributors must match valid_mask")
+        if np.any(valid_mask & (contributors < 1)):
+            raise ValueError("valid fused pixels must have at least one contributor")
+    if source_confidence is not None:
+        if source_confidence.shape != valid_mask.shape:
+            raise ValueError("source_confidence must match valid_mask")
+        if not np.all(np.isfinite(source_confidence[valid_mask])):
+            raise ValueError("source_confidence must be finite on valid pixels")
     return MotionCrafterPrediction(
         point_map=point_map,
         valid_mask=valid_mask,
         scene_flow=scene_flow,
         deform_mask=deform_mask,
+        frame_indices=frame_indices,
+        point_covariance_m2=point_covariance,
+        flow_covariance_m2=flow_covariance,
+        contributors=contributors,
+        source_confidence=source_confidence,
     )
 
 
@@ -243,6 +338,65 @@ def resample_cover_grid(
         (array.shape[0], array.shape[1]), target_shape
     )
     return array[source_y[:, None], source_x[None, :]]
+
+
+def load_phystwin_world_point_grid(
+    raw_case_dir: str | Path,
+    frame_index: int,
+) -> tuple[np.ndarray, str]:
+    """Load or reconstruct all calibrated per-pixel world point maps."""
+
+    raw_path = Path(raw_case_dir)
+    archive_path = raw_path / "pcd" / f"{frame_index}.npz"
+    if archive_path.is_file():
+        with np.load(archive_path) as archive:
+            points = np.asarray(archive["points"], dtype=float)
+        if points.ndim != 4 or points.shape[-1] != 3:
+            raise ValueError(f"{archive_path} points must have shape (C, H, W, 3)")
+        return points, str(archive_path.relative_to(raw_path))
+
+    metadata_path = raw_path / "metadata.json"
+    calibration_path = raw_path / "calibrate.pkl"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    intrinsics = np.asarray(metadata["intrinsics"], dtype=float)
+    with calibration_path.open("rb") as handle:
+        camera_to_world = np.asarray(pickle.load(handle), dtype=float)
+    if intrinsics.ndim != 3 or intrinsics.shape[1:] != (3, 3):
+        raise ValueError("metadata intrinsics must have shape (C, 3, 3)")
+    if camera_to_world.shape != (len(intrinsics), 4, 4):
+        raise ValueError("calibrate.pkl must contain one 4x4 pose per camera")
+
+    width, height = (int(value) for value in metadata["WH"])
+    columns, rows = np.meshgrid(
+        np.arange(width, dtype=float),
+        np.arange(height, dtype=float),
+    )
+    point_maps: list[np.ndarray] = []
+    for camera, intrinsic in enumerate(intrinsics):
+        depth_path = raw_path / "depth" / str(camera) / f"{frame_index}.npy"
+        depth = np.asarray(np.load(depth_path), dtype=float) / 1000.0
+        if depth.shape != (height, width):
+            raise ValueError(f"unexpected depth shape in {depth_path}")
+        camera_points = np.stack(
+            (
+                (columns - intrinsic[0, 2]) / intrinsic[0, 0] * depth,
+                (rows - intrinsic[1, 2]) / intrinsic[1, 1] * depth,
+                depth,
+            ),
+            axis=-1,
+        )
+        world = (
+            np.einsum(
+                "ij,...j->...i",
+                camera_to_world[camera, :3, :3],
+                camera_points,
+            )
+            + camera_to_world[camera, :3, 3]
+        )
+        valid_depth = np.isfinite(depth) & (depth > 0.2) & (depth < 1.5)
+        world[~valid_depth] = np.nan
+        point_maps.append(world)
+    return np.stack(point_maps), "depth+metadata+calibrate"
 
 
 def robust_similarity_transform(
@@ -300,9 +454,7 @@ def robust_similarity_transform(
             "inlier_pair_count": int(len(selected)),
             "inlier_mask": np.isin(np.arange(len(source_points)), selected),
             "all_pair_residual_m": residual,
-            "inlier_rmse_m": float(
-                np.sqrt(np.mean(np.square(residual[selected])))
-            ),
+            "inlier_rmse_m": float(np.sqrt(np.mean(np.square(residual[selected])))),
         }
     )
     return transform
@@ -318,11 +470,28 @@ def align_motioncrafter_prediction(
     translation = np.asarray(transform["translation"], dtype=float)
     point_map = prediction.point_map.astype(float) @ linear + translation
     scene_flow = prediction.scene_flow.astype(float) @ linear
+
+    def transform_covariance(values: np.ndarray | None) -> np.ndarray | None:
+        if values is None:
+            return None
+        transformed = np.einsum(
+            "ia,...ij,jb->...ab",
+            linear,
+            np.asarray(values, dtype=float),
+            linear,
+        )
+        return transformed.astype(np.float32)
+
     return MotionCrafterPrediction(
         point_map=point_map.astype(np.float32),
         valid_mask=prediction.valid_mask,
         scene_flow=scene_flow.astype(np.float32),
         deform_mask=prediction.deform_mask,
+        frame_indices=prediction.frame_indices,
+        point_covariance_m2=transform_covariance(prediction.point_covariance_m2),
+        flow_covariance_m2=transform_covariance(prediction.flow_covariance_m2),
+        contributors=prediction.contributors,
+        source_confidence=prediction.source_confidence,
     )
 
 
@@ -476,15 +645,13 @@ def compose_dense_trajectories(
         if len(next_pixels) == 0:
             continue
         next_points = flat_points[frame + 1, next_pixels]
-        predicted = flat_points[frame, current_pixels] + flat_flow[frame, current_pixels]
+        predicted = (
+            flat_points[frame, current_pixels] + flat_flow[frame, current_pixels]
+        )
         query_count = min(transport_candidate_count, len(next_points))
-        distance, nearest = _nearest_neighbors(
-            next_points, predicted, k=query_count
-        )
+        distance, nearest = _nearest_neighbors(next_points, predicted, k=query_count)
         proposed_pixels = next_pixels[nearest]
-        accepted = np.isfinite(distance) & (
-            distance <= maximum_transport_error_m
-        )
+        accepted = np.isfinite(distance) & (distance <= maximum_transport_error_m)
         if not np.any(accepted):
             continue
 
@@ -524,9 +691,7 @@ def compose_dense_trajectories(
         positions[frame + 1, winner_tracks] = flat_points[
             frame + 1, winner_pixels_array
         ]
-        step_error[frame, winner_tracks] = np.asarray(
-            winner_distance, dtype=np.float32
-        )
+        step_error[frame, winner_tracks] = np.asarray(winner_distance, dtype=np.float32)
 
     return DenseMotionTrajectories(
         positions=positions,
@@ -567,9 +732,7 @@ def concatenate_dense_trajectories(
     )
     camera_indices = np.concatenate(
         [
-            np.full(
-                trajectories.positions.shape[1], camera, dtype=np.int16
-            )
+            np.full(trajectories.positions.shape[1], camera, dtype=np.int16)
             for camera, trajectories in ordered
         ]
     )
@@ -662,18 +825,16 @@ def infer_graph_association(
             target_valid = np.all(np.isfinite(target), axis=1) & np.all(
                 np.isfinite(target_reference), axis=1
             )
-            candidate = trajectories.positions[frame, candidate_indices].astype(
-                float
-            )
+            candidate = trajectories.positions[frame, candidate_indices].astype(float)
             candidate_valid = trajectories.valid[frame, candidate_indices]
-            usable = target_valid[:, None] & candidate_valid & np.all(
-                np.isfinite(candidate), axis=2
+            usable = (
+                target_valid[:, None]
+                & candidate_valid
+                & np.all(np.isfinite(candidate), axis=2)
             )
             target_delta = target - target_reference
             candidate_delta = candidate - candidate_points
-            error = np.linalg.norm(
-                candidate_delta - target_delta[:, None, :], axis=2
-            )
+            error = np.linalg.norm(candidate_delta - target_delta[:, None, :], axis=2)
             scaled = error / motion_scale_m
             robust = 2.0 * (np.sqrt(1.0 + np.square(scaled)) - 1.0)
             robust_sum += np.where(usable, robust, 0.0)
@@ -712,9 +873,7 @@ def infer_graph_association(
         np.add.at(usage, candidate_indices.reshape(-1), weights.reshape(-1))
         collision = np.maximum(usage[candidate_indices] - 1.0, 0.0)
         total_cost = (
-            unary
-            + 0.5 * graph_strength * pair_cost
-            + collision_strength * collision
+            unary + 0.5 * graph_strength * pair_cost + collision_strength * collision
         )
         weights = _softmax_negative_cost(total_cost)
 
@@ -736,14 +895,17 @@ def infer_graph_association(
     motion_denominator = np.sum(motion_weight, axis=1)
     training_motion_error = np.full(len(graph), np.nan, dtype=float)
     motion_available = motion_denominator > 0.0
-    training_motion_error[motion_available] = np.sum(
-        np.where(
-            np.isfinite(candidate_motion_error),
-            weights * candidate_motion_error,
-            0.0,
-        ),
-        axis=1,
-    )[motion_available] / motion_denominator[motion_available]
+    training_motion_error[motion_available] = (
+        np.sum(
+            np.where(
+                np.isfinite(candidate_motion_error),
+                weights * candidate_motion_error,
+                0.0,
+            ),
+            axis=1,
+        )[motion_available]
+        / motion_denominator[motion_available]
+    )
     return GraphAssociation(
         trajectory_indices=candidate_indices.astype(np.int32),
         weights=weights.astype(np.float32),
@@ -808,9 +970,10 @@ def dense_graph_error_by_frame(
     denominator = np.sum(weighted, axis=1)
     output = np.full(len(graph), np.nan, dtype=float)
     available = denominator > 0.0
-    output[available] = np.sum(
-        np.where(usable, distance * weighted, 0.0), axis=1
-    )[available] / denominator[available]
+    output[available] = (
+        np.sum(np.where(usable, distance * weighted, 0.0), axis=1)[available]
+        / denominator[available]
+    )
     return output
 
 
@@ -830,7 +993,11 @@ def manual_track_association_audit(
     frames = np.asarray(frame_indices, dtype=np.int64)
     if tracks.ndim != 3 or tracks.shape[2] != 3:
         raise ValueError("manual_tracks must have shape (T, K, 3)")
-    if len(frames) != len(observed) or np.any(frames < 0) or np.any(frames >= len(tracks)):
+    if (
+        len(frames) != len(observed)
+        or np.any(frames < 0)
+        or np.any(frames >= len(tracks))
+    ):
         raise ValueError("frame_indices do not map observations into manual_tracks")
     initial_mask = np.all(np.isfinite(tracks[0]), axis=1)
     _, graph_indices = _nearest_distances(graph, tracks[0, initial_mask], p=2)
@@ -842,17 +1009,14 @@ def manual_track_association_audit(
         usable = (
             np.all(np.isfinite(manual), axis=1)
             & observation_valid[output_frame, graph_indices]
-            & np.all(
-                np.isfinite(observed[output_frame, graph_indices]), axis=1
-            )
+            & np.all(np.isfinite(observed[output_frame, graph_indices]), axis=1)
         )
         count_by_frame[output_frame] = int(np.sum(usable))
         if np.any(usable):
             by_frame[output_frame] = float(
                 np.mean(
                     np.linalg.norm(
-                        observed[output_frame, graph_indices[usable]]
-                        - manual[usable],
+                        observed[output_frame, graph_indices[usable]] - manual[usable],
                         axis=1,
                     )
                 )
@@ -922,20 +1086,37 @@ def associate_motioncrafter_case(
         for camera, path in sorted(view_paths.items())
     }
     prediction = predictions[config.camera_index]
-    frame_indices = np.arange(0, frame_count, config.process_stride, dtype=np.int64)
-    if len(frame_indices) < len(prediction.point_map):
-        frame_indices = frame_indices[: len(prediction.point_map)]
+    frame_indices = (
+        np.arange(0, frame_count, config.process_stride, dtype=np.int64)[
+            : len(prediction.point_map)
+        ]
+        if prediction.frame_indices is None
+        else np.asarray(prediction.frame_indices, dtype=np.int64)
+    )
     if len(frame_indices) != len(prediction.point_map):
         raise ValueError("process_stride does not explain MotionCrafter frame count")
+    if np.any(frame_indices < 0) or np.any(frame_indices >= frame_count):
+        raise ValueError("MotionCrafter frame_indices exceed the released case")
     for camera, candidate in predictions.items():
         if candidate.point_map.shape != prediction.point_map.shape:
             raise ValueError(
                 f"MotionCrafter camera {camera} shape does not match the primary view"
             )
+        candidate_frames = (
+            frame_indices
+            if candidate.frame_indices is None
+            else np.asarray(candidate.frame_indices, dtype=np.int64)
+        )
+        if not np.array_equal(candidate_frames, frame_indices):
+            raise ValueError(
+                f"MotionCrafter camera {camera} frame indices do not match the primary view"
+            )
 
-    pcd_path = raw_path / "pcd" / "0.npz"
-    with np.load(pcd_path) as pcd_archive:
-        camera_points = np.asarray(pcd_archive["points"], dtype=float)
+    alignment_reference_frame = int(frame_indices[0])
+    camera_points, alignment_reference_source = load_phystwin_world_point_grid(
+        raw_path,
+        alignment_reference_frame,
+    )
     if any(camera < 0 or camera >= len(camera_points) for camera in view_paths):
         raise ValueError("camera_index exceeds raw point-cloud cameras")
     with (raw_path / "mask" / "processed_masks.pkl").open("rb") as handle:
@@ -948,17 +1129,15 @@ def associate_motioncrafter_case(
         object_masks = np.stack(
             [
                 resample_cover_grid(
-                    np.asarray(
-                        processed_masks[int(frame)][camera]["object"]
-                    ),
+                    np.asarray(processed_masks[int(frame)][camera]["object"]),
                     target_shape,
                 ).astype(bool)
                 for frame in frame_indices
             ]
         )
-        initial_world = resample_cover_grid(
-            camera_points[camera], target_shape
-        ).astype(float)
+        initial_world = resample_cover_grid(camera_points[camera], target_shape).astype(
+            float
+        )
         grid_y, grid_x = np.indices(target_shape)
         alignment_mask = (
             object_masks[0]
@@ -1008,19 +1187,19 @@ def associate_motioncrafter_case(
             controller_max_neighbours=int(optimal["controller_max_neighbours"]),
         ),
     )
-    surface_springs = graph.springs[
-        np.all(graph.springs < surface_count, axis=1)
-    ]
+    surface_springs = graph.springs[np.all(graph.springs < surface_count, axis=1)]
     association_frame_count = int(np.sum(frame_indices < train_end))
-    training_target = np.full(
-        (association_frame_count, surface_count, 3), np.nan, dtype=float
-    )
-    training_target[0] = structure_points[:surface_count]
+    if association_frame_count < 1:
+        raise ValueError("persistent association requires at least one training frame")
+    training_target = baseline[
+        frame_indices[:association_frame_count], :surface_count
+    ].copy()
     training_target[:, : observed.shape[1]] = observed[
         frame_indices[:association_frame_count]
     ]
+    association_initial = training_target[0]
     association = infer_graph_association(
-        structure_points[:surface_count],
+        association_initial,
         surface_springs,
         trajectories,
         candidate_count=config.candidate_count,
@@ -1031,9 +1210,7 @@ def associate_motioncrafter_case(
         graph_strength=config.graph_strength,
         collision_strength=config.collision_strength,
         mean_field_iterations=config.mean_field_iterations,
-        minimum_trajectory_valid_fraction=(
-            config.minimum_trajectory_valid_fraction
-        ),
+        minimum_trajectory_valid_fraction=(config.minimum_trajectory_valid_fraction),
         association_frame_count=association_frame_count,
         graph_training_trajectory=training_target,
     )
@@ -1054,9 +1231,9 @@ def associate_motioncrafter_case(
         camera = config.camera_index
         object_masks = object_masks_by_camera[camera]
         target_shape = reverse_prediction.point_map.shape[1:3]
-        initial_world = resample_cover_grid(
-            camera_points[camera], target_shape
-        ).astype(float)
+        initial_world = resample_cover_grid(camera_points[camera], target_shape).astype(
+            float
+        )
         grid_y, grid_x = np.indices(target_shape)
         initial_mask = (
             object_masks[0]
@@ -1095,9 +1272,7 @@ def associate_motioncrafter_case(
             trim_fraction=config.alignment_trim_fraction,
             iterations=config.alignment_iterations,
         )
-        aligned_reverse = align_motioncrafter_prediction(
-            aligned_reverse, bridge_icp
-        )
+        aligned_reverse = align_motioncrafter_prediction(aligned_reverse, bridge_icp)
         reverse_time_trajectories = compose_dense_trajectories(
             aligned_reverse,
             object_masks[::-1],
@@ -1105,9 +1280,7 @@ def associate_motioncrafter_case(
             maximum_transport_error_m=config.maximum_transport_error_m,
             transport_candidate_count=config.transport_candidate_count,
         )
-        backward_trajectories = reverse_dense_trajectories(
-            reverse_time_trajectories
-        )
+        backward_trajectories = reverse_dense_trajectories(reverse_time_trajectories)
         backward_slice = DenseMotionTrajectories(
             positions=backward_trajectories.positions[bridge_frame:],
             valid=backward_trajectories.valid[bridge_frame:],
@@ -1143,13 +1316,9 @@ def associate_motioncrafter_case(
         graph_observations = graph_observations.copy()
         graph_valid = graph_valid.copy()
         graph_reliability = graph_reliability.copy()
-        graph_observations[train_end:] = backward_observations[
-            backward_future_offset:
-        ]
+        graph_observations[train_end:] = backward_observations[backward_future_offset:]
         graph_valid[train_end:] = backward_valid[backward_future_offset:]
-        graph_reliability[train_end:] = backward_reliability[
-            backward_future_offset:
-        ]
+        graph_reliability[train_end:] = backward_reliability[backward_future_offset:]
         backward_archive = {
             "dense_backward_positions": backward_trajectories.positions,
             "dense_backward_valid": backward_trajectories.valid,
@@ -1159,9 +1328,7 @@ def associate_motioncrafter_case(
             "backward_graph_observations": backward_observations,
             "backward_graph_valid": backward_valid,
             "backward_graph_reliability": backward_reliability,
-            "backward_trajectory_indices": (
-                backward_association.trajectory_indices
-            ),
+            "backward_trajectory_indices": (backward_association.trajectory_indices),
             "backward_association_weights": backward_association.weights,
         }
         backward_summary = {
@@ -1188,9 +1355,7 @@ def associate_motioncrafter_case(
                 np.asarray(bridge_icp["final_nearest_residual_m"])
             ),
             "bridge_icp_linear": np.asarray(bridge_icp["linear"]).tolist(),
-            "bridge_icp_translation": np.asarray(
-                bridge_icp["translation"]
-            ).tolist(),
+            "bridge_icp_translation": np.asarray(bridge_icp["translation"]).tolist(),
         }
     sampled_baseline = baseline[frame_indices, :surface_count]
     dense_error = dense_graph_error_by_frame(
@@ -1229,9 +1394,7 @@ def associate_motioncrafter_case(
         association_confidence=association.confidence,
         association_initial_error_m=association.initial_error_m,
         association_normalized_entropy=association.normalized_entropy,
-        association_training_motion_error_m=(
-            association.training_motion_error_m
-        ),
+        association_training_motion_error_m=(association.training_motion_error_m),
         dense_positions=trajectories.positions,
         dense_valid=trajectories.valid,
         dense_step_error_m=trajectories.step_error_m,
@@ -1261,6 +1424,8 @@ def associate_motioncrafter_case(
         transform_summaries[str(camera)] = transform_summary
     alignment_summary = {
         "view_count": len(transforms),
+        "reference_frame": alignment_reference_frame,
+        "reference_source": alignment_reference_source,
         "inlier_rmse_m": _distribution(
             np.asarray(
                 [transform["inlier_rmse_m"] for transform in transforms.values()]
@@ -1277,9 +1442,9 @@ def associate_motioncrafter_case(
         "config": asdict(config),
         "contract": {
             "motioncrafter_representation": "world-coordinate dense point maps and forward 3D scene flow",
-            "alignment": "per-view frame-zero same-pixel object-mask depth correspondences only",
+            "alignment": "per-view first-archive-frame same-pixel object-mask depth correspondences only",
             "identity_transport": "forward flow followed by gated nearest point-map transport and collision rejection",
-            "graph_association": "frame-zero geometry plus automatic training-prefix track motion, persistence, spring-edge, and local-injectivity regularization",
+            "graph_association": "first-archive-frame geometry plus automatic training-prefix track motion, persistence, spring-edge, and local-injectivity regularization",
             "future_use": (
                 "offline reverse-video trajectories generate evaluation-only future observations and never enter PhysTwin fitting or prediction"
                 if reverse_motioncrafter_npz_path is not None
@@ -1307,9 +1472,7 @@ def associate_motioncrafter_case(
                     "valid_fraction_by_sampled_frame": np.mean(
                         camera_trajectories.valid, axis=1
                     ).tolist(),
-                    "step_error_m": _distribution(
-                        camera_trajectories.step_error_m
-                    ),
+                    "step_error_m": _distribution(camera_trajectories.step_error_m),
                 }
                 for camera, camera_trajectories in trajectories_by_camera.items()
             },
@@ -1318,13 +1481,9 @@ def associate_motioncrafter_case(
         "graph": {
             "surface_vertex_count": surface_count,
             "surface_spring_count": int(len(surface_springs)),
-            "association_initial_error_m": _distribution(
-                association.initial_error_m
-            ),
+            "association_initial_error_m": _distribution(association.initial_error_m),
             "association_confidence": _distribution(association.confidence),
-            "normalized_entropy": _distribution(
-                association.normalized_entropy
-            ),
+            "normalized_entropy": _distribution(association.normalized_entropy),
             "training_motion_error_m": _distribution(
                 association.training_motion_error_m
             ),
@@ -1346,18 +1505,23 @@ def associate_motioncrafter_case(
             else {
                 "available": True,
                 **manual_audit,
-                "training_mean_m": _mean_on_frames(
-                    manual_error, train_selection
-                ),
-                "future_mean_m": _mean_on_frames(
-                    manual_error, future_selection
-                ),
+                "training_mean_m": _mean_on_frames(manual_error, train_selection),
+                "future_mean_m": _mean_on_frames(manual_error, future_selection),
             }
         ),
         "inputs": {
-            "final_data": {"path": str(final_path.resolve()), "sha256": _sha256(final_path)},
-            "baseline": {"path": str(baseline_path.resolve()), "sha256": _sha256(baseline_path)},
-            "optimal_params": {"path": str(optimal_path.resolve()), "sha256": _sha256(optimal_path)},
+            "final_data": {
+                "path": str(final_path.resolve()),
+                "sha256": _sha256(final_path),
+            },
+            "baseline": {
+                "path": str(baseline_path.resolve()),
+                "sha256": _sha256(baseline_path),
+            },
+            "optimal_params": {
+                "path": str(optimal_path.resolve()),
+                "sha256": _sha256(optimal_path),
+            },
             "manual_tracks": (
                 None
                 if not track_path.is_file()

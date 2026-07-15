@@ -68,7 +68,29 @@ def main() -> None:
     parser.add_argument("--graph-ridge", type=float, default=1e-8)
     parser.add_argument("--graph-solver-relative-tolerance", type=float, default=1e-5)
     parser.add_argument("--graph-solver-maximum-iterations", type=int, default=5000)
+    parser.add_argument("--graph-covariance-probes", type=int, default=0)
+    parser.add_argument("--graph-covariance-manual-track-audit", action="store_true")
     parser.add_argument("--maximum-graph-correction-m", type=float, default=0.01)
+    parser.add_argument(
+        "--reliability-mode",
+        choices=("legacy", "decoupled_robust"),
+        default="legacy",
+    )
+    parser.add_argument(
+        "--multiview-fusion-mode",
+        choices=("legacy_independent", "covariance_intersection"),
+        default="legacy_independent",
+    )
+    parser.add_argument("--correlation-block-pixels", type=int, default=16)
+    parser.add_argument("--boundary-reliability-scale-pixels", type=float, default=8.0)
+    parser.add_argument("--boundary-reliability-floor", type=float, default=0.25)
+    parser.add_argument("--observation-variance-floor-m2", type=float, default=4e-6)
+    parser.add_argument(
+        "--robust-outlier-variance-multiplier", type=float, default=100.0
+    )
+    parser.add_argument(
+        "--robust-model-discrepancy-variance-m2", type=float, default=0.0
+    )
     args = parser.parse_args()
     result = assimilate_motioncrafter_case(
         args.case_dir,
@@ -99,7 +121,23 @@ def main() -> None:
             graph_ridge=args.graph_ridge,
             graph_solver_relative_tolerance=(args.graph_solver_relative_tolerance),
             graph_solver_maximum_iterations=(args.graph_solver_maximum_iterations),
+            graph_covariance_probes=args.graph_covariance_probes,
+            graph_covariance_manual_track_audit=(
+                args.graph_covariance_manual_track_audit
+            ),
             maximum_graph_correction_m=args.maximum_graph_correction_m,
+            reliability_mode=args.reliability_mode,
+            multiview_fusion_mode=args.multiview_fusion_mode,
+            correlation_block_pixels=args.correlation_block_pixels,
+            boundary_reliability_scale_pixels=(args.boundary_reliability_scale_pixels),
+            boundary_reliability_floor=args.boundary_reliability_floor,
+            observation_variance_floor_m2=args.observation_variance_floor_m2,
+            robust_outlier_variance_multiplier=(
+                args.robust_outlier_variance_multiplier
+            ),
+            robust_model_discrepancy_variance_m2=(
+                args.robust_model_discrepancy_variance_m2
+            ),
         ),
     )
     print(json.dumps(result, indent=2, sort_keys=True))

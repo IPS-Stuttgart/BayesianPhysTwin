@@ -1,3 +1,6 @@
+import json
+import pickle
+
 import numpy as np
 
 from bayesian_phystwin.phystwin_motioncrafter_association import (
@@ -8,12 +11,108 @@ from bayesian_phystwin.phystwin_motioncrafter_association import (
     compose_dense_trajectories,
     dense_graph_error_by_frame,
     infer_graph_association,
+    load_phystwin_world_point_grid,
+    load_motioncrafter_prediction,
     manual_track_association_audit,
     resample_cover_grid,
     reverse_dense_trajectories,
     robust_icp_transform,
     robust_similarity_transform,
 )
+
+
+def test_world_point_grid_reconstructs_missing_frame_and_prefers_archive(
+    tmp_path,
+) -> None:
+    (tmp_path / "depth" / "0").mkdir(parents=True)
+    (tmp_path / "pcd").mkdir()
+    metadata = {
+        "intrinsics": [[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]],
+        "WH": [2, 2],
+    }
+    (tmp_path / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+    with (tmp_path / "calibrate.pkl").open("wb") as handle:
+        pickle.dump(np.eye(4)[None], handle)
+    np.save(tmp_path / "depth" / "0" / "1.npy", np.full((2, 2), 1000.0))
+
+    reconstructed, source = load_phystwin_world_point_grid(tmp_path, 1)
+
+    expected = np.array(
+        [[[[0.0, 0.0, 1.0], [1.0, 0.0, 1.0]], [[0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]]
+    )
+    np.testing.assert_allclose(reconstructed, expected)
+    assert source == "depth+metadata+calibrate"
+
+    archived = np.full((1, 2, 2, 3), 7.0)
+    np.savez(tmp_path / "pcd" / "1.npz", points=archived)
+    loaded, source = load_phystwin_world_point_grid(tmp_path, 1)
+
+    np.testing.assert_array_equal(loaded, archived)
+    assert source == "pcd/1.npz"
+
+
+def _pack_covariance(covariance: np.ndarray) -> np.ndarray:
+    return covariance[..., (0, 0, 0, 1, 1, 2), (0, 1, 2, 1, 2, 2)]
+
+
+def test_disjoint_archive_loading_remains_compatible(tmp_path) -> None:
+    point_map = np.arange(2 * 2 * 3 * 3, dtype=np.float32).reshape(2, 2, 3, 3)
+    valid = np.ones((2, 2, 3), dtype=bool)
+    scene_flow = np.full_like(point_map, 0.25)
+    deform = valid.copy()
+    path = tmp_path / "disjoint.npz"
+    np.savez_compressed(
+        path,
+        point_map=point_map,
+        valid_mask=valid,
+        scene_flow=scene_flow,
+        deform_mask=deform,
+    )
+
+    prediction = load_motioncrafter_prediction(path)
+
+    np.testing.assert_array_equal(prediction.point_map, point_map)
+    np.testing.assert_array_equal(prediction.valid_mask, valid)
+    np.testing.assert_array_equal(prediction.scene_flow, scene_flow)
+    np.testing.assert_array_equal(prediction.deform_mask, deform)
+    assert prediction.frame_indices is None
+    assert prediction.point_covariance_m2 is None
+    assert prediction.flow_covariance_m2 is None
+    assert prediction.contributors is None
+
+
+def test_prob4d_fused_archive_loads_packed_covariance_and_contributors(
+    tmp_path,
+) -> None:
+    shape = (2, 2, 3)
+    point_map = np.zeros(shape + (3,), dtype=np.float32)
+    valid = np.ones(shape, dtype=bool)
+    scene_flow = np.ones_like(point_map)
+    deform = valid.copy()
+    point_covariance = np.broadcast_to(
+        np.diag([1e-4, 2e-4, 3e-4]), shape + (3, 3)
+    ).copy()
+    flow_covariance = 2.0 * point_covariance
+    contributors = np.full(shape, 2, dtype=np.uint16)
+    path = tmp_path / "prob4d_uniform.npz"
+    np.savez_compressed(
+        path,
+        point_map=point_map,
+        valid_mask=valid,
+        scene_flow=scene_flow,
+        deform_mask=deform,
+        frame_indices=np.array([4, 5]),
+        point_covariance_packed=_pack_covariance(point_covariance),
+        flow_covariance_packed=_pack_covariance(flow_covariance),
+        contributors=contributors,
+    )
+
+    prediction = load_motioncrafter_prediction(path)
+
+    np.testing.assert_array_equal(prediction.frame_indices, [4, 5])
+    np.testing.assert_allclose(prediction.point_covariance_m2, point_covariance)
+    np.testing.assert_allclose(prediction.flow_covariance_m2, flow_covariance)
+    np.testing.assert_array_equal(prediction.contributors, contributors)
 
 
 def test_resample_cover_grid_is_identity_at_equal_resolution() -> None:
@@ -111,9 +210,7 @@ def test_compose_dense_trajectories_reindexes_flow_and_rejects_collisions() -> N
 
     np.testing.assert_allclose(trajectories.positions[:, 0, 0], [0.0, 0.01, 0.02])
     np.testing.assert_array_equal(trajectories.valid[:, 0], [True, True, True])
-    np.testing.assert_array_equal(
-        np.sum(trajectories.valid, axis=1), [4, 3, 2]
-    )
+    np.testing.assert_array_equal(np.sum(trajectories.valid, axis=1), [4, 3, 2])
     assert len(np.unique(trajectories.pixel_indices[1, trajectories.valid[1]])) == 3
 
 
@@ -188,9 +285,7 @@ def test_concatenate_dense_trajectories_preserves_camera_ids() -> None:
     )
 
     np.testing.assert_array_equal(camera_indices, [0, 0, 2, 2])
-    np.testing.assert_allclose(
-        combined.positions[0, :, 0], [0.0, 0.0, 2.0, 2.0]
-    )
+    np.testing.assert_allclose(combined.positions[0, :, 0], [0.0, 0.0, 2.0, 2.0])
 
 
 def test_training_motion_disambiguates_nearby_automatic_identities() -> None:
@@ -226,9 +321,7 @@ def test_training_motion_disambiguates_nearby_automatic_identities() -> None:
 
 
 def test_graph_association_and_manual_audit_recover_dense_identities() -> None:
-    graph = np.array(
-        [[0.0, 0.0, 0.0], [0.01, 0.0, 0.0], [0.02, 0.0, 0.0]]
-    )
+    graph = np.array([[0.0, 0.0, 0.0], [0.01, 0.0, 0.0], [0.02, 0.0, 0.0]])
     dense_initial = np.array(
         [
             [0.0001, 0.0, 0.0],
@@ -246,9 +339,7 @@ def test_graph_association_and_manual_audit_recover_dense_identities() -> None:
         valid=np.ones((2, 5), dtype=bool),
         step_error_m=np.zeros((1, 5), dtype=np.float32),
         pixel_indices=np.tile(np.arange(5), (2, 1)),
-        seed_pixels_yx=np.column_stack([np.zeros(5), np.arange(5)]).astype(
-            np.int32
-        ),
+        seed_pixels_yx=np.column_stack([np.zeros(5), np.arange(5)]).astype(np.int32),
     )
     springs = np.array([[0, 1], [1, 2]], dtype=np.int32)
 
@@ -272,9 +363,7 @@ def test_graph_association_and_manual_audit_recover_dense_identities() -> None:
     assert np.all(reliability > 0.0)
     np.testing.assert_allclose(observations[0], graph, atol=7e-4)
     moved_graph = np.stack([graph, graph + np.array([0.0, 0.002, 0.0])])
-    error = dense_graph_error_by_frame(
-        moved_graph, observations, valid, reliability
-    )
+    error = dense_graph_error_by_frame(moved_graph, observations, valid, reliability)
     assert np.max(error) < 7e-4
 
     manual = moved_graph.copy()
