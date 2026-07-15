@@ -201,6 +201,16 @@ On the real source validation action, the strongest beta improves RMSE by only
 The hidden-action query is rejected with byte-identical fallback weights. This
 formalizes the earlier MolmoMotion null instead of accepting a harmful prior.
 
+Positive semantic weighting also has an independent runtime admission gate.
+`causal4d.semantic_freshness` requires strict timing metadata on a trusted,
+named monotonic clock; it rejects missing or mismatched clock identity,
+overlong inference, an aged query snapshot, a missed planning deadline, and
+malformed telemetry. Every rejection reconstructs the task posterior with
+`beta=0` and byte-identical physical/task weights. The expected clock identity
+must come from the planner runtime, never from the semantic payload. The locked
+limits and failure behavior are in
+`configs/causal4d/hardware_execution_gate_v1.json`.
+
 A subsequent direct competence audit corrects the original 30/15 fps temporal
 mismatch and evaluates Molmo before beta selection. The corrected instruction
 still reaches only `0.0164` times the real motion scale, does not beat zero or
@@ -219,8 +229,18 @@ cycle:
 4. executes only a short control segment;
 5. updates physical component, `theta`, `phi`, and `kappa` weights from new
    observations, starting from the physical rather than task posterior;
-6. passes particle endpoint position and velocity to the next simulator call;
-7. transfers the updated latent joint into the new action support and replans.
+6. optionally propagates and robustly updates a separate low-rank graph
+   discrepancy mean/covariance from partial node/coordinate observations;
+7. passes particle endpoint position and velocity to the next simulator call;
+8. moment-matches the graph coefficients onto matching
+   `(particle, phi, kappa)` support in each new plan and replans.
+
+Graph persistence is the default coefficient transition because it is the
+supported real-data baseline; learned graph AR dynamics require an explicit
+opt-in. The transported field corrects readout moments and predictive risk but
+is never injected into simulator position or velocity. These are software and
+unit-test contracts, not evidence of a new real-data accuracy or calibration
+gain.
 
 The controlled closed-loop test rejects an unreachable action, completes a
 language-conditioned task with two replans, and updates the correct physical

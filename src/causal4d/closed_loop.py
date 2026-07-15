@@ -3,12 +3,56 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Sequence
+from typing import Callable, Literal, Sequence
 
 import numpy as np
 
 from causal4d.contracts import PhysicalPosterior, TaskPosterior
+from causal4d.graph_temporal_discrepancy import GraphTemporalDiscrepancyModel
 from causal4d.physical_validation import physical_posterior_moments
+
+
+def _validated_graph_discrepancy_state(
+    coefficient_mean: np.ndarray | None,
+    coefficient_covariance: np.ndarray | None,
+    *,
+    component_count: int,
+    owner: str,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """Validate a component-wise Gaussian state over graph coefficients."""
+
+    if (coefficient_mean is None) != (coefficient_covariance is None):
+        raise ValueError(
+            f"{owner} graph discrepancy mean and covariance must be supplied together"
+        )
+    if coefficient_mean is None:
+        return None, None
+    mean = np.asarray(coefficient_mean, dtype=float).copy()
+    covariance = np.asarray(coefficient_covariance, dtype=float).copy()
+    if mean.ndim != 3 or mean.shape[0] != component_count or mean.shape[2] != 3:
+        raise ValueError(f"{owner} graph discrepancy mean must have shape (K, rank, 3)")
+    rank = mean.shape[1]
+    if rank < 1 or covariance.shape != (component_count, 3, rank, rank):
+        raise ValueError(
+            f"{owner} graph discrepancy covariance must have shape (K, 3, rank, rank)"
+        )
+    if not np.all(np.isfinite(mean)) or not np.all(np.isfinite(covariance)):
+        raise ValueError(f"{owner} graph discrepancy state must be finite")
+    if not np.allclose(
+        covariance,
+        covariance.swapaxes(-1, -2),
+        atol=1e-10,
+        rtol=1e-10,
+    ):
+        raise ValueError(f"{owner} graph discrepancy covariance must be symmetric")
+    minimum_eigenvalue = float(np.min(np.linalg.eigvalsh(covariance), initial=0.0))
+    if minimum_eigenvalue < -1e-10:
+        raise ValueError(
+            f"{owner} graph discrepancy covariance must be positive semidefinite"
+        )
+    mean.setflags(write=False)
+    covariance.setflags(write=False)
+    return mean, covariance
 
 
 @dataclass(frozen=True)
@@ -43,14 +87,18 @@ class CandidatePlan:
     physical: PhysicalPosterior
     task: TaskPosterior | None = None
     frame_dt_s: float = 1.0
+    graph_discrepancy_coefficient_mean: np.ndarray | None = None
+    graph_discrepancy_coefficient_covariance: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         controls = np.asarray(self.controller_points_m, dtype=float)
         anchor = np.asarray(self.control_anchor_m, dtype=float)
         if not self.action_id:
             raise ValueError("candidate action_id must be nonempty")
-        if controls.ndim != 3 or controls.shape[2] != 3 or not np.all(
-            np.isfinite(controls)
+        if (
+            controls.ndim != 3
+            or controls.shape[2] != 3
+            or not np.all(np.isfinite(controls))
         ):
             raise ValueError("controller_points_m must have finite shape (H, C, 3)")
         if anchor.shape != controls.shape[1:] or not np.all(np.isfinite(anchor)):
@@ -64,8 +112,24 @@ class CandidatePlan:
                 raise ValueError("candidate task does not reference candidate physics")
             if self.task.component_ids != self.physical.component_ids:
                 raise ValueError("candidate task and physical support differ")
+        discrepancy_mean, discrepancy_covariance = _validated_graph_discrepancy_state(
+            self.graph_discrepancy_coefficient_mean,
+            self.graph_discrepancy_coefficient_covariance,
+            component_count=len(self.physical.weights),
+            owner="candidate",
+        )
         object.__setattr__(self, "controller_points_m", controls)
         object.__setattr__(self, "control_anchor_m", anchor)
+        object.__setattr__(
+            self,
+            "graph_discrepancy_coefficient_mean",
+            discrepancy_mean,
+        )
+        object.__setattr__(
+            self,
+            "graph_discrepancy_coefficient_covariance",
+            discrepancy_covariance,
+        )
 
 
 @dataclass(frozen=True)
@@ -96,6 +160,8 @@ class RecursivePhysicalBelief:
     phi_mean: np.ndarray
     kappa_mean: np.ndarray
     effective_components: float
+    graph_discrepancy_coefficient_mean: np.ndarray | None = None
+    graph_discrepancy_coefficient_covariance: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         component = np.asarray(self.component_weights, dtype=float).copy()
@@ -135,6 +201,12 @@ class RecursivePhysicalBelief:
             or state_velocity.shape != state_position.shape
         ):
             raise ValueError("recursive endpoint state must have shape (K, N, 3)")
+        discrepancy_mean, discrepancy_covariance = _validated_graph_discrepancy_state(
+            self.graph_discrepancy_coefficient_mean,
+            self.graph_discrepancy_coefficient_covariance,
+            component_count=len(component),
+            owner="recursive",
+        )
         for values in (
             component,
             particle_indices,
@@ -156,6 +228,16 @@ class RecursivePhysicalBelief:
         object.__setattr__(self, "twin_particle_marginal", particles)
         object.__setattr__(self, "phi_mean", phi)
         object.__setattr__(self, "kappa_mean", kappa)
+        object.__setattr__(
+            self,
+            "graph_discrepancy_coefficient_mean",
+            discrepancy_mean,
+        )
+        object.__setattr__(
+            self,
+            "graph_discrepancy_coefficient_covariance",
+            discrepancy_covariance,
+        )
 
 
 @dataclass(frozen=True)
@@ -183,6 +265,108 @@ def _logsumexp(values: np.ndarray) -> float:
     return maximum + float(np.log(np.sum(np.exp(values - maximum))))
 
 
+def _positive_semidefinite(matrix: np.ndarray) -> np.ndarray:
+    """Remove only floating-point negative covariance eigenvalues."""
+
+    symmetric = 0.5 * (matrix + matrix.T)
+    eigenvalues, eigenvectors = np.linalg.eigh(symmetric)
+    return (eigenvectors * np.maximum(eigenvalues, 0.0)) @ eigenvectors.T
+
+
+def graph_discrepancy_adjusted_plan_moments(
+    plan: CandidatePlan,
+    model: GraphTemporalDiscrepancyModel,
+    *,
+    dynamics: Literal["persistence", "learned"] = "persistence",
+    projection_variance_mode: Literal[
+        "included_in_readout", "add"
+    ] = "included_in_readout",
+) -> tuple[np.ndarray, np.ndarray]:
+    """Moment-match a plan after forecasting its separate graph-field belief.
+
+    ``included_in_readout`` avoids counting the model's projection residual twice
+    when ``PhysicalPosterior.readout_variance_m2`` was calibrated from the same
+    residual. Select ``add`` only when the physical variance excludes it.
+    """
+
+    if dynamics not in {"persistence", "learned"}:
+        raise ValueError("graph discrepancy dynamics must be persistence or learned")
+    if projection_variance_mode not in {"included_in_readout", "add"}:
+        raise ValueError("graph projection variance mode must be included or add")
+    source_mean = plan.graph_discrepancy_coefficient_mean
+    source_covariance = plan.graph_discrepancy_coefficient_covariance
+    if source_mean is None or source_covariance is None:
+        raise ValueError("adjusted moments require a graph discrepancy belief")
+    component_count, frame_count, node_count, _ = (
+        plan.physical.readout_trajectories_m.shape
+    )
+    rank = model.selected_rank
+    if source_mean.shape != (component_count, rank, 3):
+        raise ValueError("candidate graph discrepancy rank does not match the model")
+    if model.basis.shape[0] < node_count:
+        raise ValueError("graph discrepancy basis does not cover plan readout nodes")
+    basis = model.basis[:node_count]
+    transition = model.transition if dynamics == "learned" else np.eye(rank)
+    coefficient_mean = source_mean.copy()
+    coefficient_covariance = source_covariance.copy()
+    components = plan.physical.readout_trajectories_m.astype(float).copy()
+    conditional_variance = np.broadcast_to(
+        plan.physical.readout_variance_m2[:, None].astype(float),
+        components.shape,
+    ).copy()
+    projection_variance = (
+        model.projection_variance_m2
+        if projection_variance_mode == "add"
+        else np.zeros(3, dtype=float)
+    )
+    for frame in range(frame_count):
+        if frame > 0:
+            coefficient_mean = np.einsum(
+                "ij,kjc->kic",
+                transition,
+                coefficient_mean,
+            )
+            for component in range(component_count):
+                for coordinate in range(3):
+                    coefficient_covariance[component, coordinate] = (
+                        _positive_semidefinite(
+                            transition
+                            @ coefficient_covariance[component, coordinate]
+                            @ transition.T
+                            + model.innovation_covariance
+                        )
+                    )
+        components[:, frame] += np.einsum(
+            "nr,krc->knc",
+            basis,
+            coefficient_mean,
+        )
+        for component in range(component_count):
+            for coordinate in range(3):
+                conditional_variance[component, frame, :, coordinate] += (
+                    np.einsum(
+                        "ni,ij,nj->n",
+                        basis,
+                        coefficient_covariance[component, coordinate],
+                        basis,
+                    )
+                    + projection_variance[coordinate]
+                )
+    mean = np.einsum("k,ktnc->tnc", plan.physical.weights, components)
+    centered = components - mean[None]
+    epistemic = np.einsum(
+        "k,ktnc->tnc",
+        plan.physical.weights,
+        np.square(centered),
+    )
+    conditional = np.einsum(
+        "k,ktnc->tnc",
+        plan.physical.weights,
+        conditional_variance,
+    )
+    return mean, np.maximum(epistemic + conditional, np.finfo(float).tiny)
+
+
 class RecedingHorizonPlanner:
     """Select, execute, observe, update, and replan without semantic state updates."""
 
@@ -193,15 +377,31 @@ class RecedingHorizonPlanner:
         observation_scale_m: float = 0.006,
         observation_likelihood_power: float = 8.0,
         degrees_of_freedom: float = 4.0,
+        graph_discrepancy_model: GraphTemporalDiscrepancyModel | None = None,
+        graph_discrepancy_dynamics: Literal["persistence", "learned"] = "persistence",
+        graph_projection_variance_mode: Literal[
+            "included_in_readout", "add"
+        ] = "included_in_readout",
     ) -> None:
         if observation_scale_m <= 0.0 or observation_likelihood_power <= 0.0:
             raise ValueError("closed-loop observation likelihood settings are invalid")
         if degrees_of_freedom <= 0.0:
             raise ValueError("degrees_of_freedom must be positive")
+        if graph_discrepancy_dynamics not in {"persistence", "learned"}:
+            raise ValueError(
+                "graph_discrepancy_dynamics must be 'persistence' or 'learned'"
+            )
+        if graph_projection_variance_mode not in {"included_in_readout", "add"}:
+            raise ValueError(
+                "graph_projection_variance_mode must be 'included_in_readout' or 'add'"
+            )
         self.constraints = constraints
         self.observation_scale_m = float(observation_scale_m)
         self.observation_likelihood_power = float(observation_likelihood_power)
         self.degrees_of_freedom = float(degrees_of_freedom)
+        self.graph_discrepancy_model = graph_discrepancy_model
+        self.graph_discrepancy_dynamics = graph_discrepancy_dynamics
+        self.graph_projection_variance_mode = graph_projection_variance_mode
 
     def assess(self, plan: CandidatePlan) -> PlanAssessment:
         controls = np.concatenate(
@@ -210,7 +410,22 @@ class RecedingHorizonPlanner:
         )
         control_steps = np.linalg.norm(np.diff(controls, axis=0), axis=2)
         maximum_control_step = float(np.max(control_steps, initial=0.0))
-        mean, variance = physical_posterior_moments(plan.physical)
+        if (
+            self.graph_discrepancy_model is None
+            and plan.graph_discrepancy_coefficient_mean is not None
+        ):
+            raise ValueError(
+                "candidate graph discrepancy state requires a planner model"
+            )
+        if plan.graph_discrepancy_coefficient_mean is not None:
+            mean, variance = graph_discrepancy_adjusted_plan_moments(
+                plan,
+                self.graph_discrepancy_model,
+                dynamics=self.graph_discrepancy_dynamics,
+                projection_variance_mode=self.graph_projection_variance_mode,
+            )
+        else:
+            mean, variance = physical_posterior_moments(plan.physical)
         displacement = np.linalg.norm(mean - mean[0][None], axis=2)
         maximum_displacement = float(np.max(displacement, initial=0.0))
         maximum_std = float(np.max(np.sqrt(variance), initial=0.0))
@@ -269,6 +484,167 @@ class RecedingHorizonPlanner:
         _, _, selected = max(feasible, key=lambda value: (value[0], value[1]))
         return selected, assessments
 
+    def _assimilate_graph_discrepancy(
+        self,
+        plan: CandidatePlan,
+        observations: np.ndarray,
+        valid: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Filter a separate low-rank readout discrepancy for every component."""
+
+        model = self.graph_discrepancy_model
+        if model is None:
+            raise RuntimeError("graph discrepancy update requires a model")
+        component_count = len(plan.physical.weights)
+        node_count = observations.shape[1]
+        rank = model.selected_rank
+        if model.basis.shape[0] < node_count:
+            raise ValueError(
+                "graph discrepancy basis does not cover the physical readout nodes"
+            )
+        if plan.graph_discrepancy_coefficient_mean is None:
+            coefficient_mean = np.zeros((component_count, rank, 3), dtype=float)
+            coefficient_covariance = np.zeros(
+                (component_count, 3, rank, rank),
+                dtype=float,
+            )
+        else:
+            coefficient_mean = np.asarray(
+                plan.graph_discrepancy_coefficient_mean,
+                dtype=float,
+            ).copy()
+            coefficient_covariance = np.asarray(
+                plan.graph_discrepancy_coefficient_covariance,
+                dtype=float,
+            ).copy()
+            if coefficient_mean.shape != (component_count, rank, 3):
+                raise ValueError(
+                    "candidate graph discrepancy rank does not match the planner model"
+                )
+
+        basis = model.basis[:node_count]
+        transition = (
+            model.transition
+            if self.graph_discrepancy_dynamics == "learned"
+            else np.eye(rank)
+        )
+        innovation_covariance = model.innovation_covariance
+        scores = np.zeros(component_count, dtype=float)
+        valid_count = int(np.sum(valid))
+        identity = np.eye(rank)
+        for frame in range(len(observations)):
+            coefficient_mean = np.einsum(
+                "ij,kjc->kic",
+                transition,
+                coefficient_mean,
+            )
+            for component in range(component_count):
+                for coordinate in range(3):
+                    prior_covariance = coefficient_covariance[
+                        component,
+                        coordinate,
+                    ]
+                    coefficient_covariance[component, coordinate] = (
+                        _positive_semidefinite(
+                            transition @ prior_covariance @ transition.T
+                            + innovation_covariance
+                        )
+                    )
+
+            for component in range(component_count):
+                physical_prediction = plan.physical.readout_trajectories_m[
+                    component,
+                    frame + 1,
+                ].astype(float)
+                for coordinate in range(3):
+                    selected = np.flatnonzero(valid[frame, :, coordinate])
+                    if len(selected) == 0:
+                        continue
+                    mean = coefficient_mean[component, :, coordinate]
+                    covariance = coefficient_covariance[component, coordinate]
+                    design = basis[selected]
+                    noise_variance = (
+                        self.observation_scale_m**2
+                        + plan.physical.readout_variance_m2[
+                            component,
+                            selected,
+                            coordinate,
+                        ].astype(float)
+                        + (
+                            model.projection_variance_m2[coordinate]
+                            if self.graph_projection_variance_mode == "add"
+                            else 0.0
+                        )
+                    )
+                    noise_variance = np.maximum(noise_variance, 1e-15)
+                    residual = (
+                        observations[frame, selected, coordinate]
+                        - physical_prediction[selected, coordinate]
+                        - design @ mean
+                    )
+                    predictive_variance = noise_variance + np.einsum(
+                        "ni,ij,nj->n",
+                        design,
+                        covariance,
+                        design,
+                    )
+                    scores[component] += float(
+                        np.sum(
+                            -0.5 * np.log(predictive_variance)
+                            - (
+                                0.5
+                                * (self.degrees_of_freedom + 1.0)
+                                * np.log1p(
+                                    np.square(residual)
+                                    / (self.degrees_of_freedom * predictive_variance)
+                                )
+                            )
+                        )
+                    )
+
+                    # A sequential Student-t Kalman update bounds the influence
+                    # of individual bad tracks while retaining partial-node and
+                    # coordinate masks. The field corrects readout likelihoods;
+                    # it is deliberately never injected into physical state.
+                    for node, measurement_variance in zip(
+                        selected,
+                        noise_variance,
+                        strict=True,
+                    ):
+                        design_row = basis[node]
+                        innovation = float(
+                            observations[frame, node, coordinate]
+                            - physical_prediction[node, coordinate]
+                            - design_row @ mean
+                        )
+                        latent_variance = float(design_row @ covariance @ design_row)
+                        predictive_scalar_variance = (
+                            latent_variance + measurement_variance
+                        )
+                        standardized_square = innovation**2 / predictive_scalar_variance
+                        robust_weight = min(
+                            1.0,
+                            (self.degrees_of_freedom + 1.0)
+                            / (self.degrees_of_freedom + standardized_square),
+                        )
+                        effective_variance = measurement_variance / max(
+                            robust_weight,
+                            1e-6,
+                        )
+                        denominator = latent_variance + effective_variance
+                        gain = covariance @ design_row / denominator
+                        mean = mean + gain * innovation
+                        update = identity - np.outer(gain, design_row)
+                        covariance = (
+                            update @ covariance @ update.T
+                            + np.outer(gain, gain) * effective_variance
+                        )
+                    coefficient_mean[component, :, coordinate] = mean
+                    coefficient_covariance[component, coordinate] = (
+                        _positive_semidefinite(covariance)
+                    )
+        return coefficient_mean, coefficient_covariance, scores / valid_count
+
     def assimilate(
         self,
         plan: CandidatePlan,
@@ -277,7 +653,7 @@ class RecedingHorizonPlanner:
         observation_frame_stop: int,
         mask: np.ndarray | None = None,
     ) -> RecursivePhysicalBelief:
-        """Update theta/phi/kappa from physical evidence, never task weights."""
+        """Update physical support and optional readout discrepancy from evidence."""
 
         observations = np.asarray(observations_m, dtype=float)
         if observations.ndim != 3 or observations.shape[2] != 3:
@@ -288,7 +664,10 @@ class RecedingHorizonPlanner:
             plan.physical.readout_trajectories_m.shape[2],
             3,
         )
-        if observations.shape != expected_shape or not 1 <= observed_count < plan.physical.readout_trajectories_m.shape[1]:
+        if (
+            observations.shape != expected_shape
+            or not 1 <= observed_count < plan.physical.readout_trajectories_m.shape[1]
+        ):
             raise ValueError("closed-loop observations do not fit the plan horizon")
         valid = np.isfinite(observations)
         if mask is not None:
@@ -300,17 +679,37 @@ class RecedingHorizonPlanner:
             valid &= supplied
         if not np.any(valid):
             raise ValueError("closed-loop update has no valid observations")
-        predicted = plan.physical.readout_trajectories_m[
-            :, 1 : observed_count + 1
-        ].astype(float)
-        variance = plan.physical.readout_variance_m2[:, None].astype(float)
-        scale = np.sqrt(self.observation_scale_m**2 + variance)
-        standardized = (predicted - observations[None]) / scale
-        terms = -0.5 * (self.degrees_of_freedom + 1.0) * np.log1p(
-            np.square(standardized) / self.degrees_of_freedom
-        )
-        scores = np.sum(np.where(valid[None], terms, 0.0), axis=(1, 2, 3))
-        scores /= int(np.sum(valid))
+        discrepancy_mean = None
+        discrepancy_covariance = None
+        if self.graph_discrepancy_model is None:
+            if plan.graph_discrepancy_coefficient_mean is not None:
+                raise ValueError(
+                    "candidate graph discrepancy state requires a planner model"
+                )
+            predicted = plan.physical.readout_trajectories_m[
+                :, 1 : observed_count + 1
+            ].astype(float)
+            variance = plan.physical.readout_variance_m2[:, None].astype(float)
+            scale = np.sqrt(self.observation_scale_m**2 + variance)
+            standardized = (predicted - observations[None]) / scale
+            terms = (
+                -0.5
+                * (self.degrees_of_freedom + 1.0)
+                * np.log1p(np.square(standardized) / self.degrees_of_freedom)
+            )
+            scores = np.sum(
+                np.where(valid[None], terms, 0.0),
+                axis=(1, 2, 3),
+            )
+            scores /= int(np.sum(valid))
+        else:
+            discrepancy_mean, discrepancy_covariance, scores = (
+                self._assimilate_graph_discrepancy(
+                    plan,
+                    observations,
+                    valid,
+                )
+            )
         # The update starts from the physical posterior. Language never enters
         # state, theta, phi, or kappa inference.
         log_weights = np.log(np.maximum(plan.physical.weights, 1e-300)) + (
@@ -346,29 +745,113 @@ class RecedingHorizonPlanner:
             phi_mean=phi_mean,
             kappa_mean=kappa_mean,
             effective_components=1.0 / float(np.sum(np.square(weights))),
+            graph_discrepancy_coefficient_mean=discrepancy_mean,
+            graph_discrepancy_coefficient_covariance=discrepancy_covariance,
         )
+
+
+def _latent_support_key(
+    particle_index: int,
+    phi: np.ndarray,
+    kappa: np.ndarray,
+) -> tuple[int, tuple[float, ...], tuple[float, ...]]:
+    return (
+        int(particle_index),
+        tuple(map(float, phi)),
+        tuple(map(float, kappa)),
+    )
+
+
+def _transport_graph_discrepancy(
+    plan: CandidatePlan,
+    belief: RecursivePhysicalBelief,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """Moment-match coefficient state onto a replanned latent support."""
+
+    source_mean = belief.graph_discrepancy_coefficient_mean
+    source_covariance = belief.graph_discrepancy_coefficient_covariance
+    if source_mean is None:
+        return (
+            plan.graph_discrepancy_coefficient_mean,
+            plan.graph_discrepancy_coefficient_covariance,
+        )
+    rank = source_mean.shape[1]
+    target_mean = np.zeros((len(plan.physical.weights), rank, 3), dtype=float)
+    target_covariance = np.zeros(
+        (len(plan.physical.weights), 3, rank, rank),
+        dtype=float,
+    )
+    members: dict[
+        tuple[int, tuple[float, ...], tuple[float, ...]],
+        list[int],
+    ] = {}
+    for index in range(len(belief.component_weights)):
+        key = _latent_support_key(
+            belief.twin_particle_indices[index],
+            belief.phi_support[index],
+            belief.kappa_support[index],
+        )
+        members.setdefault(key, []).append(index)
+
+    moments: dict[
+        tuple[int, tuple[float, ...], tuple[float, ...]],
+        tuple[np.ndarray, np.ndarray],
+    ] = {}
+    for key, indices in members.items():
+        member_weights = belief.component_weights[indices]
+        mass = float(np.sum(member_weights))
+        if mass <= 0.0:
+            continue
+        member_weights = member_weights / mass
+        mean = np.einsum(
+            "k,krc->rc",
+            member_weights,
+            source_mean[indices],
+        )
+        covariance = np.zeros((3, rank, rank), dtype=float)
+        for local_index, source_index in enumerate(indices):
+            difference = source_mean[source_index] - mean
+            for coordinate in range(3):
+                covariance[coordinate] += member_weights[local_index] * (
+                    source_covariance[source_index, coordinate]
+                    + np.outer(
+                        difference[:, coordinate],
+                        difference[:, coordinate],
+                    )
+                )
+        moments[key] = mean, covariance
+
+    for index in range(len(plan.physical.weights)):
+        key = _latent_support_key(
+            plan.physical.twin_particle_indices[index],
+            plan.physical.phi[index],
+            plan.physical.kappa_cf[index],
+        )
+        if key in moments:
+            target_mean[index], target_covariance[index] = moments[key]
+    return target_mean, target_covariance
 
 
 def condition_plan_on_recursive_belief(
     plan: CandidatePlan,
     belief: RecursivePhysicalBelief,
 ) -> CandidatePlan:
-    """Transfer the updated ``(theta, phi, kappa)`` joint to a new action plan."""
+    """Transfer physical and graph-discrepancy beliefs to a new action plan."""
 
     latent_mass: dict[tuple[int, tuple[float, ...], tuple[float, ...]], float] = {}
     for index, weight in enumerate(belief.component_weights):
-        key = (
-            int(belief.twin_particle_indices[index]),
-            tuple(map(float, belief.phi_support[index])),
-            tuple(map(float, belief.kappa_support[index])),
+        key = _latent_support_key(
+            belief.twin_particle_indices[index],
+            belief.phi_support[index],
+            belief.kappa_support[index],
         )
         latent_mass[key] = latent_mass.get(key, 0.0) + float(weight)
     weights = np.empty_like(plan.physical.weights)
     for index in range(len(weights)):
-        key = (
-            int(plan.physical.twin_particle_indices[index]),
-            tuple(map(float, plan.physical.phi[index])),
-            tuple(map(float, plan.physical.kappa_cf[index])),
+        key = _latent_support_key(
+            plan.physical.twin_particle_indices[index],
+            plan.physical.phi[index],
+            plan.physical.kappa_cf[index],
         )
         weights[index] = latent_mass.get(key, 0.0)
     retained_mass = float(np.sum(weights))
@@ -426,6 +909,10 @@ def condition_plan_on_recursive_belief(
                 "recursive_physical_prior": True,
             },
         )
+    discrepancy_mean, discrepancy_covariance = _transport_graph_discrepancy(
+        plan,
+        belief,
+    )
     return CandidatePlan(
         action_id=plan.action_id,
         controller_points_m=plan.controller_points_m,
@@ -433,6 +920,8 @@ def condition_plan_on_recursive_belief(
         physical=physical,
         task=task,
         frame_dt_s=plan.frame_dt_s,
+        graph_discrepancy_coefficient_mean=discrepancy_mean,
+        graph_discrepancy_coefficient_covariance=discrepancy_covariance,
     )
 
 

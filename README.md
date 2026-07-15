@@ -31,12 +31,14 @@ Initial scope:
 - exact and hierarchical multi-interaction parameter pooling
 - regularized spatial spring regions and explicit damping sweeps
 - causal, action-conditioned low-rank simulator discrepancy
+- recursive low-rank graph-discrepancy beliefs with robust partial observations
 - capped persistent and robust Bayesian endpoint discrepancy anchors
 - sparse spring-graph discrepancy smoothing and covariance solves
 - raw camera/mask cue recovery and paired moving-block evaluation
 - automatic dense MotionCrafter-to-spring-graph association and view gating
 - selective release-archive retrieval and physical-object clustered bootstrap
 - reproducible experiment configs and remote-run scripts
+- fail-closed semantic timing, freshness, and planner-deadline admission
 
 ## Repository Layout
 
@@ -137,8 +139,9 @@ The complete Causal4D architecture now exports particle-specific endpoint
 state and discrepancy beliefs, abduces persistent actuation and factual
 contact variables, applies explicit `do(u_cf)` queries with fresh-contact
 semantics, separates physical and language-conditioned posteriors, gates
-MolmoMotion trust on source validation and target OOD diagnostics, and supports
-constrained receding-horizon replanning. See
+MolmoMotion trust on source validation, target OOD diagnostics, and strict
+freshness telemetry, and supports constrained receding-horizon replanning with
+a separately transported graph-discrepancy coefficient belief. See
 [docs/causal4d_abduction_intervention_prediction.md](docs/causal4d_abduction_intervention_prediction.md)
 for the artifact contracts, commands, audited results, and claim boundary.
 
