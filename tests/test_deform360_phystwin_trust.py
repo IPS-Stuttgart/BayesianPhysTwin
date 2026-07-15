@@ -16,6 +16,7 @@ from causal4d_public.deform360_phystwin_trust import (
     fit_cardinality_normalized_source_causal_trust,
     fit_regime_gated_source_causal_trust,
     fit_source_causal_trust,
+    load_cardinality_source_execution_protocol,
     load_cardinality_trust_protocol,
     load_official_phystwin_trust_episode,
     validate_cardinality_normalized_source_causal_trust_artifact,
@@ -71,6 +72,15 @@ def _cardinality_protocol_path() -> Path:
     )
 
 
+def _cardinality_source_execution_path() -> Path:
+    return (
+        Path(__file__).resolve().parents[1]
+        / "configs"
+        / "causal4d_public"
+        / "deform360_cardinality_source_execution_002_rope_silk_v1.json"
+    )
+
+
 def test_independent_cardinality_protocol_is_canonically_locked(
     tmp_path: Path,
 ) -> None:
@@ -84,6 +94,28 @@ def test_independent_cardinality_protocol_is_canonically_locked(
     changed_path.write_text(json.dumps(changed), encoding="utf-8")
     with pytest.raises(ValueError, match="checksum mismatch"):
         load_cardinality_trust_protocol(changed_path)
+
+
+def test_independent_source_execution_is_canonically_locked(
+    tmp_path: Path,
+) -> None:
+    protocol = load_cardinality_source_execution_protocol(
+        _cardinality_source_execution_path()
+    )
+    frame_slice = protocol["config"]["frame_slice"]
+    assert frame_slice["train_frame_range"] == [0, 64]
+    assert frame_slice["untouched_tail_frame_range"] == [64, 81]
+    assert (
+        protocol["config"]["physical_arm_roles"]["primary_gate_arm"]
+        == "source_pooled_grid"
+    )
+
+    changed = json.loads(json.dumps(protocol))
+    changed["config"]["frame_slice"]["train_frame_range"] = [0, 65]
+    changed_path = tmp_path / "changed-source-execution.json"
+    changed_path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        load_cardinality_source_execution_protocol(changed_path)
 
 
 def test_causal_control_variate_contains_exact_control_arms() -> None:

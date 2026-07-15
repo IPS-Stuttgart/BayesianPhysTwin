@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-cardinality-source-execution-002-rope-silk-v1",
+    "status": "locked-before-source-object-trajectories-and-tail-outcomes",
+    "parent_protocol_id": "deform360-cardinality-trust-002-rope-silk-v1",
+    "parent_config_sha256": "ab1177d24f87281c9dffc80d68666844efc939e96852eabf00526acbceed588d",
+    "validation_object_id": "002-rope-silk",
+    "source_episode_ids": [0, 2, 5, 6, 7, 9],
+    "frame_slice": {
+      "raw_start_frame": 110,
+      "frame_count": 81,
+      "train_frame_range": [0, 64],
+      "untouched_tail_frame_range": [64, 81],
+      "rule": "floor(0.8 * frame_count), matching the 60/76 discovery split"
+    },
+    "physical_arm_roles": {
+      "primary_gate_arm": "source_pooled_grid",
+      "transfer_control_arm": "inherited_081_control",
+      "transfer_control_can_open_calibration_or_target": false
+    },
+    "primary_selection": {
+      "outer_evaluation": "six-fold leave-one-action-out source-tail evaluation",
+      "fit_scope": "other five episodes' train frames only",
+      "jointly_selected": [
+        "init_spring_y",
+        "drag_damping",
+        "dashpot_damping",
+        "base_action_response_trust",
+        "autonomous_drift_trust"
+      ],
+      "score": "execution-balanced mean normalized track RMSE and symmetric Chamfer",
+      "tie_break": [
+        "lower score",
+        "lower sum of trust weights",
+        "lower action-response trust",
+        "lower autonomous-drift trust",
+        "lower init_spring_y",
+        "lower drag_damping",
+        "lower dashpot_damping"
+      ],
+      "source_tail_used_for_selection": false
+    },
+    "source_gate_scope": {
+      "metrics_are_outer_leave_one_action_out_tails": true,
+      "joint_win_count_is_per_held_episode": true,
+      "bimanual_episode_ids": [5, 6, 7, 9],
+      "maximum_degradation_applies_to_each_metric_in_each_episode": true,
+      "all_thresholds_in_parent_protocol_apply": true
+    },
+    "information_boundary": {
+      "source_geometry_and_registration_qa_allowed": true,
+      "source_object_trajectories_read_before_this_lock": false,
+      "source_tail_outcomes_read_before_this_lock": false,
+      "calibration_episode_read": false,
+      "sealed_target_episode_read": false
+    },
+    "decision": {
+      "on_primary_source_gate_pass": "open declared calibration episodes only",
+      "on_primary_source_gate_fail": "freeze negative and do not inspect calibration or target"
+    },
+    "claim_boundary": "independent source competence test; not a Deform360 SOTA claim"
+  },
+  "config_sha256": "5175235d0409368e6e69ab708eb958255cc85eaa82c5260098f3363238bfc8b7"
+}

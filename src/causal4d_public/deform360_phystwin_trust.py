@@ -18,6 +18,12 @@ CARDINALITY_TRUST_PROTOCOL_ID = "deform360-cardinality-trust-002-rope-silk-v1"
 CANONICAL_CARDINALITY_TRUST_CONFIG_SHA256 = (
     "ab1177d24f87281c9dffc80d68666844efc939e96852eabf00526acbceed588d"
 )
+CARDINALITY_SOURCE_EXECUTION_PROTOCOL_ID = (
+    "deform360-cardinality-source-execution-002-rope-silk-v1"
+)
+CANONICAL_CARDINALITY_SOURCE_EXECUTION_CONFIG_SHA256 = (
+    "5175235d0409368e6e69ab708eb958255cc85eaa82c5260098f3363238bfc8b7"
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -305,6 +311,60 @@ def load_cardinality_trust_protocol(path: str | Path) -> dict[str, Any]:
         is False
         and boundary.get("future_object_observations_used_at_prediction_time") is False,
         "cardinality trust information boundary changed",
+    )
+    return payload
+
+
+def load_cardinality_source_execution_protocol(
+    path: str | Path,
+) -> dict[str, Any]:
+    """Load the immutable source execution addendum for the independent test."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(
+        payload.get("schema_version") == PHYSTWIN_TRUST_SCHEMA_VERSION,
+        "cardinality source execution schema changed",
+    )
+    observed = _config_sha256(payload)
+    _require(
+        payload.get("config_sha256") == observed,
+        "cardinality source execution checksum mismatch",
+    )
+    _require(
+        observed == CANONICAL_CARDINALITY_SOURCE_EXECUTION_CONFIG_SHA256,
+        "cardinality source execution differs from canonical lock",
+    )
+    config = payload.get("config", {})
+    _require(
+        config.get("protocol_id") == CARDINALITY_SOURCE_EXECUTION_PROTOCOL_ID,
+        "cardinality source execution protocol id changed",
+    )
+    _require(
+        config.get("parent_config_sha256")
+        == CANONICAL_CARDINALITY_TRUST_CONFIG_SHA256,
+        "cardinality source execution parent changed",
+    )
+    frame_slice = config.get("frame_slice", {})
+    _require(
+        frame_slice.get("frame_count") == 81
+        and frame_slice.get("train_frame_range") == [0, 64]
+        and frame_slice.get("untouched_tail_frame_range") == [64, 81],
+        "cardinality source train/tail boundary changed",
+    )
+    roles = config.get("physical_arm_roles", {})
+    _require(
+        roles.get("primary_gate_arm") == "source_pooled_grid"
+        and roles.get("transfer_control_arm") == "inherited_081_control"
+        and roles.get("transfer_control_can_open_calibration_or_target") is False,
+        "cardinality source physical arm roles changed",
+    )
+    boundary = config.get("information_boundary", {})
+    _require(
+        boundary.get("source_object_trajectories_read_before_this_lock") is False
+        and boundary.get("source_tail_outcomes_read_before_this_lock") is False
+        and boundary.get("calibration_episode_read") is False
+        and boundary.get("sealed_target_episode_read") is False,
+        "cardinality source information boundary changed",
     )
     return payload
 
