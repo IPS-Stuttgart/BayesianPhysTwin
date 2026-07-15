@@ -1,0 +1,55 @@
+{
+  "artifact_kind": "PublicPokeFlexWarpSourcePolicy",
+  "config": {
+    "controller_patch_size": 4,
+    "controller_spring_y_grid": [
+      100.0,
+      300.0,
+      1000.0,
+      3000.0,
+      10000.0
+    ],
+    "dashpot_damping": 0.0,
+    "drag_damping": 3.0,
+    "evaluation_surface_point_count": 512,
+    "expected_source_qa_result_sha256": "e09d36db4e1ba8a38c70e112c3af9ab95516ee245302f71a853f36cd2dd0e0e7",
+    "force_axis_index": 1,
+    "force_threshold_n": 3.0,
+    "frame_dt_seconds": 0.03333333333333333,
+    "graph_knn": 8,
+    "graph_node_count": 128,
+    "ground_elasticity": 0.0,
+    "ground_friction_grid": [
+      0.0,
+      0.3
+    ],
+    "inactive_controller_spring_y": 1e-12,
+    "initial_ground_clearance_m": 0.001,
+    "maximum_p99_relative_edge_strain": 0.5,
+    "maximum_repeat_rollout_rmse_m": 0.0001,
+    "minimum_leave_one_out_persistence_win_fraction": 0.6,
+    "minimum_pooled_vs_single_source_win_fraction": 0.6,
+    "object_spring_y_grid": [
+      100.0,
+      300.0,
+      1000.0,
+      3000.0,
+      10000.0
+    ],
+    "official_phystwin_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "official_simulator_sha256": "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c",
+    "policy_id": "causal4d-pokeflex-source-warp-v1",
+    "prefix_frame_count": 6,
+    "substeps": 64,
+    "upstream_commit": "aaa8726072834a95bbe97e1a113588968c36e185"
+  },
+  "config_sha256": "bf534da2543116f486472581e842786f55b1fa538b0f06d5cb9b5d98c6904c26",
+  "information_boundary": {
+    "calibration_take_data_allowed": false,
+    "development_takes_only": true,
+    "material_identity_metrics_allowed": false,
+    "source_prediction_metrics_allowed": true,
+    "target_take_data_allowed": false
+  },
+  "schema_version": 1
+}

@@ -1,0 +1,356 @@
+{
+  "artifact_kind": "PublicPokeFlexSourceQa",
+  "capability_gates": {
+    "material_identity_metrics_ready": false,
+    "pose_wrench_contact_candidate_ready": true,
+    "shared_parameters_across_take_specific_graphs_ready": true,
+    "single_shared_canonical_graph_ready": false,
+    "source_take_specific_graph_backend_ready": true
+  },
+  "claim_boundary": "Development-take geometry and pose/wrench compatibility only. No prediction, parameter fit, material identity, calibration, or target result is established.",
+  "cross_take_first_frame_alignment": {
+    "maximum_rigid_icp_chamfer_mm": 14.259113116564851,
+    "pair_count": 10,
+    "pairs": [
+      {
+        "first_take_id": "3dPrintedBunny_T1",
+        "rigid_icp_chamfer_mm": 14.259113116564851,
+        "rigid_icp_rotation_degrees": 11.629567644544727,
+        "second_take_id": "3dPrintedBunny_T3",
+        "translation_aligned_chamfer_mm": 14.339512433816159
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T1",
+        "rigid_icp_chamfer_mm": 10.828095201517606,
+        "rigid_icp_rotation_degrees": 28.88349446838763,
+        "second_take_id": "3dPrintedBunny_T4",
+        "translation_aligned_chamfer_mm": 14.688230303817193
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T1",
+        "rigid_icp_chamfer_mm": 4.18246152233869,
+        "rigid_icp_rotation_degrees": 38.80986963500133,
+        "second_take_id": "3dPrintedBunny_T6",
+        "translation_aligned_chamfer_mm": 11.318649145025047
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T1",
+        "rigid_icp_chamfer_mm": 2.587190094299771,
+        "rigid_icp_rotation_degrees": 22.93278122529844,
+        "second_take_id": "3dPrintedBunny_T7",
+        "translation_aligned_chamfer_mm": 7.47754201350437
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T3",
+        "rigid_icp_chamfer_mm": 11.830380810498056,
+        "rigid_icp_rotation_degrees": 36.33315399683462,
+        "second_take_id": "3dPrintedBunny_T4",
+        "translation_aligned_chamfer_mm": 15.816891524908224
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T3",
+        "rigid_icp_chamfer_mm": 13.013643252127583,
+        "rigid_icp_rotation_degrees": 41.05470140036873,
+        "second_take_id": "3dPrintedBunny_T6",
+        "translation_aligned_chamfer_mm": 15.928528533895065
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T3",
+        "rigid_icp_chamfer_mm": 11.95890597256327,
+        "rigid_icp_rotation_degrees": 21.037662932773205,
+        "second_take_id": "3dPrintedBunny_T7",
+        "translation_aligned_chamfer_mm": 13.29482738932212
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T4",
+        "rigid_icp_chamfer_mm": 10.320651263024736,
+        "rigid_icp_rotation_degrees": 38.5740201541541,
+        "second_take_id": "3dPrintedBunny_T6",
+        "translation_aligned_chamfer_mm": 14.478522735004624
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T4",
+        "rigid_icp_chamfer_mm": 7.724997482822176,
+        "rigid_icp_rotation_degrees": 32.09136789769971,
+        "second_take_id": "3dPrintedBunny_T7",
+        "translation_aligned_chamfer_mm": 12.53640319198986
+      },
+      {
+        "first_take_id": "3dPrintedBunny_T6",
+        "rigid_icp_chamfer_mm": 9.005540618861868,
+        "rigid_icp_rotation_degrees": 35.34456303636294,
+        "second_take_id": "3dPrintedBunny_T7",
+        "translation_aligned_chamfer_mm": 14.505690281933827
+      }
+    ],
+    "single_canonical_graph_threshold_mm": 5.0
+  },
+  "information_boundary": {
+    "calibration_take_data_read": false,
+    "development_data_only": true,
+    "model_parameters_fitted": false,
+    "opened_take_ids": [
+      "3dPrintedBunny_T1",
+      "3dPrintedBunny_T3",
+      "3dPrintedBunny_T4",
+      "3dPrintedBunny_T6",
+      "3dPrintedBunny_T7"
+    ],
+    "prediction_metrics_computed": false,
+    "raw_data_embedded": false,
+    "target_take_data_read": false,
+    "unopened_take_ids": [
+      "3dPrintedBunny_T2",
+      "3dPrintedBunny_T5"
+    ]
+  },
+  "object_id": "3dPrintedBunny",
+  "policy_id": "causal4d-pokeflex-source-qa-v1",
+  "preflight_result_sha256": "56ff6606c3c90234f5945c23fa3999c45cc4490a0d6530b2086c79f80018b89a",
+  "result_sha256": "e09d36db4e1ba8a38c70e112c3af9ab95516ee245302f71a853f36cd2dd0e0e7",
+  "schema_version": 1,
+  "source_qa_passed": true,
+  "takes": [
+    {
+      "contact_alignment": {
+        "force_active_frame_count": 84,
+        "force_active_proximity_agreement_fraction": 0.8095238095238095,
+        "force_axis_index": 1,
+        "force_threshold_n": 3.0,
+        "median_active_tool_surface_distance_mm": 10.339866040019567,
+        "median_inactive_tool_surface_distance_mm": 38.41439349068788,
+        "minimum_active_tool_surface_distance_mm": 0.5965742961006493,
+        "passed": true,
+        "proximity_threshold_mm": 20.0
+      },
+      "first_frame": 1,
+      "first_mesh": {
+        "boundary_edge_count": 1258,
+        "centroid_mm": [
+          258.16396801757844,
+          337.6937334798173,
+          239.81515624999875
+        ],
+        "closed_edge_fraction": 0.9646420641389584,
+        "edge_count": 35579,
+        "extent_mm": [
+          130.312,
+          147.94500000000005,
+          145.58999999999997
+        ],
+        "face_count": 23300,
+        "nonmanifold_edge_count": 0,
+        "vertex_count": 12288
+      },
+      "first_mesh_sha256": "d13b8dfe705284c0eb29d28851e892d94e9f60403a7d61c7478116af979c915a",
+      "frame_count": 149,
+      "gates": {
+        "frame_alignment_ready": true,
+        "material_vertex_identity_ready": false,
+        "pose_wrench_contact_candidate_ready": true,
+        "surface_graph_geometry_ready": true,
+        "take_specific_graph_backend_ready": true
+      },
+      "last_frame": 149,
+      "mesh_inventory_sha256": "0b2be242131514c96943f27a56681c0966009b871e7fd50e8291520ef816c8ea",
+      "robot_sha256": "aa402671a8a1ca8d622eb50f38f69ab6b5aeb081841db7909aa5a38e194d701b",
+      "take_id": "3dPrintedBunny_T1",
+      "vertex_count_constant": false,
+      "vertex_count_max": 13892,
+      "vertex_count_min": 11716
+    },
+    {
+      "contact_alignment": {
+        "force_active_frame_count": 76,
+        "force_active_proximity_agreement_fraction": 0.9078947368421053,
+        "force_axis_index": 1,
+        "force_threshold_n": 3.0,
+        "median_active_tool_surface_distance_mm": 12.245703248955538,
+        "median_inactive_tool_surface_distance_mm": 27.457420083962937,
+        "minimum_active_tool_surface_distance_mm": 0.5848744648630827,
+        "passed": true,
+        "proximity_threshold_mm": 20.0
+      },
+      "first_frame": 1,
+      "first_mesh": {
+        "boundary_edge_count": 1046,
+        "centroid_mm": [
+          292.1850870922594,
+          320.8860947357101,
+          219.42883593497703
+        ],
+        "closed_edge_fraction": 0.9609570378112052,
+        "edge_count": 26791,
+        "extent_mm": [
+          160.895,
+          104.97700000000003,
+          166.00000000000003
+        ],
+        "face_count": 17512,
+        "nonmanifold_edge_count": 0,
+        "vertex_count": 9289
+      },
+      "first_mesh_sha256": "c89ffb810ab82f6d5bfbb618d55a49069dd90a1b64ed2704bc36e327e00d1f1c",
+      "frame_count": 170,
+      "gates": {
+        "frame_alignment_ready": true,
+        "material_vertex_identity_ready": false,
+        "pose_wrench_contact_candidate_ready": true,
+        "surface_graph_geometry_ready": true,
+        "take_specific_graph_backend_ready": true
+      },
+      "last_frame": 170,
+      "mesh_inventory_sha256": "95ee7e93c3b903fb433481ca2b37fc513ceda90b71f3cfa1ef499597d2d25ad4",
+      "robot_sha256": "daa8224f56830cb46a70437dbd0e17074a2f68485c2b3a35ce54d2dede385f39",
+      "take_id": "3dPrintedBunny_T3",
+      "vertex_count_constant": false,
+      "vertex_count_max": 10784,
+      "vertex_count_min": 9008
+    },
+    {
+      "contact_alignment": {
+        "force_active_frame_count": 103,
+        "force_active_proximity_agreement_fraction": 0.8932038834951457,
+        "force_axis_index": 1,
+        "force_threshold_n": 3.0,
+        "median_active_tool_surface_distance_mm": 9.000753511213901,
+        "median_inactive_tool_surface_distance_mm": 22.283141239696636,
+        "minimum_active_tool_surface_distance_mm": 0.3046044786864658,
+        "passed": true,
+        "proximity_threshold_mm": 20.0
+      },
+      "first_frame": 1,
+      "first_mesh": {
+        "boundary_edge_count": 1204,
+        "centroid_mm": [
+          301.5069470544373,
+          336.71168423233064,
+          237.03734045902576
+        ],
+        "closed_edge_fraction": 0.965576395242452,
+        "edge_count": 34976,
+        "extent_mm": [
+          144.18800000000002,
+          146.50100000000003,
+          127.541
+        ],
+        "face_count": 22916,
+        "nonmanifold_edge_count": 0,
+        "vertex_count": 12069
+      },
+      "first_mesh_sha256": "20d77e18edc9ab8fcd00efaca69acff44b12dfa6b2cfaeca00dac889f01ebdbd",
+      "frame_count": 169,
+      "gates": {
+        "frame_alignment_ready": true,
+        "material_vertex_identity_ready": false,
+        "pose_wrench_contact_candidate_ready": true,
+        "surface_graph_geometry_ready": true,
+        "take_specific_graph_backend_ready": true
+      },
+      "last_frame": 169,
+      "mesh_inventory_sha256": "665be3296b2e7cbaa5952078d7bc29200c15d63233fd301bc8e12db133e64fe9",
+      "robot_sha256": "d7f09206e84450cb9949c8820e7fe0eea535a7291e77dcb37f9dd694b0c6b30a",
+      "take_id": "3dPrintedBunny_T4",
+      "vertex_count_constant": false,
+      "vertex_count_max": 14406,
+      "vertex_count_min": 10123
+    },
+    {
+      "contact_alignment": {
+        "force_active_frame_count": 62,
+        "force_active_proximity_agreement_fraction": 0.9838709677419355,
+        "force_axis_index": 1,
+        "force_threshold_n": 3.0,
+        "median_active_tool_surface_distance_mm": 6.555223843408439,
+        "median_inactive_tool_surface_distance_mm": 31.975005910960224,
+        "minimum_active_tool_surface_distance_mm": 0.378531728073429,
+        "passed": true,
+        "proximity_threshold_mm": 20.0
+      },
+      "first_frame": 1,
+      "first_mesh": {
+        "boundary_edge_count": 964,
+        "centroid_mm": [
+          541.2936981215275,
+          337.67911808801546,
+          211.42272325601917
+        ],
+        "closed_edge_fraction": 0.9708161782513925,
+        "edge_count": 33032,
+        "extent_mm": [
+          109.20900000000006,
+          145.401,
+          135.29
+        ],
+        "face_count": 21700,
+        "nonmanifold_edge_count": 0,
+        "vertex_count": 11339
+      },
+      "first_mesh_sha256": "7ae78bb80d4f37f2567bd15fe78a0f9b80c3c75bc069682a44c94e58d942023a",
+      "frame_count": 160,
+      "gates": {
+        "frame_alignment_ready": true,
+        "material_vertex_identity_ready": false,
+        "pose_wrench_contact_candidate_ready": true,
+        "surface_graph_geometry_ready": true,
+        "take_specific_graph_backend_ready": true
+      },
+      "last_frame": 160,
+      "mesh_inventory_sha256": "9c2f6fdb8d5713bc95ddb91dbccc1976bcbbe82d7ed44d577f7788ecc725ca2c",
+      "robot_sha256": "21defcc842ae435fb4ce8de1c0d6f9e371fb1355bd07d2804e42ed163056df22",
+      "take_id": "3dPrintedBunny_T6",
+      "vertex_count_constant": false,
+      "vertex_count_max": 14313,
+      "vertex_count_min": 11003
+    },
+    {
+      "contact_alignment": {
+        "force_active_frame_count": 83,
+        "force_active_proximity_agreement_fraction": 1.0,
+        "force_axis_index": 1,
+        "force_threshold_n": 3.0,
+        "median_active_tool_surface_distance_mm": 5.485146690372158,
+        "median_inactive_tool_surface_distance_mm": 27.06661625530588,
+        "minimum_active_tool_surface_distance_mm": 0.5723949567481815,
+        "passed": true,
+        "proximity_threshold_mm": 20.0
+      },
+      "first_frame": 1,
+      "first_mesh": {
+        "boundary_edge_count": 1390,
+        "centroid_mm": [
+          528.4422574556743,
+          338.1901907018544,
+          213.11976460495055
+        ],
+        "closed_edge_fraction": 0.9606198827095788,
+        "edge_count": 35297,
+        "extent_mm": [
+          143.75099999999992,
+          143.20100000000002,
+          122.72500000000002
+        ],
+        "face_count": 23068,
+        "nonmanifold_edge_count": 0,
+        "vertex_count": 12239
+      },
+      "first_mesh_sha256": "9ae88c3a02670b83954345e71dcbb18180edd1fb208bb617938c806eec3e0412",
+      "frame_count": 159,
+      "gates": {
+        "frame_alignment_ready": true,
+        "material_vertex_identity_ready": false,
+        "pose_wrench_contact_candidate_ready": true,
+        "surface_graph_geometry_ready": true,
+        "take_specific_graph_backend_ready": true
+      },
+      "last_frame": 159,
+      "mesh_inventory_sha256": "3bfc17096a816bb9ce782b7fb07a574c126de17028f11f3aa646241a1180fd3e",
+      "robot_sha256": "294e6567179157962e3062da8fce174e4e9d76362e00cd302cfc99baaea96d19",
+      "take_id": "3dPrintedBunny_T7",
+      "vertex_count_constant": false,
+      "vertex_count_max": 13044,
+      "vertex_count_min": 10064
+    }
+  ],
+  "upstream_commit": "aaa8726072834a95bbe97e1a113588968c36e185"
+}

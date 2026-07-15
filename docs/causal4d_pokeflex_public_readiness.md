@@ -5,8 +5,10 @@
 This public-data track does not replace or modify the frozen
 `causal4d-preacquisition-v4` physical protocol. The v1 readiness config was
 locked while access was pending and remains immutable. Access was subsequently
-granted, and a server-side download began on 2026-07-14. Raw data remain outside
-Git. No prediction outcome has been inspected.
+granted, and the server-side download completed. Raw data remain outside Git.
+Only the five metadata-selected development takes have been used for source QA
+and source-model evaluation; the calibration and target outcomes remain
+unopened.
 
 The public interface is pinned to:
 
@@ -153,9 +155,33 @@ The isolated `gpuserver6000` suite passed 433 tests with four skips using
 PyRecEst 2.4.1. Compact evidence is recorded in
 `milestones/pokeflex-001-public-preflight-v1`.
 
+## Development-only source gate
+
+A second locked phase opened only development takes T1, T3, T4, T6, and T7.
+Source QA confirmed usable pose/wrench proximity cues and mesh geometry, while
+rejecting persistent vertex identity and one cross-take canonical sparse graph.
+The calibration take T5 and target take T2 remained unopened.
+
+A 50-candidate shared-setting test then used take-specific 128-node surface
+graphs in the pinned official PhysTwin Warp simulator. The implementation was
+deterministic and satisfied the edge-strain gate, but the model failed its two
+predictive admission criteria:
+
+- pooled leave-one-take-out selection beat persistence in 0/5 takes;
+- pooled selection beat median single-source selection in 2/5 takes;
+- pooled mean Chamfer was 23.771 mm versus 10.093 mm for persistence;
+- even the per-take source oracle lost to persistence in every take.
+
+This is a negative result for the sparse surface-spring backend, not for the
+full PhysTwin reconstruction pipeline or PokeFlex as a dataset. The complete
+candidate matrix and checksummed QA artifacts are frozen in
+`milestones/pokeflex-001-source-warp-gate-v1`. No target evaluation is allowed
+for the rejected backend.
+
 ## Claim boundary
 
-This track supports held-out interventional prediction across publicly recorded
-pokes. It cannot supply individual counterfactual ground truth. The first real
-preflight establishes schema and split readiness only; it is not a prediction,
-calibration, contact-identification, or Bayesian-PhysTwin result.
+This track can support held-out interventional prediction across publicly
+recorded pokes once a source backend passes its admission gate. It cannot supply
+individual counterfactual ground truth. The first sparse official-Warp backend
+did not pass, so no target prediction, calibration, contact-identification, or
+Bayesian-PhysTwin result is claimed.

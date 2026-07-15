@@ -1,0 +1,40 @@
+{
+  "artifact_kind": "PublicPokeFlexSourceQaPolicy",
+  "config": {
+    "contact_proximity_mm": 20.0,
+    "expected_development_take_ids": [
+      "3dPrintedBunny_T1",
+      "3dPrintedBunny_T3",
+      "3dPrintedBunny_T4",
+      "3dPrintedBunny_T6",
+      "3dPrintedBunny_T7"
+    ],
+    "expected_object_id": "3dPrintedBunny",
+    "expected_preflight_result_sha256": "56ff6606c3c90234f5945c23fa3999c45cc4490a0d6530b2086c79f80018b89a",
+    "force_axis_index": 1,
+    "force_threshold_n": 3.0,
+    "icp_iterations": 20,
+    "icp_max_points": 3000,
+    "icp_trim_quantile": 0.9,
+    "maximum_minimum_active_tool_surface_distance_mm": 5.0,
+    "maximum_nonmanifold_edge_count": 0,
+    "maximum_shared_graph_rigid_chamfer_mm": 5.0,
+    "minimum_closed_edge_fraction": 0.95,
+    "minimum_force_contact_frame_count": 6,
+    "minimum_force_proximity_agreement_fraction": 0.75,
+    "minimum_future_frame_count": 6,
+    "policy_id": "causal4d-pokeflex-source-qa-v1",
+    "prefix_frame_count": 6,
+    "readiness_config_sha256": "256f6c0585a1eb592583b0a0c017e116baed9126f12119e80f866cd174b58070",
+    "upstream_commit": "aaa8726072834a95bbe97e1a113588968c36e185"
+  },
+  "config_sha256": "6abf69df5299f997caa223c19778c500dfe407d28b78eb068bb567b7f0b56836",
+  "information_boundary": {
+    "calibration_take_data_allowed": false,
+    "model_fitting_allowed": false,
+    "prediction_metrics_allowed": false,
+    "source_meshes_and_robot_records_only": true,
+    "target_take_data_allowed": false
+  },
+  "schema_version": 1
+}
