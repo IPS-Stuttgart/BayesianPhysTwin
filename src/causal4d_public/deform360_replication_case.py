@@ -9,6 +9,7 @@ from typing import Any, Sequence
 import numpy as np
 
 from .deform360_replication_graph import build_sparse_graph_for_stratum
+from .deform360_reusable_twin import Deform360ReusableTwin
 from .deform360_replication_warp import (
     Deform360WarpForecastCase,
     sparse_trajectory_chamfer_m,
@@ -65,6 +66,67 @@ def _robot_arrays(state: Any) -> tuple[np.ndarray, np.ndarray]:
     return openings, transforms
 
 
+def contact_propagated_initial_velocity(
+    graph: Any,
+    contact_node_indices: Sequence[int],
+    controller_velocities_m_s: np.ndarray,
+    contact_active: np.ndarray,
+    *,
+    length_scale_fraction: float = 0.35,
+) -> np.ndarray:
+    """Diffuse measured contact velocity over graph geodesic distance."""
+
+    try:
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import dijkstra
+    except ImportError as error:  # pragma: no cover - scipy is required by project
+        raise RuntimeError(
+            "SciPy is required for graph velocity propagation"
+        ) from error
+    velocities = np.asarray(controller_velocities_m_s, dtype=np.float64)
+    active = np.asarray(contact_active, dtype=bool)
+    nodes = tuple(map(int, contact_node_indices))
+    _require(
+        velocities.shape == (len(nodes), 3) and active.shape == (len(nodes),),
+        "contact velocity inputs differ",
+    )
+    _require(np.all(np.isfinite(velocities)), "contact velocities must be finite")
+    _require(
+        0.0 < length_scale_fraction <= 1.0,
+        "velocity length-scale fraction is invalid",
+    )
+    output = np.zeros_like(graph.positions_m, dtype=np.float64)
+    if not np.any(active):
+        return output
+    stretch = graph.spring_edges[graph.spring_families == 0]
+    lengths = np.linalg.norm(
+        graph.positions_m[stretch[:, 1]] - graph.positions_m[stretch[:, 0]], axis=1
+    )
+    rows = np.concatenate((stretch[:, 0], stretch[:, 1]))
+    columns = np.concatenate((stretch[:, 1], stretch[:, 0]))
+    weights = np.concatenate((lengths, lengths))
+    adjacency = coo_matrix(
+        (weights, (rows, columns)),
+        shape=(len(graph.positions_m), len(graph.positions_m)),
+    ).tocsr()
+    active_indices = np.flatnonzero(active)
+    distances = dijkstra(
+        adjacency,
+        directed=False,
+        indices=np.asarray([nodes[index] for index in active_indices]),
+    )
+    if distances.ndim == 1:
+        distances = distances[None]
+    finite = distances[np.isfinite(distances)]
+    _require(len(finite) > 0, "contact nodes are disconnected from the graph")
+    scale = max(length_scale_fraction * float(np.max(finite)), 1e-6)
+    influence = np.exp(-distances / scale)
+    numerator = influence.T @ velocities[active_indices]
+    denominator = np.maximum(1.0, np.sum(influence, axis=0))[:, None]
+    output = numerator / denominator
+    return output
+
+
 def build_replication_warp_observation(
     episode_dir: str | Path,
     episode_id: str,
@@ -75,6 +137,9 @@ def build_replication_warp_observation(
     *,
     dt_seconds: float = 1.0 / 30.0,
     selected_taxel_count: int = 8,
+    reusable_twin: Deform360ReusableTwin | None = None,
+    initial_velocity_policy: str = "zero",
+    velocity_length_scale_fraction: float = 0.35,
 ) -> ReplicationWarpObservation:
     """Attach released gripper taxels to a prefix graph without future geometry."""
 
@@ -83,6 +148,13 @@ def build_replication_warp_observation(
     hulls = tuple(np.asarray(hull, dtype=np.float64) for hull in reference_hulls_m)
     _require(len(frames) == len(hulls) >= 1, "hull frames and values differ")
     graph = build_sparse_graph_for_stratum(hulls[0], stratum)
+    object_rest_lengths = None
+    if reusable_twin is not None:
+        _require(
+            reusable_twin.object_id == episode_id.split("/episode_", maxsplit=1)[0],
+            "reusable twin belongs to another object",
+        )
+        object_rest_lengths = reusable_twin.rest_lengths_for_graph(graph)
     try:
         from deform360.processing.control_points_stage import gripper_taxel_points
         from deform360.robot import load_robot_state
@@ -138,9 +210,38 @@ def build_replication_warp_observation(
             taxels = gripper_taxel_points(
                 float(openings[raw_frame, axis]), transforms[raw_frame, axis]
             )
-            controllers[output_index, axis] = np.mean(
-                taxels[selected_taxels[axis]], axis=0
-            ) + offsets[axis]
+            controllers[output_index, axis] = (
+                np.mean(taxels[selected_taxels[axis]], axis=0) + offsets[axis]
+            )
+    if initial_velocity_policy == "zero":
+        initial_velocities = None
+    elif initial_velocity_policy == "contact-propagated":
+        _require(prefix_endpoint >= 1, "contact velocity needs a previous frame")
+        previous_controllers = np.empty_like(controllers[0])
+        for axis in range(openings.shape[1]):
+            taxels = gripper_taxel_points(
+                float(openings[prefix_endpoint - 1, axis]),
+                transforms[prefix_endpoint - 1, axis],
+            )
+            previous_controllers[axis] = (
+                np.mean(taxels[selected_taxels[axis]], axis=0) + offsets[axis]
+            )
+        controller_velocities = (controllers[0] - previous_controllers) / dt_seconds
+        initial_velocities = contact_propagated_initial_velocity(
+            graph,
+            nodes,
+            controller_velocities,
+            schedule[prefix_endpoint],
+            length_scale_fraction=velocity_length_scale_fraction,
+        )
+        for axis, association in enumerate(associations):
+            association["prefix_controller_velocity_m_s"] = controller_velocities[
+                axis
+            ].tolist()
+    else:
+        raise ValueError(
+            f"unsupported initial velocity policy: {initial_velocity_policy}"
+        )
     case = Deform360WarpForecastCase(
         episode_id=episode_id,
         graph=graph,
@@ -149,6 +250,8 @@ def build_replication_warp_observation(
         contact_node_indices=tuple(nodes),
         contact_rest_lengths_m=np.asarray(rest_lengths, dtype=np.float64),
         dt_seconds=dt_seconds,
+        initial_velocities_m_s=initial_velocities,
+        object_rest_lengths_m=object_rest_lengths,
     )
     return ReplicationWarpObservation(
         case=case,
@@ -192,17 +295,14 @@ def score_constant_persistence(
         "future hull references are required for scoring",
     )
     count = len(observation.reference_hulls_m) - 1
-    prediction = np.repeat(
-        observation.case.graph.positions_m[None], count, axis=0
-    )
-    return sparse_trajectory_chamfer_m(
-        observation.reference_hulls_m[1:], prediction
-    )
+    prediction = np.repeat(observation.case.graph.positions_m[None], count, axis=0)
+    return sparse_trajectory_chamfer_m(observation.reference_hulls_m[1:], prediction)
 
 
 __all__ = [
     "ReplicationWarpObservation",
     "build_replication_warp_observation",
+    "contact_propagated_initial_velocity",
     "score_constant_persistence",
     "score_replication_warp_prediction",
 ]

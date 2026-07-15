@@ -34,11 +34,13 @@ class Deform360WarpForecastCase:
     contact_rest_lengths_m: np.ndarray
     dt_seconds: float
     initial_velocities_m_s: np.ndarray | None = None
+    object_rest_lengths_m: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         controllers = np.asarray(self.controller_positions_m, dtype=np.float64)
         active = np.asarray(self.contact_active, dtype=bool)
         rest = np.asarray(self.contact_rest_lengths_m, dtype=np.float64)
+        object_edges = np.asarray(self.graph.spring_edges, dtype=np.int32)
         node_count = len(self.graph.positions_m)
         _require(
             controllers.ndim == 3
@@ -72,11 +74,26 @@ class Deform360WarpForecastCase:
                 and np.all(np.isfinite(velocities)),
                 "initial velocities differ from the graph",
             )
+        if self.object_rest_lengths_m is None:
+            object_rest = np.linalg.norm(
+                self.graph.positions_m[object_edges[:, 1]]
+                - self.graph.positions_m[object_edges[:, 0]],
+                axis=1,
+            )
+        else:
+            object_rest = np.asarray(self.object_rest_lengths_m, dtype=np.float64)
+            _require(
+                object_rest.shape == (len(object_edges),)
+                and np.all(np.isfinite(object_rest))
+                and np.all(object_rest > 1e-6),
+                "object rest lengths differ from the graph",
+            )
         for name, values in (
             ("controller_positions_m", controllers),
             ("contact_active", active),
             ("contact_rest_lengths_m", rest),
             ("initial_velocities_m_s", velocities),
+            ("object_rest_lengths_m", object_rest),
         ):
             copied = values.copy()
             copied.setflags(write=False)
@@ -146,7 +163,11 @@ def sparse_trajectory_chamfer_m(
 
 
 def sparse_graph_strain_summary(
-    graph: Deform360SparseGraph, prediction_m: np.ndarray
+    graph: Deform360SparseGraph,
+    prediction_m: np.ndarray,
+    *,
+    rest_lengths_m: np.ndarray | None = None,
+    spring_family: int | None = None,
 ) -> dict[str, float]:
     """Return absolute relative object-spring strain summaries."""
 
@@ -154,9 +175,24 @@ def sparse_graph_strain_summary(
     if not np.all(np.isfinite(prediction)):
         return {"p95": float("inf"), "p99": float("inf"), "maximum": float("inf")}
     edges = graph.spring_edges
-    rest = np.linalg.norm(
-        graph.positions_m[edges[:, 1]] - graph.positions_m[edges[:, 0]], axis=1
-    )
+    if rest_lengths_m is None:
+        rest = np.linalg.norm(
+            graph.positions_m[edges[:, 1]] - graph.positions_m[edges[:, 0]], axis=1
+        )
+    else:
+        rest = np.asarray(rest_lengths_m, dtype=np.float64)
+        _require(
+            rest.shape == (len(edges),)
+            and np.all(np.isfinite(rest))
+            and np.all(rest > 1e-6),
+            "strain rest lengths differ from the graph",
+        )
+    if spring_family is not None:
+        _require(spring_family in (0, 1), "strain spring family is invalid")
+        selected = graph.spring_families == spring_family
+        _require(np.any(selected), "strain spring family is empty")
+        edges = edges[selected]
+        rest = rest[selected]
     lengths = np.linalg.norm(
         prediction[:, edges[:, 1]] - prediction[:, edges[:, 0]], axis=2
     )
@@ -202,7 +238,9 @@ class OfficialWarpSparseGraphRunner:
             import torch
             import warp as wp
         except ImportError as error:  # pragma: no cover - GPU integration
-            raise RuntimeError("official-Warp replication requires torch and warp") from error
+            raise RuntimeError(
+                "official-Warp replication requires torch and warp"
+            ) from error
         from bayesian_phystwin._phystwin_warp_backend import (
             load_official_spring_mass_module,
             make_reliability_simulator_class,
@@ -247,17 +285,16 @@ class OfficialWarpSparseGraphRunner:
         self.stretch_count = len(stretch_edges)
         self.bend_count = len(bend_edges)
         self.num_object_springs = len(object_edges)
-        object_rest = np.linalg.norm(
-            self.initial_positions[object_edges[:, 1]]
-            - self.initial_positions[object_edges[:, 0]],
-            axis=1,
-        )
+        object_rest = case.object_rest_lengths_m.astype(np.float32)
         self.rest_lengths = np.concatenate(
             (object_rest, case.contact_rest_lengths_m.astype(np.float32))
         ).astype(np.float32)
         vertices = np.concatenate((self.initial_positions, self.controllers[0]), axis=0)
         masses = np.concatenate(
-            (case.graph.masses.astype(np.float32), np.ones(len(control_edges), np.float32))
+            (
+                case.graph.masses.astype(np.float32),
+                np.ones(len(control_edges), np.float32),
+            )
         )
 
         runtime_config = SimpleNamespace(
@@ -328,9 +365,7 @@ class OfficialWarpSparseGraphRunner:
         )
         wp.synchronize()
 
-    def _spring_log_y(
-        self, candidate: WarpRopeCandidate, active: tuple[bool, ...]
-    ):
+    def _spring_log_y(self, candidate: WarpRopeCandidate, active: tuple[bool, ...]):
         values = np.empty(len(self.springs), dtype=np.float32)
         values[: self.stretch_count] = candidate.stretch_spring_y
         values[self.stretch_count : self.num_object_springs] = candidate.bend_spring_y
@@ -341,9 +376,7 @@ class OfficialWarpSparseGraphRunner:
                 else self.config.inactive_controller_spring_y
             )
         return self.torch.log(
-            self.torch.as_tensor(
-                values, dtype=self.torch.float32, device=self.device
-            )
+            self.torch.as_tensor(values, dtype=self.torch.float32, device=self.device)
         ).contiguous()
 
     def rollout(

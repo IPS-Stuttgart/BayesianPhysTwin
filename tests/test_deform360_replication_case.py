@@ -3,6 +3,7 @@ import pytest
 
 from causal4d_public.deform360_replication_case import (
     ReplicationWarpObservation,
+    contact_propagated_initial_velocity,
     score_constant_persistence,
     score_replication_warp_prediction,
 )
@@ -72,3 +73,25 @@ def test_prefix_only_case_is_valid_but_not_scorable() -> None:
             prefix_only,
             np.repeat(full.case.graph.positions_m[None], 14, axis=0),
         )
+
+
+def test_contact_velocity_propagates_causally_and_decays_over_graph() -> None:
+    graph = _observation().case.graph
+    velocity = contact_propagated_initial_velocity(
+        graph,
+        (0,),
+        np.asarray([[0.6, 0.0, 0.0]]),
+        np.asarray([True]),
+        length_scale_fraction=1.0,
+    )
+    assert velocity[0, 0] == pytest.approx(0.6)
+    assert np.all(np.diff(velocity[:, 0]) < 0.0)
+    np.testing.assert_array_equal(velocity[:, 1:], 0.0)
+
+    inactive = contact_propagated_initial_velocity(
+        graph,
+        (0,),
+        np.asarray([[0.6, 0.0, 0.0]]),
+        np.asarray([False]),
+    )
+    np.testing.assert_array_equal(inactive, 0.0)

@@ -43,9 +43,7 @@ def test_warp_coordinate_transform_round_trip() -> None:
 
 def test_chamfer_accepts_unequal_point_set_sizes() -> None:
     reference = np.asarray([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
-    prediction = np.asarray(
-        [[0.0, 0.0, 0.0], [0.5, 0.0, 0.0], [1.0, 0.0, 0.0]]
-    )
+    prediction = np.asarray([[0.0, 0.0, 0.0], [0.5, 0.0, 0.0], [1.0, 0.0, 0.0]])
     assert symmetric_chamfer_distance_m(reference, prediction) == 1.0 / 12.0
 
 
@@ -73,6 +71,40 @@ def test_case_defaults_to_zero_velocity_and_validates_contacts() -> None:
         dt_seconds=1.0 / 30.0,
     )
     np.testing.assert_array_equal(case.initial_velocities_m_s, np.zeros((4, 3)))
+    expected_rest = np.linalg.norm(
+        case.graph.positions_m[case.graph.spring_edges[:, 1]]
+        - case.graph.positions_m[case.graph.spring_edges[:, 0]],
+        axis=1,
+    )
+    np.testing.assert_array_equal(case.object_rest_lengths_m, expected_rest)
+
+
+def test_case_accepts_object_persistent_rest_lengths() -> None:
+    graph = _graph()
+    rest = np.asarray([0.08, 0.08, 0.08, 0.10])
+    case = Deform360WarpForecastCase(
+        episode_id="unit",
+        graph=graph,
+        controller_positions_m=np.zeros((8, 1, 3)),
+        contact_active=np.ones((8, 1), dtype=bool),
+        contact_node_indices=(2,),
+        contact_rest_lengths_m=np.asarray([0.001]),
+        dt_seconds=1.0 / 30.0,
+        object_rest_lengths_m=rest,
+    )
+    np.testing.assert_array_equal(case.object_rest_lengths_m, rest)
+    current = np.repeat(graph.positions_m[None], 2, axis=0)
+    summary = sparse_graph_strain_summary(
+        graph, current, rest_lengths_m=case.object_rest_lengths_m
+    )
+    assert summary["maximum"] == 1.0
+    stretch = sparse_graph_strain_summary(
+        graph,
+        current,
+        rest_lengths_m=case.object_rest_lengths_m,
+        spring_family=0,
+    )
+    assert stretch["maximum"] == 0.25
 
 
 def test_strain_summary_is_zero_for_identity_trajectory() -> None:

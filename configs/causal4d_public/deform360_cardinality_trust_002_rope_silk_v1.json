@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-cardinality-trust-002-rope-silk-v1",
+    "status": "preregistered-after-081-discovery-before-002-source-outcomes",
+    "preregistered_at": "2026-07-15T23:56:13+02:00",
+    "parent_protocol_id": "causal4d-deform360-shared-physics-replication-v1",
+    "discovery_object_id": "081-stripe-rope",
+    "validation_object_id": "002-rope-silk",
+    "metadata_sha256": "d03ec7d02e4d00be9906a1d521ee9b6ac7ef14e9da7585c3a2c953ea6252e3d3",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "official_phystwin_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "source_episode_ids": [0, 2, 5, 6, 7, 9],
+    "calibration_episode_ids": [3, 4, 8],
+    "sealed_target_episode_id": 1,
+    "source_actions": {
+      "0": {"action": "lift side", "controller_count": 1},
+      "2": {"action": "drag side", "controller_count": 1},
+      "5": {"action": "lift sides", "controller_count": 2},
+      "6": {"action": "lift middle and side", "controller_count": 2},
+      "7": {"action": "drag sides", "controller_count": 2},
+      "9": {"action": "fold", "controller_count": 2}
+    },
+    "information_boundary": {
+      "registration_uses_frame_zero_geometry_only": true,
+      "source_training_frames_select_parameters": true,
+      "source_tails_select_parameters": false,
+      "calibration_episodes_read_before_source_gate": false,
+      "target_episode_read_before_source_and_calibration_gates": false,
+      "future_object_observations_used_at_prediction_time": false,
+      "released_future_robot_trajectory_allowed": true
+    },
+    "registration": {
+      "strict_hull_minimum_points": 512,
+      "voxel_resolution": 120,
+      "controller_association": "frame-zero-nearest",
+      "controller_points_per_gripper": 1,
+      "maximum_initial_association_distance_m": 0.02,
+      "support_transform": "positive-world-y-to-positive-simulator-z"
+    },
+    "physical_parameter_arms": {
+      "inherited_081_control": {
+        "init_spring_y": 50000.0,
+        "drag_damping": 3.0,
+        "dashpot_damping": 100.0
+      },
+      "source_pooled_grid": {
+        "init_spring_y": [10000.0, 30000.0, 50000.0, 80000.0],
+        "drag_damping": [1.0, 3.0, 10.0],
+        "dashpot_damping": [50.0, 100.0],
+        "selection": "execution-balanced source-training score only",
+        "leave_one_action_out_reselection": true
+      }
+    },
+    "trust_model": {
+      "prediction": "x0 + a_base / controller_count * (x_driven - x_zero) + b * (x_zero - x_zero0)",
+      "base_action_response_grid": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+      "autonomous_drift_grid": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+      "controller_count_available_before_outcome": true,
+      "hypothesis_status": "post-hoc-on-081-independent-on-002"
+    },
+    "source_gate": {
+      "minimum_joint_track_and_chamfer_win_count": 4,
+      "minimum_bimanual_joint_win_count": 3,
+      "minimum_pooled_track_improvement_fraction": 0.05,
+      "minimum_pooled_chamfer_improvement_fraction": 0.02,
+      "maximum_any_metric_degradation_fraction": 0.10,
+      "require_tail_mutation_invariance": true,
+      "require_all_registered_qa": true
+    },
+    "decision": {
+      "on_pass": "fit declared calibration only, then seal and evaluate target episode 1",
+      "on_fail": "freeze as negative and do not inspect calibration or target episodes"
+    },
+    "claim_boundary": "independent source competence test, not a Deform360 SOTA claim"
+  },
+  "config_sha256": "ab1177d24f87281c9dffc80d68666844efc939e96852eabf00526acbceed588d"
+}
