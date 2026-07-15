@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CardinalitySourceGeometryGate",
+  "protocol_id": "deform360-cardinality-trust-002-rope-silk-v1",
+  "source_execution_protocol_id": "deform360-cardinality-source-execution-002-rope-silk-v1",
+  "parent_config_sha256": "ab1177d24f87281c9dffc80d68666844efc939e96852eabf00526acbceed588d",
+  "source_execution_config_sha256": "5175235d0409368e6e69ab708eb958255cc85eaa82c5260098f3363238bfc8b7",
+  "object_id": "002-rope-silk",
+  "completed_source_episode_ids": [0, 2, 5, 6],
+  "stopped_source_episode_ids": [7, 9],
+  "qa_pass_count": 0,
+  "qa_fail_count": 4,
+  "qa_by_episode": {
+    "0": {"passed": false, "failed_gates": ["minor_span"], "result_sha256": "3dcce7538a697213f9c0212365205bcc75831cbed17339f532e86ef6b24be0a9"},
+    "2": {"passed": false, "failed_gates": ["center"], "result_sha256": "973e905dabe5ef158781919d9dc6bad3af429ef66b462f7f0ffbecb856ff65b4"},
+    "5": {"passed": false, "failed_gates": ["center", "minor_span"], "result_sha256": "17f5d5807bcd6e014297dc85c9f9f7f8b0d3a5778dd84d00d108a8853ef86b64"},
+    "6": {"passed": false, "failed_gates": ["major_span"], "result_sha256": "fcdaaf7ffe3c187b92d11690859c2424ad611a9c55a0ece9215fcdfa9e629e33"}
+  },
+  "information_boundary": {
+    "dense_object_trajectory_generated": false,
+    "source_dynamics_outcome_read": false,
+    "source_tail_metric_read": false,
+    "warp_rollout_run": false,
+    "calibration_episode_read": false,
+    "sealed_target_episode_read": false
+  },
+  "decision": "freeze_v1_as_geometry_qa_failure_and_keep_calibration_and_target_sealed",
+  "claim_boundary": "automatic-registration QA failure; not a test of the physical or trust-model hypothesis"
+}

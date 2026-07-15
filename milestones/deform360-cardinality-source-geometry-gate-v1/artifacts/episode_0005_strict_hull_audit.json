@@ -1,0 +1,63 @@
+{
+  "acceptance_gates": {
+    "center": false,
+    "chamfer": true,
+    "major_span": true,
+    "minor_span": false,
+    "not_phantom_volume": true
+  },
+  "camera_count": 12,
+  "claim_boundary": "exploratory source-only reconstruction QA; no calibration or target episode was read",
+  "episode": 0,
+  "frame": 0,
+  "hull": {
+    "median_world_m": [
+      0.2388620376586914,
+      -0.0018156201113015413,
+      0.16331471502780914
+    ],
+    "pca_q01_to_q99_spans_m_descending": [
+      0.3356197714805603,
+      0.30883303612470625,
+      0.2776286795735359
+    ],
+    "robust_pca_volume_m3": 0.028776343958889172
+  },
+  "hull_point_count": 1474,
+  "major_span_ratio": 0.8960917136149908,
+  "median_center_error_m": 0.10919023518623197,
+  "minimum_hull_points": 512,
+  "passed": false,
+  "reconstruction": {
+    "median_world_m": [
+      0.13678814470767975,
+      -0.004073429387062788,
+      0.202022984623909
+    ],
+    "pca_q01_to_q99_spans_m_descending": [
+      0.30074609614908693,
+      0.22250654913485052,
+      0.02705165628343821
+    ],
+    "robust_pca_volume_m3": 0.0018102420864740006
+  },
+  "reconstruction_point_count": 555,
+  "result_sha256": "17f5d5807bcd6e014297dc85c9f9f7f8b0d3a5778dd84d00d108a8853ef86b64",
+  "robust_pca_volume_ratio": 0.06290729944916462,
+  "schema": "bayesian-phystwin/deform360-strict-hull-audit/v1",
+  "source_manifest_sha256": "fe1bf41a9694bea9b60994a0a08d6c9b9d42016ea74222e32ea7dcde0d06ad71",
+  "source_only": true,
+  "splat_sha256": "aa8e899daf189cdffb803c4b0e73ea606d6cb7db418733633ccc21bc873b71dc",
+  "symmetric_chamfer_m": 0.025325886704844938,
+  "thresholds": {
+    "major_span_ratio": [
+      0.7,
+      1.4
+    ],
+    "maximum_center_error_m": 0.05,
+    "maximum_chamfer_m": 0.05,
+    "maximum_minor_span_m": 0.12,
+    "maximum_robust_pca_volume_ratio": 8.0
+  },
+  "voxel_resolution": 120
+}
