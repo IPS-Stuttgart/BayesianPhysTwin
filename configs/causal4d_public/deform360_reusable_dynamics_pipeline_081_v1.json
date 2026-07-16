@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-reusable-dynamics-pipeline-081-v1",
+    "status": "locked-after-staging-started-and-before-calibration-reconstruction",
+    "frozen_at": "2026-07-16T23:45:00+02:00",
+    "parent_protocol_id": "deform360-reusable-dynamics-081-v1",
+    "parent_config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+    "source_selection_result_sha256": "945fcc1bfa5a279a38d6e1b854be19b5ef6b2ec3917d28658decb5be7d33ffef",
+    "source_selection_file_sha256": "fb29a7d8d5b6e858335523d1768a9a0673fa3b3a887de2ccf2b6d95d58e09b91",
+    "source_trust_result_sha256": "9a8a4b663a3d542888a4ecfbd1bd087222e0405b2bafa3f0b79e5335d35038a7",
+    "source_trust_file_sha256": "38a028381c7b9a96b8ee43920f3b781348689dbe63f42f35747ced66e47b7ea2",
+    "deform360_processing_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "staging": {
+      "raw_frame_range_half_open": [110, 191],
+      "frame_count": 81,
+      "sealed_initial_masks_required": true
+    },
+    "reconstruction": {
+      "minimum_visual_hull_points": 512,
+      "voxel_resolution": 120,
+      "cube_half_extent_m": 0.5,
+      "first_frame_iterations": 500,
+      "warm_start_iterations": 250,
+      "warm_start_from_previous_frame": true
+    },
+    "depth": {
+      "expected_depth": true,
+      "object_mask_applied": true,
+      "gripper_mask_applied_when_available": true,
+      "preview_video": false
+    },
+    "tracking": {
+      "model": "facebook/cotracker3-scaled-offline",
+      "checkpoint_sha256": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+      "pivot_skip": 5,
+      "sequence_length": 15,
+      "gap": 5,
+      "grid_size": 40,
+      "resize_factor": 4
+    },
+    "point_cloud": {
+      "rng_seed": 0,
+      "tracking_tail_frames_skipped": 5,
+      "expected_frame_count": 76,
+      "correlation_aware_variant_is_primary": false
+    },
+    "control_points": {
+      "released_stage_required": true,
+      "sparse_controller_policy": "nearest object patch at processed frame zero, one node per gripper group, support +y mapped to PhysTwin +z",
+      "controller_radius_m": 0.015,
+      "controller_max_neighbours": 1
+    },
+    "information_boundary": {
+      "calibration_videos_staged_before_this_addendum": true,
+      "calibration_reconstruction_or_prediction_metrics_computed_before_this_addendum": false,
+      "pipeline_settings_inherited_from_source_runs": true,
+      "calibration_outcomes_allowed_for_pipeline_changes": false,
+      "target_media_read": false
+    },
+    "claim_boundary": {
+      "observation_pipeline_addendum_only": true,
+      "independent_dynamics_result": false,
+      "state_of_the_art_claim": false
+    }
+  },
+  "config_sha256": "e32c20e98442e7112a79c1d54de3f58a4608d9c382739f05a10085df53d42039"
+}

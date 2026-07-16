@@ -126,3 +126,36 @@ def test_joint_opt_in_retains_basic_candidate_below_appearance_gate() -> None:
     assert candidates[0]["diagnostic"]["eligible"] is False
     assert candidates[0]["diagnostic"]["joint_selection_eligible"] is True
     assert summary["appearance_eligible_candidate_count"] == 0
+
+
+def test_explicit_rgb_candidate_path_does_not_read_video_frame_zero() -> None:
+    pytest.importorskip("cv2")
+    config = DeformableObjectSam2MaskConfig(minimum_mask_region_area=20)
+    reference_rgb = np.full((60, 80, 3), 245, dtype=np.uint8)
+    reference_rgb[20:40, 20:50] = (200, 30, 30)
+    reference_mask = np.zeros(reference_rgb.shape[:2], dtype=bool)
+    reference_mask[20:40, 20:50] = True
+    target_rgb = reference_rgb.copy()
+    annotation = {
+        "segmentation": reference_mask.copy(),
+        "predicted_iou": 0.95,
+        "stability_score": 0.95,
+    }
+    predictor = object.__new__(DeformableObjectSam2VideoPredictor)
+    predictor.config = config
+    predictor._first_frame_rgb = lambda _: pytest.fail("video frame was read")
+    predictor._automatic_annotations = lambda image: [annotation]
+
+    candidates, summary = predictor.initial_mask_candidates_from_rgb_with_reference(
+        target_rgb,
+        camera="cam03",
+        video_name="raw-frame-000110",
+        reference_rgb=reference_rgb,
+        reference_mask=reference_mask,
+        reference_camera="cam00",
+    )
+
+    assert len(candidates) == 1
+    assert summary["camera"] == "cam03"
+    assert summary["video"] == "raw-frame-000110"
+    assert np.array_equal(candidates[0]["mask"], reference_mask)

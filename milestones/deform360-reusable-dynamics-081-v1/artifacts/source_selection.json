@@ -1,0 +1,2586 @@
+{
+  "artifact_kind": "Deform360ReusableDynamicsSourceGridSelection",
+  "candidate_count": 24,
+  "candidate_table": [
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.3006746330956536,
+          "result_file_sha256": "5787144e0db6bf56fd4abb56142db0a83d75d85f5be89e6ffe21e312b39144dd",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010814082964296798,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011982199585980784
+          },
+          "trajectory_sha256": "07e234e92b22ea16a58f0b24722e66503277593d85d9f158ad58dd1adb0faec6",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013429989831638687,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016723808483220637
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.1867099846949305,
+          "result_file_sha256": "8672bfc1748290aa7c7927d6127839bd2691c99cf39e04f659a918b03958c9b8",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.011402403650955722,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011537060117885724
+          },
+          "trajectory_sha256": "2d369be34f73a917bee2e53b231064010157d39deaaa5efd191c47eeb4f4891c",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.014521762878535528,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015205664210952818
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 3.7593918707936416,
+          "result_file_sha256": "343b960efad09780c757c4133f23b75f93e0146a3354bb8a27d4d367e2c75dba",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01962243406226785,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016364156990706667
+          },
+          "trajectory_sha256": "55bf5c37460caa588df37dc496132dd447874037e1a9c95c27a376a008078243",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04441151529547825,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03483906399924308
+          }
+        }
+      },
+      "candidate_label": "y10000-drag1-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 10000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.4155921628614085
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2974583694311548,
+          "result_file_sha256": "18c5ca2d135f043f916c5e580a2b9bd248a1935ec49426d428e5f6185f4916cc",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010808736194037832,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01192081979302279
+          },
+          "trajectory_sha256": "28bbfc917fdcc1e480a65dbe66bdb762880d17441e014200795321b57db94729",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013412834904671215,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01665088487789035
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.184129048028588,
+          "result_file_sha256": "3fbfdef6e8e275b60cce9f9643473921e2a05ff249f89fc2d83e8b64504225c3",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.011380649325289642,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011532746898641779
+          },
+          "trajectory_sha256": "b0cdc73befecc3794bbaf89dfffb102f09b84ff1d5ef4ac391cdda2aae03993b",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.014602809434541009,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015341520949732512
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 3.7468216218356174,
+          "result_file_sha256": "0f6db47ea96af79c54f468a97da79369c0ae97f47a6d66f227d147f3441ceaff",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.019551636146832727,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016315266300561064
+          },
+          "trajectory_sha256": "a7bb09b132192a7fc7c7ecc59080c0833ca5d1ee876a8393846a0640c449bdd3",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04440814448063429,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03483431087806821
+          }
+        }
+      },
+      "candidate_label": "y10000-drag1-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 10000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.4094696797651203
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2997423842806513,
+          "result_file_sha256": "dec9513a12d848539c88d0f4e424394f04c320b1d32fddba683def3400ef6172",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010815313045083519,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011960282783671203
+          },
+          "trajectory_sha256": "30d43ebb0cc833078d0a7980ed7cde6cf8a267bb6b700d596fad31aabe88aa40",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013408835204726667,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01670666434802115
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.150011612277239,
+          "result_file_sha256": "7bebc9367dffb0570e0de27c3099ebb11fa041f758d2dcb7b6e58f40f04117bf",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01116084176540357,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011399737945994583
+          },
+          "trajectory_sha256": "117f0e295393e5e1e25818786a64a9b49855b27b2cda887238e4adf598ad3452",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01459741020324587,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015419633185956627
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 3.7204885678040425,
+          "result_file_sha256": "105f4d4456a692268719a9eff8edfe7bc72b79360fb5b5d47a7060a4c7f023f3",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.019404692727458053,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016211308688872446
+          },
+          "trajectory_sha256": "09d4ed7a86adea8f3f6a460cfb666947a3d71db1a9baccfc1ed0142aaff321bb",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04431584601700841,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.034770807600580156
+          }
+        }
+      },
+      "candidate_label": "y10000-drag3-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 10000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.390080854787311
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2872085870471865,
+          "result_file_sha256": "d2a1ce4948341035cc48270900f46ac6f34882cdc261629143acf2fa22015670",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010732507488282444,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011813053533719
+          },
+          "trajectory_sha256": "abdc0eec0aea33b0a6fb66cb8c4a73c7c6d9438fc178d1b82689a6e649460c7f",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01329512989493217,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016568629653193057
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.1368001682038726,
+          "result_file_sha256": "9948844ba348748a273693a1be8e51930f677dd75d60dda587255d74e98f566d",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.011086345769045613,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011336321417652702
+          },
+          "trajectory_sha256": "2a660f101de78db59dd5bd8d1c2645e6f47ad9ee18a489b70e4c5a8d09053a8b",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.014566324510839168,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015357151394709945
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 3.7240564112203813,
+          "result_file_sha256": "122f63fc2df04d5f35c8df1b5a27c4cd5a1c4a78211bf721e77b8291ed6a60ab",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01943005711114296,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016219266082586375
+          },
+          "trajectory_sha256": "9dc1029c2852cc6e3ac4ff9f7c0d2a6a96ac03ed7a8da9f712d0ab08c0913841",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04432185037329059,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.034771366394124925
+          }
+        }
+      },
+      "candidate_label": "y10000-drag3-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 10000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.3826883888238135
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2952552929100056,
+          "result_file_sha256": "02f38dc879bcc59735fa1998424917c797943097f6900220a3c47046da955c7c",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010816307922849492,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011862103294549604
+          },
+          "trajectory_sha256": "11cd6be0c65dc0284e85a6335a0392e01f54e480470e97a6a2d14e02b01fc7d8",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013388391353013685,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01665110804606229
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.1092810259939485,
+          "result_file_sha256": "816ed57dd0b2a156e88c915587292bbd8998b9be74ebfcf1e1f5bc57dfe4f27b",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010905898041261288,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011232569797943204
+          },
+          "trajectory_sha256": "a74e42b8946979ee37b7493d1b498a0969f0c0187f6d3127429ed061498bafcb",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.014824755920565341,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015764135983772576
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 3.6942665401576997,
+          "result_file_sha256": "6676c7944911b473d9762d5881f54c9d290b3ce693af12e082ebf10ef1ade658",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01899203752556605,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016406958094024558
+          },
+          "trajectory_sha256": "3faee7869bb96d589f02514db2320489c9c3f0b4043b2a610c6ab71a395468d8",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04419280107853084,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.035117194056510925
+          }
+        }
+      },
+      "candidate_label": "y10000-drag10-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 10000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.366267619687218
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2952662873926082,
+          "result_file_sha256": "55410a7ca31d6243c2248ebfb5cd76fab0464ec49cc8afbf08421872a372511d",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010815633066576319,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011863341791776278
+          },
+          "trajectory_sha256": "538a148a0883efb21892a9105b2333bff45316584645a46ade5eaee974effbb7",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013395051954049204,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016639041248708963
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.1096126768188705,
+          "result_file_sha256": "5cf806d3678e498e02712290d9025df1f0821b0b11ee58e2ae209845d7988b4c",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010906450620916629,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011235639279297853
+          },
+          "trajectory_sha256": "bfc12eb6f278e0e9e17ad0026ffadd68c559db0361732ff9ead26683f7b503f6",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.014807241403156528,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015730449988041073
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 3.58691040024061,
+          "result_file_sha256": "4444f6be775b1e0880c89bc04885488d2c3087876315a603853f85f9ed828bee",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.018474087939189397,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015892018177309782
+          },
+          "trajectory_sha256": "88dd72ef014f54cdab9117b819d3b023c32a5187352bd49d33f7d2a1ab84cffb",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04340523153091669,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03453133744187653
+          }
+        }
+      },
+      "candidate_label": "y10000-drag10-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 10000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.3305964548173628
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2062819158006008,
+          "result_file_sha256": "b331133207a3f89d91259839c8186a67796de78784b4632b9c693d941b032613",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010282023575966475,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.0107375334048549
+          },
+          "trajectory_sha256": "f14b8a33a1e5ba9e3ece5501c63c9f38d24945f2968ad5f9a3afa0673ef614de",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012996644049779089,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01569933578139171
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.0069548620812627,
+          "result_file_sha256": "204cad01029076b77fae9438691aa568b848a7723b217704b35f2514cf9dfa5f",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010566971623645222,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010474415780124018
+          },
+          "trajectory_sha256": "24fd126c819e62e4238c1dcc32a28742ffa7594fa5498c4e261fdbd1cd5dcf93",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013301111878378444,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01398631528718397
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.349916668204603,
+          "result_file_sha256": "66ae5c1b34f3ebced7022f68792ce180b15d63fda5597fd5cc1e38725fc5bdba",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.02287330864267892,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.018745265822163074
+          },
+          "trajectory_sha256": "fcaad71bd942fa4a610fc11dc18383bc4dae734e5a7e2470c6465bd4a8d976a9",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04782131613525603,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03720727190375328
+          }
+        }
+      },
+      "candidate_label": "y30000-drag1-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 30000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.521051148695489
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.203227643190807,
+          "result_file_sha256": "31111c4d2c1b7c4b80d108be86fd742b2301897fdb7ab92b125e5db10c6656c2",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010237394208862365,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010737943857655688
+          },
+          "trajectory_sha256": "3535c7f7978cfcc4cf4e984ef8c4d6027a26fafe2e1bb170e61c2aba8e6b98df",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012980388103581587,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01573877944611013
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 2.0188356213773258,
+          "result_file_sha256": "f3682da831ef51893de083f9fd0c3e0f46fe864282f401c190c15e2958361054",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010658591562208173,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01050382672998486
+          },
+          "trajectory_sha256": "0566d8f8afa3a3db5afd61cdf359a7ef732bc6261f44149bf6769ef31ab7cca5",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01330179027724536,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01397044479381293
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.377388599056153,
+          "result_file_sha256": "06f4dda78c4cc4813d0305513b4754093a4c19933aa3d503661a8be08917ce3f",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.022551113117788044,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.019387839725083213
+          },
+          "trajectory_sha256": "795f8d6c1d0fda9b89e007b3ef6188f312ed37f2ad4e16a6d651ce234270d5b2",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.047883038203903834,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03784824791364372
+          }
+        }
+      },
+      "candidate_label": "y30000-drag1-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 30000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.533150621208095
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.20123487025639,
+          "result_file_sha256": "2ca055b41d24a7dd1b6d16d5384e77f31568aee89834a9e43c510ef9db9e7640",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010207240625343643,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01073974764795374
+          },
+          "trajectory_sha256": "2b82fffe7bcdcd784d3448579938eb07a502856d80dbb56bb0d87881c980a8ab",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012977689295437758,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015737676003482193
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9593621190930117,
+          "result_file_sha256": "d033bceb8f71c4c297a1f0e5859dd49da924b0454107b8d9cf842280b10ae485",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010214673878396247,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01034009229723301
+          },
+          "trajectory_sha256": "42077c39290567215ff17d1ccbdb68eff524831e341dc0fcff7aa9e8412acee0",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013404251370341375,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014283557189628482
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.28781978863576,
+          "result_file_sha256": "310a6a589678d0d633232a6b3a9ddc0bdc4f35355c320077c482e784781c7898",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.022503924500453562,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.018525811606797123
+          },
+          "trajectory_sha256": "7d69ee92f179f7f9904cd4c528b029fd69a849d4c1e19329bfefb4106185884b",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04767892488742871,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03711743070743978
+          }
+        }
+      },
+      "candidate_label": "y30000-drag3-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 30000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.4828055926617205
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2003539287485725,
+          "result_file_sha256": "921be7b03fda01a0a8f58e99a7ce469713ef1814ff36886e564b62ae83741ecc",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010207862745661924,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010719838859986956
+          },
+          "trajectory_sha256": "c597f49fd8f4fcf965bfae26ad6007869c13cabac00c7d5cfaa80007c04550bc",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012964747593504274,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015716549241915345
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9497822041154345,
+          "result_file_sha256": "03e31064d2269271d9e12af10caebc84953d1239645a6e63c5d8c989478d9503",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010137125306638779,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010320494910386406
+          },
+          "trajectory_sha256": "053b3206427094090f2f080537e041411628383b7d03d06877480563844e7164",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01342210490984002,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014348497439641505
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.238637133446096,
+          "result_file_sha256": "482a75fae9d93752b68863b35b800c912eb560a5193146ffde4e0b294fe8944b",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.022242240987688126,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.018317309492346594
+          },
+          "trajectory_sha256": "a238246528b26f4e7c36f50b9547db6386adf7e931098fa50d93626bd3e21725",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.047706026265628323,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03714264160953462
+          }
+        }
+      },
+      "candidate_label": "y30000-drag3-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 30000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.4629244221033675
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2017700521495864,
+          "result_file_sha256": "3a6bac4e89f8174e00ed1544939b564a5a0dcc1bfe7868fcaaf10513fd13e79e",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01016951334407025,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010807272433540073
+          },
+          "trajectory_sha256": "da14b3e644b0ae810969f785dea742721ce89df001abb4b3315243d8f2411b11",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01300124150458062,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015846849826630205
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9195768595579397,
+          "result_file_sha256": "add3eb55948eeed3c0bfdb982b48de52ec3552a2c159270e80fbb1f0d17dfb0f",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.009845477101098864,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010311567804665637
+          },
+          "trajectory_sha256": "48439750c1c079b77e67316e71aa20bf7bb5f80fde793b392da8ff8c576bb76f",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01379394748550113,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015062101592775434
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.049233967288698,
+          "result_file_sha256": "5d5db92f6689b8bc13adb5586ebc746c588e67650eac8acf5e1c4602b90ecf00",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.021222597706327218,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.017527727370734436
+          },
+          "trajectory_sha256": "ef3e4a7cacd50d687aefba7441c26b3466f9a0408d8f3f25a7720752fb8ae859",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.047351424917816895,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03689103573560715
+          }
+        }
+      },
+      "candidate_label": "y30000-drag10-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 30000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.3901936263320747
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2053540704835406,
+          "result_file_sha256": "bc19e652199fe2914cca2115839c0c51fe41058992a535920164a4f6d85fc8fa",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01018950010000732,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01085485071259535
+          },
+          "trajectory_sha256": "ad6cd834148e10f9e74d416c82e8acd5599d227ed17c72b51d15c55b52480115",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013042769360510619,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015915532247163355
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9171813947841225,
+          "result_file_sha256": "567dbaaf38e4e045f6a1270d777e5b1763a599b92e754f286cc641ded369fea3",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.00982545648465176,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010307373455330983
+          },
+          "trajectory_sha256": "d3a2be26586697bfd8a77f79707c9e91bff2ae7ede090d453994e4e66744f08f",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01379041510112357,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015062869584653527
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.044512771185917,
+          "result_file_sha256": "ad5cd95aebe7062629bc31dfc8d9a9b35d0199f94e71e0d922b0351a9675a875",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.021175227390264364,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01753270648561923
+          },
+          "trajectory_sha256": "76c69e6e9b68720681b4b6939845f9769f9a44341cb3a014a4dc41fd17c54b91",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04727928282472107,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03682848438620567
+          }
+        }
+      },
+      "candidate_label": "y30000-drag10-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 30000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.38901607881786
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.2793572596355536,
+          "result_file_sha256": "edc8ffcbee6272877df646cdd84ce153b23240511809b25e18cd3301852de3fc",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010939178799714065,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.011337126707816022
+          },
+          "trajectory_sha256": "7cf61c42e08a2438862ddb2ffabe0e8b8d87324970628dd74de08518b58225e2",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013449497310496494,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016015254543162882
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9899975293697652,
+          "result_file_sha256": "c5959b2242187d33c2274263b17cb22a48c938c35165d9149e0b26e8211b32ae",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010473758561824193,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010390321404467953
+          },
+          "trajectory_sha256": "aa4b3a2210555cc8d7fab6ae7710af59c5ce30ada5f21acdd7d4a6ba9b5904d1",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01325976722488119,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.0137585325865075
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.886986262938965,
+          "result_file_sha256": "7c526f4f00a691e54165a8978a59aa5e729b5e13b9350e053e4bb09b3a72ac8a",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.02575713785525619,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.020992576665544913
+          },
+          "trajectory_sha256": "042512ede8af8ed6bc0f2b05ec700a367952262e731628e40545fdd3ae1fa08f",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.049819139107777854,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03865049500018358
+          }
+        }
+      },
+      "candidate_label": "y50000-drag1-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 50000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.7187803506480948
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.195962147533043,
+          "result_file_sha256": "3fe2b17e5a0e4067ac8a7bebfc8a395101aca04feca1d714c00906f44588f4ba",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010146523818719246,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010716222739636393
+          },
+          "trajectory_sha256": "3cbbbd7fe698efc7575862bfb70b54bfe2645fce3b5bc7430ff1b75fdf9acad8",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012773051614758538,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015641132253222167
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9590650501658065,
+          "result_file_sha256": "2219bcebf816d74ec73789291e529ebfe2068b63b8a5927dfaae2072c310a5f5",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01024355457740658,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010304399777866773
+          },
+          "trajectory_sha256": "f7155e244ec8140a4f6247dea162e6210d91813005661c9e8536451fb2e1e1e0",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013266644975358951,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.013877420453354716
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.8396337782116206,
+          "result_file_sha256": "fd610eb1d9cac4dd07c7c0d0a2898c008b3f1a173379a02f91ff00f5b7d4e30a",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.02548576601564841,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.02081365442156034
+          },
+          "trajectory_sha256": "9e10d7b0653439f08155e70792a003dca3aa26df016254fd9b7cd5ca2330d46a",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04982332410211836,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.038653802359476686
+          }
+        }
+      },
+      "candidate_label": "y50000-drag1-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 50000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.6648869919701568
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.1929932514188608,
+          "result_file_sha256": "08a6019d18ea46da587fd5fdf8671e9bca580a509abb7f5e2ee40cfcbc0fef88",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01011178237241599,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010703798557110763
+          },
+          "trajectory_sha256": "b82cb11d469ba601b2b36066502b35524658534f29c00f58f9246790fdf91db0",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012814738221981314,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01567869877908379
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9517372537285491,
+          "result_file_sha256": "494e718ea4d46012096cf9946d360a03e1ec55c87063be9f3b3f507b8d8c47b2",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.01018525830613109,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010288263828951424
+          },
+          "trajectory_sha256": "885eefd57e0f25cfc3d0be81efc36995eb080f2530d0bdc4d79e9016c3b424ad",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013393652285171299,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014100019470788538
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.718468736297467,
+          "result_file_sha256": "57e32cdfa9909a49649a8f453bf4e23e86fa7b0298a2835b2a8229086ecc667e",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.024816636499956406,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.020327462467475462
+          },
+          "trajectory_sha256": "8344cb47539dd830c1060d7a4337d72816629f4232daad1ebd326e75ae7b8abf",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04971542874806327,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.0385777335613966
+          }
+        }
+      },
+      "candidate_label": "y50000-drag3-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 50000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.621066413814959
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.1877674000459544,
+          "result_file_sha256": "737ef241e946fc5218233d4c239137f5ecb7bf996a97e2a1016b4496cf93b074",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010055501250817665,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01067470081182102
+          },
+          "trajectory_sha256": "a1382031494d7d7afa7dd634e6770520b50017bf6f7b3bf1312aba383d850bdd",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012814141352241924,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015706696140114218
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9285484056341415,
+          "result_file_sha256": "fed66ee68eaeefa69ff66414cc03f6f9093710638ebfdfe0cc55417d014dccf0",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.009995372214077513,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01024326545944027
+          },
+          "trajectory_sha256": "223c9a9afd94350c5c5232b03dc6459ba34e643c0b3ca08d4d4526d3a88b61fd",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.01339640351457391,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014188696979545057
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.708100351601716,
+          "result_file_sha256": "b2b0ae6ec7cce352995498cdb139436484a784b7581f42f87277a1f177febc21",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.02433988884192536,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.020757067419777987
+          },
+          "trajectory_sha256": "f9461da3dd1a51186fab7d6978484dafe05276e0b1d716d557b278e19c91d1b8",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04966985124362816,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.039100394351407886
+          }
+        }
+      },
+      "candidate_label": "y50000-drag3-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 50000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.608138719093937
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.1945827483378921,
+          "result_file_sha256": "f977ce18f34d878c232f2e99804d8c1f6c9bb232a48a9cc9e018dc2a4077be0a",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010034070596491954,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01085338608156574
+          },
+          "trajectory_sha256": "8d9dffbb434a8f888e58d59c2c69bfd6d14dd0c5ecd9d05da70bd32ab44c719e",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.012970497147376681,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.015941656718496233
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9241246509257344,
+          "result_file_sha256": "e47819f5c931cb8a4004256687a4b1e56363754d31bacfe7c058642629591272",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.009929537621028392,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010267886842237943
+          },
+          "trajectory_sha256": "fe3489606b327fa9725b8f2f352405c23ed753e77d7ac276096a1eb8f5f6dea0",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013557894014372024,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014516648137941957
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.267848611262018,
+          "result_file_sha256": "b69a0378a71de29b4931c867a9ee3d672b2160f17144d1c59243086740942f80",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.021822992320344514,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.019086673934707196
+          },
+          "trajectory_sha256": "db4c553d4879b6c75cddd2d2432d9bc93588e4193c53a6467b073b3261fcd7bf",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04860557888878607,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03863918432034552
+          }
+        }
+      },
+      "candidate_label": "y50000-drag10-dash50",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 50000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.4621853368418813
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.196482588828255,
+          "result_file_sha256": "77e8518906e3d64266fe32ebb032449f713ad4345015d5cf48bd10699e002d87",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010030015324296211,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010900348669580989
+          },
+          "trajectory_sha256": "04dd169e3c5288669b79410e14cb8cce25f0b8078d9333f37f2e1a811cac6784",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013012765935282637,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": true,
+            "track_rmse_m": 0.016020012262742966
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9207389260507564,
+          "result_file_sha256": "7e941d0657a852be1779cd65330dd5436e1c8d40e0e10dc463e5b554aafa20ab",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.009902133470870253,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010260957391869467
+          },
+          "trajectory_sha256": "8ffee4235aff697fcadc644ed5f3b41ba552520ca237763af2e6f774f2951d23",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013555721400531073,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014530950575135648
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.460063766443825,
+          "result_file_sha256": "36818aaf0e665e9820d0083eb6d29965809d36e64d8474b12e4b8e207867333f",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.022994144188891202,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.019734794463394052
+          },
+          "trajectory_sha256": "0e2abe65d37027a515ffe27e7848dfaf895a481c4c1abf65dacf63c17686f065",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.04943293514606892,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03892879490740597
+          }
+        }
+      },
+      "candidate_label": "y50000-drag10-dash100",
+      "eligible": true,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 50000.0
+      },
+      "pooled_relative_score_vs_persistence": 2.5257617604409455
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "51f52e8e66cbaa255d1fe4a631aa4e9728fabf7873eed0458805dd9eab9d7d9a",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "75a2f715944eb9547e4b98fdbd7c469bfbed5156e5404a1e3f13796968b4d0d8",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9448993782388242,
+          "result_file_sha256": "521bdda9659aa3fa5953e5e11c47c2637d2b0c521071ea920f92535f4e598453",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010141666033335103,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010261087907257221
+          },
+          "trajectory_sha256": "2d4d607d561c00710bdd011ae15ae31451e1e8a504624dce449aa941ad1c297d",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013425975714944235,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014014368527568877
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 5.214956579564374,
+          "result_file_sha256": "4f236c9404369ec14fbece8d623e6911233428166b27d0d56a2ad75b4eb3f234",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.027825189158466615,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.02202008893492363
+          },
+          "trajectory_sha256": "ab4b95656c826943665038b2d8c9c47dcba55d35db26b720d3481840e1352261",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.0485183863697799,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.037056238390505314
+          }
+        }
+      },
+      "candidate_label": "y80000-drag1-dash50",
+      "eligible": false,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 80000.0
+      },
+      "pooled_relative_score_vs_persistence": null
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "2616affb63b7398f8a048c2086ba9033a4c83ad4810fb8d13de39c1f0fd34ea5",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "631cf30715afd8592dee0f99541b4511a4e3c81f34c97293d858716678b63f5d",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9343751503130056,
+          "result_file_sha256": "17513d374646fd480b92be241047a5dd466c87ea0733b9d0954a55b3b6f98771",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010068615030620018,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010225942551742419
+          },
+          "trajectory_sha256": "15a024217e5a02705963e94e527a89d7721063611f95c2cfe21a4390916406f8",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013359145949236114,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.013944953912869096
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "d3d76d31fb3f0cb2122c7df0f89b13d076eb3280d396fab2360882cef806aa5b",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "f3d250784bb9412a9d2cde91a6ed32e55076272e988316eaaf3b97dcb4d14068",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        }
+      },
+      "candidate_label": "y80000-drag1-dash100",
+      "eligible": false,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 1.0,
+        "init_spring_Y": 80000.0
+      },
+      "pooled_relative_score_vs_persistence": null
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "04e2af8ebbad8f64750b2d2e02feb6ead6186db95e4323b8adb64d40eea0c117",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "bc55c46b2b74ad9858369b022d4b9c40b92856ed376b106bf42ce5ca8eb50e0f",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9556603289703496,
+          "result_file_sha256": "71aea3a1b35253ee938eb89571e826444a73292249aea281a9ff87cf66de9deb",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.010224325381797352,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010288091281713065
+          },
+          "trajectory_sha256": "f5ffbedff251f2e5f9c3da80db3c4b801eb28e4308b8d2aee022a1cd92badbf3",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013484415553700526,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014083184709306806
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 5.278131856372227,
+          "result_file_sha256": "77990c87e581554728c89aad1ec6bca257d9bf7d22dd280ab33fba0ed1e0cc91",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.027517344241188825,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.02301128821100219
+          },
+          "trajectory_sha256": "2fedcc52f63abe45ac36ca612ea28b2982770ab5ef25dce2d6833e9f4139890c",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.05111595379660698,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.04009392159059644
+          }
+        }
+      },
+      "candidate_label": "y80000-drag3-dash50",
+      "eligible": false,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 80000.0
+      },
+      "pooled_relative_score_vs_persistence": null
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "e4f642bb397344ba5672f1ffa5d0bc3d4d5edd2292e5a2b324af5b7b0505ef80",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "4efb72088631c6b1261ad41faafc8295af25db7974652954dda9e90c9b12277c",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9154313915983934,
+          "result_file_sha256": "38092e212855422bd1adc3276c968cee19d1db3a52beb7f6ca84dd6090e86ebd",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.009922345768328998,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010179251321922924
+          },
+          "trajectory_sha256": "ef738d4be4e93f0a13eb7233315b2a937f3d51811619d88ae40fcd1040c7ac4b",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013375863039854583,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01409869926283136
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": 4,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "0ae82396f13952c4a728f84c1db947512bd1da1bd21b647fe3d6570f49eba032",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "3ceefb007473e82ac647405538e8ecc84848e65337f6702b08ccf5aef03d9e55",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        }
+      },
+      "candidate_label": "y80000-drag3-dash100",
+      "eligible": false,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 80000.0
+      },
+      "pooled_relative_score_vs_persistence": null
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "c92f0b53044006ae129f9dea35c561c3c13868c8a79f6c9c7aaa75709e1c8b0b",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "5d77ea691871db33e27e40e7ffd68c41e5f6f981d5502e4c3c823ed132f4db9f",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9236152211315978,
+          "result_file_sha256": "70a464c8b73faa64372cd77067f3284cdb91007241547cdee378c066e8a0f516",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.00990515307705083,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01028956597576202
+          },
+          "trajectory_sha256": "a9f15f2f4b34bc6f8c7a43785d3be59fceb0077341fb3862ec70124a178f6d20",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013649366204271679,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.014769625442568213
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 4.596040038111736,
+          "result_file_sha256": "2d08bb0800c6d790727ded3024e747e0fdb3c7298f3c2c4d5a3440778d9e0016",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.023718130591399968,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": true,
+            "track_rmse_m": 0.02031067744591984
+          },
+          "trajectory_sha256": "8cfae095624cc78afcfcb9a359d802095b4a90690f53ade327115a550d20ab5e",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.05091474864153307,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": true,
+            "track_rmse_m": 0.03994368202984333
+          }
+        }
+      },
+      "candidate_label": "y80000-drag10-dash50",
+      "eligible": false,
+      "physical_parameters": {
+        "dashpot_damping": 50.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 80000.0
+      },
+      "pooled_relative_score_vs_persistence": null
+    },
+    {
+      "by_episode": {
+        "1": {
+          "first_nonfinite_frame": 1,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "8d34ce9e4f52119bb370654b90b0fd89d9cda25a99da9f443a48e2f2b93377d4",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.007260779419091687,
+            "persistence_track_rmse_m": 0.010775688275871444,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "7f29d37b56c7215c73c988841574a078d90dbfcdcee646d352b9ac9201d8747e",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009305761757503863,
+            "persistence_track_rmse_m": 0.014391209348104894,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        },
+        "4": {
+          "first_nonfinite_frame": null,
+          "relative_score_vs_persistence": 1.9228982960365026,
+          "result_file_sha256": "9b185d825b70b495b4c1c5ec01333b5abb7d67343713750277c7387e11205948",
+          "rollout_passed": true,
+          "train_metrics": {
+            "chamfer_m": 0.009886622441126036,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00495952936546983,
+            "persistence_track_rmse_m": 0.005561824532763902,
+            "prediction_finite": true,
+            "track_rmse_m": 0.010302372186018502
+          },
+          "trajectory_sha256": "8fe07e3b858e8dff9d307392678770428a614c960d2e3369c4af90cc626a4a92",
+          "untouched_tail_metrics": {
+            "chamfer_m": 0.013717932636337794,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.009768087977503432,
+            "persistence_track_rmse_m": 0.011540604929905385,
+            "prediction_finite": true,
+            "track_rmse_m": 0.01490631839260459
+          }
+        },
+        "6": {
+          "first_nonfinite_frame": 2,
+          "relative_score_vs_persistence": null,
+          "result_file_sha256": "9c432aea3ff66016a6c13209304a93ecfdc58fb67e188c8b03d756bcdf432add",
+          "rollout_passed": false,
+          "train_metrics": {
+            "chamfer_m": null,
+            "frame_count": 59,
+            "frame_range": [
+              1,
+              60
+            ],
+            "persistence_chamfer_m": 0.00454733484844631,
+            "persistence_track_rmse_m": 0.00510799943423096,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          },
+          "trajectory_sha256": "8ed76bf4880fa5fab3b0cd8b06a83061c03604093a1251c4de660ba8aab2ba44",
+          "untouched_tail_metrics": {
+            "chamfer_m": null,
+            "frame_count": 16,
+            "frame_range": [
+              60,
+              76
+            ],
+            "persistence_chamfer_m": 0.005680284860801814,
+            "persistence_track_rmse_m": 0.006782225798815489,
+            "prediction_finite": false,
+            "track_rmse_m": null
+          }
+        }
+      },
+      "candidate_label": "y80000-drag10-dash100",
+      "eligible": false,
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 80000.0
+      },
+      "pooled_relative_score_vs_persistence": null
+    }
+  ],
+  "claim_boundary": "source-only physical selection; no reusable-dynamics transfer or SOTA claim",
+  "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+  "eligible_candidate_count": 18,
+  "information_boundary": {
+    "calibration_episode_read": false,
+    "source_episodes_read": [
+      1,
+      4,
+      6
+    ],
+    "source_train_outcomes_used_for_selection": true,
+    "source_untouched_tails_reported_but_not_selected": true,
+    "target_episode_read": false
+  },
+  "object_id": "081-stripe-rope",
+  "protocol_id": "deform360-reusable-dynamics-081-v1",
+  "rejected_candidate_labels": [
+    "y80000-drag1-dash50",
+    "y80000-drag1-dash100",
+    "y80000-drag3-dash50",
+    "y80000-drag3-dash100",
+    "y80000-drag10-dash50",
+    "y80000-drag10-dash100"
+  ],
+  "result_sha256": "945fcc1bfa5a279a38d6e1b854be19b5ef6b2ec3917d28658decb5be7d33ffef",
+  "schema_version": 1,
+  "score": "execution-balanced mean over source episodes of 0.5 * (track_rmse / persistence_track_rmse + symmetric_cd / persistence_symmetric_cd)",
+  "selected_pooled_physical_parameters": {
+    "dashpot_damping": 100.0,
+    "drag_damping": 10.0,
+    "init_spring_Y": 10000.0
+  },
+  "selected_pooled_relative_score_vs_persistence": 2.3305964548173628,
+  "selected_single_source_physical_parameters": {
+    "1": {
+      "dashpot_damping": 100.0,
+      "drag_damping": 3.0,
+      "init_spring_Y": 50000.0
+    },
+    "4": {
+      "dashpot_damping": 100.0,
+      "drag_damping": 10.0,
+      "init_spring_Y": 30000.0
+    },
+    "6": {
+      "dashpot_damping": 100.0,
+      "drag_damping": 10.0,
+      "init_spring_Y": 10000.0
+    }
+  },
+  "selection_arm": "raw_official_phystwin_driven",
+  "selection_frame_range": [
+    1,
+    60
+  ],
+  "source_episode_ids": [
+    1,
+    4,
+    6
+  ]
+}

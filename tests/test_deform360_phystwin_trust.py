@@ -14,7 +14,9 @@ from causal4d_public.deform360_phystwin_trust import (
     CausalTrustWeights,
     PhysicalTrustParameters,
     apply_cardinality_physical_grid_source_gate,
+    cardinality_normalized_causal_prediction,
     causal_control_variate_prediction,
+    evaluate_cardinality_normalized_fixed_trust,
     fit_cardinality_normalized_physical_grid_source_trust,
     fit_cardinality_normalized_source_causal_trust,
     fit_regime_gated_source_causal_trust,
@@ -23,6 +25,7 @@ from causal4d_public.deform360_phystwin_trust import (
     load_cardinality_trust_protocol,
     load_contact_anchored_causal_trust_protocol,
     load_official_phystwin_trust_episode,
+    score_causal_trust_interval,
     validate_cardinality_normalized_source_causal_trust_artifact,
     validate_cardinality_physical_grid_source_trust_artifact,
     validate_regime_gated_source_causal_trust_artifact,
@@ -185,6 +188,26 @@ def test_causal_control_variate_contains_exact_control_arms() -> None:
         episode.target_m[:1] + episode.driven_m - episode.zero_action_m,
         atol=1e-15,
     )
+
+
+def test_fixed_cardinality_policy_normalizes_bimanual_action_response() -> None:
+    episode = _episode("bimanual", controller_count=2)
+
+    predicted = cardinality_normalized_causal_prediction(
+        episode, base_action_response=0.5, autonomous_drift=0.2
+    )
+    metrics = evaluate_cardinality_normalized_fixed_trust(
+        episode, base_action_response=0.5, autonomous_drift=0.2
+    )
+
+    np.testing.assert_allclose(predicted, episode.target_m, atol=1e-15)
+    assert metrics["effective_action_response"] == 0.25
+    assert metrics["train"]["track_rmse_m"] < 1e-14
+    assert metrics["untouched_tail"]["chamfer_m"] < 1e-14
+
+    full = score_causal_trust_interval(episode, predicted, 1, 7)
+    assert full["track_rmse_m"] < 1e-14
+    assert full["relative_score_vs_persistence"] < 1e-12
 
 
 def test_source_fit_recovers_separate_action_and_drift_trust() -> None:
@@ -449,6 +472,47 @@ def test_load_official_warp_pair_checks_matched_configuration(tmp_path: Path) ->
         "e0", data_path, result_paths[0], result_paths[1], split_path
     )
     np.testing.assert_allclose(loaded.driven_m, episode.driven_m)
+
+    source_payloads = []
+    for result_path in result_paths:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+        source_payloads.append(dict(payload))
+        payload["source_only_smoke"] = False
+        payload["reusable_dynamics_calibration"] = True
+        result_path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="not source-only"):
+        load_official_phystwin_trust_episode(
+            "e0", data_path, result_paths[0], result_paths[1], split_path
+        )
+    loaded_calibration = load_official_phystwin_trust_episode(
+        "e0",
+        data_path,
+        result_paths[0],
+        result_paths[1],
+        split_path,
+        evidence_scope="reusable-calibration",
+    )
+    np.testing.assert_allclose(loaded_calibration.driven_m, episode.driven_m)
+    for result_path, payload in zip(result_paths, source_payloads, strict=True):
+        result_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    legacy = json.loads(result_paths[1].read_text(encoding="utf-8"))
+    legacy.pop("contact_transmission")
+    result_paths[1].write_text(json.dumps(legacy), encoding="utf-8")
+    loaded_legacy = load_official_phystwin_trust_episode(
+        "e0", data_path, result_paths[0], result_paths[1], split_path
+    )
+    np.testing.assert_allclose(loaded_legacy.zero_action_m, episode.zero_action_m)
+
+    legacy_driven = json.loads(result_paths[0].read_text(encoding="utf-8"))
+    legacy_driven.pop("realized_actuation")
+    result_paths[0].write_text(json.dumps(legacy_driven), encoding="utf-8")
+    loaded_legacy_driven = load_official_phystwin_trust_episode(
+        "e0", data_path, result_paths[0], result_paths[1], split_path
+    )
+    np.testing.assert_allclose(
+        loaded_legacy_driven.driven_m, episode.driven_m
+    )
 
     changed = json.loads(result_paths[1].read_text(encoding="utf-8"))
     changed["config_sha256"] = "e" * 64

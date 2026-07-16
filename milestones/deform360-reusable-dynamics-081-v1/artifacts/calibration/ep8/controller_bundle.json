@@ -1,0 +1,122 @@
+{
+  "association_information_scope": "frame-zero-geometry-only",
+  "association_mode": "frame-zero-nearest",
+  "claim_boundary": "independent calibration preparation under the frozen reusable-dynamics protocol; prediction metrics not yet computed",
+  "fit_stop_frame": null,
+  "frame_count": 76,
+  "group_count": 2,
+  "groups": [
+    {
+      "group": 0,
+      "initial_distances_m": [
+        0.010588685464442535
+      ],
+      "input_index_range": [
+        0,
+        768
+      ],
+      "nearest_object_indices": [
+        1
+      ],
+      "selected_global_indices": [
+        63
+      ],
+      "source_fit": null
+    },
+    {
+      "group": 1,
+      "initial_distances_m": [
+        0.039124622053664154
+      ],
+      "input_index_range": [
+        768,
+        1536
+      ],
+      "nearest_object_indices": [
+        716
+      ],
+      "selected_global_indices": [
+        894
+      ],
+      "source_fit": null
+    }
+  ],
+  "held_out_object_motion_read_for_association": false,
+  "input_controller_point_count": 1536,
+  "input_group_size": 768,
+  "maximum_initial_distance_m": 0.02,
+  "minimum_separation_m": 0.004,
+  "object_motion_used_for_association": false,
+  "object_point_count": 718,
+  "output_controller_point_count": 2,
+  "output_final_data": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep8/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.pkl",
+  "output_final_data_sha256": "ba651507e8ab919c24c83535bd5c014bb5c309fcaa84badbfb8f9575ecfa9f6d",
+  "points_per_group": 1,
+  "proximity_weight": 0.25,
+  "result_sha256": "7f01420670401844746cc3681c71876fb519b235d618aae57b097fc87a7bfa59",
+  "reusable_dynamics_request": {
+    "allowed_frame_range": [
+      1,
+      76
+    ],
+    "calibration_episodes": [
+      0,
+      2,
+      8
+    ],
+    "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+    "episode_id": 8,
+    "method_or_hyperparameter_changes_allowed": false,
+    "object_id": "081-stripe-rope",
+    "operation": "one-shot-scoring",
+    "passed": true,
+    "physical_candidate_count": 24,
+    "protocol_id": "deform360-reusable-dynamics-081-v1",
+    "sealed_target_episodes": [
+      5
+    ],
+    "source_episodes": [
+      1,
+      4,
+      6
+    ],
+    "split": "independent-calibration",
+    "target_media_allowed": false
+  },
+  "schema": "bayesian-phystwin/deform360-sparse-controller-bundle/v1",
+  "source_final_data_sha256": "7d6e062e765930092058d14930b2e4a2b5975bd44ee9615ead671a26ed7a8c58",
+  "source_manifest_sha256": "c6e2d0950eee36a70629e8c129d352cc60509bdef75ca34916f6ebae8ca35568",
+  "source_object_motion_used_to_fit_controller_patch": false,
+  "source_only": false,
+  "source_patch_meta": null,
+  "source_patch_meta_sha256": null,
+  "support_frame": {
+    "clearance_m": 0.002,
+    "fit_information_scope": "frame-zero-object-geometry-only",
+    "free_space_sign": 1,
+    "rotation_world_to_sim": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "support_axis": 1,
+    "support_location_world_m": -0.017093065436929466,
+    "translation_sim_m": [
+      0.0,
+      0.0,
+      0.019093065436929464
+    ]
+  }
+}

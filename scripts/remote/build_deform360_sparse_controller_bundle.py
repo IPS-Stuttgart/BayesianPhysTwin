@@ -19,6 +19,11 @@ from causal4d_public.deform360_dense_source import (
     select_sparse_controller_patch,
     sha256_file,
 )
+from causal4d_public.deform360_reusable_dynamics import (
+    load_reusable_dynamics_config,
+    reusable_dynamics_result_sha256,
+    validate_reusable_dynamics_calibration_request,
+)
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -51,15 +56,62 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--support-normal-sign", type=int, choices=(-1, 1), default=1)
     parser.add_argument("--support-quantile", type=float, default=0.01)
     parser.add_argument("--support-clearance-m", type=float, default=0.002)
+    parser.add_argument("--reusable-dynamics-repo", type=Path)
+    parser.add_argument("--reusable-observation-artifact", type=Path)
     return parser.parse_args()
 
 
 def main() -> int:
     args = _parse_args()
-    source_manifest = args.episode_dir / "dense_source_smoke.manifest.json"
-    boundary = json.loads(source_manifest.read_text(encoding="utf-8"))
-    if not boundary.get("source_only"):
-        raise ValueError("sparse association accepts only source-only data")
+    reusable = args.reusable_dynamics_repo is not None
+    if reusable != (args.reusable_observation_artifact is not None):
+        raise ValueError("reusable dynamics needs both repo and observation artifact")
+    if reusable:
+        if args.association_mode != "frame-zero-nearest":
+            raise ValueError("reusable dynamics permits frame-zero association only")
+        assert args.reusable_dynamics_repo is not None
+        assert args.reusable_observation_artifact is not None
+        protocol_path = (
+            args.reusable_dynamics_repo
+            / "configs/causal4d_public/deform360_reusable_dynamics_081_v1.json"
+        )
+        protocol = load_reusable_dynamics_config(protocol_path)
+        observation = json.loads(
+            args.reusable_observation_artifact.read_text(encoding="utf-8")
+        )
+        if observation.get("artifact_kind") != "Deform360ReusableDynamicsObservations":
+            raise ValueError("unexpected reusable observation artifact")
+        if observation.get("parent_config_sha256") != protocol["config_sha256"]:
+            raise ValueError("reusable observations use another protocol")
+        if observation.get("result_sha256") != reusable_dynamics_result_sha256(
+            observation
+        ):
+            raise ValueError("reusable observation checksum mismatch")
+        request = validate_reusable_dynamics_calibration_request(
+            protocol,
+            object_id=str(observation["object_id"]),
+            episode_id=int(observation["episode_id"]),
+            operation="one-shot-scoring",
+        )
+        boundary_manifest = args.reusable_observation_artifact
+        boundary = observation
+        source_only = False
+        claim_boundary = (
+            "independent calibration preparation under the frozen reusable-"
+            "dynamics protocol; prediction metrics not yet computed"
+        )
+    else:
+        source_manifest = args.episode_dir / "dense_source_smoke.manifest.json"
+        boundary = json.loads(source_manifest.read_text(encoding="utf-8"))
+        if not boundary.get("source_only"):
+            raise ValueError("sparse association accepts only source-only data")
+        boundary_manifest = source_manifest
+        source_only = True
+        request = None
+        claim_boundary = (
+            "exploratory source-only automatic association; no calibration or "
+            "target episode was read"
+        )
     source_path = args.episode_dir / "final_data.pkl"
     with source_path.open("rb") as stream:
         data = pickle.load(stream)  # noqa: S301 - trusted local research artifact
@@ -232,8 +284,8 @@ def main() -> int:
         pickle.dump(sparse, stream, protocol=4)
     payload: dict[str, Any] = {
         "schema": "bayesian-phystwin/deform360-sparse-controller-bundle/v1",
-        "source_only": True,
-        "source_manifest_sha256": sha256_file(source_manifest),
+        "source_only": source_only,
+        "source_manifest_sha256": sha256_file(boundary_manifest),
         "source_final_data_sha256": sha256_file(source_path),
         "output_final_data": str(output_path.resolve()),
         "output_final_data_sha256": sha256_file(output_path),
@@ -273,11 +325,10 @@ def main() -> int:
             args.association_mode == "source-transfer-material"
         ),
         "held_out_object_motion_read_for_association": False,
-        "claim_boundary": (
-            "exploratory source-only automatic association; no calibration or "
-            "target episode was read"
-        ),
+        "claim_boundary": claim_boundary,
     }
+    if reusable:
+        payload["reusable_dynamics_request"] = request
     payload["result_sha256"] = hashlib.sha256(_canonical_bytes(payload)).hexdigest()
     metadata_path = output_path.with_suffix(".meta.json")
     metadata_path.write_text(

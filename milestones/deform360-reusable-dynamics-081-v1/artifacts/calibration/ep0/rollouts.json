@@ -1,0 +1,87 @@
+{
+  "arms": {
+    "y10000-drag10-dash100": {
+      "driven": {
+        "controller_displacement_scale": 1.0,
+        "p99_relative_edge_strain": 0.013420879244804361,
+        "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-v1/081-stripe-rope/ep0/y10000-drag10-dash100/driven/official_phystwin_smoke.json",
+        "result_sha256": "ce4fb24d8bdc40d452ad78b69634094de3dafce49c414f4888d7796f3b45b9b7",
+        "trajectory_sha256": "9b4e8ecf9e9b0a9e17459070cd67227a49308699c1cbbd706cd1fcbd31416398"
+      },
+      "zero": {
+        "controller_displacement_scale": 0.0,
+        "p99_relative_edge_strain": 0.012795692086219786,
+        "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-v1/081-stripe-rope/ep0/y10000-drag10-dash100/zero/official_phystwin_smoke.json",
+        "result_sha256": "9b420684847c70e09fe4d3ba45d4e106d2e4b961bffccc05dba818444dc6ec99",
+        "trajectory_sha256": "7aece1a35b1e62f95f0bfae09406da13e7260d79d7d4af3ee4d9e694515b0c62"
+      }
+    },
+    "y30000-drag10-dash100": {
+      "driven": {
+        "controller_displacement_scale": 1.0,
+        "p99_relative_edge_strain": 0.008719227313995354,
+        "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-v1/081-stripe-rope/ep0/y30000-drag10-dash100/driven/official_phystwin_smoke.json",
+        "result_sha256": "11319ea501a433c031d1e23eb957575a4da8a62855b6b72dde7469733bce6b59",
+        "trajectory_sha256": "94c13c3858a96adcefc1090f2fbe60e86729eb7c74c2d18ce99a1778ac768822"
+      },
+      "zero": {
+        "controller_displacement_scale": 0.0,
+        "p99_relative_edge_strain": 0.008200135827064504,
+        "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-v1/081-stripe-rope/ep0/y30000-drag10-dash100/zero/official_phystwin_smoke.json",
+        "result_sha256": "62a4da045d1e5e5bb7ae2664776ac73ee0d43075a983ee9b8acdf5d1eaf1e1e0",
+        "trajectory_sha256": "e98209de45ae6a76e52f7cfc0c9919e41a232fb94762996751329830c68f11de"
+      }
+    },
+    "y50000-drag3-dash100": {
+      "driven": {
+        "controller_displacement_scale": 1.0,
+        "p99_relative_edge_strain": 0.033649638891220066,
+        "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-v1/081-stripe-rope/ep0/y50000-drag3-dash100/driven/official_phystwin_smoke.json",
+        "result_sha256": "c6f3d4acd34ddafa58c1b32ab7db559d38416fdc1493e622995fb2c66e56474e",
+        "trajectory_sha256": "8f77369cca7e746f678c64795267cdf62cb11c6f875e56d0324cfd5311c17fa0"
+      },
+      "zero": {
+        "controller_displacement_scale": 0.0,
+        "p99_relative_edge_strain": 0.03266384363174438,
+        "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-v1/081-stripe-rope/ep0/y50000-drag3-dash100/zero/official_phystwin_smoke.json",
+        "result_sha256": "639c0b41b356bd0e33f66b7ea051b3921e3fde6c3e2556f940ac8c7398752064",
+        "trajectory_sha256": "0713ebc15e27ea0e57ba13d122416e381ff375a52bd14ea4608a49637bab50c8"
+      }
+    }
+  },
+  "artifact_kind": "Deform360ReusableDynamicsCalibrationRollouts",
+  "claim_boundary": "calibration rollouts only; no target or SOTA claim",
+  "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+  "controller_metadata_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep0/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.meta.json",
+  "controller_metadata_result_sha256": "914e534b08784d61616603db61c5edea9d51c0884183db4a1ecea81979e5718a",
+  "controller_metadata_sha256": "f756435ec8000ed07bf986d3e0d192f62d66a5d8e9eb78f334958152c02df779",
+  "deterministic_repeats": {
+    "driven": {
+      "controller_displacement_scale": 1.0,
+      "p99_relative_edge_strain": 0.013420602083206126,
+      "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-repeat-v1/081-stripe-rope/ep0/y10000-drag10-dash100/driven/official_phystwin_smoke.json",
+      "result_sha256": "78ab3bf00c3399282191933db502c9b4d7165f9d724c65a02230c4afe9777ef3",
+      "trajectory_sha256": "bb1688656da211c36e879194014384eee8f8e14ddae834c02c627d978b620d42"
+    },
+    "zero": {
+      "controller_displacement_scale": 0.0,
+      "p99_relative_edge_strain": 0.01279117822647094,
+      "result_path": "/mnt/corsair/florianpfaff/phystwin-reusable-dynamics-calibration-repeat-v1/081-stripe-rope/ep0/y10000-drag10-dash100/zero/official_phystwin_smoke.json",
+      "result_sha256": "8fc41f47ec1577f0f955701ce0359d0f9b2d7096d53a0b57e97d64fa34d561d7",
+      "trajectory_sha256": "4a49c2b2f2723295609ef242b1aa57a0eb1490508b12cc6325cf7a2a115226a2"
+    }
+  },
+  "episode_id": 0,
+  "information_boundary": {
+    "independent_calibration_outcomes_generated": true,
+    "method_or_hyperparameter_changes_allowed": false,
+    "target_episode_read": false
+  },
+  "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+  "protocol_id": "deform360-reusable-dynamics-081-v1",
+  "real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+  "result_sha256": "13078b24771af0440ada26915d9c62e413e676b133fdbe3dd3833e0fddf0c3fb",
+  "schema_version": 1,
+  "source_selection_result_sha256": "945fcc1bfa5a279a38d6e1b854be19b5ef6b2ec3917d28658decb5be7d33ffef",
+  "split_sha256": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92"
+}

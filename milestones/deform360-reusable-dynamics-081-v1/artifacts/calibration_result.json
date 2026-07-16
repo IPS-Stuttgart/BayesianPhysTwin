@@ -1,0 +1,1027 @@
+{
+  "artifact_kind": "Deform360ReusableDynamicsCalibration",
+  "claim_boundary": "independent same-object calibration only; target episode 5 remains sealed unless every conjunctive gate passes; no multi-object or SOTA claim",
+  "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+  "conformal": {
+    "by_episode_m": {
+      "0": 0.03762091986705367,
+      "2": 0.0426007200461979,
+      "8": 0.021493975768832562
+    },
+    "calibration_coverage_by_episode": {
+      "0": 0.9618565400843881,
+      "2": 0.9000234741784038,
+      "8": 1.0
+    },
+    "coverage_claim_before_target": false,
+    "interval_width_m": 0.0852014400923958,
+    "nonconformity": "execution-level 90th percentile material-point Euclidean error in metres",
+    "order_statistic_rank": 3,
+    "quantile_method": "higher",
+    "radius_m": 0.0426007200461979
+  },
+  "controller_artifacts": {
+    "0": {
+      "data_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep0/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.pkl",
+      "data_sha256": "26fb826cb46c5faf2078a20f9e53fa82724e309ccaf4db1be2f7c8cbe3644e5e",
+      "metadata_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep0/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.meta.json",
+      "metadata_result_sha256": "914e534b08784d61616603db61c5edea9d51c0884183db4a1ecea81979e5718a",
+      "metadata_sha256": "f756435ec8000ed07bf986d3e0d192f62d66a5d8e9eb78f334958152c02df779",
+      "observation_depth_qa": {
+        "accepted_camera_count": 11,
+        "claim_boundary": "the public aligned release lacks rendered URDF depth masks; any gripper depth inside the propagated object mask remains",
+        "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+        "gripper_depth_exclusion_available_camera_count": 0,
+        "gripper_depth_exclusion_missing_cameras": [
+          "brics-odroid-001_cam0",
+          "brics-odroid-008_cam1",
+          "brics-odroid-011_cam0",
+          "brics-odroid-014_cam1",
+          "brics-odroid-015_cam0",
+          "brics-odroid-017_cam1",
+          "brics-odroid-019_cam1",
+          "brics-odroid-021_cam1",
+          "brics-odroid-023_cam0",
+          "brics-odroid-024_cam1",
+          "brics-odroid-027_cam0"
+        ],
+        "observation_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep0/staged/episode_0000/reusable_dynamics_observations.json",
+        "observation_sha256": "af1f9c52ca5ce334b6c139bf00b8b4e6d0aec4c1834f7e97d5352b96a2ebcf8f"
+      }
+    },
+    "2": {
+      "data_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep2/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.pkl",
+      "data_sha256": "137380b2f75ba24d5ff1950c35fd7335ff7aae2b865e47d465fb2ad9899844c8",
+      "metadata_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep2/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.meta.json",
+      "metadata_result_sha256": "f346974d0fdc1e2c14fccad047eb84927a3ef61e83a91c34e490890f6d744c09",
+      "metadata_sha256": "239ec84445c9d62644a351804b5049a077d2dbe6d6dcd100b928aa51ef3ccc5c",
+      "observation_depth_qa": {
+        "accepted_camera_count": 12,
+        "claim_boundary": "the public aligned release lacks rendered URDF depth masks; any gripper depth inside the propagated object mask remains",
+        "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+        "gripper_depth_exclusion_available_camera_count": 0,
+        "gripper_depth_exclusion_missing_cameras": [
+          "brics-odroid-001_cam0",
+          "brics-odroid-008_cam1",
+          "brics-odroid-010_cam1",
+          "brics-odroid-011_cam0",
+          "brics-odroid-014_cam1",
+          "brics-odroid-015_cam0",
+          "brics-odroid-017_cam1",
+          "brics-odroid-019_cam1",
+          "brics-odroid-021_cam1",
+          "brics-odroid-023_cam0",
+          "brics-odroid-024_cam1",
+          "brics-odroid-027_cam0"
+        ],
+        "observation_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep2/staged/episode_0000/reusable_dynamics_observations.json",
+        "observation_sha256": "6a130265d7ce3b3498ef59870c31c06d00bc8b7cfb7e19aab9983e9aca894171"
+      }
+    },
+    "8": {
+      "data_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep8/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.pkl",
+      "data_sha256": "ba651507e8ab919c24c83535bd5c014bb5c309fcaa84badbfb8f9575ecfa9f6d",
+      "metadata_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep8/controller_bundle/final_data_sparse_controller_k1_per_group_support-positive-y-to-positive-z.meta.json",
+      "metadata_result_sha256": "7f01420670401844746cc3681c71876fb519b235d618aae57b097fc87a7bfa59",
+      "metadata_sha256": "0d78d5cd0240bbe4c9ae3c8566fc9e166248502988900355f6684e9c528c3eee",
+      "observation_depth_qa": {
+        "accepted_camera_count": 10,
+        "claim_boundary": "the public aligned release lacks rendered URDF depth masks; any gripper depth inside the propagated object mask remains",
+        "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+        "gripper_depth_exclusion_available_camera_count": 0,
+        "gripper_depth_exclusion_missing_cameras": [
+          "brics-odroid-001_cam0",
+          "brics-odroid-008_cam1",
+          "brics-odroid-011_cam0",
+          "brics-odroid-014_cam1",
+          "brics-odroid-015_cam0",
+          "brics-odroid-017_cam1",
+          "brics-odroid-021_cam1",
+          "brics-odroid-023_cam0",
+          "brics-odroid-024_cam1",
+          "brics-odroid-027_cam0"
+        ],
+        "observation_path": "/mnt/lexar4tb/datasets/deform360/reusable-dynamics-081-v1/calibration/ep8/staged/episode_0000/reusable_dynamics_observations.json",
+        "observation_sha256": "c6e2d0950eee36a70629e8c129d352cc60509bdef75ca34916f6ebae8ca35568"
+      }
+    }
+  },
+  "deterministic_repeat": {
+    "by_episode": {
+      "0": {
+        "driven_rmse_m": 2.2512226394155732e-07,
+        "maximum_rmse_m": 1.7579694031155668e-05,
+        "zero_rmse_m": 1.7579694031155668e-05
+      },
+      "2": {
+        "driven_rmse_m": 1.1057020856242161e-05,
+        "maximum_rmse_m": 1.7472031686338596e-05,
+        "zero_rmse_m": 1.7472031686338596e-05
+      },
+      "8": {
+        "driven_rmse_m": 2.6519228413235396e-05,
+        "maximum_rmse_m": 2.6519228413235396e-05,
+        "zero_rmse_m": 1.8322496543987654e-05
+      }
+    },
+    "maximum_rmse_m": 2.6519228413235396e-05
+  },
+  "direct_graph_support_and_physical_diagnostics": {
+    "0": {
+      "controller_point_count": 1,
+      "controller_spring_count": 1,
+      "direct_graph_support_fraction": 0.0015822784810126582,
+      "maximum_driven_or_zero_p99_relative_edge_strain": 0.013420879244804361,
+      "maximum_initial_association_distance_m": 0.013222817598021833,
+      "object_point_count": 632
+    },
+    "2": {
+      "controller_point_count": 1,
+      "controller_spring_count": 1,
+      "direct_graph_support_fraction": 0.0017605633802816902,
+      "maximum_driven_or_zero_p99_relative_edge_strain": 0.014215437173843354,
+      "maximum_initial_association_distance_m": 0.011181365570719297,
+      "object_point_count": 568
+    },
+    "8": {
+      "controller_point_count": 2,
+      "controller_spring_count": 1,
+      "direct_graph_support_fraction": 0.001392757660167131,
+      "maximum_driven_or_zero_p99_relative_edge_strain": 0.022903546094894214,
+      "maximum_initial_association_distance_m": 0.039124622053664154,
+      "object_point_count": 718
+    }
+  },
+  "fixed_action_trust": {
+    "autonomous_drift": 0.1,
+    "base_action_response": 0.4,
+    "effective_action_response": "base_action_response / controller_count",
+    "prediction": "x0 + effective_action_response * (x_driven - x_zero) + autonomous_drift * (x_zero - x0)",
+    "source_developed": true,
+    "weights_may_change_after_freeze": false
+  },
+  "gates": {
+    "conformal_radius": true,
+    "deterministic_replay": true,
+    "execution_balanced_cd_transfer": true,
+    "execution_balanced_track_transfer": true,
+    "late_horizon_cd_transfer": true,
+    "late_horizon_track_transfer": true,
+    "maximum_per_episode_degradation": true,
+    "minimum_joint_win_episode_count": true,
+    "physical_strain": true,
+    "pooled_matches_or_beats_single_source_controls": false
+  },
+  "information_boundary": {
+    "calibration_outcomes_read_once": true,
+    "method_or_hyperparameter_changes_allowed": false,
+    "source_selection_frozen_before_scoring": true,
+    "target_episode_read": false
+  },
+  "joint_win_episode_count": 2,
+  "maximum_p99_relative_edge_strain": 0.022903546094894214,
+  "maximum_per_episode_degradation_fraction": 0.015305300236070211,
+  "passed": false,
+  "per_episode_comparison": {
+    "0": {
+      "joint_win_vs_persistence": true,
+      "maximum_metric_degradation_fraction_vs_persistence": -0.12562188442006514,
+      "median_single_source_chamfer_m": 0.013045676906429958,
+      "median_single_source_track_rmse_m": 0.011763579455551362,
+      "pooled_matches_or_beats_median_single_source_both_metrics": false
+    },
+    "2": {
+      "joint_win_vs_persistence": true,
+      "maximum_metric_degradation_fraction_vs_persistence": -0.2834244007235129,
+      "median_single_source_chamfer_m": 0.012912303813902924,
+      "median_single_source_track_rmse_m": 0.01290600768328543,
+      "pooled_matches_or_beats_median_single_source_both_metrics": false
+    },
+    "8": {
+      "joint_win_vs_persistence": false,
+      "maximum_metric_degradation_fraction_vs_persistence": 0.015305300236070211,
+      "median_single_source_chamfer_m": 0.007396933221212184,
+      "median_single_source_track_rmse_m": 0.0074097896101127155,
+      "pooled_matches_or_beats_median_single_source_both_metrics": true
+    }
+  },
+  "pooled_matches_or_beats_single_source_episode_count": 1,
+  "pooled_raw": {
+    "by_episode": {
+      "0": {
+        "metrics": {
+          "early": {
+            "chamfer_m": 0.006172434244656083,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.0058815149887683545,
+            "persistence_track_rmse_m": 0.005594903932080087,
+            "relative_score_vs_persistence": 1.0681327736708415,
+            "track_rmse_m": 0.006080554057132218
+          },
+          "full": {
+            "chamfer_m": 0.010654763522161884,
+            "frame_count": 75,
+            "persistence_chamfer_m": 0.015253142138439856,
+            "persistence_track_rmse_m": 0.014021199436233584,
+            "relative_score_vs_persistence": 0.7078036519784533,
+            "track_rmse_m": 0.010054296626694496
+          },
+          "late": {
+            "chamfer_m": 0.01399721272819282,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.02358188150464216,
+            "persistence_track_rmse_m": 0.02180556380265223,
+            "relative_score_vs_persistence": 0.5941229852739555,
+            "track_rmse_m": 0.012967508050794918
+          },
+          "middle": {
+            "chamfer_m": 0.011794643593636746,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.01629602992190905,
+            "persistence_track_rmse_m": 0.014663130573968432,
+            "relative_score_vs_persistence": 0.7408929859851263,
+            "track_rmse_m": 0.01111482777215635
+          }
+        }
+      },
+      "2": {
+        "metrics": {
+          "early": {
+            "chamfer_m": 0.010372545379735759,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.006233688233900307,
+            "persistence_track_rmse_m": 0.006246805101649988,
+            "relative_score_vs_persistence": 1.7059192204158795,
+            "track_rmse_m": 0.01091871858669602
+          },
+          "full": {
+            "chamfer_m": 0.016607067141258966,
+            "frame_count": 75,
+            "persistence_chamfer_m": 0.0183521378384752,
+            "persistence_track_rmse_m": 0.019869264002227556,
+            "relative_score_vs_persistence": 0.9345252093998828,
+            "track_rmse_m": 0.0191567236083827
+          },
+          "late": {
+            "chamfer_m": 0.022126439399882278,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.029000479715606466,
+            "persistence_track_rmse_m": 0.03234580485994878,
+            "relative_score_vs_persistence": 0.8102942875716203,
+            "track_rmse_m": 0.027740426214635894
+          },
+          "middle": {
+            "chamfer_m": 0.01732221664415886,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.01982224556591884,
+            "persistence_track_rmse_m": 0.0210151820450839,
+            "relative_score_vs_persistence": 0.884496814526255,
+            "track_rmse_m": 0.018811026023816176
+          }
+        }
+      },
+      "8": {
+        "metrics": {
+          "early": {
+            "chamfer_m": 0.007607354978035209,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.0030574026620915494,
+            "persistence_track_rmse_m": 0.003132326991623106,
+            "relative_score_vs_persistence": 2.537799783148194,
+            "track_rmse_m": 0.008104657646823426
+          },
+          "full": {
+            "chamfer_m": 0.010260377017347987,
+            "frame_count": 75,
+            "persistence_chamfer_m": 0.007285427564981992,
+            "persistence_track_rmse_m": 0.007194684151152339,
+            "relative_score_vs_persistence": 1.536264301646709,
+            "track_rmse_m": 0.011973293631868465
+          },
+          "late": {
+            "chamfer_m": 0.011629166262059261,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.008726502569787768,
+            "persistence_track_rmse_m": 0.008835386323615814,
+            "relative_score_vs_persistence": 1.490912843062428,
+            "track_rmse_m": 0.014571314277645984
+          },
+          "middle": {
+            "chamfer_m": 0.011544609811949493,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.010072377463066657,
+            "persistence_track_rmse_m": 0.009616339138218095,
+            "relative_score_vs_persistence": 1.2616975711043168,
+            "track_rmse_m": 0.01324390897113599
+          }
+        }
+      }
+    },
+    "execution_balanced": {
+      "early": {
+        "chamfer_improvement_fraction_vs_persistence": -0.5918382633721693,
+        "chamfer_m": 0.008050778200809017,
+        "persistence_chamfer_m": 0.00505753529492007,
+        "persistence_track_rmse_m": 0.004991345341784394,
+        "track_improvement_fraction_vs_persistence": -0.6764972548581509,
+        "track_rmse_m": 0.008367976763550555
+      },
+      "full": {
+        "chamfer_improvement_fraction_vs_persistence": 0.08237812607367616,
+        "chamfer_m": 0.01250740256025628,
+        "persistence_chamfer_m": 0.013630235847299018,
+        "persistence_track_rmse_m": 0.013695049196537827,
+        "track_improvement_fraction_vs_persistence": -0.0024136770378122966,
+        "track_rmse_m": 0.01372810462231522
+      },
+      "late": {
+        "chamfer_improvement_fraction_vs_persistence": 0.22111069365642197,
+        "chamfer_m": 0.015917606130044785,
+        "persistence_chamfer_m": 0.02043628793001213,
+        "persistence_track_rmse_m": 0.020995584995405606,
+        "track_improvement_fraction_vs_persistence": 0.1223670983657855,
+        "track_rmse_m": 0.0184264161810256
+      },
+      "middle": {
+        "chamfer_improvement_fraction_vs_persistence": 0.11970350163760496,
+        "chamfer_m": 0.013553823349915032,
+        "persistence_chamfer_m": 0.015396884316964848,
+        "persistence_track_rmse_m": 0.015098217252423473,
+        "track_improvement_fraction_vs_persistence": 0.04691258035383456,
+        "track_rmse_m": 0.014389920922369506
+      }
+    },
+    "physical_parameters": {
+      "dashpot_damping": 100.0,
+      "drag_damping": 10.0,
+      "init_spring_Y": 10000.0
+    }
+  },
+  "pooled_trusted": {
+    "by_episode": {
+      "0": {
+        "driven_result_sha256": "ce4fb24d8bdc40d452ad78b69634094de3dafce49c414f4888d7796f3b45b9b7",
+        "effective_action_response": 0.4,
+        "metrics": {
+          "early": {
+            "chamfer_m": 0.005553519731254803,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.0058815149887683545,
+            "persistence_track_rmse_m": 0.005594903932080087,
+            "relative_score_vs_persistence": 0.9447712857476787,
+            "track_rmse_m": 0.005288917010199953
+          },
+          "full": {
+            "chamfer_m": 0.01333701367968194,
+            "frame_count": 75,
+            "persistence_chamfer_m": 0.015253142138439856,
+            "persistence_track_rmse_m": 0.014021199436233584,
+            "relative_score_vs_persistence": 0.8646809648510084,
+            "track_rmse_m": 0.011987898572557375
+          },
+          "late": {
+            "chamfer_m": 0.019870580061334023,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.02358188150464216,
+            "persistence_track_rmse_m": 0.02180556380265223,
+            "relative_score_vs_persistence": 0.8276244692461022,
+            "track_rmse_m": 0.017719818233277843
+          },
+          "middle": {
+            "chamfer_m": 0.014586941246456988,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.01629602992190905,
+            "persistence_track_rmse_m": 0.014663130573968432,
+            "relative_score_vs_persistence": 0.8893140800529351,
+            "track_rmse_m": 0.012954960474194328
+          }
+        },
+        "zero_result_sha256": "9b420684847c70e09fe4d3ba45d4e106d2e4b961bffccc05dba818444dc6ec99"
+      },
+      "2": {
+        "driven_result_sha256": "bf30ac635a0f5aae9f55c56bbd4836d9e12ed30f9d71801121b4f543297b65ad",
+        "effective_action_response": 0.4,
+        "metrics": {
+          "early": {
+            "chamfer_m": 0.005252657704107302,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.006233688233900307,
+            "persistence_track_rmse_m": 0.006246805101649988,
+            "relative_score_vs_persistence": 0.7957862395803732,
+            "track_rmse_m": 0.004678532785760665
+          },
+          "full": {
+            "chamfer_m": 0.013150694169610061,
+            "frame_count": 75,
+            "persistence_chamfer_m": 0.0183521378384752,
+            "persistence_track_rmse_m": 0.019869264002227556,
+            "relative_score_vs_persistence": 0.6830609689372807,
+            "track_rmse_m": 0.01290600768328543
+          },
+          "late": {
+            "chamfer_m": 0.01976428624488579,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.029000479715606466,
+            "persistence_track_rmse_m": 0.03234580485994878,
+            "relative_score_vs_persistence": 0.658376166618851,
+            "track_rmse_m": 0.020547235704724266
+          },
+          "middle": {
+            "chamfer_m": 0.014435138559837093,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.01982224556591884,
+            "persistence_track_rmse_m": 0.0210151820450839,
+            "relative_score_vs_persistence": 0.6851266923872297,
+            "track_rmse_m": 0.013492254559371359
+          }
+        },
+        "zero_result_sha256": "dfd64f69d1c833b48ea51d3f180b51fbee4dc06f8c42760b9fd0eb4359e5d945"
+      },
+      "8": {
+        "driven_result_sha256": "0c6adec266dcf44e4f2f8b013e97391573683d62a04e4d175ac71812a55a187d",
+        "effective_action_response": 0.2,
+        "metrics": {
+          "early": {
+            "chamfer_m": 0.003233467266931289,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.0030574026620915494,
+            "persistence_track_rmse_m": 0.003132326991623106,
+            "relative_score_vs_persistence": 1.0291902813397984,
+            "track_rmse_m": 0.003134814781733499
+          },
+          "full": {
+            "chamfer_m": 0.007396933221212184,
+            "frame_count": 75,
+            "persistence_chamfer_m": 0.007285427564981992,
+            "persistence_track_rmse_m": 0.007194684151152339,
+            "relative_score_vs_persistence": 1.0012339725938444,
+            "track_rmse_m": 0.007102323436243034
+          },
+          "late": {
+            "chamfer_m": 0.008879672581870295,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.008726502569787768,
+            "persistence_track_rmse_m": 0.008835386323615814,
+            "relative_score_vs_persistence": 1.0021316740946018,
+            "track_rmse_m": 0.008717973481737787
+          },
+          "middle": {
+            "chamfer_m": 0.010077659814834971,
+            "frame_count": 25,
+            "persistence_chamfer_m": 0.010072377463066657,
+            "persistence_track_rmse_m": 0.009616339138218095,
+            "relative_score_vs_persistence": 0.991830887856225,
+            "track_rmse_m": 0.009454182045257812
+          }
+        },
+        "zero_result_sha256": "17dcbc4ec410c53f181784d9f48c6087e8e8ba70d58d9151035c31c85a83cd6c"
+      }
+    },
+    "execution_balanced": {
+      "early": {
+        "chamfer_improvement_fraction_vs_persistence": 0.07467149618674242,
+        "chamfer_m": 0.004679881567431131,
+        "persistence_chamfer_m": 0.00505753529492007,
+        "persistence_track_rmse_m": 0.004991345341784394,
+        "track_improvement_fraction_vs_persistence": 0.1250011315913685,
+        "track_rmse_m": 0.0043674215258980385
+      },
+      "full": {
+        "chamfer_improvement_fraction_vs_persistence": 0.17133639627571567,
+        "chamfer_m": 0.011294880356834729,
+        "persistence_chamfer_m": 0.013630235847299018,
+        "persistence_track_rmse_m": 0.013695049196537827,
+        "track_improvement_fraction_vs_persistence": 0.2212214980536022,
+        "track_rmse_m": 0.010665409897361948
+      },
+      "late": {
+        "chamfer_improvement_fraction_vs_persistence": 0.20868638090835984,
+        "chamfer_m": 0.016171512962696703,
+        "persistence_chamfer_m": 0.02043628793001213,
+        "persistence_track_rmse_m": 0.020995584995405606,
+        "track_improvement_fraction_vs_persistence": 0.2540490865099897,
+        "track_rmse_m": 0.015661675806579966
+      },
+      "middle": {
+        "chamfer_improvement_fraction_vs_persistence": 0.1535140310162722,
+        "chamfer_m": 0.013033246540376351,
+        "persistence_chamfer_m": 0.015396884316964848,
+        "persistence_track_rmse_m": 0.015098217252423473,
+        "track_improvement_fraction_vs_persistence": 0.20738109940185537,
+        "track_rmse_m": 0.011967132359607833
+      }
+    },
+    "physical_parameters": {
+      "dashpot_damping": 100.0,
+      "drag_damping": 10.0,
+      "init_spring_Y": 10000.0
+    }
+  },
+  "primary_method": "pooled_cardinality_normalized_action_trust",
+  "protocol_id": "deform360-reusable-dynamics-081-v1",
+  "registered_ranges_half_open": {
+    "early": [
+      1,
+      26
+    ],
+    "full": [
+      1,
+      76
+    ],
+    "late": [
+      51,
+      76
+    ],
+    "middle": [
+      26,
+      51
+    ]
+  },
+  "result_sha256": "3a85a727f423d9822a705b38046fe0a4d96ae964e08f173636b48cdb70b89785",
+  "schema_version": 1,
+  "single_source_trusted_controls": {
+    "single-source-1": {
+      "by_episode": {
+        "0": {
+          "driven_result_sha256": "c6f3d4acd34ddafa58c1b32ab7db559d38416fdc1493e622995fb2c66e56474e",
+          "effective_action_response": 0.4,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.0050853759524054345,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.0058815149887683545,
+              "persistence_track_rmse_m": 0.005594903932080087,
+              "relative_score_vs_persistence": 0.8720931697363846,
+              "track_rmse_m": 0.004920993604060519
+            },
+            "full": {
+              "chamfer_m": 0.012779058103481122,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.015253142138439856,
+              "persistence_track_rmse_m": 0.014021199436233584,
+              "relative_score_vs_persistence": 0.8321769354941466,
+              "track_rmse_m": 0.011589299080926202
+            },
+            "late": {
+              "chamfer_m": 0.019389523958595428,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.02358188150464216,
+              "persistence_track_rmse_m": 0.02180556380265223,
+              "relative_score_vs_persistence": 0.8105760005087359,
+              "track_rmse_m": 0.017421135584960765
+            },
+            "middle": {
+              "chamfer_m": 0.013862274399442504,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.01629602992190905,
+              "persistence_track_rmse_m": 0.014663130573968432,
+              "relative_score_vs_persistence": 0.8490346188760779,
+              "track_rmse_m": 0.012425768053757327
+            }
+          },
+          "zero_result_sha256": "639c0b41b356bd0e33f66b7ea051b3921e3fde6c3e2556f940ac8c7398752064"
+        },
+        "2": {
+          "driven_result_sha256": "49b45126b46dead6608356142a0ad4e4a6881d5d6f934280ab05232dad110a72",
+          "effective_action_response": 0.4,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.006223156674548116,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.006233688233900307,
+              "persistence_track_rmse_m": 0.006246805101649988,
+              "relative_score_vs_persistence": 0.9901321043794481,
+              "track_rmse_m": 0.006134073179999609
+            },
+            "full": {
+              "chamfer_m": 0.012912303813902924,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.0183521378384752,
+              "persistence_track_rmse_m": 0.019869264002227556,
+              "relative_score_vs_persistence": 0.6817728989395244,
+              "track_rmse_m": 0.013112919178554063
+            },
+            "late": {
+              "chamfer_m": 0.01866032509655679,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.029000479715606466,
+              "persistence_track_rmse_m": 0.03234580485994878,
+              "relative_score_vs_persistence": 0.6256712554385948,
+              "track_rmse_m": 0.019662809982290294
+            },
+            "middle": {
+              "chamfer_m": 0.013853429670603863,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.01982224556591884,
+              "persistence_track_rmse_m": 0.0210151820450839,
+              "relative_score_vs_persistence": 0.6716341300781725,
+              "track_rmse_m": 0.013541874373372287
+            }
+          },
+          "zero_result_sha256": "34f8a6318ae7d4ad077c8e70fbeb0f6447c9d2713e6f41fd01013f3c17eff95e"
+        },
+        "8": {
+          "driven_result_sha256": "ad241bbd5529d0bac746492eca4cc3f168a03ebffe475a26a1f77bbae7d17ab5",
+          "effective_action_response": 0.2,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.0034198366155552863,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.0030574026620915494,
+              "persistence_track_rmse_m": 0.003132326991623106,
+              "relative_score_vs_persistence": 1.11145437826951,
+              "track_rmse_m": 0.003459234391531001
+            },
+            "full": {
+              "chamfer_m": 0.007084038932583847,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.007285427564981992,
+              "persistence_track_rmse_m": 0.007194684151152339,
+              "relative_score_vs_persistence": 1.0011275836434463,
+              "track_rmse_m": 0.0074097896101127155
+            },
+            "late": {
+              "chamfer_m": 0.008486280683229458,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.008726502569787768,
+              "persistence_track_rmse_m": 0.008835386323615814,
+              "relative_score_vs_persistence": 1.0374105102745879,
+              "track_rmse_m": 0.00973967816790527
+            },
+            "middle": {
+              "chamfer_m": 0.009345999498966794,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.010072377463066657,
+              "persistence_track_rmse_m": 0.009616339138218095,
+              "relative_score_vs_persistence": 0.9334791948347985,
+              "track_rmse_m": 0.009030456270901871
+            }
+          },
+          "zero_result_sha256": "77dd7c13ffa0dfc02b06ffcfec8023a259b7b0925c1ec6fd461d7733e7872bc8"
+        }
+      },
+      "execution_balanced": {
+        "early": {
+          "chamfer_improvement_fraction_vs_persistence": 0.029278862551724086,
+          "chamfer_m": 0.004909456414169612,
+          "persistence_chamfer_m": 0.00505753529492007,
+          "persistence_track_rmse_m": 0.004991345341784394,
+          "track_improvement_fraction_vs_persistence": 0.03070213327813927,
+          "track_rmse_m": 0.00483810039186371
+        },
+        "full": {
+          "chamfer_improvement_fraction_vs_persistence": 0.1984633472926369,
+          "chamfer_m": 0.010925133616655964,
+          "persistence_chamfer_m": 0.013630235847299018,
+          "persistence_track_rmse_m": 0.013695049196537827,
+          "track_improvement_fraction_vs_persistence": 0.21840349241653825,
+          "track_rmse_m": 0.010704002623197659
+        },
+        "late": {
+          "chamfer_improvement_fraction_vs_persistence": 0.24095592608348926,
+          "chamfer_m": 0.015512043246127224,
+          "persistence_chamfer_m": 0.02043628793001213,
+          "persistence_track_rmse_m": 0.020995584995405606,
+          "track_improvement_fraction_vs_persistence": 0.2566115884934446,
+          "track_rmse_m": 0.015607874578385443
+        },
+        "middle": {
+          "chamfer_improvement_fraction_vs_persistence": 0.19763629216470285,
+          "chamfer_m": 0.012353901189671052,
+          "persistence_chamfer_m": 0.015396884316964848,
+          "persistence_track_rmse_m": 0.015098217252423473,
+          "track_improvement_fraction_vs_persistence": 0.22732381550071626,
+          "track_rmse_m": 0.011666032899343828
+        }
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 50000.0
+      }
+    },
+    "single-source-4": {
+      "by_episode": {
+        "0": {
+          "driven_result_sha256": "11319ea501a433c031d1e23eb957575a4da8a62855b6b72dde7469733bce6b59",
+          "effective_action_response": 0.4,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.005373645272844169,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.0058815149887683545,
+              "persistence_track_rmse_m": 0.005594903932080087,
+              "relative_score_vs_persistence": 0.9179785337155039,
+              "track_rmse_m": 0.0051602202911048365
+            },
+            "full": {
+              "chamfer_m": 0.013045676906429958,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.015253142138439856,
+              "persistence_track_rmse_m": 0.014021199436233584,
+              "relative_score_vs_persistence": 0.8471316230538407,
+              "track_rmse_m": 0.011763579455551362
+            },
+            "late": {
+              "chamfer_m": 0.01948038297224928,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.02358188150464216,
+              "persistence_track_rmse_m": 0.02180556380265223,
+              "relative_score_vs_persistence": 0.8120822816467363,
+              "track_rmse_m": 0.017402811193504543
+            },
+            "middle": {
+              "chamfer_m": 0.014283002474196423,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.01629602992190905,
+              "persistence_track_rmse_m": 0.014663130573968432,
+              "relative_score_vs_persistence": 0.8722393836223206,
+              "track_rmse_m": 0.012727706882044703
+            }
+          },
+          "zero_result_sha256": "62a4da045d1e5e5bb7ae2664776ac73ee0d43075a983ee9b8acdf5d1eaf1e1e0"
+        },
+        "2": {
+          "driven_result_sha256": "26dfdae6aac054b5a015351babc85800c3ef2737a28f6bcade51518eb62d398f",
+          "effective_action_response": 0.4,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.005032995408097005,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.006233688233900307,
+              "persistence_track_rmse_m": 0.006246805101649988,
+              "relative_score_vs_persistence": 0.7733030994640833,
+              "track_rmse_m": 0.004617761704334955
+            },
+            "full": {
+              "chamfer_m": 0.01264046427231917,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.0183521378384752,
+              "persistence_track_rmse_m": 0.019869264002227556,
+              "relative_score_vs_persistence": 0.6624158691986006,
+              "track_rmse_m": 0.012638011158982021
+            },
+            "late": {
+              "chamfer_m": 0.019241933474579684,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.029000479715606466,
+              "persistence_track_rmse_m": 0.03234580485994878,
+              "relative_score_vs_persistence": 0.6417983038775223,
+              "track_rmse_m": 0.020057395398619476
+            },
+            "middle": {
+              "chamfer_m": 0.013646463934280819,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.01982224556591884,
+              "persistence_track_rmse_m": 0.0210151820450839,
+              "relative_score_vs_persistence": 0.6592045616621678,
+              "track_rmse_m": 0.013238876373991633
+            }
+          },
+          "zero_result_sha256": "825c0da816cd9d9023c2dc03fc5b062b07eaa6441010ea35c6b4638eeed6afb4"
+        },
+        "8": {
+          "driven_result_sha256": "d2158884499f1ea0cb87fb254db25ba6e8f6e079310d13bbed4a4a9fb310382e",
+          "effective_action_response": 0.2,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.0033960657373361043,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.0030574026620915494,
+              "persistence_track_rmse_m": 0.003132326991623106,
+              "relative_score_vs_persistence": 1.0771472080621036,
+              "track_rmse_m": 0.00326866524544282
+            },
+            "full": {
+              "chamfer_m": 0.007706722699801561,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.007285427564981992,
+              "persistence_track_rmse_m": 0.007194684151152339,
+              "relative_score_vs_persistence": 1.0454792880945258,
+              "track_rmse_m": 0.0074330546711489495
+            },
+            "late": {
+              "chamfer_m": 0.00943217661609926,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.008726502569787768,
+              "persistence_track_rmse_m": 0.008835386323615814,
+              "relative_score_vs_persistence": 1.074164219585236,
+              "track_rmse_m": 0.009431446387823606
+            },
+            "middle": {
+              "chamfer_m": 0.01029192574596932,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.010072377463066657,
+              "persistence_track_rmse_m": 0.009616339138218095,
+              "relative_score_vs_persistence": 1.0099997111342631,
+              "track_rmse_m": 0.009599052380180424
+            }
+          },
+          "zero_result_sha256": "70794cb350911c9b7b8f81f9e9a830a056611707337fbc67ebe777b9c9b27369"
+        }
+      },
+      "execution_balanced": {
+        "early": {
+          "chamfer_improvement_fraction_vs_persistence": 0.09028768537769112,
+          "chamfer_m": 0.004600902139425759,
+          "persistence_chamfer_m": 0.00505753529492007,
+          "persistence_track_rmse_m": 0.004991345341784394,
+          "track_improvement_fraction_vs_persistence": 0.12871538316104128,
+          "track_rmse_m": 0.004348882413627537
+        },
+        "full": {
+          "chamfer_improvement_fraction_vs_persistence": 0.18336302094220291,
+          "chamfer_m": 0.011130954626183564,
+          "persistence_chamfer_m": 0.013630235847299018,
+          "persistence_track_rmse_m": 0.013695049196537827,
+          "track_improvement_fraction_vs_persistence": 0.2251544133741829,
+          "track_rmse_m": 0.010611548428560777
+        },
+        "late": {
+          "chamfer_improvement_fraction_vs_persistence": 0.21455903622937383,
+          "chamfer_m": 0.016051497687642743,
+          "persistence_chamfer_m": 0.02043628793001213,
+          "persistence_track_rmse_m": 0.020995584995405606,
+          "track_improvement_fraction_vs_persistence": 0.25553153214181656,
+          "track_rmse_m": 0.015630550993315877
+        },
+        "middle": {
+          "chamfer_improvement_fraction_vs_persistence": 0.17252972814478582,
+          "chamfer_m": 0.012740464051482187,
+          "persistence_chamfer_m": 0.015396884316964848,
+          "persistence_track_rmse_m": 0.015098217252423473,
+          "track_improvement_fraction_vs_persistence": 0.21479392695611177,
+          "track_rmse_m": 0.01185521187873892
+        }
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 30000.0
+      }
+    },
+    "single-source-6": {
+      "by_episode": {
+        "0": {
+          "driven_result_sha256": "ce4fb24d8bdc40d452ad78b69634094de3dafce49c414f4888d7796f3b45b9b7",
+          "effective_action_response": 0.4,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.005553519731254803,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.0058815149887683545,
+              "persistence_track_rmse_m": 0.005594903932080087,
+              "relative_score_vs_persistence": 0.9447712857476787,
+              "track_rmse_m": 0.005288917010199953
+            },
+            "full": {
+              "chamfer_m": 0.01333701367968194,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.015253142138439856,
+              "persistence_track_rmse_m": 0.014021199436233584,
+              "relative_score_vs_persistence": 0.8646809648510084,
+              "track_rmse_m": 0.011987898572557375
+            },
+            "late": {
+              "chamfer_m": 0.019870580061334023,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.02358188150464216,
+              "persistence_track_rmse_m": 0.02180556380265223,
+              "relative_score_vs_persistence": 0.8276244692461022,
+              "track_rmse_m": 0.017719818233277843
+            },
+            "middle": {
+              "chamfer_m": 0.014586941246456988,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.01629602992190905,
+              "persistence_track_rmse_m": 0.014663130573968432,
+              "relative_score_vs_persistence": 0.8893140800529351,
+              "track_rmse_m": 0.012954960474194328
+            }
+          },
+          "zero_result_sha256": "9b420684847c70e09fe4d3ba45d4e106d2e4b961bffccc05dba818444dc6ec99"
+        },
+        "2": {
+          "driven_result_sha256": "bf30ac635a0f5aae9f55c56bbd4836d9e12ed30f9d71801121b4f543297b65ad",
+          "effective_action_response": 0.4,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.005252657704107302,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.006233688233900307,
+              "persistence_track_rmse_m": 0.006246805101649988,
+              "relative_score_vs_persistence": 0.7957862395803732,
+              "track_rmse_m": 0.004678532785760665
+            },
+            "full": {
+              "chamfer_m": 0.013150694169610061,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.0183521378384752,
+              "persistence_track_rmse_m": 0.019869264002227556,
+              "relative_score_vs_persistence": 0.6830609689372807,
+              "track_rmse_m": 0.01290600768328543
+            },
+            "late": {
+              "chamfer_m": 0.01976428624488579,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.029000479715606466,
+              "persistence_track_rmse_m": 0.03234580485994878,
+              "relative_score_vs_persistence": 0.658376166618851,
+              "track_rmse_m": 0.020547235704724266
+            },
+            "middle": {
+              "chamfer_m": 0.014435138559837093,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.01982224556591884,
+              "persistence_track_rmse_m": 0.0210151820450839,
+              "relative_score_vs_persistence": 0.6851266923872297,
+              "track_rmse_m": 0.013492254559371359
+            }
+          },
+          "zero_result_sha256": "dfd64f69d1c833b48ea51d3f180b51fbee4dc06f8c42760b9fd0eb4359e5d945"
+        },
+        "8": {
+          "driven_result_sha256": "0c6adec266dcf44e4f2f8b013e97391573683d62a04e4d175ac71812a55a187d",
+          "effective_action_response": 0.2,
+          "metrics": {
+            "early": {
+              "chamfer_m": 0.003233467266931289,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.0030574026620915494,
+              "persistence_track_rmse_m": 0.003132326991623106,
+              "relative_score_vs_persistence": 1.0291902813397984,
+              "track_rmse_m": 0.003134814781733499
+            },
+            "full": {
+              "chamfer_m": 0.007396933221212184,
+              "frame_count": 75,
+              "persistence_chamfer_m": 0.007285427564981992,
+              "persistence_track_rmse_m": 0.007194684151152339,
+              "relative_score_vs_persistence": 1.0012339725938444,
+              "track_rmse_m": 0.007102323436243034
+            },
+            "late": {
+              "chamfer_m": 0.008879672581870295,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.008726502569787768,
+              "persistence_track_rmse_m": 0.008835386323615814,
+              "relative_score_vs_persistence": 1.0021316740946018,
+              "track_rmse_m": 0.008717973481737787
+            },
+            "middle": {
+              "chamfer_m": 0.010077659814834971,
+              "frame_count": 25,
+              "persistence_chamfer_m": 0.010072377463066657,
+              "persistence_track_rmse_m": 0.009616339138218095,
+              "relative_score_vs_persistence": 0.991830887856225,
+              "track_rmse_m": 0.009454182045257812
+            }
+          },
+          "zero_result_sha256": "17dcbc4ec410c53f181784d9f48c6087e8e8ba70d58d9151035c31c85a83cd6c"
+        }
+      },
+      "execution_balanced": {
+        "early": {
+          "chamfer_improvement_fraction_vs_persistence": 0.07467149618674242,
+          "chamfer_m": 0.004679881567431131,
+          "persistence_chamfer_m": 0.00505753529492007,
+          "persistence_track_rmse_m": 0.004991345341784394,
+          "track_improvement_fraction_vs_persistence": 0.1250011315913685,
+          "track_rmse_m": 0.0043674215258980385
+        },
+        "full": {
+          "chamfer_improvement_fraction_vs_persistence": 0.17133639627571567,
+          "chamfer_m": 0.011294880356834729,
+          "persistence_chamfer_m": 0.013630235847299018,
+          "persistence_track_rmse_m": 0.013695049196537827,
+          "track_improvement_fraction_vs_persistence": 0.2212214980536022,
+          "track_rmse_m": 0.010665409897361948
+        },
+        "late": {
+          "chamfer_improvement_fraction_vs_persistence": 0.20868638090835984,
+          "chamfer_m": 0.016171512962696703,
+          "persistence_chamfer_m": 0.02043628793001213,
+          "persistence_track_rmse_m": 0.020995584995405606,
+          "track_improvement_fraction_vs_persistence": 0.2540490865099897,
+          "track_rmse_m": 0.015661675806579966
+        },
+        "middle": {
+          "chamfer_improvement_fraction_vs_persistence": 0.1535140310162722,
+          "chamfer_m": 0.013033246540376351,
+          "persistence_chamfer_m": 0.015396884316964848,
+          "persistence_track_rmse_m": 0.015098217252423473,
+          "track_improvement_fraction_vs_persistence": 0.20738109940185537,
+          "track_rmse_m": 0.011967132359607833
+        }
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 10000.0
+      }
+    }
+  },
+  "source_selection_file_sha256": "fb29a7d8d5b6e858335523d1768a9a0673fa3b3a887de2ccf2b6d95d58e09b91",
+  "source_selection_result_sha256": "945fcc1bfa5a279a38d6e1b854be19b5ef6b2ec3917d28658decb5be7d33ffef",
+  "split_sha256": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92"
+}

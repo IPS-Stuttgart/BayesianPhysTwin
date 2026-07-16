@@ -362,16 +362,43 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
         The caller may use camera calibration to choose one candidate per view.
         """
 
+        rgb = self._first_frame_rgb(video_path)
+        return self.initial_mask_candidates_from_rgb_with_reference(
+            rgb,
+            camera=video_path.parent.name,
+            video_name=video_path.name,
+            reference_rgb=reference_rgb,
+            reference_mask=reference_mask,
+            reference_camera=reference_camera,
+            maximum_candidates=maximum_candidates,
+            include_below_appearance_threshold=include_below_appearance_threshold,
+        )
+
+    def initial_mask_candidates_from_rgb_with_reference(
+        self,
+        rgb: np.ndarray,
+        *,
+        camera: str,
+        video_name: str,
+        reference_rgb: np.ndarray,
+        reference_mask: np.ndarray,
+        reference_camera: str,
+        maximum_candidates: int = 4,
+        include_below_appearance_threshold: bool = False,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Return ranked candidates for an explicitly supplied observation frame."""
+
         _require(maximum_candidates >= 1, "maximum_candidates must be positive")
 
-        rgb = self._first_frame_rgb(video_path)
+        image = np.asarray(rgb, dtype=np.uint8)
+        _require(image.ndim == 3 and image.shape[2] == 3, "RGB image must be HxWx3")
         reference_descriptor = mask_appearance_descriptor(reference_rgb, reference_mask)
-        annotations = self._automatic_annotations(rgb)
+        annotations = self._automatic_annotations(image)
         candidates = []
         for index, annotation in enumerate(annotations):
             mask = np.asarray(annotation["segmentation"], dtype=bool)
             diagnostics = deformable_object_mask_candidate_diagnostics(
-                rgb, mask, self.config
+                image, mask, self.config
             )
             basic_eligible = bool(
                 diagnostics["area_pixels"] >= self.config.minimum_mask_region_area
@@ -382,7 +409,7 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
                 >= self.config.minimum_foreground_contrast
             )
             if basic_eligible:
-                descriptor = mask_appearance_descriptor(rgb, mask)
+                descriptor = mask_appearance_descriptor(image, mask)
                 similarity = mask_appearance_similarity(
                     reference_descriptor, descriptor
                 )
@@ -436,7 +463,7 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
         eligible = [candidate for candidate in candidates if candidate[0] >= 0.0]
         _require(
             eligible,
-            f"SAM2 found no reference-consistent mask for {video_path}",
+            f"SAM2 found no reference-consistent mask for {camera}/{video_name}",
         )
         ranked = sorted(eligible, key=lambda item: (-item[0], item[1]))
         ranked_records = [
@@ -451,8 +478,8 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
             for score, candidate_index, diagnostic in ranked[:maximum_candidates]
         ]
         summary = {
-            "camera": video_path.parent.name,
-            "video": video_path.name,
+            "camera": camera,
+            "video": video_name,
             "initialization": "source-reference-appearance",
             "reference_camera": reference_camera,
             "reference_descriptor": reference_descriptor,

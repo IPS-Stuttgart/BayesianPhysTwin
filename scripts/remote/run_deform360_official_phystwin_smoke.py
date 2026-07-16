@@ -258,6 +258,19 @@ def _parse_args() -> argparse.Namespace:
             "diagnostic for already settled, support-confined motion."
         ),
     )
+    parser.add_argument(
+        "--reusable-dynamics-calibration",
+        action="store_true",
+        help=(
+            "Label this opt-in rollout as frozen reusable-dynamics calibration "
+            "evidence instead of source-only evidence."
+        ),
+    )
+    parser.add_argument(
+        "--report-edge-strain",
+        action="store_true",
+        help="Report object-spring strain without changing the simulated rollout.",
+    )
     return parser.parse_args()
 
 
@@ -429,6 +442,36 @@ def main() -> int:
         validity,
         intervals=intervals,
     )
+    object_edge_strain = None
+    if args.report_edge_strain:
+        spring_indices = (
+            wp.to_torch(simulator.wp_springs, requires_grad=False)
+            .cpu()
+            .numpy()[: trainer.num_object_springs]
+            .astype(np.int64, copy=False)
+        )
+        rest_lengths = (
+            wp.to_torch(simulator.wp_rest_lengths, requires_grad=False)
+            .cpu()
+            .numpy()[: trainer.num_object_springs]
+        )
+        edge_vectors = (
+            trajectory[:, spring_indices[:, 0]]
+            - trajectory[:, spring_indices[:, 1]]
+        )
+        edge_lengths = np.linalg.norm(edge_vectors, axis=-1)
+        relative_strain = np.abs(
+            edge_lengths / np.maximum(rest_lengths[None], 1e-12) - 1.0
+        )
+        object_edge_strain = {
+            "object_spring_count": int(len(rest_lengths)),
+            "p99_absolute_relative_strain": float(
+                np.quantile(relative_strain, 0.99)
+            ),
+            "maximum_absolute_relative_strain": float(
+                np.max(relative_strain, initial=0.0)
+            ),
+        }
 
     trajectory_path = args.output_dir / "official_phystwin_trajectory.npz"
     np.savez_compressed(trajectory_path, vertices=trajectory)
@@ -437,7 +480,7 @@ def main() -> int:
     finite_values = trajectory[np.isfinite(trajectory)]
     payload = {
         "passed": bool(finite_by_frame.all()),
-        "source_only_smoke": True,
+        "source_only_smoke": not args.reusable_dynamics_calibration,
         "official_phystwin_revision": _git_revision(args.official_phystwin_repo),
         "data_sha256": _sha256_file(args.data),
         "config_sha256": _sha256_file(args.config),
@@ -529,6 +572,10 @@ def main() -> int:
         "trajectory_sha256": _sha256_file(trajectory_path),
         "metrics": metrics,
     }
+    if args.reusable_dynamics_calibration:
+        payload["reusable_dynamics_calibration"] = True
+    if object_edge_strain is not None:
+        payload["object_edge_strain"] = object_edge_strain
     output_path = args.output_dir / "official_phystwin_smoke.json"
     output_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"

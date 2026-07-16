@@ -1,0 +1,198 @@
+{
+  "accepted_cameras": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-008_cam1",
+    "brics-odroid-011_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam0",
+    "brics-odroid-017_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-023_cam0",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "artifact_kind": "Deform360ReusableDynamicsObservations",
+  "claim_boundary": "observation artifacts only; no dynamics claim",
+  "episode_id": 0,
+  "implementation_revision": {
+    "cotracker": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "deform360_processing": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+  },
+  "information_boundary": {
+    "calibration_observation_pipeline_completed": true,
+    "method_or_hyperparameter_changes_allowed": false,
+    "prediction_metrics_computed": false,
+    "target_media_read": false
+  },
+  "input_sha256": {
+    "parent_protocol": "581258b1ae01f501b69a02b4af2da5d13097c2f7aa9584f51b725108302e3658",
+    "pipeline_protocol": "8692dc89651a91dcb1732a7b7185983ffd0aa2312aeb2bd202bafaf85309d7e8",
+    "reconstruction": "590620c3eb72326b61311ae3bdb94c5fcab6500ce6ed6c1dbd0320dd15c1ea5d",
+    "tracking_checkpoint": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834"
+  },
+  "object_id": "081-stripe-rope",
+  "output_sha256": {
+    "control_points": {
+      "calibrate": "64be320dcf59d9af753c21a4f05d1afb352893c6ab2a1fbe9a24516eb4f61a7f",
+      "final_data": "1065855d40000793141e18d6a18f30699c18b21bf6252b0e5523805d1d05c2fd",
+      "meta": "bc69fd49d024fb894ebdacd43df74cd04c4842ca367b3eb3feb02070d5a295a8",
+      "split": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92",
+      "start_ply": "6b9cf1fd965217c29913d1b150e5e969d3644d9033ce5d860f2ecd4e3d5d067b"
+    },
+    "depth": {
+      "brics-odroid-001_cam0": "91ea6bbe8e497757e7018cbe4f63b829eab9ffdb47f8037758708a1e5c79ab7e",
+      "brics-odroid-008_cam1": "fd64a1a8e0f03ce3d31a97542ec8288a5c56408192ed52c7f17f2a968df1d8ba",
+      "brics-odroid-011_cam0": "70f100bd1a68c9e8711c69f0e4789662d79629aa896e4688a90a0217a6d9b6b0",
+      "brics-odroid-014_cam1": "285978e1d561aabb630580f62a3c86d597b36f6301a0cffb3742e10408d32f34",
+      "brics-odroid-015_cam0": "69c58ec3d337bae1e657b4cb51504c14b74511a3ad4ed4fc876d464d60e9c4f1",
+      "brics-odroid-017_cam1": "463e630fe5bc7770174fb76c2e7a08708cbe9c2a93126f42cbbd9d3b7e23f973",
+      "brics-odroid-019_cam1": "4017f8314e4b2bded7328f8cf9bad4204dd17c7c3e80c180686f9cca4816a205",
+      "brics-odroid-021_cam1": "41f754fa497ed7569c6f4688301ffbd4fd8e4a223e1d1ac72080f95a6c1a2298",
+      "brics-odroid-023_cam0": "eeb3edefecbf630d005bf8dcb5f27a47e8b72fea49ca43f01d84e9146e18326b",
+      "brics-odroid-024_cam1": "c4ef6ee532b1359db5297ada509f0c04c7af1d63d0ef3597b52b2aa182f43382",
+      "brics-odroid-027_cam0": "92ec8da538e19f50faf7f630483b139c46a9ba2fb3593b07096500163c144868"
+    },
+    "point_cloud": {
+      "000000.npz": "7e4e641502898ae9eb89fa4c8cf9abb3eaee6db5b9d62937cb367c65c9060877",
+      "000001.npz": "5273f2a8450e730c57e10d840efc78d94744392d18ced4422b3746cf73c38ac7",
+      "000002.npz": "ebca7d79b8b55fba100dc186549f217ef8c12d9c46a04205e7699b4a50df4144",
+      "000003.npz": "ffc3b5d82f753f99acb85df8ac6d47ffaf0de2d869bbfbf2413a6f6ff962ad40",
+      "000004.npz": "1db7c6171bd2e502cafb37caadc4ce58410fa7b52b6c3bf26edc8a6beeab57d5",
+      "000005.npz": "280a61a46abc747a9696ce2b005fde8a67513be222628109bc3582bd2e037336",
+      "000006.npz": "0bfa2f80f5b15c2e6bcb48ccf3f99bc459ed208893898b12d8138faef617668d",
+      "000007.npz": "4107edcd477004151dbcf59fbbdb8b464904e2142784118ba7aeabc0d13d143a",
+      "000008.npz": "fd9e665e53da67c32b52c460561a575b06351e80c143896ae49e581f87087209",
+      "000009.npz": "d18a37cfe6bbb471a6bdc8333f5fbea72d5b371b4408174b98e7b766242190b0",
+      "000010.npz": "d1e4ac19c4c0924a932c7581570e058d8105955f4976e54b1622189425912c3f",
+      "000011.npz": "bb41cf4993d5e7b78ea640b4d6e12ecaaa1aed92d0e01ab2ab2c19f606921744",
+      "000012.npz": "6d90e9ac5da652f0e0b6b6d7f9c97807c1024380dbe13bfa55a04ec1666690ed",
+      "000013.npz": "e63c1ed74f2f3411105266a67ab12260d76f96f69026e650db36d7a7ba099a68",
+      "000014.npz": "7e6a2eaef6733226ad13e608d0b5f302b4d2286ced25d2244ee4ccd13dbf6daa",
+      "000015.npz": "237c0777524c6d1559c0a138d5e0aee75f215c2818fa6e7f5e883d9a66da8f46",
+      "000016.npz": "8dc50df3f5899b64431fa793d8a70d72495e5646cb4ed0684697c93d46243e11",
+      "000017.npz": "23f453200c152218193b4cf30eecefb9ed2186709e46fb62ce4afe3ba9036d6f",
+      "000018.npz": "3c89faf5c5a20ec08989d4a86366a52a3d157bb5925d84d402061c3cc7976a81",
+      "000019.npz": "b5e4387bc973041da5201a4cff310135783a4ae9d703c4033de99293731326ac",
+      "000020.npz": "2479466e1e51723489cc0f07591d048d8fc3b11c87150f16810e1ceff575e440",
+      "000021.npz": "1fd1dd30b9f10a6eae8f678971d38e79f969f01ebc791e3cb8d797f0707d7368",
+      "000022.npz": "e1e6c8eb7ccf5d87e83136b9e728d9859de66576f6df82ffe5b185a340e2cd78",
+      "000023.npz": "19e6de07c50a229eb16ede94ce976e31a2621e22677e8f9c568c4b2c4142ec84",
+      "000024.npz": "0f220a324e2d7a048a5268c1e343567aa682ca36cd094b6a2b1aa9cbfbdc7e7e",
+      "000025.npz": "5b0d806b4564a4eeb5f5bc3eb78ec3ddfdda40afe4156b902f112b7a1a8e59a9",
+      "000026.npz": "b4ee70cfb839cd0bece3130945a0ccea2c6ff01a60ebad376a29c111df72a102",
+      "000027.npz": "62cded2e4c480bf3fd09b69c231267eada0d66bd880336acfbbb12cb6c727f40",
+      "000028.npz": "06c0e73dd73c3bd3b031c2a9ba13c4904d6f39e9c1aecfb73bf10b49cf2c1320",
+      "000029.npz": "5a6d6d293ea0d9e3b1644a9018dda2f362a47e65019a648591cd86ff3812baa8",
+      "000030.npz": "4950fdb7e6472d26bdb2006ce642876b9f803e24aebfa465e0c099ba4b8e502f",
+      "000031.npz": "48b2838f3b9f6dc707155a7966588848a797d486ddf82cc18b1a6c98c0a34af5",
+      "000032.npz": "a0cf23927ca4b43d89343464b82ecd18481fe61ff52b152963d31841de615520",
+      "000033.npz": "950bc7b151b6cc9ae1711b25e89b1ddd5cd37db433e8652afe9625e8360591a7",
+      "000034.npz": "674e64f03ba81ad0b06fb25731c6c7e974a0219c76976a019a1bc321be7e427c",
+      "000035.npz": "85eefd862333f74b2382a147c8da74d6858513a0764b352aeceda14e4066e2d8",
+      "000036.npz": "5b5bea56e045eac53d978e6fa0816ab0f40554cede958edf7d745a9b27d1681f",
+      "000037.npz": "cc7d08e21568a773d4047b35a0c0f743a6106ce543bba67229bb273961f29ecd",
+      "000038.npz": "6ade89b72a72bd6de908e961eb51f3c6811b29c9e53db375fadbebbc8efc411a",
+      "000039.npz": "17f18ba1bcc415614220e7492d6fe59776edc6b148613c2afef0d0ca1d72244e",
+      "000040.npz": "db7d790246c890b216c204736c9b1a59dc733a7e189e18278457edd7349a11b2",
+      "000041.npz": "ffc94988a5bf31b49662dbd2e90cb336e9b8ebf30baccb16977c8ca2b6273543",
+      "000042.npz": "aef517d6677d1d507a9fb0fe1a174692581bbd8a4bc479bc5e50a2bc8f20a147",
+      "000043.npz": "cc32d9d33ca4b62ecae4baf7db52a302f1967c26eadc980b406007d69d02637c",
+      "000044.npz": "a00572795ab78dfd9efbcde3e2340690334b4c062f722886c2fee922d6d372dc",
+      "000045.npz": "2d20fe18c39ed9cb0c0a6f8fd7ccf0474318c5715cc2b38afe14e7aa32b0cfa3",
+      "000046.npz": "644a3c6a4a5ba5eee1d131b0c462764fbf6125b2f229ba253d153ef97dfbede7",
+      "000047.npz": "a35e2a4fe1f49c6200abc0040bec66748dc7d226a0c1d4fc924168e451525aff",
+      "000048.npz": "3e5c3ed9e4b671c2037ad5fafb4f8aec89f3060d01819e3a405527141fa31e27",
+      "000049.npz": "f3228a79ef26426a05ffae60938195dd07c18f1fe07a494b195a0cff47642333",
+      "000050.npz": "f26b7e824789f64f8e162cfbb0de911df252dc65604265cc5fe0a97ba65974da",
+      "000051.npz": "6ea713ff514b28010501b55e4f4a4a943f24e0bf1781dc82d19859e9d010a066",
+      "000052.npz": "1c64e93eeda6492818febced62c0e4ddb9504c034d7d5fe1c02794eacb69dfeb",
+      "000053.npz": "124e6fa2115f9f515c58be9b254c78e7a9261929d7191dbf84f2aed13f789565",
+      "000054.npz": "a98fcf48749790dc240a568b25a7a54e67ffa664cf6133a58e705466b84dbde9",
+      "000055.npz": "688a7cde1fb6d5f5ab94f41950e06d4d83bd8a2991aaf231c8bb281add28d0f7",
+      "000056.npz": "186faf9eef8b80224333c3ea1fde4732ea754aeacf172f590cffe84a16742455",
+      "000057.npz": "5f68701a3f3f47c0b6f479595ed79d90596e261a3fbbe3f517e0122a0fee8dea",
+      "000058.npz": "11fd6bc8f99aaefb4ba2602b9e9a003f1792e1c3474894a108eb54dabdd5e066",
+      "000059.npz": "b718b7bbc800f6c2f4456c9a1d3537df5af6ff191997a26d6abdc691ba3cdb5b",
+      "000060.npz": "5abe46ef158f15d5d13142ee17f3215b606dad2ee109c6b244ebc55611a890b5",
+      "000061.npz": "1c0a4ac1c6a5d56efe5296a435fe57683f49c67657c64766de0cba6d66a2353d",
+      "000062.npz": "a3ddd7e585ba53a1ea8d84d33d05faa4a11f8e0fbd18d90e5608bb7a3dc7a7be",
+      "000063.npz": "6ab862e17972700ab32697777287e423dc3b4d59c4023adc8c25bc86802185f8",
+      "000064.npz": "0ee591b8d7ea78fca5da5119f8a8910cd48a55a8e49143ec2f6258d9bd5c1004",
+      "000065.npz": "3ddb491c60d98797b85ece396dd2f3eab07fca3f6cfeb0343d1f589122f264b8",
+      "000066.npz": "7e30ee951f497b3a19aaa0c649910b08f26c58a10dc3b11c6e0c318b7f4f5cc8",
+      "000067.npz": "e3c10cfd7d5b1c84a2e23c60c185ea3ee464eec5eb117ffc3be1d9b0d1533669",
+      "000068.npz": "138857e89aab86af6e9ff44f4ad70252c2690fcab7d44d1b9986ef8db194b75d",
+      "000069.npz": "c4eaeafe6d1abb0267eec3a5881727d2302d00834996561fefbff50758886940",
+      "000070.npz": "7aa16a1c54f12248fc2cd8e4d3af5b2fb2d429c4b5421427310d637087e71100",
+      "000071.npz": "bc78ae2219e1506e8d7607bd6ac92473437114daa04a92d150bb343953c4806e",
+      "000072.npz": "e42075f4207f7a159e5aa7169a481f0003033acaf495dd4ef1bb7d2289d3291e",
+      "000073.npz": "49650247d04c6da046048778744bb0004cf82cbd5d893aa28e743d305f4c2e13",
+      "000074.npz": "901422f032bfd815a915a8129943ff818ff258dfa8f020f1623d6e3a0faa5f29",
+      "000075.npz": "d5d759ad1a7e6d647e68c76a95b04df9648c36ca67d3f830d60244def8d7cc6f"
+    },
+    "tracking": {
+      "brics-odroid-001_cam0": {
+        "tracking.meta.json": "a73f4edfb1d55bd5051213dc2289b86edb641c40196c459fbc3ec112d0c84bd1",
+        "vel.h5": "b766d2c6a20f08b243bafd08eede274a27710ca4848ff47ee71b3354fb2e1a94",
+        "visibility.h5": "ddae5dbc16c359bbb2b220f535998631da32fcab951eb6d12d8856352fc578b9"
+      },
+      "brics-odroid-008_cam1": {
+        "tracking.meta.json": "f48a484c943e1fd75476513a805547a4e72bb514bfb4f4a3a98e1dabfa61d412",
+        "vel.h5": "724fc7c178b63f2c71877831f462fdeff1bd3cccd7c58535539cec2597e1f17f",
+        "visibility.h5": "b7870543ba4057f475e2901ba86bd461d963ec7de88c8edbaacaecf1023ec304"
+      },
+      "brics-odroid-011_cam0": {
+        "tracking.meta.json": "f506396a9bd6e730a43473a2ac658b78690c243d0cbe85b8b7203dc0af9afe33",
+        "vel.h5": "fdbbeba268f37fc8dac37949d5dd40c34a04d1f59d07f954f3ffa3480126f606",
+        "visibility.h5": "451f0289427849f41b9abad11bc39131b775be9e92d18a31b255fffc1ca416c8"
+      },
+      "brics-odroid-014_cam1": {
+        "tracking.meta.json": "eb280333c28db8b339c60a9008e8332dcb4eb8364a9a6be3ce3387086bea83e1",
+        "vel.h5": "12c1298a41662d1cd185f27c6448237dd5c10b5527dd68b823fde7be070861eb",
+        "visibility.h5": "f3ade3239e0a6959618d121294187b051fa978bd48dc6a0b53d7e0f75c382278"
+      },
+      "brics-odroid-015_cam0": {
+        "tracking.meta.json": "3fdce3e1900079c31ff1e2834d8dfe831cc9aa60a36befe1cf619c21a87e5448",
+        "vel.h5": "61e8adfefa3528dc26a22386a1d8bbc4a727e738c800b8c2ef9e788754e2d645",
+        "visibility.h5": "f25360a9ae9acb15c4c26efa049166b41ffbf23a20804d98c9c7573b3e9ba4d3"
+      },
+      "brics-odroid-017_cam1": {
+        "tracking.meta.json": "1701ff5a08994da63a31ee37d26406f67f5be8e28d6940f5ebc097dc442c2bb4",
+        "vel.h5": "23d6c402e612e9c6d19cc3b87e789d48270ce761c0914ba5ab6656f111abf10c",
+        "visibility.h5": "bbc8c954fbe67a713ec80f939ace7f519750a59edf7e0315cbea35ced116a338"
+      },
+      "brics-odroid-019_cam1": {
+        "tracking.meta.json": "1b8aeeeddf52ff367ec1c91fb5d64be5e0e2225c1c602cb252b7b4ed79f991c8",
+        "vel.h5": "4a10725d1ac17c8c3c9431982a6afab4dbbad7488ac02ce26a8e74bef8b66844",
+        "visibility.h5": "4b808aa19a6f2c60d3e0eb1f5779f136aa4fbbebbc10d1c0ebd0b43b85ab33bf"
+      },
+      "brics-odroid-021_cam1": {
+        "tracking.meta.json": "213625d3f57372fa995c6dddac878e4d8c9d837095ab2909e928d46a2c6f0528",
+        "vel.h5": "acbc60822c26c8ef4d0b8e8cb597ebbe71ff6c5fae993923255983e4b41b230d",
+        "visibility.h5": "978e8fac921616056e98dfacc8fd4b695edafad196942a133eaa3c6c6f952410"
+      },
+      "brics-odroid-023_cam0": {
+        "tracking.meta.json": "20f0ad210868ad79b6bd7bc1c52d7520f1428dcb3b44784b30d1f1f9a87ee992",
+        "vel.h5": "78f9073c869433f9287684c983cd32831100877f4d94142d817be8f8f6795598",
+        "visibility.h5": "6ea086db9480c7be065d94151696cedca2181114dfb7c0f83512cb4fcab22aa3"
+      },
+      "brics-odroid-024_cam1": {
+        "tracking.meta.json": "4e016f9c5a68aef65d557f0475f00e41785c590fe0f0348d8749153a9bc97eb9",
+        "vel.h5": "a3131256b82a0f4a0030b7a54b50784a116c30647825f32f747e9d75b7ba224f",
+        "visibility.h5": "808d362dc07df3996522705f0b5502c1ec27de1f5bfb3e1f012b20fde6f98c6f"
+      },
+      "brics-odroid-027_cam0": {
+        "tracking.meta.json": "0a2f01dfd2921a162847ed45869a8a89c84a2b9afeb6e19e6504a0b1ff899fd1",
+        "vel.h5": "6b591dcd1379498e7eb3dc60d88914b39847be53aeb9a6a896805733ba5a763d",
+        "visibility.h5": "73f0f3f34830fec988a02e0bd3a2d0977eb80e0f03529edea56a2ae3f4bba1da"
+      }
+    }
+  },
+  "parent_config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+  "pipeline_config_sha256": "e32c20e98442e7112a79c1d54de3f58a4608d9c382739f05a10085df53d42039",
+  "point_cloud_frame_count": 76,
+  "result_sha256": "97d6bc1dc841ec789d0b237c2622880c2726ec32ebbc5255e22e85ee03b5dc91",
+  "schema_version": 1,
+  "staged_episode_id": 0
+}

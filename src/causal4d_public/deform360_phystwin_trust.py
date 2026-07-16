@@ -190,8 +190,15 @@ def load_official_phystwin_trust_episode(
     driven_result_path: str | Path,
     zero_action_result_path: str | Path,
     split_path: str | Path,
+    *,
+    evidence_scope: str = "source-only",
 ) -> CausalTrustEpisode:
     """Load a matched official-Warp source pair with checksum validation."""
+
+    _require(
+        evidence_scope in ("source-only", "reusable-calibration"),
+        "official Warp evidence scope is invalid",
+    )
 
     data_file = Path(data_path)
     driven_result_file = Path(driven_result_path)
@@ -201,10 +208,17 @@ def load_official_phystwin_trust_episode(
     zero_result = json.loads(zero_result_file.read_text(encoding="utf-8"))
     for label, result in (("driven", driven_result), ("zero-action", zero_result)):
         _require(result.get("passed") is True, f"{label} Warp rollout failed")
-        _require(
-            result.get("source_only_smoke") is True,
-            f"{label} Warp rollout is not source-only",
-        )
+        if evidence_scope == "source-only":
+            _require(
+                result.get("source_only_smoke") is True,
+                f"{label} Warp rollout is not source-only",
+            )
+        else:
+            _require(
+                result.get("source_only_smoke") is False
+                and result.get("reusable_dynamics_calibration") is True,
+                f"{label} Warp rollout is not reusable calibration evidence",
+            )
         _require(
             result.get("data_sha256") == _sha256_file(data_file),
             f"{label} source data checksum changed",
@@ -221,7 +235,6 @@ def load_official_phystwin_trust_episode(
         "config_overrides",
         "support_dynamics",
         "effective_inertia",
-        "contact_transmission",
         "frame_count",
         "num_controller_points",
         "num_original_points",
@@ -230,15 +243,35 @@ def load_official_phystwin_trust_episode(
             driven_result.get(key) == zero_result.get(key),
             f"matched Warp pair differs in {key}",
         )
+    driven_contact = driven_result.get("contact_transmission")
+    zero_contact = zero_result.get("contact_transmission")
+    if driven_contact is not None and zero_contact is not None:
+        _require(
+            driven_contact == zero_contact,
+            "matched Warp pair differs in contact_transmission",
+        )
+    elif driven_contact is not None or zero_contact is not None:
+        available_contact = driven_contact or zero_contact
+        _require(
+            isinstance(available_contact, Mapping),
+            "legacy contact-transmission diagnostic is malformed",
+        )
+        scale = available_contact.get(
+            "controller_spring_stiffness_scale", available_contact.get("scale")
+        )
+        _require(
+            np.isclose(float(scale), 1.0)
+            and available_contact.get("override_applied", False) is False,
+            "legacy contact-transmission diagnostic is not the default",
+        )
+    driven_actuation = driven_result.get("realized_actuation")
+    driven_scale = (
+        1.0
+        if driven_actuation is None
+        else float(driven_actuation.get("controller_displacement_scale", np.nan))
+    )
     _require(
-        np.isclose(
-            float(
-                driven_result.get("realized_actuation", {}).get(
-                    "controller_displacement_scale", np.nan
-                )
-            ),
-            1.0,
-        ),
+        np.isclose(driven_scale, 1.0),
         "driven rollout does not use the full source action",
     )
     _require(
@@ -509,6 +542,23 @@ def causal_control_variate_prediction(
     )
 
 
+def cardinality_normalized_causal_prediction(
+    episode: CausalTrustEpisode,
+    *,
+    base_action_response: float,
+    autonomous_drift: float,
+) -> np.ndarray:
+    """Apply fixed trust after normalizing action response by controller count."""
+
+    weights = CausalTrustWeights(
+        action_response=base_action_response / float(episode.controller_count),
+        autonomous_drift=autonomous_drift,
+    )
+    return causal_control_variate_prediction(
+        episode.target_m[:1], episode.driven_m, episode.zero_action_m, weights
+    )
+
+
 def _symmetric_chamfer_m(predicted: np.ndarray, target: np.ndarray) -> float:
     # Candidate grids call this thousands of times; per-query thread pools are
     # slower than serial KD-tree queries at Deform360's point counts.
@@ -560,6 +610,19 @@ def _score_interval(
     }
 
 
+def score_causal_trust_interval(
+    episode: CausalTrustEpisode,
+    predicted_m: np.ndarray,
+    start: int,
+    stop: int,
+) -> dict[str, float | int]:
+    """Score a frozen prediction over an explicitly registered frame interval."""
+
+    metrics = _score_interval(episode, predicted_m, start, stop)
+    metrics["relative_score_vs_persistence"] = _relative_score(metrics)
+    return metrics
+
+
 def _relative_score(metrics: Mapping[str, float | int]) -> float:
     persistence_track = float(metrics["persistence_track_rmse_m"])
     persistence_chamfer = float(metrics["persistence_chamfer_m"])
@@ -601,6 +664,36 @@ def _candidate_metrics(
     )
     metrics["relative_score_vs_persistence"] = _relative_score(metrics)
     return metrics
+
+
+def evaluate_cardinality_normalized_fixed_trust(
+    episode: CausalTrustEpisode,
+    *,
+    base_action_response: float,
+    autonomous_drift: float,
+) -> dict[str, Any]:
+    """Score one source episode under a fixed cardinality-normalized policy."""
+
+    predicted = cardinality_normalized_causal_prediction(
+        episode,
+        base_action_response=base_action_response,
+        autonomous_drift=autonomous_drift,
+    )
+    train = _score_interval(episode, predicted, 0, episode.train_stop_frame)
+    tail = _score_interval(
+        episode, predicted, episode.train_stop_frame, len(episode.target_m)
+    )
+    for metrics in (train, tail):
+        metrics["relative_score_vs_persistence"] = _relative_score(metrics)
+    return {
+        "controller_count": int(episode.controller_count),
+        "effective_action_response": float(
+            base_action_response / float(episode.controller_count)
+        ),
+        "autonomous_drift": float(autonomous_drift),
+        "train": train,
+        "untouched_tail": tail,
+    }
 
 
 def _candidate_grid(
@@ -1693,13 +1786,16 @@ def write_regime_gated_source_causal_trust_artifact(
 __all__ = [
     "CausalTrustEpisode",
     "CausalTrustWeights",
+    "cardinality_normalized_causal_prediction",
     "causal_control_variate_prediction",
+    "evaluate_cardinality_normalized_fixed_trust",
     "fit_cardinality_normalized_source_causal_trust",
     "fit_regime_gated_source_causal_trust",
     "fit_source_causal_trust",
     "load_cardinality_trust_protocol",
     "load_contact_anchored_causal_trust_protocol",
     "load_official_phystwin_trust_episode",
+    "score_causal_trust_interval",
     "validate_cardinality_normalized_source_causal_trust_artifact",
     "validate_regime_gated_source_causal_trust_artifact",
     "validate_source_causal_trust_artifact",

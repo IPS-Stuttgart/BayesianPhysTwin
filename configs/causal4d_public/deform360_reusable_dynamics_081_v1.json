@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-reusable-dynamics-081-v1",
+    "status": "locked-before-calibration-dynamics-media-read",
+    "frozen_at": "2026-07-16T23:00:00+02:00",
+    "code_repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "dataset_repository": "brownu/deform360",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "object_id": "081-stripe-rope",
+    "parent_association": {
+      "protocol_id": "deform360-reusable-material-association-v2",
+      "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+      "mask_summary_file_sha256": "6f2ea1024390b22456f4c3922bdae7aa0704d1756a561427cc2c2f4e3515b5b4",
+      "prefix_summary_file_sha256": "596e25ddf0c38949f05bf4842253653d4defdac033389e24235ff8a1ca895599",
+      "conjunctive_mask_gate_required": true,
+      "conjunctive_prefix_gate_required": true
+    },
+    "episode_partition": {
+      "source_selection": [1, 4, 6],
+      "independent_calibration": [0, 2, 8],
+      "sealed_target": [5],
+      "target_may_open_only_after_all_calibration_gates_pass": true
+    },
+    "frame_protocol": {
+      "raw_aligned_range_half_open": [110, 191],
+      "raw_frame_count": 81,
+      "tracking_tail_frames_skipped": 5,
+      "processed_frame_count": 76,
+      "initial_state_frame": 0,
+      "source_selection_range_half_open": [1, 60],
+      "source_untouched_tail_range_half_open": [60, 76],
+      "independent_calibration_prediction_range_half_open": [1, 76],
+      "horizon_ranges_half_open": {
+        "early": [1, 26],
+        "middle": [26, 51],
+        "late": [51, 76]
+      },
+      "future_frame_allowed_for_initial_association": false
+    },
+    "official_phystwin": {
+      "repository": "https://github.com/Jianghanxiao/PhysTwin",
+      "upstream_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+      "source_split_sha256": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92",
+      "support_mode": "official-ground",
+      "fixed_overrides": {
+        "controller_max_neighbours": 1,
+        "controller_radius": 0.015,
+        "reverse_z": false
+      },
+      "source_parameter_grid": {
+        "init_spring_Y": [10000.0, 30000.0, 50000.0, 80000.0],
+        "drag_damping": [1.0, 3.0, 10.0],
+        "dashpot_damping": [50.0, 100.0]
+      },
+      "zero_control_scale": 0.0,
+      "driven_control_scale": 1.0,
+      "deterministic_repeat_max_rmse_m": 0.0001,
+      "maximum_p99_relative_edge_strain": 0.5
+    },
+    "source_inputs": [
+      {
+        "episode_id": 1,
+        "controller_count": 1,
+        "controller_bundle_sha256": "e2b8e3c5744908be72da8d1497de60c83442ab1760038129bb50b1070d9e03f2",
+        "frozen_driven_trajectory_sha256": "5a3059758c769ab8db0bf55525b006b9a3eef65dbf28ba1889d01bfd2f3eca7e",
+        "frozen_zero_trajectory_sha256": "aa9d672ba27e3e5f1905a94f859c72bed5ae8c60c6db6073aa2c553eec6f9b68"
+      },
+      {
+        "episode_id": 4,
+        "controller_count": 1,
+        "controller_bundle_sha256": "ae9212b230a8c99d32d97aba185cf05715ce1cc18b949fd2c20bb172ac1e0220",
+        "frozen_driven_trajectory_sha256": "4e5a6ad049f17d9a66379085d43fe5443f77f30f2957b2f7e808765544ee0a11",
+        "frozen_zero_trajectory_sha256": "8a4984bd348fd0a88f08ea89eb081a91d49da26f54a7fee545e66e90dc0fc81d"
+      },
+      {
+        "episode_id": 6,
+        "controller_count": 2,
+        "controller_bundle_sha256": "fd9f77544c3feea46656c6b1bdf7488a16d79d2318c7a65a2327ae0284f7306f",
+        "frozen_driven_trajectory_sha256": "5f085a289ed66f18031faab2c1b3536b3d3fe68444fd8ab3b3b99eb1f2363895",
+        "frozen_zero_trajectory_sha256": "0d96b72fc1cd97979a97288a0048743ec2d3399bfe7c95dbba3e3c90751bac9a"
+      }
+    ],
+    "source_selection": {
+      "candidate_count": 24,
+      "candidate_generation_uses_source_episodes_only": true,
+      "candidate_prediction_arm": "raw_official_phystwin_driven",
+      "invalid_candidate_policy": "retain the attempted candidate in the audit and reject it jointly if any source rollout is non-finite; never substitute or tune around the failure",
+      "score_range_half_open": [1, 60],
+      "score": "execution-balanced mean over source episodes of 0.5 * (track_rmse / persistence_track_rmse + symmetric_cd / persistence_symmetric_cd)",
+      "lower_is_better": true,
+      "tie_break_order": ["init_spring_Y", "drag_damping", "dashpot_damping"],
+      "pooled_selection": "one physical tuple minimizes the score jointly over episodes 1, 4, and 6",
+      "single_episode_controls": "select one tuple independently on each source episode; apply all three frozen tuples to every calibration episode and report their median",
+      "selection_artifact_must_be_frozen_before_calibration_scoring": true,
+      "calibration_or_target_outcomes_allowed": false
+    },
+    "fixed_action_trust": {
+      "source_developed": true,
+      "base_action_response": 0.4,
+      "autonomous_drift": 0.1,
+      "effective_action_response": "base_action_response / controller_count",
+      "prediction": "x0 + effective_action_response * (x_driven - x_zero) + autonomous_drift * (x_zero - x0)",
+      "weights_may_change_after_freeze": false
+    },
+    "comparison_arms": [
+      "constant_persistence",
+      "pooled_raw_official_phystwin",
+      "pooled_cardinality_normalized_action_trust",
+      "matched_single_source_cardinality_normalized_controls"
+    ],
+    "primary_method": "pooled_cardinality_normalized_action_trust",
+    "source_compatibility_gates": {
+      "minimum_untouched_tail_track_improvement_fraction": 0.0,
+      "minimum_untouched_tail_cd_improvement_fraction": 0.0,
+      "minimum_joint_win_episode_count": 2,
+      "maximum_per_episode_degradation_fraction_per_metric": 0.25,
+      "all_gates_conjunctive": true,
+      "on_fail": "freeze the source incompatibility and do not score calibration dynamics"
+    },
+    "calibration_gates": {
+      "minimum_execution_balanced_cd_improvement_fraction": 0.05,
+      "minimum_execution_balanced_track_improvement_fraction": 0.05,
+      "minimum_joint_win_episode_count": 2,
+      "maximum_per_episode_degradation_fraction_per_metric": 0.10,
+      "minimum_late_horizon_cd_improvement_fraction": 0.03,
+      "minimum_late_horizon_track_improvement_fraction": 0.03,
+      "pooled_must_match_or_beat_median_single_source_control_episode_count": 2,
+      "conformal": {
+        "unit": "execution",
+        "calibration_episode_count": 3,
+        "nominal_marginal_coverage": 0.75,
+        "order_statistic_rank": 3,
+        "nonconformity": "execution-level 90th percentile material-point Euclidean error in metres",
+        "maximum_allowed_radius_m": 0.075,
+        "coverage_claim_before_target": false
+      },
+      "all_gates_conjunctive": true,
+      "on_fail": "freeze the calibration result and keep episode 5 sealed",
+      "on_pass": "freeze method and conformal radius before opening episode 5"
+    },
+    "reported_metrics": [
+      "direct_graph_support",
+      "future_manual_track_rmse_m",
+      "future_symmetric_chamfer_m",
+      "early_middle_late_breakdown",
+      "execution_level_conformal_radius_m",
+      "predictive_coverage",
+      "interval_width",
+      "deterministic_repeat_rmse_m",
+      "p99_relative_edge_strain"
+    ],
+    "information_boundary": {
+      "source_future_outcomes_used_for_source_selection": true,
+      "calibration_initial_frame_allowed_after_this_freeze": true,
+      "calibration_future_allowed_only_for_one_shot_scoring_after_source_selection_freeze": true,
+      "calibration_future_allowed_for_method_or_hyperparameter_changes": false,
+      "target_media_allowed_before_all_calibration_gates_pass": false,
+      "target_outcomes_allowed_for_method_selection": false
+    },
+    "claim_boundary": {
+      "association_calibration_passed": true,
+      "reusable_same_object_dynamics_result": false,
+      "official_multi_episode_benchmark_result": false,
+      "multi_object_result": false,
+      "state_of_the_art_claim": false,
+      "full_dense_phystwin_required_for_state_of_the_art_claim": true
+    }
+  },
+  "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c"
+}

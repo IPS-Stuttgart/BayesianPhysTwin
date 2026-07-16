@@ -1,0 +1,415 @@
+{
+  "artifact_kind": "Deform360ReusableDynamicsSourceTrustCompatibility",
+  "claim_boundary": "source compatibility only; no independent transfer or SOTA claim",
+  "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+  "fixed_action_trust": {
+    "autonomous_drift": 0.1,
+    "base_action_response": 0.4,
+    "effective_action_response": "base_action_response / controller_count",
+    "prediction": "x0 + effective_action_response * (x_driven - x_zero) + autonomous_drift * (x_zero - x0)",
+    "source_developed": true,
+    "weights_may_change_after_freeze": false
+  },
+  "gates": {
+    "maximum_per_episode_degradation": true,
+    "minimum_joint_win_count": true,
+    "positive_execution_balanced_cd_transfer": true,
+    "positive_execution_balanced_track_transfer": true
+  },
+  "information_boundary": {
+    "calibration_episode_read": false,
+    "method_or_hyperparameter_changes_allowed": false,
+    "source_train_and_tail_outcomes_read": true,
+    "target_episode_read": false
+  },
+  "passed": true,
+  "pooled_joint_win_episode_count": 2,
+  "pooled_maximum_per_episode_degradation_fraction": 0.058916395177711293,
+  "protocol_id": "deform360-reusable-dynamics-081-v1",
+  "result_sha256": "9a8a4b663a3d542888a4ecfbd1bd087222e0405b2bafa3f0b79e5335d35038a7",
+  "roles": {
+    "pooled": {
+      "by_episode": {
+        "1": {
+          "driven_result_sha256": "55410a7ca31d6243c2248ebfb5cd76fab0464ec49cc8afbf08421872a372511d",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.006674870103943939,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.007260779419091687,
+              "persistence_track_rmse_m": 0.010775688301659134,
+              "relative_score_vs_persistence": 0.8898813190061283,
+              "track_rmse_m": 0.009272024372437933
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.00825007988066479,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009305761757503863,
+              "persistence_track_rmse_m": 0.014391209281295139,
+              "relative_score_vs_persistence": 0.8591648884617424,
+              "track_rmse_m": 0.011970229013806946
+            }
+          },
+          "zero_result_sha256": "4ea51ee61ac6211812da2e32cb924b8fbec8194e53c4f2f652d4623428e63968"
+        },
+        "4": {
+          "driven_result_sha256": "5cf806d3678e498e02712290d9025df1f0821b0b11ee58e2ae209845d7988b4c",
+          "joint_win": false,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.005307007898627548,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00495952936546983,
+              "persistence_track_rmse_m": 0.005561824539449144,
+              "relative_score_vs_persistence": 1.0507454786531572,
+              "track_rmse_m": 0.005736622414531123
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.010343588508916675,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009768087977503432,
+              "persistence_track_rmse_m": 0.011540604758890963,
+              "relative_score_vs_persistence": 1.0397284785477336,
+              "track_rmse_m": 0.011777655265509316
+            }
+          },
+          "zero_result_sha256": "5bbd94ac985ab8a0c6e157a4f46697105f1a8069ca2bd737010457f8fc1241fe"
+        },
+        "6": {
+          "driven_result_sha256": "4444f6be775b1e0880c89bc04885488d2c3087876315a603853f85f9ed828bee",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 2,
+            "effective_action_response": 0.2,
+            "train": {
+              "chamfer_m": 0.0032111978950198484,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00454733484844631,
+              "persistence_track_rmse_m": 0.005107999521976827,
+              "relative_score_vs_persistence": 0.692794698159839,
+              "track_rmse_m": 0.0034704667118810486
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.004869351032049252,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.005680284860801814,
+              "persistence_track_rmse_m": 0.00678222615514107,
+              "relative_score_vs_persistence": 0.7909027562462309,
+              "track_rmse_m": 0.004914186706098968
+            }
+          },
+          "zero_result_sha256": "9ff6887f763035ca209b1e3387019224bdfa9095f6ad953cf5ea8c186d1d32da"
+        }
+      },
+      "execution_balanced_untouched_tail": {
+        "chamfer_improvement_fraction_vs_persistence": 0.052157556515709205,
+        "chamfer_m": 0.007821006473876907,
+        "persistence_chamfer_m": 0.008251378198603035,
+        "persistence_track_rmse_m": 0.010904680065109057,
+        "track_improvement_fraction_vs_persistence": 0.12386025039153435,
+        "track_rmse_m": 0.009554023661805076
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 10000.0
+      }
+    },
+    "single-source-1": {
+      "by_episode": {
+        "1": {
+          "driven_result_sha256": "737ef241e946fc5218233d4c239137f5ecb7bf996a97e2a1016b4496cf93b074",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.006188415487136889,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.007260779419091687,
+              "persistence_track_rmse_m": 0.010775688301659134,
+              "relative_score_vs_persistence": 0.82645030420641,
+              "track_rmse_m": 0.008626943673952983
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.007850991708923161,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009305761757503863,
+              "persistence_track_rmse_m": 0.014391209281295139,
+              "relative_score_vs_persistence": 0.8170543268447144,
+              "track_rmse_m": 0.011375368573365737
+            }
+          },
+          "zero_result_sha256": "0c9de426c234b47dbbbdf0d5e69f8636f43bb37a92050c7b8e819036813900ce"
+        },
+        "4": {
+          "driven_result_sha256": "fed66ee68eaeefa69ff66414cc03f6f9093710638ebfdfe0cc55417d014dccf0",
+          "joint_win": false,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.005246416045752779,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00495952936546983,
+              "persistence_track_rmse_m": 0.005561824539449144,
+              "relative_score_vs_persistence": 1.024113865677503,
+              "track_rmse_m": 0.005508331946163743
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.010130017597149876,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009768087977503432,
+              "persistence_track_rmse_m": 0.011540604758890963,
+              "relative_score_vs_persistence": 1.0072137304060194,
+              "track_rmse_m": 0.011279501030525173
+            }
+          },
+          "zero_result_sha256": "75c0c2279a8f1bcea5eabef7f576bd2b376b196e796627fb2e70dfdf972be40d"
+        },
+        "6": {
+          "driven_result_sha256": "b2b0ae6ec7cce352995498cdb139436484a784b7581f42f87277a1f177febc21",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 2,
+            "effective_action_response": 0.2,
+            "train": {
+              "chamfer_m": 0.0032431292066564888,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00454733484844631,
+              "persistence_track_rmse_m": 0.005107999521976827,
+              "relative_score_vs_persistence": 0.6922762590543645,
+              "track_rmse_m": 0.0034293020485840573
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.0045582110130045535,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.005680284860801814,
+              "persistence_track_rmse_m": 0.00678222615514107,
+              "relative_score_vs_persistence": 0.7678675116134119,
+              "track_rmse_m": 0.004973225550913189
+            }
+          },
+          "zero_result_sha256": "ee1c84bf25277388ebc316777c7a7021f924f2784d1427cc5243dec8b609fc0d"
+        }
+      },
+      "execution_balanced_untouched_tail": {
+        "chamfer_improvement_fraction_vs_persistence": 0.08947653848123223,
+        "chamfer_m": 0.00751307343969253,
+        "persistence_chamfer_m": 0.008251378198603035,
+        "persistence_track_rmse_m": 0.010904680065109057,
+        "track_improvement_fraction_vs_persistence": 0.1554667356937937,
+        "track_rmse_m": 0.009209365051601366
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 3.0,
+        "init_spring_Y": 50000.0
+      }
+    },
+    "single-source-4": {
+      "by_episode": {
+        "1": {
+          "driven_result_sha256": "bc19e652199fe2914cca2115839c0c51fe41058992a535920164a4f6d85fc8fa",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.006441308920177149,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.007260779419091687,
+              "persistence_track_rmse_m": 0.010775688301659134,
+              "relative_score_vs_persistence": 0.8584012251791432,
+              "track_rmse_m": 0.008940212060030175
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.008092099160908355,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009305761757503863,
+              "persistence_track_rmse_m": 0.014391209281295139,
+              "relative_score_vs_persistence": 0.8404954369497264,
+              "track_rmse_m": 0.011677191660985152
+            }
+          },
+          "zero_result_sha256": "a427ef37f9667365e968e4510d530855dc881de161afba84c2e9c8531a9f1961"
+        },
+        "4": {
+          "driven_result_sha256": "567dbaaf38e4e045f6a1270d777e5b1763a599b92e754f286cc641ded369fea3",
+          "joint_win": false,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.005411810837686452,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00495952936546983,
+              "persistence_track_rmse_m": 0.005561824539449144,
+              "relative_score_vs_persistence": 1.0569896501030622,
+              "track_rmse_m": 0.0056885499687587575
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.010421182448696841,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009768087977503432,
+              "persistence_track_rmse_m": 0.011540604758890963,
+              "relative_score_vs_persistence": 1.040188938132616,
+              "track_rmse_m": 0.011696609097247752
+            }
+          },
+          "zero_result_sha256": "e4e2930763401a57cea0eb2ba8a8254b98cb7730576c1fdb37b20fac061f18d9"
+        },
+        "6": {
+          "driven_result_sha256": "ad5cd95aebe7062629bc31dfc8d9a9b35d0199f94e71e0d922b0351a9675a875",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 2,
+            "effective_action_response": 0.2,
+            "train": {
+              "chamfer_m": 0.0031283174719496714,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00454733484844631,
+              "persistence_track_rmse_m": 0.005107999521976827,
+              "relative_score_vs_persistence": 0.6735407439670635,
+              "track_rmse_m": 0.00336686751774043
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.004879838114648896,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.005680284860801814,
+              "persistence_track_rmse_m": 0.00678222615514107,
+              "relative_score_vs_persistence": 0.7962142401184853,
+              "track_rmse_m": 0.004973712561870795
+            }
+          },
+          "zero_result_sha256": "eff85bf2e30544c658704c79267f179a7b549ba2bc7dca43f0e86a81696cecaf"
+        }
+      },
+      "execution_balanced_untouched_tail": {
+        "chamfer_improvement_fraction_vs_persistence": 0.05498131499153423,
+        "chamfer_m": 0.007797706574751363,
+        "persistence_chamfer_m": 0.008251378198603035,
+        "persistence_track_rmse_m": 0.010904680065109057,
+        "track_improvement_fraction_vs_persistence": 0.13347562236740124,
+        "track_rmse_m": 0.009449171106701232
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 30000.0
+      }
+    },
+    "single-source-6": {
+      "by_episode": {
+        "1": {
+          "driven_result_sha256": "55410a7ca31d6243c2248ebfb5cd76fab0464ec49cc8afbf08421872a372511d",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.006674870103943939,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.007260779419091687,
+              "persistence_track_rmse_m": 0.010775688301659134,
+              "relative_score_vs_persistence": 0.8898813190061283,
+              "track_rmse_m": 0.009272024372437933
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.00825007988066479,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009305761757503863,
+              "persistence_track_rmse_m": 0.014391209281295139,
+              "relative_score_vs_persistence": 0.8591648884617424,
+              "track_rmse_m": 0.011970229013806946
+            }
+          },
+          "zero_result_sha256": "4ea51ee61ac6211812da2e32cb924b8fbec8194e53c4f2f652d4623428e63968"
+        },
+        "4": {
+          "driven_result_sha256": "5cf806d3678e498e02712290d9025df1f0821b0b11ee58e2ae209845d7988b4c",
+          "joint_win": false,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 1,
+            "effective_action_response": 0.4,
+            "train": {
+              "chamfer_m": 0.005307007898627548,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00495952936546983,
+              "persistence_track_rmse_m": 0.005561824539449144,
+              "relative_score_vs_persistence": 1.0507454786531572,
+              "track_rmse_m": 0.005736622414531123
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.010343588508916675,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.009768087977503432,
+              "persistence_track_rmse_m": 0.011540604758890963,
+              "relative_score_vs_persistence": 1.0397284785477336,
+              "track_rmse_m": 0.011777655265509316
+            }
+          },
+          "zero_result_sha256": "5bbd94ac985ab8a0c6e157a4f46697105f1a8069ca2bd737010457f8fc1241fe"
+        },
+        "6": {
+          "driven_result_sha256": "4444f6be775b1e0880c89bc04885488d2c3087876315a603853f85f9ed828bee",
+          "joint_win": true,
+          "metrics": {
+            "autonomous_drift": 0.1,
+            "controller_count": 2,
+            "effective_action_response": 0.2,
+            "train": {
+              "chamfer_m": 0.0032111978950198484,
+              "frame_count": 59,
+              "persistence_chamfer_m": 0.00454733484844631,
+              "persistence_track_rmse_m": 0.005107999521976827,
+              "relative_score_vs_persistence": 0.692794698159839,
+              "track_rmse_m": 0.0034704667118810486
+            },
+            "untouched_tail": {
+              "chamfer_m": 0.004869351032049252,
+              "frame_count": 16,
+              "persistence_chamfer_m": 0.005680284860801814,
+              "persistence_track_rmse_m": 0.00678222615514107,
+              "relative_score_vs_persistence": 0.7909027562462309,
+              "track_rmse_m": 0.004914186706098968
+            }
+          },
+          "zero_result_sha256": "9ff6887f763035ca209b1e3387019224bdfa9095f6ad953cf5ea8c186d1d32da"
+        }
+      },
+      "execution_balanced_untouched_tail": {
+        "chamfer_improvement_fraction_vs_persistence": 0.052157556515709205,
+        "chamfer_m": 0.007821006473876907,
+        "persistence_chamfer_m": 0.008251378198603035,
+        "persistence_track_rmse_m": 0.010904680065109057,
+        "track_improvement_fraction_vs_persistence": 0.12386025039153435,
+        "track_rmse_m": 0.009554023661805076
+      },
+      "physical_parameters": {
+        "dashpot_damping": 100.0,
+        "drag_damping": 10.0,
+        "init_spring_Y": 10000.0
+      }
+    }
+  },
+  "schema_version": 1,
+  "source_selection_file_sha256": "fb29a7d8d5b6e858335523d1768a9a0673fa3b3a887de2ccf2b6d95d58e09b91",
+  "source_selection_result_sha256": "945fcc1bfa5a279a38d6e1b854be19b5ef6b2ec3917d28658decb5be7d33ffef"
+}
