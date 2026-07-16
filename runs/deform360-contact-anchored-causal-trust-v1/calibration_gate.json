@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ContactAnchoredCausalTrustCalibrationGate",
+  "protocol_id": "deform360-contact-anchored-causal-trust-002-rope-silk-v1",
+  "method_lock": {
+    "canonical_config_sha256": "1ce4dabdc54683c73ae3b93a0dcec2e1d87542fb245fbfe2338abdfe9dc3341e",
+    "config_file_sha256": "9c4c3d4f00a80f9154116b6b2cabd3fbcdf2341db6b1d3a7394f6f49d7a9296f",
+    "git_commit": "5c30e6754754c081718b11a231d3301343779b13"
+  },
+  "information_boundary": {
+    "frame_range": [110, 191],
+    "prediction_prefix_frame_count": 6,
+    "calibration_prefix_read": true,
+    "calibration_future_media_staged_for_evaluation": true,
+    "calibration_future_metrics_computed": false,
+    "calibration_warp_rollout_scored": false,
+    "target_episode_id": 1,
+    "target_episode_read": false
+  },
+  "episode_results": [
+    {
+      "episode_id": 3,
+      "regime": "support-tangential",
+      "association_qa_passed": false,
+      "failure": "candidate masks do not form the required multiview consensus",
+      "initial_mask_artifact_sha256": "88de43ff67f33c9e2e4acce5f0ffd2beabb3f9f5d0130333c256c728dffbf50a",
+      "failure_log_sha256": "76c97911841637fb34d7cbcd67116bfe421e74100a6759999048b64f25d2d3eb",
+      "partial_splat_count_when_stopped": 42
+    },
+    {
+      "episode_id": 4,
+      "regime": "prehensile",
+      "association_qa_passed": false,
+      "failure": "Gaussian identity match exceeds 30 mm",
+      "initial_mask_artifact_sha256": "d668aa21d3470cc5298490617417d44ac8d01f948afb378cd106610814d98578",
+      "failure_log_sha256": "162f735a9126825a29ba6bb1b7ef1ad18ead3a7207859d8225c2fa45fa5b04d5",
+      "partial_splat_count_when_stopped": 43
+    },
+    {
+      "episode_id": 8,
+      "regime": "support-tangential",
+      "association_qa_passed": null,
+      "failure": "not evaluated after conjunctive calibration gate failed",
+      "initial_mask_artifact_sha256": "6992f0e5e3aaeee86a065d6cfad4cebe4d760de73e1077dc733faba9181010f2",
+      "partial_splat_count_when_stopped": 0
+    }
+  ],
+  "gate": {
+    "association_qa_required_for_all": true,
+    "passed": false,
+    "decision": "freeze-negative-and-keep-target-sealed"
+  },
+  "next_method_requirements": [
+    "select masks jointly in calibrated 3D rather than independently by view",
+    "estimate Gaussian correspondence even when consecutive exports have equal cardinality",
+    "validate both changes on a new source cohort before any new held-out evaluation"
+  ],
+  "claim_boundary": "Calibration-prefix QA failure only; no calibration accuracy result and no target or SOTA claim."
+}

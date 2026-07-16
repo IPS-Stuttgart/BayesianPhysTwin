@@ -5,9 +5,11 @@
 This is a post-hoc source discovery on `002-rope-silk`. All six source
 continuations were available while the automatic material association,
 physical candidate subset, contact-regime fallback, and final fixed trust rule
-were developed. Calibration episodes 3, 4, and 8 and target episode 1 remain
-sealed. The result is neither a retroactive pass of the earlier independent
-source gate nor a Deform360 state-of-the-art result.
+were developed. At the source freeze, calibration episodes 3, 4, and 8 and
+target episode 1 were sealed. The calibration prefix was subsequently opened
+under the frozen gate; the gate failed before future scoring, and target
+episode 1 remains sealed. The result is neither a retroactive pass of the
+earlier independent source gate nor a Deform360 state-of-the-art result.
 
 ## Method
 
@@ -74,16 +76,26 @@ decomposition, not the more flexible per-fold selector.
 - Missing multiview support is treated as zero prior reliability rather than an
   invalid episode.
 - The focused association suite passes 5 tests; the full repository suite
-  passes 500 tests with 1 skipped.
+  passes 502 tests with 1 skipped.
 
-## Next evidence gate
+## Calibration gate result
 
-The method is now frozen before any calibration or target outcome is read.
-Episodes 3 and 8 are support-tangential controls and must take the exact
-persistence path. Episode 4 (`curve`) is the only active physical-response
-calibration action and must improve both Chamfer and track error without any
-parameter or threshold change. Only then may target episode 1 (`lift middle`)
-be evaluated once.
+The frozen calibration was attempted on the same `110:191` frame slice and
+six-frame prefix used by the source result. It failed at association QA before
+any future prediction metric was computed:
+
+- episode 3 failed the required multiview mask-consensus check;
+- episode 4 exceeded the frozen 30 mm Gaussian-identity match bound;
+- episode 8 was not evaluated after the conjunction had already failed;
+- no Warp calibration score, future CD, or future track error was computed;
+- target episode 1 (`lift middle`) was not opened.
+
+The registered decision is therefore `on_calibration_fail`: freeze the
+negative result and keep the target sealed. The failure localizes the next
+method work to two prediction-time assumptions: independently selected view
+masks do not always form one calibrated 3D object, and equal-size Splatfacto
+exports do not guarantee stable Gaussian ordering. Neither threshold may be
+relaxed on this calibration cohort.
 
 Even a positive target result is a same-object confirmation, not SOTA evidence.
 The publication-grade test is a separately locked multi-object filament cohort
