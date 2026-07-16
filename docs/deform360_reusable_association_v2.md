@@ -42,3 +42,18 @@ This is a source competence result, not an independent result and not a SOTA
 claim. The frozen calibration gate reads only first-frame and six-frame-prefix
 geometry. Future CD, track error, and all target media remain inaccessible
 until that conjunction passes.
+
+## Independent calibration result
+
+After the source freeze, the declared `081-stripe-rope` calibration episodes
+0, 2, and 8 passed the frame-zero multiview gate with 11, 12, and 11 accepted
+cameras. Their six-frame strict-hull reconstructions contained 695, 557, and
+653 Gaussians per frame. All 15 transitions achieved 100% identity match; the
+minimum effective reliable support was 96.27%, above the frozen 80% gate.
+
+The conjunction therefore passes. Exact masks, manifests, and checksummed
+results are archived under
+`milestones/deform360-reusable-association-v2-calibration-*`. No future metric,
+physical rollout, or target media was read. This result authorizes a separately
+frozen dynamics calibration; it does not itself support a future-prediction or
+state-of-the-art claim.

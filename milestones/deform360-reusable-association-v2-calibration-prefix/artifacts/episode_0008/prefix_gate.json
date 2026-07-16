@@ -1,0 +1,176 @@
+{
+  "accepted_cameras": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-008_cam1",
+    "brics-odroid-010_cam1",
+    "brics-odroid-011_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam0",
+    "brics-odroid-017_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-023_cam0",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "artifact_kind": "Deform360ReusableAssociationCalibrationPrefixGate",
+  "claim_boundary": "prefix-only material-identity calibration; no future dynamics claim",
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+  "episode_id": 8,
+  "gates": {
+    "effective_reliable_match_fraction": true,
+    "splat_cardinality": true,
+    "temporal_match_fraction": true
+  },
+  "information_boundary": {
+    "calibration_future_geometry_read": false,
+    "calibration_prefix_frame_range": [
+      0,
+      6
+    ],
+    "future_prediction_metrics_computed": false,
+    "target_media_read": false
+  },
+  "object_id": "081-stripe-rope",
+  "passed": true,
+  "protocol_id": "deform360-reusable-material-association-v2",
+  "raw_frame_range": [
+    0,
+    6
+  ],
+  "reconstruction": {
+    "first_frame_iterations": 500,
+    "minimum_hull_points": 512,
+    "splat_counts": {
+      "0": 653,
+      "1": 653,
+      "2": 653,
+      "3": 653,
+      "4": 653,
+      "5": 653
+    },
+    "splat_sha256": {
+      "0": "a67f338914145c493c90c5fdab43fb3338dcac3ee6cd43ed14b38882865d70a7",
+      "1": "8c425fe95f6932f86f52d090872dfc37c6d71383543070decec28e87cd770977",
+      "2": "99768f08f36b69a6327e5f8faa08b15ffaa9f6ec6304b973cccf44ce98c67f61",
+      "3": "91b7f3fec2db09fbcd1223340ed257f5eb19489771735ca84389203f78a9be79",
+      "4": "5c6574029c3398fc0f401d2a852633cb151dde2642de29ad3b8bd91cdcbdede5",
+      "5": "6ea764ddd124c6fbe3bfa543c81233bc2ee52b2116f8566dfbe0bc2a57644afb"
+    },
+    "warm_start_iterations": 250
+  },
+  "result_sha256": "103e9d8d2e7fea41f3574705f65f2a8077e64e51641b86dde4bd1612f984d047",
+  "schema_version": 1,
+  "staging_manifest_sha256": "b18626e17c41fdf637bfc78d041105bad8fe365a4f6f8850102b8417b7624d05",
+  "thresholds": {
+    "maximum_splat_count": 2238,
+    "minimum_effective_reliable_match_fraction_per_step": 0.8,
+    "minimum_temporal_match_fraction_per_step": 0.95
+  },
+  "transitions": [
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.00045349699684651143,
+        "median": 3.6963817593193104e-05
+      },
+      "current_count": 653,
+      "effective_reliable_match_count": 631.766322822421,
+      "effective_reliable_match_fraction": 0.9674828833421455,
+      "from_frame": 0,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.015543635129283449,
+      "median_match_distance_m": 0.004310117896866781,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 653,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 653,
+      "to_frame": 1,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0005606640566517863,
+        "median": 3.648775062232631e-05
+      },
+      "current_count": 653,
+      "effective_reliable_match_count": 632.8497183728645,
+      "effective_reliable_match_fraction": 0.9691419883198537,
+      "from_frame": 1,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.01741353381592042,
+      "median_match_distance_m": 0.004282130559944588,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 653,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 653,
+      "to_frame": 2,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0004946089077590713,
+        "median": 2.4136142302488485e-05
+      },
+      "current_count": 653,
+      "effective_reliable_match_count": 639.0647397291402,
+      "effective_reliable_match_fraction": 0.9786596320507507,
+      "from_frame": 2,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.016279871518215493,
+      "median_match_distance_m": 0.0034797437408580316,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 653,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 653,
+      "to_frame": 3,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.00036535052043447727,
+        "median": 2.0418272180559564e-05
+      },
+      "current_count": 653,
+      "effective_reliable_match_count": 640.80456679856,
+      "effective_reliable_match_fraction": 0.9813239920345482,
+      "from_frame": 3,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.013865358669422814,
+      "median_match_distance_m": 0.0031997097589607816,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 653,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 653,
+      "to_frame": 4,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0005021624270133801,
+        "median": 2.1005576812770656e-05
+      },
+      "current_count": 653,
+      "effective_reliable_match_count": 640.5094075849754,
+      "effective_reliable_match_fraction": 0.9808719871132855,
+      "from_frame": 4,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.016412420090149246,
+      "median_match_distance_m": 0.0032455337283807282,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 653,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 653,
+      "to_frame": 5,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    }
+  ]
+}

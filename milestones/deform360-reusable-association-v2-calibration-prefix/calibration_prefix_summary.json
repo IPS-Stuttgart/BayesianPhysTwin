@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ReusableAssociationCalibrationPrefixSummary",
+  "protocol_id": "deform360-reusable-material-association-v2",
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+  "method_commit": "457a951",
+  "successful_runner_commit": "43e5b92",
+  "object_id": "081-stripe-rope",
+  "raw_frame_range": [0, 6],
+  "thresholds": {
+    "minimum_accepted_camera_count_per_episode": 10,
+    "minimum_temporal_match_fraction_per_step": 0.95,
+    "minimum_effective_reliable_match_fraction_per_step": 0.8,
+    "maximum_splat_count": 2238
+  },
+  "episodes": [
+    {
+      "episode_id": 0,
+      "accepted_camera_count": 11,
+      "splat_count_per_frame": 695,
+      "minimum_match_fraction": 1.0,
+      "minimum_effective_reliable_match_fraction": 0.9626997916390475,
+      "result_sha256": "4f7d8c9a6760ecd2a9da411e913be845b24d9e38e7729aef8219fd03c9747d72",
+      "result_file_sha256": "4d1910ba87cb0e3294ab700822f32ee860d3363b5de7f9d5924d2a94dbb448a0",
+      "staging_manifest_file_sha256": "29cdba59e2d20c21aca361dcaed9e3207cf279c065f1ce8d606ed14bb004ffd0",
+      "passed": true
+    },
+    {
+      "episode_id": 2,
+      "accepted_camera_count": 12,
+      "splat_count_per_frame": 557,
+      "minimum_match_fraction": 1.0,
+      "minimum_effective_reliable_match_fraction": 0.9677557342744294,
+      "result_sha256": "545801f67d4d0a766ab4c83da832fbc3ac6183a99201fd1221a572dda919fa08",
+      "result_file_sha256": "b7e953da5f1f99cdff2636fef7a9a154423f95492ac0349ce2ddb1d969cab947",
+      "staging_manifest_file_sha256": "560a775173a57a7e3a86e289184a7f279ed330b46ca2dc71beb010fb4c315907",
+      "passed": true
+    },
+    {
+      "episode_id": 8,
+      "accepted_camera_count": 11,
+      "splat_count_per_frame": 653,
+      "minimum_match_fraction": 1.0,
+      "minimum_effective_reliable_match_fraction": 0.9674828833421455,
+      "result_sha256": "103e9d8d2e7fea41f3574705f65f2a8077e64e51641b86dde4bd1612f984d047",
+      "result_file_sha256": "d6ef06ef1cc27d5c1825ac461ef81a3247b6c02a2db619dd573ae2edefcd0076",
+      "staging_manifest_file_sha256": "b18626e17c41fdf637bfc78d041105bad8fe365a4f6f8850102b8417b7624d05",
+      "passed": true
+    }
+  ],
+  "conjunctive_reusable_association_gate_passed": true,
+  "operational_attempts_without_gate_statistics": [
+    "missing-staged-timestamps",
+    "unset-cuda-toolkit-path",
+    "missing-ninja-path"
+  ],
+  "information_boundary": {
+    "calibration_prefix_frame_range": [0, 6],
+    "calibration_future_geometry_read": false,
+    "future_prediction_metrics_computed": false,
+    "target_media_read": false
+  },
+  "claim_boundary": {
+    "independent_material_association_transfer": true,
+    "future_dynamics_result": false,
+    "state_of_the_art_claim": false
+  }
+}

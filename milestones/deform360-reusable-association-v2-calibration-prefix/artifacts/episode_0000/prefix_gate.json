@@ -1,0 +1,176 @@
+{
+  "accepted_cameras": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-008_cam1",
+    "brics-odroid-011_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam0",
+    "brics-odroid-017_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-023_cam0",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "artifact_kind": "Deform360ReusableAssociationCalibrationPrefixGate",
+  "claim_boundary": "prefix-only material-identity calibration; no future dynamics claim",
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+  "episode_id": 0,
+  "gates": {
+    "effective_reliable_match_fraction": true,
+    "splat_cardinality": true,
+    "temporal_match_fraction": true
+  },
+  "information_boundary": {
+    "calibration_future_geometry_read": false,
+    "calibration_prefix_frame_range": [
+      0,
+      6
+    ],
+    "future_prediction_metrics_computed": false,
+    "target_media_read": false
+  },
+  "object_id": "081-stripe-rope",
+  "passed": true,
+  "protocol_id": "deform360-reusable-material-association-v2",
+  "raw_frame_range": [
+    0,
+    6
+  ],
+  "reconstruction": {
+    "first_frame_iterations": 500,
+    "minimum_hull_points": 512,
+    "splat_counts": {
+      "0": 695,
+      "1": 695,
+      "2": 695,
+      "3": 695,
+      "4": 695,
+      "5": 695
+    },
+    "splat_sha256": {
+      "0": "ff50147d6173d108bc4cb4e4ff6345fad8619be3634d9b715170f87796b58e15",
+      "1": "f4c84c173d6021d7bee02ba4d9f1880c3ab86279a9c8f800abc88b480352620e",
+      "2": "0f2c5868b7bb9cb0013d66f1a3acc53b646dfc94b1dc63398795f8577f580b44",
+      "3": "dcf16e08697651d4f85fe0aee0f8959cc5a18b19e433a09f5e40c9c9f1602f1c",
+      "4": "e75aa2096d17b1b550753535e5d902b57a30926d118902589b14c633e33db55c",
+      "5": "ae77a09d3bd14dd6e7a402f220879c788e625cb6fd8cb951289c1964208d32b6"
+    },
+    "warm_start_iterations": 250
+  },
+  "result_sha256": "4f7d8c9a6760ecd2a9da411e913be845b24d9e38e7729aef8219fd03c9747d72",
+  "schema_version": 1,
+  "staging_manifest_sha256": "29cdba59e2d20c21aca361dcaed9e3207cf279c065f1ce8d606ed14bb004ffd0",
+  "thresholds": {
+    "maximum_splat_count": 2238,
+    "minimum_effective_reliable_match_fraction_per_step": 0.8,
+    "minimum_temporal_match_fraction_per_step": 0.95
+  },
+  "transitions": [
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0005565163625406873,
+        "median": 3.855163988947957e-05
+      },
+      "current_count": 695,
+      "effective_reliable_match_count": 669.076355189138,
+      "effective_reliable_match_fraction": 0.9626997916390475,
+      "from_frame": 0,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.017343949138789304,
+      "median_match_distance_m": 0.00440220373142304,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 695,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 695,
+      "to_frame": 1,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.000662131423233483,
+        "median": 3.494992464114103e-05
+      },
+      "current_count": 695,
+      "effective_reliable_match_count": 673.5695940477751,
+      "effective_reliable_match_fraction": 0.9691648835219786,
+      "from_frame": 1,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.019059037600285038,
+      "median_match_distance_m": 0.00419047280632012,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 695,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 695,
+      "to_frame": 2,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.00046390929901538004,
+        "median": 2.371983791279768e-05
+      },
+      "current_count": 695,
+      "effective_reliable_match_count": 679.1748763162188,
+      "effective_reliable_match_fraction": 0.9772300378650631,
+      "from_frame": 2,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.015732570007011382,
+      "median_match_distance_m": 0.003449503761690428,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 695,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 695,
+      "to_frame": 3,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0003505204720604654,
+        "median": 2.4179356818448276e-05
+      },
+      "current_count": 695,
+      "effective_reliable_match_count": 679.8298936108025,
+      "effective_reliable_match_fraction": 0.9781725087925216,
+      "from_frame": 3,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.013566903685689123,
+      "median_match_distance_m": 0.0034828679619825784,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 695,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 695,
+      "to_frame": 4,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.00048084824818813674,
+        "median": 2.2191463608898563e-05
+      },
+      "current_count": 695,
+      "effective_reliable_match_count": 680.0811651908452,
+      "effective_reliable_match_fraction": 0.9785340506343096,
+      "from_frame": 4,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.01603629678477373,
+      "median_match_distance_m": 0.003336165560820066,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 695,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 695,
+      "to_frame": 5,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    }
+  ]
+}

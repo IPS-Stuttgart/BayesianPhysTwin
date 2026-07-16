@@ -1,0 +1,177 @@
+{
+  "accepted_cameras": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-008_cam1",
+    "brics-odroid-010_cam1",
+    "brics-odroid-011_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam0",
+    "brics-odroid-017_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-023_cam0",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "artifact_kind": "Deform360ReusableAssociationCalibrationPrefixGate",
+  "claim_boundary": "prefix-only material-identity calibration; no future dynamics claim",
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+  "episode_id": 2,
+  "gates": {
+    "effective_reliable_match_fraction": true,
+    "splat_cardinality": true,
+    "temporal_match_fraction": true
+  },
+  "information_boundary": {
+    "calibration_future_geometry_read": false,
+    "calibration_prefix_frame_range": [
+      0,
+      6
+    ],
+    "future_prediction_metrics_computed": false,
+    "target_media_read": false
+  },
+  "object_id": "081-stripe-rope",
+  "passed": true,
+  "protocol_id": "deform360-reusable-material-association-v2",
+  "raw_frame_range": [
+    0,
+    6
+  ],
+  "reconstruction": {
+    "first_frame_iterations": 500,
+    "minimum_hull_points": 512,
+    "splat_counts": {
+      "0": 557,
+      "1": 557,
+      "2": 557,
+      "3": 557,
+      "4": 557,
+      "5": 557
+    },
+    "splat_sha256": {
+      "0": "3eff16812ce88f86dcf77dab04113fd0c82fa12c0885bd7d7b335b51ef9c9777",
+      "1": "10e0576677d93b51db63d0674030eb00f8135aa6aa2c1f813fb624088e7c084d",
+      "2": "177ec2141d3fc97f00b8ba0766bc29314521613d32b89ffece2319502a9a8c03",
+      "3": "e559ffac8da2f353f0343077ab0174b31386e00289c2ef0cd2f456e48ae753e0",
+      "4": "7a53f1c42931e04c4f51344b8b32ee760928253e8f62f5de971bc2857c4472d4",
+      "5": "7a0b882702b3757f0b65f371b4c549ae5b377ac5cde8a9ebe94d4377bbb85821"
+    },
+    "warm_start_iterations": 250
+  },
+  "result_sha256": "545801f67d4d0a766ab4c83da832fbc3ac6183a99201fd1221a572dda919fa08",
+  "schema_version": 1,
+  "staging_manifest_sha256": "560a775173a57a7e3a86e289184a7f279ed330b46ca2dc71beb010fb4c315907",
+  "thresholds": {
+    "maximum_splat_count": 2238,
+    "minimum_effective_reliable_match_fraction_per_step": 0.8,
+    "minimum_temporal_match_fraction_per_step": 0.95
+  },
+  "transitions": [
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0006076145802447348,
+        "median": 3.652238115007906e-05
+      },
+      "current_count": 557,
+      "effective_reliable_match_count": 539.0399439908572,
+      "effective_reliable_match_fraction": 0.9677557342744294,
+      "from_frame": 0,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.01818785856371577,
+      "median_match_distance_m": 0.004284172483141579,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 557,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 557,
+      "to_frame": 1,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0004940197524005404,
+        "median": 3.862943950745638e-05
+      },
+      "current_count": 557,
+      "effective_reliable_match_count": 541.0129825308314,
+      "effective_reliable_match_fraction": 0.9712979937716902,
+      "from_frame": 1,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.016269499155822854,
+      "median_match_distance_m": 0.0044066673029437425,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 557,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 557,
+      "to_frame": 2,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0003957003756932025,
+        "median": 2.8165927541192763e-05
+      },
+      "current_count": 557,
+      "effective_reliable_match_count": 543.123299619147,
+      "effective_reliable_match_fraction": 0.9750867138584327,
+      "from_frame": 2,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.01446056130436117,
+      "median_match_distance_m": 0.0037600796255590476,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 557,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 557,
+      "to_frame": 3,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0005636996402167661,
+        "median": 2.633336908818888e-05
+      },
+      "current_count": 557,
+      "effective_reliable_match_count": 543.6030216152521,
+      "effective_reliable_match_fraction": 0.9759479741745999,
+      "from_frame": 3,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.017464334399339334,
+      "median_match_distance_m": 0.0036352383330110318,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 557,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 557,
+      "to_frame": 4,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    },
+    {
+      "ambiguous_match_count": 0,
+      "assignment_variance_m2": {
+        "maximum": 0.0004427915616375991,
+        "median": 2.3957900695101565e-05
+      },
+      "current_count": 557,
+      "effective_reliable_match_count": 545.1153951307969,
+      "effective_reliable_match_fraction": 0.9786631869493659,
+      "from_frame": 4,
+      "match_fraction": 1.0,
+      "maximum_match_distance_m": 0.015347525730517508,
+      "median_match_distance_m": 0.0034668282928184187,
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "previous_count": 557,
+      "spatial_rematch_count": 0,
+      "stable_order_match_count": 557,
+      "to_frame": 5,
+      "unmatched_previous_count": 0,
+      "unused_current_count": 0
+    }
+  ]
+}
