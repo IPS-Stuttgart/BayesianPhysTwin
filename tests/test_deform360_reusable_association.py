@@ -10,6 +10,7 @@ from causal4d_public.deform360_reusable_association import (
     CANONICAL_REUSABLE_ASSOCIATION_CONFIG_SHA256,
     load_reusable_association_config,
     load_reusable_association_source_evidence,
+    validate_reusable_association_calibration_request,
     validate_reusable_association_config,
 )
 
@@ -55,3 +56,28 @@ def test_source_evidence_is_checksummed_and_claim_bounded() -> None:
     assert len(payload["mask_cases"]) == 7
     assert payload["conclusion"]["source_mask_gate_passed"] is True
     assert payload["conclusion"]["state_of_the_art_claim"] is False
+
+
+def test_calibration_request_is_limited_to_frozen_episodes() -> None:
+    payload = load_reusable_association_config(CONFIG)
+    validated = validate_reusable_association_calibration_request(
+        payload,
+        object_id="081-stripe-rope",
+        episode_id=2,
+    )
+    assert validated["allowed_frame_range"] == [0, 6]
+    assert validated["future_prediction_metrics_allowed"] is False
+
+    with pytest.raises(ValueError, match="episode is not in calibration gate"):
+        validate_reusable_association_calibration_request(
+            payload,
+            object_id="081-stripe-rope",
+            episode_id=5,
+        )
+
+    with pytest.raises(ValueError, match="object is not in calibration gate"):
+        validate_reusable_association_calibration_request(
+            payload,
+            object_id="002-rope-silk",
+            episode_id=2,
+        )

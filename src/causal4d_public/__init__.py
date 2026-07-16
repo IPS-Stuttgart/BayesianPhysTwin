@@ -80,6 +80,7 @@ from causal4d_public.deform360_reusable_association import (
     REUSABLE_ASSOCIATION_PROTOCOL_ID,
     load_reusable_association_config,
     load_reusable_association_source_evidence,
+    validate_reusable_association_calibration_request,
     validate_reusable_association_config,
     validate_reusable_association_source_evidence,
 )
@@ -349,6 +350,7 @@ __all__ = [
     "validate_sam2_suffix_mask_artifact",
     "validate_sam2_view_audit",
     "validate_reusable_association_config",
+    "validate_reusable_association_calibration_request",
     "validate_reusable_association_source_evidence",
     "write_material_association_artifact",
     "validate_splat_probe_artifact",

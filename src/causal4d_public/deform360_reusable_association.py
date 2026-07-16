@@ -101,6 +101,35 @@ def load_reusable_association_config(path: str | Path) -> dict[str, Any]:
     return payload
 
 
+def validate_reusable_association_calibration_request(
+    payload: Mapping[str, Any],
+    *,
+    object_id: str,
+    episode_id: int,
+) -> dict[str, Any]:
+    """Authorize one prefix-only calibration episode under the frozen lock."""
+
+    validated = validate_reusable_association_config(payload)
+    gate = payload["config"]["calibration_gate"]
+    _require(object_id == gate.get("object_id"), "object is not in calibration gate")
+    episodes = tuple(int(value) for value in gate.get("episode_ids", ()))
+    _require(episode_id in episodes, "episode is not in calibration gate")
+    _require(
+        payload["config"]["information_boundary"].get(
+            "calibration_first_frame_and_six_frame_prefix_allowed_after_freeze"
+        )
+        is True,
+        "calibration prefix is not authorized",
+    )
+    return {
+        **validated,
+        "object_id": object_id,
+        "episode_id": int(episode_id),
+        "allowed_frame_range": [0, 6],
+        "future_prediction_metrics_allowed": False,
+    }
+
+
 def reusable_association_source_evidence_sha256(payload: Mapping[str, Any]) -> str:
     canonical = dict(payload)
     canonical.pop("result_sha256", None)
@@ -162,6 +191,7 @@ __all__ = [
     "load_reusable_association_source_evidence",
     "reusable_association_config_sha256",
     "reusable_association_source_evidence_sha256",
+    "validate_reusable_association_calibration_request",
     "validate_reusable_association_config",
     "validate_reusable_association_source_evidence",
 ]
