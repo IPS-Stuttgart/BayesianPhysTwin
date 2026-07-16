@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ReusableAssociationCalibrationMaskSummary",
+  "protocol_id": "deform360-reusable-material-association-v2",
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+  "method_commit": "457a951",
+  "gate_runner_commit": "fee2612",
+  "object_id": "081-stripe-rope",
+  "episodes": [
+    {
+      "episode_id": 0,
+      "accepted_camera_count": 11,
+      "camera_count": 12,
+      "selected_candidate_ranks": [0],
+      "result_sha256": "5b95ca8187dfe2b6784b3938db2455bf151fd7884f1370bf0779091591cb4e5d",
+      "result_file_sha256": "417e22bad7012a185aa2651b413ad43ef71dd048cb1a7459e6df90903212bec1",
+      "mask_archive_sha256": "93712be733649b1c3c9d82ed650a090c11777088f0c984575e6676e2286e8fd3",
+      "passed": true
+    },
+    {
+      "episode_id": 2,
+      "accepted_camera_count": 12,
+      "camera_count": 12,
+      "selected_candidate_ranks": [0],
+      "result_sha256": "21e979b6d7aea0efb4606122e795756a0c310e4b84104106b9ca9538a13d4e3d",
+      "result_file_sha256": "5762f3207ca9e6e18cfff3d2ee61d2a4d28a1cd9d199d0d7a86cc19e394e7d55",
+      "mask_archive_sha256": "889e165b99d680e509ec2068adb9a941cee8671a38c850b3ce434454dc5ee54a",
+      "passed": true
+    },
+    {
+      "episode_id": 8,
+      "accepted_camera_count": 11,
+      "camera_count": 12,
+      "selected_candidate_ranks": [0],
+      "result_sha256": "24b96c847d58a485ff2d5deb51d7814538977424a86f0ea5127d3f7064038fe0",
+      "result_file_sha256": "b5ab6fba811bcf455e418d59303057b58524de4fc68efe0866d64fd1fd48e04b",
+      "mask_archive_sha256": "4422d676af84300295abb3fa275c9939c719e22ffa1239b091caa47a848a5b1b",
+      "passed": true
+    }
+  ],
+  "conjunctive_mask_gate_passed": true,
+  "information_boundary": {
+    "calibration_frame_indices_read": [0],
+    "calibration_future_geometry_read": false,
+    "future_prediction_metrics_computed": false,
+    "target_media_read": false
+  },
+  "claim_boundary": {
+    "independent_mask_association_transfer": true,
+    "temporal_identity_calibration_passed": false,
+    "future_dynamics_result": false,
+    "state_of_the_art_claim": false
+  }
+}
