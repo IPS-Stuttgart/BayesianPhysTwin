@@ -100,6 +100,16 @@ def _trim_video(source: Path, destination: Path) -> None:
     )
 
 
+def _trim_timestamps(source: Path, destination: Path) -> None:
+    lines = source.read_text(encoding="utf-8").splitlines()
+    selected = lines[:FRAME_COUNT]
+    if len(selected) != FRAME_COUNT:
+        raise ValueError(
+            f"requested {FRAME_COUNT} timestamps but found {len(selected)}"
+        )
+    destination.write_text("\n".join(selected) + "\n", encoding="utf-8")
+
+
 def _subset_calibration(source: Path, destination: Path, cameras: list[str]) -> None:
     payload = np.load(source, allow_pickle=True).item()
     missing = sorted(set(cameras) - set(payload))
@@ -223,6 +233,10 @@ def main() -> int:
             camera_dir.mkdir()
             video_path = camera_dir / "undistorted.mp4"
             _trim_video(source_episode / camera / "undistorted.mp4", video_path)
+            _trim_timestamps(
+                source_episode / camera / "aligned_timestamps.txt",
+                camera_dir / "aligned_timestamps.txt",
+            )
             masks = list(
                 predictor.segment_from_initial_mask(
                     video_path,
