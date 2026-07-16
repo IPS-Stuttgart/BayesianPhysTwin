@@ -55,6 +55,8 @@ class RopeForwardFitConfig:
     drag_grid: tuple[float, ...] = (0.0, 0.2)
     substeps: int = 4
     constraint_iterations: int = 16
+    initial_velocity_policy: str = "zero"
+    initial_velocity_frame_count: int = 4
     minimum_pooled_chamfer_improvement_fraction: float = 0.05
     minimum_loo_better_episode_fraction: float = 0.6
 
@@ -76,6 +78,14 @@ class RopeForwardFitConfig:
         _require(
             self.constraint_iterations >= 1,
             "forward fit requires inextensibility projection",
+        )
+        _require(
+            self.initial_velocity_policy in {"zero", "prefix-median"},
+            "unsupported initial velocity policy",
+        )
+        _require(
+            self.initial_velocity_frame_count >= 2,
+            "initial velocity estimation needs at least two frames",
         )
         _require(
             0.0 <= self.minimum_pooled_chamfer_improvement_fraction < 1.0,
@@ -132,12 +142,28 @@ def _source_forecast_case(
     _require(prefix_end < len(observation.positions_m), "source prefix has no future")
     initial = observation.positions_m[prefix_end - 1]
     reference = observation.positions_m[prefix_end - 1 :]
+    if config.initial_velocity_policy == "zero":
+        initial_velocities = np.zeros_like(initial)
+    else:
+        velocity_start = max(
+            prefix_start,
+            prefix_end - config.initial_velocity_frame_count,
+        )
+        velocity_positions = observation.positions_m[velocity_start:prefix_end]
+        _require(
+            len(velocity_positions) >= 2,
+            "source prefix is too short for velocity estimation",
+        )
+        initial_velocities = np.median(
+            np.diff(velocity_positions, axis=0) / observation.dt_seconds,
+            axis=0,
+        )
     return {
         "episode_id": observation.episode_id,
         "prefix_start_index": prefix_start,
         "prefix_end_index_exclusive": prefix_end,
         "initial_positions_m": initial,
-        "initial_velocities_m_s": np.zeros_like(initial),
+        "initial_velocities_m_s": initial_velocities,
         "controller_positions_m": observation.controller_positions_m[prefix_end - 1 :],
         "contact_active": observation.contact_active[prefix_end - 1 :],
         "contact_node_indices": observation.contact_node_indices,
@@ -294,10 +320,21 @@ def fit_forward_rope_dynamics(
         and loo_better_fraction >= config.minimum_loo_better_episode_fraction
         and loo_mean < persistence_mean
     )
+    serialized_config = asdict(config)
+    if (
+        config.initial_velocity_policy == "zero"
+        and config.initial_velocity_frame_count == 4
+    ):
+        serialized_config.pop("initial_velocity_policy")
+        serialized_config.pop("initial_velocity_frame_count")
     return {
-        "config": asdict(config),
+        "config": serialized_config,
         "fit_method": "finite source-only forward-rollout grid",
-        "initial_velocity_policy": "zero for silhouette pseudo-correspondences",
+        "initial_velocity_policy": (
+            "zero for silhouette pseudo-correspondences"
+            if config.initial_velocity_policy == "zero"
+            else "prefix median from persistent material identities"
+        ),
         "effective_gravity_m_s2": [0.0, 0.0, 0.0],
         "candidate_count": len(candidate_rows),
         "selected_candidate_index": selected["candidate_index"],

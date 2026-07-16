@@ -81,3 +81,63 @@ def test_forward_fit_selects_transferable_velocity_coupling() -> None:
         row["chamfer_better_than_persistence"]
         for row in result["leave_one_episode_out"]
     )
+
+
+def _translating_material_observation(
+    episode_id: str, speed_m_s: float
+) -> RopeDynamicsObservation:
+    node_count = 7
+    frame_count = 18
+    dt = 0.02
+    initial = np.column_stack(
+        (
+            np.linspace(-0.12, 0.12, node_count),
+            np.zeros(node_count),
+            np.zeros(node_count),
+        )
+    )
+    velocity = np.asarray([0.0, speed_m_s, 0.0])
+    positions = initial[None] + np.arange(frame_count)[:, None, None] * dt * velocity
+    controllers = positions[:, [0]].copy()
+    return RopeDynamicsObservation(
+        episode_id=episode_id,
+        positions_m=positions,
+        controller_positions_m=controllers,
+        contact_active=np.ones((frame_count, 1), dtype=bool),
+        contact_node_indices=(0,),
+        contact_offsets_m=np.zeros((1, 3)),
+        dt_seconds=dt,
+    )
+
+
+def test_prefix_material_velocity_improves_translating_forecast() -> None:
+    observations = (
+        _translating_material_observation("source-a", 0.05),
+        _translating_material_observation("source-b", 0.08),
+    )
+    common = dict(
+        bending_acceleration_grid=(0.0,),
+        contact_acceleration_grid=(0.0,),
+        contact_damping_grid=(0.0,),
+        drag_grid=(0.0,),
+        substeps=1,
+        constraint_iterations=2,
+    )
+    zero = fit_forward_rope_dynamics(
+        observations,
+        config=RopeForwardFitConfig(**common),
+    )
+    material = fit_forward_rope_dynamics(
+        observations,
+        config=RopeForwardFitConfig(
+            **common,
+            initial_velocity_policy="prefix-median",
+            initial_velocity_frame_count=4,
+        ),
+    )
+
+    assert material["initial_velocity_policy"].startswith("prefix median")
+    assert (
+        material["selected_source_metrics"]["mean_track_error_m"]
+        < 0.05 * zero["selected_source_metrics"]["mean_track_error_m"]
+    )

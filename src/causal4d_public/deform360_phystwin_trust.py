@@ -24,6 +24,12 @@ CARDINALITY_SOURCE_EXECUTION_PROTOCOL_ID = (
 CANONICAL_CARDINALITY_SOURCE_EXECUTION_CONFIG_SHA256 = (
     "5175235d0409368e6e69ab708eb958255cc85eaa82c5260098f3363238bfc8b7"
 )
+CONTACT_ANCHORED_CAUSAL_TRUST_PROTOCOL_ID = (
+    "deform360-contact-anchored-causal-trust-002-rope-silk-v1"
+)
+CANONICAL_CONTACT_ANCHORED_CAUSAL_TRUST_CONFIG_SHA256 = (
+    "1ce4dabdc54683c73ae3b93a0dcec2e1d87542fb245fbfe2338abdfe9dc3341e"
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -391,6 +397,69 @@ def load_cardinality_source_execution_protocol(
         and boundary.get("calibration_episode_read") is False
         and boundary.get("sealed_target_episode_read") is False,
         "cardinality source information boundary changed",
+    )
+    return payload
+
+
+def load_contact_anchored_causal_trust_protocol(
+    path: str | Path,
+) -> dict[str, Any]:
+    """Load the post-hoc source discovery frozen before calibration and target."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(
+        payload.get("schema_version") == PHYSTWIN_TRUST_SCHEMA_VERSION,
+        "contact-anchored trust schema changed",
+    )
+    observed = _config_sha256(payload)
+    _require(
+        payload.get("config_sha256") == observed,
+        "contact-anchored trust checksum mismatch",
+    )
+    _require(
+        observed == CANONICAL_CONTACT_ANCHORED_CAUSAL_TRUST_CONFIG_SHA256,
+        "contact-anchored trust differs from canonical lock",
+    )
+    config = payload.get("config", {})
+    _require(
+        config.get("protocol_id") == CONTACT_ANCHORED_CAUSAL_TRUST_PROTOCOL_ID,
+        "contact-anchored trust protocol id changed",
+    )
+    _require(
+        config.get("status")
+        == "post-hoc-source-method-freeze-before-calibration-and-target",
+        "contact-anchored trust status changed",
+    )
+    _require(
+        config.get("source_episode_ids") == [0, 2, 5, 6, 7, 9]
+        and config.get("calibration_episode_ids") == [3, 4, 8]
+        and config.get("sealed_target_episode_id") == 1,
+        "contact-anchored trust evidence split changed",
+    )
+    association = config.get("material_association", {})
+    _require(
+        association.get("observation_frame_count") == 6
+        and association.get("node_count") == 21
+        and association.get("state_innovation_used_for_prior_reliability") is False,
+        "contact-anchored association changed",
+    )
+    candidate = config.get("physical_candidate", {})
+    trust = config.get("causal_trust", {})
+    _require(
+        candidate.get("candidate_index") == 157
+        and trust.get("prehensile_action_response_weight") == "1 / controller_count"
+        and trust.get("autonomous_drift_weight") == 0.0
+        and trust.get("support_tangential_policy") == "exact-persistence-fallback",
+        "contact-anchored causal policy changed",
+    )
+    boundary = config.get("information_boundary", {})
+    _require(
+        boundary.get("all_source_outcomes_read_before_this_freeze") is True
+        and boundary.get("calibration_episode_outcomes_read_before_this_freeze")
+        is False
+        and boundary.get("target_episode_outcome_read_before_this_freeze") is False
+        and boundary.get("future_object_observations_used_at_prediction_time") is False,
+        "contact-anchored trust information boundary changed",
     )
     return payload
 
@@ -1629,6 +1698,7 @@ __all__ = [
     "fit_regime_gated_source_causal_trust",
     "fit_source_causal_trust",
     "load_cardinality_trust_protocol",
+    "load_contact_anchored_causal_trust_protocol",
     "load_official_phystwin_trust_episode",
     "validate_cardinality_normalized_source_causal_trust_artifact",
     "validate_regime_gated_source_causal_trust_artifact",

@@ -8,6 +8,7 @@ import pytest
 from causal4d_public.deform360_sam2_views import (
     CrossViewMaskReliabilityConfig,
     build_sam2_view_audit,
+    camera_reliability_from_multiview_consistency,
     summarize_multiview_mask_hits,
     validate_sam2_view_audit,
     write_sam2_view_audit,
@@ -51,6 +52,16 @@ def test_cross_view_consistency_rejects_disjoint_placebo_mask() -> None:
         item for item in consistency["per_camera"] if item["camera"] == "camera_4"
     )
     assert bad["leave_one_out_core_recall"] == 0.0
+
+
+def test_camera_reliability_is_soft_and_residual_independent() -> None:
+    consistency, _ = _consistency_fixture()
+
+    reliability = camera_reliability_from_multiview_consistency(consistency)
+
+    assert reliability["camera_0"] == 1.0
+    assert reliability["camera_4"] == 0.05
+    assert set(reliability) == {item["camera"] for item in consistency["per_camera"]}
 
 
 def test_view_audit_is_checksummed_and_round_trips(tmp_path: Path) -> None:

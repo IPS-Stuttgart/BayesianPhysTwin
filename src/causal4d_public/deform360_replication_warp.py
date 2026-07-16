@@ -35,6 +35,7 @@ class Deform360WarpForecastCase:
     dt_seconds: float
     initial_velocities_m_s: np.ndarray | None = None
     object_rest_lengths_m: np.ndarray | None = None
+    support_height_m: float | None = None
 
     def __post_init__(self) -> None:
         controllers = np.asarray(self.controller_positions_m, dtype=np.float64)
@@ -65,6 +66,11 @@ class Deform360WarpForecastCase:
             "controller trajectory and contact rest lengths must be finite",
         )
         _require(self.dt_seconds > 0.0, "forecast interval must be positive")
+        if self.support_height_m is not None:
+            _require(
+                np.isfinite(self.support_height_m),
+                "support height must be finite",
+            )
         if self.initial_velocities_m_s is None:
             velocities = np.zeros_like(self.graph.positions_m)
         else:
@@ -254,7 +260,11 @@ class OfficialWarpSparseGraphRunner:
         self.device = device
         wp.set_device(device)
         self.node_count = len(case.graph.positions_m)
-        self.support_height_m = float(np.min(case.graph.positions_m[:, 1]))
+        self.support_height_m = (
+            float(np.min(case.graph.positions_m[:, 1]))
+            if case.support_height_m is None
+            else float(case.support_height_m)
+        )
         self.initial_positions = deform360_xyz_to_warp_xzy(
             case.graph.positions_m,
             initial_support_height_m=self.support_height_m,

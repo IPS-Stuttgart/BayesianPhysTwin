@@ -71,6 +71,7 @@ def test_case_defaults_to_zero_velocity_and_validates_contacts() -> None:
         dt_seconds=1.0 / 30.0,
     )
     np.testing.assert_array_equal(case.initial_velocities_m_s, np.zeros((4, 3)))
+    assert case.support_height_m is None
     expected_rest = np.linalg.norm(
         case.graph.positions_m[case.graph.spring_edges[:, 1]]
         - case.graph.positions_m[case.graph.spring_edges[:, 0]],
@@ -105,6 +106,21 @@ def test_case_accepts_object_persistent_rest_lengths() -> None:
         spring_family=0,
     )
     assert stretch["maximum"] == 0.25
+
+
+def test_case_accepts_registered_support_height() -> None:
+    case = Deform360WarpForecastCase(
+        episode_id="unit",
+        graph=_graph(),
+        controller_positions_m=np.zeros((8, 1, 3)),
+        contact_active=np.ones((8, 1), dtype=bool),
+        contact_node_indices=(2,),
+        contact_rest_lengths_m=np.asarray([0.001]),
+        dt_seconds=1.0 / 30.0,
+        support_height_m=0.075,
+    )
+
+    assert case.support_height_m == 0.075
 
 
 def test_strain_summary_is_zero_for_identity_trajectory() -> None:

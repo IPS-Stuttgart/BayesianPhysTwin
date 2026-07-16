@@ -207,6 +207,45 @@ def multiview_mask_consistency(
     )
 
 
+def camera_reliability_from_multiview_consistency(
+    consistency: Mapping[str, Any],
+    *,
+    minimum_reliability: float = 0.05,
+    recall_power: float = 2.0,
+) -> dict[str, float]:
+    """Turn source-only leave-one-view recall into conservative soft weights.
+
+    The score is independent of any fitted filament or simulator residual.  A
+    nonzero floor keeps a view available as weak contradictory evidence rather
+    than silently deleting it at a hard threshold.
+    """
+
+    _require(
+        0.0 < minimum_reliability <= 1.0,
+        "minimum camera reliability must lie in (0,1]",
+    )
+    _require(recall_power > 0.0, "camera reliability power must be positive")
+    records = consistency.get("per_camera")
+    _require(isinstance(records, list) and records, "consistency has no cameras")
+    output: dict[str, float] = {}
+    for record in records:
+        _require(isinstance(record, Mapping), "invalid camera consistency record")
+        camera = record.get("camera")
+        recall = record.get("leave_one_out_core_recall")
+        _require(isinstance(camera, str) and camera, "camera name is missing")
+        _require(camera not in output, "camera consistency names must be unique")
+        _require(
+            isinstance(recall, (float, int)) and np.isfinite(recall),
+            f"camera recall is invalid for {camera}",
+        )
+        _require(0.0 <= recall <= 1.0, f"camera recall is invalid for {camera}")
+        output[camera] = float(
+            minimum_reliability
+            + (1.0 - minimum_reliability) * float(recall) ** recall_power
+        )
+    return output
+
+
 def sam2_view_audit_sha256(payload: Mapping[str, Any]) -> str:
     canonical = dict(payload)
     canonical.pop("result_sha256", None)
@@ -289,6 +328,7 @@ def write_sam2_view_audit(path: str | Path, payload: Mapping[str, Any]) -> Path:
 __all__ = [
     "CrossViewMaskReliabilityConfig",
     "build_sam2_view_audit",
+    "camera_reliability_from_multiview_consistency",
     "load_sam2_view_audit",
     "multiview_mask_consistency",
     "sam2_view_audit_sha256",

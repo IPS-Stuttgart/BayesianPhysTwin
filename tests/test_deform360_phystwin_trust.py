@@ -21,6 +21,7 @@ from causal4d_public.deform360_phystwin_trust import (
     fit_source_causal_trust,
     load_cardinality_source_execution_protocol,
     load_cardinality_trust_protocol,
+    load_contact_anchored_causal_trust_protocol,
     load_official_phystwin_trust_episode,
     validate_cardinality_normalized_source_causal_trust_artifact,
     validate_cardinality_physical_grid_source_trust_artifact,
@@ -85,6 +86,15 @@ def _cardinality_source_execution_path() -> Path:
     )
 
 
+def _contact_anchored_protocol_path() -> Path:
+    return (
+        Path(__file__).resolve().parents[1]
+        / "configs"
+        / "causal4d_public"
+        / "deform360_contact_anchored_causal_trust_002_rope_silk_v1.json"
+    )
+
+
 def test_independent_cardinality_protocol_is_canonically_locked(
     tmp_path: Path,
 ) -> None:
@@ -120,6 +130,29 @@ def test_independent_source_execution_is_canonically_locked(
     changed_path.write_text(json.dumps(changed), encoding="utf-8")
     with pytest.raises(ValueError, match="checksum mismatch"):
         load_cardinality_source_execution_protocol(changed_path)
+
+
+def test_contact_anchored_source_discovery_is_locked_before_calibration(
+    tmp_path: Path,
+) -> None:
+    protocol = load_contact_anchored_causal_trust_protocol(
+        _contact_anchored_protocol_path()
+    )
+    config = protocol["config"]
+    assert config["information_boundary"]["all_source_outcomes_read_before_this_freeze"]
+    assert not config["information_boundary"][
+        "calibration_episode_outcomes_read_before_this_freeze"
+    ]
+    assert config["causal_trust"]["support_tangential_policy"] == (
+        "exact-persistence-fallback"
+    )
+
+    changed = json.loads(json.dumps(protocol))
+    changed["config"]["causal_trust"]["autonomous_drift_weight"] = 0.1
+    changed_path = tmp_path / "changed-contact-anchored.json"
+    changed_path.write_text(json.dumps(changed), encoding="utf-8")
+    with pytest.raises(ValueError, match="checksum mismatch"):
+        load_contact_anchored_causal_trust_protocol(changed_path)
 
 
 def test_causal_control_variate_contains_exact_control_arms() -> None:
