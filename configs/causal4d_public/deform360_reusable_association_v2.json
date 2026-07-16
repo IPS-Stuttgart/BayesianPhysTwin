@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-reusable-material-association-v2",
+    "status": "source-only-frozen-before-new-calibration-access",
+    "frozen_at": "2026-07-16T20:10:00+02:00",
+    "code_repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "dataset_repository": "brownu/deform360",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "parent_failed_protocol_id": "deform360-contact-anchored-causal-trust-002-rope-silk-v1",
+    "parent_failed_config_sha256": "1ce4dabdc54683c73ae3b93a0dcec2e1d87542fb245fbfe2338abdfe9dc3341e",
+    "source_qa_config_sha256": "f5c3f4577bab648bf3da2537c28b7a77e87c055b32e1284c179a192e7569909b",
+    "development_source_cases": [
+      {"object_id": "081-stripe-rope", "reference_episode": 1, "episodes": [3, 4, 6, 7, 9]},
+      {"object_id": "085-scarf-cloth", "reference_episode": 1, "episodes": [3]},
+      {"object_id": "092-squirrel", "reference_episode": 0, "episodes": [4]}
+    ],
+    "mask_candidates": {
+      "model": "sam2.1-hiera-small-pinned-by-source-qa-v1",
+      "maximum_candidates_per_camera": 4,
+      "include_basic_candidates_below_appearance_threshold": true,
+      "candidate_prior": "source-reference appearance, shape, area, predicted-IoU, and stability only",
+      "simulator_residual_allowed": false,
+      "future_frame_allowed": false
+    },
+    "joint_selection": {
+      "policy": "appearance-first-calibrated-3d-feasibility-v2",
+      "top_appearance_set_retained_when_geometry_passes": true,
+      "search_only_when_top_appearance_geometry_fails": true,
+      "voxel_resolution": 32,
+      "coordinate_descent_passes": 4,
+      "appearance_weight": 0.05,
+      "projected_volume_penalty": 0.1,
+      "full_resolution_cross_view_config": {
+        "cube_half_extent_m": 0.5,
+        "voxel_resolution": 120,
+        "consensus_fraction_of_peak": 0.55,
+        "minimum_consensus_votes": 8,
+        "minimum_leave_one_out_recall": 0.3
+      }
+    },
+    "temporal_identity": {
+      "policy": "stable-order-with-sparse-rematch-v1",
+      "maximum_distance_m": 0.03,
+      "stable_order_distance_m": 0.03,
+      "ambiguity_margin_m": 0.001,
+      "ambiguity_ratio": 1.25,
+      "maximum_neighbors": 4,
+      "stable_pairs_use_distance_reliability": true,
+      "spatial_rematches_include_assignment_mixture_variance": true,
+      "single_identity_outlier_invalidates_episode": false
+    },
+    "calibration_gate": {
+      "object_id": "081-stripe-rope",
+      "episode_ids": [0, 2, 8],
+      "minimum_accepted_camera_count_per_episode": 10,
+      "minimum_temporal_match_fraction_per_step": 0.95,
+      "minimum_effective_reliable_match_fraction_per_step": 0.8,
+      "maximum_splat_count_ratio_to_source_maximum": 3.0,
+      "conjunctive_all_episodes_required": true,
+      "future_prediction_metrics_allowed": false,
+      "on_fail": "freeze negative result and keep all target episodes sealed",
+      "on_pass": "freeze association artifacts before any dynamics scoring"
+    },
+    "information_boundary": {
+      "development_source_frames_only": true,
+      "development_calibration_media_read": false,
+      "development_target_media_read": false,
+      "development_outcome_metrics_computed": false,
+      "calibration_first_frame_and_six_frame_prefix_allowed_after_freeze": true,
+      "calibration_future_geometry_allowed": false,
+      "target_media_allowed_before_calibration_pass": false
+    },
+    "claim_boundary": {
+      "source_transfer_result": true,
+      "independent_calibration_result": false,
+      "future_dynamics_result": false,
+      "state_of_the_art_result": false
+    }
+  },
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118"
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ReusableAssociationSourceEvidence",
+  "protocol_id": "deform360-reusable-material-association-v2",
+  "config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+  "split": "development-source-only",
+  "mask_cases": [
+    {
+      "object_id": "081-stripe-rope",
+      "episode": 3,
+      "result_sha256": "98d873cbf901d52e3b37f5b97b084e76a547e4ca8664a6c20bcafd6874abb52f",
+      "accepted_camera_count": 12,
+      "strict_v1_status": "not-recomputed-with-full-v1-candidate-list",
+      "v2_search_required": false
+    },
+    {
+      "object_id": "081-stripe-rope",
+      "episode": 4,
+      "result_sha256": "f274c23978ec8200869b0ab4c929ca4902a6e5c13781b38f10a9cf203c97f789",
+      "accepted_camera_count": 12,
+      "strict_v1_status": "aborted-no-appearance-eligible-candidate-in-camera-008_cam1",
+      "v2_search_required": false
+    },
+    {
+      "object_id": "081-stripe-rope",
+      "episode": 6,
+      "result_sha256": "ec765b969634b5f3d9e1dc838f1391cf79bab12bc43bd9c93705cef70d6f2127",
+      "accepted_camera_count": 10,
+      "strict_v1_status": "aborted-no-appearance-eligible-candidate-in-camera-008_cam1",
+      "v2_search_required": false
+    },
+    {
+      "object_id": "081-stripe-rope",
+      "episode": 7,
+      "result_sha256": "9ce2f278d1a40907e0eef83ceb391efd8da01227b7010779135db3b93ad16744",
+      "accepted_camera_count": 10,
+      "strict_v1_status": "aborted-no-appearance-eligible-candidate-in-camera-008_cam1",
+      "v2_search_required": false
+    },
+    {
+      "object_id": "081-stripe-rope",
+      "episode": 9,
+      "result_sha256": "1aeca464b0eb61b881ee66d9097e81de50d64cfb7d2ced9963e52bbcdc300d7c",
+      "accepted_camera_count": 11,
+      "strict_v1_status": "passed",
+      "v2_search_required": false
+    },
+    {
+      "object_id": "085-scarf-cloth",
+      "episode": 3,
+      "result_sha256": "91d1476afd75ad54baa2d8491f3a9c69316d9e75291283ba1263a4dd09374c9c",
+      "accepted_camera_count": 12,
+      "strict_v1_status": "passed",
+      "v2_search_required": false
+    },
+    {
+      "object_id": "092-squirrel",
+      "episode": 4,
+      "result_sha256": "08b900064444816a4e32d4119ad19fd0ee5565506a28394645b26cb28efb5443",
+      "accepted_camera_count": 11,
+      "strict_v1_status": "passed",
+      "v2_search_required": false
+    }
+  ],
+  "temporal_identity_source_audit": {
+    "object_id": "081-stripe-rope",
+    "episodes": [3, 4, 6, 7, 9],
+    "prefix_transition_count_per_episode": 5,
+    "minimum_match_fraction": 1.0,
+    "minimum_effective_reliable_match_fraction": 0.9709,
+    "maximum_source_splat_count": 746,
+    "real_spatial_rematch_count": 0,
+    "synthetic_permutation_and_outlier_controls_passed": true
+  },
+  "visual_source_audit": {
+    "081-stripe-rope-ep0006-masks.jpg": "479aed7b11531949864de23204699c5163489bedcde50639109e9f67e54cb7c5",
+    "085-scarf-cloth-ep0003-masks.jpg": "8884b7246579740991c4ec9e33119843ab2843d94e1f7789b52475b254bbf581",
+    "092-squirrel-ep0004-masks.jpg": "76ce6b8a58560f64298b4172235b7b945bbd412a37760125368e84e7fa2aab29"
+  },
+  "verification": {
+    "host": "gpuserver6000",
+    "full_test_suite": "511 passed, 5 skipped",
+    "changed_file_lint": "passed"
+  },
+  "information_boundary": {
+    "source_frames_only": true,
+    "calibration_media_read_for_v2_development": false,
+    "target_media_read": false,
+    "future_outcome_metrics_computed": false
+  },
+  "conclusion": {
+    "source_mask_gate_passed": true,
+    "source_temporal_identity_gate_passed": true,
+    "independent_calibration_passed": false,
+    "state_of_the_art_claim": false
+  },
+  "result_sha256": "55b132ae4b413e57bb96c67151368a1c4b37e25862efcbc9f4c4bb8ef1bd03ee"
+}

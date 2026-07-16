@@ -111,7 +111,9 @@ def deformable_object_mask_candidate_diagnostics(
     border_sides += int(np.any(candidate[:, -1]))
     eligible = bool(
         area >= config.minimum_mask_region_area
-        and config.minimum_area_fraction <= area_fraction <= config.maximum_area_fraction
+        and config.minimum_area_fraction
+        <= area_fraction
+        <= config.maximum_area_fraction
         and foreground_contrast >= config.minimum_foreground_contrast
         and center_distance <= config.maximum_normalized_center_distance
     )
@@ -176,10 +178,7 @@ def mask_appearance_descriptor(rgb: np.ndarray, mask: np.ndarray) -> dict[str, A
     if len(coordinates) >= 3:
         eigenvalues = np.linalg.eigvalsh(np.cov(coordinates.T))
         elongation = float(
-            np.sqrt(
-                (float(eigenvalues[-1]) + 1.0)
-                / (float(eigenvalues[0]) + 1.0)
-            )
+            np.sqrt((float(eigenvalues[-1]) + 1.0) / (float(eigenvalues[0]) + 1.0))
         )
     else:
         elongation = 1.0
@@ -190,7 +189,9 @@ def mask_appearance_descriptor(rgb: np.ndarray, mask: np.ndarray) -> dict[str, A
             np.quantile(lab_values, 0.75, axis=0)
             - np.quantile(lab_values, 0.25, axis=0)
         ).tolist(),
-        "bounding_box_fill_fraction": float(np.count_nonzero(candidate) / bounding_area),
+        "bounding_box_fill_fraction": float(
+            np.count_nonzero(candidate) / bounding_area
+        ),
         "area_fraction": float(np.mean(candidate)),
         "elongation": elongation,
     }
@@ -212,18 +213,16 @@ def mask_appearance_similarity(
     )
     reference_lab = np.asarray(reference["lab_median"], dtype=np.float64)
     candidate_lab = np.asarray(candidate["lab_median"], dtype=np.float64)
-    lab_distance = float(np.linalg.norm(reference_lab - candidate_lab) / np.sqrt(3 * 255**2))
+    lab_distance = float(
+        np.linalg.norm(reference_lab - candidate_lab) / np.sqrt(3 * 255**2)
+    )
     lab_similarity = float(np.exp(-4.0 * lab_distance))
     reference_fill = max(float(reference["bounding_box_fill_fraction"]), 1e-6)
     candidate_fill = max(float(candidate["bounding_box_fill_fraction"]), 1e-6)
-    fill_similarity = float(
-        np.exp(-abs(np.log(candidate_fill / reference_fill)))
-    )
+    fill_similarity = float(np.exp(-abs(np.log(candidate_fill / reference_fill))))
     reference_area = max(float(reference["area_fraction"]), 1e-6)
     candidate_area = max(float(candidate["area_fraction"]), 1e-6)
-    area_similarity = float(
-        np.exp(-0.5 * abs(np.log(candidate_area / reference_area)))
-    )
+    area_similarity = float(np.exp(-0.5 * abs(np.log(candidate_area / reference_area))))
     reference_elongation = max(float(reference["elongation"]), 1.0)
     candidate_elongation = max(float(candidate["elongation"]), 1.0)
     elongation_similarity = float(
@@ -233,9 +232,7 @@ def mask_appearance_similarity(
         (fill_similarity * area_similarity * elongation_similarity) ** (1.0 / 3.0)
     )
     combined = float(
-        0.65 * histogram_intersection
-        + 0.25 * lab_similarity
-        + 0.10 * shape_similarity
+        0.65 * histogram_intersection + 0.25 * lab_similarity + 0.10 * shape_similarity
     )
     return {
         "combined": combined,
@@ -336,10 +333,39 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
     ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select a source-view mask using appearance from a fixed source view."""
 
-        rgb = self._first_frame_rgb(video_path)
-        reference_descriptor = mask_appearance_descriptor(
-            reference_rgb, reference_mask
+        ranked, summary = self.initial_mask_candidates_with_reference(
+            video_path,
+            reference_rgb,
+            reference_mask,
+            reference_camera=reference_camera,
+            maximum_candidates=1,
         )
+        selected = ranked[0]
+        return np.asarray(selected["mask"], dtype=bool), {
+            **summary,
+            "selected": selected["diagnostic"],
+        }
+
+    def initial_mask_candidates_with_reference(
+        self,
+        video_path: Path,
+        reference_rgb: np.ndarray,
+        reference_mask: np.ndarray,
+        *,
+        reference_camera: str,
+        maximum_candidates: int = 4,
+        include_below_appearance_threshold: bool = False,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Return ranked appearance candidates for calibrated joint selection.
+
+        Candidate generation remains independent of the physical-state residual.
+        The caller may use camera calibration to choose one candidate per view.
+        """
+
+        _require(maximum_candidates >= 1, "maximum_candidates must be positive")
+
+        rgb = self._first_frame_rgb(video_path)
+        reference_descriptor = mask_appearance_descriptor(reference_rgb, reference_mask)
         annotations = self._automatic_annotations(rgb)
         candidates = []
         for index, annotation in enumerate(annotations):
@@ -375,18 +401,23 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
             )
             predicted_iou = float(annotation["predicted_iou"])
             stability = float(annotation["stability_score"])
-            score = (
+            raw_score = (
                 similarity["combined"] ** 3
                 * similarity["shape_similarity"] ** 4
                 * np.sqrt(diagnostics["area_fraction"])
                 * np.sqrt(max(0.0, predicted_iou * stability))
-                if appearance_eligible
+                if basic_eligible
                 else -1.0
             )
+            joint_eligible = bool(
+                appearance_eligible
+                or (include_below_appearance_threshold and basic_eligible)
+            )
+            score = raw_score if joint_eligible else -1.0
             diagnostics.update(
                 {
                     "eligible": appearance_eligible,
-                    "score": float(score),
+                    "score": float(score if appearance_eligible else -1.0),
                     "candidate_index": index,
                     "predicted_iou": predicted_iou,
                     "stability_score": stability,
@@ -394,17 +425,32 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
                     "appearance_descriptor": descriptor,
                 }
             )
+            if include_below_appearance_threshold:
+                diagnostics.update(
+                    {
+                        "joint_selection_eligible": joint_eligible,
+                        "joint_selection_score": float(score),
+                    }
+                )
             candidates.append((score, index, diagnostics))
         eligible = [candidate for candidate in candidates if candidate[0] >= 0.0]
         _require(
             eligible,
             f"SAM2 found no reference-consistent mask for {video_path}",
         )
-        _, selected_index, selected = max(
-            eligible, key=lambda item: (item[0], -item[1])
-        )
-        mask = np.asarray(annotations[selected_index]["segmentation"], dtype=bool)
-        return mask, {
+        ranked = sorted(eligible, key=lambda item: (-item[0], item[1]))
+        ranked_records = [
+            {
+                "mask": np.asarray(
+                    annotations[candidate_index]["segmentation"], dtype=bool
+                ),
+                "prior_score": float(score),
+                "candidate_index": int(candidate_index),
+                "diagnostic": diagnostic,
+            }
+            for score, candidate_index, diagnostic in ranked[:maximum_candidates]
+        ]
+        summary = {
             "camera": video_path.parent.name,
             "video": video_path.name,
             "initialization": "source-reference-appearance",
@@ -412,8 +458,12 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
             "reference_descriptor": reference_descriptor,
             "automatic_candidate_count": len(annotations),
             "eligible_candidate_count": len(eligible),
-            "selected": selected,
         }
+        if include_below_appearance_threshold:
+            summary["appearance_eligible_candidate_count"] = sum(
+                int(diagnostic["eligible"]) for _, _, diagnostic in candidates
+            )
+        return ranked_records, summary
 
     def segment_from_initial_mask(
         self,

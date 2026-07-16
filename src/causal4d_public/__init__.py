@@ -70,6 +70,19 @@ from causal4d_public.deform360_object_sam2 import (
     mask_appearance_descriptor,
     mask_appearance_similarity,
 )
+from causal4d_public.deform360_gaussian_identity import (
+    GaussianIdentityConfig,
+    GaussianIdentityResult,
+    match_gaussian_identities,
+)
+from causal4d_public.deform360_reusable_association import (
+    CANONICAL_REUSABLE_ASSOCIATION_CONFIG_SHA256,
+    REUSABLE_ASSOCIATION_PROTOCOL_ID,
+    load_reusable_association_config,
+    load_reusable_association_source_evidence,
+    validate_reusable_association_config,
+    validate_reusable_association_source_evidence,
+)
 from causal4d_public.deform360_replication_controls import (
     ContactTransitionEpisode,
     ContactTransitionFit,
@@ -110,9 +123,12 @@ from causal4d_public.deform360_sam2_suffix import (
 )
 from causal4d_public.deform360_sam2_views import (
     CrossViewMaskReliabilityConfig,
+    JointMultiviewMaskSelectionConfig,
     camera_reliability_from_multiview_consistency,
     load_sam2_view_audit,
     multiview_mask_consistency,
+    select_joint_mask_candidate_hits,
+    select_joint_multiview_masks,
     validate_sam2_view_audit,
 )
 from causal4d_public.deform360_rope_graph import (
@@ -200,6 +216,8 @@ from causal4d_public.pokeflex_warp_source import (
 
 __all__ = [
     "CrossViewMaskReliabilityConfig",
+    "CANONICAL_REUSABLE_ASSOCIATION_CONFIG_SHA256",
+    "JointMultiviewMaskSelectionConfig",
     "ContactTransitionEpisode",
     "ContactTransitionFit",
     "ContactTransitionModel",
@@ -207,6 +225,8 @@ __all__ = [
     "Deform360ProtocolConfig",
     "DeformableObjectSam2MaskConfig",
     "DeformableObjectSam2VideoPredictor",
+    "GaussianIdentityConfig",
+    "GaussianIdentityResult",
     "Deform360MaterialAssociation",
     "FilamentRegistrationConfig",
     "FilamentRegistrationQAConfig",
@@ -223,6 +243,7 @@ __all__ = [
     "RopeCenterlineConfig",
     "RopeCenterlineSequenceConfig",
     "RopeDynamicsObservation",
+    "REUSABLE_ASSOCIATION_PROTOCOL_ID",
     "RopeForwardFitConfig",
     "RopeFutureGeometryConfig",
     "RopePrefixGeometryConfig",
@@ -276,6 +297,8 @@ __all__ = [
     "filament_multiview_support_diagnostics",
     "load_deform360_protocol_config",
     "load_material_association_artifact",
+    "load_reusable_association_config",
+    "load_reusable_association_source_evidence",
     "load_pokeflex_source_qa_policy",
     "load_deform360_replication_protocol",
     "load_backend_policy",
@@ -285,6 +308,7 @@ __all__ = [
     "load_forward_rope_fit_parameters",
     "load_sam2_view_audit",
     "multiview_mask_consistency",
+    "match_gaussian_identities",
     "mask_appearance_descriptor",
     "mask_appearance_similarity",
     "preflight_deform360_001_rope",
@@ -295,6 +319,8 @@ __all__ = [
     "rope_mask_candidate_diagnostics",
     "rope_chain_edges",
     "rollout_rope_dynamics",
+    "select_joint_mask_candidate_hits",
+    "select_joint_multiview_masks",
     "run_official_warp_feasibility_gate",
     "run_pokeflex_source_qa",
     "run_pokeflex_warp_source_backend",
@@ -322,6 +348,8 @@ __all__ = [
     "validate_sam2_prefix_mask_artifact",
     "validate_sam2_suffix_mask_artifact",
     "validate_sam2_view_audit",
+    "validate_reusable_association_config",
+    "validate_reusable_association_source_evidence",
     "write_material_association_artifact",
     "validate_splat_probe_artifact",
     "validate_held_out_rope_prediction_seal",
