@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "config_sha256": "7a5c41a37a710d6daf65296a26d3e160e32b582047498f38362925c6c5e4f50c",
+  "config": {
+    "protocol_id": "deform360-reusable-ensemble-081-v1",
+    "status": "source-only-development-after-independent-calibration-diagnosis",
+    "frozen_at": "2026-07-16T23:45:00+02:00",
+    "object_id": "081-stripe-rope",
+    "parent_reusable_dynamics": {
+      "config_sha256": "9fceb7a417822b979a22313285bbaf02cb0f4e5506fef953c38a8e4ae5566d6c",
+      "source_selection_result_sha256": "945fcc1bfa5a279a38d6e1b854be19b5ef6b2ec3917d28658decb5be7d33ffef",
+      "source_selection_file_sha256": "fb29a7d8d5b6e858335523d1768a9a0673fa3b3a887de2ccf2b6d95d58e09b91",
+      "negative_calibration_result_sha256": "3a85a727f423d9822a705b38046fe0a4d96ae964e08f173636b48cdb70b89785",
+      "negative_calibration_file_sha256": "4f7785622e376fa628068e8c4a2dfdb1e35e36c8f9c6e3599ec68e160828499c",
+      "frozen_implementation_commit": "d26cccc"
+    },
+    "source_fit": {
+      "episode_ids": [
+        1,
+        4,
+        6
+      ],
+      "frame_range_half_open": [
+        1,
+        60
+      ],
+      "candidate_policy": "all 18 physical tuples finite on every source episode",
+      "candidate_prior": "uniform",
+      "candidate_loss": "execution-normalized mean of track RMSE and symmetric Chamfer distance under the fixed trust prediction",
+      "temperature_grid": [
+        0.01,
+        0.03,
+        0.1,
+        0.3,
+        1.0
+      ],
+      "temperature_selection": "leave-one-source-action-out prediction",
+      "minimum_effective_candidate_count": 2.0,
+      "source_untouched_tails_used_for_fit": false
+    },
+    "fixed_action_trust": {
+      "base_action_response": 0.4,
+      "autonomous_drift": 0.1,
+      "normalization": "base_action_response / min(controller_group_count, controller_spring_count)",
+      "support_is_residual_independent": true,
+      "weights_may_change_after_freeze": false
+    },
+    "posterior_prediction": {
+      "point_prediction": "weighted posterior mean of trusted candidate trajectories",
+      "parameter_uncertainty": "weighted coordinate variance over candidate trajectories",
+      "single_source_controls": "use the selected pooled temperature but fit candidate weights from each source episode separately; report their median",
+      "calibration_or_target_outcomes_allowed_in_weights": false
+    },
+    "source_gates": {
+      "leave_one_action_out_beats_persistence": true,
+      "leave_one_action_out_matches_or_beats_point_map": true,
+      "minimum_effective_candidate_count": 2.0,
+      "all_gates_conjunctive": true
+    },
+    "exploratory_evaluation": {
+      "episodes": [
+        0,
+        2,
+        8
+      ],
+      "outcomes_were_inspected_before_this_method_family_was_frozen": true,
+      "allowed_claim": "mechanism-development evidence only",
+      "required_controls": [
+        "constant_persistence",
+        "frozen_pooled_point_tuple",
+        "pooled_gibbs_posterior_mean",
+        "median_single_source_gibbs_control",
+        "commanded-count versus supported-count trust"
+      ]
+    },
+    "sealed_target": {
+      "episode_id": 5,
+      "may_open_under_this_protocol": false,
+      "reason": "the parent calibration pooling gate failed"
+    },
+    "next_confirmatory_evidence": {
+      "required": true,
+      "unit": "object-session",
+      "design": "fresh preregistered topology-stratified multi-object Deform360 panel",
+      "state_of_the_art_claim_allowed_before_pass": false
+    },
+    "information_boundary": {
+      "parent_calibration_outcomes_known_before_method_design": true,
+      "parent_calibration_outcomes_allowed_for_numerical_fit": false,
+      "source_train_outcomes_allowed_for_fit": true,
+      "sealed_target_media_allowed": false
+    },
+    "claim_boundary": "post-calibration source-only method development; no independent reusable-twin, multi-object, or state-of-the-art claim"
+  }
+}

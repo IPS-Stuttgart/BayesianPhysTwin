@@ -1,0 +1,116 @@
+{
+  "artifact_kind": "Deform360ReusableTwinSourceTrustedPointMapControl",
+  "claim_boundary": "source-only trust-aligned point-MAP diagnostic; current calibration is exploratory and a fresh panel is required for claims",
+  "config_sha256": "7a5c41a37a710d6daf65296a26d3e160e32b582047498f38362925c6c5e4f50c",
+  "fixed_action_trust": {
+    "autonomous_drift": 0.1,
+    "base_action_response": 0.4,
+    "normalization": "supported_controller_count"
+  },
+  "frame_range_half_open": [
+    1,
+    60
+  ],
+  "gibbs_result_sha256": "3ae8878a581abecf90be7a256013d0c2a27c6a47198f1a6a7b94f85c5ccb5186",
+  "information_boundary": {
+    "derived_only_from_source_gibbs_control": true,
+    "previous_calibration_outcomes_used_for_numerical_selection": false,
+    "sealed_target_episode_read": false,
+    "source_untouched_tails_used_for_selection": false
+  },
+  "leave_one_action_out": [
+    {
+      "fit_episode_ids": [
+        "4",
+        "6"
+      ],
+      "held_out_episode_id": "1",
+      "joint_win_vs_persistence": true,
+      "metrics": {
+        "chamfer_m": 0.005997408429244119,
+        "frame_count": 59,
+        "persistence_chamfer_m": 0.007260779419091687,
+        "persistence_track_rmse_m": 0.010775688301659134,
+        "relative_score_vs_persistence": 0.8034139525434234,
+        "track_rmse_m": 0.008413951252466002
+      },
+      "selected_candidate_label": "y50000-drag1-dash50"
+    },
+    {
+      "fit_episode_ids": [
+        "1",
+        "6"
+      ],
+      "held_out_episode_id": "4",
+      "joint_win_vs_persistence": false,
+      "metrics": {
+        "chamfer_m": 0.005021506061262936,
+        "frame_count": 59,
+        "persistence_chamfer_m": 0.00495952936546983,
+        "persistence_track_rmse_m": 0.005561824539449144,
+        "relative_score_vs_persistence": 0.9811830777014758,
+        "track_rmse_m": 0.005283008429262158
+      },
+      "selected_candidate_label": "y50000-drag1-dash50"
+    },
+    {
+      "fit_episode_ids": [
+        "1",
+        "4"
+      ],
+      "held_out_episode_id": "6",
+      "joint_win_vs_persistence": true,
+      "metrics": {
+        "chamfer_m": 0.0030778702816201503,
+        "frame_count": 59,
+        "persistence_chamfer_m": 0.00454733484844631,
+        "persistence_track_rmse_m": 0.005107999521976827,
+        "relative_score_vs_persistence": 0.6646537636037624,
+        "track_rmse_m": 0.0033327452228598007
+      },
+      "selected_candidate_label": "y50000-drag1-dash50"
+    }
+  ],
+  "protocol_id": "deform360-reusable-ensemble-081-v1",
+  "result_sha256": "8c78103add47ee5e878b7a72d446c9c825102dbdb63b507011d70ce9a9252b55",
+  "schema_version": 1,
+  "selected_pooled_candidate_label": "y50000-drag1-dash50",
+  "selected_pooled_physical_parameters": {
+    "dashpot_damping": 50.0,
+    "drag_damping": 1.0,
+    "init_spring_Y": 50000.0
+  },
+  "selected_single_source_candidate_labels": {
+    "1": "y50000-drag1-dash50",
+    "4": "y50000-drag1-dash50",
+    "6": "y50000-drag1-dash100"
+  },
+  "selected_single_source_physical_parameters": {
+    "1": {
+      "dashpot_damping": 50.0,
+      "drag_damping": 1.0,
+      "init_spring_Y": 50000.0
+    },
+    "4": {
+      "dashpot_damping": 50.0,
+      "drag_damping": 1.0,
+      "init_spring_Y": 50000.0
+    },
+    "6": {
+      "dashpot_damping": 100.0,
+      "drag_damping": 1.0,
+      "init_spring_Y": 50000.0
+    }
+  },
+  "source_diagnostics": {
+    "execution_balanced_relative_score_vs_persistence": 0.8164169312828872,
+    "joint_win_episode_count": 2,
+    "maximum_metric_degradation_fraction": 0.012496487312810833,
+    "same_candidate_selected_in_every_outer_fold": true
+  },
+  "source_episode_ids": [
+    "1",
+    "4",
+    "6"
+  ]
+}
