@@ -114,3 +114,18 @@ The next action is data processing, not method selection: download the three
 locked objects, fit object-level physics only on the six declared training
 episodes, seal all twelve held-out predictions, and then score the admission
 gate once.
+
+## Physical-fit addendum
+
+The raw transfer began after the source milestone was tagged. Before inspecting
+fresh object metadata, media, or outcomes, the physical fit was made exact in
+`deform360_reusable_trust_physics_addendum_v1.json`. It uses the 18 finite
+parameter tuples inherited from the earlier reusable-dynamics grid: spring
+stiffness 10k, 30k, or 50k; drag 1, 3, or 10; and dashpot 50 or 100.
+
+The trust decision is computed once from the fixed 10k/10/100 reference
+response. Candidate physics cannot alter that decision or its alpha. The pooled
+tuple minimizes an execution-balanced normalized track-and-Chamfer score over
+the six declared fit episodes. Leave-one-fit-episode-out and single-episode
+selection controls are reported. The selected tuple is then frozen before the
+twelve held-out predictions are generated.
