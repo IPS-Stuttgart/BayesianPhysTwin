@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "config_sha256": "64e41773d3e333987dc97a11c52e3474fd34fe65139e6c7d799b3e8f4db188cd",
+  "config": {
+    "protocol_id": "deform360-reusable-sota-v1",
+    "status": "locked-before-listed-object-download-and-outcome-processing",
+    "locked_at": "2026-07-17",
+    "dataset": {
+      "repository": "brownu/deform360",
+      "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+      "public_object_count_at_lock": 190,
+      "fit_episode_ids": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        9
+      ],
+      "held_episode_ids": [
+        0,
+        2,
+        5,
+        8
+      ]
+    },
+    "development_objects": {
+      "1d": [
+        "004-rubber-band",
+        "067-paracord",
+        "073-shoelace",
+        "079-chain-metal"
+      ],
+      "2d": [
+        "008-pink-cloth",
+        "016-shirt-cloth",
+        "021-bag-cloth",
+        "040-paper-cloth"
+      ],
+      "3d": [
+        "043-dog",
+        "046-sponge",
+        "052-rubber-duck",
+        "096-octopus"
+      ]
+    },
+    "confirmatory_objects": {
+      "1d": [
+        "068-nylon-rope",
+        "074-string"
+      ],
+      "2d": [
+        "033-mask-cloth",
+        "117-bubble-wrap-cloth"
+      ],
+      "3d": [
+        "090-sloth",
+        "145-rubber-toy"
+      ]
+    },
+    "claim": {
+      "primary_setting": "multi-episode transfer to held actions on the same object",
+      "zero_shot_multi_object_claim": false,
+      "primary_method": "automatically registered reusable physical twin with source-fitted Bayesian parameters and observable trust gating",
+      "learned_temporal_residual_in_primary_method": false,
+      "causal4d_frozen_claim_may_change": false
+    },
+    "arms": [
+      "constant persistence",
+      "single-fit-episode physical selection control",
+      "pooled-fit-episode physical twin without trust gating",
+      "pooled-fit-episode physical twin with frozen observable trust gating"
+    ],
+    "information_boundary": {
+      "development_object_outcomes_may_open_after_lock": true,
+      "confirmatory_fit_episode_outcomes_may_open_only_after_method_freeze": true,
+      "confirmatory_held_input_frame_count": 1,
+      "confirmatory_full_robot_action_trajectory_allowed": true,
+      "confirmatory_future_object_frames_allowed_before_prediction_seal": false,
+      "confirmatory_future_particle_tracks_allowed_before_prediction_seal": false,
+      "confirmatory_future_point_clouds_allowed_before_prediction_seal": false,
+      "confirmatory_tactile_allowed_before_prediction_seal": false,
+      "held_predictions_must_be_checksummed_before_outcome_reveal": true,
+      "future_outcome_opened_early_invalidates_object_without_replacement": true,
+      "penguin_held_episode_ids_remain_sealed": [
+        0,
+        2,
+        5,
+        8
+      ],
+      "pokeflex_target_remains_sealed": true
+    },
+    "frozen_method_selection": {
+      "object_geometry": "automatic frame-zero registration with input-only QA",
+      "physical_parameter_fit": "pooled six fit episodes per object",
+      "single_episode_control": "same candidate grid fit separately on each fit episode and summarized over all six choices",
+      "trust_features": "robot/action, registration, graph, and simulator self-diagnostics available without future object outcomes",
+      "trust_thresholds": "selected only on the 12 development objects",
+      "residual_policy": "no learned residual; the 5000-step temporal source arm failed and abstained",
+      "hyperparameters_may_change_after_confirmatory_fit_open": false
+    },
+    "evaluation": {
+      "confirmatory_object_count": 6,
+      "confirmatory_held_episode_count": 24,
+      "unit_of_replication": "object with episodes nested within object",
+      "primary_metrics": [
+        "future_chamfer_m",
+        "future_track_error_m"
+      ],
+      "secondary_metrics": [
+        "late_chamfer_m",
+        "late_track_error_m",
+        "horizon_resolved_error",
+        "coverage_90",
+        "energy_score",
+        "fallback_fraction",
+        "runtime"
+      ],
+      "uncertainty_resampling": "object-clustered bootstrap with all held episodes retained inside each sampled object",
+      "report_episode_level_table": true,
+      "report_category_level_table": true
+    },
+    "transfer_gate": {
+      "minimum_future_chamfer_improvement_vs_persistence_fraction": 0.05,
+      "minimum_future_track_improvement_vs_persistence_fraction": 0.05,
+      "minimum_pooled_improvement_vs_median_single_episode_control_fraction": 0.02,
+      "minimum_held_episode_win_count_out_of_24": 16,
+      "maximum_held_episode_degradation_fraction": 0.10,
+      "coverage_90_interval": [
+        0.85,
+        0.95
+      ],
+      "energy_score_must_improve": true,
+      "all_gates_conjunctive": true
+    },
+    "published_reference": {
+      "paper": "Deform360 arXiv:2607.05390v1",
+      "multi_episode_particleformer_future_chamfer_m": 0.051,
+      "multi_episode_particleformer_future_track_error_m": 0.079,
+      "multi_object_particleformer_future_chamfer_m": 0.038,
+      "multi_object_particleformer_future_track_error_m": 0.048,
+      "direct_sota_claim_requires_identical_split_horizon_and_evaluator": true,
+      "authors_split_or_evaluator_currently_public": false,
+      "pgrd_cross_benchmark_result_is_not_a_direct_comparator": true
+    },
+    "decision_rule": {
+      "if_transfer_gate_fails": "retain the source-only reusable-physics result and make no independent SOTA claim",
+      "if_transfer_gate_passes_without_official_parity": "report an independently preregistered public-data result, not a direct Table 4 claim",
+      "if_transfer_gate_and_official_parity_pass": "permit a direct multi-episode Deform360 comparison",
+      "held_outcomes_may_not_select_a_new_model": true
+    }
+  }
+}

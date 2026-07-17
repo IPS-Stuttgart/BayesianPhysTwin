@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ReusableSotaInputQa",
+  "protocol_id": "deform360-reusable-sota-v1",
+  "protocol_config_sha256": "64e41773d3e333987dc97a11c52e3474fd34fe65139e6c7d799b3e8f4db188cd",
+  "dataset_repository": "brownu/deform360",
+  "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+  "object_id": "004-rubber-band",
+  "role": "development",
+  "raw_file_count": 832,
+  "raw_tree_sha256": "c2b8a096806d87cc5a0599fab88443c36343a923c30a1d97b9576f303ba6d937",
+  "aligned_episodes": [
+    {"episode_id": 0, "camera_count": 32, "frame_count": 342},
+    {"episode_id": 1, "camera_count": 32, "frame_count": 317},
+    {"episode_id": 2, "camera_count": 32, "frame_count": 249},
+    {"episode_id": 3, "camera_count": 32, "frame_count": 266},
+    {"episode_id": 4, "camera_count": 32, "frame_count": 259},
+    {"episode_id": 5, "camera_count": 32, "frame_count": 301},
+    {"episode_id": 6, "camera_count": 32, "frame_count": 316},
+    {"episode_id": 7, "camera_count": 32, "frame_count": 273},
+    {"episode_id": 8, "camera_count": 32, "frame_count": 291},
+    {"episode_id": 9, "camera_count": 32, "frame_count": 274}
+  ],
+  "fit_robot_artifacts": [
+    {
+      "episode_id": 1,
+      "frame_count": 317,
+      "bimanual": false,
+      "actions_shape": [317, 5, 3],
+      "robot_sha256": "67554fd7c2f0e6f6821e4dc068457134d972e7f24b05a8da1a57c07ac26590e6",
+      "robot_meta_sha256": "95b925014dcd53038e8e7b6c3aa272988aacb3e2470340671d30ff4b8fbbd0e3"
+    },
+    {
+      "episode_id": 3,
+      "frame_count": 266,
+      "bimanual": false,
+      "actions_shape": [266, 5, 3],
+      "robot_sha256": "5bff38da87fa3912014231aca86cf9c5368ff52bfa8de0abb706648cd00d67c5",
+      "robot_meta_sha256": "c7d9ac1856f87d049dcf8aeff18dc68526a049030d516daf3ea716fd0510ab87"
+    },
+    {
+      "episode_id": 4,
+      "frame_count": 259,
+      "bimanual": false,
+      "actions_shape": [259, 5, 3],
+      "robot_sha256": "01f09af481b5cc5cd31e185eee83e08f053fd55b3df0b46e6353c1d92e8c9977",
+      "robot_meta_sha256": "b7fb9c51c00d31a11e2b2b33fcaf25e1c360a23ec3461604c808cac2df838959"
+    },
+    {
+      "episode_id": 6,
+      "frame_count": 316,
+      "bimanual": true,
+      "actions_shape": [316, 2, 5, 3],
+      "robot_sha256": "2385f5388839c7c04aedc37735581dfdfb9c58419a4ec9d15bd12171c4ba59b2",
+      "robot_meta_sha256": "6cbe48530de7519ffd2240aadb463ebc0aa4d9aded46b1766a5a8041625257ab"
+    },
+    {
+      "episode_id": 7,
+      "frame_count": 273,
+      "bimanual": true,
+      "actions_shape": [273, 2, 5, 3],
+      "robot_sha256": "6e711cb3ea6f720dcc7c477a1794579960a4f509446053c1f10d3bafff304679",
+      "robot_meta_sha256": "1a15210e5bfcd97b1e4f5472b0b124639535e7c13bf2467adf79ef9f8cf82432"
+    },
+    {
+      "episode_id": 9,
+      "frame_count": 274,
+      "bimanual": true,
+      "actions_shape": [274, 2, 5, 3],
+      "robot_sha256": "737efd722428231c590c9ed1f861780b483301a87173f54b6aae9368927cfd88",
+      "robot_meta_sha256": "7438a5324dfd66e872576d459c07a9063686981d55bdf13f199ba36e0e734bb0"
+    }
+  ],
+  "held_robot_artifacts_present": [],
+  "confirmatory_objects_opened": [],
+  "checks": {
+    "all_ten_alignment_outputs_valid": true,
+    "all_fit_robot_outputs_valid": true,
+    "fit_action_cardinality_matches_metadata": true,
+    "held_robot_outputs_absent": true,
+    "confirmatory_panel_untouched": true
+  },
+  "passed": true,
+  "claim_boundary": "input-side development staging only; no dynamics, calibration, or SOTA claim"
+}

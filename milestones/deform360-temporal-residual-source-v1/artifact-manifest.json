@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-temporal-residual-source-v1",
+  "captured_at": "2026-07-17",
+  "compute_host": "gpuserver6000",
+  "parent_code_commit": "78c86cb",
+  "branch": "deform360-contact-conditioned-reusable-v1",
+  "held_object_id": "092-squirrel",
+  "training_episode_count": 18,
+  "training_steps": 5000,
+  "context_steps": 8,
+  "rollout_steps": 8,
+  "fresh_object_data_opened": false,
+  "penguin_held_data_opened": false,
+  "pokeflex_target_opened": false,
+  "result": {
+    "selected_utility_threshold": 1.1,
+    "deterministic_future_track_degradation_fraction": 1.219300561726408,
+    "deterministic_future_chamfer_degradation_fraction": 0.820434953452648,
+    "gated_output": "trusted physical fallback exactly",
+    "result_sha256": "1d8c059217aa046a1cfa0f4edf556800941263f51b88c42fa1b3ff40f0ae1b40"
+  },
+  "artifacts": [
+    {
+      "path": "artifacts/smoke-092-squirrel-5000.json",
+      "sha256": "914cfea966d852a5804cda9ac2551b0a1cc53756f87abd9a6d1630589afcf72b"
+    }
+  ]
+}

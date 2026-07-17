@@ -9,6 +9,8 @@ import pytest
 from causal4d_public.deform360_bayesian_residual import (
     BayesianResidualModelConfig,
     EquivariantBayesianResidual,
+    TemporalBayesianResidualModelConfig,
+    TemporalEquivariantBayesianResidual,
     apply_exact_residual_fallback,
     clustered_effective_weights,
     inflate_variance_for_action_shift,
@@ -227,3 +229,122 @@ def test_duplicate_controller_surface_points_do_not_change_prediction() -> None:
     torch.testing.assert_close(
         duplicated.utility_probability, original.utility_probability
     )
+
+
+def test_temporal_residual_is_rotation_equivariant_across_history() -> None:
+    torch.manual_seed(13)
+    model = TemporalEquivariantBayesianResidual(
+        TemporalBayesianResidualModelConfig(
+            hidden_dim=16,
+            message_steps=1,
+            temporal_hidden_dim=16,
+        )
+    ).eval()
+    with torch.no_grad():
+        model.vector_coefficients.weight.normal_(std=0.05)
+        model.vector_coefficients.bias.copy_(
+            torch.tensor([0.1, -0.2, 0.05, 0.15])
+        )
+    positions = torch.tensor(
+        [[[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.1, 0.0]]]
+    )
+    velocities = torch.tensor(
+        [[[0.01, 0.02, 0.0], [0.00, 0.01, 0.0], [-0.01, 0.0, 0.0]]]
+    )
+    physics_positions = positions + 0.01 * torch.tensor(
+        [[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]]
+    )
+    controllers = torch.tensor([[[0.25, 0.0, 0.0]]])
+    controller_velocities = torch.tensor([[[0.0, 0.03, 0.0]]])
+    contact = torch.tensor([[[0.0], [0.4], [0.8]]])
+    reliability = torch.tensor([[0.9, 0.7, 0.8]])
+    edges = torch.tensor([[0, 1, 1, 2], [1, 0, 2, 1]])
+    gravity = torch.tensor([[0.0, 0.0, -1.0]])
+    kwargs = {
+        "positions_m": positions,
+        "velocities_mps": velocities,
+        "physics_positions_m": physics_positions,
+        "physics_velocities_mps": velocities * 0.8,
+        "controller_positions_m": controllers,
+        "controller_velocities_mps": controller_velocities,
+        "contact_probabilities": contact,
+        "prior_reliability": reliability,
+        "edge_index": edges,
+        "gravity_direction": gravity,
+    }
+    rotation = _rotation_z()
+    rotated_kwargs = {
+        **kwargs,
+        "positions_m": positions @ rotation.T,
+        "velocities_mps": velocities @ rotation.T,
+        "physics_positions_m": physics_positions @ rotation.T,
+        "physics_velocities_mps": velocities * 0.8 @ rotation.T,
+        "controller_positions_m": controllers @ rotation.T,
+        "controller_velocities_mps": controller_velocities @ rotation.T,
+        "gravity_direction": gravity @ rotation.T,
+    }
+    with torch.no_grad():
+        original_first, original_state = model(**kwargs)
+        rotated_first, rotated_state = model(**rotated_kwargs)
+        original_second, original_state = model(
+            **kwargs, temporal_state=original_state
+        )
+        rotated_second, rotated_state = model(
+            **rotated_kwargs, temporal_state=rotated_state
+        )
+
+    for original, rotated in (
+        (original_first, rotated_first),
+        (original_second, rotated_second),
+    ):
+        torch.testing.assert_close(
+            rotated.mean_mps,
+            original.mean_mps @ rotation.T,
+            atol=2.0e-6,
+            rtol=2.0e-5,
+        )
+        torch.testing.assert_close(
+            rotated.aleatoric_variance_m2ps2,
+            original.aleatoric_variance_m2ps2,
+        )
+        torch.testing.assert_close(
+            rotated.utility_probability, original.utility_probability
+        )
+    torch.testing.assert_close(rotated_state.hidden, original_state.hidden)
+    torch.testing.assert_close(
+        rotated_state.previous_mean_mps,
+        original_state.previous_mean_mps @ rotation.T,
+        atol=2.0e-6,
+        rtol=2.0e-5,
+    )
+
+
+def test_temporal_residual_carries_causal_history() -> None:
+    torch.manual_seed(17)
+    model = TemporalEquivariantBayesianResidual(
+        TemporalBayesianResidualModelConfig(
+            hidden_dim=16,
+            message_steps=1,
+            temporal_hidden_dim=16,
+        )
+    ).eval()
+    positions = torch.tensor([[[0.0, 0.0, 0.0], [0.1, 0.0, 0.0]]])
+    base = {
+        "positions_m": positions,
+        "velocities_mps": torch.zeros_like(positions),
+        "physics_positions_m": positions
+        + torch.tensor([[[0.01, 0.0, 0.0], [0.0, 0.01, 0.0]]]),
+        "physics_velocities_mps": torch.zeros_like(positions),
+        "controller_positions_m": torch.tensor([[[0.05, 0.0, 0.0]]]),
+        "controller_velocities_mps": torch.tensor([[[0.0, 0.02, 0.0]]]),
+        "contact_probabilities": torch.tensor([[[0.4], [0.6]]]),
+        "prior_reliability": torch.ones(1, 2),
+        "edge_index": torch.tensor([[0, 1], [1, 0]]),
+    }
+    with torch.no_grad():
+        _, state = model(**base)
+        carried, _ = model(**base, temporal_state=state)
+        reset, _ = model(**base)
+
+    assert not torch.allclose(carried.mean_mps, reset.mean_mps)
+    assert model.detach_state(state).hidden.requires_grad is False

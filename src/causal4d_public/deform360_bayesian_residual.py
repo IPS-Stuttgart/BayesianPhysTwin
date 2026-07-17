@@ -467,6 +467,262 @@ if nn is not None:
             )
 
 
+    @dataclass(frozen=True)
+    class TemporalResidualState:
+        """Per-node history carried by the causal temporal residual."""
+
+        hidden: torch.Tensor
+        previous_mean_mps: torch.Tensor
+
+
+    @dataclass(frozen=True)
+    class TemporalBayesianResidualModelConfig:
+        hidden_dim: int = 64
+        message_steps: int = 3
+        temporal_hidden_dim: int = 64
+        maximum_residual_speed_mps: float = 0.30
+        maximum_temporal_correction_mps: float = 0.15
+        minimum_variance_m2ps2: float = 1.0e-8
+        maximum_variance_m2ps2: float = 0.25
+
+
+    class TemporalEquivariantBayesianResidual(nn.Module):
+        """Causal temporal refinement of an equivariant instantaneous residual.
+
+        The recurrent state contains only invariant scalar features and a previous
+        equivariant vector prediction. Rotating every physical vector, including
+        gravity, therefore rotates the output without changing its scalar trust
+        or uncertainty. The temporal correction heads start at zero so this model
+        initially behaves like a smoothed instantaneous residual.
+        """
+
+        _TEMPORAL_FEATURE_COUNT = 11
+
+        def __init__(
+            self,
+            config: TemporalBayesianResidualModelConfig | None = None,
+        ) -> None:
+            super().__init__()
+            self.config = config or TemporalBayesianResidualModelConfig()
+            _require(
+                self.config.temporal_hidden_dim >= 8,
+                "temporal hidden dimension is too small",
+            )
+            _require(
+                0.0 < self.config.maximum_temporal_correction_mps
+                <= self.config.maximum_residual_speed_mps,
+                "temporal correction speed is invalid",
+            )
+            instantaneous_config = BayesianResidualModelConfig(
+                hidden_dim=self.config.hidden_dim,
+                message_steps=self.config.message_steps,
+                maximum_residual_speed_mps=self.config.maximum_residual_speed_mps,
+                minimum_variance_m2ps2=self.config.minimum_variance_m2ps2,
+                maximum_variance_m2ps2=self.config.maximum_variance_m2ps2,
+            )
+            self.instantaneous = EquivariantBayesianResidual(instantaneous_config)
+            temporal_hidden = self.config.temporal_hidden_dim
+            self.temporal_encoder = nn.Sequential(
+                nn.Linear(self._TEMPORAL_FEATURE_COUNT, temporal_hidden),
+                nn.SiLU(),
+                nn.Linear(temporal_hidden, temporal_hidden),
+                nn.SiLU(),
+            )
+            self.temporal_cell = nn.GRUCell(temporal_hidden, temporal_hidden)
+            self.instantaneous_gate = nn.Linear(temporal_hidden, 1)
+            self.vector_coefficients = nn.Linear(temporal_hidden, 4)
+            self.log_variance_scale = nn.Linear(temporal_hidden, 1)
+            self.utility_logit_delta = nn.Linear(temporal_hidden, 1)
+            self._initialize_temporal_heads()
+
+        def _initialize_temporal_heads(self) -> None:
+            nn.init.zeros_(self.instantaneous_gate.weight)
+            nn.init.constant_(self.instantaneous_gate.bias, 2.0)
+            for layer in (
+                self.vector_coefficients,
+                self.log_variance_scale,
+                self.utility_logit_delta,
+            ):
+                nn.init.zeros_(layer.weight)
+                nn.init.zeros_(layer.bias)
+
+        def initial_state(
+            self,
+            *,
+            batch_size: int,
+            node_count: int,
+            device: torch.device,
+            dtype: torch.dtype,
+        ) -> TemporalResidualState:
+            _require(batch_size >= 1 and node_count >= 1, "invalid temporal state size")
+            hidden = torch.zeros(
+                batch_size,
+                node_count,
+                self.config.temporal_hidden_dim,
+                device=device,
+                dtype=dtype,
+            )
+            previous = torch.zeros(
+                batch_size,
+                node_count,
+                3,
+                device=device,
+                dtype=dtype,
+            )
+            return TemporalResidualState(hidden=hidden, previous_mean_mps=previous)
+
+        @staticmethod
+        def detach_state(state: TemporalResidualState) -> TemporalResidualState:
+            return TemporalResidualState(
+                hidden=state.hidden.detach(),
+                previous_mean_mps=state.previous_mean_mps.detach(),
+            )
+
+        def forward(
+            self,
+            *,
+            positions_m: torch.Tensor,
+            velocities_mps: torch.Tensor,
+            physics_positions_m: torch.Tensor,
+            physics_velocities_mps: torch.Tensor,
+            controller_positions_m: torch.Tensor,
+            controller_velocities_mps: torch.Tensor,
+            contact_probabilities: torch.Tensor,
+            prior_reliability: torch.Tensor,
+            edge_index: torch.Tensor,
+            temporal_state: TemporalResidualState | None = None,
+            gravity_direction: torch.Tensor | None = None,
+        ) -> tuple[ResidualVelocityDistribution, TemporalResidualState]:
+            instantaneous = self.instantaneous(
+                positions_m=positions_m,
+                velocities_mps=velocities_mps,
+                physics_positions_m=physics_positions_m,
+                physics_velocities_mps=physics_velocities_mps,
+                controller_positions_m=controller_positions_m,
+                controller_velocities_mps=controller_velocities_mps,
+                contact_probabilities=contact_probabilities,
+                prior_reliability=prior_reliability,
+                edge_index=edge_index,
+            )
+            batch_size, node_count, _ = positions_m.shape
+            if temporal_state is None:
+                temporal_state = self.initial_state(
+                    batch_size=batch_size,
+                    node_count=node_count,
+                    device=positions_m.device,
+                    dtype=positions_m.dtype,
+                )
+            _require(
+                temporal_state.hidden.shape
+                == (batch_size, node_count, self.config.temporal_hidden_dim),
+                "temporal hidden state shape differs",
+            )
+            _require(
+                temporal_state.previous_mean_mps.shape == positions_m.shape,
+                "previous residual shape differs",
+            )
+            if gravity_direction is None:
+                gravity = positions_m.new_tensor((0.0, 0.0, -1.0)).view(1, 1, 3)
+            else:
+                gravity = gravity_direction.to(
+                    device=positions_m.device,
+                    dtype=positions_m.dtype,
+                )
+                if gravity.ndim == 2:
+                    gravity = gravity[:, None]
+                _require(
+                    gravity.shape in ((batch_size, 1, 3), positions_m.shape),
+                    "gravity direction shape differs",
+                )
+            gravity = _unit_vector(gravity).expand(batch_size, node_count, 3)
+            physics_delta = physics_positions_m - positions_m
+            contact_mass = torch.amax(contact_probabilities, dim=-1, keepdim=True)
+            variance = instantaneous.aleatoric_variance_m2ps2
+            temporal_features = torch.cat(
+                (
+                    torch.linalg.vector_norm(
+                        instantaneous.mean_mps, dim=-1, keepdim=True
+                    ),
+                    torch.linalg.vector_norm(velocities_mps, dim=-1, keepdim=True),
+                    torch.linalg.vector_norm(
+                        physics_velocities_mps, dim=-1, keepdim=True
+                    ),
+                    torch.linalg.vector_norm(physics_delta, dim=-1, keepdim=True),
+                    torch.sum(velocities_mps * gravity, dim=-1, keepdim=True),
+                    torch.sum(
+                        physics_velocities_mps * gravity, dim=-1, keepdim=True
+                    ),
+                    contact_mass,
+                    prior_reliability[..., None],
+                    instantaneous.utility_probability[..., None],
+                    torch.log(torch.clamp(variance, min=1.0e-12))[..., None],
+                    torch.linalg.vector_norm(
+                        temporal_state.previous_mean_mps,
+                        dim=-1,
+                        keepdim=True,
+                    ),
+                ),
+                dim=-1,
+            )
+            encoded = self.temporal_encoder(temporal_features)
+            hidden = self.temporal_cell(
+                encoded.reshape(batch_size * node_count, -1),
+                temporal_state.hidden.reshape(batch_size * node_count, -1),
+            ).reshape(batch_size, node_count, -1)
+
+            gate = torch.sigmoid(self.instantaneous_gate(hidden))
+            smoothed = (
+                gate * instantaneous.mean_mps
+                + (1.0 - gate) * temporal_state.previous_mean_mps
+            )
+            vector_bases = torch.stack(
+                (
+                    _unit_vector(physics_delta),
+                    _unit_vector(velocities_mps),
+                    _unit_vector(physics_velocities_mps),
+                    gravity,
+                ),
+                dim=-2,
+            )
+            coefficients = torch.tanh(self.vector_coefficients(hidden))
+            temporal_correction = (
+                self.config.maximum_temporal_correction_mps
+                * torch.sum(coefficients[..., None] * vector_bases, dim=-2)
+                / vector_bases.shape[-2]
+            )
+            mean = smoothed + temporal_correction
+            speed = torch.linalg.vector_norm(mean, dim=-1, keepdim=True)
+            mean = mean * torch.clamp(
+                self.config.maximum_residual_speed_mps
+                / torch.clamp(speed, min=1.0e-12),
+                max=1.0,
+            )
+
+            log_scale = torch.clamp(
+                self.log_variance_scale(hidden).squeeze(-1), min=-4.0, max=4.0
+            )
+            refined_variance = torch.clamp(
+                variance * torch.exp(log_scale),
+                min=self.config.minimum_variance_m2ps2,
+                max=self.config.maximum_variance_m2ps2,
+            )
+            probability = torch.clamp(
+                instantaneous.utility_probability, min=1.0e-6, max=1.0 - 1.0e-6
+            )
+            utility_logit = torch.logit(probability) + self.utility_logit_delta(
+                hidden
+            ).squeeze(-1)
+            refined = ResidualVelocityDistribution(
+                mean_mps=mean,
+                aleatoric_variance_m2ps2=refined_variance,
+                utility_probability=torch.sigmoid(utility_logit),
+            )
+            return refined, TemporalResidualState(
+                hidden=hidden,
+                previous_mean_mps=mean,
+            )
+
+
     def clustered_student_t_nll(
         target_residual_mps: torch.Tensor,
         prediction: ResidualVelocityDistribution,
@@ -515,10 +771,19 @@ else:
             )
 
 
+    class TemporalEquivariantBayesianResidual:  # pragma: no cover
+        def __init__(self, *_: object, **__: object) -> None:
+            raise RuntimeError(
+                "TemporalEquivariantBayesianResidual requires the optional torch "
+                "dependency"
+            )
+
+
 __all__ = [
     "BAYESIAN_RESIDUAL_PROTOCOL_ID",
     "BayesianResidualModelConfig",
     "EquivariantBayesianResidual",
+    "TemporalEquivariantBayesianResidual",
     "apply_exact_residual_fallback",
     "bayesian_residual_config_sha256",
     "clustered_effective_weights",
@@ -530,4 +795,11 @@ __all__ = [
 ]
 
 if nn is not None:
-    __all__.extend(("ResidualVelocityDistribution", "clustered_student_t_nll"))
+    __all__.extend(
+        (
+            "ResidualVelocityDistribution",
+            "TemporalBayesianResidualModelConfig",
+            "TemporalResidualState",
+            "clustered_student_t_nll",
+        )
+    )
