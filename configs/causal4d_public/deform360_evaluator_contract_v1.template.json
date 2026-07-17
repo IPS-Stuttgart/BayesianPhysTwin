@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "artifact_kind": "Deform360EvaluatorContract",
   "contract_id": "deform360-table4-unresolved-v1",
   "status": "unresolved-non-authorizing",
@@ -35,6 +35,7 @@
   "metrics": {
     "chamfer": {
       "definition": "unresolved",
+      "visibility_policy": "unresolved",
       "paper_description": "Chamfer distance"
     },
     "track": {
@@ -78,6 +79,7 @@
     "particles.identity_policy",
     "particles.identity_sha256_by_episode",
     "metrics.chamfer.definition",
+    "metrics.chamfer.visibility_policy",
     "metrics.track.definition",
     "metrics.track.visibility_policy",
     "aggregation.frame",
@@ -88,5 +90,5 @@
     "evaluator_provenance.entrypoint_sha256",
     "evaluator_provenance.particleformer_table4_reproduction"
   ],
-  "result_sha256": "26657b2dad34121f41be6a92a7d5fd1ff546630dd42fc9c94a72fb3cbf26fb7f"
+  "result_sha256": "ebd68b888f6e09a480c4a29ade0fd6387a8bf4c62ada47e9bda8087b146a51d3"
 }

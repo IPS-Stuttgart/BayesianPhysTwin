@@ -23,7 +23,8 @@ guessing it. A direct Table 4 authorization requires all of the following:
 1. the complete ordered fit and held object/episode split;
 2. the exact evaluation horizon and stride;
 3. checksummed material-particle identities for every held episode;
-4. explicit Chamfer, track, visibility, and aggregation definitions;
+4. explicit, separate Chamfer and track visibility policies plus metric and
+   aggregation definitions;
 5. an author-released evaluator revision and entrypoint checksum;
 6. exact reproduction of the published ParticleFormer `0.051/0.079` row.
 
@@ -33,6 +34,8 @@ placing our score below the published numbers under an independent protocol is
 not sufficient.
 
 The scorer also records the evaluated frame indices and material-identity hash.
+Chamfer and identity-based track error have separate visibility policies; a
+track-confidence mask cannot silently remove geometry from Chamfer evaluation.
 This prevents a changed horizon, unordered Chamfer-only particle cloud, or a
 different visibility subset from silently replacing the declared experiment.
 Panel aggregation is explicit and supports object-balanced evaluation so that

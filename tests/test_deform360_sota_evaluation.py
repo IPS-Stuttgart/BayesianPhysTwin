@@ -32,7 +32,7 @@ def _contract(
         "object-b/0": "c" * 64,
     }
     payload: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "artifact_kind": "Deform360EvaluatorContract",
         "contract_id": "fixture",
         "status": status,
@@ -61,7 +61,10 @@ def _contract(
             "identity_sha256_by_episode": identities,
         },
         "metrics": {
-            "chamfer": {"definition": "symmetric_mean_euclidean_m"},
+            "chamfer": {
+                "definition": "symmetric_mean_euclidean_m",
+                "visibility_policy": "all_finite_material_points",
+            },
             "track": {
                 "definition": track,
                 "visibility_policy": "all_finite_material_points",
@@ -150,6 +153,34 @@ def test_track_semantics_are_not_interchangeable() -> None:
         )
 
     assert values == pytest.approx([2.5, np.sqrt(12.5), 12.5])
+
+
+def test_chamfer_and_track_visibility_policies_are_independent() -> None:
+    contract = _contract()
+    contract["metrics"]["track"][
+        "visibility_policy"
+    ] = "visible_and_finite_material_points"
+    _seal(contract)
+    target = np.zeros((3, 2, 3), dtype=np.float64)
+    prediction = target.copy()
+    prediction[1:, 1, 0] = 1.0
+    visibility = np.ones((3, 2), dtype=bool)
+    visibility[1:, 1] = False
+
+    result = score_deform360_episode(
+        contract,
+        object_id="object-a",
+        episode_id=0,
+        particle_identity_sha256="a" * 64,
+        target_m=target,
+        prediction_m=prediction,
+        visibility=visibility,
+    )
+
+    assert result["metrics"]["future_chamfer"] > 0.0
+    assert result["metrics"]["future_track_error"] == 0.0
+    assert result["valid_chamfer_particle_count_by_frame"] == [2, 2]
+    assert result["valid_track_particle_count_by_frame"] == [1, 1]
 
 
 def test_particle_identity_mismatch_is_rejected() -> None:

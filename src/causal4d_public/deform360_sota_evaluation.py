@@ -16,7 +16,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 
-DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION = 1
+DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION = 2
 DEFORM360_EVALUATOR_CONTRACT_KIND = "Deform360EvaluatorContract"
 DEFORM360_EPISODE_SCORE_KIND = "Deform360EpisodeScore"
 DEFORM360_PANEL_SCORE_KIND = "Deform360PanelScore"
@@ -172,6 +172,11 @@ def _validate_official_parity_contract(payload: Mapping[str, Any]) -> None:
         "official Chamfer definition is unresolved",
     )
     _require(
+        metrics.get("chamfer", {}).get("visibility_policy")
+        in _VISIBILITY_POLICIES,
+        "official Chamfer visibility policy is unresolved",
+    )
+    _require(
         metrics.get("track", {}).get("definition") in _TRACK_DEFINITIONS,
         "official track definition is unresolved",
     )
@@ -259,6 +264,11 @@ def _score_ready_contract(payload: Mapping[str, Any], episode_key: str) -> None:
         "Chamfer definition is unresolved",
     )
     _require(
+        metrics.get("chamfer", {}).get("visibility_policy")
+        in _VISIBILITY_POLICIES,
+        "Chamfer visibility policy is unresolved",
+    )
+    _require(
         metrics.get("track", {}).get("definition") in _TRACK_DEFINITIONS,
         "track definition is unresolved",
     )
@@ -336,8 +346,14 @@ def score_deform360_episode(
         dtype=np.int64,
     )
     _require(len(indices) and int(indices[-1]) < len(target), "evaluation horizon exceeds data")
-    visibility_policy = contract["metrics"]["track"]["visibility_policy"]
-    if visibility_policy == "visible_and_finite_material_points":
+    chamfer_visibility_policy = contract["metrics"]["chamfer"][
+        "visibility_policy"
+    ]
+    track_visibility_policy = contract["metrics"]["track"]["visibility_policy"]
+    if "visible_and_finite_material_points" in {
+        chamfer_visibility_policy,
+        track_visibility_policy,
+    }:
         _require(visibility is not None, "visibility mask is required by the contract")
         visible = np.asarray(visibility, dtype=bool)
         _require(visible.shape == target.shape[:2], "visibility shape differs")
@@ -347,22 +363,42 @@ def score_deform360_episode(
     track_definition = contract["metrics"]["track"]["definition"]
     frame_chamfer: list[float] = []
     frame_track: list[float] = []
-    frame_counts: list[int] = []
+    frame_chamfer_counts: list[int] = []
+    frame_track_counts: list[int] = []
     for frame_index in indices:
         finite = np.all(np.isfinite(target[frame_index]), axis=1) & np.all(
             np.isfinite(prediction[frame_index]), axis=1
         )
-        selected = finite & visible[frame_index]
-        _require(np.any(selected), f"no valid particles at frame {frame_index}")
-        target_frame = target[frame_index, selected]
-        prediction_frame = prediction[frame_index, selected]
+        chamfer_selected = finite.copy()
+        if chamfer_visibility_policy == "visible_and_finite_material_points":
+            chamfer_selected &= visible[frame_index]
+        track_selected = finite.copy()
+        if track_visibility_policy == "visible_and_finite_material_points":
+            track_selected &= visible[frame_index]
+        _require(
+            np.any(chamfer_selected),
+            f"no valid Chamfer particles at frame {frame_index}",
+        )
+        _require(
+            np.any(track_selected),
+            f"no valid track particles at frame {frame_index}",
+        )
         frame_chamfer.append(
-            _chamfer(target_frame, prediction_frame, chamfer_definition)
+            _chamfer(
+                target[frame_index, chamfer_selected],
+                prediction[frame_index, chamfer_selected],
+                chamfer_definition,
+            )
         )
         frame_track.append(
-            _track(prediction_frame - target_frame, track_definition)
+            _track(
+                prediction[frame_index, track_selected]
+                - target[frame_index, track_selected],
+                track_definition,
+            )
         )
-        frame_counts.append(int(np.count_nonzero(selected)))
+        frame_chamfer_counts.append(int(np.count_nonzero(chamfer_selected)))
+        frame_track_counts.append(int(np.count_nonzero(track_selected)))
     payload: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": DEFORM360_EPISODE_SCORE_KIND,
@@ -372,12 +408,15 @@ def score_deform360_episode(
         "episode_key": episode_key,
         "particle_identity_sha256": particle_identity_sha256,
         "evaluated_frame_indices": indices.tolist(),
-        "valid_particle_count_by_frame": frame_counts,
+        "valid_chamfer_particle_count_by_frame": frame_chamfer_counts,
+        "valid_track_particle_count_by_frame": frame_track_counts,
         "metrics": {
             "future_chamfer": float(np.mean(frame_chamfer)),
             "future_track_error": float(np.mean(frame_track)),
             "chamfer_definition": chamfer_definition,
+            "chamfer_visibility_policy": chamfer_visibility_policy,
             "track_definition": track_definition,
+            "track_visibility_policy": track_visibility_policy,
             "per_frame_chamfer": frame_chamfer,
             "per_frame_track_error": frame_track,
         },
