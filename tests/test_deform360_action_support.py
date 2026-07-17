@@ -4,6 +4,7 @@ import numpy as np
 
 from causal4d_public.deform360_action_support import (
     GraphActionSupportEpisode,
+    dynamic_contact_anchor_indices,
     fit_source_graph_action_support,
     graph_action_support_prediction,
     graph_readout_action_support,
@@ -48,6 +49,27 @@ def test_graph_readout_support_is_convex_and_distance_ordered() -> None:
         length_scale_m=0.1,
     )
     np.testing.assert_allclose(support, np.exp(-np.asarray([0.0, 1.0, 2.0])))
+
+
+def test_dynamic_contact_anchors_match_groupwise_nearest_nodes() -> None:
+    points = np.asarray([[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0]])
+    controls = np.asarray(
+        [
+            [0.005, 0.0, 0.0],
+            [0.006, 0.0, 0.0],
+            [0.195, 0.0, 0.0],
+            [0.196, 0.0, 0.0],
+        ]
+    )
+
+    anchors = dynamic_contact_anchor_indices(
+        points,
+        controls,
+        controller_group_size=2,
+        maximum_contact_distance_m=0.01,
+    )
+
+    np.testing.assert_array_equal(anchors, [0, 2])
 
 
 def test_zero_action_support_is_exact_persistence() -> None:

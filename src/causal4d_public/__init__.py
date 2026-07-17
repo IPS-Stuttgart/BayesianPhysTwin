@@ -12,6 +12,7 @@ from causal4d_public.deform360_contact import (
 )
 from causal4d_public.deform360_action_support import (
     GraphActionSupportEpisode,
+    dynamic_contact_anchor_indices,
     fit_source_graph_action_support,
     graph_action_support_prediction,
     graph_contact_distance_m,
@@ -40,6 +41,7 @@ from causal4d_public.deform360_partial_graph_state import (
     PartialGraphStateResult,
     evaluate_partial_graph_state,
     fit_partial_graph_state,
+    fit_rigid_partial_graph_state,
 )
 from causal4d_public.deform360_reusable_graph import (
     CanonicalDeform360Graph,
@@ -85,6 +87,10 @@ from causal4d_public.deform360_reusable_trust_protocol import (
     load_reusable_trust_protocol,
     validate_reusable_trust_prediction,
     validate_reusable_trust_prediction_cohort_seal,
+)
+from causal4d_public.deform360_reusable_trust_state import (
+    STATE_ADDENDUM_ID as DEFORM360_REUSABLE_TRUST_STATE_ADDENDUM_ID,
+    load_reusable_trust_state_addendum,
 )
 from causal4d_public.deform360_reusable_trust_evaluation import (
     aggregate_reusable_trust_fresh_gate,
@@ -313,6 +319,7 @@ __all__ = [
     "DEFORM360_REUSABLE_TRUST_FRESH_PROTOCOL_ID",
     "DEFORM360_REUSABLE_TRUST_FRESH_SPLITS",
     "DEFORM360_REUSABLE_TRUST_PHYSICS_ADDENDUM_ID",
+    "DEFORM360_REUSABLE_TRUST_STATE_ADDENDUM_ID",
     "DENSE_REUSABLE_PANEL_PROTOCOL_ID",
     "GraphActionSupportEpisode",
     "DeformableObjectSam2MaskConfig",
@@ -394,6 +401,7 @@ __all__ = [
     "deform360_response_features",
     "deform360_robot_action_features",
     "deterministic_farthest_point_indices",
+    "dynamic_contact_anchor_indices",
     "discover_pokeflex_episodes",
     "evaluate_target_contact_oracle",
     "evaluate_partial_graph_state",
@@ -412,6 +420,7 @@ __all__ = [
     "fit_causal_contact_transition",
     "fit_multiview_filament_centerline",
     "fit_partial_graph_state",
+    "fit_rigid_partial_graph_state",
     "fit_filament_seed_plane",
     "fit_shared_rope_dynamics",
     "fit_forward_rope_dynamics",
@@ -429,6 +438,7 @@ __all__ = [
     "load_reusable_association_config",
     "load_reusable_association_source_evidence",
     "load_reusable_trust_protocol",
+    "load_reusable_trust_state_addendum",
     "load_reusable_twin_trust_candidate",
     "load_pokeflex_source_qa_policy",
     "load_deform360_replication_protocol",

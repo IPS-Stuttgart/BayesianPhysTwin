@@ -6,6 +6,7 @@ from bayesian_phystwin.phystwin_graph import PhysTwinSpringGraphConfig
 from causal4d_public.deform360_partial_graph_state import (
     PartialGraphStateConfig,
     fit_partial_graph_state,
+    fit_rigid_partial_graph_state,
 )
 from causal4d_public.deform360_reusable_graph import (
     ReusableGraphRegistrationConfig,
@@ -103,3 +104,53 @@ def test_duplicate_target_observations_do_not_remove_assignment_uncertainty() ->
     )
     assert np.all(result.target_prior_reliability < 1.0)
     assert np.all(np.trace(result.readout_covariance_m2, axis1=1, axis2=2) >= 12e-6)
+
+
+def test_rigid_state_completion_preserves_shared_rest_lengths() -> None:
+    coordinate = np.linspace(0.0, 1.0, 24)
+    source = np.column_stack(
+        (
+            0.10 * coordinate,
+            0.025 * coordinate**2,
+            0.012 * np.sin(np.pi * coordinate),
+        )
+    )
+    colors = np.column_stack((coordinate, 1.0 - coordinate, coordinate**2))
+    canonical = build_canonical_deform360_graph(
+        source,
+        colors,
+        registration_config=ReusableGraphRegistrationConfig(
+            canonical_node_count=24,
+        ),
+        spring_config=PhysTwinSpringGraphConfig(
+            object_radius=0.025,
+            object_max_neighbours=5,
+            controller_radius=0.02,
+            controller_max_neighbours=1,
+        ),
+    )
+    angle = 0.35
+    rotation = np.array(
+        [
+            [np.cos(angle), -np.sin(angle), 0.0],
+            [np.sin(angle), np.cos(angle), 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    target = source @ rotation.T + np.array([0.04, -0.03, 0.02])
+
+    result = fit_rigid_partial_graph_state(
+        canonical,
+        target,
+        colors,
+        config=PartialGraphStateConfig(
+            start_count=6,
+            anchor_count=8,
+            minimum_observed_target_fraction=0.95,
+            minimum_effective_target_reliability=0.50,
+        ),
+    )
+
+    assert result.metrics["passed"] is True
+    assert result.metrics["symmetric_chamfer_m"] < 1e-8
+    assert np.max(result.relative_edge_strain) < 1e-6

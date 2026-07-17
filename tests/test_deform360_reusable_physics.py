@@ -14,17 +14,19 @@ from causal4d_public.deform360_reusable_trust_protocol import (
     authorize_reusable_trust_episode,
     load_reusable_trust_protocol,
 )
+from causal4d_public.deform360_reusable_trust_state import (
+    load_reusable_trust_state_addendum,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PARENT = ROOT / "configs/causal4d_public/deform360_reusable_trust_fresh_v1.json"
 ADDENDUM = (
-    ROOT
-    / "configs/causal4d_public/deform360_reusable_trust_physics_addendum_v1.json"
+    ROOT / "configs/causal4d_public/deform360_reusable_trust_physics_addendum_v1.json"
 )
-EXECUTION = (
-    ROOT / "configs/causal4d_public/deform360_reusable_trust_execution_v1.json"
-)
+EXECUTION = ROOT / "configs/causal4d_public/deform360_reusable_trust_execution_v1.json"
+MASK = ROOT / "configs/causal4d_public/deform360_reusable_trust_mask_addendum_v5.json"
+STATE = ROOT / "configs/causal4d_public/deform360_reusable_trust_state_addendum_v1.json"
 
 
 def _pickle(path: Path, value: object) -> None:
@@ -84,7 +86,7 @@ def test_physical_response_seal_is_outcome_blind_and_checksummed(
     monkeypatch.setattr(
         reusable,
         "graph_contact_distance_m",
-        lambda _: np.zeros(node_count, dtype=np.float64),
+        lambda _, **__: np.zeros(node_count, dtype=np.float64),
     )
     monkeypatch.setattr(
         reusable,
@@ -110,9 +112,7 @@ def test_physical_response_seal_is_outcome_blind_and_checksummed(
             "episode_id": episode_id,
             "fresh_authorization": authorization,
             "input_sha256": {"episode_final_data": sha256_file(data_path)},
-            "output_sha256": {
-                "simulator_final_data": sha256_file(simulator_path)
-            },
+            "output_sha256": {"simulator_final_data": sha256_file(simulator_path)},
             "information_boundary": {
                 "target_access": False,
                 "post_initial_object_observation_used": False,
@@ -120,9 +120,7 @@ def test_physical_response_seal_is_outcome_blind_and_checksummed(
         },
     )
 
-    fixed = protocol["addendum"]["object_level_physical_grid"][
-        "fixed_warp_settings"
-    ]
+    fixed = protocol["addendum"]["object_level_physical_grid"]["fixed_warp_settings"]
     parameters = {
         "init_spring_y": 10000.0,
         "drag_damping": 1.0,
@@ -213,6 +211,58 @@ def test_physical_response_rejects_tuple_outside_frozen_grid() -> None:
                 "dashpot_damping": 50.0,
             },
         )
+
+
+def test_physical_response_is_bound_to_frozen_state_policy() -> None:
+    protocol = load_reusable_trust_state_addendum(
+        PARENT,
+        ADDENDUM,
+        EXECUTION,
+        MASK,
+        STATE,
+    )
+    authorization = authorize_reusable_trust_episode(
+        protocol,
+        object_id="171-penguin",
+        episode_id=1,
+        operation="fit",
+    )
+    payload = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360ReusableTwinPhysicalResponse",
+        "prospective_authorization": authorization,
+        "object_id": "171-penguin",
+        "episode_id": 1,
+        "candidate_index": 0,
+        "physical_parameters": protocol["physical_candidates"][0],
+        "state_addendum": None,
+        "canonical_graph": {
+            "file_sha256": "a" * 64,
+            "reusable_graph_sha256": "b" * 64,
+            "shared_object_topology": True,
+        },
+        "information_boundary": {
+            "object_observation_frames_used": [0],
+            "post_initial_object_observation_used": False,
+            "future_object_track_read": False,
+            "future_object_visibility_read": False,
+            "future_tactile_read": False,
+            "external_target_scoring_in_warp": False,
+            "object_outcome_used": False,
+        },
+    }
+    payload["result_sha256"] = reusable._result_sha256(payload)
+
+    with pytest.raises(ValueError, match="state policy"):
+        reusable.validate_reusable_physics_response(payload, protocol=protocol)
+
+    payload["state_addendum"] = reusable._state_lock(protocol)
+    payload["result_sha256"] = reusable._result_sha256(payload)
+    validated = reusable.validate_reusable_physics_response(
+        payload,
+        protocol=protocol,
+    )
+    assert validated["candidate_index"] == 0
 
 
 def test_physical_selection_pools_only_fit_episodes_and_freezes_controls(
@@ -337,9 +387,7 @@ def test_physical_selection_pools_only_fit_episodes_and_freezes_controls(
         reusable, "load_reusable_twin_trust_candidate", lambda _: TrustModel()
     )
     first_fit_responses = [
-        path
-        for path in response_paths
-        if f"response-{fit_ids[0]}-" in path.name
+        path for path in response_paths if f"response-{fit_ids[0]}-" in path.name
     ]
     grid_seal = reusable.build_reusable_physics_fit_grid_seal(
         first_fit_responses,
@@ -358,9 +406,7 @@ def test_physical_selection_pools_only_fit_episodes_and_freezes_controls(
         trust_artifact_path=trust_path,
         object_id=object_id,
     )
-    validated = reusable.validate_reusable_physics_selection(
-        result, protocol=protocol
-    )
+    validated = reusable.validate_reusable_physics_selection(result, protocol=protocol)
 
     assert validated_grid["response_count"] == 18
     assert validated["selected_candidate_index"] == selected_index

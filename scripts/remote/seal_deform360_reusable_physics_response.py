@@ -14,6 +14,9 @@ from causal4d_public.deform360_reusable_physics import (
 from causal4d_public.deform360_reusable_trust_protocol import (
     load_reusable_trust_protocol,
 )
+from causal4d_public.deform360_reusable_trust_state import (
+    load_reusable_trust_state_addendum,
+)
 
 
 def main() -> int:
@@ -21,7 +24,11 @@ def main() -> int:
     parser.add_argument("--parent-lock", type=Path, required=True)
     parser.add_argument("--physics-addendum", type=Path, required=True)
     parser.add_argument("--execution-lock", type=Path, required=True)
-    parser.add_argument("--operation", choices=("fit", "held-prediction"), required=True)
+    parser.add_argument("--mask-addendum", type=Path)
+    parser.add_argument("--state-addendum", type=Path)
+    parser.add_argument(
+        "--operation", choices=("fit", "held-prediction"), required=True
+    )
     parser.add_argument("--object-id", required=True)
     parser.add_argument("--episode-id", type=int, required=True)
     parser.add_argument("--init-spring-y", type=float, required=True)
@@ -38,8 +45,20 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    protocol = load_reusable_trust_protocol(
-        args.parent_lock, args.physics_addendum, args.execution_lock
+    if (args.mask_addendum is None) != (args.state_addendum is None):
+        raise ValueError("mask and state addenda are required together")
+    protocol = (
+        load_reusable_trust_protocol(
+            args.parent_lock, args.physics_addendum, args.execution_lock
+        )
+        if args.state_addendum is None
+        else load_reusable_trust_state_addendum(
+            args.parent_lock,
+            args.physics_addendum,
+            args.execution_lock,
+            args.mask_addendum,
+            args.state_addendum,
+        )
     )
     payload = seal_reusable_physics_response(
         args.prediction_archive,
@@ -60,9 +79,7 @@ def main() -> int:
         driven_result_path=args.driven_result,
         zero_result_path=args.zero_result,
     )
-    validate_reusable_physics_response(
-        payload, protocol=protocol, verify_archive=True
-    )
+    validate_reusable_physics_response(payload, protocol=protocol, verify_archive=True)
     if args.output.exists():
         raise FileExistsError(f"physical response already exists: {args.output}")
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -10,6 +10,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import dijkstra
+from scipy.spatial.distance import cdist
 
 from .deform360_phystwin_trust import (
     CausalTrustEpisode,
@@ -36,10 +37,66 @@ def _result_sha256(payload: Mapping[str, Any]) -> str:
     ).hexdigest()
 
 
-def graph_contact_distance_m(graph: CanonicalDeform360Graph) -> np.ndarray:
+def dynamic_contact_anchor_indices(
+    object_points_m: np.ndarray,
+    controller_reference_m: np.ndarray,
+    *,
+    controller_group_size: int,
+    maximum_contact_distance_m: float,
+) -> np.ndarray:
+    """Recover the same per-episode contact anchors used by the Warp adapter."""
+
+    points = np.asarray(object_points_m, dtype=np.float64)
+    controls = np.asarray(controller_reference_m, dtype=np.float64)
+    _require(
+        points.ndim == 2
+        and points.shape[1] == 3
+        and controls.ndim == 2
+        and controls.shape[1] == 3
+        and np.all(np.isfinite(points))
+        and np.all(np.isfinite(controls)),
+        "dynamic contact geometry must contain finite 3D points",
+    )
+    _require(
+        controller_group_size >= 1 and len(controls) % controller_group_size == 0,
+        "dynamic controller points do not form locked groups",
+    )
+    _require(
+        np.isfinite(maximum_contact_distance_m) and maximum_contact_distance_m > 0.0,
+        "dynamic contact radius must be finite and positive",
+    )
+    anchors = []
+    for start in range(0, len(controls), controller_group_size):
+        group = controls[start : start + controller_group_size]
+        distance = cdist(points, group)
+        node, _ = np.unravel_index(np.argmin(distance), distance.shape)
+        _require(
+            float(np.min(distance)) <= maximum_contact_distance_m,
+            "episode contact anchor is outside the controller radius",
+        )
+        anchors.append(int(node))
+    return np.asarray(anchors, dtype=np.int64)
+
+
+def graph_contact_distance_m(
+    graph: CanonicalDeform360Graph,
+    *,
+    contact_anchor_indices: np.ndarray | None = None,
+) -> np.ndarray:
     """Return shortest material-graph distance to any registered contact anchor."""
 
-    _require(len(graph.contact_anchor_indices) > 0, "graph has no contact anchor")
+    anchors = (
+        np.asarray(graph.contact_anchor_indices, dtype=np.int64)
+        if contact_anchor_indices is None
+        else np.asarray(contact_anchor_indices, dtype=np.int64)
+    )
+    _require(
+        anchors.ndim == 1
+        and len(anchors) > 0
+        and np.all(anchors >= 0)
+        and np.all(anchors < len(graph.vertices)),
+        "graph has no valid contact anchor",
+    )
     edges = np.asarray(graph.springs, dtype=np.int64)
     lengths = np.asarray(graph.rest_lengths, dtype=np.float64)
     _require(
@@ -59,7 +116,7 @@ def graph_contact_distance_m(graph: CanonicalDeform360Graph) -> np.ndarray:
     distance = np.asarray(
         dijkstra(
             adjacency,
-            indices=np.asarray(graph.contact_anchor_indices, dtype=np.int64),
+            indices=anchors,
             directed=False,
         ),
         dtype=np.float64,
@@ -321,6 +378,7 @@ def fit_source_graph_action_support(
 
 __all__ = [
     "GraphActionSupportEpisode",
+    "dynamic_contact_anchor_indices",
     "fit_source_graph_action_support",
     "graph_action_support_prediction",
     "graph_contact_distance_m",

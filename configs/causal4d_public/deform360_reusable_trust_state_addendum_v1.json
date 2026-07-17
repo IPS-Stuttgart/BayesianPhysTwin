@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-reusable-trust-state-addendum-v1",
+  "parent_locks": {
+    "fresh_protocol_file_sha256": "bf4ab83236068a7bddb6cddb3f3f60d09eb9e6d0147a25e78aa4bc265a9fc831",
+    "physics_addendum_file_sha256": "48a875b7fe45843d2e7dce6752deaaecbe9765b6d41172f443ee577a8b98158c",
+    "execution_lock_file_sha256": "46a56cb8db5df26e800de71083b265b0c96e73bd52b9c0cca2d4a046fa2754d2",
+    "mask_addendum_id": "deform360-reusable-trust-mask-addendum-v5",
+    "mask_addendum_file_sha256": "26bfd06a6d9d9e3631ffa057cad95ce92bf1d9ffe73d4bfa64526ac9af9b4d70"
+  },
+  "locked_at": "2026-07-17T13:15:22+02:00",
+  "lock_timing": {
+    "source_frame_zero_states_inspected": true,
+    "source_nonrigid_warp_responses_inspected": true,
+    "source_future_object_outcomes_inspected": false,
+    "held_out_media_inspected": false,
+    "held_out_outcomes_inspected": false,
+    "reason": "the deformable MAP state reduced frame-zero readout error but created severe local prestrain; a rigid rest-preserving state passed all frame-zero gates and is now frozen before outcome fitting"
+  },
+  "failed_deformable_map_diagnostic": {
+    "source_episode_3_maximum_warp_edge_strain": 7.318141937255859,
+    "source_episode_4_maximum_warp_edge_strain": 5.098085403442383,
+    "source_episode_6_p99_warp_edge_strain": 0.8831793105602261,
+    "source_episode_6_maximum_warp_edge_strain": 56.420249938964844,
+    "source_episode_7_contact_anchor_within_3cm": false,
+    "source_future_object_outcome_read": false,
+    "conclusion": "the current free-vertex MAP gains small readout accuracy by creating a physically implausible initial state and is rejected for the reusable-twin arm"
+  },
+  "state_policy": {
+    "mode": "rigid-rest-preserving",
+    "candidate_generation": "six-step appearance-aware proper-rigid ICP with PCA multistart, plus deterministic farthest-point translation-anchor fallbacks inherited from the partial-state implementation",
+    "candidate_selection_key": [
+      "physical admission pass before failure",
+      "minimum symmetric frame-zero Chamfer",
+      "minimum frame-zero readout RMSE",
+      "deterministic candidate index"
+    ],
+    "object_rest_lengths_changed": false,
+    "object_topology_changed": false,
+    "episode_readout_is_external": true,
+    "readout_covariance_includes_assignment_spread": true,
+    "simulator_residual_used": false,
+    "post_initial_object_observation_used": false,
+    "target_tactile_used": false
+  },
+  "source_gate": {
+    "required_episode_ids": [1, 3, 4, 6, 7, 9],
+    "all_frame_zero_state_gates_must_pass": true,
+    "all_reference_physics_rollouts_must_be_finite": true,
+    "maximum_p99_warp_edge_strain": 0.5,
+    "contact_attachment_must_be_within_m": 0.03,
+    "failure_action": "reject the reusable penguin arm and return exact persistence; never tune the state policy after source outcomes or held access"
+  },
+  "claim_boundary": "source-only state-model correction locked before future outcome fitting; the physical state preserves one shared rest graph while observation geometry is represented by an uncertain external readout"
+}

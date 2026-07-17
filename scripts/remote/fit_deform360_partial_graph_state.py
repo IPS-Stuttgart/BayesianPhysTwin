@@ -23,6 +23,7 @@ from causal4d_public.deform360_partial_graph_state import (
     PartialGraphStateConfig,
     evaluate_partial_graph_state,
     fit_partial_graph_state,
+    fit_rigid_partial_graph_state,
 )
 from causal4d_public.deform360_independent_source import (
     sha256_array,
@@ -34,6 +35,9 @@ from causal4d_public.deform360_reusable_graph import (
 from causal4d_public.deform360_reusable_trust_protocol import (
     authorize_reusable_trust_episode,
     load_reusable_trust_protocol,
+)
+from causal4d_public.deform360_reusable_trust_state import (
+    load_reusable_trust_state_addendum,
 )
 
 
@@ -63,6 +67,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--fresh-parent-lock", type=Path)
     parser.add_argument("--physics-addendum", type=Path)
     parser.add_argument("--execution-lock", type=Path)
+    parser.add_argument("--mask-addendum", type=Path)
+    parser.add_argument("--state-addendum", type=Path)
     parser.add_argument("--fresh-operation", choices=("fit", "held-prediction"))
     parser.add_argument("--prediction-only-input", action="store_true")
     parser.add_argument("--canonical-graph", type=Path, required=True)
@@ -82,6 +88,11 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--split-json", type=Path)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument(
+        "--state-completion-mode",
+        choices=("deformable-map", "rigid-rest-preserving"),
+        default="deformable-map",
+    )
     return parser.parse_args()
 
 
@@ -120,11 +131,33 @@ def main() -> int:
     else:
         if not args.prediction_only_input:
             raise ValueError("fresh state completion requires prediction-only input")
-        fresh_protocol = load_reusable_trust_protocol(
-            args.fresh_parent_lock,
-            args.physics_addendum,
-            args.execution_lock,
-        )
+        state_lock_values = (args.mask_addendum, args.state_addendum)
+        if any(value is not None for value in state_lock_values) and not all(
+            value is not None for value in state_lock_values
+        ):
+            raise ValueError("mask and state addenda are required together")
+        if args.state_completion_mode == "rigid-rest-preserving":
+            if not all(value is not None for value in state_lock_values):
+                raise ValueError(
+                    "fresh rigid state completion requires mask and state addenda"
+                )
+            fresh_protocol = load_reusable_trust_state_addendum(
+                args.fresh_parent_lock,
+                args.physics_addendum,
+                args.execution_lock,
+                args.mask_addendum,
+                args.state_addendum,
+            )
+        else:
+            if any(value is not None for value in state_lock_values):
+                raise ValueError(
+                    "state addendum requires rigid-rest-preserving completion"
+                )
+            fresh_protocol = load_reusable_trust_protocol(
+                args.fresh_parent_lock,
+                args.physics_addendum,
+                args.execution_lock,
+            )
         authorization = authorize_reusable_trust_episode(
             fresh_protocol,
             object_id=args.object_id,
@@ -251,27 +284,25 @@ def main() -> int:
         if contact_action is None
         else contact_action.controller_reference_points_m
     )
-    if args.episode_id == reference_episode_id:
-        if args.state_frame == 0:
-            result = evaluate_partial_graph_state(
-                canonical,
-                canonical.vertices,
-                observed_points,
-                observed_colors,
-                config=config,
-                candidate_reliability=candidate_reliability,
-                controller_points=observed_controller,
-            )
-        else:
-            result = fit_partial_graph_state(
-                canonical,
-                observed_points,
-                observed_colors,
-                config=config,
-                candidate_reliability=candidate_reliability,
-                controller_points=observed_controller,
-                device=args.device,
-            )
+    if args.episode_id == reference_episode_id and args.state_frame == 0:
+        result = evaluate_partial_graph_state(
+            canonical,
+            canonical.vertices,
+            observed_points,
+            observed_colors,
+            config=config,
+            candidate_reliability=candidate_reliability,
+            controller_points=observed_controller,
+        )
+    elif args.state_completion_mode == "rigid-rest-preserving":
+        result = fit_rigid_partial_graph_state(
+            canonical,
+            observed_points,
+            observed_colors,
+            config=config,
+            candidate_reliability=candidate_reliability,
+            controller_points=observed_controller,
+        )
     else:
         result = fit_partial_graph_state(
             canonical,
@@ -315,6 +346,7 @@ def main() -> int:
         "association_mode": "partial_graph_state_completion",
         "target_readout_is_external": True,
         "state_frame": int(args.state_frame),
+        "state_completion_mode": args.state_completion_mode,
         "passed": bool(result.metrics["passed"]),
     }
     if contact_action_payload is not None:
@@ -353,6 +385,15 @@ def main() -> int:
         "episode_id": args.episode_id,
         "phase": args.phase,
         "fresh_authorization": authorization if fresh_protocol is not None else None,
+        "state_completion_mode": args.state_completion_mode,
+        "state_addendum": (
+            None
+            if fresh_protocol is None or "state_addendum" not in fresh_protocol
+            else {
+                "protocol_id": fresh_protocol["state_addendum"]["protocol_id"],
+                "file_sha256": fresh_protocol["state_addendum_file_sha256"],
+            }
+        ),
         "prediction_input_validation": prediction_input_validation,
         "state_frame": int(args.state_frame),
         "canonical_graph_sha256": canonical.sha256,
@@ -373,6 +414,14 @@ def main() -> int:
                 else _sha256_file(args.contact_conditioned_action_json)
             ),
             "split_json": split_sha256,
+            "mask_addendum": (
+                None if args.mask_addendum is None else _sha256_file(args.mask_addendum)
+            ),
+            "state_addendum": (
+                None
+                if args.state_addendum is None
+                else _sha256_file(args.state_addendum)
+            ),
         },
         "output_sha256": {
             "simulator_final_data": _sha256_file(args.simulator_final_data),
@@ -382,6 +431,7 @@ def main() -> int:
             "observed_object_geometry_frames_used": [int(args.state_frame)],
             "reliability_prefix_frame_range": [prefix_start, prefix_stop],
             "simulator_residual_used": False,
+            "post_initial_object_observation_used": False,
             "future_object_frames_used": False,
             "held_out_test_frames_used": False,
             "target_access": False,

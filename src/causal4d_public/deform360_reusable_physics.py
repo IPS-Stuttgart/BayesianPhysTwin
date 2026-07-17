@@ -11,6 +11,7 @@ from typing import Any, Mapping
 import numpy as np
 
 from .deform360_action_support import (
+    dynamic_contact_anchor_indices,
     graph_contact_distance_m,
     graph_readout_action_support,
 )
@@ -77,9 +78,17 @@ def _physical_parameters(value: Mapping[str, Any]) -> dict[str, float]:
     return normalized
 
 
-def _candidate_index(
-    protocol: Mapping[str, Any], parameters: Mapping[str, Any]
-) -> int:
+def _state_lock(protocol: Mapping[str, Any]) -> dict[str, str] | None:
+    payload = protocol.get("state_addendum")
+    if not isinstance(payload, Mapping):
+        return None
+    return {
+        "protocol_id": str(payload["protocol_id"]),
+        "file_sha256": str(protocol["state_addendum_file_sha256"]),
+    }
+
+
+def _candidate_index(protocol: Mapping[str, Any], parameters: Mapping[str, Any]) -> int:
     candidate = _physical_parameters(parameters)
     candidates = [
         _physical_parameters(item) for item in protocol.get("physical_candidates", ())
@@ -154,6 +163,14 @@ def seal_reusable_physics_response(
     graph = load_canonical_deform360_graph(graph_file)
     twin = _load_json(summary_file)
     _require(twin.get("passed") is True, "episode state failed admission")
+    state_lock = _state_lock(protocol)
+    if state_lock is not None:
+        _require(
+            twin.get("state_completion_mode")
+            == protocol["state_addendum"]["state_policy"]["mode"]
+            and twin.get("state_addendum") == state_lock,
+            "episode state uses another frozen state policy",
+        )
     _require(
         twin.get("object_id") == object_id
         and int(twin.get("episode_id", -1)) == int(episode_id),
@@ -237,8 +254,7 @@ def seal_reusable_physics_response(
             f"{name} Warp dynamics differ from the frozen tuple",
         )
         _require(
-            result.get("support_dynamics", {}).get("mode")
-            == fixed["support_dynamics"],
+            result.get("support_dynamics", {}).get("mode") == fixed["support_dynamics"],
             f"{name} support dynamics differ from the addendum",
         )
         canonical = result.get("canonical_reusable_graph", {})
@@ -301,7 +317,19 @@ def seal_reusable_physics_response(
         "matched rollouts use different config or frame splits",
     )
 
-    distance = graph_contact_distance_m(graph)
+    contact_anchors = None
+    if "execution" in protocol and not len(graph.contact_anchor_indices):
+        attachment = protocol["execution"]["dynamic_controller_attachment"]
+        contact_anchors = dynamic_contact_anchor_indices(
+            np.asarray(simulator_data["object_points"])[0],
+            np.asarray(simulator_data["controller_points"])[0],
+            controller_group_size=int(attachment["controller_group_size"]),
+            maximum_contact_distance_m=float(attachment["controller_radius_m"]),
+        )
+    distance = graph_contact_distance_m(
+        graph,
+        contact_anchor_indices=contact_anchors,
+    )
     length_scale = float(reference["graph_action_support_length_scale_m"])
     response_alpha = float(reference["reference_response_alpha"])
     support = graph_readout_action_support(
@@ -343,6 +371,7 @@ def seal_reusable_physics_response(
         "episode_key": f"{object_id}/{int(episode_id)}",
         "candidate_index": candidate_index,
         "physical_parameters": candidate,
+        "state_addendum": state_lock,
         "canonical_graph": {
             "file_sha256": graph_sha,
             "reusable_graph_sha256": graph.sha256,
@@ -355,6 +384,9 @@ def seal_reusable_physics_response(
             "total_graph_node_count": len(graph.vertices),
             "frame_count": int(bundle["frame_count"]),
             "point_count": int(bundle["point_count"]),
+            "dynamic_contact_anchor_indices": (
+                None if contact_anchors is None else contact_anchors.tolist()
+            ),
         },
         "prediction_archive": {
             "path": str(archive_file),
@@ -372,9 +404,7 @@ def seal_reusable_physics_response(
             "driven_result": sha256_file(driven_file),
             "zero_action_result": sha256_file(zero_file),
             "driven_trajectory": sha256_file(trajectory_files["driven"]),
-            "zero_action_trajectory": sha256_file(
-                trajectory_files["zero_action"]
-            ),
+            "zero_action_trajectory": sha256_file(trajectory_files["zero_action"]),
         },
         "information_boundary": {
             "object_observation_frames_used": [0],
@@ -406,8 +436,7 @@ def validate_reusable_physics_response(
 
     _require(
         payload.get("schema_version") == REUSABLE_PHYSICS_RESPONSE_SCHEMA_VERSION
-        and payload.get("artifact_kind")
-        == "Deform360ReusableTwinPhysicalResponse",
+        and payload.get("artifact_kind") == "Deform360ReusableTwinPhysicalResponse",
         "reusable physical response identity changed",
     )
     _require(
@@ -431,6 +460,10 @@ def validate_reusable_physics_response(
         int(payload.get("candidate_index", -1))
         == _candidate_index(protocol, candidate),
         "physical response candidate identity changed",
+    )
+    _require(
+        payload.get("state_addendum") == _state_lock(protocol),
+        "physical response uses another state policy",
     )
     boundary = payload.get("information_boundary", {})
     _require(
@@ -526,6 +559,7 @@ def build_reusable_physics_fit_grid_seal(
         "physics_addendum_id": protocol["addendum"]["protocol_id"],
         "parent_file_sha256": protocol["parent_file_sha256"],
         "addendum_file_sha256": protocol["addendum_file_sha256"],
+        "state_addendum": _state_lock(protocol),
         "prospective_authorization": authorization,
         "object_id": object_id,
         "episode_id": int(episode_id),
@@ -568,6 +602,10 @@ def validate_reusable_physics_fit_grid_seal(
         and payload.get("addendum_file_sha256") == protocol["addendum_file_sha256"],
         "fit-grid seal uses another protocol",
     )
+    _require(
+        payload.get("state_addendum") == _state_lock(protocol),
+        "fit-grid seal uses another state policy",
+    )
     object_id = str(payload.get("object_id"))
     episode_id = int(payload.get("episode_id", -1))
     authorization = authorize_reusable_trust_episode(
@@ -609,8 +647,7 @@ def validate_reusable_physics_fit_grid_seal(
             _require(
                 validated["episode_key"] == authorization["episode_key"]
                 and validated["candidate_index"] == int(key)
-                and validated["result_sha256"]
-                == record.get("response_result_sha256"),
+                and validated["result_sha256"] == record.get("response_result_sha256"),
                 f"fit response identity changed for candidate {key}",
             )
     return {
@@ -714,15 +751,15 @@ def fit_reusable_physics_selection(
         )
         episode_id = int(payload["episode_id"])
         candidate_index = int(validated["candidate_index"])
-        _require(episode_id in response_by_episode, "response is not from a fit episode")
+        _require(
+            episode_id in response_by_episode, "response is not from a fit episode"
+        )
         _require(
             candidate_index not in response_by_episode[episode_id],
             "physical response is duplicated",
         )
         response_by_episode[episode_id][candidate_index] = payload
-        response_file_hashes[
-            f"{episode_id}/{candidate_index}"
-        ] = sha256_file(path)
+        response_file_hashes[f"{episode_id}/{candidate_index}"] = sha256_file(path)
         if "execution" in protocol:
             graph = payload.get("canonical_graph", {})
             canonical_graph_identities.add(
@@ -746,21 +783,28 @@ def fit_reusable_physics_selection(
             "physical selection rebuilt the canonical graph across episodes",
         )
 
-    normalized_targets = {int(key): Path(value).resolve() for key, value in target_paths.items()}
-    normalized_robots = {int(key): Path(value).resolve() for key, value in robot_paths.items()}
+    normalized_targets = {
+        int(key): Path(value).resolve() for key, value in target_paths.items()
+    }
+    normalized_robots = {
+        int(key): Path(value).resolve() for key, value in robot_paths.items()
+    }
     _require(set(normalized_targets) == set(fit_ids), "fit target set changed")
     _require(set(normalized_robots) == set(fit_ids), "fit robot set changed")
     model = load_reusable_twin_trust_candidate(trust_artifact_path)
     expected_model = protocol["addendum"]["reference_trust_response"][
         "candidate_result_sha256"
     ]
-    _require(model.result_sha256 == expected_model, "selection uses another trust model")
+    _require(
+        model.result_sha256 == expected_model, "selection uses another trust model"
+    )
     reference_parameters = _physical_parameters(
         protocol["addendum"]["reference_trust_response"]
     )
     reference_index = candidates.index(reference_parameters)
     horizon = tuple(
-        int(value) for value in protocol["addendum"]["selection"]["fit_horizon_half_open"]
+        int(value)
+        for value in protocol["addendum"]["selection"]["fit_horizon_half_open"]
     )
 
     episodes: dict[int, CausalTrustEpisode] = {}
@@ -792,9 +836,7 @@ def fit_reusable_physics_selection(
             "raw_alpha": float(decision.raw_alpha),
             "closure_accepted": bool(decision.closure_accepted),
             "closure_value": float(decision.closure_value),
-            "features": {
-                name: float(features[name]) for name in model.feature_names
-            },
+            "features": {name: float(features[name]) for name in model.feature_names},
         }
         episode_key = f"{object_id}/{episode_id}"
         episodes[episode_id] = _fit_episode(
@@ -819,7 +861,9 @@ def fit_reusable_physics_selection(
             )
             if alpha_by_episode[episode_id] == 0.0:
                 trusted = persistence.copy()
-                _require(np.array_equal(trusted, persistence), "zero trust is not exact")
+                _require(
+                    np.array_equal(trusted, persistence), "zero trust is not exact"
+                )
             else:
                 raw_response = (
                     candidate_prediction - persistence
@@ -886,6 +930,7 @@ def fit_reusable_physics_selection(
         "physics_addendum_id": protocol["addendum"]["protocol_id"],
         "parent_file_sha256": protocol["parent_file_sha256"],
         "addendum_file_sha256": protocol["addendum_file_sha256"],
+        "state_addendum": _state_lock(protocol),
         "object_id": object_id,
         "topology": split["topology"],
         "fit_episode_ids": list(fit_ids),
@@ -949,8 +994,7 @@ def validate_reusable_physics_selection(
 
     _require(
         payload.get("schema_version") == 1
-        and payload.get("artifact_kind")
-        == "Deform360ReusableTwinPhysicalSelection",
+        and payload.get("artifact_kind") == "Deform360ReusableTwinPhysicalSelection",
         "reusable physical selection identity changed",
     )
     _require(
@@ -962,11 +1006,14 @@ def validate_reusable_physics_selection(
         and payload.get("addendum_file_sha256") == protocol["addendum_file_sha256"],
         "physical selection uses another protocol",
     )
+    _require(
+        payload.get("state_addendum") == _state_lock(protocol),
+        "physical selection uses another state policy",
+    )
     if "execution" in protocol:
         graph = payload.get("canonical_graph", {})
         _require(
-            payload.get("execution_file_sha256")
-            == protocol["execution_file_sha256"]
+            payload.get("execution_file_sha256") == protocol["execution_file_sha256"]
             and graph.get("shared_across_all_fit_and_held_episodes") is True
             and isinstance(graph.get("file_sha256"), str)
             and isinstance(graph.get("reusable_graph_sha256"), str),

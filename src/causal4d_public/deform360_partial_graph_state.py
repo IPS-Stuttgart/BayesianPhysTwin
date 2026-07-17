@@ -179,6 +179,59 @@ def _initial_states(
     return np.stack([state for _, state in candidates[: config.start_count]])
 
 
+def _proper_rigid_fit(
+    source: np.ndarray,
+    target: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    source_center = np.mean(source, axis=0)
+    target_center = np.mean(target, axis=0)
+    left, _, right = np.linalg.svd(
+        (source - source_center).T @ (target - target_center),
+        full_matrices=False,
+    )
+    rotation = right.T @ left.T
+    if np.linalg.det(rotation) < 0.0:
+        right[-1] *= -1.0
+        rotation = right.T @ left.T
+    translation = target_center - source_center @ rotation.T
+    return rotation, translation
+
+
+def _refine_rigid_state(
+    initial: np.ndarray,
+    canonical_colors: np.ndarray,
+    target: np.ndarray,
+    target_colors: np.ndarray,
+    target_reliability: np.ndarray,
+    *,
+    config: PartialGraphStateConfig,
+    iterations: int = 6,
+    trim_fraction: float = 0.90,
+) -> np.ndarray:
+    state = np.asarray(initial, dtype=np.float64).copy()
+    source_descriptor = _robust_color_descriptor(canonical_colors)
+    target_descriptor = _robust_color_descriptor(target_colors)
+    color_sq = cdist(source_descriptor, target_descriptor, metric="sqeuclidean")
+    reliability_penalty = -2.0 * np.log(np.maximum(target_reliability, 1e-6))
+    for _ in range(iterations):
+        geometry_sq = cdist(state, target, metric="sqeuclidean")
+        cost = geometry_sq / (config.readout_geometry_scale_m**2)
+        cost += config.readout_color_weight * color_sq / (config.readout_color_scale**2)
+        cost += reliability_penalty[None]
+        assignment = np.argmin(cost, axis=1)
+        distance = np.sqrt(geometry_sq[np.arange(len(state)), assignment])
+        cutoff = float(np.quantile(distance, trim_fraction))
+        retained = distance <= max(cutoff, config.readout_geometry_scale_m)
+        if np.count_nonzero(retained) < 3:
+            retained[:] = True
+        rotation, translation = _proper_rigid_fit(
+            state[retained],
+            target[assignment[retained]],
+        )
+        state = state @ rotation.T + translation
+    return state
+
+
 def _robust_color_descriptor(colors: np.ndarray) -> np.ndarray:
     center = np.median(colors, axis=0)
     scale = 1.4826 * np.median(np.abs(colors - center), axis=0)
@@ -522,9 +575,78 @@ def fit_partial_graph_state(
     )
 
 
+def fit_rigid_partial_graph_state(
+    canonical: CanonicalDeform360Graph,
+    episode_points: np.ndarray,
+    episode_colors: np.ndarray,
+    *,
+    config: PartialGraphStateConfig,
+    candidate_reliability: np.ndarray | None = None,
+    controller_points: np.ndarray | None = None,
+) -> PartialGraphStateResult:
+    """Place a shared rest graph rigidly while fitting an uncertain readout."""
+
+    config.validate()
+    source = _points(canonical.vertices, name="canonical.vertices")
+    target = _points(episode_points, name="episode_points")
+    target_colors = _colors(
+        episode_colors,
+        count=len(target),
+        name="episode_colors",
+    )
+    target_reliability = (
+        np.ones(len(target), dtype=np.float64)
+        if candidate_reliability is None
+        else np.asarray(candidate_reliability, dtype=np.float64)
+    )
+    if target_reliability.shape != (len(target),) or not np.all(
+        np.isfinite(target_reliability)
+    ):
+        raise ValueError("candidate_reliability must be finite per target point")
+    if np.any(target_reliability < 0.0) or np.any(target_reliability > 1.0):
+        raise ValueError("candidate_reliability must lie in [0, 1]")
+    starts = _initial_states(source, target, config=config)
+    refined = np.stack(
+        [
+            _refine_rigid_state(
+                state,
+                canonical.colors,
+                target,
+                target_colors,
+                target_reliability,
+                config=config,
+            )
+            for state in starts
+        ]
+    )
+    starts = np.concatenate((refined, starts), axis=0)
+    results = [
+        evaluate_partial_graph_state(
+            canonical,
+            state,
+            target,
+            target_colors,
+            config=config,
+            candidate_reliability=candidate_reliability,
+            controller_points=controller_points,
+        )
+        for state in starts
+    ]
+    return min(
+        enumerate(results),
+        key=lambda item: (
+            not bool(item[1].metrics["passed"]),
+            float(item[1].metrics["symmetric_chamfer_m"]),
+            float(item[1].metrics["initial_readout_rmse_m"]),
+            item[0],
+        ),
+    )[1]
+
+
 __all__ = [
     "PartialGraphStateConfig",
     "PartialGraphStateResult",
     "evaluate_partial_graph_state",
     "fit_partial_graph_state",
+    "fit_rigid_partial_graph_state",
 ]
