@@ -56,6 +56,12 @@ provide only its initial object state and the released robot action trajectory
 before prediction. Future object video, point clouds, tracks, and tactile data
 remain unavailable until the prediction archive has been checksummed.
 
+The checksummed [action-window addendum](deform360_reusable_sota_window_v1.md)
+uses only robot action, aperture, and episode length to select an 81-frame
+compute slice. It changes neither the object split nor the held-out information
+boundary; the selected held episode still contributes only one object frame
+before its prediction is sealed.
+
 An early outcome reveal invalidates that object without replacement. Penguin
 episodes `0,2,5,8` and the PokeFlex target remain under their existing seals.
 Nothing in this protocol changes the frozen Causal4D claim.

@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "config_sha256": "331faa06dd3d81d1ddea615828eae2b4a040c3a56b92058e5b037a6129f1f9c8",
+  "config": {
+    "protocol_id": "deform360-reusable-sota-window-v1",
+    "status": "locked-before-held-development-outcome-evaluation",
+    "locked_at": "2026-07-17",
+    "parent_protocol": {
+      "protocol_id": "deform360-reusable-sota-v1",
+      "config_sha256": "64e41773d3e333987dc97a11c52e3474fd34fe65139e6c7d799b3e8f4db188cd"
+    },
+    "provenance": {
+      "inherited_protocol_id": "deform360-dense-reusable-panel-v1",
+      "inherited_config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+      "rule_changed_after_reusable_sota_v1_lock": false,
+      "development_held_outcomes_inspected": false,
+      "purpose": "reduce reconstruction compute while preserving an action-rich forecast interval"
+    },
+    "window_selection": {
+      "rule": "maximize mean gripper-centre path weighted at each step by the minimum endpoint closure confidence",
+      "window_length_frames": 81,
+      "controller_centre": "arithmetic mean of the five released action points per gripper",
+      "closure_confidence": "per gripper, clip((episode aperture p90 - aperture)/(episode aperture p90 - episode aperture p10), 0, 1); smaller released aperture means more closed",
+      "static_aperture_fallback": "confidence one, reducing exactly to unweighted path when aperture cannot identify closure",
+      "step_weight": "minimum closure confidence at the two endpoints of each gripper-centre path step",
+      "gripper_aggregation": "mean of per-gripper closure-weighted path lengths; gripper vectors are never averaged before taking their norms",
+      "candidate_starts": {
+        "first": 8,
+        "stride": 6,
+        "stop": "last start whose complete 81-frame window exists"
+      },
+      "tie_break": "earliest start",
+      "input_fields": [
+        "robot/robot.npz:actions",
+        "robot/robot.npz:openings",
+        "episode frame count"
+      ],
+      "known_future_action_is_conditioning_input": true,
+      "object_geometry_or_tactile_used_for_selection": false
+    },
+    "frame_protocol": {
+      "comparison_fixed_raw_range_half_open": [110, 191],
+      "tracking_tail_frames_skipped": 5,
+      "processed_frame_count": 76,
+      "evaluation_range_half_open": [1, 76],
+      "horizon_ranges_half_open": {
+        "early": [1, 26],
+        "middle": [26, 51],
+        "late": [51, 76]
+      }
+    },
+    "information_boundary": {
+      "held_window_selection_may_read_full_robot_action": true,
+      "held_window_selection_may_read_object_geometry": false,
+      "held_window_selection_may_read_object_tracks": false,
+      "held_window_selection_may_read_tactile": false,
+      "held_prediction_object_input_frame_count": 1,
+      "held_future_outcomes_sealed_until_prediction_hash": true
+    },
+    "claim_boundary": {
+      "compute_addendum_only": true,
+      "direct_deform360_table4_claim": false,
+      "official_evaluator_parity_unresolved": true,
+      "description": "This addendum changes temporal staging cost, not the model, object split, held-information boundary, or published comparison claim."
+    }
+  }
+}

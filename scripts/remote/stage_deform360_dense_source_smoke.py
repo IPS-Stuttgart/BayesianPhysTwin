@@ -31,6 +31,14 @@ from causal4d_public.deform360_reusable_trust_protocol import (
     authorize_reusable_trust_episode,
     load_reusable_trust_protocol,
 )
+from causal4d_public.deform360_reusable_sota_protocol import (
+    load_reusable_sota_config,
+)
+from causal4d_public.deform360_reusable_sota_window import (
+    authorize_development_fit_window,
+    load_reusable_sota_window,
+    select_reusable_sota_action_window,
+)
 from deform360.robot import RobotState, load_robot_state, save_robot_state
 
 
@@ -178,12 +186,17 @@ def main() -> int:
     parser.add_argument("--start-frame", type=int)
     parser.add_argument("--frame-count", type=int, default=8)
     parser.add_argument("--dense-panel-config")
+    parser.add_argument(
+        "--sota-window-addendum",
+        help=(
+            "Opt into the locked reusable-SOTA action window. The --protocol "
+            "argument must name its parent protocol. Development fit episodes only."
+        ),
+    )
     parser.add_argument("--fresh-parent-lock")
     parser.add_argument("--physics-addendum")
     parser.add_argument("--execution-lock")
-    parser.add_argument(
-        "--fresh-operation", choices=("fit", "held-prediction")
-    )
+    parser.add_argument("--fresh-operation", choices=("fit", "held-prediction"))
     parser.add_argument(
         "--action-aligned",
         action="store_true",
@@ -225,7 +238,29 @@ def main() -> int:
             "fresh parent, physics, execution, and operation locks are required together"
         )
     fresh_authorization = None
-    if args.fresh_parent_lock is None:
+    sota_authorization = None
+    if args.sota_window_addendum is not None:
+        if args.fresh_parent_lock is not None or args.dense_panel_config is not None:
+            raise ValueError(
+                "reusable-SOTA staging cannot combine fresh or dense-panel locks"
+            )
+        if not args.action_aligned or args.start_frame is not None:
+            raise ValueError(
+                "reusable-SOTA staging requires action alignment without a fixed start"
+            )
+        if args.prediction_only_staging:
+            raise ValueError(
+                "this runner authorizes reusable-SOTA development fit staging only"
+            )
+        parent = load_reusable_sota_config(args.protocol)
+        sota_window = load_reusable_sota_window(args.sota_window_addendum)
+        sota_authorization = authorize_development_fit_window(
+            parent,
+            sota_window,
+            object_id=args.object_id,
+            episode_id=args.episode,
+        )
+    elif args.fresh_parent_lock is None:
         require_source_episode(args.protocol, args.object_id, args.episode)
     else:
         if not args.prediction_only_staging:
@@ -246,12 +281,25 @@ def main() -> int:
     )
     action_alignment: dict[str, object] | None = None
     if args.action_aligned:
-        if args.dense_panel_config is None:
+        if args.dense_panel_config is None and sota_authorization is None:
             raise ValueError("action alignment requires --dense-panel-config")
         if args.start_frame is not None:
             raise ValueError("action alignment cannot also set --start-frame")
-        panel = load_dense_reusable_panel_config(args.dense_panel_config)
-        if fresh_authorization is None:
+        if sota_authorization is not None:
+            with np.load(
+                source_episode / "robot" / "robot.npz", allow_pickle=False
+            ) as robot:
+                selected_action = select_reusable_sota_action_window(
+                    robot["actions"], robot["openings"], sota_window
+                )
+            action_summary = selected_action["action_summary"]
+            selected_range = selected_action["selected_raw_frame_range_half_open"]
+            selection = selected_action["selection_rule"]
+            authorization = sota_authorization
+            authorization_config_sha256 = sota_authorization["window_config_sha256"]
+        else:
+            panel = load_dense_reusable_panel_config(args.dense_panel_config)
+        if sota_authorization is None and fresh_authorization is None:
             authorization = authorize_dense_panel_episode(
                 panel,
                 object_id=args.object_id,
@@ -260,27 +308,30 @@ def main() -> int:
                 source_admission_passed=False,
             )
             authorization_config_sha256 = authorization["config_sha256"]
-        else:
+        elif sota_authorization is None:
             authorization = fresh_authorization
             authorization_config_sha256 = authorization["addendum_file_sha256"]
-        selection = panel["config"]["frame_protocol"]["window_selection"]
-        old_start, old_stop = panel["config"]["frame_protocol"][
-            "superseded_fixed_raw_aligned_range_half_open"
-        ]
-        with np.load(
-            source_episode / "robot" / "robot.npz", allow_pickle=False
-        ) as robot:
-            action_summary = summarize_robot_action(
-                robot["actions"],
-                robot["openings"],
-                locked_start=int(old_start),
-                locked_stop=int(old_stop),
-                candidate_start_frame=int(selection["candidate_starts"]["first"]),
-                candidate_stride_frames=int(selection["candidate_starts"]["stride"]),
-            )
-        selected_range = action_summary["best_contact_conditioned_path_window"][
-            "frame_range_half_open"
-        ]
+        if sota_authorization is None:
+            selection = panel["config"]["frame_protocol"]["window_selection"]
+            old_start, old_stop = panel["config"]["frame_protocol"][
+                "superseded_fixed_raw_aligned_range_half_open"
+            ]
+            with np.load(
+                source_episode / "robot" / "robot.npz", allow_pickle=False
+            ) as robot:
+                action_summary = summarize_robot_action(
+                    robot["actions"],
+                    robot["openings"],
+                    locked_start=int(old_start),
+                    locked_stop=int(old_stop),
+                    candidate_start_frame=int(selection["candidate_starts"]["first"]),
+                    candidate_stride_frames=int(
+                        selection["candidate_starts"]["stride"]
+                    ),
+                )
+            selected_range = action_summary["best_contact_conditioned_path_window"][
+                "frame_range_half_open"
+            ]
         args.start_frame = int(selected_range[0])
         args.frame_count = int(selection["window_length_frames"])
         action_alignment = {
@@ -301,13 +352,20 @@ def main() -> int:
         }
         if fresh_authorization is not None:
             action_alignment["fresh_authorization"] = fresh_authorization
+        if sota_authorization is not None:
+            action_alignment["reusable_sota_authorization"] = sota_authorization
         action_alignment["result_sha256"] = _canonical_sha256(action_alignment)
     elif args.start_frame is None:
         raise ValueError("fixed staging requires --start-frame")
     if args.dense_panel_config is not None and not args.action_aligned:
         raise ValueError("--dense-panel-config requires --action-aligned")
 
-    output_episode = Path(args.output_aligned_root) / "episode_0000"
+    output_episode_name = (
+        f"episode_{args.episode:04d}"
+        if sota_authorization is not None
+        else "episode_0000"
+    )
+    output_episode = Path(args.output_aligned_root) / output_episode_name
     if output_episode.exists():
         if not args.overwrite:
             raise FileExistsError(f"source staging already exists: {output_episode}")
@@ -476,9 +534,13 @@ def main() -> int:
     write_dense_source_manifest(
         output_episode / "dense_source_smoke.manifest.json",
         protocol_path=(
-            args.protocol
-            if args.physics_addendum is None
-            else args.physics_addendum
+            args.sota_window_addendum
+            if args.sota_window_addendum is not None
+            else (
+                args.protocol
+                if args.physics_addendum is None
+                else args.physics_addendum
+            )
         ),
         object_id=args.object_id,
         episode_index=args.episode,
