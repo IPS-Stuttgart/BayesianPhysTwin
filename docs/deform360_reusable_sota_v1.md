@@ -82,6 +82,13 @@ The single-episode control uses the same physical candidate grid independently
 on every fit episode. All six choices are reported, along with their median; a
 favorable source episode may not be selected using held outcomes.
 
+Candidate selection uses the equal-weight dimensionless score
+`0.5 * track/persistence_track + 0.5 * CD/persistence_CD`. Pooled selection
+averages this score over all fit actions. The source diagnostic also performs
+leave-one-fit-action-out selection and compares it with candidates selected
+from each remaining single action. Held episodes evaluate those frozen indices
+only; they cannot refit either the pooled or single-action choices.
+
 The tested temporal learned residual is excluded from the primary arm. Its
 5,000-step source-only run converged in training but failed every useful
 transfer threshold, and its calibrated utility gate chose exact abstention.

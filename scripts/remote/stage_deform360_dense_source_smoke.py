@@ -436,6 +436,7 @@ def main() -> int:
         args.start_frame,
         args.frame_count,
     )
+    copy_tactile = fresh_authorization is None and sota_authorization is None
     tactile_hashes = (
         _trim_tactile_streams(
             source_episode,
@@ -443,7 +444,7 @@ def main() -> int:
             args.start_frame,
             args.frame_count,
         )
-        if fresh_authorization is None
+        if copy_tactile
         else {}
     )
 
@@ -570,7 +571,7 @@ def main() -> int:
             "known_robot_action_frame_count": args.frame_count,
             "object_observation_frame_count": object_frame_count,
             "tactile_sha256": tactile_hashes,
-            "tactile_copied": fresh_authorization is None,
+            "tactile_copied": copy_tactile,
         },
     )
     if action_alignment is not None:
