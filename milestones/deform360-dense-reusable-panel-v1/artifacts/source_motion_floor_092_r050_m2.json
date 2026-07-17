@@ -1,0 +1,88 @@
+{
+  "aggregate_by_stratum": {
+    "volumetric": {
+      "controller_mean_displacement_m": 0.029359865648140904,
+      "episode_count": 1,
+      "object_mean_displacement_m": 0.0006218929575994806,
+      "persistence_coordinate_rmse_m": 0.0020971833764230185,
+      "persistence_mean_euclidean_track_error_m": 0.0006218929575994806,
+      "persistence_symmetric_chamfer_m": 0.00033201017550992456
+    }
+  },
+  "artifact_kind": "Deform360SourceMotionFloorAudit",
+  "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "evidence_scope": "source-only",
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "published_particleformer_reference": {
+    "symmetric_chamfer_m": 0.051,
+    "track_error_m": 0.079
+  },
+  "record_count": 1,
+  "records": [
+    {
+      "controller_point_count": 768,
+      "episode_id": 0,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/contact-conditioned-source-v1/092-squirrel-ep0000/episode_0000/final_data.pkl",
+      "final_data_sha256": "ae5dffe0bc41c4e522bf71a6cc55cc2ec54217760b9851130719ff3e3951ac54",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.05195443594797727,
+        "controller_mean_displacement_m": 0.029359865648140904,
+        "controller_mean_point_path_m": 0.08042276151129323,
+        "frame_count": 75,
+        "minimum_valid_point_count": 3271,
+        "object_maximum_displacement_m": 0.04913172582222048,
+        "object_mean_displacement_m": 0.0006218929575994806,
+        "persistence_coordinate_rmse_m": 0.0020971833764230185,
+        "persistence_mean_euclidean_track_error_m": 0.0006218929575994806,
+        "persistence_symmetric_chamfer_m": 0.00033201017550992456
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.02460494891082419,
+          "controller_mean_displacement_m": 0.011848081990364885,
+          "controller_mean_point_path_m": 0.02334223035054672,
+          "frame_count": 25,
+          "minimum_valid_point_count": 3271,
+          "object_maximum_displacement_m": 0.022947146830570316,
+          "object_mean_displacement_m": 0.00018588694120098907,
+          "persistence_coordinate_rmse_m": 0.0006530097316472688,
+          "persistence_mean_euclidean_track_error_m": 0.00018588694120098907,
+          "persistence_symmetric_chamfer_m": 0.00012225807730408434
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.05195443594797727,
+          "controller_mean_displacement_m": 0.04206119156763619,
+          "controller_mean_point_path_m": 0.029426900754028987,
+          "frame_count": 25,
+          "minimum_valid_point_count": 3271,
+          "object_maximum_displacement_m": 0.04913172582222048,
+          "object_mean_displacement_m": 0.000912554599944404,
+          "persistence_coordinate_rmse_m": 0.00304929396217821,
+          "persistence_mean_euclidean_track_error_m": 0.000912554599944404,
+          "persistence_symmetric_chamfer_m": 0.0004645873784658515
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.04540551107439095,
+          "controller_mean_displacement_m": 0.03417032338642162,
+          "controller_mean_point_path_m": 0.02586613098916219,
+          "frame_count": 25,
+          "minimum_valid_point_count": 3271,
+          "object_maximum_displacement_m": 0.043107357190027146,
+          "object_mean_displacement_m": 0.0007672373316530484,
+          "persistence_coordinate_rmse_m": 0.002589246435443577,
+          "persistence_mean_euclidean_track_error_m": 0.0007672373316530484,
+          "persistence_symmetric_chamfer_m": 0.0004091850707598379
+        }
+      },
+      "object_id": "092-squirrel",
+      "object_point_count": 3271,
+      "stratum": "volumetric"
+    }
+  ],
+  "reference_comparison_is_confirmatory": false,
+  "result_sha256": "1a108ff66e9bb1bdf39a002cadb8edb104d0ae5e2300e7ca123b62491f2fdc98",
+  "schema_version": 1,
+  "target_future_read": false,
+  "target_initial_frame_read": false,
+  "target_post_initial_object_observations_read": false
+}

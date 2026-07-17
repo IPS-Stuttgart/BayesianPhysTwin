@@ -1,0 +1,1542 @@
+{
+  "build_seconds": 0.26211014622822404,
+  "canonical_reusable_graph": {
+    "bridge_spring_count": 951,
+    "contact_anchor_count": 1,
+    "contact_chain_spring_count": 0,
+    "controller_attachments_rebuilt_per_episode": true,
+    "controller_patch_size_per_anchor": 16,
+    "file_sha256": "aa09cb5ec8ab0c5d00b9e194dc8515033597fe1fa827cb560c41ff157aaba330",
+    "latent_node_count": 636,
+    "node_count": 1020,
+    "object_spring_count": 1019,
+    "object_topology_rebuilt_per_episode": false,
+    "observed_node_count": 384,
+    "path": "/mnt/corsair/florianpfaff/deform360-dense-reusable-panel-v1/085-scarf-cloth-ep0001/automatic_twin_n384/episode_graph.npz",
+    "reusable_graph_sha256": "d2a90ac88e806d97b3efe90438ce9ece22ab4162c6ce83392cad633657963c6c"
+  },
+  "config_overrides": {
+    "controller_max_neighbours": 1,
+    "controller_radius": 0.03,
+    "dashpot_damping": 100.0,
+    "drag_damping": 10.0,
+    "init_spring_Y": 10000.0
+  },
+  "config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+  "contact_transmission": {
+    "claim_boundary": "source-only virtual attachment compliance; separates contact transmission from object material stiffness but is not a measured grasp stiffness",
+    "controller_spring_stiffness_scale": 1.0,
+    "effective_controller_spring_y_max": 10000.001953125,
+    "effective_controller_spring_y_min": 10000.001953125,
+    "num_controller_springs": 16,
+    "original_controller_spring_y_max": 10000.001953125,
+    "original_controller_spring_y_min": 10000.001953125,
+    "override_applied": false
+  },
+  "controller_attachment_group_count": 1,
+  "data_sha256": "93c97eabfc20c405bb7a0669f2f58cafc95945fc2a58c4f2e3be4c7fcf928dbf",
+  "effective_inertia": {
+    "claim_boundary": "source-only effective stiffness-to-inertia diagnostic; not an identified SI material mass",
+    "maximum_particle_mass": 1.0,
+    "minimum_particle_mass": 1.0,
+    "override_applied": false,
+    "particle_mass_scale": 1.0
+  },
+  "external_target_scoring": {
+    "benchmark_metrics_use_frame_zero_fixed_target_readout": true,
+    "external_target_final_data_sha256": "0197e8356e18c91a5d3ad90894483588d1153a4dc47350ed02deab311884e340",
+    "external_target_frame_range": [
+      0,
+      76
+    ],
+    "finite_scored_frame_count": 76,
+    "frame_zero_anchored_readout": true,
+    "frame_zero_readout_offset_max_m": 0.017300823735831073,
+    "frame_zero_readout_offset_rmse_m": 0.004352065305245917,
+    "future_frames_used_to_fit_readout": false,
+    "future_state_to_observation_chamfer_m": 0.07498532746572495,
+    "readout_offset_uses_future_object_observations": false,
+    "readout_rows_sum_to_one": true,
+    "readout_weight_shape": [
+      6607,
+      1020
+    ],
+    "target_point_count": 6607,
+    "target_readout_artifact_sha256": "6c865b854c49b0b20b8766b02981f85c7c624cc13ea1b1ba48302c70500fc272"
+  },
+  "finite_vertex_fraction": 1.0,
+  "first_nonfinite_frame": null,
+  "frame_count": 76,
+  "maximum_absolute_finite_coordinate_m": 0.4055464565753937,
+  "metrics": {
+    "future_chamfer_m": 0.06933012871544209,
+    "future_persistence_chamfer_m": 0.00799450167906206,
+    "future_persistence_track_rmse_m": 0.013497192622493678,
+    "future_prediction_finite": true,
+    "future_track_rmse_m": 0.09050919908864723,
+    "intervals": {
+      "test": {
+        "chamfer_m": 0.06983170076141156,
+        "frame_count": 16,
+        "frame_range": [
+          60,
+          76
+        ],
+        "persistence_chamfer_m": 0.00977669187356638,
+        "persistence_track_rmse_m": 0.017651327260953587,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09073488600278545
+      },
+      "train": {
+        "chamfer_m": 0.06919410917755203,
+        "frame_count": 59,
+        "frame_range": [
+          1,
+          60
+        ],
+        "persistence_chamfer_m": 0.007511195863603259,
+        "persistence_track_rmse_m": 0.012370647635792684,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09044799585769449
+      }
+    },
+    "per_frame": [
+      {
+        "chamfer_m": 3.9055564863258675e-21,
+        "frame": 0,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 2.858723167004528e-20,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.07924266535503109,
+        "frame": 1,
+        "persistence_chamfer_m": 0.001119351733576139,
+        "persistence_track_rmse_m": 0.0008570359071675091,
+        "prediction_finite": true,
+        "track_rmse_m": 0.11748056643565231,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.07437837135685879,
+        "frame": 2,
+        "persistence_chamfer_m": 0.00193903268082018,
+        "persistence_track_rmse_m": 0.0016286788692006617,
+        "prediction_finite": true,
+        "track_rmse_m": 0.10950549422121866,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.07045107898935266,
+        "frame": 3,
+        "persistence_chamfer_m": 0.0026574908649427053,
+        "persistence_track_rmse_m": 0.00246376441035805,
+        "prediction_finite": true,
+        "track_rmse_m": 0.10197139388908079,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06835459960796546,
+        "frame": 4,
+        "persistence_chamfer_m": 0.00310027048303425,
+        "persistence_track_rmse_m": 0.003101403379709771,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09469387961413503,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06789080628458796,
+        "frame": 5,
+        "persistence_chamfer_m": 0.0036165025650155393,
+        "persistence_track_rmse_m": 0.003950659811523498,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08938743334526147,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06803296817349244,
+        "frame": 6,
+        "persistence_chamfer_m": 0.004104892955149483,
+        "persistence_track_rmse_m": 0.004741335316539052,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08757356696289734,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06792703025278882,
+        "frame": 7,
+        "persistence_chamfer_m": 0.0044742384896073635,
+        "persistence_track_rmse_m": 0.005412966369909278,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08721486681556245,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06791346569534425,
+        "frame": 8,
+        "persistence_chamfer_m": 0.00480789490033732,
+        "persistence_track_rmse_m": 0.00611091034779655,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0870257697069228,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06798309546054514,
+        "frame": 9,
+        "persistence_chamfer_m": 0.005169843045942696,
+        "persistence_track_rmse_m": 0.006806937473662116,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08707778864451073,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06808404729186066,
+        "frame": 10,
+        "persistence_chamfer_m": 0.0054228127232038995,
+        "persistence_track_rmse_m": 0.007310986078122718,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08722809929174154,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06820351861513779,
+        "frame": 11,
+        "persistence_chamfer_m": 0.0056387690907803555,
+        "persistence_track_rmse_m": 0.007803325317645854,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0874153280441192,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06828271826587523,
+        "frame": 12,
+        "persistence_chamfer_m": 0.005900518947581359,
+        "persistence_track_rmse_m": 0.008304735110865814,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08757696315004605,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06835522548468355,
+        "frame": 13,
+        "persistence_chamfer_m": 0.006109266749281271,
+        "persistence_track_rmse_m": 0.008794834045265989,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08773094412807073,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06836674348189414,
+        "frame": 14,
+        "persistence_chamfer_m": 0.006268758382616237,
+        "persistence_track_rmse_m": 0.009198562550216815,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08781932762394218,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06837709566593572,
+        "frame": 15,
+        "persistence_chamfer_m": 0.006433387541828626,
+        "persistence_track_rmse_m": 0.009576375121260762,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08791655142729782,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06840870194416379,
+        "frame": 16,
+        "persistence_chamfer_m": 0.0066119903815331175,
+        "persistence_track_rmse_m": 0.009954418821951723,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08800979428278739,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06839449871294122,
+        "frame": 17,
+        "persistence_chamfer_m": 0.006637203842764166,
+        "persistence_track_rmse_m": 0.010179272331288285,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08806013070145188,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06841492758609662,
+        "frame": 18,
+        "persistence_chamfer_m": 0.006789490343960716,
+        "persistence_track_rmse_m": 0.010493842548535696,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08816219786773558,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06844772832488277,
+        "frame": 19,
+        "persistence_chamfer_m": 0.006934943294351651,
+        "persistence_track_rmse_m": 0.010807459125436587,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08825961922860832,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0684968147632024,
+        "frame": 20,
+        "persistence_chamfer_m": 0.007053177812533888,
+        "persistence_track_rmse_m": 0.011138712010524533,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08835110333341781,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06848010517540591,
+        "frame": 21,
+        "persistence_chamfer_m": 0.007164041263003024,
+        "persistence_track_rmse_m": 0.011440847139922246,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08842261896616639,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06848116817870074,
+        "frame": 22,
+        "persistence_chamfer_m": 0.007342566822728571,
+        "persistence_track_rmse_m": 0.011784714587228035,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08853230194569998,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0685315189865465,
+        "frame": 23,
+        "persistence_chamfer_m": 0.007406565403979411,
+        "persistence_track_rmse_m": 0.012032528995194046,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08858508792345314,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06849862760490635,
+        "frame": 24,
+        "persistence_chamfer_m": 0.007504558659444296,
+        "persistence_track_rmse_m": 0.012301802001328618,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0886274179113326,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06842716182882237,
+        "frame": 25,
+        "persistence_chamfer_m": 0.007635993539286132,
+        "persistence_track_rmse_m": 0.012594201845300154,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08869690395453667,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06842261141576281,
+        "frame": 26,
+        "persistence_chamfer_m": 0.0077901544273154015,
+        "persistence_track_rmse_m": 0.012897821398322691,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08877266481868673,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06846909169065372,
+        "frame": 27,
+        "persistence_chamfer_m": 0.007932419230787007,
+        "persistence_track_rmse_m": 0.013203618867406945,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08884176368891361,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06843614248860554,
+        "frame": 28,
+        "persistence_chamfer_m": 0.008090319154888326,
+        "persistence_track_rmse_m": 0.013501076307693647,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08891758483945643,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06847477360758818,
+        "frame": 29,
+        "persistence_chamfer_m": 0.008166398413589168,
+        "persistence_track_rmse_m": 0.013726370073465912,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08899287808225413,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06854450432601751,
+        "frame": 30,
+        "persistence_chamfer_m": 0.008307733636464473,
+        "persistence_track_rmse_m": 0.014029436441054567,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08912018381843517,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06860898359887431,
+        "frame": 31,
+        "persistence_chamfer_m": 0.008365795739503589,
+        "persistence_track_rmse_m": 0.014211176154253982,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08919501255031698,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06859586487305401,
+        "frame": 32,
+        "persistence_chamfer_m": 0.008395489569775124,
+        "persistence_track_rmse_m": 0.014295745927561868,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0892734871053199,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06870135544160515,
+        "frame": 33,
+        "persistence_chamfer_m": 0.008444122707085932,
+        "persistence_track_rmse_m": 0.014408701691956443,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08940856915508966,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06878681098986988,
+        "frame": 34,
+        "persistence_chamfer_m": 0.008478326241820343,
+        "persistence_track_rmse_m": 0.014499038535806232,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08950405400923685,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06890969553721005,
+        "frame": 35,
+        "persistence_chamfer_m": 0.008518178461805017,
+        "persistence_track_rmse_m": 0.014556266609178178,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08961967661307516,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06897276548451425,
+        "frame": 36,
+        "persistence_chamfer_m": 0.008556000587391891,
+        "persistence_track_rmse_m": 0.014617752865184953,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0897289313807399,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0690817309791037,
+        "frame": 37,
+        "persistence_chamfer_m": 0.008592100754007542,
+        "persistence_track_rmse_m": 0.014694041032030482,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0898352065616849,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06923611866164037,
+        "frame": 38,
+        "persistence_chamfer_m": 0.00863406439801837,
+        "persistence_track_rmse_m": 0.014769932185921986,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08993956064229956,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06937267838467856,
+        "frame": 39,
+        "persistence_chamfer_m": 0.008802659368687845,
+        "persistence_track_rmse_m": 0.015021481497893672,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09011981184047164,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06951919099315346,
+        "frame": 40,
+        "persistence_chamfer_m": 0.008913552364237274,
+        "persistence_track_rmse_m": 0.01521357494188883,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09027249664714956,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0696844310987823,
+        "frame": 41,
+        "persistence_chamfer_m": 0.00898995034999685,
+        "persistence_track_rmse_m": 0.01539521887165214,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09038316246945963,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06977950256089274,
+        "frame": 42,
+        "persistence_chamfer_m": 0.009083134114265614,
+        "persistence_track_rmse_m": 0.015591359860796234,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09046780123531996,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0698033113531853,
+        "frame": 43,
+        "persistence_chamfer_m": 0.009102795070952466,
+        "persistence_track_rmse_m": 0.01570190734268026,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09051646442262576,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06981195806827903,
+        "frame": 44,
+        "persistence_chamfer_m": 0.00908875210922495,
+        "persistence_track_rmse_m": 0.01578418056420743,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0905337843598656,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06980094190726123,
+        "frame": 45,
+        "persistence_chamfer_m": 0.009163220282527867,
+        "persistence_track_rmse_m": 0.01597099672559886,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09057802012282823,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06976704880118395,
+        "frame": 46,
+        "persistence_chamfer_m": 0.009163543513448127,
+        "persistence_track_rmse_m": 0.016068025474072253,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09058029932799531,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06963385118128651,
+        "frame": 47,
+        "persistence_chamfer_m": 0.009197067767115676,
+        "persistence_track_rmse_m": 0.016191908001490056,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09058443084342062,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06956275107067333,
+        "frame": 48,
+        "persistence_chamfer_m": 0.009305092491434703,
+        "persistence_track_rmse_m": 0.016418448588422885,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0906210054634669,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06951129277774898,
+        "frame": 49,
+        "persistence_chamfer_m": 0.009387532388695777,
+        "persistence_track_rmse_m": 0.01659732783603845,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09066387366494917,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06951605064251498,
+        "frame": 50,
+        "persistence_chamfer_m": 0.009416700276704812,
+        "persistence_track_rmse_m": 0.016741938827583625,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09066596178197958,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06960701092309336,
+        "frame": 51,
+        "persistence_chamfer_m": 0.009488308310609008,
+        "persistence_track_rmse_m": 0.016908753850452846,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09071704006777025,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06963123632967966,
+        "frame": 52,
+        "persistence_chamfer_m": 0.009615297270131318,
+        "persistence_track_rmse_m": 0.017147769679777936,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09080597972969219,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06964512610812126,
+        "frame": 53,
+        "persistence_chamfer_m": 0.00968504099498302,
+        "persistence_track_rmse_m": 0.017317271067787403,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09087171822171682,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0697293965011904,
+        "frame": 54,
+        "persistence_chamfer_m": 0.009780369684907364,
+        "persistence_track_rmse_m": 0.017488641871482465,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09095338340828565,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06970577376227195,
+        "frame": 55,
+        "persistence_chamfer_m": 0.009816487253421902,
+        "persistence_track_rmse_m": 0.01758935346464172,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0909996827633908,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06968747973502461,
+        "frame": 56,
+        "persistence_chamfer_m": 0.009812129468069364,
+        "persistence_track_rmse_m": 0.01764186977421965,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09099147656565859,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06968849060510256,
+        "frame": 57,
+        "persistence_chamfer_m": 0.009778098711184995,
+        "persistence_track_rmse_m": 0.017644504792995553,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09094850463953603,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06966853359626782,
+        "frame": 58,
+        "persistence_chamfer_m": 0.009725278319224786,
+        "persistence_track_rmse_m": 0.01761951703773838,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09086630889055797,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06966125289365661,
+        "frame": 59,
+        "persistence_chamfer_m": 0.009730880003014024,
+        "persistence_track_rmse_m": 0.01761287283455559,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0908158264566773,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06972478419939471,
+        "frame": 60,
+        "persistence_chamfer_m": 0.009747696231617727,
+        "persistence_track_rmse_m": 0.017610010322881946,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0907726585596669,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06975868626060323,
+        "frame": 61,
+        "persistence_chamfer_m": 0.009694052949025523,
+        "persistence_track_rmse_m": 0.017565622679665306,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09073516538786976,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06983432222400969,
+        "frame": 62,
+        "persistence_chamfer_m": 0.009740367041195366,
+        "persistence_track_rmse_m": 0.017608568646374088,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09072954505184942,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06989686153088256,
+        "frame": 63,
+        "persistence_chamfer_m": 0.009791328583787425,
+        "persistence_track_rmse_m": 0.01765271933752824,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09074694060598869,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06997535478589187,
+        "frame": 64,
+        "persistence_chamfer_m": 0.009766561449729145,
+        "persistence_track_rmse_m": 0.01759926574106033,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09071144316680352,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.07004250307724233,
+        "frame": 65,
+        "persistence_chamfer_m": 0.009719126912874194,
+        "persistence_track_rmse_m": 0.01752519533315464,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09065033652668086,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.07007297918112207,
+        "frame": 66,
+        "persistence_chamfer_m": 0.009758376495482734,
+        "persistence_track_rmse_m": 0.017555665031299995,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09066734315650825,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0700604115929082,
+        "frame": 67,
+        "persistence_chamfer_m": 0.00977063628594356,
+        "persistence_track_rmse_m": 0.017585920305714656,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09065812048331015,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.07000567256529548,
+        "frame": 68,
+        "persistence_chamfer_m": 0.009813257001299893,
+        "persistence_track_rmse_m": 0.017648531343702537,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09064941400354992,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.069954706546023,
+        "frame": 69,
+        "persistence_chamfer_m": 0.00982624570243773,
+        "persistence_track_rmse_m": 0.017691753720910246,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09064705032782558,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06987872889678688,
+        "frame": 70,
+        "persistence_chamfer_m": 0.009834073753786183,
+        "persistence_track_rmse_m": 0.01773247469253308,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09066252889301218,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06978471748308551,
+        "frame": 71,
+        "persistence_chamfer_m": 0.009824470528763282,
+        "persistence_track_rmse_m": 0.017720073887355553,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0906969816626885,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06973249750458999,
+        "frame": 72,
+        "persistence_chamfer_m": 0.009804025996420189,
+        "persistence_track_rmse_m": 0.017723819692391393,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09075162732738176,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0695730443029815,
+        "frame": 73,
+        "persistence_chamfer_m": 0.009765333210943916,
+        "persistence_track_rmse_m": 0.017715156891604248,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09082195309824068,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.06952542698456197,
+        "frame": 74,
+        "persistence_chamfer_m": 0.00977498292012988,
+        "persistence_track_rmse_m": 0.017715063186102994,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09088516190286365,
+        "valid_points": 6607
+      },
+      {
+        "chamfer_m": 0.0694865150472059,
+        "frame": 75,
+        "persistence_chamfer_m": 0.009796534913625341,
+        "persistence_track_rmse_m": 0.017771395362978167,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09097190589032746,
+        "valid_points": 6607
+      }
+    ]
+  },
+  "num_all_points": 1020,
+  "num_controller_points": 768,
+  "num_controller_springs": 16,
+  "num_object_springs": 1019,
+  "num_original_points": 1020,
+  "num_springs": 1035,
+  "num_surface_points": 1020,
+  "object_edge_strain": {
+    "evaluated_frame_count": 76,
+    "maximum_absolute_relative_strain": 1.4386000633239746,
+    "object_spring_count": 1019,
+    "p99_absolute_relative_strain": 0.06667697906494134
+  },
+  "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+  "passed": true,
+  "peak_cuda_bytes": 6001664,
+  "realized_actuation": {
+    "applied_max_controller_displacement_m": 0.1117795780301094,
+    "claim_boundary": "source-only realized controller-displacement gain; interpreted as an effective actuation-transmission latent, not a calibrated robot gain",
+    "controller_displacement_scale": 1.0,
+    "original_max_controller_displacement_m": 0.1117795780301094,
+    "override_applied": false
+  },
+  "rollout_seconds": 0.36365031776949763,
+  "simulator_internal_metrics": {
+    "future_chamfer_m": 0.07633180632850585,
+    "future_persistence_chamfer_m": 0.0,
+    "future_persistence_track_rmse_m": 0.0,
+    "future_prediction_finite": true,
+    "future_track_rmse_m": 0.09008054008086522,
+    "intervals": {
+      "test": {
+        "chamfer_m": 0.07587476634088158,
+        "frame_count": 16,
+        "frame_range": [
+          60,
+          76
+        ],
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08884719805791974
+      },
+      "train": {
+        "chamfer_m": 0.07645574937599717,
+        "frame_count": 59,
+        "frame_range": [
+          1,
+          60
+        ],
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09041500571420637
+      }
+    },
+    "per_frame": [
+      {
+        "chamfer_m": 0.0,
+        "frame": 0,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.08743937144739919,
+        "frame": 1,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.12324284762144089,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.08311812085686034,
+        "frame": 2,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.11491497606039047,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07933890591936021,
+        "frame": 3,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.106631338596344,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07743558642310107,
+        "frame": 4,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09844697266817093,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07672469766282594,
+        "frame": 5,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.09205877780914307,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07667992052753982,
+        "frame": 6,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08993220329284668,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07656283870958197,
+        "frame": 7,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08935331553220749,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07657515349626746,
+        "frame": 8,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08892706781625748,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07658269906297308,
+        "frame": 9,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08877215534448624,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07657093412997694,
+        "frame": 10,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08874893933534622,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07655130144634481,
+        "frame": 11,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08874626457691193,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.0765301171302531,
+        "frame": 12,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0887465551495552,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07650442714000746,
+        "frame": 13,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08874700963497162,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07647475725223908,
+        "frame": 14,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08874787390232086,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07644525719926357,
+        "frame": 15,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08874928951263428,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07641662169188373,
+        "frame": 16,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0887509286403656,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07638638801437485,
+        "frame": 17,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08875250071287155,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07635659497967183,
+        "frame": 18,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08875448256731033,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07632886550391842,
+        "frame": 19,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08875733613967896,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07630257811168582,
+        "frame": 20,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08876103907823563,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07627696226294878,
+        "frame": 21,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08876482397317886,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07624798001546323,
+        "frame": 22,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0887683853507042,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07621944719114794,
+        "frame": 23,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0887727290391922,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07619211592875888,
+        "frame": 24,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08877842873334885,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07616357625602242,
+        "frame": 25,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08878502249717712,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07613624971262695,
+        "frame": 26,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08879242092370987,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07610957203605481,
+        "frame": 27,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08880063146352768,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.0760837344631068,
+        "frame": 28,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08880863338708878,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07605633202252676,
+        "frame": 29,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08881670981645584,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07602837311835618,
+        "frame": 30,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08882361650466919,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07600271087197163,
+        "frame": 31,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08883002400398254,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07597896344743518,
+        "frame": 32,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08883623778820038,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07595768304328995,
+        "frame": 33,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08884251117706299,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07593935116563742,
+        "frame": 34,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0888485461473465,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07592364158715825,
+        "frame": 35,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08885373920202255,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07590927831925273,
+        "frame": 36,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08885718137025833,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07589683052212706,
+        "frame": 37,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0888608917593956,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.0758851830428718,
+        "frame": 38,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08886410295963287,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07587484469904048,
+        "frame": 39,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0888674408197403,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07586484175684523,
+        "frame": 40,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08887065947055817,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07585465117692768,
+        "frame": 41,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08887418359518051,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07584309532545058,
+        "frame": 42,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08887788653373718,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07583040799345774,
+        "frame": 43,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0888817235827446,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07581724059809183,
+        "frame": 44,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08888628333806992,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07580252196673395,
+        "frame": 45,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08889169245958328,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07578618071789466,
+        "frame": 46,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08889754861593246,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07576993699607923,
+        "frame": 47,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0889042317867279,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07575349593651269,
+        "frame": 48,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08891145884990692,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07573691544769616,
+        "frame": 49,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08891867846250534,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07572003583240576,
+        "frame": 50,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08892574161291122,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07570485378678976,
+        "frame": 51,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08893299102783203,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07568989470240915,
+        "frame": 52,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08893996477127075,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.0756761388856803,
+        "frame": 53,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08894617110490799,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07566421144065137,
+        "frame": 54,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08895193785429001,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07565243548247641,
+        "frame": 55,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08895547688007355,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07564086255489058,
+        "frame": 56,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08895640820264816,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07563148688639844,
+        "frame": 57,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08895512670278549,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07562376953803147,
+        "frame": 58,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08895040303468704,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07561826974708416,
+        "frame": 59,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08894281834363937,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07561797440998755,
+        "frame": 60,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0889347493648529,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.0756237499846368,
+        "frame": 61,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08892602473497391,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07563492938915545,
+        "frame": 62,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08891631662845612,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07565253779727334,
+        "frame": 63,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08890648186206818,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07567772077726216,
+        "frame": 64,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08889587968587875,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07571013952516825,
+        "frame": 65,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0888841301202774,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07575040996124839,
+        "frame": 66,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.0888713076710701,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07579564136559484,
+        "frame": 67,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08885683119297028,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07584601285666363,
+        "frame": 68,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08884239941835403,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07589968154430507,
+        "frame": 69,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08882904052734375,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07596055493619737,
+        "frame": 70,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08881710469722748,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07602894264684615,
+        "frame": 71,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08880365639925003,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07610191250153459,
+        "frame": 72,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08878930658102036,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07616958937584956,
+        "frame": 73,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08877493441104889,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07623271871577739,
+        "frame": 74,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08876053988933563,
+        "valid_points": 1016
+      },
+      {
+        "chamfer_m": 0.07629374566660488,
+        "frame": 75,
+        "persistence_chamfer_m": 0.0,
+        "persistence_track_rmse_m": 0.0,
+        "prediction_finite": true,
+        "track_rmse_m": 0.08874646574258804,
+        "valid_points": 1016
+      }
+    ]
+  },
+  "source_only_smoke": true,
+  "split_sha256": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92",
+  "support_dynamics": {
+    "claim_boundary": "official-ground is the frozen PhysTwin path; gravity-neutral-planar is an exploratory source-only reduced-order support diagnostic",
+    "mode": "official-ground",
+    "reverse_factor": -1.0,
+    "uses_official_cuda_graph": true
+  },
+  "trajectory_sha256": "900c513fa8b5b5053313d6f1b600e84b9cd4c4c2d455900952052e565d275982"
+}

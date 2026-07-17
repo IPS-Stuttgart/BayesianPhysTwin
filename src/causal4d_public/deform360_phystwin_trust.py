@@ -340,6 +340,124 @@ def load_official_phystwin_trust_episode(
     )
 
 
+def load_official_phystwin_readout_trust_episode(
+    episode_id: str,
+    target_data_path: str | Path,
+    simulation_data_path: str | Path,
+    readout_artifact_path: str | Path,
+    driven_result_path: str | Path,
+    zero_action_result_path: str | Path,
+    split_path: str | Path,
+    *,
+    evidence_scope: str = "source-only",
+) -> CausalTrustEpisode:
+    """Load matched graph rollouts and map them to frame-zero target identities."""
+
+    simulation_episode = load_official_phystwin_trust_episode(
+        episode_id,
+        simulation_data_path,
+        driven_result_path,
+        zero_action_result_path,
+        split_path,
+        evidence_scope=evidence_scope,
+    )
+    target_file = Path(target_data_path)
+    readout_file = Path(readout_artifact_path)
+    with target_file.open("rb") as stream:
+        target_data = pickle.load(stream)
+    _require(isinstance(target_data, Mapping), "target bundle is not a mapping")
+    target = np.asarray(target_data["object_points"], dtype=np.float64)
+    visibility = np.asarray(target_data["object_visibilities"], dtype=bool)
+    validity = np.asarray(target_data["object_motions_valid"], dtype=bool)
+    _require(
+        target.ndim == 3
+        and target.shape[0] == len(simulation_episode.target_m)
+        and target.shape[2] == 3,
+        "target trajectory differs from the graph rollout frame axis",
+    )
+    _require(
+        visibility.shape == target.shape[:2] and validity.shape == target.shape[:2],
+        "target masks differ from the target trajectory",
+    )
+    with np.load(readout_file, allow_pickle=False) as archive:
+        weights = np.asarray(archive["readout_weights"], dtype=np.float64)
+    _require(
+        weights.shape == (target.shape[1], simulation_episode.target_m.shape[1]),
+        "readout shape differs from target and graph nodes",
+    )
+    _require(
+        np.all(np.isfinite(weights))
+        and np.all(weights >= 0.0)
+        and np.allclose(np.sum(weights, axis=1), 1.0, atol=1e-6),
+        "readout weights are not finite convex assignments",
+    )
+    target_sha256 = _sha256_file(target_file)
+    readout_sha256 = _sha256_file(readout_file)
+    controller_group_count = None
+    for result_path in (driven_result_path, zero_action_result_path):
+        result = json.loads(Path(result_path).read_text(encoding="utf-8"))
+        external = result.get("external_target_scoring", {})
+        _require(
+            external.get("external_target_final_data_sha256") == target_sha256,
+            "Warp result uses another external target",
+        )
+        _require(
+            external.get("target_readout_artifact_sha256") == readout_sha256,
+            "Warp result uses another target readout",
+        )
+        _require(
+            external.get("frame_zero_anchored_readout") is True
+            and external.get("readout_offset_uses_future_object_observations") is False,
+            "Warp result does not use the frame-zero-only readout boundary",
+        )
+        canonical_graph = result.get("canonical_reusable_graph")
+        canonical_group_count = (
+            canonical_graph.get("contact_anchor_count")
+            if isinstance(canonical_graph, Mapping)
+            else None
+        )
+        group_count = int(
+            canonical_group_count
+            or result.get(
+                "controller_attachment_group_count",
+                result.get("num_controller_springs", 0),
+            )
+        )
+        _require(group_count >= 1, "Warp result has no controller attachment group")
+        if controller_group_count is None:
+            controller_group_count = group_count
+        else:
+            _require(
+                group_count == controller_group_count,
+                "matched Warp pair differs in controller attachment groups",
+            )
+
+    driven = np.einsum(
+        "mn,tnc->tmc", weights, simulation_episode.driven_m, optimize=True
+    )
+    zero = np.einsum(
+        "mn,tnc->tmc", weights, simulation_episode.zero_action_m, optimize=True
+    )
+    offset = target[0] - zero[0]
+    driven += offset[None]
+    zero += offset[None]
+    return CausalTrustEpisode(
+        episode_id=episode_id,
+        target_m=target,
+        visibility=visibility,
+        validity=validity,
+        driven_m=driven,
+        zero_action_m=zero,
+        train_stop_frame=simulation_episode.train_stop_frame,
+        source_data_sha256=target_sha256,
+        driven_trajectory_sha256=simulation_episode.driven_trajectory_sha256,
+        zero_action_trajectory_sha256=(
+            simulation_episode.zero_action_trajectory_sha256
+        ),
+        controller_count=int(controller_group_count),
+    )
+
+
 def load_cardinality_trust_protocol(path: str | Path) -> dict[str, Any]:
     """Load the immutable independent-object hypothesis lock."""
 

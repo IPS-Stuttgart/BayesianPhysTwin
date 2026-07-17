@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "config": {
+    "protocol_id": "deform360-dense-reusable-panel-v1",
+    "status": "source-only-contact-conditioned-window-amendment-before-calibration-dynamics-and-any-target-access",
+    "frozen_at": "2026-07-17T01:30:00+02:00",
+    "amended_at": "2026-07-17T02:35:00+02:00",
+    "amendment_reason": "the prior v2 association preserved within-episode identities but not one graph across episodes; a source-only cross-action probe then showed that rigid one-to-one registration fails under grasp occlusion, so the locked method keeps one graph while completing its state from partial observations; the official Deform360 paper also defines multi-episode evaluation as prediction on an entirely unseen interaction, so the observation boundary is tightened prospectively from a six-frame response prefix to frame zero only; a source-action-only audit over all 30 source episodes showed that the fixed raw interval captured only 24.94 percent of the best equal-length controller displacement and 33.45 percent of the best path; the first displacement-maximizing amendment was then falsified on source episode 002-rope-silk/0 because 83.07 mm mean controller displacement coincided with only 0.597 mm mean object displacement and the video showed open-gripper approach rather than manipulation; before any calibration dynamics, target action, target initial frame, or target outcome was read, the selector was therefore amended to maximize gripper path weighted by robust closure confidence from the released future action aperture",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "parent_evidence": {
+      "replication_config_sha256": "f0aab308345807b2183f653306a062d4ad0295584b6b283deb99d29b3c247934",
+      "source_qa_result_sha256": "2d7f0f4be5d27af1c2d6abb87168e0bf1a07c335287a6d15541c266adf22290f",
+      "sparse_backend_negative_result_sha256": "3603d273f6263dfe682631b9d9c72ae73b11ec2707a649f6d065cb6855e343a2",
+      "reusable_association_config_sha256": "fa3c20b90d08c1fee11e7490c48c10d0a275d1850dd966084359eb93f1506118",
+      "reusable_081_calibration_result_sha256": "3a85a727f423d9822a705b38046fe0a4d96ae964e08f173636b48cdb70b89785",
+      "reusable_081_ensemble_result_sha256": "5a15a97e1776839f6999b10cf7690238fccd526b87a68dd6e7b284166b5f208d",
+      "source_action_window_audit_result_sha256": "46eadfd9c94ca59a7dddd70c3a327f87604591aac3890404f0168ce535b1e4a6",
+      "displacement_only_source_smoke_result_sha256": "5de2fa5dadace466a8c4e73538b2d55d29b18cf268a932219992e94d7b0d72e1"
+    },
+    "development_object": {
+      "object_id": "081-stripe-rope",
+      "target_episode_id": 5,
+      "excluded_from_confirmatory_panel": true,
+      "target_must_remain_sealed": true
+    },
+    "cohort": [
+      {
+        "stratum": "filament",
+        "object_id": "002-rope-silk",
+        "canonical_reference_episode_id": 0,
+        "source_episode_ids": [0, 2, 5, 6, 7, 9],
+        "calibration_episode_ids": [3, 4, 8],
+        "target_episode_id": 1
+      },
+      {
+        "stratum": "sheet",
+        "object_id": "085-scarf-cloth",
+        "canonical_reference_episode_id": 1,
+        "source_episode_ids": [1, 3, 4, 6, 8, 9],
+        "calibration_episode_ids": [0, 5, 7],
+        "target_episode_id": 2
+      },
+      {
+        "stratum": "sheet",
+        "object_id": "083-blanket-cloth",
+        "canonical_reference_episode_id": 1,
+        "source_episode_ids": [1, 2, 4, 5, 8, 9],
+        "calibration_episode_ids": [0, 3, 6],
+        "target_episode_id": 7
+      },
+      {
+        "stratum": "volumetric",
+        "object_id": "092-squirrel",
+        "canonical_reference_episode_id": 0,
+        "source_episode_ids": [0, 4, 5, 7, 8, 9],
+        "calibration_episode_ids": [2, 3, 6],
+        "target_episode_id": 1
+      },
+      {
+        "stratum": "volumetric",
+        "object_id": "170-spider",
+        "canonical_reference_episode_id": 0,
+        "source_episode_ids": [0, 1, 3, 5, 8, 9],
+        "calibration_episode_ids": [2, 4, 7],
+        "target_episode_id": 6
+      }
+    ],
+    "dense_reusable_method": {
+      "canonical_geometry": "one immutable source-reference material graph per object with latent bending-chain nodes across occlusion gaps; topology and object rest lengths are never rebuilt per episode",
+      "canonical_surface_node_count": 192,
+      "minimum_canonical_surface_node_count": 128,
+      "object_radius_m": 0.02,
+      "object_max_neighbours": 30,
+      "episode_association": "partial graph-constrained state completion plus uncertain target-centric readout",
+      "association_uses_simulator_residual": false,
+      "association_uses_future_object_frames": false,
+      "accepted_camera_minimum": 10,
+      "temporal_prefix_frame_count": 1,
+      "minimum_temporal_match_fraction": 0.95,
+      "minimum_effective_reliable_match_fraction": 0.7,
+      "canonical_episode_registration": {
+        "geometry_sigma_m": 0.01,
+        "color_sigma": 0.2,
+        "color_cost_weight": 0.25,
+        "assignment_temperature": 0.5,
+        "measurement_variance_m2": 0.000004,
+        "maximum_match_distance_m": 0.02,
+        "icp_iterations": 6,
+        "trim_fraction": 0.9,
+        "use_pca_multistart": true,
+        "one_to_one_assignment": false,
+        "partial_visibility_is_explicit": true,
+        "assignment_mixture_spread_enters_observation_covariance": true,
+        "candidate_reliability_sources": [
+          "source confidence",
+          "mask support",
+          "multiview consistency",
+          "prefix visibility",
+          "association entropy"
+        ],
+        "simulator_state_innovation_used_as_prior_reliability": false
+      },
+      "partial_graph_state_completion": {
+        "start_count": 12,
+        "anchor_count": 24,
+        "iterations": 1200,
+        "learning_rate": 0.002,
+        "observation_scale_m": 0.01,
+        "hidden_node_distance_cap_m": 0.025,
+        "hidden_node_fit_weight": 0.35,
+        "edge_strain_weight": 10.0,
+        "bridge_strain_weight": 3.0,
+        "contact_anchor_weight": 10.0,
+        "readout_neighbour_count": 4,
+        "readout_geometry_scale_m": 0.01,
+        "readout_color_scale": 1.0,
+        "readout_color_weight": 0.1,
+        "measurement_variance_m2": 0.000004,
+        "maximum_supported_distance_m": 0.02,
+        "minimum_observed_target_fraction": 0.95,
+        "minimum_effective_target_reliability": 0.7,
+        "maximum_p99_relative_edge_strain": 0.5,
+        "maximum_bridge_relative_edge_strain": 0.5,
+        "maximum_contact_anchor_error_m": 0.015,
+        "uses_only_object_geometry_frames": [0],
+        "uses_prefix_visibility_frame_count": 1,
+        "uses_simulator_residual": false,
+        "uses_future_object_frames": false
+      },
+      "controller_radius_m": 0.015,
+      "controller_max_neighbours": 1,
+      "controller_input_group_size": 768,
+      "unsupported_controller_group_policy": "reject episode before rollout; never renormalize remaining action response",
+      "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "official_real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+      "support_mode": "official-ground",
+      "parameter_grid": {
+        "init_spring_Y": [10000.0, 30000.0, 50000.0, 80000.0],
+        "drag_damping": [1.0, 3.0, 10.0],
+        "dashpot_damping": [50.0, 100.0]
+      },
+      "physical_selection": "one point tuple per object, selected jointly over all six source episodes using raw Warp",
+      "model_averaging_promoted": false,
+      "fixed_action_trust": {
+        "base_action_response": 0.4,
+        "autonomous_drift": 0.1,
+        "normalization": "commanded controller group count",
+        "weights_may_change": false
+      }
+    },
+    "frame_protocol": {
+      "window_selection": {
+        "rule": "maximize mean gripper-centre path weighted at each step by the minimum endpoint closure confidence",
+        "window_length_frames": 81,
+        "controller_centre": "arithmetic mean of the five released action points per gripper",
+        "closure_confidence": "per gripper, clip((episode aperture p90 - aperture)/(episode aperture p90 - episode aperture p10), 0, 1); smaller released aperture means more closed",
+        "static_aperture_fallback": "confidence one, reducing exactly to unweighted path when aperture cannot identify closure",
+        "step_weight": "minimum closure confidence at the two endpoints of each gripper-centre path step",
+        "gripper_aggregation": "mean of per-gripper closure-weighted path lengths; gripper vectors are never averaged before taking their norms",
+        "candidate_starts": {
+          "first": 8,
+          "stride": 6,
+          "stop": "last start whose complete 81-frame window exists",
+          "reason": "matches the prospectively generated source-QA mask timeline without using mask values or object outcomes"
+        },
+        "tie_break": "earliest start",
+        "input_fields": ["robot/robot.npz:actions", "robot/robot.npz:openings", "episode frame count"],
+        "known_future_action_is_conditioning_input": true,
+        "object_geometry_or_tactile_used_for_selection": false
+      },
+      "superseded_displacement_only_window_rule": "maximize mean gripper-centre displacement from the candidate window start",
+      "superseded_fixed_raw_aligned_range_half_open": [110, 191],
+      "tracking_tail_frames_skipped": 5,
+      "processed_frame_count": 76,
+      "source_selection_range_half_open": [1, 60],
+      "source_untouched_tail_range_half_open": [60, 76],
+      "calibration_prediction_range_half_open": [1, 76],
+      "horizon_ranges_half_open": {
+        "early": [1, 26],
+        "middle": [26, 51],
+        "late": [51, 76]
+      }
+    },
+    "source_admission": {
+      "all_five_objects_must_pass": true,
+      "minimum_tail_track_improvement_fraction": 0.0,
+      "minimum_tail_cd_improvement_fraction": 0.0,
+      "minimum_joint_win_episode_count_per_object": 4,
+      "maximum_per_episode_degradation_fraction_per_metric": 0.25,
+      "all_commanded_controller_groups_must_have_graph_support": true,
+      "maximum_nonfinite_state_count": 0,
+      "maximum_p99_relative_edge_strain": 0.5,
+      "maximum_bridge_relative_edge_strain": 0.5,
+      "on_fail": "freeze source failure and keep all calibration dynamics and targets sealed"
+    },
+    "calibration_admission": {
+      "execution_count": 15,
+      "all_five_objects_must_be_scored": true,
+      "minimum_execution_balanced_track_improvement_fraction": 0.05,
+      "minimum_execution_balanced_cd_improvement_fraction": 0.05,
+      "minimum_joint_win_execution_count": 10,
+      "maximum_per_execution_degradation_fraction_per_metric": 0.10,
+      "minimum_late_track_improvement_fraction": 0.03,
+      "minimum_late_cd_improvement_fraction": 0.03,
+      "minimum_pooled_vs_median_single_source_joint_win_count": 10,
+      "require_no_stratum_with_median_degradation": true,
+      "all_commanded_controller_groups_must_have_graph_support": true,
+      "all_gates_conjunctive": true,
+      "on_fail": "freeze calibration failure and keep all five targets sealed",
+      "on_pass": "freeze every predictor and checksum before any target prefix opens"
+    },
+    "target_panel": {
+      "target_count": 5,
+      "open_as_one_conjunctive_panel": true,
+      "partial_target_opening_allowed": false,
+      "target_prefix_allowed_before_calibration_pass": false,
+      "target_initial_frame_allowed_after_calibration_pass": true,
+      "target_action_trajectory_allowed_after_calibration_pass": true,
+      "target_post_initial_object_observations_allowed": false,
+      "target_future_allowed_before_prediction_seal": false,
+      "primary_metrics": ["symmetric_chamfer_m", "material_track_rmse_m"],
+      "published_particleformer_multi_episode": {
+        "symmetric_chamfer_m": 0.051,
+        "track_error_m": 0.079
+      },
+      "clear_margin_goal": {
+        "symmetric_chamfer_m_at_most": 0.0459,
+        "track_error_m_at_most": 0.0711
+      },
+      "minimum_joint_win_target_count_vs_persistence": 4,
+      "require_no_stratum_with_median_degradation_vs_persistence": true,
+      "inference_unit": "object-target episode",
+      "unqualified_state_of_the_art_claim_requires_full_official_split": true
+    },
+    "protected_stage_roots": ["aligned", "observations", "fits"],
+    "information_boundary": {
+      "selected_source_observations_were_previously_read": true,
+      "sparse_source_prediction_outcomes_were_previously_read": true,
+      "five_target_prefixes_read": false,
+      "five_target_action_trajectories_read": false,
+      "five_target_initial_frames_read": false,
+      "five_target_post_initial_object_observations_read": false,
+      "five_target_future_geometry_read": false,
+      "five_target_future_tactile_read": false,
+      "development_081_target_read": false,
+      "target_requests_authorized_by_this_config": false
+    },
+    "claim_boundary": "five-object prerequisite panel for reusable PhysTwin; an unqualified state-of-the-art claim requires the full official Deform360 multi-episode split"
+  }
+}

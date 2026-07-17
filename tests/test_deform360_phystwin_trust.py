@@ -24,6 +24,7 @@ from causal4d_public.deform360_phystwin_trust import (
     load_cardinality_source_execution_protocol,
     load_cardinality_trust_protocol,
     load_contact_anchored_causal_trust_protocol,
+    load_official_phystwin_readout_trust_episode,
     load_official_phystwin_trust_episode,
     score_causal_trust_interval,
     validate_cardinality_normalized_source_causal_trust_artifact,
@@ -510,9 +511,7 @@ def test_load_official_warp_pair_checks_matched_configuration(tmp_path: Path) ->
     loaded_legacy_driven = load_official_phystwin_trust_episode(
         "e0", data_path, result_paths[0], result_paths[1], split_path
     )
-    np.testing.assert_allclose(
-        loaded_legacy_driven.driven_m, episode.driven_m
-    )
+    np.testing.assert_allclose(loaded_legacy_driven.driven_m, episode.driven_m)
 
     changed = json.loads(result_paths[1].read_text(encoding="utf-8"))
     changed["config_sha256"] = "e" * 64
@@ -521,3 +520,115 @@ def test_load_official_warp_pair_checks_matched_configuration(tmp_path: Path) ->
         load_official_phystwin_trust_episode(
             "e0", data_path, result_paths[0], result_paths[1], split_path
         )
+
+
+def test_readout_trust_loader_anchors_frame_zero_without_future_data(
+    tmp_path: Path,
+) -> None:
+    frames = 7
+    graph_nodes = 3
+    target_nodes = 4
+    graph_initial = np.column_stack(
+        (
+            np.linspace(0.0, 0.2, graph_nodes),
+            np.zeros(graph_nodes),
+            np.zeros(graph_nodes),
+        )
+    )
+    progress = np.linspace(0.0, 1.0, frames)[:, None, None]
+    graph_zero = np.repeat(graph_initial[None], frames, axis=0)
+    graph_zero[..., 2] += 0.02 * progress[..., 0]
+    graph_driven = graph_zero.copy()
+    graph_driven[..., 1] += 0.05 * progress[..., 0]
+    weights = np.asarray(
+        [
+            [1.0, 0.0, 0.0],
+            [0.5, 0.5, 0.0],
+            [0.0, 0.5, 0.5],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    target = np.einsum("mn,tnc->tmc", weights, graph_driven)
+    frame_zero_offset = np.asarray([0.003, -0.002, 0.001])[None]
+    target += frame_zero_offset[None]
+    target_data_path = tmp_path / "target.pkl"
+    simulation_data_path = tmp_path / "simulation.pkl"
+    split_path = tmp_path / "split.json"
+    readout_path = tmp_path / "readout.npz"
+    with target_data_path.open("wb") as stream:
+        pickle.dump(
+            {
+                "object_points": target,
+                "object_visibilities": np.ones((frames, target_nodes), dtype=bool),
+                "object_motions_valid": np.ones((frames, target_nodes), dtype=bool),
+            },
+            stream,
+        )
+    with simulation_data_path.open("wb") as stream:
+        pickle.dump(
+            {
+                "object_points": graph_zero,
+                "object_visibilities": np.ones((frames, graph_nodes), dtype=bool),
+                "object_motions_valid": np.ones((frames, graph_nodes), dtype=bool),
+            },
+            stream,
+        )
+    np.savez_compressed(readout_path, readout_weights=weights)
+    split_path.write_text(
+        json.dumps({"frame_len": frames, "train": [0, 5], "test": [5, 7]}),
+        encoding="utf-8",
+    )
+    result_paths = []
+    for name, scale, trajectory in (
+        ("driven", 1.0, graph_driven),
+        ("zero", 0.0, graph_zero),
+    ):
+        root = tmp_path / name
+        root.mkdir()
+        trajectory_path = root / "official_phystwin_trajectory.npz"
+        np.savez_compressed(trajectory_path, vertices=trajectory)
+        result_path = root / "official_phystwin_smoke.json"
+        result_path.write_text(
+            json.dumps(
+                {
+                    "passed": True,
+                    "source_only_smoke": True,
+                    "official_phystwin_revision": "revision",
+                    "data_sha256": _sha256(simulation_data_path),
+                    "config_sha256": "d" * 64,
+                    "split_sha256": _sha256(split_path),
+                    "config_overrides": {"init_spring_Y": 1.0},
+                    "support_dynamics": {"mode": "official-ground"},
+                    "effective_inertia": {"particle_mass_scale": 1.0},
+                    "contact_transmission": {"scale": 1.0},
+                    "realized_actuation": {"controller_displacement_scale": scale},
+                    "frame_count": frames,
+                    "num_controller_points": 1,
+                    "controller_attachment_group_count": 1,
+                    "num_controller_springs": 4,
+                    "num_original_points": graph_nodes,
+                    "trajectory_sha256": _sha256(trajectory_path),
+                    "external_target_scoring": {
+                        "external_target_final_data_sha256": _sha256(target_data_path),
+                        "target_readout_artifact_sha256": _sha256(readout_path),
+                        "frame_zero_anchored_readout": True,
+                        "readout_offset_uses_future_object_observations": False,
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        result_paths.append(result_path)
+
+    loaded = load_official_phystwin_readout_trust_episode(
+        "e0",
+        target_data_path,
+        simulation_data_path,
+        readout_path,
+        result_paths[0],
+        result_paths[1],
+        split_path,
+    )
+    np.testing.assert_allclose(loaded.driven_m, target)
+    np.testing.assert_allclose(loaded.zero_action_m[0], target[0])
+    assert loaded.controller_count == 1

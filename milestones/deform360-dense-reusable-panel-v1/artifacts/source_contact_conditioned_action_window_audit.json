@@ -1,0 +1,2795 @@
+{
+  "aggregate": {
+    "episode_count": 30,
+    "mean_best_contact_conditioned_path_m": 0.15172884794582572,
+    "mean_best_controller_displacement_m": 0.17250909410437582,
+    "mean_locked_controller_displacement_m": 0.04183188469272968,
+    "mean_locked_to_best_contact_conditioned_path_ratio": 0.660174597206148,
+    "mean_locked_to_best_displacement_ratio": 0.25089513096890376,
+    "mean_locked_to_best_path_ratio": 0.33648128991566906
+  },
+  "aggregate_by_object": {
+    "002-rope-silk": {
+      "episode_count": 6,
+      "mean_best_contact_conditioned_path_m": 0.14554267043361932,
+      "mean_best_controller_displacement_m": 0.18791842566430253,
+      "mean_locked_controller_displacement_m": 0.039055674074258195,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.7137851203369999,
+      "mean_locked_to_best_displacement_ratio": 0.21416008286855112,
+      "mean_locked_to_best_path_ratio": 0.30767107477079453
+    },
+    "083-blanket-cloth": {
+      "episode_count": 6,
+      "mean_best_contact_conditioned_path_m": 0.1749808431019929,
+      "mean_best_controller_displacement_m": 0.18177530308805911,
+      "mean_locked_controller_displacement_m": 0.05193868372024449,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.5974488812477879,
+      "mean_locked_to_best_displacement_ratio": 0.3301055578326753,
+      "mean_locked_to_best_path_ratio": 0.37822438775328715
+    },
+    "085-scarf-cloth": {
+      "episode_count": 6,
+      "mean_best_contact_conditioned_path_m": 0.13898392100246612,
+      "mean_best_controller_displacement_m": 0.182736738634682,
+      "mean_locked_controller_displacement_m": 0.05030037285965546,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.7506220866530261,
+      "mean_locked_to_best_displacement_ratio": 0.2769206075883742,
+      "mean_locked_to_best_path_ratio": 0.30709072512216284
+    },
+    "092-squirrel": {
+      "episode_count": 6,
+      "mean_best_contact_conditioned_path_m": 0.11693085239540385,
+      "mean_best_controller_displacement_m": 0.14179972332378238,
+      "mean_locked_controller_displacement_m": 0.028013486671580826,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.6716480392331697,
+      "mean_locked_to_best_displacement_ratio": 0.1999416905256484,
+      "mean_locked_to_best_path_ratio": 0.3102994182306294
+    },
+    "170-spider": {
+      "episode_count": 6,
+      "mean_best_contact_conditioned_path_m": 0.18220595279564647,
+      "mean_best_controller_displacement_m": 0.1683152798110531,
+      "mean_locked_controller_displacement_m": 0.03985120613790947,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.5673688585597567,
+      "mean_locked_to_best_displacement_ratio": 0.2333477160292696,
+      "mean_locked_to_best_path_ratio": 0.3791208437014717
+    }
+  },
+  "aggregate_by_stratum": {
+    "filament": {
+      "episode_count": 6,
+      "mean_best_contact_conditioned_path_m": 0.14554267043361932,
+      "mean_best_controller_displacement_m": 0.18791842566430253,
+      "mean_locked_controller_displacement_m": 0.039055674074258195,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.7137851203369999,
+      "mean_locked_to_best_displacement_ratio": 0.21416008286855112,
+      "mean_locked_to_best_path_ratio": 0.30767107477079453
+    },
+    "sheet": {
+      "episode_count": 12,
+      "mean_best_contact_conditioned_path_m": 0.1569823820522295,
+      "mean_best_controller_displacement_m": 0.1822560208613706,
+      "mean_locked_controller_displacement_m": 0.05111952828994997,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.6740354839504071,
+      "mean_locked_to_best_displacement_ratio": 0.3035130827105248,
+      "mean_locked_to_best_path_ratio": 0.34265755643772505
+    },
+    "volumetric": {
+      "episode_count": 12,
+      "mean_best_contact_conditioned_path_m": 0.14956840259552517,
+      "mean_best_controller_displacement_m": 0.15505750156741774,
+      "mean_locked_controller_displacement_m": 0.03393234640474515,
+      "mean_locked_to_best_contact_conditioned_path_ratio": 0.6195084488964633,
+      "mean_locked_to_best_displacement_ratio": 0.216644703277459,
+      "mean_locked_to_best_path_ratio": 0.3447101309660506
+    }
+  },
+  "artifact_kind": "Deform360SourceActionWindowAudit",
+  "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "evidence_scope": "source-actions-only",
+  "prospective_window_rule": {
+    "candidate_starts": {
+      "first": 8,
+      "reason": "matches the prospectively generated source-QA mask timeline without using mask values or object outcomes",
+      "stop": "last start whose complete 81-frame window exists",
+      "stride": 6
+    },
+    "closure_confidence": "per gripper, clip((episode aperture p90 - aperture)/(episode aperture p90 - episode aperture p10), 0, 1); smaller released aperture means more closed",
+    "controller_centre": "arithmetic mean of the five released action points per gripper",
+    "gripper_aggregation": "mean of per-gripper closure-weighted path lengths; gripper vectors are never averaged before taking their norms",
+    "input_fields": [
+      "robot/robot.npz:actions",
+      "robot/robot.npz:openings",
+      "episode frame count"
+    ],
+    "known_future_action_is_conditioning_input": true,
+    "object_geometry_or_tactile_used_for_selection": false,
+    "rule": "maximize mean gripper-centre path weighted at each step by the minimum endpoint closure confidence",
+    "static_aperture_fallback": "confidence one, reducing exactly to unweighted path when aperture cannot identify closure",
+    "step_weight": "minimum closure confidence at the two endpoints of each gripper-centre path step",
+    "tie_break": "earliest start",
+    "window_length_frames": 81
+  },
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "records": [
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            218,
+            299
+          ],
+          "maximum_closed_weighted_path_length_m": 0.19103238548566853,
+          "maximum_displacement_from_window_start_m": 0.18031480660021154,
+          "maximum_gripper_path_length_m": 0.1957676351190095,
+          "mean_closed_weighted_path_length_m": 0.19103238548566853,
+          "mean_closure_confidence": 0.978387691152898,
+          "mean_displacement_from_window_start_m": 0.09983222997756057,
+          "mean_gripper_path_length_m": 0.1957676351190095
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            44,
+            125
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09669052290841115,
+          "maximum_displacement_from_window_start_m": 0.21894359715214412,
+          "maximum_gripper_path_length_m": 0.2761028318990094,
+          "mean_closed_weighted_path_length_m": 0.09669052290841115,
+          "mean_closure_confidence": 0.49652840181560265,
+          "mean_displacement_from_window_start_m": 0.16341070302114374,
+          "mean_gripper_path_length_m": 0.2761028318990094
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            284,
+            365
+          ],
+          "maximum_closed_weighted_path_length_m": 0.12392389916081549,
+          "maximum_displacement_from_window_start_m": 0.2655261362222344,
+          "maximum_gripper_path_length_m": 0.33313288745470016,
+          "mean_closed_weighted_path_length_m": 0.12392389916081549,
+          "mean_closure_confidence": 0.6386498127026923,
+          "mean_displacement_from_window_start_m": 0.06473102820058743,
+          "mean_gripper_path_length_m": 0.33313288745470016
+        },
+        "candidate_count": 50,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 384,
+        "full_episode": {
+          "frame_count": 384,
+          "frame_range_half_open": [
+            0,
+            384
+          ],
+          "maximum_closed_weighted_path_length_m": 0.5909686571126687,
+          "maximum_displacement_from_window_start_m": 0.22121371213684746,
+          "maximum_gripper_path_length_m": 1.0090600074671483,
+          "mean_closed_weighted_path_length_m": 0.5909686571126687,
+          "mean_closure_confidence": 0.6424574812612666,
+          "mean_displacement_from_window_start_m": 0.12158529067549073,
+          "mean_gripper_path_length_m": 1.0090600074671483
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.9154232310805548,
+        "locked_to_best_displacement_ratio": 0.42642390283207765,
+        "locked_to_best_path_ratio": 0.5663053864445424,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.17487548356231677,
+          "maximum_displacement_from_window_start_m": 0.15914777665036234,
+          "maximum_gripper_path_length_m": 0.18865494856742024,
+          "mean_closed_weighted_path_length_m": 0.17487548356231677,
+          "mean_closure_confidence": 0.9231719514046549,
+          "mean_displacement_from_window_start_m": 0.0696822297468097,
+          "mean_gripper_path_length_m": 0.18865494856742024
+        },
+        "maximum_opening_change_from_episode_start_m": 0.08621084828292633,
+        "mean_opening_change_from_episode_start_m": 0.05403935346982456
+      },
+      "episode_id": 0,
+      "object_id": "002-rope-silk",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/002-rope-silk/episode_0000/robot/robot.npz",
+      "robot_sha256": "6d09b29a89e2b34f1c19a4153db3db6973e448ec8eeb038fbeefd371e0a979f1",
+      "stratum": "filament"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            254,
+            335
+          ],
+          "maximum_closed_weighted_path_length_m": 0.18760561214627197,
+          "maximum_displacement_from_window_start_m": 0.34107268119500966,
+          "maximum_gripper_path_length_m": 0.40392840378845557,
+          "mean_closed_weighted_path_length_m": 0.18760561214627197,
+          "mean_closure_confidence": 0.7693647394106472,
+          "mean_displacement_from_window_start_m": 0.058911962181165047,
+          "mean_gripper_path_length_m": 0.40392840378845557
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            296,
+            377
+          ],
+          "maximum_closed_weighted_path_length_m": 0.15644636844082555,
+          "maximum_displacement_from_window_start_m": 0.35520287256154975,
+          "maximum_gripper_path_length_m": 0.4011389231448004,
+          "mean_closed_weighted_path_length_m": 0.15644636844082555,
+          "mean_closure_confidence": 0.2824811877880635,
+          "mean_displacement_from_window_start_m": 0.23401832444719292,
+          "mean_gripper_path_length_m": 0.4011389231448004
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            38,
+            119
+          ],
+          "maximum_closed_weighted_path_length_m": 0.17293253497254202,
+          "maximum_displacement_from_window_start_m": 0.27641861213011776,
+          "maximum_gripper_path_length_m": 0.4378204556113832,
+          "mean_closed_weighted_path_length_m": 0.17293253497254202,
+          "mean_closure_confidence": 0.43367942190783115,
+          "mean_displacement_from_window_start_m": 0.1677776088004822,
+          "mean_gripper_path_length_m": 0.4378204556113832
+        },
+        "candidate_count": 49,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 379,
+        "full_episode": {
+          "frame_count": 379,
+          "frame_range_half_open": [
+            0,
+            379
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4888500791247317,
+          "maximum_displacement_from_window_start_m": 0.3234800174853369,
+          "maximum_gripper_path_length_m": 1.0117736006498685,
+          "mean_closed_weighted_path_length_m": 0.4888500791247317,
+          "mean_closure_confidence": 0.6044434262202127,
+          "mean_displacement_from_window_start_m": 0.1964278042642001,
+          "mean_gripper_path_length_m": 1.0117736006498685
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.3711905208439837,
+        "locked_to_best_displacement_ratio": 0.13169826778213062,
+        "locked_to_best_path_ratio": 0.1760541319587601,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.06963742488582908,
+          "maximum_displacement_from_window_start_m": 0.04727008828995863,
+          "maximum_gripper_path_length_m": 0.07708010026645093,
+          "mean_closed_weighted_path_length_m": 0.06963742488582908,
+          "mean_closure_confidence": 0.9194535321458093,
+          "mean_displacement_from_window_start_m": 0.030819807958971938,
+          "mean_gripper_path_length_m": 0.07708010026645093
+        },
+        "maximum_opening_change_from_episode_start_m": 0.08456704501806941,
+        "mean_opening_change_from_episode_start_m": 0.04917582621270642
+      },
+      "episode_id": 2,
+      "object_id": "002-rope-silk",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/002-rope-silk/episode_0002/robot/robot.npz",
+      "robot_sha256": "48481c2bbc7428638bfee6d98d105d21c7786b9b6e2b0490afa12494065f6f8a",
+      "stratum": "filament"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            200,
+            281
+          ],
+          "maximum_closed_weighted_path_length_m": 0.15457499133436584,
+          "maximum_displacement_from_window_start_m": 0.08233553079519096,
+          "maximum_gripper_path_length_m": 0.15922129671279894,
+          "mean_closed_weighted_path_length_m": 0.14840428962179178,
+          "mean_closure_confidence": 0.9577961146784678,
+          "mean_displacement_from_window_start_m": 0.03828235793009992,
+          "mean_gripper_path_length_m": 0.15534612090248012
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09477325495202321,
+          "maximum_displacement_from_window_start_m": 0.29479912588441265,
+          "maximum_gripper_path_length_m": 0.394376594586144,
+          "mean_closed_weighted_path_length_m": 0.07242135313431783,
+          "mean_closure_confidence": 0.2621215658302704,
+          "mean_displacement_from_window_start_m": 0.19773850709072666,
+          "mean_gripper_path_length_m": 0.3645405849699298
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.08493601868410944,
+          "maximum_displacement_from_window_start_m": 0.31709780028562395,
+          "maximum_gripper_path_length_m": 0.43690263004987806,
+          "mean_closed_weighted_path_length_m": 0.0753718823127762,
+          "mean_closure_confidence": 0.2360504051317258,
+          "mean_displacement_from_window_start_m": 0.19258913767014327,
+          "mean_gripper_path_length_m": 0.37899424423286815
+        },
+        "candidate_count": 54,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 412,
+        "full_episode": {
+          "frame_count": 412,
+          "frame_range_half_open": [
+            0,
+            412
+          ],
+          "maximum_closed_weighted_path_length_m": 0.5243914018448834,
+          "maximum_displacement_from_window_start_m": 0.32610921393981723,
+          "maximum_gripper_path_length_m": 1.1562442159789927,
+          "mean_closed_weighted_path_length_m": 0.49174130346121925,
+          "mean_closure_confidence": 0.6194432542169523,
+          "mean_displacement_from_window_start_m": 0.21311882809460914,
+          "mean_gripper_path_length_m": 1.1161839579445911
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.7287845177545207,
+        "locked_to_best_displacement_ratio": 0.28219650587979345,
+        "locked_to_best_path_ratio": 0.317866740425155,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.13222045913231587,
+          "maximum_displacement_from_window_start_m": 0.14468154770733024,
+          "maximum_gripper_path_length_m": 0.15068136411322086,
+          "mean_closed_weighted_path_length_m": 0.10815474864471974,
+          "mean_closure_confidence": 0.8945432902953525,
+          "mean_displacement_from_window_start_m": 0.055801115778889826,
+          "mean_gripper_path_length_m": 0.1204696650541969
+        },
+        "maximum_opening_change_from_episode_start_m": 0.09266445220771463,
+        "mean_opening_change_from_episode_start_m": 0.044002799644953655
+      },
+      "episode_id": 5,
+      "object_id": "002-rope-silk",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/002-rope-silk/episode_0005/robot/robot.npz",
+      "robot_sha256": "e77467e537cf986a115bf754b29730989075e100a6226268022949db8d9d1eda",
+      "stratum": "filament"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            152,
+            233
+          ],
+          "maximum_closed_weighted_path_length_m": 0.10855620927449837,
+          "maximum_displacement_from_window_start_m": 0.07388200602706589,
+          "maximum_gripper_path_length_m": 0.11108819885624543,
+          "mean_closed_weighted_path_length_m": 0.105866178151382,
+          "mean_closure_confidence": 0.9504996323557918,
+          "mean_displacement_from_window_start_m": 0.0441239833783122,
+          "mean_gripper_path_length_m": 0.1107564555756144
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            38,
+            119
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11006692769279519,
+          "maximum_displacement_from_window_start_m": 0.330227017448694,
+          "maximum_gripper_path_length_m": 0.45704803200044014,
+          "mean_closed_weighted_path_length_m": 0.07730433451027713,
+          "mean_closure_confidence": 0.3377510992531379,
+          "mean_displacement_from_window_start_m": 0.19054373789670548,
+          "mean_gripper_path_length_m": 0.35930708182925547
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            272,
+            353
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1036727405101223,
+          "maximum_displacement_from_window_start_m": 0.3353000176945697,
+          "maximum_gripper_path_length_m": 0.4470944625282635,
+          "mean_closed_weighted_path_length_m": 0.07668803014326776,
+          "mean_closure_confidence": 0.36900999914980376,
+          "mean_displacement_from_window_start_m": 0.12708782273963842,
+          "mean_gripper_path_length_m": 0.3847375638339734
+        },
+        "candidate_count": 46,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 359,
+        "full_episode": {
+          "frame_count": 359,
+          "frame_range_half_open": [
+            0,
+            359
+          ],
+          "maximum_closed_weighted_path_length_m": 0.3978111870052461,
+          "maximum_displacement_from_window_start_m": 0.39931023431247814,
+          "maximum_gripper_path_length_m": 1.17434701894899,
+          "mean_closed_weighted_path_length_m": 0.3472769597004831,
+          "mean_closure_confidence": 0.5693956389436522,
+          "mean_displacement_from_window_start_m": 0.22258650262702034,
+          "mean_gripper_path_length_m": 0.984571800783469
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.8983051773571367,
+        "locked_to_best_displacement_ratio": 0.11844134984130794,
+        "locked_to_best_path_ratio": 0.2667913678067744,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09761094614428603,
+          "maximum_displacement_from_window_start_m": 0.03934082721608228,
+          "maximum_gripper_path_length_m": 0.10484671671498912,
+          "mean_closed_weighted_path_length_m": 0.09510013594039943,
+          "mean_closure_confidence": 0.9176121285120273,
+          "mean_displacement_from_window_start_m": 0.02256825752029418,
+          "mean_gripper_path_length_m": 0.10264466090191196
+        },
+        "maximum_opening_change_from_episode_start_m": 0.0786083462711038,
+        "mean_opening_change_from_episode_start_m": 0.037503088780040265
+      },
+      "episode_id": 6,
+      "object_id": "002-rope-silk",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/002-rope-silk/episode_0006/robot/robot.npz",
+      "robot_sha256": "4d881532ae02f243bbb13f2dab11af9cb9a8a62780dc76fe92d09a47c5abf14d",
+      "stratum": "filament"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            218,
+            299
+          ],
+          "maximum_closed_weighted_path_length_m": 0.15341734553013545,
+          "maximum_displacement_from_window_start_m": 0.2491284121759035,
+          "maximum_gripper_path_length_m": 0.313001119503885,
+          "mean_closed_weighted_path_length_m": 0.12062261875185734,
+          "mean_closure_confidence": 0.7038322941627728,
+          "mean_displacement_from_window_start_m": 0.04798315011758221,
+          "mean_gripper_path_length_m": 0.28911781747781673
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.06671562831061872,
+          "maximum_displacement_from_window_start_m": 0.27538528943532253,
+          "maximum_gripper_path_length_m": 0.35767283702367286,
+          "mean_closed_weighted_path_length_m": 0.051923742496406446,
+          "mean_closure_confidence": 0.27720301221668414,
+          "mean_displacement_from_window_start_m": 0.17427946130353286,
+          "mean_gripper_path_length_m": 0.3324273344132821
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.06500960823637893,
+          "maximum_displacement_from_window_start_m": 0.2950109538052578,
+          "maximum_gripper_path_length_m": 0.3547638226517631,
+          "mean_closed_weighted_path_length_m": 0.04988480691274519,
+          "mean_closure_confidence": 0.22635076789684222,
+          "mean_displacement_from_window_start_m": 0.1656353037876077,
+          "mean_gripper_path_length_m": 0.3420405925357791
+        },
+        "candidate_count": 40,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 325,
+        "full_episode": {
+          "frame_count": 325,
+          "frame_range_half_open": [
+            0,
+            325
+          ],
+          "maximum_closed_weighted_path_length_m": 0.3331508462375585,
+          "maximum_displacement_from_window_start_m": 0.3136798613910358,
+          "maximum_gripper_path_length_m": 0.8064567249478408,
+          "mean_closed_weighted_path_length_m": 0.2716444450872696,
+          "mean_closure_confidence": 0.5789258159323386,
+          "mean_displacement_from_window_start_m": 0.19988337213164414,
+          "mean_gripper_path_length_m": 0.7865712928178481
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.5821322713776661,
+        "locked_to_best_displacement_ratio": 0.12095157010806566,
+        "locked_to_best_path_ratio": 0.21236760264170898,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.08489635605338353,
+          "maximum_displacement_from_window_start_m": 0.036290388334567214,
+          "maximum_gripper_path_length_m": 0.08694335128253516,
+          "mean_closed_weighted_path_length_m": 0.07021831903354098,
+          "mean_closure_confidence": 0.9681864332502161,
+          "mean_displacement_from_window_start_m": 0.021079374482250172,
+          "mean_gripper_path_length_m": 0.07263834064297303
+        },
+        "maximum_opening_change_from_episode_start_m": 0.09450045164539222,
+        "mean_opening_change_from_episode_start_m": 0.050938956719724364
+      },
+      "episode_id": 7,
+      "object_id": "002-rope-silk",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/002-rope-silk/episode_0007/robot/robot.npz",
+      "robot_sha256": "74b5c9149abd010ccc9bfaf13e1bcfcdab33f57a3bdf04c11968e8d4c7f1023e",
+      "stratum": "filament"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1893747267772587,
+          "maximum_displacement_from_window_start_m": 0.26935015869649587,
+          "maximum_gripper_path_length_m": 0.3221813520845686,
+          "mean_closed_weighted_path_length_m": 0.11972493844474429,
+          "mean_closure_confidence": 0.5340344286824639,
+          "mean_displacement_from_window_start_m": 0.16564572329791774,
+          "mean_gripper_path_length_m": 0.2765483670242734
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.18911063504066805,
+          "maximum_displacement_from_window_start_m": 0.306100924192987,
+          "maximum_gripper_path_length_m": 0.35730859017182326,
+          "mean_closed_weighted_path_length_m": 0.11691538104264573,
+          "mean_closure_confidence": 0.4666216950552222,
+          "mean_displacement_from_window_start_m": 0.1675198202265137,
+          "mean_gripper_path_length_m": 0.2926120545707166
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            230,
+            311
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1237288313904452,
+          "maximum_displacement_from_window_start_m": 0.3345192350707654,
+          "maximum_gripper_path_length_m": 0.38413829838022945,
+          "mean_closed_weighted_path_length_m": 0.08801493265041314,
+          "mean_closure_confidence": 0.3832136519369247,
+          "mean_displacement_from_window_start_m": 0.13064816560245324,
+          "mean_gripper_path_length_m": 0.31870085174343965
+        },
+        "candidate_count": 39,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 317,
+        "full_episode": {
+          "frame_count": 317,
+          "frame_range_half_open": [
+            0,
+            317
+          ],
+          "maximum_closed_weighted_path_length_m": 0.485434354847332,
+          "maximum_displacement_from_window_start_m": 0.4038125555483716,
+          "maximum_gripper_path_length_m": 0.9620543235473316,
+          "mean_closed_weighted_path_length_m": 0.35014032862733746,
+          "mean_closure_confidence": 0.5890593908727737,
+          "mean_displacement_from_window_start_m": 0.19680677567047777,
+          "mean_gripper_path_length_m": 0.7870744529034935
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.7868750036081378,
+        "locked_to_best_displacement_ratio": 0.20524890076793112,
+        "locked_to_best_path_ratio": 0.3066412193478263,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11272582087548755,
+          "maximum_displacement_from_window_start_m": 0.0961561312949577,
+          "maximum_gripper_path_length_m": 0.11655889199067623,
+          "mean_closed_weighted_path_length_m": 0.09420856137069224,
+          "mean_closure_confidence": 0.969998610610516,
+          "mean_displacement_from_window_start_m": 0.03438325895833337,
+          "mean_gripper_path_length_m": 0.09772681778579914
+        },
+        "maximum_opening_change_from_episode_start_m": 0.08093814697096473,
+        "mean_opening_change_from_episode_start_m": 0.042795661253283844
+      },
+      "episode_id": 9,
+      "object_id": "002-rope-silk",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/002-rope-silk/episode_0009/robot/robot.npz",
+      "robot_sha256": "e34e3aa629d5c7fe501aeeb89d7d0aec89ee50a4c36d1b843396be67d6122574",
+      "stratum": "filament"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            188,
+            269
+          ],
+          "maximum_closed_weighted_path_length_m": 0.13270491426326536,
+          "maximum_displacement_from_window_start_m": 0.2034130763695308,
+          "maximum_gripper_path_length_m": 0.3292162817050366,
+          "mean_closed_weighted_path_length_m": 0.13270491426326536,
+          "mean_closure_confidence": 0.7198983123151231,
+          "mean_displacement_from_window_start_m": 0.052336706176287474,
+          "mean_gripper_path_length_m": 0.3292162817050366
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.08521555081982908,
+          "maximum_displacement_from_window_start_m": 0.26623960391473617,
+          "maximum_gripper_path_length_m": 0.3974067025121924,
+          "mean_closed_weighted_path_length_m": 0.08521555081982908,
+          "mean_closure_confidence": 0.3752252960921396,
+          "mean_displacement_from_window_start_m": 0.1958540434794255,
+          "mean_gripper_path_length_m": 0.3974067025121924
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.08051964336130091,
+          "maximum_displacement_from_window_start_m": 0.2802014646612868,
+          "maximum_gripper_path_length_m": 0.4100669555616283,
+          "mean_closed_weighted_path_length_m": 0.08051964336130091,
+          "mean_closure_confidence": 0.3012273247381168,
+          "mean_displacement_from_window_start_m": 0.19160020443597348,
+          "mean_gripper_path_length_m": 0.4100669555616283
+        },
+        "candidate_count": 31,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 272,
+        "full_episode": {
+          "frame_count": 272,
+          "frame_range_half_open": [
+            0,
+            272
+          ],
+          "maximum_closed_weighted_path_length_m": 0.30265658988622207,
+          "maximum_displacement_from_window_start_m": 0.3014108035963134,
+          "maximum_gripper_path_length_m": 0.8642087920320247,
+          "mean_closed_weighted_path_length_m": 0.30265658988622207,
+          "mean_closure_confidence": 0.6329045335550999,
+          "mean_displacement_from_window_start_m": 0.23751209358778713,
+          "mean_gripper_path_length_m": 0.8642087920320247
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.57137301579482,
+        "locked_to_best_displacement_ratio": 0.18050709253824915,
+        "locked_to_best_path_ratio": 0.19523525791682128,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.07582400707339496,
+          "maximum_displacement_from_window_start_m": 0.05886621879804109,
+          "maximum_gripper_path_length_m": 0.0800595278322402,
+          "mean_closed_weighted_path_length_m": 0.07582400707339496,
+          "mean_closure_confidence": 0.9457065318543587,
+          "mean_displacement_from_window_start_m": 0.03535304395033093,
+          "mean_gripper_path_length_m": 0.0800595278322402
+        },
+        "maximum_opening_change_from_episode_start_m": 0.07636861454804064,
+        "mean_opening_change_from_episode_start_m": 0.045920279045607554
+      },
+      "episode_id": 1,
+      "object_id": "085-scarf-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/085-scarf-cloth/episode_0001/robot/robot.npz",
+      "robot_sha256": "792cbea6d59cadc3793ad1161fe64093a56c6141a6df0f6e087b643bd02f6d22",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            74,
+            155
+          ],
+          "maximum_closed_weighted_path_length_m": 0.13661301670515633,
+          "maximum_displacement_from_window_start_m": 0.10219707386877465,
+          "maximum_gripper_path_length_m": 0.14381477103151818,
+          "mean_closed_weighted_path_length_m": 0.13661301670515633,
+          "mean_closure_confidence": 0.9545840270143162,
+          "mean_displacement_from_window_start_m": 0.041992699749779865,
+          "mean_gripper_path_length_m": 0.14381477103151818
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.03603498892315939,
+          "maximum_displacement_from_window_start_m": 0.24566974775790645,
+          "maximum_gripper_path_length_m": 0.37513098494202934,
+          "mean_closed_weighted_path_length_m": 0.03603498892315939,
+          "mean_closure_confidence": 0.2404536253376382,
+          "mean_displacement_from_window_start_m": 0.18492505978939777,
+          "mean_gripper_path_length_m": 0.37513098494202934
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            308,
+            389
+          ],
+          "maximum_closed_weighted_path_length_m": 0.07602996180101962,
+          "maximum_displacement_from_window_start_m": 0.2970952444082127,
+          "maximum_gripper_path_length_m": 0.38362605210385603,
+          "mean_closed_weighted_path_length_m": 0.07602996180101962,
+          "mean_closure_confidence": 0.4428507499000747,
+          "mean_displacement_from_window_start_m": 0.09097525446662798,
+          "mean_gripper_path_length_m": 0.38362605210385603
+        },
+        "candidate_count": 52,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 400,
+        "full_episode": {
+          "frame_count": 400,
+          "frame_range_half_open": [
+            0,
+            400
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4002129995888297,
+          "maximum_displacement_from_window_start_m": 0.3007197884063323,
+          "maximum_gripper_path_length_m": 1.0746513981957655,
+          "mean_closed_weighted_path_length_m": 0.4002129995888297,
+          "mean_closure_confidence": 0.6517722499000612,
+          "mean_displacement_from_window_start_m": 0.20692015331203925,
+          "mean_gripper_path_length_m": 1.0746513981957655
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.8910888638691554,
+        "locked_to_best_displacement_ratio": 0.3387322729754402,
+        "locked_to_best_path_ratio": 0.32351058548982126,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1217343378455357,
+          "maximum_displacement_from_window_start_m": 0.11902978666722747,
+          "maximum_gripper_path_length_m": 0.12410708872526714,
+          "mean_closed_weighted_path_length_m": 0.1217343378455357,
+          "mean_closure_confidence": 0.9823256859694428,
+          "mean_displacement_from_window_start_m": 0.06264008583258188,
+          "mean_gripper_path_length_m": 0.12410708872526714
+        },
+        "maximum_opening_change_from_episode_start_m": 0.08763752487631386,
+        "mean_opening_change_from_episode_start_m": 0.061015944366262
+      },
+      "episode_id": 3,
+      "object_id": "085-scarf-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/085-scarf-cloth/episode_0003/robot/robot.npz",
+      "robot_sha256": "f26851ec40b848980a4a502ae30249d4398496654718580ef1030e8e2a750139",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            308,
+            389
+          ],
+          "maximum_closed_weighted_path_length_m": 0.16536744407626117,
+          "maximum_displacement_from_window_start_m": 0.2885896070880211,
+          "maximum_gripper_path_length_m": 0.3706453357495805,
+          "mean_closed_weighted_path_length_m": 0.16536744407626117,
+          "mean_closure_confidence": 0.6919216620457778,
+          "mean_displacement_from_window_start_m": 0.08739882977395079,
+          "mean_gripper_path_length_m": 0.3706453357495805
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.07265114999943666,
+          "maximum_displacement_from_window_start_m": 0.27964818123715984,
+          "maximum_gripper_path_length_m": 0.33434203275046237,
+          "mean_closed_weighted_path_length_m": 0.07265114999943666,
+          "mean_closure_confidence": 0.5073072556454588,
+          "mean_displacement_from_window_start_m": 0.23022254335778017,
+          "mean_gripper_path_length_m": 0.33434203275046237
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            308,
+            389
+          ],
+          "maximum_closed_weighted_path_length_m": 0.16536744407626117,
+          "maximum_displacement_from_window_start_m": 0.2885896070880211,
+          "maximum_gripper_path_length_m": 0.3706453357495805,
+          "mean_closed_weighted_path_length_m": 0.16536744407626117,
+          "mean_closure_confidence": 0.6919216620457778,
+          "mean_displacement_from_window_start_m": 0.08739882977395079,
+          "mean_gripper_path_length_m": 0.3706453357495805
+        },
+        "candidate_count": 57,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 425,
+        "full_episode": {
+          "frame_count": 425,
+          "frame_range_half_open": [
+            0,
+            425
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4670183207989944,
+          "maximum_displacement_from_window_start_m": 0.2886354078044391,
+          "maximum_gripper_path_length_m": 0.978637190686094,
+          "mean_closed_weighted_path_length_m": 0.4670183207989944,
+          "mean_closure_confidence": 0.6862839852285997,
+          "mean_displacement_from_window_start_m": 0.16361974409647698,
+          "mean_gripper_path_length_m": 0.978637190686094
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.7779959441866352,
+        "locked_to_best_displacement_ratio": 0.28794133658470045,
+        "locked_to_best_path_ratio": 0.35166913242380954,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1286552007918414,
+          "maximum_displacement_from_window_start_m": 0.1247805656374512,
+          "maximum_gripper_path_length_m": 0.13034452365998656,
+          "mean_closed_weighted_path_length_m": 0.1286552007918414,
+          "mean_closure_confidence": 0.9881701982920714,
+          "mean_displacement_from_window_start_m": 0.06629058684636838,
+          "mean_gripper_path_length_m": 0.13034452365998656
+        },
+        "maximum_opening_change_from_episode_start_m": 0.12932057016253629,
+        "mean_opening_change_from_episode_start_m": 0.09890797096937651
+      },
+      "episode_id": 4,
+      "object_id": "085-scarf-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/085-scarf-cloth/episode_0004/robot/robot.npz",
+      "robot_sha256": "9950d6edb483171954a5ffe48536eaba28eb9ccebe99470c1f2c622acc16f8d7",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            224,
+            305
+          ],
+          "maximum_closed_weighted_path_length_m": 0.18335344186469654,
+          "maximum_displacement_from_window_start_m": 0.16300339418797824,
+          "maximum_gripper_path_length_m": 0.24191156044714876,
+          "mean_closed_weighted_path_length_m": 0.13653642063738908,
+          "mean_closure_confidence": 0.682750760444226,
+          "mean_displacement_from_window_start_m": 0.04582259553422193,
+          "mean_gripper_path_length_m": 0.224172229118399
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.03906058664442812,
+          "maximum_displacement_from_window_start_m": 0.23175433368618495,
+          "maximum_gripper_path_length_m": 0.30478083706692544,
+          "mean_closed_weighted_path_length_m": 0.03393766113986865,
+          "mean_closure_confidence": 0.18020826160062767,
+          "mean_displacement_from_window_start_m": 0.14976909549811457,
+          "mean_gripper_path_length_m": 0.29370297197724404
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.03906058664442812,
+          "maximum_displacement_from_window_start_m": 0.23175433368618495,
+          "maximum_gripper_path_length_m": 0.30478083706692544,
+          "mean_closed_weighted_path_length_m": 0.03393766113986865,
+          "mean_closure_confidence": 0.18020826160062767,
+          "mean_displacement_from_window_start_m": 0.14976909549811457,
+          "mean_gripper_path_length_m": 0.29370297197724404
+        },
+        "candidate_count": 38,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 311,
+        "full_episode": {
+          "frame_count": 311,
+          "frame_range_half_open": [
+            0,
+            311
+          ],
+          "maximum_closed_weighted_path_length_m": 0.35366241862029135,
+          "maximum_displacement_from_window_start_m": 0.24238806303299806,
+          "maximum_gripper_path_length_m": 0.7163329241380835,
+          "mean_closed_weighted_path_length_m": 0.33022498077995144,
+          "mean_closure_confidence": 0.6365921564358183,
+          "mean_displacement_from_window_start_m": 0.16189726513158909,
+          "mean_gripper_path_length_m": 0.710286777638443
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6814936547381528,
+        "locked_to_best_displacement_ratio": 0.32145822007717034,
+        "locked_to_best_path_ratio": 0.34017893723086284,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11250669178922572,
+          "maximum_displacement_from_window_start_m": 0.10995568526148018,
+          "maximum_gripper_path_length_m": 0.11930932598820639,
+          "mean_closed_weighted_path_length_m": 0.09304870430504003,
+          "mean_closure_confidence": 0.933605685237097,
+          "mean_displacement_from_window_start_m": 0.048144506861391656,
+          "mean_gripper_path_length_m": 0.09991156486876476
+        },
+        "maximum_opening_change_from_episode_start_m": 0.09316906851763368,
+        "mean_opening_change_from_episode_start_m": 0.05270214726858448
+      },
+      "episode_id": 6,
+      "object_id": "085-scarf-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/085-scarf-cloth/episode_0006/robot/robot.npz",
+      "robot_sha256": "e40198fe3f48afa82f63c8ffc030bd4a55ef7e9c1ed0300d8f4cbea92a4dc397",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            230,
+            311
+          ],
+          "maximum_closed_weighted_path_length_m": 0.14694898160801928,
+          "maximum_displacement_from_window_start_m": 0.1582579785393239,
+          "maximum_gripper_path_length_m": 0.23505868849031258,
+          "mean_closed_weighted_path_length_m": 0.11285106110807089,
+          "mean_closure_confidence": 0.7938571377870419,
+          "mean_displacement_from_window_start_m": 0.0322717519517638,
+          "mean_gripper_path_length_m": 0.2006021246402543
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04967977273714625,
+          "maximum_displacement_from_window_start_m": 0.26016658310443,
+          "maximum_gripper_path_length_m": 0.3889029728579047,
+          "mean_closed_weighted_path_length_m": 0.044077771604702776,
+          "mean_closure_confidence": 0.21968526147428644,
+          "mean_displacement_from_window_start_m": 0.1702489867994394,
+          "mean_gripper_path_length_m": 0.34878392613953924
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04967977273714625,
+          "maximum_displacement_from_window_start_m": 0.26016658310443,
+          "maximum_gripper_path_length_m": 0.3889029728579047,
+          "mean_closed_weighted_path_length_m": 0.044077771604702776,
+          "mean_closure_confidence": 0.21968526147428644,
+          "mean_displacement_from_window_start_m": 0.1702489867994394,
+          "mean_gripper_path_length_m": 0.34878392613953924
+        },
+        "candidate_count": 42,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 336,
+        "full_episode": {
+          "frame_count": 336,
+          "frame_range_half_open": [
+            0,
+            336
+          ],
+          "maximum_closed_weighted_path_length_m": 0.3628402546257327,
+          "maximum_displacement_from_window_start_m": 0.27098483432175763,
+          "maximum_gripper_path_length_m": 0.8956118522494245,
+          "mean_closed_weighted_path_length_m": 0.32693117325258225,
+          "mean_closure_confidence": 0.6493086078700818,
+          "mean_displacement_from_window_start_m": 0.1701751317250922,
+          "mean_gripper_path_length_m": 0.8298552513424724
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.7806401119060943,
+        "locked_to_best_displacement_ratio": 0.2546273877105104,
+        "locked_to_best_path_ratio": 0.2596622321861506,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09622903940600046,
+          "maximum_displacement_from_window_start_m": 0.09134330551532768,
+          "maximum_gripper_path_length_m": 0.0993154470805392,
+          "mean_closed_weighted_path_length_m": 0.08809606497212594,
+          "mean_closure_confidence": 0.9752319998418235,
+          "mean_displacement_from_window_start_m": 0.04335005476910243,
+          "mean_gripper_path_length_m": 0.09056601281204224
+        },
+        "maximum_opening_change_from_episode_start_m": 0.07999537023966108,
+        "mean_opening_change_from_episode_start_m": 0.043483797603025884
+      },
+      "episode_id": 8,
+      "object_id": "085-scarf-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/085-scarf-cloth/episode_0008/robot/robot.npz",
+      "robot_sha256": "cfd7f2a6a72f9ece6bcab97139eb47fc51d7cda8e1663d286c488e73c109e4be",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            206,
+            287
+          ],
+          "maximum_closed_weighted_path_length_m": 0.19594336837936585,
+          "maximum_displacement_from_window_start_m": 0.23610176370557273,
+          "maximum_gripper_path_length_m": 0.3609659867885421,
+          "mean_closed_weighted_path_length_m": 0.14983066922465385,
+          "mean_closure_confidence": 0.5588634367152754,
+          "mean_displacement_from_window_start_m": 0.08792742367094755,
+          "mean_gripper_path_length_m": 0.29970584321029314
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.039614524585020267,
+          "maximum_displacement_from_window_start_m": 0.2606713852689713,
+          "maximum_gripper_path_length_m": 0.3665867615498375,
+          "mean_closed_weighted_path_length_m": 0.038115276199082795,
+          "mean_closure_confidence": 0.15006402924120524,
+          "mean_displacement_from_window_start_m": 0.16540070288393474,
+          "mean_gripper_path_length_m": 0.33741685383986353
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.039614524585020267,
+          "maximum_displacement_from_window_start_m": 0.2606713852689713,
+          "maximum_gripper_path_length_m": 0.3665867615498375,
+          "mean_closed_weighted_path_length_m": 0.038115276199082795,
+          "mean_closure_confidence": 0.15006402924120524,
+          "mean_displacement_from_window_start_m": 0.16540070288393474,
+          "mean_gripper_path_length_m": 0.33741685383986353
+        },
+        "candidate_count": 39,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 320,
+        "full_episode": {
+          "frame_count": 320,
+          "frame_range_half_open": [
+            0,
+            320
+          ],
+          "maximum_closed_weighted_path_length_m": 0.42294270880204854,
+          "maximum_displacement_from_window_start_m": 0.32491476534983516,
+          "maximum_gripper_path_length_m": 0.9958787409859137,
+          "mean_closed_weighted_path_length_m": 0.3747477280497423,
+          "mean_closure_confidence": 0.5415803028888939,
+          "mean_displacement_from_window_start_m": 0.17791889744282638,
+          "mean_gripper_path_length_m": 0.9122176924288992
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.8011409294232997,
+        "locked_to_best_displacement_ratio": 0.2782573356441749,
+        "locked_to_best_path_ratio": 0.37228820548551167,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.12174016008654005,
+          "maximum_displacement_from_window_start_m": 0.09896140790908503,
+          "maximum_gripper_path_length_m": 0.12741538136469335,
+          "mean_closed_weighted_path_length_m": 0.12003548159875418,
+          "mean_closure_confidence": 0.9697685264052851,
+          "mean_displacement_from_window_start_m": 0.04602395889815747,
+          "mean_gripper_path_length_m": 0.12561631501660997
+        },
+        "maximum_opening_change_from_episode_start_m": 0.08195932348525228,
+        "mean_opening_change_from_episode_start_m": 0.03926516998953328
+      },
+      "episode_id": 9,
+      "object_id": "085-scarf-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/085-scarf-cloth/episode_0009/robot/robot.npz",
+      "robot_sha256": "b644bb5ece1e29c36275059ef7d65d29aecf87475d19ac582899119a3bd11b54",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            302,
+            383
+          ],
+          "maximum_closed_weighted_path_length_m": 0.15019538635305107,
+          "maximum_displacement_from_window_start_m": 0.2084952489894433,
+          "maximum_gripper_path_length_m": 0.3250140920995087,
+          "mean_closed_weighted_path_length_m": 0.15019538635305107,
+          "mean_closure_confidence": 0.7207429059222378,
+          "mean_displacement_from_window_start_m": 0.057533942315135624,
+          "mean_gripper_path_length_m": 0.3250140920995087
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09619488091550744,
+          "maximum_displacement_from_window_start_m": 0.3305718546123304,
+          "maximum_gripper_path_length_m": 0.45367119717352267,
+          "mean_closed_weighted_path_length_m": 0.09619488091550744,
+          "mean_closure_confidence": 0.429246070940308,
+          "mean_displacement_from_window_start_m": 0.23851838193649377,
+          "mean_gripper_path_length_m": 0.45367119717352267
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.07287977065211208,
+          "maximum_displacement_from_window_start_m": 0.33573592404266717,
+          "maximum_gripper_path_length_m": 0.5184872948940623,
+          "mean_closed_weighted_path_length_m": 0.07287977065211208,
+          "mean_closure_confidence": 0.2913214601407266,
+          "mean_displacement_from_window_start_m": 0.22837422238409003,
+          "mean_gripper_path_length_m": 0.5184872948940623
+        },
+        "candidate_count": 54,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 409,
+        "full_episode": {
+          "frame_count": 409,
+          "frame_range_half_open": [
+            0,
+            409
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4832084584491613,
+          "maximum_displacement_from_window_start_m": 0.32985805194853407,
+          "maximum_gripper_path_length_m": 1.1791550298904925,
+          "mean_closed_weighted_path_length_m": 0.4832084584491613,
+          "mean_closure_confidence": 0.6926427990351642,
+          "mean_displacement_from_window_start_m": 0.21370822327368552,
+          "mean_gripper_path_length_m": 1.1791550298904925
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6258622146168612,
+        "locked_to_best_displacement_ratio": 0.2029737476516887,
+        "locked_to_best_path_ratio": 0.19073596582305716,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09400161712815563,
+          "maximum_displacement_from_window_start_m": 0.09223690968966586,
+          "maximum_gripper_path_length_m": 0.09889417495860323,
+          "mean_closed_weighted_path_length_m": 0.09400161712815563,
+          "mean_closure_confidence": 0.9481191785060589,
+          "mean_displacement_from_window_start_m": 0.048412969865467,
+          "mean_gripper_path_length_m": 0.09889417495860323
+        },
+        "maximum_opening_change_from_episode_start_m": 0.06751972614757806,
+        "mean_opening_change_from_episode_start_m": 0.047904827081336594
+      },
+      "episode_id": 1,
+      "object_id": "083-blanket-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/083-blanket-cloth/episode_0001/robot/robot.npz",
+      "robot_sha256": "6bbedc066b25ad51d41145cd44836060a7d7fca661f39fc278a3a8994a0e3523",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            224,
+            305
+          ],
+          "maximum_closed_weighted_path_length_m": 0.21653055536692156,
+          "maximum_displacement_from_window_start_m": 0.32638292356867615,
+          "maximum_gripper_path_length_m": 0.41233482914968433,
+          "mean_closed_weighted_path_length_m": 0.21653055536692156,
+          "mean_closure_confidence": 0.8230093064332239,
+          "mean_displacement_from_window_start_m": 0.059971815261882964,
+          "mean_gripper_path_length_m": 0.41233482914968433
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11611420984262723,
+          "maximum_displacement_from_window_start_m": 0.3485999729141742,
+          "maximum_gripper_path_length_m": 0.5020847614579853,
+          "mean_closed_weighted_path_length_m": 0.11611420984262723,
+          "mean_closure_confidence": 0.4095028573225143,
+          "mean_displacement_from_window_start_m": 0.25502003215380104,
+          "mean_gripper_path_length_m": 0.5020847614579853
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.10921988060653234,
+          "maximum_displacement_from_window_start_m": 0.3632536147078323,
+          "maximum_gripper_path_length_m": 0.5146171096151049,
+          "mean_closed_weighted_path_length_m": 0.10921988060653234,
+          "mean_closure_confidence": 0.3383809456357952,
+          "mean_displacement_from_window_start_m": 0.24578739948971567,
+          "mean_gripper_path_length_m": 0.5146171096151049
+        },
+        "candidate_count": 41,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 329,
+        "full_episode": {
+          "frame_count": 329,
+          "frame_range_half_open": [
+            0,
+            329
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4405218643301135,
+          "maximum_displacement_from_window_start_m": 0.35912274408834965,
+          "maximum_gripper_path_length_m": 1.068453749168083,
+          "mean_closed_weighted_path_length_m": 0.4405218643301135,
+          "mean_closure_confidence": 0.6897149621944162,
+          "mean_displacement_from_window_start_m": 0.28293614296570013,
+          "mean_gripper_path_length_m": 1.068453749168083
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.25389464597993405,
+        "locked_to_best_displacement_ratio": 0.10588437369313716,
+        "locked_to_best_path_ratio": 0.11275971010913986,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.054975948698723055,
+          "maximum_displacement_from_window_start_m": 0.04801749911655738,
+          "maximum_gripper_path_length_m": 0.05802807609740268,
+          "mean_closed_weighted_path_length_m": 0.054975948698723055,
+          "mean_closure_confidence": 0.9513328247800923,
+          "mean_displacement_from_window_start_m": 0.027002636383808922,
+          "mean_gripper_path_length_m": 0.05802807609740268
+        },
+        "maximum_opening_change_from_episode_start_m": 0.07918888846396245,
+        "mean_opening_change_from_episode_start_m": 0.05898370797995832
+      },
+      "episode_id": 2,
+      "object_id": "083-blanket-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/083-blanket-cloth/episode_0002/robot/robot.npz",
+      "robot_sha256": "fbf2607b5d407d43f3467e6ffa88065b31ca9f6eed84e249189e8fc14e7895cd",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            62,
+            143
+          ],
+          "maximum_closed_weighted_path_length_m": 0.19832052037781653,
+          "maximum_displacement_from_window_start_m": 0.1675543151481874,
+          "maximum_gripper_path_length_m": 0.21232944393574835,
+          "mean_closed_weighted_path_length_m": 0.19832052037781653,
+          "mean_closure_confidence": 0.9605312211203467,
+          "mean_displacement_from_window_start_m": 0.08857193669196005,
+          "mean_gripper_path_length_m": 0.21232944393574835
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1273072994602239,
+          "maximum_displacement_from_window_start_m": 0.2746291358436639,
+          "maximum_gripper_path_length_m": 0.4415051983451882,
+          "mean_closed_weighted_path_length_m": 0.1273072994602239,
+          "mean_closure_confidence": 0.5042328590257336,
+          "mean_displacement_from_window_start_m": 0.20381178609553416,
+          "mean_gripper_path_length_m": 0.4415051983451882
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1157567483228383,
+          "maximum_displacement_from_window_start_m": 0.27441412314145214,
+          "maximum_gripper_path_length_m": 0.4426194798523736,
+          "mean_closed_weighted_path_length_m": 0.1157567483228383,
+          "mean_closure_confidence": 0.4412043151445836,
+          "mean_displacement_from_window_start_m": 0.1915886880825198,
+          "mean_gripper_path_length_m": 0.4426194798523736
+        },
+        "candidate_count": 55,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 414,
+        "full_episode": {
+          "frame_count": 414,
+          "frame_range_half_open": [
+            0,
+            414
+          ],
+          "maximum_closed_weighted_path_length_m": 0.49304664844078616,
+          "maximum_displacement_from_window_start_m": 0.2762462728734182,
+          "maximum_gripper_path_length_m": 1.1192706472116107,
+          "mean_closed_weighted_path_length_m": 0.49304664844078616,
+          "mean_closure_confidence": 0.6824723346933803,
+          "mean_displacement_from_window_start_m": 0.13303675245043503,
+          "mean_gripper_path_length_m": 1.1192706472116107
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.7546045462140354,
+        "locked_to_best_displacement_ratio": 0.40023060231824614,
+        "locked_to_best_path_ratio": 0.3511664267964212,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1496535662846336,
+          "maximum_displacement_from_window_start_m": 0.14834715474297286,
+          "maximum_gripper_path_length_m": 0.15543310117024858,
+          "mean_closed_weighted_path_length_m": 0.1496535662846336,
+          "mean_closure_confidence": 0.9641037825912792,
+          "mean_displacement_from_window_start_m": 0.08157171390857318,
+          "mean_gripper_path_length_m": 0.15543310117024858
+        },
+        "maximum_opening_change_from_episode_start_m": 0.06834555251398651,
+        "mean_opening_change_from_episode_start_m": 0.04893107836668237
+      },
+      "episode_id": 4,
+      "object_id": "083-blanket-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/083-blanket-cloth/episode_0004/robot/robot.npz",
+      "robot_sha256": "5a35e44911acdf616d8b8bbe07c665f7d96302fe68647243d9febc96cd5c5305",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            218,
+            299
+          ],
+          "maximum_closed_weighted_path_length_m": 0.25210792703359425,
+          "maximum_displacement_from_window_start_m": 0.07217621960409537,
+          "maximum_gripper_path_length_m": 0.28947778749449715,
+          "mean_closed_weighted_path_length_m": 0.17018101169708286,
+          "mean_closure_confidence": 0.9290931100555677,
+          "mean_displacement_from_window_start_m": 0.03582662604121078,
+          "mean_gripper_path_length_m": 0.19143411766510296
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04026369050793892,
+          "maximum_displacement_from_window_start_m": 0.1695056964005493,
+          "maximum_gripper_path_length_m": 0.2080508931267625,
+          "mean_closed_weighted_path_length_m": 0.038220366517485296,
+          "mean_closure_confidence": 0.23749963662401527,
+          "mean_displacement_from_window_start_m": 0.09170233526943294,
+          "mean_gripper_path_length_m": 0.19856727889798614
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04026369050793892,
+          "maximum_displacement_from_window_start_m": 0.1695056964005493,
+          "maximum_gripper_path_length_m": 0.2080508931267625,
+          "mean_closed_weighted_path_length_m": 0.038220366517485296,
+          "mean_closure_confidence": 0.23749963662401527,
+          "mean_displacement_from_window_start_m": 0.09170233526943294,
+          "mean_gripper_path_length_m": 0.19856727889798614
+        },
+        "candidate_count": 58,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 434,
+        "full_episode": {
+          "frame_count": 434,
+          "frame_range_half_open": [
+            0,
+            434
+          ],
+          "maximum_closed_weighted_path_length_m": 0.5512670508542801,
+          "maximum_displacement_from_window_start_m": 0.1949433574020491,
+          "maximum_gripper_path_length_m": 0.8208486733480957,
+          "mean_closed_weighted_path_length_m": 0.4450990223853798,
+          "mean_closure_confidence": 0.6955184869489511,
+          "mean_displacement_from_window_start_m": 0.10799278159017357,
+          "mean_gripper_path_length_m": 0.7399908225361678
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6654109760937749,
+        "locked_to_best_displacement_ratio": 0.5789405510066485,
+        "locked_to_best_path_ratio": 0.6094788405153793,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11835364723209228,
+          "maximum_displacement_from_window_start_m": 0.0921262804879154,
+          "maximum_gripper_path_length_m": 0.12611012033804156,
+          "mean_closed_weighted_path_length_m": 0.11324031310598202,
+          "mean_closure_confidence": 0.942973769496649,
+          "mean_displacement_from_window_start_m": 0.053090200509481926,
+          "mean_gripper_path_length_m": 0.12102255490703853
+        },
+        "maximum_opening_change_from_episode_start_m": 0.08610463087157363,
+        "mean_opening_change_from_episode_start_m": 0.03762681510533444
+      },
+      "episode_id": 5,
+      "object_id": "083-blanket-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/083-blanket-cloth/episode_0005/robot/robot.npz",
+      "robot_sha256": "1b9c75cfb0b06f7cebb388d8ef96207e1b50aa87200bc6d82437a71ede20293f",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            284,
+            365
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1364441843186178,
+          "maximum_displacement_from_window_start_m": 0.10899194832330873,
+          "maximum_gripper_path_length_m": 0.272851706230283,
+          "mean_closed_weighted_path_length_m": 0.13368508814718866,
+          "mean_closure_confidence": 0.7619655913544818,
+          "mean_displacement_from_window_start_m": 0.04171657349994238,
+          "mean_gripper_path_length_m": 0.2371151224481136
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            44,
+            125
+          ],
+          "maximum_closed_weighted_path_length_m": 0.05185725366533667,
+          "maximum_displacement_from_window_start_m": 0.24739413716614603,
+          "maximum_gripper_path_length_m": 0.2909177516628321,
+          "mean_closed_weighted_path_length_m": 0.05112856990514435,
+          "mean_closure_confidence": 0.2409498594302729,
+          "mean_displacement_from_window_start_m": 0.15916638065906175,
+          "mean_gripper_path_length_m": 0.28821550601573914
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04744500453694909,
+          "maximum_displacement_from_window_start_m": 0.24671065631083433,
+          "maximum_gripper_path_length_m": 0.30983549431976537,
+          "mean_closed_weighted_path_length_m": 0.042996588985329015,
+          "mean_closure_confidence": 0.16777974811528637,
+          "mean_displacement_from_window_start_m": 0.13753764048019448,
+          "mean_gripper_path_length_m": 0.29438847376629496
+        },
+        "candidate_count": 53,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 406,
+        "full_episode": {
+          "frame_count": 406,
+          "frame_range_half_open": [
+            0,
+            406
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4214825928069813,
+          "maximum_displacement_from_window_start_m": 0.24757766997926794,
+          "maximum_gripper_path_length_m": 0.8582686054279476,
+          "mean_closed_weighted_path_length_m": 0.4133609396860136,
+          "mean_closure_confidence": 0.6243822256582919,
+          "mean_displacement_from_window_start_m": 0.15453610871476736,
+          "mean_gripper_path_length_m": 0.8512319940937206
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.853614418498598,
+        "locked_to_best_displacement_ratio": 0.17360248517260665,
+        "locked_to_best_path_ratio": 0.4345169495401792,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.13294468045061172,
+          "maximum_displacement_from_window_start_m": 0.07369147135770572,
+          "maximum_gripper_path_length_m": 0.14380280209587878,
+          "mean_closed_weighted_path_length_m": 0.11411551878069626,
+          "mean_closure_confidence": 0.8939776099833088,
+          "mean_displacement_from_window_start_m": 0.027631679238342234,
+          "mean_gripper_path_length_m": 0.12791678160071956
+        },
+        "maximum_opening_change_from_episode_start_m": 0.09029764108427946,
+        "mean_opening_change_from_episode_start_m": 0.051681439290811995
+      },
+      "episode_id": 8,
+      "object_id": "083-blanket-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/083-blanket-cloth/episode_0008/robot/robot.npz",
+      "robot_sha256": "b9c8c9cc40b071d7eb3445caa80122b21f49d5059c99d9208121d1682ccaed09",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            218,
+            299
+          ],
+          "maximum_closed_weighted_path_length_m": 0.2945368203696801,
+          "maximum_displacement_from_window_start_m": 0.15889645153815732,
+          "maximum_gripper_path_length_m": 0.3453170117578369,
+          "mean_closed_weighted_path_length_m": 0.18097249666989668,
+          "mean_closure_confidence": 0.6745963297141151,
+          "mean_displacement_from_window_start_m": 0.07032274258232574,
+          "mean_gripper_path_length_m": 0.2725806498743557
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.15092655356100157,
+          "maximum_displacement_from_window_start_m": 0.1927476852134464,
+          "maximum_gripper_path_length_m": 0.30309686273377234,
+          "mean_closed_weighted_path_length_m": 0.11546760369727352,
+          "mean_closure_confidence": 0.3469165611982928,
+          "mean_displacement_from_window_start_m": 0.14243290241403098,
+          "mean_gripper_path_length_m": 0.28620431335696345
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11549726840762432,
+          "maximum_displacement_from_window_start_m": 0.207429285776044,
+          "maximum_gripper_path_length_m": 0.3081122965205238,
+          "mean_closed_weighted_path_length_m": 0.10440546816797103,
+          "mean_closure_confidence": 0.34907767612875273,
+          "mean_displacement_from_window_start_m": 0.13611071268968997,
+          "mean_gripper_path_length_m": 0.28849587937365606
+        },
+        "candidate_count": 43,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 341,
+        "full_episode": {
+          "frame_count": 341,
+          "frame_range_half_open": [
+            0,
+            341
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4708640693070457,
+          "maximum_displacement_from_window_start_m": 0.21213936689627394,
+          "maximum_gripper_path_length_m": 0.9103385053423172,
+          "mean_closed_weighted_path_length_m": 0.4501399846365189,
+          "mean_closure_confidence": 0.5366409441751749,
+          "mean_displacement_from_window_start_m": 0.12818788024214794,
+          "mean_gripper_path_length_m": 0.9056251520446142
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.43130648608352445,
+        "locked_to_best_displacement_ratio": 0.5190015871537247,
+        "locked_to_best_path_ratio": 0.5706884337355463,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.13024580731630392,
+          "maximum_displacement_from_window_start_m": 0.186535287215339,
+          "maximum_gripper_path_length_m": 0.19136382601902985,
+          "mean_closed_weighted_path_length_m": 0.07805461161645547,
+          "mean_closure_confidence": 0.549067266727393,
+          "mean_displacement_from_window_start_m": 0.07392290241579366,
+          "mean_gripper_path_length_m": 0.1646412615389109
+        },
+        "maximum_opening_change_from_episode_start_m": 0.15097002632956366,
+        "mean_opening_change_from_episode_start_m": 0.06534524113154079
+      },
+      "episode_id": 9,
+      "object_id": "083-blanket-cloth",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/083-blanket-cloth/episode_0009/robot/robot.npz",
+      "robot_sha256": "16bb13ae999e17530de60a5d66f55b6bfbb591167c0a014cb1c055f49682599e",
+      "stratum": "sheet"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            86,
+            167
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09415541869324773,
+          "maximum_displacement_from_window_start_m": 0.05771457100326662,
+          "maximum_gripper_path_length_m": 0.1027930867971523,
+          "mean_closed_weighted_path_length_m": 0.09415541869324773,
+          "mean_closure_confidence": 0.9209797668533113,
+          "mean_displacement_from_window_start_m": 0.03513562384860909,
+          "mean_gripper_path_length_m": 0.1027930867971523
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            218,
+            299
+          ],
+          "maximum_closed_weighted_path_length_m": 0.01418479253578635,
+          "maximum_displacement_from_window_start_m": 0.08521185730260744,
+          "maximum_gripper_path_length_m": 0.09819888346906835,
+          "mean_closed_weighted_path_length_m": 0.01418479253578635,
+          "mean_closure_confidence": 0.1052473835930221,
+          "mean_displacement_from_window_start_m": 0.07063527484394541,
+          "mean_gripper_path_length_m": 0.09819888346906835
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.048801325613402106,
+          "maximum_displacement_from_window_start_m": 0.08285267449093471,
+          "maximum_gripper_path_length_m": 0.1805607568245546,
+          "mean_closed_weighted_path_length_m": 0.048801325613402106,
+          "mean_closure_confidence": 0.4316193261840834,
+          "mean_displacement_from_window_start_m": 0.05872111346686433,
+          "mean_gripper_path_length_m": 0.1805607568245546
+        },
+        "candidate_count": 37,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 308,
+        "full_episode": {
+          "frame_count": 308,
+          "frame_range_half_open": [
+            0,
+            308
+          ],
+          "maximum_closed_weighted_path_length_m": 0.16409292828664301,
+          "maximum_displacement_from_window_start_m": 0.08301070604984752,
+          "maximum_gripper_path_length_m": 0.4041316164220565,
+          "mean_closed_weighted_path_length_m": 0.16409292828664301,
+          "mean_closure_confidence": 0.45583845507412335,
+          "mean_displacement_from_window_start_m": 0.04738777551372513,
+          "mean_gripper_path_length_m": 0.4041316164220565
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.8741301956935067,
+        "locked_to_best_displacement_ratio": 0.24884270149110246,
+        "locked_to_best_path_ratio": 0.49028487784554164,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.0823040945679327,
+          "maximum_displacement_from_window_start_m": 0.03462578217237455,
+          "maximum_gripper_path_length_m": 0.0885262086034253,
+          "mean_closed_weighted_path_length_m": 0.0823040945679327,
+          "mean_closure_confidence": 0.9430966337187818,
+          "mean_displacement_from_window_start_m": 0.017577072612733887,
+          "mean_gripper_path_length_m": 0.0885262086034253
+        },
+        "maximum_opening_change_from_episode_start_m": 0.04534794448719132,
+        "mean_opening_change_from_episode_start_m": 0.01875147992869548
+      },
+      "episode_id": 0,
+      "object_id": "092-squirrel",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/092-squirrel/episode_0000/robot/robot.npz",
+      "robot_sha256": "ef72be788601ac2b94349543dd244d308663d7a09481cadae4da591f8cf6ff15",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.05450976805143916,
+          "maximum_displacement_from_window_start_m": 0.12270180073004727,
+          "maximum_gripper_path_length_m": 0.14966378916645434,
+          "mean_closed_weighted_path_length_m": 0.05450976805143916,
+          "mean_closure_confidence": 0.47807767091572206,
+          "mean_displacement_from_window_start_m": 0.09424949228220621,
+          "mean_gripper_path_length_m": 0.14966378916645434
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.05450976805143916,
+          "maximum_displacement_from_window_start_m": 0.12270180073004727,
+          "maximum_gripper_path_length_m": 0.14966378916645434,
+          "mean_closed_weighted_path_length_m": 0.05450976805143916,
+          "mean_closure_confidence": 0.47807767091572206,
+          "mean_displacement_from_window_start_m": 0.09424949228220621,
+          "mean_gripper_path_length_m": 0.14966378916645434
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            200,
+            281
+          ],
+          "maximum_closed_weighted_path_length_m": 0.02585282250595905,
+          "maximum_displacement_from_window_start_m": 0.12630562528151895,
+          "maximum_gripper_path_length_m": 0.16424753130130948,
+          "mean_closed_weighted_path_length_m": 0.02585282250595905,
+          "mean_closure_confidence": 0.29639219049935156,
+          "mean_displacement_from_window_start_m": 0.032859413945717515,
+          "mean_gripper_path_length_m": 0.16424753130130948
+        },
+        "candidate_count": 38,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 316,
+        "full_episode": {
+          "frame_count": 316,
+          "frame_range_half_open": [
+            0,
+            316
+          ],
+          "maximum_closed_weighted_path_length_m": 0.13440887972657542,
+          "maximum_displacement_from_window_start_m": 0.1291170313502797,
+          "maximum_gripper_path_length_m": 0.3801461732393574,
+          "mean_closed_weighted_path_length_m": 0.13440887972657542,
+          "mean_closure_confidence": 0.5032425117457237,
+          "mean_displacement_from_window_start_m": 0.09166350508369005,
+          "mean_gripper_path_length_m": 0.3801461732393574
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6845630360553252,
+        "locked_to_best_displacement_ratio": 0.1342262712575353,
+        "locked_to_best_path_ratio": 0.24550907629371682,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.03731537231196476,
+          "maximum_displacement_from_window_start_m": 0.019907456267357366,
+          "maximum_gripper_path_length_m": 0.04032425969330783,
+          "mean_closed_weighted_path_length_m": 0.03731537231196476,
+          "mean_closure_confidence": 0.9264024353088012,
+          "mean_displacement_from_window_start_m": 0.01265075791695639,
+          "mean_gripper_path_length_m": 0.04032425969330783
+        },
+        "maximum_opening_change_from_episode_start_m": 0.058564245261720424,
+        "mean_opening_change_from_episode_start_m": 0.025457971874053957
+      },
+      "episode_id": 4,
+      "object_id": "092-squirrel",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/092-squirrel/episode_0004/robot/robot.npz",
+      "robot_sha256": "227f5bf454dfb852f44c974973b1f5c74819fd7401096cbe12d6555b544a3937",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.20848305757360464,
+          "maximum_displacement_from_window_start_m": 0.3311397477961619,
+          "maximum_gripper_path_length_m": 0.4011769677139419,
+          "mean_closed_weighted_path_length_m": 0.13731046142126535,
+          "mean_closure_confidence": 0.3927813935552818,
+          "mean_displacement_from_window_start_m": 0.15186510001650955,
+          "mean_gripper_path_length_m": 0.3356478626236452
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            44,
+            125
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1339499167230062,
+          "maximum_displacement_from_window_start_m": 0.23342010652680117,
+          "maximum_gripper_path_length_m": 0.3083478621390149,
+          "mean_closed_weighted_path_length_m": 0.11159027413223306,
+          "mean_closure_confidence": 0.5275319074953723,
+          "mean_displacement_from_window_start_m": 0.17370318726810893,
+          "mean_gripper_path_length_m": 0.3004743017155581
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.20848305757360464,
+          "maximum_displacement_from_window_start_m": 0.3311397477961619,
+          "maximum_gripper_path_length_m": 0.4011769677139419,
+          "mean_closed_weighted_path_length_m": 0.13731046142126535,
+          "mean_closure_confidence": 0.3927813935552818,
+          "mean_displacement_from_window_start_m": 0.15186510001650955,
+          "mean_gripper_path_length_m": 0.3356478626236452
+        },
+        "candidate_count": 47,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 370,
+        "full_episode": {
+          "frame_count": 370,
+          "frame_range_half_open": [
+            0,
+            370
+          ],
+          "maximum_closed_weighted_path_length_m": 0.43573604574844393,
+          "maximum_displacement_from_window_start_m": 0.33126030667625883,
+          "maximum_gripper_path_length_m": 0.8820741675255298,
+          "mean_closed_weighted_path_length_m": 0.3382819456571883,
+          "mean_closure_confidence": 0.5659783351668515,
+          "mean_displacement_from_window_start_m": 0.19026560597163458,
+          "mean_gripper_path_length_m": 0.7887561701475037
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.508443662635203,
+        "locked_to_best_displacement_ratio": 0.15733784008202029,
+        "locked_to_best_path_ratio": 0.22375650320898305,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.0842772677870427,
+          "maximum_displacement_from_window_start_m": 0.057164480218501894,
+          "maximum_gripper_path_length_m": 0.09138194315302278,
+          "mean_closed_weighted_path_length_m": 0.0698146339231579,
+          "mean_closure_confidence": 0.9306247380005817,
+          "mean_displacement_from_window_start_m": 0.027330084300126945,
+          "mean_gripper_path_length_m": 0.07510339205023597
+        },
+        "maximum_opening_change_from_episode_start_m": 0.11990382358465654,
+        "mean_opening_change_from_episode_start_m": 0.027611683705191462
+      },
+      "episode_id": 5,
+      "object_id": "092-squirrel",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/092-squirrel/episode_0005/robot/robot.npz",
+      "robot_sha256": "528995aea442bf1fb978ba46b268b109b21186034cefea3bcb266bcf2897c091",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            224,
+            305
+          ],
+          "maximum_closed_weighted_path_length_m": 0.21398352214165847,
+          "maximum_displacement_from_window_start_m": 0.3117401684318369,
+          "maximum_gripper_path_length_m": 0.3598404263545286,
+          "mean_closed_weighted_path_length_m": 0.12199319478291643,
+          "mean_closure_confidence": 0.4282341180234899,
+          "mean_displacement_from_window_start_m": 0.06559564919284828,
+          "mean_gripper_path_length_m": 0.29333530686239456
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.169710122736502,
+          "maximum_displacement_from_window_start_m": 0.31122977019802955,
+          "maximum_gripper_path_length_m": 0.3705593045242591,
+          "mean_closed_weighted_path_length_m": 0.09941072644571172,
+          "mean_closure_confidence": 0.3897389633272801,
+          "mean_displacement_from_window_start_m": 0.16241922475492532,
+          "mean_gripper_path_length_m": 0.2751815754750062
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            242,
+            323
+          ],
+          "maximum_closed_weighted_path_length_m": 0.2093367667222445,
+          "maximum_displacement_from_window_start_m": 0.3185705174634871,
+          "maximum_gripper_path_length_m": 0.37260453168863145,
+          "mean_closed_weighted_path_length_m": 0.11697541665384453,
+          "mean_closure_confidence": 0.318469786812685,
+          "mean_displacement_from_window_start_m": 0.12073057786172398,
+          "mean_gripper_path_length_m": 0.2980850669853704
+        },
+        "candidate_count": 42,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 339,
+        "full_episode": {
+          "frame_count": 339,
+          "frame_range_half_open": [
+            0,
+            339
+          ],
+          "maximum_closed_weighted_path_length_m": 0.48198658864633626,
+          "maximum_displacement_from_window_start_m": 0.34862227957002606,
+          "maximum_gripper_path_length_m": 0.9236672472291836,
+          "mean_closed_weighted_path_length_m": 0.29982377652589437,
+          "mean_closure_confidence": 0.5417813123207004,
+          "mean_displacement_from_window_start_m": 0.18980908905180555,
+          "mean_gripper_path_length_m": 0.7034957786719538
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.459436881694802,
+        "locked_to_best_displacement_ratio": 0.10153629871594046,
+        "locked_to_best_path_ratio": 0.19574831233055603,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.06983379295376209,
+          "maximum_displacement_from_window_start_m": 0.03162181633647841,
+          "maximum_gripper_path_length_m": 0.07239571455067449,
+          "mean_closed_weighted_path_length_m": 0.05604817299904971,
+          "mean_closure_confidence": 0.9604896753781813,
+          "mean_displacement_from_window_start_m": 0.01649144692192757,
+          "mean_gripper_path_length_m": 0.058349648793327005
+        },
+        "maximum_opening_change_from_episode_start_m": 0.1519217342606191,
+        "mean_opening_change_from_episode_start_m": 0.05821032122234034
+      },
+      "episode_id": 7,
+      "object_id": "092-squirrel",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/092-squirrel/episode_0007/robot/robot.npz",
+      "robot_sha256": "de0e0cf5000e24b31315bd8da4f17327eedac47f09081b8643f85fb4d3c70c36",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            38,
+            119
+          ],
+          "maximum_closed_weighted_path_length_m": 0.200460583534256,
+          "maximum_displacement_from_window_start_m": 0.2591825524295732,
+          "maximum_gripper_path_length_m": 0.33878197274319305,
+          "mean_closed_weighted_path_length_m": 0.1369070428410327,
+          "mean_closure_confidence": 0.5594435167954879,
+          "mean_displacement_from_window_start_m": 0.1852799618643477,
+          "mean_gripper_path_length_m": 0.3137756883405399
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1969288360288784,
+          "maximum_displacement_from_window_start_m": 0.2905293083122823,
+          "maximum_gripper_path_length_m": 0.3872286114859478,
+          "mean_closed_weighted_path_length_m": 0.13360808456019563,
+          "mean_closure_confidence": 0.499764518231078,
+          "mean_displacement_from_window_start_m": 0.1881505961734397,
+          "mean_gripper_path_length_m": 0.33684117282683007
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.18577232374802938,
+          "maximum_displacement_from_window_start_m": 0.30959624239868444,
+          "maximum_gripper_path_length_m": 0.4093182889412315,
+          "mean_closed_weighted_path_length_m": 0.12425541739100432,
+          "mean_closure_confidence": 0.43039695190837823,
+          "mean_displacement_from_window_start_m": 0.18045783325641868,
+          "mean_gripper_path_length_m": 0.3450417621627251
+        },
+        "candidate_count": 37,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 305,
+        "full_episode": {
+          "frame_count": 305,
+          "frame_range_half_open": [
+            0,
+            305
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4580691095236733,
+          "maximum_displacement_from_window_start_m": 0.31469528682215286,
+          "maximum_gripper_path_length_m": 0.8452168236068668,
+          "mean_closed_weighted_path_length_m": 0.3415326779231274,
+          "mean_closure_confidence": 0.5317196915883688,
+          "mean_displacement_from_window_start_m": 0.18161003941394077,
+          "mean_gripper_path_length_m": 0.8032124165644251
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6212557144819604,
+        "locked_to_best_displacement_ratio": 0.14649091564967331,
+        "locked_to_best_path_ratio": 0.25429588465341463,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09594307515093999,
+          "maximum_displacement_from_window_start_m": 0.0511560697961445,
+          "maximum_gripper_path_length_m": 0.09946921983089044,
+          "mean_closed_weighted_path_length_m": 0.08505428271781812,
+          "mean_closure_confidence": 0.9733711116194788,
+          "mean_displacement_from_window_start_m": 0.027562353113479102,
+          "mean_gripper_path_length_m": 0.08774270015154326
+        },
+        "maximum_opening_change_from_episode_start_m": 0.11209405417734561,
+        "mean_opening_change_from_episode_start_m": 0.05097324941013736
+      },
+      "episode_id": 8,
+      "object_id": "092-squirrel",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/092-squirrel/episode_0008/robot/robot.npz",
+      "robot_sha256": "553fb6f0b4924e5a9794b71e389045749a9a768c49dc1b66685c9959b043bcf7",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            86,
+            167
+          ],
+          "maximum_closed_weighted_path_length_m": 0.20201052112089318,
+          "maximum_displacement_from_window_start_m": 0.24169414979548165,
+          "maximum_gripper_path_length_m": 0.2519286931542221,
+          "mean_closed_weighted_path_length_m": 0.15670922858252176,
+          "mean_closure_confidence": 0.8549944525924755,
+          "mean_displacement_from_window_start_m": 0.07017710910010296,
+          "mean_gripper_path_length_m": 0.18631355130195443
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09467577628755303,
+          "maximum_displacement_from_window_start_m": 0.2544375302912822,
+          "maximum_gripper_path_length_m": 0.36254367175815416,
+          "mean_closed_weighted_path_length_m": 0.0764837560466986,
+          "mean_closure_confidence": 0.3136117573535869,
+          "mean_displacement_from_window_start_m": 0.16164056462006862,
+          "mean_gripper_path_length_m": 0.3190239271047228
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.0899694043726874,
+          "maximum_displacement_from_window_start_m": 0.26700882299457895,
+          "maximum_gripper_path_length_m": 0.3902668375904328,
+          "mean_closed_weighted_path_length_m": 0.07061231465633337,
+          "mean_closure_confidence": 0.26117372645494813,
+          "mean_displacement_from_window_start_m": 0.1599552303858937,
+          "mean_gripper_path_length_m": 0.32775582281699667
+        },
+        "candidate_count": 52,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 397,
+        "full_episode": {
+          "frame_count": 397,
+          "frame_range_half_open": [
+            0,
+            397
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4669890058008594,
+          "maximum_displacement_from_window_start_m": 0.2847535982199225,
+          "maximum_gripper_path_length_m": 0.9624183125919861,
+          "mean_closed_weighted_path_length_m": 0.4313361377604635,
+          "mean_closure_confidence": 0.5681192422468926,
+          "mean_displacement_from_window_start_m": 0.1712753853992977,
+          "mean_gripper_path_length_m": 0.9593548966602795
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.882058744838221,
+        "locked_to_best_displacement_ratio": 0.4112161159576186,
+        "locked_to_best_path_ratio": 0.4522018550515643,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.18407173556406725,
+          "maximum_displacement_from_window_start_m": 0.1928293411513685,
+          "maximum_gripper_path_length_m": 0.20130104579250097,
+          "mean_closed_weighted_path_length_m": 0.13822674546806502,
+          "mean_closure_confidence": 0.9378425146469197,
+          "mean_displacement_from_window_start_m": 0.06646920516426108,
+          "mean_gripper_path_length_m": 0.14821179108179772
+        },
+        "maximum_opening_change_from_episode_start_m": 0.13910591373584447,
+        "mean_opening_change_from_episode_start_m": 0.0633874858530646
+      },
+      "episode_id": 9,
+      "object_id": "092-squirrel",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/092-squirrel/episode_0009/robot/robot.npz",
+      "robot_sha256": "a70e52df587e7543ba89ea0818e5dbf72555886e26942e926c4c31baf59453cd",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            62,
+            143
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11891832282265766,
+          "maximum_displacement_from_window_start_m": 0.14095808772961763,
+          "maximum_gripper_path_length_m": 0.178198160964685,
+          "mean_closed_weighted_path_length_m": 0.11891832282265766,
+          "mean_closure_confidence": 0.806918280998215,
+          "mean_displacement_from_window_start_m": 0.10469645299464736,
+          "mean_gripper_path_length_m": 0.178198160964685
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            38,
+            119
+          ],
+          "maximum_closed_weighted_path_length_m": 0.11222085670659879,
+          "maximum_displacement_from_window_start_m": 0.32629719880250363,
+          "maximum_gripper_path_length_m": 0.372572973228549,
+          "mean_closed_weighted_path_length_m": 0.11222085670659879,
+          "mean_closure_confidence": 0.54611137388791,
+          "mean_displacement_from_window_start_m": 0.2330775766040446,
+          "mean_gripper_path_length_m": 0.372572973228549
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.10266807621359195,
+          "maximum_displacement_from_window_start_m": 0.34319290244934986,
+          "maximum_gripper_path_length_m": 0.3892695531184265,
+          "mean_closed_weighted_path_length_m": 0.10266807621359195,
+          "mean_closure_confidence": 0.4361938175796975,
+          "mean_displacement_from_window_start_m": 0.21027326643997118,
+          "mean_gripper_path_length_m": 0.3892695531184265
+        },
+        "candidate_count": 33,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 285,
+        "full_episode": {
+          "frame_count": 285,
+          "frame_range_half_open": [
+            0,
+            285
+          ],
+          "maximum_closed_weighted_path_length_m": 0.22247764883087454,
+          "maximum_displacement_from_window_start_m": 0.35354749752872183,
+          "maximum_gripper_path_length_m": 0.8441625168174101,
+          "mean_closed_weighted_path_length_m": 0.22247764883087454,
+          "mean_closure_confidence": 0.5784230593628973,
+          "mean_displacement_from_window_start_m": 0.24105055423850572,
+          "mean_gripper_path_length_m": 0.8441625168174101
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.5404873044916438,
+        "locked_to_best_displacement_ratio": 0.05340590966811275,
+        "locked_to_best_path_ratio": 0.172757524716218,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.06427384375708536,
+          "maximum_displacement_from_window_start_m": 0.02112097883927135,
+          "maximum_gripper_path_length_m": 0.06724924444412769,
+          "mean_closed_weighted_path_length_m": 0.06427384375708536,
+          "mean_closure_confidence": 0.9601868424542179,
+          "mean_displacement_from_window_start_m": 0.012447720001778234,
+          "mean_gripper_path_length_m": 0.06724924444412769
+        },
+        "maximum_opening_change_from_episode_start_m": 0.06482958918365583,
+        "mean_opening_change_from_episode_start_m": 0.038675412650121456
+      },
+      "episode_id": 0,
+      "object_id": "170-spider",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/170-spider/episode_0000/robot/robot.npz",
+      "robot_sha256": "6429205deeae933d880022d8938996d3e6759c1827449ce51c33b0e82204ef81",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            62,
+            143
+          ],
+          "maximum_closed_weighted_path_length_m": 0.17218929082628903,
+          "maximum_displacement_from_window_start_m": 0.13888381113510873,
+          "maximum_gripper_path_length_m": 0.18796625060931882,
+          "mean_closed_weighted_path_length_m": 0.17218929082628903,
+          "mean_closure_confidence": 0.9127039047476956,
+          "mean_displacement_from_window_start_m": 0.07741137503851228,
+          "mean_gripper_path_length_m": 0.18796625060931882
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            20,
+            101
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09538273846847058,
+          "maximum_displacement_from_window_start_m": 0.21232003745012798,
+          "maximum_gripper_path_length_m": 0.312489140918485,
+          "mean_closed_weighted_path_length_m": 0.09538273846847058,
+          "mean_closure_confidence": 0.4740970577102816,
+          "mean_displacement_from_window_start_m": 0.15649543047969147,
+          "mean_gripper_path_length_m": 0.312489140918485
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.1253181925580035,
+          "maximum_displacement_from_window_start_m": 0.1910531907195256,
+          "maximum_gripper_path_length_m": 0.32452130456077255,
+          "mean_closed_weighted_path_length_m": 0.1253181925580035,
+          "mean_closure_confidence": 0.5367000070051745,
+          "mean_displacement_from_window_start_m": 0.1455425200318466,
+          "mean_gripper_path_length_m": 0.32452130456077255
+        },
+        "candidate_count": 34,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 292,
+        "full_episode": {
+          "frame_count": 292,
+          "frame_range_half_open": [
+            0,
+            292
+          ],
+          "maximum_closed_weighted_path_length_m": 0.27125522689007103,
+          "maximum_displacement_from_window_start_m": 0.213513946625892,
+          "maximum_gripper_path_length_m": 0.6884743506276654,
+          "mean_closed_weighted_path_length_m": 0.27125522689007103,
+          "mean_closure_confidence": 0.6313635159311137,
+          "mean_displacement_from_window_start_m": 0.1237132077382371,
+          "mean_gripper_path_length_m": 0.6884743506276654
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.4085384514649746,
+        "locked_to_best_displacement_ratio": 0.11796803858080035,
+        "locked_to_best_path_ratio": 0.2240612838196614,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.07034594623302427,
+          "maximum_displacement_from_window_start_m": 0.029595539604748623,
+          "maximum_gripper_path_length_m": 0.07271266012671804,
+          "mean_closed_weighted_path_length_m": 0.07034594623302427,
+          "mean_closure_confidence": 0.9682066642177584,
+          "mean_displacement_from_window_start_m": 0.018461458980547202,
+          "mean_gripper_path_length_m": 0.07271266012671804
+        },
+        "maximum_opening_change_from_episode_start_m": 0.047537585364963934,
+        "mean_opening_change_from_episode_start_m": 0.029399895929146505
+      },
+      "episode_id": 1,
+      "object_id": "170-spider",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/170-spider/episode_0001/robot/robot.npz",
+      "robot_sha256": "246ce6bc9fcd583bca8b65d7b8a255f9b7691f745af682b239560dd54628db87",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            44,
+            125
+          ],
+          "maximum_closed_weighted_path_length_m": 0.06509996381059745,
+          "maximum_displacement_from_window_start_m": 0.08417034266027856,
+          "maximum_gripper_path_length_m": 0.12516685519932585,
+          "mean_closed_weighted_path_length_m": 0.06509996381059745,
+          "mean_closure_confidence": 0.7431854237728561,
+          "mean_displacement_from_window_start_m": 0.07099041517513968,
+          "mean_gripper_path_length_m": 0.12516685519932585
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.0573027104503232,
+          "maximum_displacement_from_window_start_m": 0.15443183791659415,
+          "maximum_gripper_path_length_m": 0.200278761537522,
+          "mean_closed_weighted_path_length_m": 0.0573027104503232,
+          "mean_closure_confidence": 0.6013282247491347,
+          "mean_displacement_from_window_start_m": 0.12652643988199228,
+          "mean_gripper_path_length_m": 0.200278761537522
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            14,
+            95
+          ],
+          "maximum_closed_weighted_path_length_m": 0.05398163594656946,
+          "maximum_displacement_from_window_start_m": 0.15398158846216403,
+          "maximum_gripper_path_length_m": 0.27890404508512345,
+          "mean_closed_weighted_path_length_m": 0.05398163594656946,
+          "mean_closure_confidence": 0.4301417560421626,
+          "mean_displacement_from_window_start_m": 0.11434047535267598,
+          "mean_gripper_path_length_m": 0.27890404508512345
+        },
+        "candidate_count": 23,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 222,
+        "full_episode": {
+          "frame_count": 222,
+          "frame_range_half_open": [
+            0,
+            222
+          ],
+          "maximum_closed_weighted_path_length_m": 0.12132739705815418,
+          "maximum_displacement_from_window_start_m": 0.18312983258801557,
+          "maximum_gripper_path_length_m": 0.5944222982250887,
+          "mean_closed_weighted_path_length_m": 0.12132739705815418,
+          "mean_closure_confidence": 0.5199330186298888,
+          "mean_displacement_from_window_start_m": 0.128563350372972,
+          "mean_gripper_path_length_m": 0.5944222982250887
+        },
+        "gripper_count": 1,
+        "locked_to_best_contact_conditioned_path_ratio": 0.7628703229038195,
+        "locked_to_best_displacement_ratio": 0.15934719530032196,
+        "locked_to_best_path_ratio": 0.44660110447195467,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04966283041321744,
+          "maximum_displacement_from_window_start_m": 0.07876228169647086,
+          "maximum_gripper_path_length_m": 0.12455885457671198,
+          "mean_closed_weighted_path_length_m": 0.04966283041321744,
+          "mean_closure_confidence": 0.7754630514918982,
+          "mean_displacement_from_window_start_m": 0.02016163332653027,
+          "mean_gripper_path_length_m": 0.12455885457671198
+        },
+        "maximum_opening_change_from_episode_start_m": 0.06190559355512855,
+        "mean_opening_change_from_episode_start_m": 0.029335793091456435
+      },
+      "episode_id": 3,
+      "object_id": "170-spider",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/170-spider/episode_0003/robot/robot.npz",
+      "robot_sha256": "f878b9b71b18f392f940de69ea40077aebd1978bd0ed99c09066bf57fe1b4f67",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            224,
+            305
+          ],
+          "maximum_closed_weighted_path_length_m": 0.3925392575976469,
+          "maximum_displacement_from_window_start_m": 0.5523819649467901,
+          "maximum_gripper_path_length_m": 0.654197623517262,
+          "mean_closed_weighted_path_length_m": 0.20831641419281732,
+          "mean_closure_confidence": 0.4212794069511715,
+          "mean_displacement_from_window_start_m": 0.12694275872213798,
+          "mean_gripper_path_length_m": 0.5184410167576965
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            38,
+            119
+          ],
+          "maximum_closed_weighted_path_length_m": 0.14100197292033245,
+          "maximum_displacement_from_window_start_m": 0.33479377834353374,
+          "maximum_gripper_path_length_m": 0.3531591771182105,
+          "mean_closed_weighted_path_length_m": 0.10620520207735802,
+          "mean_closure_confidence": 0.5216992250272939,
+          "mean_displacement_from_window_start_m": 0.1978268565192991,
+          "mean_gripper_path_length_m": 0.30594256415314897
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            224,
+            305
+          ],
+          "maximum_closed_weighted_path_length_m": 0.3925392575976469,
+          "maximum_displacement_from_window_start_m": 0.5523819649467901,
+          "maximum_gripper_path_length_m": 0.654197623517262,
+          "mean_closed_weighted_path_length_m": 0.20831641419281732,
+          "mean_closure_confidence": 0.4212794069511715,
+          "mean_displacement_from_window_start_m": 0.12694275872213798,
+          "mean_gripper_path_length_m": 0.5184410167576965
+        },
+        "candidate_count": 37,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 307,
+        "full_episode": {
+          "frame_count": 307,
+          "frame_range_half_open": [
+            0,
+            307
+          ],
+          "maximum_closed_weighted_path_length_m": 0.6687067641959403,
+          "maximum_displacement_from_window_start_m": 0.3951817824718335,
+          "maximum_gripper_path_length_m": 1.1083754867054343,
+          "mean_closed_weighted_path_length_m": 0.4424206288149585,
+          "mean_closure_confidence": 0.6053342938176176,
+          "mean_displacement_from_window_start_m": 0.2366154153161258,
+          "mean_gripper_path_length_m": 1.0036491202572229
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.4293399414369783,
+        "locked_to_best_displacement_ratio": 0.13889172743968514,
+        "locked_to_best_path_ratio": 0.1780496547912403,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.0966638175719767,
+          "maximum_displacement_from_window_start_m": 0.057341273383938185,
+          "maximum_gripper_path_length_m": 0.10099571651997512,
+          "mean_closed_weighted_path_length_m": 0.0894385570699055,
+          "mean_closure_confidence": 0.9754797889735076,
+          "mean_displacement_from_window_start_m": 0.02747651383592819,
+          "mean_gripper_path_length_m": 0.09230824406332748
+        },
+        "maximum_opening_change_from_episode_start_m": 0.14261896079235814,
+        "mean_opening_change_from_episode_start_m": 0.05995427841868289
+      },
+      "episode_id": 5,
+      "object_id": "170-spider",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/170-spider/episode_0005/robot/robot.npz",
+      "robot_sha256": "38af18baf010b0a9a9ba803265a2e7dc9a625c0ccba66649ea2e58f99e22d728",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            32,
+            113
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09949575120850884,
+          "maximum_displacement_from_window_start_m": 0.14386290422884812,
+          "maximum_gripper_path_length_m": 0.1841991696714508,
+          "mean_closed_weighted_path_length_m": 0.0806820345942775,
+          "mean_closure_confidence": 0.5893853224064263,
+          "mean_displacement_from_window_start_m": 0.09670101209777991,
+          "mean_gripper_path_length_m": 0.18387813136576453
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            26,
+            107
+          ],
+          "maximum_closed_weighted_path_length_m": 0.09836969301451036,
+          "maximum_displacement_from_window_start_m": 0.15768019887796375,
+          "maximum_gripper_path_length_m": 0.19912231837876904,
+          "mean_closed_weighted_path_length_m": 0.0800484445709809,
+          "mean_closure_confidence": 0.5301135993274931,
+          "mean_displacement_from_window_start_m": 0.09801417001046962,
+          "mean_gripper_path_length_m": 0.19604350677594934
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            8,
+            89
+          ],
+          "maximum_closed_weighted_path_length_m": 0.08387099307608299,
+          "maximum_displacement_from_window_start_m": 0.14717522310386577,
+          "maximum_gripper_path_length_m": 0.21471008063095176,
+          "mean_closed_weighted_path_length_m": 0.06758850023627522,
+          "mean_closure_confidence": 0.32732789565275966,
+          "mean_displacement_from_window_start_m": 0.06829340329677042,
+          "mean_gripper_path_length_m": 0.20599646882458678
+        },
+        "candidate_count": 25,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 233,
+        "full_episode": {
+          "frame_count": 233,
+          "frame_range_half_open": [
+            0,
+            233
+          ],
+          "maximum_closed_weighted_path_length_m": 0.16039818854588148,
+          "maximum_displacement_from_window_start_m": 0.16726864724109206,
+          "maximum_gripper_path_length_m": 0.48143574480722096,
+          "mean_closed_weighted_path_length_m": 0.14498523067603686,
+          "mean_closure_confidence": 0.48320693801999,
+          "mean_displacement_from_window_start_m": 0.0907814181674328,
+          "mean_gripper_path_length_m": 0.4381582906392898
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6032050527894733,
+        "locked_to_best_displacement_ratio": 0.23643312324957055,
+        "locked_to_best_path_ratio": 0.556556710194988,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.04920399074119689,
+          "maximum_displacement_from_window_start_m": 0.0975674506757918,
+          "maximum_gripper_path_length_m": 0.11831301472521752,
+          "mean_closed_weighted_path_length_m": 0.04866781093660327,
+          "mean_closure_confidence": 0.7127625931107038,
+          "mean_displacement_from_window_start_m": 0.023173796338289726,
+          "mean_gripper_path_length_m": 0.11464871700079643
+        },
+        "maximum_opening_change_from_episode_start_m": 0.07592946429432211,
+        "mean_opening_change_from_episode_start_m": 0.03430143205478348
+      },
+      "episode_id": 8,
+      "object_id": "170-spider",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/170-spider/episode_0008/robot/robot.npz",
+      "robot_sha256": "f78c82b975a1a099774bffd70c5cf1441bf857194abe5f742432ecd3f52430e1",
+      "stratum": "volumetric"
+    },
+    {
+      "action": {
+        "best_contact_conditioned_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            182,
+            263
+          ],
+          "maximum_closed_weighted_path_length_m": 0.8277478767682233,
+          "maximum_displacement_from_window_start_m": 0.5538442252196284,
+          "maximum_gripper_path_length_m": 0.8689720678651586,
+          "mean_closed_weighted_path_length_m": 0.44802969052724,
+          "mean_closure_confidence": 0.9475947686220273,
+          "mean_displacement_from_window_start_m": 0.19795120537082153,
+          "mean_gripper_path_length_m": 0.47187259624856814
+        },
+        "best_equal_length_displacement_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            182,
+            263
+          ],
+          "maximum_closed_weighted_path_length_m": 0.8277478767682233,
+          "maximum_displacement_from_window_start_m": 0.5538442252196284,
+          "maximum_gripper_path_length_m": 0.8689720678651586,
+          "mean_closed_weighted_path_length_m": 0.44802969052724,
+          "mean_closure_confidence": 0.9475947686220273,
+          "mean_displacement_from_window_start_m": 0.19795120537082153,
+          "mean_gripper_path_length_m": 0.47187259624856814
+        },
+        "best_equal_length_path_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            182,
+            263
+          ],
+          "maximum_closed_weighted_path_length_m": 0.8277478767682233,
+          "maximum_displacement_from_window_start_m": 0.5538442252196284,
+          "maximum_gripper_path_length_m": 0.8689720678651586,
+          "mean_closed_weighted_path_length_m": 0.44802969052724,
+          "mean_closure_confidence": 0.9475947686220273,
+          "mean_displacement_from_window_start_m": 0.19795120537082153,
+          "mean_gripper_path_length_m": 0.47187259624856814
+        },
+        "candidate_count": 50,
+        "candidate_start_frame": 8,
+        "candidate_stride_frames": 6,
+        "frame_count": 383,
+        "full_episode": {
+          "frame_count": 383,
+          "frame_range_half_open": [
+            0,
+            383
+          ],
+          "maximum_closed_weighted_path_length_m": 1.375362956452995,
+          "maximum_displacement_from_window_start_m": 0.4311821804663548,
+          "maximum_gripper_path_length_m": 1.8572647729920617,
+          "mean_closed_weighted_path_length_m": 0.8797537481421978,
+          "mean_closure_confidence": 0.5560801643527378,
+          "mean_displacement_from_window_start_m": 0.16330517250007193,
+          "mean_gripper_path_length_m": 1.485367415315229
+        },
+        "gripper_count": 2,
+        "locked_to_best_contact_conditioned_path_ratio": 0.6597720782716506,
+        "locked_to_best_displacement_ratio": 0.6940403019371267,
+        "locked_to_best_path_ratio": 0.6966987842147679,
+        "locked_window": {
+          "frame_count": 81,
+          "frame_range_half_open": [
+            110,
+            191
+          ],
+          "maximum_closed_weighted_path_length_m": 0.4421048468230178,
+          "maximum_displacement_from_window_start_m": 0.3118211444845657,
+          "maximum_gripper_path_length_m": 0.502942348482299,
+          "mean_closed_weighted_path_length_m": 0.2955974800465616,
+          "mean_closure_confidence": 0.9279876434098941,
+          "mean_displacement_from_window_start_m": 0.13738611434438316,
+          "mean_gripper_path_length_m": 0.3287530641106435
+        },
+        "maximum_opening_change_from_episode_start_m": 0.045308993302035624,
+        "mean_opening_change_from_episode_start_m": 0.022383110332726486
+      },
+      "episode_id": 9,
+      "object_id": "170-spider",
+      "robot_path": "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned/170-spider/episode_0009/robot/robot.npz",
+      "robot_sha256": "4683c3e5d0896552a1c4131a6777fb3791e81577e170eda21772b627470a6111",
+      "stratum": "volumetric"
+    }
+  ],
+  "result_sha256": "839580a4bb54093319dc945bfdb5a7ad39ce7f907cc495f1c0877d3a3ec75f1c",
+  "schema_version": 1,
+  "superseded_fixed_raw_aligned_range_half_open": [
+    110,
+    191
+  ],
+  "target_future_read": false,
+  "target_initial_frame_read": false,
+  "target_paths_constructed": false
+}

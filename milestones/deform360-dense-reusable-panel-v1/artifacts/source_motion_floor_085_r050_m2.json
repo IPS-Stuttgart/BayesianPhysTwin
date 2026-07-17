@@ -1,0 +1,88 @@
+{
+  "aggregate_by_stratum": {
+    "sheet": {
+      "controller_mean_displacement_m": 0.07207517241025412,
+      "episode_count": 1,
+      "object_mean_displacement_m": 0.018672671916809786,
+      "persistence_coordinate_rmse_m": 0.013497192622493678,
+      "persistence_mean_euclidean_track_error_m": 0.018672671916809786,
+      "persistence_symmetric_chamfer_m": 0.00799450167906206
+    }
+  },
+  "artifact_kind": "Deform360SourceMotionFloorAudit",
+  "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "evidence_scope": "source-only",
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "published_particleformer_reference": {
+    "symmetric_chamfer_m": 0.051,
+    "track_error_m": 0.079
+  },
+  "record_count": 1,
+  "records": [
+    {
+      "controller_point_count": 768,
+      "episode_id": 1,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/contact-conditioned-source-v1/085-scarf-cloth-ep0001/episode_0000/final_data.pkl",
+      "final_data_sha256": "0197e8356e18c91a5d3ad90894483588d1153a4dc47350ed02deab311884e340",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.11177958514790784,
+        "controller_mean_displacement_m": 0.07207517241025412,
+        "controller_mean_point_path_m": 0.27129412537558745,
+        "frame_count": 75,
+        "minimum_valid_point_count": 6607,
+        "object_maximum_displacement_m": 0.09613599455678211,
+        "object_mean_displacement_m": 0.018672671916809786,
+        "persistence_coordinate_rmse_m": 0.013497192622493678,
+        "persistence_mean_euclidean_track_error_m": 0.018672671916809786,
+        "persistence_symmetric_chamfer_m": 0.00799450167906206
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.07301430728983302,
+          "controller_mean_displacement_m": 0.03710714703276944,
+          "controller_mean_point_path_m": 0.0727193663979136,
+          "frame_count": 25,
+          "minimum_valid_point_count": 6607,
+          "object_maximum_displacement_m": 0.06343935658135855,
+          "object_mean_displacement_m": 0.011125009823966059,
+          "persistence_coordinate_rmse_m": 0.007951612380638174,
+          "persistence_mean_euclidean_track_error_m": 0.011125009823966059,
+          "persistence_symmetric_chamfer_m": 0.005513742500692096
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.11177958514790784,
+          "controller_mean_displacement_m": 0.09025694799564236,
+          "controller_mean_point_path_m": 0.16296870431499658,
+          "frame_count": 25,
+          "minimum_valid_point_count": 6607,
+          "object_maximum_displacement_m": 0.09613599455678211,
+          "object_mean_displacement_m": 0.024161084313315005,
+          "persistence_coordinate_rmse_m": 0.01757567162195636,
+          "persistence_mean_euclidean_track_error_m": 0.024161084313315005,
+          "persistence_symmetric_chamfer_m": 0.009754358399704314
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.10514045062053845,
+          "controller_mean_displacement_m": 0.08886142220235056,
+          "controller_mean_point_path_m": 0.03206158196762997,
+          "frame_count": 25,
+          "minimum_valid_point_count": 6607,
+          "object_maximum_displacement_m": 0.08664693616119525,
+          "object_mean_displacement_m": 0.020731921613148296,
+          "persistence_coordinate_rmse_m": 0.014964293864886503,
+          "persistence_mean_euclidean_track_error_m": 0.020731921613148296,
+          "persistence_symmetric_chamfer_m": 0.008715404136789767
+        }
+      },
+      "object_id": "085-scarf-cloth",
+      "object_point_count": 6607,
+      "stratum": "sheet"
+    }
+  ],
+  "reference_comparison_is_confirmatory": false,
+  "result_sha256": "734933eb867d656fd5d18ddfa507c19addd5548b87ab11383e6984ecb7a58d49",
+  "schema_version": 1,
+  "target_future_read": false,
+  "target_initial_frame_read": false,
+  "target_post_initial_object_observations_read": false
+}

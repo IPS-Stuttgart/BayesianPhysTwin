@@ -1,0 +1,88 @@
+{
+  "aggregate_by_stratum": {
+    "filament": {
+      "controller_mean_displacement_m": 0.12674032846023792,
+      "episode_count": 1,
+      "object_mean_displacement_m": 0.023091799772467093,
+      "persistence_coordinate_rmse_m": 0.025259973480344953,
+      "persistence_mean_euclidean_track_error_m": 0.023091799772467093,
+      "persistence_symmetric_chamfer_m": 0.014833194422012645
+    }
+  },
+  "artifact_kind": "Deform360SourceMotionFloorAudit",
+  "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "evidence_scope": "source-only",
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "published_particleformer_reference": {
+    "symmetric_chamfer_m": 0.051,
+    "track_error_m": 0.079
+  },
+  "record_count": 1,
+  "records": [
+    {
+      "controller_point_count": 768,
+      "episode_id": 0,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/contact-conditioned-source-v1/002-rope-silk-ep0000/episode_0000/final_data.pkl",
+      "final_data_sha256": "2871a4651d72c83840ca76f77f8709f6ba3ad54f489ca5ebcf01013167072c0b",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.24779462472090127,
+        "controller_mean_displacement_m": 0.12674032846023792,
+        "controller_mean_point_path_m": 0.2393910126258953,
+        "frame_count": 75,
+        "minimum_valid_point_count": 3580,
+        "object_maximum_displacement_m": 0.21229566887293536,
+        "object_mean_displacement_m": 0.023091799772467093,
+        "persistence_coordinate_rmse_m": 0.025259973480344953,
+        "persistence_mean_euclidean_track_error_m": 0.023091799772467093,
+        "persistence_symmetric_chamfer_m": 0.014833194422012645
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.09046898829162148,
+          "controller_mean_displacement_m": 0.03888419104576327,
+          "controller_mean_point_path_m": 0.0867263620126763,
+          "frame_count": 25,
+          "minimum_valid_point_count": 3580,
+          "object_maximum_displacement_m": 0.09917640428041145,
+          "object_mean_displacement_m": 0.011413142871420923,
+          "persistence_coordinate_rmse_m": 0.01131065092926668,
+          "persistence_mean_euclidean_track_error_m": 0.011413142871420923,
+          "persistence_symmetric_chamfer_m": 0.008240182425822404
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.24779462472090127,
+          "controller_mean_displacement_m": 0.2079396383982076,
+          "controller_mean_point_path_m": 0.059666160316836206,
+          "frame_count": 25,
+          "minimum_valid_point_count": 3580,
+          "object_maximum_displacement_m": 0.21229566887293536,
+          "object_mean_displacement_m": 0.031185845392340893,
+          "persistence_coordinate_rmse_m": 0.03561893701902634,
+          "persistence_mean_euclidean_track_error_m": 0.031185845392340893,
+          "persistence_symmetric_chamfer_m": 0.019179218197505236
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.1845474776713748,
+          "controller_mean_displacement_m": 0.13339715593674284,
+          "controller_mean_point_path_m": 0.08591107368316483,
+          "frame_count": 25,
+          "minimum_valid_point_count": 3580,
+          "object_maximum_displacement_m": 0.18774913624233247,
+          "object_mean_displacement_m": 0.02667641105363945,
+          "persistence_coordinate_rmse_m": 0.028850332492741843,
+          "persistence_mean_euclidean_track_error_m": 0.02667641105363945,
+          "persistence_symmetric_chamfer_m": 0.0170801826427103
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 3580,
+      "stratum": "filament"
+    }
+  ],
+  "reference_comparison_is_confirmatory": false,
+  "result_sha256": "a84e706c901536f56dc07739a7e206382920d2b8d6e2f165354d185db96a8ec2",
+  "schema_version": 1,
+  "target_future_read": false,
+  "target_initial_frame_read": false,
+  "target_post_initial_object_observations_read": false
+}

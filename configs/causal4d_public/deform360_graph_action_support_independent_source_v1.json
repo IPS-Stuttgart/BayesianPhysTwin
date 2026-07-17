@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-graph-action-support-independent-source-v1",
+  "status": "candidate-locked-after-source-discovery-before-independent-source-calibration-and-target-outcomes",
+  "locked_at": "2026-07-17T03:43:09+02:00",
+  "parent_protocol_id": "deform360-dense-reusable-panel-v1",
+  "parent_config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "discovery_evidence": {
+    "artifact": "../../milestones/deform360-dense-reusable-panel-v1/artifacts/source_graph_action_support_fit_v1.json",
+    "artifact_file_sha256": "18a17dfa79dfeef73397e2b4256febac2a2e9d27846d8360267be5e9c9ba9929",
+    "result_sha256": "35b68b5e35f1c7d62cab1cadc108dfb0f9101508660813c06d4cf35ad37d3634",
+    "selection_episodes": [
+      "085-scarf-cloth/1",
+      "092-squirrel/0"
+    ],
+    "held_out_source_transfer_episode": "002-rope-silk/0",
+    "selection_uses_train_frames_only": true,
+    "source_tails_used_for_selection": false,
+    "held_out_transfer_used_for_selection": false,
+    "calibration_outcomes_read": false,
+    "target_initial_frames_read": false,
+    "target_futures_read": false
+  },
+  "frozen_predictor": {
+    "twin_construction": "automatic episode twin from frame-zero multiview observations",
+    "official_phystwin_revision": "2b663052d09950b070db48f0c7262a983b865dea",
+    "observed_graph_node_count": 384,
+    "future_object_observations_used_for_twin": false,
+    "distributed_contact_patch": {
+      "requested_material_node_count_per_anchor": 16,
+      "maximum_graph_distance_m": 0.03,
+      "allow_fewer_nodes_within_radius": true,
+      "controller_attachment_group_count_uses_anchor_count": true
+    },
+    "observation_consensus": {
+      "maximum_speed_m_per_s": 0.05,
+      "minimum_camera_inlier_count": 2,
+      "rope_initial_component_selection": "frame-zero controller-conditioned connected component",
+      "future_object_motion_used_for_component_selection": false,
+      "known_limit": "the current staged archive does not yet propagate contributor counts or metric covariance"
+    },
+    "causal_response": "official Warp driven rollout minus matched zero-action rollout",
+    "graph_action_support": {
+      "kernel": "exp(-material_graph_distance_m / length_scale_m)",
+      "length_scale_m": 0.12,
+      "action_response": 0.9,
+      "autonomous_drift_response": 0.0,
+      "exact_persistence_when_action_response_is_zero": true,
+      "support_uses_state_innovation_or_future_residual": false
+    },
+    "selection_grid": {
+      "length_scale_m": [0.01, 0.02, 0.03, 0.05, 0.08, 0.12, 0.2, 0.4, 1000000.0],
+      "action_response": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    }
+  },
+  "independent_source_panel": {
+    "episode_count": 27,
+    "episodes_by_object": {
+      "002-rope-silk": [2, 5, 6, 7, 9],
+      "085-scarf-cloth": [3, 4, 6, 8, 9],
+      "083-blanket-cloth": [1, 2, 4, 5, 8, 9],
+      "092-squirrel": [4, 5, 7, 8, 9],
+      "170-spider": [0, 1, 3, 5, 8, 9]
+    },
+    "discovery_episodes_excluded": [
+      "002-rope-silk/0",
+      "085-scarf-cloth/1",
+      "092-squirrel/0"
+    ],
+    "prediction_must_be_hashed_before_future_outcome_scoring": true,
+    "post_initial_object_observations_used_for_prediction": false,
+    "all_episodes_must_be_scored": true,
+    "minimum_execution_balanced_track_improvement_fraction": 0.05,
+    "minimum_execution_balanced_chamfer_improvement_fraction": 0.05,
+    "minimum_late_track_improvement_fraction": 0.03,
+    "minimum_late_chamfer_improvement_fraction": 0.03,
+    "minimum_joint_win_episode_count": 18,
+    "minimum_joint_win_fraction_per_object": 0.6,
+    "require_no_object_with_median_degradation": true,
+    "maximum_per_episode_degradation_fraction_per_metric": 0.1,
+    "all_gates_conjunctive": true,
+    "on_fail": "freeze the source failure and keep all calibration dynamics and targets sealed",
+    "on_pass": "freeze implementation and prediction policy before opening the 15 registered calibration outcomes"
+  },
+  "calibration_and_target_boundary": {
+    "calibration_episode_count": 15,
+    "calibration_outcomes_may_open_only_after_independent_source_pass": true,
+    "targets_may_open_only_after_the_parent_calibration_gate_passes": true,
+    "partial_target_opening_allowed": false,
+    "uncertainty_calibration_is_not_claimed_by_this_source_point-prediction_lock": true
+  },
+  "claim_boundary": "source-discovered automatic frame-zero PhysTwin action-support candidate; independent source and calibration gates are required before target access, and the complete official split is required before an unqualified state-of-the-art claim"
+}

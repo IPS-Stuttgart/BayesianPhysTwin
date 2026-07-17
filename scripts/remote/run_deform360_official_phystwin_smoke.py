@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import pickle
 import subprocess
 import sys
 import time
@@ -20,6 +21,11 @@ from causal4d_public.deform360_dense_source import (
     DEFORM360_SUPPORT_DYNAMICS,
     support_dynamics_reverse_factor,
 )
+from causal4d_public.deform360_reusable_graph import (
+    build_registered_phystwin_graph,
+    load_canonical_deform360_graph,
+)
+from bayesian_phystwin.phystwin_graph import PhysTwinSpringGraphConfig
 
 
 def _unavailable_render_symbol(name: str):
@@ -210,9 +216,42 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--split-json", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--canonical-reusable-graph",
+        type=Path,
+        help=(
+            "Opt in to one source-locked object graph. The input final_data must "
+            "already be reordered by the matching registration artifact."
+        ),
+    )
+    parser.add_argument(
+        "--external-target-final-data",
+        type=Path,
+        help="Original episode observations used only for target-centric scoring.",
+    )
+    parser.add_argument(
+        "--target-readout-artifact",
+        type=Path,
+        help="Frame-zero target-to-canonical readout from partial state completion.",
+    )
+    parser.add_argument(
+        "--external-target-start-frame",
+        type=int,
+        default=0,
+        help="First external observation aligned with rollout frame zero.",
+    )
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--controller-radius-m", type=float)
     parser.add_argument("--controller-max-neighbours", type=int)
+    parser.add_argument(
+        "--canonical-controller-patch-size",
+        type=int,
+        default=1,
+        help=(
+            "Opt-in number of graph-local material nodes attached per canonical "
+            "contact anchor. One preserves the original reusable-graph adapter."
+        ),
+    )
     parser.add_argument("--init-spring-y", type=float)
     parser.add_argument("--drag-damping", type=float)
     parser.add_argument("--dashpot-damping", type=float)
@@ -283,6 +322,8 @@ def main() -> int:
         and args.controller_max_neighbours < 1
     ):
         raise ValueError("controller neighbour count must be positive")
+    if args.canonical_controller_patch_size < 1:
+        raise ValueError("canonical controller patch size must be positive")
     if args.init_spring_y is not None and args.init_spring_y <= 0.0:
         raise ValueError("initial spring stiffness must be positive")
     if args.drag_damping is not None and args.drag_damping < 0.0:
@@ -303,6 +344,16 @@ def main() -> int:
         or args.controller_spring_stiffness_scale <= 0.0
     ):
         raise ValueError("controller spring stiffness scale must be positive")
+    if (args.external_target_final_data is None) != (
+        args.target_readout_artifact is None
+    ):
+        raise ValueError(
+            "external target scoring needs both final_data and readout artifacts"
+        )
+    if args.external_target_start_frame < 0:
+        raise ValueError("external target start frame must be non-negative")
+    if args.external_target_start_frame and args.external_target_final_data is None:
+        raise ValueError("external target start frame requires external scoring")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("PYNPUT_BACKEND", "dummy")
     os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
@@ -328,6 +379,7 @@ def main() -> int:
     for name, value in overrides.items():
         if value is not None:
             setattr(cfg, name, value)
+    cfg.device = args.device
     if args.support_dynamics != "official-ground":
         # The official CUDA graph captures reverse_factor by value during
         # construction. Eager stepping lets the opt-in factor be applied after
@@ -336,6 +388,62 @@ def main() -> int:
     torch_device = torch.device(args.device)
     torch.cuda.set_device(torch_device)
     torch.cuda.reset_peak_memory_stats(torch_device)
+    canonical_graph = None
+    if args.canonical_reusable_graph is not None:
+        canonical_graph = load_canonical_deform360_graph(args.canonical_reusable_graph)
+        with args.data.open("rb") as stream:
+            registered_data = pickle.load(stream)
+        registration = registered_data.get("reusable_graph_registration", {})
+        if registration.get("canonical_graph_sha256") != canonical_graph.sha256:
+            raise ValueError("registered final_data uses another canonical graph")
+        if registration.get("passed") is not True:
+            raise ValueError("canonical episode registration did not pass admission")
+
+        def _init_canonical_graph(
+            _trainer: object,
+            object_points: Any,
+            controller_points: Any,
+            object_radius: float = 0.02,
+            object_max_neighbours: int = 30,
+            controller_radius: float = 0.04,
+            controller_max_neighbours: int = 50,
+            mask: Any = None,
+        ) -> tuple[Any, Any, Any, Any, int]:
+            if mask is not None:
+                raise ValueError(
+                    "canonical reusable graph does not permit object masks"
+                )
+            object_numpy = object_points.detach().cpu().numpy()
+            controller_numpy = (
+                None
+                if controller_points is None
+                else controller_points.detach().cpu().numpy()
+            )
+            graph = build_registered_phystwin_graph(
+                canonical_graph,
+                object_numpy,
+                controller_numpy,
+                spring_config=PhysTwinSpringGraphConfig(
+                    object_radius=float(object_radius),
+                    object_max_neighbours=int(object_max_neighbours),
+                    controller_radius=float(controller_radius),
+                    controller_max_neighbours=int(controller_max_neighbours),
+                ),
+                controller_patch_size=args.canonical_controller_patch_size,
+            )
+            return (
+                torch.as_tensor(graph.vertices, dtype=torch.float32, device=cfg.device),
+                torch.as_tensor(graph.springs, dtype=torch.int32, device=cfg.device),
+                torch.as_tensor(
+                    graph.rest_lengths,
+                    dtype=torch.float32,
+                    device=cfg.device,
+                ),
+                torch.as_tensor(graph.masses, dtype=torch.float32, device=cfg.device),
+                graph.num_object_springs,
+            )
+
+        InvPhyTrainerWarp._init_start = _init_canonical_graph
     build_started = time.perf_counter()
     trainer = InvPhyTrainerWarp(
         str(args.data),
@@ -381,6 +489,11 @@ def main() -> int:
     num_controller_springs = simulator.n_springs - trainer.num_object_springs
     if num_controller_springs < 1:
         raise ValueError("Deform360 rollout has no controller attachment springs")
+    controller_attachment_group_count = (
+        len(canonical_graph.contact_anchor_indices)
+        if canonical_graph is not None
+        else int(trainer.controller_points.shape[1])
+    )
     original_controller_spring_y = torch.exp(
         spring_log_stiffness[-num_controller_springs:]
     )
@@ -421,6 +534,11 @@ def main() -> int:
     torch.cuda.synchronize(args.device)
     rollout_seconds = time.perf_counter() - rollout_started
     trajectory = np.stack(vertices)
+    trajectory_path = args.output_dir / "official_phystwin_trajectory.npz"
+    np.savez_compressed(trajectory_path, vertices=trajectory)
+    finite_by_frame = np.isfinite(trajectory).all(axis=(1, 2))
+    invalid_frames = np.flatnonzero(~finite_by_frame)
+    finite_values = trajectory[np.isfinite(trajectory)]
     predicted = trajectory[:, : trainer.num_original_points]
     target = trainer.object_points.detach().cpu().numpy()
     visibility = trainer.object_visibilities.detach().cpu().numpy()
@@ -435,13 +553,113 @@ def main() -> int:
             for name, bounds in split.items()
             if name != "frame_len"
         }
-    metrics = _score_trajectory(
-        predicted,
-        target,
-        visibility,
-        validity,
-        intervals=intervals,
-    )
+    if finite_by_frame.all():
+        simulator_internal_metrics = _score_trajectory(
+            predicted,
+            target,
+            visibility,
+            validity,
+            intervals=intervals,
+        )
+    else:
+        simulator_internal_metrics = {
+            "available": False,
+            "reason": "nonfinite_rollout",
+            "first_nonfinite_frame": int(invalid_frames[0]),
+        }
+    metrics = simulator_internal_metrics
+    external_scoring = None
+    if args.external_target_final_data is not None:
+        if canonical_graph is None:
+            raise ValueError("external target readout requires a canonical graph")
+        assert args.target_readout_artifact is not None
+        with args.external_target_final_data.open("rb") as stream:
+            external_data = pickle.load(stream)
+        with np.load(args.target_readout_artifact, allow_pickle=False) as archive:
+            readout_weights = np.asarray(archive["readout_weights"], dtype=np.float64)
+            readout_graph_sha256 = str(
+                np.asarray(archive["canonical_graph_sha256"]).item()
+            )
+        if readout_graph_sha256 != canonical_graph.sha256:
+            raise ValueError("target readout uses another canonical graph")
+        target_start = int(args.external_target_start_frame)
+        target_stop = target_start + frame_len
+        external_target = np.asarray(external_data["object_points"], dtype=np.float64)[
+            target_start:target_stop
+        ]
+        external_visibility = np.asarray(
+            external_data["object_visibilities"], dtype=bool
+        )[target_start:target_stop]
+        external_validity = np.asarray(
+            external_data["object_motions_valid"], dtype=bool
+        )[target_start:target_stop]
+        if external_target.shape[0] != frame_len:
+            raise ValueError("external target frame count differs from rollout")
+        if readout_weights.shape != (
+            external_target.shape[1],
+            trainer.num_original_points,
+        ):
+            raise ValueError("target readout shape differs from target and graph")
+        raw_predicted_readout = np.einsum(
+            "mn,tnc->tmc",
+            readout_weights,
+            predicted,
+            optimize=True,
+        )
+        readout_offset = external_target[0] - raw_predicted_readout[0]
+        predicted_readout = raw_predicted_readout + readout_offset[None]
+        if finite_by_frame.all():
+            metrics = _score_trajectory(
+                predicted_readout,
+                external_target,
+                external_visibility,
+                external_validity,
+                intervals=intervals,
+            )
+        else:
+            metrics = {
+                "available": False,
+                "reason": "nonfinite_rollout",
+                "first_nonfinite_frame": int(invalid_frames[0]),
+            }
+        state_observation_chamfer = []
+        for frame in np.flatnonzero(finite_by_frame):
+            mask = external_visibility[frame] & external_validity[frame]
+            if not np.any(mask):
+                mask = np.ones(external_target.shape[1], dtype=bool)
+            state_observation_chamfer.append(
+                _symmetric_chamfer_m(predicted[frame], external_target[frame, mask])
+            )
+        external_scoring = {
+            "external_target_final_data_sha256": _sha256_file(
+                args.external_target_final_data
+            ),
+            "target_readout_artifact_sha256": _sha256_file(
+                args.target_readout_artifact
+            ),
+            "target_point_count": int(external_target.shape[1]),
+            "external_target_frame_range": [target_start, target_stop],
+            "readout_weight_shape": list(readout_weights.shape),
+            "readout_rows_sum_to_one": bool(
+                np.allclose(np.sum(readout_weights, axis=1), 1.0, atol=1e-6)
+            ),
+            "frame_zero_readout_offset_rmse_m": float(
+                np.sqrt(np.mean(readout_offset**2))
+            ),
+            "frame_zero_readout_offset_max_m": float(
+                np.max(np.linalg.norm(readout_offset, axis=1))
+            ),
+            "frame_zero_anchored_readout": True,
+            "readout_offset_uses_future_object_observations": False,
+            "future_state_to_observation_chamfer_m": (
+                float(np.mean(state_observation_chamfer[1:]))
+                if len(state_observation_chamfer) > 1
+                else None
+            ),
+            "finite_scored_frame_count": len(state_observation_chamfer),
+            "benchmark_metrics_use_frame_zero_fixed_target_readout": True,
+            "future_frames_used_to_fit_readout": False,
+        }
     object_edge_strain = None
     if args.report_edge_strain:
         spring_indices = (
@@ -455,9 +673,10 @@ def main() -> int:
             .cpu()
             .numpy()[: trainer.num_object_springs]
         )
+        finite_trajectory = trajectory[finite_by_frame]
         edge_vectors = (
-            trajectory[:, spring_indices[:, 0]]
-            - trajectory[:, spring_indices[:, 1]]
+            finite_trajectory[:, spring_indices[:, 0]]
+            - finite_trajectory[:, spring_indices[:, 1]]
         )
         edge_lengths = np.linalg.norm(edge_vectors, axis=-1)
         relative_strain = np.abs(
@@ -465,25 +684,42 @@ def main() -> int:
         )
         object_edge_strain = {
             "object_spring_count": int(len(rest_lengths)),
-            "p99_absolute_relative_strain": float(
-                np.quantile(relative_strain, 0.99)
-            ),
+            "evaluated_frame_count": int(np.sum(finite_by_frame)),
+            "p99_absolute_relative_strain": float(np.quantile(relative_strain, 0.99)),
             "maximum_absolute_relative_strain": float(
                 np.max(relative_strain, initial=0.0)
             ),
         }
 
-    trajectory_path = args.output_dir / "official_phystwin_trajectory.npz"
-    np.savez_compressed(trajectory_path, vertices=trajectory)
-    finite_by_frame = np.isfinite(trajectory).all(axis=(1, 2))
-    invalid_frames = np.flatnonzero(~finite_by_frame)
-    finite_values = trajectory[np.isfinite(trajectory)]
     payload = {
         "passed": bool(finite_by_frame.all()),
         "source_only_smoke": not args.reusable_dynamics_calibration,
         "official_phystwin_revision": _git_revision(args.official_phystwin_repo),
         "data_sha256": _sha256_file(args.data),
         "config_sha256": _sha256_file(args.config),
+        "canonical_reusable_graph": (
+            None
+            if canonical_graph is None
+            else {
+                "path": str(args.canonical_reusable_graph.resolve()),
+                "file_sha256": _sha256_file(args.canonical_reusable_graph),
+                "reusable_graph_sha256": canonical_graph.sha256,
+                "node_count": len(canonical_graph.vertices),
+                "object_spring_count": len(canonical_graph.springs),
+                "bridge_spring_count": canonical_graph.bridge_spring_count,
+                "observed_node_count": canonical_graph.observed_node_count,
+                "latent_node_count": canonical_graph.latent_node_count,
+                "contact_anchor_count": len(canonical_graph.contact_anchor_indices),
+                "contact_chain_spring_count": (
+                    canonical_graph.contact_chain_spring_count
+                ),
+                "object_topology_rebuilt_per_episode": False,
+                "controller_attachments_rebuilt_per_episode": True,
+                "controller_patch_size_per_anchor": (
+                    args.canonical_controller_patch_size
+                ),
+            }
+        ),
         "split_sha256": (
             _sha256_file(args.split_json) if args.split_json is not None else None
         ),
@@ -556,6 +792,7 @@ def main() -> int:
         "num_surface_points": int(trainer.num_surface_points),
         "num_all_points": int(trainer.num_all_points),
         "num_controller_points": int(trainer.controller_points.shape[1]),
+        "controller_attachment_group_count": int(controller_attachment_group_count),
         "num_springs": int(simulator.n_springs),
         "num_object_springs": int(trainer.num_object_springs),
         "num_controller_springs": int(num_controller_springs),
@@ -571,7 +808,10 @@ def main() -> int:
         "peak_cuda_bytes": int(torch.cuda.max_memory_allocated(torch_device)),
         "trajectory_sha256": _sha256_file(trajectory_path),
         "metrics": metrics,
+        "simulator_internal_metrics": simulator_internal_metrics,
     }
+    if external_scoring is not None:
+        payload["external_target_scoring"] = external_scoring
     if args.reusable_dynamics_calibration:
         payload["reusable_dynamics_calibration"] = True
     if object_edge_strain is not None:

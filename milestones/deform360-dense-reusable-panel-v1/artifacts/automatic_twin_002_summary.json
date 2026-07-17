@@ -1,0 +1,63 @@
+{
+  "artifact_kind": "Deform360AutomaticEpisodeTwin",
+  "capacity_diagnostic": {
+    "configured_canonical_node_count": 192,
+    "effective_canonical_node_count": 384,
+    "source_only_override": true
+  },
+  "claim_boundary": "benchmark-fair automatic frame-zero episode-twin control; physical parameters may be pooled across source episodes, but object topology and rest geometry are rebuilt automatically for each episode",
+  "episode_id": 0,
+  "graph": {
+    "artifact_kind": "Deform360CanonicalReusableGraph",
+    "bridge_spring_count": 2,
+    "contact_anchor_count": 1,
+    "contact_chain_spring_count": 2,
+    "latent_node_count": 2,
+    "node_count": 386,
+    "object_spring_count": 4316,
+    "observed_node_count": 384,
+    "path": "/mnt/corsair/florianpfaff/deform360-dense-reusable-panel-v1/002-rope-silk-ep0000/automatic_twin_n384/episode_graph.npz",
+    "reusable_graph_sha256": "50385d26ec4154668cd073ae39cc9cd095eeaca85a5878b79e2f564d5b601f50",
+    "schema_version": 1
+  },
+  "graph_mode": "episode_specific_frame_zero_control",
+  "information_boundary": {
+    "future_robot_action_available": true,
+    "object_observation_frames_used": [
+      0
+    ],
+    "post_initial_object_observation_used": false,
+    "simulator_residual_used": false,
+    "target_access": false
+  },
+  "input_sha256": {
+    "episode_final_data": "2871a4651d72c83840ca76f77f8709f6ba3ad54f489ca5ebcf01013167072c0b"
+  },
+  "object_id": "002-rope-silk",
+  "output_sha256": {
+    "episode_graph": "c0945d3ecd48b6800c02737039cb6bc3f606fe59167605710fc78df72c832fe8",
+    "simulator_final_data": "0439b1cf7b78af047dff326f0394ab8b09cd98288e11e48330e88df55e37f967",
+    "state_artifact": "728f9526f74a00c260ca626a92496ff2a9882063ac8d5f4e1bf79a84dc305181"
+  },
+  "passed": true,
+  "phase": "source",
+  "protocol_config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "result_sha256": "35c35358455231a5a036198deceebac96308e6a05c90f20b1ed8efb0449972c9",
+  "schema_version": 1,
+  "state_metrics": {
+    "canonical_supported_fraction": 1.0,
+    "effective_target_reliability": 0.7461758693123243,
+    "finite": true,
+    "initial_readout_rmse_m": 0.0013959228540003548,
+    "maximum_absolute_relative_edge_strain": 1.288014668698878e-06,
+    "maximum_bridge_absolute_relative_edge_strain": 1.288014668698878e-06,
+    "maximum_contact_anchor_error_m": 0.0004224327653402114,
+    "observed_target_fraction": 1.0,
+    "p99_absolute_relative_edge_strain": 5.3515569869988545e-08,
+    "passed": true,
+    "source_to_target_p95_m": 0.0,
+    "symmetric_chamfer_m": 0.0010677379055898974,
+    "target_to_source_p95_m": 0.0035653568689221573
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "aggregate_by_stratum": {
+    "filament": {
+      "controller_mean_displacement_m": 0.08307087689609133,
+      "episode_count": 1,
+      "object_mean_displacement_m": 0.0005968162326023689,
+      "persistence_coordinate_rmse_m": 0.00039433217649271867,
+      "persistence_mean_euclidean_track_error_m": 0.0005968162326023689,
+      "persistence_symmetric_chamfer_m": 0.0005275140939702078
+    }
+  },
+  "artifact_kind": "Deform360SourceMotionFloorAudit",
+  "config_sha256": "4fef835ea1c0f9ab04faab74c8ed907d992054ccb78f11060ed2b1399e76308d",
+  "evidence_scope": "source-only",
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "published_particleformer_reference": {
+    "symmetric_chamfer_m": 0.051,
+    "track_error_m": 0.079
+  },
+  "record_count": 1,
+  "records": [
+    {
+      "controller_point_count": 768,
+      "episode_id": 0,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/action-aligned-source-v1/002-rope-silk-ep0000/episode_0000/final_data.pkl",
+      "final_data_sha256": "3411bf28131768b8b1ba38d3f3506ed39e440a09816d57fc8968fa7a3a6324fd",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.12585952271419076,
+        "controller_mean_displacement_m": 0.08307087689609133,
+        "controller_mean_point_path_m": 0.13589059344843823,
+        "frame_count": 75,
+        "minimum_valid_point_count": 613,
+        "object_maximum_displacement_m": 0.0026508640680354754,
+        "object_mean_displacement_m": 0.0005968162326023689,
+        "persistence_coordinate_rmse_m": 0.00039433217649271867,
+        "persistence_mean_euclidean_track_error_m": 0.0005968162326023689,
+        "persistence_symmetric_chamfer_m": 0.0005275140939702078
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.09739113720179314,
+          "controller_mean_displacement_m": 0.04490459029993824,
+          "controller_mean_point_path_m": 0.08989327855141083,
+          "frame_count": 25,
+          "minimum_valid_point_count": 613,
+          "object_maximum_displacement_m": 0.0015622418223776406,
+          "object_mean_displacement_m": 0.00029942701562091516,
+          "persistence_coordinate_rmse_m": 0.00019916971710702482,
+          "persistence_mean_euclidean_track_error_m": 0.00029942701562091516,
+          "persistence_symmetric_chamfer_m": 0.000282136525548293
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.12585952271419076,
+          "controller_mean_displacement_m": 0.10794750484150456,
+          "controller_mean_point_path_m": 0.01925667641085966,
+          "frame_count": 25,
+          "minimum_valid_point_count": 613,
+          "object_maximum_displacement_m": 0.0026508640680354754,
+          "object_mean_displacement_m": 0.0009244671134781511,
+          "persistence_coordinate_rmse_m": 0.0006058565889128038,
+          "persistence_mean_euclidean_track_error_m": 0.0009244671134781511,
+          "persistence_symmetric_chamfer_m": 0.0007872081862449284
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.1174139290718819,
+          "controller_mean_displacement_m": 0.09636053554683123,
+          "controller_mean_point_path_m": 0.023169074292992066,
+          "frame_count": 25,
+          "minimum_valid_point_count": 613,
+          "object_maximum_displacement_m": 0.0019353216965455134,
+          "object_mean_displacement_m": 0.0005665545687080407,
+          "persistence_coordinate_rmse_m": 0.00037797022345832746,
+          "persistence_mean_euclidean_track_error_m": 0.0005665545687080407,
+          "persistence_symmetric_chamfer_m": 0.0005131975701174017
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 613,
+      "stratum": "filament"
+    }
+  ],
+  "reference_comparison_is_confirmatory": false,
+  "result_sha256": "5de2fa5dadace466a8c4e73538b2d55d29b18cf268a932219992e94d7b0d72e1",
+  "schema_version": 1,
+  "target_future_read": false,
+  "target_initial_frame_read": false,
+  "target_post_initial_object_observations_read": false
+}

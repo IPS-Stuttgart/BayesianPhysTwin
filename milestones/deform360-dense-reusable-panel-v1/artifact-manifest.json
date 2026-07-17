@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-dense-reusable-panel-v1",
+  "captured_at": "2026-07-17",
+  "compute_host": "gpuserver6000",
+  "base_code_commit": "48f61ed6e78d21f4e7fb187d5b7353fa57b16c44",
+  "branch": "deform360-dense-reusable-panel-v1",
+  "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
+  "source_admission_started": true,
+  "source_graph_action_support_discovery_complete": true,
+  "source_graph_action_support_candidate_lock_sha256": "d462fdfbaaccdce702292288976f71a7543174ffe1b8e6017550a019e315852b",
+  "calibration_dynamics_opened": false,
+  "target_panel_opened": false,
+  "information_boundary": {
+    "development_object": "081-stripe-rope",
+    "development_target_episode_id": 5,
+    "development_target_read": false,
+    "confirmatory_object_count": 5,
+    "confirmatory_target_actions_read": false,
+    "confirmatory_target_initial_frames_read": false,
+    "confirmatory_target_futures_read": false
+  },
+  "artifacts": [
+    {
+      "path": "../../configs/causal4d_public/deform360_dense_reusable_panel_v1.json",
+      "sha256": "8a90705dd38c6c90b042ed8f450e2bc7e3cffc54b965765b004d0385999d40ea",
+      "config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd"
+    },
+    {
+      "path": "artifacts/source_action_window_audit.json",
+      "sha256": "bcda3a01399acfb95115a265fa16252fe41a06196049e8aeedc7607f0cb5c775",
+      "result_sha256": "46eadfd9c94ca59a7dddd70c3a327f87604591aac3890404f0168ce535b1e4a6"
+    },
+    {
+      "path": "artifacts/source_frame_audit.json",
+      "sha256": "89c0d615207a0491286fb8938c63a581d4df7ea46a1e041732cc840c67248512",
+      "result_sha256": "d4a3614535ec634d99993fd27f831eb915427e65f2342801c1b4557e4d85af2c"
+    },
+    {
+      "path": "artifacts/source_motion_floor_002_fixed_window.json",
+      "sha256": "49ad8aa69d81051618f16caa2e79d16ae3f018e77a7a8b569971beccf83b0c80",
+      "result_sha256": "e10f0f5b43bc4d40e0eebe0655a745e7ba0dbde8c44058e3bafeab013fdef17a"
+    },
+    {
+      "path": "artifacts/target_boundary_audit.json",
+      "sha256": "46129463bcfe428b088a15cdbfa421dedc1d734d721a3495afa2190d9f4426f0",
+      "result_sha256": "dfec6a040c92a272ab987900f953adb26181e07348557a451136058bbd9f4bb7"
+    },
+    {
+      "path": "../../configs/causal4d_public/deform360_graph_action_support_independent_source_v1.json",
+      "sha256": "d462fdfbaaccdce702292288976f71a7543174ffe1b8e6017550a019e315852b"
+    },
+    {
+      "path": "artifacts/source_graph_action_support_fit_v1.json",
+      "sha256": "18a17dfa79dfeef73397e2b4256febac2a2e9d27846d8360267be5e9c9ba9929",
+      "result_sha256": "35b68b5e35f1c7d62cab1cadc108dfb0f9101508660813c06d4cf35ad37d3634"
+    },
+    {
+      "path": "artifacts/source_motion_floor_002_contact_component_r050_m2.json",
+      "sha256": "e948b50b0c96116bd63b384933ad3783a65e138d024231dc6b5de83eb299ac17"
+    },
+    {
+      "path": "artifacts/source_motion_floor_085_r050_m2.json",
+      "sha256": "20b066d41999ee859061c17a1a7bbb93bc46d66766e17380e5d63ab1223e1295"
+    },
+    {
+      "path": "artifacts/source_motion_floor_092_r050_m2.json",
+      "sha256": "5c18ebe4318185be783a1b3b600082468443cd33c374ad22024d28847ada1ecd"
+    },
+    {
+      "path": "artifacts/automatic_twin_002_summary.json",
+      "sha256": "cf292782fe192f8bc25ce4502dc5286cdaceb7c932463e52faa4b0c497815e7a"
+    },
+    {
+      "path": "artifacts/automatic_twin_085_summary.json",
+      "sha256": "702b0119946fc04759a169637be6cddcff3eb691e8d753415d0562c73578d393"
+    },
+    {
+      "path": "artifacts/automatic_twin_092_summary.json",
+      "sha256": "36c0044f68b81d36f85efda1430b4cf2b049cf824f71433c525b650eafb27ba3"
+    },
+    {
+      "path": "artifacts/official_phystwin_002_patch16_driven.json",
+      "sha256": "9c2b68fd70459ab151c22cef92c3c550fe12ea47678f18409a0605ac2c84f9ec"
+    },
+    {
+      "path": "artifacts/official_phystwin_002_patch16_zero.json",
+      "sha256": "a65d8696c2c3851031f4e240b9f30336e9d0c854961820626405b29ae7b145fa"
+    },
+    {
+      "path": "artifacts/official_phystwin_085_patch16_driven.json",
+      "sha256": "b718a7ec491ed2edc82ab0fbd2a0eee7343c57960b232176cc980d3fded541f6"
+    },
+    {
+      "path": "artifacts/official_phystwin_085_patch16_zero.json",
+      "sha256": "78bb856cdabd65e8b5a4e5f00c63cc958831f759267e4e55a002247cab8c3034"
+    },
+    {
+      "path": "artifacts/official_phystwin_092_patch16_driven.json",
+      "sha256": "f1602852efe8956927b1b987737beb6b5f4bb8410e1957be11f4fcaba6af247b"
+    },
+    {
+      "path": "artifacts/official_phystwin_092_patch16_zero.json",
+      "sha256": "9031995ffbe106a087869c12075b8100aa04c309fcde0c8b2c059d9d2be3ff58"
+    }
+  ]
+}

@@ -1,0 +1,383 @@
+{
+  "aggregate_by_stratum": {
+    "filament": {
+      "controller_mean_displacement_m": 0.03653894013715641,
+      "episode_count": 6,
+      "object_mean_displacement_m": 0.0017152457380652509,
+      "persistence_coordinate_rmse_m": 0.0015772100833343035,
+      "persistence_mean_euclidean_track_error_m": 0.0017152457380652509,
+      "persistence_symmetric_chamfer_m": 0.0012113386633751755
+    }
+  },
+  "artifact_kind": "Deform360SourceMotionFloorAudit",
+  "config_sha256": "2bd722981e64aa7ecf24dc79a3eb4fc6b63ecd31d5e7d2f3b461206e649a9b74",
+  "evidence_scope": "source-only",
+  "protocol_id": "deform360-dense-reusable-panel-v1",
+  "published_particleformer_reference": {
+    "symmetric_chamfer_m": 0.051,
+    "track_error_m": 0.079
+  },
+  "record_count": 6,
+  "records": [
+    {
+      "controller_point_count": 768,
+      "episode_id": 0,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/cardinality-source-active-strict-v1/002-rope-silk-ep0000/episode_0000/final_data.pkl",
+      "final_data_sha256": "7c15601c66ad3fb76b9206f74bd22fc5de2aca01e37edd8d9a014488748333fb",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.17101351792119626,
+        "controller_mean_displacement_m": 0.05541037883914168,
+        "controller_mean_point_path_m": 0.17506460854700429,
+        "frame_count": 75,
+        "minimum_valid_point_count": 328,
+        "object_maximum_displacement_m": 0.042181213095176605,
+        "object_mean_displacement_m": 0.004275458224880339,
+        "persistence_coordinate_rmse_m": 0.003793766268075866,
+        "persistence_mean_euclidean_track_error_m": 0.004275458224880339,
+        "persistence_symmetric_chamfer_m": 0.0031480720781469048
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.027285385532932617,
+          "controller_mean_displacement_m": 0.009727347232100177,
+          "controller_mean_point_path_m": 0.021270333776447735,
+          "frame_count": 25,
+          "minimum_valid_point_count": 328,
+          "object_maximum_displacement_m": 0.007701827363510815,
+          "object_mean_displacement_m": 0.0004156824992092821,
+          "persistence_coordinate_rmse_m": 0.0002999467539090492,
+          "persistence_mean_euclidean_track_error_m": 0.0004156824992092821,
+          "persistence_symmetric_chamfer_m": 0.00037107536993945115
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.17101351792119626,
+          "controller_mean_displacement_m": 0.11960706294967345,
+          "controller_mean_point_path_m": 0.07393677681523739,
+          "frame_count": 25,
+          "minimum_valid_point_count": 328,
+          "object_maximum_displacement_m": 0.042181213095176605,
+          "object_mean_displacement_m": 0.008086968470658696,
+          "persistence_coordinate_rmse_m": 0.007298640331009059,
+          "persistence_mean_euclidean_track_error_m": 0.008086968470658696,
+          "persistence_symmetric_chamfer_m": 0.005767057287351069
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.08961816204817535,
+          "controller_mean_displacement_m": 0.03689672633565142,
+          "controller_mean_point_path_m": 0.07546312256350063,
+          "frame_count": 25,
+          "minimum_valid_point_count": 328,
+          "object_maximum_displacement_m": 0.02682021318638762,
+          "object_mean_displacement_m": 0.00432372370477304,
+          "persistence_coordinate_rmse_m": 0.00378271171930949,
+          "persistence_mean_euclidean_track_error_m": 0.00432372370477304,
+          "persistence_symmetric_chamfer_m": 0.0033060835771501935
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 328,
+      "stratum": "filament"
+    },
+    {
+      "controller_point_count": 768,
+      "episode_id": 2,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/cardinality-source-active-strict-v1/002-rope-silk-ep0002/episode_0000/final_data.pkl",
+      "final_data_sha256": "9f31f85381440bbae6fed31b5623a8ae644ca7e16eaa474c9035e9b1ef9eea1d",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.10751341579992489,
+        "controller_mean_displacement_m": 0.03963200417098147,
+        "controller_mean_point_path_m": 0.12276120880946167,
+        "frame_count": 75,
+        "minimum_valid_point_count": 286,
+        "object_maximum_displacement_m": 0.002893731116002413,
+        "object_mean_displacement_m": 0.00035962136201950825,
+        "persistence_coordinate_rmse_m": 0.0003096253954958929,
+        "persistence_mean_euclidean_track_error_m": 0.00035962136201950825,
+        "persistence_symmetric_chamfer_m": 0.0003292048375597108
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.014528217198588458,
+          "controller_mean_displacement_m": 0.006555322385863124,
+          "controller_mean_point_path_m": 0.01942945871438618,
+          "frame_count": 25,
+          "minimum_valid_point_count": 286,
+          "object_maximum_displacement_m": 0.0012678747621777567,
+          "object_mean_displacement_m": 0.0001723492463439286,
+          "persistence_coordinate_rmse_m": 0.0001602945199604105,
+          "persistence_mean_euclidean_track_error_m": 0.0001723492463439286,
+          "persistence_symmetric_chamfer_m": 0.0001639001985373167
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.10751341579992489,
+          "controller_mean_displacement_m": 0.07824432162888717,
+          "controller_mean_point_path_m": 0.04377216433505969,
+          "frame_count": 25,
+          "minimum_valid_point_count": 286,
+          "object_maximum_displacement_m": 0.002893731116002413,
+          "object_mean_displacement_m": 0.0005272232210639545,
+          "persistence_coordinate_rmse_m": 0.0004420043375812422,
+          "persistence_mean_euclidean_track_error_m": 0.0005272232210639545,
+          "persistence_symmetric_chamfer_m": 0.00047080323121036444
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.06529298517156384,
+          "controller_mean_displacement_m": 0.03409636849819411,
+          "controller_mean_point_path_m": 0.05569389088853572,
+          "frame_count": 25,
+          "minimum_valid_point_count": 286,
+          "object_maximum_displacement_m": 0.0023265059479441737,
+          "object_mean_displacement_m": 0.00037929161865064175,
+          "persistence_coordinate_rmse_m": 0.000326577328946026,
+          "persistence_mean_euclidean_track_error_m": 0.00037929161865064175,
+          "persistence_symmetric_chamfer_m": 0.00035291108293145106
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 286,
+      "stratum": "filament"
+    },
+    {
+      "controller_point_count": 1536,
+      "episode_id": 5,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/cardinality-source-active-strict-v1/002-rope-silk-ep0005/episode_0000/final_data.pkl",
+      "final_data_sha256": "15727b112f1b1d1f8cd85c9f32c73425887a835a75b8a97e1d858e801083d027",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.05141557371804992,
+        "controller_mean_displacement_m": 0.01603795479418685,
+        "controller_mean_point_path_m": 0.07581759160555236,
+        "frame_count": 75,
+        "minimum_valid_point_count": 555,
+        "object_maximum_displacement_m": 0.009830927576883045,
+        "object_mean_displacement_m": 0.0008236869862713464,
+        "persistence_coordinate_rmse_m": 0.0007515251474823609,
+        "persistence_mean_euclidean_track_error_m": 0.0008236869862713464,
+        "persistence_symmetric_chamfer_m": 0.0006586437947820878
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.02632281617655277,
+          "controller_mean_displacement_m": 0.007855186001509284,
+          "controller_mean_point_path_m": 0.01960399163592219,
+          "frame_count": 25,
+          "minimum_valid_point_count": 555,
+          "object_maximum_displacement_m": 0.007712601118493403,
+          "object_mean_displacement_m": 0.0003272753993366086,
+          "persistence_coordinate_rmse_m": 0.00033229687432637946,
+          "persistence_mean_euclidean_track_error_m": 0.0003272753993366086,
+          "persistence_symmetric_chamfer_m": 0.00028151184889184307
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.05141557371804992,
+          "controller_mean_displacement_m": 0.02543719336011247,
+          "controller_mean_point_path_m": 0.03876128072685731,
+          "frame_count": 25,
+          "minimum_valid_point_count": 555,
+          "object_maximum_displacement_m": 0.009830927576883045,
+          "object_mean_displacement_m": 0.0012618784587139348,
+          "persistence_coordinate_rmse_m": 0.0011290624794966892,
+          "persistence_mean_euclidean_track_error_m": 0.0012618784587139348,
+          "persistence_symmetric_chamfer_m": 0.0009986597040534326
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.034988096033701024,
+          "controller_mean_displacement_m": 0.014821485020938795,
+          "controller_mean_point_path_m": 0.01614279651543456,
+          "frame_count": 25,
+          "minimum_valid_point_count": 555,
+          "object_maximum_displacement_m": 0.009034659477010277,
+          "object_mean_displacement_m": 0.000881907100763496,
+          "persistence_coordinate_rmse_m": 0.0007932160886240141,
+          "persistence_mean_euclidean_track_error_m": 0.000881907100763496,
+          "persistence_symmetric_chamfer_m": 0.0006957598314009878
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 555,
+      "stratum": "filament"
+    },
+    {
+      "controller_point_count": 1536,
+      "episode_id": 6,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/cardinality-source-active-strict-v1/002-rope-silk-ep0006/episode_0000/final_data.pkl",
+      "final_data_sha256": "41b9757cb9cb2c89e6b4aeb195d0ea7d8ebb727a1e9c214dfaa8b6fc75ce2049",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.07898942493269434,
+        "controller_mean_displacement_m": 0.025440724645704255,
+        "controller_mean_point_path_m": 0.11234982279176568,
+        "frame_count": 75,
+        "minimum_valid_point_count": 494,
+        "object_maximum_displacement_m": 0.0481699331049659,
+        "object_mean_displacement_m": 0.0032642513364101225,
+        "persistence_coordinate_rmse_m": 0.0030314359743808836,
+        "persistence_mean_euclidean_track_error_m": 0.0032642513364101225,
+        "persistence_symmetric_chamfer_m": 0.0019235447926407956
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.028463681825562467,
+          "controller_mean_displacement_m": 0.008901945785592606,
+          "controller_mean_point_path_m": 0.02135232527012426,
+          "frame_count": 25,
+          "minimum_valid_point_count": 494,
+          "object_maximum_displacement_m": 0.003142536633204198,
+          "object_mean_displacement_m": 0.0003837053041953737,
+          "persistence_coordinate_rmse_m": 0.000297152289273071,
+          "persistence_mean_euclidean_track_error_m": 0.0003837053041953737,
+          "persistence_symmetric_chamfer_m": 0.000356261704086894
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.07898942493269434,
+          "controller_mean_displacement_m": 0.05207569115520605,
+          "controller_mean_point_path_m": 0.055009361294164685,
+          "frame_count": 25,
+          "minimum_valid_point_count": 494,
+          "object_maximum_displacement_m": 0.0481699331049659,
+          "object_mean_displacement_m": 0.006547234469595261,
+          "persistence_coordinate_rmse_m": 0.0064378301983979,
+          "persistence_mean_euclidean_track_error_m": 0.006547234469595261,
+          "persistence_symmetric_chamfer_m": 0.00341379104321071
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.030351247523574175,
+          "controller_mean_displacement_m": 0.015344536996314124,
+          "controller_mean_point_path_m": 0.03260746483678259,
+          "frame_count": 25,
+          "minimum_valid_point_count": 494,
+          "object_maximum_displacement_m": 0.020318840011101534,
+          "object_mean_displacement_m": 0.002861814235439733,
+          "persistence_coordinate_rmse_m": 0.0023593254354716798,
+          "persistence_mean_euclidean_track_error_m": 0.002861814235439733,
+          "persistence_symmetric_chamfer_m": 0.0020005816306247824
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 494,
+      "stratum": "filament"
+    },
+    {
+      "controller_point_count": 1536,
+      "episode_id": 7,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/cardinality-source-active-strict-v1/002-rope-silk-ep0007/episode_0000/final_data.pkl",
+      "final_data_sha256": "2472fda9e3b6aedc8eb70938fe164d18bf60783596df82555cab234d534723ea",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.05748796425491197,
+        "controller_mean_displacement_m": 0.020573623840605123,
+        "controller_mean_point_path_m": 0.09150483075042763,
+        "frame_count": 75,
+        "minimum_valid_point_count": 512,
+        "object_maximum_displacement_m": 0.01321883486610198,
+        "object_mean_displacement_m": 0.0007617227652689953,
+        "persistence_coordinate_rmse_m": 0.0007003968968457028,
+        "persistence_mean_euclidean_track_error_m": 0.0007617227652689953,
+        "persistence_symmetric_chamfer_m": 0.000622082481202137
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.01604328388853331,
+          "controller_mean_displacement_m": 0.0060510762596967605,
+          "controller_mean_point_path_m": 0.017439815438629595,
+          "frame_count": 25,
+          "minimum_valid_point_count": 512,
+          "object_maximum_displacement_m": 0.00196910134112998,
+          "object_mean_displacement_m": 0.0002366618139816798,
+          "persistence_coordinate_rmse_m": 0.00020197683560049424,
+          "persistence_mean_euclidean_track_error_m": 0.0002366618139816798,
+          "persistence_symmetric_chamfer_m": 0.00022338340545759145
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.05748796425491197,
+          "controller_mean_displacement_m": 0.041187909528238746,
+          "controller_mean_point_path_m": 0.039375371877814994,
+          "frame_count": 25,
+          "minimum_valid_point_count": 512,
+          "object_maximum_displacement_m": 0.01321883486610198,
+          "object_mean_displacement_m": 0.001265347601267377,
+          "persistence_coordinate_rmse_m": 0.0012265077114799448,
+          "persistence_mean_euclidean_track_error_m": 0.001265347601267377,
+          "persistence_symmetric_chamfer_m": 0.0009764976926638396
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.03403443913844248,
+          "controller_mean_displacement_m": 0.01448188573387986,
+          "controller_mean_point_path_m": 0.032455322083550356,
+          "frame_count": 25,
+          "minimum_valid_point_count": 512,
+          "object_maximum_displacement_m": 0.009923622437510713,
+          "object_mean_displacement_m": 0.0007831588805579293,
+          "persistence_coordinate_rmse_m": 0.0006727061434566689,
+          "persistence_mean_euclidean_track_error_m": 0.0007831588805579293,
+          "persistence_symmetric_chamfer_m": 0.0006663663454849803
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 512,
+      "stratum": "filament"
+    },
+    {
+      "controller_point_count": 1536,
+      "episode_id": 9,
+      "final_data_path": "/mnt/lexar4tb/datasets/deform360/cardinality-source-active-strict-v1/002-rope-silk-ep0009/episode_0000/final_data.pkl",
+      "final_data_sha256": "4a010cb8202e8167e29916208b25bb103b765f623dcd05c7116cb9af0bc007c4",
+      "full_future": {
+        "controller_maximum_displacement_m": 0.15231192813327635,
+        "controller_mean_displacement_m": 0.06213895453231905,
+        "controller_mean_point_path_m": 0.14157500618720512,
+        "frame_count": 75,
+        "minimum_valid_point_count": 497,
+        "object_maximum_displacement_m": 0.007402511335105716,
+        "object_mean_displacement_m": 0.0008067337535411927,
+        "persistence_coordinate_rmse_m": 0.0008765108177251154,
+        "persistence_mean_euclidean_track_error_m": 0.0008067337535411927,
+        "persistence_symmetric_chamfer_m": 0.0005864839959194169
+      },
+      "horizons": {
+        "early": {
+          "controller_maximum_displacement_m": 0.04277202538297372,
+          "controller_mean_displacement_m": 0.016536631575584326,
+          "controller_mean_point_path_m": 0.03836171929801739,
+          "frame_count": 25,
+          "minimum_valid_point_count": 497,
+          "object_maximum_displacement_m": 0.007402511335105716,
+          "object_mean_displacement_m": 0.0006038288651103223,
+          "persistence_coordinate_rmse_m": 0.0006531163003084092,
+          "persistence_mean_euclidean_track_error_m": 0.0006038288651103223,
+          "persistence_symmetric_chamfer_m": 0.00045470172675285766
+        },
+        "late": {
+          "controller_maximum_displacement_m": 0.15231192813327635,
+          "controller_mean_displacement_m": 0.1091568019748066,
+          "controller_mean_point_path_m": 0.051042388076735896,
+          "frame_count": 25,
+          "minimum_valid_point_count": 497,
+          "object_maximum_displacement_m": 0.007402511335105716,
+          "object_mean_displacement_m": 0.0009081861977566279,
+          "persistence_coordinate_rmse_m": 0.0009882080764334682,
+          "persistence_mean_euclidean_track_error_m": 0.0009081861977566279,
+          "persistence_symmetric_chamfer_m": 0.0006523751305026967
+        },
+        "middle": {
+          "controller_maximum_displacement_m": 0.09776567949715627,
+          "controller_mean_displacement_m": 0.060723430046566246,
+          "controller_mean_point_path_m": 0.04801350707808063,
+          "frame_count": 25,
+          "minimum_valid_point_count": 497,
+          "object_maximum_displacement_m": 0.007402511335105716,
+          "object_mean_displacement_m": 0.0009081861977566279,
+          "persistence_coordinate_rmse_m": 0.0009882080764334682,
+          "persistence_mean_euclidean_track_error_m": 0.0009081861977566279,
+          "persistence_symmetric_chamfer_m": 0.0006523751305026967
+        }
+      },
+      "object_id": "002-rope-silk",
+      "object_point_count": 497,
+      "stratum": "filament"
+    }
+  ],
+  "reference_comparison_is_confirmatory": false,
+  "result_sha256": "e10f0f5b43bc4d40e0eebe0655a745e7ba0dbde8c44058e3bafeab013fdef17a",
+  "schema_version": 1,
+  "target_future_read": false,
+  "target_initial_frame_read": false,
+  "target_post_initial_object_observations_read": false
+}

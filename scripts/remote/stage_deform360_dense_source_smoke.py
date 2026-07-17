@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -17,6 +18,11 @@ from causal4d_public.deform360_dense_source import (
     sha256_file,
     unpack_sampled_mask,
     write_dense_source_manifest,
+)
+from causal4d_public.deform360_action_audit import summarize_robot_action
+from causal4d_public.deform360_dense_reusable_panel import (
+    authorize_dense_panel_episode,
+    load_dense_reusable_panel_config,
 )
 from causal4d_public.deform360_object_sam2 import (
     DeformableObjectSam2VideoPredictor,
@@ -85,6 +91,13 @@ def _write_masks(
         )
 
 
+def _canonical_sha256(value: object) -> str:
+    encoded = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _trim_robot(
     source_episode: Path, output_episode: Path, start: int, count: int
 ) -> Path:
@@ -138,8 +151,15 @@ def main() -> int:
     parser.add_argument("--protocol", required=True)
     parser.add_argument("--object-id", required=True)
     parser.add_argument("--episode", type=int, required=True)
-    parser.add_argument("--start-frame", type=int, required=True)
+    parser.add_argument("--start-frame", type=int)
     parser.add_argument("--frame-count", type=int, default=8)
+    parser.add_argument("--dense-panel-config")
+    parser.add_argument(
+        "--action-aligned",
+        action="store_true",
+        help="Select the source window using the locked known-action-only rule.",
+    )
+    parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--sam2-repository", required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", default="cuda")
@@ -149,8 +169,66 @@ def main() -> int:
     source_episode = (
         Path(args.source_aligned_root) / args.object_id / f"episode_{args.episode:04d}"
     )
+    action_alignment: dict[str, object] | None = None
+    if args.action_aligned:
+        if args.dense_panel_config is None:
+            raise ValueError("action alignment requires --dense-panel-config")
+        if args.start_frame is not None:
+            raise ValueError("action alignment cannot also set --start-frame")
+        panel = load_dense_reusable_panel_config(args.dense_panel_config)
+        authorization = authorize_dense_panel_episode(
+            panel,
+            object_id=args.object_id,
+            episode_id=args.episode,
+            phase="source",
+            source_admission_passed=False,
+        )
+        selection = panel["config"]["frame_protocol"]["window_selection"]
+        old_start, old_stop = panel["config"]["frame_protocol"][
+            "superseded_fixed_raw_aligned_range_half_open"
+        ]
+        with np.load(
+            source_episode / "robot" / "robot.npz", allow_pickle=False
+        ) as robot:
+            action_summary = summarize_robot_action(
+                robot["actions"],
+                robot["openings"],
+                locked_start=int(old_start),
+                locked_stop=int(old_stop),
+                candidate_start_frame=int(selection["candidate_starts"]["first"]),
+                candidate_stride_frames=int(selection["candidate_starts"]["stride"]),
+            )
+        selected_range = action_summary["best_contact_conditioned_path_window"][
+            "frame_range_half_open"
+        ]
+        args.start_frame = int(selected_range[0])
+        args.frame_count = int(selection["window_length_frames"])
+        action_alignment = {
+            "schema_version": 1,
+            "artifact_kind": "Deform360ActionAlignedSourceStaging",
+            "protocol_id": authorization["protocol_id"],
+            "config_sha256": authorization["config_sha256"],
+            "object_id": args.object_id,
+            "episode_id": int(args.episode),
+            "selected_raw_frame_range_half_open": selected_range,
+            "selection_rule": selection,
+            "action_summary": action_summary,
+            "robot_sha256": sha256_file(source_episode / "robot" / "robot.npz"),
+            "source_only": True,
+            "target_action_read": False,
+            "target_observation_read": False,
+            "target_future_read": False,
+        }
+        action_alignment["result_sha256"] = _canonical_sha256(action_alignment)
+    elif args.start_frame is None:
+        raise ValueError("fixed staging requires --start-frame")
+    if args.dense_panel_config is not None and not args.action_aligned:
+        raise ValueError("--dense-panel-config requires --action-aligned")
+
     output_episode = Path(args.output_aligned_root) / "episode_0000"
     if output_episode.exists():
+        if not args.overwrite:
+            raise FileExistsError(f"source staging already exists: {output_episode}")
         shutil.rmtree(output_episode)
     output_episode.mkdir(parents=True)
 
@@ -252,6 +330,12 @@ def main() -> int:
             "tactile_sha256": tactile_hashes,
         },
     )
+    if action_alignment is not None:
+        alignment_path = output_episode / "action_aligned_source_staging.json"
+        alignment_path.write_text(
+            json.dumps(action_alignment, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     print(
         json.dumps(
             {
@@ -260,6 +344,13 @@ def main() -> int:
                 "episode_dir": str(output_episode),
                 "camera_count": len(cameras),
                 "frame_count": args.frame_count,
+                "start_frame": args.start_frame,
+                "action_aligned": args.action_aligned,
+                "action_alignment_result_sha256": (
+                    action_alignment["result_sha256"]
+                    if action_alignment is not None
+                    else None
+                ),
             },
             indent=2,
             sort_keys=True,
