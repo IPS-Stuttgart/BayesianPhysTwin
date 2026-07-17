@@ -1,0 +1,125 @@
+{
+  "aggregate": {
+    "deterministic_residual": {
+      "future_chamfer_m": 0.007826274387974638,
+      "future_track_error_m": 0.011985548449242423,
+      "late_chamfer_m": 0.010291265428884784,
+      "late_track_error_m": 0.017132369493305186
+    },
+    "gated_residual": {
+      "future_chamfer_m": 0.0073929805284977035,
+      "future_track_error_m": 0.011190071697120765,
+      "late_chamfer_m": 0.009556346680322046,
+      "late_track_error_m": 0.015538096665983754
+    },
+    "persistence": {
+      "future_chamfer_m": 0.00780316309336966,
+      "future_track_error_m": 0.011983992349855645,
+      "late_chamfer_m": 0.01045438271210011,
+      "late_track_error_m": 0.01716803635993746
+    },
+    "physics": {
+      "future_chamfer_m": 0.0073929805284977035,
+      "future_track_error_m": 0.011190071697120765,
+      "late_chamfer_m": 0.009556346680322046,
+      "late_track_error_m": 0.015538096665983754
+    }
+  },
+  "artifact_kind": "Deform360BayesianResidualTrustedSourceAggregate",
+  "claim_boundary": "Already-open 27-episode source development result on a deterministic 256-node subset; not an official Deform360 or state-of-the-art claim.",
+  "episode_count": 27,
+  "episode_diagnostics": {
+    "deterministic_residual": {
+      "joint_win_count_vs_persistence": 8,
+      "maximum_future_degradation_fraction_vs_persistence": 2.9089226097731187
+    },
+    "gated_residual": {
+      "joint_win_count_vs_persistence": 5,
+      "maximum_future_degradation_fraction_vs_persistence": 0.033260740643681785
+    },
+    "physics": {
+      "joint_win_count_vs_persistence": 5,
+      "maximum_future_degradation_fraction_vs_persistence": 0.033260740643681785
+    }
+  },
+  "fold_count": 5,
+  "held_object_ids": [
+    "002-rope-silk",
+    "083-blanket-cloth",
+    "085-scarf-cloth",
+    "092-squirrel",
+    "170-spider"
+  ],
+  "improvement_fraction": {
+    "persistence": {
+      "deterministic_residual": {
+        "future_chamfer_m": -0.0029617854104082575,
+        "future_track_error_m": -0.00012984816256134124,
+        "late_chamfer_m": 0.015602765625418513,
+        "late_track_error_m": 0.0020775157906528507
+      },
+      "gated_residual": {
+        "future_chamfer_m": 0.052566191423127906,
+        "future_track_error_m": 0.06624842786589757,
+        "late_chamfer_m": 0.08590043587544005,
+        "late_track_error_m": 0.09494036823904095
+      },
+      "persistence": {
+        "future_chamfer_m": 0.0,
+        "future_track_error_m": 0.0,
+        "late_chamfer_m": 0.0,
+        "late_track_error_m": 0.0
+      },
+      "physics": {
+        "future_chamfer_m": 0.052566191423127906,
+        "future_track_error_m": 0.06624842786589757,
+        "late_chamfer_m": 0.08590043587544005,
+        "late_track_error_m": 0.09494036823904095
+      }
+    },
+    "physics": {
+      "deterministic_residual": {
+        "future_chamfer_m": -0.05860881924505512,
+        "future_track_error_m": -0.07108772612478753,
+        "late_chamfer_m": -0.07690373457003674,
+        "late_track_error_m": -0.1026041259488133
+      },
+      "gated_residual": {
+        "future_chamfer_m": 0.0,
+        "future_track_error_m": 0.0,
+        "late_chamfer_m": 0.0,
+        "late_track_error_m": 0.0
+      },
+      "persistence": {
+        "future_chamfer_m": -0.05548270596558824,
+        "future_track_error_m": -0.07094866540838685,
+        "late_chamfer_m": -0.09397273475095402,
+        "late_track_error_m": -0.10489957225726343
+      },
+      "physics": {
+        "future_chamfer_m": 0.0,
+        "future_track_error_m": 0.0,
+        "late_chamfer_m": 0.0,
+        "late_track_error_m": 0.0
+      }
+    }
+  },
+  "input_result_sha256": {
+    "002-rope-silk": "01e8cf4380dcd39737228e4d45ed839dc48bd97e9227a4fe0e6c23e8250d7e9d",
+    "083-blanket-cloth": "1c91337a4691abcff4dce68f3fec151efc599efbaa640fa18fae905c397bb478",
+    "085-scarf-cloth": "e62ca4f4bccb65c7de87cd4d3f0b2580524b7016cb9160cd5468f76ae4cb49b5",
+    "092-squirrel": "bb17390129bfb1819d8f5aa0f780439e25da2f0dfb7de4cbcb3ea17eacd19997",
+    "170-spider": "c1601c7c1f254e4880048fc53f842f7d722c5f7f82529af8e7899ad91845fc1e"
+  },
+  "protocol_id": "deform360-bayesian-residual-source-v1",
+  "residual_gate_admitted_any_outer_fold": false,
+  "result_sha256": "75351a1f50d9fec638ede8705088677b1d5229c64538cc80b2654999f4bb59e9",
+  "schema_version": 1,
+  "selected_utility_threshold_by_object": {
+    "002-rope-silk": 1.1,
+    "083-blanket-cloth": 1.1,
+    "085-scarf-cloth": 1.1,
+    "092-squirrel": 1.1,
+    "170-spider": 1.1
+  }
+}

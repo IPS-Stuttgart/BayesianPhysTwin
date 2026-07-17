@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "config_sha256": "df0a5c3c9b79257aee126526629791a3a15d81e35fbbf6df3abee6073d413743",
+  "config": {
+    "protocol_id": "deform360-bayesian-residual-source-v1",
+    "status": "locked-before-new-residual-source-training",
+    "scientific_hypothesis": "A probabilistic equivariant residual trained across objects can recover nonlinear model discrepancy while calibrated abstention prevents the catastrophic negative transfer observed for fixed and linear shared responses.",
+    "development_panel": {
+      "objects": [
+        "002-rope-silk",
+        "083-blanket-cloth",
+        "085-scarf-cloth",
+        "092-squirrel",
+        "170-spider"
+      ],
+      "episode_count": 27,
+      "outcome_status": "already opened by the failed independent-source gate",
+      "use": "development and leave-one-object-out model selection only"
+    },
+    "arms": [
+      "persistence",
+      "frozen reusable physics",
+      "deterministic residual",
+      "heteroscedastic residual ensemble",
+      "source-calibrated gated residual ensemble"
+    ],
+    "model_constraints": {
+      "residual_kind": "per-node velocity",
+      "spatial_symmetry": "O(3)-equivariant and translation invariant",
+      "observation_reliability_must_be_residual_independent": true,
+      "innovation_processed_once": true,
+      "correlated_observations_use_clustered_effective_weights": true,
+      "ensemble_variance_includes_assignment_and_member_spread": true,
+      "counterfactual_action_shift_inflates_variance": true
+    },
+    "evaluation": {
+      "outer_split": "leave-one-object-out",
+      "unit_of_replication": "episode",
+      "threshold_selection": "nested on outer-training objects",
+      "future_object_frames_allowed_as_model_input": false,
+      "metrics": [
+        "future_track_error_m",
+        "future_chamfer_m",
+        "late_track_error_m",
+        "late_chamfer_m",
+        "energy_score",
+        "negative_log_likelihood",
+        "coverage_90",
+        "interval_width_m",
+        "fallback_fraction"
+      ]
+    },
+    "fallback": {
+      "rejected_residual_is_byte_identical_to_physics": true,
+      "thresholds_selected_on_outer_training_objects_only": true,
+      "criteria": [
+        "predicted utility probability",
+        "total predictive variance",
+        "action distance from source support"
+      ]
+    },
+    "development_gates": {
+      "minimum_future_track_improvement_fraction": 0.05,
+      "minimum_future_chamfer_improvement_fraction": 0.05,
+      "minimum_late_track_improvement_fraction": 0.05,
+      "minimum_late_chamfer_improvement_fraction": 0.05,
+      "maximum_episode_degradation_fraction": 0.1,
+      "coverage_90_interval": [0.85, 0.95],
+      "energy_score_must_improve": true,
+      "all_gates_conjunctive": true
+    },
+    "external_score_targets": {
+      "deform360_multi_episode_future_cd_m": 0.051,
+      "deform360_multi_episode_future_track_error_m": 0.079,
+      "deform360_multi_object_future_cd_m": 0.038,
+      "deform360_multi_object_future_track_error_m": 0.048,
+      "source": "Deform360 Tables 4 and 5; targets are comparison thresholds, not current claims"
+    },
+    "information_boundary": {
+      "development_outcomes": "27 already-open independent-source episodes only",
+      "penguin_held_episode_ids": [0, 2, 5, 8],
+      "penguin_held_media_or_outcomes_may_open": false,
+      "pokeflex_sealed_target_may_open": false,
+      "causal4d_frozen_claim_may_change": false,
+      "fresh_evaluation_requires_new_preregistration": true
+    },
+    "claim_boundary": "Source-development test of a Bayesian residual reusable twin. Passing permits a fresh preregistration; it is not a state-of-the-art result."
+  }
+}

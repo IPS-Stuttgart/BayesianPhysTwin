@@ -116,6 +116,7 @@ causal4d-deform360-replication = "causal4d_public.cli.deform360_replication:main
 causal4d-deform360-phystwin-feasibility = "causal4d_public.cli.deform360_phystwin_feasibility:main"
 causal4d-deform360-pooling-control = "causal4d_public.cli.deform360_pooling_control:main"
 causal4d-deform360-source-qa = "causal4d_public.cli.deform360_replication_source_qa:main"
+causal4d-deform360-bayesian-residual-source = "causal4d_public.cli.deform360_bayesian_residual_source:main"
 
 [project.optional-dependencies]
 dev = [
@@ -126,6 +127,9 @@ data = [
 ]
 graph = [
     "scipy>=1.10",
+]
+learning = [
+    "torch>=2.1",
 ]
 pyrecest = [
     "pyrecest==2.4.1",

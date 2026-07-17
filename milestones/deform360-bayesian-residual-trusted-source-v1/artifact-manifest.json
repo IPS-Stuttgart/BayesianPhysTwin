@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-bayesian-residual-trusted-source-v1",
+  "captured_at": "2026-07-17",
+  "compute_host": "gpuserver6000",
+  "base_code_commit": "89d1614",
+  "branch": "deform360-contact-conditioned-reusable-v1",
+  "source_episode_count": 27,
+  "source_object_count": 5,
+  "node_count": 256,
+  "training_steps_per_fold": 2000,
+  "fresh_object_data_opened": false,
+  "penguin_held_data_opened": false,
+  "pokeflex_target_opened": false,
+  "verification": {
+    "focused_pytest": "16 passed in 0.91 s",
+    "full_pytest": "627 passed, 1 skipped in 35.12 s",
+    "ruff": "all intended Bayesian-residual files passed",
+    "git_diff_check": "passed"
+  },
+  "trusted_physics_result": {
+    "future_track_improvement_fraction": 0.06624842786589757,
+    "future_chamfer_improvement_fraction": 0.052566191423127906,
+    "late_track_improvement_fraction": 0.09494036823904095,
+    "late_chamfer_improvement_fraction": 0.08590043587544005,
+    "maximum_future_degradation_fraction": 0.033260740643681785
+  },
+  "residual_result": {
+    "outer_fold_count": 5,
+    "outer_folds_admitting_residual": 0,
+    "selected_utility_threshold": 1.1,
+    "deployed_output": "trusted physics exactly"
+  },
+  "artifacts": [
+    {
+      "path": "../../configs/causal4d_public/deform360_bayesian_residual_source_v1.json",
+      "sha256": "78ef3213be954e60088927fe7330ac3b25e3ca97ab1ff7021039750ec15995dc"
+    },
+    {
+      "path": "artifacts/002-rope-silk.json",
+      "sha256": "fe90ce2497912487accd9a3862f7a4789454f1a4d45c038d04789230f4a38f6c",
+      "result_sha256": "01e8cf4380dcd39737228e4d45ed839dc48bd97e9227a4fe0e6c23e8250d7e9d"
+    },
+    {
+      "path": "artifacts/083-blanket-cloth.json",
+      "sha256": "b84956f554580e2eefc2db4510fde9e139926e5c74967d253c981c4a639b0758",
+      "result_sha256": "1c91337a4691abcff4dce68f3fec151efc599efbaa640fa18fae905c397bb478"
+    },
+    {
+      "path": "artifacts/085-scarf-cloth.json",
+      "sha256": "a00d3c266af2358a2d09bad95ebe2e2ac856fca775ba1c507549c145eea18fc4",
+      "result_sha256": "e62ca4f4bccb65c7de87cd4d3f0b2580524b7016cb9160cd5468f76ae4cb49b5"
+    },
+    {
+      "path": "artifacts/092-squirrel.json",
+      "sha256": "d7d84371ad4f1e59f1cedeec4af44b8d762167db58cd85c56f1a2fcd5f9d9c5b",
+      "result_sha256": "bb17390129bfb1819d8f5aa0f780439e25da2f0dfb7de4cbcb3ea17eacd19997"
+    },
+    {
+      "path": "artifacts/170-spider.json",
+      "sha256": "c2af7ce497c4a498795c30ebdcb90a4c753f8d4964a9c407045d22b29babc1c4",
+      "result_sha256": "c1601c7c1f254e4880048fc53f842f7d722c5f7f82529af8e7899ad91845fc1e"
+    },
+    {
+      "path": "artifacts/aggregate.json",
+      "sha256": "7aa875a816f57cec8396596d45d25f903931628ff96430c4d9a814de858f03fe",
+      "result_sha256": "75351a1f50d9fec638ede8705088677b1d5229c64538cc80b2654999f4bb59e9"
+    }
+  ]
+}
