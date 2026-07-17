@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360EvaluatorContract",
+  "contract_id": "deform360-table4-unresolved-v1",
+  "status": "unresolved-non-authorizing",
+  "dataset": {
+    "repository": "lhy0807/deform360",
+    "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "coordinate_unit": "m"
+  },
+  "split": {
+    "object_ids": [],
+    "fit_episode_ids_by_object": {},
+    "held_episode_ids_by_object": {}
+  },
+  "input_boundary": {
+    "initial_object_frame_count": null,
+    "known_future_robot_action": true,
+    "future_object_observation": false
+  },
+  "temporal": {
+    "source_frame_rate_hz": 30.0,
+    "evaluation_start_frame": null,
+    "evaluation_stop_frame_exclusive": null,
+    "frame_stride": null
+  },
+  "particles": {
+    "identity_policy": "unresolved",
+    "identity_sha256_by_episode": {}
+  },
+  "metrics": {
+    "chamfer": {
+      "definition": "unresolved",
+      "paper_description": "Chamfer distance"
+    },
+    "track": {
+      "definition": "unresolved",
+      "visibility_policy": "unresolved",
+      "paper_description": "mean squared error (track error)"
+    }
+  },
+  "aggregation": {
+    "frame": "unresolved",
+    "episode": "unresolved",
+    "object": "unresolved",
+    "panel": "unresolved"
+  },
+  "published_reference": {
+    "paper": "Deform360 arXiv:2607.05390v1",
+    "table": 4,
+    "setting": "multi-episode future prediction",
+    "method": "ParticleFormer",
+    "future_chamfer_m": 0.051,
+    "future_track_error_m": 0.079
+  },
+  "evaluator_provenance": {
+    "released_by_deform360_authors": false,
+    "source_revision_sha256": null,
+    "entrypoint_sha256": null,
+    "particleformer_table4_reproduction": {
+      "passed": false,
+      "future_chamfer_m": null,
+      "future_track_error_m": null
+    }
+  },
+  "unresolved_fields": [
+    "split.object_ids",
+    "split.fit_episode_ids_by_object",
+    "split.held_episode_ids_by_object",
+    "input_boundary.initial_object_frame_count",
+    "temporal.evaluation_start_frame",
+    "temporal.evaluation_stop_frame_exclusive",
+    "temporal.frame_stride",
+    "particles.identity_policy",
+    "particles.identity_sha256_by_episode",
+    "metrics.chamfer.definition",
+    "metrics.track.definition",
+    "metrics.track.visibility_policy",
+    "aggregation.frame",
+    "aggregation.episode",
+    "aggregation.object",
+    "aggregation.panel",
+    "evaluator_provenance.source_revision_sha256",
+    "evaluator_provenance.entrypoint_sha256",
+    "evaluator_provenance.particleformer_table4_reproduction"
+  ],
+  "result_sha256": "87ce1f0c7b0f2e4aa3876d7c36704f39c653275444d423b23b19f329b57d1813"
+}
