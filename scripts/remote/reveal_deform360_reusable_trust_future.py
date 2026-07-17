@@ -210,8 +210,25 @@ def main() -> int:
     expected_cameras = protocol["mask_addendum"]["objects"][access["object_id"]][
         "cameras"
     ]
-    if cameras != expected_cameras:
-        raise ValueError("staged cameras differ from the frozen camera panel")
+    sampled_masks_path = Path(manifest["inputs"]["sampled_masks_path"])
+    mask_selection_path = sampled_masks_path.with_name("mask_selection.json")
+    mask_selection = json.loads(mask_selection_path.read_text(encoding="utf-8"))
+    if (
+        mask_selection.get("passed") is not True
+        or mask_selection.get("object_id") != access["object_id"]
+        or int(mask_selection.get("episode_id", -1)) != access["episode_id"]
+        or mask_selection.get("mask_addendum_file_sha256")
+        != protocol["mask_addendum_file_sha256"]
+        or mask_selection.get("requested_cameras") != expected_cameras
+        or mask_selection.get("selected_cameras") != cameras
+        or int(mask_selection.get("unavailable_camera_count", -1))
+        != len(expected_cameras) - len(cameras)
+        or manifest["inputs"].get("sampled_masks_sha256")
+        != sha256_file(sampled_masks_path)
+        or mask_selection.get("output_sha256", {}).get("sampled_masks")
+        != sha256_file(sampled_masks_path)
+    ):
+        raise ValueError("staged cameras differ from the sealed mask selection")
 
     output_path = args.output or episode_dir / "future_reveal.meta.json"
     if output_path.exists():
@@ -353,6 +370,8 @@ def main() -> int:
             "mask_addendum": sha256_file(args.mask_addendum),
             "state_addendum": sha256_file(args.state_addendum),
             "manifest": sha256_file(manifest_path),
+            "mask_selection": sha256_file(mask_selection_path),
+            "sampled_masks": sha256_file(sampled_masks_path),
             "sam2_checkpoint": sha256_file(args.checkpoint),
         },
         "prediction_only_inputs": before,
