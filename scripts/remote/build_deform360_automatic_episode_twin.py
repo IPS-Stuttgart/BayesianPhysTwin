@@ -14,11 +14,15 @@ from typing import Any
 import numpy as np
 
 from bayesian_phystwin.phystwin_graph import PhysTwinSpringGraphConfig
+from causal4d_public.deform360_contact_conditioned_action import (
+    load_contact_conditioned_action_artifact,
+)
 from causal4d_public.deform360_dense_reusable_panel import (
     authorize_dense_panel_episode,
     load_dense_reusable_panel_config,
 )
 from causal4d_public.deform360_independent_source import (
+    sha256_array,
     validate_prediction_only_bundle,
 )
 from causal4d_public.deform360_partial_graph_state import (
@@ -79,6 +83,14 @@ def _parse_args() -> argparse.Namespace:
         help=(
             "Require a frame-zero-only bundle whose object geometry is constant "
             "over the known-action prediction horizon."
+        ),
+    )
+    parser.add_argument(
+        "--contact-conditioned-action-json",
+        type=Path,
+        help=(
+            "Opt-in source-development action selected at predicted contact onset. "
+            "The frozen frame-zero path is unchanged when omitted."
         ),
     )
     parser.add_argument(
@@ -203,6 +215,37 @@ def main() -> int:
         raise ValueError("visibility and validity must match object point axes")
     if controllers.ndim != 3 or controllers.shape[0] != points.shape[0]:
         raise ValueError("controller trajectory must share the episode frame axis")
+    contact_action_payload = None
+    contact_action = None
+    source_controller_sha256 = sha256_array(controllers)
+    if args.contact_conditioned_action_json is not None:
+        contact_action_payload = json.loads(
+            args.contact_conditioned_action_json.read_text(encoding="utf-8")
+        )
+        contact_action = load_contact_conditioned_action_artifact(
+            contact_action_payload
+        )
+        if (
+            contact_action_payload.get("object_id") != args.object_id
+            or int(contact_action_payload.get("episode_id", -1)) != args.episode_id
+        ):
+            raise ValueError("contact-conditioned action belongs to another episode")
+        if (
+            contact_action_payload.get("source_controller_sha256")
+            != source_controller_sha256
+        ):
+            raise ValueError(
+                "contact-conditioned action uses another controller trajectory"
+            )
+        if contact_action.falls_back_to_persistence:
+            raise ValueError(
+                "contact-conditioned action has no admissible group; use persistence"
+            )
+        if len(contact_action.controller_points_m) != len(controllers):
+            raise ValueError("contact-conditioned action frame count changed")
+        controllers = np.asarray(
+            contact_action.controller_points_m, dtype=controllers.dtype
+        )
     effective_node_count = min(canonical_node_count, points.shape[1])
     if effective_node_count < minimum_node_count:
         raise ValueError("frame-zero point count is below the panel minimum")
@@ -234,6 +277,7 @@ def main() -> int:
 
     frame_count = points.shape[0]
     simulator_data = dict(episode)
+    simulator_data["controller_points"] = controllers.astype(np.float32)
     simulator_data["object_points"] = np.repeat(
         state.vertices[None], frame_count, axis=0
     ).astype(np.float32)
@@ -258,6 +302,16 @@ def main() -> int:
         "state_frame": 0,
         "passed": bool(state.metrics["passed"]),
     }
+    if contact_action_payload is not None:
+        simulator_data["contact_conditioned_action"] = {
+            "result_sha256": contact_action_payload["result_sha256"],
+            "archive_sha256": contact_action_payload["archive"]["sha256"],
+            "retained_group_count": contact_action.retained_group_count,
+            "source_group_indices": list(contact_action.source_group_indices),
+            "onset_frames": list(contact_action.onset_frames),
+            "future_object_observations_used": False,
+            "target_tactile_used": False,
+        }
     args.simulator_final_data.parent.mkdir(parents=True, exist_ok=True)
     with args.simulator_final_data.open("wb") as stream:
         pickle.dump(simulator_data, stream, protocol=pickle.HIGHEST_PROTOCOL)
@@ -284,7 +338,11 @@ def main() -> int:
         "object_id": args.object_id,
         "episode_id": args.episode_id,
         "phase": args.phase,
-        "graph_mode": "episode_specific_frame_zero_control",
+        "graph_mode": (
+            "episode_specific_predicted_contact_onset_control"
+            if contact_action_payload is not None
+            else "episode_specific_frame_zero_control"
+        ),
         "capacity_diagnostic": {
             "configured_canonical_node_count": configured_node_count,
             "requested_canonical_node_count": canonical_node_count,
@@ -296,6 +354,11 @@ def main() -> int:
         "state_metrics": state.metrics,
         "input_sha256": {
             "episode_final_data": _sha256_file(args.episode_final_data),
+            "contact_conditioned_action": (
+                None
+                if args.contact_conditioned_action_json is None
+                else _sha256_file(args.contact_conditioned_action_json)
+            ),
         },
         "output_sha256": {
             "episode_graph": _sha256_file(args.episode_graph),
@@ -311,6 +374,12 @@ def main() -> int:
             "prediction_only_input_required": args.prediction_only_input,
             "future_object_tracks_present": (
                 False if args.prediction_only_input else None
+            ),
+            "contact_conditioned_action_used": contact_action_payload is not None,
+            "contact_conditioned_action_result_sha256": (
+                None
+                if contact_action_payload is None
+                else contact_action_payload["result_sha256"]
             ),
         },
         "prediction_input_validation": prediction_input_validation,

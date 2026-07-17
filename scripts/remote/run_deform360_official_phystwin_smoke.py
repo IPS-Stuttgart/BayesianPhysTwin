@@ -17,6 +17,10 @@ from typing import Any
 
 import numpy as np
 
+from causal4d_public.deform360_contact_conditioned_action import (
+    controller_spring_group_indices,
+    load_contact_conditioned_action_artifact,
+)
 from causal4d_public.deform360_dense_source import (
     DEFORM360_SUPPORT_DYNAMICS,
     support_dynamics_reverse_factor,
@@ -283,6 +287,14 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--contact-conditioned-action-json",
+        type=Path,
+        help=(
+            "Opt in to a source-trained dynamic contact schedule. The frozen "
+            "always-attached rollout is unchanged when omitted."
+        ),
+    )
+    parser.add_argument(
         "--reverse-z",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -354,6 +366,28 @@ def main() -> int:
         raise ValueError("external target start frame must be non-negative")
     if args.external_target_start_frame and args.external_target_final_data is None:
         raise ValueError("external target start frame requires external scoring")
+    contact_action_payload = None
+    contact_action = None
+    registered_data = None
+    if args.contact_conditioned_action_json is not None:
+        contact_action_payload = json.loads(
+            args.contact_conditioned_action_json.read_text(encoding="utf-8")
+        )
+        contact_action = load_contact_conditioned_action_artifact(
+            contact_action_payload
+        )
+        if contact_action.falls_back_to_persistence:
+            raise ValueError(
+                "contact-conditioned action has no admissible group; use persistence"
+            )
+        with args.data.open("rb") as stream:
+            registered_data = pickle.load(stream)
+        embedded_contact = registered_data.get("contact_conditioned_action", {})
+        if (
+            embedded_contact.get("result_sha256")
+            != contact_action_payload["result_sha256"]
+        ):
+            raise ValueError("simulator data uses another contact-conditioned action")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("PYNPUT_BACKEND", "dummy")
     os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
@@ -391,8 +425,9 @@ def main() -> int:
     canonical_graph = None
     if args.canonical_reusable_graph is not None:
         canonical_graph = load_canonical_deform360_graph(args.canonical_reusable_graph)
-        with args.data.open("rb") as stream:
-            registered_data = pickle.load(stream)
+        if registered_data is None:
+            with args.data.open("rb") as stream:
+                registered_data = pickle.load(stream)
         registration = registered_data.get("reusable_graph_registration", {})
         if registration.get("canonical_graph_sha256") != canonical_graph.sha256:
             raise ValueError("registered final_data uses another canonical graph")
@@ -506,6 +541,28 @@ def main() -> int:
         min=float(simulator.spring_Y_min),
         max=float(simulator.spring_Y_max),
     )
+    base_spring_log_stiffness = spring_log_stiffness.detach().clone()
+    controller_spring_groups = None
+    contact_schedule = None
+    inactive_controller_spring_y = 1e-12
+    if contact_action is not None:
+        if len(contact_action.controller_points_m) != trainer.dataset.frame_len:
+            raise ValueError("contact schedule differs from the rollout frame count")
+        if contact_action.controller_points_m.shape[1] != int(
+            trainer.controller_points.shape[1]
+        ):
+            raise ValueError("contact schedule differs from controller point count")
+        springs = wp.to_torch(simulator.wp_springs, requires_grad=False).cpu().numpy()
+        controller_point_count = int(trainer.controller_points.shape[1])
+        controller_spring_groups = controller_spring_group_indices(
+            springs,
+            num_object_springs=trainer.num_object_springs,
+            controller_vertex_start=int(trainer.num_all_points),
+            controller_point_count=controller_point_count,
+            controller_group_size=contact_action.source_group_size,
+            retained_group_count=contact_action.retained_group_count,
+        )
+        contact_schedule = np.asarray(contact_action.contact_active, dtype=bool)
     simulator.reverse_factor = support_dynamics_reverse_factor(
         args.support_dynamics,
         reverse_z=bool(cfg.reverse_z),
@@ -516,7 +573,27 @@ def main() -> int:
         wp.to_torch(simulator.wp_states[0].wp_x, requires_grad=False).cpu().numpy()
     ]
     rollout_started = time.perf_counter()
+    previous_contact_state = None
     for frame in range(1, frame_len):
+        if contact_schedule is not None:
+            active = tuple(map(bool, contact_schedule[frame]))
+            if active != previous_contact_state:
+                updated_spring_log_y = base_spring_log_stiffness.clone()
+                active_by_spring = np.asarray(active, dtype=bool)[
+                    controller_spring_groups
+                ]
+                inactive_indices = np.flatnonzero(~active_by_spring)
+                if len(inactive_indices):
+                    controller_values = updated_spring_log_y[-num_controller_springs:]
+                    controller_values[
+                        torch.as_tensor(
+                            inactive_indices,
+                            dtype=torch.long,
+                            device=controller_values.device,
+                        )
+                    ] = float(np.log(inactive_controller_spring_y))
+                simulator.set_spring_Y(updated_spring_log_y)
+                previous_contact_state = active
         simulator.set_controller_target(frame, pure_inference=True)
         if simulator.object_collision_flag:
             simulator.update_collision_graph()
@@ -780,6 +857,22 @@ def main() -> int:
             ),
             "effective_controller_spring_y_max": float(
                 applied_controller_spring_y.max().item()
+            ),
+            "dynamic_contact_schedule": (
+                None
+                if contact_action_payload is None
+                else {
+                    "result_sha256": contact_action_payload["result_sha256"],
+                    "source_group_indices": list(contact_action.source_group_indices),
+                    "onset_frames": list(contact_action.onset_frames),
+                    "active_fraction": float(np.mean(contact_schedule)),
+                    "transition_count": int(
+                        np.sum(contact_schedule[1:] != contact_schedule[:-1])
+                    ),
+                    "inactive_controller_spring_y": inactive_controller_spring_y,
+                    "future_object_observations_used": False,
+                    "target_tactile_used": False,
+                }
             ),
             "claim_boundary": (
                 "source-only virtual attachment compliance; separates contact "

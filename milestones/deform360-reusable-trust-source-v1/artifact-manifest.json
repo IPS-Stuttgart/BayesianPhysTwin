@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-reusable-trust-source-v1",
+  "captured_at": "2026-07-17",
+  "compute_host": "gpuserver6000",
+  "base_code_commit": "2297a4d",
+  "branch": "deform360-contact-conditioned-reusable-v1",
+  "source_episode_count": 27,
+  "source_object_count": 5,
+  "fresh_object_data_opened": false,
+  "calibration_outcomes_opened": false,
+  "target_outcomes_opened": false,
+  "fit_runtime": {
+    "python_version": "3.12.3",
+    "numpy_version": "2.0.2"
+  },
+  "verification": {
+    "focused_pytest": "12 passed in 0.17 s",
+    "full_pytest": "576 passed, 1 skipped in 33.25 s",
+    "ruff": "all intended trust-gate files passed",
+    "git_diff_check": "passed"
+  },
+  "source_cross_fitted_result": {
+    "future_track_improvement_fraction": 0.056516601592610516,
+    "future_chamfer_improvement_fraction": 0.0599785164460267,
+    "late_track_improvement_fraction": 0.08211462403774539,
+    "late_chamfer_improvement_fraction": 0.09619316936600297,
+    "maximum_future_track_degradation_fraction": 0.027131200996010296,
+    "maximum_future_chamfer_degradation_fraction": 0.026035488816736896
+  },
+  "artifacts": [
+    {
+      "path": "../../configs/causal4d_public/deform360_reusable_trust_fresh_v1.json",
+      "sha256": "bf4ab83236068a7bddb6cddb3f3f60d09eb9e6d0147a25e78aa4bc265a9fc831"
+    },
+    {
+      "path": "artifacts/reusable_twin_trust_candidate.json",
+      "sha256": "4f18dc72d7ce82ad26d69eaded0c3316094f7cae72fa8cd4adafce20dc9f1d25",
+      "result_sha256": "177c9642a0e043f69afe206c39c748fda35ea6d48cd70aa36f0752035b39da11"
+    },
+    {
+      "path": "artifacts/same_object_trust_diagnosis.json",
+      "sha256": "e3fc9b48d37c2a4de1b1a062f4e952f590fccd2de7c5c010ef5cca868a3548d0",
+      "result_sha256": "00c8d84a50ee79480e346220d6d71ced48c02c3d74af58c6fa7b4a6649b570b0"
+    }
+  ]
+}

@@ -1,0 +1,4616 @@
+{
+  "artifact_kind": "Deform360SameObjectTrustDiagnosis",
+  "baselines": {
+    "closure_then_self_diagnostic": {
+      "future": {
+        "chamfer_degradation_count": 5,
+        "chamfer_improvement_fraction": 0.0599785164460267,
+        "chamfer_m": 0.006490909199595895,
+        "joint_win_count": 5,
+        "maximum_chamfer_degradation_fraction": 0.026035488816736896,
+        "maximum_track_degradation_fraction": 0.027131200996010296,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 0.9417524409806814,
+        "track_degradation_count": 5,
+        "track_improvement_fraction": 0.056516601592610516,
+        "track_rmse_m": 0.0073076968624382135
+      },
+      "late": {
+        "chamfer_degradation_count": 4,
+        "chamfer_improvement_fraction": 0.09619316936600297,
+        "chamfer_m": 0.008464578279913268,
+        "joint_win_count": 5,
+        "maximum_chamfer_degradation_fraction": 0.0293045832757306,
+        "maximum_track_degradation_fraction": 0.013296235832735537,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 0.9108461032981259,
+        "track_degradation_count": 5,
+        "track_improvement_fraction": 0.08211462403774539,
+        "track_rmse_m": 0.010132998825232999
+      }
+    },
+    "conservative_closure_self_intersection": {
+      "future": {
+        "chamfer_degradation_count": 5,
+        "chamfer_improvement_fraction": 0.0531354847246609,
+        "chamfer_m": 0.00653816077664008,
+        "joint_win_count": 5,
+        "maximum_chamfer_degradation_fraction": 0.026035488816736896,
+        "maximum_track_degradation_fraction": 0.027131200996010296,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 0.9487051477382225,
+        "track_degradation_count": 5,
+        "track_improvement_fraction": 0.049454219798894083,
+        "track_rmse_m": 0.0073623981379057
+      },
+      "late": {
+        "chamfer_degradation_count": 4,
+        "chamfer_improvement_fraction": 0.08608285528997328,
+        "chamfer_m": 0.008559266151292853,
+        "joint_win_count": 5,
+        "maximum_chamfer_degradation_fraction": 0.0293045832757306,
+        "maximum_track_degradation_fraction": 0.013296235832735537,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 0.9209933039742064,
+        "track_degradation_count": 5,
+        "track_improvement_fraction": 0.07193053676161376,
+        "track_rmse_m": 0.010245426092414293
+      }
+    },
+    "cross_fitted_binary_closure": {
+      "future": {
+        "chamfer_degradation_count": 8,
+        "chamfer_improvement_fraction": 0.03201482034387504,
+        "chamfer_m": 0.00668400033151122,
+        "joint_win_count": 3,
+        "maximum_chamfer_degradation_fraction": 0.7580669199928152,
+        "maximum_track_degradation_fraction": 0.6462425355864212,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 0.9681886961525843,
+        "track_degradation_count": 8,
+        "track_improvement_fraction": 0.03160778735095626,
+        "track_rmse_m": 0.007500626662780281
+      },
+      "late": {
+        "chamfer_degradation_count": 6,
+        "chamfer_improvement_fraction": 0.07976302037032412,
+        "chamfer_m": 0.008618454393271479,
+        "joint_win_count": 5,
+        "maximum_chamfer_degradation_fraction": 0.834713641285924,
+        "maximum_track_degradation_fraction": 0.5638275282200822,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 0.9235485012244289,
+        "track_degradation_count": 7,
+        "track_improvement_fraction": 0.073139977180818,
+        "track_rmse_m": 0.010232074470667256
+      }
+    },
+    "frozen_fixed_response": {
+      "future": {
+        "chamfer_degradation_count": 19,
+        "chamfer_improvement_fraction": -0.11671397189363986,
+        "chamfer_m": 0.007710982270402027,
+        "joint_win_count": 7,
+        "maximum_chamfer_degradation_fraction": 6.766833881177656,
+        "maximum_track_degradation_fraction": 12.102448556735826,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 1.1337826629764651,
+        "track_degradation_count": 18,
+        "track_improvement_fraction": -0.1508513540592904,
+        "track_rmse_m": 0.008913853538269081
+      },
+      "late": {
+        "chamfer_degradation_count": 16,
+        "chamfer_improvement_fraction": -0.12683898572383612,
+        "chamfer_m": 0.010553379859750196,
+        "joint_win_count": 9,
+        "maximum_chamfer_degradation_fraction": 5.479503863315775,
+        "maximum_track_degradation_fraction": 13.245324947492152,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 1.1479068142408586,
+        "track_degradation_count": 17,
+        "track_improvement_fraction": -0.16897464275788132,
+        "track_rmse_m": 0.012904899666121138
+      }
+    },
+    "leave_one_episode_out_object_mean": {
+      "future": {
+        "chamfer_degradation_count": 16,
+        "chamfer_improvement_fraction": -0.04432245666590262,
+        "chamfer_m": 0.0072111141712306245,
+        "joint_win_count": 8,
+        "maximum_chamfer_degradation_fraction": 2.2437965565874634,
+        "maximum_track_degradation_fraction": 3.6627528040564457,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 1.049290714868036,
+        "track_degradation_count": 17,
+        "track_improvement_fraction": -0.054258973070169025,
+        "track_rmse_m": 0.008165702759271642
+      },
+      "late": {
+        "chamfer_degradation_count": 14,
+        "chamfer_improvement_fraction": -0.058719705209867135,
+        "chamfer_m": 0.009915410591607589,
+        "joint_win_count": 9,
+        "maximum_chamfer_degradation_fraction": 2.6426170627245353,
+        "maximum_track_degradation_fraction": 4.020615857813893,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 1.0650664956338272,
+        "track_degradation_count": 15,
+        "track_improvement_fraction": -0.07141328605778718,
+        "track_rmse_m": 0.01182787072686626
+      }
+    },
+    "non_deployable_alpha_oracle": {
+      "future": {
+        "chamfer_degradation_count": 1,
+        "chamfer_improvement_fraction": 0.09260275195508572,
+        "chamfer_m": 0.006265636741359173,
+        "joint_win_count": 13,
+        "maximum_chamfer_degradation_fraction": 0.0016907617792771834,
+        "maximum_track_degradation_fraction": 0.0,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 0.9075909444739009,
+        "track_degradation_count": 0,
+        "track_improvement_fraction": 0.09221535909711254,
+        "track_rmse_m": 0.007031194171824947
+      },
+      "late": {
+        "chamfer_degradation_count": 1,
+        "chamfer_improvement_fraction": 0.13684986383676634,
+        "chamfer_m": 0.008083809114107244,
+        "joint_win_count": 13,
+        "maximum_chamfer_degradation_fraction": 0.018766631808606826,
+        "maximum_track_degradation_fraction": 0.04465243979456335,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 0.8710729124251829,
+        "track_degradation_count": 1,
+        "track_improvement_fraction": 0.12100431131286782,
+        "track_rmse_m": 0.009703675986246293
+      }
+    },
+    "persistence": {
+      "future": {
+        "chamfer_degradation_count": 0,
+        "chamfer_improvement_fraction": 0.0,
+        "chamfer_m": 0.006905064738579675,
+        "joint_win_count": 0,
+        "maximum_chamfer_degradation_fraction": 0.0,
+        "maximum_track_degradation_fraction": 0.0,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 1.0,
+        "track_degradation_count": 0,
+        "track_improvement_fraction": 0.0,
+        "track_rmse_m": 0.00774544297734723
+      },
+      "late": {
+        "chamfer_degradation_count": 0,
+        "chamfer_improvement_fraction": 0.0,
+        "chamfer_m": 0.009365472790215124,
+        "joint_win_count": 0,
+        "maximum_chamfer_degradation_fraction": 0.0,
+        "maximum_track_degradation_fraction": 0.0,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 1.0,
+        "track_degradation_count": 0,
+        "track_improvement_fraction": 0.0,
+        "track_rmse_m": 0.011039503505119237
+      }
+    }
+  },
+  "claim_boundary": "post-failure exploratory diagnosis matched to same-object unseen-episode generalization; any selected feature family requires a fresh protocol lock",
+  "episode_count": 27,
+  "feature_sets": {
+    "action_kinematics": {
+      "feature_names": [
+        "mean_closure",
+        "mean_minimum_gripper_closure",
+        "all_grippers_closed_fraction_075",
+        "gripper_count",
+        "bimanual",
+        "mean_gripper_path_m",
+        "max_gripper_path_m",
+        "mean_endpoint_displacement_m",
+        "mean_vertical_displacement_m",
+        "mean_absolute_vertical_displacement_m",
+        "mean_horizontal_displacement_m",
+        "mean_vertical_path_m",
+        "mean_horizontal_path_m",
+        "vertical_to_horizontal_path_ratio",
+        "mean_opening_start_m",
+        "mean_opening_end_m",
+        "mean_opening_change_m",
+        "minimum_opening_m",
+        "gripper_0_delta_x_m",
+        "gripper_0_delta_y_m",
+        "gripper_0_delta_z_m",
+        "gripper_1_delta_x_m",
+        "gripper_1_delta_y_m",
+        "gripper_1_delta_z_m",
+        "gripper_separation_start_m",
+        "gripper_separation_end_m",
+        "gripper_separation_change_m",
+        "gripper_separation_range_m",
+        "gripper_delta_dot_m2"
+      ],
+      "folds": [
+        {
+          "held_out_episode": "002-rope-silk/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3195201200995465,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.32407246254260574,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21433233472402277,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1960459208164803,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19469115694380096,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2250462510997116,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.34605854364669164,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.3210064979562264,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24290105152128735,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2024469327866898,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19571869122820434,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22675457335511873,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3526459268825919,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.3432686291036985,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2371342782736337,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20317407774829746,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19526414176761003,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22186813214543746,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.18253868576742652,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26141520154566644,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2585419468453026,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20148656254239097,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18892771568401612,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22384406552164482,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "002-rope-silk/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.4047285300455972,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29799177689162176,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24059624538316965,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22261286274310338,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.196761155390857,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2264089415585955,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.47963718198421706,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29183904429410046,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2246208769708595,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20080279999701922,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19419601348215226,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2280509201090692,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.32209239349446567,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2225420548062553,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.242761440660888,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20709398936450205,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19638778248612596,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22743433726241286,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.279108045303935,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22166234691465003,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20938398377390458,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1810397575524485,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17563915380306605,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19907004379423743,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3487865546265168,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.3209133016191378,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2554727265539407,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20459484156657265,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17846145766452717,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19950252132507795,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.21619384258190363,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2693812155959202,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2571671505135505,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20384549994279194,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1891575364429196,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2240207371536713,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.4073441763148934,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21988934359627377,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2114456560107329,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20081882764571216,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.193794939691007,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22476633986121308,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.39986209933577954,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2986778978366439,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23454938429550543,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2021425116983878,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19599305183150229,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22560035362827824,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2806097712456853,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.250505931152589,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1948812994262244,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18775574402139628,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19465801728844426,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2283496340321451,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.32260736057666356,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2624533703356251,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23626691431167404,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1879472282568417,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17954397561224497,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19961753174787814,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29730191800416716,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27622456673759205,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22053646732518445,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19946421787706056,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17625138480498354,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1987394415040858,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.11042292981079008,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.16254994618942734,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19928380037773172,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19295981605266596,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1910097297935107,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22548472566216285,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "092-squirrel/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.42384213745477317,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.3690071380141718,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2074580732692254,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.12699005526786927,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.15020309331579249,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19449646552569103,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "092-squirrel/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3279684162775058,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.30556136009359885,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24051704142218705,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21111269692904158,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19796677174187988,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22652565688004153,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "092-squirrel/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3557590979423267,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2528963115829735,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2502981206545816,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20567364844973793,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19241345335452678,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22540427251663486,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "092-squirrel/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3097885069074054,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2830218757601134,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22727555358249493,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19797544254197286,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19542334109489976,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22571796822011883,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "092-squirrel/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.40959316475734064,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.33687498780101754,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29771588082304856,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2364769437336709,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18819230158008568,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22326696000917837,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "170-spider/0",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2347653166740131,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22833689294164178,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2124595245321468,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20346686863620797,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19588772357855394,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22846614142145139,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "170-spider/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.4100680864207459,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.30183782734367487,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20847492899426223,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18279852018248632,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1860839515387502,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22288839981911435,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3066487437607309,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.3536654203193456,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2503763834547343,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18642669515848262,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18439216524224766,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2218783558880991,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "170-spider/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.4335084571269938,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2738046252165003,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2527897825370187,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20905018658241523,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1913881196445861,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22370729386527424,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "170-spider/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.302876934462866,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24589557213066487,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20084544698185866,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.16443894646210283,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18265518766713099,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2230517104765243,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.3488609681930299,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2991219309119209,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2605928339855122,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2097714443804157,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19614250547288448,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22596813558022422,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        }
+      ],
+      "future": {
+        "chamfer_degradation_count": 13,
+        "chamfer_improvement_fraction": -0.05297724401820347,
+        "chamfer_m": 0.007270876038196903,
+        "joint_win_count": 9,
+        "maximum_chamfer_degradation_fraction": 1.8079318524766719,
+        "maximum_track_degradation_fraction": 1.50382006674749,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 1.0498036655030145,
+        "track_degradation_count": 14,
+        "track_improvement_fraction": -0.04663008698782556,
+        "track_rmse_m": 0.008106613657140174
+      },
+      "late": {
+        "chamfer_degradation_count": 13,
+        "chamfer_improvement_fraction": -0.049209600778833185,
+        "chamfer_m": 0.009826343967326635,
+        "joint_win_count": 10,
+        "maximum_chamfer_degradation_fraction": 2.3912170850280066,
+        "maximum_track_degradation_fraction": 1.652491522862388,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 1.048660369876392,
+        "track_degradation_count": 13,
+        "track_improvement_fraction": -0.04811113897395103,
+        "track_rmse_m": 0.011570626592457448
+      },
+      "selected_alpha_by_episode": {
+        "002-rope-silk/2": 0.15178798329412355,
+        "002-rope-silk/5": 0.5164547941952127,
+        "002-rope-silk/6": 0.5395641036941707,
+        "002-rope-silk/7": 0.0,
+        "002-rope-silk/9": 0.1747412655246172,
+        "083-blanket-cloth/1": 0.2948892705233929,
+        "083-blanket-cloth/2": 0.1386524545028087,
+        "083-blanket-cloth/4": 0.06902069370724918,
+        "083-blanket-cloth/5": 0.46644521051858656,
+        "083-blanket-cloth/8": 0.4157617431892331,
+        "083-blanket-cloth/9": 1.2,
+        "085-scarf-cloth/3": 0.4374679978989532,
+        "085-scarf-cloth/4": 0.22912300372393243,
+        "085-scarf-cloth/6": 0.42806892997665624,
+        "085-scarf-cloth/8": 0.4438080741426897,
+        "085-scarf-cloth/9": 0.4008064429310721,
+        "092-squirrel/4": 0.044200576023453945,
+        "092-squirrel/5": 0.07004683892143836,
+        "092-squirrel/7": 0.38856552828953944,
+        "092-squirrel/8": 0.1567253160155558,
+        "092-squirrel/9": 0.4723446718957376,
+        "170-spider/0": 0.3285483315466381,
+        "170-spider/1": 0.5206970581208817,
+        "170-spider/3": 0.46753985390643554,
+        "170-spider/5": 0.1873017894407647,
+        "170-spider/8": 0.7401748160604085,
+        "170-spider/9": 0.0
+      }
+    },
+    "same_object_intercept": {
+      "feature_names": [
+        "object::002-rope-silk",
+        "object::083-blanket-cloth",
+        "object::085-scarf-cloth",
+        "object::092-squirrel",
+        "object::170-spider"
+      ],
+      "folds": [
+        {
+          "held_out_episode": "002-rope-silk/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2895999318544466,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2893227410851047,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.28667494272161653,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26884688277098595,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24191361471609524,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23769888453151491,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2885744474159656,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2882986830205598,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.28566670916623305,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26807094537206083,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24241248357144243,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.238927932409466,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.274559490237855,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2743029062850121,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27185779617434486,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.25573504182320256,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23402247387055347,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2322155781055813,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2895999318544466,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2893227410851047,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.28667494272161653,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26884688277098595,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24191361471609524,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23769888453151491,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29186454387027294,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29158425704620033,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.28890656679837146,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2708579999967221,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24342580106621872,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23902540528533195,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29619671447470985,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2958917103536712,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29298283811830755,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2736401413342133,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24576187489020418,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24195302265523022,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.28658279597271313,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.28629097808836984,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2835130095275774,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26534071610346266,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2414949826466485,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23968879181913733,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2677822409974307,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26751589097455464,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26496396468419564,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24732357812106237,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21690219583663092,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20977734758561553,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2677822409974307,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26751589097455464,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26496396468419564,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24732357812106237,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21690219583663092,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20977734758561553,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.27803709056013975,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2777569861541013,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27509465997645105,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2579206944263139,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23731346604896483,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2370664863247835,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.28305276793980727,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2827718693337704,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2800957656185509,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2624912250179379,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23907979038177082,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23730063978942126,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.28305276793980727,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2827718693337704,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2800957656185509,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2624912250179379,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23907979038177082,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23730063978942126,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2998177213496537,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29951994756821304,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29667400297680263,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27741195434887966,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24728083197115083,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2418092979648828,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.26286271398181615,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26260188823039843,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26010675044628867,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2430805049821071,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21530282235873413,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2095644048151484,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.26286271398181615,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26260188823039843,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26010675044628867,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2430805049821071,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21530282235873413,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2095644048151484,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.28635768712721793,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2860734674278615,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.28336440639452554,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.265464624534376,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2410053819419548,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23868514232985408,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "092-squirrel/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.22419723467676753,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2239975586394685,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2221116649697702,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21066684209011186,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20317411236486263,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2079282601932599,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "092-squirrel/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29598116111412587,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2956831874682729,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29283489481848674,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27353597958467896,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24330961990103417,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23787347395858663,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "092-squirrel/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29790394492509303,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29760334490909474,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29472989370326136,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2752566966926968,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24471222715491406,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2391852387400362,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "092-squirrel/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29598116111412587,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2956831874682729,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29283489481848674,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27353597958467896,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24330961990103417,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23787347395858666,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "092-squirrel/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29598116111412587,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2956831874682729,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.29283489481848674,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27353597958467896,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24330961990103417,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23787347395858666,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "170-spider/0",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2826247409286051,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2823641137464079,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27988291860163017,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2636545660520512,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2425786741285888,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24119678107062192,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "170-spider/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29235922931662284,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2920887358785848,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2895025380193783,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27193056239461083,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2436703872606839,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23796827983658814,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "170-spider/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29235922931662284,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2920887358785848,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2895025380193783,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27193056239461083,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2436703872606839,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23796827983658814,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "170-spider/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29235922931662284,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2920887358785848,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2895025380193783,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27193056239461083,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2436703872606839,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23796827983658814,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "170-spider/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29235922931662284,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2920887358785848,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2895025380193783,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27193056239461083,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2436703872606839,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23796827983658814,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        },
+        {
+          "held_out_episode": "170-spider/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.29235922931662284,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2920887358785848,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2895025380193783,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27193056239461083,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2436703872606839,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23796827983658814,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1000.0
+        }
+      ],
+      "future": {
+        "chamfer_degradation_count": 16,
+        "chamfer_improvement_fraction": -0.01289395250453751,
+        "chamfer_m": 0.006994098315359677,
+        "joint_win_count": 9,
+        "maximum_chamfer_degradation_fraction": 2.4614345562777844,
+        "maximum_track_degradation_fraction": 4.02021313037107,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 1.0161406450158212,
+        "track_degradation_count": 17,
+        "track_improvement_fraction": -0.019387337527105197,
+        "track_rmse_m": 0.007895606494646008
+      },
+      "late": {
+        "chamfer_degradation_count": 14,
+        "chamfer_improvement_fraction": -0.009796036438196376,
+        "chamfer_m": 0.009457217302929007,
+        "joint_win_count": 10,
+        "maximum_chamfer_degradation_fraction": 2.1826924255151683,
+        "maximum_track_degradation_fraction": 4.412065028369322,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 1.0178998520371758,
+        "track_degradation_count": 15,
+        "track_improvement_fraction": -0.026003667636155248,
+        "track_rmse_m": 0.011326571085134528
+      },
+      "selected_alpha_by_episode": {
+        "002-rope-silk/2": 0.3392246091190171,
+        "002-rope-silk/5": 0.31232094707293073,
+        "002-rope-silk/6": 0.30335305972423526,
+        "002-rope-silk/7": 0.3392246091190171,
+        "002-rope-silk/9": 0.33698263728184324,
+        "083-blanket-cloth/1": 0.3460860322059146,
+        "083-blanket-cloth/2": 0.3460860322059146,
+        "083-blanket-cloth/4": 0.3265052898372621,
+        "083-blanket-cloth/5": 0.29387071922284147,
+        "083-blanket-cloth/8": 0.29387071922284147,
+        "083-blanket-cloth/9": 0.3439103941649532,
+        "085-scarf-cloth/3": 0.3377723052037659,
+        "085-scarf-cloth/4": 0.34449822071528746,
+        "085-scarf-cloth/6": 0.29517484029746244,
+        "085-scarf-cloth/8": 0.29517484029746244,
+        "085-scarf-cloth/9": 0.34898216438963514,
+        "092-squirrel/4": 0.22622530264734506,
+        "092-squirrel/5": 0.33772344676969124,
+        "092-squirrel/7": 0.33548147493251734,
+        "092-squirrel/8": 0.33772344676969124,
+        "092-squirrel/9": 0.33772344676969124,
+        "170-spider/0": 0.31108168889559346,
+        "170-spider/1": 0.3306624312642459,
+        "170-spider/3": 0.3306624312642459,
+        "170-spider/5": 0.3306624312642459,
+        "170-spider/8": 0.3306624312642459,
+        "170-spider/9": 0.3306624312642459
+      }
+    },
+    "same_object_simulation_self_diagnostic": {
+      "feature_names": [
+        "object::002-rope-silk",
+        "object::083-blanket-cloth",
+        "object::085-scarf-cloth",
+        "object::092-squirrel",
+        "object::170-spider",
+        "mean_closure",
+        "mean_minimum_gripper_closure",
+        "all_grippers_closed_fraction_075",
+        "gripper_count",
+        "bimanual",
+        "mean_gripper_path_m",
+        "max_gripper_path_m",
+        "mean_endpoint_displacement_m",
+        "mean_vertical_displacement_m",
+        "mean_absolute_vertical_displacement_m",
+        "mean_horizontal_displacement_m",
+        "mean_vertical_path_m",
+        "mean_horizontal_path_m",
+        "vertical_to_horizontal_path_ratio",
+        "mean_opening_start_m",
+        "mean_opening_end_m",
+        "mean_opening_change_m",
+        "minimum_opening_m",
+        "gripper_0_delta_x_m",
+        "gripper_0_delta_y_m",
+        "gripper_0_delta_z_m",
+        "gripper_1_delta_x_m",
+        "gripper_1_delta_y_m",
+        "gripper_1_delta_z_m",
+        "gripper_separation_start_m",
+        "gripper_separation_end_m",
+        "gripper_separation_change_m",
+        "gripper_separation_range_m",
+        "gripper_delta_dot_m2",
+        "response_rms_m",
+        "response_mean_displacement_m",
+        "response_early_mean_displacement_m",
+        "response_late_mean_displacement_m",
+        "response_endpoint_mean_displacement_m",
+        "response_p90_displacement_m",
+        "response_max_displacement_m",
+        "response_frame_rms_growth_m",
+        "response_late_to_early_ratio",
+        "response_to_action_path_ratio",
+        "response_to_geometry_ratio",
+        "geometry_extent_x_m",
+        "geometry_extent_y_m",
+        "geometry_extent_z_m",
+        "geometry_diagonal_m",
+        "geometry_pca_0_m",
+        "geometry_pca_1_m",
+        "geometry_pca_2_m"
+      ],
+      "folds": [
+        {
+          "held_out_episode": "002-rope-silk/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2238703709657105,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21700374015123616,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1933956703241299,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1791350415781345,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2029543232277304,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22830914018212362,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2505772700825751,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2428374207152775,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20711816280539283,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18161543700181312,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20468226948665652,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23045960946136737,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2462332334502603,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23540678545875604,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1941910957117554,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.16798264872037671,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.193600603709565,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22349339282564523,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.26416740588150067,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24708811076353976,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19863249012024176,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1777036472053427,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1985099795438926,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22744180929635194,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "002-rope-silk/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.20498982535260615,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2015067043657665,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18644724987017308,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17631410272510006,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1999717559612875,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2291296514416548,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.22353674164132775,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21409168754528335,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18572677666000503,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17493724117890336,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20055702479988147,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23146080197777147,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.24873309330748183,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2405010366408922,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20900562584550386,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18222401686406364,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20434598093048845,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23091794276922722,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.10382404665390171,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.10654219929045398,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.12072071317373852,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1593454940906972,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18893039464686187,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20330125037944993,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.23054557903091888,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23118517845436853,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22360497397064874,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.201530456694187,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19342532817629968,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20391482090788227,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.26051117298065546,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.26018961723524814,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23342524015656793,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1950247777538716,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20058976477761445,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2272801692966319,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.21480768866206074,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20960588365749971,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18383701442549016,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17041142971843398,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19917569782122996,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2279903153595556,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.24055279558152406,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23295207314574698,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20452257110021768,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18002912409211136,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20415733235776742,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22905594559978346,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.19829448287283086,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19287855433989962,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17440222878216996,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1749875590925632,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20416396297508932,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2320754151014242,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2704858074115912,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2547955733955432,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19307858103863695,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1697900008528549,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18799893725015235,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20220529195697864,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.28153563849690966,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27268436772142945,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22804272022056754,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18966038813347808,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1878839149003733,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20224970841341186,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.18086689028114344,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17532776271840422,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1617671494887745,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1728698582124485,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20081111071110794,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22925625030635569,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 1.0
+        },
+        {
+          "held_out_episode": "092-squirrel/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.16144033417785175,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.15880843229146593,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.14551577047200723,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.11683608265680007,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.15185294621285222,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19557863573927897,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "092-squirrel/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.22819757344269737,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2252665230648032,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20956089558717098,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1908049847943215,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20845553044224194,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23003966693042038,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "092-squirrel/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.20623712102800124,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20638081738805186,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1991534286260636,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18347652758875246,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2027104827127818,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22926218289058028,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "092-squirrel/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2838322860962554,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2711549912707611,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22101669997344223,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18220289676578552,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20636818752360903,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22989892588322555,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "092-squirrel/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.28830964669090703,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.27721098401658034,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21491949202459112,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1718638595885442,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1952547494247453,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22735179069079808,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/0",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.13790633766482147,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.13958306353689387,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.14537185762454352,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.15948572119206259,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19945005061315493,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23157663663967817,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "170-spider/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2680546091223086,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.25839313534499386,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.213038260072376,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17848601884313248,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19502519167926663,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22645619707906067,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.22948833657859308,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22550145416703288,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20116599560997536,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17669306483428568,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19257569261809607,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22540011839070156,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.22489029086886442,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22086085266613342,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20267765582959046,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17659299078673538,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19650249812817264,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22724476048409142,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.24727179716589676,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.24102919354785948,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2091871960134927,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1681647397624846,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19181504245435993,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2268145277614719,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        },
+        {
+          "held_out_episode": "170-spider/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.2439703433132982,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2386032113443886,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21545114835856122,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19112027817593577,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20284913079202532,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22965801439152275,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 10.0
+        }
+      ],
+      "future": {
+        "chamfer_degradation_count": 12,
+        "chamfer_improvement_fraction": -0.021939178688846095,
+        "chamfer_m": 0.007056556187737424,
+        "joint_win_count": 8,
+        "maximum_chamfer_degradation_fraction": 1.0124964496307323,
+        "maximum_track_degradation_fraction": 1.0000114120263355,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 1.0195192848879864,
+        "track_degradation_count": 12,
+        "track_improvement_fraction": -0.01709939108712688,
+        "track_rmse_m": 0.007877885335959931
+      },
+      "late": {
+        "chamfer_degradation_count": 12,
+        "chamfer_improvement_fraction": -0.019070075929956687,
+        "chamfer_m": 0.00954407306744447,
+        "joint_win_count": 9,
+        "maximum_chamfer_degradation_fraction": 1.3470825868899392,
+        "maximum_track_degradation_fraction": 1.6468969063544852,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 1.0217843602232874,
+        "track_degradation_count": 11,
+        "track_improvement_fraction": -0.02449864451661843,
+        "track_rmse_m": 0.011309956377131117
+      },
+      "selected_alpha_by_episode": {
+        "002-rope-silk/2": 0.0,
+        "002-rope-silk/5": 0.7064867280339507,
+        "002-rope-silk/6": 0.43096197618076465,
+        "002-rope-silk/7": 0.24586670521625412,
+        "002-rope-silk/9": 0.22207524762056946,
+        "083-blanket-cloth/1": 0.3666758407959286,
+        "083-blanket-cloth/2": 0.0,
+        "083-blanket-cloth/4": 0.04807981280799757,
+        "083-blanket-cloth/5": 0.6553869792549322,
+        "083-blanket-cloth/8": 0.4366163066516549,
+        "083-blanket-cloth/9": 0.8003308417842253,
+        "085-scarf-cloth/3": 0.5710062436862406,
+        "085-scarf-cloth/4": 0.28024398017010826,
+        "085-scarf-cloth/6": 0.33093105942677487,
+        "085-scarf-cloth/8": 0.48897692290491285,
+        "085-scarf-cloth/9": 0.3001737736263177,
+        "092-squirrel/4": 0.0023724406229534566,
+        "092-squirrel/5": 0.11378818879468015,
+        "092-squirrel/7": 0.5176318336524786,
+        "092-squirrel/8": 0.0,
+        "092-squirrel/9": 0.6442064715381306,
+        "170-spider/0": 0.0,
+        "170-spider/1": 0.33495666692778814,
+        "170-spider/3": 0.40077341127049615,
+        "170-spider/5": 0.17980372115027393,
+        "170-spider/8": 0.5379219331041796,
+        "170-spider/9": 0.0
+      }
+    },
+    "simulation_self_diagnostic": {
+      "feature_names": [
+        "mean_closure",
+        "mean_minimum_gripper_closure",
+        "all_grippers_closed_fraction_075",
+        "gripper_count",
+        "bimanual",
+        "mean_gripper_path_m",
+        "max_gripper_path_m",
+        "mean_endpoint_displacement_m",
+        "mean_vertical_displacement_m",
+        "mean_absolute_vertical_displacement_m",
+        "mean_horizontal_displacement_m",
+        "mean_vertical_path_m",
+        "mean_horizontal_path_m",
+        "vertical_to_horizontal_path_ratio",
+        "mean_opening_start_m",
+        "mean_opening_end_m",
+        "mean_opening_change_m",
+        "minimum_opening_m",
+        "gripper_0_delta_x_m",
+        "gripper_0_delta_y_m",
+        "gripper_0_delta_z_m",
+        "gripper_1_delta_x_m",
+        "gripper_1_delta_y_m",
+        "gripper_1_delta_z_m",
+        "gripper_separation_start_m",
+        "gripper_separation_end_m",
+        "gripper_separation_change_m",
+        "gripper_separation_range_m",
+        "gripper_delta_dot_m2",
+        "response_rms_m",
+        "response_mean_displacement_m",
+        "response_early_mean_displacement_m",
+        "response_late_mean_displacement_m",
+        "response_endpoint_mean_displacement_m",
+        "response_p90_displacement_m",
+        "response_max_displacement_m",
+        "response_frame_rms_growth_m",
+        "response_late_to_early_ratio",
+        "response_to_action_path_ratio",
+        "response_to_geometry_ratio",
+        "geometry_extent_x_m",
+        "geometry_extent_y_m",
+        "geometry_extent_z_m",
+        "geometry_diagonal_m",
+        "geometry_pca_0_m",
+        "geometry_pca_1_m",
+        "geometry_pca_2_m"
+      ],
+      "folds": [
+        {
+          "held_out_episode": "002-rope-silk/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1840419216168564,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18240955791309243,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19789919445625945,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2042118837365638,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20172111453009925,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22799061859763933,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "002-rope-silk/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.18969047202692207,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18931447148228636,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20099411575907178,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.208676501302132,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20374060095919347,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2302894486858748,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "002-rope-silk/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1748107221766647,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1724413031417826,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1872085902950253,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19376295323706086,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19541749558440588,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22364435857191356,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "002-rope-silk/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1711784568123854,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17103477346133084,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19728042338521562,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1894658380366258,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19579441213469015,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22709864276903363,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "002-rope-silk/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.18674803012681435,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1857629505685424,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1985753154312639,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21200129838284718,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1990893624085941,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22882561383488775,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.13191426359254926,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1404273394307848,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19424630858876293,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20826935485129605,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20176641951853352,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23134614936936737,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.17387731717211236,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17771187361374194,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2045241520415853,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20762578340688853,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20361769196498186,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23089892930068429,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/6",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.16072700802501555,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.16689440047672274,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19257038823403608,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18406723081199725,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18583736570600082,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20258834262260267,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.18751223901199132,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19440310492551025,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22339458359742548,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21880475550589504,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19019031300781147,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20323420192264274,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "085-scarf-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.19025781111343898,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19011044344311073,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20761443594000653,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21448335401316798,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20109155626109354,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22754454679947808,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.18925760561705857,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18531840921108025,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19666630392142342,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2088861910417704,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20158405656138179,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22811831333109417,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/2",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1325427122009423,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.14407519430767954,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20200470606619686,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20520755437736088,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20363407981555198,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22907095415488102,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.17228984394212435,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.16992346190052635,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18405920616197904,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2040981166508923,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20228429604104886,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23162360327106735,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1960536323677028,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1932430063776147,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1864929669736322,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19426656353891503,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18520956620215331,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20162554776811203,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.17015167761702166,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17408561983432563,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20315852807074555,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2127720807567866,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18644771590197856,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20177224448130462,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "083-blanket-cloth/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.14402381046420507,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.14803484642849862,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18668301603549647,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2048313770677828,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20278469227659615,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22933378185687914,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "092-squirrel/4",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.08118315645683966,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.08407839768329123,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.10564884419620507,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.12351408007817609,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1543426366953637,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1963595854335815,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "092-squirrel/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.13490217584459782,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.14428039358674596,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19462733080705596,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21643946512339682,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20691127127220144,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.229681738329581,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "092-squirrel/7",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.17513679449106834,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1776158553469964,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2005177486526467,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2160585782953559,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20245388338199619,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22883286598005517,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "092-squirrel/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1838532036941712,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18148272909056357,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19219027893487242,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20177197456442728,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20486858348135512,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2295027988241472,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "092-squirrel/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1927875435886715,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19818223565945725,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21804099891488007,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23003721923458384,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19682582653516423,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22698278666456284,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "170-spider/0",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.13605802414813553,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1416883134457696,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1845608628803661,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20057777920032707,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20240707246995732,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.23169618820263027,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "170-spider/1",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1986963303401604,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1957758276234333,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.21054233486865423,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19382780789205403,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19192306602449896,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22590288935548666,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 100.0
+        },
+        {
+          "held_out_episode": "170-spider/3",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.12497404617302005,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.133937057154993,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1782129804786172,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18407165250063903,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18942670030029463,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22484583301240307,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "170-spider/5",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.11719476347069345,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.121446578641863,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.14862015840902043,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.17190773179211785,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.19553538015160116,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22682029579896396,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.01
+        },
+        {
+          "held_out_episode": "170-spider/8",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.1338159189381242,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.1317759615394891,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.15367397090945575,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.16518426034308928,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.18890961231795333,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22630979085569053,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        },
+        {
+          "held_out_episode": "170-spider/9",
+          "inner_candidates": [
+            {
+              "inner_oracle_alpha_mse": 0.20460534003612343,
+              "ridge": 0.01
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20052793404014732,
+              "ridge": 0.1
+            },
+            {
+              "inner_oracle_alpha_mse": 0.20749384015769923,
+              "ridge": 1.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2069664447374992,
+              "ridge": 10.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.2028201635379316,
+              "ridge": 100.0
+            },
+            {
+              "inner_oracle_alpha_mse": 0.22927394111192545,
+              "ridge": 1000.0
+            }
+          ],
+          "selected_ridge": 0.1
+        }
+      ],
+      "future": {
+        "chamfer_degradation_count": 11,
+        "chamfer_improvement_fraction": 0.035387778518097046,
+        "chamfer_m": 0.006660709836957696,
+        "joint_win_count": 9,
+        "maximum_chamfer_degradation_fraction": 1.7156999022229344,
+        "maximum_track_degradation_fraction": 2.5764849870514555,
+        "persistence_chamfer_m": 0.006905064738579675,
+        "persistence_track_rmse_m": 0.00774544297734723,
+        "relative_score_vs_persistence": 0.9662763409156099,
+        "track_degradation_count": 10,
+        "track_improvement_fraction": 0.03205953965068309,
+        "track_rmse_m": 0.007497127641102862
+      },
+      "late": {
+        "chamfer_degradation_count": 10,
+        "chamfer_improvement_fraction": 0.05641343778999253,
+        "chamfer_m": 0.008837134273590456,
+        "joint_win_count": 10,
+        "maximum_chamfer_degradation_fraction": 3.4887939736184803,
+        "maximum_track_degradation_fraction": 5.749545082876247,
+        "persistence_chamfer_m": 0.009365472790215124,
+        "persistence_track_rmse_m": 0.011039503505119237,
+        "relative_score_vs_persistence": 0.9548428385789625,
+        "track_degradation_count": 9,
+        "track_improvement_fraction": 0.03390088505208244,
+        "track_rmse_m": 0.010665254565760129
+      },
+      "selected_alpha_by_episode": {
+        "002-rope-silk/2": 0.0,
+        "002-rope-silk/5": 0.6273721720893586,
+        "002-rope-silk/6": 0.7953490210931101,
+        "002-rope-silk/7": 0.05791989317939472,
+        "002-rope-silk/9": 0.21658339334291687,
+        "083-blanket-cloth/1": 0.04940544315810813,
+        "083-blanket-cloth/2": 0.36607982369238223,
+        "083-blanket-cloth/4": 0.08887568545241142,
+        "083-blanket-cloth/5": 0.4354718155204691,
+        "083-blanket-cloth/8": 1.0406703155939065,
+        "083-blanket-cloth/9": 0.5396400326141355,
+        "085-scarf-cloth/3": 0.5358457047091152,
+        "085-scarf-cloth/4": 0.0,
+        "085-scarf-cloth/6": 0.8016620886399127,
+        "085-scarf-cloth/8": 1.2,
+        "085-scarf-cloth/9": 0.026551434775590632,
+        "092-squirrel/4": 0.09513928994848209,
+        "092-squirrel/5": 0.0,
+        "092-squirrel/7": 0.3521801776184996,
+        "092-squirrel/8": 0.0,
+        "092-squirrel/9": 0.0,
+        "170-spider/0": 0.10935401405317435,
+        "170-spider/1": 0.47605771553786996,
+        "170-spider/3": 0.4152184545729437,
+        "170-spider/5": 1.199028255550751,
+        "170-spider/8": 0.7357422467443437,
+        "170-spider/9": 0.0
+      }
+    }
+  },
+  "full_source_candidate": {
+    "artifact_kind": "Deform360ReusableTwinTrustCandidate",
+    "closure_feature": "mean_minimum_gripper_closure",
+    "closure_rule": {
+      "mode": "threshold",
+      "threshold": 0.36971213239866374
+    },
+    "closure_search": [
+      {
+        "future_relative_score": 1.1337826629764651,
+        "mode": "accept_all",
+        "threshold": null
+      },
+      {
+        "future_relative_score": 1.1336257346772804,
+        "mode": "threshold",
+        "threshold": 0.14585212332101366
+      },
+      {
+        "future_relative_score": 1.092143017871141,
+        "mode": "threshold",
+        "threshold": 0.20220033728943673
+      },
+      {
+        "future_relative_score": 1.096207224312998,
+        "mode": "threshold",
+        "threshold": 0.26602333547098844
+      },
+      {
+        "future_relative_score": 1.0977740245588419,
+        "mode": "threshold",
+        "threshold": 0.281288558331778
+      },
+      {
+        "future_relative_score": 1.095600107821065,
+        "mode": "threshold",
+        "threshold": 0.2904699201223439
+      },
+      {
+        "future_relative_score": 1.057716118771163,
+        "mode": "threshold",
+        "threshold": 0.3033839853495985
+      },
+      {
+        "future_relative_score": 1.0522563811439023,
+        "mode": "threshold",
+        "threshold": 0.3265829554972881
+      },
+      {
+        "future_relative_score": 1.0522350557993416,
+        "mode": "threshold",
+        "threshold": 0.34804608486756416
+      },
+      {
+        "future_relative_score": 1.0525497580168097,
+        "mode": "threshold",
+        "threshold": 0.35130351244193314
+      },
+      {
+        "future_relative_score": 1.0364647854553102,
+        "mode": "threshold",
+        "threshold": 0.3530642654995969
+      },
+      {
+        "future_relative_score": 1.0125026623897515,
+        "mode": "threshold",
+        "threshold": 0.3577224208904842
+      },
+      {
+        "future_relative_score": 0.9574260993446477,
+        "mode": "threshold",
+        "threshold": 0.36971213239866374
+      },
+      {
+        "future_relative_score": 0.972721623946501,
+        "mode": "threshold",
+        "threshold": 0.39342025454501417
+      },
+      {
+        "future_relative_score": 0.9900423244161667,
+        "mode": "threshold",
+        "threshold": 0.42573460280554165
+      },
+      {
+        "future_relative_score": 0.9876120844049056,
+        "mode": "threshold",
+        "threshold": 0.44551350816307833
+      },
+      {
+        "future_relative_score": 0.9869008578998274,
+        "mode": "threshold",
+        "threshold": 0.4857941461104055
+      },
+      {
+        "future_relative_score": 0.9869011455634797,
+        "mode": "threshold",
+        "threshold": 0.525426073686263
+      },
+      {
+        "future_relative_score": 0.9743417459650543,
+        "mode": "threshold",
+        "threshold": 0.5539374072490093
+      },
+      {
+        "future_relative_score": 0.9705200446762159,
+        "mode": "threshold",
+        "threshold": 0.5817047669141608
+      },
+      {
+        "future_relative_score": 0.9681360641707465,
+        "mode": "threshold",
+        "threshold": 0.5851406223910396
+      },
+      {
+        "future_relative_score": 0.9679593118974996,
+        "mode": "threshold",
+        "threshold": 0.603431588140624
+      },
+      {
+        "future_relative_score": 0.9799886865582639,
+        "mode": "threshold",
+        "threshold": 0.6427082383732092
+      },
+      {
+        "future_relative_score": 0.9812193723784651,
+        "mode": "threshold",
+        "threshold": 0.672971104635202
+      },
+      {
+        "future_relative_score": 0.9799555952603527,
+        "mode": "threshold",
+        "threshold": 0.6952038291503269
+      },
+      {
+        "future_relative_score": 0.9779677277338856,
+        "mode": "threshold",
+        "threshold": 0.7109284316553328
+      },
+      {
+        "future_relative_score": 0.9774364219256158,
+        "mode": "threshold",
+        "threshold": 0.7166373125190146
+      },
+      {
+        "future_relative_score": 1.0,
+        "mode": "accept_none",
+        "threshold": null
+      }
+    ],
+    "coefficients": [
+      0.32592592592592573,
+      -0.013736232040623337,
+      -0.05378572706432032,
+      0.10940498114153598,
+      -0.1773460191623578,
+      -0.1773460191623003,
+      -0.09779815177054878,
+      -0.04351706271458515,
+      -0.04459151985783874,
+      0.0992669756228087,
+      -0.08963061272498858,
+      -0.06738128635805188,
+      0.0498132591833214,
+      -0.09224705325018574,
+      0.2664713633122175,
+      -0.1514479040474009,
+      0.05884996269078867,
+      0.13231613409761928,
+      0.18251340159190688,
+      0.17482584639567947,
+      -0.1807432208631908,
+      0.00950325014966476,
+      0.07529600463815049,
+      0.1542992590047506,
+      -0.22464690442231225,
+      0.1057516301088656,
+      0.11252323307887972,
+      0.0406220532871552,
+      0.10924236227729116,
+      0.12224387848029172,
+      0.030875459133918596,
+      0.0392041042163425,
+      0.047790916608566845,
+      -0.05530249250525291,
+      -0.18850447746543095,
+      -0.021818208519108727,
+      -0.03776963850046124,
+      -0.18130570643018748,
+      0.2884311773734,
+      0.19795533675983598,
+      0.0703730690132211,
+      0.1314730622316666,
+      -0.030443505788842914,
+      -0.07921665626492401,
+      -0.001314645630857514,
+      0.14462864586804494,
+      -0.010702278132480475,
+      0.11365955205572092
+    ],
+    "feature_mean": [
+      0.5408439593191632,
+      0.4468454700262023,
+      0.2933723196881091,
+      1.6296296296296295,
+      0.6296296296296297,
+      0.26184092344931653,
+      0.3044160578177835,
+      0.18064908911181107,
+      -0.011049142527028731,
+      0.05933070685867419,
+      0.16443199364769787,
+      0.09727820029411122,
+      0.21928141622819572,
+      0.45943083611368346,
+      0.06009506324566004,
+      0.06333222690753205,
+      0.0032371636618720306,
+      0.03631039507635135,
+      0.053634046220263916,
+      0.06481249829636544,
+      -0.008091652681446031,
+      -0.011958255752338932,
+      -8.033965349724424e-05,
+      -0.004290556699619036,
+      0.12293572878599593,
+      0.1376126606077665,
+      0.014676931821770592,
+      0.09693852248668497,
+      0.00186775632841442,
+      0.005816299681713362,
+      0.007093341764839326,
+      0.0034317152910162325,
+      0.011150890410638206,
+      0.014007111733010615,
+      0.016103841073835598,
+      0.04814584818126613,
+      0.008994002697586913,
+      4.131098959773628,
+      0.03281367522864439,
+      0.029038872597581637,
+      0.19072271034949356,
+      0.10590077764182179,
+      0.167831261793186,
+      0.28467582528464835,
+      0.05812340603133704,
+      0.03587415430964944,
+      0.015581916704786015
+    ],
+    "feature_names": [
+      "mean_closure",
+      "mean_minimum_gripper_closure",
+      "all_grippers_closed_fraction_075",
+      "gripper_count",
+      "bimanual",
+      "mean_gripper_path_m",
+      "max_gripper_path_m",
+      "mean_endpoint_displacement_m",
+      "mean_vertical_displacement_m",
+      "mean_absolute_vertical_displacement_m",
+      "mean_horizontal_displacement_m",
+      "mean_vertical_path_m",
+      "mean_horizontal_path_m",
+      "vertical_to_horizontal_path_ratio",
+      "mean_opening_start_m",
+      "mean_opening_end_m",
+      "mean_opening_change_m",
+      "minimum_opening_m",
+      "gripper_0_delta_x_m",
+      "gripper_0_delta_y_m",
+      "gripper_0_delta_z_m",
+      "gripper_1_delta_x_m",
+      "gripper_1_delta_y_m",
+      "gripper_1_delta_z_m",
+      "gripper_separation_start_m",
+      "gripper_separation_end_m",
+      "gripper_separation_change_m",
+      "gripper_separation_range_m",
+      "gripper_delta_dot_m2",
+      "response_rms_m",
+      "response_mean_displacement_m",
+      "response_early_mean_displacement_m",
+      "response_late_mean_displacement_m",
+      "response_endpoint_mean_displacement_m",
+      "response_p90_displacement_m",
+      "response_max_displacement_m",
+      "response_frame_rms_growth_m",
+      "response_late_to_early_ratio",
+      "response_to_action_path_ratio",
+      "response_to_geometry_ratio",
+      "geometry_extent_x_m",
+      "geometry_extent_y_m",
+      "geometry_extent_z_m",
+      "geometry_diagonal_m",
+      "geometry_pca_0_m",
+      "geometry_pca_1_m",
+      "geometry_pca_2_m"
+    ],
+    "feature_scale": [
+      0.11100887397948908,
+      0.17017712921284917,
+      0.22685276788277442,
+      0.48290388186686284,
+      0.48290388186686295,
+      0.10489076046417993,
+      0.16006361387342533,
+      0.10057133937776389,
+      0.06720106201093354,
+      0.04934509676891129,
+      0.0957868235988188,
+      0.05180003953812178,
+      0.08900269522325481,
+      0.19490246072989273,
+      0.024093380224904842,
+      0.027132527209084482,
+      0.0396447507041689,
+      0.009551561465045565,
+      0.1119129719769394,
+      0.13683991759211167,
+      0.06825058478430156,
+      0.11428521418722289,
+      0.11275813417211339,
+      0.08314789524549135,
+      0.12782209879114825,
+      0.1640702803384096,
+      0.12171524294416224,
+      0.12157986418879846,
+      0.03413256041998858,
+      0.005950413622128264,
+      0.007917853569544196,
+      0.004294625452394057,
+      0.01275847180284031,
+      0.017116650811876428,
+      0.01718055704565411,
+      0.04452099070097995,
+      0.010091569793682061,
+      3.7508964491555137,
+      0.04534336710870904,
+      0.03389518923706842,
+      0.09000463507948382,
+      0.04860343763236939,
+      0.07792631803050806,
+      0.10607909034801938,
+      0.028011377654906907,
+      0.01660553544233594,
+      0.007592723940828691
+    ],
+    "fit_episode_keys": [
+      "002-rope-silk/2",
+      "002-rope-silk/5",
+      "002-rope-silk/6",
+      "002-rope-silk/7",
+      "002-rope-silk/9",
+      "085-scarf-cloth/3",
+      "085-scarf-cloth/4",
+      "085-scarf-cloth/6",
+      "085-scarf-cloth/8",
+      "085-scarf-cloth/9",
+      "083-blanket-cloth/1",
+      "083-blanket-cloth/2",
+      "083-blanket-cloth/4",
+      "083-blanket-cloth/5",
+      "083-blanket-cloth/8",
+      "083-blanket-cloth/9",
+      "092-squirrel/4",
+      "092-squirrel/5",
+      "092-squirrel/7",
+      "092-squirrel/8",
+      "092-squirrel/9",
+      "170-spider/0",
+      "170-spider/1",
+      "170-spider/3",
+      "170-spider/5",
+      "170-spider/8",
+      "170-spider/9"
+    ],
+    "fit_runtime": {
+      "numpy_version": "2.0.2",
+      "python_version": "3.12.3"
+    },
+    "information_boundary": {
+      "application_uses_frame_zero_geometry": true,
+      "application_uses_known_robot_action": true,
+      "application_uses_post_initial_object_observation": false,
+      "application_uses_predicted_simulator_response": true,
+      "application_uses_symbolic_action_label": false,
+      "application_uses_tactile": false,
+      "fit_uses_exhausted_source_outcomes": true
+    },
+    "maximum_alpha": 1.2,
+    "policy": "closure gate AND simulator-response self-diagnostic",
+    "reference_response_alpha": 0.9,
+    "result_sha256": "177c9642a0e043f69afe206c39c748fda35ea6d48cd70aa36f0752035b39da11",
+    "ridge": 0.1,
+    "ridge_search": [
+      {
+        "leave_one_episode_out_oracle_alpha_mse": 0.1635381513796186,
+        "ridge": 0.01
+      },
+      {
+        "leave_one_episode_out_oracle_alpha_mse": 0.16204491941644855,
+        "ridge": 0.1
+      },
+      {
+        "leave_one_episode_out_oracle_alpha_mse": 0.18352368485939066,
+        "ridge": 1.0
+      },
+      {
+        "leave_one_episode_out_oracle_alpha_mse": 0.19735398135019022,
+        "ridge": 10.0
+      },
+      {
+        "leave_one_episode_out_oracle_alpha_mse": 0.19464854983048668,
+        "ridge": 100.0
+      },
+      {
+        "leave_one_episode_out_oracle_alpha_mse": 0.22270976987604119,
+        "ridge": 1000.0
+      }
+    ],
+    "schema_version": 1,
+    "source_input_sha256": {
+      "episodes": {
+        "002-rope-silk/2": {
+          "alignment": "2ab0ea2fc737574a581bf23db1d0126f43e17ad55a4a454d2ea375cd3cfd45ea",
+          "prediction": "606a6cd487d48ff49fa49d123e90595e0286b21186ba2397f3e14a5941596989",
+          "robot": "61b31ea3cec6e57daae3eff792bca31de1ad80d91376def05c9801d9dccae6ef",
+          "target": "24fc6f7ed5ec4256a8231cb8d3e9b5e1ea354170b3342d42607ee828e9874844"
+        },
+        "002-rope-silk/5": {
+          "alignment": "43031744a1ac897b3e14ff5c532311f9871e87ec2754b6cf78a50e4d4afda3e0",
+          "prediction": "977700e6d7113234867bdd7162f6a6b8bd3e1577061a71dfc7755ce553d11b7e",
+          "robot": "771789b19ec2265ac987aead34abeba2fa5cee063b8fd3842f6a1c03c7e41332",
+          "target": "da15b816135791daff3ac21993a43ebdd34330eb30847153952d98c295a45c75"
+        },
+        "002-rope-silk/6": {
+          "alignment": "bf9735d597d86242bc6cf9b8a4079d1ba24e9d2318854dbead0362b64fbcc730",
+          "prediction": "a88e3a405e47e06853f1f5d95da1fb20a5aec4ec2f171f8e724f42fd6196b2a4",
+          "robot": "9907f1ff255ddb2e2fd95c9779a08a89c9f6c0faf12a94a6ec10333cb4d6887d",
+          "target": "70589a2f08c9a1c3f2ac4da510d0062631668436300d8767173ea5f7b164b87e"
+        },
+        "002-rope-silk/7": {
+          "alignment": "000154e47f33b985e6e0fb621a4cf6b9d16b0173fdcdf100a75abb4cecf65dc7",
+          "prediction": "2963cd6d6000b8defc64d8604db1f72deefa09f64c83f2222b26e2991d42c913",
+          "robot": "4592d7f9d73bce6069a28f687c950d69f2d128966b9265dcc72d0fc925ea3952",
+          "target": "5f557a8f6062bf51ad6b0405328226f92ec5ec9a349acb56d8f9b19e9f55eaec"
+        },
+        "002-rope-silk/9": {
+          "alignment": "a2464ce0c0b203d810b22fead83b9aa8279f8a4d26280dffd6fb9e016b54c812",
+          "prediction": "bd5f75bbd1e434adbeb5c9bca9752aaaddfda05d2239581668e3959a50616325",
+          "robot": "3ec886750c3b7655e04c702ab0c57180d3c69ce1893a1beed520f211bd3f21f6",
+          "target": "3ac976dbe0afd0cea52e444780b89969b4ed7ea00651ed6a700f0d588f4a0db7"
+        },
+        "083-blanket-cloth/1": {
+          "alignment": "58d3527e18877a740da9bbac1a840d43fe5bc411d9e43a9a77a0b3285d9b7efe",
+          "prediction": "3bcccd2f698c8982cc2614ee51a9516037250104a25779e0f0dbb38d6b80b8a8",
+          "robot": "06e4fbedbc601bdd6f3cf6e910701d578df2cff36770e72a1ea895f1e17179fc",
+          "target": "6e90cb423a1f3f2842998f5cfc5e2a693cf72423f0ecd60e5912954ac621520b"
+        },
+        "083-blanket-cloth/2": {
+          "alignment": "a11a023b5a53555497b6bb636d37c1487156b408399d9e8f1ac41eba933ddda4",
+          "prediction": "f7172b33cf98013c322196c63257a62e7c6e0dc7976924b4cc647869b94f4e37",
+          "robot": "6151025288841745da8829a705d37d7271170449ff822083c4ed3cd3fb0f9138",
+          "target": "503fbdaed798f7dea5712ad2ae6c6d9d51ef381782182e1d399f68934558cd4f"
+        },
+        "083-blanket-cloth/4": {
+          "alignment": "89f3eb089655207c0cf2d10f20e7a8f2bb0b14e885ba0a32b220f6922263e68f",
+          "prediction": "cdf612cdd0dff551ef47e86c1c75e149f033bdc5dcc8e2c166765926d44498f1",
+          "robot": "5c37490041f9384fae3d8b15672a3a1332c45125db8a3ff034e4bf0a8d551354",
+          "target": "1f70c53c43ecc5246d4ad6acb92b586db71a7c9092e89577b9306f4c509a8d1c"
+        },
+        "083-blanket-cloth/5": {
+          "alignment": "83f355b5aad6f467036e98e042cc39c438e4c116528122e0eface84e0de1d860",
+          "prediction": "4769f1f2e239a88aaae23d721c6ecbdb777535af4767ebf5ff3d2cbd946347c0",
+          "robot": "4ca18fed4edfa99e5652ef548784861a41640bad76a3b144eb2a19a1631056f3",
+          "target": "03d3b991b0db61a76ca759dad79df3e1344c4f9bf548e0be8a13aa03d79a455d"
+        },
+        "083-blanket-cloth/8": {
+          "alignment": "148cb49b27886870253d60029baf4b2d79bfa24bb4018b34120176b94d62096b",
+          "prediction": "c98107a55e5379b2f1d4e4cfc63fa4bf5734549d29641046686964b46e122791",
+          "robot": "d8e1b20bca888802ef096538fa26a6ccdaee9c1a021eb04b16e434f462bbe70b",
+          "target": "e9b09b4d4640b8624dcd2bbbebf30806487dcb3e733c3731204d0af9737c742f"
+        },
+        "083-blanket-cloth/9": {
+          "alignment": "f675a785d4b50c43e97702618a20adc42f504250f1fdc0000248ab487c8e8b68",
+          "prediction": "8b1c294d483124e3c015f3e6bcc1763b39ecfb9337e8cd2ce76ece7551023867",
+          "robot": "3c58303aaf5a06733ddf841aaa4f3457a149d2ce885f29861bbda0f4362edf85",
+          "target": "9ed68d8225172e01951a0df05747f5419e7a983a0dc22cba750f76d55f99cf57"
+        },
+        "085-scarf-cloth/3": {
+          "alignment": "c76d79621f42cd42acb214c7872e68f9cbde5d33ffb5ab3d7138ac22ebf568bd",
+          "prediction": "06c8feb09eaa4b64c3d4437907bc07b56c28f38e56f2677438877fa834667877",
+          "robot": "05d6cd153ba4e0c8fe0756562dc458dea516f3a026e7a83f8efdf20478cd7028",
+          "target": "752e4043ecf7bdfbca392ebf312e5ee6360f7f55d4f60e2429f4760e70cced01"
+        },
+        "085-scarf-cloth/4": {
+          "alignment": "92b615f6cd8352098f450390972272b6103367fc887a8c5084fd2e03a188c627",
+          "prediction": "77329da6b21e259a4448a6d8e61f6eb2dde6bf78e91dbe7729aac9e81ddd5972",
+          "robot": "66ee69b1588e1bd8b15f5680a659ec28224085df10934836fc9c4de316f5436d",
+          "target": "22e69bc591eaf2086bbd412b94f5e750c17f7df2fb53a120f458a59c6f5911a3"
+        },
+        "085-scarf-cloth/6": {
+          "alignment": "20f35409e2c83fe31c443dbc095c8c89b01c5e3ba5bf5ab6a650d62f9a99c244",
+          "prediction": "77f6c775b017fede1a02c2377394100f433dc0dfe48b8790ef39338344595502",
+          "robot": "47949d00ce801607b1ae5fa3068f3904f24df1dcf3cf14e005c9b4186d7b51c7",
+          "target": "bbca64e6ee03d33c46002acd65c3cab0430752445ddcfb53b11f168f5caddbaa"
+        },
+        "085-scarf-cloth/8": {
+          "alignment": "41d4a274ac03598313abc46305807fed220c7e7f2a05892432d277b893a28f35",
+          "prediction": "a0e49b9f23edd4073d006b646bfa2019351d324990ff5b964ff55d9e0354fb83",
+          "robot": "a4ba2fad1effc2f027730c7dd3764c070510984849c6bb64f00a085a05d0761c",
+          "target": "0d13d13ac1578a08ce5ca146d8e5dd95aec2e46627ce51d885532377edc571ff"
+        },
+        "085-scarf-cloth/9": {
+          "alignment": "b07d16c3b6736b67ed594ca01f95028e98d2b7fce7fbf60bea4e877230063056",
+          "prediction": "2707ed5523d15efab56d375cef0f422aaffdcf2cb46112a8ab96b0ca41a58072",
+          "robot": "3d1d5a3e85bab0787ced56e086c8cd86362fa7f790fa16b434a8d5eb5e4f15b4",
+          "target": "464b1b93ed84c1e00748f0774ba31067664b0863fb017fde018d937d7e608dac"
+        },
+        "092-squirrel/4": {
+          "alignment": "e75c7468ac6b83cb6f62dfccfa2a622396a60fec4ae85233716d61b519ed564d",
+          "prediction": "ea0fe1745d93410dcf125f3f4d983202254356804617f93363f10c1482a3b7a4",
+          "robot": "8423be599afc4e1f4efdb2a32af1848712ef22d17a49e3c5d204dfb5456962e0",
+          "target": "2be4bc2c66b604953865c73669e3b56dd2aa9a014daaa47d8627eae5da7aea60"
+        },
+        "092-squirrel/5": {
+          "alignment": "c39e557aa677578da465fac9e8f7a5a1b022d17c12f48f9e968db0a4d4230ec5",
+          "prediction": "69e2bb62ceb91115609a4659144f577040508b137faf476e7abe1ce30c695acb",
+          "robot": "e548cdb604d685690336d8ae929ffa96bbd802613bc05a7d5cf83ce7c0a5e58a",
+          "target": "f83507233ab60b37963ec4964257da7d354ebaed0131e2ee3be8c49447fddc05"
+        },
+        "092-squirrel/7": {
+          "alignment": "52b95f9b480ae8af25c212ee810af9c3b4a1c1c7ef4cb29176dc3cc22a2102aa",
+          "prediction": "2a29dca532d0425eab2c575ca09e57191f0928bb53d11d10333c5aeb90eeb28f",
+          "robot": "5318b175b15e9be7aeea329d08d1e68c61807f5ed229040fcd3eaa61bdae1407",
+          "target": "b0aab8afbb14365ad454a456bfb7fb5cdfa04e4c2861f9b4aa47e3a2470a66e1"
+        },
+        "092-squirrel/8": {
+          "alignment": "d97589e1040330e2cd72ae9e449283c3dcef56e74effa194f6a16e6c4458f5d0",
+          "prediction": "89fba98a6bfbe3314ccfc133089a8d56a4eade3b471b8a447e8a87f20aef900f",
+          "robot": "c585e08bdb2ddbd8de3c16f78e0f52bfa38d93be74da81e0872d59f4fe54ea73",
+          "target": "a3b87ade453f56107ed34b240355df3ebc531a73459b05cbb711d64234243b0b"
+        },
+        "092-squirrel/9": {
+          "alignment": "c204b5b3c6ca50168fa907db937433ca84bcb9ef43a7a0cd9c1bf6123a051a17",
+          "prediction": "b1becdc93d1ad433295a319bbc2f026ace1366498bab48c9ba3fbe5dc721da90",
+          "robot": "2726e83838c927c1392940e30be1921c189aa52ea99e274e6478a59000b98d81",
+          "target": "c7d3cb01981af4a4e196e9e534c058eba37af4c961640198a6a5152b15c26ce6"
+        },
+        "170-spider/0": {
+          "alignment": "2286450a1564a0d1927a07c4cf35118fa3cbf32be9ecab4d5075239c2b2c97ec",
+          "prediction": "da33a85e253a0d03e02f5feefb9e4254a51d7c40e8e735c0e54cd94b1c0b1b39",
+          "robot": "0a24fec4998049074a2dbdc8dfe420a5edbfd141d61fca737ff7c0232d6da313",
+          "target": "b6180d391ec324da633a73c2222495697c664f212f55c73c8c80cb44d0ef6c1c"
+        },
+        "170-spider/1": {
+          "alignment": "358d5bf64d65bd120520a9722d305bebafa2dfbe908e10d720e591b353b23798",
+          "prediction": "1c42d3432242529fb122435f0c9e606f97cb4453902d84f4d6512cd549d92940",
+          "robot": "a2227739d8599d0b9348148888297f4980acaa05c3be8bb9d860e829b445ae98",
+          "target": "52c93d3cfa33b3d4785264a256343dc8ec3f3b6801672062aac7f17665b6821f"
+        },
+        "170-spider/3": {
+          "alignment": "8187657a3d576d83f2a6e4b8b22a6cc6f71e904a982b0547f7ee464104eafdcf",
+          "prediction": "1e2e7445009baad7f5402f0be211bb767206549a90b250a969f915328ddfcf5d",
+          "robot": "d799e7e92867c2bc5446e25cf33566683bdf28fb3269916d7ed2bde69aca5bd6",
+          "target": "cc8540917674e10ac7614520e91bbe01aeb817b6b06664bd495e58752026db0f"
+        },
+        "170-spider/5": {
+          "alignment": "010ad621a3941c099d072296c188c40f4db6dcb67c42f0c32e2e70612bc24b30",
+          "prediction": "b526e5d62e6bb8924940e1989fb91addd452f34de4ef77d2140fa31e8f2f8b5a",
+          "robot": "12239e3291eb4d83c7b31f8861d6ff7eaf6dae4e9c90bffd923f0e67dcfa30c7",
+          "target": "48256bb53fa49f8f1672970d3debd5385b7c6720f0d8c57d22e9c5307c221635"
+        },
+        "170-spider/8": {
+          "alignment": "05b080097321028e7433e555709b28d060015759302104b5a08f0e3f68d9e141",
+          "prediction": "2e8893417c8c6f0ade628ef3df9e44e6ed27234910c168dcfaaccc5cc656f0bf",
+          "robot": "1478c884802a7c91e7634a90f58b45ea57478477e155a69efbadea29e16c2d47",
+          "target": "bf074cd06420bc10e62761dd7a601982d349b4aa1e6604ac41453a57b5ffd05b"
+        },
+        "170-spider/9": {
+          "alignment": "60ff5ca0d625284a31e2f90c20f43cbdce8e7212cf1a385451b6b2119fc878b6",
+          "prediction": "1fd881c97c721e485163f9a605b96ea572ee791538b5ba0b19d3e1b2aea36483",
+          "robot": "98ae531cc0e1645bd32e74f170480b25cd7aa749f4648ac60be028fa4464e617",
+          "target": "3a224fc1f9b281ceb31acc80fdec1e1bc025d7e24baffe037b8a9a295012b760"
+        }
+      },
+      "failure_diagnosis": "2e4692ec8cc1e2c1d25898100bcdc6078eadce405682402fdfc858565e54519b"
+    }
+  },
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "held_episode_object_outcome_used": false,
+    "held_episode_simulator_response_used": true,
+    "independent_source_outcomes_read": true,
+    "outer_cross_fit_unit": "episode",
+    "ridge_selected_by_nested_episode_cross_fit": true,
+    "same_object_training_episodes_permitted": true,
+    "symbolic_action_label_used": false,
+    "tactile_used": false,
+    "target_actions_read": false,
+    "target_initial_frames_read": false,
+    "target_outcomes_read": false
+  },
+  "input_sha256": {
+    "episodes": {
+      "002-rope-silk/2": {
+        "alignment": "2ab0ea2fc737574a581bf23db1d0126f43e17ad55a4a454d2ea375cd3cfd45ea",
+        "prediction": "606a6cd487d48ff49fa49d123e90595e0286b21186ba2397f3e14a5941596989",
+        "robot": "61b31ea3cec6e57daae3eff792bca31de1ad80d91376def05c9801d9dccae6ef",
+        "target": "24fc6f7ed5ec4256a8231cb8d3e9b5e1ea354170b3342d42607ee828e9874844"
+      },
+      "002-rope-silk/5": {
+        "alignment": "43031744a1ac897b3e14ff5c532311f9871e87ec2754b6cf78a50e4d4afda3e0",
+        "prediction": "977700e6d7113234867bdd7162f6a6b8bd3e1577061a71dfc7755ce553d11b7e",
+        "robot": "771789b19ec2265ac987aead34abeba2fa5cee063b8fd3842f6a1c03c7e41332",
+        "target": "da15b816135791daff3ac21993a43ebdd34330eb30847153952d98c295a45c75"
+      },
+      "002-rope-silk/6": {
+        "alignment": "bf9735d597d86242bc6cf9b8a4079d1ba24e9d2318854dbead0362b64fbcc730",
+        "prediction": "a88e3a405e47e06853f1f5d95da1fb20a5aec4ec2f171f8e724f42fd6196b2a4",
+        "robot": "9907f1ff255ddb2e2fd95c9779a08a89c9f6c0faf12a94a6ec10333cb4d6887d",
+        "target": "70589a2f08c9a1c3f2ac4da510d0062631668436300d8767173ea5f7b164b87e"
+      },
+      "002-rope-silk/7": {
+        "alignment": "000154e47f33b985e6e0fb621a4cf6b9d16b0173fdcdf100a75abb4cecf65dc7",
+        "prediction": "2963cd6d6000b8defc64d8604db1f72deefa09f64c83f2222b26e2991d42c913",
+        "robot": "4592d7f9d73bce6069a28f687c950d69f2d128966b9265dcc72d0fc925ea3952",
+        "target": "5f557a8f6062bf51ad6b0405328226f92ec5ec9a349acb56d8f9b19e9f55eaec"
+      },
+      "002-rope-silk/9": {
+        "alignment": "a2464ce0c0b203d810b22fead83b9aa8279f8a4d26280dffd6fb9e016b54c812",
+        "prediction": "bd5f75bbd1e434adbeb5c9bca9752aaaddfda05d2239581668e3959a50616325",
+        "robot": "3ec886750c3b7655e04c702ab0c57180d3c69ce1893a1beed520f211bd3f21f6",
+        "target": "3ac976dbe0afd0cea52e444780b89969b4ed7ea00651ed6a700f0d588f4a0db7"
+      },
+      "083-blanket-cloth/1": {
+        "alignment": "58d3527e18877a740da9bbac1a840d43fe5bc411d9e43a9a77a0b3285d9b7efe",
+        "prediction": "3bcccd2f698c8982cc2614ee51a9516037250104a25779e0f0dbb38d6b80b8a8",
+        "robot": "06e4fbedbc601bdd6f3cf6e910701d578df2cff36770e72a1ea895f1e17179fc",
+        "target": "6e90cb423a1f3f2842998f5cfc5e2a693cf72423f0ecd60e5912954ac621520b"
+      },
+      "083-blanket-cloth/2": {
+        "alignment": "a11a023b5a53555497b6bb636d37c1487156b408399d9e8f1ac41eba933ddda4",
+        "prediction": "f7172b33cf98013c322196c63257a62e7c6e0dc7976924b4cc647869b94f4e37",
+        "robot": "6151025288841745da8829a705d37d7271170449ff822083c4ed3cd3fb0f9138",
+        "target": "503fbdaed798f7dea5712ad2ae6c6d9d51ef381782182e1d399f68934558cd4f"
+      },
+      "083-blanket-cloth/4": {
+        "alignment": "89f3eb089655207c0cf2d10f20e7a8f2bb0b14e885ba0a32b220f6922263e68f",
+        "prediction": "cdf612cdd0dff551ef47e86c1c75e149f033bdc5dcc8e2c166765926d44498f1",
+        "robot": "5c37490041f9384fae3d8b15672a3a1332c45125db8a3ff034e4bf0a8d551354",
+        "target": "1f70c53c43ecc5246d4ad6acb92b586db71a7c9092e89577b9306f4c509a8d1c"
+      },
+      "083-blanket-cloth/5": {
+        "alignment": "83f355b5aad6f467036e98e042cc39c438e4c116528122e0eface84e0de1d860",
+        "prediction": "4769f1f2e239a88aaae23d721c6ecbdb777535af4767ebf5ff3d2cbd946347c0",
+        "robot": "4ca18fed4edfa99e5652ef548784861a41640bad76a3b144eb2a19a1631056f3",
+        "target": "03d3b991b0db61a76ca759dad79df3e1344c4f9bf548e0be8a13aa03d79a455d"
+      },
+      "083-blanket-cloth/8": {
+        "alignment": "148cb49b27886870253d60029baf4b2d79bfa24bb4018b34120176b94d62096b",
+        "prediction": "c98107a55e5379b2f1d4e4cfc63fa4bf5734549d29641046686964b46e122791",
+        "robot": "d8e1b20bca888802ef096538fa26a6ccdaee9c1a021eb04b16e434f462bbe70b",
+        "target": "e9b09b4d4640b8624dcd2bbbebf30806487dcb3e733c3731204d0af9737c742f"
+      },
+      "083-blanket-cloth/9": {
+        "alignment": "f675a785d4b50c43e97702618a20adc42f504250f1fdc0000248ab487c8e8b68",
+        "prediction": "8b1c294d483124e3c015f3e6bcc1763b39ecfb9337e8cd2ce76ece7551023867",
+        "robot": "3c58303aaf5a06733ddf841aaa4f3457a149d2ce885f29861bbda0f4362edf85",
+        "target": "9ed68d8225172e01951a0df05747f5419e7a983a0dc22cba750f76d55f99cf57"
+      },
+      "085-scarf-cloth/3": {
+        "alignment": "c76d79621f42cd42acb214c7872e68f9cbde5d33ffb5ab3d7138ac22ebf568bd",
+        "prediction": "06c8feb09eaa4b64c3d4437907bc07b56c28f38e56f2677438877fa834667877",
+        "robot": "05d6cd153ba4e0c8fe0756562dc458dea516f3a026e7a83f8efdf20478cd7028",
+        "target": "752e4043ecf7bdfbca392ebf312e5ee6360f7f55d4f60e2429f4760e70cced01"
+      },
+      "085-scarf-cloth/4": {
+        "alignment": "92b615f6cd8352098f450390972272b6103367fc887a8c5084fd2e03a188c627",
+        "prediction": "77329da6b21e259a4448a6d8e61f6eb2dde6bf78e91dbe7729aac9e81ddd5972",
+        "robot": "66ee69b1588e1bd8b15f5680a659ec28224085df10934836fc9c4de316f5436d",
+        "target": "22e69bc591eaf2086bbd412b94f5e750c17f7df2fb53a120f458a59c6f5911a3"
+      },
+      "085-scarf-cloth/6": {
+        "alignment": "20f35409e2c83fe31c443dbc095c8c89b01c5e3ba5bf5ab6a650d62f9a99c244",
+        "prediction": "77f6c775b017fede1a02c2377394100f433dc0dfe48b8790ef39338344595502",
+        "robot": "47949d00ce801607b1ae5fa3068f3904f24df1dcf3cf14e005c9b4186d7b51c7",
+        "target": "bbca64e6ee03d33c46002acd65c3cab0430752445ddcfb53b11f168f5caddbaa"
+      },
+      "085-scarf-cloth/8": {
+        "alignment": "41d4a274ac03598313abc46305807fed220c7e7f2a05892432d277b893a28f35",
+        "prediction": "a0e49b9f23edd4073d006b646bfa2019351d324990ff5b964ff55d9e0354fb83",
+        "robot": "a4ba2fad1effc2f027730c7dd3764c070510984849c6bb64f00a085a05d0761c",
+        "target": "0d13d13ac1578a08ce5ca146d8e5dd95aec2e46627ce51d885532377edc571ff"
+      },
+      "085-scarf-cloth/9": {
+        "alignment": "b07d16c3b6736b67ed594ca01f95028e98d2b7fce7fbf60bea4e877230063056",
+        "prediction": "2707ed5523d15efab56d375cef0f422aaffdcf2cb46112a8ab96b0ca41a58072",
+        "robot": "3d1d5a3e85bab0787ced56e086c8cd86362fa7f790fa16b434a8d5eb5e4f15b4",
+        "target": "464b1b93ed84c1e00748f0774ba31067664b0863fb017fde018d937d7e608dac"
+      },
+      "092-squirrel/4": {
+        "alignment": "e75c7468ac6b83cb6f62dfccfa2a622396a60fec4ae85233716d61b519ed564d",
+        "prediction": "ea0fe1745d93410dcf125f3f4d983202254356804617f93363f10c1482a3b7a4",
+        "robot": "8423be599afc4e1f4efdb2a32af1848712ef22d17a49e3c5d204dfb5456962e0",
+        "target": "2be4bc2c66b604953865c73669e3b56dd2aa9a014daaa47d8627eae5da7aea60"
+      },
+      "092-squirrel/5": {
+        "alignment": "c39e557aa677578da465fac9e8f7a5a1b022d17c12f48f9e968db0a4d4230ec5",
+        "prediction": "69e2bb62ceb91115609a4659144f577040508b137faf476e7abe1ce30c695acb",
+        "robot": "e548cdb604d685690336d8ae929ffa96bbd802613bc05a7d5cf83ce7c0a5e58a",
+        "target": "f83507233ab60b37963ec4964257da7d354ebaed0131e2ee3be8c49447fddc05"
+      },
+      "092-squirrel/7": {
+        "alignment": "52b95f9b480ae8af25c212ee810af9c3b4a1c1c7ef4cb29176dc3cc22a2102aa",
+        "prediction": "2a29dca532d0425eab2c575ca09e57191f0928bb53d11d10333c5aeb90eeb28f",
+        "robot": "5318b175b15e9be7aeea329d08d1e68c61807f5ed229040fcd3eaa61bdae1407",
+        "target": "b0aab8afbb14365ad454a456bfb7fb5cdfa04e4c2861f9b4aa47e3a2470a66e1"
+      },
+      "092-squirrel/8": {
+        "alignment": "d97589e1040330e2cd72ae9e449283c3dcef56e74effa194f6a16e6c4458f5d0",
+        "prediction": "89fba98a6bfbe3314ccfc133089a8d56a4eade3b471b8a447e8a87f20aef900f",
+        "robot": "c585e08bdb2ddbd8de3c16f78e0f52bfa38d93be74da81e0872d59f4fe54ea73",
+        "target": "a3b87ade453f56107ed34b240355df3ebc531a73459b05cbb711d64234243b0b"
+      },
+      "092-squirrel/9": {
+        "alignment": "c204b5b3c6ca50168fa907db937433ca84bcb9ef43a7a0cd9c1bf6123a051a17",
+        "prediction": "b1becdc93d1ad433295a319bbc2f026ace1366498bab48c9ba3fbe5dc721da90",
+        "robot": "2726e83838c927c1392940e30be1921c189aa52ea99e274e6478a59000b98d81",
+        "target": "c7d3cb01981af4a4e196e9e534c058eba37af4c961640198a6a5152b15c26ce6"
+      },
+      "170-spider/0": {
+        "alignment": "2286450a1564a0d1927a07c4cf35118fa3cbf32be9ecab4d5075239c2b2c97ec",
+        "prediction": "da33a85e253a0d03e02f5feefb9e4254a51d7c40e8e735c0e54cd94b1c0b1b39",
+        "robot": "0a24fec4998049074a2dbdc8dfe420a5edbfd141d61fca737ff7c0232d6da313",
+        "target": "b6180d391ec324da633a73c2222495697c664f212f55c73c8c80cb44d0ef6c1c"
+      },
+      "170-spider/1": {
+        "alignment": "358d5bf64d65bd120520a9722d305bebafa2dfbe908e10d720e591b353b23798",
+        "prediction": "1c42d3432242529fb122435f0c9e606f97cb4453902d84f4d6512cd549d92940",
+        "robot": "a2227739d8599d0b9348148888297f4980acaa05c3be8bb9d860e829b445ae98",
+        "target": "52c93d3cfa33b3d4785264a256343dc8ec3f3b6801672062aac7f17665b6821f"
+      },
+      "170-spider/3": {
+        "alignment": "8187657a3d576d83f2a6e4b8b22a6cc6f71e904a982b0547f7ee464104eafdcf",
+        "prediction": "1e2e7445009baad7f5402f0be211bb767206549a90b250a969f915328ddfcf5d",
+        "robot": "d799e7e92867c2bc5446e25cf33566683bdf28fb3269916d7ed2bde69aca5bd6",
+        "target": "cc8540917674e10ac7614520e91bbe01aeb817b6b06664bd495e58752026db0f"
+      },
+      "170-spider/5": {
+        "alignment": "010ad621a3941c099d072296c188c40f4db6dcb67c42f0c32e2e70612bc24b30",
+        "prediction": "b526e5d62e6bb8924940e1989fb91addd452f34de4ef77d2140fa31e8f2f8b5a",
+        "robot": "12239e3291eb4d83c7b31f8861d6ff7eaf6dae4e9c90bffd923f0e67dcfa30c7",
+        "target": "48256bb53fa49f8f1672970d3debd5385b7c6720f0d8c57d22e9c5307c221635"
+      },
+      "170-spider/8": {
+        "alignment": "05b080097321028e7433e555709b28d060015759302104b5a08f0e3f68d9e141",
+        "prediction": "2e8893417c8c6f0ade628ef3df9e44e6ed27234910c168dcfaaccc5cc656f0bf",
+        "robot": "1478c884802a7c91e7634a90f58b45ea57478477e155a69efbadea29e16c2d47",
+        "target": "bf074cd06420bc10e62761dd7a601982d349b4aa1e6604ac41453a57b5ffd05b"
+      },
+      "170-spider/9": {
+        "alignment": "60ff5ca0d625284a31e2f90c20f43cbdce8e7212cf1a385451b6b2119fc878b6",
+        "prediction": "1fd881c97c721e485163f9a605b96ea572ee791538b5ba0b19d3e1b2aea36483",
+        "robot": "98ae531cc0e1645bd32e74f170480b25cd7aa749f4648ac60be028fa4464e617",
+        "target": "3a224fc1f9b281ceb31acc80fdec1e1bc025d7e24baffe037b8a9a295012b760"
+      }
+    },
+    "failure_diagnosis": "2e4692ec8cc1e2c1d25898100bcdc6078eadce405682402fdfc858565e54519b"
+  },
+  "object_count": 5,
+  "result_sha256": "00c8d84a50ee79480e346220d6d71ced48c02c3d74af58c6fa7b4a6649b570b0",
+  "schema_version": 1
+}

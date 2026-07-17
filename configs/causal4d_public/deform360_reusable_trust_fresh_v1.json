@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-reusable-trust-fresh-v1",
+  "lock_revision": 2,
+  "status": "candidate-locked-before-fresh-object-download-or-outcomes",
+  "locked_at": "2026-07-17T08:51:42+02:00",
+  "amended_at": "2026-07-17T09:18:00+02:00",
+  "pre_data_amendment": {
+    "reason": "archive a standalone candidate with source hashes and an explicit numerical fit runtime",
+    "fresh_object_data_downloaded_or_inspected": false,
+    "superseded_candidate_result_sha256": "547a6758305502634be37a145c2329276dca61d42c5079ec1abb9b829a4aedd9",
+    "predictor_or_gate_changed": false,
+    "source_metrics_changed_materially": false
+  },
+  "parent_protocol_id": "deform360-graph-action-support-independent-source-v1",
+  "dataset": {
+    "repository": "brownu/deform360",
+    "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "code_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+  },
+  "discovery_evidence": {
+    "artifact": "/mnt/corsair/florianpfaff/deform360-contact-conditioned-reusable-v1/same_object_trust_diagnosis.json",
+    "artifact_file_sha256": "e3fc9b48d37c2a4de1b1a062f4e952f590fccd2de7c5c010ef5cca868a3548d0",
+    "result_sha256": "00c8d84a50ee79480e346220d6d71ced48c02c3d74af58c6fa7b4a6649b570b0",
+    "candidate_artifact": "../../milestones/deform360-reusable-trust-source-v1/artifacts/reusable_twin_trust_candidate.json",
+    "candidate_artifact_file_sha256": "4f18dc72d7ce82ad26d69eaded0c3316094f7cae72fa8cd4adafce20dc9f1d25",
+    "candidate_result_sha256": "177c9642a0e043f69afe206c39c748fda35ea6d48cd70aa36f0752035b39da11",
+    "source_episode_count": 27,
+    "source_object_count": 5,
+    "post_failure_exploratory": true,
+    "calibration_outcomes_read": false,
+    "target_actions_read": false,
+    "target_initial_frames_read": false,
+    "target_outcomes_read": false
+  },
+  "frozen_predictor": {
+    "policy": "apply the simulator-response scale only when the source-fitted closure gate accepts; otherwise return exact persistence",
+    "closure_feature": "mean_minimum_gripper_closure",
+    "closure_threshold": 0.36971213239866374,
+    "self_diagnostic": {
+      "model": "standardized ridge regression",
+      "ridge": 0.1,
+      "feature_count": 47,
+      "fit_runtime": {
+        "python_version": "3.12.3",
+        "numpy_version": "2.0.2"
+      },
+      "reference_response_alpha": 0.9,
+      "maximum_alpha": 1.2,
+      "inputs": [
+        "known robot trajectory and openness",
+        "frame-zero object geometry",
+        "driven-minus-persistence simulator response"
+      ]
+    },
+    "forbidden_inputs": [
+      "post-initial object observations",
+      "future object tracks or geometry",
+      "tactile measurements",
+      "symbolic action labels",
+      "held-out outcomes"
+    ],
+    "source_cross_fitted_result": {
+      "future_track_improvement_fraction": 0.056516601592610405,
+      "future_chamfer_improvement_fraction": 0.059978516446025254,
+      "late_track_improvement_fraction": 0.08211462403774583,
+      "late_chamfer_improvement_fraction": 0.0961931693660022,
+      "joint_win_count": 5,
+      "episode_count": 27,
+      "maximum_future_track_degradation_fraction": 0.027131200996014293,
+      "maximum_future_chamfer_degradation_fraction": 0.026035488816740893
+    }
+  },
+  "fresh_object_panel": {
+    "objects": {
+      "003-cable": "1D deformable",
+      "086-cotton-scarf-cloth": "2D deformable",
+      "171-penguin": "3D volumetric deformable"
+    },
+    "selection_rule": "first previously untouched hosted object after the principal discovery examples in each topology class; selected from directory names only",
+    "object_metadata_read_before_lock": false,
+    "video_or_track_data_read_before_lock": false,
+    "object_outcomes_read_before_lock": false,
+    "object_level_fit_episode_ids": [1, 3, 4, 6, 7, 9],
+    "held_out_episode_ids": [0, 2, 5, 8],
+    "held_out_episode_count": 12,
+    "prediction_must_be_hashed_before_any_held_out_outcome_is_opened": true,
+    "all_held_out_episodes_must_be_scored": true
+  },
+  "fresh_admission_gate": {
+    "minimum_future_track_improvement_fraction": 0.03,
+    "minimum_future_chamfer_improvement_fraction": 0.03,
+    "minimum_late_track_improvement_fraction": 0.05,
+    "minimum_late_chamfer_improvement_fraction": 0.05,
+    "maximum_per_episode_degradation_fraction_per_metric": 0.1,
+    "require_no_object_with_median_degradation": true,
+    "all_gates_conjunctive": true,
+    "on_fail": "freeze the reusable-trust route as a negative result and keep existing calibration and targets sealed",
+    "on_pass": "freeze the complete implementation and reproduce the official full-horizon Deform360 multi-episode split and evaluator"
+  },
+  "state_of_the_art_gate": {
+    "published_particleformer_future_chamfer_m": 0.051,
+    "published_particleformer_future_track_error_m": 0.079,
+    "source": "Deform360 Table 4",
+    "required_setting": "same-object unseen-episode, frame-zero open-loop prediction with known robot action",
+    "required_evaluation": [
+      "exact official temporal horizon and train/test episode split",
+      "official particle identities, Chamfer definition, and track-error definition",
+      "execution-balanced multi-object aggregation",
+      "ParticleFormer and persistence controls on the identical episodes"
+    ],
+    "claim_rule": "no state-of-the-art claim may be made from the 76-frame active-window admission panel"
+  },
+  "claim_boundary": "prospectively locked admission test for an automatic reusable physical twin; early-response abduction is a separate partial-observation Causal4D setting and is not part of this zero-shot benchmark"
+}

@@ -17,6 +17,14 @@ from causal4d_public.deform360_action_support import (
     graph_contact_distance_m,
     graph_readout_action_support,
 )
+from causal4d_public.deform360_contact_conditioned_action import (
+    CONTACT_CONDITIONED_ACTION_SCHEMA_VERSION,
+    ContactConditionedControllerAction,
+    condition_controller_action,
+    controller_spring_group_indices,
+    load_contact_conditioned_action_artifact,
+    write_contact_conditioned_action_artifact,
+)
 from causal4d_public.deform360_dense_reusable_panel import (
     CANONICAL_DENSE_REUSABLE_PANEL_CONFIG_SHA256,
     DENSE_REUSABLE_PANEL_PROTOCOL_ID,
@@ -45,6 +53,15 @@ from causal4d_public.deform360_reusable_graph import (
     registered_episode_data,
     reusable_graph_sha256,
     write_canonical_deform360_graph,
+)
+from causal4d_public.deform360_reusable_trust import (
+    Deform360ReusableTwinTrustCandidate,
+    ReusableTwinTrustDecision,
+    build_deform360_trust_features,
+    deform360_closure_features,
+    deform360_response_features,
+    deform360_robot_action_features,
+    load_reusable_twin_trust_candidate,
 )
 from causal4d_public.deform360_filament_registration import (
     FilamentRegistrationConfig,
@@ -252,6 +269,7 @@ from causal4d_public.pokeflex_warp_source import (
 )
 
 __all__ = [
+    "CONTACT_CONDITIONED_ACTION_SCHEMA_VERSION",
     "CANONICAL_DENSE_REUSABLE_PANEL_CONFIG_SHA256",
     "CanonicalDeform360Graph",
     "CrossViewMaskReliabilityConfig",
@@ -260,8 +278,10 @@ __all__ = [
     "ContactTransitionEpisode",
     "ContactTransitionFit",
     "ContactTransitionModel",
+    "ContactConditionedControllerAction",
     "AdaptiveRopeHullConfig",
     "Deform360ProtocolConfig",
+    "Deform360ReusableTwinTrustCandidate",
     "DENSE_REUSABLE_PANEL_PROTOCOL_ID",
     "GraphActionSupportEpisode",
     "DeformableObjectSam2MaskConfig",
@@ -288,6 +308,7 @@ __all__ = [
     "RopeCenterlineSequenceConfig",
     "RopeDynamicsObservation",
     "REUSABLE_ASSOCIATION_PROTOCOL_ID",
+    "ReusableTwinTrustDecision",
     "ReusableGraphRegistrationConfig",
     "RopeForwardFitConfig",
     "RopeFutureGeometryConfig",
@@ -299,6 +320,7 @@ __all__ = [
     "WarpRopeFeasibilityConfig",
     "build_sam2_mask_audit",
     "build_canonical_deform360_graph",
+    "build_deform360_trust_features",
     "build_registered_phystwin_graph",
     "canonical_reference_registration",
     "build_pokeflex_warp_case",
@@ -307,6 +329,8 @@ __all__ = [
     "build_sam2_prefix_mask_audit",
     "build_sam2_suffix_mask_audit",
     "camera_reliability_from_multiview_consistency",
+    "condition_controller_action",
+    "controller_spring_group_indices",
     "build_source_rope_observation",
     "build_source_backend_decision_artifact",
     "build_source_stage_failure_artifact",
@@ -326,6 +350,9 @@ __all__ = [
     "carve_candidate_points",
     "decode_video_frame_window",
     "deformable_object_mask_candidate_diagnostics",
+    "deform360_closure_features",
+    "deform360_response_features",
+    "deform360_robot_action_features",
     "deterministic_farthest_point_indices",
     "discover_pokeflex_episodes",
     "evaluate_target_contact_oracle",
@@ -355,10 +382,12 @@ __all__ = [
     "filament_multiview_support_diagnostics",
     "load_deform360_protocol_config",
     "load_canonical_deform360_graph",
+    "load_contact_conditioned_action_artifact",
     "load_dense_reusable_panel_config",
     "load_material_association_artifact",
     "load_reusable_association_config",
     "load_reusable_association_source_evidence",
+    "load_reusable_twin_trust_candidate",
     "load_pokeflex_source_qa_policy",
     "load_deform360_replication_protocol",
     "load_backend_policy",
@@ -416,6 +445,7 @@ __all__ = [
     "validate_reusable_association_calibration_request",
     "validate_reusable_association_source_evidence",
     "write_material_association_artifact",
+    "write_contact_conditioned_action_artifact",
     "write_canonical_deform360_graph",
     "validate_splat_probe_artifact",
     "validate_held_out_rope_prediction_seal",
