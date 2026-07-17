@@ -434,9 +434,15 @@ def predict_causal_contact_transition(
     predicted_object_positions_m: np.ndarray,
     *,
     dt_seconds: float,
-    initial_contact_state: np.ndarray,
+    initial_contact_state: np.ndarray | None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Recursively predict contact without future tactile labels."""
+    """Recursively predict contact without future tactile labels.
+
+    Passing ``None`` infers the frame-zero state from the onset hazard.  This is
+    the strict prediction setting where only initial geometry and the known
+    robot trajectory are available.  Supplying a state preserves the original
+    prefix-conditioned behavior.
+    """
 
     features = contact_transition_geometry_features(
         openings_m,
@@ -457,12 +463,23 @@ def predict_causal_contact_transition(
         onset.shape == release.shape == (features.shape[2] + 1,),
         "contact-transition coefficients changed",
     )
-    state = np.asarray(initial_contact_state, dtype=bool).copy()
-    _require(state.shape == (features.shape[1],), "initial contact state changed")
     states = np.empty(features.shape[:2], dtype=bool)
     probabilities = np.empty(features.shape[:2], dtype=np.float64)
+    if initial_contact_state is None:
+        initial_design = np.column_stack(
+            (np.ones(features.shape[1]), normalized[0])
+        )
+        initial_probability = _sigmoid(initial_design @ onset)
+        state = initial_probability >= model.transition_threshold
+        probabilities[0] = initial_probability
+    else:
+        state = np.asarray(initial_contact_state, dtype=bool).copy()
+        _require(
+            state.shape == (features.shape[1],),
+            "initial contact state changed",
+        )
+        probabilities[0] = state.astype(np.float64)
     states[0] = state
-    probabilities[0] = state.astype(np.float64)
     for frame in range(1, len(features)):
         design = np.column_stack((np.ones(features.shape[1]), normalized[frame]))
         onset_probability = _sigmoid(design @ onset)

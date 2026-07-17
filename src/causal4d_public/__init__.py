@@ -76,6 +76,13 @@ from causal4d_public.deform360_reusable_physics import (
     validate_reusable_physics_selection,
     validate_reusable_physics_response,
 )
+from causal4d_public.deform360_reusable_contact_transition import (
+    CANONICAL_CONTACT_TRANSITION_CONFIG_SHA256,
+    CONTACT_TRANSITION_ADDENDUM_ID,
+    contact_transition_config_sha256,
+    load_contact_transition_addendum,
+    validate_contact_transition_addendum,
+)
 from causal4d_public.deform360_reusable_trust_protocol import (
     EXECUTION_LOCK_ID as DEFORM360_REUSABLE_TRUST_EXECUTION_LOCK_ID,
     EXPECTED_SPLITS as DEFORM360_REUSABLE_TRUST_FRESH_SPLITS,
@@ -313,6 +320,7 @@ from causal4d_public.pokeflex_warp_source import (
 )
 
 __all__ = [
+    "CANONICAL_CONTACT_TRANSITION_CONFIG_SHA256",
     "CONTACT_CONDITIONED_ACTION_SCHEMA_VERSION",
     "CANONICAL_DENSE_REUSABLE_PANEL_CONFIG_SHA256",
     "CanonicalDeform360Graph",
@@ -323,6 +331,7 @@ __all__ = [
     "ContactTransitionFit",
     "ContactTransitionModel",
     "ContactConditionedControllerAction",
+    "CONTACT_TRANSITION_ADDENDUM_ID",
     "AdaptiveRopeHullConfig",
     "Deform360ProtocolConfig",
     "Deform360ReusableTwinTrustCandidate",
@@ -385,6 +394,7 @@ __all__ = [
     "build_sam2_suffix_mask_audit",
     "camera_reliability_from_multiview_consistency",
     "condition_controller_action",
+    "contact_transition_config_sha256",
     "controller_group_distance_trajectory_m",
     "controller_spring_group_indices",
     "geometry_latched_contact_schedule",
@@ -450,6 +460,7 @@ __all__ = [
     "load_deform360_evaluator_contract",
     "load_canonical_deform360_graph",
     "load_contact_conditioned_action_artifact",
+    "load_contact_transition_addendum",
     "load_dense_reusable_panel_config",
     "load_material_association_artifact",
     "load_reusable_association_config",
@@ -531,6 +542,7 @@ __all__ = [
     "validate_target_prefix_rope_geometry",
     "validate_target_future_rope_geometry",
     "validate_transition_fit_artifact",
+    "validate_contact_transition_addendum",
     "validate_rope_sequence_artifact",
     "validate_source_rope_observation_artifact",
     "write_synthetic_pokeflex_fixture",

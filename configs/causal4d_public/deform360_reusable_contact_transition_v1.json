@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "config_sha256": "7c0711e130e32d030e1c82e45c2249ed8d7654473bdf8eee889310daa89ed334",
+  "config": {
+    "protocol_id": "deform360-reusable-contact-transition-v1",
+    "status": "locked-after-fit-input-preprocessing-and-before-any-development-held-outcome",
+    "locked_at": "2026-07-17",
+    "parent_protocol": {
+      "protocol_id": "deform360-reusable-sota-v1",
+      "config_sha256": "64e41773d3e333987dc97a11c52e3474fd34fe65139e6c7d799b3e8f4db188cd",
+      "modified": false
+    },
+    "scientific_question": "Does causal onset-and-release prediction recover the contact-timing headroom left by the frozen static contact schedule?",
+    "information_boundary": {
+      "fit_episode_tactile_may_train_transition": true,
+      "held_initial_object_frame_count": 1,
+      "held_future_robot_trajectory_allowed": true,
+      "held_future_object_geometry_before_seal": false,
+      "held_future_tactile_before_seal": false,
+      "development_held_outcomes_may_open_only_after_all_arm_predictions_are_sealed": true,
+      "confirmatory_data_access_before_method_freeze": false,
+      "pokeflex_target_remains_sealed": true,
+      "causal4d_frozen_claim_may_change": false
+    },
+    "model": {
+      "kind": "separate regularized logistic onset and release hazards",
+      "features": [
+        "gripper_openness_m",
+        "gripper_to_predicted_object_proximity_m",
+        "relative_closing_speed_m_s"
+      ],
+      "current_contact_state": "selects onset or release hazard branch",
+      "coefficient_fit": "six fit episodes of the current object using tactile only as source supervision",
+      "hyperparameter_selection": "frozen globally by leave-one-development-object-out cross-validation",
+      "initial_contact_state": "infer from frame-zero onset hazard; no target tactile",
+      "feature_rollout": "one geometry-latched Warp rollout followed by one hazard-conditioned Warp rerun",
+      "final_prediction_rollout": "official Warp with hazard-conditioned controller activation",
+      "learned_geometry_residual": false,
+      "future_target_tactile_used": false,
+      "future_target_object_geometry_used": false
+    },
+    "required_arms": [
+      "constant persistence",
+      "pooled reusable twin with frozen static geometry-latched contact and trust",
+      "pooled reusable twin with causal contact-transition and the same trust",
+      "full future tactile oracle after prediction seal"
+    ],
+    "fallback": {
+      "invalid_or_unsupported_contact": "exact persistence",
+      "failed_development_gate": "retain frozen static-contact trusted arm",
+      "held_outcome_may_choose_fallback": false,
+      "confirmatory_arm_may_change_after_freeze": false
+    },
+    "development_gate": {
+      "development_object_count": 12,
+      "development_held_episode_count": 48,
+      "minimum_cd_improvement_vs_static_fraction": 0.02,
+      "minimum_track_improvement_vs_static_fraction": 0.02,
+      "minimum_episode_win_count_out_of_48": 28,
+      "maximum_episode_degradation_fraction": 0.10,
+      "no_category_median_degradation": true,
+      "contact_brier_must_improve": true,
+      "energy_score_must_not_degrade": true,
+      "coverage_90_must_remain_in_parent_interval": true,
+      "all_gates_conjunctive": true
+    },
+    "reporting": {
+      "contact_metrics": [
+        "brier_score",
+        "balanced_accuracy",
+        "onset_absolute_error_frames",
+        "release_absolute_error_frames"
+      ],
+      "geometry_metrics": [
+        "future_chamfer_m",
+        "future_track_error_m",
+        "late_chamfer_m",
+        "late_track_error_m"
+      ],
+      "oracle_role": "post-seal headroom diagnostic only",
+      "claim_if_gate_passes": "contact realization improves a reusable object-specific twin on the independent development protocol",
+      "direct_sota_claim_requires_parent_evaluator_parity": true
+    }
+  }
+}
