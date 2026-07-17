@@ -23,6 +23,9 @@ from causal4d_public.deform360_reusable_trust_protocol import (
     load_reusable_trust_protocol,
     validate_reusable_trust_prediction_cohort_seal,
 )
+from causal4d_public.deform360_reusable_trust_state import (
+    load_reusable_trust_state_addendum,
+)
 from deform360.processing import depth_stage, pcd_stage, tracking_stage
 from deform360.processing.control_points_stage import _frame_controller_points
 from deform360.processing.episode import episode_cameras
@@ -63,6 +66,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--parent-lock", type=Path, required=True)
     parser.add_argument("--physics-addendum", type=Path, required=True)
     parser.add_argument("--execution-lock", type=Path, required=True)
+    parser.add_argument("--mask-addendum", type=Path)
+    parser.add_argument("--state-addendum", type=Path)
     parser.add_argument("--observation-consensus-lock", type=Path, required=True)
     parser.add_argument("--operation", choices=("fit", "held-outcome"), required=True)
     parser.add_argument("--future-access-seal", type=Path, required=True)
@@ -79,8 +84,20 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-    protocol = load_reusable_trust_protocol(
-        args.parent_lock, args.physics_addendum, args.execution_lock
+    if (args.mask_addendum is None) != (args.state_addendum is None):
+        raise ValueError("mask and state addenda are required together")
+    protocol = (
+        load_reusable_trust_protocol(
+            args.parent_lock, args.physics_addendum, args.execution_lock
+        )
+        if args.state_addendum is None
+        else load_reusable_trust_state_addendum(
+            args.parent_lock,
+            args.physics_addendum,
+            args.execution_lock,
+            args.mask_addendum,
+            args.state_addendum,
+        )
     )
     access_seal = json.loads(
         args.future_access_seal.read_text(encoding="utf-8")
@@ -244,6 +261,16 @@ def main() -> int:
         "artifact_kind": "Deform360ReusableTwinFreshOutcome",
         "protocol_id": protocol["parent"]["protocol_id"],
         "physics_addendum_id": protocol["addendum"]["protocol_id"],
+        "mask_addendum_id": (
+            None
+            if protocol.get("mask_addendum") is None
+            else protocol["mask_addendum"]["protocol_id"]
+        ),
+        "state_addendum_id": (
+            None
+            if protocol.get("state_addendum") is None
+            else protocol["state_addendum"]["protocol_id"]
+        ),
         "role": role,
         "object_id": args.object_id,
         "episode_id": args.episode_id,
@@ -260,6 +287,16 @@ def main() -> int:
         "input_sha256": {
             "parent_lock": sha256_file(args.parent_lock),
             "physics_addendum": sha256_file(args.physics_addendum),
+            "mask_addendum": (
+                None
+                if args.mask_addendum is None
+                else sha256_file(args.mask_addendum)
+            ),
+            "state_addendum": (
+                None
+                if args.state_addendum is None
+                else sha256_file(args.state_addendum)
+            ),
             "observation_consensus_lock": sha256_file(
                 args.observation_consensus_lock
             ),

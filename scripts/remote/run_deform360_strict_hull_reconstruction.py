@@ -22,6 +22,9 @@ from causal4d_public.deform360_reusable_trust_protocol import (
     load_reusable_trust_protocol,
     validate_reusable_trust_prediction_cohort_seal,
 )
+from causal4d_public.deform360_reusable_trust_state import (
+    load_reusable_trust_state_addendum,
+)
 from deform360.processing import reconstruct_stage
 
 
@@ -57,6 +60,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--fresh-parent-lock", type=Path)
     parser.add_argument("--physics-addendum", type=Path)
     parser.add_argument("--execution-lock", type=Path)
+    parser.add_argument("--mask-addendum", type=Path)
+    parser.add_argument("--state-addendum", type=Path)
     parser.add_argument("--fresh-fit-grid-seal", type=Path)
     parser.add_argument("--fresh-held-cohort-seal", type=Path)
     return parser.parse_args()
@@ -85,11 +90,27 @@ def main() -> int:
         raise ValueError(
             "fresh parent, physics, and execution locks are required together"
         )
+    if (args.mask_addendum is None) != (args.state_addendum is None):
+        raise ValueError("mask and state addenda are required together")
+    if args.state_addendum is not None and args.fresh_parent_lock is None:
+        raise ValueError("state addendum requires the fresh protocol locks")
     fresh_protocol = (
         None
         if args.fresh_parent_lock is None
-        else load_reusable_trust_protocol(
-            args.fresh_parent_lock, args.physics_addendum, args.execution_lock
+        else (
+            load_reusable_trust_protocol(
+                args.fresh_parent_lock,
+                args.physics_addendum,
+                args.execution_lock,
+            )
+            if args.state_addendum is None
+            else load_reusable_trust_state_addendum(
+                args.fresh_parent_lock,
+                args.physics_addendum,
+                args.execution_lock,
+                args.mask_addendum,
+                args.state_addendum,
+            )
         )
     )
     if args.frame_zero_only:
