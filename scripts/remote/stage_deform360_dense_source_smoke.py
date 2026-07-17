@@ -189,6 +189,15 @@ def main() -> int:
         action="store_true",
         help="Select the source window using the locked known-action-only rule.",
     )
+    parser.add_argument(
+        "--prediction-only-staging",
+        action="store_true",
+        help=(
+            "Read and segment only the window-start object frame while retaining "
+            "the complete known robot-action window. Required by the fresh "
+            "outcome-blind prediction path."
+        ),
+    )
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--sam2-repository", required=True)
     parser.add_argument("--checkpoint", required=True)
@@ -219,6 +228,10 @@ def main() -> int:
     if args.fresh_parent_lock is None:
         require_source_episode(args.protocol, args.object_id, args.episode)
     else:
+        if not args.prediction_only_staging:
+            raise ValueError(
+                "fresh prediction staging must not read post-initial object frames"
+            )
         fresh_protocol = load_reusable_trust_protocol(
             args.fresh_parent_lock, args.physics_addendum, args.execution_lock
         )
@@ -300,6 +313,7 @@ def main() -> int:
             raise FileExistsError(f"source staging already exists: {output_episode}")
         shutil.rmtree(output_episode)
     output_episode.mkdir(parents=True)
+    object_frame_count = 1 if args.prediction_only_staging else args.frame_count
 
     sampled_masks_path = Path(args.sampled_masks_npz)
     initial_masks: dict[str, np.ndarray] = {}
@@ -380,13 +394,13 @@ def main() -> int:
                 source_camera / "undistorted.mp4",
                 output_camera / "undistorted.mp4",
                 args.start_frame,
-                args.frame_count,
+                object_frame_count,
             )
             _trim_timestamps(
                 source_camera / "aligned_timestamps.txt",
                 output_camera / "aligned_timestamps.txt",
                 args.start_frame,
-                args.frame_count,
+                object_frame_count,
             )
             metadata_path = source_camera / "metadata.json"
             if metadata_path.exists():
@@ -420,7 +434,7 @@ def main() -> int:
                     initialization=initialization,
                 )
             )
-            if [index for index, _ in masks] != list(range(args.frame_count)):
+            if [index for index, _ in masks] != list(range(object_frame_count)):
                 raise ValueError(f"SAM2 returned incomplete frames for {camera}")
             _write_masks(
                 output_camera / "mask_refined.h5",
@@ -471,7 +485,7 @@ def main() -> int:
         source_episode_dir=source_episode,
         sampled_masks_path=manifest_masks_path,
         start_frame=args.start_frame,
-        frame_count=args.frame_count,
+        frame_count=object_frame_count,
         cameras=cameras,
         outputs={
             "episode_dir": str(output_episode.resolve()),
@@ -480,6 +494,8 @@ def main() -> int:
             "initial_mask_diagnostics_sha256": sha256_file(initialization_path),
             "automatic_initial_mask_fallback_used": not sampled_masks_exact,
             "robot_sha256": sha256_file(robot_path),
+            "known_robot_action_frame_count": args.frame_count,
+            "object_observation_frame_count": object_frame_count,
             "tactile_sha256": tactile_hashes,
             "tactile_copied": fresh_authorization is None,
         },
@@ -497,7 +513,8 @@ def main() -> int:
                 "source_only": True,
                 "episode_dir": str(output_episode),
                 "camera_count": len(cameras),
-                "frame_count": args.frame_count,
+                "frame_count": object_frame_count,
+                "known_robot_action_frame_count": args.frame_count,
                 "start_frame": args.start_frame,
                 "action_aligned": args.action_aligned,
                 "initial_mask_policy": initial_mask_policy,
