@@ -304,6 +304,42 @@ def test_registered_graph_supports_opt_in_distributed_contact_patch() -> None:
     )
 
 
+def test_registered_graph_builds_dynamic_episode_contact_patches() -> None:
+    points, colors = _reference()
+    canonical = build_canonical_deform360_graph(
+        points,
+        colors,
+        registration_config=_config(),
+        spring_config=SPRINGS,
+    )
+    assert len(canonical.contact_anchor_indices) == 0
+    first = np.tile(canonical.vertices[:1], (4, 1))
+    second = np.tile(canonical.vertices[-1:], (4, 1))
+    controller = np.concatenate((first, second), axis=0)
+
+    graph = build_registered_phystwin_graph(
+        canonical,
+        canonical.vertices,
+        controller,
+        spring_config=SPRINGS,
+        controller_patch_size=3,
+        controller_group_size=4,
+    )
+
+    controller_springs = graph.springs[graph.num_object_springs :]
+    assert controller_springs.shape == (6, 2)
+    assert len(np.unique(controller_springs[:3, 1])) == 3
+    assert len(np.unique(controller_springs[3:, 1])) == 3
+    assert np.all(controller_springs[:3, 0] < len(canonical.vertices) + 4)
+    assert np.all(controller_springs[3:, 0] >= len(canonical.vertices) + 4)
+    np.testing.assert_array_equal(
+        graph.springs[: graph.num_object_springs], canonical.springs
+    )
+    np.testing.assert_array_equal(
+        graph.rest_lengths[: graph.num_object_springs], canonical.rest_lengths
+    )
+
+
 def test_registration_reorders_tracks_and_enforces_information_boundary() -> None:
     points, colors = _reference()
     canonical = build_canonical_deform360_graph(

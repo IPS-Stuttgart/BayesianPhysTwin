@@ -19,6 +19,10 @@ from causal4d_public.deform360_independent_source import (
     sha256_file,
     validate_prediction_only_bundle,
 )
+from causal4d_public.deform360_reusable_trust_protocol import (
+    authorize_reusable_trust_episode,
+    load_reusable_trust_protocol,
+)
 from deform360.processing.control_points_stage import _frame_controller_points
 from deform360.processing.pcd_stage import (
     CROP_HALF_EXTENT_M,
@@ -40,6 +44,11 @@ def _result_sha256(payload: dict[str, Any]) -> str:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lock", type=Path, required=True)
+    parser.add_argument("--physics-addendum", type=Path)
+    parser.add_argument("--execution-lock", type=Path)
+    parser.add_argument(
+        "--fresh-operation", choices=("fit", "held-prediction")
+    )
     parser.add_argument("--object-id", required=True)
     parser.add_argument("--episode-id", type=int, required=True)
     parser.add_argument("--episode-dir", type=Path, required=True)
@@ -52,10 +61,34 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-    lock = load_independent_source_lock(args.lock)
-    authorization = authorize_independent_source_episode(
-        lock, args.object_id, args.episode_id
+    fresh_values = (
+        args.physics_addendum,
+        args.execution_lock,
+        args.fresh_operation,
     )
+    if any(value is not None for value in fresh_values) and not all(
+        value is not None for value in fresh_values
+    ):
+        raise ValueError(
+            "physics, execution, and fresh operation locks must be supplied together"
+        )
+    if args.physics_addendum is None:
+        lock = load_independent_source_lock(args.lock)
+        authorization = authorize_independent_source_episode(
+            lock, args.object_id, args.episode_id
+        )
+        minimum = int(lock["frozen_predictor"]["minimum_observed_graph_node_count"])
+    else:
+        protocol = load_reusable_trust_protocol(
+            args.lock, args.physics_addendum, args.execution_lock
+        )
+        authorization = authorize_reusable_trust_episode(
+            protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            operation=args.fresh_operation,
+        )
+        minimum = 128
     if args.frame_count != 76:
         raise ValueError("the independent-source predictor requires 76 frames")
     episode_dir = args.episode_dir.resolve()
@@ -80,6 +113,9 @@ def main() -> int:
         or alignment.get("target_future_read") is not False
     ):
         raise ValueError("staged episode does not use the locked action alignment")
+    if args.physics_addendum is not None:
+        if alignment.get("fresh_authorization") != authorization:
+            raise ValueError("staged episode uses another fresh authorization")
     frame_range = alignment.get("selected_raw_frame_range_half_open")
     if (
         not isinstance(frame_range, list)
@@ -96,7 +132,6 @@ def main() -> int:
         seed_count=SEED_POINT_COUNT,
         rng_seed=args.rng_seed,
     )
-    minimum = int(lock["frozen_predictor"]["minimum_observed_graph_node_count"])
     if len(points) < minimum:
         raise ValueError(
             f"frame-zero reconstruction has {len(points)} points, below {minimum}"
@@ -175,6 +210,9 @@ def main() -> int:
         },
         "passed": True,
     }
+    if args.physics_addendum is not None:
+        summary["physics_addendum_sha256"] = sha256_file(args.physics_addendum)
+        summary["execution_lock_sha256"] = sha256_file(args.execution_lock)
     summary["result_sha256"] = _result_sha256(summary)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(

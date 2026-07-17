@@ -932,18 +932,30 @@ def build_registered_phystwin_graph(
     *,
     spring_config: PhysTwinSpringGraphConfig,
     controller_patch_size: int = 1,
+    controller_group_size: int | None = None,
 ) -> PhysTwinSpringGraph:
     """Keep canonical object springs and rebuild only episode contact springs."""
 
     if controller_patch_size < 1:
         raise ValueError("controller_patch_size must be positive")
+    if controller_group_size is not None and controller_group_size < 1:
+        raise ValueError("controller_group_size must be positive")
     episode_points = _points(
         episode_initial_points,
         name="episode_initial_points",
     ).astype(np.float32)
     if episode_points.shape != canonical.vertices.shape:
         raise ValueError("registered episode does not match the canonical node count")
-    if controller_reference is None or not len(canonical.contact_anchor_indices):
+    if controller_reference is None:
+        candidate = build_phystwin_spring_graph(
+            episode_points,
+            controller_reference,
+            config=spring_config,
+        )
+        controller_springs = candidate.springs[candidate.num_object_springs :].copy()
+        controller_rest = candidate.rest_lengths[candidate.num_object_springs :].copy()
+        controller_vertices = candidate.vertices[len(episode_points) :]
+    elif not len(canonical.contact_anchor_indices) and controller_group_size is None:
         candidate = build_phystwin_spring_graph(
             episode_points,
             controller_reference,
@@ -957,12 +969,21 @@ def build_registered_phystwin_graph(
             controller_reference,
             name="controller_reference",
         ).astype(np.float32)
-        anchor_count = len(canonical.contact_anchor_indices)
-        if len(controller_vertices) % anchor_count:
+        if len(canonical.contact_anchor_indices):
+            anchors = np.asarray(canonical.contact_anchor_indices, dtype=np.int64)
+            group_size = len(controller_vertices) // len(anchors)
+        else:
+            assert controller_group_size is not None
+            group_size = controller_group_size
+            if len(controller_vertices) % group_size:
+                raise ValueError(
+                    "controller points cannot be divided into dynamic groups"
+                )
+            anchors = np.empty(len(controller_vertices) // group_size, dtype=np.int64)
+        if len(controller_vertices) % len(anchors):
             raise ValueError(
                 "controller points cannot be divided among canonical contact anchors"
             )
-        group_size = len(controller_vertices) // anchor_count
         controller_springs_list: list[tuple[int, int]] = []
         controller_rest_list: list[float] = []
         graph_adjacency = coo_matrix(
@@ -975,7 +996,7 @@ def build_registered_phystwin_graph(
             ),
             shape=(len(episode_points), len(episode_points)),
         ).tocsr()
-        for group_index, anchor_index in enumerate(canonical.contact_anchor_indices):
+        for group_index in range(len(anchors)):
             start = group_index * group_size
             stop = start + group_size
             group = controller_vertices[start:stop]
@@ -984,10 +1005,14 @@ def build_registered_phystwin_graph(
             nearest_distance = controller_distance[
                 np.arange(len(episode_points)), nearest_controller
             ]
-            anchor = int(anchor_index)
+            if len(canonical.contact_anchor_indices):
+                anchor = int(anchors[group_index])
+            else:
+                anchor = int(np.argmin(nearest_distance))
+                anchors[group_index] = anchor
             if nearest_distance[anchor] > spring_config.controller_radius:
                 raise ValueError(
-                    "canonical contact anchor is outside the controller radius"
+                    "episode contact anchor is outside the controller radius"
                 )
             if controller_patch_size == 1:
                 selected_nodes = np.asarray([anchor], dtype=np.int64)

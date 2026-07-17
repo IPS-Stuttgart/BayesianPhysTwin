@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-reusable-trust-execution-v1",
+  "parent_physics_addendum_id": "deform360-reusable-trust-physics-addendum-v1",
+  "parent_physics_addendum_file_sha256": "48a875b7fe45843d2e7dce6752deaaecbe9765b6d41172f443ee577a8b98158c",
+  "locked_at": "2026-07-17T10:19:14+02:00",
+  "lock_timing": {
+    "raw_archives_downloaded": true,
+    "automatic_camera_undistortion_completed": true,
+    "known_robot_trajectory_recovery_started": true,
+    "fresh_frame_zero_object_reconstruction_run": false,
+    "fresh_object_mask_or_geometry_inspected": false,
+    "fit_outcomes_opened": false,
+    "held_outcomes_opened": false,
+    "reason": "make graph reuse and action-stream preprocessing exact before any fresh frame-zero object reconstruction"
+  },
+  "canonical_object_graph": {
+    "one_graph_per_object": true,
+    "reference_episode_rule": "lowest frozen fit episode id",
+    "reference_episode_id": 1,
+    "maximum_observed_node_count": 384,
+    "source": "reference episode frame-zero geometry and appearance only",
+    "shared_across_fit_and_held_episodes": true,
+    "object_springs_and_rest_lengths_rebuilt_per_episode": false,
+    "controller_or_contact_springs_embedded_in_shared_graph": false,
+    "episode_specific_updates": [
+      "rigid/material association from frame-zero geometry and appearance",
+      "partial graph state completion",
+      "controller attachment springs from known frame-zero gripper geometry"
+    ],
+    "registration_config_source_file_sha256": "8a90705dd38c6c90b042ed8f450e2bc7e3cffc54b965765b004d0385999d40ea",
+    "registration_uses_simulator_residual": false,
+    "registration_uses_post_initial_object_observation": false,
+    "failure_policy": "reject the object arm; never replace the object, reference episode, graph, or registration thresholds after seeing outcomes"
+  },
+  "dynamic_controller_attachment": {
+    "controller_group_size": 768,
+    "anchor_rule": "nearest canonical state node to each frame-zero controller group",
+    "canonical_patch_size_per_anchor": 16,
+    "controller_radius_m": 0.03,
+    "controller_max_neighbours": 1,
+    "known_future_controller_trajectory_used": true,
+    "tactile_used": false
+  },
+  "preprocessing": {
+    "action_window_rule": "inherit the frozen closure-weighted known-action selector",
+    "initial_mask_rule": "exact-frame generic SAM2 fallback when no source-QA mask exists",
+    "robot_trajectory": "released ArUco recovery from the aligned videos; treated as known action conditioning",
+    "tactile_copied_to_prediction_stage": false,
+    "post_initial_object_observation_used_before_prediction_seal": false
+  },
+  "controls": {
+    "episode_specific_graph": "retain as a labeled fit-side control; it cannot support a reusable-PhysTwin claim",
+    "persistence": "always reported and returned byte-exactly when trust rejects",
+    "single_fit_episode_physical_selection": "report for the pooling ablation",
+    "leave_one_fit_episode_out_selection": "report for transfer diagnosis"
+  },
+  "claim_boundary": "implementation lock for a genuinely reusable object graph; the 76-frame panel remains an admission test and cannot establish state of the art"
+}

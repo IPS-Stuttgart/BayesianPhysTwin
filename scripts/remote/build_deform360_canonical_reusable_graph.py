@@ -17,6 +17,9 @@ from causal4d_public.deform360_dense_reusable_panel import (
     authorize_dense_panel_episode,
     load_dense_reusable_panel_config,
 )
+from causal4d_public.deform360_independent_source import (
+    validate_prediction_only_bundle,
+)
 from causal4d_public.deform360_reusable_graph import (
     ReusableGraphRegistrationConfig,
     build_canonical_deform360_graph,
@@ -26,6 +29,10 @@ from causal4d_public.deform360_reusable_graph import (
     register_canonical_graph_to_episode,
     registered_episode_data,
     write_canonical_deform360_graph,
+)
+from causal4d_public.deform360_reusable_trust_protocol import (
+    authorize_reusable_trust_episode,
+    load_reusable_trust_protocol,
 )
 
 
@@ -58,6 +65,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--episode-id", type=int, required=True)
     parser.add_argument("--phase", choices=("source", "calibration"), required=True)
     parser.add_argument("--source-admission-passed", action="store_true")
+    parser.add_argument("--fresh-parent-lock", type=Path)
+    parser.add_argument("--physics-addendum", type=Path)
+    parser.add_argument("--execution-lock", type=Path)
+    parser.add_argument(
+        "--fresh-operation", choices=("fit", "held-prediction")
+    )
     parser.add_argument("--reference-final-data", type=Path, required=True)
     parser.add_argument("--episode-final-data", type=Path, required=True)
     parser.add_argument("--canonical-graph", type=Path, required=True)
@@ -66,6 +79,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument("--build-canonical", action="store_true")
     parser.add_argument("--canonical-only", action="store_true")
+    parser.add_argument("--prediction-only-input", action="store_true")
     return parser.parse_args()
 
 
@@ -75,19 +89,79 @@ def main() -> int:
         args.repo / "configs/causal4d_public/deform360_dense_reusable_panel_v1.json"
     )
     protocol = load_dense_reusable_panel_config(config_path)
-    authorization = authorize_dense_panel_episode(
-        protocol,
-        object_id=args.object_id,
-        episode_id=args.episode_id,
-        phase=args.phase,
-        source_admission_passed=args.source_admission_passed,
+    fresh_values = (
+        args.fresh_parent_lock,
+        args.physics_addendum,
+        args.execution_lock,
+        args.fresh_operation,
     )
-    cohort = {row["object_id"]: row for row in protocol["config"]["cohort"]}
-    object_protocol = cohort[args.object_id]
+    if any(value is not None for value in fresh_values) and not all(
+        value is not None for value in fresh_values
+    ):
+        raise ValueError(
+            "fresh parent, physics, execution, and operation locks are required together"
+        )
+    fresh_protocol = None
+    if args.fresh_parent_lock is None:
+        authorization = authorize_dense_panel_episode(
+            protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            phase=args.phase,
+            source_admission_passed=args.source_admission_passed,
+        )
+        cohort = {row["object_id"]: row for row in protocol["config"]["cohort"]}
+        reference_episode_id = int(cohort[args.object_id]["canonical_reference_episode_id"])
+        canonical_node_limit = int(
+            protocol["config"]["dense_reusable_method"][
+                "canonical_surface_node_count"
+            ]
+        )
+        protocol_config_sha256 = authorization["config_sha256"]
+    else:
+        if not args.prediction_only_input:
+            raise ValueError("fresh canonical build requires prediction-only input")
+        fresh_protocol = load_reusable_trust_protocol(
+            args.fresh_parent_lock,
+            args.physics_addendum,
+            args.execution_lock,
+        )
+        authorization = authorize_reusable_trust_episode(
+            fresh_protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            operation=args.fresh_operation,
+        )
+        execution = fresh_protocol["execution"]["canonical_object_graph"]
+        reference_episode_id = int(execution["reference_episode_id"])
+        canonical_node_limit = int(execution["maximum_observed_node_count"])
+        protocol_config_sha256 = fresh_protocol["execution_file_sha256"]
+        if not args.canonical_only:
+            raise ValueError(
+                "fresh reusable execution builds only the shared canonical graph; "
+                "episode state uses the separate partial-state stage"
+            )
     method = protocol["config"]["dense_reusable_method"]
     association = method["canonical_episode_registration"]
+    reference = _load_pickle(args.reference_final_data)
+    episode = _load_pickle(args.episode_final_data)
+    prediction_input_validation = None
+    if args.prediction_only_input:
+        prediction_input_validation = validate_prediction_only_bundle(
+            reference,
+            object_id=args.object_id,
+            episode_id=reference_episode_id,
+        )
+        validate_prediction_only_bundle(
+            episode,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+        )
+    reference_points = np.asarray(reference["object_points"])[0]
+    reference_colors = np.asarray(reference["object_colors"])[0]
+    effective_node_count = min(canonical_node_limit, len(reference_points))
     registration_config = ReusableGraphRegistrationConfig(
-        canonical_node_count=int(method["canonical_surface_node_count"]),
+        canonical_node_count=effective_node_count,
         geometry_sigma_m=float(association["geometry_sigma_m"]),
         color_sigma=float(association["color_sigma"]),
         color_cost_weight=float(association["color_cost_weight"]),
@@ -109,19 +183,19 @@ def main() -> int:
         controller_max_neighbours=int(method["controller_max_neighbours"]),
     )
 
-    reference = _load_pickle(args.reference_final_data)
-    episode = _load_pickle(args.episode_final_data)
-    reference_points = np.asarray(reference["object_points"])[0]
-    reference_colors = np.asarray(reference["object_colors"])[0]
     if args.build_canonical:
-        if args.episode_id != int(object_protocol["canonical_reference_episode_id"]):
+        if args.episode_id != reference_episode_id:
             raise ValueError("only the locked reference episode may build the graph")
         canonical = build_canonical_deform360_graph(
             reference_points,
             reference_colors,
             registration_config=registration_config,
             spring_config=spring_config,
-            reference_controller_points=np.asarray(reference["controller_points"])[0],
+            reference_controller_points=(
+                None
+                if fresh_protocol is not None
+                else np.asarray(reference["controller_points"])[0]
+            ),
             controller_group_size=int(method["controller_input_group_size"]),
             contact_clearance_m=0.1 * float(method["object_radius_m"]),
         )
@@ -142,8 +216,10 @@ def main() -> int:
             "contact_anchor_count": len(canonical.contact_anchor_indices),
             "contact_chain_spring_count": canonical.contact_chain_spring_count,
         }
-    if canonical.observed_node_count != registration_config.canonical_node_count:
+    if canonical.observed_node_count != effective_node_count:
         raise ValueError("canonical node count differs from the locked protocol")
+    if fresh_protocol is not None and len(canonical.contact_anchor_indices):
+        raise ValueError("fresh canonical graph must not embed controller contacts")
     if args.canonical_only:
         if not args.build_canonical:
             raise ValueError("canonical-only mode must build the source graph")
@@ -151,11 +227,15 @@ def main() -> int:
             "schema_version": 1,
             "artifact_kind": "Deform360CanonicalReusableGraphBuild",
             "protocol_id": authorization["protocol_id"],
-            "protocol_config_sha256": authorization["config_sha256"],
+            "protocol_config_sha256": protocol_config_sha256,
             "object_id": args.object_id,
             "episode_id": args.episode_id,
             "phase": args.phase,
+            "fresh_authorization": (
+                authorization if fresh_protocol is not None else None
+            ),
             "canonical_graph": canonical_descriptor,
+            "prediction_input_validation": prediction_input_validation,
             "input_sha256": {
                 "reference_final_data": _sha256_file(args.reference_final_data),
             },
@@ -167,6 +247,7 @@ def main() -> int:
                 "simulator_residual_used": False,
                 "future_object_frames_used": False,
                 "target_access": False,
+                "prediction_only_input_required": args.prediction_only_input,
             },
             "passed": True,
             "claim_boundary": (
@@ -198,7 +279,7 @@ def main() -> int:
     visibility = np.asarray(episode["object_visibilities"][:prefix_frames], dtype=bool)
     validity = np.asarray(episode["object_motions_valid"][:prefix_frames], dtype=bool)
     candidate_reliability = np.mean(visibility & validity, axis=0)
-    if args.episode_id == int(object_protocol["canonical_reference_episode_id"]):
+    if args.episode_id == reference_episode_id:
         if _sha256_file(args.episode_final_data) != _sha256_file(
             args.reference_final_data
         ):
@@ -249,13 +330,11 @@ def main() -> int:
     summary.update(
         {
             "protocol_id": authorization["protocol_id"],
-            "protocol_config_sha256": authorization["config_sha256"],
+            "protocol_config_sha256": protocol_config_sha256,
             "object_id": args.object_id,
             "episode_id": args.episode_id,
             "phase": args.phase,
-            "canonical_reference_episode_id": int(
-                object_protocol["canonical_reference_episode_id"]
-            ),
+            "canonical_reference_episode_id": reference_episode_id,
             "canonical_graph": canonical_descriptor,
             "input_sha256": {
                 "reference_final_data": _sha256_file(args.reference_final_data),

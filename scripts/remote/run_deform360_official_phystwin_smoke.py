@@ -256,6 +256,15 @@ def _parse_args() -> argparse.Namespace:
             "contact anchor. One preserves the original reusable-graph adapter."
         ),
     )
+    parser.add_argument(
+        "--canonical-controller-group-size",
+        type=int,
+        help=(
+            "Opt in to dynamic per-episode contact anchors by grouping the "
+            "controller point cloud. Canonical graphs with fixed contact anchors "
+            "retain their original behavior."
+        ),
+    )
     parser.add_argument("--init-spring-y", type=float)
     parser.add_argument("--drag-damping", type=float)
     parser.add_argument("--dashpot-damping", type=float)
@@ -336,6 +345,16 @@ def main() -> int:
         raise ValueError("controller neighbour count must be positive")
     if args.canonical_controller_patch_size < 1:
         raise ValueError("canonical controller patch size must be positive")
+    if (
+        args.canonical_controller_group_size is not None
+        and args.canonical_controller_group_size < 1
+    ):
+        raise ValueError("canonical controller group size must be positive")
+    if (
+        args.canonical_controller_group_size is not None
+        and args.canonical_reusable_graph is None
+    ):
+        raise ValueError("canonical controller grouping requires a reusable graph")
     if args.init_spring_y is not None and args.init_spring_y <= 0.0:
         raise ValueError("initial spring stiffness must be positive")
     if args.drag_damping is not None and args.drag_damping < 0.0:
@@ -465,6 +484,7 @@ def main() -> int:
                     controller_max_neighbours=int(controller_max_neighbours),
                 ),
                 controller_patch_size=args.canonical_controller_patch_size,
+                controller_group_size=args.canonical_controller_group_size,
             )
             return (
                 torch.as_tensor(graph.vertices, dtype=torch.float32, device=cfg.device),
@@ -524,11 +544,21 @@ def main() -> int:
     num_controller_springs = simulator.n_springs - trainer.num_object_springs
     if num_controller_springs < 1:
         raise ValueError("Deform360 rollout has no controller attachment springs")
-    controller_attachment_group_count = (
-        len(canonical_graph.contact_anchor_indices)
-        if canonical_graph is not None
-        else int(trainer.controller_points.shape[1])
-    )
+    if canonical_graph is None:
+        controller_attachment_group_count = int(trainer.controller_points.shape[1])
+    elif len(canonical_graph.contact_anchor_indices):
+        controller_attachment_group_count = len(
+            canonical_graph.contact_anchor_indices
+        )
+    elif args.canonical_controller_group_size is not None:
+        controller_point_count = int(trainer.controller_points.shape[1])
+        if controller_point_count % args.canonical_controller_group_size:
+            raise ValueError("controller trajectory does not form locked groups")
+        controller_attachment_group_count = (
+            controller_point_count // args.canonical_controller_group_size
+        )
+    else:
+        controller_attachment_group_count = int(trainer.controller_points.shape[1])
     original_controller_spring_y = torch.exp(
         spring_log_stiffness[-num_controller_springs:]
     )
@@ -794,6 +824,16 @@ def main() -> int:
                 "controller_attachments_rebuilt_per_episode": True,
                 "controller_patch_size_per_anchor": (
                     args.canonical_controller_patch_size
+                ),
+                "controller_group_size": args.canonical_controller_group_size,
+                "controller_attachment_mode": (
+                    "canonical_fixed_anchors"
+                    if len(canonical_graph.contact_anchor_indices)
+                    else (
+                        "episode_dynamic_grouped_anchors"
+                        if args.canonical_controller_group_size is not None
+                        else "legacy_generic_nearest"
+                    )
                 ),
             }
         ),

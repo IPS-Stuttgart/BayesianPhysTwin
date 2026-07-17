@@ -21,8 +21,15 @@ from causal4d_public.deform360_partial_graph_state import (
     evaluate_partial_graph_state,
     fit_partial_graph_state,
 )
+from causal4d_public.deform360_independent_source import (
+    validate_prediction_only_bundle,
+)
 from causal4d_public.deform360_reusable_graph import (
     load_canonical_deform360_graph,
+)
+from causal4d_public.deform360_reusable_trust_protocol import (
+    authorize_reusable_trust_episode,
+    load_reusable_trust_protocol,
 )
 
 
@@ -49,6 +56,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--episode-id", type=int, required=True)
     parser.add_argument("--phase", choices=("source", "calibration"), required=True)
     parser.add_argument("--source-admission-passed", action="store_true")
+    parser.add_argument("--fresh-parent-lock", type=Path)
+    parser.add_argument("--physics-addendum", type=Path)
+    parser.add_argument("--execution-lock", type=Path)
+    parser.add_argument(
+        "--fresh-operation", choices=("fit", "held-prediction")
+    )
+    parser.add_argument("--prediction-only-input", action="store_true")
     parser.add_argument("--canonical-graph", type=Path, required=True)
     parser.add_argument("--episode-final-data", type=Path, required=True)
     parser.add_argument("--simulator-final-data", type=Path, required=True)
@@ -74,17 +88,55 @@ def main() -> int:
         args.repo / "configs/causal4d_public/deform360_dense_reusable_panel_v1.json"
     )
     protocol = load_dense_reusable_panel_config(config_path)
-    authorization = authorize_dense_panel_episode(
-        protocol,
-        object_id=args.object_id,
-        episode_id=args.episode_id,
-        phase=args.phase,
-        source_admission_passed=args.source_admission_passed,
+    fresh_values = (
+        args.fresh_parent_lock,
+        args.physics_addendum,
+        args.execution_lock,
+        args.fresh_operation,
     )
+    if any(value is not None for value in fresh_values) and not all(
+        value is not None for value in fresh_values
+    ):
+        raise ValueError(
+            "fresh parent, physics, execution, and operation locks are required together"
+        )
+    fresh_protocol = None
+    if args.fresh_parent_lock is None:
+        authorization = authorize_dense_panel_episode(
+            protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            phase=args.phase,
+            source_admission_passed=args.source_admission_passed,
+        )
+        object_protocol = {
+            row["object_id"]: row for row in protocol["config"]["cohort"]
+        }[args.object_id]
+        reference_episode_id = int(
+            object_protocol["canonical_reference_episode_id"]
+        )
+        protocol_config_sha256 = authorization["config_sha256"]
+    else:
+        if not args.prediction_only_input:
+            raise ValueError("fresh state completion requires prediction-only input")
+        fresh_protocol = load_reusable_trust_protocol(
+            args.fresh_parent_lock,
+            args.physics_addendum,
+            args.execution_lock,
+        )
+        authorization = authorize_reusable_trust_episode(
+            fresh_protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            operation=args.fresh_operation,
+        )
+        reference_episode_id = int(
+            fresh_protocol["execution"]["canonical_object_graph"][
+                "reference_episode_id"
+            ]
+        )
+        protocol_config_sha256 = fresh_protocol["execution_file_sha256"]
     method = protocol["config"]["dense_reusable_method"]
-    object_protocol = {row["object_id"]: row for row in protocol["config"]["cohort"]}[
-        args.object_id
-    ]
     state_policy = method["partial_graph_state_completion"]
     config = PartialGraphStateConfig(
         start_count=int(state_policy["start_count"]),
@@ -125,6 +177,15 @@ def main() -> int:
     )
     canonical = load_canonical_deform360_graph(args.canonical_graph)
     episode = _load_pickle(args.episode_final_data)
+    prediction_input_validation = None
+    if args.prediction_only_input:
+        prediction_input_validation = validate_prediction_only_bundle(
+            episode,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+        )
+    if fresh_protocol is not None and len(canonical.contact_anchor_indices):
+        raise ValueError("fresh canonical graph must not embed controller contacts")
     total_frame_count = len(episode["object_points"])
     if not 0 <= args.state_frame < total_frame_count:
         raise ValueError("state frame is outside the episode")
@@ -154,7 +215,7 @@ def main() -> int:
     observed_points = np.asarray(episode["object_points"])[args.state_frame]
     observed_colors = np.asarray(episode["object_colors"])[args.state_frame]
     observed_controller = np.asarray(episode["controller_points"])[args.state_frame]
-    if args.episode_id == int(object_protocol["canonical_reference_episode_id"]):
+    if args.episode_id == reference_episode_id:
         if args.state_frame == 0:
             result = evaluate_partial_graph_state(
                 canonical,
@@ -236,10 +297,12 @@ def main() -> int:
         "schema_version": 1,
         "artifact_kind": "Deform360PartialGraphStateCompletion",
         "protocol_id": authorization["protocol_id"],
-        "protocol_config_sha256": authorization["config_sha256"],
+        "protocol_config_sha256": protocol_config_sha256,
         "object_id": args.object_id,
         "episode_id": args.episode_id,
         "phase": args.phase,
+        "fresh_authorization": authorization if fresh_protocol is not None else None,
+        "prediction_input_validation": prediction_input_validation,
         "state_frame": int(args.state_frame),
         "canonical_graph_sha256": canonical.sha256,
         "canonical_graph": {
@@ -266,6 +329,10 @@ def main() -> int:
             "future_object_frames_used": False,
             "held_out_test_frames_used": False,
             "target_access": False,
+            "prediction_only_input_required": args.prediction_only_input,
+            "future_object_tracks_present": (
+                False if args.prediction_only_input else None
+            ),
         },
         "passed": bool(result.metrics["passed"]),
         "claim_boundary": (

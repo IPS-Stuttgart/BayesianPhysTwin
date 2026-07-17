@@ -27,6 +27,10 @@ from causal4d_public.deform360_dense_reusable_panel import (
 from causal4d_public.deform360_object_sam2 import (
     DeformableObjectSam2VideoPredictor,
 )
+from causal4d_public.deform360_reusable_trust_protocol import (
+    authorize_reusable_trust_episode,
+    load_reusable_trust_protocol,
+)
 from deform360.robot import RobotState, load_robot_state, save_robot_state
 
 
@@ -174,6 +178,12 @@ def main() -> int:
     parser.add_argument("--start-frame", type=int)
     parser.add_argument("--frame-count", type=int, default=8)
     parser.add_argument("--dense-panel-config")
+    parser.add_argument("--fresh-parent-lock")
+    parser.add_argument("--physics-addendum")
+    parser.add_argument("--execution-lock")
+    parser.add_argument(
+        "--fresh-operation", choices=("fit", "held-prediction")
+    )
     parser.add_argument(
         "--action-aligned",
         action="store_true",
@@ -193,7 +203,31 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    require_source_episode(args.protocol, args.object_id, args.episode)
+    fresh_values = (
+        args.fresh_parent_lock,
+        args.physics_addendum,
+        args.execution_lock,
+        args.fresh_operation,
+    )
+    if any(value is not None for value in fresh_values) and not all(
+        value is not None for value in fresh_values
+    ):
+        raise ValueError(
+            "fresh parent, physics, execution, and operation locks are required together"
+        )
+    fresh_authorization = None
+    if args.fresh_parent_lock is None:
+        require_source_episode(args.protocol, args.object_id, args.episode)
+    else:
+        fresh_protocol = load_reusable_trust_protocol(
+            args.fresh_parent_lock, args.physics_addendum, args.execution_lock
+        )
+        fresh_authorization = authorize_reusable_trust_episode(
+            fresh_protocol,
+            object_id=args.object_id,
+            episode_id=args.episode,
+            operation=args.fresh_operation,
+        )
     source_episode = (
         Path(args.source_aligned_root) / args.object_id / f"episode_{args.episode:04d}"
     )
@@ -204,13 +238,18 @@ def main() -> int:
         if args.start_frame is not None:
             raise ValueError("action alignment cannot also set --start-frame")
         panel = load_dense_reusable_panel_config(args.dense_panel_config)
-        authorization = authorize_dense_panel_episode(
-            panel,
-            object_id=args.object_id,
-            episode_id=args.episode,
-            phase="source",
-            source_admission_passed=False,
-        )
+        if fresh_authorization is None:
+            authorization = authorize_dense_panel_episode(
+                panel,
+                object_id=args.object_id,
+                episode_id=args.episode,
+                phase="source",
+                source_admission_passed=False,
+            )
+            authorization_config_sha256 = authorization["config_sha256"]
+        else:
+            authorization = fresh_authorization
+            authorization_config_sha256 = authorization["addendum_file_sha256"]
         selection = panel["config"]["frame_protocol"]["window_selection"]
         old_start, old_stop = panel["config"]["frame_protocol"][
             "superseded_fixed_raw_aligned_range_half_open"
@@ -235,7 +274,7 @@ def main() -> int:
             "schema_version": 1,
             "artifact_kind": "Deform360ActionAlignedSourceStaging",
             "protocol_id": authorization["protocol_id"],
-            "config_sha256": authorization["config_sha256"],
+            "config_sha256": authorization_config_sha256,
             "object_id": args.object_id,
             "episode_id": int(args.episode),
             "selected_raw_frame_range_half_open": selected_range,
@@ -247,6 +286,8 @@ def main() -> int:
             "target_observation_read": False,
             "target_future_read": False,
         }
+        if fresh_authorization is not None:
+            action_alignment["fresh_authorization"] = fresh_authorization
         action_alignment["result_sha256"] = _canonical_sha256(action_alignment)
     elif args.start_frame is None:
         raise ValueError("fixed staging requires --start-frame")
@@ -312,11 +353,15 @@ def main() -> int:
         args.start_frame,
         args.frame_count,
     )
-    tactile_hashes = _trim_tactile_streams(
-        source_episode,
-        output_episode,
-        args.start_frame,
-        args.frame_count,
+    tactile_hashes = (
+        _trim_tactile_streams(
+            source_episode,
+            output_episode,
+            args.start_frame,
+            args.frame_count,
+        )
+        if fresh_authorization is None
+        else {}
     )
 
     predictor = DeformableObjectSam2VideoPredictor(
@@ -416,7 +461,11 @@ def main() -> int:
         )
     write_dense_source_manifest(
         output_episode / "dense_source_smoke.manifest.json",
-        protocol_path=args.protocol,
+        protocol_path=(
+            args.protocol
+            if args.physics_addendum is None
+            else args.physics_addendum
+        ),
         object_id=args.object_id,
         episode_index=args.episode,
         source_episode_dir=source_episode,
@@ -432,6 +481,7 @@ def main() -> int:
             "automatic_initial_mask_fallback_used": not sampled_masks_exact,
             "robot_sha256": sha256_file(robot_path),
             "tactile_sha256": tactile_hashes,
+            "tactile_copied": fresh_authorization is None,
         },
     )
     if action_alignment is not None:

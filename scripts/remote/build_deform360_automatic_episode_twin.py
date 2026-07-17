@@ -34,6 +34,10 @@ from causal4d_public.deform360_reusable_graph import (
     build_canonical_deform360_graph,
     write_canonical_deform360_graph,
 )
+from causal4d_public.deform360_reusable_trust_protocol import (
+    authorize_reusable_trust_episode,
+    load_reusable_trust_protocol,
+)
 
 
 def _sha256_file(path: Path) -> str:
@@ -72,6 +76,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--episode-id", type=int, required=True)
     parser.add_argument("--phase", choices=("source", "calibration"), required=True)
     parser.add_argument("--source-admission-passed", action="store_true")
+    parser.add_argument("--fresh-parent-lock", type=Path)
+    parser.add_argument("--physics-addendum", type=Path)
+    parser.add_argument(
+        "--fresh-operation", choices=("fit", "held-prediction")
+    )
     parser.add_argument("--episode-final-data", type=Path, required=True)
     parser.add_argument("--episode-graph", type=Path, required=True)
     parser.add_argument("--simulator-final-data", type=Path, required=True)
@@ -110,13 +119,37 @@ def main() -> int:
         args.repo / "configs/causal4d_public/deform360_dense_reusable_panel_v1.json"
     )
     protocol = load_dense_reusable_panel_config(protocol_path)
-    authorization = authorize_dense_panel_episode(
-        protocol,
-        object_id=args.object_id,
-        episode_id=args.episode_id,
-        phase=args.phase,
-        source_admission_passed=args.source_admission_passed,
+    fresh_values = (
+        args.fresh_parent_lock,
+        args.physics_addendum,
+        args.fresh_operation,
     )
+    if any(value is not None for value in fresh_values) and not all(
+        value is not None for value in fresh_values
+    ):
+        raise ValueError(
+            "fresh parent lock, physics addendum, and operation are required together"
+        )
+    if args.fresh_parent_lock is None:
+        authorization = authorize_dense_panel_episode(
+            protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            phase=args.phase,
+            source_admission_passed=args.source_admission_passed,
+        )
+        authorization_config_sha256 = authorization["config_sha256"]
+    else:
+        fresh_protocol = load_reusable_trust_protocol(
+            args.fresh_parent_lock, args.physics_addendum
+        )
+        authorization = authorize_reusable_trust_episode(
+            fresh_protocol,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            operation=args.fresh_operation,
+        )
+        authorization_config_sha256 = authorization["addendum_file_sha256"]
     method = protocol["config"]["dense_reusable_method"]
     registration = method["canonical_episode_registration"]
     state_policy = method["partial_graph_state_completion"]
@@ -334,7 +367,7 @@ def main() -> int:
         "schema_version": 1,
         "artifact_kind": "Deform360AutomaticEpisodeTwin",
         "protocol_id": authorization["protocol_id"],
-        "protocol_config_sha256": authorization["config_sha256"],
+        "protocol_config_sha256": authorization_config_sha256,
         "object_id": args.object_id,
         "episode_id": args.episode_id,
         "phase": args.phase,
@@ -390,6 +423,8 @@ def main() -> int:
             "and rest geometry are rebuilt automatically for each episode"
         ),
     }
+    if args.fresh_parent_lock is not None:
+        summary["fresh_authorization"] = authorization
     summary["result_sha256"] = _result_sha256(summary)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(

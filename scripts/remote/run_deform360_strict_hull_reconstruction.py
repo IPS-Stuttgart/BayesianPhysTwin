@@ -14,6 +14,14 @@ from causal4d_public.deform360_dense_source import sha256_file
 from causal4d_public.deform360_independent_source import (
     validate_independent_source_prediction_seal,
 )
+from causal4d_public.deform360_reusable_physics import (
+    validate_reusable_physics_fit_grid_seal,
+)
+from causal4d_public.deform360_reusable_trust_protocol import (
+    authorize_reusable_trust_held_outcome,
+    load_reusable_trust_protocol,
+    validate_reusable_trust_prediction_cohort_seal,
+)
 from deform360.processing import reconstruct_stage
 
 
@@ -46,6 +54,11 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         help="Required before post-initial object reconstruction may begin.",
     )
+    parser.add_argument("--fresh-parent-lock", type=Path)
+    parser.add_argument("--physics-addendum", type=Path)
+    parser.add_argument("--execution-lock", type=Path)
+    parser.add_argument("--fresh-fit-grid-seal", type=Path)
+    parser.add_argument("--fresh-held-cohort-seal", type=Path)
     return parser.parse_args()
 
 
@@ -59,22 +72,105 @@ def main() -> int:
     if not source_boundary.get("source_only"):
         raise ValueError("strict reconstruction accepts only source-only data")
     prediction_seal: dict[str, Any] | None = None
+    future_access_seal: dict[str, Any] | None = None
+    future_access_path: Path | None = None
+    fresh_values = (
+        args.fresh_parent_lock,
+        args.physics_addendum,
+        args.execution_lock,
+    )
+    if any(value is not None for value in fresh_values) and not all(
+        value is not None for value in fresh_values
+    ):
+        raise ValueError(
+            "fresh parent, physics, and execution locks are required together"
+        )
+    fresh_protocol = (
+        None
+        if args.fresh_parent_lock is None
+        else load_reusable_trust_protocol(
+            args.fresh_parent_lock, args.physics_addendum, args.execution_lock
+        )
+    )
     if args.frame_zero_only:
-        if args.prediction_seal is not None:
+        if any(
+            value is not None
+            for value in (
+                args.prediction_seal,
+                args.fresh_fit_grid_seal,
+                args.fresh_held_cohort_seal,
+            )
+        ):
             raise ValueError(
                 "frame-zero reconstruction must precede prediction sealing"
             )
     else:
-        if args.prediction_seal is None:
-            raise ValueError("full reconstruction requires a sealed prediction")
-        prediction_seal = json.loads(args.prediction_seal.read_text(encoding="utf-8"))
-        validate_independent_source_prediction_seal(
-            prediction_seal, verify_archive=True
-        )
-        if prediction_seal.get("object_id") != source_boundary.get("object_id") or int(
-            prediction_seal.get("episode_id", -1)
-        ) != int(source_boundary.get("episode_index", -2)):
-            raise ValueError("prediction seal belongs to another source episode")
+        if fresh_protocol is None:
+            if args.prediction_seal is None:
+                raise ValueError("full reconstruction requires a sealed prediction")
+            if (
+                args.fresh_fit_grid_seal is not None
+                or args.fresh_held_cohort_seal is not None
+            ):
+                raise ValueError("fresh seals require the fresh protocol")
+            prediction_seal = json.loads(
+                args.prediction_seal.read_text(encoding="utf-8")
+            )
+            validate_independent_source_prediction_seal(
+                prediction_seal, verify_archive=True
+            )
+            if prediction_seal.get("object_id") != source_boundary.get(
+                "object_id"
+            ) or int(prediction_seal.get("episode_id", -1)) != int(
+                source_boundary.get("episode_index", -2)
+            ):
+                raise ValueError("prediction seal belongs to another source episode")
+            future_access_seal = prediction_seal
+            future_access_path = args.prediction_seal
+        else:
+            if args.prediction_seal is not None:
+                raise ValueError("fresh future access cannot use a legacy seal")
+            supplied = [
+                value
+                for value in (
+                    args.fresh_fit_grid_seal,
+                    args.fresh_held_cohort_seal,
+                )
+                if value is not None
+            ]
+            if len(supplied) != 1:
+                raise ValueError(
+                    "fresh full reconstruction requires exactly one future-access seal"
+                )
+            future_access_path = supplied[0]
+            future_access_seal = json.loads(
+                future_access_path.read_text(encoding="utf-8")
+            )
+            object_id = str(source_boundary.get("object_id"))
+            episode_id = int(source_boundary.get("episode_index", -1))
+            if args.fresh_fit_grid_seal is not None:
+                validated = validate_reusable_physics_fit_grid_seal(
+                    future_access_seal,
+                    protocol=fresh_protocol,
+                    verify_responses=True,
+                )
+                if (
+                    validated["object_id"] != object_id
+                    or validated["episode_id"] != episode_id
+                ):
+                    raise ValueError("fit-grid seal belongs to another episode")
+            else:
+                validate_reusable_trust_prediction_cohort_seal(
+                    future_access_seal,
+                    protocol=fresh_protocol,
+                    verify_predictions=True,
+                )
+                authorize_reusable_trust_held_outcome(
+                    fresh_protocol,
+                    future_access_seal,
+                    object_id=object_id,
+                    episode_id=episode_id,
+                )
 
     original = reconstruct_stage.visual_hull_points
     original_frame_count = reconstruct_stage.camera_frame_count
@@ -129,6 +225,16 @@ def main() -> int:
                 "result_sha256": prediction_seal["result_sha256"],
             }
         ),
+        "future_access_seal": (
+            None
+            if future_access_seal is None
+            else {
+                "path": str(future_access_path.resolve()),
+                "file_sha256": sha256_file(future_access_path),
+                "result_sha256": future_access_seal["result_sha256"],
+                "artifact_kind": future_access_seal.get("artifact_kind"),
+            }
+        ),
         "outputs": {
             str(frame): {
                 "path": str(path.resolve()),
@@ -147,7 +253,7 @@ def main() -> int:
                 args.frame_zero_only
             ),
             "prediction_seal_verified_before_future_reconstruction": (
-                prediction_seal is not None
+                future_access_seal is not None
             ),
         },
         "claim_boundary": (
