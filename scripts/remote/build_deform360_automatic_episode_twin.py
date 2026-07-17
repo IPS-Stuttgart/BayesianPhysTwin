@@ -38,6 +38,17 @@ from causal4d_public.deform360_reusable_trust_protocol import (
     authorize_reusable_trust_episode,
     load_reusable_trust_protocol,
 )
+from causal4d_public.deform360_reusable_sota_protocol import (
+    load_reusable_sota_config,
+)
+from causal4d_public.deform360_reusable_sota_window import (
+    authorize_development_fit_window,
+    load_reusable_sota_window,
+)
+from causal4d_public.deform360_sota_processing import (
+    authorize_development_processing,
+    validate_development_final_data_input,
+)
 
 
 def _sha256_file(path: Path) -> str:
@@ -78,9 +89,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--source-admission-passed", action="store_true")
     parser.add_argument("--fresh-parent-lock", type=Path)
     parser.add_argument("--physics-addendum", type=Path)
-    parser.add_argument(
-        "--fresh-operation", choices=("fit", "held-prediction")
-    )
+    parser.add_argument("--fresh-operation", choices=("fit", "held-prediction"))
+    parser.add_argument("--sota-protocol", type=Path)
+    parser.add_argument("--sota-window-addendum", type=Path)
+    parser.add_argument("--development-observations", type=Path)
     parser.add_argument("--episode-final-data", type=Path, required=True)
     parser.add_argument("--episode-graph", type=Path, required=True)
     parser.add_argument("--simulator-final-data", type=Path, required=True)
@@ -130,7 +142,55 @@ def main() -> int:
         raise ValueError(
             "fresh parent lock, physics addendum, and operation are required together"
         )
-    if args.fresh_parent_lock is None:
+    sota_values = (
+        args.sota_protocol,
+        args.sota_window_addendum,
+        args.development_observations,
+    )
+    if any(value is not None for value in sota_values) and not all(
+        value is not None for value in sota_values
+    ):
+        raise ValueError(
+            "SOTA parent, window addendum, and observations are required together"
+        )
+    if args.sota_protocol is not None and args.fresh_parent_lock is not None:
+        raise ValueError("SOTA and fresh reusable-trust authorization cannot combine")
+    sota_input_validation = None
+    sota_authorization = None
+    if args.sota_protocol is not None:
+        if args.phase != "source" or args.prediction_only_input:
+            raise ValueError(
+                "SOTA automatic twin currently authorizes development fit inputs only"
+            )
+        parent = load_reusable_sota_config(args.sota_protocol)
+        window = load_reusable_sota_window(args.sota_window_addendum)
+        processing_authorization = authorize_development_processing(
+            parent,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+            role="fit",
+        )
+        window_authorization = authorize_development_fit_window(
+            parent,
+            window,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+        )
+        observations = json.loads(
+            args.development_observations.read_text(encoding="utf-8")
+        )
+        sota_input_validation = validate_development_final_data_input(
+            observations,
+            authorization=processing_authorization,
+            final_data_path=args.episode_final_data,
+        )
+        authorization = window_authorization
+        authorization_config_sha256 = window_authorization["window_config_sha256"]
+        sota_authorization = {
+            "processing": processing_authorization,
+            "window": window_authorization,
+        }
+    elif args.fresh_parent_lock is None:
         authorization = authorize_dense_panel_episode(
             protocol,
             object_id=args.object_id,
@@ -233,6 +293,12 @@ def main() -> int:
     visibility = np.asarray(episode["object_visibilities"], dtype=bool)
     validity = np.asarray(episode["object_motions_valid"], dtype=bool)
     controllers = np.asarray(episode["controller_points"])
+    if sota_input_validation is not None and points.shape[0] != int(
+        sota_input_validation["point_frame_count"]
+    ):
+        raise ValueError(
+            "SOTA final_data frame count differs from its observation lock"
+        )
     prediction_input_validation = None
     if args.prediction_only_input:
         prediction_input_validation = validate_prediction_only_bundle(
@@ -387,6 +453,11 @@ def main() -> int:
         "state_metrics": state.metrics,
         "input_sha256": {
             "episode_final_data": _sha256_file(args.episode_final_data),
+            "development_observations": (
+                None
+                if args.development_observations is None
+                else _sha256_file(args.development_observations)
+            ),
             "contact_conditioned_action": (
                 None
                 if args.contact_conditioned_action_json is None
@@ -416,6 +487,7 @@ def main() -> int:
             ),
         },
         "prediction_input_validation": prediction_input_validation,
+        "sota_input_validation": sota_input_validation,
         "passed": bool(state.metrics["passed"]),
         "claim_boundary": (
             "benchmark-fair automatic frame-zero episode-twin control; physical "
@@ -425,6 +497,13 @@ def main() -> int:
     }
     if args.fresh_parent_lock is not None:
         summary["fresh_authorization"] = authorization
+    if sota_authorization is not None:
+        summary["sota_authorization"] = sota_authorization
+        summary["sota_method_definition"] = {
+            "protocol_id": protocol["config"]["protocol_id"],
+            "config_sha256": protocol["config_sha256"],
+            "role": "numeric development implementation dependency",
+        }
     summary["result_sha256"] = _result_sha256(summary)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(

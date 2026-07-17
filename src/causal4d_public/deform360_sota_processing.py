@@ -513,6 +513,90 @@ def stage_development_processing_episode(
     return payload
 
 
+def write_development_action_window_stage(
+    path: str | Path,
+    *,
+    authorization: Mapping[str, Any],
+    window_authorization: Mapping[str, Any],
+    selected_raw_frame_range_half_open: tuple[int, int] | list[int],
+    camera_count: int,
+    frame_count: int,
+    window_config_sha256: str,
+    mask_diagnostics_sha256: str,
+    initialization_diagnostics_sha256: str,
+) -> dict[str, Any]:
+    """Write a SOTA-compatible stage for an action-only development slice."""
+
+    _require(
+        authorization.get("role") == "fit"
+        and authorization.get("development_only") is True
+        and authorization.get("confirmatory_object_opened") is False,
+        "action-window stage requires development fit authorization",
+    )
+    _require(
+        window_authorization.get("operation") == "development-fit-staging"
+        and window_authorization.get("object_id") == authorization.get("object_id")
+        and int(window_authorization.get("episode_id", -1))
+        == int(authorization.get("episode_id", -2))
+        and window_authorization.get("held_outcome_read") is False
+        and window_authorization.get("confirmatory_object_read") is False,
+        "action-window authorization is incompatible",
+    )
+    start, stop = (int(value) for value in selected_raw_frame_range_half_open)
+    _require(start >= 0 and stop - start == frame_count == 81, "invalid action window")
+    _require(camera_count >= 3, "too few cameras in the action-window stage")
+    for label, value in (
+        ("window config", window_config_sha256),
+        ("mask diagnostics", mask_diagnostics_sha256),
+        ("initialization diagnostics", initialization_diagnostics_sha256),
+    ):
+        _require(
+            isinstance(value, str)
+            and len(value) == 64
+            and all(character in "0123456789abcdef" for character in value),
+            f"invalid {label} checksum",
+        )
+    payload: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": DEVELOPMENT_PROCESSING_STAGE_KIND,
+        "authorization": dict(authorization),
+        "object_id": str(authorization["object_id"]),
+        "episode_id": int(authorization["episode_id"]),
+        "role": "fit",
+        "camera_count": int(camera_count),
+        "frame_count": int(frame_count),
+        "temporal_staging": {
+            "mode": "locked-action-only-window",
+            "selected_raw_frame_range_half_open": [start, stop],
+            "window_config_sha256": window_config_sha256,
+            "window_authorization": dict(window_authorization),
+        },
+        "input_sha256": {
+            "mask_diagnostics": mask_diagnostics_sha256,
+            "initialization_diagnostics": initialization_diagnostics_sha256,
+        },
+        "information_boundary": {
+            "development_only": True,
+            "confirmatory_object_opened": False,
+            "target_metric_read": False,
+            "window_selection_used_robot_action_and_opening_only": True,
+            "window_selection_used_object_geometry_or_tactile": False,
+        },
+        "claim_boundary": (
+            "Action-window compute addendum for independent development processing; "
+            "no official Deform360 evaluator or Table 4 parity claim."
+        ),
+    }
+    payload["result_sha256"] = _canonical_sha256(payload)
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+    return payload
+
+
 def _load_development_stage(
     episode_dir: Path, *, authorization: Mapping[str, Any]
 ) -> dict[str, Any]:
@@ -690,6 +774,51 @@ def build_development_observations_manifest(
     return payload
 
 
+def validate_development_final_data_input(
+    observations: Mapping[str, Any],
+    *,
+    authorization: Mapping[str, Any],
+    final_data_path: str | Path,
+) -> dict[str, Any]:
+    """Bind one fit-only PhysTwin input to checksummed development supervision."""
+
+    _require(
+        observations.get("artifact_kind") == DEVELOPMENT_OBSERVATIONS_KIND
+        and observations.get("result_sha256") == _canonical_sha256(observations),
+        "development observation artifact is incompatible",
+    )
+    _require(
+        observations.get("authorization") == dict(authorization)
+        and observations.get("role") == "fit",
+        "development observations use another authorization",
+    )
+    _require(
+        authorization.get("development_only") is True
+        and authorization.get("confirmatory_object_opened") is False,
+        "development final_data input is outside the prospective panel",
+    )
+    final_data = Path(final_data_path).resolve()
+    _require(final_data.is_file(), "development final_data input is missing")
+    expected = (
+        observations.get("output_sha256", {})
+        .get("control_points", {})
+        .get("final_data.pkl")
+    )
+    observed = _file_sha256(final_data)
+    _require(expected == observed, "development final_data checksum changed")
+    return {
+        "passed": True,
+        "object_id": str(authorization["object_id"]),
+        "episode_id": int(authorization["episode_id"]),
+        "role": "fit",
+        "final_data_sha256": observed,
+        "observations_result_sha256": str(observations["result_sha256"]),
+        "point_frame_count": int(observations["point_frame_count"]),
+        "held_outcome_read": False,
+        "confirmatory_object_read": False,
+    }
+
+
 __all__ = [
     "DEFORM360_PCD_TAIL_FRAMES_SKIPPED",
     "DEVELOPMENT_MASK_PANEL_KIND",
@@ -703,4 +832,6 @@ __all__ = [
     "material_identity_sha256",
     "propagate_development_masks",
     "stage_development_processing_episode",
+    "validate_development_final_data_input",
+    "write_development_action_window_stage",
 ]

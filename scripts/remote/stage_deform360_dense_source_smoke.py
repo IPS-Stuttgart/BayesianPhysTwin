@@ -39,6 +39,10 @@ from causal4d_public.deform360_reusable_sota_window import (
     load_reusable_sota_window,
     select_reusable_sota_action_window,
 )
+from causal4d_public.deform360_sota_processing import (
+    authorize_development_processing,
+    write_development_action_window_stage,
+)
 from deform360.robot import RobotState, load_robot_state, save_robot_state
 
 
@@ -239,6 +243,7 @@ def main() -> int:
         )
     fresh_authorization = None
     sota_authorization = None
+    sota_processing_authorization = None
     if args.sota_window_addendum is not None:
         if args.fresh_parent_lock is not None or args.dense_panel_config is not None:
             raise ValueError(
@@ -254,6 +259,12 @@ def main() -> int:
             )
         parent = load_reusable_sota_config(args.protocol)
         sota_window = load_reusable_sota_window(args.sota_window_addendum)
+        sota_processing_authorization = authorize_development_processing(
+            parent,
+            object_id=args.object_id,
+            episode_id=args.episode,
+            role="fit",
+        )
         sota_authorization = authorize_development_fit_window(
             parent,
             sota_window,
@@ -567,6 +578,19 @@ def main() -> int:
         alignment_path.write_text(
             json.dumps(action_alignment, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
+        )
+    if sota_authorization is not None:
+        assert sota_processing_authorization is not None
+        write_development_action_window_stage(
+            output_episode / "development_staging.json",
+            authorization=sota_processing_authorization,
+            window_authorization=sota_authorization,
+            selected_raw_frame_range_half_open=selected_range,
+            camera_count=len(cameras),
+            frame_count=object_frame_count,
+            window_config_sha256=sota_authorization["window_config_sha256"],
+            mask_diagnostics_sha256=sha256_file(diagnostics_path),
+            initialization_diagnostics_sha256=sha256_file(initialization_path),
         )
     print(
         json.dumps(

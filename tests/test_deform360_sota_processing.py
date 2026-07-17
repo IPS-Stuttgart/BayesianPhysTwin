@@ -13,6 +13,10 @@ import causal4d_public.deform360_sota_processing as sota_processing
 from causal4d_public.deform360_reusable_sota_protocol import (
     load_reusable_sota_config,
 )
+from causal4d_public.deform360_reusable_sota_window import (
+    authorize_development_fit_window,
+    load_reusable_sota_window,
+)
 from causal4d_public.deform360_sota_processing import (
     DEVELOPMENT_MASK_PANEL_KIND,
     DEVELOPMENT_PROCESSING_STAGE_KIND,
@@ -21,11 +25,14 @@ from causal4d_public.deform360_sota_processing import (
     material_identity_sha256,
     propagate_development_masks,
     stage_development_processing_episode,
+    validate_development_final_data_input,
+    write_development_action_window_stage,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs/causal4d_public/deform360_reusable_sota_v1.json"
+WINDOW = ROOT / "configs/causal4d_public/deform360_reusable_sota_window_v1.json"
 
 
 def _canonical_sha256(payload: dict[str, object]) -> str:
@@ -171,6 +178,59 @@ def test_staging_rejects_authorization_substitution(tmp_path: Path) -> None:
         )
 
 
+def test_action_window_stage_is_compatible_with_sota_observation_runner(
+    tmp_path: Path,
+) -> None:
+    protocol = load_reusable_sota_config(PROTOCOL)
+    window = load_reusable_sota_window(WINDOW)
+    authorization = authorize_development_processing(
+        protocol, object_id="004-rubber-band", episode_id=3, role="fit"
+    )
+    window_authorization = authorize_development_fit_window(
+        protocol, window, object_id="004-rubber-band", episode_id=3
+    )
+    output = tmp_path / "development_staging.json"
+    result = write_development_action_window_stage(
+        output,
+        authorization=authorization,
+        window_authorization=window_authorization,
+        selected_raw_frame_range_half_open=(26, 107),
+        camera_count=3,
+        frame_count=81,
+        window_config_sha256=window["config_sha256"],
+        mask_diagnostics_sha256="a" * 64,
+        initialization_diagnostics_sha256="b" * 64,
+    )
+    assert output.is_file()
+    assert result["artifact_kind"] == DEVELOPMENT_PROCESSING_STAGE_KIND
+    assert result["authorization"] == authorization
+    assert result["temporal_staging"]["selected_raw_frame_range_half_open"] == [
+        26,
+        107,
+    ]
+    assert (
+        result["information_boundary"][
+            "window_selection_used_object_geometry_or_tactile"
+        ]
+        is False
+    )
+
+    altered = copy.deepcopy(window_authorization)
+    altered["held_outcome_read"] = True
+    with pytest.raises(ValueError, match="window authorization"):
+        write_development_action_window_stage(
+            tmp_path / "invalid.json",
+            authorization=authorization,
+            window_authorization=altered,
+            selected_raw_frame_range_half_open=(26, 107),
+            camera_count=3,
+            frame_count=81,
+            window_config_sha256=window["config_sha256"],
+            mask_diagnostics_sha256="a" * 64,
+            initialization_diagnostics_sha256="b" * 64,
+        )
+
+
 def test_development_observation_manifest_binds_ordered_material_identity(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -257,6 +317,24 @@ def test_development_observation_manifest_binds_ordered_material_identity(
     assert result["point_frame_count"] == 2
     assert result["material_point_count"] == 2
     assert result["material_identity_sha256"] == material_identity_sha256(points)
+
+    final_data = episode / "final_data.pkl"
+    validation = validate_development_final_data_input(
+        result,
+        authorization=authorization,
+        final_data_path=final_data,
+    )
+    assert validation["passed"] is True
+    assert validation["point_frame_count"] == 2
+    assert validation["held_outcome_read"] is False
+
+    final_data.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="checksum changed"):
+        validate_development_final_data_input(
+            result,
+            authorization=authorization,
+            final_data_path=final_data,
+        )
     assert material_identity_sha256(points[::-1]) != material_identity_sha256(points)
     assert result["information_boundary"]["prediction_metric_computed"] is False
 
