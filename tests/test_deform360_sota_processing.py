@@ -9,12 +9,16 @@ import h5py
 import numpy as np
 import pytest
 
+import causal4d_public.deform360_sota_processing as sota_processing
 from causal4d_public.deform360_reusable_sota_protocol import (
     load_reusable_sota_config,
 )
 from causal4d_public.deform360_sota_processing import (
     DEVELOPMENT_MASK_PANEL_KIND,
+    DEVELOPMENT_PROCESSING_STAGE_KIND,
     authorize_development_processing,
+    build_development_observations_manifest,
+    material_identity_sha256,
     propagate_development_masks,
     stage_development_processing_episode,
 )
@@ -164,4 +168,104 @@ def test_staging_rejects_authorization_substitution(tmp_path: Path) -> None:
             aligned_object_root=tmp_path,
             annotation_root=tmp_path,
             processing_root=tmp_path / "processing",
+        )
+
+
+def test_development_observation_manifest_binds_ordered_material_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    protocol = load_reusable_sota_config(PROTOCOL)
+    authorization = authorize_development_processing(
+        protocol, object_id="004-rubber-band", episode_id=3, role="fit"
+    )
+    processing = tmp_path / "processing"
+    episode = processing / "004-rubber-band" / "episode_0003"
+    episode.mkdir(parents=True)
+    staging = {
+        "schema_version": 1,
+        "artifact_kind": DEVELOPMENT_PROCESSING_STAGE_KIND,
+        "authorization": authorization,
+        "object_id": "004-rubber-band",
+        "episode_id": 3,
+        "role": "fit",
+        "camera_count": 2,
+        "frame_count": 7,
+        "mask_panel_result_sha256": "a" * 64,
+        "mask_panel_file_sha256": "b" * 64,
+        "information_boundary": {
+            "development_only": True,
+            "confirmatory_object_opened": False,
+            "target_metric_read": False,
+        },
+        "claim_boundary": "fixture",
+    }
+    staging["result_sha256"] = _canonical_sha256(staging)
+    (episode / "development_staging.json").write_text(json.dumps(staging))
+
+    splat_dir = episode / "splatfacto"
+    splat_dir.mkdir()
+    for frame in range(7):
+        (splat_dir / f"splat_{frame}.ply").write_bytes(f"splat-{frame}".encode())
+    (splat_dir / "splatfacto.meta.json").write_text("{}")
+    for camera in ("cam-a", "cam-b"):
+        camera_dir = episode / camera
+        tracking = camera_dir / "tracking"
+        tracking.mkdir(parents=True)
+        (camera_dir / "mask_refined.h5").write_bytes(b"mask")
+        (camera_dir / "rendered_depth.h5").write_bytes(b"depth")
+        (camera_dir / "rendered_depth.meta.json").write_text("{}")
+        (tracking / "vel.h5").write_bytes(b"velocity")
+        (tracking / "visibility.h5").write_bytes(b"visibility")
+        (tracking / "tracking.meta.json").write_text("{}")
+
+    point_dir = episode / "pcd_clean"
+    point_dir.mkdir()
+    points = np.array([[0.0, 0.0, 0.0], [1.0, 2.0, 3.0]], dtype=np.float32)
+    np.savez(point_dir / "000000.npz", pts=points)
+    np.savez(point_dir / "000001.npz", pts=points + 0.1)
+    (point_dir / "pcd_clean.meta.json").write_text("{}")
+    for name in (
+        "calibrate.pkl",
+        "start_obj_pcd.ply",
+        "split.json",
+        "final_data.pkl",
+        "control_points.meta.json",
+    ):
+        (episode / name).write_bytes(name.encode())
+
+    checkpoint = tmp_path / "scaled_offline.pth"
+    checkpoint.write_bytes(b"checkpoint")
+    checkpoint_sha = _file_sha256(checkpoint)
+    monkeypatch.setattr(
+        sota_processing, "PINNED_DEFORM360_PROCESSING_REVISION", "deform-revision"
+    )
+    monkeypatch.setattr(
+        sota_processing, "PINNED_COTRACKER_REVISION", "cotracker-revision"
+    )
+    monkeypatch.setattr(
+        sota_processing, "PINNED_COTRACKER_CHECKPOINT_SHA256", checkpoint_sha
+    )
+
+    result = build_development_observations_manifest(
+        authorization=authorization,
+        processing_root=processing,
+        deform360_processing_revision="deform-revision",
+        cotracker_revision="cotracker-revision",
+        cotracker_checkpoint=checkpoint,
+    )
+
+    assert result["point_frame_count"] == 2
+    assert result["material_point_count"] == 2
+    assert result["material_identity_sha256"] == material_identity_sha256(points)
+    assert material_identity_sha256(points[::-1]) != material_identity_sha256(points)
+    assert result["information_boundary"]["prediction_metric_computed"] is False
+
+    (point_dir / "000001.npz").unlink()
+    with pytest.raises(ValueError, match="point-cloud output is incomplete"):
+        build_development_observations_manifest(
+            authorization=authorization,
+            processing_root=processing,
+            deform360_processing_revision="deform-revision",
+            cotracker_revision="cotracker-revision",
+            cotracker_checkpoint=checkpoint,
         )

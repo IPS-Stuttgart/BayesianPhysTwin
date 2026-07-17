@@ -98,14 +98,31 @@ metric or simulator residual enters mask selection. It then builds a symlink-onl
 view for the released Deform360 processing code and records checksummed mask and
 staging artifacts. Confirmatory objects are rejected before any media access.
 
+After reconstruction, the development-only observation runner
+`scripts/remote/run_deform360_sota_development_observations.py` executes the
+released depth, CoTracker, advected-point-cloud, and control-point stages at
+their pinned revisions. Its manifest hashes every stage, defines material
+identity as the ordered frame-zero seed points, verifies that the identity
+count is unchanged through the rollout, and records the actual point horizon.
+No prediction metric is computed by this step.
+
+`build_development_evaluator_contract` accepts only checksummed
+`held-development` manifests. The evaluation start, stop, and stride must be
+declared explicitly and must fit every included episode. It fixes Euclidean
+symmetric Chamfer, identity-aware mean Euclidean track error, all-finite point
+visibility, and object-balanced aggregation. The resulting contract remains
+`independent-protocol`: even a score below the published ParticleFormer row is
+programmatically refused as a direct Table 4 claim until author-evaluator parity
+is established.
+
 ## Next evidence
 
 The next source-only steps are:
 
 1. run the released reconstruction at declared development iterations, then
    depth, tracking, point-cloud, and control-point stages on fit episode 1;
-2. instantiate an `independent-protocol` evaluator contract with checksummed
-   particles and a declared horizon;
+2. instantiate an `independent-protocol` evaluator contract from checksummed
+   held-development manifests and a prospectively declared horizon;
 3. run persistence and reusable-PhysTwin smoke scores;
 4. replace the independent contract with an official one only if the authors
    release the split/evaluator or provide enough artifacts to reproduce the

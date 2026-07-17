@@ -15,6 +15,14 @@ import numpy as np
 
 DEVELOPMENT_MASK_PANEL_KIND = "Deform360ReusableSotaDevelopmentMaskPanel"
 DEVELOPMENT_PROCESSING_STAGE_KIND = "Deform360ReusableSotaDevelopmentStage"
+DEVELOPMENT_OBSERVATIONS_KIND = "Deform360ReusableSotaDevelopmentObservations"
+
+PINNED_DEFORM360_PROCESSING_REVISION = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+PINNED_COTRACKER_REVISION = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
+PINNED_COTRACKER_CHECKPOINT_SHA256 = (
+    "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834"
+)
+DEFORM360_PCD_TAIL_FRAMES_SKIPPED = 5
 
 
 class DevelopmentMaskPredictor(Protocol):
@@ -60,6 +68,34 @@ def _file_sha256(path: Path) -> str:
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+def material_identity_sha256(points_m: np.ndarray) -> str:
+    """Hash ordered frame-zero material points without platform-dependent metadata."""
+
+    points = np.ascontiguousarray(np.asarray(points_m, dtype="<f4"))
+    _require(
+        points.ndim == 2
+        and points.shape[1] == 3
+        and len(points) > 0
+        and np.all(np.isfinite(points)),
+        "material points must be finite (N,3)",
+    )
+    digest = hashlib.sha256()
+    digest.update(b"deform360-material-identity-v1\0")
+    digest.update(np.asarray(points.shape, dtype="<i8").tobytes())
+    digest.update(points.tobytes())
+    return digest.hexdigest()
+
+
+def _tree_sha256(root: Path, paths: Iterator[Path]) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(paths):
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        digest.update(len(relative).to_bytes(8, "little"))
+        digest.update(relative)
+        digest.update(bytes.fromhex(_file_sha256(path)))
     return digest.hexdigest()
 
 
@@ -477,10 +513,194 @@ def stage_development_processing_episode(
     return payload
 
 
+def _load_development_stage(
+    episode_dir: Path, *, authorization: Mapping[str, Any]
+) -> dict[str, Any]:
+    stage_path = episode_dir / "development_staging.json"
+    stage = json.loads(stage_path.read_text(encoding="utf-8"))
+    _require(
+        stage.get("artifact_kind") == DEVELOPMENT_PROCESSING_STAGE_KIND
+        and stage.get("result_sha256") == _canonical_sha256(stage)
+        and stage.get("authorization") == dict(authorization),
+        "development processing stage is incompatible",
+    )
+    return stage
+
+
+def build_development_observations_manifest(
+    *,
+    authorization: Mapping[str, Any],
+    processing_root: str | Path,
+    deform360_processing_revision: str,
+    cotracker_revision: str,
+    cotracker_checkpoint: str | Path,
+) -> dict[str, Any]:
+    """Bind official processing outputs to one authorized development episode."""
+
+    _require(
+        deform360_processing_revision == PINNED_DEFORM360_PROCESSING_REVISION,
+        "Deform360 processing revision changed",
+    )
+    _require(
+        cotracker_revision == PINNED_COTRACKER_REVISION,
+        "CoTracker revision changed",
+    )
+    checkpoint = Path(cotracker_checkpoint).resolve()
+    _require(
+        checkpoint.is_file()
+        and _file_sha256(checkpoint) == PINNED_COTRACKER_CHECKPOINT_SHA256,
+        "CoTracker checkpoint changed",
+    )
+    object_id = str(authorization["object_id"])
+    episode_id = int(authorization["episode_id"])
+    episode_dir = (
+        Path(processing_root).resolve() / object_id / f"episode_{episode_id:04d}"
+    )
+    stage = _load_development_stage(episode_dir, authorization=authorization)
+    frame_count = int(stage["frame_count"])
+    cameras = sorted(
+        path.name
+        for path in episode_dir.iterdir()
+        if path.is_dir() and (path / "mask_refined.h5").is_file()
+    )
+    _require(
+        len(cameras) == int(stage["camera_count"]),
+        "processed camera panel differs from the staging artifact",
+    )
+
+    splat_dir = episode_dir / "splatfacto"
+    splats = [splat_dir / f"splat_{frame}.ply" for frame in range(frame_count)]
+    _require(all(path.is_file() for path in splats), "reconstruction is incomplete")
+    reconstruction_meta = splat_dir / "splatfacto.meta.json"
+    _require(reconstruction_meta.is_file(), "reconstruction provenance is missing")
+
+    depth: dict[str, dict[str, str]] = {}
+    tracking: dict[str, dict[str, str]] = {}
+    for camera in cameras:
+        camera_dir = episode_dir / camera
+        depth_file = camera_dir / "rendered_depth.h5"
+        depth_meta = camera_dir / "rendered_depth.meta.json"
+        tracking_dir = camera_dir / "tracking"
+        velocity = tracking_dir / "vel.h5"
+        visibility = tracking_dir / "visibility.h5"
+        tracking_meta = tracking_dir / "tracking.meta.json"
+        _require(
+            all(
+                path.is_file()
+                for path in (
+                    depth_file,
+                    depth_meta,
+                    velocity,
+                    visibility,
+                    tracking_meta,
+                )
+            ),
+            f"depth or tracking output is incomplete: {camera}",
+        )
+        depth[camera] = {
+            "data_sha256": _file_sha256(depth_file),
+            "metadata_sha256": _file_sha256(depth_meta),
+        }
+        tracking[camera] = {
+            "velocity_sha256": _file_sha256(velocity),
+            "visibility_sha256": _file_sha256(visibility),
+            "metadata_sha256": _file_sha256(tracking_meta),
+        }
+
+    pcd_dir = episode_dir / "pcd_clean"
+    point_frame_count = frame_count - DEFORM360_PCD_TAIL_FRAMES_SKIPPED
+    _require(point_frame_count >= 2, "episode is too short for future evaluation")
+    pcd_paths = [pcd_dir / f"{frame:06d}.npz" for frame in range(point_frame_count)]
+    _require(
+        all(path.is_file() for path in pcd_paths), "point-cloud output is incomplete"
+    )
+    pcd_meta = pcd_dir / "pcd_clean.meta.json"
+    _require(pcd_meta.is_file(), "point-cloud provenance is missing")
+    with np.load(pcd_paths[0], allow_pickle=False) as stored:
+        frame_zero = np.asarray(stored["pts"], dtype=np.float32)
+    identity_sha256 = material_identity_sha256(frame_zero)
+    point_count = len(frame_zero)
+    for path in pcd_paths[1:]:
+        with np.load(path, allow_pickle=False) as stored:
+            points = np.asarray(stored["pts"])
+        _require(
+            points.shape == frame_zero.shape and np.all(np.isfinite(points)),
+            "advected material identities changed shape or became non-finite",
+        )
+
+    control_names = (
+        "calibrate.pkl",
+        "start_obj_pcd.ply",
+        "split.json",
+        "final_data.pkl",
+        "control_points.meta.json",
+    )
+    control_paths = {name: episode_dir / name for name in control_names}
+    _require(
+        all(path.is_file() for path in control_paths.values()),
+        "control-point output is incomplete",
+    )
+    payload: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": DEVELOPMENT_OBSERVATIONS_KIND,
+        "authorization": dict(authorization),
+        "object_id": object_id,
+        "episode_id": episode_id,
+        "role": str(authorization["role"]),
+        "camera_count": len(cameras),
+        "frame_count": frame_count,
+        "point_frame_count": point_frame_count,
+        "material_point_count": point_count,
+        "material_identity_sha256": identity_sha256,
+        "development_staging_result_sha256": stage["result_sha256"],
+        "implementation_revision": {
+            "deform360_processing": deform360_processing_revision,
+            "cotracker": cotracker_revision,
+        },
+        "input_sha256": {
+            "development_staging": _file_sha256(
+                episode_dir / "development_staging.json"
+            ),
+            "cotracker_checkpoint": _file_sha256(checkpoint),
+        },
+        "output_sha256": {
+            "reconstruction_metadata": _file_sha256(reconstruction_meta),
+            "reconstruction_tree": _tree_sha256(splat_dir, iter(splats)),
+            "depth": depth,
+            "tracking": tracking,
+            "point_cloud_metadata": _file_sha256(pcd_meta),
+            "point_cloud_tree": _tree_sha256(pcd_dir, iter(pcd_paths)),
+            "control_points": {
+                name: _file_sha256(path) for name, path in control_paths.items()
+            },
+        },
+        "information_boundary": {
+            "development_only": True,
+            "future_frames_used_for_development_supervision": True,
+            "prediction_metric_computed": False,
+            "confirmatory_object_opened": False,
+            "pokeflex_target_opened": False,
+        },
+        "claim_boundary": (
+            "Checksummed independent development supervision; no official "
+            "Deform360 evaluator or Table 4 parity claim."
+        ),
+    }
+    payload["result_sha256"] = _canonical_sha256(payload)
+    return payload
+
+
 __all__ = [
+    "DEFORM360_PCD_TAIL_FRAMES_SKIPPED",
     "DEVELOPMENT_MASK_PANEL_KIND",
+    "DEVELOPMENT_OBSERVATIONS_KIND",
     "DEVELOPMENT_PROCESSING_STAGE_KIND",
+    "PINNED_COTRACKER_CHECKPOINT_SHA256",
+    "PINNED_COTRACKER_REVISION",
+    "PINNED_DEFORM360_PROCESSING_REVISION",
     "authorize_development_processing",
+    "build_development_observations_manifest",
+    "material_identity_sha256",
     "propagate_development_masks",
     "stage_development_processing_episode",
 ]

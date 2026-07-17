@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -8,10 +9,24 @@ import pytest
 from causal4d_public.deform360_sota_evaluation import (
     aggregate_deform360_panel,
     authorize_deform360_table4_claim,
+    build_development_evaluator_contract,
     deform360_evaluator_contract_sha256,
     score_deform360_episode,
     validate_deform360_evaluator_contract,
 )
+from causal4d_public.deform360_reusable_sota_protocol import (
+    load_reusable_sota_config,
+)
+from causal4d_public.deform360_sota_processing import (
+    DEVELOPMENT_OBSERVATIONS_KIND,
+    PINNED_COTRACKER_CHECKPOINT_SHA256,
+    PINNED_COTRACKER_REVISION,
+    PINNED_DEFORM360_PROCESSING_REVISION,
+)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PROTOCOL = ROOT / "configs/causal4d_public/deform360_reusable_sota_v1.json"
 
 
 def _seal(payload: dict[str, object]) -> dict[str, object]:
@@ -157,9 +172,9 @@ def test_track_semantics_are_not_interchangeable() -> None:
 
 def test_chamfer_and_track_visibility_policies_are_independent() -> None:
     contract = _contract()
-    contract["metrics"]["track"][
-        "visibility_policy"
-    ] = "visible_and_finite_material_points"
+    contract["metrics"]["track"]["visibility_policy"] = (
+        "visible_and_finite_material_points"
+    )
     _seal(contract)
     target = np.zeros((3, 2, 3), dtype=np.float64)
     prediction = target.copy()
@@ -275,3 +290,70 @@ def test_authorization_needs_both_metrics_below_reference() -> None:
     assert decision["authorized"] is False
     assert decision["gates"]["future_chamfer_below_particleformer"] is True
     assert decision["gates"]["future_track_below_particleformer"] is False
+
+
+def test_development_contract_is_explicit_but_never_table4_authorizing() -> None:
+    protocol = load_reusable_sota_config(PROTOCOL)
+    manifest = {
+        "schema_version": 1,
+        "artifact_kind": DEVELOPMENT_OBSERVATIONS_KIND,
+        "authorization": {
+            "protocol_id": "deform360-reusable-sota-v1",
+            "protocol_config_sha256": protocol["config_sha256"],
+            "object_id": "004-rubber-band",
+            "episode_id": 0,
+            "role": "held-development",
+            "development_only": True,
+            "confirmatory_object_opened": False,
+        },
+        "object_id": "004-rubber-band",
+        "episode_id": 0,
+        "role": "held-development",
+        "camera_count": 3,
+        "frame_count": 20,
+        "point_frame_count": 15,
+        "material_point_count": 2,
+        "material_identity_sha256": "f" * 64,
+        "implementation_revision": {
+            "deform360_processing": PINNED_DEFORM360_PROCESSING_REVISION,
+            "cotracker": PINNED_COTRACKER_REVISION,
+        },
+        "input_sha256": {
+            "cotracker_checkpoint": PINNED_COTRACKER_CHECKPOINT_SHA256,
+        },
+        "information_boundary": {
+            "development_only": True,
+            "prediction_metric_computed": False,
+            "confirmatory_object_opened": False,
+            "pokeflex_target_opened": False,
+        },
+    }
+    _seal(manifest)
+
+    contract = build_development_evaluator_contract(
+        protocol,
+        [manifest],
+        evaluation_start_frame=1,
+        evaluation_stop_frame_exclusive=12,
+    )
+
+    assert contract["status"] == "independent-protocol"
+    assert contract["split"]["held_episode_ids_by_object"] == {"004-rubber-band": [0]}
+    assert contract["particles"]["identity_sha256_by_episode"] == {
+        "004-rubber-band/0": "f" * 64
+    }
+    validation = validate_deform360_evaluator_contract(contract)
+    assert validation["official_table4_authorizing"] is False
+    with pytest.raises(ValueError, match="evaluator parity is not established"):
+        authorize_deform360_table4_claim(contract, {})
+
+    altered = deepcopy(manifest)
+    altered["authorization"]["role"] = "fit"
+    _seal(altered)
+    with pytest.raises(ValueError, match="held-development"):
+        build_development_evaluator_contract(
+            protocol,
+            [altered],
+            evaluation_start_frame=1,
+            evaluation_stop_frame_exclusive=12,
+        )

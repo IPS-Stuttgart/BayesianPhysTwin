@@ -15,6 +15,18 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
+from .deform360_reusable_sota_protocol import (
+    EXPECTED_FIT_EPISODES,
+    EXPECTED_HELD_EPISODES,
+    validate_reusable_sota_config,
+)
+from .deform360_sota_processing import (
+    DEVELOPMENT_OBSERVATIONS_KIND,
+    PINNED_COTRACKER_CHECKPOINT_SHA256,
+    PINNED_COTRACKER_REVISION,
+    PINNED_DEFORM360_PROCESSING_REVISION,
+)
+
 
 DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION = 2
 DEFORM360_EVALUATOR_CONTRACT_KIND = "Deform360EvaluatorContract"
@@ -82,8 +94,7 @@ def validate_deform360_evaluator_contract(
     """Validate a contract without pretending unresolved fields are known."""
 
     _require(
-        payload.get("schema_version")
-        == DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION,
+        payload.get("schema_version") == DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION,
         "unsupported Deform360 evaluator-contract schema",
     )
     _require(
@@ -159,9 +170,12 @@ def _validate_official_parity_contract(payload: Mapping[str, Any]) -> None:
         "evaluation_stop_frame_exclusive",
         "frame_stride",
     ):
-        _require(isinstance(temporal.get(field), int), f"temporal.{field} is unresolved")
+        _require(
+            isinstance(temporal.get(field), int), f"temporal.{field} is unresolved"
+        )
     _require(
-        0 <= temporal["evaluation_start_frame"]
+        0
+        <= temporal["evaluation_start_frame"]
         < temporal["evaluation_stop_frame_exclusive"]
         and temporal["frame_stride"] >= 1,
         "official temporal range is invalid",
@@ -172,8 +186,7 @@ def _validate_official_parity_contract(payload: Mapping[str, Any]) -> None:
         "official Chamfer definition is unresolved",
     )
     _require(
-        metrics.get("chamfer", {}).get("visibility_policy")
-        in _VISIBILITY_POLICIES,
+        metrics.get("chamfer", {}).get("visibility_policy") in _VISIBILITY_POLICIES,
         "official Chamfer visibility policy is unresolved",
     )
     _require(
@@ -204,7 +217,9 @@ def _validate_official_parity_contract(payload: Mapping[str, Any]) -> None:
         "official particle identity checksum is invalid",
     )
     provenance = payload.get("evaluator_provenance")
-    _require(isinstance(provenance, Mapping), "official evaluator provenance is missing")
+    _require(
+        isinstance(provenance, Mapping), "official evaluator provenance is missing"
+    )
     _require(
         provenance.get("released_by_deform360_authors") is True,
         "evaluator is not author-released",
@@ -244,6 +259,179 @@ def write_deform360_evaluator_contract(
     return output
 
 
+def build_development_evaluator_contract(
+    protocol: Mapping[str, Any],
+    observation_manifests: Sequence[Mapping[str, Any]],
+    *,
+    evaluation_start_frame: int,
+    evaluation_stop_frame_exclusive: int,
+    frame_stride: int = 1,
+) -> dict[str, Any]:
+    """Build an explicit non-authorizing contract for held development episodes."""
+
+    validate_reusable_sota_config(protocol)
+    _require(
+        0 <= evaluation_start_frame < evaluation_stop_frame_exclusive
+        and frame_stride >= 1,
+        "independent evaluation horizon is invalid",
+    )
+    records = [dict(record) for record in observation_manifests]
+    _require(records, "development evaluator requires observation manifests")
+    development = protocol["config"]["development_objects"]
+    development_ids = {
+        str(object_id)
+        for category in ("1d", "2d", "3d")
+        for object_id in development[category]
+    }
+    protocol_id = str(protocol["config"]["protocol_id"])
+    protocol_sha256 = str(protocol["config_sha256"])
+    by_object: dict[str, list[int]] = {}
+    identities: dict[str, str] = {}
+    manifest_checksums: dict[str, str] = {}
+    for record in records:
+        _require(
+            record.get("artifact_kind") == DEVELOPMENT_OBSERVATIONS_KIND
+            and record.get("result_sha256") == _canonical_sha256(record),
+            "development observation manifest is invalid",
+        )
+        authorization = record.get("authorization", {})
+        implementation = record.get("implementation_revision", {})
+        inputs = record.get("input_sha256", {})
+        boundary = record.get("information_boundary", {})
+        object_id = str(record.get("object_id"))
+        episode_id = int(record.get("episode_id", -1))
+        _require(
+            object_id in development_ids
+            and authorization.get("protocol_id") == protocol_id
+            and authorization.get("protocol_config_sha256") == protocol_sha256
+            and authorization.get("object_id") == object_id
+            and int(authorization.get("episode_id", -1)) == episode_id
+            and authorization.get("role") == "held-development"
+            and authorization.get("development_only") is True
+            and authorization.get("confirmatory_object_opened") is False
+            and record.get("role") == "held-development"
+            and episode_id in EXPECTED_HELD_EPISODES,
+            "evaluator input is not a locked held-development episode",
+        )
+        _require(
+            implementation.get("deform360_processing")
+            == PINNED_DEFORM360_PROCESSING_REVISION
+            and implementation.get("cotracker") == PINNED_COTRACKER_REVISION
+            and inputs.get("cotracker_checkpoint")
+            == PINNED_COTRACKER_CHECKPOINT_SHA256,
+            "development observation implementation changed",
+        )
+        _require(
+            boundary.get("development_only") is True
+            and boundary.get("prediction_metric_computed") is False
+            and boundary.get("confirmatory_object_opened") is False
+            and boundary.get("pokeflex_target_opened") is False,
+            "development observation information boundary changed",
+        )
+        _require(
+            int(record.get("point_frame_count", -1)) >= evaluation_stop_frame_exclusive,
+            f"evaluation horizon exceeds processed points for {object_id}/{episode_id}",
+        )
+        identity = record.get("material_identity_sha256")
+        _require(_valid_sha256(identity), "material identity checksum is invalid")
+        key = _episode_key(object_id, episode_id)
+        _require(key not in identities, "development evaluator episode is duplicated")
+        by_object.setdefault(object_id, []).append(episode_id)
+        identities[key] = str(identity)
+        manifest_checksums[key] = str(record["result_sha256"])
+
+    object_ids = sorted(by_object)
+    held = {object_id: sorted(by_object[object_id]) for object_id in object_ids}
+    fit = {object_id: list(EXPECTED_FIT_EPISODES) for object_id in object_ids}
+    payload: dict[str, Any] = {
+        "schema_version": DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION,
+        "artifact_kind": DEFORM360_EVALUATOR_CONTRACT_KIND,
+        "contract_id": "deform360-reusable-sota-development-independent-v1",
+        "status": "independent-protocol",
+        "dataset": {
+            "repository": "brownu/deform360",
+            "revision": protocol["config"]["dataset"]["revision"],
+            "coordinate_unit": "m",
+        },
+        "annotation_pipeline": {
+            "repository": "lhy0807/deform360",
+            "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+            "producer": "public SAM2 development fallback plus released processing",
+            "official_sam3_parity": False,
+        },
+        "split": {
+            "object_ids": object_ids,
+            "fit_episode_ids_by_object": fit,
+            "held_episode_ids_by_object": held,
+        },
+        "input_boundary": {
+            "initial_object_frame_count": 1,
+            "known_future_robot_action": True,
+            "future_object_observation": False,
+        },
+        "temporal": {
+            "source_frame_rate_hz": 30.0,
+            "evaluation_start_frame": int(evaluation_start_frame),
+            "evaluation_stop_frame_exclusive": int(evaluation_stop_frame_exclusive),
+            "frame_stride": int(frame_stride),
+        },
+        "particles": {
+            "identity_policy": "ordered_frame_zero_seed_advected_by_released_pipeline",
+            "identity_sha256_by_episode": identities,
+            "observation_manifest_sha256_by_episode": manifest_checksums,
+        },
+        "metrics": {
+            "chamfer": {
+                "definition": "symmetric_mean_euclidean_m",
+                "visibility_policy": "all_finite_material_points",
+            },
+            "track": {
+                "definition": "mean_euclidean_m",
+                "visibility_policy": "all_finite_material_points",
+            },
+        },
+        "aggregation": {
+            "frame": "mean",
+            "episode": "mean",
+            "object": "mean",
+            "panel": "object_balanced_mean",
+        },
+        "published_reference": {
+            "paper": "Deform360 arXiv:2607.05390v1",
+            "table": 4,
+            "setting": "multi-episode future prediction",
+            "method": "ParticleFormer",
+            "future_chamfer_m": 0.051,
+            "future_track_error_m": 0.079,
+        },
+        "evaluator_provenance": {
+            "released_by_deform360_authors": False,
+            "source_revision_sha256": None,
+            "entrypoint_sha256": None,
+            "particleformer_table4_reproduction": {
+                "passed": False,
+                "future_chamfer_m": None,
+                "future_track_error_m": None,
+            },
+        },
+        "information_boundary": {
+            "development_only": True,
+            "confirmatory_object_opened": False,
+            "pokeflex_target_opened": False,
+        },
+        "unresolved_fields": [
+            "official_parity.split",
+            "official_parity.temporal",
+            "official_parity.metrics",
+            "official_parity.evaluator",
+            "official_parity.particleformer_table4_reproduction",
+        ],
+    }
+    payload["result_sha256"] = _canonical_sha256(payload)
+    validate_deform360_evaluator_contract(payload)
+    return payload
+
+
 def _score_ready_contract(payload: Mapping[str, Any], episode_key: str) -> None:
     validate_deform360_evaluator_contract(payload)
     temporal = payload["temporal"]
@@ -264,8 +452,7 @@ def _score_ready_contract(payload: Mapping[str, Any], episode_key: str) -> None:
         "Chamfer definition is unresolved",
     )
     _require(
-        metrics.get("chamfer", {}).get("visibility_policy")
-        in _VISIBILITY_POLICIES,
+        metrics.get("chamfer", {}).get("visibility_policy") in _VISIBILITY_POLICIES,
         "Chamfer visibility policy is unresolved",
     )
     _require(
@@ -283,9 +470,7 @@ def _score_ready_contract(payload: Mapping[str, Any], episode_key: str) -> None:
     )
 
 
-def _chamfer(
-    target: np.ndarray, prediction: np.ndarray, definition: str
-) -> float:
+def _chamfer(target: np.ndarray, prediction: np.ndarray, definition: str) -> float:
     difference = target[:, None, :] - prediction[None, :, :]
     squared = np.sum(difference * difference, axis=2)
     if definition == "symmetric_mean_euclidean_m":
@@ -333,9 +518,7 @@ def score_deform360_episode(
     target = np.asarray(target_m, dtype=np.float64)
     prediction = np.asarray(prediction_m, dtype=np.float64)
     _require(
-        target.shape == prediction.shape
-        and target.ndim == 3
-        and target.shape[2] == 3,
+        target.shape == prediction.shape and target.ndim == 3 and target.shape[2] == 3,
         "target and prediction must share shape (T,N,3)",
     )
     temporal = contract["temporal"]
@@ -345,10 +528,11 @@ def score_deform360_episode(
         temporal["frame_stride"],
         dtype=np.int64,
     )
-    _require(len(indices) and int(indices[-1]) < len(target), "evaluation horizon exceeds data")
-    chamfer_visibility_policy = contract["metrics"]["chamfer"][
-        "visibility_policy"
-    ]
+    _require(
+        len(indices) and int(indices[-1]) < len(target),
+        "evaluation horizon exceeds data",
+    )
+    chamfer_visibility_policy = contract["metrics"]["chamfer"]["visibility_policy"]
     track_visibility_policy = contract["metrics"]["track"]["visibility_policy"]
     if "visible_and_finite_material_points" in {
         chamfer_visibility_policy,
@@ -449,7 +633,9 @@ def aggregate_deform360_panel(
             for object_id, episode_ids in held.items()
             for episode_id in episode_ids
         }
-        _require(observed_keys == expected, "panel differs from the declared held split")
+        _require(
+            observed_keys == expected, "panel differs from the declared held split"
+        )
     by_object: dict[str, dict[str, float | int]] = {}
     for object_id in sorted({str(row["object_id"]) for row in rows}):
         selected = [row for row in rows if row["object_id"] == object_id]
@@ -541,6 +727,7 @@ __all__ = [
     "DEFORM360_EVALUATOR_CONTRACT_SCHEMA_VERSION",
     "aggregate_deform360_panel",
     "authorize_deform360_table4_claim",
+    "build_development_evaluator_contract",
     "deform360_evaluator_contract_sha256",
     "load_deform360_evaluator_contract",
     "score_deform360_episode",
