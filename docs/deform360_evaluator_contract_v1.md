@@ -43,6 +43,14 @@ objects with more episodes do not become accidental extra replicates.
 
 ## Development mask and processing path
 
+The locked Hugging Face revision was inventoried recursively before scaling the
+experiment. It contains 179,700 tree entries: 179,698 below `raw/`, plus the
+repository README and `.gitattributes`. No `processed/`, `pcd_clean`, tracking,
+particle-identity, or evaluator artifact is present. The official release README
+also states that processed annotations are not assumed to be present. Therefore
+there is no public precomputed supervision path that can silently stand in for
+the released annotation pipeline.
+
 The official annotation pipeline uses gated SAM3 masks. On 2026-07-17 the
 server had no authenticated SAM3 checkpoint, so a pinned public SAM2.1 fallback
 was exercised as a development producer only:
@@ -79,6 +87,16 @@ artifacts for all 21 cameras. The reconstruction used only 200 optimization
 iterations and is therefore a dependency and contract smoke, not a quality
 result. This establishes development-pipeline feasibility, not equivalence to
 Deform360's SAM3 masks, published particle annotations, or evaluator.
+
+Subsequent development episodes use
+`scripts/remote/stage_deform360_sota_development_episode.py`. The runner accepts
+only objects in the locked 12-object development panel, enforces the fit versus
+held-development episode split, verifies the episode-1 reference-mask hashes,
+and re-identifies each same-view object mask from the new episode's frame zero.
+Future frames are used only to propagate the development annotation; no outcome
+metric or simulator residual enters mask selection. It then builds a symlink-only
+view for the released Deform360 processing code and records checksummed mask and
+staging artifacts. Confirmatory objects are rejected before any media access.
 
 ## Next evidence
 
