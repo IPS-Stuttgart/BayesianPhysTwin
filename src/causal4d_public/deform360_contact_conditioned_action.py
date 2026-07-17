@@ -150,6 +150,85 @@ def _minimum_group_distance_m(
     return minimum
 
 
+def controller_group_distance_trajectory_m(
+    controller_points_m: np.ndarray,
+    initial_object_points_m: np.ndarray,
+    *,
+    controller_group_size: int,
+) -> np.ndarray:
+    """Measure each known controller group's distance to frame-zero geometry."""
+
+    controls = np.asarray(controller_points_m, dtype=np.float64)
+    initial = np.asarray(initial_object_points_m, dtype=np.float64)
+    _require(
+        controls.ndim == 3 and controls.shape[0] >= 2 and controls.shape[2] == 3,
+        "controller points must have shape (T,P,3)",
+    )
+    _require(
+        initial.ndim == 2 and initial.shape[1] == 3 and len(initial) >= 1,
+        "initial object points must have shape (N,3)",
+    )
+    _require(
+        controller_group_size >= 1 and controls.shape[1] % controller_group_size == 0,
+        "controller points do not form complete groups",
+    )
+    _require(
+        np.all(np.isfinite(controls)) and np.all(np.isfinite(initial)),
+        "controller and object points must be finite",
+    )
+    group_count = controls.shape[1] // controller_group_size
+    distances = np.empty((len(controls), group_count), dtype=np.float64)
+    for frame in range(len(controls)):
+        for group in range(group_count):
+            start = group * controller_group_size
+            stop = start + controller_group_size
+            distances[frame, group] = _minimum_group_distance_m(
+                controls[frame, start:stop], initial
+            )
+    return distances
+
+
+def geometry_latched_contact_schedule(
+    controller_points_m: np.ndarray,
+    initial_object_points_m: np.ndarray,
+    *,
+    controller_group_size: int,
+    maximum_contact_distance_m: float,
+    confirmation_frames: int = 1,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Infer target-tactile-free contact onset from known action and initial geometry.
+
+    A controller group becomes active after the requested number of consecutive
+    frames inside the contact envelope and remains active thereafter. Latching is
+    deliberate: once the object moves, distance to its *initial* geometry is no
+    longer evidence for release.
+    """
+
+    _require(
+        np.isfinite(maximum_contact_distance_m) and maximum_contact_distance_m > 0.0,
+        "maximum contact distance must be finite and positive",
+    )
+    _require(confirmation_frames >= 1, "confirmation count must be positive")
+    distances = controller_group_distance_trajectory_m(
+        controller_points_m,
+        initial_object_points_m,
+        controller_group_size=controller_group_size,
+    )
+    schedule = np.zeros_like(distances, dtype=bool)
+    for group in range(distances.shape[1]):
+        inside = distances[:, group] <= maximum_contact_distance_m
+        run = 0
+        onset = None
+        for frame, value in enumerate(inside):
+            run = run + 1 if value else 0
+            if run >= confirmation_frames:
+                onset = frame - confirmation_frames + 1
+                break
+        if onset is not None:
+            schedule[onset:, group] = True
+    return schedule, distances
+
+
 def condition_controller_action(
     controller_points_m: np.ndarray,
     contact_active: np.ndarray,
@@ -298,13 +377,26 @@ def write_contact_conditioned_action_artifact(
     object_id: str,
     episode_id: int,
     source_controller_sha256: str,
-    contact_model_result_sha256: str,
     information_boundary: Mapping[str, Any],
+    contact_model_result_sha256: str | None = None,
+    contact_policy_result_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Write a checksum-bound action artifact for an opt-in Warp rollout."""
 
     _require(len(source_controller_sha256) == 64, "source controller hash is invalid")
-    _require(len(contact_model_result_sha256) == 64, "contact model hash is invalid")
+    _require(
+        (contact_model_result_sha256 is None) != (contact_policy_result_sha256 is None),
+        "exactly one contact model or policy hash is required",
+    )
+    contact_sha256 = (
+        contact_model_result_sha256
+        if contact_model_result_sha256 is not None
+        else contact_policy_result_sha256
+    )
+    _require(
+        contact_sha256 is not None and len(contact_sha256) == 64,
+        "contact model or policy hash is invalid",
+    )
     boundary = dict(information_boundary)
     _require(
         boundary.get("future_object_observations_used") is False
@@ -339,7 +431,6 @@ def write_contact_conditioned_action_artifact(
         "maximum_contact_distance_m": action.maximum_contact_distance_m,
         "falls_back_to_persistence": action.falls_back_to_persistence,
         "source_controller_sha256": source_controller_sha256,
-        "contact_model_result_sha256": contact_model_result_sha256,
         "archive": {
             "path": str(archive),
             "sha256": _file_sha256(archive),
@@ -350,10 +441,14 @@ def write_contact_conditioned_action_artifact(
         },
         "information_boundary": boundary,
         "claim_boundary": (
-            "source-trained contact realization from known action and frame-zero "
-            "geometry; no target tactile or future object observation"
+            "contact realization from known action and frame-zero geometry; no "
+            "target tactile or future object observation"
         ),
     }
+    if contact_model_result_sha256 is not None:
+        payload["contact_model_result_sha256"] = contact_model_result_sha256
+    else:
+        payload["contact_policy_result_sha256"] = contact_policy_result_sha256
     payload["result_sha256"] = _artifact_sha256(payload)
     return payload
 
@@ -418,7 +513,9 @@ __all__ = [
     "CONTACT_CONDITIONED_ACTION_SCHEMA_VERSION",
     "ContactConditionedControllerAction",
     "condition_controller_action",
+    "controller_group_distance_trajectory_m",
     "controller_spring_group_indices",
+    "geometry_latched_contact_schedule",
     "load_contact_conditioned_action_artifact",
     "write_contact_conditioned_action_artifact",
 ]

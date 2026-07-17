@@ -283,12 +283,29 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
         self, video_path: Path
     ) -> tuple[np.ndarray, dict[str, Any]]:
         rgb = self._first_frame_rgb(video_path)
-        annotations = self._automatic_annotations(rgb)
+        return self.select_initial_mask_from_rgb(
+            rgb,
+            camera=video_path.parent.name,
+            video_name=video_path.name,
+        )
+
+    def select_initial_mask_from_rgb(
+        self,
+        rgb: np.ndarray,
+        *,
+        camera: str,
+        video_name: str,
+    ) -> tuple[np.ndarray, dict[str, Any]]:
+        """Select a generic candidate from one explicitly supplied RGB frame."""
+
+        image = np.asarray(rgb, dtype=np.uint8)
+        _require(image.ndim == 3 and image.shape[2] == 3, "RGB image must be HxWx3")
+        annotations = self._automatic_annotations(image)
 
         candidates = []
         for index, annotation in enumerate(annotations):
             diagnostics = deformable_object_mask_candidate_diagnostics(
-                rgb,
+                image,
                 annotation["segmentation"],
                 self.config,
             )
@@ -309,15 +326,15 @@ class DeformableObjectSam2VideoPredictor(RopeSam2VideoPredictor):
         eligible = [candidate for candidate in candidates if candidate[0] >= 0.0]
         _require(
             eligible,
-            f"SAM2 found no deformable-object first-frame mask for {video_path}",
+            f"SAM2 found no deformable-object mask for {camera}/{video_name}",
         )
         _, selected_index, selected = max(
             eligible, key=lambda item: (item[0], -item[1])
         )
         mask = np.asarray(annotations[selected_index]["segmentation"], dtype=bool)
         return mask, {
-            "camera": video_path.parent.name,
-            "video": video_path.name,
+            "camera": camera,
+            "video": video_name,
             "automatic_candidate_count": len(annotations),
             "eligible_candidate_count": len(eligible),
             "selected": selected,

@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-reusable-trust-mask-addendum-v2",
+  "parent_locks": {
+    "fresh_protocol_id": "deform360-reusable-trust-fresh-v1",
+    "fresh_protocol_file_sha256": "bf4ab83236068a7bddb6cddb3f3f60d09eb9e6d0147a25e78aa4bc265a9fc831",
+    "physics_addendum_id": "deform360-reusable-trust-physics-addendum-v1",
+    "physics_addendum_file_sha256": "48a875b7fe45843d2e7dce6752deaaecbe9765b6d41172f443ee577a8b98158c",
+    "execution_lock_id": "deform360-reusable-trust-execution-v1",
+    "execution_lock_file_sha256": "46a56cb8db5df26e800de71083b265b0c96e73bd52b9c0cca2d4a046fa2754d2"
+  },
+  "locked_at": "2026-07-17T11:10:58+02:00",
+  "lock_timing": {
+    "source_fit_frame_zero_media_inspected": true,
+    "source_fit_future_outcomes_inspected": false,
+    "held_out_media_inspected": false,
+    "held_out_outcomes_inspected": false,
+    "reason": "the frozen independent per-camera generic masks failed the pre-outcome 3 cm contact-attachment gate on cable and scarf"
+  },
+  "failed_v1_diagnostic": {
+    "policy": "independent exact-frame generic SAM2",
+    "003-cable_hull_to_controller_distance_m": 0.2212187945842743,
+    "086-cotton-scarf-cloth_hull_to_controller_distance_m": 0.1218334510922432,
+    "086-cotton-scarf-cloth_median_cross_view_splat_containment": 0.22784810126582278,
+    "outcome_read": false,
+    "conclusion": "source preprocessing rejected before Warp outcome; physics radius remains unchanged"
+  },
+  "inherited_sources": {
+    "source_qa_config_sha256": "17077f5938f25bb6c7d5569b2a98121a213acbba09d911c4fe66134882087d58",
+    "association_config_sha256": "a08a8adba8ddfc14c827bcaa9621302c53b8aac003a9134e966ff7ac4a85addc",
+    "source_geometry_qa_sha256": "5cba6655ba3714f949a0342813e94c2c72fee0112ab9a0f6734b1d5b44b0501c",
+    "rule": "reuse the already frozen SAM2, camera-count, and calibrated 3D consistency settings; borrow camera templates from the closest pre-existing topology object"
+  },
+  "source_reference": {
+    "episode_id": 1,
+    "camera": "brics-odroid-001_cam0",
+    "bootstrap": "generic_sam2_top_candidate_on_exact_action_window_start",
+    "reused_across_fit_and_held_episodes": true,
+    "future_object_observation_used": false,
+    "manual_mask_or_box_used": false
+  },
+  "objects": {
+    "003-cable": {
+      "topology": "1D",
+      "camera_template_object": "002-rope-silk",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-021_cam1",
+        "brics-odroid-007_cam0",
+        "brics-odroid-028_cam0",
+        "brics-odroid-019_cam1",
+        "brics-odroid-010_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-025_cam1",
+        "brics-odroid-006_cam0",
+        "brics-odroid-015_cam1",
+        "brics-odroid-027_cam0"
+      ]
+    },
+    "086-cotton-scarf-cloth": {
+      "topology": "2D",
+      "camera_template_object": "085-scarf-cloth",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-027_cam0",
+        "brics-odroid-011_cam0",
+        "brics-odroid-028_cam0",
+        "brics-odroid-021_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-010_cam0",
+        "brics-odroid-024_cam1",
+        "brics-odroid-015_cam0",
+        "brics-odroid-006_cam0",
+        "brics-odroid-017_cam1",
+        "brics-odroid-023_cam0"
+      ]
+    },
+    "171-penguin": {
+      "topology": "3D",
+      "camera_template_object": "092-squirrel",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-021_cam1",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-019_cam1",
+        "brics-odroid-006_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-010_cam0",
+        "brics-odroid-024_cam1",
+        "brics-odroid-015_cam1",
+        "brics-odroid-027_cam0"
+      ]
+    }
+  },
+  "sam2": {
+    "candidate_config": {
+      "points_per_side": 24,
+      "points_per_batch": 64,
+      "predicted_iou_threshold": 0.7,
+      "stability_score_threshold": 0.8,
+      "minimum_mask_region_area": 100,
+      "minimum_area_fraction": 0.0005,
+      "maximum_area_fraction": 0.65,
+      "minimum_foreground_contrast": 0.06,
+      "maximum_normalized_center_distance": 0.9,
+      "border_side_penalty": 0.55,
+      "minimum_reference_appearance_similarity": 0.35
+    },
+    "checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "candidate_prior_uses_simulator_residual": false
+  },
+  "joint_multiview_selection": {
+    "maximum_candidates_per_camera": 4,
+    "include_basic_candidates_below_appearance_threshold": true,
+    "voxel_resolution": 32,
+    "coordinate_descent_passes": 4,
+    "appearance_weight": 0.05,
+    "projected_volume_penalty": 0.1,
+    "cross_view_config": {
+      "cube_half_extent_m": 0.5,
+      "voxel_resolution": 120,
+      "consensus_fraction_of_peak": 0.55,
+      "minimum_consensus_votes": 8,
+      "minimum_leave_one_out_recall": 0.3
+    },
+    "simulator_residual_used": false,
+    "post_initial_object_observation_used": false
+  },
+  "source_qa_gates": {
+    "minimum_accepted_camera_count": 8,
+    "minimum_visual_hull_point_count": 512,
+    "maximum_hull_to_controller_distance_m": 0.03,
+    "failure_action": "reject the episode and return exact persistence; never widen the attachment radius"
+  },
+  "held_boundary": {
+    "allowed": [
+      "source reference RGB and mask",
+      "held frame-zero RGB from frozen cameras",
+      "held known robot trajectory for action-window selection and contact QA",
+      "camera calibration"
+    ],
+    "forbidden": [
+      "held post-initial object frames",
+      "held tactile",
+      "held object outcomes",
+      "simulator residuals"
+    ]
+  },
+  "claim_boundary": "source-QA repair after a pre-outcome preprocessing rejection; no held outcome was opened and all physics and admission gates remain frozen"
+}

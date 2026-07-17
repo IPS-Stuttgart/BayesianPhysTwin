@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-reusable-trust-mask-addendum-v5",
+  "parent_locks": {
+    "fresh_protocol_id": "deform360-reusable-trust-fresh-v1",
+    "fresh_protocol_file_sha256": "bf4ab83236068a7bddb6cddb3f3f60d09eb9e6d0147a25e78aa4bc265a9fc831",
+    "physics_addendum_id": "deform360-reusable-trust-physics-addendum-v1",
+    "physics_addendum_file_sha256": "48a875b7fe45843d2e7dce6752deaaecbe9765b6d41172f443ee577a8b98158c",
+    "execution_lock_id": "deform360-reusable-trust-execution-v1",
+    "execution_lock_file_sha256": "46a56cb8db5df26e800de71083b265b0c96e73bd52b9c0cca2d4a046fa2754d2",
+    "superseded_mask_addendum_id": "deform360-reusable-trust-mask-addendum-v4",
+    "superseded_mask_addendum_file_sha256": "5edcaf1ad3634f128d8126303aff2b6a7540af0cff085027af518252109ee556"
+  },
+  "locked_at": "2026-07-17T12:41:23+02:00",
+  "lock_timing": {
+    "source_fit_frame_zero_media_inspected": true,
+    "source_fit_simulator_response_inspected": true,
+    "source_fit_future_object_outcomes_inspected": false,
+    "held_out_media_inspected": false,
+    "held_out_outcomes_inspected": false,
+    "reason": "all-camera v4 reduced cable consensus from six to three accepted views; freeze fit-episode-1 view reliability and demand unchanged transfer to five untouched fit episodes"
+  },
+  "failed_v4_diagnostic": {
+    "003-cable_candidate_camera_count": 32,
+    "003-cable_accepted_camera_count": 3,
+    "003-cable_visual_hull_point_count": 738,
+    "003-cable_geometry_contact_distance_m": 0.0024124028918783968,
+    "future_object_outcome_read": false,
+    "conclusion": "unqualified camera accumulation is not robust to correlated occlusion and false masks; estimate a sparse camera-trust panel on source frame-zero evidence only"
+  },
+  "camera_policy": {
+    "rule": "fit_episode_one_leave_one_view_reliability_then_frozen_transfer",
+    "selection_episode_id": 1,
+    "selection_input_camera_count": 12,
+    "selection_uses_frame_zero_multiview_geometry_only": true,
+    "selection_uses_mask_quality": true,
+    "selection_uses_object_outcomes": false,
+    "validation_episode_ids": [3, 4, 6, 7, 9],
+    "validation_failure_action": "reject the object arm and return exact persistence; never alter its camera set or gates",
+    "held_camera_set_is_identical_to_source_selected_set": true
+  },
+  "objects": {
+    "003-cable": {
+      "topology": "1D",
+      "text_prompt": "long black cable.",
+      "cameras": [
+        "brics-odroid-006_cam0",
+        "brics-odroid-007_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-015_cam1",
+        "brics-odroid-021_cam1",
+        "brics-odroid-027_cam0"
+      ]
+    },
+    "086-cotton-scarf-cloth": {
+      "topology": "2D",
+      "text_prompt": "blanket.",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-010_cam0",
+        "brics-odroid-011_cam0",
+        "brics-odroid-015_cam0",
+        "brics-odroid-017_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-021_cam1",
+        "brics-odroid-023_cam0",
+        "brics-odroid-024_cam1"
+      ]
+    },
+    "171-penguin": {
+      "topology": "3D",
+      "text_prompt": "penguin.",
+      "cameras": [
+        "brics-odroid-006_cam0",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-010_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-015_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-027_cam0"
+      ]
+    }
+  },
+  "observation_initializer": {
+    "mode": "grounding_dino_box_prompted_sam2",
+    "grounding_dino": {
+      "model_id": "IDEA-Research/grounding-dino-base",
+      "model_revision": "12bdfa3120f3e7ec7b434d90674b3396eccf88eb",
+      "transformers_version": "4.57.3",
+      "box_threshold": 0.15,
+      "text_threshold": 0.15,
+      "maximum_boxes_per_camera": 4,
+      "maximum_candidates_per_camera": 6,
+      "minimum_sam2_score": 0.0,
+      "duplicate_iou_threshold": 0.98
+    },
+    "candidate_prior_uses_simulator_residual": false,
+    "candidate_prior_uses_future_object_observation": false,
+    "candidate_prior_uses_tactile": false
+  },
+  "sam2": {
+    "candidate_config": {
+      "points_per_side": 24,
+      "points_per_batch": 64,
+      "predicted_iou_threshold": 0.7,
+      "stability_score_threshold": 0.8,
+      "minimum_mask_region_area": 100,
+      "minimum_area_fraction": 0.0005,
+      "maximum_area_fraction": 0.65,
+      "minimum_foreground_contrast": 0.06,
+      "maximum_normalized_center_distance": 0.9,
+      "border_side_penalty": 0.55,
+      "minimum_reference_appearance_similarity": 0.35
+    },
+    "checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
+  },
+  "joint_multiview_selection": {
+    "maximum_candidates_per_camera": 6,
+    "voxel_resolution": 32,
+    "coordinate_descent_passes": 4,
+    "appearance_weight": 0.05,
+    "projected_volume_penalty": 0.1,
+    "cross_view_config": {
+      "cube_half_extent_m": 0.5,
+      "voxel_resolution": 120,
+      "consensus_fraction_of_peak": 0.55,
+      "minimum_consensus_votes": 4,
+      "minimum_leave_one_out_recall": 0.3
+    },
+    "simulator_residual_used": false,
+    "post_initial_object_observation_used": false
+  },
+  "geometry_contact_policy": {
+    "rule": "first_consecutive_entry_into_initial_geometry_envelope_then_latched",
+    "controller_group_size": 768,
+    "maximum_contact_distance_m": 0.03,
+    "confirmation_frames": 2,
+    "minimum_retained_group_count": 1,
+    "release_inferred_from_initial_geometry": false,
+    "known_future_robot_action_used": true,
+    "future_object_observation_used": false,
+    "target_tactile_used": false
+  },
+  "source_qa_gates": {
+    "minimum_accepted_camera_count": 4,
+    "minimum_visual_hull_point_count": 512,
+    "maximum_hull_to_controller_distance_m": 0.03,
+    "minimum_geometry_contact_group_count": 1,
+    "failure_action": "reject the episode and return exact persistence; never widen the attachment radius"
+  },
+  "held_boundary": {
+    "allowed": [
+      "locked text prompt",
+      "held frame-zero RGB from the source-selected frozen cameras",
+      "held known robot trajectory for action-window selection and geometry-only contact onset",
+      "camera calibration"
+    ],
+    "forbidden": [
+      "held post-initial object frames",
+      "held tactile",
+      "held object outcomes",
+      "simulator residuals"
+    ]
+  },
+  "claim_boundary": "source-trained camera reliability and delayed-contact policy locked before held access; five untouched fit episodes must pass unchanged before any held prediction is admitted"
+}

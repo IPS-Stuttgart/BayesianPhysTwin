@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-reusable-trust-mask-addendum-v3",
+  "parent_locks": {
+    "fresh_protocol_id": "deform360-reusable-trust-fresh-v1",
+    "fresh_protocol_file_sha256": "bf4ab83236068a7bddb6cddb3f3f60d09eb9e6d0147a25e78aa4bc265a9fc831",
+    "physics_addendum_id": "deform360-reusable-trust-physics-addendum-v1",
+    "physics_addendum_file_sha256": "48a875b7fe45843d2e7dce6752deaaecbe9765b6d41172f443ee577a8b98158c",
+    "execution_lock_id": "deform360-reusable-trust-execution-v1",
+    "execution_lock_file_sha256": "46a56cb8db5df26e800de71083b265b0c96e73bd52b9c0cca2d4a046fa2754d2",
+    "superseded_mask_addendum_id": "deform360-reusable-trust-mask-addendum-v2",
+    "superseded_mask_addendum_file_sha256": "b51568bdff239ff63f04d0742ca08e21cfc3bcec0287db98b3185868ed1cacaf"
+  },
+  "locked_at": "2026-07-17T11:39:00+02:00",
+  "lock_timing": {
+    "source_fit_frame_zero_media_inspected": true,
+    "source_fit_simulator_response_inspected": true,
+    "source_fit_future_object_outcomes_inspected": false,
+    "held_out_media_inspected": false,
+    "held_out_outcomes_inspected": false,
+    "reason": "v2 admitted scarf but source-only cable and penguin contact QA failed; a benchmark-native text prompt is now used only to propose frame-zero SAM2 boxes"
+  },
+  "failed_v2_diagnostic": {
+    "003-cable_hull_to_controller_distance_m": 0.1777218173419355,
+    "171-penguin_hull_to_controller_distance_m": 0.10659446531378018,
+    "086-cotton-scarf-cloth_passed": true,
+    "topology_template_cable_multiview_consensus": false,
+    "topology_template_penguin_hull_to_controller_distance_m": 0.02993392173159257,
+    "future_object_outcome_read": false,
+    "conclusion": "generic or borrowed appearance is not a reliable object identifier; retain all physical gates and replace only candidate proposal"
+  },
+  "objects": {
+    "003-cable": {
+      "topology": "1D",
+      "text_prompt": "long black cable.",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-021_cam1",
+        "brics-odroid-007_cam0",
+        "brics-odroid-028_cam0",
+        "brics-odroid-019_cam1",
+        "brics-odroid-010_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-025_cam1",
+        "brics-odroid-006_cam0",
+        "brics-odroid-015_cam1",
+        "brics-odroid-027_cam0"
+      ]
+    },
+    "086-cotton-scarf-cloth": {
+      "topology": "2D",
+      "text_prompt": "blanket.",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-027_cam0",
+        "brics-odroid-011_cam0",
+        "brics-odroid-028_cam0",
+        "brics-odroid-021_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-010_cam0",
+        "brics-odroid-024_cam1",
+        "brics-odroid-015_cam0",
+        "brics-odroid-006_cam0",
+        "brics-odroid-017_cam1",
+        "brics-odroid-023_cam0"
+      ]
+    },
+    "171-penguin": {
+      "topology": "3D",
+      "text_prompt": "penguin.",
+      "cameras": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-013_cam0",
+        "brics-odroid-021_cam1",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-019_cam1",
+        "brics-odroid-006_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-010_cam0",
+        "brics-odroid-024_cam1",
+        "brics-odroid-015_cam1",
+        "brics-odroid-027_cam0"
+      ]
+    }
+  },
+  "observation_initializer": {
+    "mode": "grounding_dino_box_prompted_sam2",
+    "grounding_dino": {
+      "model_id": "IDEA-Research/grounding-dino-base",
+      "model_revision": "12bdfa3120f3e7ec7b434d90674b3396eccf88eb",
+      "transformers_version": "4.57.3",
+      "box_threshold": 0.15,
+      "text_threshold": 0.15,
+      "maximum_boxes_per_camera": 4,
+      "maximum_candidates_per_camera": 6,
+      "minimum_sam2_score": 0.0,
+      "duplicate_iou_threshold": 0.98
+    },
+    "candidate_prior_uses_simulator_residual": false,
+    "candidate_prior_uses_future_object_observation": false,
+    "candidate_prior_uses_tactile": false
+  },
+  "sam2": {
+    "candidate_config": {
+      "points_per_side": 24,
+      "points_per_batch": 64,
+      "predicted_iou_threshold": 0.7,
+      "stability_score_threshold": 0.8,
+      "minimum_mask_region_area": 100,
+      "minimum_area_fraction": 0.0005,
+      "maximum_area_fraction": 0.65,
+      "minimum_foreground_contrast": 0.06,
+      "maximum_normalized_center_distance": 0.9,
+      "border_side_penalty": 0.55,
+      "minimum_reference_appearance_similarity": 0.35
+    },
+    "checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
+  },
+  "joint_multiview_selection": {
+    "maximum_candidates_per_camera": 6,
+    "voxel_resolution": 32,
+    "coordinate_descent_passes": 4,
+    "appearance_weight": 0.05,
+    "projected_volume_penalty": 0.1,
+    "cross_view_config": {
+      "cube_half_extent_m": 0.5,
+      "voxel_resolution": 120,
+      "consensus_fraction_of_peak": 0.55,
+      "minimum_consensus_votes": 8,
+      "minimum_leave_one_out_recall": 0.3
+    },
+    "simulator_residual_used": false,
+    "post_initial_object_observation_used": false
+  },
+  "source_qa_gates": {
+    "minimum_accepted_camera_count": 8,
+    "minimum_visual_hull_point_count": 512,
+    "maximum_hull_to_controller_distance_m": 0.03,
+    "failure_action": "reject the episode and return exact persistence; never widen the attachment radius"
+  },
+  "held_boundary": {
+    "allowed": [
+      "locked text prompt",
+      "held frame-zero RGB from frozen cameras",
+      "held known robot trajectory for action-window selection and contact QA",
+      "camera calibration"
+    ],
+    "forbidden": [
+      "held post-initial object frames",
+      "held tactile",
+      "held object outcomes",
+      "simulator residuals"
+    ]
+  },
+  "claim_boundary": "source-QA observation repair locked before held access; text grounding proposes boxes only and unchanged multiview/contact gates decide admission"
+}

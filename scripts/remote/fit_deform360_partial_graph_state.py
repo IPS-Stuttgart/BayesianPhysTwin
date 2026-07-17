@@ -12,6 +12,9 @@ from typing import Any
 
 import numpy as np
 
+from causal4d_public.deform360_contact_conditioned_action import (
+    load_contact_conditioned_action_artifact,
+)
 from causal4d_public.deform360_dense_reusable_panel import (
     authorize_dense_panel_episode,
     load_dense_reusable_panel_config,
@@ -22,6 +25,7 @@ from causal4d_public.deform360_partial_graph_state import (
     fit_partial_graph_state,
 )
 from causal4d_public.deform360_independent_source import (
+    sha256_array,
     validate_prediction_only_bundle,
 )
 from causal4d_public.deform360_reusable_graph import (
@@ -59,12 +63,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--fresh-parent-lock", type=Path)
     parser.add_argument("--physics-addendum", type=Path)
     parser.add_argument("--execution-lock", type=Path)
-    parser.add_argument(
-        "--fresh-operation", choices=("fit", "held-prediction")
-    )
+    parser.add_argument("--fresh-operation", choices=("fit", "held-prediction"))
     parser.add_argument("--prediction-only-input", action="store_true")
     parser.add_argument("--canonical-graph", type=Path, required=True)
     parser.add_argument("--episode-final-data", type=Path, required=True)
+    parser.add_argument("--contact-conditioned-action-json", type=Path)
     parser.add_argument("--simulator-final-data", type=Path, required=True)
     parser.add_argument("--state-artifact", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
@@ -112,9 +115,7 @@ def main() -> int:
         object_protocol = {
             row["object_id"]: row for row in protocol["config"]["cohort"]
         }[args.object_id]
-        reference_episode_id = int(
-            object_protocol["canonical_reference_episode_id"]
-        )
+        reference_episode_id = int(object_protocol["canonical_reference_episode_id"])
         protocol_config_sha256 = authorization["config_sha256"]
     else:
         if not args.prediction_only_input:
@@ -184,6 +185,37 @@ def main() -> int:
             object_id=args.object_id,
             episode_id=args.episode_id,
         )
+    contact_action_payload = None
+    contact_action = None
+    source_controller_points = np.asarray(episode["controller_points"])
+    if args.contact_conditioned_action_json is not None:
+        contact_action_payload = json.loads(
+            args.contact_conditioned_action_json.read_text(encoding="utf-8")
+        )
+        contact_action = load_contact_conditioned_action_artifact(
+            contact_action_payload
+        )
+        if (
+            contact_action_payload.get("object_id") != args.object_id
+            or int(contact_action_payload.get("episode_id", -1)) != args.episode_id
+        ):
+            raise ValueError("contact-conditioned action belongs to another episode")
+        if contact_action_payload.get("source_controller_sha256") != sha256_array(
+            source_controller_points
+        ):
+            raise ValueError(
+                "contact-conditioned action uses another controller trajectory"
+            )
+        if contact_action.falls_back_to_persistence:
+            raise ValueError(
+                "contact-conditioned action has no admissible group; use persistence"
+            )
+        if len(contact_action.controller_points_m) != len(source_controller_points):
+            raise ValueError("contact-conditioned action frame count changed")
+        if args.state_frame != 0:
+            raise ValueError(
+                "contact-conditioned fresh prediction starts at frame zero"
+            )
     if fresh_protocol is not None and len(canonical.contact_anchor_indices):
         raise ValueError("fresh canonical graph must not embed controller contacts")
     total_frame_count = len(episode["object_points"])
@@ -214,7 +246,11 @@ def main() -> int:
     candidate_reliability = np.mean(visibility & validity, axis=0)
     observed_points = np.asarray(episode["object_points"])[args.state_frame]
     observed_colors = np.asarray(episode["object_colors"])[args.state_frame]
-    observed_controller = np.asarray(episode["controller_points"])[args.state_frame]
+    observed_controller = (
+        source_controller_points[args.state_frame]
+        if contact_action is None
+        else contact_action.controller_reference_points_m
+    )
     if args.episode_id == reference_episode_id:
         if args.state_frame == 0:
             result = evaluate_partial_graph_state(
@@ -264,9 +300,14 @@ def main() -> int:
     simulator_data["object_motions_valid"] = np.repeat(
         supported[None], frame_count, axis=0
     )
-    simulator_data["controller_points"] = np.asarray(episode["controller_points"])[
-        args.state_frame :
-    ].copy()
+    simulator_data["controller_points"] = (
+        source_controller_points[args.state_frame :].copy()
+        if contact_action is None
+        else np.asarray(
+            contact_action.controller_points_m[args.state_frame :],
+            dtype=source_controller_points.dtype,
+        )
+    )
     simulator_data["surface_points"] = np.empty((0, 3), dtype=np.float32)
     simulator_data["interior_points"] = np.empty((0, 3), dtype=np.float32)
     simulator_data["reusable_graph_registration"] = {
@@ -276,6 +317,16 @@ def main() -> int:
         "state_frame": int(args.state_frame),
         "passed": bool(result.metrics["passed"]),
     }
+    if contact_action_payload is not None:
+        simulator_data["contact_conditioned_action"] = {
+            "result_sha256": contact_action_payload["result_sha256"],
+            "archive_sha256": contact_action_payload["archive"]["sha256"],
+            "retained_group_count": contact_action.retained_group_count,
+            "source_group_indices": list(contact_action.source_group_indices),
+            "onset_frames": list(contact_action.onset_frames),
+            "future_object_observations_used": False,
+            "target_tactile_used": False,
+        }
     args.simulator_final_data.parent.mkdir(parents=True, exist_ok=True)
     with args.simulator_final_data.open("wb") as stream:
         pickle.dump(simulator_data, stream, protocol=pickle.HIGHEST_PROTOCOL)
@@ -316,6 +367,11 @@ def main() -> int:
         "input_sha256": {
             "canonical_graph": _sha256_file(args.canonical_graph),
             "episode_final_data": _sha256_file(args.episode_final_data),
+            "contact_conditioned_action": (
+                None
+                if args.contact_conditioned_action_json is None
+                else _sha256_file(args.contact_conditioned_action_json)
+            ),
             "split_json": split_sha256,
         },
         "output_sha256": {
@@ -332,6 +388,12 @@ def main() -> int:
             "prediction_only_input_required": args.prediction_only_input,
             "future_object_tracks_present": (
                 False if args.prediction_only_input else None
+            ),
+            "contact_conditioned_action_used": contact_action_payload is not None,
+            "contact_conditioned_action_result_sha256": (
+                None
+                if contact_action_payload is None
+                else contact_action_payload["result_sha256"]
             ),
         },
         "passed": bool(result.metrics["passed"]),

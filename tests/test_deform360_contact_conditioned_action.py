@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from causal4d_public.deform360_contact_conditioned_action import (
     condition_controller_action,
+    controller_group_distance_trajectory_m,
     controller_spring_group_indices,
+    geometry_latched_contact_schedule,
     load_contact_conditioned_action_artifact,
     write_contact_conditioned_action_artifact,
 )
@@ -89,6 +92,53 @@ def test_conditioned_action_keeps_only_admissible_original_group_indices() -> No
     np.testing.assert_allclose(result.controller_points_m, controls[:, 2:])
 
 
+def test_geometry_contact_schedule_latches_delayed_groups_without_future_object() -> (
+    None
+):
+    controls = _controllers()
+    controls[3, :2] = controls[2, :2]
+    controls[5, 2:] = controls[4, 2:]
+    initial = np.array([[0.02, 0.0, 0.0], [0.24, 0.0, 0.0]])
+
+    active, distances = geometry_latched_contact_schedule(
+        controls,
+        initial,
+        controller_group_size=2,
+        maximum_contact_distance_m=0.006,
+        confirmation_frames=2,
+    )
+
+    np.testing.assert_allclose(
+        distances,
+        controller_group_distance_trajectory_m(
+            controls,
+            initial,
+            controller_group_size=2,
+        ),
+    )
+    assert np.flatnonzero(active[:, 0])[0] == 2
+    assert np.flatnonzero(active[:, 1])[0] == 4
+    assert np.all(active[2:, 0])
+    assert np.all(active[4:, 1])
+
+
+def test_geometry_contact_schedule_does_not_infer_release_from_initial_geometry() -> (
+    None
+):
+    controls = _controllers()
+    initial = np.array([[0.0, 0.0, 0.0]])
+
+    active, _ = geometry_latched_contact_schedule(
+        controls,
+        initial,
+        controller_group_size=2,
+        maximum_contact_distance_m=0.006,
+    )
+
+    assert np.all(active[:, 0])
+    assert not np.any(active[:, 1])
+
+
 def test_contact_conditioned_action_artifact_roundtrip(tmp_path) -> None:
     controls = _controllers()
     active = np.zeros((6, 2), dtype=bool)
@@ -129,6 +179,38 @@ def test_contact_conditioned_action_artifact_roundtrip(tmp_path) -> None:
     np.testing.assert_array_equal(loaded.contact_active, action.contact_active)
     assert loaded.source_group_indices == action.source_group_indices
     assert loaded.onset_frames == action.onset_frames
+
+
+def test_contact_conditioned_action_accepts_geometry_policy_provenance(
+    tmp_path: Path,
+) -> None:
+    controls = _controllers()
+    active = np.ones((6, 2), dtype=bool)
+    action = condition_controller_action(
+        controls,
+        active,
+        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0]]),
+        controller_group_size=2,
+        maximum_contact_distance_m=0.01,
+    )
+
+    payload = write_contact_conditioned_action_artifact(
+        tmp_path / "geometry_action.npz",
+        action,
+        object_id="object",
+        episode_id=3,
+        source_controller_sha256="1" * 64,
+        contact_policy_result_sha256="3" * 64,
+        information_boundary={
+            "known_future_robot_action_used": True,
+            "future_object_observations_used": False,
+            "target_tactile_used": False,
+        },
+    )
+
+    assert "contact_model_result_sha256" not in payload
+    assert payload["contact_policy_result_sha256"] == "3" * 64
+    assert load_contact_conditioned_action_artifact(payload).retained_group_count == 2
 
 
 def test_conditioned_action_rejects_mismatched_group_schedule() -> None:
