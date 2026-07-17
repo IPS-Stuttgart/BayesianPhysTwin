@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import pickle
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,9 @@ from bayesian_phystwin.phystwin_graph import PhysTwinSpringGraphConfig
 from causal4d_public.deform360_dense_reusable_panel import (
     authorize_dense_panel_episode,
     load_dense_reusable_panel_config,
+)
+from causal4d_public.deform360_independent_source import (
+    validate_prediction_only_bundle,
 )
 from causal4d_public.deform360_partial_graph_state import (
     PartialGraphStateConfig,
@@ -70,6 +74,14 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--state-artifact", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument(
+        "--prediction-only-input",
+        action="store_true",
+        help=(
+            "Require a frame-zero-only bundle whose object geometry is constant "
+            "over the known-action prediction horizon."
+        ),
+    )
+    parser.add_argument(
         "--canonical-node-count",
         type=int,
         help=(
@@ -102,8 +114,9 @@ def main() -> int:
         if args.canonical_node_count is None
         else int(args.canonical_node_count)
     )
-    if canonical_node_count < int(method["minimum_canonical_surface_node_count"]):
-        raise ValueError("canonical node count is below the panel minimum")
+    minimum_node_count = int(method["minimum_canonical_surface_node_count"])
+    if canonical_node_count < minimum_node_count:
+        raise ValueError("requested canonical node count is below the panel minimum")
     if int(method["temporal_prefix_frame_count"]) != 1:
         raise ValueError("automatic episode twin requires a frame-zero-only lock")
     if int(state_policy["uses_prefix_visibility_frame_count"]) != 1:
@@ -175,6 +188,13 @@ def main() -> int:
     visibility = np.asarray(episode["object_visibilities"], dtype=bool)
     validity = np.asarray(episode["object_motions_valid"], dtype=bool)
     controllers = np.asarray(episode["controller_points"])
+    prediction_input_validation = None
+    if args.prediction_only_input:
+        prediction_input_validation = validate_prediction_only_bundle(
+            episode,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+        )
     if points.ndim != 3 or points.shape[0] < 2 or points.shape[2] != 3:
         raise ValueError("object_points must have shape (T, N, 3) with T >= 2")
     if colors.shape != points.shape:
@@ -183,6 +203,13 @@ def main() -> int:
         raise ValueError("visibility and validity must match object point axes")
     if controllers.ndim != 3 or controllers.shape[0] != points.shape[0]:
         raise ValueError("controller trajectory must share the episode frame axis")
+    effective_node_count = min(canonical_node_count, points.shape[1])
+    if effective_node_count < minimum_node_count:
+        raise ValueError("frame-zero point count is below the panel minimum")
+    registration_config = replace(
+        registration_config,
+        canonical_node_count=effective_node_count,
+    )
 
     canonical = build_canonical_deform360_graph(
         points[0],
@@ -260,8 +287,10 @@ def main() -> int:
         "graph_mode": "episode_specific_frame_zero_control",
         "capacity_diagnostic": {
             "configured_canonical_node_count": configured_node_count,
-            "effective_canonical_node_count": canonical_node_count,
-            "source_only_override": canonical_node_count != configured_node_count,
+            "requested_canonical_node_count": canonical_node_count,
+            "effective_canonical_node_count": effective_node_count,
+            "source_only_override": effective_node_count != configured_node_count,
+            "capacity_is_a_maximum": True,
         },
         "graph": graph_descriptor,
         "state_metrics": state.metrics,
@@ -279,7 +308,12 @@ def main() -> int:
             "post_initial_object_observation_used": False,
             "simulator_residual_used": False,
             "target_access": False,
+            "prediction_only_input_required": args.prediction_only_input,
+            "future_object_tracks_present": (
+                False if args.prediction_only_input else None
+            ),
         },
+        "prediction_input_validation": prediction_input_validation,
         "passed": bool(state.metrics["passed"]),
         "claim_boundary": (
             "benchmark-fair automatic frame-zero episode-twin control; physical "

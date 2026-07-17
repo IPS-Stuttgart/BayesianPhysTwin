@@ -1,0 +1,108 @@
+{
+  "artifact_kind": "Deform360IndependentSourceGate",
+  "episode_count": 27,
+  "evaluation_result_sha256": {
+    "002-rope-silk/2": "9becdd33cf48c0f64248b65ceded68765cd34110974529ec31530245c23045e1",
+    "002-rope-silk/5": "77f79841c25f4a12c31e1a8655b5a8e84fa6d41ab1e14e3142732dedd36b1702",
+    "002-rope-silk/6": "dc7d936390cb9f44a22df2b28437d7cb3ad4e8e814ae5ef71f70fd9e260636c5",
+    "002-rope-silk/7": "c24dd649f03ba867d71dd5b32cf3f32ec21559caf6884eac0b456c6fb2c29bb3",
+    "002-rope-silk/9": "0f2b6ca30985dbc9fa5fd962893821bf84b5335e6bd3fca934e645521d484905",
+    "083-blanket-cloth/1": "aaec49a71de50e82a9c69d13eda1a2f91c4082820ef4f19150f6b4dfa7ea6bf6",
+    "083-blanket-cloth/2": "699d31f6fa336368c1f513ca350335494ba32f97e196ea8bda40d668f7fc30d1",
+    "083-blanket-cloth/4": "9b34fdbf40eff45abd77d951ce839e59daf265b45c238d01b41e5985c8ce98b5",
+    "083-blanket-cloth/5": "639ad21e540cae99bcd590d645c96efbb2f6cbd8de0e404d8bca7f810fb3b040",
+    "083-blanket-cloth/8": "61a9be671e08a7041064c0d0ed8298934a11fb46ef166615eb70eaedd6e0dfa3",
+    "083-blanket-cloth/9": "0338bee5df4a73b28a26e13255684038fac5a59cee8a9a0df5be96a75c931025",
+    "085-scarf-cloth/3": "06ba91d17c353e5feaf56d773596d3210d6c9d8f48377987c2e0548401b06642",
+    "085-scarf-cloth/4": "56404db6996cc8fe1d67fc447c62142f6c7ce370f77565309e70851241557d4b",
+    "085-scarf-cloth/6": "4136d0fd257b5e411d16c4b52c194b3e02e51e7d15bee3010fe390fce88b5c0a",
+    "085-scarf-cloth/8": "73324077af927278177c27cdbbdeb8f67092f9a276b775fbd6ac99f8741c8307",
+    "085-scarf-cloth/9": "38de81abe46da5f328ef6d6332e6f733aaa46573919d8ddf130070b98ec962f8",
+    "092-squirrel/4": "6c64550c30e4b7824096a18f9424dd599e328991dbdd23a7aeae9676a693b6a5",
+    "092-squirrel/5": "a6dbf08e0aefb7439311e68b29273da9c1bf051bb07f3ca5b9c334dfb6e4e829",
+    "092-squirrel/7": "3c417d3d7c05de78992abc26e82f6d1087cc2b6530dd23c0f78fd8859cda72ac",
+    "092-squirrel/8": "870b615444e419c7cdbd30366924a2f72cc0518894725b19aa8601d45cc2ade1",
+    "092-squirrel/9": "50c78d9ae6fb1161f307a182d82b605d04ae97674eba9374adf2a0555b44ef63",
+    "170-spider/0": "16d763b50061070c0f6719c144ed30bf49aa7baac2672fff8d9dc49dd8e36727",
+    "170-spider/1": "bbb5fc1570b061db3ef3da9be7808b4d46ccc4510f0384deae2075f90beb7b5e",
+    "170-spider/3": "c448db2c1760181c47c3a3cafa156a2b5b1771e4c09fb7b5d54fa9c9cea8b0b4",
+    "170-spider/5": "40fe90d4a9401f48b29d5855ba60286011781f7a86ccc8629cb4198ebd3f2a75",
+    "170-spider/8": "2ef1c847950b0ae8c78826033ac3d7db96447cb5471d057bc2b9db3c7012473e",
+    "170-spider/9": "e9d535e286dd5637503aeabb7f913085bacd3516b5973a944e40e54add10976a"
+  },
+  "gates": {
+    "execution_balanced_chamfer": false,
+    "execution_balanced_track": false,
+    "joint_win_count": false,
+    "late_chamfer": false,
+    "late_track": false,
+    "maximum_per_episode_chamfer_degradation": false,
+    "maximum_per_episode_track_degradation": false,
+    "no_object_median_degradation": false,
+    "per_object_joint_win_fraction": false
+  },
+  "information_boundary": {
+    "calibration_outcomes_read": false,
+    "independent_source_outcomes_read": true,
+    "target_actions_read": false,
+    "target_initial_frames_read": false,
+    "target_outcomes_read": false
+  },
+  "lock_sha256": "fb2c5366971c27369500d8e04d811234ff8daebfce5ff43a41f1da78d63e5521",
+  "metrics": {
+    "by_object": {
+      "002-rope-silk": {
+        "episode_count": 5,
+        "joint_win_count": 2,
+        "joint_win_fraction": 0.4,
+        "median_chamfer_change_fraction": 0.0319164123144251,
+        "median_non_degradation_passed": false,
+        "median_track_change_fraction": 0.1048373168036254
+      },
+      "083-blanket-cloth": {
+        "episode_count": 6,
+        "joint_win_count": 2,
+        "joint_win_fraction": 0.3333333333333333,
+        "median_chamfer_change_fraction": 0.002346457479230568,
+        "median_non_degradation_passed": false,
+        "median_track_change_fraction": 0.004229352794302033
+      },
+      "085-scarf-cloth": {
+        "episode_count": 5,
+        "joint_win_count": 2,
+        "joint_win_fraction": 0.4,
+        "median_chamfer_change_fraction": 0.002251920828323817,
+        "median_non_degradation_passed": false,
+        "median_track_change_fraction": 0.046096600945367605
+      },
+      "092-squirrel": {
+        "episode_count": 5,
+        "joint_win_count": 1,
+        "joint_win_fraction": 0.2,
+        "median_chamfer_change_fraction": 0.11379852712086791,
+        "median_non_degradation_passed": false,
+        "median_track_change_fraction": 0.16086058489528776
+      },
+      "170-spider": {
+        "episode_count": 6,
+        "joint_win_count": 0,
+        "joint_win_fraction": 0.0,
+        "median_chamfer_change_fraction": 0.05109992042198441,
+        "median_non_degradation_passed": false,
+        "median_track_change_fraction": 0.06431566425202928
+      }
+    },
+    "execution_balanced_chamfer_improvement_fraction": -0.11671397189363986,
+    "execution_balanced_track_improvement_fraction": -0.1508513540592904,
+    "joint_win_episode_count": 7,
+    "late_chamfer_improvement_fraction": -0.12683898572383612,
+    "late_track_improvement_fraction": -0.16897464275788132,
+    "maximum_per_episode_chamfer_degradation_fraction": 6.766833881177656,
+    "maximum_per_episode_track_degradation_fraction": 12.102448556735826
+  },
+  "next_step": "freeze source failure and keep calibration and targets sealed",
+  "passed": false,
+  "protocol_id": "deform360-graph-action-support-independent-source-v1",
+  "result_sha256": "033e2ac5e6d8f2d52521312ed3189aabe046c3f374bc14366e666a453dfa21eb",
+  "schema_version": 1
+}

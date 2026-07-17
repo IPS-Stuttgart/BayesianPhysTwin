@@ -1,8 +1,10 @@
 {
   "schema_version": 1,
   "protocol_id": "deform360-graph-action-support-independent-source-v1",
-  "status": "candidate-locked-after-source-discovery-before-independent-source-calibration-and-target-outcomes",
+  "status": "candidate-locked-after-source-discovery-before-independent-source-outcomes",
   "locked_at": "2026-07-17T03:43:09+02:00",
+  "prediction_boundary_amended_at": "2026-07-17T12:15:00+02:00",
+  "prediction_boundary_amendment_reason": "before any independent-source outcome was scored, the runner audit found that the legacy frame-zero builder opened a complete future-object pickle, that several public frame-zero reconstructions contain fewer than 384 points, and that the manually transcribed PhysTwin revision did not exist; the lock is therefore expressed as a prediction-first frame-zero bundle, 384 is a maximum capacity rather than an impossible fixed count, and the revision is corrected to the exact SHA recorded by every discovery rollout",
   "parent_protocol_id": "deform360-dense-reusable-panel-v1",
   "parent_config_sha256": "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd",
   "discovery_evidence": {
@@ -23,9 +25,32 @@
   },
   "frozen_predictor": {
     "twin_construction": "automatic episode twin from frame-zero multiview observations",
-    "official_phystwin_revision": "2b663052d09950b070db48f0c7262a983b865dea",
-    "observed_graph_node_count": 384,
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "warp_dynamics": {
+      "config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+      "init_spring_y": 10000.0,
+      "drag_damping": 10.0,
+      "dashpot_damping": 100.0,
+      "controller_radius_m": 0.03,
+      "controller_max_neighbours": 1,
+      "canonical_controller_patch_size": 16,
+      "driven_controller_displacement_scale": 1.0,
+      "zero_controller_displacement_scale": 0.0,
+      "support_dynamics": "official-ground"
+    },
+    "maximum_observed_graph_node_count": 384,
+    "minimum_observed_graph_node_count": 128,
+    "observed_graph_node_policy": "use min(384, frame-zero point count) and reject below 128; never duplicate or synthesize observed nodes to meet capacity",
     "future_object_observations_used_for_twin": false,
+    "prediction_input": {
+      "object_geometry": "frame-zero object-only strict-hull splat seed",
+      "object_geometry_repeated_only_to_satisfy_the_PhysTwin_input_contract": true,
+      "known_future_robot_trajectory_used": true,
+      "future_object_tracks_present": false,
+      "future_object_visibility_present": false,
+      "future_tactile_used": false,
+      "driven_and_zero_predictions_hashed_before_future_scoring": true
+    },
     "distributed_contact_patch": {
       "requested_material_node_count_per_anchor": 16,
       "maximum_graph_distance_m": 0.03,
@@ -35,7 +60,8 @@
     "observation_consensus": {
       "maximum_speed_m_per_s": 0.05,
       "minimum_camera_inlier_count": 2,
-      "rope_initial_component_selection": "frame-zero controller-conditioned connected component",
+      "independent_panel_component_policy": "retain every point from the object-only strict-hull frame-zero splat and reject failed object-isolation QA; no component is selected using future motion",
+      "discovery_rope_component_selection": "frame-zero controller-conditioned connected component",
       "future_object_motion_used_for_component_selection": false,
       "known_limit": "the current staged archive does not yet propagate contributor counts or metric covariance"
     },

@@ -91,6 +91,26 @@ def _write_masks(
         )
 
 
+def _write_sampled_mask_archive(
+    destination: Path,
+    *,
+    cameras: list[str],
+    frame_index: int,
+    masks: dict[str, np.ndarray],
+) -> None:
+    values = np.stack([np.asarray(masks[camera], dtype=bool) for camera in cameras])
+    if values.ndim != 3 or len({tuple(mask.shape) for mask in values}) != 1:
+        raise ValueError("automatic initial masks must share one image shape")
+    packed = np.packbits(values[:, None], axis=-1)
+    np.savez_compressed(
+        destination,
+        frame_indices=np.asarray([frame_index], dtype=np.int64),
+        cameras=np.asarray(cameras),
+        packed_masks=packed,
+        image_shape=np.asarray(values.shape[1:], dtype=np.int64),
+    )
+
+
 def _canonical_sha256(value: object) -> str:
     encoded = json.dumps(
         value, sort_keys=True, separators=(",", ":"), allow_nan=False
@@ -163,6 +183,14 @@ def main() -> int:
     parser.add_argument("--sam2-repository", required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--allow-automatic-initial-mask-fallback",
+        action="store_true",
+        help=(
+            "Use the frozen generic SAM2 selector on the exact window-start frame "
+            "when its source-QA mask is absent; never reuse a mask from another frame."
+        ),
+    )
     args = parser.parse_args()
 
     require_source_episode(args.protocol, args.object_id, args.episode)
@@ -232,12 +260,41 @@ def main() -> int:
         shutil.rmtree(output_episode)
     output_episode.mkdir(parents=True)
 
-    with np.load(args.sampled_masks_npz, allow_pickle=False) as archive:
-        cameras = [str(value) for value in archive["cameras"]]
-        initial_masks = {
-            camera: unpack_sampled_mask(archive, camera, args.start_frame)
-            for camera in cameras
-        }
+    sampled_masks_path = Path(args.sampled_masks_npz)
+    initial_masks: dict[str, np.ndarray] = {}
+    sampled_masks_exact = False
+    if sampled_masks_path.is_file():
+        with np.load(sampled_masks_path, allow_pickle=False) as archive:
+            cameras = [str(value) for value in archive["cameras"]]
+            frame_indices = np.asarray(archive["frame_indices"], dtype=np.int64)
+            sampled_masks_exact = (
+                int(np.count_nonzero(frame_indices == args.start_frame)) == 1
+            )
+            if sampled_masks_exact:
+                initial_masks = {
+                    camera: unpack_sampled_mask(archive, camera, args.start_frame)
+                    for camera in cameras
+                }
+    else:
+        calibration = np.load(
+            source_episode / "undistorted_intrinsics.npy", allow_pickle=True
+        ).item()
+        cameras = sorted(str(camera) for camera in calibration)
+    if not sampled_masks_exact and not args.allow_automatic_initial_mask_fallback:
+        reason = (
+            "source-QA mask archive is absent"
+            if not sampled_masks_path.is_file()
+            else f"source-QA archive has no unique mask at frame {args.start_frame}"
+        )
+        raise ValueError(
+            f"{reason}; pass --allow-automatic-initial-mask-fallback for the "
+            "prospectively declared exact-frame generic-SAM2 fallback"
+        )
+    initial_mask_policy = (
+        "exact_source_qa_mask"
+        if sampled_masks_exact
+        else "exact_frame_generic_sam2_fallback"
+    )
 
     _subset_calibration(
         source_episode / "undistorted_intrinsics.npy",
@@ -268,6 +325,7 @@ def main() -> int:
         device=args.device,
     )
     diagnostics: dict[str, object] = {}
+    initialization_diagnostics: dict[str, object] = {}
     try:
         for camera in cameras:
             source_camera = source_episode / camera
@@ -288,14 +346,33 @@ def main() -> int:
             metadata_path = source_camera / "metadata.json"
             if metadata_path.exists():
                 shutil.copy2(metadata_path, output_camera / "metadata.json")
+            if sampled_masks_exact:
+                initial_mask = initial_masks[camera]
+                initialization = {
+                    "policy": initial_mask_policy,
+                    "source_archive_sha256": sha256_file(sampled_masks_path),
+                    "source_frame_index": args.start_frame,
+                    "object_observation_frames_used": [0],
+                }
+            else:
+                initial_mask, automatic_diagnostics = predictor.select_initial_mask(
+                    output_camera / "undistorted.mp4"
+                )
+                initial_masks[camera] = initial_mask
+                initialization = {
+                    "policy": initial_mask_policy,
+                    "source_frame_index": args.start_frame,
+                    "staged_frame_index": 0,
+                    "object_observation_frames_used": [0],
+                    "future_object_observations_used": False,
+                    "automatic_selection": automatic_diagnostics,
+                }
+            initialization_diagnostics[camera] = initialization
             masks = list(
                 predictor.segment_from_initial_mask(
                     output_camera / "undistorted.mp4",
-                    initial_masks[camera],
-                    initialization={
-                        "source_archive_sha256": sha256_file(args.sampled_masks_npz),
-                        "source_frame_index": args.start_frame,
-                    },
+                    initial_mask,
+                    initialization=initialization,
                 )
             )
             if [index for index, _ in masks] != list(range(args.frame_count)):
@@ -313,19 +390,46 @@ def main() -> int:
         json.dumps(diagnostics, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    initialization_path = output_episode / "sam2_initial_masks.json"
+    initialization_path.write_text(
+        json.dumps(
+            {
+                "policy": initial_mask_policy,
+                "locked_window_start_frame": args.start_frame,
+                "future_object_observations_used": False,
+                "cameras": initialization_diagnostics,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_masks_path = sampled_masks_path
+    if not sampled_masks_exact:
+        manifest_masks_path = output_episode / "automatic_initial_masks.npz"
+        _write_sampled_mask_archive(
+            manifest_masks_path,
+            cameras=cameras,
+            frame_index=args.start_frame,
+            masks=initial_masks,
+        )
     write_dense_source_manifest(
         output_episode / "dense_source_smoke.manifest.json",
         protocol_path=args.protocol,
         object_id=args.object_id,
         episode_index=args.episode,
         source_episode_dir=source_episode,
-        sampled_masks_path=args.sampled_masks_npz,
+        sampled_masks_path=manifest_masks_path,
         start_frame=args.start_frame,
         frame_count=args.frame_count,
         cameras=cameras,
         outputs={
             "episode_dir": str(output_episode.resolve()),
             "sam2_diagnostics_sha256": sha256_file(diagnostics_path),
+            "initial_mask_policy": initial_mask_policy,
+            "initial_mask_diagnostics_sha256": sha256_file(initialization_path),
+            "automatic_initial_mask_fallback_used": not sampled_masks_exact,
             "robot_sha256": sha256_file(robot_path),
             "tactile_sha256": tactile_hashes,
         },
@@ -346,6 +450,7 @@ def main() -> int:
                 "frame_count": args.frame_count,
                 "start_frame": args.start_frame,
                 "action_aligned": args.action_aligned,
+                "initial_mask_policy": initial_mask_policy,
                 "action_alignment_result_sha256": (
                     action_alignment["result_sha256"]
                     if action_alignment is not None

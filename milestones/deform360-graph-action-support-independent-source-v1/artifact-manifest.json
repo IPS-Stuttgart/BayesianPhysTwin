@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-graph-action-support-independent-source-v1",
+  "captured_at": "2026-07-17",
+  "compute_host": "gpuserver6000",
+  "base_code_commit": "fe51de1",
+  "branch": "deform360-dense-reusable-panel-v1",
+  "independent_source_episode_count": 27,
+  "independent_source_gate_passed": false,
+  "calibration_outcomes_opened": false,
+  "target_panel_opened": false,
+  "verification": {
+    "pytest": "564 passed, 1 skipped in 33.58 s"
+  },
+  "artifacts": [
+    {
+      "path": "../../configs/causal4d_public/deform360_graph_action_support_independent_source_v1.json",
+      "sha256": "fb2c5366971c27369500d8e04d811234ff8daebfce5ff43a41f1da78d63e5521"
+    },
+    {
+      "path": "artifacts/independent_source_gate.json",
+      "sha256": "25f9195840ccedbd94a43d2708a3aa58e7ff90b7d6e581a97cc8c5aa14d520d5",
+      "result_sha256": "033e2ac5e6d8f2d52521312ed3189aabe046c3f374bc14366e666a453dfa21eb"
+    },
+    {
+      "path": "artifacts/failure_diagnosis.json",
+      "sha256": "2e4692ec8cc1e2c1d25898100bcdc6078eadce405682402fdfc858565e54519b",
+      "result_sha256": "4b454d9d9dc3145034f0a4ba077732098f4043a3a4618a7fe36a68e5a1e43127"
+    }
+  ]
+}
