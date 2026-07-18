@@ -43,8 +43,8 @@ def _write_case(
     candidate_cd: float,
     candidate_track: float,
 ) -> None:
-    prefix = root / case / "prefix"
-    learned = root / case / "learned"
+    prefix = root / "cases" / case / "prefix"
+    learned = root / "cases" / case / "learned"
     prefix.mkdir(parents=True)
     learned.mkdir(parents=True)
     final_data = prefix / "final_data_prefix.pkl"

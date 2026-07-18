@@ -154,11 +154,14 @@ def run_part_pair_source_gate(
     minimum_improvement = float(family_gate["minimum_relative_score_improvement"])
     maximum_regression = float(family_gate["maximum_per_metric_regression"])
     fit_fraction = float(evidence["fit_fraction_of_released_prefix"])
+    cases_root = root / "cases"
+    if not cases_root.is_dir():
+        raise FileNotFoundError(cases_root)
     case_results: dict[str, object] = {}
     code_commits: set[str] = set()
     official_commits: set[str] = set()
     for case in cases:
-        case_root = root / str(case)
+        case_root = cases_root / str(case)
         prefix_manifest_path = case_root / "prefix" / "manifest.json"
         summary_path = case_root / "learned" / "summary.json"
         manifest = _load_json(prefix_manifest_path)
