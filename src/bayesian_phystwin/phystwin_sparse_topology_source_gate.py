@@ -134,6 +134,11 @@ def _validate_topology_sidecar(
         raise ValueError("topology adds an unlocked object spring scale")
     if float(search.get("controller_log_scale", 0.0)) != 0.0:
         raise ValueError("topology adds an unlocked controller spring scale")
+    region_scales = np.asarray(
+        search.get("region_object_log_scales", np.zeros_like(radii)), dtype=float
+    )
+    if region_scales.shape != radii.shape or np.any(region_scales != 0.0):
+        raise ValueError("topology adds unlocked regional spring scales")
     path = Path(str(artifact["path"])).resolve()
     digest = _sha256(path)
     if artifact.get("sha256") != digest:
@@ -257,6 +262,10 @@ def run_sparse_topology_source_gate(
             identity_topology.graph.num_object_springs
         ):
             raise ValueError(f"{case}: candidate is not sparser than identity")
+        if np.any(identity_topology.region_object_log_scales != 0.0) or np.any(
+            candidate_topology.region_object_log_scales != 0.0
+        ):
+            raise ValueError(f"{case}: sparse profile changes regional stiffness")
 
         identity_summary_path = case_root / "identity" / "summary.json"
         candidate_summary_path = case_root / "candidate" / "summary.json"

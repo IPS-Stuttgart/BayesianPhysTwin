@@ -30,6 +30,7 @@ def main() -> None:
     parser.add_argument("--neighbour-multipliers", type=_floats, required=True)
     parser.add_argument("--object-log-scale", type=float, default=0.0)
     parser.add_argument("--controller-log-scale", type=float, default=0.0)
+    parser.add_argument("--region-object-log-scales", type=_floats)
     parser.add_argument(
         "--preserve-total-object-stiffness",
         action="store_true",
@@ -50,6 +51,7 @@ def main() -> None:
         object_log_scale=args.object_log_scale,
         controller_log_scale=args.controller_log_scale,
         preserve_total_object_stiffness=args.preserve_total_object_stiffness,
+        region_object_log_scales=args.region_object_log_scales,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

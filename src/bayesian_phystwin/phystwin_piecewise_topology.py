@@ -39,6 +39,7 @@ class PiecewiseTopologyArtifact:
     applied_object_log_scale: float = 0.0
     applied_controller_log_scale: float = 0.0
     object_scale_normalization: str = "none"
+    region_object_log_scales: np.ndarray | None = None
 
 
 def _sha256(path: str | Path) -> str:
@@ -97,6 +98,7 @@ def build_piecewise_topology_candidate(
     object_log_scale: float = 0.0,
     controller_log_scale: float = 0.0,
     preserve_total_object_stiffness: bool = False,
+    region_object_log_scales: Sequence[float] | None = None,
 ) -> PiecewiseTopologyArtifact:
     """Build one bounded topology proposal around the released teacher."""
 
@@ -117,6 +119,15 @@ def build_piecewise_topology_candidate(
         raise ValueError("topology multipliers must be finite and positive")
     if not np.isfinite(object_log_scale) or not np.isfinite(controller_log_scale):
         raise ValueError("spring log scales must be finite")
+    region_log_scales = (
+        np.zeros(region_count, dtype=float)
+        if region_object_log_scales is None
+        else np.asarray(region_object_log_scales, dtype=float).reshape(-1)
+    )
+    if len(region_log_scales) != region_count:
+        raise ValueError("region object log scales must match the region count")
+    if np.any(~np.isfinite(region_log_scales)):
+        raise ValueError("region object log scales must be finite")
 
     teacher = build_phystwin_spring_graph(
         structure_points,
@@ -168,6 +179,12 @@ def build_piecewise_topology_candidate(
     reference[: candidate.num_object_springs] *= float(
         np.exp(applied_object_log_scale)
     )
+    object_edges = candidate.springs[: candidate.num_object_springs]
+    edge_region_log_scales = 0.5 * (
+        region_log_scales[assignments[object_edges[:, 0]]]
+        + region_log_scales[assignments[object_edges[:, 1]]]
+    )
+    reference[: candidate.num_object_springs] *= np.exp(edge_region_log_scales)
     reference[candidate.num_object_springs :] *= float(
         np.exp(controller_log_scale)
     )
@@ -185,6 +202,7 @@ def build_piecewise_topology_candidate(
         applied_object_log_scale=applied_object_log_scale,
         applied_controller_log_scale=float(controller_log_scale),
         object_scale_normalization=normalization,
+        region_object_log_scales=region_log_scales.astype(np.float64),
     )
 
 
@@ -230,6 +248,10 @@ def write_piecewise_topology_artifact(
         ),
         object_scale_normalization=np.asarray(
             artifact.object_scale_normalization
+        ),
+        region_object_log_scales=np.asarray(
+            artifact.region_object_log_scales,
+            dtype=np.float64,
         ),
         diagnostics_json=np.asarray(json.dumps(artifact.diagnostics, sort_keys=True)),
     )
@@ -302,6 +324,14 @@ def load_piecewise_topology_artifact(path: str | Path) -> PiecewiseTopologyArtif
                 if "object_scale_normalization" in archive
                 else "legacy_unspecified"
             ),
+            region_object_log_scales=(
+                np.asarray(archive["region_object_log_scales"], dtype=np.float64)
+                if "region_object_log_scales" in archive
+                else np.zeros(
+                    int(np.max(archive["region_assignments"])) + 1,
+                    dtype=np.float64,
+                )
+            ),
         )
     if (
         len(graph.springs) != len(graph.rest_lengths)
@@ -327,6 +357,13 @@ def load_piecewise_topology_artifact(path: str | Path) -> PiecewiseTopologyArtif
         "legacy_unspecified",
     }:
         raise ValueError("piecewise topology has an unknown normalization mode")
+    region_count = int(np.max(artifact.region_assignments)) + 1
+    if artifact.region_object_log_scales is None or len(
+        artifact.region_object_log_scales
+    ) != region_count:
+        raise ValueError("piecewise topology has invalid region spring scales")
+    if np.any(~np.isfinite(artifact.region_object_log_scales)):
+        raise ValueError("piecewise topology has non-finite region spring scales")
     if object_topology_diagnostics(graph) != artifact.diagnostics:
         raise ValueError("piecewise topology diagnostics do not reproduce")
     return artifact
@@ -344,6 +381,7 @@ def build_piecewise_topology_from_files(
     object_log_scale: float = 0.0,
     controller_log_scale: float = 0.0,
     preserve_total_object_stiffness: bool = False,
+    region_object_log_scales: Sequence[float] | None = None,
 ) -> dict[str, object]:
     """Build a proposal from future-blind PhysTwin prefix inputs."""
 
@@ -389,6 +427,7 @@ def build_piecewise_topology_from_files(
         object_log_scale=object_log_scale,
         controller_log_scale=controller_log_scale,
         preserve_total_object_stiffness=preserve_total_object_stiffness,
+        region_object_log_scales=region_object_log_scales,
     )
     identity = write_piecewise_topology_artifact(output_path, artifact)
     return {
@@ -410,6 +449,9 @@ def build_piecewise_topology_from_files(
             "applied_object_log_scale": artifact.applied_object_log_scale,
             "applied_controller_log_scale": artifact.applied_controller_log_scale,
             "object_scale_normalization": artifact.object_scale_normalization,
+            "region_object_log_scales": [
+                float(value) for value in artifact.region_object_log_scales
+            ],
         },
         "diagnostics": artifact.diagnostics,
         "transfer": {

@@ -165,3 +165,41 @@ def test_density_normalization_preserves_total_object_stiffness():
         == "preserve_total_object_stiffness"
     )
     assert candidate.applied_object_log_scale > 0.0
+
+
+def test_region_spring_field_averages_endpoint_log_scales(tmp_path: Path):
+    points, controls, assignments, config, spring_y = _inputs()
+    region_scales = np.log(np.array([2.0, 0.5]))
+
+    artifact = build_piecewise_topology_candidate(
+        points,
+        controls,
+        assignments,
+        spring_y,
+        teacher_config=config,
+        radius_multipliers=(1.0, 1.0),
+        neighbour_multipliers=(1.0, 1.0),
+        region_object_log_scales=region_scales,
+    )
+    object_edges = artifact.graph.springs[: artifact.graph.num_object_springs]
+    expected = np.exp(
+        0.5
+        * (
+            region_scales[assignments[object_edges[:, 0]]]
+            + region_scales[assignments[object_edges[:, 1]]]
+        )
+    )
+
+    np.testing.assert_allclose(
+        artifact.reference_spring_y[: artifact.graph.num_object_springs]
+        / artifact.transfer.spring_y[: artifact.graph.num_object_springs],
+        expected,
+    )
+    np.testing.assert_array_equal(
+        artifact.reference_spring_y[artifact.graph.num_object_springs :],
+        artifact.transfer.spring_y[artifact.graph.num_object_springs :],
+    )
+    path = tmp_path / "regional.npz"
+    write_piecewise_topology_artifact(path, artifact)
+    loaded = load_piecewise_topology_artifact(path)
+    np.testing.assert_array_equal(loaded.region_object_log_scales, region_scales)
