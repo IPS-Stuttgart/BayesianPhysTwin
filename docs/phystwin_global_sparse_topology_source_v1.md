@@ -2,8 +2,8 @@
 
 Lock date: 2026-07-18
 
-Status: candidate fixed from one development case; four-object source transfer
-suffixes not inspected at lock time.
+Status: source transfer gate failed; family rejected without opening future
+metrics.
 
 ## Hypothesis
 
@@ -91,3 +91,39 @@ same metric contract.
 No future PhysTwin, MotionCrafter, Prob4D, or VGGT observation may be used to
 fit or select this topology. Prob4D remains a later observation model; it is
 not part of this physical-backbone source test.
+
+## Source result
+
+The fixed candidate failed the locked transfer gate. The machine-readable
+result is archived at
+`results/sota/phystwin_global_sparse_topology_source_v1_summary.json` with
+SHA-256
+`a2160efaf9ba643b05ef0465f3b81630cc73f1bb87e0091c2f5665af99605f37`.
+The replays used Bayesian-PhysTwin commits `11044f4` and `6d03d8c` and official
+PhysTwin commit `2b66305`. The second Bayesian-PhysTwin commit only makes an
+unchanged topology's density normalization exactly zero; candidate artifacts
+and trajectories were not altered after their runs.
+
+| Transfer case | Identity CD (mm) | Candidate CD (mm) | Identity track (mm) | Candidate track (mm) | Balanced change |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `single_lift_zebra` | 4.509 | 4.835 | 8.398 | 8.286 | -2.94% |
+| `single_lift_cloth` | 28.730 | 32.109 | 60.152 | 95.684 | -35.42% |
+| `single_lift_rope` | 4.543 | 4.914 | 7.261 | 7.716 | -7.21% |
+| `single_lift_dinosor` | 5.916 | 9.038 | 7.768 | 17.445 | -88.67% |
+
+The candidate records `0/4` two-metric wins. Equal-case CD rises from
+`10.925` to `12.724 mm` (`+16.47%`) and track error rises from `20.895` to
+`32.283 mm` (`+54.50%`). The gate therefore selects the exact teacher and
+records `future_metrics_opened=false`.
+
+## Interpretation
+
+The development sloth result does not transfer as a universal edge-density
+prior. This rejects the fixed global `0.8/0.75` topology profile, not topology
+inference itself. The large differences across objects support the narrower
+hypothesis that topology and spring fields must be identified per object or
+region, as in NeuSpring, rather than imposed globally.
+
+No exploratory 19-case future run is justified for this family. A successor
+must provide a future-blind per-object selector, retain exact-teacher fallback,
+and pass a new source gate before any released future metrics are opened.

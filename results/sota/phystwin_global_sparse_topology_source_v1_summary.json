@@ -1,0 +1,310 @@
+{
+  "aggregate_balanced_relative_improvement": -0.35485055671058885,
+  "aggregate_metric_ratios": {
+    "chamfer_distance_m": 1.1646913326365387,
+    "track_error_m": 1.545009780784639
+  },
+  "aggregate_validation_metrics": {
+    "candidate": {
+      "chamfer_distance_m": 0.012723948868131298,
+      "track_error_m": 0.032282665554092316
+    },
+    "identity": {
+      "chamfer_distance_m": 0.010924739037361771,
+      "track_error_m": 0.020894796884520332
+    }
+  },
+  "both_metric_win_count": 0,
+  "case_results": {
+    "single_lift_cloth": {
+      "artifacts": {
+        "candidate_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/candidate/summary.json",
+          "sha256": "9c73e5bc9178237b70a8ebb47160d077306ca6b65e455798a429862ed642d03c"
+        },
+        "candidate_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/candidate/topology.json",
+          "sha256": "4e36e9ebae55380ec0125088f1b8f5fb4e3fa9ad7d2ca46466538af27be5964b"
+        },
+        "candidate_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/candidate/trajectory.pkl",
+          "sha256": "1393b8d8e09ba514ae624110e0147a6b40949beb4dc1e16fd961f2f1a8ef37d1"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/identity/summary.json",
+          "sha256": "36bfb78c6088112d3362c9d3bd3ef17a8c476c35824da263a3021b3f35c06f02"
+        },
+        "identity_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/identity/topology.json",
+          "sha256": "5e47cb0f545339fbb7c66638fbaef6944c37402687044cf91b908b023e5c7f3a"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/identity/trajectory.pkl",
+          "sha256": "8a2af9af44e39596d2acb2da10cdc3b8e72bb0b9c436759d2d98a6968e4b7240"
+        },
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_cloth/prefix/manifest.json",
+          "sha256": "7ebe4b4b56133659e8ab5b3f677a0b709fbdcc5c67cc4163f20338ab3645f098"
+        }
+      },
+      "balanced_relative_improvement": -0.35415242466905417,
+      "both_metrics_improved": false,
+      "candidate_metric_ratios": {
+        "chamfer_distance_m": 1.1175877174198496,
+        "track_error_m": 1.5907171319182587
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.03210884352072423,
+        "track_error_m": 0.09568433120205681
+      },
+      "fit_interval": [
+        0,
+        90
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.02873049069906854,
+        "track_error_m": 0.0601516946552718
+      },
+      "sealed_validation_interval": [
+        90,
+        121
+      ],
+      "topology": {
+        "candidate_applied_object_log_scale": 0.2742665084590056,
+        "candidate_diagnostics": {
+          "controller_spring_count": 325,
+          "isolated_object_point_count": 0,
+          "maximum_object_degree": 33,
+          "median_object_degree": 20.0,
+          "minimum_object_degree": 19,
+          "object_component_count": 1,
+          "object_spring_count": 80631
+        },
+        "candidate_object_spring_count": 80631,
+        "identity_object_spring_count": 105361
+      }
+    },
+    "single_lift_dinosor": {
+      "artifacts": {
+        "candidate_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/candidate/summary.json",
+          "sha256": "4bb103d9abfac3b2d05a5042a3d2b35cb0a0b53630909ddee2bd574fe3e8244e"
+        },
+        "candidate_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/candidate/topology.json",
+          "sha256": "1fb5bf9a4b4a361e5cd372ff3bfe5162076eeae74536d46d3ac4b09c235bd8fe"
+        },
+        "candidate_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/candidate/trajectory.pkl",
+          "sha256": "1d21d24d70a512bc366243b7a15cc93f5938f6814f5d8bc0e8654a72e8927f1d"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/identity/summary.json",
+          "sha256": "7da1c610d9f25d20667011886d5e0b90f7076e837b8a17db0ac1308fc2cf5c65"
+        },
+        "identity_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/identity/topology.json",
+          "sha256": "766f351cb239fee25dda6f8b0b2ddcd865f7ad5014ba52d99ab8097bffa61d65"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/identity/trajectory.pkl",
+          "sha256": "280a1b7a31913d5677434ec8917109e29b1c72391df33fb9c1bb1250541735ed"
+        },
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_dinosor/prefix/manifest.json",
+          "sha256": "beb4de856a6f43ae20faf524f47f87ffb5d64db88f02b3f4f3702eed423b571b"
+        }
+      },
+      "balanced_relative_improvement": -0.8866990561050727,
+      "both_metrics_improved": false,
+      "candidate_metric_ratios": {
+        "chamfer_distance_m": 1.5277595723766957,
+        "track_error_m": 2.24563853983345
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.009038190862235592,
+        "track_error_m": 0.017444730018329968
+      },
+      "fit_interval": [
+        0,
+        45
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.005915977242528491,
+        "track_error_m": 0.007768271566814031
+      },
+      "sealed_validation_interval": [
+        45,
+        60
+      ],
+      "topology": {
+        "candidate_applied_object_log_scale": 0.36424914905827027,
+        "candidate_diagnostics": {
+          "controller_spring_count": 209,
+          "isolated_object_point_count": 0,
+          "maximum_object_degree": 44,
+          "median_object_degree": 25.0,
+          "minimum_object_degree": 1,
+          "object_component_count": 1,
+          "object_spring_count": 81879
+        },
+        "candidate_object_spring_count": 81879,
+        "identity_object_spring_count": 118105
+      }
+    },
+    "single_lift_rope": {
+      "artifacts": {
+        "candidate_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/candidate/summary.json",
+          "sha256": "0c73039507ec34b781b943f4e02c51bd17171899a1c4ae28d5c323af2220d313"
+        },
+        "candidate_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/candidate/topology.json",
+          "sha256": "a790fa4c9a7c01d3544ea240e49b0fbd009c58439702ce634b367dbab0bc29e6"
+        },
+        "candidate_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/candidate/trajectory.pkl",
+          "sha256": "20a97b7c4feb2a1147deefe2f4f570a476372ed80fe4650e27dca8157e5be747"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/identity/summary.json",
+          "sha256": "e7d7684ed821c665ed9dc510885e5e056be0dcd13f482eeefc8173113158d821"
+        },
+        "identity_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/identity/topology.json",
+          "sha256": "db493ba08b8a6dfdd5b6c498c287c20b8bc3efe4b9c6dd252deef2834d524df7"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/identity/trajectory.pkl",
+          "sha256": "99bc5ce3e09bf645f50367879b9bd324b7edd92cf057a364a2c1352abf14e9ea"
+        },
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_rope/prefix/manifest.json",
+          "sha256": "b81936abe0b7c40d9c44baf1118a2fe0bae05a051195a72eb8d4232573475224"
+        }
+      },
+      "balanced_relative_improvement": -0.07208596081362728,
+      "both_metrics_improved": false,
+      "candidate_metric_ratios": {
+        "chamfer_distance_m": 1.0815272609868416,
+        "track_error_m": 1.062644660640413
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.004913853395192907,
+        "track_error_m": 0.007715764157462612
+      },
+      "fit_interval": [
+        0,
+        26
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.004543439238608976,
+        "track_error_m": 0.007260907096463114
+      },
+      "sealed_validation_interval": [
+        26,
+        35
+      ],
+      "topology": {
+        "candidate_applied_object_log_scale": 0.4022033705646727,
+        "candidate_diagnostics": {
+          "controller_spring_count": 274,
+          "isolated_object_point_count": 0,
+          "maximum_object_degree": 29,
+          "median_object_degree": 18.0,
+          "minimum_object_degree": 2,
+          "object_component_count": 1,
+          "object_spring_count": 18445
+        },
+        "candidate_object_spring_count": 18445,
+        "identity_object_spring_count": 27381
+      }
+    },
+    "single_lift_zebra": {
+      "artifacts": {
+        "candidate_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/candidate/summary.json",
+          "sha256": "97213f4b485b2add7cad4058d6fa9b089d8ae8acc81b79766ec4f53159c27768"
+        },
+        "candidate_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/candidate/topology.json",
+          "sha256": "66122a16c4ec6ed3e62050ff325dbbd1c71e0bc5ec509b682323276681635264"
+        },
+        "candidate_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/candidate/trajectory.pkl",
+          "sha256": "c315fa1e4969ae02ed945b0e7d1d31d3ac11f98e9be83ec13f7b94bda8dfb571"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/identity/summary.json",
+          "sha256": "2ddaa8e368a5558fea0659b8a0e67e7a69b334b681db49391cb6704a72af8c4d"
+        },
+        "identity_topology_sidecar": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/identity/topology.json",
+          "sha256": "dac985523f25d38c040db074fb332832ad1793aacb4c0ec26109c14c3c22f36a"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/identity/trajectory.pkl",
+          "sha256": "588f74e2021734cf4ad386bbe4c59671fe336cd049dee24cfa806fbbdbadb167"
+        },
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/cases/single_lift_zebra/prefix/manifest.json",
+          "sha256": "4a2696b5ad74038ea67c8c9a9b04844fd1949d42c92df9e4abb3f2bc90e7745e"
+        }
+      },
+      "balanced_relative_improvement": -0.02943743797930609,
+      "both_metrics_improved": false,
+      "candidate_metric_ratios": {
+        "chamfer_distance_m": 1.0722677281516049,
+        "track_error_m": 0.9866071478070073
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.004834907694372463,
+        "track_error_m": 0.008285836838519871
+      },
+      "fit_interval": [
+        0,
+        34
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.004509048969241074,
+        "track_error_m": 0.008398314219532377
+      },
+      "sealed_validation_interval": [
+        34,
+        46
+      ],
+      "topology": {
+        "candidate_applied_object_log_scale": 0.30470845572981675,
+        "candidate_diagnostics": {
+          "controller_spring_count": 305,
+          "isolated_object_point_count": 0,
+          "maximum_object_degree": 27,
+          "median_object_degree": 16.0,
+          "minimum_object_degree": 14,
+          "object_component_count": 1,
+          "object_spring_count": 40377
+        },
+        "candidate_object_spring_count": 40377,
+        "identity_object_spring_count": 54684
+      }
+    }
+  },
+  "code_commits": [
+    "11044f465de1baba0d3c1045a2d1805786db6b25",
+    "6d03d8c39056072bf2a56f595ad358115dfb225c"
+  ],
+  "completed_at_utc": "2026-07-18T12:39:28.702992+00:00",
+  "contract": "phystwin-sparse-topology-source-gate-v1",
+  "future_metrics_opened": false,
+  "official_commits": [
+    "2b6630528141b9cba5a7677c8b88b2129b4a8390"
+  ],
+  "schema_version": 1,
+  "selected_family": "exact_teacher",
+  "source_gate_passed": false,
+  "source_protocol": {
+    "path": "/mnt/corsair/florianpfaff/phystwin-global-sparse-topology-source-v1/locked_protocol.json",
+    "sha256": "5cfbe56c63a27ac2c01eb9c8840a22ee14f43afb1c0ce00e0335943dd56ed76b"
+  },
+  "transfer_case_count": 4
+}
