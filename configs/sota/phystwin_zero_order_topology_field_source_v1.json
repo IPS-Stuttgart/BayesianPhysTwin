@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-zero-order-topology-field-source-v1",
+  "locked_at_utc": "2026-07-18T12:58:42Z",
+  "status": "Per-object zero-order model-family transfer test on nested released prefixes; no future metric may be opened by this protocol.",
+  "claim_boundary": "Passing admits an exploratory 19-case run. The source cases have been examined by earlier families and are not independent confirmation.",
+  "development_case": {
+    "name": "single_lift_sloth",
+    "role": "Search design and nested-selector definition only; excluded from the transfer gate.",
+    "observed_result": "The 25-candidate all-fit winner overfit the outer source suffix. Selecting on the locked late-fit interval chose field_003 and improved outer-suffix CD by 4.22% and track error by 3.13%."
+  },
+  "transfer_cases": [
+    "single_lift_zebra",
+    "single_lift_cloth",
+    "single_lift_rope",
+    "single_lift_dinosor"
+  ],
+  "evidence_boundary": {
+    "outer_fit_fraction_of_released_prefix": 0.75,
+    "nested_selection_fraction_of_outer_fit": 0.75,
+    "outer_validation_interval": "remaining 25 percent of each released observation prefix",
+    "search_input": "a second phystwin-observation-prefix-plus-hold-v1 artifact ending at the outer fit boundary",
+    "future_controller_values": "omitted beyond each artifact boundary",
+    "future_object_observations": "omitted from every search runner input",
+    "future_metrics": "forbidden"
+  },
+  "search": {
+    "contract": "phystwin-zero-order-topology-field-v1",
+    "region_count": 5,
+    "candidates_per_family": 8,
+    "total_candidate_count_including_teacher": 25,
+    "seed": 20260718,
+    "families": [
+      "topology_only",
+      "field_only",
+      "joint"
+    ],
+    "radius_bounds": [
+      0.75,
+      1.25
+    ],
+    "neighbour_bounds": [
+      0.65,
+      1.35
+    ],
+    "object_log_scale_bounds": [
+      -0.35,
+      0.35
+    ],
+    "region_log_scale_bounds": [
+      -0.5,
+      0.5
+    ],
+    "controller_log_scale_bounds": [
+      -0.35,
+      0.35
+    ],
+    "topology_normalization": "preserve_total_object_stiffness before residual field scales",
+    "edge_field": "average endpoint-region log scales",
+    "candidate_generation": "deterministic Latin hypercube, fixed before evaluation",
+    "minimum_nested_fit_improvement": 0.01,
+    "maximum_nested_fit_metric_ratio": 1.02,
+    "fallback": "exact_teacher",
+    "parameter_optimization": "none beyond zero-order candidate selection",
+    "collision_parameters": "frozen",
+    "damping_parameters": "frozen",
+    "observation_variant": "hard",
+    "deterministic_spring_forces": true
+  },
+  "source_acceptance": {
+    "minimum_non_teacher_selection_count": 3,
+    "minimum_both_metric_win_count": 3,
+    "minimum_aggregate_balanced_improvement": 0.03,
+    "aggregate_requirement": "equal-case nested-selected mean must improve both outer-validation CD and manual-track error",
+    "family_fallback": "reject the complete zero-order family and retain the exact released teacher"
+  },
+  "forbidden": [
+    "changing candidate count, seed, bounds, split fractions, transfer cases, or gates after inspecting transfer suffixes",
+    "selecting or falling back using the outer source-validation suffix",
+    "future-frame objective, checkpoint selection, or metric inspection",
+    "calling a passing released-cohort result independent or confirmatory",
+    "claiming equivalence to NeuSpring's unpublished implementation"
+  ]
+}
