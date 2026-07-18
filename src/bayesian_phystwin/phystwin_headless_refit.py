@@ -30,6 +30,7 @@ from .phystwin_profile import (
 )
 from .phystwin_official_evaluation import evaluate_official_phystwin_interval
 from .phystwin_piecewise_topology import load_piecewise_topology_artifact
+from .phystwin_spring_field import build_canonical_spring_basis
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -64,6 +65,8 @@ class HeadlessPhysTwinRefitConfig:
     optimize_collision: bool = True
     spring_parameterization: str = "dense"
     spring_region_count: int = 4
+    spring_basis_rank: int = 16
+    spring_basis_length_scale_multiplier: float = 1.0
     spring_scale_weight_decay: float = 0.0
     dashpot_log_scale: float = 0.0
     drag_log_scale: float = 0.0
@@ -233,10 +236,11 @@ def run_headless_phystwin_refit(
         "grouped",
         "regional",
         "part_pair",
+        "canonical_basis",
     }:
         raise ValueError(
             "spring_parameterization must be 'dense', 'grouped', 'regional', "
-            "or 'part_pair'"
+            "'part_pair', or 'canonical_basis'"
         )
     if (config.spring_parameterization == "part_pair") != (
         spring_partition_path is not None
@@ -246,6 +250,15 @@ def run_headless_phystwin_refit(
         )
     if config.spring_region_count < 2:
         raise ValueError("spring_region_count must be at least two")
+    if config.spring_basis_rank < 1:
+        raise ValueError("spring_basis_rank must be positive")
+    if (
+        not np.isfinite(config.spring_basis_length_scale_multiplier)
+        or config.spring_basis_length_scale_multiplier <= 0.0
+    ):
+        raise ValueError(
+            "spring_basis_length_scale_multiplier must be positive and finite"
+        )
     if config.spring_scale_weight_decay < 0.0:
         raise ValueError("spring_scale_weight_decay must be nonnegative")
     if not np.isfinite(config.dashpot_log_scale) or not np.isfinite(
@@ -396,6 +409,7 @@ def run_headless_phystwin_refit(
         if topology_artifact.diagnostics["isolated_object_point_count"] != 0:
             raise ValueError("piecewise topology contains isolated object points")
     spring_group_ids = None
+    canonical_spring_basis = None
     part_pair_grouping: PartPairSpringGrouping | None = None
     if config.spring_parameterization == "regional":
         spring_group_ids = spatial_spring_region_ids(
@@ -421,6 +435,16 @@ def run_headless_phystwin_refit(
             num_object_springs=graph.num_object_springs,
         )
         spring_group_ids = part_pair_grouping.group_ids
+    elif config.spring_parameterization == "canonical_basis":
+        canonical_spring_basis = build_canonical_spring_basis(
+            graph.vertices,
+            graph.springs,
+            num_object_springs=graph.num_object_springs,
+            rank=config.spring_basis_rank,
+            length_scale_multiplier=(
+                config.spring_basis_length_scale_multiplier
+            ),
+        )
     checkpoint = _load_checkpoint(torch, checkpoint_path, config.device)
     checkpoint_spring_y = torch.as_tensor(
         (
@@ -510,6 +534,11 @@ def run_headless_phystwin_refit(
         spring_parameterization=config.spring_parameterization,
         num_object_springs=graph.num_object_springs,
         spring_group_ids=spring_group_ids,
+        spring_basis_weights=(
+            None
+            if canonical_spring_basis is None
+            else canonical_spring_basis.weights
+        ),
         deterministic_spring_forces=config.deterministic_spring_forces,
     )
     simulator.set_reference_spring_y(
@@ -1165,6 +1194,22 @@ def run_headless_phystwin_refit(
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
+    spring_basis_path = None
+    if canonical_spring_basis is not None:
+        spring_basis_path = output_path / "canonical_spring_basis.npz"
+        np.savez_compressed(
+            spring_basis_path,
+            weights=canonical_spring_basis.weights,
+            object_centers=canonical_spring_basis.object_centers,
+            center_spring_indices=canonical_spring_basis.center_spring_indices,
+            object_rank=np.asarray(canonical_spring_basis.object_rank),
+            length_scale_m=np.asarray(canonical_spring_basis.length_scale_m),
+            controller_parameter_index=np.asarray(
+                -1
+                if canonical_spring_basis.controller_parameter_index is None
+                else canonical_spring_basis.controller_parameter_index
+            ),
+        )
     profile_path = None
     if profile_artifact is not None:
         profile_path = output_path / "parameter_profile.npz"
@@ -1202,6 +1247,16 @@ def run_headless_phystwin_refit(
             "variant": config.variant,
             "spring_parameterization": config.spring_parameterization,
             "group_log_scales": torch.as_tensor(final_group_log_scales),
+            "spring_basis_log_coefficients": (
+                None
+                if canonical_spring_basis is None
+                else torch.as_tensor(final_group_log_scales)
+            ),
+            "spring_basis_weights": (
+                None
+                if canonical_spring_basis is None
+                else torch.as_tensor(canonical_spring_basis.weights)
+            ),
             "spring_group_ids": (
                 None
                 if spring_group_ids is None
@@ -1273,6 +1328,14 @@ def run_headless_phystwin_refit(
                     "sha256": _sha256(spring_topology_path),
                 }
             ),
+            "canonical_spring_basis": (
+                None
+                if spring_basis_path is None
+                else {
+                    "path": str(spring_basis_path.resolve()),
+                    "sha256": _sha256(spring_basis_path),
+                }
+            ),
         },
         "graph": {
             "vertex_count": int(len(graph.vertices)),
@@ -1303,6 +1366,26 @@ def run_headless_phystwin_refit(
                 if topology_artifact is None
                 else topology_artifact.diagnostics
             ),
+            "canonical_spring_basis": (
+                None
+                if canonical_spring_basis is None
+                else {
+                    "object_rank": canonical_spring_basis.object_rank,
+                    "parameter_count": int(
+                        canonical_spring_basis.weights.shape[1]
+                    ),
+                    "controller_parameter_index": (
+                        canonical_spring_basis.controller_parameter_index
+                    ),
+                    "length_scale_m": canonical_spring_basis.length_scale_m,
+                    "weights_sha256": _array_hash(
+                        canonical_spring_basis.weights
+                    ),
+                    "center_spring_indices": (
+                        canonical_spring_basis.center_spring_indices.tolist()
+                    ),
+                }
+            ),
         },
         "parameters": {
             "initial_spring_y": _spring_summary(initial_spring_y),
@@ -1317,7 +1400,9 @@ def run_headless_phystwin_refit(
                 )
             ),
             "group_log_scales": (
-                {
+                None
+                if config.spring_parameterization == "canonical_basis"
+                else ({
                     "regions": [
                         float(value)
                         for value in final_group_log_scales[
@@ -1358,7 +1443,32 @@ def run_headless_phystwin_refit(
                     "object": float(final_group_log_scales[0]),
                     "controller": float(final_group_log_scales[1]),
                     }
-                )
+                ))
+            ),
+            "canonical_spring_field": (
+                None
+                if canonical_spring_basis is None
+                else {
+                    "basis_log_coefficients": [
+                        float(value) for value in final_group_log_scales
+                    ],
+                    "object_log_scale_min": float(
+                        np.min(
+                            canonical_spring_basis.weights[
+                                : graph.num_object_springs
+                            ]
+                            @ final_group_log_scales
+                        )
+                    ),
+                    "object_log_scale_max": float(
+                        np.max(
+                            canonical_spring_basis.weights[
+                                : graph.num_object_springs
+                            ]
+                            @ final_group_log_scales
+                        )
+                    ),
+                }
             ),
             "final_collision": final_collision,
             "fixed_dashpot_damping": float(
@@ -1419,6 +1529,11 @@ def run_headless_phystwin_refit(
             "checkpoint": str(refit_checkpoint_path.resolve()),
             "parameter_profile": (
                 None if profile_path is None else str(profile_path.resolve())
+            ),
+            "canonical_spring_basis": (
+                None
+                if spring_basis_path is None
+                else str(spring_basis_path.resolve())
             ),
         },
     }

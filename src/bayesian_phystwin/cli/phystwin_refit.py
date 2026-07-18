@@ -45,12 +45,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--freeze-collision", action="store_true")
     parser.add_argument(
         "--spring-parameterization",
-        choices=("dense", "grouped", "regional", "part_pair"),
+        choices=(
+            "dense",
+            "grouped",
+            "regional",
+            "part_pair",
+            "canonical_basis",
+        ),
         default="dense",
     )
     parser.add_argument("--spring-partition")
     parser.add_argument("--spring-topology")
     parser.add_argument("--spring-region-count", type=int, default=4)
+    parser.add_argument("--spring-basis-rank", type=int, default=16)
+    parser.add_argument(
+        "--spring-basis-length-scale-multiplier",
+        type=float,
+        default=1.0,
+    )
     parser.add_argument("--spring-scale-weight-decay", type=float, default=0.0)
     parser.add_argument("--dashpot-log-scale", type=float, default=0.0)
     parser.add_argument("--drag-log-scale", type=float, default=0.0)
@@ -121,6 +133,10 @@ def main() -> None:
             optimize_collision=not args.freeze_collision,
             spring_parameterization=args.spring_parameterization,
             spring_region_count=args.spring_region_count,
+            spring_basis_rank=args.spring_basis_rank,
+            spring_basis_length_scale_multiplier=(
+                args.spring_basis_length_scale_multiplier
+            ),
             spring_scale_weight_decay=args.spring_scale_weight_decay,
             dashpot_log_scale=args.dashpot_log_scale,
             drag_log_scale=args.drag_log_scale,

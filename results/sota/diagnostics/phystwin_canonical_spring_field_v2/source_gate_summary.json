@@ -1,0 +1,116 @@
+{
+  "aggregate": {
+    "balanced_improvement": 0.09515676837265202,
+    "baseline_cd_m": 0.010924739037361771,
+    "baseline_track_m": 0.020894796884520332,
+    "cd_improvement": 0.13427511843556894,
+    "selected_cd_m": 0.009457818409242336,
+    "selected_track_m": 0.01972388551620863,
+    "track_improvement": 0.056038418309735105
+  },
+  "cases": [
+    {
+      "balanced_improvement": 0.0,
+      "baseline_cd_m": 0.004509048969241074,
+      "baseline_track_m": 0.008398314219532377,
+      "both_metric_win": false,
+      "case": "single_lift_zebra",
+      "cd_improvement": 0.0,
+      "controller_log_scale": 0.0,
+      "maximum_absolute_log_scale": 0.0,
+      "object_log_scale_max": 0.0,
+      "object_log_scale_min": 0.0,
+      "plausibility_gate_passed": true,
+      "selected_cd_m": 0.004509048969241074,
+      "selected_epoch": -1,
+      "selected_track_m": 0.008398314219532377,
+      "track_improvement": 0.0
+    },
+    {
+      "balanced_improvement": 0.14104789614347218,
+      "baseline_cd_m": 0.02873049069906854,
+      "baseline_track_m": 0.0601516946552718,
+      "both_metric_win": true,
+      "case": "single_lift_cloth",
+      "cd_improvement": 0.20423189335460867,
+      "controller_log_scale": 0.8119244575500488,
+      "maximum_absolute_log_scale": 1.6901952028274536,
+      "object_log_scale_max": 1.6901952028274536,
+      "object_log_scale_min": -1.4427149295806885,
+      "plausibility_gate_passed": false,
+      "selected_cd_m": 0.022862808186590797,
+      "selected_epoch": 11,
+      "selected_track_m": 0.055468049182025,
+      "track_improvement": 0.0778638989323357
+    },
+    {
+      "balanced_improvement": 0.0,
+      "baseline_cd_m": 0.004543439238608976,
+      "baseline_track_m": 0.007260907096463114,
+      "both_metric_win": false,
+      "case": "single_lift_rope",
+      "cd_improvement": 0.0,
+      "controller_log_scale": 0.0,
+      "maximum_absolute_log_scale": 0.0,
+      "object_log_scale_max": 0.0,
+      "object_log_scale_min": 0.0,
+      "plausibility_gate_passed": true,
+      "selected_cd_m": 0.004543439238608976,
+      "selected_epoch": -1,
+      "selected_track_m": 0.007260907096463114,
+      "track_improvement": 0.0
+    },
+    {
+      "balanced_improvement": 0.0,
+      "baseline_cd_m": 0.005915977242528491,
+      "baseline_track_m": 0.007768271566814031,
+      "both_metric_win": false,
+      "case": "single_lift_dinosor",
+      "cd_improvement": 0.0,
+      "controller_log_scale": 0.0,
+      "maximum_absolute_log_scale": 0.0,
+      "object_log_scale_max": 0.0,
+      "object_log_scale_min": 0.0,
+      "plausibility_gate_passed": true,
+      "selected_cd_m": 0.005915977242528491,
+      "selected_epoch": -1,
+      "selected_track_m": 0.007768271566814031,
+      "track_improvement": 0.0
+    }
+  ],
+  "development_summary_sha256": "d9fb391f91c786135a0369b8f46047893df39c8f23f40b525fce8fb7f4550638",
+  "execution_code_state": {
+    "file_sha256": {
+      "src/bayesian_phystwin/_phystwin_warp_backend.py": "277e47cc2e1b7c86cf1b537c41cf57e065fb107e39bbe3ecfb264cce62b72b27",
+      "src/bayesian_phystwin/cli/phystwin_refit.py": "fda88270e2ea845d3b2f6f0ab898491ccd360f9ec86c59b69434fbcdd1fe488b",
+      "src/bayesian_phystwin/phystwin_headless_refit.py": "1f580f280b8ffd7726059305f3e53ff20c38906acf0849acac1ed3fb96358c8e",
+      "src/bayesian_phystwin/phystwin_spring_field.py": "ae134c382ae196ddde7915cf20da8768e89307be63960343690f8b0a2703bc6a"
+    },
+    "git_base_commit": "0d563026d5d86d93ac2a0733499f80116709ddd7",
+    "provenance_note": "GPU runs used these exact files over the recorded clean base commit; the implementation was committed only after the locked gate completed.",
+    "working_tree_overlay": true
+  },
+  "gate": {
+    "aggregate_improves_both_metrics": true,
+    "future_metrics_opened": false,
+    "minimum_aggregate_balanced_improvement": 0.03,
+    "minimum_both_metric_win_count": 3,
+    "minimum_non_teacher_selection_count": 3,
+    "observed_both_metric_win_count": 0,
+    "observed_non_teacher_selection_count": 0,
+    "passed": false,
+    "selected_family": "exact_teacher"
+  },
+  "interpretation": "Only cloth selected a non-teacher field, and that field violated the predeclared factor-two physical scale limit. The smooth static spring field therefore fails source transfer and does not authorize future evaluation.",
+  "protocol": {
+    "path": "configs/sota/phystwin_canonical_spring_field_source_v2.json",
+    "sha256": "438f352ddbafe840c9c02e7240e76b1ec05c010db7450ffd03b0b7815da90068"
+  },
+  "schema_version": 1,
+  "source_summary_sha256": {
+    "single_lift_cloth": "214309a6607b96a79e35c762f8803bc5e6883fff1c1579d4c8c5818dbed414cb",
+    "single_lift_dinosor": "aaaa6bf1a05029cd9ffde852c0696e93324901242ce8d8ef3230244f483181cd",
+    "single_lift_rope": "4696f5281f599a75cfb3f3cad8913b8e30224bfaf1025f036384923a2d2afe16",
+    "single_lift_zebra": "b147739f3b44ae4d003dd3df9479f073c2cfe44277d30d481bed6fa840c736d3"
+  }
+}

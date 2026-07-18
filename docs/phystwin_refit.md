@@ -103,10 +103,13 @@ validation, and untouched test intervals separately.
 ## Interpretation Boundary
 
 The runner supports the released per-spring parameterization (`dense`), two log
-scales around the released checkpoint (`grouped`), or regularized principal-axis
-material bands (`regional`). The regional mode reserves one final group for
-controller springs and records the complete group assignment in the checkpoint
-and summary. It remains a point refit, not a spatial posterior.
+scales around the released checkpoint (`grouped`), regularized principal-axis
+material bands (`regional`), part-pair groups (`part_pair`), or a smooth
+canonical spring basis (`canonical_basis`). The canonical mode uses normalized
+Gaussian-RBF weights over object-spring midpoints and one separate controller
+coefficient. It is exactly centered on the released checkpoint and writes a
+complete `canonical_spring_basis.npz` artifact. It remains a low-rank point
+refit, not a spatial posterior or a reproduction of NeuSpring's neural field.
 
 Dashpot and drag damping are non-differentiable scalar inputs in the official
 kernel. They can be changed between runs with `--dashpot-log-scale` and

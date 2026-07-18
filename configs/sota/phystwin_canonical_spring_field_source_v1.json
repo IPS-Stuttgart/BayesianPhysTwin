@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-canonical-spring-field-source-v1",
+  "locked_at_utc": "2026-07-18T17:32:32Z",
+  "status": "Registered before any nonzero canonical-field optimization or validation metric was produced.",
+  "claim_boundary": "This is a future-blind model-family test on previously examined released prefixes. Passing can admit an exploratory future run, but cannot establish an independent state-of-the-art claim.",
+  "development_case": {
+    "name": "single_lift_sloth",
+    "role": "Implementation and competence gate only; excluded from source-transfer acceptance."
+  },
+  "source_transfer_cases": [
+    "single_lift_zebra",
+    "single_lift_cloth",
+    "single_lift_rope",
+    "single_lift_dinosor"
+  ],
+  "evidence_boundary": {
+    "fit_fraction_of_released_prefix": 0.75,
+    "validation_interval": "remaining 25 percent of the released observation prefix",
+    "input_contract": "phystwin-observation-prefix-plus-hold-v1",
+    "future_controller_values": "omitted beyond each prefix artifact boundary",
+    "future_object_observations": "omitted",
+    "future_metrics": "sealed unless every source gate passes"
+  },
+  "method": {
+    "teacher": "released PhysTwin graph and per-edge spring field",
+    "parameterization": "additive rank-16 normalized Gaussian-RBF log-stiffness field over canonical object-spring midpoints, plus one separate controller-spring coefficient",
+    "center_selection": "deterministic farthest-point sampling initialized at the spring midpoint nearest the centroid with stable index tie-breaking",
+    "rbf_length_scale": "median nearest-center distance",
+    "identity": "all coefficients zero reproduces the teacher exactly in the same runner",
+    "rank": 16,
+    "length_scale_multiplier": 1.0,
+    "epochs": 12,
+    "learning_rate": 0.003,
+    "coefficient_weight_decay": 0.01,
+    "early_stopping_patience": 3,
+    "observation_variant": "hard",
+    "selection_metric": "equal mean of validation Chamfer-distance and manual-track-error ratios",
+    "deterministic_spring_forces": true,
+    "collision_parameters": "frozen",
+    "damping_parameters": "frozen"
+  },
+  "development_competence_gate": {
+    "reference": "zero-update exact-teacher trajectory from the same canonical-basis runner",
+    "minimum_balanced_validation_improvement": 0.01,
+    "maximum_per_metric_regression": 0.0,
+    "fallback": "exact teacher"
+  },
+  "source_acceptance": {
+    "minimum_non_teacher_selection_count": 3,
+    "minimum_both_metric_win_count": 3,
+    "aggregate_requirement": "equal-case selected stack improves both validation Chamfer distance and manual-track error",
+    "minimum_aggregate_balanced_improvement": 0.03,
+    "fallback": "reject the complete family and retain the exact teacher"
+  },
+  "required_diagnostics": [
+    "same-run zero-coefficient identity parity",
+    "fit and validation metrics for every epoch",
+    "basis coefficient and induced object log-scale ranges",
+    "controller coefficient",
+    "spring-field artifact hash",
+    "comparison with the prior five-region zero-order field failure"
+  ],
+  "forbidden": [
+    "changing rank, length scale, optimizer settings, source cases, or gates after inspecting nonzero development validation",
+    "future-frame objective, checkpoint selection, or metric inspection",
+    "opening the exploratory 19-case future cohort after a failed development or source gate",
+    "calling this RBF basis a reproduction of NeuSpring's tri-plane implementation",
+    "claiming independent confirmation from any released PhysTwin case"
+  ]
+}

@@ -312,6 +312,33 @@ def test_refit_cli_accepts_part_pair_partition():
     assert args.spring_topology == "topology.npz"
 
 
+def test_refit_cli_accepts_canonical_spring_basis():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "mixture",
+            "--train-end-frame",
+            "64",
+            "--spring-parameterization",
+            "canonical_basis",
+            "--spring-basis-rank",
+            "12",
+            "--spring-basis-length-scale-multiplier",
+            "1.5",
+        ]
+    )
+
+    assert args.spring_parameterization == "canonical_basis"
+    assert args.spring_basis_rank == 12
+    assert args.spring_basis_length_scale_multiplier == pytest.approx(1.5)
+
+
 def test_prior_evaluation_uses_target_visible_refit_support():
     visible, motion_valid = _masks()
     cues = {

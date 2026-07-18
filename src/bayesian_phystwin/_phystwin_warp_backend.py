@@ -111,6 +111,25 @@ def expand_spring_group_log_y(
 
 
 @wp.kernel
+def expand_spring_basis_log_y(
+    reference_log_y: wp.array(dtype=wp.float32),
+    basis_weights: wp.array(dtype=wp.float32),
+    basis_log_coefficients: wp.array(dtype=wp.float32),
+    basis_parameter_count: int,
+    spring_log_y: wp.array(dtype=wp.float32),
+):
+    spring = wp.tid()
+    offset = spring * basis_parameter_count
+    log_scale = float(0.0)
+    for parameter in range(basis_parameter_count):
+        log_scale += (
+            basis_weights[offset + parameter]
+            * basis_log_coefficients[parameter]
+        )
+    spring_log_y[spring] = reference_log_y[spring] + log_scale
+
+
+@wp.kernel
 def eval_springs_deterministic(
     x: wp.array(dtype=wp.vec3),
     v: wp.array(dtype=wp.vec3),
@@ -267,6 +286,7 @@ def make_reliability_simulator_class(official_module: Any):
             spring_parameterization: str,
             num_object_springs: int,
             spring_group_ids: Any | None = None,
+            spring_basis_weights: Any | None = None,
             deterministic_spring_forces: bool = False,
             **kwargs: Any,
         ) -> None:
@@ -276,10 +296,11 @@ def make_reliability_simulator_class(official_module: Any):
                 "grouped",
                 "regional",
                 "part_pair",
+                "canonical_basis",
             }:
                 raise ValueError(
                     "spring_parameterization must be 'dense', 'grouped', "
-                    "'regional', or 'part_pair'"
+                    "'regional', 'part_pair', or 'canonical_basis'"
                 )
             self.spring_parameterization = spring_parameterization
             self.deterministic_spring_forces = bool(deterministic_spring_forces)
@@ -328,13 +349,47 @@ def make_reliability_simulator_class(official_module: Any):
                     raise ValueError("spring_group_ids must be nonnegative")
             self.spring_group_ids_tensor = group_ids.contiguous()
             group_count = int(torch.max(group_ids).item()) + 1
+            if self.spring_parameterization == "canonical_basis":
+                if spring_basis_weights is None:
+                    raise ValueError(
+                        "canonical_basis requires spring_basis_weights"
+                    )
+                basis_weights = torch.as_tensor(
+                    spring_basis_weights,
+                    dtype=torch.float32,
+                    device=device,
+                )
+                if basis_weights.ndim != 2 or basis_weights.shape[0] != spring_count:
+                    raise ValueError(
+                        "spring_basis_weights must have shape (S, P)"
+                    )
+                if basis_weights.shape[1] < 1:
+                    raise ValueError("spring_basis_weights must have a parameter")
+                if not bool(torch.all(torch.isfinite(basis_weights)).item()):
+                    raise ValueError("spring_basis_weights must be finite")
+                parameter_count = int(basis_weights.shape[1])
+                self.spring_basis_weights_tensor = (
+                    basis_weights.contiguous().reshape(-1)
+                )
+            else:
+                if spring_basis_weights is not None:
+                    raise ValueError(
+                        "spring_basis_weights require canonical_basis"
+                    )
+                parameter_count = group_count
+                self.spring_basis_weights_tensor = torch.zeros(
+                    spring_count,
+                    dtype=torch.float32,
+                    device=device,
+                )
+            self.spring_basis_parameter_count = parameter_count
             self.reference_spring_log_y_tensor = torch.zeros(
                 spring_count,
                 dtype=torch.float32,
                 device=device,
             )
             self.group_log_scale_tensor = torch.zeros(
-                group_count,
+                parameter_count,
                 dtype=torch.float32,
                 device=device,
                 requires_grad=True,
@@ -352,6 +407,11 @@ def make_reliability_simulator_class(official_module: Any):
             self.wp_spring_group_ids = wp.from_torch(
                 self.spring_group_ids_tensor,
                 dtype=wp.int32,
+                requires_grad=False,
+            )
+            self.wp_spring_basis_weights = wp.from_torch(
+                self.spring_basis_weights_tensor,
+                dtype=wp.float32,
                 requires_grad=False,
             )
             if self.deterministic_spring_forces:
@@ -428,7 +488,19 @@ def make_reliability_simulator_class(official_module: Any):
             super().__init__(*args, **kwargs)
 
         def step(self):
-            if self.spring_parameterization != "dense":
+            if self.spring_parameterization == "canonical_basis":
+                wp.launch(
+                    expand_spring_basis_log_y,
+                    dim=self.n_springs,
+                    inputs=[
+                        self.wp_reference_spring_log_y,
+                        self.wp_spring_basis_weights,
+                        self.wp_group_log_scales,
+                        self.spring_basis_parameter_count,
+                    ],
+                    outputs=[self.wp_spring_Y],
+                )
+            elif self.spring_parameterization != "dense":
                 wp.launch(
                     expand_spring_group_log_y,
                     dim=self.n_springs,
@@ -548,16 +620,29 @@ def make_reliability_simulator_class(official_module: Any):
             )
             with torch.no_grad():
                 self.group_log_scale_tensor.zero_()
-            wp.launch(
-                expand_spring_group_log_y,
-                dim=self.n_springs,
-                inputs=[
-                    self.wp_reference_spring_log_y,
-                    self.wp_group_log_scales,
-                    self.wp_spring_group_ids,
-                ],
-                outputs=[self.wp_spring_Y],
-            )
+            if self.spring_parameterization == "canonical_basis":
+                wp.launch(
+                    expand_spring_basis_log_y,
+                    dim=self.n_springs,
+                    inputs=[
+                        self.wp_reference_spring_log_y,
+                        self.wp_spring_basis_weights,
+                        self.wp_group_log_scales,
+                        self.spring_basis_parameter_count,
+                    ],
+                    outputs=[self.wp_spring_Y],
+                )
+            else:
+                wp.launch(
+                    expand_spring_group_log_y,
+                    dim=self.n_springs,
+                    inputs=[
+                        self.wp_reference_spring_log_y,
+                        self.wp_group_log_scales,
+                        self.wp_spring_group_ids,
+                    ],
+                    outputs=[self.wp_spring_Y],
+                )
 
         def set_rest_lengths(self, rest_lengths: Any):
             """Replace spring rest lengths without rebuilding captured graphs."""
