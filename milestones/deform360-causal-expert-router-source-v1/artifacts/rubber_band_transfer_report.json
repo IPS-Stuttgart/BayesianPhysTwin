@@ -1,0 +1,242 @@
+{
+  "aggregate": {
+    "future": {
+      "chamfer_improvement_fraction": 0.004945911776391698,
+      "chamfer_m": 0.001470224899754239,
+      "maximum_chamfer_degradation_fraction": 0.0,
+      "maximum_track_degradation_fraction": 0.0,
+      "persistence_chamfer_m": 0.001477532645867438,
+      "persistence_track_error_m": 0.004247090765978606,
+      "track_error_m": 0.00422663473064229,
+      "track_improvement_fraction": 0.004816481790353988
+    },
+    "late": {
+      "chamfer_improvement_fraction": 0.002989120156223102,
+      "chamfer_m": 0.002026135601123811,
+      "maximum_chamfer_degradation_fraction": 0.0,
+      "maximum_track_degradation_fraction": 0.0,
+      "persistence_chamfer_m": 0.0020322101213592464,
+      "persistence_track_error_m": 0.00687625119088659,
+      "track_error_m": 0.006840395234446152,
+      "track_improvement_fraction": 0.0052144628584773756
+    }
+  },
+  "artifact_kind": "Deform360CausalExpertRouterTransferReport",
+  "claim_boundary": "exploratory cross-object transfer only; passing admits a new prospective lock and does not establish state of the art",
+  "episode_ids": [
+    1,
+    3,
+    4,
+    6,
+    7,
+    9
+  ],
+  "information_boundary": {
+    "fresh_or_confirmatory_data_read": false,
+    "outcomes_used_only_after_all_decisions": true,
+    "pokeflex_target_read": false,
+    "router_decisions_use_outcome": false,
+    "sealed_development_episode_read": false,
+    "transfer_panel_previously_opened_during_method_development": true
+  },
+  "input_sha256": {
+    "banks": {
+      "1": {
+        "file_sha256": "7d977b838d313860d501a6c7874a9bcddd47144f012e95286deddc25605bc99a",
+        "path": "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/source-results/004-rubber-band/episode_0001/causal_transport_source_bank.json",
+        "result_sha256": "10fa4596b7fa8b301f46b747bd73b9d98d9fc350389d7282bad86e42c3deedd6"
+      },
+      "3": {
+        "file_sha256": "1e40582b1b6d9ad0312bdb3eb951fa4bcf9f93546b2783383404a143fdedc27e",
+        "path": "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/source-results/004-rubber-band/episode_0003/causal_transport_source_bank.json",
+        "result_sha256": "c77cff6dbc7437b2bc9269b1b83ebce035db03ba9db3cde6a470b7bd8ae9542a"
+      },
+      "4": {
+        "file_sha256": "1af1f103739b4848f757e6a08312471b8a1e4789b7eff5cda718f637cf37e315",
+        "path": "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/source-results/004-rubber-band/episode_0004/causal_transport_source_bank.json",
+        "result_sha256": "8ea05a59315a38daa66f3514a0f4e4745d5faa75966526a0c112751edf2576a7"
+      },
+      "6": {
+        "file_sha256": "f540dfb748124ea348c125eddd93f594075089fb950f7581b775b8a5b03d9dfd",
+        "path": "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/source-results/004-rubber-band/episode_0006/causal_transport_source_bank.json",
+        "result_sha256": "dab102f553aa7daab30111f35377cacc523f31b8d8072b221cf0b48b8cce5d47"
+      },
+      "7": {
+        "file_sha256": "b91518aff69263281ff8519a5904df042787245c3197138471e402eb87abfe55",
+        "path": "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/source-results/004-rubber-band/episode_0007/causal_transport_source_bank.json",
+        "result_sha256": "1952f4c013cb76a2b570dd937e159c7d2d1af11211210accae60828f6e3154cc"
+      },
+      "9": {
+        "file_sha256": "1cb7df27e4e73efc2d08875f149f2bbd0f3566155443ee81608a08608be52ed7",
+        "path": "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/source-results/004-rubber-band/episode_0009/causal_transport_source_bank.json",
+        "result_sha256": "8ab392922993a1ce700a6d52b17bfbb4672b04633d794b3ea19fbad87f05aac7"
+      }
+    }
+  },
+  "model": {
+    "file_sha256": "73157796bf6006ac46eb1b04f8fb9ce90774e4152ff8b4130dd70d62b8c9445b",
+    "path": "/mnt/corsair/florianpfaff/deform360-causal-expert-router-exhausted-source-v1/router_model.json",
+    "result_sha256": "eaa3ee36a412a04e8d75005a9d36867884e202efa374f60fe75a1588ed434b9f"
+  },
+  "object_id": "004-rubber-band",
+  "passed": false,
+  "result_sha256": "d19f2e706553632275a9445867c1709e04028c299e8737fd5ae7c64ab96e03b9",
+  "rows": [
+    {
+      "accepted": false,
+      "episode_id": 1,
+      "future": {
+        "chamfer_m": 0.0013466662732784713,
+        "persistence_chamfer_m": 0.0013466662732784713,
+        "persistence_track_error_m": 0.0021964738152725712,
+        "track_error_m": 0.0021964738152725712
+      },
+      "late": {
+        "chamfer_m": 0.0013652940766960971,
+        "persistence_chamfer_m": 0.0013652940766960971,
+        "persistence_track_error_m": 0.0021056635554196667,
+        "track_error_m": 0.0021056635554196667
+      },
+      "normalized_joint_score": 1.0,
+      "oracle": {
+        "label": "translation-s5mm-g0-a0.5",
+        "normalized_joint_score": 0.9244431742931922
+      },
+      "predicted_log_score": -0.02113621939230457,
+      "selected_label": "persistence",
+      "upper_log_score": 0.04684326048102453
+    },
+    {
+      "accepted": false,
+      "episode_id": 3,
+      "future": {
+        "chamfer_m": 0.0006597249048152885,
+        "persistence_chamfer_m": 0.0006597249048152885,
+        "persistence_track_error_m": 0.0009814562778553213,
+        "track_error_m": 0.0009814562778553213
+      },
+      "late": {
+        "chamfer_m": 0.0011256460446475325,
+        "persistence_chamfer_m": 0.0011256460446475325,
+        "persistence_track_error_m": 0.0020138649794629766,
+        "track_error_m": 0.0020138649794629766
+      },
+      "normalized_joint_score": 1.0,
+      "oracle": {
+        "label": "persistence",
+        "normalized_joint_score": 1.0
+      },
+      "predicted_log_score": -0.0456385266158096,
+      "selected_label": "persistence",
+      "upper_log_score": 0.022340953257519496
+    },
+    {
+      "accepted": true,
+      "episode_id": 4,
+      "future": {
+        "chamfer_m": 0.003432691795943365,
+        "persistence_chamfer_m": 0.0034765382726225594,
+        "persistence_track_error_m": 0.016617502555030857,
+        "track_error_m": 0.016494766343012952
+      },
+      "late": {
+        "chamfer_m": 0.005328477619438046,
+        "persistence_chamfer_m": 0.0053649247408506595,
+        "persistence_track_error_m": 0.028522627053865945,
+        "track_error_m": 0.028307491315223317
+      },
+      "normalized_joint_score": 0.9900009658397443,
+      "oracle": {
+        "label": "se3-s10mm-g0.5-a1",
+        "normalized_joint_score": 0.6767526567823055
+      },
+      "predicted_log_score": -0.09457230090046245,
+      "selected_label": "se3-s3mm-g0-a0.5",
+      "upper_log_score": -0.026592821027133354
+    },
+    {
+      "accepted": false,
+      "episode_id": 6,
+      "future": {
+        "chamfer_m": 0.0010111409094812616,
+        "persistence_chamfer_m": 0.0010111409094812616,
+        "persistence_track_error_m": 0.0013781356724634802,
+        "track_error_m": 0.0013781356724634802
+      },
+      "late": {
+        "chamfer_m": 0.0011979646033641806,
+        "persistence_chamfer_m": 0.0011979646033641806,
+        "persistence_track_error_m": 0.001672341339311087,
+        "track_error_m": 0.001672341339311087
+      },
+      "normalized_joint_score": 1.0,
+      "oracle": {
+        "label": "persistence",
+        "normalized_joint_score": 1.0
+      },
+      "predicted_log_score": 0.06886578741301524,
+      "selected_label": "persistence",
+      "upper_log_score": 0.13684526728634433
+    },
+    {
+      "accepted": false,
+      "episode_id": 7,
+      "future": {
+        "chamfer_m": 0.0012523129534764113,
+        "persistence_chamfer_m": 0.0012523129534764113,
+        "persistence_track_error_m": 0.0018881732923116056,
+        "track_error_m": 0.0018881732923116056
+      },
+      "late": {
+        "chamfer_m": 0.0013830519936623917,
+        "persistence_chamfer_m": 0.0013830519936623917,
+        "persistence_track_error_m": 0.002211039889373001,
+        "track_error_m": 0.002211039889373001
+      },
+      "normalized_joint_score": 1.0,
+      "oracle": {
+        "label": "persistence",
+        "normalized_joint_score": 1.0
+      },
+      "predicted_log_score": 0.11573232782820686,
+      "selected_label": "persistence",
+      "upper_log_score": 0.18371180770153595
+    },
+    {
+      "accepted": false,
+      "episode_id": 9,
+      "future": {
+        "chamfer_m": 0.001118812561530637,
+        "persistence_chamfer_m": 0.001118812561530637,
+        "persistence_track_error_m": 0.0024208029829378055,
+        "track_error_m": 0.0024208029829378055
+      },
+      "late": {
+        "chamfer_m": 0.001756379268934617,
+        "persistence_chamfer_m": 0.001756379268934617,
+        "persistence_track_error_m": 0.004731970327886859,
+        "track_error_m": 0.004731970327886859
+      },
+      "normalized_joint_score": 1.0,
+      "oracle": {
+        "label": "se3-s5mm-g0.1-a0.5",
+        "normalized_joint_score": 0.9349505565335907
+      },
+      "predicted_log_score": 0.05430986065520842,
+      "selected_label": "persistence",
+      "upper_log_score": 0.12228934052853752
+    }
+  ],
+  "schema_version": 1,
+  "transfer_gate": {
+    "checks": {
+      "future_chamfer": false,
+      "future_track": false,
+      "late_chamfer": false,
+      "late_track": false,
+      "maximum_degradation": true
+    },
+    "failure_action": "do not lock an independent evaluation from this router",
+    "passed": false
+  }
+}

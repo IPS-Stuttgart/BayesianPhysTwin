@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-causal-expert-router-source-v1",
+  "captured_at": "2026-07-18",
+  "compute_host": "gpuserver6000",
+  "branch": "deform360-contact-conditioned-reusable-v1",
+  "information_boundary": {
+    "exhausted_source_outcomes_used": true,
+    "rubber_band_source_outcomes_used": true,
+    "rubber_band_sealed_episode_read": false,
+    "fresh_or_confirmatory_data_read": false,
+    "pokeflex_target_read": false
+  },
+  "fixed_policy": {
+    "passed": false,
+    "pooled_candidate": "persistence",
+    "mean_leave_one_action_out_normalized_score": 1.050837479033646,
+    "result_sha256": "e0aefad4452d3c9ab6858234420b45db717ceba35b2e924bf7cc3addbbbb1add"
+  },
+  "router_source_cross_fit": {
+    "passed": false,
+    "mean_normalized_score": 0.9936507390315135,
+    "maximum_normalized_score": 1.0,
+    "accepted_fraction": 0.07407407407407407,
+    "win_fraction": 0.037037037037037035,
+    "model_result_sha256": "eaa3ee36a412a04e8d75005a9d36867884e202efa374f60fe75a1588ed434b9f",
+    "report_result_sha256": "ae883be9d29c66ce81564fc5a256b790982127a6d8c8ea852b8e758820dfea98"
+  },
+  "rubber_band_transfer": {
+    "passed": false,
+    "accepted_episode_count": 1,
+    "episode_count": 6,
+    "future_track_improvement_fraction": 0.004816481790353988,
+    "future_chamfer_improvement_fraction": 0.004945911776391698,
+    "result_sha256": "d19f2e706553632275a9445867c1709e04028c299e8737fd5ae7c64ab96e03b9"
+  },
+  "verification": {
+    "focused_pytest": "15 passed in 29.92 s",
+    "intended_ruff": "passed",
+    "git_diff_check": "passed"
+  },
+  "artifacts": [
+    {
+      "path": "artifacts/causal_transport_source_selection.json",
+      "sha256": "4ba782110509a049f3ae09120f8f0668ddf1f7ad30e6dfa454055d95f836720f"
+    },
+    {
+      "path": "artifacts/causal_transport_extended_gain_exploratory.json",
+      "sha256": "8eabc9933ed60b39b89ebc0eed6954cb232dcfcd6a96dc3dbca2aa238b31e18c"
+    },
+    {
+      "path": "artifacts/exhausted_source_manifest.json",
+      "sha256": "3beb5f07f627ba532f70c5260eb7cec70084709a2a328b9ed5810d5cca52135b",
+      "result_sha256": "5ce6f25534d23480d39f1c7b185929ac32c7140a504134aa296b1d34dc96c62d"
+    },
+    {
+      "path": "artifacts/router_model.json",
+      "sha256": "73157796bf6006ac46eb1b04f8fb9ce90774e4152ff8b4130dd70d62b8c9445b",
+      "result_sha256": "eaa3ee36a412a04e8d75005a9d36867884e202efa374f60fe75a1588ed434b9f"
+    },
+    {
+      "path": "artifacts/router_source_report.json",
+      "sha256": "5d87912bc8a172a150f16194fe88f93efe89daedd6f88962cfdc2715b3fe81d8",
+      "result_sha256": "ae883be9d29c66ce81564fc5a256b790982127a6d8c8ea852b8e758820dfea98"
+    },
+    {
+      "path": "artifacts/rubber_band_transfer_report.json",
+      "sha256": "7687f1acf55a13a7b879b67c707a572517e8b78e3699cef902962c114a3fe38d",
+      "result_sha256": "d19f2e706553632275a9445867c1709e04028c299e8737fd5ae7c64ab96e03b9"
+    }
+  ]
+}
