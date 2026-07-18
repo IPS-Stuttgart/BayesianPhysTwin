@@ -1,0 +1,1942 @@
+{
+  "config": {
+    "fit_end_frame": 32,
+    "interpolation_neighbors": 4,
+    "maximum_metric_ratio": 1.02,
+    "maximum_residual_m": 0.01,
+    "maximum_state_multiplier": 1.5,
+    "maximum_velocity_multiplier": 1.5,
+    "minimum_dynamic_improvement": 0.01,
+    "minimum_validation_improvement": 0.0,
+    "projection_ridge": 1e-06,
+    "rank_candidates": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "ridge_candidates": [
+      0.001,
+      0.01,
+      0.1,
+      1.0,
+      10.0
+    ],
+    "train_end_frame": 43,
+    "velocity_persistence_candidates": [
+      0.0,
+      0.5,
+      0.8,
+      0.95,
+      1.0
+    ]
+  },
+  "contract": {
+    "basis_fit_interval_for_selection": [
+      1,
+      32
+    ],
+    "fallback": "exact baseline or temporally filled endpoint persistence",
+    "final_refit_interval": [
+      1,
+      43
+    ],
+    "future_inputs": "commanded controller trajectory and baseline PhysTwin rollout",
+    "future_observations_used": false,
+    "integration": "recursive residual velocity in low-rank readout space",
+    "physical_injection_claim": false,
+    "selection_interval": [
+      32,
+      43
+    ]
+  },
+  "correction": {
+    "maximum_m": 0.010000000000000004,
+    "rms_m": 0.009295194788162485
+  },
+  "inputs": {
+    "baseline_trajectory": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_sloth/inference.pkl",
+      "sha256": "357f75ea596015564d85613955cfb970bef2483079952de7dea1a0ce61ed94fe"
+    },
+    "final_data": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_sloth/final_data.pkl",
+      "sha256": "6bbb1245812a9b6c760f6881b8b6174343fd0df717c168b09fb7b365caabb33c"
+    },
+    "gt_track_3d": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_sloth/gt_track_3d.pkl",
+      "sha256": "6bd648125d2068924b02586b27e797d538a8220a26857a0758693a9a15cf3d2f"
+    }
+  },
+  "outputs": {
+    "model": "/mnt/corsair/florianpfaff/bpt-residual-velocity-v1/runs/double_lift_sloth/residual_velocity_model.npz",
+    "summary": "/mnt/corsair/florianpfaff/bpt-residual-velocity-v1/runs/double_lift_sloth/summary.json",
+    "trajectory": "/mnt/corsair/florianpfaff/bpt-residual-velocity-v1/runs/double_lift_sloth/trajectory.pkl"
+  },
+  "schema_version": 1,
+  "selection": {
+    "baseline_official_evaluation": {
+      "chamfer_distance_m": 0.009349712371090347,
+      "frame_count": 11,
+      "frame_end_exclusive": 43,
+      "frame_start": 32,
+      "track_error_m": 0.018244191541110996
+    },
+    "candidates": [
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.020208507618671,
+          "track_error_m": 1.0357754957823184
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006606998961332867,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012373982330306682
+        },
+        "rank": 1,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0279920017004947,
+        "selection_score": 0.6924474688608178,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.020071526373312,
+          "track_error_m": 1.035891275199641
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006606111853512209,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012375365499217316
+        },
+        "rank": 1,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0279814007864765,
+        "selection_score": 0.6924379355839512,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0203573785106816,
+          "track_error_m": 1.0357025094127845
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00660796306800473,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012373110392275087
+        },
+        "rank": 1,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.028029943961733,
+        "selection_score": 0.692475130634671,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.020665416518837,
+          "track_error_m": 1.035437456271722
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006609957960994481,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012369943911799873
+        },
+        "rank": 1,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0280514363952795,
+        "selection_score": 0.6924950321764638,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0205599708227688,
+          "track_error_m": 1.0355624338913245
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006609275081368213,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012371436967836574
+        },
+        "rank": 1,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0280612023570468,
+        "selection_score": 0.6924994320940805,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0201249791972016,
+          "track_error_m": 1.0358933443742677
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006606458020741047,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012375390218792527
+        },
+        "rank": 1,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0280091617857345,
+        "selection_score": 0.6924571252342004,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.020021113351935,
+          "track_error_m": 1.0360120664332872
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006605785372427816,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012376808542228935
+        },
+        "rank": 1,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0280165898926112,
+        "selection_score": 0.6924600241773281,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0205894768628532,
+          "track_error_m": 1.0355832837458405
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0066094661662050224,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012371686052442672
+        },
+        "rank": 1,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0280863803043467,
+        "selection_score": 0.6925164772573418,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.021839954676686,
+          "track_error_m": 1.0341625311077791
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006617564418234354,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012354712907093418
+        },
+        "rank": 1,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0280012428922327,
+        "selection_score": 0.6924843864557357,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0209820203396711,
+          "track_error_m": 1.035170329201525
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006612008327267438,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012366752654949308
+        },
+        "rank": 1,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.028076174770598,
+        "selection_score": 0.6925172212743314,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.020026156876972,
+          "track_error_m": 1.0359744673566107
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0066058180349320315,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012376359361578953
+        },
+        "rank": 1,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0280003121167913,
+        "selection_score": 0.6924494606518627,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0199648295358312,
+          "track_error_m": 1.0360795073094333
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0066054208713363614,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012377614230539935
+        },
+        "rank": 1,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0280221684226323,
+        "selection_score": 0.6924626122207227,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0208004854860937,
+          "track_error_m": 1.0354035665542505
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006610832684660977,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01236953904533327
+        },
+        "rank": 1,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.028102026020172,
+        "selection_score": 0.6925307145187011,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0276092873095395,
+          "track_error_m": 1.0315839822601136
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0066549273439776594,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012323908048310052
+        },
+        "rank": 1,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0295966347848267,
+        "selection_score": 0.6936382279102762,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0227070834951137,
+          "track_error_m": 1.0333327104730166
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00662318005382248,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012344799382479553
+        },
+        "rank": 1,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0280198969840653,
+        "selection_score": 0.6925130071770893,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0199544252898745,
+          "track_error_m": 1.036035118121044
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00660535349212739,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01237708393122795
+        },
+        "rank": 1,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0279947717054592,
+        "selection_score": 0.6924444755697865,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.019931757670907,
+          "track_error_m": 1.0361062458854906
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006605206693768176,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012377933665271706
+        },
+        "rank": 1,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.028019001778199,
+        "selection_score": 0.6924599129452588,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0209564943088085,
+          "track_error_m": 1.0351780171331557
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006611843017472297,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012366844499495296
+        },
+        "rank": 1,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0280672557209822,
+        "selection_score": 0.692510897996433,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.042477369862575,
+          "track_error_m": 1.0372489424390439
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006751214921714304,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012391584989347382
+        },
+        "rank": 1,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0398631561508096,
+        "selection_score": 0.7006422077248702,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0269908586164516,
+          "track_error_m": 1.0316549937946862
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006650922321766634,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012324756393803477
+        },
+        "rank": 1,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0293229262055688,
+        "selection_score": 0.6934472987528795,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0199276575767173,
+          "track_error_m": 1.0360609874365432
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006605180141041111,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012377392981262619
+        },
+        "rank": 1,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0279943225066304,
+        "selection_score": 0.6924436749929823,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0199193822409824,
+          "track_error_m": 1.036116590272397
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006605126548923228,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012378057245392416
+        },
+        "rank": 1,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0280179862566898,
+        "selection_score": 0.6924590138274924,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0210126330846483,
+          "track_error_m": 1.0350581280343671
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006612206579264709,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012365412233916464
+        },
+        "rank": 1,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0280353805595077,
+        "selection_score": 0.692491087755758,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0536555987664153,
+          "track_error_m": 1.0464031942367384
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006823606541864189,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012500947057144031
+        },
+        "rank": 1,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0500293965015768,
+        "selection_score": 0.7075107114016624,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.030509502965925,
+          "track_error_m": 1.031391949666483
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006673709506335929,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012321613914175671
+        },
+        "rank": 1,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0309507263162039,
+        "selection_score": 0.6945797795171555,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9957022984128234,
+          "track_error_m": 1.0092043301360587
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006448293659857612,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012056547581617118
+        },
+        "rank": 2,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0024533142744412,
+        "selection_score": 0.6752606819870146,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9927825601243618,
+          "track_error_m": 1.007578970722706
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006429385066471876,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012037130083575197
+        },
+        "rank": 2,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.000180765423534,
+        "selection_score": 0.6737173405361432,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9930030341971046,
+          "track_error_m": 1.0081061318091131
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006430812884372564,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012043427859488016
+        },
+        "rank": 2,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0005545830031088,
+        "selection_score": 0.6739662935219723,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0094691592154637,
+          "track_error_m": 1.0184562346327501
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006537449586655524,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01216707626590239
+        },
+        "rank": 2,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.013962696924107,
+        "selection_score": 0.6830576725007658,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0273856604481733,
+          "track_error_m": 1.0313660771873705
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006653479108220225,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012321304826346618
+        },
+        "rank": 2,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0293758688177719,
+        "selection_score": 0.6934894359089369,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0049520391220275,
+          "track_error_m": 1.0141213510567992
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006508196147243212,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012115289201049846
+        },
+        "rank": 2,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0095366950894133,
+        "selection_score": 0.6800739939172882,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0037857603071485,
+          "track_error_m": 1.0148111061121798
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006500643178550061,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012123529419999102
+        },
+        "rank": 2,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0092984332096642,
+        "selection_score": 0.6798959107217195,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0005773749760567,
+          "track_error_m": 1.014694387021106
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006479865270512852,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012122135025194013
+        },
+        "rank": 2,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0076358809985813,
+        "selection_score": 0.6787465437030202,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0019057903752382,
+          "track_error_m": 1.0156979530789445
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006488468256174182,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012134124214663694
+        },
+        "rank": 2,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0088018717270915,
+        "selection_score": 0.6795351860856371,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0054073484225086,
+          "track_error_m": 1.0172011906563152
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00651114478769553,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012152082773537102
+        },
+        "rank": 2,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0113042695394119,
+        "selection_score": 0.6812400440913036,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0119218150553149,
+          "track_error_m": 1.0180878503424895
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006553333295196859,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012162675330837784
+        },
+        "rank": 2,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.015004832698902,
+        "selection_score": 0.6837864828589713,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0144819507891618,
+          "track_error_m": 1.0219647324342285
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006569913057086788,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012208990840999207
+        },
+        "rank": 2,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0182233416116953,
+        "selection_score": 0.6859424504931797,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0097063301146902,
+          "track_error_m": 1.0224113123747167
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006538985535310282,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012214325947221716
+        },
+        "rank": 2,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0160588212447035,
+        "selection_score": 0.6844347352738973,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.99576630018054,
+          "track_error_m": 1.0141965095356156
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006448708143377078,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012116187088374497
+        },
+        "rank": 2,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0049814048580779,
+        "selection_score": 0.6769173268607517,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9908214940386199,
+          "track_error_m": 1.008223734789126
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0064166849551761515,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012044832813749433
+        },
+        "rank": 2,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 0.9995226144138729,
+        "selection_score": 0.6732492701973496,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.015896915405252,
+          "track_error_m": 1.0206719878358488
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006579076546392177,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012193546954864532
+        },
+        "rank": 2,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.0182844516205503,
+        "selection_score": 0.6860092368559813,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0220074777832044,
+          "track_error_m": 1.02697964915617
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006618649318999736,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012268901981162254
+        },
+        "rank": 2,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0244935634696872,
+        "selection_score": 0.6901906715621002,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0174890071172895,
+          "track_error_m": 1.0298496984642824
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006589387133109721,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012303189275629352
+        },
+        "rank": 2,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0236693527907859,
+        "selection_score": 0.6895654776511908,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9933942567109796,
+          "track_error_m": 1.0142078226211582
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006433346490712366,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012116322241137982
+        },
+        "rank": 2,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0038010396660688,
+        "selection_score": 0.676099526831466,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.997311506181051,
+          "track_error_m": 1.016348279284788
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006458715092313674,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012141893393421843
+        },
+        "rank": 2,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0068298927329196,
+        "selection_score": 0.678156980836951,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0172765934427368,
+          "track_error_m": 1.021718334573531
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006588011515364267,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01220604722745852
+        },
+        "rank": 2,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.019497464008134,
+        "selection_score": 0.6868296396382928,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0244886151369503,
+          "track_error_m": 1.0286362046818391
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006634717477417065,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012288692166281782
+        },
+        "rank": 2,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0265624099093946,
+        "selection_score": 0.6915923272777187,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.020522565883794,
+          "track_error_m": 1.0331317072276915
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006609032842265999,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012342398079672029
+        },
+        "rank": 2,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0268271365557426,
+        "selection_score": 0.6916906384626431,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9935319896489464,
+          "track_error_m": 1.0146189849568787
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006434238466589152,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012121234227854999
+        },
+        "rank": 2,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0040754873029125,
+        "selection_score": 0.6762818453671994,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.005439133803593,
+          "track_error_m": 1.036742076578674
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006511350633832121,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012385529672123146
+        },
+        "rank": 2,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0210906051911335,
+        "selection_score": 0.6876488939375254,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0909778879268686,
+          "track_error_m": 1.0655839969249796
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007065310393455523,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012730092189956937
+        },
+        "rank": 4,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.078280942425924,
+        "selection_score": 0.7267163962602077,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0588393723873677,
+          "track_error_m": 1.0340679483932373
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006857177313597274,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012353582966441935
+        },
+        "rank": 4,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.0464536603903025,
+        "selection_score": 0.7052673373253637,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0069560185797906,
+          "track_error_m": 1.0200465095045799
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006521174170948266,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01218607462340793
+        },
+        "rank": 4,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0135012640421852,
+        "selection_score": 0.6827079712995736,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0130007573568112,
+          "track_error_m": 1.0862008216970886
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006560320661614693,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012976392885885663
+        },
+        "rank": 4,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.04960078952695,
+        "selection_score": 0.7064608796487002,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0320311845132648,
+          "track_error_m": 1.1470542342494063
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006683564107946947,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013703383488315879
+        },
+        "rank": 4,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0895427093813357,
+        "selection_score": 0.7329755329869378,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0984232960683604,
+          "track_error_m": 1.1959209739814307
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007113527795574975,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.014287174258078255
+        },
+        "rank": 4,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.1471721350248956,
+        "selection_score": 0.7719683106976425,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1218022511444508,
+          "track_error_m": 1.1043266650001222
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007264932857139619,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013192934854359479
+        },
+        "rank": 4,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.1130644580722864,
+        "selection_score": 0.7500763808278688,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0405096521795678,
+          "track_error_m": 1.0067262867432725
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006738471733835807,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012026943420019425
+        },
+        "rank": 4,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0236179694614203,
+        "selection_score": 0.6899673722781383,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9954024519513333,
+          "track_error_m": 1.0155502845471502
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00644635181635716,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012132360079664745
+        },
+        "rank": 4,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0054763682492418,
+        "selection_score": 0.6772345529133471,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0145547359043339,
+          "track_error_m": 1.0981390418532648
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006570384422672108,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013119013874574202
+        },
+        "rank": 4,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0563468888787995,
+        "selection_score": 0.710907733611346,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.095433604423931,
+          "track_error_m": 1.252124326186945
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0070941661754336605,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01495861250886421
+        },
+        "rank": 4,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.173778965305438,
+        "selection_score": 0.789334323257515,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1370072777391964,
+          "track_error_m": 1.2092584174463104
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007363402526984866,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.014446511190104467
+        },
+        "rank": 4,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.1731328475927534,
+        "selection_score": 0.7896977920912733,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0932214205174469,
+          "track_error_m": 1.0370657076336076
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007079839793460495,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012389395958757264
+        },
+        "rank": 4,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0651435640755271,
+        "selection_score": 0.7181562783646338,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0172489050320197,
+          "track_error_m": 1.0154470475066977
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006587832201724475,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012131126749353694
+        },
+        "rank": 4,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0163479762693588,
+        "selection_score": 0.6847667810425575,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0121418708257206,
+          "track_error_m": 1.090617305537885
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006554758404118857,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01302915479542169
+        },
+        "rank": 4,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0513795881818027,
+        "selection_score": 0.7076094155597783,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.092111464940958,
+          "track_error_m": 1.2691559699348356
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007072651581162498,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01516208252688515
+        },
+        "rank": 4,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.180633717437897,
+        "selection_score": 0.7937600706201271,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1392835409297826,
+          "track_error_m": 1.2582476058564362
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007378143894483385,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.015031764803683255
+        },
+        "rank": 4,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.1987655733931093,
+        "selection_score": 0.8065255752456912,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.116520485953532,
+          "track_error_m": 1.0719502214156593
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007230727479640995,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012806146846278904
+        },
+        "rank": 4,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0942353536845957,
+        "selection_score": 0.7376468544787345,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0297597369909344,
+          "track_error_m": 1.0262229283318904
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00666885392732339,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01225986174981218
+        },
+        "rank": 4,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0279913326614123,
+        "selection_score": 0.6926277361417038,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0259696962282934,
+          "track_error_m": 1.1351974427734897
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006644309145354627,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013561735294460597
+        },
+        "rank": 4,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0805835695008916,
+        "selection_score": 0.7269942645802472,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0912066089450736,
+          "track_error_m": 1.2737084414587476
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007066791619615109,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01521646902514225
+        },
+        "rank": 4,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.1824575252019107,
+        "selection_score": 0.7949372094892796,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1389288413935308,
+          "track_error_m": 1.2708409129902258
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007375846815552853,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.015182211846105263
+        },
+        "rank": 4,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.2048848771918783,
+        "selection_score": 0.8105258820817085,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1230244751413914,
+          "track_error_m": 1.088551508783969
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007272848133887458,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013004475574263196
+        },
+        "rank": 4,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.1057879919626803,
+        "selection_score": 0.7453347588875339,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0322938154932608,
+          "track_error_m": 1.030778828934075
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0066852649392957235,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012314289213852043
+        },
+        "rank": 4,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0315363222136678,
+        "selection_score": 0.6949969955071926,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.035065496314967,
+          "track_error_m": 1.1745857019287755
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006703214693854136,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.014032290569028976
+        },
+        "rank": 4,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.1048255991218712,
+        "selection_score": 0.74304042058959,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1337769332167058,
+          "track_error_m": 1.0812213782178868
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007342482408454723,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012916905529911997
+        },
+        "rank": 8,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.1074991557172962,
+        "selection_score": 0.7466586883099061,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1203170434202425,
+          "track_error_m": 1.0738559041896956
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007255314464607182,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012828913251807047
+        },
+        "rank": 8,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.097086473804969,
+        "selection_score": 0.7395856426759475,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0728034073592985,
+          "track_error_m": 1.047820236959263
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006947610165182596,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012517875881663637
+        },
+        "rank": 8,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0603118221592807,
+        "selection_score": 0.7146060762773252,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0680372565337037,
+          "track_error_m": 1.0788752747490817
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006916743971341729,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012888877600127717
+        },
+        "rank": 8,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0734562656413926,
+        "selection_score": 0.7231230936218174,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0450991403309902,
+          "track_error_m": 1.0592715032290996
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006768193837918505,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012654679433262985
+        },
+        "rank": 8,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.052185321780045,
+        "selection_score": 0.7087605609011358,
+        "velocity_persistence": 0.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.3396859357202937,
+          "track_error_m": 1.3177447302933942
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.008675975077365882,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01574255239180911
+        },
+        "rank": 8,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.328715333006844,
+        "selection_score": 0.8954102797933208,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.204323886871922,
+          "track_error_m": 1.0720205174024997
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007799353377520812,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012806986643418916
+        },
+        "rank": 8,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.138172202137211,
+        "selection_score": 0.7680786074176604,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0967343937054284,
+          "track_error_m": 1.0251785472847967
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007102590250872736,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012247384960512309
+        },
+        "rank": 8,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.0609564704951127,
+        "selection_score": 0.7154809668134825,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.015881928247837,
+          "track_error_m": 1.016255959715127
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006578979487670617,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012140790489628139
+        },
+        "rank": 8,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.016068943981482,
+        "selection_score": 0.6845582036102593,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0057636741357598,
+          "track_error_m": 1.0097980799636959
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006513452397953401,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012063640865736814
+        },
+        "rank": 8,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0077808770497279,
+        "selection_score": 0.6789396120995932,
+        "velocity_persistence": 0.5
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.3988825712841884,
+          "track_error_m": 1.407659952160906
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.009059339955000523,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01681673243482494
+        },
+        "rank": 8,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.4032712617225471,
+        "selection_score": 0.9453506658708446,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.2992919551373654,
+          "track_error_m": 1.2598974274632007
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.008414378564729014,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.015051474541453063
+        },
+        "rank": 8,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.2795946913002831,
+        "selection_score": 0.8624810634213036,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.1575645955644016,
+          "track_error_m": 1.0446487194829266
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00749653430985536,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012479987071422182
+        },
+        "rank": 8,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.101106657523664,
+        "selection_score": 0.7429228315659868,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0414028139012828,
+          "track_error_m": 1.0633675643737317
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006744255961788822,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012703613385102857
+        },
+        "rank": 8,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0523851891375071,
+        "selection_score": 0.7088215042367092,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0145855699844246,
+          "track_error_m": 1.034292811852168
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006570584108063488,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.012356269317373068
+        },
+        "rank": 8,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0244391909182964,
+        "selection_score": 0.6900146480698328,
+        "velocity_persistence": 0.8
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.4058711160637822,
+          "track_error_m": 1.4280030890400477
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.009104598652369927,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.017059763494461453
+        },
+        "rank": 8,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.4169371025519149,
+        "selection_score": 0.9544314965681344,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.3262714601748615,
+          "track_error_m": 1.3310629668855665
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.008589101241935543,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.015901659867254753
+        },
+        "rank": 8,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.328667213530214,
+        "selection_score": 0.8951249739674852,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.2136056012961112,
+          "track_error_m": 1.1223390940137161
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007859462930717096,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013408121909129267
+        },
+        "rank": 8,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.1679723476549135,
+        "selection_score": 0.787767823679914,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0669271449084299,
+          "track_error_m": 1.1161092215246526
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006909554748452118,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013333696193891131
+        },
+        "rank": 8,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.0915181832165413,
+        "selection_score": 0.7349293221130602,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.04049047437985,
+          "track_error_m": 1.1505522562021644
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00673834753598618,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013745172912771959
+        },
+        "rank": 8,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.0955213652910072,
+        "selection_score": 0.7370504984423826,
+        "velocity_persistence": 0.95
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.407522095616413,
+          "track_error_m": 1.4336599911994574
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.009115290604169931,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.017127344169665534
+        },
+        "rank": 8,
+        "ridge": 0.001,
+        "score_relative_to_persistence": 1.4205910434079352,
+        "selection_score": 0.9568553911096496,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.33243535141883,
+          "track_error_m": 1.3485320942326982
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.008629019379005119,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01611035632126385
+        },
+        "rank": 8,
+        "ridge": 0.01,
+        "score_relative_to_persistence": 1.340483722825764,
+        "selection_score": 0.9029792308070594,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.2350785680498322,
+          "track_error_m": 1.1684140537593608
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.007998524571527877,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013958560435705513
+        },
+        "rank": 8,
+        "ridge": 0.1,
+        "score_relative_to_persistence": 1.2017463109045965,
+        "selection_score": 0.8102898126352833,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0760368434033134,
+          "track_error_m": 1.1506123214821318
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.006968550304796026,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.013745890487879699
+        },
+        "rank": 8,
+        "ridge": 1.0,
+        "score_relative_to_persistence": 1.1133245824427225,
+        "selection_score": 0.749380851492867,
+        "velocity_persistence": 1.0
+      },
+      {
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0529146984361109,
+          "track_error_m": 1.1924082899970532
+        },
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00681880837788475,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.014245209672382192
+        },
+        "rank": 8,
+        "ridge": 10.0,
+        "score_relative_to_persistence": 1.122661494216582,
+        "selection_score": 0.7550573484716112,
+        "velocity_persistence": 1.0
+      }
+    ],
+    "dynamic_accepted": false,
+    "persistence_accepted": true,
+    "persistence_official_evaluation": {
+      "chamfer_distance_m": 0.006476126117350906,
+      "frame_count": 11,
+      "frame_end_exclusive": 43,
+      "frame_start": 32,
+      "track_error_m": 0.01194658724858194
+    },
+    "persistence_selection_score": 0.6737355234866991,
+    "selected_dynamic_candidate": {
+      "metric_ratios_relative_to_persistence": {
+        "chamfer_distance_m": 0.9908214940386199,
+        "track_error_m": 1.008223734789126
+      },
+      "official_evaluation": {
+        "chamfer_distance_m": 0.0064166849551761515,
+        "frame_count": 11,
+        "frame_end_exclusive": 43,
+        "frame_start": 32,
+        "track_error_m": 0.012044832813749433
+      },
+      "rank": 2,
+      "ridge": 10.0,
+      "score_relative_to_persistence": 0.9995226144138729,
+      "selection_score": 0.6732492701973496,
+      "velocity_persistence": 0.8
+    },
+    "selected_method": "persistence"
+  },
+  "test": {
+    "baseline_official_evaluation": {
+      "chamfer_distance_m": 0.019588933060811154,
+      "frame_count": 19,
+      "frame_end_exclusive": 62,
+      "frame_start": 43,
+      "track_error_m": 0.02813274169514534
+    },
+    "corrected_official_evaluation": {
+      "chamfer_distance_m": 0.01593821755138789,
+      "frame_count": 19,
+      "frame_end_exclusive": 62,
+      "frame_start": 43,
+      "track_error_m": 0.022463433359351675
+    },
+    "persistence_official_evaluation": {
+      "chamfer_distance_m": 0.01593821755138789,
+      "frame_count": 19,
+      "frame_end_exclusive": 62,
+      "frame_start": 43,
+      "track_error_m": 0.022463433359351675
+    },
+    "selection_score_relative_to_baseline": 0.8060569188897027,
+    "selection_score_relative_to_persistence": 1.0
+  }
+}

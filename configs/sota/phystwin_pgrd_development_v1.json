@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-pgrd-development-v1",
+  "completed_at_utc": "2026-07-18T17:35:00Z",
+  "status": "Development gate failed; the exploratory 19-case cohort remains closed.",
+  "claim_boundary": "These three released sloth interactions were examined previously and can reject an adapter family but cannot confirm transfer.",
+  "upstream": {
+    "repository": "https://github.com/shivanshpatel35/pgrd",
+    "commit": "e294d96723054f77a1cfdd3c2c052de7b7cd9ce3",
+    "checkpoint": "sloth/002500.pt",
+    "checkpoint_sha256": "79cc402835b73d6f7dc38a59ea37531f52ea3d2909d434ed9a2a8673509e073c"
+  },
+  "gate": {
+    "reference": "exact temporally filled endpoint persistence",
+    "minimum_balanced_validation_improvement": 0.01,
+    "maximum_individual_metric_ratio": 1.02,
+    "future_opened_only_after_validation_pass": true
+  },
+  "adapter": {
+    "source_fps": 30,
+    "pgrd_dt_seconds": 0.1,
+    "model_frame_stride": 3,
+    "number_of_points": 512,
+    "normalized_extent_candidates": [0.25, 0.5, 0.75],
+    "yaw_candidates_degrees": [0, 90, 180, 270],
+    "gravity_frame_map": "PhysTwin -z to PGRD -y",
+    "temporal_prefix_warmup_steps": 5,
+    "dense_endpoint_preserved_exactly": true,
+    "maximum_residual_m": 0.01
+  },
+  "episodes": [
+    {
+      "case": "single_lift_sloth",
+      "fit_end_frame": 44,
+      "train_end_frame": 59
+    },
+    {
+      "case": "double_lift_sloth",
+      "fit_end_frame": 32,
+      "train_end_frame": 43
+    },
+    {
+      "case": "double_stretch_sloth",
+      "fit_end_frame": 100,
+      "train_end_frame": 134
+    }
+  ]
+}

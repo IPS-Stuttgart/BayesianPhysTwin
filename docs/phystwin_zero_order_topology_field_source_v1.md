@@ -94,14 +94,39 @@ The selected stack records `0/4` two-metric wins. Equal-case CD improves from
 threshold, so the gate selects the exact teacher and records
 `future_metrics_opened=false`.
 
+## Post-gate diagnostics
+
+All diagnostics below use only the already-open four source suffixes. They are
+not a second selection opportunity and do not authorize a 19-case future run.
+
+The bank has limited oracle headroom. The balanced future oracle improves the
+equal-object source aggregate by `6.54%` CD and `5.62%` track error. Requiring
+the oracle choice to improve both metrics gives `6.62%` and `4.59%`, but only
+cloth and dinosaur contain a non-teacher candidate that improves both metrics;
+rope and zebra fall back to the released teacher. The complete oracle record is
+`results/sota/phystwin_zero_order_topology_field_source_v1_oracle.json`.
+
+A Bayesian ensemble does not solve the selection problem. Its strongest
+aggregate softmax policy improves CD by `5.42%` and track error by `3.02%`, but
+it records only one of four two-metric wins and is confidently wrong on rope.
+The best policy by win count reaches only two of four wins and improves the
+aggregate by `2.96%` CD and `1.41%` track error. An action-matched selector also
+reaches only two of four wins; its best policy improves CD by `1.05%` while
+worsening track error by `0.47%`.
+
+Finally, composing each selected spring field with the fixed Bayesian anchor
+does not explain the anchor discrepancy. Cloth improves both metrics, but its
+required anchor RMS shrinks by only `0.14%`. Dinosaur and zebra do not improve
+both metrics and require a *larger* anchor correction. The effects are additive
+rather than mechanistically explanatory.
+
 ## Interpretation
 
-Object-specific zero-order search can materially improve one metric, as the
-cloth CD result shows, but late-fit selection does not yet identify candidates
-that jointly transfer in CD and material-point tracking. The next diagnostic
-must separate proposal support from selection failure: rerun the frozen bank on
-these already-open source suffixes and measure its two-metric oracle. If the
-oracle wins, improve the future-blind selector; if it does not, replace the
-piecewise field model rather than expanding the same search.
+The family fails for both proposal support and future-blind selection. A
+piecewise static spring field can help particular objects, but neither
+ensembling, action matching, nor composition with the endpoint anchor makes it
+transfer reliably. This closes the static zero-order field branch on the
+released cases. A credible successor must model a correction that evolves
+during the rollout rather than enlarging this candidate bank.
 
 No exploratory 19-case future run is justified for this family.

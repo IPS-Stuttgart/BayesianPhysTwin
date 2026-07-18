@@ -1,0 +1,1242 @@
+{
+  "config": {
+    "fit_end_frame": 44,
+    "history_length": 2,
+    "interpolation_neighbors": 4,
+    "maximum_metric_ratio": 1.02,
+    "maximum_readout_gain": 5.0,
+    "maximum_residual_m": 0.01,
+    "minimum_dynamic_improvement": 0.01,
+    "model_frame_stride": 3,
+    "normalized_extent_candidates": [
+      0.25,
+      0.5,
+      0.75
+    ],
+    "number_of_points": 512,
+    "ridge_candidates": [
+      1e-08,
+      1e-06,
+      0.0001,
+      0.01
+    ],
+    "simulation_dt": 0.1,
+    "temporal_window": 5,
+    "train_end_frame": 59,
+    "yaw_candidates_degrees": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ]
+  },
+  "contract": {
+    "fallback": "exact temporally filled endpoint persistence",
+    "fit_interval": [
+      0,
+      44
+    ],
+    "future_observations_used": false,
+    "learned_parameters": "spectrally bounded 3x3 PGRD velocity readout",
+    "released_case_status": "development-only; cannot confirm transfer",
+    "selection_interval": [
+      44,
+      59
+    ]
+  },
+  "inputs": {
+    "baseline_trajectory": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_sloth/inference.pkl",
+      "sha256": "001d0c5ff883ebb92180d97f708abdf1c918e1b98e439faa9bf977871c780666"
+    },
+    "final_data": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_sloth/final_data.pkl",
+      "sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2"
+    },
+    "gt_track_3d": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_sloth/gt_track_3d.pkl",
+      "sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255"
+    }
+  },
+  "outputs": {
+    "model": "/mnt/corsair/florianpfaff/pgrd-bpt-adapter-v1/calibrated_v2/single_lift_sloth/calibrated_pgrd_model.npz",
+    "summary": "/mnt/corsair/florianpfaff/pgrd-bpt-adapter-v1/calibrated_v2/single_lift_sloth/summary.json",
+    "trajectory": "/mnt/corsair/florianpfaff/pgrd-bpt-adapter-v1/calibrated_v2/single_lift_sloth/trajectory.pkl"
+  },
+  "pgrd": {
+    "checkout": "/mnt/corsair/florianpfaff/pgrd-bpt-adapter-v1",
+    "checkpoint": "/mnt/corsair/florianpfaff/pgrd-bpt-adapter-v1/checkpoints/sloth/002500.pt",
+    "checkpoint_sha256": "79cc402835b73d6f7dc38a59ea37531f52ea3d2909d434ed9a2a8673509e073c",
+    "commit": "e294d96723054f77a1cfdd3c2c052de7b7cd9ce3"
+  },
+  "schema_version": 1,
+  "selection": {
+    "candidates": [
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9863618949054408,
+          "track_error_m": 1.0141475712897154
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005521772950925462,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008457296221289878
+        },
+        "readout_singular_values": [
+          0.11657184663013967,
+          0.01684434176085719,
+          0.004867714803838558
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 1.0002547330975782,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.988472936617223,
+          "track_error_m": 1.00095492526848
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0055335908172507945,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008347278588252195
+        },
+        "readout_singular_values": [
+          0.041620890439222104,
+          0.009533199835819824,
+          0.002566193854677826
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9947139309428514,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9979920182762856,
+          "track_error_m": 1.0005056315806142
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005586879785421753,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008343531786587222
+        },
+        "readout_singular_values": [
+          0.0033284411963295226,
+          0.00028105737883222197,
+          4.230738468852149e-05
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9992488249284499,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997568642887291,
+          "track_error_m": 1.00158029549808
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596759606433081,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352493747691937
+        },
+        "readout_singular_values": [
+          3.9428933580892385e-05,
+          2.8357395753853203e-06,
+          4.253283427016837e-07
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006685798934045,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9897371194752134,
+          "track_error_m": 0.9944052791692138
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005540667865488697,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008292659025208066
+        },
+        "readout_singular_values": [
+          0.032067063357736326,
+          0.014798152437930909,
+          0.0022494462107930245
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9920711993222135,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9905114028506323,
+          "track_error_m": 0.9943012980564722
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005545002397287647,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008291791893937656
+        },
+        "readout_singular_values": [
+          0.023046609744563584,
+          0.003824803473290782,
+          0.0014160669367400283
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9924063504535523,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9982357026273825,
+          "track_error_m": 1.0005052827416716
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005588243959834208,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008343528877509339
+        },
+        "readout_singular_values": [
+          0.003261019503518767,
+          5.127541446940992e-05,
+          3.0896920951619785e-05
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.999370492684527,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997600594781473,
+          "track_error_m": 1.001581297303949
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596777493489133,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352502102066815
+        },
+        "readout_singular_values": [
+          3.83766670473349e-05,
+          5.147296074426026e-07,
+          3.119295044082246e-07
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006706783910482,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9941840337572487,
+          "track_error_m": 0.9990357269519421
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0055655622284243025,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00833127378862553
+        },
+        "readout_singular_values": [
+          0.04423256169495394,
+          0.028844813241625328,
+          0.012091725607534501
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9966098803545954,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.992432389196427,
+          "track_error_m": 0.9988282700278313
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005555756310732694,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008329543739952108
+        },
+        "readout_singular_values": [
+          0.023632766489649713,
+          0.010038620971838944,
+          0.004931393426983826
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9956303296121292,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9986043308199065,
+          "track_error_m": 1.001179043615996
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0055903075849528805,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008349147581786497
+        },
+        "readout_singular_values": [
+          0.0030052594499670876,
+          0.0001540613516928449,
+          6.663218248029346e-05
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9998916872179513,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997646875504022,
+          "track_error_m": 1.001589243432857
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596803401996268,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352568367340123
+        },
+        "readout_singular_values": [
+          3.433783820177504e-05,
+          1.5488131288255658e-06,
+          6.682668779594022e-07
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006769654916297,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9930508250484927,
+          "track_error_m": 1.0265606923002086
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005559218389283637,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008560813149583608
+        },
+        "readout_singular_values": [
+          0.14398390646504777,
+          0.030617905858154847,
+          0.002000247810875138
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 1.0098057586743507,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9915213674181369,
+          "track_error_m": 1.0044875392683985
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005550656300848849,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.0083767381697555
+        },
+        "readout_singular_values": [
+          0.04127389691435587,
+          0.015497160596725353,
+          0.001579129676217791
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9980044533432677,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9985513330802478,
+          "track_error_m": 1.0014889401081455
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00559001089720894,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008351731906303209
+        },
+        "readout_singular_values": [
+          0.0032389568907384256,
+          0.0002788638409400052,
+          4.22840852443944e-05
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 1.0000201365941965,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997639660811417,
+          "track_error_m": 1.0015928005627057
+        },
+        "normalized_extent": 0.25,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00559679936312426,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352598031367016
+        },
+        "readout_singular_values": [
+          3.756185128928361e-05,
+          2.8058854712085133e-06,
+          4.266411777467634e-07
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006783833219237,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9812175124279503,
+          "track_error_m": 0.9943716663877376
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005492974076840667,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008292378717629747
+        },
+        "readout_singular_values": [
+          0.14186574210795647,
+          0.10258368979595872,
+          0.018613316105812756
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9877945894078439,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9838536803515322,
+          "track_error_m": 0.9934515085038141
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005507731663087373,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00828470523103371
+        },
+        "readout_singular_values": [
+          0.07077954643603064,
+          0.04920531904653684,
+          0.01692434106956475
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9886525944276732,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.996310357928036,
+          "track_error_m": 0.9988787263264142
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005577465647799883,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008329964510928075
+        },
+        "readout_singular_values": [
+          0.008760205849129779,
+          0.0008631497592079153,
+          0.0007475783067338852
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9975945421272251,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.999731588510934,
+          "track_error_m": 1.0015575732519737
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596618109577957,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00835230425972039
+        },
+        "readout_singular_values": [
+          0.00011520283057045825,
+          8.742879767479084e-06,
+          7.561167309056602e-06
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.000644580881454,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9891068251736903,
+          "track_error_m": 0.9999258466923242
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005537139401906265,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00833869677767559
+        },
+        "readout_singular_values": [
+          0.12701587441206405,
+          0.020780149111610646,
+          0.012990861474720936
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9945163359330073,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9891145239002492,
+          "track_error_m": 0.9968542039852241
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005537182500306851,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008313081381065337
+        },
+        "readout_singular_values": [
+          0.06304253202179642,
+          0.01814146006733813,
+          0.0069328347730830435
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9929843639427367,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9970542515415977,
+          "track_error_m": 0.999941269192593
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005581630054043623,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008338825390765971
+        },
+        "readout_singular_values": [
+          0.007978842139531627,
+          0.000674579148040362,
+          0.00013808647287988612
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9984977603670953,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997419209752687,
+          "track_error_m": 1.001571906486092
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596675951960529,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352423789077043
+        },
+        "readout_singular_values": [
+          0.00010428978687749172,
+          6.828415502191251e-06,
+          1.3941148292257197e-06
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006569137306802,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9881108142437917,
+          "track_error_m": 0.9968015613504092
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005531563612492718,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008312642377542475
+        },
+        "readout_singular_values": [
+          0.09270598538802968,
+          0.038886987518428125,
+          0.002881629003192904
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9924561877971004,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9885447351556184,
+          "track_error_m": 0.9945817545872294
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005533992754135497,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008294130709337858
+        },
+        "readout_singular_values": [
+          0.04382465765561938,
+          0.028267050139944287,
+          0.0017600089525875193
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9915632448714239,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9970204202537284,
+          "track_error_m": 0.9996015779129263
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005581440662410373,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008335992598125865
+        },
+        "readout_singular_values": [
+          0.008049033327011772,
+          0.0005416901354434795,
+          4.021912057725183e-05
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9983109990833273,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997419790467289,
+          "track_error_m": 1.0015680253578743
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596676277051574,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352391423125638
+        },
+        "readout_singular_values": [
+          0.00010300844947783191,
+          5.4527428512908745e-06,
+          4.069379719701155e-07
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006550022023015,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9896550686878397,
+          "track_error_m": 0.9921809120305173
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005540208535276671,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00827410932659474
+        },
+        "readout_singular_values": [
+          0.1432059181638644,
+          0.02410507667230648,
+          0.008337584467125757
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9909179903591785,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9895173741163968,
+          "track_error_m": 0.9928047487890166
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005539437704444691,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008279311697935677
+        },
+        "readout_singular_values": [
+          0.06322470422007843,
+          0.021476455573829198,
+          0.004256326824016012
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9911610614527067,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9970002314723846,
+          "track_error_m": 0.9994195151328473
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005581327643175433,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008334474319222884
+        },
+        "readout_singular_values": [
+          0.008413999270271129,
+          0.0006509240754504166,
+          8.516400764538518e-05
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9982098733026159,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997410393845308,
+          "track_error_m": 1.0015650153230835
+        },
+        "normalized_extent": 0.5,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596671016709163,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352366321496859
+        },
+        "readout_singular_values": [
+          0.00010963158273203187,
+          6.561193223608849e-06,
+          8.602460309839128e-07
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006530273538072,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9882706846376604,
+          "track_error_m": 0.9914087592169843
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005532458586255469,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008267670100926779
+        },
+        "readout_singular_values": [
+          0.11263612966373393,
+          0.06927651222449775,
+          0.01083863924875842
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9898397219273224,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.989910749062425,
+          "track_error_m": 0.992883857245477
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005541639864876648,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008279971408286355
+        },
+        "readout_singular_values": [
+          0.06640567615974287,
+          0.04729486763123266,
+          0.00971864592573134
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.991397303153951,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9964166712633699,
+          "track_error_m": 0.998820000619156
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005578060802684111,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008329474778746933
+        },
+        "readout_singular_values": [
+          0.012137161098092555,
+          0.0014283738481975258,
+          0.00044168151563842695
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9976183359412629,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997199011353253,
+          "track_error_m": 1.0015470899340346
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596552682238522,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352216836028116
+        },
+        "readout_singular_values": [
+          0.00020092617313018267,
+          1.4491253040407657e-05,
+          4.497603701787339e-06
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.00063349553468,
+        "yaw_degrees": 0.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9929773365542304,
+          "track_error_m": 0.9963366909292024
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005558806991821997,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008308765676588923
+        },
+        "readout_singular_values": [
+          0.10510229942866396,
+          0.0305968663974232,
+          0.009997988527678504
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9946570137417163,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9927980201020008,
+          "track_error_m": 0.9957691060484366
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005557803156677218,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008304032407385056
+        },
+        "readout_singular_values": [
+          0.06874514799071671,
+          0.029836655004285957,
+          0.006012839249451748
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9942835630752187,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9967126223013426,
+          "track_error_m": 0.9989485977308237
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005579717572318782,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.0083305471905905
+        },
+        "readout_singular_values": [
+          0.011683301557450829,
+          0.0019087986881527923,
+          0.00014581017080350563
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9978306100160832,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.999726998658755,
+          "track_error_m": 1.0015504300456937
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596592415031421,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352244690271928
+        },
+        "readout_singular_values": [
+          0.0001875206763174109,
+          1.944746153462568e-05,
+          1.4790026201834255e-06
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.0006387143522244,
+        "yaw_degrees": 90.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.993603906289194,
+          "track_error_m": 0.9937535547379464
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005562314604831239,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008287224089774683
+        },
+        "readout_singular_values": [
+          0.08187370640396166,
+          0.025898785236926382,
+          0.018670785331559078
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9936787305135701,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9931596439249633,
+          "track_error_m": 0.9947239743166169
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00555982757048959,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008295316724483968
+        },
+        "readout_singular_values": [
+          0.04822477722107675,
+          0.02426465366931236,
+          0.012582674922659609
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9939418091207901,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9966669142169908,
+          "track_error_m": 0.9991027203029907
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005579461692945181,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008331832467293916
+        },
+        "readout_singular_values": [
+          0.011503899826033805,
+          0.00093137429963646,
+          0.0003652103732325051
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9978848172599908,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997250143997285,
+          "track_error_m": 1.0015521479558915
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596581306909871,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352259016466494
+        },
+        "readout_singular_values": [
+          0.00018857407273557389,
+          9.445927573815381e-06,
+          3.7217284463524533e-06
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.00063858117781,
+        "yaw_degrees": 180.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9911732290277384,
+          "track_error_m": 0.9916917569454425
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.0055487073801157895,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008270030108175506
+        },
+        "readout_singular_values": [
+          0.13055995992317193,
+          0.0679937581426726,
+          0.017535538139784108
+        ],
+        "ridge": 1e-08,
+        "selection_score_relative_to_persistence": 0.9914324929865905,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9913406062168416,
+          "track_error_m": 0.9926238736163681
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005549644377824405,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008277803322865351
+        },
+        "readout_singular_values": [
+          0.08174881106210938,
+          0.04039116932647166,
+          0.0159720651820116
+        ],
+        "ridge": 1e-06,
+        "selection_score_relative_to_persistence": 0.9919822399166048,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9964068475545942,
+          "track_error_m": 0.9985061211574644
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.00557800580837657,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008326857238991917
+        },
+        "readout_singular_values": [
+          0.01234121653803595,
+          0.0016156358180930564,
+          0.0005937819518193508
+        ],
+        "ridge": 0.0001,
+        "selection_score_relative_to_persistence": 0.9974564843560293,
+        "yaw_degrees": 270.0
+      },
+      {
+        "calibration_pair_count": 4584,
+        "metric_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 0.9997212428693376,
+          "track_error_m": 1.0015431021441963
+        },
+        "normalized_extent": 0.75,
+        "official_evaluation": {
+          "chamfer_distance_m": 0.005596560193427484,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.008352183580591841
+        },
+        "readout_singular_values": [
+          0.00019825447673647043,
+          1.648928602969898e-05,
+          6.010694974861891e-06
+        ],
+        "ridge": 0.01,
+        "selection_score_relative_to_persistence": 1.000632172506767,
+        "yaw_degrees": 270.0
+      }
+    ],
+    "dynamic_accepted": true,
+    "persistence_official_evaluation": {
+      "chamfer_distance_m": 0.0055981207094935636,
+      "frame_count": 15,
+      "frame_end_exclusive": 59,
+      "frame_start": 44,
+      "track_error_m": 0.008339315165478861
+    },
+    "selected_candidate": {
+      "calibration_pair_count": 4584,
+      "metric_ratios_relative_to_persistence": {
+        "chamfer_distance_m": 0.9812175124279503,
+        "track_error_m": 0.9943716663877376
+      },
+      "normalized_extent": 0.5,
+      "official_evaluation": {
+        "chamfer_distance_m": 0.005492974076840667,
+        "frame_count": 15,
+        "frame_end_exclusive": 59,
+        "frame_start": 44,
+        "track_error_m": 0.008292378717629747
+      },
+      "readout_singular_values": [
+        0.14186574210795647,
+        0.10258368979595872,
+        0.018613316105812756
+      ],
+      "ridge": 1e-08,
+      "selection_score_relative_to_persistence": 0.9877945894078439,
+      "yaw_degrees": 0.0
+    },
+    "selected_method": "prefix_calibrated_pgrd"
+  },
+  "test": {
+    "baseline_official_evaluation": {
+      "chamfer_distance_m": 0.0178600324887817,
+      "frame_count": 26,
+      "frame_end_exclusive": 85,
+      "frame_start": 59,
+      "track_error_m": 0.024926414339721696
+    },
+    "corrected_official_evaluation": {
+      "chamfer_distance_m": 0.016257427947001843,
+      "frame_count": 26,
+      "frame_end_exclusive": 85,
+      "frame_start": 59,
+      "track_error_m": 0.02152471363450272
+    },
+    "future_metrics_opened": true,
+    "metric_ratios_relative_to_persistence": {
+      "chamfer_distance_m": 0.9875658061550021,
+      "track_error_m": 1.044399206051037
+    },
+    "persistence_official_evaluation": {
+      "chamfer_distance_m": 0.016462121152512017,
+      "frame_count": 26,
+      "frame_end_exclusive": 85,
+      "frame_start": 59,
+      "track_error_m": 0.020609661047033448
+    },
+    "selection_score_relative_to_persistence": 1.0159825061030197
+  }
+}

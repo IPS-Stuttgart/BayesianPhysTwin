@@ -1,0 +1,1722 @@
+{
+  "aggregate_balanced_oracle": {
+    "chamfer_distance_m": 0.010210710410166097,
+    "track_error_m": 0.019721309163173713
+  },
+  "aggregate_both_metric_oracle": {
+    "chamfer_distance_m": 0.010201946115576038,
+    "track_error_m": 0.019934924137615374
+  },
+  "aggregate_identity": {
+    "chamfer_distance_m": 0.010924739037361771,
+    "track_error_m": 0.020894796884520332
+  },
+  "cases": {
+    "single_lift_cloth": {
+      "best_balanced_oracle": {
+        "both_improve": true,
+        "candidate_id": "field_004",
+        "family": "field_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 0.9066467417325846,
+          "track_error_m": 0.950606466698768
+        },
+        "nested_score": 0.8597674776536687,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.02604840578068882,
+          "track_error_m": 0.0571805899221911
+        },
+        "outer_score": 0.9286266042156763
+      },
+      "best_both_metric_oracle": {
+        "both_improve": true,
+        "candidate_id": "field_004",
+        "family": "field_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 0.9066467417325846,
+          "track_error_m": 0.950606466698768
+        },
+        "nested_score": 0.8597674776536687,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.02604840578068882,
+          "track_error_m": 0.0571805899221911
+        },
+        "outer_score": 0.9286266042156763
+      },
+      "both_improving_candidate_count": 4,
+      "candidates": [
+        {
+          "both_improve": true,
+          "candidate_id": "field_004",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9066467417325846,
+            "track_error_m": 0.950606466698768
+          },
+          "nested_score": 0.8597674776536687,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.02604840578068882,
+            "track_error_m": 0.0571805899221911
+          },
+          "outer_score": 0.9286266042156763
+        },
+        {
+          "both_improve": true,
+          "candidate_id": "field_005",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9169831683911671,
+            "track_error_m": 0.9683952767352624
+          },
+          "nested_score": 0.9242341281290223,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.026345376390664827,
+            "track_error_m": 0.058250616991786935
+          },
+          "outer_score": 0.9426892225632147
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_000",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.8909366254329399,
+            "track_error_m": 1.0034439975989566
+          },
+          "nested_score": 0.8280408352009114,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.025597046430460593,
+            "track_error_m": 0.06035885694723773
+          },
+          "outer_score": 0.9471903115159483
+        },
+        {
+          "both_improve": true,
+          "candidate_id": "topology_004",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9814460733729999,
+            "track_error_m": 0.9662102545225608
+          },
+          "nested_score": 0.8843968955741852,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.028197427282680314,
+            "track_error_m": 0.058119184202833525
+          },
+          "outer_score": 0.9738281639477804
+        },
+        {
+          "both_improve": true,
+          "candidate_id": "field_002",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9905001804455091,
+            "track_error_m": 0.975229091134949
+          },
+          "nested_score": 0.9700762851713041,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.028457556221715412,
+            "track_error_m": 0.05866168250888769
+          },
+          "outer_score": 0.9828646357902291
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "exact_teacher",
+          "family": "identity",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "nested_score": 1.0,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.02873049069906854,
+            "track_error_m": 0.0601516946552718
+          },
+          "outer_score": 1.0
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_007",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9956757441076927,
+            "track_error_m": 1.0060049190851539
+          },
+          "nested_score": 0.8935755380281292,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.028606252705374213,
+            "track_error_m": 0.0605129007145116
+          },
+          "outer_score": 1.0008403315964234
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_003",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0072354472526923,
+            "track_error_m": 1.0242837630090595
+          },
+          "nested_score": 0.9680587465541566,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.028938368649065616,
+            "track_error_m": 0.06161240415287374
+          },
+          "outer_score": 1.015759605130876
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_006",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0332041161437033,
+            "track_error_m": 1.0067128153177012
+          },
+          "nested_score": 0.9900925203882397,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.029684461249106,
+            "track_error_m": 0.060555481872539396
+          },
+          "outer_score": 1.0199584657307024
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_007",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0136768040746225,
+            "track_error_m": 1.0577704763248987
+          },
+          "nested_score": 0.8871726183190607,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.029123431991327466,
+            "track_error_m": 0.06362668670725671
+          },
+          "outer_score": 1.0357236401997607
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_006",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0999033461595296,
+            "track_error_m": 0.9798904991213956
+          },
+          "nested_score": 0.9161308819952219,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.03160076285671073,
+            "track_error_m": 0.058942074098752066
+          },
+          "outer_score": 1.0398969226404626
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_001",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0881660256971775,
+            "track_error_m": 0.9985081502916774
+          },
+          "nested_score": 0.9352251996749699,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.031263543880335136,
+            "track_error_m": 0.06006195736714522
+          },
+          "outer_score": 1.0433370879944275
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_006",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.016450135747486,
+            "track_error_m": 1.0800176966762494
+          },
+          "nested_score": 0.910292750839236,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.029203111171160104,
+            "track_error_m": 0.06496489471275971
+          },
+          "outer_score": 1.0482339162118677
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_001",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0634126781621442,
+            "track_error_m": 1.0668707557159345
+          },
+          "nested_score": 1.0092744052212232,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.030552368059209054,
+            "track_error_m": 0.06417408393446396
+          },
+          "outer_score": 1.0651417169390394
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_000",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0614655594917044,
+            "track_error_m": 1.1150399688685346
+          },
+          "nested_score": 0.9762451870591322,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.030496426384357997,
+            "track_error_m": 0.06707154373580387
+          },
+          "outer_score": 1.0882527641801194
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_004",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0475347446110017,
+            "track_error_m": 1.147078759717462
+          },
+          "nested_score": 0.8728832476196705,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.030096187236997522,
+            "track_error_m": 0.06899873130007267
+          },
+          "outer_score": 1.097306752164232
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_007",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1996117823389145,
+            "track_error_m": 1.0702891753501418
+          },
+          "nested_score": 0.9924386995248325,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.03446543515498122,
+            "track_error_m": 0.06437970766850439
+          },
+          "outer_score": 1.1349504788445282
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_002",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1950440181345197,
+            "track_error_m": 1.084346957792917
+          },
+          "nested_score": 1.1003349979287957,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.034334201047991314,
+            "track_error_m": 0.06522530710553244
+          },
+          "outer_score": 1.1396954879637184
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_001",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1566253537923497,
+            "track_error_m": 1.1685174761675763
+          },
+          "nested_score": 1.056410609820381,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.03323041396943796,
+            "track_error_m": 0.07028830642578089
+          },
+          "outer_score": 1.162571414979963
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_003",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.120220290613798,
+            "track_error_m": 1.510736212443844
+          },
+          "nested_score": 1.0116520487200331,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.03218447864038758,
+            "track_error_m": 0.09087334335558393
+          },
+          "outer_score": 1.315478251528821
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_000",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.116589171006968,
+            "track_error_m": 1.5520852868769717
+          },
+          "nested_score": 1.049540488937617,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.032080154792296346,
+            "track_error_m": 0.09336056025516354
+          },
+          "outer_score": 1.33433722894197
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_003",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.3786651746190708,
+            "track_error_m": 1.3346846284545468
+          },
+          "nested_score": 1.032624535651582,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.039609726976522916,
+            "track_error_m": 0.08028354223188279
+          },
+          "outer_score": 1.3566749015368087
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_005",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.2585375369146325,
+            "track_error_m": 1.6683432679484345
+          },
+          "nested_score": 1.1157072263841121,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.03615840099875448,
+            "track_error_m": 0.10035367483381254
+          },
+          "outer_score": 1.4634404024315335
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_002",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.255251960942541,
+            "track_error_m": 1.6730759039512286
+          },
+          "nested_score": 1.0782239184936868,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.03606400478884722,
+            "track_error_m": 0.10063835090956716
+          },
+          "outer_score": 1.4641639324468847
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_005",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.4192527757048286,
+            "track_error_m": 1.698094568812226
+          },
+          "nested_score": 0.9878002733086955,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.040775828672014784,
+            "track_error_m": 0.10214326599896845
+          },
+          "outer_score": 1.5586736722585273
+        }
+      ],
+      "evaluated_candidate_count": 25,
+      "identity_metrics": {
+        "chamfer_distance_m": 0.02873049069906854,
+        "track_error_m": 0.0601516946552718
+      },
+      "nested_outer_rank_spearman": 0.7269230769230769,
+      "nested_outer_score_pearson": 0.6809162274649561,
+      "nested_selected": {
+        "both_improve": false,
+        "candidate_id": "joint_000",
+        "family": "joint",
+        "metric_ratios": {
+          "chamfer_distance_m": 0.8909366254329399,
+          "track_error_m": 1.0034439975989566
+        },
+        "nested_score": 0.8280408352009114,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.025597046430460593,
+          "track_error_m": 0.06035885694723773
+        },
+        "outer_score": 0.9471903115159483
+      },
+      "nested_selected_outer_rank": 3
+    },
+    "single_lift_dinosor": {
+      "best_balanced_oracle": {
+        "both_improve": true,
+        "candidate_id": "field_007",
+        "family": "field_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 0.9646572729759452,
+          "track_error_m": 0.8882137104669647
+        },
+        "nested_score": 1.0631573811535082,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.005706890473765287,
+          "track_error_m": 0.006899885312274912
+        },
+        "outer_score": 0.926435491721455
+      },
+      "best_both_metric_oracle": {
+        "both_improve": true,
+        "candidate_id": "field_007",
+        "family": "field_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 0.9646572729759452,
+          "track_error_m": 0.8882137104669647
+        },
+        "nested_score": 1.0631573811535082,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.005706890473765287,
+          "track_error_m": 0.006899885312274912
+        },
+        "outer_score": 0.926435491721455
+      },
+      "both_improving_candidate_count": 3,
+      "candidates": [
+        {
+          "both_improve": true,
+          "candidate_id": "field_007",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9646572729759452,
+            "track_error_m": 0.8882137104669647
+          },
+          "nested_score": 1.0631573811535082,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005706890473765287,
+            "track_error_m": 0.006899885312274912
+          },
+          "outer_score": 0.926435491721455
+        },
+        {
+          "both_improve": true,
+          "candidate_id": "field_006",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9926800927166289,
+            "track_error_m": 0.932408856421315
+          },
+          "nested_score": 1.5905424588216042,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00587267283762265,
+            "track_error_m": 0.007243205207983288
+          },
+          "outer_score": 0.962544474568972
+        },
+        {
+          "both_improve": true,
+          "candidate_id": "field_003",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9884216912979068,
+            "track_error_m": 0.998929125422174
+          },
+          "nested_score": 1.0007911439105135,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005847480231739938,
+            "track_error_m": 0.0077599527222794815
+          },
+          "outer_score": 0.9936754083600404
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "exact_teacher",
+          "family": "identity",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "nested_score": 1.0,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005915977242528491,
+            "track_error_m": 0.007768271566814031
+          },
+          "outer_score": 1.0
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_000",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0065349628718536,
+            "track_error_m": 1.0789290680254386
+          },
+          "nested_score": 1.0136590929820373,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0059546379341591455,
+            "track_error_m": 0.008381414001751176
+          },
+          "outer_score": 1.0427320154486461
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_002",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0707484782983885,
+            "track_error_m": 1.1223785214065427
+          },
+          "nested_score": 1.0290116979439157,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.006334523630085279,
+            "track_error_m": 0.008718941155045219
+          },
+          "outer_score": 1.0965634998524656
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_004",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0525820039677976,
+            "track_error_m": 1.2967782739230809
+          },
+          "nested_score": 0.9686137598153641,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.006227051181368525,
+            "track_error_m": 0.010073725793778845
+          },
+          "outer_score": 1.174680138945439
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_004",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1939768735923375,
+            "track_error_m": 1.2661419121629478
+          },
+          "nested_score": 1.1132594828845919,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007063540012277586,
+            "track_error_m": 0.009835734215806975
+          },
+          "outer_score": 1.2300593928776427
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_002",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.138096464356495,
+            "track_error_m": 1.4225918348791655
+          },
+          "nested_score": 1.1415299678298387,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.006732952782935163,
+            "track_error_m": 0.011051079702073622
+          },
+          "outer_score": 1.2803441496178303
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_001",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.2234018540767853,
+            "track_error_m": 1.3527172448490452
+          },
+          "nested_score": 1.2883514745515896,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007237617527185424,
+            "track_error_m": 0.010508274911099852
+          },
+          "outer_score": 1.2880595494629152
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_001",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1843237071492543,
+            "track_error_m": 1.5741013921283116
+          },
+          "nested_score": 1.5330755832707585,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007006432099281966,
+            "track_error_m": 0.012228047087752747
+          },
+          "outer_score": 1.3792125496387828
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_004",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.265109977040507,
+            "track_error_m": 1.6040068070507085
+          },
+          "nested_score": 0.9798434112016918,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007484361833467381,
+            "track_error_m": 0.012460360472188178
+          },
+          "outer_score": 1.4345583920456078
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_002",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.3375155929480746,
+            "track_error_m": 1.5538927756081184
+          },
+          "nested_score": 1.3465693591627206,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007912711809407811,
+            "track_error_m": 0.01207106106663428
+          },
+          "outer_score": 1.4457041842780964
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_005",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.2101527636122922,
+            "track_error_m": 1.786046472077753
+          },
+          "nested_score": 1.0589828958604994,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007159236209513282,
+            "track_error_m": 0.013874494026050118
+          },
+          "outer_score": 1.4980996178450225
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_006",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.249416697368114,
+            "track_error_m": 1.8173691810367405
+          },
+          "nested_score": 1.493135114354511,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00739152074806487,
+            "track_error_m": 0.014117817335451812
+          },
+          "outer_score": 1.5333929392024273
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_000",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.4361927855576406,
+            "track_error_m": 1.6979361152619
+          },
+          "nested_score": 1.4261169102747324,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.008496483835242603,
+            "track_error_m": 0.013190028846455688
+          },
+          "outer_score": 1.5670644504097702
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_001",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.4303228890715136,
+            "track_error_m": 1.7167117653920567
+          },
+          "nested_score": 1.5308537181702495,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.008461757661214679,
+            "track_error_m": 0.013335883195510233
+          },
+          "outer_score": 1.573517327231785
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_005",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.4527924977454814,
+            "track_error_m": 1.8561429864203853
+          },
+          "nested_score": 2.742071730874014,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.008594687354778393,
+            "track_error_m": 0.014419022785350762
+          },
+          "outer_score": 1.6544677420829332
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_007",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.321637068795118,
+            "track_error_m": 2.1881625992941793
+          },
+          "nested_score": 1.4760245465520074,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.007818774821873981,
+            "track_error_m": 0.016998241303662856
+          },
+          "outer_score": 1.7548998340446487
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_003",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.3578406273759152,
+            "track_error_m": 2.3828535650723004
+          },
+          "nested_score": 1.4595107275546706,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.008032954250536524,
+            "track_error_m": 0.0185106535974326
+          },
+          "outer_score": 1.8703470962241078
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_000",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.567377429957301,
+            "track_error_m": 2.249611552955256
+          },
+          "nested_score": 2.922596326091927,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.009272569206080187,
+            "track_error_m": 0.01747559346319867
+          },
+          "outer_score": 1.9084944914562785
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_006",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.489996009849105,
+            "track_error_m": 2.795025523276356
+          },
+          "nested_score": 1.5814736070958733,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.008814782485725562,
+            "track_error_m": 0.021712517300987222
+          },
+          "outer_score": 2.1425107665627303
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_007",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.9416934910600787,
+            "track_error_m": 3.9969825914353736
+          },
+          "nested_score": 2.1361160976237388,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.011487014505077124,
+            "track_error_m": 0.031049646218098075
+          },
+          "outer_score": 2.969338041247726
+        }
+      ],
+      "evaluated_candidate_count": 23,
+      "identity_metrics": {
+        "chamfer_distance_m": 0.005915977242528491,
+        "track_error_m": 0.007768271566814031
+      },
+      "nested_outer_rank_spearman": 0.650197628458498,
+      "nested_outer_score_pearson": 0.6011474706632081,
+      "nested_selected": {
+        "both_improve": false,
+        "candidate_id": "topology_004",
+        "family": "topology_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0525820039677976,
+          "track_error_m": 1.2967782739230809
+        },
+        "nested_score": 0.9686137598153641,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.006227051181368525,
+          "track_error_m": 0.010073725793778845
+        },
+        "outer_score": 1.174680138945439
+      },
+      "nested_selected_outer_rank": 7
+    },
+    "single_lift_rope": {
+      "best_balanced_oracle": {
+        "both_improve": false,
+        "candidate_id": "joint_000",
+        "family": "joint",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0030945945418475,
+          "track_error_m": 0.9013561577275345
+        },
+        "nested_score": 0.9825233354897556,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.004557499340877991,
+          "track_error_m": 0.006544663322084581
+        },
+        "outer_score": 0.952225376134691
+      },
+      "best_both_metric_oracle": {
+        "both_improve": false,
+        "candidate_id": "exact_teacher",
+        "family": "identity",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0,
+          "track_error_m": 1.0
+        },
+        "nested_score": 1.0,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.004543439238608976,
+          "track_error_m": 0.007260907096463114
+        },
+        "outer_score": 1.0
+      },
+      "both_improving_candidate_count": 0,
+      "candidates": [
+        {
+          "both_improve": false,
+          "candidate_id": "joint_000",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0030945945418475,
+            "track_error_m": 0.9013561577275345
+          },
+          "nested_score": 0.9825233354897556,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004557499340877991,
+            "track_error_m": 0.006544663322084581
+          },
+          "outer_score": 0.952225376134691
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_006",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0069190037746092,
+            "track_error_m": 0.9663412973912238
+          },
+          "nested_score": 1.0625844179740467,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004574875311850619,
+            "track_error_m": 0.0070165143838333095
+          },
+          "outer_score": 0.9866301505829165
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_003",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0080395899224708,
+            "track_error_m": 0.9900884936800046
+          },
+          "nested_score": 1.0530909491875853,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004579966626925055,
+            "track_error_m": 0.00718894056988762
+          },
+          "outer_score": 0.9990640418012378
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "exact_teacher",
+          "family": "identity",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "nested_score": 1.0,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004543439238608976,
+            "track_error_m": 0.007260907096463114
+          },
+          "outer_score": 1.0
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_002",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.001508593961876,
+            "track_error_m": 1.00919585573624
+          },
+          "nested_score": 1.0188743557055882,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0045502934436104925,
+            "track_error_m": 0.007327677350636429
+          },
+          "outer_score": 1.0053522248490578
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_001",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9994429223225076,
+            "track_error_m": 1.0118596311560424
+          },
+          "nested_score": 1.0398278390697246,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004540908190030104,
+            "track_error_m": 0.007347018776485458
+          },
+          "outer_score": 1.005651276739275
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_003",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.000446179718957,
+            "track_error_m": 1.0128971279049808
+          },
+          "nested_score": 1.0338077793899063,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004545466429051557,
+            "track_error_m": 0.007354551943992381
+          },
+          "outer_score": 1.0066716538119689
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_006",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.006984128816539,
+            "track_error_m": 1.0107182611229442
+          },
+          "nested_score": 1.0014025377220805,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004575171203521539,
+            "track_error_m": 0.007338731394712444
+          },
+          "outer_score": 1.0088511949697416
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_004",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.003592081394708,
+            "track_error_m": 1.0153185649529937
+          },
+          "nested_score": 1.0488172914060727,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00455975964216597,
+            "track_error_m": 0.007372133773437937
+          },
+          "outer_score": 1.0094553231738508
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_007",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 0.9993026615342472,
+            "track_error_m": 1.0234941549523668
+          },
+          "nested_score": 1.0405742014542225,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004540270923661083,
+            "track_error_m": 0.007431495972882158
+          },
+          "outer_score": 1.011398408243307
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_000",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0008364607693148,
+            "track_error_m": 1.023141712717051
+          },
+          "nested_score": 1.014574038264286,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004547239647289838,
+            "track_error_m": 0.007428936922554661
+          },
+          "outer_score": 1.0119890867431829
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_003",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0139052645693485,
+            "track_error_m": 1.016581121203804
+          },
+          "nested_score": 1.0068264601912142,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004606616963276593,
+            "track_error_m": 0.007381301077079129
+          },
+          "outer_score": 1.0152431928865764
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_001",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0343892055669617,
+            "track_error_m": 1.0143904773474353
+          },
+          "nested_score": 1.15344837349951,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0046996845045665,
+            "track_error_m": 0.007365395015556598
+          },
+          "outer_score": 1.0243898414571984
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_007",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0134019710928328,
+            "track_error_m": 1.0362863199953105
+          },
+          "nested_score": 0.9829314257118729,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004604330279946856,
+            "track_error_m": 0.007524378694821595
+          },
+          "outer_score": 1.0248441455440718
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_004",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0395421968357426,
+            "track_error_m": 1.0262732980233578
+          },
+          "nested_score": 0.9406173373170332,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004723096807293289,
+            "track_error_m": 0.007451675072528403
+          },
+          "outer_score": 1.03290774742955
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_004",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0467733964102384,
+            "track_error_m": 1.020056739918791
+          },
+          "nested_score": 0.9381218855372206,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004755951323182265,
+            "track_error_m": 0.007406537221671379
+          },
+          "outer_score": 1.0334150681645147
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_006",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0227406920573525,
+            "track_error_m": 1.0580107218693167
+          },
+          "nested_score": 1.1000146527948529,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004646760191215475,
+            "track_error_m": 0.007682117558554984
+          },
+          "outer_score": 1.0403757069633346
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_002",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.03466461257159,
+            "track_error_m": 1.049066396882739
+          },
+          "nested_score": 0.9657609135429905,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004700935799557915,
+            "track_error_m": 0.007617173645786869
+          },
+          "outer_score": 1.0418655047271645
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_001",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0315424047480257,
+            "track_error_m": 1.0539562234294664
+          },
+          "nested_score": 1.0940517675649217,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004686750238021242,
+            "track_error_m": 0.0076526782220604755
+          },
+          "outer_score": 1.042749314088746
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_005",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0319986187266794,
+            "track_error_m": 1.0600665976783616
+          },
+          "nested_score": 1.109152489496006,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004688823018513059,
+            "track_error_m": 0.007697045081806325
+          },
+          "outer_score": 1.0460326082025206
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_000",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0236588123108146,
+            "track_error_m": 1.0761382473156038
+          },
+          "nested_score": 1.0042367438977435,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004650931614800816,
+            "track_error_m": 0.007813739836709245
+          },
+          "outer_score": 1.049898529813209
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_007",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0265093435954207,
+            "track_error_m": 1.0998457709142786
+          },
+          "nested_score": 1.120814297054019,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004663882830490178,
+            "track_error_m": 0.00798587796304643
+          },
+          "outer_score": 1.0631775572548496
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_005",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0629497666634657,
+            "track_error_m": 1.0692154146536577
+          },
+          "nested_score": 0.9288853003760487,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004829447678529046,
+            "track_error_m": 0.007763473791906493
+          },
+          "outer_score": 1.0660825906585618
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_005",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1282197810633732,
+            "track_error_m": 1.0919920503798182
+          },
+          "nested_score": 1.2597330957847963,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0051259980230581575,
+            "track_error_m": 0.007928852827884128
+          },
+          "outer_score": 1.1101059157215958
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_002",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1178356758545953,
+            "track_error_m": 1.134442561127377
+          },
+          "nested_score": 1.2767964926873985,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005078818471994753,
+            "track_error_m": 0.008237082042619562
+          },
+          "outer_score": 1.1261391184909861
+        }
+      ],
+      "evaluated_candidate_count": 25,
+      "identity_metrics": {
+        "chamfer_distance_m": 0.004543439238608976,
+        "track_error_m": 0.007260907096463114
+      },
+      "nested_outer_rank_spearman": 0.21461538461538462,
+      "nested_outer_score_pearson": 0.5881331795905532,
+      "nested_selected": {
+        "both_improve": false,
+        "candidate_id": "field_005",
+        "family": "field_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0629497666634657,
+          "track_error_m": 1.0692154146536577
+        },
+        "nested_score": 0.9288853003760487,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.004829447678529046,
+          "track_error_m": 0.007763473791906493
+        },
+        "outer_score": 1.0660825906585618
+      },
+      "nested_selected_outer_rank": 23
+    },
+    "single_lift_zebra": {
+      "best_balanced_oracle": {
+        "both_improve": false,
+        "candidate_id": "field_000",
+        "family": "field_only",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0046566529293537,
+          "track_error_m": 0.9835423967506888
+        },
+        "nested_score": 0.9952270527161513,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.00453004604533229,
+          "track_error_m": 0.008260098096144265
+        },
+        "outer_score": 0.9940995248400213
+      },
+      "best_both_metric_oracle": {
+        "both_improve": false,
+        "candidate_id": "exact_teacher",
+        "family": "identity",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0,
+          "track_error_m": 1.0
+        },
+        "nested_score": 1.0,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.004509048969241074,
+          "track_error_m": 0.008398314219532377
+        },
+        "outer_score": 1.0
+      },
+      "both_improving_candidate_count": 0,
+      "candidates": [
+        {
+          "both_improve": false,
+          "candidate_id": "field_000",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0046566529293537,
+            "track_error_m": 0.9835423967506888
+          },
+          "nested_score": 0.9952270527161513,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00453004604533229,
+            "track_error_m": 0.008260098096144265
+          },
+          "outer_score": 0.9940995248400213
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_002",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0001341820078322,
+            "track_error_m": 0.9960495155073041
+          },
+          "nested_score": 0.9984163173231888,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004509654002485181,
+            "track_error_m": 0.008365136809443327
+          },
+          "outer_score": 0.9980918487575682
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "exact_teacher",
+          "family": "identity",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "nested_score": 1.0,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004509048969241074,
+            "track_error_m": 0.008398314219532377
+          },
+          "outer_score": 1.0
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_006",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.024701580864862,
+            "track_error_m": 0.9816703089492836
+          },
+          "nested_score": 1.0424344531222218,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004620429606978406,
+            "track_error_m": 0.008244375714541511
+          },
+          "outer_score": 1.0031859449070728
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_002",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.019401987622508,
+            "track_error_m": 1.0068027118922078
+          },
+          "nested_score": 1.020265138782389,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004596533481531572,
+            "track_error_m": 0.008455445531548087
+          },
+          "outer_score": 1.013102349757358
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_006",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0175369238862932,
+            "track_error_m": 1.0145356558451444
+          },
+          "nested_score": 1.024538321454045,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004588123817814224,
+            "track_error_m": 0.008520389224706881
+          },
+          "outer_score": 1.0160362898657187
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_001",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0119951447873168,
+            "track_error_m": 1.0247029616539252
+          },
+          "nested_score": 1.01651573216748,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004563135664480223,
+            "track_error_m": 0.0086057774536551
+          },
+          "outer_score": 1.018349053220621
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_003",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0252180978207306,
+            "track_error_m": 1.013652599206316
+          },
+          "nested_score": 0.9959870829747615,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00462275860722586,
+            "track_error_m": 0.008512973037580356
+          },
+          "outer_score": 1.0194353485135232
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_007",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.017832297284323,
+            "track_error_m": 1.0375691204123123
+          },
+          "nested_score": 1.0561634760145786,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004589455670930152,
+            "track_error_m": 0.008713831497706423
+          },
+          "outer_score": 1.0277007088483177
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_004",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0414559846093001,
+            "track_error_m": 1.020289877054829
+          },
+          "nested_score": 1.020275428382909,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004695976033912513,
+            "track_error_m": 0.00856871498251451
+          },
+          "outer_score": 1.0308729308320645
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_007",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0375653481592815,
+            "track_error_m": 1.0343395542524234
+          },
+          "nested_score": 1.041265503051279,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0046784329636378645,
+            "track_error_m": 0.008686708586302909
+          },
+          "outer_score": 1.0359524512058524
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_002",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0386247703629456,
+            "track_error_m": 1.0516835448378188
+          },
+          "nested_score": 1.036419972879283,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004683209950233288,
+            "track_error_m": 0.00883236886905967
+          },
+          "outer_score": 1.0451541576003822
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_001",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0443047371810406,
+            "track_error_m": 1.0522280487705749
+          },
+          "nested_score": 1.0337056516451129,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004708821198759742,
+            "track_error_m": 0.008836941784180726
+          },
+          "outer_score": 1.0482663929758078
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_004",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0615833598204698,
+            "track_error_m": 1.0466573059559432
+          },
+          "nested_score": 1.029597768357324,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004786731354361966,
+            "track_error_m": 0.008790156935587247
+          },
+          "outer_score": 1.0541203328882065
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_003",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.06352133662354,
+            "track_error_m": 1.0555423812938136
+          },
+          "nested_score": 1.0682982259004574,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.004795469786668263,
+            "track_error_m": 0.0088647765901389
+          },
+          "outer_score": 1.0595318589586769
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_007",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.0793364171030495,
+            "track_error_m": 1.1209687782604385
+          },
+          "nested_score": 1.0700402003092209,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00486678075900286,
+            "track_error_m": 0.009414248030116477
+          },
+          "outer_score": 1.1001525976817441
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "field_005",
+          "family": "field_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.122727187478499,
+            "track_error_m": 1.093348586028572
+          },
+          "nested_score": 1.0332065316640415,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005062431867438856,
+            "track_error_m": 0.009182284976949376
+          },
+          "outer_score": 1.1080378867535354
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_005",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.118364319348398,
+            "track_error_m": 1.1267884276085234
+          },
+          "nested_score": 1.0757205788667314,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.00504275948139389,
+            "track_error_m": 0.009463123273989191
+          },
+          "outer_score": 1.1225763734784606
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_003",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1099982826862491,
+            "track_error_m": 1.137067305121569
+          },
+          "nested_score": 1.0587532377092193,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0050050366124057945,
+            "track_error_m": 0.009549448517167833
+          },
+          "outer_score": 1.123532793903909
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_001",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1475665709431446,
+            "track_error_m": 1.2102494534181485
+          },
+          "nested_score": 1.27865057711346,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005174433863846701,
+            "track_error_m": 0.010164055193822923
+          },
+          "outer_score": 1.1789080121806466
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_005",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.17225946717652,
+            "track_error_m": 1.1948458859065352
+          },
+          "nested_score": 1.1360587967396174,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005285775342155379,
+            "track_error_m": 0.010034691193758615
+          },
+          "outer_score": 1.1835526765415276
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_000",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.1606845537267672,
+            "track_error_m": 1.2443526169598367
+          },
+          "nested_score": 1.3186285575695829,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005233583490595716,
+            "track_error_m": 0.010450464277126122
+          },
+          "outer_score": 1.2025185853433018
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_000",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.2570473586541933,
+            "track_error_m": 1.231038532664308
+          },
+          "nested_score": 1.1073913933941175,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005668088096826906,
+            "track_error_m": 0.010338648413666931
+          },
+          "outer_score": 1.2440429456592508
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "topology_006",
+          "family": "topology_only",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.3209173009311381,
+            "track_error_m": 1.3547750589624985
+          },
+          "nested_score": 1.1595712567598238,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.005956080794216251,
+            "track_error_m": 0.011377826641952566
+          },
+          "outer_score": 1.3378461799468182
+        },
+        {
+          "both_improve": false,
+          "candidate_id": "joint_004",
+          "family": "joint",
+          "metric_ratios": {
+            "chamfer_distance_m": 1.838141004722269,
+            "track_error_m": 1.8203409196970208
+          },
+          "nested_score": 1.2278037001306596,
+          "outer_metrics": {
+            "chamfer_distance_m": 0.0082882678026627,
+            "track_error_m": 0.015287795030288135
+          },
+          "outer_score": 1.8292409622096448
+        }
+      ],
+      "evaluated_candidate_count": 25,
+      "identity_metrics": {
+        "chamfer_distance_m": 0.004509048969241074,
+        "track_error_m": 0.008398314219532377
+      },
+      "nested_outer_rank_spearman": 0.8715384615384615,
+      "nested_outer_score_pearson": 0.6698668385478327,
+      "nested_selected": {
+        "both_improve": false,
+        "candidate_id": "exact_teacher",
+        "family": "identity",
+        "metric_ratios": {
+          "chamfer_distance_m": 1.0,
+          "track_error_m": 1.0
+        },
+        "nested_score": 1.0,
+        "outer_metrics": {
+          "chamfer_distance_m": 0.004509048969241074,
+          "track_error_m": 0.008398314219532377
+        },
+        "outer_score": 1.0
+      },
+      "nested_selected_outer_rank": 3
+    }
+  },
+  "contract": "phystwin-zero-order-source-oracle-v1",
+  "diagnostic_only": true,
+  "future_metrics_opened": false,
+  "schema_version": 1
+}

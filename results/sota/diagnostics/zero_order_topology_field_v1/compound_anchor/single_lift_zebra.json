@@ -1,0 +1,207 @@
+{
+  "balanced_improvement": 0.008070590574791203,
+  "both_wins": false,
+  "candidate_ids": [
+    "exact_teacher",
+    "field_000",
+    "field_001",
+    "field_002",
+    "field_003",
+    "field_004",
+    "field_005",
+    "field_006",
+    "field_007"
+  ],
+  "case": "single_lift_zebra",
+  "correction_rms_ratio": 1.0320421473788437,
+  "intervals": {
+    "nested": [
+      25,
+      34
+    ],
+    "outer": [
+      34,
+      46
+    ]
+  },
+  "nested": {
+    "exact_teacher": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.0038825699178746268,
+      "metrics": {
+        "chamfer_distance_m": 0.002321556658600715,
+        "track_error_m": 0.006089518419660441
+      }
+    },
+    "field_000": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.004005622165143386,
+      "metrics": {
+        "chamfer_distance_m": 0.002129505051579746,
+        "track_error_m": 0.005991493396071617
+      }
+    },
+    "field_001": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.003951825148525626,
+      "metrics": {
+        "chamfer_distance_m": 0.0022076166591144235,
+        "track_error_m": 0.006024907035615374
+      }
+    },
+    "field_002": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.003918899649019469,
+      "metrics": {
+        "chamfer_distance_m": 0.0023094034306970932,
+        "track_error_m": 0.006060092461732497
+      }
+    },
+    "field_003": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.003894578080407975,
+      "metrics": {
+        "chamfer_distance_m": 0.002378307337016455,
+        "track_error_m": 0.006112582833344251
+      }
+    },
+    "field_004": {
+      "correction_maximum_m": 0.010000000000000004,
+      "correction_rms_m": 0.0039491253298070276,
+      "metrics": {
+        "chamfer_distance_m": 0.00248366495996244,
+        "track_error_m": 0.0060473831579085
+      }
+    },
+    "field_005": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.003929194209312057,
+      "metrics": {
+        "chamfer_distance_m": 0.002534125934408352,
+        "track_error_m": 0.006091588251728692
+      }
+    },
+    "field_006": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.0040703087654772345,
+      "metrics": {
+        "chamfer_distance_m": 0.0021323267867775523,
+        "track_error_m": 0.006003840148187848
+      }
+    },
+    "field_007": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.0040521467562941536,
+      "metrics": {
+        "chamfer_distance_m": 0.0021660191904546294,
+        "track_error_m": 0.006004322279599601
+      }
+    }
+  },
+  "outer": {
+    "exact_teacher": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.004102238643326979,
+      "metrics": {
+        "chamfer_distance_m": 0.003753629701383984,
+        "track_error_m": 0.007320829164899608
+      }
+    },
+    "field_000": {
+      "correction_maximum_m": 0.010000000000000002,
+      "correction_rms_m": 0.00423368317851965,
+      "metrics": {
+        "chamfer_distance_m": 0.0036895773189027288,
+        "track_error_m": 0.007327585832452923
+      }
+    }
+  },
+  "outer_ratios": {
+    "chamfer_distance_m": 0.982935881379658,
+    "track_error_m": 1.0009229374707596
+  },
+  "selected_candidate_id": "field_000",
+  "selection_records": [
+    {
+      "balanced_score": 1.0,
+      "candidate_id": "exact_teacher",
+      "eligible": false,
+      "ratios": {
+        "chamfer_distance_m": 1.0,
+        "track_error_m": 1.0
+      }
+    },
+    {
+      "balanced_score": 0.9505886527557907,
+      "candidate_id": "field_000",
+      "eligible": true,
+      "ratios": {
+        "chamfer_distance_m": 0.9172746414310106,
+        "track_error_m": 0.983902664080571
+      }
+    },
+    {
+      "balanced_score": 0.9701553001804796,
+      "candidate_id": "field_001",
+      "eligible": true,
+      "ratios": {
+        "chamfer_distance_m": 0.950920862058578,
+        "track_error_m": 0.9893897383023812
+      }
+    },
+    {
+      "balanced_score": 0.9949664107481376,
+      "candidate_id": "field_002",
+      "eligible": false,
+      "ratios": {
+        "chamfer_distance_m": 0.9947650522081392,
+        "track_error_m": 0.9951677692881361
+      }
+    },
+    {
+      "balanced_score": 1.0141163284300547,
+      "candidate_id": "field_003",
+      "eligible": false,
+      "ratios": {
+        "chamfer_distance_m": 1.024445097303783,
+        "track_error_m": 1.0037875595563264
+      }
+    },
+    {
+      "balanced_score": 1.0314540530641376,
+      "candidate_id": "field_004",
+      "eligible": false,
+      "ratios": {
+        "chamfer_distance_m": 1.0698274154805394,
+        "track_error_m": 0.9930806906477357
+      }
+    },
+    {
+      "balanced_score": 1.0459515760554816,
+      "candidate_id": "field_005",
+      "eligible": false,
+      "ratios": {
+        "chamfer_distance_m": 1.0915632513297178,
+        "track_error_m": 1.0003399007812455
+      }
+    },
+    {
+      "balanced_score": 0.9522101483903818,
+      "candidate_id": "field_006",
+      "eligible": true,
+      "ratios": {
+        "chamfer_distance_m": 0.9184900910679397,
+        "track_error_m": 0.9859302057128237
+      }
+    },
+    {
+      "balanced_score": 0.9595061604073327,
+      "candidate_id": "field_007",
+      "eligible": true,
+      "ratios": {
+        "chamfer_distance_m": 0.9330029411214829,
+        "track_error_m": 0.9860093796931825
+      }
+    }
+  ]
+}

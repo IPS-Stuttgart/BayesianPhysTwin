@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "preregistered_method_held_out_geometry_replication",
+  "lock_condition": "created only after every exploratory19 gate passed",
+  "cohort": {
+    "name": "PhysTwin additional 11",
+    "role": "separate-case geometry replication",
+    "claim_boundary": "previously examined for other Bayesian-PhysTwin methods, but never used to select or evaluate this Prob4D MotionCrafter arm",
+    "manual_track_labels_available": false,
+    "data_manifest": "data/phystwin_graph_anchor_additional_data_manifest_v1.json",
+    "data_manifest_sha256": "275609e1566c6d1540a0c33a84b4a01a405cad391dd1fa61e572a8c8f5337f51",
+    "raw_archive_url": "https://huggingface.co/datasets/Jianghanxiao/PhysTwin/resolve/main/additional_data.zip"
+  },
+  "software": {
+    "bayesian_phystwin_commit": "174d25dc1b227a22cb8e322e5d4c144581310c3b",
+    "motioncrafter_commit": "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257",
+    "prob4d_commit": "81499fc0e76c87444266bc96f90b01db1beccc67"
+  },
+  "cases": [
+    "cloth_blue_fold",
+    "cloth_blue_lift",
+    "cloth_pant_fold",
+    "cloth_pant_lift",
+    "cloth_red_fold",
+    "cloth_red_lift",
+    "cloth_shirt_fold",
+    "cloth_shirt_lift",
+    "cloth_skirt_1_fold",
+    "cloth_skirt_1_lift",
+    "cloth_skirt_2_fold"
+  ],
+  "arms": {
+    "A": {
+      "input": "baseline_disjoint.npz from the same overlapping-window bundle",
+      "reliability_mode": "legacy"
+    },
+    "C": {
+      "input": "decoded-uniform prob4d_uniform.npz with overlap 8",
+      "reliability_mode": "decoupled_robust",
+      "graph_covariance_manual_track_audit": true,
+      "expected_uncertainty_audit": "unavailable because this cohort has no manual material identities"
+    }
+  },
+  "aggregation": {
+    "unit": "case",
+    "weighting": "equal case",
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 20260715,
+    "horizons": "split each case's future sampled-frame indices into three consecutive numpy.array_split groups"
+  },
+  "primary_endpoints": [
+    "future visible-to-supported-surface Chamfer distance",
+    "future direct graph support",
+    "late-third Chamfer distance"
+  ],
+  "replication_gates": {
+    "R1_cd_median": "median(C_CD_m - A_CD_m) < 0",
+    "R2_cd_wins": "strict CD wins >= 6 of 11",
+    "R3_support": "median(C_support - A_support) > 0",
+    "R4_late_cd": "median(C_late_CD_m - A_late_CD_m) <= 0",
+    "R5_completeness": "all 11 A/C summaries pass the frozen input and configuration contract"
+  },
+  "calibration_boundary": {
+    "source_artifact_sha256": "d27343617d6ded422300c0f1d9020aee40d01bf71e2dad522a9b826c4cd07c6b",
+    "frozen_covariance_scale": 2.3362434626767516,
+    "frozen_standard_deviation_multiplier": 1.528477498256599,
+    "application": "recorded but not evaluated because nearest-surface geometry is not a material-identity Gaussian state residual",
+    "claim": "this replication cannot establish independent NEES or manual-track coverage"
+  },
+  "boundaries": {
+    "future_motioncrafter_role": "offline reconstruction control only",
+    "causal4d_claim_modified": false,
+    "pokeflex_target_access_permitted": false,
+    "predictive_rollout_claim_permitted": false
+  }
+}

@@ -1,0 +1,730 @@
+{
+  "aggregate": {
+    "baseline": {
+      "chamfer_distance_m": 0.011122029082233833,
+      "track_error_m": 0.022189327950738497
+    },
+    "candidate": {
+      "chamfer_distance_m": 0.012595977216878966,
+      "track_error_m": 0.022881628757445215
+    }
+  },
+  "aggregate_ratios": {
+    "chamfer_distance_m": 1.1325251106382734,
+    "track_error_m": 1.0311997194436742
+  },
+  "both_win_count": 6,
+  "case_count": 19,
+  "cases": [
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.006951045653557239,
+        "track_error_m": 0.01438284523274443
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.010657090460159682,
+        "track_error_m": 0.016697782911531893
+      },
+      "case": "double_lift_cloth_1",
+      "corrected_vertex_count": 4742,
+      "correction_max_m": 0.010000000512718708,
+      "correction_rms_m": 0.006998273578815909,
+      "direct_support_fraction": 0.21130324757486293,
+      "endpoint_frame": 80,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.654535996233201,
+          "track_error_m": 1.241221687601815
+        },
+        {
+          "chamfer_distance_m": 1.4069058702088597,
+          "track_error_m": 1.1367241110792616
+        },
+        {
+          "chamfer_distance_m": 1.6116401292555094,
+          "track_error_m": 1.140334621103905
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.533163640596412,
+        "track_error_m": 1.1609513028421667
+      },
+      "train_end_frame": 81,
+      "trajectory_vertex_count": 4742
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.012554311777802755,
+        "track_error_m": 0.008971167886567887
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.017001582876171338,
+        "track_error_m": 0.012572659749162747
+      },
+      "case": "double_lift_cloth_3",
+      "corrected_vertex_count": 7521,
+      "correction_max_m": 0.010000000477218721,
+      "correction_rms_m": 0.006768823253093177,
+      "direct_support_fraction": 0.31790985241324293,
+      "endpoint_frame": 81,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.5982297430062227,
+          "track_error_m": 1.5477714927785875
+        },
+        {
+          "chamfer_distance_m": 1.3397136020573233,
+          "track_error_m": 1.5664488631625928
+        },
+        {
+          "chamfer_distance_m": 1.237640603857242,
+          "track_error_m": 1.2419145848738091
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.3542425245668817,
+        "track_error_m": 1.4014518408452936
+      },
+      "train_end_frame": 82,
+      "trajectory_vertex_count": 7521
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.015266328313215536,
+        "track_error_m": 0.03120281112995001
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.014348388684436017,
+        "track_error_m": 0.027957212792278547
+      },
+      "case": "double_lift_zebra",
+      "corrected_vertex_count": 4358,
+      "correction_max_m": 0.010000000492576003,
+      "correction_rms_m": 0.007783683908603801,
+      "direct_support_fraction": 0.04956402019274897,
+      "endpoint_frame": 39,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.0415110733914796,
+          "track_error_m": 0.8349281201154568
+        },
+        {
+          "chamfer_distance_m": 0.9443953384585364,
+          "track_error_m": 0.8853763674622871
+        },
+        {
+          "chamfer_distance_m": 0.8995821960805408,
+          "track_error_m": 0.9242426183498299
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 0.9398716174612274,
+        "track_error_m": 0.8959837841483399
+      },
+      "train_end_frame": 40,
+      "trajectory_vertex_count": 4607
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.0063851803795326924,
+        "track_error_m": 0.013080950637656507
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.008198021590900044,
+        "track_error_m": 0.016941918214263874
+      },
+      "case": "double_stretch_zebra",
+      "corrected_vertex_count": 3959,
+      "correction_max_m": 0.010000000497112105,
+      "correction_rms_m": 0.00866024235847331,
+      "direct_support_fraction": 0.04496084869916646,
+      "endpoint_frame": 137,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.1451039394953078,
+          "track_error_m": 1.142927388647723
+        },
+        {
+          "chamfer_distance_m": 1.280435489178342,
+          "track_error_m": 1.281915001781069
+        },
+        {
+          "chamfer_distance_m": 1.4446009297564992,
+          "track_error_m": 1.5290868707028282
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.2839138604726508,
+        "track_error_m": 1.2951595555672146
+      },
+      "train_end_frame": 138,
+      "trajectory_vertex_count": 4208
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.005095085751596595,
+        "track_error_m": 0.014963664014680666
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.007053427519952196,
+        "track_error_m": 0.019207284439486678
+      },
+      "case": "rope_double_hand",
+      "corrected_vertex_count": 1498,
+      "correction_max_m": 0.01000000045279341,
+      "correction_rms_m": 0.00914249793711181,
+      "direct_support_fraction": 0.04606141522029372,
+      "endpoint_frame": 183,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.5043676820079366,
+          "track_error_m": 1.2696509032077836
+        },
+        {
+          "chamfer_distance_m": 1.464729926442637,
+          "track_error_m": 1.3233895367387372
+        },
+        {
+          "chamfer_distance_m": 1.2028116388413288,
+          "track_error_m": 1.2426839637289577
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.3843589418965,
+        "track_error_m": 1.2835950085916557
+      },
+      "train_end_frame": 184,
+      "trajectory_vertex_count": 1753
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.005248691614301362,
+        "track_error_m": 0.010426523009187545
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.00872403777376121,
+        "track_error_m": 0.013582795671284524
+      },
+      "case": "single_clift_cloth_1",
+      "corrected_vertex_count": 6490,
+      "correction_max_m": 0.010000000465221051,
+      "correction_rms_m": 0.006758376556929214,
+      "direct_support_fraction": 0.1140215716486903,
+      "endpoint_frame": 55,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.585727764442975,
+          "track_error_m": 1.4081727997021782
+        },
+        {
+          "chamfer_distance_m": 1.491134424527893,
+          "track_error_m": 1.3438429587920866
+        },
+        {
+          "chamfer_distance_m": 1.8374941367205495,
+          "track_error_m": 1.2291971334534424
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.6621357120678237,
+        "track_error_m": 1.3027157432363372
+      },
+      "train_end_frame": 56,
+      "trajectory_vertex_count": 6490
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.0042787352526218085,
+        "track_error_m": 0.013651232506294726
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.008864506083535246,
+        "track_error_m": 0.01374459868335053
+      },
+      "case": "single_clift_cloth_3",
+      "corrected_vertex_count": 8158,
+      "correction_max_m": 0.010000000470097555,
+      "correction_rms_m": 0.007914634509313389,
+      "direct_support_fraction": 0.23731306692816867,
+      "endpoint_frame": 66,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 2.8922182115076027,
+          "track_error_m": 1.0832353421404843
+        },
+        {
+          "chamfer_distance_m": 2.1337716759497587,
+          "track_error_m": 1.0006615691590472
+        },
+        {
+          "chamfer_distance_m": 1.6058326954526407,
+          "track_error_m": 0.9579545826355966
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 2.071758489404899,
+        "track_error_m": 1.0068393954181611
+      },
+      "train_end_frame": 67,
+      "trajectory_vertex_count": 8158
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.021551340733428008,
+        "track_error_m": 0.059716814672285026
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.020508793249957472,
+        "track_error_m": 0.05766981821842992
+      },
+      "case": "single_lift_cloth",
+      "corrected_vertex_count": 7793,
+      "correction_max_m": 0.010000000513876268,
+      "correction_rms_m": 0.009663697527345902,
+      "direct_support_fraction": 0.04516874117798024,
+      "endpoint_frame": 120,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 0.9171638187519345,
+          "track_error_m": 0.9389245442428377
+        },
+        {
+          "chamfer_distance_m": 0.9490987978001962,
+          "track_error_m": 0.9692906846529052
+        },
+        {
+          "chamfer_distance_m": 0.9855722660341203,
+          "track_error_m": 0.9865045029961654
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 0.9516249361760842,
+        "track_error_m": 0.9657216068022273
+      },
+      "train_end_frame": 121,
+      "trajectory_vertex_count": 7793
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.022096795152490273,
+        "track_error_m": 0.028611397015838383
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.01718567378396412,
+        "track_error_m": 0.021909882523089223
+      },
+      "case": "single_lift_cloth_1",
+      "corrected_vertex_count": 5490,
+      "correction_max_m": 0.010000000511098695,
+      "correction_rms_m": 0.009889974554571994,
+      "direct_support_fraction": 0.05610200364298725,
+      "endpoint_frame": 76,
+      "graph_valid_fraction": 0.9994535519125683,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 0.7670979568973747,
+          "track_error_m": 0.7613037550610975
+        },
+        {
+          "chamfer_distance_m": 0.7726289036193393,
+          "track_error_m": 0.7791997295412605
+        },
+        {
+          "chamfer_distance_m": 0.7929471229004893,
+          "track_error_m": 0.7528374305590128
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 0.7777450831835822,
+        "track_error_m": 0.7657746495552311
+      },
+      "train_end_frame": 77,
+      "trajectory_vertex_count": 5490
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.01190483288577235,
+        "track_error_m": 0.0426666496712793
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.016466480136466247,
+        "track_error_m": 0.0433062005152617
+      },
+      "case": "single_lift_cloth_3",
+      "corrected_vertex_count": 8582,
+      "correction_max_m": 0.010000000498629874,
+      "correction_rms_m": 0.00925728841986604,
+      "direct_support_fraction": 0.13038918666977395,
+      "endpoint_frame": 108,
+      "graph_valid_fraction": 0.9994173852248893,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.5698887029743942,
+          "track_error_m": 1.0303280799549719
+        },
+        {
+          "chamfer_distance_m": 1.3770190244648821,
+          "track_error_m": 1.0131216151425395
+        },
+        {
+          "chamfer_distance_m": 1.2802747771468814,
+          "track_error_m": 1.007575740277426
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.3831760844073326,
+        "track_error_m": 1.0149894788765874
+      },
+      "train_end_frame": 109,
+      "trajectory_vertex_count": 8582
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.012725481058079219,
+        "track_error_m": 0.03397214088107595
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.01150749835833901,
+        "track_error_m": 0.03359666349110623
+      },
+      "case": "single_lift_cloth_4",
+      "corrected_vertex_count": 8185,
+      "correction_max_m": 0.010000000505914345,
+      "correction_rms_m": 0.008815087661704666,
+      "direct_support_fraction": 0.06169822846670739,
+      "endpoint_frame": 119,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 0.8634753070190008,
+          "track_error_m": 0.9616854952311773
+        },
+        {
+          "chamfer_distance_m": 0.9229658528567611,
+          "track_error_m": 0.9873765157033414
+        },
+        {
+          "chamfer_distance_m": 0.9192197459165375,
+          "track_error_m": 1.0073804255454197
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 0.9042878855281522,
+        "track_error_m": 0.9889474910844115
+      },
+      "train_end_frame": 120,
+      "trajectory_vertex_count": 8185
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.012468857879828084,
+        "track_error_m": 0.01471160624191069
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.012902304747346716,
+        "track_error_m": 0.014615967731132115
+      },
+      "case": "single_lift_dinosor",
+      "corrected_vertex_count": 5464,
+      "correction_max_m": 0.010000000463839162,
+      "correction_rms_m": 0.00807551179245816,
+      "direct_support_fraction": 0.07723279648609077,
+      "endpoint_frame": 59,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.1769555819803992,
+          "track_error_m": 1.0059271640997087
+        },
+        {
+          "chamfer_distance_m": 1.0489366205292774,
+          "track_error_m": 0.950702775275848
+        },
+        {
+          "chamfer_distance_m": 0.9626292858019782,
+          "track_error_m": 1.025122650129797
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.0347623552771306,
+        "track_error_m": 0.9934991115717795
+      },
+      "train_end_frame": 60,
+      "trajectory_vertex_count": 7576
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.010783053367805705,
+        "track_error_m": 0.017072906473736434
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.012162690406544953,
+        "track_error_m": 0.017956022079528452
+      },
+      "case": "single_lift_rope",
+      "corrected_vertex_count": 1837,
+      "correction_max_m": 0.010000000471795872,
+      "correction_rms_m": 0.009438752012821424,
+      "direct_support_fraction": 0.020141535111594992,
+      "endpoint_frame": 34,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.2944267988638622,
+          "track_error_m": 1.0948798544527008
+        },
+        {
+          "chamfer_distance_m": 1.1917037139314017,
+          "track_error_m": 1.0459755559891932
+        },
+        {
+          "chamfer_distance_m": 1.0337749754832652,
+          "track_error_m": 1.0310407573262974
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.1279449328200808,
+        "track_error_m": 1.0517261432404923
+      },
+      "train_end_frame": 35,
+      "trajectory_vertex_count": 2148
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.015450755271652728,
+        "track_error_m": 0.02430380434973018
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.016899637456078892,
+        "track_error_m": 0.0275448403534158
+      },
+      "case": "single_lift_zebra",
+      "corrected_vertex_count": 4505,
+      "correction_max_m": 0.010000000464196178,
+      "correction_rms_m": 0.006618772439180691,
+      "direct_support_fraction": 0.03618201997780244,
+      "endpoint_frame": 45,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.1915324468492572,
+          "track_error_m": 1.1587786504176716
+        },
+        {
+          "chamfer_distance_m": 1.0837780932915229,
+          "track_error_m": 1.1395985476580335
+        },
+        {
+          "chamfer_distance_m": 1.057013582979791,
+          "track_error_m": 1.1106612524417525
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.09377419802153,
+        "track_error_m": 1.1333550894768292
+      },
+      "train_end_frame": 46,
+      "trajectory_vertex_count": 4934
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.007095063838488238,
+        "track_error_m": 0.015728441933293952
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.006337837376308829,
+        "track_error_m": 0.011006869793186507
+      },
+      "case": "single_push_rope",
+      "corrected_vertex_count": 1855,
+      "correction_max_m": 0.010000000499000043,
+      "correction_rms_m": 0.009251648614091054,
+      "direct_support_fraction": 0.042587601078167114,
+      "endpoint_frame": 39,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.0179501662559478,
+          "track_error_m": 0.6850401193254816
+        },
+        {
+          "chamfer_distance_m": 0.8952975487993787,
+          "track_error_m": 0.6863344578579597
+        },
+        {
+          "chamfer_distance_m": 0.808941492570551,
+          "track_error_m": 0.7227440085990191
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 0.8932741861924174,
+        "track_error_m": 0.6998067475384943
+      },
+      "train_end_frame": 40,
+      "trajectory_vertex_count": 2332
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.004339265023060416,
+        "track_error_m": 0.006654728828171351
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.005283233723290303,
+        "track_error_m": 0.006526476016609285
+      },
+      "case": "single_push_rope_1",
+      "corrected_vertex_count": 1940,
+      "correction_max_m": 0.010000000292587167,
+      "correction_rms_m": 0.00644600898567009,
+      "direct_support_fraction": 0.027835051546391754,
+      "endpoint_frame": 63,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.2573487427444292,
+          "track_error_m": 0.9784490597544409
+        },
+        {
+          "chamfer_distance_m": 1.2004649883155696,
+          "track_error_m": 0.9954308559394104
+        },
+        {
+          "chamfer_distance_m": 1.1935006535572434,
+          "track_error_m": 0.9699517709545382
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.2175411492990857,
+        "track_error_m": 0.9807275675878578
+      },
+      "train_end_frame": 64,
+      "trajectory_vertex_count": 2293
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.003542650507619441,
+        "track_error_m": 0.008121189009475066
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.008039529956989899,
+        "track_error_m": 0.01388195141979962
+      },
+      "case": "single_push_rope_4",
+      "corrected_vertex_count": 854,
+      "correction_max_m": 0.010000000476083423,
+      "correction_rms_m": 0.00999999999966189,
+      "direct_support_fraction": 0.01053864168618267,
+      "endpoint_frame": 57,
+      "graph_valid_fraction": 1.0,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 2.26110891367431,
+          "track_error_m": 1.8251562666996064
+        },
+        {
+          "chamfer_distance_m": 2.266912829779433,
+          "track_error_m": 1.7270633211235495
+        },
+        {
+          "chamfer_distance_m": 2.2811627402093033,
+          "track_error_m": 1.5838782338893
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 2.2693545241616935,
+        "track_error_m": 1.7093496289279095
+      },
+      "train_end_frame": 58,
+      "trajectory_vertex_count": 855
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.013461644054661607,
+        "track_error_m": 0.02112459716483006
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.012420190736421713,
+        "track_error_m": 0.020707704838365898
+      },
+      "case": "single_push_sloth",
+      "corrected_vertex_count": 5364,
+      "correction_max_m": 0.010000000500702749,
+      "correction_rms_m": 0.007490909251735239,
+      "direct_support_fraction": 0.08165548098434004,
+      "endpoint_frame": 46,
+      "graph_valid_fraction": 0.9996271439224459,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 0.9249005370643273,
+          "track_error_m": 0.9246278896208951
+        },
+        {
+          "chamfer_distance_m": 0.9220012245741332,
+          "track_error_m": 1.0090716701133087
+        },
+        {
+          "chamfer_distance_m": 0.9215619820204627,
+          "track_error_m": 0.9970859891746219
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 0.9226355032111214,
+        "track_error_m": 0.980265075674047
+      },
+      "train_end_frame": 47,
+      "trajectory_vertex_count": 6270
+    },
+    {
+      "baseline": {
+        "chamfer_distance_m": 0.02011943404692877,
+        "track_error_m": 0.04223376040532321
+      },
+      "candidate": {
+        "chamfer_distance_m": 0.024762642200076446,
+        "track_error_m": 0.045324296950175536
+      },
+      "case": "weird_package",
+      "corrected_vertex_count": 4532,
+      "correction_max_m": 0.010000000502409033,
+      "correction_rms_m": 0.00945122993453883,
+      "direct_support_fraction": 0.02559576345984113,
+      "endpoint_frame": 26,
+      "graph_valid_fraction": 0.9975728155339806,
+      "horizon_ratios": [
+        {
+          "chamfer_distance_m": 1.2650422920981916,
+          "track_error_m": 1.0645840717200918
+        },
+        {
+          "chamfer_distance_m": 1.225855957176716,
+          "track_error_m": 1.076173548431837
+        },
+        {
+          "chamfer_distance_m": 1.2011102087236534,
+          "track_error_m": 1.0794335140875375
+        }
+      ],
+      "ratios": {
+        "chamfer_distance_m": 1.2307822447846868,
+        "track_error_m": 1.0731769209085817
+      },
+      "train_end_frame": 27,
+      "trajectory_vertex_count": 4532
+    }
+  ],
+  "contract": "diagnostic-only fixed train-end-minus-one Prob4D graph correction persisted over future; invalid graph vertices get zero correction; no future MotionCrafter value used",
+  "future_motioncrafter_used": false,
+  "per_metric_win_count": {
+    "chamfer_distance_m": 6,
+    "track_error_m": 8
+  },
+  "schema_version": 1
+}

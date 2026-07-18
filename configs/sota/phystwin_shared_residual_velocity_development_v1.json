@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-shared-residual-velocity-development-v1",
+  "locked_at_utc": "2026-07-18T17:20:00Z",
+  "status": "Three-action development gate; the 19-case exploratory cohort remains closed unless this gate passes.",
+  "claim_boundary": "The three sloth interactions have been examined previously and can reject this family but cannot independently confirm it.",
+  "episodes": [
+    {
+      "case": "single_lift_sloth",
+      "final_data": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_sloth/final_data.pkl",
+      "baseline_trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_sloth/inference.pkl",
+      "gt_track_3d": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_sloth/gt_track_3d.pkl",
+      "fit_end_frame": 44,
+      "train_end_frame": 59
+    },
+    {
+      "case": "double_lift_sloth",
+      "final_data": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_sloth/final_data.pkl",
+      "baseline_trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_sloth/inference.pkl",
+      "gt_track_3d": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_sloth/gt_track_3d.pkl",
+      "fit_end_frame": 32,
+      "train_end_frame": 43
+    },
+    {
+      "case": "double_stretch_sloth",
+      "final_data": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_stretch_sloth/final_data.pkl",
+      "baseline_trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_stretch_sloth/inference.pkl",
+      "gt_track_3d": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_stretch_sloth/gt_track_3d.pkl",
+      "fit_end_frame": 100,
+      "train_end_frame": 134
+    }
+  ]
+}
