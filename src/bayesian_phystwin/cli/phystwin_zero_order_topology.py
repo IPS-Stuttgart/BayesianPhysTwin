@@ -25,6 +25,7 @@ def main() -> None:
     parser.add_argument("gt_track_3d")
     parser.add_argument("output_dir")
     parser.add_argument("--fit-end-frame", type=int, required=True)
+    parser.add_argument("--selection-start-frame", type=int)
     parser.add_argument("--region-count", type=int, default=5)
     parser.add_argument("--candidates-per-family", type=int, default=8)
     parser.add_argument("--seed", type=int, default=20260718)
@@ -39,6 +40,7 @@ def main() -> None:
         cues_path=args.cues,
         output_dir=args.output_dir,
         fit_end_frame=args.fit_end_frame,
+        selection_start_frame=args.selection_start_frame,
         released_trajectory_path=args.released_trajectory,
         gt_track_path=args.gt_track_3d,
         config=ZeroOrderTopologySearchConfig(

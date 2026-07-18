@@ -288,6 +288,7 @@ def run_zero_order_topology_search(
     cues_path: str | Path,
     output_dir: str | Path,
     fit_end_frame: int,
+    selection_start_frame: int | None = None,
     released_trajectory_path: str | Path,
     gt_track_path: str | Path,
     config: ZeroOrderTopologySearchConfig = ZeroOrderTopologySearchConfig(),
@@ -299,6 +300,13 @@ def run_zero_order_topology_search(
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"zero-order output is not empty: {output}")
     output.mkdir(parents=True, exist_ok=True)
+    selection_start = (
+        int(np.floor(0.75 * fit_end_frame))
+        if selection_start_frame is None
+        else int(selection_start_frame)
+    )
+    if not 1 < selection_start < fit_end_frame:
+        raise ValueError("selection start must lie inside the fit prefix")
     candidates = generate_topology_field_candidates(config)
     plan = {
         "schema_version": 1,
@@ -306,6 +314,7 @@ def run_zero_order_topology_search(
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "config": asdict(config),
         "candidate_count": len(candidates),
+        "selection_interval": [selection_start, fit_end_frame],
         "candidates": [asdict(candidate) for candidate in candidates],
         "inputs": {
             "fit_final_data": {
@@ -331,8 +340,8 @@ def run_zero_order_topology_search(
         },
         "information_boundary": (
             "Every candidate sees only the fit-prefix artifact. Candidate "
-            "selection uses official fit CD and track error; no source suffix "
-            "or future observation is present."
+            "selection uses official CD and track error on the locked late-fit "
+            "interval; no source suffix or future observation is present."
         ),
         "future_observations_used": False,
     }
@@ -386,6 +395,7 @@ def run_zero_order_topology_search(
             config=HeadlessPhysTwinRefitConfig(
                 variant="hard",
                 train_end_frame=fit_end_frame,
+                fit_end_frame=selection_start,
                 epochs=0,
                 optimize_collision=False,
                 spring_parameterization="dense",
@@ -397,15 +407,16 @@ def run_zero_order_topology_search(
             gt_track_path=gt_track_path,
             spring_topology_path=topology_path,
         )
-        fit_metrics = {
-            name: float(run_summary["official_evaluation"]["train"][name])
+        selection_metrics = {
+            name: float(run_summary["official_evaluation"]["validation"][name])
             for name in METRICS
         }
-        metrics[candidate.candidate_id] = fit_metrics
+        metrics[candidate.candidate_id] = selection_metrics
         results[candidate.candidate_id] = {
             "status": "evaluated",
             "candidate": asdict(candidate),
-            "fit_metrics": fit_metrics,
+            "selection_metrics": selection_metrics,
+            "selection_interval": [selection_start, fit_end_frame],
             "topology": topology_summary,
             "run_summary": {
                 "path": str(candidate_root / "run" / "summary.json"),
@@ -422,6 +433,7 @@ def run_zero_order_topology_search(
         "completed_at_utc": datetime.now(timezone.utc).isoformat(),
         "search_plan": {"path": str(plan_path), "sha256": _sha256(plan_path)},
         "selection": selection,
+        "selection_interval": [selection_start, fit_end_frame],
         "selected_candidate": selected["candidate"],
         "selected_topology": selected["topology"]["artifact"],
         "candidate_results": results,
