@@ -104,3 +104,27 @@ but final selection must occur on PhysTwin-source rollouts under the same
 manual-track and CD metrics.
 
 No larger released-case or independent run is justified by this result.
+
+## Native-training successor
+
+The registered successor trained PGRD's temporal transformer on 18 PhysTwin
+source prefixes while keeping its spatial encoder frozen. Training loss fell
+by `45.7%`, but the untouched three-action development gate still failed:
+equal-case CD and track error regressed by `1.081%` and `1.296%`, respectively,
+and only `single_lift_sloth` improved both metrics. The 19-case future cohort
+therefore remains sealed.
+
+The full result and causal boundary are archived in
+`docs/phystwin_pgrd_native_v1.md`. This closes temporal-head-only adaptation.
+Any successor must be a separately registered family that changes the spatial
+representation or conditions explicitly on the PhysTwin graph and realized
+actuation.
+
+## Unrolled-training successor
+
+A second registered successor trained both the PGRD spatial decoder and
+temporal transformer with a five-step recursive source-prefix objective. Its
+training loss fell by `33.1%`, but the untouched gate regressed by `1.407%` CD
+and `1.757%` track error, with zero of three joint wins. The exploratory
+19-case future therefore remains sealed. This closes the present PGRD adapter
+family; see `docs/phystwin_pgrd_unrolled_v1.md` for the full frozen result.

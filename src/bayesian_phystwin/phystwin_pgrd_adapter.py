@@ -268,7 +268,7 @@ def verify_pgrd_assets(
     checkpoint: str | Path,
     *,
     expected_commit: str = PGRD_UPSTREAM_COMMIT,
-    expected_checkpoint_sha256: str = PGRD_SLOTH_CHECKPOINT_SHA256,
+    expected_checkpoint_sha256: str | None = PGRD_SLOTH_CHECKPOINT_SHA256,
 ) -> dict[str, str]:
     """Reject silent upstream or checkpoint drift before importing PGRD."""
 
@@ -287,7 +287,10 @@ def verify_pgrd_assets(
     checkpoint_sha256 = _sha256(checkpoint_path)
     if commit != expected_commit:
         raise ValueError(f"PGRD commit mismatch: expected {expected_commit}, got {commit}")
-    if checkpoint_sha256 != expected_checkpoint_sha256:
+    if (
+        expected_checkpoint_sha256 is not None
+        and checkpoint_sha256 != expected_checkpoint_sha256
+    ):
         raise ValueError(
             "PGRD checkpoint mismatch: expected "
             f"{expected_checkpoint_sha256}, got {checkpoint_sha256}"
@@ -353,8 +356,16 @@ class OfficialPGRDResidualPredictor:
         device: str = "cuda",
         history_length: int = 2,
         temporal_window: int = 5,
+        residual_scale: float = 0.1,
+        expected_checkpoint_sha256: str | None = PGRD_SLOTH_CHECKPOINT_SHA256,
     ) -> None:
-        self.provenance = verify_pgrd_assets(checkout, checkpoint)
+        if residual_scale <= 0.0 or not np.isfinite(residual_scale):
+            raise ValueError("residual_scale must be positive and finite")
+        self.provenance = verify_pgrd_assets(
+            checkout,
+            checkpoint,
+            expected_checkpoint_sha256=expected_checkpoint_sha256,
+        )
         checkout_path = Path(checkout).resolve()
         if str(checkout_path) not in sys.path:
             sys.path.insert(0, str(checkout_path))
@@ -422,6 +433,7 @@ class OfficialPGRDResidualPredictor:
         self._temporal = temporal
         self._history_length = history_length
         self._temporal_window = temporal_window
+        self._residual_scale = float(residual_scale)
 
     def reset(self) -> None:
         self._temporal.reset_window()
@@ -436,33 +448,73 @@ class OfficialPGRDResidualPredictor:
         v_sim: np.ndarray,
     ) -> np.ndarray:
         torch = self._torch
+        with torch.inference_mode():
+            features = self._spatial_features_tensor(
+                x, v, x_history, v_history, x_sim, v_sim
+            )
+            residual_velocity = self._temporal(
+                features,
+                rollout_window_size=self._temporal_window,
+                residual_scale=self._residual_scale,
+            )
+        result = residual_velocity[0].detach().cpu().numpy().astype(float)
+        if result.shape != x.shape or not np.all(np.isfinite(result)):
+            raise RuntimeError("PGRD returned an invalid residual velocity")
+        return result
+
+    def _spatial_features_tensor(
+        self,
+        x: np.ndarray,
+        v: np.ndarray,
+        x_history: np.ndarray,
+        v_history: np.ndarray,
+        x_sim: np.ndarray,
+        v_sim: np.ndarray,
+    ) -> object:
         arrays = [x, v, x_history, v_history, x_sim, v_sim]
         if any(not np.all(np.isfinite(value)) for value in arrays):
             raise ValueError("PGRD inputs must be finite")
         if x_history.shape != (len(x), self._history_length, 3):
             raise ValueError("x_history has an incompatible shape")
+        if any(value.shape != x.shape for value in (v, x_sim, v_sim)):
+            raise ValueError("PGRD state inputs must share shape (N, 3)")
+        if v_history.shape != x_history.shape:
+            raise ValueError("v_history has an incompatible shape")
+        torch = self._torch
         tensors = [
             torch.as_tensor(value, dtype=torch.float32, device=self._device)
             for value in arrays
         ]
         x_t, v_t, x_his_t, v_his_t, x_sim_t, v_sim_t = tensors
         enabled = torch.ones((1, len(x), 3), device=self._device)
-        with torch.inference_mode():
-            features = self._residualnet(
-                x_t[None],
-                v_t[None],
-                x_his_t.reshape(1, len(x), -1),
-                v_his_t.reshape(1, len(x), -1),
-                enabled,
-                x_sim_t[None],
-                v_sim_t[None],
+        return self._residualnet(
+            x_t[None],
+            v_t[None],
+            x_his_t.reshape(1, len(x), -1),
+            v_his_t.reshape(1, len(x), -1),
+            enabled,
+            x_sim_t[None],
+            v_sim_t[None],
+        )
+
+    def spatial_features(
+        self,
+        x: np.ndarray,
+        v: np.ndarray,
+        x_history: np.ndarray,
+        v_history: np.ndarray,
+        x_sim: np.ndarray,
+        v_sim: np.ndarray,
+    ) -> np.ndarray:
+        """Return frozen PGRD spatial features without advancing temporal state."""
+
+        with self._torch.inference_mode():
+            features = self._spatial_features_tensor(
+                x, v, x_history, v_history, x_sim, v_sim
             )
-            residual_velocity = self._temporal(
-                features, rollout_window_size=self._temporal_window
-            )
-        result = residual_velocity[0].detach().cpu().numpy().astype(float)
+        result = features[0].detach().cpu().numpy().astype(float)
         if result.shape != x.shape or not np.all(np.isfinite(result)):
-            raise RuntimeError("PGRD returned an invalid residual velocity")
+            raise RuntimeError("PGRD returned invalid spatial features")
         return result
 
 
