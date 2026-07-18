@@ -1,0 +1,764 @@
+{
+  "aggregate_both_metrics_improved": false,
+  "aggregate_validation_metrics": {
+    "candidate": {
+      "chamfer_distance_m": 0.010108147139869938,
+      "track_error_m": 0.01851250377616014
+    },
+    "selected": {
+      "chamfer_distance_m": 0.010099528538957101,
+      "track_error_m": 0.01854732222467192
+    },
+    "teacher": {
+      "chamfer_distance_m": 0.010099528538957101,
+      "track_error_m": 0.01854732222467192
+    }
+  },
+  "case_results": {
+    "single_lift_cloth": {
+      "artifacts": {
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_cloth/prefix/manifest.json",
+          "sha256": "7ebe4b4b56133659e8ab5b3f677a0b709fbdcc5c67cc4163f20338ab3645f098"
+        },
+        "run_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_cloth/learned/summary.json",
+          "sha256": "52531d84e7520183693dace04a011575a205d080075652f40f63964336cba036"
+        },
+        "selected_validation_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_cloth/learned/baseline_trajectory.pkl",
+          "sha256": "8a2af9af44e39596d2acb2da10cdc3b8e72bb0b9c436759d2d98a6968e4b7240"
+        }
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.028773403533894196,
+        "track_error_m": 0.05998605212399081
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.001493633898395,
+          "track_error_m": 0.9972462532896158
+        },
+        "candidate_normalized_score": 0.9993699435940054,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": 0.0006300564059945613,
+        "selected_family": "exact_teacher"
+      },
+      "fit_interval": [
+        0,
+        90
+      ],
+      "internal_identity_vector_rmse_m": 0.0010953490876836971,
+      "released_replay_vector_rmse_m": 0.037541768191222735,
+      "runner_selected_epoch": 0,
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.02873049069906854,
+        "track_error_m": 0.0601516946552718
+      },
+      "spring_scale_diagnostic": {
+        "controller_log_scale": 0.00024587276857346296,
+        "cross_part_mean_log_scale": 1.8936398191726767e-06,
+        "object_log_scale_max_abs": 0.0001467680122004822,
+        "object_log_scale_std": 7.379423889026918e-05,
+        "part_pairs": [
+          {
+            "log_scale": 8.516466186847538e-05,
+            "parts": [
+              0,
+              0
+            ],
+            "spring_count": 14818
+          },
+          {
+            "log_scale": 4.113290924578905e-05,
+            "parts": [
+              0,
+              2
+            ],
+            "spring_count": 128
+          },
+          {
+            "log_scale": -2.4590632165200077e-05,
+            "parts": [
+              0,
+              3
+            ],
+            "spring_count": 97
+          },
+          {
+            "log_scale": -3.327282684040256e-05,
+            "parts": [
+              0,
+              4
+            ],
+            "spring_count": 886
+          },
+          {
+            "log_scale": -0.0001116413768613711,
+            "parts": [
+              1,
+              1
+            ],
+            "spring_count": 15668
+          },
+          {
+            "log_scale": -1.9153352695866488e-05,
+            "parts": [
+              1,
+              3
+            ],
+            "spring_count": 183
+          },
+          {
+            "log_scale": 6.56198535580188e-05,
+            "parts": [
+              1,
+              4
+            ],
+            "spring_count": 1038
+          },
+          {
+            "log_scale": -0.00011987052130280063,
+            "parts": [
+              2,
+              2
+            ],
+            "spring_count": 12681
+          },
+          {
+            "log_scale": -1.1991587598458864e-05,
+            "parts": [
+              2,
+              4
+            ],
+            "spring_count": 932
+          },
+          {
+            "log_scale": 0.0001467680122004822,
+            "parts": [
+              3,
+              3
+            ],
+            "spring_count": 16218
+          },
+          {
+            "log_scale": -4.488884769671131e-06,
+            "parts": [
+              3,
+              4
+            ],
+            "spring_count": 891
+          },
+          {
+            "log_scale": -3.9168375224107876e-05,
+            "parts": [
+              4,
+              4
+            ],
+            "spring_count": 41821
+          }
+        ],
+        "within_part_mean_log_scale": -7.749519863864406e-06
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.02873049069906854,
+        "track_error_m": 0.0601516946552718
+      },
+      "validation_interval": [
+        90,
+        121
+      ]
+    },
+    "single_lift_dinosor": {
+      "artifacts": {
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_dinosor/prefix/manifest.json",
+          "sha256": "beb4de856a6f43ae20faf524f47f87ffb5d64db88f02b3f4f3702eed423b571b"
+        },
+        "run_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_dinosor/learned/summary.json",
+          "sha256": "833068c1834ebb70b91d61b444435208a72ff91c967d5fdd0b73fb88a13bbef0"
+        },
+        "selected_validation_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_dinosor/learned/baseline_trajectory.pkl",
+          "sha256": "280a1b7a31913d5677434ec8917109e29b1c72391df33fb9c1bb1250541735ed"
+        }
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.005915979129316057,
+        "track_error_m": 0.007767797325970964
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.0000003189308357,
+          "track_error_m": 0.9999389515622634
+        },
+        "candidate_normalized_score": 0.9999696352465496,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": 3.0364753450418114e-05,
+        "selected_family": "exact_teacher"
+      },
+      "fit_interval": [
+        0,
+        45
+      ],
+      "internal_identity_vector_rmse_m": 4.665910318275929e-06,
+      "released_replay_vector_rmse_m": 0.0004102980664390729,
+      "runner_selected_epoch": 2,
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.005915977242528491,
+        "track_error_m": 0.007768271566814031
+      },
+      "spring_scale_diagnostic": {
+        "controller_log_scale": -0.0003821521531790495,
+        "cross_part_mean_log_scale": 2.6571395567641176e-06,
+        "object_log_scale_max_abs": 0.00015662837540730834,
+        "object_log_scale_std": 5.4877710299466004e-05,
+        "part_pairs": [
+          {
+            "log_scale": 0.00015662837540730834,
+            "parts": [
+              0,
+              0
+            ],
+            "spring_count": 29967
+          },
+          {
+            "log_scale": 1.7540288581585628e-06,
+            "parts": [
+              0,
+              3
+            ],
+            "spring_count": 44
+          },
+          {
+            "log_scale": 7.191246368165594e-06,
+            "parts": [
+              0,
+              4
+            ],
+            "spring_count": 2044
+          },
+          {
+            "log_scale": -8.535775850759819e-05,
+            "parts": [
+              1,
+              1
+            ],
+            "spring_count": 10837
+          },
+          {
+            "log_scale": 1.3929948181612417e-06,
+            "parts": [
+              1,
+              3
+            ],
+            "spring_count": 469
+          },
+          {
+            "log_scale": -4.646286015486112e-06,
+            "parts": [
+              1,
+              4
+            ],
+            "spring_count": 924
+          },
+          {
+            "log_scale": -6.273623876040801e-05,
+            "parts": [
+              2,
+              2
+            ],
+            "spring_count": 7549
+          },
+          {
+            "log_scale": 4.354877546575153e-06,
+            "parts": [
+              2,
+              3
+            ],
+            "spring_count": 668
+          },
+          {
+            "log_scale": 5.224610049481271e-06,
+            "parts": [
+              2,
+              4
+            ],
+            "spring_count": 567
+          },
+          {
+            "log_scale": 1.5796029401826672e-05,
+            "parts": [
+              3,
+              3
+            ],
+            "spring_count": 35151
+          },
+          {
+            "log_scale": 3.328505272293114e-06,
+            "parts": [
+              3,
+              4
+            ],
+            "spring_count": 2529
+          },
+          {
+            "log_scale": -9.590650734025985e-06,
+            "parts": [
+              4,
+              4
+            ],
+            "spring_count": 27356
+          }
+        ],
+        "within_part_mean_log_scale": 2.947951361420564e-06
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.005915977242528491,
+        "track_error_m": 0.007768271566814031
+      },
+      "validation_interval": [
+        45,
+        60
+      ]
+    },
+    "single_lift_rope": {
+      "artifacts": {
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_rope/prefix/manifest.json",
+          "sha256": "b81936abe0b7c40d9c44baf1118a2fe0bae05a051195a72eb8d4232573475224"
+        },
+        "run_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_rope/learned/summary.json",
+          "sha256": "d7e6d18b872c18bb6054657085c05c813ad4618383f306100ebbd549bc6f2a0d"
+        },
+        "selected_validation_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_rope/learned/baseline_trajectory.pkl",
+          "sha256": "99bc5ce3e09bf645f50367879b9bd324b7edd92cf057a364a2c1352abf14e9ea"
+        }
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.004544020079994778,
+        "track_error_m": 0.007254569995698463
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.0001278417857702,
+          "track_error_m": 0.9991272301545163
+        },
+        "candidate_normalized_score": 0.9996275359701432,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": 0.0003724640298568005,
+        "selected_family": "exact_teacher"
+      },
+      "fit_interval": [
+        0,
+        26
+      ],
+      "internal_identity_vector_rmse_m": 1.7261058306853763e-05,
+      "released_replay_vector_rmse_m": 0.00041047793896608194,
+      "runner_selected_epoch": 1,
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.004543439238608976,
+        "track_error_m": 0.007260907096463114
+      },
+      "spring_scale_diagnostic": {
+        "controller_log_scale": -0.00017990253400057554,
+        "cross_part_mean_log_scale": 1.0767575076897629e-05,
+        "object_log_scale_max_abs": 0.0001876891910796985,
+        "object_log_scale_std": 0.00011209236638239774,
+        "part_pairs": [
+          {
+            "log_scale": -4.26975020673126e-05,
+            "parts": [
+              0,
+              0
+            ],
+            "spring_count": 3321
+          },
+          {
+            "log_scale": -9.842211875366047e-05,
+            "parts": [
+              0,
+              3
+            ],
+            "spring_count": 301
+          },
+          {
+            "log_scale": 0.0001225044543389231,
+            "parts": [
+              1,
+              1
+            ],
+            "spring_count": 1980
+          },
+          {
+            "log_scale": 0.0001408555544912815,
+            "parts": [
+              1,
+              4
+            ],
+            "spring_count": 254
+          },
+          {
+            "log_scale": -0.0001876891910796985,
+            "parts": [
+              2,
+              2
+            ],
+            "spring_count": 7123
+          },
+          {
+            "log_scale": -6.670082802884281e-05,
+            "parts": [
+              2,
+              3
+            ],
+            "spring_count": 316
+          },
+          {
+            "log_scale": 6.733769259881228e-05,
+            "parts": [
+              2,
+              4
+            ],
+            "spring_count": 349
+          },
+          {
+            "log_scale": 0.00010511730215512216,
+            "parts": [
+              3,
+              3
+            ],
+            "spring_count": 7108
+          },
+          {
+            "log_scale": 0.00011960660049226135,
+            "parts": [
+              4,
+              4
+            ],
+            "spring_count": 6629
+          }
+        ],
+        "within_part_mean_log_scale": 2.3368332767859103e-05
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.004543439238608976,
+        "track_error_m": 0.007260907096463114
+      },
+      "validation_interval": [
+        26,
+        35
+      ]
+    },
+    "single_lift_sloth": {
+      "artifacts": {
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_sloth/prefix/manifest.json",
+          "sha256": "8a0f8f0ab3914bdbba38fb75b80376777cf997e9f54651025c8d5e02b88ceb6e"
+        },
+        "run_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_sloth/learned/summary.json",
+          "sha256": "2be47addc64ded665a5f4b9ba2acdc2335ce6a233d8b5e4d4aa8dd1d6fa4e7d3"
+        },
+        "selected_validation_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_sloth/learned/baseline_trajectory.pkl",
+          "sha256": "7a7d10acae79c9a61573722b1025e6836b2072bd5b4f1d27197861cc3e7a2b75"
+        }
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.0067983548626864695,
+        "track_error_m": 0.00915574572544851
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.9999512137160982,
+          "track_error_m": 0.9998167759944533
+        },
+        "candidate_normalized_score": 0.9998839948552758,
+        "learned_accepted": false,
+        "no_metric_regression": true,
+        "relative_score_improvement": 0.0001160051447242072,
+        "selected_family": "exact_teacher"
+      },
+      "fit_interval": [
+        0,
+        44
+      ],
+      "internal_identity_vector_rmse_m": 9.026675821186431e-06,
+      "released_replay_vector_rmse_m": 0.00021967797785547248,
+      "runner_selected_epoch": 1,
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.00679868654533843,
+        "track_error_m": 0.009157423585278292
+      },
+      "spring_scale_diagnostic": {
+        "controller_log_scale": 1.0154793017136399e-05,
+        "cross_part_mean_log_scale": 7.1732734535804155e-06,
+        "object_log_scale_max_abs": 9.086833597393706e-05,
+        "object_log_scale_std": 2.891537140521435e-05,
+        "part_pairs": [
+          {
+            "log_scale": -6.552902505063685e-07,
+            "parts": [
+              0,
+              0
+            ],
+            "spring_count": 41659
+          },
+          {
+            "log_scale": -1.1264182830927894e-06,
+            "parts": [
+              0,
+              1
+            ],
+            "spring_count": 525
+          },
+          {
+            "log_scale": 1.691714169282932e-05,
+            "parts": [
+              0,
+              2
+            ],
+            "spring_count": 529
+          },
+          {
+            "log_scale": 9.556501936458517e-06,
+            "parts": [
+              0,
+              3
+            ],
+            "spring_count": 784
+          },
+          {
+            "log_scale": -1.0826534889929462e-05,
+            "parts": [
+              0,
+              4
+            ],
+            "spring_count": 1143
+          },
+          {
+            "log_scale": 2.368807872699108e-05,
+            "parts": [
+              1,
+              1
+            ],
+            "spring_count": 22583
+          },
+          {
+            "log_scale": 5.12783390149707e-06,
+            "parts": [
+              1,
+              2
+            ],
+            "spring_count": 155
+          },
+          {
+            "log_scale": 2.1317273422027938e-05,
+            "parts": [
+              1,
+              3
+            ],
+            "spring_count": 17
+          },
+          {
+            "log_scale": -1.5656652976758778e-05,
+            "parts": [
+              2,
+              2
+            ],
+            "spring_count": 19319
+          },
+          {
+            "log_scale": 9.247116395272315e-06,
+            "parts": [
+              2,
+              4
+            ],
+            "spring_count": 358
+          },
+          {
+            "log_scale": -9.000736866937586e-08,
+            "parts": [
+              3,
+              3
+            ],
+            "spring_count": 12649
+          },
+          {
+            "log_scale": -9.086833597393706e-05,
+            "parts": [
+              4,
+              4
+            ],
+            "spring_count": 10876
+          }
+        ],
+        "within_part_mean_log_scale": -1.67164415685761e-05
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.00679868654533843,
+        "track_error_m": 0.009157423585278292
+      },
+      "validation_interval": [
+        44,
+        59
+      ]
+    },
+    "single_lift_zebra": {
+      "artifacts": {
+        "prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_zebra/prefix/manifest.json",
+          "sha256": "4a2696b5ad74038ea67c8c9a9b04844fd1949d42c92df9e4abb3f2bc90e7745e"
+        },
+        "run_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_zebra/learned/summary.json",
+          "sha256": "9d3912de24fba74b67d963d6f8f42c5bab9bbe828b0c79c0f46e3ae85b8010fd"
+        },
+        "selected_validation_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/cases/single_lift_zebra/learned/baseline_trajectory.pkl",
+          "sha256": "588f74e2021734cf4ad386bbe4c59671fe336cd049dee24cfa806fbbdbadb167"
+        }
+      },
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.004508978093458192,
+        "track_error_m": 0.008398353709691959
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.999984281434208,
+          "track_error_m": 1.0000047021531404
+        },
+        "candidate_normalized_score": 0.9999944917936743,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": 5.508206325721687e-06,
+        "selected_family": "exact_teacher"
+      },
+      "fit_interval": [
+        0,
+        34
+      ],
+      "internal_identity_vector_rmse_m": 6.005161382337687e-07,
+      "released_replay_vector_rmse_m": 0.00031441346650439315,
+      "runner_selected_epoch": 0,
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.004509048969241074,
+        "track_error_m": 0.008398314219532377
+      },
+      "spring_scale_diagnostic": {
+        "controller_log_scale": 0.00027135745040141046,
+        "cross_part_mean_log_scale": 0.00028633057809202,
+        "object_log_scale_max_abs": 0.00037027118378318846,
+        "object_log_scale_std": 0.0002756471009697759,
+        "part_pairs": [
+          {
+            "log_scale": -0.0002401727542746812,
+            "parts": [
+              0,
+              0
+            ],
+            "spring_count": 12123
+          },
+          {
+            "log_scale": 0.00013575702905654907,
+            "parts": [
+              0,
+              4
+            ],
+            "spring_count": 466
+          },
+          {
+            "log_scale": -0.00021082097373437136,
+            "parts": [
+              1,
+              1
+            ],
+            "spring_count": 3881
+          },
+          {
+            "log_scale": 0.0002877194492612034,
+            "parts": [
+              1,
+              4
+            ],
+            "spring_count": 161
+          },
+          {
+            "log_scale": 0.0003619912313297391,
+            "parts": [
+              2,
+              2
+            ],
+            "spring_count": 5425
+          },
+          {
+            "log_scale": 0.00036875272053293884,
+            "parts": [
+              2,
+              4
+            ],
+            "spring_count": 366
+          },
+          {
+            "log_scale": -0.00037027118378318846,
+            "parts": [
+              3,
+              3
+            ],
+            "spring_count": 3713
+          },
+          {
+            "log_scale": 0.0003530931135173887,
+            "parts": [
+              3,
+              4
+            ],
+            "spring_count": 136
+          },
+          {
+            "log_scale": 0.00019460769544821233,
+            "parts": [
+              4,
+              4
+            ],
+            "spring_count": 28413
+          }
+        ],
+        "within_part_mean_log_scale": -5.2933197002857925e-05
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.004509048969241074,
+        "track_error_m": 0.008398314219532377
+      },
+      "validation_interval": [
+        34,
+        46
+      ]
+    }
+  },
+  "code_commits": [
+    "03a05e49749ac6661f9da9b00e9375ad42960897"
+  ],
+  "completed_at_utc": "2026-07-18T11:33:40.653532+00:00",
+  "contract": "phystwin-part-pair-source-gate-v1",
+  "future_metrics_opened": false,
+  "learned_acceptance_count": 0,
+  "official_commits": [
+    "2b6630528141b9cba5a7677c8b88b2129b4a8390"
+  ],
+  "required_learned_case_count": 3,
+  "schema_version": 1,
+  "source_gate_passed": false,
+  "source_protocol": {
+    "path": "/mnt/corsair/florianpfaff/phystwin-part-pair-source-v1/locked_protocol.json",
+    "sha256": "b5d8c49cacad711edb3cc648fce82fda3a9483cbbba962863744e3f72d2074e4"
+  },
+  "teacher_fallback_count": 5
+}
