@@ -14,6 +14,7 @@ from .deform360_reusable_sota_protocol import (
     CANONICAL_REUSABLE_SOTA_CONFIG_SHA256,
     EXPECTED_DEVELOPMENT_OBJECTS,
     EXPECTED_FIT_EPISODES,
+    EXPECTED_HELD_EPISODES,
     REUSABLE_SOTA_PROTOCOL_ID,
     validate_reusable_sota_config,
 )
@@ -168,6 +169,44 @@ def authorize_development_fit_window(
     }
 
 
+def authorize_development_held_prediction_window(
+    parent: Mapping[str, Any],
+    addendum: Mapping[str, Any],
+    *,
+    object_id: str,
+    episode_id: int,
+) -> dict[str, Any]:
+    """Authorize one-frame, outcome-sealed development prediction staging."""
+
+    validate_reusable_sota_config(parent)
+    validate_reusable_sota_window(addendum)
+    development = {
+        value for values in EXPECTED_DEVELOPMENT_OBJECTS.values() for value in values
+    }
+    _require(object_id in development, "window staging is not a development object")
+    _require(
+        int(episode_id) in EXPECTED_HELD_EPISODES,
+        "window staging is not a development held episode",
+    )
+    return {
+        "passed": True,
+        "operation": "development-held-prediction-staging",
+        "protocol_id": REUSABLE_SOTA_WINDOW_PROTOCOL_ID,
+        "object_id": object_id,
+        "episode_id": int(episode_id),
+        "parent_protocol_id": REUSABLE_SOTA_PROTOCOL_ID,
+        "parent_config_sha256": CANONICAL_REUSABLE_SOTA_CONFIG_SHA256,
+        "window_protocol_id": REUSABLE_SOTA_WINDOW_PROTOCOL_ID,
+        "window_config_sha256": addendum["config_sha256"],
+        "held_action_read": True,
+        "held_object_input_frame_count": 1,
+        "held_future_object_read": False,
+        "held_tactile_read": False,
+        "prediction_seal_required_before_outcome_reveal": True,
+        "confirmatory_object_read": False,
+    }
+
+
 def select_reusable_sota_action_window(
     actions: np.ndarray,
     openings: np.ndarray,
@@ -208,6 +247,7 @@ __all__ = [
     "CANONICAL_REUSABLE_SOTA_WINDOW_SHA256",
     "REUSABLE_SOTA_WINDOW_PROTOCOL_ID",
     "authorize_development_fit_window",
+    "authorize_development_held_prediction_window",
     "load_reusable_sota_window",
     "reusable_sota_window_sha256",
     "select_reusable_sota_action_window",

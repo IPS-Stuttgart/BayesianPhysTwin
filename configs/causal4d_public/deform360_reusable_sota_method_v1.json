@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "config_sha256": "54a865cb4382410c07501d7b6b8c512ed60a2f60d43c92be774e22f0b1427b5c",
+  "config": {
+    "protocol_id": "deform360-reusable-sota-method-v1",
+    "parent_protocol_id": "deform360-reusable-sota-v1",
+    "parent_config_sha256": "64e41773d3e333987dc97a11c52e3474fd34fe65139e6c7d799b3e8f4db188cd",
+    "window_protocol_id": "deform360-reusable-sota-window-v1",
+    "window_config_sha256": "331faa06dd3d81d1ddea615828eae2b4a040c3a56b92058e5b037a6129f1f9c8",
+    "status": "locked-before-reusable-sota-fit-metric-evaluation",
+    "locked_at": "2026-07-17",
+    "lock_timing": {
+      "fit_prediction_metrics_read": false,
+      "held_future_outcomes_read": false,
+      "confirmatory_objects_opened": false,
+      "allowed_diagnostics_before_lock": [
+        "development frame-zero reconstruction and graph QA",
+        "outcome-blind official Warp finite-rollout smoke",
+        "generic-mask failure followed by source-panel re-identification"
+      ]
+    },
+    "physical_grid": {
+      "init_spring_y": [10000.0, 30000.0, 50000.0],
+      "drag_damping": [1.0, 3.0, 10.0],
+      "dashpot_damping": [50.0, 100.0],
+      "candidate_count": 18,
+      "provenance": "inherited unchanged from deform360-reusable-trust-physics-addendum-v1"
+    },
+    "official_warp": {
+      "revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+      "controller_radius_m": 0.03,
+      "controller_max_neighbours": 1,
+      "canonical_controller_patch_size": 16,
+      "support_dynamics": "official-ground"
+    },
+    "prediction_bank": {
+      "frame_count": 76,
+      "response": "driven candidate trajectory minus matched zero-action candidate trajectory",
+      "dense_prediction": "frame-zero persistence plus target readout of the graph response",
+      "candidate_selection_uses_fit_episodes_only": true,
+      "all_held_candidate_predictions_hashed_before_outcome_reveal": true,
+      "held_future_object_or_tactile_used": false
+    },
+    "selection": {
+      "score": "0.5 * track_error / persistence_track_error + 0.5 * chamfer / persistence_chamfer",
+      "pooled_fit_episode_selection": true,
+      "all_single_fit_episode_selections_reported": true,
+      "leave_one_fit_episode_out_reported": true,
+      "held_outcome_refit_forbidden": true,
+      "tie_break": [
+        "lower normalized score",
+        "lower init_spring_y",
+        "lower drag_damping",
+        "lower dashpot_damping"
+      ]
+    },
+    "contact_regime": {
+      "mandatory_control": "always-attached official PhysTwin controller",
+      "development_arm": "openness-and-geometry-conditioned causal contact transition",
+      "future_object_or_tactile_cues_forbidden": true,
+      "promotion_requires_source-development transfer"
+        : true
+    },
+    "claim_boundary": "development method lock for an independent Deform360 protocol; direct Table 4 claims still require official evaluator parity"
+  }
+}

@@ -14,6 +14,7 @@ import numpy as np
 
 
 DEVELOPMENT_MASK_PANEL_KIND = "Deform360ReusableSotaDevelopmentMaskPanel"
+LEGACY_DEVELOPMENT_MASK_PANEL_KIND = "Deform360DevelopmentSam2MaskPanel"
 DEVELOPMENT_PROCESSING_STAGE_KIND = "Deform360ReusableSotaDevelopmentStage"
 DEVELOPMENT_OBSERVATIONS_KIND = "Deform360ReusableSotaDevelopmentObservations"
 
@@ -228,6 +229,93 @@ def _load_reference_panel(
         int(panel.get("accepted_camera_count", -1)) == len(cameras),
         "reference camera count changed",
     )
+    return panel
+
+
+def load_development_reference_mask_panel(
+    panel_path: str | Path,
+    *,
+    authorization: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the source-approved camera panel for another development episode."""
+
+    return _load_reference_panel(Path(panel_path).resolve(), authorization=authorization)
+
+
+def load_development_source_mask_panel(
+    panel_path: str | Path,
+    *,
+    authorization: Mapping[str, Any],
+    reference_cameras: list[str] | tuple[str, ...],
+    start_frame: int,
+    frame_count: int,
+) -> dict[str, Any]:
+    """Validate a source-only full-episode panel before slicing a fit window."""
+
+    _require(
+        authorization.get("role") == "fit"
+        and authorization.get("development_only") is True
+        and authorization.get("confirmatory_object_opened") is False,
+        "source mask slicing is reserved for development fit episodes",
+    )
+    _require(start_frame >= 0 and frame_count == 81, "invalid source mask window")
+    panel_file = Path(panel_path).resolve()
+    panel = json.loads(panel_file.read_text(encoding="utf-8"))
+    _require(isinstance(panel, dict), "source mask panel must contain an object")
+    _require(
+        panel.get("artifact_kind")
+        in {DEVELOPMENT_MASK_PANEL_KIND, LEGACY_DEVELOPMENT_MASK_PANEL_KIND}
+        and panel.get("result_sha256") == _canonical_sha256(panel),
+        "source mask-panel kind or checksum is incompatible",
+    )
+    _require(
+        panel.get("object_id") == authorization["object_id"]
+        and int(panel.get("episode_id", -1)) == int(authorization["episode_id"]),
+        "source mask panel belongs to another object or episode",
+    )
+    if panel["artifact_kind"] == DEVELOPMENT_MASK_PANEL_KIND:
+        _require(
+            panel.get("authorization") == dict(authorization)
+            and panel.get("role") == "fit",
+            "source mask-panel authorization changed",
+        )
+    else:
+        _require(
+            panel.get("protocol_id") == authorization["protocol_id"]
+            and panel.get("role") == "development-fit",
+            "legacy source mask panel belongs to another protocol or split",
+        )
+    boundary = panel.get("information_boundary")
+    _require(
+        isinstance(boundary, Mapping)
+        and boundary.get("confirmatory_object_opened") is False
+        and boundary.get("held_episode_opened", False) is False
+        and boundary.get("future_object_outcome_metric_used", False) is False,
+        "source mask-panel information boundary changed",
+    )
+    records = panel.get("records")
+    _require(isinstance(records, list) and records, "source mask panel is empty")
+    records_by_camera = {str(record["camera"]): record for record in records}
+    cameras = [str(camera) for camera in reference_cameras]
+    _require(
+        len(cameras) == len(set(cameras))
+        and set(records_by_camera) == set(cameras),
+        "source masks do not match the frozen reference camera panel",
+    )
+    stop_frame = start_frame + frame_count
+    for camera in cameras:
+        record = records_by_camera[camera]
+        _require(
+            int(record.get("frame_count", -1)) >= stop_frame,
+            f"source masks are too short for {camera}",
+        )
+        checksum = record.get("output_sha256")
+        _require(
+            isinstance(checksum, str)
+            and len(checksum) == 64
+            and all(character in "0123456789abcdef" for character in checksum),
+            f"invalid source mask checksum for {camera}",
+        )
     return panel
 
 
@@ -521,29 +609,63 @@ def write_development_action_window_stage(
     selected_raw_frame_range_half_open: tuple[int, int] | list[int],
     camera_count: int,
     frame_count: int,
+    known_robot_action_frame_count: int | None = None,
     window_config_sha256: str,
     mask_diagnostics_sha256: str,
     initialization_diagnostics_sha256: str,
 ) -> dict[str, Any]:
-    """Write a SOTA-compatible stage for an action-only development slice."""
+    """Write a SOTA-compatible fit or sealed held-prediction slice."""
 
+    role = str(authorization.get("role"))
     _require(
-        authorization.get("role") == "fit"
+        role in {"fit", "held-development"}
         and authorization.get("development_only") is True
         and authorization.get("confirmatory_object_opened") is False,
-        "action-window stage requires development fit authorization",
+        "action-window stage requires development authorization",
     )
+    operation = str(window_authorization.get("operation"))
+    expected_operation = {
+        "fit": "development-fit-staging",
+        "held-development": "development-held-prediction-staging",
+    }[role]
     _require(
-        window_authorization.get("operation") == "development-fit-staging"
+        operation == expected_operation
         and window_authorization.get("object_id") == authorization.get("object_id")
         and int(window_authorization.get("episode_id", -1))
         == int(authorization.get("episode_id", -2))
-        and window_authorization.get("held_outcome_read") is False
         and window_authorization.get("confirmatory_object_read") is False,
         "action-window authorization is incompatible",
     )
+    if role == "fit":
+        _require(
+            window_authorization.get("held_outcome_read") is False,
+            "fit window authorization may not read held outcomes",
+        )
+    else:
+        _require(
+            window_authorization.get("held_action_read") is True
+            and window_authorization.get("held_object_input_frame_count") == 1
+            and window_authorization.get("held_future_object_read") is False
+            and window_authorization.get("held_tactile_read") is False
+            and window_authorization.get(
+                "prediction_seal_required_before_outcome_reveal"
+            )
+            is True,
+            "held prediction authorization changed",
+        )
     start, stop = (int(value) for value in selected_raw_frame_range_half_open)
-    _require(start >= 0 and stop - start == frame_count == 81, "invalid action window")
+    action_frame_count = (
+        int(frame_count)
+        if known_robot_action_frame_count is None
+        else int(known_robot_action_frame_count)
+    )
+    expected_object_frames = 81 if role == "fit" else 1
+    _require(
+        start >= 0
+        and stop - start == action_frame_count == 81
+        and int(frame_count) == expected_object_frames,
+        "invalid action window",
+    )
     _require(camera_count >= 3, "too few cameras in the action-window stage")
     for label, value in (
         ("window config", window_config_sha256),
@@ -556,32 +678,50 @@ def write_development_action_window_stage(
             and all(character in "0123456789abcdef" for character in value),
             f"invalid {label} checksum",
         )
+    temporal_staging: dict[str, Any] = {
+        "mode": "locked-action-only-window",
+        "selected_raw_frame_range_half_open": [start, stop],
+        "window_config_sha256": window_config_sha256,
+        "window_authorization": dict(window_authorization),
+    }
+    information_boundary: dict[str, Any] = {
+        "development_only": True,
+        "confirmatory_object_opened": False,
+        "target_metric_read": False,
+        "window_selection_used_robot_action_and_opening_only": True,
+        "window_selection_used_object_geometry_or_tactile": False,
+    }
+    if role == "held-development":
+        temporal_staging.update(
+            {
+                "mode": "locked-held-prediction-window",
+                "known_robot_action_frame_count": action_frame_count,
+                "object_observation_frame_count": int(frame_count),
+            }
+        )
+        information_boundary.update(
+            {
+                "object_observation_frames_used": [0],
+                "future_object_outcome_read": False,
+                "future_tactile_read": False,
+                "prediction_seal_required_before_outcome_reveal": True,
+            }
+        )
     payload: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": DEVELOPMENT_PROCESSING_STAGE_KIND,
         "authorization": dict(authorization),
         "object_id": str(authorization["object_id"]),
         "episode_id": int(authorization["episode_id"]),
-        "role": "fit",
+        "role": role,
         "camera_count": int(camera_count),
         "frame_count": int(frame_count),
-        "temporal_staging": {
-            "mode": "locked-action-only-window",
-            "selected_raw_frame_range_half_open": [start, stop],
-            "window_config_sha256": window_config_sha256,
-            "window_authorization": dict(window_authorization),
-        },
+        "temporal_staging": temporal_staging,
         "input_sha256": {
             "mask_diagnostics": mask_diagnostics_sha256,
             "initialization_diagnostics": initialization_diagnostics_sha256,
         },
-        "information_boundary": {
-            "development_only": True,
-            "confirmatory_object_opened": False,
-            "target_metric_read": False,
-            "window_selection_used_robot_action_and_opening_only": True,
-            "window_selection_used_object_geometry_or_tactile": False,
-        },
+        "information_boundary": information_boundary,
         "claim_boundary": (
             "Action-window compute addendum for independent development processing; "
             "no official Deform360 evaluator or Table 4 parity claim."
@@ -595,6 +735,58 @@ def write_development_action_window_stage(
         encoding="utf-8",
     )
     return payload
+
+
+def validate_development_held_prediction_stage(
+    path: str | Path,
+    *,
+    authorization: Mapping[str, Any],
+    window_authorization: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate a one-frame held initialization before a prediction is built."""
+
+    stage_path = Path(path).resolve()
+    stage = json.loads(stage_path.read_text(encoding="utf-8"))
+    temporal = stage.get("temporal_staging", {})
+    boundary = stage.get("information_boundary", {})
+    selected = temporal.get("selected_raw_frame_range_half_open", ())
+    _require(
+        stage.get("artifact_kind") == DEVELOPMENT_PROCESSING_STAGE_KIND
+        and stage.get("result_sha256") == _canonical_sha256(stage)
+        and stage.get("authorization") == dict(authorization)
+        and stage.get("role") == "held-development"
+        and stage.get("frame_count") == 1
+        and temporal.get("mode") == "locked-held-prediction-window"
+        and temporal.get("window_authorization") == dict(window_authorization)
+        and temporal.get("known_robot_action_frame_count") == 81
+        and temporal.get("object_observation_frame_count") == 1
+        and isinstance(selected, list)
+        and len(selected) == 2
+        and int(selected[1]) - int(selected[0]) == 81,
+        "held prediction stage is incompatible",
+    )
+    _require(
+        boundary.get("target_metric_read") is False
+        and boundary.get("window_selection_used_robot_action_and_opening_only")
+        is True
+        and boundary.get("window_selection_used_object_geometry_or_tactile") is False
+        and boundary.get("object_observation_frames_used") == [0]
+        and boundary.get("future_object_outcome_read") is False
+        and boundary.get("future_tactile_read") is False
+        and boundary.get("prediction_seal_required_before_outcome_reveal") is True,
+        "held prediction information boundary changed",
+    )
+    return {
+        "passed": True,
+        "object_id": str(authorization["object_id"]),
+        "episode_id": int(authorization["episode_id"]),
+        "role": "held-development",
+        "stage_sha256": _file_sha256(stage_path),
+        "stage_result_sha256": str(stage["result_sha256"]),
+        "known_robot_action_frame_count": 81,
+        "object_observation_frame_count": 1,
+        "held_future_read": False,
+    }
 
 
 def _load_development_stage(
@@ -658,10 +850,13 @@ def build_development_observations_manifest(
     reconstruction_meta = splat_dir / "splatfacto.meta.json"
     _require(reconstruction_meta.is_file(), "reconstruction provenance is missing")
 
+    gripper_masks: dict[str, dict[str, str]] = {}
     depth: dict[str, dict[str, str]] = {}
     tracking: dict[str, dict[str, str]] = {}
     for camera in cameras:
         camera_dir = episode_dir / camera
+        gripper_mask = camera_dir / "rendered_urdf.h5"
+        gripper_mask_meta = camera_dir / "rendered_urdf.meta.json"
         depth_file = camera_dir / "rendered_depth.h5"
         depth_meta = camera_dir / "rendered_depth.meta.json"
         tracking_dir = camera_dir / "tracking"
@@ -672,6 +867,8 @@ def build_development_observations_manifest(
             all(
                 path.is_file()
                 for path in (
+                    gripper_mask,
+                    gripper_mask_meta,
                     depth_file,
                     depth_meta,
                     velocity,
@@ -681,6 +878,10 @@ def build_development_observations_manifest(
             ),
             f"depth or tracking output is incomplete: {camera}",
         )
+        gripper_masks[camera] = {
+            "data_sha256": _file_sha256(gripper_mask),
+            "metadata_sha256": _file_sha256(gripper_mask_meta),
+        }
         depth[camera] = {
             "data_sha256": _file_sha256(depth_file),
             "metadata_sha256": _file_sha256(depth_meta),
@@ -750,6 +951,7 @@ def build_development_observations_manifest(
         "output_sha256": {
             "reconstruction_metadata": _file_sha256(reconstruction_meta),
             "reconstruction_tree": _tree_sha256(splat_dir, iter(splats)),
+            "gripper_masks": gripper_masks,
             "depth": depth,
             "tracking": tracking,
             "point_cloud_metadata": _file_sha256(pcd_meta),
@@ -829,9 +1031,12 @@ __all__ = [
     "PINNED_DEFORM360_PROCESSING_REVISION",
     "authorize_development_processing",
     "build_development_observations_manifest",
+    "load_development_reference_mask_panel",
+    "load_development_source_mask_panel",
     "material_identity_sha256",
     "propagate_development_masks",
     "stage_development_processing_episode",
     "validate_development_final_data_input",
+    "validate_development_held_prediction_stage",
     "write_development_action_window_stage",
 ]

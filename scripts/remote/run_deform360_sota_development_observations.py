@@ -6,8 +6,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 
 from causal4d_public.deform360_reusable_sota_protocol import (
     load_reusable_sota_config,
@@ -24,6 +27,7 @@ from deform360.processing import (
     depth_stage,
     pcd_stage,
     tracking_stage,
+    urdf_render,
 )
 
 
@@ -45,6 +49,38 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _prepare_cuda_build_tools() -> None:
+    """Expose lazy gsplat build tools before any output file is created."""
+
+    search = [Path(sys.executable).parent]
+    cuda_home = os.environ.get("CUDA_HOME")
+    if not cuda_home:
+        try:
+            from torch.utils.cpp_extension import CUDA_HOME as detected_cuda_home
+        except ImportError:  # pragma: no cover - integration dependency
+            detected_cuda_home = None
+        if detected_cuda_home:
+            cuda_home = str(detected_cuda_home)
+            os.environ["CUDA_HOME"] = cuda_home
+    if cuda_home:
+        search.append(Path(cuda_home) / "bin")
+        cuda_lib = str(Path(cuda_home) / "lib64")
+        current_library_path = os.environ.get("LD_LIBRARY_PATH", "")
+        os.environ["LD_LIBRARY_PATH"] = os.pathsep.join(
+            value for value in (cuda_lib, current_library_path) if value
+        )
+    current_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = os.pathsep.join(
+        [*(str(path) for path in search), current_path]
+    )
+    missing = [tool for tool in ("ninja", "nvcc") if shutil.which(tool) is None]
+    if missing:
+        raise RuntimeError(
+            "Deform360 observation processing requires CUDA build tools on PATH: "
+            + ", ".join(missing)
+        )
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -62,6 +98,7 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
+    _prepare_cuda_build_tools()
     protocol_path = args.protocol or (
         args.repo / "configs/causal4d_public/deform360_reusable_sota_v1.json"
     )
@@ -103,6 +140,12 @@ def main() -> int:
     if len(cameras) != int(staging["camera_count"]):
         raise ValueError("development camera panel changed")
 
+    urdf_render.process_gripper_masks_episode(
+        args.processing_root / args.object_id,
+        args.episode_id,
+        cameras=cameras,
+        overwrite=args.overwrite,
+    )
     depth_stage.process_depth_episode(
         args.processing_root / args.object_id,
         args.episode_id,

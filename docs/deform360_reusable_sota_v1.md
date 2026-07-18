@@ -13,7 +13,7 @@ error.
 The proposed result is not a larger residual network. It is a reusable physical
 twin that:
 
-1. registers one canonical object graph automatically to each new initial state;
+1. constructs an episode graph automatically from each new initial state;
 2. pools physical evidence over several source actions;
 3. propagates a Bayesian parameter ensemble;
 4. admits simulator response only through an outcome-independent trust policy;
@@ -27,6 +27,11 @@ on public Deform360 objects with Bayesian physical support, outcome-independent
 admission, calibrated uncertainty, and exact fallback when the simulator is not
 trusted. PGRD remains the required hybrid-residual comparator, although its
 published numbers come from another benchmark.
+
+The present implementation shares physical parameters, not graph identity:
+topology and rest geometry are rebuilt automatically from each episode's frame
+zero. A fixed canonical material graph is a possible later ablation, but it is
+not part of this locked method or its novelty claim.
 
 ## Prospective panel
 
@@ -62,6 +67,18 @@ compute slice. It changes neither the object split nor the held-out information
 boundary; the selected held episode still contributes only one object frame
 before its prediction is sealed.
 
+Every action window uses the source-approved episode-1 camera panel and never
+selects independent generic masks across cameras. For fit episodes, an approved
+source-only full-episode mask panel may be checksummed and sliced exactly at the
+action-selected 81-frame range; this avoids rerunning selection on a moved
+configuration and does not expose a held outcome. If that panel does not yet
+exist, fit annotation may re-identify from the corresponding source mask and
+same-view RGB appearance and propagate through the permitted window. Held masks
+always use that source-reference initializer and contain frame zero only. The
+camera panel, source annotations, selected range, and resulting masks are
+checksummed, and no held frame after frame zero is decoded before the prediction
+seal.
+
 An early outcome reveal invalidates that object without replacement. Penguin
 episodes `0,2,5,8` and the PokeFlex target remain under their existing seals.
 Nothing in this protocol changes the frozen Causal4D claim.
@@ -82,12 +99,25 @@ The single-episode control uses the same physical candidate grid independently
 on every fit episode. All six choices are reported, along with their median; a
 favorable source episode may not be selected using held outcomes.
 
+For implementation transparency, each source bank also reports the absolute
+driven and zero-action PhysTwin readouts. These are diagnostic controls only:
+they are not used for candidate selection or any transfer gate. They separate
+the value of the physical rollout from the value of anchoring its causal action
+response at the observed frame-zero geometry.
+
 Candidate selection uses the equal-weight dimensionless score
 `0.5 * track/persistence_track + 0.5 * CD/persistence_CD`. Pooled selection
 averages this score over all fit actions. The source diagnostic also performs
 leave-one-fit-action-out selection and compares it with candidates selected
 from each remaining single action. Held episodes evaluate those frozen indices
 only; they cannot refit either the pooled or single-action choices.
+
+The physical grid itself remains frozen when a rollout is numerically unstable.
+Such a rollout is recorded with its first non-finite frame and checksummed Warp
+artifact, receives no finite selection score, and makes that candidate
+ineligible for every pooling fold containing the episode. Environment or
+provenance failures still abort the bank; only a validated non-finite simulator
+trajectory is treated as a scientific candidate failure.
 
 The tested temporal learned residual is excluded from the primary arm. Its
 5,000-step source-only run converged in training but failed every useful

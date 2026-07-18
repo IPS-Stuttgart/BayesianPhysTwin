@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 
@@ -10,6 +10,13 @@ import numpy as np
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def _json_matrix(values: np.ndarray) -> list[list[float | None]]:
+    return [
+        [float(value) if np.isfinite(value) else None for value in row]
+        for row in np.asarray(values, dtype=np.float64)
+    ]
 
 
 def normalized_physics_score(
@@ -40,10 +47,82 @@ def normalized_physics_score(
     return 0.5 * (track / persistence_track[None] + chamfer / persistence_chamfer[None])
 
 
+def score_reusable_sota_trajectory(
+    target_m: np.ndarray,
+    prediction_m: np.ndarray,
+    *,
+    horizon_ranges_half_open: Mapping[str, Sequence[int]],
+) -> dict[str, Any]:
+    """Score one material trajectory under the locked independent metric policy."""
+
+    try:
+        from scipy.spatial import cKDTree
+    except ImportError as error:  # pragma: no cover - integration dependency
+        raise RuntimeError("SciPy is required for exact source scoring") from error
+    target = np.asarray(target_m, dtype=np.float64)
+    prediction = np.asarray(prediction_m, dtype=np.float64)
+    _require(
+        target.shape == prediction.shape
+        and target.ndim == 3
+        and target.shape[2] == 3
+        and target.shape[0] >= 2,
+        "target and prediction must share shape (T,N,3)",
+    )
+    frame_track = np.full(target.shape[0], np.nan, dtype=np.float64)
+    frame_chamfer = np.full(target.shape[0], np.nan, dtype=np.float64)
+    valid_count = np.zeros(target.shape[0], dtype=np.int64)
+    for frame in range(target.shape[0]):
+        valid = np.all(np.isfinite(target[frame]), axis=1) & np.all(
+            np.isfinite(prediction[frame]), axis=1
+        )
+        _require(np.any(valid), f"no finite material points at frame {frame}")
+        observed = target[frame, valid]
+        predicted = prediction[frame, valid]
+        valid_count[frame] = len(observed)
+        frame_track[frame] = float(
+            np.mean(np.linalg.norm(predicted - observed, axis=1))
+        )
+        target_tree = cKDTree(observed)
+        prediction_tree = cKDTree(predicted)
+        target_to_prediction = prediction_tree.query(observed, k=1)[0]
+        prediction_to_target = target_tree.query(predicted, k=1)[0]
+        frame_chamfer[frame] = 0.5 * (
+            float(np.mean(target_to_prediction))
+            + float(np.mean(prediction_to_target))
+        )
+
+    ranges: dict[str, dict[str, float | int | list[int]]] = {}
+    for label, bounds in horizon_ranges_half_open.items():
+        _require(len(bounds) == 2, f"invalid {label} horizon")
+        start, stop = (int(value) for value in bounds)
+        _require(
+            1 <= start < stop <= target.shape[0], f"invalid {label} horizon"
+        )
+        ranges[str(label)] = {
+            "frame_range_half_open": [start, stop],
+            "frame_count": stop - start,
+            "track_error_m": float(np.mean(frame_track[start:stop])),
+            "chamfer_m": float(np.mean(frame_chamfer[start:stop])),
+        }
+    _require("full" in ranges, "a full evaluation horizon is required")
+    return {
+        "metric_contract": {
+            "track": "identity-aware mean Euclidean distance in metres",
+            "chamfer": "symmetric mean Euclidean distance in metres",
+            "visibility": "all finite material points",
+        },
+        "ranges": ranges,
+        "per_frame_track_error_m": frame_track.tolist(),
+        "per_frame_chamfer_m": frame_chamfer.tolist(),
+        "valid_material_point_count_by_frame": valid_count.tolist(),
+    }
+
+
 def _select_candidate(
     labels: Sequence[str], scores: np.ndarray, episode_indices: Sequence[int]
 ) -> int:
     columns = np.asarray(tuple(episode_indices), dtype=np.int64)
+    _require(len(labels) == scores.shape[0], "candidate order differs from scores")
     _require(columns.ndim == 1 and len(columns) >= 1, "selection fold is empty")
     _require(
         np.all((0 <= columns) & (columns < scores.shape[1])),
@@ -57,7 +136,7 @@ def _select_candidate(
             valid_indices,
             key=lambda index: (
                 float(np.mean(scores[index, columns])),
-                str(labels[index]),
+                int(index),
             ),
         )
     )
@@ -139,7 +218,7 @@ def fit_pooling_controls(
         "pooled_candidate_label": labels[pooled_index],
         "single_source_candidate_indices": list(single_indices),
         "single_source_candidate_labels": [labels[index] for index in single_indices],
-        "source_normalized_score_matrix": score.tolist(),
+        "source_normalized_score_matrix": _json_matrix(score),
         "leave_one_fit_action_out": folds,
         "leave_one_out_persistence_win_fraction": float(
             np.mean([row["pooled_beats_persistence"] for row in folds])
@@ -239,4 +318,5 @@ __all__ = [
     "evaluate_frozen_pooling_controls",
     "fit_pooling_controls",
     "normalized_physics_score",
+    "score_reusable_sota_trajectory",
 ]

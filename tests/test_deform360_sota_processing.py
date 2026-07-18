@@ -15,17 +15,22 @@ from causal4d_public.deform360_reusable_sota_protocol import (
 )
 from causal4d_public.deform360_reusable_sota_window import (
     authorize_development_fit_window,
+    authorize_development_held_prediction_window,
     load_reusable_sota_window,
 )
 from causal4d_public.deform360_sota_processing import (
     DEVELOPMENT_MASK_PANEL_KIND,
     DEVELOPMENT_PROCESSING_STAGE_KIND,
+    LEGACY_DEVELOPMENT_MASK_PANEL_KIND,
     authorize_development_processing,
     build_development_observations_manifest,
+    load_development_reference_mask_panel,
+    load_development_source_mask_panel,
     material_identity_sha256,
     propagate_development_masks,
     stage_development_processing_episode,
     validate_development_final_data_input,
+    validate_development_held_prediction_stage,
     write_development_action_window_stage,
 )
 
@@ -129,6 +134,18 @@ def test_propagate_and_stage_development_masks(tmp_path: Path) -> None:
     panel_path = tmp_path / "reference-panel.json"
     panel_path.write_text(json.dumps(panel))
 
+    held_authorization = authorize_development_processing(
+        protocol,
+        object_id="004-rubber-band",
+        episode_id=0,
+        role="held-development",
+    )
+    loaded_panel = load_development_reference_mask_panel(
+        panel_path,
+        authorization=held_authorization,
+    )
+    assert [record["camera"] for record in loaded_panel["records"]] == cameras
+
     result = propagate_development_masks(
         authorization=authorization,
         aligned_object_root=aligned,
@@ -175,6 +192,73 @@ def test_staging_rejects_authorization_substitution(tmp_path: Path) -> None:
             aligned_object_root=tmp_path,
             annotation_root=tmp_path,
             processing_root=tmp_path / "processing",
+        )
+
+
+def test_source_mask_panel_slice_is_fit_only_and_matches_frozen_cameras(
+    tmp_path: Path,
+) -> None:
+    protocol = load_reusable_sota_config(PROTOCOL)
+    authorization = authorize_development_processing(
+        protocol, object_id="004-rubber-band", episode_id=1, role="fit"
+    )
+    cameras = [f"camera-{index}" for index in range(3)]
+    panel = {
+        "schema_version": 1,
+        "artifact_kind": LEGACY_DEVELOPMENT_MASK_PANEL_KIND,
+        "protocol_id": authorization["protocol_id"],
+        "object_id": authorization["object_id"],
+        "episode_id": authorization["episode_id"],
+        "role": "development-fit",
+        "accepted_camera_count": len(cameras),
+        "records": [
+            {
+                "camera": camera,
+                "frame_count": 317,
+                "output_sha256": f"{index + 1:064x}",
+            }
+            for index, camera in enumerate(cameras)
+        ],
+        "information_boundary": {
+            "confirmatory_object_opened": False,
+            "held_episode_opened": False,
+            "fit_episode_future_frames_used_only_for_source_annotation": True,
+        },
+    }
+    panel["result_sha256"] = _canonical_sha256(panel)
+    panel_path = tmp_path / "mask_panel.json"
+    panel_path.write_text(json.dumps(panel))
+
+    loaded = load_development_source_mask_panel(
+        panel_path,
+        authorization=authorization,
+        reference_cameras=cameras,
+        start_frame=122,
+        frame_count=81,
+    )
+    assert loaded["result_sha256"] == panel["result_sha256"]
+
+    held = authorize_development_processing(
+        protocol,
+        object_id="004-rubber-band",
+        episode_id=0,
+        role="held-development",
+    )
+    with pytest.raises(ValueError, match="fit episodes"):
+        load_development_source_mask_panel(
+            panel_path,
+            authorization=held,
+            reference_cameras=cameras,
+            start_frame=122,
+            frame_count=81,
+        )
+    with pytest.raises(ValueError, match="frozen reference camera"):
+        load_development_source_mask_panel(
+            panel_path,
+            authorization=authorization,
+            reference_cameras=[*cameras[:-1], "other-camera"],
+            start_frame=122,
+            frame_count=81,
         )
 
 
@@ -231,6 +315,58 @@ def test_action_window_stage_is_compatible_with_sota_observation_runner(
         )
 
 
+def test_held_action_window_stage_exposes_only_frame_zero(tmp_path: Path) -> None:
+    protocol = load_reusable_sota_config(PROTOCOL)
+    window = load_reusable_sota_window(WINDOW)
+    authorization = authorize_development_processing(
+        protocol,
+        object_id="004-rubber-band",
+        episode_id=0,
+        role="held-development",
+    )
+    window_authorization = authorize_development_held_prediction_window(
+        protocol, window, object_id="004-rubber-band", episode_id=0
+    )
+    output = tmp_path / "development_staging.json"
+    result = write_development_action_window_stage(
+        output,
+        authorization=authorization,
+        window_authorization=window_authorization,
+        selected_raw_frame_range_half_open=(122, 203),
+        camera_count=3,
+        frame_count=1,
+        known_robot_action_frame_count=81,
+        window_config_sha256=window["config_sha256"],
+        mask_diagnostics_sha256="a" * 64,
+        initialization_diagnostics_sha256="b" * 64,
+    )
+    assert result["role"] == "held-development"
+    assert result["frame_count"] == 1
+    assert result["information_boundary"]["object_observation_frames_used"] == [0]
+    assert result["information_boundary"]["future_object_outcome_read"] is False
+    validation = validate_development_held_prediction_stage(
+        output,
+        authorization=authorization,
+        window_authorization=window_authorization,
+    )
+    assert validation["passed"] is True
+    assert validation["known_robot_action_frame_count"] == 81
+
+    with pytest.raises(ValueError, match="invalid action window"):
+        write_development_action_window_stage(
+            tmp_path / "invalid-held.json",
+            authorization=authorization,
+            window_authorization=window_authorization,
+            selected_raw_frame_range_half_open=(122, 203),
+            camera_count=3,
+            frame_count=81,
+            known_robot_action_frame_count=81,
+            window_config_sha256=window["config_sha256"],
+            mask_diagnostics_sha256="a" * 64,
+            initialization_diagnostics_sha256="b" * 64,
+        )
+
+
 def test_development_observation_manifest_binds_ordered_material_identity(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -272,6 +408,8 @@ def test_development_observation_manifest_binds_ordered_material_identity(
         tracking = camera_dir / "tracking"
         tracking.mkdir(parents=True)
         (camera_dir / "mask_refined.h5").write_bytes(b"mask")
+        (camera_dir / "rendered_urdf.h5").write_bytes(b"gripper-mask")
+        (camera_dir / "rendered_urdf.meta.json").write_text("{}")
         (camera_dir / "rendered_depth.h5").write_bytes(b"depth")
         (camera_dir / "rendered_depth.meta.json").write_text("{}")
         (tracking / "vel.h5").write_bytes(b"velocity")
@@ -317,6 +455,7 @@ def test_development_observation_manifest_binds_ordered_material_identity(
     assert result["point_frame_count"] == 2
     assert result["material_point_count"] == 2
     assert result["material_identity_sha256"] == material_identity_sha256(points)
+    assert set(result["output_sha256"]["gripper_masks"]) == {"cam-a", "cam-b"}
 
     final_data = episode / "final_data.pkl"
     validation = validate_development_final_data_input(

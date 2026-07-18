@@ -43,6 +43,7 @@ from causal4d_public.deform360_reusable_sota_protocol import (
 )
 from causal4d_public.deform360_reusable_sota_window import (
     authorize_development_fit_window,
+    authorize_development_held_prediction_window,
     load_reusable_sota_window,
 )
 from causal4d_public.deform360_sota_processing import (
@@ -85,7 +86,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--object-id", required=True)
     parser.add_argument("--episode-id", type=int, required=True)
-    parser.add_argument("--phase", choices=("source", "calibration"), required=True)
+    parser.add_argument(
+        "--phase",
+        choices=("source", "calibration", "held-development"),
+        required=True,
+    )
     parser.add_argument("--source-admission-passed", action="store_true")
     parser.add_argument("--fresh-parent-lock", type=Path)
     parser.add_argument("--physics-addendum", type=Path)
@@ -142,48 +147,59 @@ def main() -> int:
         raise ValueError(
             "fresh parent lock, physics addendum, and operation are required together"
         )
-    sota_values = (
-        args.sota_protocol,
-        args.sota_window_addendum,
-        args.development_observations,
-    )
+    sota_values = (args.sota_protocol, args.sota_window_addendum)
     if any(value is not None for value in sota_values) and not all(
         value is not None for value in sota_values
     ):
         raise ValueError(
-            "SOTA parent, window addendum, and observations are required together"
+            "SOTA parent and window addendum are required together"
         )
     if args.sota_protocol is not None and args.fresh_parent_lock is not None:
         raise ValueError("SOTA and fresh reusable-trust authorization cannot combine")
     sota_input_validation = None
     sota_authorization = None
     if args.sota_protocol is not None:
-        if args.phase != "source" or args.prediction_only_input:
+        expected_phase = "held-development" if args.prediction_only_input else "source"
+        if args.phase != expected_phase:
             raise ValueError(
-                "SOTA automatic twin currently authorizes development fit inputs only"
+                f"SOTA automatic twin requires phase {expected_phase!r}"
             )
         parent = load_reusable_sota_config(args.sota_protocol)
         window = load_reusable_sota_window(args.sota_window_addendum)
+        role = "held-development" if args.prediction_only_input else "fit"
         processing_authorization = authorize_development_processing(
             parent,
             object_id=args.object_id,
             episode_id=args.episode_id,
-            role="fit",
+            role=role,
         )
-        window_authorization = authorize_development_fit_window(
+        authorize_window = (
+            authorize_development_held_prediction_window
+            if args.prediction_only_input
+            else authorize_development_fit_window
+        )
+        window_authorization = authorize_window(
             parent,
             window,
             object_id=args.object_id,
             episode_id=args.episode_id,
         )
-        observations = json.loads(
-            args.development_observations.read_text(encoding="utf-8")
-        )
-        sota_input_validation = validate_development_final_data_input(
-            observations,
-            authorization=processing_authorization,
-            final_data_path=args.episode_final_data,
-        )
+        if args.prediction_only_input:
+            if args.development_observations is not None:
+                raise ValueError(
+                    "held prediction input cannot include development observations"
+                )
+        else:
+            if args.development_observations is None:
+                raise ValueError("SOTA fit input requires development observations")
+            observations = json.loads(
+                args.development_observations.read_text(encoding="utf-8")
+            )
+            sota_input_validation = validate_development_final_data_input(
+                observations,
+                authorization=processing_authorization,
+                final_data_path=args.episode_final_data,
+            )
         authorization = window_authorization
         authorization_config_sha256 = window_authorization["window_config_sha256"]
         sota_authorization = {
@@ -306,6 +322,15 @@ def main() -> int:
             object_id=args.object_id,
             episode_id=args.episode_id,
         )
+        if sota_authorization is not None:
+            marker = episode.get("prediction_only_input", {})
+            marker_authorization = marker.get("sota_authorization", {})
+            if (
+                marker_authorization.get("processing")
+                != sota_authorization["processing"]
+                or marker_authorization.get("window") != sota_authorization["window"]
+            ):
+                raise ValueError("prediction bundle uses another SOTA authorization")
     if points.ndim != 3 or points.shape[0] < 2 or points.shape[2] != 3:
         raise ValueError("object_points must have shape (T, N, 3) with T >= 2")
     if colors.shape != points.shape:

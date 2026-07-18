@@ -12,6 +12,7 @@ from causal4d_public.deform360_reusable_sota_protocol import (
 )
 from causal4d_public.deform360_reusable_sota_window import (
     authorize_development_fit_window,
+    authorize_development_held_prediction_window,
     load_reusable_sota_window,
     reusable_sota_window_sha256,
     select_reusable_sota_action_window,
@@ -71,6 +72,26 @@ def test_window_authorization_rejects_held_and_confirmatory_cases() -> None:
     with pytest.raises(ValueError, match="development object"):
         authorize_development_fit_window(
             parent, addendum, object_id="068-nylon-rope", episode_id=1
+        )
+
+
+def test_held_window_authorization_is_prediction_only() -> None:
+    parent = load_reusable_sota_config(PARENT)
+    addendum = load_reusable_sota_window(ADDENDUM)
+    accepted = authorize_development_held_prediction_window(
+        parent, addendum, object_id="004-rubber-band", episode_id=0
+    )
+    assert accepted["held_action_read"] is True
+    assert accepted["held_object_input_frame_count"] == 1
+    assert accepted["held_future_object_read"] is False
+    assert accepted["prediction_seal_required_before_outcome_reveal"] is True
+    with pytest.raises(ValueError, match="held episode"):
+        authorize_development_held_prediction_window(
+            parent, addendum, object_id="004-rubber-band", episode_id=1
+        )
+    with pytest.raises(ValueError, match="development object"):
+        authorize_development_held_prediction_window(
+            parent, addendum, object_id="068-nylon-rope", episode_id=0
         )
 
 
