@@ -99,3 +99,56 @@ def test_topology_artifact_round_trip_preserves_new_edges_and_scales(tmp_path: P
         0.5,
     )
     assert loaded.diagnostics == artifact.diagnostics
+    assert loaded.applied_object_log_scale == artifact.applied_object_log_scale
+    assert (
+        loaded.applied_controller_log_scale
+        == artifact.applied_controller_log_scale
+    )
+    assert loaded.object_scale_normalization == "none"
+
+
+def test_density_normalization_preserves_total_object_stiffness():
+    points, controls, assignments, _, _ = _inputs()
+    config = PhysTwinSpringGraphConfig(
+        object_radius=1.0,
+        object_max_neighbours=3,
+        controller_radius=0.5,
+        controller_max_neighbours=2,
+    )
+    teacher = build_piecewise_topology_candidate(
+        points,
+        controls,
+        assignments,
+        np.ones(7, dtype=np.float32),
+        teacher_config=config,
+        radius_multipliers=(1.0, 1.0),
+        neighbour_multipliers=(1.0, 1.0),
+    )
+    spring_y = np.arange(1, len(teacher.graph.springs) + 1, dtype=np.float32)
+
+    candidate = build_piecewise_topology_candidate(
+        points,
+        controls,
+        assignments,
+        spring_y,
+        teacher_config=config,
+        radius_multipliers=(0.45, 0.45),
+        neighbour_multipliers=(2.0 / 3.0, 2.0 / 3.0),
+        preserve_total_object_stiffness=True,
+    )
+
+    assert candidate.graph.num_object_springs < teacher.graph.num_object_springs
+    np.testing.assert_allclose(
+        np.sum(candidate.reference_spring_y[: candidate.graph.num_object_springs]),
+        np.sum(spring_y[: teacher.graph.num_object_springs]),
+        rtol=1e-6,
+    )
+    np.testing.assert_array_equal(
+        candidate.reference_spring_y[candidate.graph.num_object_springs :],
+        candidate.transfer.spring_y[candidate.graph.num_object_springs :],
+    )
+    assert (
+        candidate.object_scale_normalization
+        == "preserve_total_object_stiffness"
+    )
+    assert candidate.applied_object_log_scale > 0.0

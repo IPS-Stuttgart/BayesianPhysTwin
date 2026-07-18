@@ -36,6 +36,9 @@ class PiecewiseTopologyArtifact:
     object_max_neighbours: np.ndarray
     transfer: TransferredSpringField
     diagnostics: dict[str, object]
+    applied_object_log_scale: float = 0.0
+    applied_controller_log_scale: float = 0.0
+    object_scale_normalization: str = "none"
 
 
 def _sha256(path: str | Path) -> str:
@@ -93,6 +96,7 @@ def build_piecewise_topology_candidate(
     neighbour_multipliers: Sequence[float],
     object_log_scale: float = 0.0,
     controller_log_scale: float = 0.0,
+    preserve_total_object_stiffness: bool = False,
 ) -> PiecewiseTopologyArtifact:
     """Build one bounded topology proposal around the released teacher."""
 
@@ -136,8 +140,25 @@ def build_piecewise_topology_candidate(
         ),
     )
     transfer = transfer_teacher_spring_field(teacher, candidate, teacher_spring_y)
+    normalization_log_scale = 0.0
+    normalization = "none"
+    if preserve_total_object_stiffness:
+        teacher_values = np.asarray(teacher_spring_y, dtype=float).reshape(-1)
+        teacher_total = float(
+            np.sum(teacher_values[: teacher.num_object_springs])
+        )
+        candidate_total = float(
+            np.sum(transfer.spring_y[: candidate.num_object_springs])
+        )
+        if teacher_total <= 0.0 or candidate_total <= 0.0:
+            raise ValueError("object spring totals must be positive")
+        normalization_log_scale = float(np.log(teacher_total / candidate_total))
+        normalization = "preserve_total_object_stiffness"
+    applied_object_log_scale = float(object_log_scale + normalization_log_scale)
     reference = transfer.spring_y.copy()
-    reference[: candidate.num_object_springs] *= float(np.exp(object_log_scale))
+    reference[: candidate.num_object_springs] *= float(
+        np.exp(applied_object_log_scale)
+    )
     reference[candidate.num_object_springs :] *= float(
         np.exp(controller_log_scale)
     )
@@ -152,6 +173,9 @@ def build_piecewise_topology_candidate(
         object_max_neighbours=maximums.astype(np.int32),
         transfer=transfer,
         diagnostics=diagnostics,
+        applied_object_log_scale=applied_object_log_scale,
+        applied_controller_log_scale=float(controller_log_scale),
+        object_scale_normalization=normalization,
     )
 
 
@@ -188,6 +212,15 @@ def write_piecewise_topology_artifact(
         ),
         removed_teacher_edge_count=np.asarray(
             artifact.transfer.removed_teacher_edge_count, dtype=np.int64
+        ),
+        applied_object_log_scale=np.asarray(
+            artifact.applied_object_log_scale, dtype=np.float64
+        ),
+        applied_controller_log_scale=np.asarray(
+            artifact.applied_controller_log_scale, dtype=np.float64
+        ),
+        object_scale_normalization=np.asarray(
+            artifact.object_scale_normalization
         ),
         diagnostics_json=np.asarray(json.dumps(artifact.diagnostics, sort_keys=True)),
     )
@@ -231,6 +264,35 @@ def load_piecewise_topology_artifact(path: str | Path) -> PiecewiseTopologyArtif
                 ),
             ),
             diagnostics=json.loads(str(archive["diagnostics_json"].item())),
+            applied_object_log_scale=float(
+                archive["applied_object_log_scale"].item()
+                if "applied_object_log_scale" in archive
+                else np.median(
+                    np.log(
+                        np.asarray(archive["reference_spring_y"], dtype=float)
+                        / np.asarray(
+                            archive["transferred_teacher_spring_y"], dtype=float
+                        )
+                    )[: graph.num_object_springs]
+                )
+            ),
+            applied_controller_log_scale=float(
+                archive["applied_controller_log_scale"].item()
+                if "applied_controller_log_scale" in archive
+                else np.median(
+                    np.log(
+                        np.asarray(archive["reference_spring_y"], dtype=float)
+                        / np.asarray(
+                            archive["transferred_teacher_spring_y"], dtype=float
+                        )
+                    )[graph.num_object_springs :]
+                )
+            ),
+            object_scale_normalization=str(
+                archive["object_scale_normalization"].item()
+                if "object_scale_normalization" in archive
+                else "legacy_unspecified"
+            ),
         )
     if (
         len(graph.springs) != len(graph.rest_lengths)
@@ -246,6 +308,16 @@ def load_piecewise_topology_artifact(path: str | Path) -> PiecewiseTopologyArtif
         raise ValueError("piecewise topology contains non-finite geometry")
     if np.any(graph.rest_lengths <= 0.0) or np.any(artifact.reference_spring_y <= 0.0):
         raise ValueError("piecewise topology contains non-positive spring data")
+    if not np.isfinite(artifact.applied_object_log_scale) or not np.isfinite(
+        artifact.applied_controller_log_scale
+    ):
+        raise ValueError("piecewise topology contains a non-finite spring scale")
+    if artifact.object_scale_normalization not in {
+        "none",
+        "preserve_total_object_stiffness",
+        "legacy_unspecified",
+    }:
+        raise ValueError("piecewise topology has an unknown normalization mode")
     if object_topology_diagnostics(graph) != artifact.diagnostics:
         raise ValueError("piecewise topology diagnostics do not reproduce")
     return artifact
@@ -262,6 +334,7 @@ def build_piecewise_topology_from_files(
     neighbour_multipliers: Sequence[float],
     object_log_scale: float = 0.0,
     controller_log_scale: float = 0.0,
+    preserve_total_object_stiffness: bool = False,
 ) -> dict[str, object]:
     """Build a proposal from future-blind PhysTwin prefix inputs."""
 
@@ -306,6 +379,7 @@ def build_piecewise_topology_from_files(
         neighbour_multipliers=neighbour_multipliers,
         object_log_scale=object_log_scale,
         controller_log_scale=controller_log_scale,
+        preserve_total_object_stiffness=preserve_total_object_stiffness,
     )
     identity = write_piecewise_topology_artifact(output_path, artifact)
     return {
@@ -321,8 +395,12 @@ def build_piecewise_topology_from_files(
         "search_coordinates": {
             "radius_multipliers": [float(value) for value in radius_multipliers],
             "neighbour_multipliers": [float(value) for value in neighbour_multipliers],
-            "object_log_scale": float(object_log_scale),
-            "controller_log_scale": float(controller_log_scale),
+            "object_log_scale": artifact.applied_object_log_scale,
+            "controller_log_scale": artifact.applied_controller_log_scale,
+            "requested_object_log_scale": float(object_log_scale),
+            "applied_object_log_scale": artifact.applied_object_log_scale,
+            "applied_controller_log_scale": artifact.applied_controller_log_scale,
+            "object_scale_normalization": artifact.object_scale_normalization,
         },
         "diagnostics": artifact.diagnostics,
         "transfer": {

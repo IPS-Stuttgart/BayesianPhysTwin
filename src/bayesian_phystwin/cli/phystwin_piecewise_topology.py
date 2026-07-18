@@ -30,6 +30,14 @@ def main() -> None:
     parser.add_argument("--neighbour-multipliers", type=_floats, required=True)
     parser.add_argument("--object-log-scale", type=float, default=0.0)
     parser.add_argument("--controller-log-scale", type=float, default=0.0)
+    parser.add_argument(
+        "--preserve-total-object-stiffness",
+        action="store_true",
+        help=(
+            "Scale candidate object springs so their total stiffness equals "
+            "the released teacher before applying --object-log-scale."
+        ),
+    )
     args = parser.parse_args()
     result = build_piecewise_topology_from_files(
         args.final_data,
@@ -41,6 +49,7 @@ def main() -> None:
         neighbour_multipliers=args.neighbour_multipliers,
         object_log_scale=args.object_log_scale,
         controller_log_scale=args.controller_log_scale,
+        preserve_total_object_stiffness=args.preserve_total_object_stiffness,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

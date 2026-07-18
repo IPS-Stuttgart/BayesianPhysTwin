@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-global-sparse-topology-source-v1",
+  "locked_at_utc": "2026-07-18T12:17:23Z",
+  "status": "Fixed-family transfer test on released observation prefixes only; no future metric may be opened by this protocol.",
+  "claim_boundary": "Passing admits an exploratory 19-case run. It cannot establish a SOTA claim without a separately preregistered independent cohort.",
+  "development_case": {
+    "name": "single_lift_sloth",
+    "role": "Candidate definition only; excluded from the transfer gate after its suffix was inspected.",
+    "observed_result": "The density-matched sparse topology improved untouched suffix CD by 4.55% and track error by 7.30% relative to the exact topology identity."
+  },
+  "transfer_cases": [
+    "single_lift_zebra",
+    "single_lift_cloth",
+    "single_lift_rope",
+    "single_lift_dinosor"
+  ],
+  "evidence_boundary": {
+    "fit_fraction_of_released_prefix": 0.75,
+    "sealed_validation_interval": "remaining 25 percent of each released observation prefix",
+    "input_contract": "phystwin-observation-prefix-plus-hold-v1",
+    "future_controller_values": "omitted beyond the released observation prefix",
+    "future_object_observations": "omitted from every runner input",
+    "future_metrics": "forbidden"
+  },
+  "candidate": {
+    "name": "global_sparse_density_matched",
+    "radius_multiplier": 0.8,
+    "neighbour_multiplier": 0.75,
+    "region_policy": "apply the same multipliers to every one of the five previously locked DINO graph regions",
+    "object_scale_normalization": "preserve_total_object_stiffness",
+    "normalization_formula": "multiply retained object spring values by sum(k_teacher_object) / sum(k_transferred_candidate_object)",
+    "controller_springs": "released topology and values unchanged",
+    "parameter_optimization": "none",
+    "collision_parameters": "frozen",
+    "damping_parameters": "frozen",
+    "observation_variant": "hard",
+    "deterministic_spring_forces": true
+  },
+  "source_acceptance": {
+    "minimum_both_metric_win_count": 3,
+    "minimum_aggregate_balanced_improvement": 0.03,
+    "aggregate_requirement": "equal-case candidate mean must improve both CD and manual-track error",
+    "fallback": "reject the complete sparse-topology family and retain the exact released teacher",
+    "identity_requirement": "the all-ones topology artifact must be byte-identical to the exact-teacher runner trajectory"
+  },
+  "forbidden": [
+    "changing radius, neighbour, normalization, transfer cases, or gates after inspecting transfer suffixes",
+    "per-case validation fallback without a separately locked causal selector",
+    "future-frame objective, checkpoint selection, or metric inspection",
+    "calling a passing released-cohort result independent or confirmatory",
+    "calling this fixed sparse profile a reproduction of NeuSpring's zero-order topology optimization"
+  ]
+}
