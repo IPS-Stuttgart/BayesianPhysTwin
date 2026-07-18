@@ -215,6 +215,19 @@ def run_sparse_topology_source_gate(
         )
         identity_topology = load_piecewise_topology_artifact(identity_path)
         candidate_topology = load_piecewise_topology_artifact(candidate_path)
+        if (
+            identity_topology.transfer.interpolated_edge_count != 0
+            or identity_topology.transfer.removed_teacher_edge_count != 0
+            or identity_topology.transfer.exact_edge_count
+            != len(identity_topology.graph.springs)
+        ):
+            raise ValueError(f"{case}: identity topology differs from the teacher")
+        if not np.isclose(
+            identity_topology.applied_object_log_scale, 0.0, atol=1e-12
+        ) or not np.isclose(
+            identity_topology.applied_controller_log_scale, 0.0, atol=1e-12
+        ):
+            raise ValueError(f"{case}: identity topology rescales teacher springs")
         if not np.array_equal(
             identity_topology.graph.vertices, candidate_topology.graph.vertices
         ):
