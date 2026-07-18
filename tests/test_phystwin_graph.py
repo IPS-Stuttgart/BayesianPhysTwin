@@ -4,6 +4,7 @@ import pytest
 from bayesian_phystwin.phystwin_graph import (
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
+    part_pair_spring_grouping,
     spatial_spring_region_ids,
 )
 
@@ -132,3 +133,34 @@ def test_spatial_regions_are_deterministic_balanced_and_reserve_controller_group
     np.testing.assert_array_equal(first, second)
     np.testing.assert_array_equal(np.bincount(first[:4]), [2, 2])
     assert first[-1] == 2
+
+
+def test_part_pair_groups_preserve_cross_part_and_controller_structure():
+    springs = np.array(
+        [[0, 1], [1, 2], [2, 3], [0, 3], [4, 1], [4, 2]],
+        dtype=np.int32,
+    )
+    assignments = np.array([2, 2, 5, 5], dtype=np.int32)
+
+    grouping = part_pair_spring_grouping(
+        springs,
+        assignments,
+        num_object_springs=4,
+    )
+
+    np.testing.assert_array_equal(
+        grouping.object_part_pairs,
+        [[2, 2], [2, 5], [5, 5]],
+    )
+    np.testing.assert_array_equal(grouping.group_ids, [0, 1, 2, 1, 3, 3])
+    np.testing.assert_array_equal(grouping.group_counts, [1, 2, 1, 2])
+    assert grouping.controller_group == 3
+
+
+def test_part_pair_groups_reject_missing_object_assignments():
+    with pytest.raises(ValueError, match="endpoint exceeds"):
+        part_pair_spring_grouping(
+            np.array([[0, 2]], dtype=np.int32),
+            np.array([0, 1], dtype=np.int32),
+            num_object_springs=1,
+        )

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "protocol_name": "phystwin-part-pair-source-v1",
+  "locked_at_utc": "2026-07-18T11:15:00Z",
+  "status": "Source-prefix model-family development only; no future metric may be opened by this protocol.",
+  "claim_boundary": "Passing can admit an exploratory released-cohort run. It cannot establish a SOTA claim without a separately locked independent cohort.",
+  "source_cases": [
+    "single_lift_sloth",
+    "single_lift_zebra",
+    "single_lift_cloth",
+    "single_lift_rope",
+    "single_lift_dinosor"
+  ],
+  "evidence_boundary": {
+    "fit_fraction_of_released_prefix": 0.75,
+    "validation_interval": "remaining 25 percent of the released observation prefix",
+    "input_contract": "phystwin-observation-prefix-plus-hold-v1",
+    "future_controller_values": "not required by the source gate and omitted",
+    "future_object_observations": "omitted from the fitting payload",
+    "future_metrics": "forbidden"
+  },
+  "method": {
+    "teacher": "released PhysTwin per-edge spring field",
+    "partition": "causal-dino-graph-voronoi-parts-v1 from the previously locked fit-prefix proxy",
+    "object_groups": "unique unordered endpoint-part pairs, including separate cross-part groups",
+    "controller_groups": "one shared controller-spring group",
+    "parameterization": "additive continuous group log scales around the teacher",
+    "part_count": 5,
+    "epochs": 12,
+    "learning_rate": 0.003,
+    "spring_scale_weight_decay": 0.01,
+    "early_stopping_patience": 3,
+    "observation_variant": "hard",
+    "selection_metric": "official_3d",
+    "deterministic_spring_forces": true,
+    "collision_parameters": "frozen",
+    "damping_parameters": "frozen"
+  },
+  "family_gate": {
+    "reference": "zero-update exact-teacher trajectory from the same part-pair runner",
+    "score": "equal mean of candidate/teacher CD and track-error ratios",
+    "minimum_relative_score_improvement": 0.001,
+    "maximum_per_metric_regression": 0.0,
+    "tie_break": "exact teacher",
+    "fallback": "exact teacher"
+  },
+  "source_acceptance": {
+    "minimum_learned_case_count": 3,
+    "aggregate_metrics": "learned-or-teacher selected stack must improve both validation CD and validation track error",
+    "mechanism_diagnostic": "report within-part, cross-part, and controller log scales; uniform movement is not evidence for piecewise mechanics",
+    "identity_requirement": "zero-update part-pair runs reproduce their exact teacher within the measured Warp replay floor"
+  },
+  "forbidden": [
+    "future-frame objective, checkpoint selection, or metric inspection",
+    "retuning groups, learning rate, regularization, or source cases after validation",
+    "calling a passing released-cohort result independent or confirmatory",
+    "calling continuous part-pair scaling a reproduction of NeuSpring topology optimization"
+  ]
+}

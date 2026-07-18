@@ -271,9 +271,15 @@ def make_reliability_simulator_class(official_module: Any):
             **kwargs: Any,
         ) -> None:
             self.loss_variant = objective.variant
-            if spring_parameterization not in {"dense", "grouped", "regional"}:
+            if spring_parameterization not in {
+                "dense",
+                "grouped",
+                "regional",
+                "part_pair",
+            }:
                 raise ValueError(
-                    "spring_parameterization must be 'dense', 'grouped', or 'regional'"
+                    "spring_parameterization must be 'dense', 'grouped', "
+                    "'regional', or 'part_pair'"
                 )
             self.spring_parameterization = spring_parameterization
             self.deterministic_spring_forces = bool(deterministic_spring_forces)

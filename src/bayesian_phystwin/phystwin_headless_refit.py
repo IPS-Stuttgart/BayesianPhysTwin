@@ -16,8 +16,10 @@ from typing import Any
 import numpy as np
 
 from .phystwin_graph import (
+    PartPairSpringGrouping,
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
+    part_pair_spring_grouping,
     spatial_spring_region_ids,
 )
 from .phystwin_profile import (
@@ -198,6 +200,7 @@ def run_headless_phystwin_refit(
     released_trajectory_path: str | Path | None = None,
     gt_track_path: str | Path | None = None,
     profile_weights_path: str | Path | None = None,
+    spring_partition_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run one refit and write its trajectory, checkpoint, history, and summary."""
 
@@ -223,9 +226,21 @@ def run_headless_phystwin_refit(
         raise ValueError("cue probability powers must be nonnegative")
     if config.num_substeps < 1 or config.dt <= 0.0:
         raise ValueError("simulator time discretization must be positive")
-    if config.spring_parameterization not in {"dense", "grouped", "regional"}:
+    if config.spring_parameterization not in {
+        "dense",
+        "grouped",
+        "regional",
+        "part_pair",
+    }:
         raise ValueError(
-            "spring_parameterization must be 'dense', 'grouped', or 'regional'"
+            "spring_parameterization must be 'dense', 'grouped', 'regional', "
+            "or 'part_pair'"
+        )
+    if (config.spring_parameterization == "part_pair") != (
+        spring_partition_path is not None
+    ):
+        raise ValueError(
+            "part_pair parameterization requires exactly one spring partition"
         )
     if config.spring_region_count < 2:
         raise ValueError("spring_region_count must be at least two")
@@ -361,6 +376,7 @@ def run_headless_phystwin_refit(
         ),
     )
     spring_group_ids = None
+    part_pair_grouping: PartPairSpringGrouping | None = None
     if config.spring_parameterization == "regional":
         spring_group_ids = spatial_spring_region_ids(
             graph.vertices,
@@ -368,6 +384,23 @@ def run_headless_phystwin_refit(
             num_object_springs=graph.num_object_springs,
             region_count=config.spring_region_count,
         )
+    elif config.spring_parameterization == "part_pair":
+        with np.load(spring_partition_path) as archive:
+            if "part_assignments" not in archive:
+                raise ValueError("spring partition omits part_assignments")
+            part_assignments = np.asarray(
+                archive["part_assignments"], dtype=np.int64
+            ).reshape(-1)
+        if len(part_assignments) != len(structure_points):
+            raise ValueError(
+                "spring partition must assign every object structure point"
+            )
+        part_pair_grouping = part_pair_spring_grouping(
+            graph.springs,
+            part_assignments,
+            num_object_springs=graph.num_object_springs,
+        )
+        spring_group_ids = part_pair_grouping.group_ids
     checkpoint = _load_checkpoint(torch, checkpoint_path, config.device)
     checkpoint_spring_y = torch.as_tensor(
         checkpoint["spring_Y"], dtype=torch.float32, device=config.device
@@ -1195,6 +1228,14 @@ def run_headless_phystwin_refit(
                     "sha256": _sha256(profile_weights_path),
                 }
             ),
+            "spring_partition": (
+                None
+                if spring_partition_path is None
+                else {
+                    "path": str(Path(spring_partition_path).resolve()),
+                    "sha256": _sha256(spring_partition_path),
+                }
+            ),
         },
         "graph": {
             "vertex_count": int(len(graph.vertices)),
@@ -1241,10 +1282,36 @@ def run_headless_phystwin_refit(
                     ),
                 }
                 if config.spring_parameterization == "regional"
-                else {
+                else (
+                    {
+                        "part_pairs": [
+                            {
+                                "parts": [int(pair[0]), int(pair[1])],
+                                "spring_count": int(
+                                    part_pair_grouping.group_counts[index]
+                                ),
+                                "log_scale": float(final_group_log_scales[index]),
+                            }
+                            for index, pair in enumerate(
+                                part_pair_grouping.object_part_pairs
+                            )
+                        ],
+                        "controller": (
+                            None
+                            if part_pair_grouping.controller_group is None
+                            else float(
+                                final_group_log_scales[
+                                    part_pair_grouping.controller_group
+                                ]
+                            )
+                        ),
+                    }
+                    if config.spring_parameterization == "part_pair"
+                    else {
                     "object": float(final_group_log_scales[0]),
                     "controller": float(final_group_log_scales[1]),
-                }
+                    }
+                )
             ),
             "final_collision": final_collision,
             "fixed_dashpot_damping": float(

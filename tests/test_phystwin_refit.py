@@ -285,6 +285,30 @@ def test_refit_cli_accepts_regularized_regional_springs():
     assert args.drag_log_scale == pytest.approx(0.1)
 
 
+def test_refit_cli_accepts_part_pair_partition():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "hard",
+            "--train-end-frame",
+            "64",
+            "--spring-parameterization",
+            "part_pair",
+            "--spring-partition",
+            "node_sem.npz",
+        ]
+    )
+
+    assert args.spring_parameterization == "part_pair"
+    assert args.spring_partition == "node_sem.npz"
+
+
 def test_prior_evaluation_uses_target_visible_refit_support():
     visible, motion_valid = _masks()
     cues = {

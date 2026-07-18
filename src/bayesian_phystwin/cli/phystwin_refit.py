@@ -45,9 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--freeze-collision", action="store_true")
     parser.add_argument(
         "--spring-parameterization",
-        choices=("dense", "grouped", "regional"),
+        choices=("dense", "grouped", "regional", "part_pair"),
         default="dense",
     )
+    parser.add_argument("--spring-partition")
     parser.add_argument("--spring-region-count", type=int, default=4)
     parser.add_argument("--spring-scale-weight-decay", type=float, default=0.0)
     parser.add_argument("--dashpot-log-scale", type=float, default=0.0)
@@ -93,6 +94,7 @@ def main() -> None:
         released_trajectory_path=args.released_trajectory,
         gt_track_path=args.gt_track_3d,
         profile_weights_path=args.profile_weights,
+        spring_partition_path=args.spring_partition,
         config=HeadlessPhysTwinRefitConfig(
             variant=args.variant,
             train_end_frame=args.train_end_frame,

@@ -28,6 +28,67 @@ class PhysTwinSpringGraph:
     num_object_springs: int
 
 
+@dataclass(frozen=True)
+class PartPairSpringGrouping:
+    """Compact spring groups induced by unordered endpoint-part pairs."""
+
+    group_ids: np.ndarray
+    object_part_pairs: np.ndarray
+    group_counts: np.ndarray
+    controller_group: int | None
+
+
+def part_pair_spring_grouping(
+    springs: np.ndarray,
+    part_assignments: np.ndarray,
+    *,
+    num_object_springs: int,
+) -> PartPairSpringGrouping:
+    """Group object springs by within-part or cross-part connectivity.
+
+    Every unique unordered pair of endpoint parts receives one group. All
+    controller springs share a final group because controller vertices do not
+    have material-part identities. This preserves the released graph while
+    allowing cross-part springs to become softer or stiffer than within-part
+    springs, a continuous proxy for piecewise topology refinement.
+    """
+
+    edges = np.asarray(springs, dtype=np.int64)
+    assignments = np.asarray(part_assignments, dtype=np.int64).reshape(-1)
+    if edges.ndim != 2 or edges.shape[1] != 2 or len(edges) == 0:
+        raise ValueError("springs must have shape (S, 2)")
+    if not 0 < num_object_springs <= len(edges):
+        raise ValueError("num_object_springs must lie in (0, S]")
+    if len(assignments) == 0 or np.any(assignments < 0):
+        raise ValueError("part assignments must be nonempty and nonnegative")
+    object_edges = edges[:num_object_springs]
+    if np.any(object_edges < 0) or np.any(object_edges >= len(assignments)):
+        raise ValueError("object spring endpoint exceeds the part assignments")
+
+    endpoint_parts = assignments[object_edges]
+    unordered_pairs = np.sort(endpoint_parts, axis=1)
+    object_part_pairs, object_group_ids = np.unique(
+        unordered_pairs,
+        axis=0,
+        return_inverse=True,
+    )
+    group_ids = np.empty(len(edges), dtype=np.int32)
+    group_ids[:num_object_springs] = object_group_ids.astype(np.int32)
+    controller_group = None
+    if num_object_springs < len(edges):
+        controller_group = len(object_part_pairs)
+        group_ids[num_object_springs:] = controller_group
+    group_counts = np.bincount(group_ids).astype(np.int64)
+    if np.any(group_counts == 0):
+        raise RuntimeError("part-pair grouping produced an empty group")
+    return PartPairSpringGrouping(
+        group_ids=group_ids,
+        object_part_pairs=object_part_pairs.astype(np.int32),
+        group_counts=group_counts,
+        controller_group=controller_group,
+    )
+
+
 def spatial_spring_region_ids(
     vertices: np.ndarray,
     springs: np.ndarray,
