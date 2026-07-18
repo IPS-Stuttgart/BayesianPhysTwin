@@ -5,12 +5,52 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.matphys_causal_bridge import (
+    causal_uniform_frame_ids,
     causal_uniform_frame_indices,
     merge_matphys_external_manifests,
+    numeric_frame_paths,
     sha256_file,
     validate_causal_training_audit,
     write_causal_training_audit,
 )
+
+
+def _frame_sources(tmp_path: Path, frame_ids: list[int]) -> dict[int, Path]:
+    result = {}
+    for frame_id in frame_ids:
+        path = tmp_path / f"{frame_id}.png"
+        path.write_bytes(f"frame-{frame_id}".encode())
+        result[frame_id] = path
+    return result
+
+
+def _proxy_summary(tmp_path: Path) -> Path:
+    node_sem = tmp_path / "node_sem.npz"
+    train_ready = tmp_path / "train_ready.pt"
+    node_sem.write_bytes(b"semantics")
+    train_ready.write_bytes(b"parts")
+    proxy = tmp_path / "proxy.json"
+    proxy.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "case_a",
+                        "node_sem": {
+                            "path": str(node_sem),
+                            "sha256": sha256_file(node_sem),
+                        },
+                        "train_ready": {
+                            "path": str(train_ready),
+                            "sha256": sha256_file(train_ready),
+                        },
+                    }
+                ]
+            }
+        )
+        + "\n"
+    )
+    return proxy
 
 
 def test_causal_uniform_frames_never_reach_future() -> None:
@@ -27,14 +67,35 @@ def test_causal_uniform_frames_reject_invalid_boundary() -> None:
         causal_uniform_frame_indices(10, 11, 4)
 
 
+def test_numeric_frame_selection_uses_ids_not_lexicographic_positions(
+    tmp_path: Path,
+) -> None:
+    for frame_id in (0, 1, 2, 10, 11):
+        (tmp_path / f"{frame_id}.png").write_bytes(b"image")
+
+    paths = numeric_frame_paths(tmp_path)
+    selected = causal_uniform_frame_ids(paths, 3, 3)
+
+    assert list(paths) == [0, 1, 2, 10, 11]
+    np.testing.assert_array_equal(selected, [0, 1, 2])
+
+
+def test_numeric_frame_paths_reject_ambiguous_stems(tmp_path: Path) -> None:
+    (tmp_path / "1.png").write_bytes(b"one")
+    (tmp_path / "1.jpg").write_bytes(b"two")
+
+    with pytest.raises(ValueError, match="duplicate numeric frame"):
+        numeric_frame_paths(tmp_path)
+
+
 def test_training_audit_binds_checkpoint_and_rejects_future_access(
     tmp_path: Path,
 ) -> None:
     checkpoint = tmp_path / "checkpoint.pth"
     checkpoint.write_bytes(b"checkpoint")
-    proxy = tmp_path / "proxy.json"
-    proxy.write_text("{}\n")
+    proxy = _proxy_summary(tmp_path)
     audit_path = tmp_path / "audit.json"
+    frames = _frame_sources(tmp_path, [0, 2, 4])
     audit = write_causal_training_audit(
         [checkpoint],
         audit_path,
@@ -42,7 +103,9 @@ def test_training_audit_binds_checkpoint_and_rejects_future_access(
         source_commit="a" * 40,
         data_root=tmp_path,
         accessed_frame_indices={"case_a": [0, 2, 4]},
+        accessed_frame_paths={"case_a": frames},
         objective_end_frames_exclusive={"case_a": 5},
+        evidence_end_frames_exclusive={"case_a": 5},
         split_by_case={"case_a": {"train": [0, 5], "test": [5, 8]}},
         proxy_summary_path=proxy,
     )
@@ -52,6 +115,12 @@ def test_training_audit_binds_checkpoint_and_rejects_future_access(
     assert validated["checkpoints"][0]["sha256"] == sha256_file(checkpoint)
     assert audit["audit_sha256"] == sha256_file(audit_path)
 
+    changed = json.loads(audit_path.read_text())
+    changed["cases"][0]["validation_frame_interval"] = [4, 5]
+    audit_path.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match="validation interval"):
+        validate_causal_training_audit(audit_path, checkpoint)
+
     with pytest.raises(ValueError, match="future frame"):
         write_causal_training_audit(
             [checkpoint],
@@ -60,7 +129,9 @@ def test_training_audit_binds_checkpoint_and_rejects_future_access(
             source_commit="a" * 40,
             data_root=tmp_path,
             accessed_frame_indices={"case_a": [0, 5]},
+            accessed_frame_paths={"case_a": {**frames, 5: _frame_sources(tmp_path, [5])[5]}},
             objective_end_frames_exclusive={"case_a": 5},
+            evidence_end_frames_exclusive={"case_a": 5},
             split_by_case={"case_a": {"train": [0, 5], "test": [5, 8]}},
             proxy_summary_path=proxy,
         )
@@ -72,6 +143,7 @@ def test_training_audit_rejects_changed_checkpoint(tmp_path: Path) -> None:
     proxy = tmp_path / "proxy.json"
     proxy.write_text("{}\n")
     audit_path = tmp_path / "audit.json"
+    frames = _frame_sources(tmp_path, [0])
     write_causal_training_audit(
         [checkpoint],
         audit_path,
@@ -79,7 +151,9 @@ def test_training_audit_rejects_changed_checkpoint(tmp_path: Path) -> None:
         source_commit="a" * 40,
         data_root=tmp_path,
         accessed_frame_indices={"case_a": [0]},
+        accessed_frame_paths={"case_a": frames},
         objective_end_frames_exclusive={"case_a": 2},
+        evidence_end_frames_exclusive={"case_a": 2},
         split_by_case={"case_a": {"train": [0, 2], "test": [2, 3]}},
         proxy_summary_path=proxy,
     )
@@ -89,7 +163,7 @@ def test_training_audit_rejects_changed_checkpoint(tmp_path: Path) -> None:
         validate_causal_training_audit(audit_path, checkpoint)
 
 
-def test_audit_revalidates_serialized_frame_boundary(tmp_path: Path) -> None:
+def test_audit_rejects_legacy_unsafe_frame_order(tmp_path: Path) -> None:
     checkpoint = tmp_path / "checkpoint.pth"
     checkpoint.write_bytes(b"checkpoint")
     audit_path = tmp_path / "audit.json"
@@ -117,7 +191,7 @@ def test_audit_revalidates_serialized_frame_boundary(tmp_path: Path) -> None:
         )
     )
 
-    with pytest.raises(ValueError, match="future video access"):
+    with pytest.raises(ValueError, match="legacy MatPhys causal-audit"):
         validate_causal_training_audit(audit_path, checkpoint)
 
 
@@ -126,6 +200,7 @@ def test_training_audit_rejects_future_objective_access(tmp_path: Path) -> None:
     checkpoint.write_bytes(b"checkpoint")
     proxy = tmp_path / "proxy.json"
     proxy.write_text("{}\n")
+    frames = _frame_sources(tmp_path, [0, 1])
 
     with pytest.raises(ValueError, match="objective accessed a future frame"):
         write_causal_training_audit(
@@ -135,7 +210,9 @@ def test_training_audit_rejects_future_objective_access(tmp_path: Path) -> None:
             source_commit="a" * 40,
             data_root=tmp_path,
             accessed_frame_indices={"case_a": [0, 1]},
+            accessed_frame_paths={"case_a": frames},
             objective_end_frames_exclusive={"case_a": 3},
+            evidence_end_frames_exclusive={"case_a": 2},
             split_by_case={"case_a": {"train": [0, 2], "test": [2, 3]}},
             proxy_summary_path=proxy,
         )

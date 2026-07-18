@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-graph-parts-source-v1",
+  "locked_at_utc": "2026-07-18T09:00:00Z",
+  "status": "Source-prefix model-family development only; no future metric may be opened by this protocol.",
+  "claim_boundary": "Passing this source gate can freeze an exploratory model for an already examined cohort. It cannot establish a SOTA claim without a fresh independent evaluation.",
+  "source_panel_selection": "One canonical single_lift interaction per released MatPhys material label, chosen from names and metadata before source-validation metrics were computed.",
+  "source_cases": [
+    "single_lift_sloth",
+    "single_lift_zebra",
+    "single_lift_cloth",
+    "single_lift_rope",
+    "single_lift_dinosor"
+  ],
+  "method": {
+    "training_scope": "one shared checkpoint across the five source cases",
+    "fit_fraction_of_released_prefix": 0.75,
+    "checkpoint_policy": "fixed terminal epoch",
+    "epochs": 20,
+    "eval_every_epochs": 5,
+    "video_frames": 16,
+    "video_frame_contract": "uniform numeric filename IDs before the fit boundary",
+    "dino_model": "dinov2_vitl14_reg",
+    "dino_image_size": 518,
+    "dino_keyframes": 4,
+    "dino_views": "all calibrated views",
+    "part_count": 5,
+    "semantic_edge_weight": 4.0,
+    "part_feature_scale": 1.0,
+    "teacher_parameterization": "released-phystwin-bounded-logk-residual-v1",
+    "teacher_residual_log_scale": 0.6931471805599453,
+    "maximum_stiffness_ratio": 2.0,
+    "global_contact_and_damping_parameters": "frozen at released PhysTwin values"
+  },
+  "family_gate": {
+    "reference": "paired exact teacher rerun generated in the same export",
+    "interval": "remaining 25 percent of the released observation prefix",
+    "score": "equal mean of candidate/teacher CD and track-error ratios",
+    "minimum_relative_score_improvement": 0.0,
+    "maximum_per_metric_regression": 0.0,
+    "tie_break": "exact teacher",
+    "fallback": "exact teacher",
+    "future_trajectory_access": false
+  },
+  "source_acceptance": {
+    "minimum_learned_case_count": 3,
+    "aggregate_metrics": "learned-or-teacher selected stack must improve both validation CD and validation track error over the all-teacher stack",
+    "specialization_diagnostic": "report per-part spring-ratio means and their range; no minimum range is target-tuned",
+    "identity_requirement": "paired scale-zero teacher trajectories must preserve the released PhysTwin state contract"
+  },
+  "forbidden": [
+    "future-frame objective or checkpoint selection",
+    "future metric inspection during source-family selection",
+    "retuning part count, residual bound, or source cases after gate results",
+    "calling the released 22-case cohort independent or confirmatory",
+    "calling graph Voronoi parts a reproduction of unpublished MatPhys preprocessing"
+  ]
+}

@@ -56,6 +56,8 @@ def main() -> None:
     parser.add_argument("--eval-every", type=int, default=5)
     parser.add_argument("--teacher-experiments-dir")
     parser.add_argument("--teacher-residual-log-scale", type=float)
+    parser.add_argument("--fit-fraction", type=float, default=1.0)
+    parser.add_argument("--graph-parts", action="store_true")
     args = parser.parse_args()
     if args.epochs < 1 or args.eval_every < 1:
         parser.error("epochs and eval-every must be positive")
@@ -101,6 +103,8 @@ def main() -> None:
                 str(args.epochs),
                 "--eval-every",
                 str(args.eval_every),
+                "--fit-fraction",
+                str(args.fit_fraction),
             ]
             if args.teacher_experiments_dir is not None:
                 train_command.extend(
@@ -113,6 +117,8 @@ def main() -> None:
                         str(args.teacher_residual_log_scale),
                     )
                 )
+            if args.graph_parts:
+                train_command.append("--graph-parts")
             _run(train_command, case_root / "train.log")
             validate_causal_training_audit(audit, checkpoint)
             trained = True
@@ -173,6 +179,8 @@ def main() -> None:
         "eval_every": args.eval_every,
         "teacher_experiments_dir": args.teacher_experiments_dir,
         "teacher_residual_log_scale": args.teacher_residual_log_scale,
+        "fit_fraction": args.fit_fraction,
+        "graph_parts": args.graph_parts,
         "cases": records,
     }
     destination = run_root / f"shard_{args.device.replace(':', '_')}.json"

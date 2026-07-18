@@ -11,7 +11,7 @@ from typing import Iterable, Mapping, Sequence
 import numpy as np
 
 
-MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION = 1
+MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION = 2
 _EXTERNAL_BACKBONE_SHARED_FIELDS = (
     "name",
     "source_repository",
@@ -51,6 +51,69 @@ def causal_uniform_frame_indices(
         sample_count,
         dtype=int,
     )
+
+
+def numeric_frame_paths(
+    directory: str | Path,
+    *,
+    suffixes: Sequence[str] = (".png", ".jpg", ".jpeg"),
+) -> dict[int, Path]:
+    """Index unpadded frame files by their numeric stem.
+
+    Lexicographic sorting places ``10.png`` before ``2.png`` and can therefore
+    cross a causal frame boundary even when list positions appear valid. This
+    helper makes the frame identifier, rather than directory order, the unit
+    audited by the causal MatPhys path.
+    """
+
+    root = Path(directory)
+    allowed = {suffix.lower() for suffix in suffixes}
+    result: dict[int, Path] = {}
+    for path in root.iterdir():
+        if not path.is_file() or path.suffix.lower() not in allowed:
+            continue
+        try:
+            frame_id = int(path.stem)
+        except ValueError as exc:
+            raise ValueError(f"nonnumeric frame filename: {path}") from exc
+        if frame_id < 0:
+            raise ValueError(f"negative frame identifier: {path}")
+        if frame_id in result:
+            raise ValueError(f"duplicate numeric frame identifier {frame_id}")
+        result[frame_id] = path.resolve()
+    if not result:
+        raise ValueError(f"no numeric image frames found under {root}")
+    return dict(sorted(result.items()))
+
+
+def causal_uniform_frame_ids(
+    available_frame_ids: Sequence[int],
+    evidence_end_frame_exclusive: int,
+    sample_count: int,
+) -> np.ndarray:
+    """Select causal frames from explicit numeric identifiers."""
+
+    if evidence_end_frame_exclusive < 1:
+        raise ValueError("evidence end must be positive")
+    if sample_count < 1:
+        raise ValueError("sample_count must be positive")
+    eligible = np.asarray(
+        sorted(
+            {
+                int(frame_id)
+                for frame_id in available_frame_ids
+                if 0 <= int(frame_id) < evidence_end_frame_exclusive
+            }
+        ),
+        dtype=int,
+    )
+    if len(eligible) == 0:
+        raise ValueError("no available frame lies before the evidence boundary")
+    positions = np.linspace(0, len(eligible) - 1, sample_count, dtype=int)
+    selected = eligible[positions]
+    if np.any(selected >= evidence_end_frame_exclusive):
+        raise AssertionError("causal frame selection crossed the evidence boundary")
+    return selected
 
 
 def _load_pickle(path: Path) -> object:
@@ -205,7 +268,9 @@ def write_causal_training_audit(
     source_commit: str,
     data_root: str | Path,
     accessed_frame_indices: Mapping[str, Sequence[int]],
+    accessed_frame_paths: Mapping[str, Mapping[int, str | Path]],
     objective_end_frames_exclusive: Mapping[str, int],
+    evidence_end_frames_exclusive: Mapping[str, int],
     split_by_case: Mapping[str, Mapping[str, object]],
     proxy_summary_path: str | Path,
     parameterization: Mapping[str, object] | None = None,
@@ -219,24 +284,55 @@ def write_causal_training_audit(
         if case not in split_by_case:
             raise ValueError(f"missing split for accessed case {case}")
         train_end = int(split_by_case[case]["train"][1])
+        if case not in evidence_end_frames_exclusive:
+            raise ValueError(f"missing evidence boundary for accessed case {case}")
+        evidence_end = int(evidence_end_frames_exclusive[case])
+        if not 1 <= evidence_end <= train_end:
+            raise ValueError(f"{case}: evidence boundary crosses the released prefix")
         if case not in objective_end_frames_exclusive:
             raise ValueError(f"missing objective boundary for accessed case {case}")
         objective_end = int(objective_end_frames_exclusive[case])
-        if not 1 <= objective_end <= train_end:
+        if not 1 <= objective_end <= evidence_end:
             raise ValueError(f"{case}: objective accessed a future frame")
         indices = sorted(set(int(index) for index in raw_indices))
         if not indices:
             raise ValueError(f"no video frames were recorded for {case}")
-        if indices[0] < 0 or indices[-1] >= train_end:
+        if indices[0] < 0 or indices[-1] >= evidence_end:
             raise ValueError(f"{case}: checkpoint training accessed a future frame")
+        case_paths = accessed_frame_paths.get(case)
+        if not isinstance(case_paths, Mapping):
+            raise ValueError(f"{case}: exact accessed frame paths were not recorded")
+        frame_files: list[dict[str, object]] = []
+        for frame_id in indices:
+            if frame_id not in case_paths:
+                raise ValueError(f"{case}: frame {frame_id} has no bound source file")
+            frame_path = Path(case_paths[frame_id]).resolve()
+            if not frame_path.is_file():
+                raise FileNotFoundError(frame_path)
+            try:
+                path_frame_id = int(frame_path.stem)
+            except ValueError as exc:
+                raise ValueError(f"{case}: frame source has a nonnumeric stem") from exc
+            if path_frame_id != frame_id:
+                raise ValueError(f"{case}: audited frame id disagrees with its filename")
+            frame_files.append(
+                {
+                    "frame_id": frame_id,
+                    "path": str(frame_path),
+                    "sha256": sha256_file(frame_path),
+                }
+            )
         cases.append(
             {
                 "name": case,
                 "train_end_frame_exclusive": train_end,
+                "evidence_end_frame_exclusive": evidence_end,
                 "accessed_frame_indices": indices,
                 "maximum_accessed_frame": indices[-1],
+                "accessed_frame_files": frame_files,
                 "objective_frame_interval": [1, objective_end],
                 "maximum_objective_frame": objective_end - 1,
+                "validation_frame_interval": [evidence_end, train_end],
             }
         )
     checkpoints = []
@@ -251,8 +347,9 @@ def write_causal_training_audit(
     audit = {
         "schema_version": MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION,
         "future_observations_used": False,
-        "video_sampling": "uniform-within-released-training-prefix-v1",
-        "optimization_and_checkpoint_selection": "released-prefix-only-v1",
+        "frame_id_contract": "numeric-filename-stem-v2",
+        "video_sampling": "uniform-numeric-ids-before-evidence-boundary-v2",
+        "optimization_and_checkpoint_selection": "fit-prefix-only-v2",
         "checkpoint_policy": "fixed-terminal-epoch-v1",
         "fit_all_frames": False,
         "source_repository": source_repository,
@@ -284,15 +381,22 @@ def validate_causal_training_audit(
     source = Path(audit_path).resolve()
     audit = json.loads(source.read_text(encoding="utf-8"))
     if audit.get("schema_version") != MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION:
-        raise ValueError("unsupported MatPhys causal-audit schema")
+        raise ValueError(
+            "unsupported or legacy MatPhys causal-audit schema; schema 1 used "
+            "unsafe lexicographic frame positions"
+        )
     if audit.get("future_observations_used") is not False:
         raise ValueError("MatPhys checkpoint audit does not forbid future observations")
     if audit.get("fit_all_frames") is not False:
         raise ValueError("MatPhys checkpoint audit permits fit_all_frames")
+    if audit.get("frame_id_contract") != "numeric-filename-stem-v2":
+        raise ValueError("MatPhys checkpoint audit does not bind numeric frame ids")
     if (
-        audit.get("optimization_and_checkpoint_selection")
-        != "released-prefix-only-v1"
+        audit.get("video_sampling")
+        != "uniform-numeric-ids-before-evidence-boundary-v2"
     ):
+        raise ValueError("MatPhys checkpoint audit uses an unsafe frame order")
+    if audit.get("optimization_and_checkpoint_selection") != "fit-prefix-only-v2":
         raise ValueError("MatPhys checkpoint audit does not bind objective access")
     if audit.get("checkpoint_policy") != "fixed-terminal-epoch-v1":
         raise ValueError("MatPhys checkpoint audit does not use the terminal epoch")
@@ -300,15 +404,50 @@ def validate_causal_training_audit(
     identity = {"path": str(checkpoint), "sha256": sha256_file(checkpoint)}
     if identity not in audit.get("checkpoints", []):
         raise ValueError("checkpoint bytes are not bound by the causal training audit")
+    proxy_identity = audit.get("proxy")
+    if not isinstance(proxy_identity, dict):
+        raise ValueError("MatPhys checkpoint audit omits its input proxy")
+    proxy_path = Path(proxy_identity.get("path", ""))
+    if sha256_file(proxy_path) != proxy_identity.get("sha256"):
+        raise ValueError("MatPhys proxy summary bytes changed")
+    proxy_summary = json.loads(proxy_path.read_text(encoding="utf-8"))
+    for proxy_case in proxy_summary.get("cases", []):
+        for key in ("node_sem", "train_ready"):
+            proxy_source = proxy_case.get(key)
+            if not isinstance(proxy_source, dict):
+                raise ValueError(f"MatPhys proxy omits {key}")
+            if sha256_file(proxy_source["path"]) != proxy_source.get("sha256"):
+                raise ValueError(f"MatPhys proxy {key} bytes changed")
     for case in audit.get("cases", []):
         train_end = int(case["train_end_frame_exclusive"])
+        evidence_end = int(case["evidence_end_frame_exclusive"])
+        if not 1 <= evidence_end <= train_end:
+            raise ValueError(f"{case.get('name')}: invalid evidence boundary")
+        if case.get("validation_frame_interval") != [evidence_end, train_end]:
+            raise ValueError(
+                f"{case.get('name')}: validation interval disagrees with evidence"
+            )
         indices = [int(index) for index in case["accessed_frame_indices"]]
-        if not indices or min(indices) < 0 or max(indices) >= train_end:
+        if not indices or min(indices) < 0 or max(indices) >= evidence_end:
             raise ValueError(f"{case.get('name')}: audit contains future video access")
+        frame_files = case.get("accessed_frame_files")
+        if not isinstance(frame_files, list) or len(frame_files) != len(indices):
+            raise ValueError(f"{case.get('name')}: exact frame sources are unbound")
+        bound_ids: list[int] = []
+        for record in frame_files:
+            frame_id = int(record["frame_id"])
+            frame_path = Path(record["path"])
+            if int(frame_path.stem) != frame_id:
+                raise ValueError(f"{case.get('name')}: numeric frame binding changed")
+            if sha256_file(frame_path) != record["sha256"]:
+                raise ValueError(f"{case.get('name')}: accessed frame bytes changed")
+            bound_ids.append(frame_id)
+        if sorted(bound_ids) != sorted(indices):
+            raise ValueError(f"{case.get('name')}: accessed frame ids are inconsistent")
         objective_start, objective_end = (
             int(value) for value in case["objective_frame_interval"]
         )
-        if objective_start != 1 or not objective_start <= objective_end <= train_end:
+        if objective_start != 1 or not objective_start <= objective_end <= evidence_end:
             raise ValueError(
                 f"{case.get('name')}: audit contains future objective access"
             )

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "amendment_name": "matphys-graph-parts-source-v1-replay-floor",
+  "locked_at_utc": "2026-07-18T09:21:00Z",
+  "lock_timing": "After the paired scale-zero identity export and before the terminal source checkpoint, source export, or source-validation metrics existed.",
+  "base_protocol": {
+    "path": "configs/sota/matphys_graph_parts_source_v1.json",
+    "sha256": "44cd03fb1e6ba74a4bc20bee768f50e99987757b65078a60276058ace44858f9"
+  },
+  "reason": "The paired scale-zero candidate improved the balanced validation score by 0.000698 percent solely from Warp replay ordering. A strictly positive but unqualified threshold would therefore accept numerical noise.",
+  "paired_identity_control": {
+    "case": "single_lift_sloth",
+    "mean_node_frame_difference_mm": 0.0005556537031669804,
+    "validation_mean_node_frame_difference_mm": 0.001307590760377245,
+    "candidate_normalized_validation_score": 0.9999930189132347,
+    "apparent_relative_score_improvement": 0.000006981086765334155
+  },
+  "change": {
+    "minimum_relative_score_improvement_before": 0.0,
+    "minimum_relative_score_improvement_after": 0.001,
+    "interpretation": "Require at least 0.1 percent balanced improvement above the paired exact teacher."
+  },
+  "unchanged": [
+    "source cases",
+    "fit and validation boundaries",
+    "20 terminal epochs",
+    "DINO model and keyframes",
+    "part count and graph weighting",
+    "factor-two teacher residual bound",
+    "zero per-metric regression",
+    "three-of-five source acceptance count",
+    "all future-data prohibitions"
+  ]
+}

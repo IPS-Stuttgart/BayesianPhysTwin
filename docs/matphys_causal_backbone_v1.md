@@ -2,9 +2,27 @@
 
 Run date: 2026-07-18
 
-Status: complete. Both the absolute-stiffness model and the bounded
-teacher-residual model are frozen negative results. No independent evaluation
-is admitted by the locked gate.
+Status: frozen legacy engineering results. Both the absolute-stiffness model
+and the bounded teacher-residual model are negative, but their schema-1 causal
+audits are invalid because of a frame-ordering defect. No future-blind or
+independent evidence claim is admitted.
+
+## Provenance correction
+
+The wrapper used lexicographic sorting on unpadded PNG filenames while its
+audit recorded list positions as frame IDs. Consequently, names such as
+`10.png` preceded `2.png`, and every one of the 22 legacy runs accessed at
+least one actual video frame beyond its declared evidence boundary. The
+reported numerical failures remain useful engineering history, especially
+because additional information did not make the models competitive, but they
+cannot support causal model selection. In particular, the observed-prefix
+adaptive family gains below are invalid as future-blind evidence.
+
+Audit schema 2 now uses numeric filename stems, hashes every accessed source,
+and rejects all schema-1 checkpoints. The replacement experiment is documented
+in `docs/matphys_graph_parts_v1.md`. The 22-case machine-readable invalidation
+record is `results/sota/matphys_legacy_frame_order_audit_v1.json` (SHA-256
+`5815c86313e43f61a67e2bae2d5d51d49afd971f46f5aba58a1477a205923c7e`).
 
 ## Question
 
@@ -14,8 +32,8 @@ remain unchanged?
 
 The public MatPhys recipe cannot be used directly for this question. Its video
 loader samples the complete video, and its repository does not publish the
-per-case semantic and part artifacts used by the paper model. The wrapper in
-`scripts/remote/run_matphys_causal.py` therefore enforces:
+per-case semantic and part artifacts used by the paper model. The corrected
+schema-2 wrapper in `scripts/remote/run_matphys_causal.py` now enforces:
 
 - 16 uniformly sampled RGB frames from the released observation prefix only;
 - tracking, geometry, checkpoint, and selection objectives ending at the same
@@ -197,9 +215,8 @@ released fitted PhysTwin spring field
 = identity-preserving learned physical twin
 ```
 
-The next admissible model family should combine the same bounded teacher
-residual with **causal keyframe-only graph parts** and a truly disjoint family
-gate:
+The next model family combined the same bounded teacher residual with **causal
+keyframe-only graph parts** and a truly disjoint family gate:
 
 1. compute DINO features only from frames before a frozen fit boundary;
 2. cluster and graph-regularize node features into temporally stable parts;
@@ -214,9 +231,12 @@ The part hypothesis is the missing component most strongly implicated by
 [MatPhys's published ablation](https://arxiv.org/html/2605.19386#S5.T2):
 removing part decomposition changes its future result from 8/15 mm CD/track to
 10/20 mm.
-Those are external paper values, not locally reproduced evidence, but they make
-keyframe-only DINO part recovery the most defensible next model family. The
-residual bound must not be widened after this result.
+Those are external paper values, not locally reproduced evidence. The locked
+source experiment nevertheless rejected this implementation: only `2/5`
+learned cases passed, and all spring fields saturated at the uniform `0.5x`
+lower bound instead of learning part structure. The wider cohort remained
+unopened. See `docs/matphys_graph_parts_v1.md` for the implementation, exact
+gate, and next low-dimensional shrinkage hypothesis.
 
 ## Provenance
 

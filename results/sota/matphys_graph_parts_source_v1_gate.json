@@ -1,0 +1,402 @@
+{
+  "aggregate_both_metrics_improved": true,
+  "aggregate_validation_metrics": {
+    "candidate": {
+      "chamfer_distance_m": 0.02269378575144086,
+      "track_error_m": 0.04760688744797603
+    },
+    "selected": {
+      "chamfer_distance_m": 0.02177964743264702,
+      "track_error_m": 0.045497411998546164
+    },
+    "teacher": {
+      "chamfer_distance_m": 0.043795420292735865,
+      "track_error_m": 0.0645697550308522
+    }
+  },
+  "case_results": {
+    "single_lift_cloth": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.02195369941231347,
+        "frame_count": 31,
+        "frame_end_exclusive": 121,
+        "frame_start": 90,
+        "track_error_m": 0.06016268828595276
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.1135117195398307,
+          "track_error_m": 1.1092865957683924
+        },
+        "candidate_normalized_score": 1.1113991576541116,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": -0.11139915765411157,
+        "selected_family": "exact_teacher"
+      },
+      "fit_end_frame_exclusive": 90,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_cloth/final_data.pkl",
+          "sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_cloth/gt_track_3d.pkl",
+          "sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_cloth/split.json",
+          "sha256": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.01971573269241032,
+        "frame_count": 31,
+        "frame_end_exclusive": 121,
+        "frame_start": 90,
+        "track_error_m": 0.05423547757221265
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_cloth/teacher_fit_validation_trajectory.pkl",
+        "sha256": "c5e4af5fdcf14cc1e76d9fab5855cc513251beaa8adb39f2654b88adf179766a"
+      },
+      "spring_field": {
+        "part_mean_range": 4.1752143409290454e-09,
+        "part_means": [
+          0.5000000013962195,
+          0.4999999976441393,
+          0.49999999722100513,
+          0.5000000005102752,
+          0.5000000000819257
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_cloth/spring_field_summary.json",
+        "ratio_bounds": [
+          0.4999996910763803,
+          0.5000003013659022
+        ],
+        "sha256": "f202259aeb74a537d3ad9ab8d16cfa82be58ae066e948e3650f8257e7dc06100"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.01971573269241032,
+        "frame_count": 31,
+        "frame_end_exclusive": 121,
+        "frame_start": 90,
+        "track_error_m": 0.05423547757221265
+      },
+      "validation_end_frame_exclusive": 121
+    },
+    "single_lift_dinosor": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.07349558129646726,
+        "frame_count": 15,
+        "frame_end_exclusive": 60,
+        "frame_start": 45,
+        "track_error_m": 0.14639033258157189
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.4016850229738768,
+          "track_error_m": 0.6069950208733846
+        },
+        "candidate_normalized_score": 0.5043400219236307,
+        "learned_accepted": true,
+        "no_metric_regression": true,
+        "relative_score_improvement": 0.4956599780763693,
+        "selected_family": "learned_part_residual"
+      },
+      "fit_end_frame_exclusive": 45,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_dinosor/final_data.pkl",
+          "sha256": "94ddd2f6b530c62f25bdc5b1d53b01a20340f254025da72723b2c5b83c80cec6"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_dinosor/gt_track_3d.pkl",
+          "sha256": "3b17a1f0e5be7c2e7e533b07d949874b64ad89e2c8da591fe11c36cf7ff0a51b"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_dinosor/split.json",
+          "sha256": "788b4b1c35dbf46844e04439e3709eb172630b57038fba48e49e25fe22531fb7"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.07349558129646726,
+        "frame_count": 15,
+        "frame_end_exclusive": 60,
+        "frame_start": 45,
+        "track_error_m": 0.14639033258157189
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_dinosor/candidate_fit_validation_trajectory.pkl",
+        "sha256": "a0abfc8cbdb13c9380da89a4c4cdc78477a1f61eedff03d181cfd4518c980521"
+      },
+      "spring_field": {
+        "part_mean_range": 1.1163172430883606e-07,
+        "part_means": [
+          0.5000001143501882,
+          0.5000000046574498,
+          0.5000000027184639,
+          0.5000000775314332,
+          0.5000000310557817
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_dinosor/spring_field_summary.json",
+        "ratio_bounds": [
+          0.49999969454380633,
+          0.5000002972152581
+        ],
+        "sha256": "f1f8d6f435defbc2f719cc0ec797bd55d80028252800a0655b9e3fd0bd7e446c"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.18296818923529287,
+        "frame_count": 15,
+        "frame_end_exclusive": 60,
+        "frame_start": 45,
+        "track_error_m": 0.24117221319366966
+      },
+      "validation_end_frame_exclusive": 60
+    },
+    "single_lift_rope": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.006803048202657837,
+        "frame_count": 9,
+        "frame_end_exclusive": 35,
+        "frame_start": 26,
+        "track_error_m": 0.013893603150161221
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.3645958663550373,
+          "track_error_m": 1.4055109909449919
+        },
+        "candidate_normalized_score": 1.3850534286500147,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": -0.3850534286500147,
+        "selected_family": "exact_teacher"
+      },
+      "fit_end_frame_exclusive": 26,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_rope/final_data.pkl",
+          "sha256": "d5395ed5c4b7848ee3d5a0e9e7d5955f18de68437b24a9e8965aea447401201d"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_rope/gt_track_3d.pkl",
+          "sha256": "69249831ffff16bcb30eef6b34b57e85a5eb810e645591eb53769e74c50e1869"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_rope/split.json",
+          "sha256": "6e939ed1cd93f338a2cc48de10991f21790740ab74897cde9021ec0fe42d5b37"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.004985394115863338,
+        "frame_count": 9,
+        "frame_end_exclusive": 35,
+        "frame_start": 26,
+        "track_error_m": 0.009885090361918758
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_rope/teacher_fit_validation_trajectory.pkl",
+        "sha256": "8690cda26f556420f10debcd25cb1b3efca2bd1e6f92e7c03f5928266b1379fb"
+      },
+      "spring_field": {
+        "part_mean_range": 2.3489462874781708e-08,
+        "part_means": [
+          0.4999999743040307,
+          0.4999999931624347,
+          0.4999999951037169,
+          0.4999999977934936,
+          0.499999995738274
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_rope/spring_field_summary.json",
+        "ratio_bounds": [
+          0.4999996937804352,
+          0.5000003044585858
+        ],
+        "sha256": "84937d74634b8a4bf672f98a6b65b2b6208ba380888237d0df83002530a43882"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.004985394115863338,
+        "frame_count": 9,
+        "frame_end_exclusive": 35,
+        "frame_start": 26,
+        "track_error_m": 0.009885090361918758
+      },
+      "validation_end_frame_exclusive": 35
+    },
+    "single_lift_sloth": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.006192476737313471,
+        "frame_count": 15,
+        "frame_end_exclusive": 59,
+        "frame_start": 44,
+        "track_error_m": 0.008577806949686129
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.910828039166028,
+          "track_error_m": 0.9366829822407631
+        },
+        "candidate_normalized_score": 0.9237555107033955,
+        "learned_accepted": true,
+        "no_metric_regression": true,
+        "relative_score_improvement": 0.07624448929660455,
+        "selected_family": "learned_part_residual"
+      },
+      "fit_end_frame_exclusive": 44,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/final_data.pkl",
+          "sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/gt_track_3d.pkl",
+          "sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_sloth/split.json",
+          "sha256": "023d7fc38af55d3e1eda0cab7d523333e9c7260775287c0946b05503dacb39fd"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.006192476737313471,
+        "frame_count": 15,
+        "frame_end_exclusive": 59,
+        "frame_start": 44,
+        "track_error_m": 0.008577806949686129
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_sloth/candidate_fit_validation_trajectory.pkl",
+        "sha256": "3fae3cf4c1e5c7652a2c812157250a80c13cba770bcdc9c18ae9ccaa3ef32c8f"
+      },
+      "spring_field": {
+        "part_mean_range": 3.708441825844844e-08,
+        "part_means": [
+          0.4999999763964689,
+          0.49999999244117344,
+          0.4999999612533345,
+          0.49999999833775277,
+          0.499999994049499
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_sloth/spring_field_summary.json",
+        "ratio_bounds": [
+          0.49999969785773923,
+          0.5000003020245828
+        ],
+        "sha256": "bdde4c036f70ff0586e3bd35874808a9ff3d1ee56d6ac5515ece16ebb2cee5db"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.006798733098932071,
+        "frame_count": 15,
+        "frame_end_exclusive": 59,
+        "frame_start": 44,
+        "track_error_m": 0.009157641499118543
+      },
+      "validation_end_frame_exclusive": 59
+    },
+    "single_lift_zebra": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.005024123108452271,
+        "frame_count": 12,
+        "frame_end_exclusive": 46,
+        "frame_start": 34,
+        "track_error_m": 0.009010006272508165
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.114230386028584,
+          "track_error_m": 1.072830206064282
+        },
+        "candidate_normalized_score": 1.093530296046433,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": -0.09353029604643304,
+        "selected_family": "exact_teacher"
+      },
+      "fit_end_frame_exclusive": 34,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/final_data.pkl",
+          "sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/gt_track_3d.pkl",
+          "sha256": "ce1da22169fce5063eff159b4ff297e2989559aa8410d30cdb8e4f2d0ee28e80"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_lift_zebra/split.json",
+          "sha256": "c134477272286feb86e465bc02878a2311b810442e3179449bf47bce5863a681"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.004509052321180715,
+        "frame_count": 12,
+        "frame_end_exclusive": 46,
+        "frame_start": 34,
+        "track_error_m": 0.008398352527341406
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_zebra/teacher_fit_validation_trajectory.pkl",
+        "sha256": "bc7ac91813cdb7f2fbb66999423144b7273764e0968ca8d663c7c02c28d231cb"
+      },
+      "spring_field": {
+        "part_mean_range": 6.648897676875265e-08,
+        "part_means": [
+          0.4999999601000032,
+          0.49999996828093207,
+          0.49999993401234377,
+          0.5000000005013205,
+          0.4999999882357656
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/cases/single_lift_zebra/spring_field_summary.json",
+        "ratio_bounds": [
+          0.4999996969335022,
+          0.5000003048392184
+        ],
+        "sha256": "38b2a96d6d82d82f18a5b957ddec23cbab875ce7954574c6f13ce0cd6b00b6f4"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.004509052321180715,
+        "frame_count": 12,
+        "frame_end_exclusive": 46,
+        "frame_start": 34,
+        "track_error_m": 0.008398352527341406
+      },
+      "validation_end_frame_exclusive": 46
+    }
+  },
+  "completed_at_utc": "2026-07-18T09:56:49.256961+00:00",
+  "contract": {
+    "candidate_manifest": {
+      "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/export/external_backbone_manifest.json",
+      "sha256": "a9f59a33c7df1175b68f0886cc00cd290ac14ad3ec3e8033b98f04e3798426ac"
+    },
+    "cases": [
+      "single_lift_sloth",
+      "single_lift_zebra",
+      "single_lift_cloth",
+      "single_lift_rope",
+      "single_lift_dinosor"
+    ],
+    "contract": "causal-matphys-part-family-fit-validation-v1",
+    "fallback": "exact_teacher",
+    "future_trajectory_access": "forbidden; gate reads truncated validation artifacts only",
+    "maximum_metric_regression": 0.0,
+    "minimum_relative_score_improvement": 0.001,
+    "reference": "paired exact released-PhysTwin teacher rerun",
+    "required_learned_case_count": 3,
+    "selection_interval": "[fit_end, released_train_end)",
+    "source_protocol": {
+      "path": "/mnt/corsair/florianpfaff/matphys-part-causal-v1/source_panel_v1/locked_protocol_amendment.json",
+      "sha256": "31b73db0ebecbaf52febb0e917af51e586eebacd6b60aa530369e0540419fd5a"
+    },
+    "status": "source/development family selection; not future evidence"
+  },
+  "future_metrics_opened": false,
+  "learned_acceptance_count": 2,
+  "protocol_id": "0824df04526ca9144fcec497d5f6616e69b769a330639a600e80b900f63dc1c4",
+  "schema_version": 1,
+  "source_gate_passed": false,
+  "teacher_fallback_count": 3
+}
