@@ -143,16 +143,25 @@ def build_piecewise_topology_candidate(
     normalization_log_scale = 0.0
     normalization = "none"
     if preserve_total_object_stiffness:
-        teacher_values = np.asarray(teacher_spring_y, dtype=float).reshape(-1)
-        teacher_total = float(
-            np.sum(teacher_values[: teacher.num_object_springs])
+        topology_is_identity = bool(
+            transfer.interpolated_edge_count == 0
+            and transfer.removed_teacher_edge_count == 0
+            and transfer.exact_edge_count == len(teacher.springs)
+            and len(candidate.springs) == len(teacher.springs)
         )
-        candidate_total = float(
-            np.sum(transfer.spring_y[: candidate.num_object_springs])
-        )
-        if teacher_total <= 0.0 or candidate_total <= 0.0:
-            raise ValueError("object spring totals must be positive")
-        normalization_log_scale = float(np.log(teacher_total / candidate_total))
+        if not topology_is_identity:
+            teacher_values = np.asarray(teacher_spring_y, dtype=float).reshape(-1)
+            teacher_total = float(
+                np.sum(teacher_values[: teacher.num_object_springs])
+            )
+            candidate_total = float(
+                np.sum(transfer.spring_y[: candidate.num_object_springs])
+            )
+            if teacher_total <= 0.0 or candidate_total <= 0.0:
+                raise ValueError("object spring totals must be positive")
+            normalization_log_scale = float(
+                np.log(teacher_total / candidate_total)
+            )
         normalization = "preserve_total_object_stiffness"
     applied_object_log_scale = float(object_log_scale + normalization_log_scale)
     reference = transfer.spring_y.copy()

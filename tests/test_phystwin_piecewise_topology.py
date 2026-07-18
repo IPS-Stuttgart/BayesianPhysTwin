@@ -48,6 +48,7 @@ def test_identity_piecewise_candidate_preserves_teacher_field_and_connectivity()
     )
 
     np.testing.assert_array_equal(artifact.reference_spring_y, spring_y)
+    assert artifact.applied_object_log_scale == 0.0
     assert artifact.transfer.exact_edge_count == 5
     assert artifact.transfer.interpolated_edge_count == 0
     assert artifact.transfer.removed_teacher_edge_count == 0
@@ -125,6 +126,16 @@ def test_density_normalization_preserves_total_object_stiffness():
         neighbour_multipliers=(1.0, 1.0),
     )
     spring_y = np.arange(1, len(teacher.graph.springs) + 1, dtype=np.float32)
+    normalized_identity = build_piecewise_topology_candidate(
+        points,
+        controls,
+        assignments,
+        spring_y,
+        teacher_config=config,
+        radius_multipliers=(1.0, 1.0),
+        neighbour_multipliers=(1.0, 1.0),
+        preserve_total_object_stiffness=True,
+    )
 
     candidate = build_piecewise_topology_candidate(
         points,
@@ -138,6 +149,8 @@ def test_density_normalization_preserves_total_object_stiffness():
     )
 
     assert candidate.graph.num_object_springs < teacher.graph.num_object_springs
+    assert normalized_identity.applied_object_log_scale == 0.0
+    np.testing.assert_array_equal(normalized_identity.reference_spring_y, spring_y)
     np.testing.assert_allclose(
         np.sum(candidate.reference_spring_y[: candidate.graph.num_object_springs]),
         np.sum(spring_y[: teacher.graph.num_object_springs]),
