@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -18,6 +19,16 @@ class PhysTwinSpringGraphConfig:
 
 
 @dataclass(frozen=True)
+class PhysTwinPiecewiseSpringGraphConfig:
+    """Region-specific object topology with a fixed controller topology."""
+
+    object_radii: tuple[float, ...]
+    object_max_neighbours: tuple[int, ...]
+    controller_radius: float
+    controller_max_neighbours: int
+
+
+@dataclass(frozen=True)
 class PhysTwinSpringGraph:
     """NumPy representation of PhysTwin's simulator initialization arrays."""
 
@@ -26,6 +37,7 @@ class PhysTwinSpringGraph:
     rest_lengths: np.ndarray
     masses: np.ndarray
     num_object_springs: int
+    num_object_points: int | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +48,16 @@ class PartPairSpringGrouping:
     object_part_pairs: np.ndarray
     group_counts: np.ndarray
     controller_group: int | None
+
+
+@dataclass(frozen=True)
+class TransferredSpringField:
+    """Teacher spring values transferred onto a candidate topology."""
+
+    spring_y: np.ndarray
+    exact_edge_count: int
+    interpolated_edge_count: int
+    removed_teacher_edge_count: int
 
 
 def part_pair_spring_grouping(
@@ -185,12 +207,34 @@ def build_phystwin_spring_graph(
     which matters when a point lies close to a radius boundary.
     """
 
-    if config.object_radius <= 0.0 or config.controller_radius <= 0.0:
-        raise ValueError("spring radii must be positive")
-    if config.object_max_neighbours < 1:
-        raise ValueError("object_max_neighbours must be positive")
-    if config.controller_max_neighbours < 1:
-        raise ValueError("controller_max_neighbours must be positive")
+    object_points = _points(structure_points, name="structure_points")
+    return build_piecewise_phystwin_spring_graph(
+        object_points,
+        controller_points,
+        np.zeros(len(object_points), dtype=np.int32),
+        config=PhysTwinPiecewiseSpringGraphConfig(
+            object_radii=(config.object_radius,),
+            object_max_neighbours=(config.object_max_neighbours,),
+            controller_radius=config.controller_radius,
+            controller_max_neighbours=config.controller_max_neighbours,
+        ),
+    )
+
+
+def build_piecewise_phystwin_spring_graph(
+    structure_points: np.ndarray,
+    controller_points: np.ndarray | None,
+    region_assignments: np.ndarray,
+    *,
+    config: PhysTwinPiecewiseSpringGraphConfig,
+) -> PhysTwinSpringGraph:
+    """Build a union of region-specific radius/KNN object topologies.
+
+    Each object point queries neighbors using the radius and maximum-neighbor
+    count of its assigned region. Undirected edges proposed by either endpoint
+    are retained. When every point has region zero, this is byte-compatible
+    with :func:`build_phystwin_spring_graph`.
+    """
 
     object_points = _points(structure_points, name="structure_points")
     controls = (
@@ -198,16 +242,35 @@ def build_phystwin_spring_graph(
         if controller_points is None
         else _points(controller_points, name="controller_points")
     )
+    assignments = np.asarray(region_assignments, dtype=np.int64).reshape(-1)
+    radii = np.asarray(config.object_radii, dtype=float).reshape(-1)
+    maximums = np.asarray(config.object_max_neighbours, dtype=np.int64).reshape(-1)
+    if len(assignments) != len(object_points):
+        raise ValueError("region_assignments must label every structure point")
+    if len(radii) == 0 or len(maximums) != len(radii):
+        raise ValueError("piecewise radii and neighbor limits must have equal size")
+    if np.any(~np.isfinite(radii)) or np.any(radii <= 0.0):
+        raise ValueError("spring radii must be positive and finite")
+    if config.controller_radius <= 0.0 or not np.isfinite(config.controller_radius):
+        raise ValueError("spring radii must be positive and finite")
+    if np.any(maximums < 1):
+        raise ValueError("object_max_neighbours must be positive")
+    if config.controller_max_neighbours < 1:
+        raise ValueError("controller_max_neighbours must be positive")
+    if np.any(assignments < 0) or np.any(assignments >= len(radii)):
+        raise ValueError("region assignment exceeds the piecewise configuration")
+
     springs: list[tuple[int, int]] = []
     rest_lengths: list[float] = []
     seen: set[tuple[int, int]] = set()
 
     for point_index, point in enumerate(object_points):
+        region = int(assignments[point_index])
         neighbors = _radius_neighbors(
             object_points,
             point,
-            radius=config.object_radius,
-            maximum=config.object_max_neighbours,
+            radius=float(radii[region]),
+            maximum=int(maximums[region]),
             self_index=point_index,
         )
         # The official builder drops the first result because it is the query.
@@ -259,4 +322,101 @@ def build_phystwin_spring_graph(
         rest_lengths=rest_array,
         masses=np.ones(len(vertices), dtype=np.float32),
         num_object_springs=num_object_springs,
+        num_object_points=len(object_points),
+    )
+
+
+def _graph_object_count(graph: PhysTwinSpringGraph) -> int:
+    if graph.num_object_points is not None:
+        count = int(graph.num_object_points)
+    elif graph.num_object_springs < len(graph.springs):
+        controller_edges = graph.springs[graph.num_object_springs :]
+        count = int(np.min(np.max(controller_edges, axis=1)))
+    else:
+        count = len(graph.vertices)
+    if not 1 <= count <= len(graph.vertices):
+        raise ValueError("graph has an invalid object-point boundary")
+    return count
+
+
+def transfer_teacher_spring_field(
+    teacher_graph: PhysTwinSpringGraph,
+    candidate_graph: PhysTwinSpringGraph,
+    teacher_spring_y: Sequence[float] | np.ndarray,
+) -> TransferredSpringField:
+    """Transfer a positive teacher field while preserving shared edges exactly.
+
+    New object edges receive the geometric mean of robust endpoint-local
+    stiffness summaries. This is deterministic and avoids turning topology
+    search into an implicit nearest-midpoint model-selection step.
+    """
+
+    teacher_y = np.asarray(teacher_spring_y, dtype=float).reshape(-1)
+    if len(teacher_y) != len(teacher_graph.springs):
+        raise ValueError("teacher spring field must match the teacher graph")
+    if np.any(~np.isfinite(teacher_y)) or np.any(teacher_y <= 0.0):
+        raise ValueError("teacher spring values must be finite and positive")
+    if teacher_graph.vertices.shape != candidate_graph.vertices.shape or not np.array_equal(
+        teacher_graph.vertices,
+        candidate_graph.vertices,
+    ):
+        raise ValueError("teacher and candidate graphs must share ordered vertices")
+
+    teacher_edges = {
+        tuple(sorted((int(first), int(second)))): index
+        for index, (first, second) in enumerate(teacher_graph.springs)
+    }
+    if len(teacher_edges) != len(teacher_graph.springs):
+        raise ValueError("teacher graph contains duplicate undirected edges")
+    object_count = _graph_object_count(teacher_graph)
+    if object_count != _graph_object_count(candidate_graph):
+        raise ValueError("teacher and candidate object-point boundaries differ")
+    incident_logs: list[list[float]] = [[] for _ in range(object_count)]
+    for edge_index, (first, second) in enumerate(
+        teacher_graph.springs[: teacher_graph.num_object_springs]
+    ):
+        value = float(np.log(teacher_y[edge_index]))
+        incident_logs[int(first)].append(value)
+        incident_logs[int(second)].append(value)
+    global_object_log = float(
+        np.median(np.log(teacher_y[: teacher_graph.num_object_springs]))
+    )
+    local_logs = np.asarray(
+        [np.median(values) if values else global_object_log for values in incident_logs],
+        dtype=float,
+    )
+    controller_values = teacher_y[teacher_graph.num_object_springs :]
+    controller_fallback = float(
+        np.median(np.log(controller_values))
+        if len(controller_values)
+        else global_object_log
+    )
+
+    candidate_y = np.empty(len(candidate_graph.springs), dtype=np.float32)
+    exact = 0
+    interpolated = 0
+    for edge_index, (first_raw, second_raw) in enumerate(candidate_graph.springs):
+        first, second = int(first_raw), int(second_raw)
+        key = tuple(sorted((first, second)))
+        teacher_index = teacher_edges.get(key)
+        if teacher_index is not None:
+            candidate_y[edge_index] = teacher_y[teacher_index]
+            exact += 1
+            continue
+        if edge_index < candidate_graph.num_object_springs:
+            log_value = 0.5 * (local_logs[first] + local_logs[second])
+        else:
+            object_endpoint = second if second < object_count else first
+            log_value = 0.5 * (local_logs[object_endpoint] + controller_fallback)
+        candidate_y[edge_index] = np.exp(log_value)
+        interpolated += 1
+    removed = len(set(teacher_edges) - {
+        tuple(sorted((int(first), int(second))))
+        for first, second in candidate_graph.springs
+    })
+    return TransferredSpringField(
+        spring_y=candidate_y,
+        exact_edge_count=exact,
+        interpolated_edge_count=interpolated,
+        removed_teacher_edge_count=removed,
     )

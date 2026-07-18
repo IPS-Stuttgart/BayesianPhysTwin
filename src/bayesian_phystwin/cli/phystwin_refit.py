@@ -49,6 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="dense",
     )
     parser.add_argument("--spring-partition")
+    parser.add_argument("--spring-topology")
     parser.add_argument("--spring-region-count", type=int, default=4)
     parser.add_argument("--spring-scale-weight-decay", type=float, default=0.0)
     parser.add_argument("--dashpot-log-scale", type=float, default=0.0)
@@ -95,6 +96,7 @@ def main() -> None:
         gt_track_path=args.gt_track_3d,
         profile_weights_path=args.profile_weights,
         spring_partition_path=args.spring_partition,
+        spring_topology_path=args.spring_topology,
         config=HeadlessPhysTwinRefitConfig(
             variant=args.variant,
             train_end_frame=args.train_end_frame,

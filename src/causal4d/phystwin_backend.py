@@ -603,6 +603,7 @@ def shift_phystwin_attachment_graph(
         rest_lengths=rest_lengths,
         masses=np.asarray(graph.masses, dtype=np.float32).copy(),
         num_object_springs=graph.num_object_springs,
+        num_object_points=graph.num_object_points,
     )
     return AttachmentGraphVariant(variant, shifts, changed)
 

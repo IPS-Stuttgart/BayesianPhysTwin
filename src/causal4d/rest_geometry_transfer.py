@@ -285,6 +285,7 @@ def attach_target_controller_to_canonical_graph(
             )
         ),
         num_object_springs=len(canonical.springs),
+        num_object_points=object_count,
     )
 
 

@@ -29,6 +29,7 @@ from .phystwin_profile import (
     truncate_profile_prediction_weights,
 )
 from .phystwin_official_evaluation import evaluate_official_phystwin_interval
+from .phystwin_piecewise_topology import load_piecewise_topology_artifact
 from .phystwin_refit import (
     PhysTwinRefitReliabilityConfig,
     build_phystwin_track_objective,
@@ -201,6 +202,7 @@ def run_headless_phystwin_refit(
     gt_track_path: str | Path | None = None,
     profile_weights_path: str | Path | None = None,
     spring_partition_path: str | Path | None = None,
+    spring_topology_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run one refit and write its trajectory, checkpoint, history, and summary."""
 
@@ -282,6 +284,8 @@ def run_headless_phystwin_refit(
             raise ValueError("parameter profiling requires epochs=0")
         if config.optimize_collision:
             raise ValueError("parameter profiling requires frozen collision parameters")
+    if spring_topology_path is not None and config.profile_grid_count:
+        raise ValueError("piecewise topology proposals do not support profiling")
     if config.device != "cuda:0":
         raise ValueError(
             "the pinned official simulator selects cuda:0 at import; use "
@@ -365,16 +369,32 @@ def run_headless_phystwin_refit(
         axis=0,
     )
     num_surface_points = original_count + len(surface_points)
-    graph = build_phystwin_spring_graph(
-        structure_points,
-        controller_points[0],
-        config=PhysTwinSpringGraphConfig(
-            object_radius=float(optimal["object_radius"]),
-            object_max_neighbours=int(optimal["object_max_neighbours"]),
-            controller_radius=float(optimal["controller_radius"]),
-            controller_max_neighbours=int(optimal["controller_max_neighbours"]),
-        ),
-    )
+    topology_artifact = None
+    if spring_topology_path is None:
+        graph = build_phystwin_spring_graph(
+            structure_points,
+            controller_points[0],
+            config=PhysTwinSpringGraphConfig(
+                object_radius=float(optimal["object_radius"]),
+                object_max_neighbours=int(optimal["object_max_neighbours"]),
+                controller_radius=float(optimal["controller_radius"]),
+                controller_max_neighbours=int(optimal["controller_max_neighbours"]),
+            ),
+        )
+    else:
+        topology_artifact = load_piecewise_topology_artifact(spring_topology_path)
+        graph = topology_artifact.graph
+        expected_vertices = np.concatenate(
+            (structure_points, controller_points[0]), axis=0
+        ).astype(np.float32)
+        if not np.array_equal(graph.vertices, expected_vertices):
+            raise ValueError("piecewise topology vertices differ from the fitting payload")
+        if graph.num_object_points != len(structure_points):
+            raise ValueError("piecewise topology object boundary changed")
+        if topology_artifact.diagnostics["object_component_count"] != 1:
+            raise ValueError("piecewise topology object graph must be connected")
+        if topology_artifact.diagnostics["isolated_object_point_count"] != 0:
+            raise ValueError("piecewise topology contains isolated object points")
     spring_group_ids = None
     part_pair_grouping: PartPairSpringGrouping | None = None
     if config.spring_parameterization == "regional":
@@ -403,14 +423,23 @@ def run_headless_phystwin_refit(
         spring_group_ids = part_pair_grouping.group_ids
     checkpoint = _load_checkpoint(torch, checkpoint_path, config.device)
     checkpoint_spring_y = torch.as_tensor(
-        checkpoint["spring_Y"], dtype=torch.float32, device=config.device
+        (
+            checkpoint["spring_Y"]
+            if topology_artifact is None
+            else topology_artifact.reference_spring_y
+        ),
+        dtype=torch.float32,
+        device=config.device,
     ).reshape(-1)
     if len(checkpoint_spring_y) != len(graph.springs):
         raise ValueError(
             "reconstructed graph and checkpoint disagree: "
             f"{len(graph.springs)} versus {len(checkpoint_spring_y)} springs"
         )
-    if int(checkpoint["num_object_springs"]) != graph.num_object_springs:
+    if (
+        topology_artifact is None
+        and int(checkpoint["num_object_springs"]) != graph.num_object_springs
+    ):
         raise ValueError("reconstructed object spring count disagrees with checkpoint")
 
     runtime_cfg = SimpleNamespace(
@@ -1236,9 +1265,22 @@ def run_headless_phystwin_refit(
                     "sha256": _sha256(spring_partition_path),
                 }
             ),
+            "spring_topology": (
+                None
+                if spring_topology_path is None
+                else {
+                    "path": str(Path(spring_topology_path).resolve()),
+                    "sha256": _sha256(spring_topology_path),
+                }
+            ),
         },
         "graph": {
             "vertex_count": int(len(graph.vertices)),
+            "object_point_count": int(
+                len(structure_points)
+                if graph.num_object_points is None
+                else graph.num_object_points
+            ),
             "spring_count": int(len(graph.springs)),
             "object_spring_count": int(graph.num_object_springs),
             "controller_spring_count": int(
@@ -1255,6 +1297,11 @@ def run_headless_phystwin_refit(
                 None
                 if spring_group_ids is None
                 else np.bincount(spring_group_ids).astype(int).tolist()
+            ),
+            "piecewise_topology_diagnostics": (
+                None
+                if topology_artifact is None
+                else topology_artifact.diagnostics
             ),
         },
         "parameters": {

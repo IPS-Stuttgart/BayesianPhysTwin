@@ -302,11 +302,14 @@ def test_refit_cli_accepts_part_pair_partition():
             "part_pair",
             "--spring-partition",
             "node_sem.npz",
+            "--spring-topology",
+            "topology.npz",
         ]
     )
 
     assert args.spring_parameterization == "part_pair"
     assert args.spring_partition == "node_sem.npz"
+    assert args.spring_topology == "topology.npz"
 
 
 def test_prior_evaluation_uses_target_visible_refit_support():
