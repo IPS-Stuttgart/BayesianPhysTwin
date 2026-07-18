@@ -2,8 +2,8 @@
 
 Lock date: 2026-07-18
 
-Status: nested source-transfer protocol locked; transfer suffixes not inspected
-for this family at lock time.
+Status: nested source-transfer gate failed; family rejected without opening
+future metrics.
 
 ## Why this successor exists
 
@@ -70,3 +70,38 @@ objects are zebra, cloth, rope, and dinosaur. The family passes only with:
 Failure rejects the complete family without opening any 19-case future metric.
 Passing permits only an exploratory run on that previously examined cohort;
 independent confirmation remains necessary for a state-of-the-art claim.
+
+## Source result
+
+The nested selector chose a non-teacher candidate in three of four objects but
+failed the locked transfer gate. The machine-readable result is archived at
+`results/sota/phystwin_zero_order_topology_field_source_v1_summary.json` with
+SHA-256
+`fffd52f44bd8aab66c0ba65623fe6b0dc68bef6acb1be7b4b1943fc4f27e0d92`.
+All replays used Bayesian-PhysTwin commit `95dc8b4` and official PhysTwin commit
+`2b66305`.
+
+| Transfer case | Nested selection | Outer CD change | Outer track change | Both improve |
+| --- | --- | ---: | ---: | --- |
+| `single_lift_zebra` | exact teacher | 0.00% | 0.00% | no |
+| `single_lift_cloth` | `joint_000` | -10.91% | +0.34% | no |
+| `single_lift_rope` | `field_005` | +6.29% | +6.92% | no |
+| `single_lift_dinosor` | `topology_004` | +5.26% | +29.68% | no |
+
+The selected stack records `0/4` two-metric wins. Equal-case CD improves from
+`10.925` to `10.291 mm` (`-5.80%`), but track error worsens from `20.895` to
+`21.649 mm` (`+3.61%`). Balanced improvement is `1.10%`, below the locked `3%`
+threshold, so the gate selects the exact teacher and records
+`future_metrics_opened=false`.
+
+## Interpretation
+
+Object-specific zero-order search can materially improve one metric, as the
+cloth CD result shows, but late-fit selection does not yet identify candidates
+that jointly transfer in CD and material-point tracking. The next diagnostic
+must separate proposal support from selection failure: rerun the frozen bank on
+these already-open source suffixes and measure its two-metric oracle. If the
+oracle wins, improve the future-blind selector; if it does not, replace the
+piecewise field model rather than expanding the same search.
+
+No exploratory 19-case future run is justified for this family.

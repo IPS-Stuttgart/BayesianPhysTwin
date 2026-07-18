@@ -1,0 +1,298 @@
+{
+  "aggregate_balanced_relative_improvement": 0.010982969122662944,
+  "aggregate_metric_ratios": {
+    "chamfer_distance_m": 0.9419582957273926,
+    "track_error_m": 1.0360757660272815
+  },
+  "aggregate_validation_metrics": {
+    "identity": {
+      "chamfer_distance_m": 0.010924739037361771,
+      "track_error_m": 0.020894796884520332
+    },
+    "selected": {
+      "chamfer_distance_m": 0.01029064856489981,
+      "track_error_m": 0.02164859268811386
+    }
+  },
+  "both_metric_win_count": 0,
+  "case_results": {
+    "single_lift_cloth": {
+      "artifacts": {
+        "fit_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/fit_prefix/manifest.json",
+          "sha256": "d2fbf25215917591effb0a4ce7b88fe6b502a449057fb98d8f1aa6dfdcd62db2"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/identity/summary.json",
+          "sha256": "a7590f2297ee89241d2626fe8dd13b82a6f53c0d1a3ca3c04603c3aabff94a13"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/identity/trajectory.pkl",
+          "sha256": "8a2af9af44e39596d2acb2da10cdc3b8e72bb0b9c436759d2d98a6968e4b7240"
+        },
+        "outer_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/outer_prefix/manifest.json",
+          "sha256": "7ebe4b4b56133659e8ab5b3f677a0b709fbdcc5c67cc4163f20338ab3645f098"
+        },
+        "search_plan": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/search/search_plan.json",
+          "sha256": "ba8fc96ba2fa4f16d19adfb87ce3950b4be28d449a765312002b41541e5220ff"
+        },
+        "search_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/search/search_summary.json",
+          "sha256": "d855fee7a32505e0e764b8aa1fe35032973ba8d1ab2f9389f7a8efd1ac8cc6d8"
+        },
+        "selected_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/selected/summary.json",
+          "sha256": "65a10f32a93feaa138e3897457c7822d22b52c3707195028a66b9ec0325e7477"
+        },
+        "selected_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_cloth/selected/trajectory.pkl",
+          "sha256": "34a98ccbd14eb61c26e4330657a4e648aa76b91fe17df9f62fe8eaaa947d95a7"
+        }
+      },
+      "balanced_relative_improvement": 0.05280968848405165,
+      "both_metrics_improved": false,
+      "fit_interval": [
+        0,
+        90
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.02873049069906854,
+        "track_error_m": 0.0601516946552718
+      },
+      "nested_selection_interval": [
+        67,
+        90
+      ],
+      "non_teacher_selected": true,
+      "outer_validation_interval": [
+        90,
+        121
+      ],
+      "selected_candidate_id": "joint_000",
+      "selected_family": "joint",
+      "selected_metric_ratios": {
+        "chamfer_distance_m": 0.8909366254329399,
+        "track_error_m": 1.0034439975989566
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.025597046430460593,
+        "track_error_m": 0.06035885694723773
+      }
+    },
+    "single_lift_dinosor": {
+      "artifacts": {
+        "fit_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/fit_prefix/manifest.json",
+          "sha256": "98813e71333b05924238f8a55d0e4b248f16aeddc7f776574a4cb9786023a6a4"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/identity/summary.json",
+          "sha256": "eba7aac99822979009a29e7731a21002c935e5897cd0cdb4740e223d873f5be7"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/identity/trajectory.pkl",
+          "sha256": "280a1b7a31913d5677434ec8917109e29b1c72391df33fb9c1bb1250541735ed"
+        },
+        "outer_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/outer_prefix/manifest.json",
+          "sha256": "beb4de856a6f43ae20faf524f47f87ffb5d64db88f02b3f4f3702eed423b571b"
+        },
+        "search_plan": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/search/search_plan.json",
+          "sha256": "a4f88a33d0ceb08b580fe7ddef542e70bfdf37bb8629f1d23fa233705d88da5e"
+        },
+        "search_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/search/search_summary.json",
+          "sha256": "0d25c15a3ddb6e1327924f28e91c7073a6d58231f467ee454f63608be9aee9e8"
+        },
+        "selected_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/selected/summary.json",
+          "sha256": "909291c676bc2e3fb276e77d71ac8a64dffd3b1ad1cd8f2f37c0e53829e013d0"
+        },
+        "selected_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_dinosor/selected/trajectory.pkl",
+          "sha256": "3b8b67de57f701093547f8614c19a1aeb2665e994fccd73bc93047bb7a78e4cd"
+        }
+      },
+      "balanced_relative_improvement": -0.1746801389454391,
+      "both_metrics_improved": false,
+      "fit_interval": [
+        0,
+        45
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.005915977242528491,
+        "track_error_m": 0.007768271566814031
+      },
+      "nested_selection_interval": [
+        33,
+        45
+      ],
+      "non_teacher_selected": true,
+      "outer_validation_interval": [
+        45,
+        60
+      ],
+      "selected_candidate_id": "topology_004",
+      "selected_family": "topology_only",
+      "selected_metric_ratios": {
+        "chamfer_distance_m": 1.0525820039677976,
+        "track_error_m": 1.2967782739230809
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.006227051181368525,
+        "track_error_m": 0.010073725793778845
+      }
+    },
+    "single_lift_rope": {
+      "artifacts": {
+        "fit_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/fit_prefix/manifest.json",
+          "sha256": "89c25f6a37902810a2861f3e3aea9a06078b29816d724d7a13f29162d20a7cc1"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/identity/summary.json",
+          "sha256": "fe3064e819400cb127d7976d157cf3ae5396fdf6bdba582716d0a150e9bc9f0b"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/identity/trajectory.pkl",
+          "sha256": "99bc5ce3e09bf645f50367879b9bd324b7edd92cf057a364a2c1352abf14e9ea"
+        },
+        "outer_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/outer_prefix/manifest.json",
+          "sha256": "b81936abe0b7c40d9c44baf1118a2fe0bae05a051195a72eb8d4232573475224"
+        },
+        "search_plan": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/search/search_plan.json",
+          "sha256": "2f05d69321f5a822725f770ae9178ae8bb8fbe16aa6d4d4207a066984a0c24d7"
+        },
+        "search_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/search/search_summary.json",
+          "sha256": "6ab79952f8d6fab17f0f7e5b4359c8b1825cfd6b4d22bc238ac8b3b0c97ac0b6"
+        },
+        "selected_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/selected/summary.json",
+          "sha256": "8cf1a30bdd33620c2df17e8a094af27529a0b87b52a7116cdf3f7344d114adc4"
+        },
+        "selected_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_rope/selected/trajectory.pkl",
+          "sha256": "6dc35906e73c4b10db9cb28ab392fa79a401323ffad27dd4eee8fe2dd3297dc4"
+        }
+      },
+      "balanced_relative_improvement": -0.06608259065856181,
+      "both_metrics_improved": false,
+      "fit_interval": [
+        0,
+        26
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.004543439238608976,
+        "track_error_m": 0.007260907096463114
+      },
+      "nested_selection_interval": [
+        19,
+        26
+      ],
+      "non_teacher_selected": true,
+      "outer_validation_interval": [
+        26,
+        35
+      ],
+      "selected_candidate_id": "field_005",
+      "selected_family": "field_only",
+      "selected_metric_ratios": {
+        "chamfer_distance_m": 1.0629497666634657,
+        "track_error_m": 1.0692154146536577
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.004829447678529046,
+        "track_error_m": 0.007763473791906493
+      }
+    },
+    "single_lift_zebra": {
+      "artifacts": {
+        "fit_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/fit_prefix/manifest.json",
+          "sha256": "fd7b2d02d25a059e3d5cac51010249aaae8452a799b46661bf460ef9576b565d"
+        },
+        "identity_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/identity/summary.json",
+          "sha256": "1aabe7f1b86d8b40753411436e47cb848a9ca11c9dfcf3947598a1a1eb2054f8"
+        },
+        "identity_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/identity/trajectory.pkl",
+          "sha256": "588f74e2021734cf4ad386bbe4c59671fe336cd049dee24cfa806fbbdbadb167"
+        },
+        "outer_prefix_manifest": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/outer_prefix/manifest.json",
+          "sha256": "4a2696b5ad74038ea67c8c9a9b04844fd1949d42c92df9e4abb3f2bc90e7745e"
+        },
+        "search_plan": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/search/search_plan.json",
+          "sha256": "c091769cda6ae95ef402364a284787ff5f9ca1a94f29b54f4c544808141fd0b0"
+        },
+        "search_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/search/search_summary.json",
+          "sha256": "dde218afefa3cab3d1ef31da96812761d37ceb85923383920e2e18c8d2add0f1"
+        },
+        "selected_summary": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/selected/summary.json",
+          "sha256": "13d875e2ecbb669efc16055f87732e9d6c6d30fc17014a2d07454ac63ab71638"
+        },
+        "selected_trajectory": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/cases/single_lift_zebra/selected/trajectory.pkl",
+          "sha256": "588f74e2021734cf4ad386bbe4c59671fe336cd049dee24cfa806fbbdbadb167"
+        }
+      },
+      "balanced_relative_improvement": 0.0,
+      "both_metrics_improved": false,
+      "fit_interval": [
+        0,
+        34
+      ],
+      "identity_validation_metrics": {
+        "chamfer_distance_m": 0.004509048969241074,
+        "track_error_m": 0.008398314219532377
+      },
+      "nested_selection_interval": [
+        25,
+        34
+      ],
+      "non_teacher_selected": false,
+      "outer_validation_interval": [
+        34,
+        46
+      ],
+      "selected_candidate_id": "exact_teacher",
+      "selected_family": "identity",
+      "selected_metric_ratios": {
+        "chamfer_distance_m": 1.0,
+        "track_error_m": 1.0
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.004509048969241074,
+        "track_error_m": 0.008398314219532377
+      }
+    }
+  },
+  "code_commits": [
+    "95dc8b40a3402f12070969fc3af4e75c6f5ed578"
+  ],
+  "completed_at_utc": "2026-07-18T13:23:39.517732+00:00",
+  "contract": "phystwin-zero-order-source-gate-v1",
+  "future_metrics_opened": false,
+  "non_teacher_selection_count": 3,
+  "official_commits": [
+    "2b6630528141b9cba5a7677c8b88b2129b4a8390"
+  ],
+  "schema_version": 1,
+  "selected_family": "exact_teacher",
+  "source_gate_passed": false,
+  "source_protocol": {
+    "path": "/mnt/corsair/florianpfaff/phystwin-zero-order-topology-field-source-v1/locked_protocol.json",
+    "sha256": "4c76fd89e76aa1ae3684aa76008ad9b857a7451412bf0f32fde5174f3f3572ea"
+  },
+  "transfer_case_count": 4
+}
