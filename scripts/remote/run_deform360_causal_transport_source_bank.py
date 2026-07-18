@@ -30,6 +30,9 @@ from causal4d_public.deform360_reusable_sota_window import (
     authorize_development_fit_window,
     load_reusable_sota_window,
 )
+from causal4d_public.deform360_reusable_trust import (
+    build_deform360_trust_features,
+)
 from causal4d_public.deform360_sota_processing import (
     authorize_development_processing,
     validate_development_final_data_input,
@@ -84,26 +87,35 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _aligned_openings(
+def _aligned_robot(
     robot_path: Path,
     *,
     frame_count: int,
     group_count: int,
     expected_raw_frame_count: int,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     with np.load(robot_path, allow_pickle=False) as archive:
-        _require("openings" in archive, "robot state lacks gripper openings")
+        _require(
+            "actions" in archive and "openings" in archive,
+            "robot state lacks actions or gripper openings",
+        )
+        actions = np.asarray(archive["actions"], dtype=np.float64)
         openings = np.asarray(archive["openings"], dtype=np.float64)
+    if actions.ndim == 3:
+        actions = actions[:, None]
     if openings.ndim == 1:
         openings = openings[:, None]
     _require(
-        openings.ndim == 2
+        actions.ndim == 4
+        and actions.shape == (expected_raw_frame_count, group_count, 5, 3)
+        and openings.ndim == 2
         and openings.shape == (expected_raw_frame_count, group_count)
+        and np.all(np.isfinite(actions))
         and np.all(np.isfinite(openings)),
-        "robot openings differ from the locked staged action window",
+        "robot action differs from the locked staged action window",
     )
     # Deform360's public reconstruction drops the final tracking tail.
-    return openings[:frame_count].copy()
+    return actions[:frame_count].copy(), openings[:frame_count].copy()
 
 
 def main() -> int:
@@ -158,7 +170,7 @@ def main() -> int:
         "source trajectories differ from the locked causal-transport horizon",
     )
     group_count = controllers.shape[1] // group_size
-    openings = _aligned_openings(
+    actions, openings = _aligned_robot(
         args.source_robot_state,
         frame_count=frame_count,
         group_count=group_count,
@@ -205,12 +217,19 @@ def main() -> int:
             result.prediction_m,
             horizon_ranges_half_open=ranges,
         )
+        response = result.prediction_m - persistence
         records.append(
             {
                 **candidate,
                 "valid": True,
                 "metrics": metrics,
                 "diagnostics": result.diagnostics(),
+                "trust_features": build_deform360_trust_features(
+                    actions,
+                    openings,
+                    response,
+                    persistence,
+                ),
                 "prediction_array_sha256": _array_sha256(result.prediction_m),
             }
         )
@@ -244,6 +263,7 @@ def main() -> int:
             "source_robot_state": _sha256_file(args.source_robot_state),
             "initial_object_points": _array_sha256(target[0]),
             "controller_points": _array_sha256(controllers),
+            "aligned_actions": _array_sha256(actions),
             "aligned_openings": _array_sha256(openings),
         },
         "information_boundary": {
