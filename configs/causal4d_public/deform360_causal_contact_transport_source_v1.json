@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "config_sha256": "6f70329aa2ecf0c7b3d7e7cc648f2d701ad6092c655d8a3970fc9a7f4adf3206",
+  "config": {
+    "protocol_id": "deform360-causal-contact-transport-source-v1",
+    "status": "source-development-addendum-after-three-fit-outcomes-and-before-any-development-held-outcome",
+    "locked_at": "2026-07-18",
+    "parent_config_sha256": "64e41773d3e333987dc97a11c52e3474fd34fe65139e6c7d799b3e8f4db188cd",
+    "window_config_sha256": "331faa06dd3d81d1ddea615828eae2b4a040c3a56b92058e5b037a6129f1f9c8",
+    "scientific_question": "Can a causal local-to-broad contact transport expert recover action motion that an episode-specific dense spring graph over-transmits?",
+    "information_boundary": {
+      "source_outcomes_used_for_method_discovery": true,
+      "development_held_initial_object_frame_allowed": true,
+      "development_held_future_robot_action_allowed": true,
+      "development_held_future_opening_allowed": true,
+      "development_held_future_object_geometry_before_prediction_seal": false,
+      "development_held_future_tactile_before_prediction_seal": false,
+      "development_held_future_read": false,
+      "confirmatory_data_read": false,
+      "pokeflex_target_read": false
+    },
+    "contact_policy": {
+      "controller_group_size": 768,
+      "maximum_contact_distance_m": 0.01,
+      "opening_contact_threshold_m": 0.0795396,
+      "confirmation_frames": 1,
+      "contact_geometry": "controller surface distance to frame-zero object points",
+      "contact_latching": true,
+      "initial_contact_definition": "causally confirmed at frame zero",
+      "acquired_contact_gain": 0.0,
+      "acquired_contact_role": "safe persistence until the separately locked transition model validates transfer"
+    },
+    "candidate_grid": {
+      "base_scale_m": [0.003, 0.005, 0.01],
+      "support_growth_per_travel": [0.0, 0.1, 0.5, 2.0],
+      "initial_contact_gain": [0.5, 1.0],
+      "transform_mode": ["translation", "se3"],
+      "candidate_count": 49,
+      "persistence_included_exactly_once": true
+    },
+    "prediction": {
+      "point_identity_source": "frame-zero object points",
+      "transport": "convex background-plus-gripper skinning",
+      "support": "exp(-point_to_onset_gripper_surface_distance / (base_scale + growth * gripper_travel))",
+      "multiple_grippers": "correlation-conservative normalized transport weights",
+      "future_object_observations_used": false,
+      "future_tactile_used": false
+    },
+    "selection": {
+      "fit_episode_ids": [1, 3, 4, 6, 7, 9],
+      "metric": "equal-weight normalized future track and Chamfer error",
+      "pooling_control": "same candidate bank selected independently on each source episode",
+      "leave_one_action_out_required": true,
+      "development_held_outcome_refit_forbidden": true
+    },
+    "source_gate": {
+      "minimum_leave_one_action_out_persistence_win_fraction": 0.6666666666666666,
+      "minimum_leave_one_action_out_single_median_win_fraction": 0.6666666666666666,
+      "maximum_mean_normalized_score": 0.98,
+      "all_gates_conjunctive": true,
+      "failure_action": "do not open the sealed development-held outcome for this arm"
+    },
+    "claim_boundary": "Exploratory source-developed causal transport arm. A direct Deform360 SOTA claim requires an independently locked cohort and official evaluator parity."
+  }
+}
