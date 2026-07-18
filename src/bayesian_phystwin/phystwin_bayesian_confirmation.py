@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ProcessPoolExecutor
 import json
 import math
 from dataclasses import asdict, dataclass
@@ -15,13 +16,16 @@ from .phystwin_bayesian_anchor import (
     fit_bayesian_residual_anchor,
 )
 from .phystwin_comparison import compare_phystwin_manifest
+from .phystwin_confirmation_lock import exclusively_owned_confirmation_output
 from .phystwin_confirmatory import (
     DEVELOPMENT_CASES,
-    _canonical_json,
     _case_readout,
+    _case_source_identity,
     _cohort_readout,
     _lock_protocol,
+    _seal_case_cache,
     _split_for_case,
+    _validate_cached_case,
 )
 
 
@@ -69,20 +73,85 @@ def _comparison_manifest(
     return {"schema_version": 1, "cases": entries}
 
 
+def _fit_case(
+    job: tuple[
+        Path,
+        Path,
+        str,
+        BayesianAnchorConfirmationProtocol,
+        bool,
+    ],
+) -> tuple[str, dict[str, object]]:
+    """Fit one independent case so full-cohort runs can use multiple processes."""
+
+    root, output, case, config, force = job
+    case_dir = root / case
+    source_identity = _case_source_identity(case_dir)
+    fit_end, train_end, frame_count = _split_for_case(
+        case_dir, config.fit_fraction
+    )
+    anchor_config = BayesianResidualAnchorConfig(
+        fit_end_frame=fit_end,
+        train_end_frame=train_end,
+        process_std_candidates_m=config.process_std_candidates_m,
+        observation_std_candidates_m=config.observation_std_candidates_m,
+        initial_std_m=config.initial_std_m,
+        inlier_prior=config.inlier_prior,
+        outlier_variance_multiplier=config.outlier_variance_multiplier,
+        interpolation_neighbors=config.interpolation_neighbors,
+        maximum_residual_m=config.maximum_residual_m,
+        minimum_validation_improvement=config.minimum_validation_improvement,
+    )
+    case_output = output / "cases" / case
+    summary_path = case_output / "summary.json"
+    if summary_path.exists() and not force:
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        _validate_cached_case(
+            summary, asdict(anchor_config), case_dir, case_output, case
+        )
+    else:
+        summary = fit_bayesian_residual_anchor(
+            case_dir / "final_data.pkl",
+            case_dir / "inference.pkl",
+            case_dir / "gt_track_3d.pkl",
+            case_output,
+            config=anchor_config,
+        )
+        _seal_case_cache(
+            summary,
+            case_dir,
+            case_output,
+            expected_source_identity=source_identity,
+        )
+    return case, {
+        "fit_end_frame": fit_end,
+        "train_end_frame": train_end,
+        "frame_count": frame_count,
+        **_case_readout(summary),
+        "posterior": summary["posterior"],
+    }
+
+
+@exclusively_owned_confirmation_output
 def run_bayesian_anchor_confirmation(
     data_root: str | Path,
     output_dir: str | Path,
     *,
     protocol: BayesianAnchorConfirmationProtocol | None = None,
     force: bool = False,
+    workers: int = 1,
 ) -> dict[str, object]:
     """Fit each case causally and evaluate the nondevelopment cohort once."""
 
+    if workers < 1:
+        raise ValueError("workers must be positive")
     config = BayesianAnchorConfirmationProtocol() if protocol is None else protocol
     root = Path(data_root)
     source_manifest_path = root / "evaluation_subset_manifest.json"
     source_manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
     selected = tuple(str(case) for case in source_manifest["selected_cases"])
+    if len(selected) != len(set(selected)):
+        raise ValueError("the data manifest contains duplicate cases")
     development = tuple(case for case in selected if case in config.development_cases)
     confirmation = tuple(case for case in selected if case not in config.development_cases)
     output = Path(output_dir)
@@ -100,47 +169,13 @@ def run_bayesian_anchor_confirmation(
         "status": "exploratory extension after the deterministic confirmation",
     }
     locked = _lock_protocol(output, specification)
-    case_results: dict[str, dict[str, object]] = {}
-    for case in selected:
-        case_dir = root / case
-        fit_end, train_end, frame_count = _split_for_case(
-            case_dir, config.fit_fraction
-        )
-        anchor_config = BayesianResidualAnchorConfig(
-            fit_end_frame=fit_end,
-            train_end_frame=train_end,
-            process_std_candidates_m=config.process_std_candidates_m,
-            observation_std_candidates_m=config.observation_std_candidates_m,
-            initial_std_m=config.initial_std_m,
-            inlier_prior=config.inlier_prior,
-            outlier_variance_multiplier=config.outlier_variance_multiplier,
-            interpolation_neighbors=config.interpolation_neighbors,
-            maximum_residual_m=config.maximum_residual_m,
-            minimum_validation_improvement=config.minimum_validation_improvement,
-        )
-        case_output = output / "cases" / case
-        summary_path = case_output / "summary.json"
-        if summary_path.exists() and not force:
-            summary = json.loads(summary_path.read_text(encoding="utf-8"))
-            if _canonical_json(summary["config"]) != _canonical_json(
-                asdict(anchor_config)
-            ):
-                raise RuntimeError(f"cached case uses a different protocol: {case}")
-        else:
-            summary = fit_bayesian_residual_anchor(
-                case_dir / "final_data.pkl",
-                case_dir / "inference.pkl",
-                case_dir / "gt_track_3d.pkl",
-                case_output,
-                config=anchor_config,
-            )
-        case_results[case] = {
-            "fit_end_frame": fit_end,
-            "train_end_frame": train_end,
-            "frame_count": frame_count,
-            **_case_readout(summary),
-            "posterior": summary["posterior"],
-        }
+    jobs = [(root, output, case, config, force) for case in selected]
+    if workers == 1:
+        fitted_cases = list(map(_fit_case, jobs))
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            fitted_cases = list(executor.map(_fit_case, jobs))
+    case_results = dict(fitted_cases)
 
     manifest = _comparison_manifest(root, output, confirmation)
     manifest_path = output / "comparison_confirmation_manifest.json"

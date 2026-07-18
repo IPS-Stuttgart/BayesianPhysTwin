@@ -1,0 +1,278 @@
+{
+  "artifacts": {
+    "calibration_summary": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/teacher_residual_exploratory_v1/full22/calibration/phystwin_calibration_summary.json",
+      "sha256": "622a60371df4421c6f6b215877a197688bea99b586c20f63cae1873d7cee23f1"
+    },
+    "manifest": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/teacher_residual_exploratory_v1/full22/external_backbone_manifest.json",
+      "sha256": "fa502660c532d4eb11bd40e535d69df7550656b705346361c02e40205f9e81f2"
+    },
+    "overlay_summary": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/teacher_residual_exploratory_v1/full22/overlay/external_backbone_overlay_summary.json",
+      "sha256": "d07e328d1be31bfc9ec6770d38eae2cd881d1b40454b12e18de6dbaf3cf264c9"
+    },
+    "protocol": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/Bayesian-PhysTwin-teacher-v1/configs/sota/matphys_teacher_residual_exploratory_v1.json",
+      "sha256": "7a89cdf78b713592fb63b9ad7ed9ef137dba74e08050f4dc5a4f7a525a788833"
+    },
+    "released_reference_summary": {
+      "path": "/mnt/corsair/florianpfaff/bpt-external-backbone-smoke-v1/runs/external_backbone_parity_v1/external_backbone_overlay_summary.json",
+      "sha256": "93b1ba2eb51140202d302bea0109f34f39943992935c807f92c3203aa3cdecc5"
+    },
+    "secondary_family_gate_summary": {
+      "path": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/teacher_residual_exploratory_v1/full22/family_gate/backbone_family_gate_summary.json",
+      "sha256": "d56fcc9fff5674017665e8fbcd112d275ce8540baf4600dc055910ad0993d4c7"
+    }
+  },
+  "calibration": {
+    "claim_allowed": false,
+    "coverage_90": {
+      "chamfer_distance_m": {
+        "late_macro_case_coverage": 0.6437289562289562,
+        "macro_case_coverage": 0.7053295469962136,
+        "mean_case_mean_upper_bound_m": 0.014844639335356395,
+        "micro_frame_coverage": 0.7887096774193548,
+        "nominal": 0.9
+      },
+      "track_error_m": {
+        "late_macro_case_coverage": 0.7368386243386243,
+        "macro_case_coverage": 0.8492458044319746,
+        "mean_case_mean_upper_bound_m": 0.03529213019496926,
+        "micro_frame_coverage": 0.8661290322580645,
+        "nominal": 0.9
+      }
+    },
+    "formal_numeric_gate_predeclared": false,
+    "operational_future_nees_3d": {
+      "case_count": 19,
+      "macro_mean_3d": 2339.891058487028,
+      "median_case_mean_3d": 14.395347125622564,
+      "micro": {
+        "count": 4276,
+        "covariance_multiplier_for_mean_nees_3": 1153.5598109165287,
+        "ellipsoid_coverage_80": 0.36412535079513564,
+        "ellipsoid_coverage_90": 0.41440598690364827,
+        "ellipsoid_coverage_95": 0.4462114125350795,
+        "expected_mean_3d": 3.0,
+        "mean_3d": 3460.6794327495863,
+        "mean_per_coordinate": 1153.5598109165287,
+        "median_3d": 11.8672322088816
+      }
+    },
+    "primary_conformal_method": "posterior_scaled",
+    "reason": "The primary 90% conformal coverage misses nominal coverage for both metrics and the operational posterior NEES/ellipsoid audit strongly undercovers; the protocol therefore does not permit a calibrated-uncertainty claim.",
+    "strict_future_nees_3d": {
+      "case_count": 19,
+      "macro_mean_3d": 0.9634172791073008,
+      "median_case_mean_3d": 0.6477619278888014,
+      "micro": {
+        "count": 4276,
+        "covariance_multiplier_for_mean_nees_3": 0.22690231027031926,
+        "ellipsoid_coverage_80": 0.9899438727782974,
+        "ellipsoid_coverage_90": 0.9943872778297475,
+        "ellipsoid_coverage_95": 0.9988306828811974,
+        "expected_mean_3d": 3.0,
+        "mean_3d": 0.6807069308109578,
+        "mean_per_coordinate": 0.22690231027031926,
+        "median_3d": 0.3038286943663204
+      }
+    }
+  },
+  "claim_boundary": "This evidence cannot establish SOTA; its frozen gates only decide whether an independent preregistered evaluation is justified.",
+  "completed_at_utc": "2026-07-18T07:46:11.428343+00:00",
+  "decision": {
+    "accuracy_gates_passed": false,
+    "calibration_claim_allowed": false,
+    "proceed_to_independent_preregistered_evaluation": false,
+    "reason": "Transfer, stability, frontier, and calibration boundaries all fail."
+  },
+  "raw_backbone": {
+    "all_22_table_compatible": {
+      "chamfer_distance_m": {
+        "relative_change": 0.05479587514321316,
+        "released_raw_reference_m": 0.011579260877226459,
+        "value_m": 0.012213756610505654
+      },
+      "track_error_m": {
+        "relative_change": 0.0498271820544256,
+        "released_raw_reference_m": 0.022018638978870252,
+        "value_m": 0.02311576571186109
+      }
+    },
+    "confirmation_19": {
+      "chamfer_distance_m": {
+        "relative_change": 0.08972700901461272,
+        "released_raw_reference_m": 0.011122029082233833,
+        "value_m": 0.012119975485956213
+      },
+      "track_error_m": {
+        "relative_change": 0.06425398224086165,
+        "released_raw_reference_m": 0.022189327950738497,
+        "value_m": 0.023615080634821903
+      }
+    }
+  },
+  "schema_version": 1,
+  "secondary_observed_prefix_family_gate": {
+    "comparison": {
+      "case_count": 22,
+      "family_equal_case_means": {
+        "released": {
+          "chamfer_distance_m": 0.010168644597542313,
+          "track_error_m": 0.01921157454651666
+        },
+        "teacher_residual": {
+          "chamfer_distance_m": 0.010674852248562202,
+          "track_error_m": 0.020632279351175085
+        }
+      },
+      "selected_equal_case_mean": {
+        "chamfer_distance_m": 0.009945094398825056,
+        "track_error_m": 0.0195891653929225
+      }
+    },
+    "selection_counts": {
+      "released": 10,
+      "teacher_residual": 12
+    },
+    "status": "exploratory only; validation tail overlaps the backbone fitting prefix"
+  },
+  "selected_frontier_all_22": {
+    "chamfer_distance_m": {
+      "half_gap_threshold_m": 0.009084322298771156,
+      "passed": false,
+      "published_matphys_reference_m": 0.008,
+      "released_selected_reference_m": 0.010168644597542313,
+      "value_m": 0.010674852248562202
+    },
+    "track_error_m": {
+      "half_gap_threshold_m": 0.01710578727325833,
+      "passed": false,
+      "published_matphys_reference_m": 0.015,
+      "released_selected_reference_m": 0.01921157454651666,
+      "value_m": 0.020632279351175085
+    }
+  },
+  "selected_stability_confirmation_19": {
+    "chamfer_distance_m": {
+      "maximum_allowed_regression": 0.1,
+      "maximum_regression": {
+        "case": "single_lift_cloth_1",
+        "reference_m": 0.017470838558462716,
+        "relative_change": 0.6409781683898172,
+        "value_m": 0.02866926465790034
+      },
+      "regressions_over_limit": [
+        {
+          "case": "single_lift_cloth_1",
+          "reference_m": 0.017470838558462716,
+          "relative_change": 0.6409781683898172,
+          "value_m": 0.02866926465790034
+        },
+        {
+          "case": "single_lift_cloth_4",
+          "reference_m": 0.009988606645849357,
+          "relative_change": 0.5290717548351711,
+          "value_m": 0.015273296292327128
+        },
+        {
+          "case": "single_push_sloth",
+          "reference_m": 0.01073707011055044,
+          "relative_change": 0.30235256405278355,
+          "value_m": 0.01398345078888987
+        },
+        {
+          "case": "double_lift_cloth_1",
+          "reference_m": 0.006951045653557239,
+          "relative_change": 0.19623901315448267,
+          "value_m": 0.008315111993003067
+        },
+        {
+          "case": "single_push_rope",
+          "reference_m": 0.005489928272209029,
+          "relative_change": 0.1376750290594151,
+          "value_m": 0.006245754306619511
+        },
+        {
+          "case": "single_clift_cloth_3",
+          "reference_m": 0.004239448533911176,
+          "relative_change": 0.13592485769389584,
+          "value_m": 0.004815694972583649
+        }
+      ],
+      "required_wins_or_ties": 12,
+      "wins_or_ties": 9
+    },
+    "track_error_m": {
+      "maximum_allowed_regression": 0.1,
+      "maximum_regression": {
+        "case": "single_push_sloth",
+        "reference_m": 0.015555531994725398,
+        "relative_change": 0.6054258795722371,
+        "value_m": 0.0249732536348461
+      },
+      "regressions_over_limit": [
+        {
+          "case": "single_push_sloth",
+          "reference_m": 0.015555531994725398,
+          "relative_change": 0.6054258795722371,
+          "value_m": 0.0249732536348461
+        },
+        {
+          "case": "single_lift_cloth_1",
+          "reference_m": 0.021862203294356015,
+          "relative_change": 0.3552442274875123,
+          "value_m": 0.029628624814834466
+        },
+        {
+          "case": "double_lift_cloth_1",
+          "reference_m": 0.01438284523274443,
+          "relative_change": 0.29589091791835176,
+          "value_m": 0.01863859851093877
+        },
+        {
+          "case": "single_clift_cloth_3",
+          "reference_m": 0.013666608987289693,
+          "relative_change": 0.20830526237106883,
+          "value_m": 0.01651343555810988
+        },
+        {
+          "case": "single_lift_zebra",
+          "reference_m": 0.019041132524441406,
+          "relative_change": 0.1656778818027691,
+          "value_m": 0.022195827028216673
+        },
+        {
+          "case": "single_lift_cloth_3",
+          "reference_m": 0.036645051682075984,
+          "relative_change": 0.11694474991259107,
+          "value_m": 0.04093049808657034
+        },
+        {
+          "case": "rope_double_hand",
+          "reference_m": 0.014963664014680666,
+          "relative_change": 0.11358947601868397,
+          "value_m": 0.01666337876942788
+        }
+      ],
+      "required_wins_or_ties": 12,
+      "wins_or_ties": 6
+    }
+  },
+  "selected_transfer_confirmation_19": {
+    "chamfer_distance_m": {
+      "passed": false,
+      "reference_m": 0.009815464219990386,
+      "relative_change": 0.0821749294003229,
+      "value_m": 0.010622049299299493
+    },
+    "track_error_m": {
+      "passed": false,
+      "reference_m": 0.019530720980979088,
+      "relative_change": 0.08931152965882805,
+      "value_m": 0.021275039547130097
+    }
+  },
+  "status": "exploratory rejection on a previously examined cohort"
+}

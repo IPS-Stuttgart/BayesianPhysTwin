@@ -1,0 +1,16 @@
+diff --git a/gs_render_dynamics.py b/gs_render_dynamics.py
+--- a/gs_render_dynamics.py
++++ b/gs_render_dynamics.py
+@@ -65,3 +65,3 @@
+     # view_indices = [0, 25, 50, 75, 100, 125]
+-    view_indices = [0, 50, 100]
++    view_indices = [0]  # The released evaluator scores only this held-out view.
+     selected_views = [views[i] for i in view_indices]
+@@ -138,3 +138,6 @@
+         exp_name = dataset.source_path.split("/")[-1]
+-        ctrl_pts_path = f"./experiments/{exp_name}/inference.pkl"
++        ctrl_pts_path = os.environ.get(
++            "PHYSTWIN_TRAJECTORY_PATH",
++            f"./experiments/{exp_name}/inference.pkl",
++        )
+         with open(ctrl_pts_path, "rb") as f:

@@ -17,6 +17,7 @@ from .phystwin_confirmatory import (
     _lock_protocol,
     _split_for_case,
 )
+from .phystwin_external_backbone import validate_external_backbone_manifest
 from .phystwin_official_evaluation import (
     _nearest_distances,
     official_phystwin_metrics_by_frame,
@@ -42,7 +43,7 @@ CHI_SQUARE_3_THRESHOLDS = {
     "90": 6.251388631170325,
     "95": 7.814727903251179,
 }
-CALIBRATION_IMPLEMENTATION_VERSION = 2
+CALIBRATION_IMPLEMENTATION_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -505,8 +506,7 @@ def _aggregate_point_metrics(
 
 
 def _operational_anchor_nees(
-    case: str,
-    anchor_run: Path,
+    anchor_case_dir: Path,
     baseline: np.ndarray,
     gt_track_3d: np.ndarray,
     *,
@@ -515,11 +515,14 @@ def _operational_anchor_nees(
     track_initial_mask: np.ndarray,
     track_indices: np.ndarray,
 ) -> tuple[np.ndarray, dict[str, object]]:
-    case_dir = anchor_run / "cases" / case
-    summary = json.loads((case_dir / "summary.json").read_text(encoding="utf-8"))
-    posterior = np.load(case_dir / "posterior.npz")
+    summary = json.loads(
+        (anchor_case_dir / "summary.json").read_text(encoding="utf-8")
+    )
+    posterior = np.load(anchor_case_dir / "posterior.npz")
     if int(summary["config"]["train_end_frame"]) != train_end_frame:
-        raise ValueError(f"operational anchor split mismatch in {case}")
+        raise ValueError(
+            f"operational anchor split mismatch in {anchor_case_dir}"
+        )
     selected = summary["selection"]["selected_candidate"]
     process_std = float(selected["process_std_m"])
     tracked = np.repeat(
@@ -561,6 +564,8 @@ def run_phystwin_calibration_audit(
     output_dir: str | Path,
     *,
     anchor_run_dir: str | Path | None = None,
+    external_backbone_manifest: str | Path | None = None,
+    external_overlay_dir: str | Path | None = None,
     protocol: PhysTwinCalibrationProtocol | None = None,
     cases: Iterable[str] | None = None,
 ) -> dict[str, object]:
@@ -591,6 +596,38 @@ def run_phystwin_calibration_audit(
     missing = sorted(set(selected_cases) - set(available))
     if missing:
         raise ValueError("cases absent from data manifest: " + ", ".join(missing))
+    if anchor_run_dir is not None and external_overlay_dir is not None:
+        raise ValueError(
+            "anchor_run_dir and external_overlay_dir are mutually exclusive"
+        )
+    if external_overlay_dir is not None and external_backbone_manifest is None:
+        raise ValueError(
+            "external_overlay_dir requires external_backbone_manifest"
+        )
+
+    external_backbone: dict[str, object] | None = None
+    baseline_paths: dict[str, Path] = {
+        case: root / case / "inference.pkl" for case in selected_cases
+    }
+    if external_backbone_manifest is not None:
+        external_backbone = validate_external_backbone_manifest(
+            root,
+            external_backbone_manifest,
+            require_full_cohort=False,
+        )
+        external_entries = {
+            str(entry["name"]): Path(str(entry["trajectory"]))
+            for entry in external_backbone["cases"]
+        }
+        missing_external = sorted(set(selected_cases) - set(external_entries))
+        if missing_external:
+            raise ValueError(
+                "cases absent from external backbone manifest: "
+                + ", ".join(missing_external)
+            )
+        baseline_paths = {
+            case: external_entries[case] for case in selected_cases
+        }
     development = tuple(
         case for case in selected_cases if case in config.development_cases
     )
@@ -610,11 +647,29 @@ def run_phystwin_calibration_audit(
         for case in selected_cases
     }
     anchor_run = Path(anchor_run_dir) if anchor_run_dir is not None else None
+    external_overlay = (
+        Path(external_overlay_dir).resolve()
+        if external_overlay_dir is not None
+        else None
+    )
     anchor_protocol: dict[str, object] | None = None
     if anchor_run is not None:
         anchor_protocol = json.loads(
             (anchor_run / "locked_protocol.json").read_text(encoding="utf-8")
         )
+    elif external_overlay is not None:
+        anchor_protocol = json.loads(
+            (external_overlay / "locked_protocol.json").read_text(encoding="utf-8")
+        )
+        recorded_specification = anchor_protocol.get(
+            "specification", anchor_protocol
+        )
+        recorded_manifest = recorded_specification.get("backbone_manifest", {})
+        expected_manifest = external_backbone["manifest"]
+        if recorded_manifest.get("sha256") != expected_manifest["sha256"]:
+            raise ValueError(
+                "external overlay and backbone manifest have different hashes"
+            )
     output = Path(output_dir)
     specification = {
         "method": "strict split-conformal Bayesian-anchor calibration audit",
@@ -625,6 +680,15 @@ def run_phystwin_calibration_audit(
             "path": str(source_manifest_path.resolve()),
             "sha256": _sha256(source_manifest_path),
         },
+        "baseline": (
+            {
+                "kind": "external_backbone",
+                "manifest": external_backbone["manifest"],
+                "backbone": external_backbone["backbone"],
+            }
+            if external_backbone is not None
+            else {"kind": "released_phystwin"}
+        ),
         "case_contracts": case_contracts,
         "cohorts": {
             "development": list(development),
@@ -632,10 +696,16 @@ def run_phystwin_calibration_audit(
         },
         "operational_anchor": (
             {
-                "path": str(anchor_run.resolve()),
+                "path": str((anchor_run or external_overlay).resolve()),
                 "protocol_id": anchor_protocol["protocol_id"],
+                "layout": (
+                    "external_overlay"
+                    if external_overlay is not None
+                    else "released_anchor"
+                ),
             }
-            if anchor_run is not None and anchor_protocol is not None
+            if (anchor_run is not None or external_overlay is not None)
+            and anchor_protocol is not None
             else None
         ),
         "claim_contract": {
@@ -667,7 +737,7 @@ def run_phystwin_calibration_audit(
         train_end = int(contract["train_end_frame"])
         frame_count = int(contract["frame_count"])
         data = _load_pickle(case_dir / "final_data.pkl")
-        baseline = np.asarray(_load_pickle(case_dir / "inference.pkl"), dtype=float)
+        baseline = np.asarray(_load_pickle(baseline_paths[case]), dtype=float)
         gt_track_3d = np.asarray(
             _load_pickle(case_dir / "gt_track_3d.pkl"), dtype=float
         )
@@ -797,10 +867,14 @@ def run_phystwin_calibration_audit(
             "strict_validation_nees_3d": summarize_nees(strict_validation_nees),
             "strict_future_nees_3d": summarize_nees(strict_future_nees),
         }
-        if anchor_run is not None:
+        if anchor_run is not None or external_overlay is not None:
+            anchor_case_dir = (
+                anchor_run / "cases" / case
+                if anchor_run is not None
+                else external_overlay / "cases" / case / "bayesian_anchor"
+            )
             operational_values, operational_summary = _operational_anchor_nees(
-                case,
-                anchor_run,
+                anchor_case_dir,
                 baseline,
                 gt_track_3d,
                 train_end_frame=train_end,
@@ -859,7 +933,7 @@ def run_phystwin_calibration_audit(
                 "strict_future_nees_3d",
             ),
         }
-        if anchor_run is not None:
+        if anchor_run is not None or external_overlay is not None:
             nees_output["operational_future_nees_3d"] = _aggregate_nees(
                 cohort,
                 case_results,

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "amends": "causal-matphys-family-gate-exploratory-v1",
+  "locked_at_utc": "2026-07-18T04:53:42Z",
+  "lock_timing": "After shard launch and before inspection of any future metric from the 19 new cases.",
+  "reason": "The MatPhys objective uses the complete released observation prefix, including frames later called the overlay validation interval. The family score is therefore causal but not out-of-sample for the MatPhys backbone.",
+  "run_changes": {
+    "training": "none",
+    "checkpoint_selection": "none",
+    "export": "none",
+    "trajectory_bytes": "none"
+  },
+  "primary_results": [
+    "raw fixed-terminal causal MatPhys versus raw released PhysTwin",
+    "fixed Bayesian-PhysTwin overlay arms reported separately without treating the overlapping prefix score as independent validation"
+  ],
+  "secondary_result": "The previously locked per-case family gate remains an observed-prefix adaptive policy whose one-shot future performance may be reported, but its prefix score is not evidence that the policy protects against regression.",
+  "forbidden_claim": "Do not call the family score held-out, nested, independent, or validation evidence for the MatPhys backbone.",
+  "next_method_requirement": "Any confirmatory family selector must use a nested prefix split, cross-case selection fixed on development objects, or an independent source cohort before final refitting on the complete observation prefix.",
+  "claim_boundary": "All 22 released cases remain exploratory for this method. Independent preregistered evidence is required for a SOTA claim."
+}

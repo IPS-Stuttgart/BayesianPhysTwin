@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-teacher-residual-exploratory-v1",
+  "locked_at_utc": "2026-07-18T05:57:58Z",
+  "lock_timing": "After the frozen three-case development gate passed and before inspection of any v1 or v2 future metric on the remaining 19 cases.",
+  "status": "Exploratory on the previously examined released PhysTwin cohort.",
+  "claim_boundary": "This run can justify an independent preregistered evaluation, but cannot itself establish a SOTA claim.",
+  "method": {
+    "parameterization": "released-phystwin-bounded-logk-residual-v1",
+    "residual_log_scale": 0.6931471805599453,
+    "maximum_stiffness_ratio": 2.0,
+    "global_contact_and_damping_parameters": "frozen at released PhysTwin values",
+    "epochs": 20,
+    "checkpoint_policy": "fixed-terminal-epoch-v1",
+    "future_observations_used": false
+  },
+  "development_gate": {
+    "manifest_sha256": "9bfe019dcd68d61484cf08a62f7d91ad13362f198cb6065207033c38fc38eb9f",
+    "overlay_protocol_id": "bf810a91dd394d95aaf0e77828cd72879db0568e1cc77fb11aacd9626acee051",
+    "released_selected_mean_m": {
+      "chamfer_distance": 0.012405453655371183,
+      "track_error": 0.01719031379492129
+    },
+    "teacher_residual_selected_mean_m": {
+      "chamfer_distance": 0.011009271032419674,
+      "track_error": 0.016561464542466164
+    },
+    "maximum_case_regression": "0.96 percent CD on double_stretch_sloth; below the locked 5 percent limit",
+    "accepted": true
+  },
+  "implementation_sha256": {
+    "run_matphys_causal.py": "c2dcf5a6a916f7a5aede8f6c0b87f2d756fea512bbc6d2932dc571e20815dd2b",
+    "run_matphys_causal_shard.py": "2fde83854c8de5607c5e7668a3f8e74ae47952c41b6df81421af01ac335eeb67",
+    "matphys_causal_bridge.py": "7fa795a25e4bb19d5eeb75b576058c523f2c6ae2f62d29fb08ecd64a2724c59e",
+    "matphys_teacher_residual.py": "b9a7463bdb4ed25aa50b47a81d0d93d9d42171aa11f93821ce283e650c34c612"
+  },
+  "reused_development_cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "new_case_shards": {
+    "cuda:0": [
+      "rope_double_hand",
+      "single_lift_cloth_4",
+      "double_lift_cloth_3",
+      "single_lift_cloth_1",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "single_lift_zebra",
+      "single_lift_rope"
+    ],
+    "cuda:1": [
+      "double_stretch_zebra",
+      "single_lift_cloth",
+      "single_lift_cloth_3",
+      "double_lift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_dinosor",
+      "single_clift_cloth_1",
+      "double_lift_zebra",
+      "single_push_rope",
+      "weird_package"
+    ]
+  },
+  "primary_comparisons": [
+    "raw teacher-centered MatPhys versus raw released PhysTwin",
+    "teacher-centered MatPhys plus frozen Bayesian overlay versus released Bayesian-PhysTwin selected stack"
+  ],
+  "secondary_comparisons": [
+    "absolute MatPhys v1 versus teacher-centered MatPhys v2",
+    "observed-prefix adaptive family policy, explicitly not treated as independent validation"
+  ],
+  "acceptance_gate": {
+    "transfer": "Improve both equal-case CD and track error over the released selected stack on the 19 new cases.",
+    "stability": "Win or tie both metrics in at least 12 of 19 new cases and have no regression larger than 10 percent in either metric.",
+    "frontier": "Reduce at least half of the remaining equal-case gap from released Bayesian-PhysTwin to the published MatPhys reference in both metrics.",
+    "calibration": "Do not claim calibrated uncertainty until NEES and coverage are recomputed for the new deterministic backbone."
+  },
+  "next_evidence_rule": "Proceed to an independent preregistered cohort only if transfer, stability, and frontier gates all pass."
+}

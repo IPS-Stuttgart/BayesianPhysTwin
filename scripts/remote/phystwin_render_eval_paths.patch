@@ -1,0 +1,30 @@
+diff --git a/gaussian_splatting/evaluate_render.py b/gaussian_splatting/evaluate_render.py
+--- a/gaussian_splatting/evaluate_render.py
++++ b/gaussian_splatting/evaluate_render.py
+@@ -26,8 +26,20 @@
+ if __name__ == "__main__":
+-    render_path = './data/render_eval_data'
+-    human_mask_path = "./data/different_types_human_mask"
+-    root_data_dir = './data/gaussian_data'
+-    output_dir = './gaussian_output_dynamic'
++    render_path = os.environ.get(
++        "PHYSTWIN_RENDER_REFERENCE_PATH",
++        "./data/render_eval_data",
++    )
++    human_mask_path = os.environ.get(
++        "PHYSTWIN_HUMAN_MASK_PATH",
++        "./data/different_types_human_mask",
++    )
++    root_data_dir = os.environ.get(
++        "PHYSTWIN_GAUSSIAN_DATA_PATH",
++        "./data/gaussian_data",
++    )
++    output_dir = os.environ.get(
++        "PHYSTWIN_RENDER_OUTPUT_DIR",
++        "./gaussian_output_dynamic",
++    )
+-
++
+-    log_dir = './results'
++    log_dir = os.environ.get("PHYSTWIN_RENDER_RESULT_DIR", "./results")
+     os.makedirs(log_dir, exist_ok=True)

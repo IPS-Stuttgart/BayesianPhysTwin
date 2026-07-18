@@ -40,6 +40,31 @@ Initial scope:
 - reproducible experiment configs and remote-run scripts
 - fail-closed semantic timing, freshness, and planner-deadline admission
 
+## Current Full-22 Result
+
+On the official ordered 22-case PhysTwin cohort, the Bayesian anchor improves
+equal-case CD by 12.09% and track error by 12.78% over re-evaluated released
+`inference.pkl` trajectories. This is better than released PhysTwin, but not
+overall state of the art against later published methods. PhysTwin supplies the
+released trajectories, data, renderer, and metric definitions; this repository
+supplies the causal correction layers and evaluation orchestration. See the
+[full evidence report](docs/phystwin_sota_22_v1.md) for the frozen protocol,
+uncertainty intervals, render metrics, provenance, and ownership boundary.
+
+An opt-in external-backbone path now validates hash-locked,
+PhysTwin-compatible trajectories before applying the frozen Bayesian and
+last-residual overlays. An absolute causal MatPhys spring field is a frozen
+22-case negative result. An identity-preserving replacement instead predicts a
+factor-of-two-bounded stiffness residual around each released PhysTwin spring;
+it passed the three-case, single-object development gate but failed the frozen
+19-case transfer, stability, frontier, and calibration gates. The result
+rejects both wholesale replacement and a one-part bounded residual as routes to
+the published frontier. The calibration audit can bind an external backbone
+and its exact overlay before recomputing NEES and conformal coverage.
+See the [causal MatPhys experiments](docs/matphys_causal_backbone_v1.md) for the
+information boundary, public-artifact limitation, negative result, bounded
+teacher model, and escalation gate.
+
 ## Repository Layout
 
 ```text

@@ -18,11 +18,21 @@ def main() -> None:
         "--anchor-run-dir",
         help="Existing Bayesian-anchor run whose operational future posterior is audited.",
     )
+    parser.add_argument(
+        "--external-backbone-manifest",
+        help="Hash-validated external trajectory manifest to audit instead of inference.pkl.",
+    )
+    parser.add_argument(
+        "--external-overlay-dir",
+        help="Matching external-backbone overlay whose operational anchor is audited.",
+    )
     args = parser.parse_args()
     summary = run_phystwin_calibration_audit(
         args.data_root,
         args.output_dir,
         anchor_run_dir=args.anchor_run_dir,
+        external_backbone_manifest=args.external_backbone_manifest,
+        external_overlay_dir=args.external_overlay_dir,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

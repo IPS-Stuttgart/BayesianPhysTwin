@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
 import math
+import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +15,7 @@ from typing import Iterable
 import numpy as np
 
 from .phystwin_comparison import compare_phystwin_manifest
+from .phystwin_confirmation_lock import exclusively_owned_confirmation_output
 from .phystwin_residual_dynamics import (
     PhysTwinResidualDynamicsConfig,
     fit_action_conditioned_residual_dynamics,
@@ -53,14 +56,161 @@ def _protocol_id(specification: dict[str, object]) -> str:
     return hashlib.sha256(_canonical_json(specification).encode()).hexdigest()
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _implementation_sha256() -> str:
+    package_root = Path(__file__).resolve().parent
+    digest = hashlib.sha256()
+    for path in sorted(package_root.glob("*.py")):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\0")
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+_CASE_INPUT_FILES = (
+    ("final_data", "final_data.pkl"),
+    ("baseline_trajectory", "inference.pkl"),
+    ("gt_track_3d", "gt_track_3d.pkl"),
+)
+
+
+def _case_source_identity(case_dir: Path) -> dict[str, object]:
+    """Capture every source that can affect one fitted case."""
+
+    return {
+        "split_sha256": _sha256_file(case_dir / "split.json"),
+        "implementation_sha256": _implementation_sha256(),
+        "inputs": {
+            name: {
+                "path": str((case_dir / filename).resolve()),
+                "sha256": _sha256_file(case_dir / filename),
+            }
+            for name, filename in _CASE_INPUT_FILES
+        },
+    }
+
+
+def _summary_body_sha256(summary: dict[str, object]) -> str:
+    body = {key: value for key, value in summary.items() if key != "cache_identity"}
+    return hashlib.sha256(_canonical_json(body).encode("utf-8")).hexdigest()
+
+
+def _case_cache_identity(
+    case_dir: Path,
+    case_output: Path,
+    summary: dict[str, object],
+    *,
+    source_identity: dict[str, object] | None = None,
+) -> dict[str, object]:
+    outputs = {
+        path.relative_to(case_output).as_posix(): _sha256_file(path)
+        for path in sorted(case_output.rglob("*"))
+        if path.is_file() and path.name != "summary.json"
+    }
+    if not outputs:
+        raise RuntimeError(f"case output contains no fitted artifacts: {case_output}")
+    source = (
+        _case_source_identity(case_dir)
+        if source_identity is None
+        else source_identity
+    )
+    return {
+        "schema_version": 3,
+        **source,
+        "summary_body_sha256": _summary_body_sha256(summary),
+        "outputs": outputs,
+    }
+
+
+def _seal_case_cache(
+    summary: dict[str, object],
+    case_dir: Path,
+    case_output: Path,
+    *,
+    expected_source_identity: dict[str, object] | None = None,
+) -> None:
+    current_source_identity = _case_source_identity(case_dir)
+    if (
+        expected_source_identity is not None
+        and current_source_identity != expected_source_identity
+    ):
+        raise RuntimeError("case sources changed while the fit was running")
+    recorded_inputs = summary.get("inputs")
+    if not isinstance(recorded_inputs, dict):
+        raise RuntimeError("fitted case does not record input identities")
+    for name, expected_identity in current_source_identity["inputs"].items():
+        if recorded_inputs.get(name) != expected_identity:
+            raise RuntimeError(f"fitted case recorded a different input: {name}")
+    summary["cache_identity"] = _case_cache_identity(
+        case_dir,
+        case_output,
+        summary,
+        source_identity=current_source_identity,
+    )
+    path = case_output / "summary.json"
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("w", encoding="utf-8") as handle:
+            json.dump(summary, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _validate_cached_case(
+    summary: dict[str, object],
+    expected_config: dict[str, object],
+    case_dir: Path,
+    case_output: Path,
+    case: str,
+) -> None:
+    """Reject a cached fit unless its protocol and source artifacts still match."""
+
+    if summary.get("schema_version") != 1 or _canonical_json(
+        summary.get("config")
+    ) != _canonical_json(expected_config):
+        raise RuntimeError(f"cached case uses a different protocol: {case}")
+    inputs = summary.get("inputs")
+    if not isinstance(inputs, dict):
+        raise RuntimeError(f"cached case does not record input identities: {case}")
+    expected_source_identity = _case_source_identity(case_dir)
+    for name, expected_identity in expected_source_identity["inputs"].items():
+        identity = inputs.get(name)
+        if identity != expected_identity:
+            raise RuntimeError(f"cached case input changed: {case}: {name}")
+    if summary.get("cache_identity") != _case_cache_identity(
+        case_dir,
+        case_output,
+        summary,
+        source_identity=expected_source_identity,
+    ):
+        raise RuntimeError(
+            f"cached case summary, implementation, source, or output changed: {case}"
+        )
+
+
 def _lock_protocol(output: Path, specification: dict[str, object]) -> dict[str, object]:
     path = output / "locked_protocol.json"
     protocol_id = _protocol_id(specification)
+    normalized_specification = json.loads(_canonical_json(specification))
     if path.exists():
         locked = json.loads(path.read_text(encoding="utf-8"))
         if locked.get("protocol_id") != protocol_id or locked.get(
             "specification"
-        ) != specification:
+        ) != normalized_specification:
             raise RuntimeError(
                 "output directory already contains a different locked protocol"
             )
@@ -70,7 +220,7 @@ def _lock_protocol(output: Path, specification: dict[str, object]) -> dict[str, 
         "schema_version": 1,
         "locked_at_utc": datetime.now(timezone.utc).isoformat(),
         "protocol_id": protocol_id,
-        "specification": specification,
+        "specification": normalized_specification,
     }
     path.write_text(
         json.dumps(locked, indent=2, sort_keys=True) + "\n",
@@ -189,6 +339,65 @@ def _cohort_readout(
     }
 
 
+def _fit_case(
+    job: tuple[
+        Path,
+        Path,
+        str,
+        PhysTwinConfirmatoryProtocol,
+        bool,
+    ],
+) -> tuple[str, dict[str, object]]:
+    """Fit one independent case so full-cohort runs can use multiple processes."""
+
+    root, output, case, config, force = job
+    case_dir = root / case
+    source_identity = _case_source_identity(case_dir)
+    fit_end, train_end, frame_count = _split_for_case(
+        case_dir, config.fit_fraction
+    )
+    case_output = output / "cases" / case
+    summary_path = case_output / "summary.json"
+    residual_config = PhysTwinResidualDynamicsConfig(
+        fit_end_frame=fit_end,
+        train_end_frame=train_end,
+        rank_candidates=config.rank_candidates,
+        persistence_candidates=config.persistence_candidates,
+        ridge_candidates=config.ridge_candidates,
+        projection_ridge=config.projection_ridge,
+        interpolation_neighbors=config.interpolation_neighbors,
+        maximum_state_multiplier=config.maximum_state_multiplier,
+        maximum_residual_m=config.maximum_residual_m,
+        minimum_validation_improvement=config.minimum_validation_improvement,
+    )
+    if summary_path.exists() and not force:
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        _validate_cached_case(
+            summary, asdict(residual_config), case_dir, case_output, case
+        )
+    else:
+        summary = fit_action_conditioned_residual_dynamics(
+            case_dir / "final_data.pkl",
+            case_dir / "inference.pkl",
+            case_dir / "gt_track_3d.pkl",
+            case_output,
+            config=residual_config,
+        )
+        _seal_case_cache(
+            summary,
+            case_dir,
+            case_output,
+            expected_source_identity=source_identity,
+        )
+    return case, {
+        "fit_end_frame": fit_end,
+        "train_end_frame": train_end,
+        "frame_count": frame_count,
+        **_case_readout(summary),
+    }
+
+
+@exclusively_owned_confirmation_output
 def run_phystwin_confirmatory_benchmark(
     data_root: str | Path,
     output_dir: str | Path,
@@ -196,9 +405,12 @@ def run_phystwin_confirmatory_benchmark(
     protocol: PhysTwinConfirmatoryProtocol | None = None,
     cases: Iterable[str] | None = None,
     force: bool = False,
+    workers: int = 1,
 ) -> dict[str, object]:
     """Run the locked residual protocol and report untouched cases separately."""
 
+    if workers < 1:
+        raise ValueError("workers must be positive")
     config = PhysTwinConfirmatoryProtocol() if protocol is None else protocol
     if not 0.0 < config.fit_fraction < 1.0:
         raise ValueError("fit_fraction must lie in (0, 1)")
@@ -206,6 +418,8 @@ def run_phystwin_confirmatory_benchmark(
     source_manifest_path = root / "evaluation_subset_manifest.json"
     source_manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
     available = tuple(str(case) for case in source_manifest["selected_cases"])
+    if len(available) != len(set(available)):
+        raise ValueError("the data manifest contains duplicate cases")
     selected = available if cases is None else tuple(dict.fromkeys(cases))
     missing = sorted(set(selected) - set(available))
     if missing:
@@ -230,46 +444,13 @@ def run_phystwin_confirmatory_benchmark(
     }
     locked = _lock_protocol(output, specification)
 
-    case_results: dict[str, dict[str, object]] = {}
-    for case in selected:
-        case_dir = root / case
-        fit_end, train_end, frame_count = _split_for_case(
-            case_dir, config.fit_fraction
-        )
-        case_output = output / "cases" / case
-        summary_path = case_output / "summary.json"
-        residual_config = PhysTwinResidualDynamicsConfig(
-            fit_end_frame=fit_end,
-            train_end_frame=train_end,
-            rank_candidates=config.rank_candidates,
-            persistence_candidates=config.persistence_candidates,
-            ridge_candidates=config.ridge_candidates,
-            projection_ridge=config.projection_ridge,
-            interpolation_neighbors=config.interpolation_neighbors,
-            maximum_state_multiplier=config.maximum_state_multiplier,
-            maximum_residual_m=config.maximum_residual_m,
-            minimum_validation_improvement=config.minimum_validation_improvement,
-        )
-        if summary_path.exists() and not force:
-            summary = json.loads(summary_path.read_text(encoding="utf-8"))
-            if _canonical_json(summary["config"]) != _canonical_json(
-                asdict(residual_config)
-            ):
-                raise RuntimeError(f"cached case uses a different protocol: {case}")
-        else:
-            summary = fit_action_conditioned_residual_dynamics(
-                case_dir / "final_data.pkl",
-                case_dir / "inference.pkl",
-                case_dir / "gt_track_3d.pkl",
-                case_output,
-                config=residual_config,
-            )
-        case_results[case] = {
-            "fit_end_frame": fit_end,
-            "train_end_frame": train_end,
-            "frame_count": frame_count,
-            **_case_readout(summary),
-        }
+    jobs = [(root, output, case, config, force) for case in selected]
+    if workers == 1:
+        fitted_cases = list(map(_fit_case, jobs))
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            fitted_cases = list(executor.map(_fit_case, jobs))
+    case_results = dict(fitted_cases)
 
     comparisons: dict[str, dict[str, object]] = {}
     cohorts = {"confirmation": confirmation, "all": selected}

@@ -1,9 +1,11 @@
+import hashlib
 import json
 import math
 import pickle
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from bayesian_phystwin.phystwin_calibration import (
     PhysTwinCalibrationProtocol,
@@ -126,3 +128,187 @@ def test_calibration_audit_keeps_validation_out_of_state_fit(tmp_path: Path) -> 
         == 1
     )
     assert Path(result["summary_path"]).exists()
+
+
+def test_calibration_audit_accepts_hash_validated_external_backbone(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "data"
+    case = root / "toy_case"
+    case.mkdir(parents=True)
+    frame_count = 16
+    train_end = 12
+    initial = np.array([[0.0, 0.0, 0.0], [0.02, 0.0, 0.0]])
+    released = np.repeat(initial[None], frame_count, axis=0)
+    external = released.copy()
+    external[1:, :, 1] = 0.002
+    observed = released.copy()
+    observed[1:, :, 0] = 0.005
+    tracks = observed[:, :1].copy()
+    data = {
+        "object_points": observed.astype(np.float32),
+        "object_visibilities": np.ones((frame_count, 2), dtype=bool),
+        "object_motions_valid": np.ones((frame_count - 1, 2), dtype=bool),
+        "surface_points": np.empty((0, 3), dtype=np.float32),
+    }
+    for path, value in (
+        (case / "final_data.pkl", data),
+        (case / "inference.pkl", released.astype(np.float32)),
+        (case / "gt_track_3d.pkl", tracks.astype(np.float32)),
+    ):
+        with path.open("wb") as handle:
+            pickle.dump(value, handle)
+    (case / "split.json").write_text(
+        json.dumps(
+            {
+                "frame_len": frame_count,
+                "train": [0, train_end],
+                "test": [train_end, frame_count],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "evaluation_subset_manifest.json").write_text(
+        json.dumps({"selected_cases": ["toy_case"]}), encoding="utf-8"
+    )
+    trajectory = tmp_path / "external.pkl"
+    with trajectory.open("wb") as handle:
+        pickle.dump(external.astype(np.float32), handle)
+    digest = hashlib.sha256(trajectory.read_bytes()).hexdigest()
+    manifest = tmp_path / "external_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "backbone": {
+                    "name": "toy external backbone",
+                    "source_repository": "https://example.test/backbone",
+                    "source_commit": "a" * 40,
+                    "future_observations_used": False,
+                    "coordinate_frame": "phystwin-world-metres-v1",
+                    "vertex_contract": "phystwin-observed-prefix-then-surface-v1",
+                },
+                "cases": [
+                    {
+                        "name": "toy_case",
+                        "trajectory": str(trajectory),
+                        "sha256": digest,
+                        "evidence_end_frame_exclusive": train_end,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_phystwin_calibration_audit(
+        root,
+        tmp_path / "external_output",
+        external_backbone_manifest=manifest,
+        protocol=PhysTwinCalibrationProtocol(
+            interpolation_neighbors=1,
+            coverage_levels=(0.5,),
+            bootstrap_samples=20,
+            development_cases=(),
+        ),
+    )
+
+    assert result["claim_boundary"]["predictor_update_after_fit"] == "none"
+    locked = json.loads(
+        (tmp_path / "external_output" / "locked_protocol.json").read_text()
+    )
+    assert locked["specification"]["baseline"]["kind"] == "external_backbone"
+    assert locked["specification"]["baseline"]["manifest"][
+        "sha256"
+    ] == hashlib.sha256(
+        manifest.read_bytes()
+    ).hexdigest()
+    metrics = result["case_results"]["toy_case"]["future_point_metrics"]
+    assert metrics["track_error_m"]["baseline_mean_m"] > 0.005
+
+    mismatched_overlay = tmp_path / "mismatched_overlay"
+    mismatched_overlay.mkdir()
+    (mismatched_overlay / "locked_protocol.json").write_text(
+        json.dumps(
+            {
+                "protocol_id": "b" * 64,
+                "specification": {
+                    "backbone_manifest": {"sha256": "0" * 64}
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="different hashes"):
+        run_phystwin_calibration_audit(
+            root,
+            tmp_path / "mismatched_output",
+            external_backbone_manifest=manifest,
+            external_overlay_dir=mismatched_overlay,
+            protocol=PhysTwinCalibrationProtocol(
+                interpolation_neighbors=1,
+                coverage_levels=(0.5,),
+                bootstrap_samples=20,
+                development_cases=(),
+            ),
+        )
+
+    external_overlay = tmp_path / "external_overlay"
+    anchor_case = external_overlay / "cases" / "toy_case" / "bayesian_anchor"
+    anchor_case.mkdir(parents=True)
+    manifest_sha256 = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    (external_overlay / "locked_protocol.json").write_text(
+        json.dumps(
+            {
+                "protocol_id": "c" * 64,
+                "specification": {
+                    "backbone_manifest": {"sha256": manifest_sha256}
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (anchor_case / "summary.json").write_text(
+        json.dumps(
+            {
+                "config": {
+                    "train_end_frame": train_end,
+                    "maximum_residual_m": 0.01,
+                },
+                "selection": {
+                    "accepted": True,
+                    "selected_candidate": {
+                        "process_std_m": 0.005,
+                        "observation_std_m": 0.001,
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    np.savez_compressed(
+        anchor_case / "posterior.npz",
+        mean=np.zeros((2, 3), dtype=float),
+        variance=np.full(2, 1e-4, dtype=float),
+        lift_indices=np.empty((0, 1), dtype=np.int64),
+        lift_weights=np.empty((0, 1), dtype=float),
+    )
+
+    operational = run_phystwin_calibration_audit(
+        root,
+        tmp_path / "operational_output",
+        external_backbone_manifest=manifest,
+        external_overlay_dir=external_overlay,
+        protocol=PhysTwinCalibrationProtocol(
+            interpolation_neighbors=1,
+            coverage_levels=(0.5,),
+            bootstrap_samples=20,
+            development_cases=(),
+        ),
+    )
+
+    future_nees = operational["case_results"]["toy_case"]["nees"][
+        "operational_future_nees_3d"
+    ]
+    assert future_nees["accepted_on_validation"] is True
+    assert future_nees["count"] == 4

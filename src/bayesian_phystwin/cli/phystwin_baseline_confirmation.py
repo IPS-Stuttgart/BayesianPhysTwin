@@ -17,11 +17,13 @@ def main() -> None:
     parser.add_argument("data_root")
     parser.add_argument("output_dir")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args()
     summary = run_phystwin_baseline_confirmation(
         args.data_root,
         args.output_dir,
         force=args.force,
+        workers=args.workers,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

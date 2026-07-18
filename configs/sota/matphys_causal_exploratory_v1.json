@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "protocol_name": "causal-matphys-family-gate-exploratory-v1",
+  "locked_at_utc": "2026-07-18T04:11:45Z",
+  "lock_timing": "After shard launch and before completion or inspection of any of the 19 new case outcomes.",
+  "status": "Exploratory on the previously examined released PhysTwin 22-case cohort.",
+  "claim_boundary": "No confirmatory or SOTA claim may be made without an independently locked cohort or protocol.",
+  "source": {
+    "repository": "https://github.com/Yrainy0615/MatPhys",
+    "commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "recipe": "global-onehot-single-part-v1 proxy with Gaussian rendering disabled",
+    "future_observations_used": false
+  },
+  "implementation_sha256": {
+    "run_matphys_causal.py": "7ecaea968db19b534a9d43b52b122ae4d73744ad11ad202d745a473bc256c457",
+    "run_matphys_causal_shard.py": "e666dd5ff6b008dc3b5527fba7b107eb9218d49ba1a0fe4cdcab336383affb91",
+    "phystwin_external_backbone.py": "f99e6cb2c5e4794774fef04f110dea0a100df62a4ffb0c865010ed8d1f8c8d94",
+    "phystwin_backbone_family_gate.py": "6cf4d6fe771ca13ce42523369472f49c3c5899f755048036b9e506760869f3e0"
+  },
+  "training": {
+    "scope": "independent per case",
+    "epochs": 20,
+    "eval_every": 5,
+    "checkpoint_policy": "fixed-terminal-epoch-v1",
+    "video_sampling": "16 uniform frames inside the released training prefix",
+    "objective_boundary": "all fit and selection losses stop at the released training boundary",
+    "known_future_input": "controller targets only",
+    "forbidden_future_inputs": [
+      "RGB",
+      "depth",
+      "object tracks",
+      "manual tracks",
+      "masks",
+      "point clouds",
+      "future evaluation metrics"
+    ]
+  },
+  "development_gate": {
+    "cases": [
+      "single_lift_sloth",
+      "double_lift_sloth",
+      "double_stretch_sloth"
+    ],
+    "manifest_sha256": "2916a7533310fc17a987677784fa00883fcec416f2a6052ee1259e33b8aa0324",
+    "overlay_protocol_id": "909c0cff063db72d9cb56dc6751995ee08a2d0f5a716c459d3dd529691180344",
+    "family_gate_protocol_id": "e1741168fe94cd9a9fa83acc561e9a632e9ba74e468fdb21622ca81b38ed3f1e",
+    "released_selected_mean_m": {
+      "chamfer_distance": 0.012405453655371183,
+      "track_error": 0.01719031379492129
+    },
+    "gated_mean_m": {
+      "chamfer_distance": 0.011402820178481701,
+      "track_error": 0.016472361974571737
+    }
+  },
+  "family_gate": {
+    "reference_family": "released PhysTwin with frozen validation-selected correction",
+    "candidate_family": "causal MatPhys proxy with frozen validation-selected correction",
+    "score": "0.5 * validation_CD/reference_raw_CD + 0.5 * validation_track/reference_raw_track",
+    "tie_break": "released reference family",
+    "future_metrics_used_for_selection": false
+  },
+  "reused_development_cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "new_case_shards": {
+    "cuda:0": [
+      "rope_double_hand",
+      "single_lift_cloth_4",
+      "double_lift_cloth_3",
+      "single_lift_cloth_1",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "single_lift_zebra",
+      "single_lift_rope"
+    ],
+    "cuda:1": [
+      "double_stretch_zebra",
+      "single_lift_cloth",
+      "single_lift_cloth_3",
+      "double_lift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_dinosor",
+      "single_clift_cloth_1",
+      "double_lift_zebra",
+      "single_push_rope",
+      "weird_package"
+    ]
+  },
+  "primary_comparison": "Validation-gated family trajectory versus released validation-selected Bayesian-PhysTwin trajectory.",
+  "metrics": [
+    "equal-case mean future chamfer_distance_m",
+    "equal-case mean future track_error_m",
+    "per-case paired changes",
+    "family selection counts"
+  ],
+  "published_reference_m": {
+    "MatPhys_chamfer_distance": 0.008,
+    "MatPhys_track_error": 0.015,
+    "NeuSpring_chamfer_distance": 0.0087,
+    "NeuSpring_track_error": 0.0175
+  },
+  "next_evidence_rule": "Proceed to an independent preregistered evaluation only if the exploratory family gate improves both released metrics and shows a credible path to the published reference frontier."
+}

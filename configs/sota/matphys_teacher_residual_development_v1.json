@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-teacher-residual-development-v1",
+  "locked_at_utc": "2026-07-18T05:22:31Z",
+  "status": "Development-only mechanism gate on the three previously declared sloth interactions.",
+  "claim_boundary": "This gate may choose whether the method merits a new exploratory cohort run. It is not independent evidence and cannot support a SOTA claim.",
+  "cases": [
+    "single_lift_sloth",
+    "double_lift_sloth",
+    "double_stretch_sloth"
+  ],
+  "source": {
+    "repository": "https://github.com/Yrainy0615/MatPhys",
+    "commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "video_proxy": "global-onehot-single-part-v1",
+    "teacher": "released per-edge PhysTwin best checkpoint plus released CMA global parameters"
+  },
+  "parameterization": {
+    "name": "released-phystwin-bounded-logk-residual-v1",
+    "object_and_controller_springs": "teacher_log_k + log(2) * tanh(MatPhys_raw)",
+    "residual_log_scale": 0.6931471805599453,
+    "maximum_stiffness_ratio": 2.0,
+    "global_contact_and_damping_parameters": "frozen at released PhysTwin values",
+    "identity_arm_residual_log_scale": 0.0
+  },
+  "training": {
+    "epochs": 20,
+    "checkpoint_policy": "fixed-terminal-epoch-v1",
+    "video_sampling": "16 uniform frames inside the complete released observation prefix",
+    "objective_boundary": "released observation prefix only",
+    "future_observations_used": false
+  },
+  "implementation_sha256": {
+    "run_matphys_causal.py": "c2dcf5a6a916f7a5aede8f6c0b87f2d756fea512bbc6d2932dc571e20815dd2b",
+    "run_matphys_causal_shard.py": "2fde83854c8de5607c5e7668a3f8e74ae47952c41b6df81421af01ac335eeb67",
+    "matphys_causal_bridge.py": "7fa795a25e4bb19d5eeb75b576058c523f2c6ae2f62d29fb08ecd64a2724c59e",
+    "matphys_teacher_residual.py": "b9a7463bdb4ed25aa50b47a81d0d93d9d42171aa11f93821ce283e650c34c612"
+  },
+  "identity_gate": [
+    "Every object and controller spring count must match the released checkpoint exactly.",
+    "At residual scale zero, exported spring and global parameter tensors must equal the released values exactly.",
+    "Repeated identity rollouts must be reported with the Warp replay difference rather than assuming determinism."
+  ],
+  "development_acceptance_gate": {
+    "aggregate": "Improve both equal-case future CD and track error versus the released Bayesian-PhysTwin selected stack.",
+    "regression": "No development case may worsen either future metric by more than 5 percent versus the released selected stack.",
+    "mechanism": "The bounded residual must outperform or match the absolute MatPhys v1 head on the double-stretch regression case.",
+    "selection": "No future metric may select an epoch, residual scale, or checkpoint."
+  },
+  "next_evidence_rule": "Run a newly locked exploratory cohort only if every identity and development acceptance condition passes."
+}
