@@ -42,6 +42,11 @@ def main() -> None:
         help="NAME=manifest.json identity replay for a non-reference family.",
     )
     parser.add_argument("--maximum-stability-rmse-m", type=float)
+    parser.add_argument(
+        "--selection-only",
+        action="store_true",
+        help="Freeze family choices without opening future metrics.",
+    )
     args = parser.parse_args()
     families = dict(args.family)
     if len(families) != len(args.family):
@@ -63,6 +68,7 @@ def main() -> None:
         maximum_metric_regression=args.maximum_metric_regression,
         stability_control_manifests=(stability_controls or None),
         maximum_stability_rmse_m=args.maximum_stability_rmse_m,
+        evaluate_future=not args.selection_only,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

@@ -286,6 +286,7 @@ def run_backbone_family_gate(
     maximum_metric_regression: float | None = None,
     stability_control_manifests: Mapping[str, str | Path] | None = None,
     maximum_stability_rmse_m: float | None = None,
+    evaluate_future: bool = True,
 ) -> dict[str, object]:
     """Select one future-blind backbone family on the permitted validation split."""
 
@@ -312,6 +313,10 @@ def run_backbone_family_gate(
         summary = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(summary.get("case_results"), dict):
             raise ValueError(f"{family}: overlay summary has no case results")
+        if not evaluate_future and summary.get("future_metrics_opened") is not False:
+            raise ValueError(
+                f"{family}: selection-only gate requires a sealed overlay summary"
+            )
         loaded[family] = summary
         provenance[family] = {"path": str(path), "sha256": _sha256_file(path)}
 
@@ -388,6 +393,12 @@ def run_backbone_family_gate(
             else None
         ),
         "registered_subset_protocol": subset_protocol_identity,
+        "future_metrics_opened": evaluate_future,
+        "future_evaluation": (
+            "official future metrics evaluated after family selection"
+            if evaluate_future
+            else "forbidden; selected trajectories are frozen before future opening"
+        ),
         "status": (
             "development-only integration smoke; not cohort evidence"
             if development_smoke
@@ -493,52 +504,79 @@ def run_backbone_family_gate(
         selected_source = trajectory_by_family[selected_family]
         staged = output / "cases" / case / "trajectory.pkl"
         selected_hash = _copy_exact(selected_source, staged)
-        family_test = {
-            family: _future_metrics(
-                root,
-                case,
-                trajectory,
-                train_end=train_end,
-                frame_count=frame_count,
-            )
+        family_outputs = {
+            family: {
+                "path": str(trajectory),
+                "sha256": _sha256_file(trajectory),
+            }
             for family, trajectory in trajectory_by_family.items()
         }
-        case_results[case] = {
+        case_result = {
             "selected_family": selected_family,
             "selected_within_family_method": method_by_family[selected_family],
+            "fit_end_frame_exclusive": fit_end,
+            "train_end_frame_exclusive": train_end,
+            "frame_count": frame_count,
             "validation_scores": scores,
             "family_decisions": decisions,
             "stability": stability_by_family,
             "validation_metrics": validation_by_family,
             "reference_raw_validation_metrics": reference_validation,
-            "test_metrics_by_family": family_test,
-            "selected_test_metrics": family_test[selected_family],
+            "family_outputs": family_outputs,
             "output": {"path": str(staged), "sha256": selected_hash},
         }
+        if evaluate_future:
+            family_test = {
+                family: _future_metrics(
+                    root,
+                    case,
+                    trajectory,
+                    train_end=train_end,
+                    frame_count=frame_count,
+                )
+                for family, trajectory in trajectory_by_family.items()
+            }
+            case_result["test_metrics_by_family"] = family_test
+            case_result["selected_test_metrics"] = family_test[selected_family]
+        case_results[case] = case_result
 
     metrics = ("chamfer_distance_m", "track_error_m")
-    selected_mean = {
-        metric: float(
-            np.mean(
-                [result["selected_test_metrics"][metric] for result in case_results.values()]
-            )
-        )
-        for metric in metrics
-    }
-    family_means = {
-        family: {
+    if evaluate_future:
+        selected_mean = {
             metric: float(
                 np.mean(
                     [
-                        result["test_metrics_by_family"][family][metric]
+                        result["selected_test_metrics"][metric]
                         for result in case_results.values()
                     ]
                 )
             )
             for metric in metrics
         }
-        for family in family_summaries
-    }
+        family_means = {
+            family: {
+                metric: float(
+                    np.mean(
+                        [
+                            result["test_metrics_by_family"][family][metric]
+                            for result in case_results.values()
+                        ]
+                    )
+                )
+                for metric in metrics
+            }
+            for family in family_summaries
+        }
+        comparison = {
+            "case_count": len(requested),
+            "selected_equal_case_mean": selected_mean,
+            "family_equal_case_means": family_means,
+        }
+    else:
+        comparison = {
+            "case_count": len(requested),
+            "status": "family choices sealed; future metrics remain unopened",
+        }
     summary = {
         "schema_version": 1,
         "protocol_id": locked["protocol_id"],
@@ -546,13 +584,153 @@ def run_backbone_family_gate(
         "contract": specification,
         "selection_counts": selection_counts,
         "case_results": case_results,
-        "comparison": {
-            "case_count": len(requested),
-            "selected_equal_case_mean": selected_mean,
-            "family_equal_case_means": family_means,
+        "comparison": comparison,
+        "future_metrics_opened": evaluate_future,
+    }
+    summary_path = output / (
+        "backbone_family_gate_summary.json"
+        if evaluate_future
+        else "backbone_family_selection.json"
+    )
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    summary["summary_path"] = str(summary_path)
+    return summary
+
+
+def _validated_output_identity(identity: object, *, label: str) -> Path:
+    if not isinstance(identity, Mapping):
+        raise ValueError(f"{label} must be a file identity")
+    path = Path(str(identity.get("path", ""))).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    expected = str(identity.get("sha256", ""))
+    if not expected or _sha256_file(path) != expected:
+        raise ValueError(f"{label} SHA-256 mismatch")
+    return path
+
+
+@exclusively_owned_confirmation_output
+def open_backbone_family_future(
+    data_root: str | Path,
+    output_dir: str | Path,
+    selection_summary: str | Path,
+) -> dict[str, object]:
+    """Evaluate futures only after hash-bound family choices are sealed."""
+
+    root = Path(data_root).resolve()
+    output = Path(output_dir).resolve()
+    selection_path = Path(selection_summary).resolve()
+    selection = json.loads(selection_path.read_text(encoding="utf-8"))
+    if selection.get("schema_version") != 1:
+        raise ValueError("unsupported family-selection schema")
+    if selection.get("future_metrics_opened") is not False:
+        raise ValueError("family selection is not a sealed prefix-only artifact")
+    raw_results = selection.get("case_results")
+    if not isinstance(raw_results, Mapping) or not raw_results:
+        raise ValueError("family selection contains no case results")
+
+    specification = {
+        "method": "open frozen PhysTwin backbone-family futures",
+        "selection_summary": {
+            "path": str(selection_path),
+            "sha256": _sha256_file(selection_path),
+        },
+        "selection_protocol_id": selection.get("protocol_id"),
+        "future_access": "after hash-bound family selection only",
+    }
+    locked = _lock_protocol(output, specification)
+    case_results: dict[str, dict[str, object]] = {}
+    family_order: tuple[str, ...] | None = None
+    for case, raw_result in raw_results.items():
+        if not isinstance(raw_result, Mapping):
+            raise ValueError(f"{case}: malformed family-selection result")
+        selected_family = str(raw_result.get("selected_family", ""))
+        raw_outputs = raw_result.get("family_outputs")
+        if not isinstance(raw_outputs, Mapping) or not raw_outputs:
+            raise ValueError(f"{case}: family selection omits family outputs")
+        current_order = tuple(str(family) for family in raw_outputs)
+        if family_order is None:
+            family_order = current_order
+        elif current_order != family_order:
+            raise ValueError("family output order differs across cases")
+        if selected_family not in raw_outputs:
+            raise ValueError(f"{case}: selected family has no trajectory")
+        selected_path = _validated_output_identity(
+            raw_result.get("output"), label=f"{case}.selected_output"
+        )
+        family_paths = {
+            str(family): _validated_output_identity(
+                identity, label=f"{case}.{family}"
+            )
+            for family, identity in raw_outputs.items()
+        }
+        selected_hash = _sha256_file(selected_path)
+        if selected_hash != _sha256_file(family_paths[selected_family]):
+            raise ValueError(f"{case}: staged selection differs from selected family")
+        train_end = int(raw_result["train_end_frame_exclusive"])
+        frame_count = int(raw_result["frame_count"])
+        family_metrics = {
+            family: _future_metrics(
+                root,
+                str(case),
+                trajectory,
+                train_end=train_end,
+                frame_count=frame_count,
+            )
+            for family, trajectory in family_paths.items()
+        }
+        case_results[str(case)] = {
+            "selected_family": selected_family,
+            "future_metrics_by_family": family_metrics,
+            "selected_future_metrics": family_metrics[selected_family],
+            "selected_output": {
+                "path": str(selected_path),
+                "sha256": selected_hash,
+            },
+        }
+
+    assert family_order is not None
+    metrics = ("chamfer_distance_m", "track_error_m")
+    comparison = {
+        "case_count": len(case_results),
+        "selected_equal_case_mean": {
+            metric: float(
+                np.mean(
+                    [
+                        result["selected_future_metrics"][metric]
+                        for result in case_results.values()
+                    ]
+                )
+            )
+            for metric in metrics
+        },
+        "family_equal_case_means": {
+            family: {
+                metric: float(
+                    np.mean(
+                        [
+                            result["future_metrics_by_family"][family][metric]
+                            for result in case_results.values()
+                        ]
+                    )
+                )
+                for metric in metrics
+            }
+            for family in family_order
         },
     }
-    summary_path = output / "backbone_family_gate_summary.json"
+    summary = {
+        "schema_version": 1,
+        "protocol_id": locked["protocol_id"],
+        "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "contract": specification,
+        "future_metrics_opened": True,
+        "case_results": case_results,
+        "comparison": comparison,
+    }
+    summary_path = output / "backbone_family_future.json"
     summary_path.write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )

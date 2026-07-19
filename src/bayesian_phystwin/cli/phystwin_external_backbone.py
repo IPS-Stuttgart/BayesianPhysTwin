@@ -23,6 +23,11 @@ def main() -> None:
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument(
+        "--selection-only",
+        action="store_true",
+        help="Generate predictive trajectories and validation choices without future metrics.",
+    )
+    parser.add_argument(
         "--development-smoke",
         action="store_true",
         help="Allow only an ordered subset of the three declared development cases.",
@@ -40,6 +45,7 @@ def main() -> None:
         workers=args.workers,
         development_smoke=args.development_smoke,
         registered_subset_protocol=args.registered_subset_protocol,
+        evaluate_future=not args.selection_only,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

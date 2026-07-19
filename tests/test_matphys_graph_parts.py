@@ -10,6 +10,7 @@ from bayesian_phystwin.matphys_graph_parts import (
     GRAPH_PART_PROXY_CONTRACT,
     compact_graph_part_proxy,
     graph_semantic_parts,
+    materialize_compact_graph_proxy_subset,
 )
 
 
@@ -139,3 +140,131 @@ def test_compact_proxy_preserves_part_features_and_replaces_only_dead_semantics(
         record["train_ready"]["path"], map_location="cpu", weights_only=False
     )
     torch.testing.assert_close(compact_ready["part_features"], part_features)
+
+
+def _compact_proxy_source(
+    root: Path,
+    source_mapping: Path,
+    cases: tuple[str, ...],
+) -> Path:
+    class_to_id = {"cloth": 0, "rope": 1}
+    mapping = root / "case_to_material.json"
+    mapping.parent.mkdir(parents=True)
+    mapping.write_text(
+        json.dumps(
+            {
+                "case_to_material": {
+                    case: "cloth" if "cloth" in case else "rope" for case in cases
+                },
+                "class_to_id": class_to_id,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    records = []
+    for index, case in enumerate(cases):
+        node_sem = root / "semantic_cache" / f"{case}_node_sem.npz"
+        train_ready = root / "results" / case / "train" / "train_ready.pt"
+        node_sem.parent.mkdir(parents=True, exist_ok=True)
+        train_ready.parent.mkdir(parents=True, exist_ok=True)
+        node_sem.write_bytes(f"node-{case}-{index}".encode())
+        train_ready.write_bytes(f"ready-{case}-{index}".encode())
+        label = "cloth" if "cloth" in case else "rope"
+        records.append(
+            {
+                "name": case,
+                "material_label": label,
+                "material_id": class_to_id[label],
+                "structure_point_count": index + 2,
+                "node_sem": {"path": str(node_sem), "sha256": sha256_file(node_sem)},
+                "train_ready": {
+                    "path": str(train_ready),
+                    "sha256": sha256_file(train_ready),
+                },
+            }
+        )
+    summary = root / "proxy_summary.json"
+    summary.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "contract": GRAPH_PART_COMPACT_PROXY_CONTRACT,
+                "part_count": 5,
+                "semantic_edge_weight": 4.0,
+                "source_mapping": {
+                    "path": str(source_mapping),
+                    "sha256": sha256_file(source_mapping),
+                },
+                "mapping": {"path": str(mapping), "sha256": sha256_file(mapping)},
+                "cases": records,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return summary
+
+
+def test_materialize_compact_proxy_subset_combines_byte_bound_sources(
+    tmp_path: Path,
+) -> None:
+    source_mapping_a = tmp_path / "source_mapping_a.json"
+    source_mapping_b = tmp_path / "source_mapping_b.json"
+    mapping_bytes = json.dumps({"cloth": 0, "rope": 1}) + "\n"
+    source_mapping_a.write_text(mapping_bytes, encoding="utf-8")
+    source_mapping_b.write_text(mapping_bytes, encoding="utf-8")
+    first = _compact_proxy_source(
+        tmp_path / "first", source_mapping_a, ("single_cloth", "single_rope")
+    )
+    second = _compact_proxy_source(
+        tmp_path / "second", source_mapping_b, ("double_cloth",)
+    )
+
+    result = materialize_compact_graph_proxy_subset(
+        (first, second),
+        tmp_path / "subset",
+        ("double_cloth", "single_rope"),
+    )
+
+    assert [record["name"] for record in result["cases"]] == [
+        "double_cloth",
+        "single_rope",
+    ]
+    assert result["source_mapping"]["sha256"] == sha256_file(source_mapping_a)
+    for record in result["cases"]:
+        source_record = next(
+            item
+            for summary_path in (first, second)
+            for item in json.loads(summary_path.read_text())["cases"]
+            if item["name"] == record["name"]
+        )
+        assert sha256_file(record["node_sem"]["path"]) == source_record["node_sem"][
+            "sha256"
+        ]
+        assert sha256_file(record["train_ready"]["path"]) == source_record[
+            "train_ready"
+        ]["sha256"]
+    repeated = materialize_compact_graph_proxy_subset(
+        (first, second),
+        tmp_path / "subset",
+        ("double_cloth", "single_rope"),
+    )
+    assert repeated["mapping"]["sha256"] == result["mapping"]["sha256"]
+
+
+def test_materialize_compact_proxy_subset_rejects_missing_and_duplicate_cases(
+    tmp_path: Path,
+) -> None:
+    source_mapping = tmp_path / "source_mapping.json"
+    source_mapping.write_text("{}\n", encoding="utf-8")
+    summary = _compact_proxy_source(tmp_path / "source", source_mapping, ("rope",))
+
+    with pytest.raises(ValueError, match="nonempty and unique"):
+        materialize_compact_graph_proxy_subset(
+            (summary,), tmp_path / "duplicate", ("rope", "rope")
+        )
+    with pytest.raises(ValueError, match="omit requested"):
+        materialize_compact_graph_proxy_subset(
+            (summary,), tmp_path / "missing", ("cloth",)
+        )

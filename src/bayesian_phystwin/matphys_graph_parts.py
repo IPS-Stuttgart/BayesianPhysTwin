@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import heapq
 import json
+import os
 import pickle
 from pathlib import Path
 import shutil
@@ -522,6 +523,151 @@ def compact_graph_part_proxy(
     summary_path.write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
+    )
+    summary["summary_path"] = str(summary_path)
+    return summary
+
+
+def materialize_compact_graph_proxy_subset(
+    source_summary_paths: Sequence[str | Path],
+    output_root: str | Path,
+    case_names: Sequence[str],
+) -> dict[str, object]:
+    """Assemble a byte-bound compact proxy subset without recomputing DINO."""
+
+    requested = tuple(str(case) for case in case_names)
+    if not requested or len(requested) != len(set(requested)):
+        raise ValueError("proxy subset cases must be nonempty and unique")
+    sources = []
+    available: dict[str, tuple[Path, dict[str, object]]] = {}
+    common: tuple[int, float, str] | None = None
+    canonical_source_mapping: dict[str, str] | None = None
+    class_to_id = None
+    for raw_path in source_summary_paths:
+        path = Path(raw_path).resolve()
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("contract") != GRAPH_PART_COMPACT_PROXY_CONTRACT:
+            raise ValueError("proxy subset requires compact graph-part sources")
+        source_mapping = payload.get("source_mapping", {})
+        source_mapping_path = Path(str(source_mapping.get("path", ""))).resolve()
+        source_mapping_hash = str(source_mapping.get("sha256", ""))
+        if not source_mapping_hash or sha256_file(source_mapping_path) != source_mapping_hash:
+            raise ValueError("compact proxy source material mapping bytes changed")
+        identity = (
+            int(payload["part_count"]),
+            float(payload["semantic_edge_weight"]),
+            source_mapping_hash,
+        )
+        if common is None:
+            common = identity
+            canonical_source_mapping = {
+                "path": str(source_mapping_path),
+                "sha256": source_mapping_hash,
+            }
+        elif identity != common:
+            raise ValueError("compact proxy sources use different graph contracts")
+        mapping_path = Path(str(payload["mapping"]["path"])).resolve()
+        if sha256_file(mapping_path) != payload["mapping"]["sha256"]:
+            raise ValueError("compact proxy mapping bytes changed")
+        mapping = json.loads(mapping_path.read_text(encoding="utf-8"))
+        if class_to_id is None:
+            class_to_id = mapping["class_to_id"]
+        elif mapping["class_to_id"] != class_to_id:
+            raise ValueError("compact proxy material class ids disagree")
+        for record in payload.get("cases", []):
+            case = str(record.get("name", ""))
+            if not case or case in available:
+                raise ValueError(f"compact proxy case is empty or duplicated: {case}")
+            available[case] = (path, record)
+        sources.append({"path": str(path), "sha256": sha256_file(path)})
+    if common is None or canonical_source_mapping is None or class_to_id is None:
+        raise ValueError("at least one compact proxy source is required")
+    missing = [case for case in requested if case not in available]
+    if missing:
+        raise ValueError(f"compact proxy sources omit requested cases: {missing}")
+
+    destination = Path(output_root).resolve()
+
+    def link_exact(source: Path, target: Path, expected_hash: str) -> None:
+        if sha256_file(source) != expected_hash:
+            raise ValueError(f"compact proxy source bytes changed: {source}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            if sha256_file(target) != expected_hash:
+                raise ValueError(f"existing compact proxy target differs: {target}")
+            return
+        try:
+            os.link(source, target)
+        except OSError:
+            shutil.copy2(source, target)
+        if sha256_file(target) != expected_hash:
+            raise RuntimeError(f"compact proxy bytes changed while staging: {source}")
+
+    selected_mapping = {}
+    records = []
+    for case in requested:
+        _, raw_record = available[case]
+        node_identity = raw_record["node_sem"]
+        ready_identity = raw_record["train_ready"]
+        node_path = destination / "semantic_cache" / f"{case}_node_sem.npz"
+        ready_path = destination / "results" / case / "train" / "train_ready.pt"
+        link_exact(
+            Path(str(node_identity["path"])).resolve(),
+            node_path,
+            str(node_identity["sha256"]),
+        )
+        link_exact(
+            Path(str(ready_identity["path"])).resolve(),
+            ready_path,
+            str(ready_identity["sha256"]),
+        )
+        selected_mapping[case] = str(raw_record["material_label"])
+        records.append(
+            {
+                **raw_record,
+                "node_sem": {
+                    "path": str(node_path),
+                    "sha256": str(node_identity["sha256"]),
+                },
+                "train_ready": {
+                    "path": str(ready_path),
+                    "sha256": str(ready_identity["sha256"]),
+                },
+            }
+        )
+
+    mapping_path = destination / "case_to_material.json"
+    mapping_path.parent.mkdir(parents=True, exist_ok=True)
+    mapping_bytes = (
+        json.dumps(
+            {"case_to_material": selected_mapping, "class_to_id": class_to_id},
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
+    if mapping_path.exists() and mapping_path.read_text(encoding="utf-8") != mapping_bytes:
+        raise ValueError(f"existing compact proxy mapping differs: {mapping_path}")
+    mapping_path.write_text(mapping_bytes, encoding="utf-8")
+    summary = {
+        "schema_version": 1,
+        "contract": GRAPH_PART_COMPACT_PROXY_CONTRACT,
+        "claim_boundary": (
+            "Byte-identical subset of causal compact graph-part proxies; no DINO "
+            "features or graph assignments were recomputed."
+        ),
+        "part_count": common[0],
+        "semantic_edge_weight": common[1],
+        "source_mapping": canonical_source_mapping,
+        "source_proxies": sources,
+        "mapping": {"path": str(mapping_path), "sha256": sha256_file(mapping_path)},
+        "semantic_cache_dir": str(destination / "semantic_cache"),
+        "results_dir": str(destination / "results"),
+        "cases": records,
+    }
+    summary_path = destination / "proxy_summary.json"
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     summary["summary_path"] = str(summary_path)
     return summary

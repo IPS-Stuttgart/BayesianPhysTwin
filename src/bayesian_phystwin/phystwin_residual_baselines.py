@@ -114,6 +114,7 @@ def fit_residual_dynamics_baselines(
     output_dir: str | Path,
     *,
     config: PhysTwinResidualDynamicsConfig,
+    evaluate_future: bool = True,
 ) -> dict[str, object]:
     """Fit last-value, autonomous, and DMDc residual comparators causally."""
 
@@ -126,12 +127,29 @@ def fit_residual_dynamics_baselines(
     visible = np.asarray(data["object_visibilities"], dtype=bool)
     motion_valid = np.asarray(data["object_motions_valid"], dtype=bool)
     controllers = np.asarray(data["controller_points"], dtype=float)
-    frame_count, original_count, _ = observed.shape
-    if baseline.shape[0] < frame_count or baseline.shape[1] < original_count:
+    observation_frame_count, original_count, _ = observed.shape
+    frame_count = baseline.shape[0]
+    if observation_frame_count < config.train_end_frame:
+        raise ValueError("observations do not cover the selection interval")
+    if baseline.shape[1] < original_count:
         raise ValueError("baseline trajectory does not cover the observations")
-    baseline = baseline[:frame_count]
+    if evaluate_future and observation_frame_count < frame_count:
+        raise ValueError("future evaluation requires complete observations")
+    if gt_track.shape[0] < config.train_end_frame:
+        raise ValueError("tracks do not cover the selection interval")
+    if evaluate_future and gt_track.shape[0] < frame_count:
+        raise ValueError("future evaluation requires complete tracks")
+    if controllers.shape[0] < frame_count:
+        raise ValueError("controller actions do not cover the prediction horizon")
+    usable_observation_count = frame_count if evaluate_future else config.train_end_frame
+    observed = observed[:usable_observation_count]
+    observation_frame_count = len(observed)
+    visible = visible[:observation_frame_count]
+    motion_valid = motion_valid[: max(observation_frame_count - 1, 0)]
+    gt_track = gt_track[:usable_observation_count]
+    controllers = controllers[:frame_count]
     valid = _target_validity(visible, motion_valid)
-    residual = observed - baseline[:, :original_count]
+    residual = observed - baseline[:observation_frame_count, :original_count]
     features = controller_action_features(controllers)
     standardized_fit, _, _ = _standardize_actions(
         features, end_frame=config.fit_end_frame
@@ -146,10 +164,9 @@ def fit_residual_dynamics_baselines(
         baseline[0], original_count, config.interpolation_neighbors
     )
     num_surface_points = original_count + len(np.asarray(data["surface_points"]))
-    intervals = {
-        "validation": (config.fit_end_frame, config.train_end_frame),
-        "test": (config.train_end_frame, frame_count),
-    }
+    intervals = {"validation": (config.fit_end_frame, config.train_end_frame)}
+    if evaluate_future:
+        intervals["test"] = (config.train_end_frame, frame_count)
     baseline_metrics = {
         name: evaluate_official_phystwin_interval(
             baseline,
@@ -343,9 +360,18 @@ def fit_residual_dynamics_baselines(
                 future_count, original_count, 3
             )
 
-        test_metrics, correction = evaluate_tracked(
-            tracked_future, config.train_end_frame, frame_count
+        correction = _lift_residual(
+            tracked_future,
+            baseline.shape[1],
+            lift_indices,
+            lift_weights,
+            maximum_norm=config.maximum_residual_m,
         )
+        test_metrics = None
+        if evaluate_future:
+            test_metrics, _ = evaluate_tracked(
+                tracked_future, config.train_end_frame, frame_count
+            )
         corrected = baseline.copy()
         corrected[config.train_end_frame :] += correction
         method_output = output / method
@@ -360,19 +386,12 @@ def fit_residual_dynamics_baselines(
         model_path = method_output / "model.npz"
         np.savez_compressed(model_path, **artifact)
         correction_norm = np.linalg.norm(correction, axis=2)
-        method_summaries[method] = {
+        method_summary = {
             "selection": {
                 "accepted": accepted,
                 "relative_improvement": validation_improvement,
                 "selected_candidate": selected_candidate,
                 "candidates": candidates[method],
-            },
-            "test": {
-                "baseline_official_evaluation": baseline_metrics["test"],
-                "corrected_official_evaluation": test_metrics,
-                "selection_score_relative_to_baseline": _selection_score(
-                    test_metrics, baseline_metrics["test"]
-                ),
             },
             "correction": {
                 "rms_m": float(np.sqrt(np.mean(np.square(correction_norm)))),
@@ -383,6 +402,16 @@ def fit_residual_dynamics_baselines(
                 "model": str(model_path.resolve()),
             },
         }
+        if evaluate_future:
+            assert test_metrics is not None
+            method_summary["test"] = {
+                "baseline_official_evaluation": baseline_metrics["test"],
+                "corrected_official_evaluation": test_metrics,
+                "selection_score_relative_to_baseline": _selection_score(
+                    test_metrics, baseline_metrics["test"]
+                ),
+            }
+        method_summaries[method] = method_summary
 
     summary: dict[str, object] = {
         "schema_version": 1,
@@ -412,6 +441,7 @@ def fit_residual_dynamics_baselines(
             },
         },
         "methods": method_summaries,
+        "future_metrics_opened": evaluate_future,
     }
     output.mkdir(parents=True, exist_ok=True)
     summary_path = output / "summary.json"

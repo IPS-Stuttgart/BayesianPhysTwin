@@ -49,6 +49,61 @@ def test_spring_overlay_replaces_only_spring_field(tmp_path) -> None:
     assert summary.with_suffix(".json.sha256").is_file()
 
 
+def test_spring_overlay_interpolates_in_log_space(tmp_path) -> None:
+    torch = pytest.importorskip("torch")
+    source = tmp_path / "source.pt"
+    field = tmp_path / "field.npy"
+    torch.save({"spring_Y": torch.tensor([100.0, 400.0])}, source)
+    np.save(field, np.array([400.0, 100.0]), allow_pickle=False)
+
+    result = build_spring_overlay_checkpoint(
+        source,
+        field,
+        tmp_path / "half.pt",
+        strength=0.5,
+    )
+
+    applied = _load(torch, tmp_path / "half.pt")["spring_Y"]
+    torch.testing.assert_close(applied, torch.tensor([200.0, 200.0]))
+    assert result["proposal_strength"] == 0.5
+    assert result["spring_ratio"]["minimum"] == pytest.approx(0.5)
+    assert result["spring_ratio"]["maximum"] == pytest.approx(2.0)
+
+
+def test_zero_strength_is_exact_checkpoint_identity(tmp_path) -> None:
+    torch = pytest.importorskip("torch")
+    source = tmp_path / "source.pt"
+    field = tmp_path / "field.npy"
+    source_values = torch.tensor([100.0, 400.0])
+    torch.save({"spring_Y": source_values}, source)
+    np.save(field, np.array([400.0, 100.0]), allow_pickle=False)
+
+    result = build_spring_overlay_checkpoint(
+        source,
+        field,
+        tmp_path / "identity.pt",
+        strength=0.0,
+    )
+
+    torch.testing.assert_close(
+        _load(torch, tmp_path / "identity.pt")["spring_Y"], source_values
+    )
+    assert result["identity_field"] is True
+
+
+def test_spring_overlay_rejects_invalid_strength(tmp_path) -> None:
+    torch = pytest.importorskip("torch")
+    source = tmp_path / "source.pt"
+    field = tmp_path / "field.npy"
+    torch.save({"spring_Y": torch.ones(2)}, source)
+    np.save(field, np.ones(2), allow_pickle=False)
+
+    with pytest.raises(ValueError, match="strength"):
+        build_spring_overlay_checkpoint(
+            source, field, tmp_path / "output.pt", strength=1.1
+        )
+
+
 @pytest.mark.parametrize(
     "candidate, message",
     [
