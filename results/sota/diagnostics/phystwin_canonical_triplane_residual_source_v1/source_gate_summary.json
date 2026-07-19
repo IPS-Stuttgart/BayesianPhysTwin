@@ -1,0 +1,2740 @@
+{
+  "config": {
+    "adaptation_learning_rate": 0.01,
+    "adaptation_regularization": 0.01,
+    "adaptation_steps": 250,
+    "blend_candidates": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "controller_kernel_fraction": 0.25,
+    "decoder_hidden_dim": 96,
+    "device": "cuda:0",
+    "gradient_clip": 1.0,
+    "grid_resolution": 16,
+    "interpolation_neighbors": 4,
+    "latent_dim": 16,
+    "latent_regularization": 0.001,
+    "learning_rate": 0.0003,
+    "maximum_case_metric_ratio": 1.05,
+    "maximum_residual_m": 0.01,
+    "maximum_training_points": 192,
+    "maximum_velocity_multiplier": 2.0,
+    "meta_training_steps": 1500,
+    "minimum_balanced_improvement": 0.03,
+    "minimum_both_win_folds": 2,
+    "plane_channels": 24,
+    "point_hidden_dim": 64,
+    "rollout_horizon": 12,
+    "seeds": [
+      17,
+      43,
+      101
+    ],
+    "weight_decay": 1e-05
+  },
+  "contract": "source-meta-canonical-triplane-residual-v1",
+  "fold_training": [
+    {
+      "held_out_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "single_lift_cloth",
+        "single_push_rope_4",
+        "single_lift_dinosor",
+        "double_lift_cloth_3"
+      ],
+      "heldout_prefix_adaptation": {
+        "double_lift_cloth_3": [
+          {
+            "initial_loss": 0.001345322234556079,
+            "latent_norm": 0.13659781217575073,
+            "minimum_loss": 0.00022759736748412251,
+            "seed": 17,
+            "terminal_loss": 0.00025295582599937916
+          },
+          {
+            "initial_loss": 0.000594989862293005,
+            "latent_norm": 0.09673665463924408,
+            "minimum_loss": 0.00021350954193621874,
+            "seed": 43,
+            "terminal_loss": 0.0010150596499443054
+          },
+          {
+            "initial_loss": 0.0012695200275629759,
+            "latent_norm": 0.07231210917234421,
+            "minimum_loss": 0.0002139205316780135,
+            "seed": 101,
+            "terminal_loss": 0.0002885653520934284
+          }
+        ],
+        "double_stretch_zebra": [
+          {
+            "initial_loss": 0.014650169759988785,
+            "latent_norm": 0.11304773390293121,
+            "minimum_loss": 0.002073878888040781,
+            "seed": 17,
+            "terminal_loss": 0.0038350566755980253
+          },
+          {
+            "initial_loss": 0.04588807001709938,
+            "latent_norm": 0.1065303161740303,
+            "minimum_loss": 0.001975417835637927,
+            "seed": 43,
+            "terminal_loss": 0.005783258005976677
+          },
+          {
+            "initial_loss": 0.02001688815653324,
+            "latent_norm": 0.1472218781709671,
+            "minimum_loss": 0.001874814392067492,
+            "seed": 101,
+            "terminal_loss": 0.005910609383136034
+          }
+        ],
+        "single_lift_cloth": [
+          {
+            "initial_loss": 0.03267787769436836,
+            "latent_norm": 0.06730719655752182,
+            "minimum_loss": 0.0013502318179234862,
+            "seed": 17,
+            "terminal_loss": 0.00210552173666656
+          },
+          {
+            "initial_loss": 0.01470782607793808,
+            "latent_norm": 0.06878276914358139,
+            "minimum_loss": 0.0013811644166707993,
+            "seed": 43,
+            "terminal_loss": 0.04189866781234741
+          },
+          {
+            "initial_loss": 0.032402921468019485,
+            "latent_norm": 0.062164243310689926,
+            "minimum_loss": 0.0015751940663903952,
+            "seed": 101,
+            "terminal_loss": 0.003475656732916832
+          }
+        ],
+        "single_lift_dinosor": [
+          {
+            "initial_loss": 0.011018741875886917,
+            "latent_norm": 0.25277358293533325,
+            "minimum_loss": 0.0026208129711449146,
+            "seed": 17,
+            "terminal_loss": 0.002719555050134659
+          },
+          {
+            "initial_loss": 0.006121477112174034,
+            "latent_norm": 0.4005179703235626,
+            "minimum_loss": 0.002390096662566066,
+            "seed": 43,
+            "terminal_loss": 0.01652531698346138
+          },
+          {
+            "initial_loss": 0.010402075946331024,
+            "latent_norm": 0.4630955457687378,
+            "minimum_loss": 0.0029836276080459356,
+            "seed": 101,
+            "terminal_loss": 0.0042359293438494205
+          }
+        ],
+        "single_push_rope_4": [
+          {
+            "initial_loss": 0.002738918410614133,
+            "latent_norm": 0.15932439267635345,
+            "minimum_loss": 0.0016454086871817708,
+            "seed": 17,
+            "terminal_loss": 0.002736774506047368
+          },
+          {
+            "initial_loss": 0.002045337576419115,
+            "latent_norm": 0.15279532968997955,
+            "minimum_loss": 0.0016196139622479677,
+            "seed": 43,
+            "terminal_loss": 0.0024957903660833836
+          },
+          {
+            "initial_loss": 0.002562676090747118,
+            "latent_norm": 0.1506129801273346,
+            "minimum_loss": 0.0016920586349442601,
+            "seed": 101,
+            "terminal_loss": 0.0019698936957865953
+          }
+        ],
+        "weird_package": [
+          {
+            "initial_loss": 0.07255503535270691,
+            "latent_norm": 0.9422335624694824,
+            "minimum_loss": 0.028399409726262093,
+            "seed": 17,
+            "terminal_loss": 0.02867240086197853
+          },
+          {
+            "initial_loss": 0.052155751734972,
+            "latent_norm": 0.7125939726829529,
+            "minimum_loss": 0.02794833295047283,
+            "seed": 43,
+            "terminal_loss": 0.07460282742977142
+          },
+          {
+            "initial_loss": 0.07155168801546097,
+            "latent_norm": 1.070834755897522,
+            "minimum_loss": 0.02653316967189312,
+            "seed": 101,
+            "terminal_loss": 0.030971216037869453
+          }
+        ]
+      },
+      "name": "fold_0",
+      "seed_models": [
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_00/model_seed_17.pt",
+            "sha256": "cc7b2fb11d776812b55c1e0b86c9dbb2ac090104429af4c6f1cf58b944666db1"
+          },
+          "initial_loss": 0.03750656917691231,
+          "minimum_loss": 0.00018372471095062792,
+          "seed": 17,
+          "step_count": 1500,
+          "terminal_loss": 0.018507154658436775
+        },
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_00/model_seed_43.pt",
+            "sha256": "cbdc9272b10187c5bfb23bad32a91f46c0f2b3c5361e512a9557348a4ff12346"
+          },
+          "initial_loss": 0.015248971059918404,
+          "minimum_loss": 0.0002104400482494384,
+          "seed": 43,
+          "step_count": 1500,
+          "terminal_loss": 0.003322083270177245
+        },
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_00/model_seed_101.pt",
+            "sha256": "0fbe0db5e162405fbb4b0f713f576821ccd5bf55ac748f589ee6fb12d57262de"
+          },
+          "initial_loss": 0.008058426901698112,
+          "minimum_loss": 0.00019064695516135544,
+          "seed": 101,
+          "step_count": 1500,
+          "terminal_loss": 0.05706559121608734
+        }
+      ],
+      "training_cases": [
+        "double_lift_sloth",
+        "single_lift_sloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "rope_double_hand",
+        "single_push_rope_1",
+        "single_lift_rope",
+        "single_lift_cloth_1",
+        "single_lift_cloth_3",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ]
+    },
+    {
+      "held_out_cases": [
+        "double_lift_sloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "rope_double_hand",
+        "single_lift_rope",
+        "single_lift_cloth_3"
+      ],
+      "heldout_prefix_adaptation": {
+        "double_lift_sloth": [
+          {
+            "initial_loss": 0.008412569761276245,
+            "latent_norm": 0.15074566006660461,
+            "minimum_loss": 0.0010479041375219822,
+            "seed": 17,
+            "terminal_loss": 0.001260685850866139
+          },
+          {
+            "initial_loss": 0.006000073626637459,
+            "latent_norm": 0.33763474225997925,
+            "minimum_loss": 0.0011117241811007261,
+            "seed": 43,
+            "terminal_loss": 0.00925616268068552
+          },
+          {
+            "initial_loss": 0.008234492503106594,
+            "latent_norm": 0.2893795967102051,
+            "minimum_loss": 0.0011660937452688813,
+            "seed": 101,
+            "terminal_loss": 0.002134873764589429
+          }
+        ],
+        "rope_double_hand": [
+          {
+            "initial_loss": 0.013030054047703743,
+            "latent_norm": 0.06365275382995605,
+            "minimum_loss": 0.003670585108920932,
+            "seed": 17,
+            "terminal_loss": 0.005182818975299597
+          },
+          {
+            "initial_loss": 0.01620420627295971,
+            "latent_norm": 0.15375681221485138,
+            "minimum_loss": 0.0036483388394117355,
+            "seed": 43,
+            "terminal_loss": 0.007250708993524313
+          },
+          {
+            "initial_loss": 0.013858119025826454,
+            "latent_norm": 0.11147410422563553,
+            "minimum_loss": 0.0035935561172664165,
+            "seed": 101,
+            "terminal_loss": 0.012319322675466537
+          }
+        ],
+        "single_lift_cloth_3": [
+          {
+            "initial_loss": 0.004485664889216423,
+            "latent_norm": 0.04690287634730339,
+            "minimum_loss": 0.00016695435624569654,
+            "seed": 17,
+            "terminal_loss": 0.0002028400922426954
+          },
+          {
+            "initial_loss": 0.0024903814774006605,
+            "latent_norm": 0.0660276710987091,
+            "minimum_loss": 0.0001673342485446483,
+            "seed": 43,
+            "terminal_loss": 0.00883037131279707
+          },
+          {
+            "initial_loss": 0.004465531557798386,
+            "latent_norm": 0.14138217270374298,
+            "minimum_loss": 0.00017156961257569492,
+            "seed": 101,
+            "terminal_loss": 0.0005522695137187839
+          }
+        ],
+        "single_lift_cloth_4": [
+          {
+            "initial_loss": 0.031620368361473083,
+            "latent_norm": 0.07396411150693893,
+            "minimum_loss": 0.0013011780101805925,
+            "seed": 17,
+            "terminal_loss": 0.0021552250254899263
+          },
+          {
+            "initial_loss": 0.010933308862149715,
+            "latent_norm": 0.18925882875919342,
+            "minimum_loss": 0.0013253827346488833,
+            "seed": 43,
+            "terminal_loss": 0.03944220393896103
+          },
+          {
+            "initial_loss": 0.03005729801952839,
+            "latent_norm": 0.06084756925702095,
+            "minimum_loss": 0.001446159672923386,
+            "seed": 101,
+            "terminal_loss": 0.0016744472086429596
+          }
+        ],
+        "single_lift_rope": [
+          {
+            "initial_loss": 0.006881085690110922,
+            "latent_norm": 0.3238189220428467,
+            "minimum_loss": 0.003410933306440711,
+            "seed": 17,
+            "terminal_loss": 0.0036597915459424257
+          },
+          {
+            "initial_loss": 0.00535936513915658,
+            "latent_norm": 0.22649767994880676,
+            "minimum_loss": 0.003566727042198181,
+            "seed": 43,
+            "terminal_loss": 0.0073454612866044044
+          },
+          {
+            "initial_loss": 0.006573543883860111,
+            "latent_norm": 0.3882715404033661,
+            "minimum_loss": 0.003747283946722746,
+            "seed": 101,
+            "terminal_loss": 0.004289190750569105
+          }
+        ],
+        "single_lift_zebra": [
+          {
+            "initial_loss": 0.0026877180207520723,
+            "latent_norm": 0.08479952067136765,
+            "minimum_loss": 0.0013310926733538508,
+            "seed": 17,
+            "terminal_loss": 0.0013980300864204764
+          },
+          {
+            "initial_loss": 0.0030938165728002787,
+            "latent_norm": 0.14495694637298584,
+            "minimum_loss": 0.001390772988088429,
+            "seed": 43,
+            "terminal_loss": 0.0027547830250114202
+          },
+          {
+            "initial_loss": 0.0030195428989827633,
+            "latent_norm": 0.12703272700309753,
+            "minimum_loss": 0.0013669350882992148,
+            "seed": 101,
+            "terminal_loss": 0.0019504858646541834
+          }
+        ]
+      },
+      "name": "fold_1",
+      "seed_models": [
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_01/model_seed_17.pt",
+            "sha256": "4f34f8df4219ea2d51bd3d81b8132f2f8891964d20418d2396372fc204f68fb1"
+          },
+          "initial_loss": 0.1388498693704605,
+          "minimum_loss": 0.00020632075029425323,
+          "seed": 17,
+          "step_count": 1500,
+          "terminal_loss": 0.055274441838264465
+        },
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_01/model_seed_43.pt",
+            "sha256": "2154d5e8897cf34812557f33db6869440c311d3df276e2c322de199804e5b79a"
+          },
+          "initial_loss": 0.12389735132455826,
+          "minimum_loss": 0.0003588367544580251,
+          "seed": 43,
+          "step_count": 1500,
+          "terminal_loss": 0.03627884015440941
+        },
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_01/model_seed_101.pt",
+            "sha256": "d2d325ad73aecdd2c76bc38e4c4f3f3554d3a07498073ca3f900645e0344df6b"
+          },
+          "initial_loss": 0.10125616937875748,
+          "minimum_loss": 0.00029046201962046325,
+          "seed": 101,
+          "step_count": 1500,
+          "terminal_loss": 0.10572905838489532
+        }
+      ],
+      "training_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "single_lift_sloth",
+        "single_lift_cloth",
+        "single_push_rope_4",
+        "single_lift_dinosor",
+        "single_push_rope_1",
+        "single_lift_cloth_1",
+        "double_lift_cloth_3",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ]
+    },
+    {
+      "held_out_cases": [
+        "single_lift_sloth",
+        "single_push_rope_1",
+        "single_lift_cloth_1",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ],
+      "heldout_prefix_adaptation": {
+        "double_stretch_sloth": [
+          {
+            "initial_loss": 0.016689112409949303,
+            "latent_norm": 0.14412398636341095,
+            "minimum_loss": 0.0033463204745203257,
+            "seed": 17,
+            "terminal_loss": 0.007905129343271255
+          },
+          {
+            "initial_loss": 0.01436543744057417,
+            "latent_norm": 0.36851736903190613,
+            "minimum_loss": 0.0032016909681260586,
+            "seed": 43,
+            "terminal_loss": 0.014143064618110657
+          },
+          {
+            "initial_loss": 0.016151832416653633,
+            "latent_norm": 0.17271961271762848,
+            "minimum_loss": 0.0031078325118869543,
+            "seed": 101,
+            "terminal_loss": 0.003218156984075904
+          }
+        ],
+        "single_lift_cloth_1": [
+          {
+            "initial_loss": 0.017854610458016396,
+            "latent_norm": 0.20112408697605133,
+            "minimum_loss": 0.0011700763134285808,
+            "seed": 17,
+            "terminal_loss": 0.0015151753323152661
+          },
+          {
+            "initial_loss": 0.008248813450336456,
+            "latent_norm": 0.4112387001514435,
+            "minimum_loss": 0.0010721797589212656,
+            "seed": 43,
+            "terminal_loss": 0.03405800461769104
+          },
+          {
+            "initial_loss": 0.014163617044687271,
+            "latent_norm": 0.21256639063358307,
+            "minimum_loss": 0.001001743832603097,
+            "seed": 101,
+            "terminal_loss": 0.002236094791442156
+          }
+        ],
+        "single_lift_sloth": [
+          {
+            "initial_loss": 0.003101373789831996,
+            "latent_norm": 0.10426881909370422,
+            "minimum_loss": 0.0005975848180241883,
+            "seed": 17,
+            "terminal_loss": 0.0006000798894092441
+          },
+          {
+            "initial_loss": 0.0016826146747916937,
+            "latent_norm": 0.19600366055965424,
+            "minimum_loss": 0.0005833932664245367,
+            "seed": 43,
+            "terminal_loss": 0.0037530018016695976
+          },
+          {
+            "initial_loss": 0.0032271561212837696,
+            "latent_norm": 0.15131676197052002,
+            "minimum_loss": 0.0005745482631027699,
+            "seed": 101,
+            "terminal_loss": 0.0008026747382245958
+          }
+        ],
+        "single_push_rope": [
+          {
+            "initial_loss": 0.007777491118758917,
+            "latent_norm": 0.08456413447856903,
+            "minimum_loss": 0.005936982575803995,
+            "seed": 17,
+            "terminal_loss": 0.006847952492535114
+          },
+          {
+            "initial_loss": 0.0067385109141469,
+            "latent_norm": 0.10990185290575027,
+            "minimum_loss": 0.00583656458184123,
+            "seed": 43,
+            "terminal_loss": 0.007985475473105907
+          },
+          {
+            "initial_loss": 0.009086612612009048,
+            "latent_norm": 0.14875583350658417,
+            "minimum_loss": 0.0058806948363780975,
+            "seed": 101,
+            "terminal_loss": 0.008450593799352646
+          }
+        ],
+        "single_push_rope_1": [
+          {
+            "initial_loss": 0.0020904848352074623,
+            "latent_norm": 0.041069213300943375,
+            "minimum_loss": 0.0012889271602034569,
+            "seed": 17,
+            "terminal_loss": 0.001298041781410575
+          },
+          {
+            "initial_loss": 0.0017610054928809404,
+            "latent_norm": 0.012067084200680256,
+            "minimum_loss": 0.0013195796636864543,
+            "seed": 43,
+            "terminal_loss": 0.0021990120876580477
+          },
+          {
+            "initial_loss": 0.002299829851835966,
+            "latent_norm": 0.07727018743753433,
+            "minimum_loss": 0.0012809793697670102,
+            "seed": 101,
+            "terminal_loss": 0.001877018716186285
+          }
+        ]
+      },
+      "name": "fold_2",
+      "seed_models": [
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_02/model_seed_17.pt",
+            "sha256": "3df2df6812a789392e0dda062848ba8342544351e1dc412aab136ac3f2d4e495"
+          },
+          "initial_loss": 0.1388498693704605,
+          "minimum_loss": 0.0001986718998523429,
+          "seed": 17,
+          "step_count": 1500,
+          "terminal_loss": 0.027772748842835426
+        },
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_02/model_seed_43.pt",
+            "sha256": "03bfe70979f0f8ad58cc39e014bb88b33c682938140099dd026b979271d1f61a"
+          },
+          "initial_loss": 0.12389735132455826,
+          "minimum_loss": 0.00018296620692126453,
+          "seed": 43,
+          "step_count": 1500,
+          "terminal_loss": 0.0067366366274654865
+        },
+        {
+          "checkpoint": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-canonical-triplane-residual-v1/source_gate_v1b/fold_02/model_seed_101.pt",
+            "sha256": "ebe7bcf3c11d47a5c0bdff3b15d52b6d98e6dc67f86a647a08c19887f8137ba9"
+          },
+          "initial_loss": 0.10125616937875748,
+          "minimum_loss": 0.00020399974891915917,
+          "seed": 101,
+          "step_count": 1500,
+          "terminal_loss": 0.06372037529945374
+        }
+      ],
+      "training_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "double_lift_sloth",
+        "single_lift_cloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "single_push_rope_4",
+        "rope_double_hand",
+        "single_lift_dinosor",
+        "single_lift_rope",
+        "double_lift_cloth_3",
+        "single_lift_cloth_3"
+      ]
+    }
+  ],
+  "information_boundary": "Complete outcomes supervise only non-held-out source interactions. Each held-out source model adapts only a case latent on [0, fit_end), and is scored on [fit_end, train_end). No target artifact is read.",
+  "protocol": {
+    "path": "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/configs/sota/phystwin_canonical_triplane_residual_source_v1.json",
+    "sha256": "7934296b41432f2772b71a57a76921ac951f2564dd950bd508a6d25ddbe712eb"
+  },
+  "schema_version": 1,
+  "selection": {
+    "candidates": [
+      {
+        "aggregate_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0052092119558826,
+          "track_error_m": 1.0007053653696034
+        },
+        "balanced_improvement": -0.0029572886627429185,
+        "blend": 0.25,
+        "both_win_fold_count": 0,
+        "case_results": [
+          {
+            "case": "weird_package",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.015520482618571788,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03935629050480196
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.015520001304595547,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03930703321765421
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0000310124958622,
+              "track_error_m": 1.0012531418200654
+            }
+          },
+          {
+            "case": "double_stretch_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004696866270300792,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008433605482846433
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0044992674056897825,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008231211516987948
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0439180085987168,
+              "track_error_m": 1.0245885997997715
+            }
+          },
+          {
+            "case": "single_lift_cloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.01671580019523945,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04675875893441124
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.016688615686192915,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04676190960810111
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0016289253439412,
+              "track_error_m": 0.9999326230747146
+            }
+          },
+          {
+            "case": "single_push_rope_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.002838400371495432,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008691630284893727
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0028142085627815725,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008731446383256994
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0085963098235862,
+              "track_error_m": 0.995439919502957
+            }
+          },
+          {
+            "case": "single_lift_dinosor",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005188682179411115,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009648480455304498
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005294106231134803,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009781769007987091
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9800865250675014,
+              "track_error_m": 0.986373778344821
+            }
+          },
+          {
+            "case": "double_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004203438003825296,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.0036367291400628186
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00404757797090477,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.003695393192867669
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.03850698715155,
+              "track_error_m": 0.98412508500636
+            }
+          },
+          {
+            "case": "double_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.006491412687627809,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.011948507319851543
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006476126140755265,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.011946587223513501
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0023604461278701,
+              "track_error_m": 1.000160723418506
+            }
+          },
+          {
+            "case": "single_lift_cloth_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.008875233930791987,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022669306778988388
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.008893173214547337,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022670918454890627
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9979828028395977,
+              "track_error_m": 0.9999289099863579
+            }
+          },
+          {
+            "case": "single_lift_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0037377026173819362,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.00735415795183883
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.003760031831254129,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.0073100189539000784
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.994061429563817,
+              "track_error_m": 1.006038150956531
+            }
+          },
+          {
+            "case": "rope_double_hand",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0045887899402945655,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.010871126887233993
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004530670075658471,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.010744944235931425
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.012828094667133,
+              "track_error_m": 1.0117434440358108
+            }
+          },
+          {
+            "case": "single_lift_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.003968013901865385,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009443331198401902
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0039620137978230345,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009447984930589851
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0015144076594702,
+              "track_error_m": 0.9995074365357123
+            }
+          },
+          {
+            "case": "single_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.006228135624503659,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01600642762410908
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006220548530461561,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01601389748199342
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.001219682477348,
+              "track_error_m": 0.9995335390467724
+            }
+          },
+          {
+            "case": "single_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005589189045670834,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008307747060699514
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005598120743557204,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008339315238347803
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.998404518534787,
+              "track_error_m": 0.9962145359965378
+            }
+          },
+          {
+            "case": "single_push_rope_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0033549401778943193,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005091379518245599
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0033321377741497523,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005027194425689177
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0068431755497822,
+              "track_error_m": 1.0127675771258087
+            }
+          },
+          {
+            "case": "single_lift_cloth_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.009317328014864125,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.01393586898054371
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.009375917010171209,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.013929170918207954
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9937511183979632,
+              "track_error_m": 1.000480865830069
+            }
+          },
+          {
+            "case": "double_stretch_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004689988646608722,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007787507551442796
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004637649129269838,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007801137854014575
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.011285786371494,
+              "track_error_m": 0.998252780193499
+            }
+          },
+          {
+            "case": "single_push_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0038246335809593536,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008240290462954634
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00384177800482685,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008276291498303112
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9955373725795826,
+              "track_error_m": 0.9956501006089672
+            }
+          }
+        ],
+        "fold_results": [
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0121279614135263,
+              "track_error_m": 0.9986188579247816
+            },
+            "both_metrics_improve": false,
+            "name": "fold_0"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.001661143889206,
+              "track_error_m": 1.0028187006632816
+            },
+            "both_metrics_improve": false,
+            "name": "fold_1"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0011643942867219,
+              "track_error_m": 1.0006731719509763
+            },
+            "both_metrics_improve": false,
+            "name": "fold_2"
+          }
+        ],
+        "maximum_case_metric_ratio": 1.0439180085987168
+      },
+      {
+        "aggregate_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0134244218088322,
+          "track_error_m": 1.0027750687346435
+        },
+        "balanced_improvement": -0.008099745271737735,
+        "blend": 0.5,
+        "both_win_fold_count": 0,
+        "case_results": [
+          {
+            "case": "weird_package",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.015520882087852452,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.039407158930011885
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.015520001304595547,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03930703321765421
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0000567514937415,
+              "track_error_m": 1.0025472721841724
+            }
+          },
+          {
+            "case": "double_stretch_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004956757740751796,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008672047355774367
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0044992674056897825,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008231211516987948
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.1016810724526998,
+              "track_error_m": 1.0535566165292438
+            }
+          },
+          {
+            "case": "single_lift_cloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.016752641075490748,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04675259168608386
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.016688615686192915,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04676190960810111
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0038364709513206,
+              "track_error_m": 0.9998007369225222
+            }
+          },
+          {
+            "case": "single_push_rope_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.002867282183022907,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008653075579678652
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0028142085627815725,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008731446383256994
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0188591637959044,
+              "track_error_m": 0.9910243045495163
+            }
+          },
+          {
+            "case": "single_lift_dinosor",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0050990843273207775,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009526705777223764
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005294106231134803,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009781769007987091
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9631624498452457,
+              "track_error_m": 0.9739246315717474
+            }
+          },
+          {
+            "case": "double_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0043757718043110705,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.0036181617058653006
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00404757797090477,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.003695393192867669
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0810840052410253,
+              "track_error_m": 0.9791006036512083
+            }
+          },
+          {
+            "case": "double_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.006511203307388655,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.011969995243921432
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006476126140755265,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.011946587223513501
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0054163810078751,
+              "track_error_m": 1.0019593897378374
+            }
+          },
+          {
+            "case": "single_lift_cloth_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.008852129313168183,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022662561660729854
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.008893173214547337,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022670918454890627
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.995384785566527,
+              "track_error_m": 0.9996313870486808
+            }
+          },
+          {
+            "case": "single_lift_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.003717940017409879,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.007400568526617114
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.003760031831254129,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.0073100189539000784
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9888054634286938,
+              "track_error_m": 1.0123870503329853
+            }
+          },
+          {
+            "case": "rope_double_hand",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004705794450130027,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.011001035005161572
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004530670075658471,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.010744944235931425
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.03865308476387,
+              "track_error_m": 1.0238336061692876
+            }
+          },
+          {
+            "case": "single_lift_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.003978976757072793,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009441345726968897
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0039620137978230345,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009447984930589851
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.004281398328062,
+              "track_error_m": 0.9992972889277735
+            }
+          },
+          {
+            "case": "single_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.006239058291007001,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.016001332094929432
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006220548530461561,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01601389748199342
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0029755833355851,
+              "track_error_m": 0.9992153448541733
+            }
+          },
+          {
+            "case": "single_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.00558432754636642,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008278580552131957
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005598120743557204,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008339315238347803
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9975361022345475,
+              "track_error_m": 0.9927170655527493
+            }
+          },
+          {
+            "case": "single_push_rope_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0033814144544171846,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005158852292468303
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0033321377741497523,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005027194425689177
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0147883081695221,
+              "track_error_m": 1.0261891336659568
+            }
+          },
+          {
+            "case": "single_lift_cloth_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.009252421607247523,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.013952284834584222
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.009375917010171209,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.013929170918207954
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9868284453894254,
+              "track_error_m": 1.0016593892423313
+            }
+          },
+          {
+            "case": "double_stretch_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004792121305210933,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007793117188957498
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004637649129269838,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007801137854014575
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0333082929810637,
+              "track_error_m": 0.9989718595918735
+            }
+          },
+          {
+            "case": "single_push_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0038093434550419553,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.00820478837823114
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00384177800482685,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008276291498303112
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.991557411765036,
+              "track_error_m": 0.9913604879568787
+            }
+          }
+        ],
+        "fold_results": [
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.028113318963323,
+              "track_error_m": 0.9999923609014015
+            },
+            "both_metrics_improve": false,
+            "name": "fold_0"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0059194494051023,
+              "track_error_m": 1.0060540111784564
+            },
+            "both_metrics_improve": false,
+            "name": "fold_1"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0048037121079187,
+              "track_error_m": 1.0021795872019579
+            },
+            "both_metrics_improve": false,
+            "name": "fold_2"
+          }
+        ],
+        "maximum_case_metric_ratio": 1.1016810724526998
+      },
+      {
+        "aggregate_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0234018737886024,
+          "track_error_m": 1.0062967736804762
+        },
+        "balanced_improvement": -0.014849323734539288,
+        "blend": 0.75,
+        "both_win_fold_count": 0,
+        "case_results": [
+          {
+            "case": "weird_package",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.015516611211597657,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03946420626843132
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.015520001304595547,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03930703321765421
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9997815661911778,
+              "track_error_m": 1.0039985986707975
+            }
+          },
+          {
+            "case": "double_stretch_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005237163303973978,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008943209786510291
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0044992674056897825,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008231211516987948
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.1640035658585333,
+              "track_error_m": 1.0864998145234015
+            }
+          },
+          {
+            "case": "single_lift_cloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.016808132372192336,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.046754604522790545
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.016688615686192915,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04676190960810111
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0071615697938505,
+              "track_error_m": 0.9998437812875525
+            }
+          },
+          {
+            "case": "single_push_rope_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.002899782635096856,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008615805761448245
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0028142085627815725,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008731446383256994
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0304078643804215,
+              "track_error_m": 0.9867558458549897
+            }
+          },
+          {
+            "case": "single_lift_dinosor",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.00503068197803815,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009393188760025406
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005294106231134803,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009781769007987091
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9502419782309152,
+              "track_error_m": 0.9602750537612983
+            }
+          },
+          {
+            "case": "double_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004557399828224449,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.0036276201067571463
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00404757797090477,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.003695393192867669
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.1259572665392577,
+              "track_error_m": 0.9816601150206888
+            }
+          },
+          {
+            "case": "double_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0065425498469055,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.012072221192713577
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006476126140755265,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.011946587223513501
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.010256703576575,
+              "track_error_m": 1.010516306192684
+            }
+          },
+          {
+            "case": "single_lift_cloth_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.008819690686865585,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022648909570993477
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.008893173214547337,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022670918454890627
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9917371981958532,
+              "track_error_m": 0.9990292019292936
+            }
+          },
+          {
+            "case": "single_lift_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.003700636919351536,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.007449226217873746
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.003760031831254129,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.0073100189539000784
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.984203614605363,
+              "track_error_m": 1.0190433519873976
+            }
+          },
+          {
+            "case": "rope_double_hand",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004851258623605857,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.011137438864320613
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004530670075658471,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.010744944235931425
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.070759632150172,
+              "track_error_m": 1.0365283076180771
+            }
+          },
+          {
+            "case": "single_lift_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.00399208624642346,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009442067901799574
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0039620137978230345,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009447984930589851
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.007590192799669,
+              "track_error_m": 0.9993737258437914
+            }
+          },
+          {
+            "case": "single_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0062545617690700165,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01600088420762346
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006220548530461561,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01601389748199342
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0054678841330302,
+              "track_error_m": 0.9991873761909247
+            }
+          },
+          {
+            "case": "single_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005584016467125582,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008251629433178542
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005598120743557204,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008339315238347803
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9974805337223469,
+              "track_error_m": 0.9894852511671409
+            }
+          },
+          {
+            "case": "single_push_rope_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0034106655895447175,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.00522932587880367
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0033321377741497523,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005027194425689177
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0235667972687603,
+              "track_error_m": 1.0402076060718068
+            }
+          },
+          {
+            "case": "single_lift_cloth_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.009181740704816952,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.013981391346013988
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.009375917010171209,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.013929170918207954
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9792898865099158,
+              "track_error_m": 1.0037489975614968
+            }
+          },
+          {
+            "case": "double_stretch_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004923547079871968,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007831363101429359
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004637649129269838,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007801137854014575
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0616471713648468,
+              "track_error_m": 1.0038744665176285
+            }
+          },
+          {
+            "case": "single_push_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0037967463315057154,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008168843322090244
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00384177800482685,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008276291498303112
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9882784290855545,
+              "track_error_m": 0.9870173523691259
+            }
+          }
+        ],
+        "fold_results": [
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.046258968499026,
+              "track_error_m": 1.0031722015197881
+            },
+            "both_metrics_improve": false,
+            "name": "fold_0"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0116692042434436,
+              "track_error_m": 1.0106130449603614
+            },
+            "both_metrics_improve": false,
+            "name": "fold_1"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.010052563590285,
+              "track_error_m": 1.0048667347374398
+            },
+            "both_metrics_improve": false,
+            "name": "fold_2"
+          }
+        ],
+        "maximum_case_metric_ratio": 1.1640035658585333
+      },
+      {
+        "aggregate_ratios_relative_to_persistence": {
+          "chamfer_distance_m": 1.0360488762833637,
+          "track_error_m": 1.012043978664817
+        },
+        "balanced_improvement": -0.02404642747409036,
+        "blend": 1.0,
+        "both_win_fold_count": 0,
+        "case_results": [
+          {
+            "case": "weird_package",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.015555945923564301,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03958247352683103
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.015520001304595547,
+              "frame_count": 7,
+              "frame_end_exclusive": 27,
+              "frame_start": 20,
+              "track_error_m": 0.03930703321765421
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0023160190687683,
+              "track_error_m": 1.0070074052053644
+            }
+          },
+          {
+            "case": "double_stretch_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005518740046218957,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.009240825647829807
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0044992674056897825,
+              "frame_count": 35,
+              "frame_end_exclusive": 138,
+              "frame_start": 103,
+              "track_error_m": 0.008231211516987948
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.2265863636466565,
+              "track_error_m": 1.1226568080237243
+            }
+          },
+          {
+            "case": "single_lift_cloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.016972597452262206,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04681434219151505
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.016688615686192915,
+              "frame_count": 31,
+              "frame_end_exclusive": 121,
+              "frame_start": 90,
+              "track_error_m": 0.04676190960810111
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0170164962396635,
+              "track_error_m": 1.001121266942547
+            }
+          },
+          {
+            "case": "single_push_rope_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0029346091481923424,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008579278281154247
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0028142085627815725,
+              "frame_count": 15,
+              "frame_end_exclusive": 58,
+              "frame_start": 43,
+              "track_error_m": 0.008731446383256994
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.042783106768663,
+              "track_error_m": 0.9825724060569693
+            }
+          },
+          {
+            "case": "single_lift_dinosor",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004984801539376948,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.00925858112941273
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005294106231134803,
+              "frame_count": 15,
+              "frame_end_exclusive": 60,
+              "frame_start": 45,
+              "track_error_m": 0.009781769007987091
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9415756544629149,
+              "track_error_m": 0.9465139814539515
+            }
+          },
+          {
+            "case": "double_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004741130613031221,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.0036582677126911537
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00404757797090477,
+              "frame_count": 21,
+              "frame_end_exclusive": 82,
+              "frame_start": 61,
+              "track_error_m": 0.003695393192867669
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.1713500387421614,
+              "track_error_m": 0.9899535778092113
+            }
+          },
+          {
+            "case": "double_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.006615585917900135,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.012409665024432864
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006476126140755265,
+              "frame_count": 11,
+              "frame_end_exclusive": 43,
+              "frame_start": 32,
+              "track_error_m": 0.011946587223513501
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0215344442207863,
+              "track_error_m": 1.0387623504734411
+            }
+          },
+          {
+            "case": "single_lift_cloth_4",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.008792275490319603,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022590639905030557
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.008893173214547337,
+              "frame_count": 30,
+              "frame_end_exclusive": 120,
+              "frame_start": 90,
+              "track_error_m": 0.022670918454890627
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9886544744160962,
+              "track_error_m": 0.9964589634945843
+            }
+          },
+          {
+            "case": "single_lift_zebra",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0036854931749250724,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.007500110375569309
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.003760031831254129,
+              "frame_count": 12,
+              "frame_end_exclusive": 46,
+              "frame_start": 34,
+              "track_error_m": 0.0073100189539000784
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9801760570989116,
+              "track_error_m": 1.0260042310243003
+            }
+          },
+          {
+            "case": "rope_double_hand",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005020151314236987,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.011285687475960827
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004530670075658471,
+              "frame_count": 46,
+              "frame_end_exclusive": 184,
+              "frame_start": 138,
+              "track_error_m": 0.010744944235931425
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.108037272722264,
+              "track_error_m": 1.0503253649489535
+            }
+          },
+          {
+            "case": "single_lift_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.004007677109887158,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009445144300897178
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0039620137978230345,
+              "frame_count": 9,
+              "frame_end_exclusive": 35,
+              "frame_start": 26,
+              "track_error_m": 0.009447984930589851
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0115252784049398,
+              "track_error_m": 0.999699340154166
+            }
+          },
+          {
+            "case": "single_lift_cloth_3",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.006284750995961262,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01595745828859899
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.006220548530461561,
+              "frame_count": 28,
+              "frame_end_exclusive": 109,
+              "frame_start": 81,
+              "track_error_m": 0.01601389748199342
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0103210295981626,
+              "track_error_m": 0.9964756116705572
+            }
+          },
+          {
+            "case": "single_lift_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005589039458456609,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008219942326657447
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.005598120743557204,
+              "frame_count": 15,
+              "frame_end_exclusive": 59,
+              "frame_start": 44,
+              "track_error_m": 0.008339315238347803
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9983777975651835,
+              "track_error_m": 0.9856855259360592
+            }
+          },
+          {
+            "case": "single_push_rope_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0034412547178846887,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005302470447488399
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.0033321377741497523,
+              "frame_count": 16,
+              "frame_end_exclusive": 64,
+              "frame_start": 48,
+              "track_error_m": 0.005027194425689177
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0327468283518917,
+              "track_error_m": 1.054757385231124
+            }
+          },
+          {
+            "case": "single_lift_cloth_1",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0091413943258004,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.014067742147465454
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.009375917010171209,
+              "frame_count": 20,
+              "frame_end_exclusive": 77,
+              "frame_start": 57,
+              "track_error_m": 0.013929170918207954
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9749866936624553,
+              "track_error_m": 1.0099482754624227
+            }
+          },
+          {
+            "case": "double_stretch_sloth",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.005094911096176905,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.00791603188304102
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.004637649129269838,
+              "frame_count": 34,
+              "frame_end_exclusive": 134,
+              "frame_start": 100,
+              "track_error_m": 0.007801137854014575
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0985977925801083,
+              "track_error_m": 1.0147278552406709
+            }
+          },
+          {
+            "case": "single_push_rope",
+            "dynamic_official_evaluation": {
+              "chamfer_distance_m": 0.0037889364585344627,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008127957910789763
+            },
+            "persistence_official_evaluation": {
+              "chamfer_distance_m": 0.00384177800482685,
+              "frame_count": 10,
+              "frame_end_exclusive": 40,
+              "frame_start": 30,
+              "track_error_m": 0.008276291498303112
+            },
+            "ratios_relative_to_persistence": {
+              "chamfer_distance_m": 0.9862455492675536,
+              "track_error_m": 0.9820772881738443
+            }
+          }
+        ],
+        "fold_results": [
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.066937946488138,
+              "track_error_m": 1.0083042409152945
+            },
+            "both_metrics_improve": false,
+            "name": "fold_0"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.02004142607686,
+              "track_error_m": 1.0179543102943336
+            },
+            "both_metrics_improve": false,
+            "name": "fold_1"
+          },
+          {
+            "aggregate_ratios_relative_to_persistence": {
+              "chamfer_distance_m": 1.0181909322854383,
+              "track_error_m": 1.0094392660088243
+            },
+            "both_metrics_improve": false,
+            "name": "fold_2"
+          }
+        ],
+        "maximum_case_metric_ratio": 1.2265863636466565
+      }
+    ],
+    "selected_candidate": {
+      "aggregate_ratios_relative_to_persistence": {
+        "chamfer_distance_m": 1.0052092119558826,
+        "track_error_m": 1.0007053653696034
+      },
+      "balanced_improvement": -0.0029572886627429185,
+      "blend": 0.25,
+      "both_win_fold_count": 0,
+      "case_results": [
+        {
+          "case": "weird_package",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.015520482618571788,
+            "frame_count": 7,
+            "frame_end_exclusive": 27,
+            "frame_start": 20,
+            "track_error_m": 0.03935629050480196
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.015520001304595547,
+            "frame_count": 7,
+            "frame_end_exclusive": 27,
+            "frame_start": 20,
+            "track_error_m": 0.03930703321765421
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0000310124958622,
+            "track_error_m": 1.0012531418200654
+          }
+        },
+        {
+          "case": "double_stretch_zebra",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.004696866270300792,
+            "frame_count": 35,
+            "frame_end_exclusive": 138,
+            "frame_start": 103,
+            "track_error_m": 0.008433605482846433
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.0044992674056897825,
+            "frame_count": 35,
+            "frame_end_exclusive": 138,
+            "frame_start": 103,
+            "track_error_m": 0.008231211516987948
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0439180085987168,
+            "track_error_m": 1.0245885997997715
+          }
+        },
+        {
+          "case": "single_lift_cloth",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.01671580019523945,
+            "frame_count": 31,
+            "frame_end_exclusive": 121,
+            "frame_start": 90,
+            "track_error_m": 0.04675875893441124
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.016688615686192915,
+            "frame_count": 31,
+            "frame_end_exclusive": 121,
+            "frame_start": 90,
+            "track_error_m": 0.04676190960810111
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0016289253439412,
+            "track_error_m": 0.9999326230747146
+          }
+        },
+        {
+          "case": "single_push_rope_4",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.002838400371495432,
+            "frame_count": 15,
+            "frame_end_exclusive": 58,
+            "frame_start": 43,
+            "track_error_m": 0.008691630284893727
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.0028142085627815725,
+            "frame_count": 15,
+            "frame_end_exclusive": 58,
+            "frame_start": 43,
+            "track_error_m": 0.008731446383256994
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0085963098235862,
+            "track_error_m": 0.995439919502957
+          }
+        },
+        {
+          "case": "single_lift_dinosor",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.005188682179411115,
+            "frame_count": 15,
+            "frame_end_exclusive": 60,
+            "frame_start": 45,
+            "track_error_m": 0.009648480455304498
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.005294106231134803,
+            "frame_count": 15,
+            "frame_end_exclusive": 60,
+            "frame_start": 45,
+            "track_error_m": 0.009781769007987091
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 0.9800865250675014,
+            "track_error_m": 0.986373778344821
+          }
+        },
+        {
+          "case": "double_lift_cloth_3",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.004203438003825296,
+            "frame_count": 21,
+            "frame_end_exclusive": 82,
+            "frame_start": 61,
+            "track_error_m": 0.0036367291400628186
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.00404757797090477,
+            "frame_count": 21,
+            "frame_end_exclusive": 82,
+            "frame_start": 61,
+            "track_error_m": 0.003695393192867669
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.03850698715155,
+            "track_error_m": 0.98412508500636
+          }
+        },
+        {
+          "case": "double_lift_sloth",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.006491412687627809,
+            "frame_count": 11,
+            "frame_end_exclusive": 43,
+            "frame_start": 32,
+            "track_error_m": 0.011948507319851543
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.006476126140755265,
+            "frame_count": 11,
+            "frame_end_exclusive": 43,
+            "frame_start": 32,
+            "track_error_m": 0.011946587223513501
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0023604461278701,
+            "track_error_m": 1.000160723418506
+          }
+        },
+        {
+          "case": "single_lift_cloth_4",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.008875233930791987,
+            "frame_count": 30,
+            "frame_end_exclusive": 120,
+            "frame_start": 90,
+            "track_error_m": 0.022669306778988388
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.008893173214547337,
+            "frame_count": 30,
+            "frame_end_exclusive": 120,
+            "frame_start": 90,
+            "track_error_m": 0.022670918454890627
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 0.9979828028395977,
+            "track_error_m": 0.9999289099863579
+          }
+        },
+        {
+          "case": "single_lift_zebra",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.0037377026173819362,
+            "frame_count": 12,
+            "frame_end_exclusive": 46,
+            "frame_start": 34,
+            "track_error_m": 0.00735415795183883
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.003760031831254129,
+            "frame_count": 12,
+            "frame_end_exclusive": 46,
+            "frame_start": 34,
+            "track_error_m": 0.0073100189539000784
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 0.994061429563817,
+            "track_error_m": 1.006038150956531
+          }
+        },
+        {
+          "case": "rope_double_hand",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.0045887899402945655,
+            "frame_count": 46,
+            "frame_end_exclusive": 184,
+            "frame_start": 138,
+            "track_error_m": 0.010871126887233993
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.004530670075658471,
+            "frame_count": 46,
+            "frame_end_exclusive": 184,
+            "frame_start": 138,
+            "track_error_m": 0.010744944235931425
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.012828094667133,
+            "track_error_m": 1.0117434440358108
+          }
+        },
+        {
+          "case": "single_lift_rope",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.003968013901865385,
+            "frame_count": 9,
+            "frame_end_exclusive": 35,
+            "frame_start": 26,
+            "track_error_m": 0.009443331198401902
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.0039620137978230345,
+            "frame_count": 9,
+            "frame_end_exclusive": 35,
+            "frame_start": 26,
+            "track_error_m": 0.009447984930589851
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0015144076594702,
+            "track_error_m": 0.9995074365357123
+          }
+        },
+        {
+          "case": "single_lift_cloth_3",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.006228135624503659,
+            "frame_count": 28,
+            "frame_end_exclusive": 109,
+            "frame_start": 81,
+            "track_error_m": 0.01600642762410908
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.006220548530461561,
+            "frame_count": 28,
+            "frame_end_exclusive": 109,
+            "frame_start": 81,
+            "track_error_m": 0.01601389748199342
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.001219682477348,
+            "track_error_m": 0.9995335390467724
+          }
+        },
+        {
+          "case": "single_lift_sloth",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.005589189045670834,
+            "frame_count": 15,
+            "frame_end_exclusive": 59,
+            "frame_start": 44,
+            "track_error_m": 0.008307747060699514
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.005598120743557204,
+            "frame_count": 15,
+            "frame_end_exclusive": 59,
+            "frame_start": 44,
+            "track_error_m": 0.008339315238347803
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 0.998404518534787,
+            "track_error_m": 0.9962145359965378
+          }
+        },
+        {
+          "case": "single_push_rope_1",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.0033549401778943193,
+            "frame_count": 16,
+            "frame_end_exclusive": 64,
+            "frame_start": 48,
+            "track_error_m": 0.005091379518245599
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.0033321377741497523,
+            "frame_count": 16,
+            "frame_end_exclusive": 64,
+            "frame_start": 48,
+            "track_error_m": 0.005027194425689177
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0068431755497822,
+            "track_error_m": 1.0127675771258087
+          }
+        },
+        {
+          "case": "single_lift_cloth_1",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.009317328014864125,
+            "frame_count": 20,
+            "frame_end_exclusive": 77,
+            "frame_start": 57,
+            "track_error_m": 0.01393586898054371
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.009375917010171209,
+            "frame_count": 20,
+            "frame_end_exclusive": 77,
+            "frame_start": 57,
+            "track_error_m": 0.013929170918207954
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 0.9937511183979632,
+            "track_error_m": 1.000480865830069
+          }
+        },
+        {
+          "case": "double_stretch_sloth",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.004689988646608722,
+            "frame_count": 34,
+            "frame_end_exclusive": 134,
+            "frame_start": 100,
+            "track_error_m": 0.007787507551442796
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.004637649129269838,
+            "frame_count": 34,
+            "frame_end_exclusive": 134,
+            "frame_start": 100,
+            "track_error_m": 0.007801137854014575
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.011285786371494,
+            "track_error_m": 0.998252780193499
+          }
+        },
+        {
+          "case": "single_push_rope",
+          "dynamic_official_evaluation": {
+            "chamfer_distance_m": 0.0038246335809593536,
+            "frame_count": 10,
+            "frame_end_exclusive": 40,
+            "frame_start": 30,
+            "track_error_m": 0.008240290462954634
+          },
+          "persistence_official_evaluation": {
+            "chamfer_distance_m": 0.00384177800482685,
+            "frame_count": 10,
+            "frame_end_exclusive": 40,
+            "frame_start": 30,
+            "track_error_m": 0.008276291498303112
+          },
+          "ratios_relative_to_persistence": {
+            "chamfer_distance_m": 0.9955373725795826,
+            "track_error_m": 0.9956501006089672
+          }
+        }
+      ],
+      "fold_results": [
+        {
+          "aggregate_ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0121279614135263,
+            "track_error_m": 0.9986188579247816
+          },
+          "both_metrics_improve": false,
+          "name": "fold_0"
+        },
+        {
+          "aggregate_ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.001661143889206,
+            "track_error_m": 1.0028187006632816
+          },
+          "both_metrics_improve": false,
+          "name": "fold_1"
+        },
+        {
+          "aggregate_ratios_relative_to_persistence": {
+            "chamfer_distance_m": 1.0011643942867219,
+            "track_error_m": 1.0006731719509763
+          },
+          "both_metrics_improve": false,
+          "name": "fold_2"
+        }
+      ],
+      "maximum_case_metric_ratio": 1.0439180085987168
+    }
+  },
+  "source_gate_passed": false,
+  "source_inputs": [
+    {
+      "baseline_trajectory_sha256": "aa28c6d24615c01764589043ce00599e403215234494470a5d6d197059054ffe",
+      "case": "weird_package",
+      "final_data_sha256": "cb081bab8ca86f15d29487bba57ec8cecb65b3a520b370c3b7dc473f1b7d58f5",
+      "fit_end_frame": 20,
+      "gt_track_3d_sha256": "6e289bc336fd5334672ba8d7447ec37e90f815c9c7e2d402f8265f5c2ac0296a",
+      "train_end_frame": 27
+    },
+    {
+      "baseline_trajectory_sha256": "511ee1fb5b7033c4e336d2801645d5c53854be12567ef9b1d494d772073ae0ab",
+      "case": "double_stretch_zebra",
+      "final_data_sha256": "880a083589457ba0db8e937f6283d7918afae048eb290bf0a9cea78645854b44",
+      "fit_end_frame": 103,
+      "gt_track_3d_sha256": "de2f690cd86d49c45e5b4444bc28fc4c909f0b1afb80245c53df81d988662cd8",
+      "train_end_frame": 138
+    },
+    {
+      "baseline_trajectory_sha256": "357f75ea596015564d85613955cfb970bef2483079952de7dea1a0ce61ed94fe",
+      "case": "double_lift_sloth",
+      "final_data_sha256": "6bbb1245812a9b6c760f6881b8b6174343fd0df717c168b09fb7b365caabb33c",
+      "fit_end_frame": 32,
+      "gt_track_3d_sha256": "6bd648125d2068924b02586b27e797d538a8220a26857a0758693a9a15cf3d2f",
+      "train_end_frame": 43
+    },
+    {
+      "baseline_trajectory_sha256": "001d0c5ff883ebb92180d97f708abdf1c918e1b98e439faa9bf977871c780666",
+      "case": "single_lift_sloth",
+      "final_data_sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2",
+      "fit_end_frame": 44,
+      "gt_track_3d_sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255",
+      "train_end_frame": 59
+    },
+    {
+      "baseline_trajectory_sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949",
+      "case": "single_lift_cloth",
+      "final_data_sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+      "fit_end_frame": 90,
+      "gt_track_3d_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+      "train_end_frame": 121
+    },
+    {
+      "baseline_trajectory_sha256": "09a64e256cfda0526288eadb130208b0a2bba511261194d6cf3655ff1d71fc11",
+      "case": "single_lift_cloth_4",
+      "final_data_sha256": "264a5453df2be9393ea6d3a4789af9739e7b5cd9438f13b493c24f5168bf79fa",
+      "fit_end_frame": 90,
+      "gt_track_3d_sha256": "7c1a5aa7f0d0e1be2d84ec29b89dbbedb00edecbb84e6d5728afde24dbce0bc3",
+      "train_end_frame": 120
+    },
+    {
+      "baseline_trajectory_sha256": "49eb18a3e8a3d36022fd564e5218ee30cc26786658eb438d4f3ac197ce2aa77b",
+      "case": "single_lift_zebra",
+      "final_data_sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e",
+      "fit_end_frame": 34,
+      "gt_track_3d_sha256": "ce1da22169fce5063eff159b4ff297e2989559aa8410d30cdb8e4f2d0ee28e80",
+      "train_end_frame": 46
+    },
+    {
+      "baseline_trajectory_sha256": "c885fce3e01815fa9a33ed71638d75109b98aa9110b69a11166f0978c2a87a05",
+      "case": "single_push_rope_4",
+      "final_data_sha256": "ec64e6342cfa2d59faa8193c7c40ae09e796d471142b700ed226870d8d7261fb",
+      "fit_end_frame": 43,
+      "gt_track_3d_sha256": "92f783d846d4f6d282fcb686042e7d8a16c3463a17359d185a8e0521373ea40d",
+      "train_end_frame": 58
+    },
+    {
+      "baseline_trajectory_sha256": "8c502fdb7cee89e2e96935a66966027d90cdd9a8edded3e1f9bbf0e40f3084b8",
+      "case": "rope_double_hand",
+      "final_data_sha256": "12e5f20d83c63a65e07ec92d53acdcef449f6046f626e3bb187926644d148caa",
+      "fit_end_frame": 138,
+      "gt_track_3d_sha256": "3a3cae254990c574b4756eb047adba3eebd9bdc93f6977fd64a71674377fd678",
+      "train_end_frame": 184
+    },
+    {
+      "baseline_trajectory_sha256": "4e0c85e885871b48f7664d43310632261e1c486fb345c0e936754c6039a2bb5d",
+      "case": "single_lift_dinosor",
+      "final_data_sha256": "94ddd2f6b530c62f25bdc5b1d53b01a20340f254025da72723b2c5b83c80cec6",
+      "fit_end_frame": 45,
+      "gt_track_3d_sha256": "3b17a1f0e5be7c2e7e533b07d949874b64ad89e2c8da591fe11c36cf7ff0a51b",
+      "train_end_frame": 60
+    },
+    {
+      "baseline_trajectory_sha256": "81c9d519d0dc88bde79ec78f380475a598cc23320b9116f0b109e2dcf09a57c0",
+      "case": "single_push_rope_1",
+      "final_data_sha256": "675319bf30b4d6d91b833424e07d1ce1454efa027e710092ba4f29d51a4d434e",
+      "fit_end_frame": 48,
+      "gt_track_3d_sha256": "139f006a2b6b8746ba9033a32c69113ca8c3f140b9f075e3e652f08676b0c2e2",
+      "train_end_frame": 64
+    },
+    {
+      "baseline_trajectory_sha256": "a2214d4273474c98b29fb92196113917461d29074fdb652e01902dc6f335262d",
+      "case": "single_lift_rope",
+      "final_data_sha256": "d5395ed5c4b7848ee3d5a0e9e7d5955f18de68437b24a9e8965aea447401201d",
+      "fit_end_frame": 26,
+      "gt_track_3d_sha256": "69249831ffff16bcb30eef6b34b57e85a5eb810e645591eb53769e74c50e1869",
+      "train_end_frame": 35
+    },
+    {
+      "baseline_trajectory_sha256": "fed20f84faac0081214562f9e58e67030e90f526ebf6721bc8844296c52cf5e4",
+      "case": "single_lift_cloth_1",
+      "final_data_sha256": "3ec505a6a39f734d55969590225aba89c4efdb239c67cecf6e4addff6b549d9d",
+      "fit_end_frame": 57,
+      "gt_track_3d_sha256": "b7a69ece3858bd2373313299998b316ef625215f9fa6ecda2e166b1cca1a110a",
+      "train_end_frame": 77
+    },
+    {
+      "baseline_trajectory_sha256": "cacf8a4eac034dfedf47dc8d268aa4b4a95b4677be29b6899d4548d91a49152e",
+      "case": "double_lift_cloth_3",
+      "final_data_sha256": "ed4e77bd74c6641ec6bb7a3ed36e069cb0896af3ed273a615c6a2ae31cc71de3",
+      "fit_end_frame": 61,
+      "gt_track_3d_sha256": "9b05b081ae1746e92cdc901d96066ab3f7ff2cbee9503336f5aed97cae19655d",
+      "train_end_frame": 82
+    },
+    {
+      "baseline_trajectory_sha256": "3f65c658406b2b49da226dfa319fbc0f74fa6f7faa9f22711dd5a3c73ccd8edf",
+      "case": "single_lift_cloth_3",
+      "final_data_sha256": "0ecbea5028e7bc7014f2a3b9bb1ae8cfdd165ec8194ffab7907b2f5cdba514a2",
+      "fit_end_frame": 81,
+      "gt_track_3d_sha256": "e49e9e89b41526fc09ccf95bb6e53317d95b4949e5e1a9591c1a463b40446995",
+      "train_end_frame": 109
+    },
+    {
+      "baseline_trajectory_sha256": "72119ee5d7e662599ae2e01671775e6e096893f65efb08627adccdc3359430c4",
+      "case": "double_stretch_sloth",
+      "final_data_sha256": "d5a4d44eed6d8d78a6fedbbfa01f1f720b29f757fbb82768b28bb62391f5e346",
+      "fit_end_frame": 100,
+      "gt_track_3d_sha256": "90f14a3bbe3c3686523a11140168dc5b9520534836339f9f2de274778eb1284e",
+      "train_end_frame": 134
+    },
+    {
+      "baseline_trajectory_sha256": "2dda0ae3a9dcc72c3875b55ffa742f7db3510448578b946aba0f75ddc32a090f",
+      "case": "single_push_rope",
+      "final_data_sha256": "6e956043d11dd48f2a8b345d160d892500de5539568ef96a3a6ed3c10863584e",
+      "fit_end_frame": 30,
+      "gt_track_3d_sha256": "744d52daba60acd90c42dede95b5a9143eac25f607e5f9d730eda37c96a13274",
+      "train_end_frame": 40
+    }
+  ],
+  "target_future_opened": false
+}
