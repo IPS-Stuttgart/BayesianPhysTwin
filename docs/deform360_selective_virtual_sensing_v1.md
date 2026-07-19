@@ -5,7 +5,7 @@ Status: locked before download or media access for the 12 selected objects.
 The executable lock is
 `configs/sota/deform360_selective_virtual_sensing_v1.json`. Its canonical
 checksum is
-`af4100e373233280a1c39e35fe38d213e611b8c8ff852307c151f148c43fbb87`.
+`e2b52d91ab2e4c28e15e7642f8e67b18c97d86096d37e6fe92ae277af9b97b89`.
 The lock is validated by
 `bayesian_phystwin.deform360_selective_virtual_sensing_protocol`.
 
@@ -46,14 +46,15 @@ and both object-cluster intervals excluded zero.
 The simpler persistence-only pairwise arm reached 7.646 mm hidden identity
 RMSE and 6.787 mm hidden Chamfer, versus 9.357 mm and 8.243 mm for persistence.
 That is an 18.29% and 17.66% reduction and improved all five development
-objects. It is the prospective primary arm because it requires no target-fitted
-physical model. The physical/persistence selector remains a secondary
-composition experiment wherever a physical prediction was sealed without
-target outcomes.
+objects. The object-cluster intervals are `[-2.344, -0.808] mm` and
+`[-2.295, -0.566] mm`. It is the prospective primary arm because it requires no
+target-fitted physical model. The physical/persistence selector remains a
+secondary composition experiment wherever a physical prediction was sealed
+without target outcomes.
 
 These numbers selected the method and are not confirmatory evidence. The
 archived development summary is under
-`results/sota/diagnostics/deform360_raw_alltracker_pairwise_gate_v1/`.
+`results/sota/diagnostics/deform360_raw_alltracker_pairwise_explicit_arms_f98fcfa/`.
 
 ## Frozen method
 

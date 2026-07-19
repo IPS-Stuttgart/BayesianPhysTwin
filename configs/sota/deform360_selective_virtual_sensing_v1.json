@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "config_sha256": "af4100e373233280a1c39e35fe38d213e611b8c8ff852307c151f148c43fbb87",
+  "config_sha256": "e2b52d91ab2e4c28e15e7642f8e67b18c97d86096d37e6fe92ae277af9b97b89",
   "config": {
     "protocol_id": "deform360-selective-virtual-sensing-v1",
     "status": "locked-before-selected-object-download-or-media-access",
@@ -175,6 +175,11 @@
       "persistence_baseline_chamfer_m": 0.008242887172585901,
       "persistence_pairwise_arm_identity_relative_change": -0.18288414550527,
       "persistence_pairwise_arm_chamfer_relative_change": -0.17660241622029,
+      "persistence_pairwise_arm_identity_episode_wins": 18,
+      "persistence_pairwise_arm_chamfer_episode_wins": 21,
+      "persistence_pairwise_arm_objects_improved": 5,
+      "persistence_pairwise_arm_identity_object_cluster_95_m": [-0.0023443789822406138, -0.0008075249838674553],
+      "persistence_pairwise_arm_chamfer_object_cluster_95_m": [-0.0022950188181040184, -0.0005657316031589592],
       "used_for_method_selection": true,
       "eligible_as_confirmatory_evidence": false
     },
@@ -184,7 +189,8 @@
       "pairwise_gate_sha256": "4141e766abc61df0b527c46e6bff4b0d359920518608c7b353b62f406c4329be",
       "online_belief_sha256": "ed0da8142d854433e7dbb5ffc60ce80570258d0fdf8d1e1ceb6ba0fa4123ae4e",
       "raw_camera_builder_sha256": "e6321e8378914757656860e2c58965ec48b2bc5e92f2410ba64b44218890abf8",
-      "development_summary_sha256": "686086fdb4ea3b62b5ef947dd8de2696508b3eed5374b6ebca523bf5df8d832d"
+      "development_summary_sha256": "686086fdb4ea3b62b5ef947dd8de2696508b3eed5374b6ebca523bf5df8d832d",
+      "explicit_arm_development_summary_sha256": "bca32e2af053b673f0fc0f44662c44f5ebcdb42872fffefe4ccc853a0df80bd0"
     },
     "decision_rule": {
       "if_any_success_gate_fails": "Report the prospective negative or mixed result and make no general confirmation claim; held outcomes may not select a replacement method.",
