@@ -27,6 +27,10 @@ def main() -> None:
         action="store_true",
         help="Allow only an ordered subset of the three declared development cases.",
     )
+    parser.add_argument(
+        "--registered-subset-protocol",
+        help="JSON protocol whose target_cases exactly register a subset manifest.",
+    )
     args = parser.parse_args()
     summary = run_external_backbone_overlay(
         args.data_root,
@@ -35,6 +39,7 @@ def main() -> None:
         force=args.force,
         workers=args.workers,
         development_smoke=args.development_smoke,
+        registered_subset_protocol=args.registered_subset_protocol,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
 

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-smoke-v1-compact-proxy-amendment",
+  "locked_at_utc": "2026-07-18T19:19:18Z",
+  "timing": "Locked before completion or inspection of any source epoch metric and before any target input, rollout, or metric access.",
+  "source_proxy": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/proxy/proxy_summary.json",
+    "sha256": "64d58356ad606d0236bc1393d490da688d4db136123a6e99609d813b03d3ed5d"
+  },
+  "compact_proxy": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/proxy_compact/proxy_summary.json",
+    "sha256": "63e0c99fb1e08f69940e291c1effae073515b2eccc0498e975c60678a382e56f",
+    "contract": "causal-dino-graph-parts-compact-unused-edge-semantics-v1"
+  },
+  "behavioral_boundary": {
+    "preserved_exactly": [
+      "DINO part features",
+      "graph part assignments",
+      "material distributions",
+      "train_ready.pt bytes",
+      "spring graph and geometry",
+      "causal frame provenance"
+    ],
+    "replaced": "Per-node 1024-D semantic tensors are replaced by one constant channel before MatPhys expands them to per-edge z_sem and controller ctrl_sem.",
+    "model_use": "The released simple decoder reads neither z_sem nor ctrl_sem; the opt-in adapter reads preserved part_features directly.",
+    "prediction_contract": "Model outputs must be identical for full and compact proxies given identical part_features and checkpoint bytes."
+  },
+  "reason": "The unused per-edge expansion consumed several gigabytes per rank and more than ten minutes before each run. Compact semantics reduce the source semantic cache from 310 MB compressed to 72 KB and do not alter a consumed model input."
+}

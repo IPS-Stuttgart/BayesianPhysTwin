@@ -1,0 +1,31 @@
+/mnt/corsair/florianpfaff/matphys-causal-sota-v1/pydeps/torchvision/io/image.py:14: UserWarning: Failed to load image Python extension: 'Could not load this library: /mnt/corsair/florianpfaff/matphys-causal-sota-v1/pydeps/torchvision/image.so'If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. Otherwise, there might be something wrong with your environment. Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?
+  warn(
+Using cache found in /home/florianpfaff/.cache/torch/hub/facebookresearch_dinov2_main
+/home/florianpfaff/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/home/florianpfaff/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/home/florianpfaff/.cache/torch/hub/facebookresearch_dinov2_main/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+2026-07-18 23:25:14,277 [   INFO] [DATA]: loading data from /mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1/final_data.pkl
+2026-07-18 23:25:14,858 [   INFO] [SIMULATION]: Initialize the Spring-Mass System
+Warp 1.11.1 initialized:
+   CUDA Toolkit 12.9, Driver 13.0
+   Devices:
+     "cpu"      : "x86_64"
+     "cuda:0"   : "NVIDIA RTX 6000 Ada Generation" (47 GiB, sm_89, mempool enabled)
+   Kernel cache:
+     /home/florianpfaff/.cache/warp/1.11.1
+Module qqtt.model.diff_simulator.spring_mass_warp c7f55ed load on device 'cuda:0' took 1.28 ms  (cached)
+[warn] No Gaussian model found for single_clift_cloth_1 under __disabled__
+Traceback (most recent call last):
+  File "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/scripts/remote/run_matphys_causal.py", line 1458, in <module>
+    main()
+  File "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/scripts/remote/run_matphys_causal.py", line 1454, in main
+    args.handler(args)
+  File "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/scripts/remote/run_matphys_causal.py", line 1239, in export
+    spring_summary = summarize_part_spring_ratios(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/src/bayesian_phystwin/matphys_part_model.py", line 29, in summarize_part_spring_ratios
+    raise ValueError("spring fields must be finite")
+ValueError: spring fields must be finite

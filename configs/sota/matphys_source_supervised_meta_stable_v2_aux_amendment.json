@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-stable-v2-aux-amendment",
+  "locked_at_utc": "2026-07-18T21:44:57Z",
+  "parent_protocol": {
+    "path": "configs/sota/matphys_source_supervised_meta_stable_v2.json",
+    "sha256": "c2657e2d06436528c63d95ae28bec3d9af00b76ce2d2f9e029fb9eb5f003f242"
+  },
+  "timing": "Locked after the first v2 process failed on its first source update, before any completed source epoch, target metric, target future rollout, target future observation, or target outcome access.",
+  "discarded_process": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2",
+    "completed_source_updates": 0,
+    "failure": "The released trainer invoked auxiliary.backward and simulator backward separately after one DDP forward, causing the DDP reducer to encounter an undefined gradient."
+  },
+  "repair": {
+    "contract": "intermediate-hook-single-backward-aux-v1",
+    "behavior": "Compute the teacher-proximity gradient only with respect to the applied intermediate output, attach it as a hook, detach the scalar auxiliary loss, and let the existing simulator backward perform one combined parameter backward and one DDP reduction.",
+    "objective_equivalence": "The applied gradient is the sum of the simulator gradient and the unchanged teacher-proximity gradient. No loss weight, model input, source outcome, or target boundary changes.",
+    "runner": {
+      "path": "scripts/remote/run_matphys_causal.py",
+      "sha256": "a1043c97fe359a4f367337ecf608ec37a90bcbb26ded76446edf9db989075d4b"
+    },
+    "regression_test": {
+      "path": "tests/test_matphys_remote_runner.py",
+      "sha256": "6eca84ad27d971feee9dbfd7d6c8d36a6ded0b32bd759e33441f45e07ce67402",
+      "assertion": "A unit auxiliary gradient of 2 and primary gradient of 3 produce one combined parameter gradient of 5."
+    }
+  },
+  "unchanged": [
+    "source and target membership",
+    "causal input and outcome boundaries",
+    "public-trunk zero-residual initialization",
+    "learning rate, teacher-proximity weight, and gradient clip",
+    "five fixed terminal epochs",
+    "target family gate",
+    "exploratory claim boundary"
+  ]
+}

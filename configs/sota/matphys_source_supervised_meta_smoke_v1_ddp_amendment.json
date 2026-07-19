@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-smoke-v1-ddp-forward-amendment",
+  "locked_at_utc": "2026-07-18T20:21:11Z",
+  "runtime_amendment": {
+    "path": "configs/sota/matphys_source_supervised_meta_smoke_v1_amendment.json",
+    "sha256": "9e18887d51ec7cb73b833b7b0e48e25ddaa4edf68043a3c069bfdee1c1b390b5"
+  },
+  "compact_proxy_amendment": {
+    "path": "configs/sota/matphys_source_supervised_meta_smoke_v1_proxy_amendment.json",
+    "sha256": "2595eb5eebc01fe2b43c2ba8713e0db4eaafa1141b52593ee3213466fea889af"
+  },
+  "timing": "Locked after observing only process health and before completion or inspection of any source epoch metric, target input, target rollout, or target metric.",
+  "findings": [
+    "The released MatPhys forward_case helper unwraps DistributedDataParallel before invoking the model. Its two ranks therefore do not execute DDP forward synchronization hooks, and rank-zero checkpoints do not represent the pooled source panel.",
+    "MatPhys shards whole interactions but performs one model update per simulation frame. Source interactions contain 38 to 263 update steps, so ordinary DDP reaches an uneven-input collective deadlock.",
+    "The released trainer selects a rank-local network device but leaves args.device unchanged. Warp runtime construction would therefore place every rank's simulator on the requested cuda:0 device.",
+    "On gpuserver6000, NCCL 2.29.7 with the CUDA-13 driver stalls in DDP construction on its default peer-to-peer transport even for a four-by-four linear layer. NCCL_P2P_DISABLE=1 makes both the linear control and the exact patched MatPhys model complete DDP construction in under one second.",
+    "The first synchronized source update showed four MatPhys parameters are conditionally unused for an interaction. The released find_unused_parameters=False setting prevents the following DDP forward."
+  ],
+  "change": {
+    "scope": "opt-in graph-part adapter only",
+    "behavior": "Call the supplied model wrapper in forward_case with unused-parameter detection enabled, enter PyTorch DDP join for uneven interaction shards, defer metric reductions until all ranks join, and broadcast the last active rank's optimizer state before the next epoch. Pass cuda:$LOCAL_RANK to each Warp runtime and set NCCL_P2P_DISABLE=1 on gpuserver6000. Cache only the frozen VideoMAE pooled feature for a reused case clip while rerunning the trainable projector on every update. Prediction and single-device training semantics are unchanged.",
+    "implementation": {
+      "path": "src/bayesian_phystwin/matphys_part_model.py",
+      "sha256": "e420b1c89db99cf14b352cbe4090ad6a5ea0a491c5f9dd2112379600ef5969e2"
+    },
+    "runner": {
+      "path": "scripts/remote/run_matphys_causal.py",
+      "sha256": "475f56c3ee684793fda4999f699aea45934d508a811df89df1a9bdeb2a728482"
+    },
+    "regression_test": {
+      "path": "tests/test_matphys_part_model.py",
+      "sha256": "f614235a2db9656db1154ff3e096ba4c56da968ec46222e463209d07e4877a41",
+      "result": "6 passed on gpuserver6000 with the CUDA runtime"
+    },
+    "uneven_ddp_integration_test": {
+      "path": "tests/test_matphys_uneven_ddp.py",
+      "sha256": "cd1d0dc4cd22671bb573d9fc6f8f13c93da3cbe0b9f5da3f5041a48ffe412ee1",
+      "result": "1 passed on gpuserver6000; ranks with one versus two updates ended with identical model and Adam states"
+    },
+    "rank_local_runtime_test": {
+      "path": "tests/test_matphys_remote_runner.py",
+      "sha256": "6ba57ea4f2fe8cbc79813afdd5ce30c06467279c5681589af484dcbbb5811cc0",
+      "result": "5 passed on gpuserver6000, including rank-local simulator selection and forced unused-parameter detection"
+    },
+    "nccl_transport_diagnostic": {
+      "path": "scripts/remote/diagnose_matphys_ddp_init.py",
+      "sha256": "1ca51fd2319e372a67769ff2b02ad04345ae788694a93c953e271e249a2712d1",
+      "result": "Default NCCL P2P stalled; P2P-disabled exact MatPhys DDP wrapped at 3.43 seconds and passed its barrier at 3.45 seconds"
+    }
+  },
+  "discarded_runs_without_completed_epoch_metrics": [
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact",
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_sync",
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join",
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join_v2",
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join_v3",
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join_v4",
+    "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join_v5"
+  ],
+  "unchanged": [
+    "source and target case membership",
+    "causal video evidence boundaries",
+    "complete source-only outcome supervision",
+    "target non-access",
+    "model architecture and residual bound",
+    "five fixed terminal epochs",
+    "target prefix family gate",
+    "metrics, success rule, and exploratory claim boundary"
+  ]
+}

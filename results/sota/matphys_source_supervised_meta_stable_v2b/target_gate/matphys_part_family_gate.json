@@ -1,0 +1,403 @@
+{
+  "aggregate_both_metrics_improved": true,
+  "aggregate_validation_metrics": {
+    "candidate": {
+      "chamfer_distance_m": 0.041630171641546546,
+      "track_error_m": 0.05558949328151912
+    },
+    "selected": {
+      "chamfer_distance_m": 0.0415911861524554,
+      "track_error_m": 0.05551041270424437
+    },
+    "teacher": {
+      "chamfer_distance_m": 0.07413268827406043,
+      "track_error_m": 0.1074266386915855
+    }
+  },
+  "case_results": {
+    "double_lift_cloth_1": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.0043138089304900285,
+        "frame_count": 21,
+        "frame_end_exclusive": 81,
+        "frame_start": 60,
+        "track_error_m": 0.004766794221221512
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.025810761981663,
+          "track_error_m": 1.0194718628087598
+        },
+        "candidate_normalized_score": 1.0226413123952114,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": -0.022641312395211388,
+        "selected_family": "exact_teacher"
+      },
+      "fit_end_frame_exclusive": 60,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/double_lift_cloth_1/final_data.pkl",
+          "sha256": "c823c86c5d2b29c289287c46ad1c6fa5c50e7c9c84b5e61f21fe2001b9dc0a88"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/double_lift_cloth_1/gt_track_3d.pkl",
+          "sha256": "6702a80b7c09d7628a05acd1951fd186373ea3df9e137416b06ebc3ff8523d9a"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/double_lift_cloth_1/split.json",
+          "sha256": "c0a2923d97276e03d1b28faa3e7f17776ddc7c80376debeca2e4a9d91aaa992a"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.00420526776513497,
+        "frame_count": 21,
+        "frame_end_exclusive": 81,
+        "frame_start": 60,
+        "track_error_m": 0.004675748684312343
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/double_lift_cloth_1/teacher_fit_validation_trajectory.pkl",
+        "sha256": "b080aa8119804bc234b1372e639760918d12f90b090b5ea4d2e4e3e6092c366e"
+      },
+      "spring_field": {
+        "part_mean_range": 0.012905571783859426,
+        "part_means": [
+          0.7278301696470142,
+          0.732980622676396,
+          0.7336693328499427,
+          0.7279199814901735,
+          0.7407357414308736
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/double_lift_cloth_1/spring_field_summary.json",
+        "ratio_bounds": [
+          0.6904949390775549,
+          0.8093749927917986
+        ],
+        "sha256": "a9a3143d8ef6b5532118663e8db510a68446a9aa66ab380bb3285e06026af7e3"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.00420526776513497,
+        "frame_count": 21,
+        "frame_end_exclusive": 81,
+        "frame_start": 60,
+        "track_error_m": 0.004675748684312343
+      },
+      "validation_end_frame_exclusive": 81
+    },
+    "double_lift_zebra": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.16952581904555333,
+        "frame_count": 10,
+        "frame_end_exclusive": 40,
+        "frame_start": 30,
+        "track_error_m": 0.2069424225003939
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.7818349318976354,
+          "track_error_m": 0.8674442839529124
+        },
+        "candidate_normalized_score": 0.8246396079252739,
+        "learned_accepted": true,
+        "no_metric_regression": true,
+        "relative_score_improvement": 0.1753603920747261,
+        "selected_family": "learned_part_residual"
+      },
+      "fit_end_frame_exclusive": 30,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/double_lift_zebra/final_data.pkl",
+          "sha256": "fa81083526ab4d41a9b153a8d39b51a7baa9f5726184c52ff34e4902e26b9dc8"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/double_lift_zebra/gt_track_3d.pkl",
+          "sha256": "053a5f59bb859a980fd5aeef51d1b04f5a650288197cf6d511dff9c397831585"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/double_lift_zebra/split.json",
+          "sha256": "be3e50c1d2eff352c924affdb4de365906d71464b9bfc7f99eca3efb14fd235b"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.16952581904555333,
+        "frame_count": 10,
+        "frame_end_exclusive": 40,
+        "frame_start": 30,
+        "track_error_m": 0.2069424225003939
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/double_lift_zebra/candidate_fit_validation_trajectory.pkl",
+        "sha256": "e073b3b40ac6e87fda7f690d65832d5cca1389a207b95aef10755dfe9f6f0b11"
+      },
+      "spring_field": {
+        "part_mean_range": 0.039141285569945894,
+        "part_means": [
+          0.6635426434341235,
+          0.7026839290040694,
+          0.698222194518475,
+          0.6765663156101847,
+          0.6831044587801102
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/double_lift_zebra/spring_field_summary.json",
+        "ratio_bounds": [
+          0.6135544731373406,
+          0.7916394035729588
+        ],
+        "sha256": "74bd3b215a5339697d373628451422b338ace585be1c9b1eb6a18af9a4050dbe"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.2168307044481726,
+        "frame_count": 10,
+        "frame_end_exclusive": 40,
+        "frame_start": 30,
+        "track_error_m": 0.2385656650561633
+      },
+      "validation_end_frame_exclusive": 40
+    },
+    "single_clift_cloth_1": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.003952311110064737,
+        "frame_count": 14,
+        "frame_end_exclusive": 56,
+        "frame_start": 42,
+        "track_error_m": 0.0047793571310309835
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 1.0898309817093295,
+          "track_error_m": 0.9867176526278928
+        },
+        "candidate_normalized_score": 1.038274317168611,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": -0.03827431716861107,
+        "selected_family": "exact_teacher"
+      },
+      "fit_end_frame_exclusive": 42,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1/final_data.pkl",
+          "sha256": "945998ecd4127bb9acc96296202c25cc55454055603b3e2480a0e6346a6b546c"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1/gt_track_3d.pkl",
+          "sha256": "10ad2022dc3de0539ca18e9c5e6c1adc0c73eba6cc49e62da25b0106ccebae6e"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_1/split.json",
+          "sha256": "2cac333e644e52632e88f34969285fe89afa325467b74791ad4579f1181c143a"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.0036265358357364663,
+        "frame_count": 14,
+        "frame_end_exclusive": 56,
+        "frame_start": 42,
+        "track_error_m": 0.004843692740575055
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/single_clift_cloth_1/teacher_fit_validation_trajectory.pkl",
+        "sha256": "79afcdd95b979eece9dcb2776e7af6dd21950b9a51b4bfa542191ecd461b613b"
+      },
+      "spring_field": {
+        "part_mean_range": 0.03884341752790099,
+        "part_means": [
+          0.7216548041213393,
+          0.7210912742915885,
+          0.7217127105512058,
+          0.694287640253311,
+          0.733131057781212
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/single_clift_cloth_1/spring_field_summary.json",
+        "ratio_bounds": [
+          0.6580193880888023,
+          0.80194637069356
+        ],
+        "sha256": "b745bcb261cbcbc19cd07f1366c8d19cdbb4ca8740dda15ffaf701646c9e53e6"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.0036265358357364663,
+        "frame_count": 14,
+        "frame_end_exclusive": 56,
+        "frame_start": 42,
+        "track_error_m": 0.004843692740575055
+      },
+      "validation_end_frame_exclusive": 56
+    },
+    "single_clift_cloth_3": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.002043083995181462,
+        "frame_count": 17,
+        "frame_end_exclusive": 67,
+        "frame_start": 50,
+        "track_error_m": 0.008132425836186242
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.895118586139511,
+          "track_error_m": 1.0474891350386903
+        },
+        "candidate_normalized_score": 0.9713038605891007,
+        "learned_accepted": false,
+        "no_metric_regression": false,
+        "relative_score_improvement": 0.028696139410899324,
+        "selected_family": "exact_teacher"
+      },
+      "fit_end_frame_exclusive": 50,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_3/final_data.pkl",
+          "sha256": "693807277a795d250ba63f88a394ba5865d076803ce7fc5bc8defc847d7403b7"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_3/gt_track_3d.pkl",
+          "sha256": "d1f2daf2db64aeec9ad6c8b071d16467af2f9f5893bd4c4e3e98861217cf725f"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_clift_cloth_3/split.json",
+          "sha256": "066059d731461a2b0b9c626b1e29544e7ce8c9a6ba0cc0f4913d812413ba4359"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.0022824729894090614,
+        "frame_count": 17,
+        "frame_end_exclusive": 67,
+        "frame_start": 50,
+        "track_error_m": 0.007763732877177633
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/single_clift_cloth_3/teacher_fit_validation_trajectory.pkl",
+        "sha256": "7ffd636fdcfb0064bbcd88846c9ccb48f76c5ca2099b3c87a1dba9c0db537025"
+      },
+      "spring_field": {
+        "part_mean_range": 0.007503981151643524,
+        "part_means": [
+          0.7618709286993768,
+          0.7601282559487738,
+          0.7555453160652823,
+          0.7613692760451709,
+          0.7630492972169258
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/single_clift_cloth_3/spring_field_summary.json",
+        "ratio_bounds": [
+          0.7295449811388843,
+          0.8158275995227047
+        ],
+        "sha256": "73db3dac74639927ca12673e759957b6f9cb647e01e4fd548bf66c8eba0ee822"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.0022824729894090614,
+        "frame_count": 17,
+        "frame_end_exclusive": 67,
+        "frame_start": 50,
+        "track_error_m": 0.007763732877177633
+      },
+      "validation_end_frame_exclusive": 67
+    },
+    "single_push_sloth": {
+      "candidate_validation_metrics": {
+        "chamfer_distance_m": 0.028315835126443183,
+        "frame_count": 12,
+        "frame_end_exclusive": 47,
+        "frame_start": 35,
+        "track_error_m": 0.053326466718762934
+      },
+      "decision": {
+        "candidate_metric_ratios": {
+          "chamfer_distance_m": 0.1970229507125341,
+          "track_error_m": 0.1895820579478862
+        },
+        "candidate_normalized_score": 0.19330250433021015,
+        "learned_accepted": true,
+        "no_metric_regression": true,
+        "relative_score_improvement": 0.8066974956697899,
+        "selected_family": "learned_part_residual"
+      },
+      "fit_end_frame_exclusive": 35,
+      "inputs": {
+        "final_data": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_push_sloth/final_data.pkl",
+          "sha256": "d71975a65f78110d944a13687d7f2b0b48a9ac6ad51e994e88a1a63567703ba9"
+        },
+        "gt_track_3d": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_push_sloth/gt_track_3d.pkl",
+          "sha256": "6d0f5547d2e7c0a9a6871ff0a9ae1b87135d55801bde58a26dcf2a8f5f465e67"
+        },
+        "split": {
+          "path": "/mnt/corsair/florianpfaff/phystwin-data/extracted/data/different_types/single_push_sloth/split.json",
+          "sha256": "e6a258ca1899a18e1f7b3c3fde9778ccb61fe0d5c1e594e238e885f7e1f59363"
+        }
+      },
+      "selected_validation_metrics": {
+        "chamfer_distance_m": 0.028315835126443183,
+        "frame_count": 12,
+        "frame_end_exclusive": 47,
+        "frame_start": 35,
+        "track_error_m": 0.053326466718762934
+      },
+      "selected_validation_trajectory": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/single_push_sloth/candidate_fit_validation_trajectory.pkl",
+        "sha256": "8db8361c2f4e418623ca27a2c743e3e4cd0b28cfd496692d052bfda7a9f061e6"
+      },
+      "spring_field": {
+        "part_mean_range": 0.01302339726981161,
+        "part_means": [
+          0.5436565055272721,
+          0.5566799027970837,
+          0.5490220708129501,
+          0.5529946351150394,
+          0.5472925061621652
+        ],
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/cases/single_push_sloth/spring_field_summary.json",
+        "ratio_bounds": [
+          0.517743868371677,
+          0.6036873836314122
+        ],
+        "sha256": "27522d784ebd4105c6df5f68d808ae6a0088603dc114bf5b2cfc34b2f45226bf"
+      },
+      "teacher_validation_metrics": {
+        "chamfer_distance_m": 0.14371846033184907,
+        "frame_count": 12,
+        "frame_end_exclusive": 47,
+        "frame_start": 35,
+        "track_error_m": 0.28128435409969926
+      },
+      "validation_end_frame_exclusive": 47
+    }
+  },
+  "completed_at_utc": "2026-07-19T00:25:10.209911+00:00",
+  "contract": {
+    "candidate_manifest": {
+      "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/external_backbone_manifest.json",
+      "sha256": "ebc3bf3129531d78f82b174820e7e42506798e9600d66269f60992a0d82e846a"
+    },
+    "cases": [
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "double_lift_cloth_1",
+      "double_lift_zebra",
+      "single_push_sloth"
+    ],
+    "contract": "causal-matphys-part-family-fit-validation-v1",
+    "fallback": "exact_teacher",
+    "future_trajectory_access": "forbidden; gate reads truncated validation artifacts only",
+    "maximum_metric_regression": 0.0,
+    "minimum_relative_score_improvement": 0.001,
+    "reference": "paired exact released-PhysTwin teacher rerun",
+    "required_learned_case_count": 1,
+    "selection_interval": "[fit_end, released_train_end)",
+    "source_protocol": {
+      "path": "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/configs/sota/matphys_source_supervised_meta_smoke_v1_gate_amendment.json",
+      "sha256": "7716377c7d1e0292527e88c6bd1d0235a36f30c533d12ebc43566a8bb7de6be7"
+    },
+    "status": "source/development family selection; not future evidence",
+    "training_contract": "registered-source-supervised-target-disjoint-v1"
+  },
+  "future_metrics_opened": false,
+  "learned_acceptance_count": 2,
+  "protocol_id": "f830fa30f26329a21fa605b3b2d7657c5372050febe01d6068fdef634b434758",
+  "schema_version": 1,
+  "source_gate_passed": true,
+  "teacher_fallback_count": 3
+}

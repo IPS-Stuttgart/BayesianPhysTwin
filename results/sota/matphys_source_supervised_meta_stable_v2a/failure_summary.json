@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "completed_at_utc": "2026-07-18T23:04:38Z",
+  "protocol": "matphys-source-supervised-meta-stable-v2-aux-amendment",
+  "status": "rejected_before_target_evaluation",
+  "remote_run": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2a",
+  "checkpoint": {
+    "sha256": "de2e05e57c4a4f8acea98d26ff659b4d430f397337daafdb47a844ceb757af1e",
+    "model_nonfinite_count": 0,
+    "optimizer_nonfinite_count": 2433
+  },
+  "optimizer_guard": {
+    "rank_0": {
+      "attempted_steps": 5179,
+      "accepted_steps": 923,
+      "rejected_pre_step": 0,
+      "rejected_post_step": 4256
+    },
+    "rank_1": {
+      "attempted_steps": 5763,
+      "accepted_steps": 2435,
+      "rejected_pre_step": 0,
+      "rejected_post_step": 3328
+    }
+  },
+  "diagnosis": "The transactional guard kept every model parameter finite. The accepted-step boundary and the remaining non-finite Adam moments localize corruption to the opaque NCCL optimizer-state broadcast after uneven-rank join, rather than the model update itself.",
+  "target_prefix_metrics_computed": false,
+  "target_future_rollout_computed": false,
+  "target_future_metrics_computed": false,
+  "artifacts": {
+    "checkpoint_finiteness": {
+      "path": "checkpoint_finiteness.json",
+      "sha256": "41dd802c4bc6970228b0c327d0adce2a0c80edfd47bf84bd1c7a8a8fd5f80af1"
+    },
+    "rank_0": {
+      "path": "rank_000.json",
+      "sha256": "f916f0892044b77b00d2c78b526c9dd4574942a4ecbac3623cd13cdfb9132464"
+    },
+    "rank_1": {
+      "path": "rank_001.json",
+      "sha256": "8596d4412952702f842a60324acd5f65c296c5fae27afd1b1b9564da068dff52"
+    },
+    "train_log": {
+      "path": "train.log",
+      "sha256": "fcbe4f91a46a34fb56328ba0e0c18273a78b2d7efeca6647554fb8991f60d543"
+    }
+  }
+}

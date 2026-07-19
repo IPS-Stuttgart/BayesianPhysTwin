@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "contract": "matphys-source-supervised-meta-stable-v2b-summary-v1",
+  "status": "negative exploratory result; high-dimensional shared spring predictor frozen",
+  "checkpoint": {
+    "sha256": "cb59db8bb8e7344337cbaab71f7f3b33fdb0067dba2ae45964f93dc8d2e84dd8",
+    "finite": true,
+    "model_nonfinite_count": 0,
+    "optimizer_nonfinite_count": 0,
+    "optimizer_steps": {
+      "rank_0": {"accepted": 5182, "attempted": 5182},
+      "rank_1": {"accepted": 5766, "attempted": 5766}
+    }
+  },
+  "target_prefix_gate": {
+    "case_count": 5,
+    "learned_acceptance_count": 2,
+    "accepted_cases": ["double_lift_zebra", "single_push_sloth"],
+    "teacher_fallback_count": 3,
+    "equal_case_mean_m": {
+      "teacher": {"chamfer_distance_m": 0.07413268827406043, "track_error_m": 0.1074266386915855},
+      "candidate": {"chamfer_distance_m": 0.041630171641546546, "track_error_m": 0.05558949328151912},
+      "selected": {"chamfer_distance_m": 0.0415911861524554, "track_error_m": 0.05551041270424437}
+    }
+  },
+  "target_future_exploratory": {
+    "equal_case_mean_m": {
+      "teacher": {"chamfer_distance_m": 0.07612168689272554, "track_error_m": 0.10505548474010384},
+      "candidate": {"chamfer_distance_m": 0.05235905864485953, "track_error_m": 0.06938868944871071},
+      "prefix_selected": {"chamfer_distance_m": 0.05195514724613938, "track_error_m": 0.06815152330787408},
+      "prefix_selected_plus_bayesian": {"chamfer_distance_m": 0.04924199186847846, "track_error_m": 0.0647523783126385}
+    },
+    "matched_bayesian_phystwin_component_reference_m": {
+      "chamfer_distance_m": 0.008739702,
+      "track_error_m": 0.017442919
+    },
+    "comparison_valid": false,
+    "invalid_reason": "The exact-teacher MatPhys-fork trajectory fails parity with the pinned upstream PhysTwin replay on two target cases."
+  },
+  "learned_field": {
+    "interpretation": "predominantly global object-spring softening",
+    "case_mean_stiffness_ratios": {
+      "single_clift_cloth_1": 0.7183754973997314,
+      "single_clift_cloth_3": 0.7603926147951059,
+      "double_lift_cloth_1": 0.73262716961888,
+      "double_lift_zebra": 0.6848239082693925,
+      "single_push_sloth": 0.5499291240829021
+    },
+    "maximum_part_mean_range": 0.039141285569945894
+  },
+  "decision": {
+    "continue_dense_spring_predictor": false,
+    "independent_evaluation_admitted": false,
+    "next_method": "source-trained action-conditioned graph-spectral discrepancy dynamics with Prob4D covariance-aware prefix observations",
+    "required_physical_prior_gate": "pinned-upstream coefficient-zero trajectory parity"
+  }
+}

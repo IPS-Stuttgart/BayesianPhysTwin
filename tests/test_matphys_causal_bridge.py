@@ -11,7 +11,9 @@ from bayesian_phystwin.matphys_causal_bridge import (
     numeric_frame_paths,
     sha256_file,
     validate_causal_training_audit,
+    validate_source_supervised_training_audit,
     write_causal_training_audit,
+    write_source_supervised_training_audit,
 )
 
 
@@ -215,6 +217,97 @@ def test_training_audit_rejects_future_objective_access(tmp_path: Path) -> None:
             evidence_end_frames_exclusive={"case_a": 2},
             split_by_case={"case_a": {"train": [0, 2], "test": [2, 3]}},
             proxy_summary_path=proxy,
+        )
+
+
+def test_source_supervised_audit_allows_only_source_future_outcomes(
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.pth"
+    checkpoint.write_bytes(b"checkpoint")
+    source_root = tmp_path / "case_a"
+    target_root = tmp_path / "case_b"
+    source_root.mkdir()
+    target_root.mkdir()
+    split = {"train": [0, 3], "test": [3, 6], "frame_len": 6}
+    for root in (source_root, target_root):
+        (root / "split.json").write_text(json.dumps(split) + "\n")
+    proxy = _proxy_summary(tmp_path)
+    registration = tmp_path / "registered_split.json"
+    registration.write_text(
+        json.dumps({"source_cases": ["case_a"], "target_cases": ["case_b"]})
+        + "\n"
+    )
+    frames = _frame_sources(tmp_path, [0, 1])
+    audit_path = tmp_path / "source_audit.json"
+    implementation = tmp_path / "runner.py"
+    implementation.write_text("# frozen implementation\n")
+
+    written = write_source_supervised_training_audit(
+        [checkpoint],
+        audit_path,
+        source_repository="https://example.test/matphys",
+        source_commit="a" * 40,
+        data_root=tmp_path,
+        source_cases=["case_a"],
+        target_cases=["case_b"],
+        accessed_frame_indices={"case_a": [0, 1]},
+        accessed_frame_paths={"case_a": frames},
+        objective_end_frames_exclusive={"case_a": 6},
+        evidence_end_frames_exclusive={"case_a": 2},
+        target_evidence_end_frames_exclusive={"case_b": 2},
+        split_by_case={"case_a": split, "case_b": split},
+        proxy_summary_path=proxy,
+        split_registration_path=registration,
+        implementation_paths=[implementation],
+    )
+
+    validated = validate_source_supervised_training_audit(audit_path, checkpoint)
+    assert written["source_future_outcomes_used"] is True
+    assert validated["source_future_video_used"] is False
+    assert validated["target_future_observations_used"] is False
+    assert validated["target_cases"][0]["outcome_accessed_during_training"] is False
+    assert validated["implementation_files"][0]["path"] == str(implementation)
+
+    implementation.write_text("# changed implementation\n")
+    with pytest.raises(ValueError, match="implementation file bytes changed"):
+        validate_source_supervised_training_audit(audit_path, checkpoint)
+
+
+def test_source_supervised_audit_rejects_target_access_and_overlap(
+    tmp_path: Path,
+) -> None:
+    checkpoint = tmp_path / "checkpoint.pth"
+    checkpoint.write_bytes(b"checkpoint")
+    case_root = tmp_path / "case_a"
+    case_root.mkdir()
+    split = {"train": [0, 2], "test": [2, 3], "frame_len": 3}
+    (case_root / "split.json").write_text(json.dumps(split) + "\n")
+    proxy = _proxy_summary(tmp_path)
+    registration = tmp_path / "registered_split.json"
+    registration.write_text(
+        json.dumps({"source_cases": ["case_a"], "target_cases": ["case_a"]})
+        + "\n"
+    )
+    frames = _frame_sources(tmp_path, [0])
+
+    with pytest.raises(ValueError, match="disjoint"):
+        write_source_supervised_training_audit(
+            [checkpoint],
+            tmp_path / "source_audit.json",
+            source_repository="https://example.test/matphys",
+            source_commit="a" * 40,
+            data_root=tmp_path,
+            source_cases=["case_a"],
+            target_cases=["case_a"],
+            accessed_frame_indices={"case_a": [0]},
+            accessed_frame_paths={"case_a": frames},
+            objective_end_frames_exclusive={"case_a": 2},
+            evidence_end_frames_exclusive={"case_a": 1},
+            target_evidence_end_frames_exclusive={"case_a": 1},
+            split_by_case={"case_a": split},
+            proxy_summary_path=proxy,
+            split_registration_path=registration,
         )
 
 

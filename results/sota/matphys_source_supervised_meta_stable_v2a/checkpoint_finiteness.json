@@ -1,0 +1,22 @@
+{
+  "checkpoint": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2a/last_checkpoint.pth",
+    "sha256": "de2e05e57c4a4f8acea98d26ff659b4d430f397337daafdb47a844ceb757af1e"
+  },
+  "contract": "finite-model-and-optimizer-checkpoint-v1",
+  "examples": [
+    {
+      "element_count": 32768,
+      "name": "optimizer_state_dict.state.37.exp_avg_sq",
+      "nonfinite_count": 54
+    },
+    {
+      "element_count": 49152,
+      "name": "optimizer_state_dict.state.25.exp_avg",
+      "nonfinite_count": 2379
+    }
+  ],
+  "finite": false,
+  "model_nonfinite_count": 0,
+  "optimizer_nonfinite_count": 2433
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-smoke-v1-runtime-amendment",
+  "locked_at_utc": "2026-07-18T18:55:16Z",
+  "parent_protocol": {
+    "path": "configs/sota/matphys_source_supervised_meta_smoke_v1.json",
+    "sha256": "89c59ed5ffe5a4e944939192623cf3e9761bdd8331932c9b2f3232558b448f71"
+  },
+  "timing": "Locked after proxy construction and a runtime-only partial first epoch, before completion or inspection of any source epoch metric and before any target model input, rollout, or metric access.",
+  "reason": "The observed single-GPU rollout rate implied roughly nine hours for 20 epochs. This amendment bounds the registered smoke test while preserving its scientific information boundary.",
+  "changes": {
+    "epochs": {
+      "from": 20,
+      "to": 5
+    },
+    "execution": {
+      "from": "single GPU",
+      "to": "two-GPU distributed data parallel using MatPhys's released DDP path"
+    },
+    "runtime_audit": "Each rank writes exact frame and objective access logs; rank zero merges and checksum-binds both logs into the training audit."
+  },
+  "unchanged": [
+    "source and target case membership",
+    "causal video evidence boundaries",
+    "complete source-only outcome supervision",
+    "target non-access",
+    "model architecture and residual bound",
+    "fixed terminal checkpoint policy",
+    "target prefix family gate",
+    "metrics and success rule",
+    "exploratory claim boundary"
+  ],
+  "interpretation": "Five epochs are a competence and direction-of-effect smoke test, not a converged comparison to the 200-epoch MatPhys checkpoint. A positive independent run must preregister its training budget without target-based extension."
+}

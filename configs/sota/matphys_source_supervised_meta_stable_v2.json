@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-stable-v2",
+  "locked_at_utc": "2026-07-18T21:38:53Z",
+  "status": "Exploratory stability rerun on the registered MatPhys source/target split.",
+  "parent_protocol": {
+    "path": "configs/sota/matphys_source_supervised_meta_smoke_v1.json",
+    "sha256": "89c59ed5ffe5a4e944939192623cf3e9761bdd8331932c9b2f3232558b448f71"
+  },
+  "triggering_failure": {
+    "path": "results/sota/matphys_source_supervised_meta_smoke_v1/failure_summary.json",
+    "sha256": "523e6509bd2c7fe43250538eb43170ebbbb3ef4b27032b930ad57fa0b96395d3",
+    "diagnosis": "The fixed v1 checkpoint had 155939 non-finite model values and 710400 non-finite optimizer values; source loss at epoch 5 was 5.73 times epoch 1."
+  },
+  "timing": "Locked after generating the registered target causal-prefix proxy and observing a checkpoint-finiteness failure, but before any target prefix metric, target future rollout, target future observation, or target outcome was opened.",
+  "scientific_change": {
+    "initialization": {
+      "checkpoint": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/checkpoints/checkpoint_all_latest.pth",
+      "sha256": "38af188bd3ce7f7ab804faa80531c48480684e08721e6ee64a09859bcf0b6a15",
+      "rule": "Load the public source-trained MatPhys representation but exclude spring_base.5, ctrl_spring_base.5, and spring_mod. The excluded residual heads remain exactly zero, so the initial physical field is byte-equivalent to the released per-case PhysTwin teacher."
+    },
+    "optimization": {
+      "epochs": 5,
+      "checkpoint_policy": "fixed terminal epoch",
+      "learning_rate": 0.00003,
+      "gradient_clip": 5.0,
+      "teacher_proximity_weight": 1.0,
+      "finite_optimizer_guard": "transactional-finite-adamw-v1"
+    },
+    "rationale": "The public model's absolute output is a rejected causal input shortcut, but its source-trained representation is reusable after the absolute spring heads are reset. A tenfold lower learning rate, explicit teacher shrinkage, and transactional finite updates directly address the source-only v1 instability while preserving the exact-teacher fallback."
+  },
+  "target_proxy": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_proxy/proxy_summary.json",
+    "sha256": "5342a7d6f392fcccbd1f51b88273f2e0ffc64aedd424452e532279f8f1d7e301",
+    "evidence": "four uniformly sampled RGB frames strictly before each registered 75 percent target-prefix boundary"
+  },
+  "implementation": {
+    "runner": {
+      "path": "scripts/remote/run_matphys_causal.py",
+      "sha256": "28b2abb2abcf9d5b97043e043dae23f94ccf78315c8ad27ce8b2588aed80739e"
+    },
+    "part_model": {
+      "path": "src/bayesian_phystwin/matphys_part_model.py",
+      "sha256": "a6b239da7adf570484be80131a5924e52b7b12e3923428385c529f9d42b517ed"
+    },
+    "runner_tests": {
+      "path": "tests/test_matphys_remote_runner.py",
+      "sha256": "6108f653aa1f92c61f9dddde4fc296d2a8f86fbc777a6fa0c56d6e8c1d5c24c0"
+    },
+    "part_model_tests": {
+      "path": "tests/test_matphys_part_model.py",
+      "sha256": "959c02c6f63444073e7d9bb82041c68b54b2f2bd4a7c45a7098b5fe5be10daf0"
+    }
+  },
+  "competence_gate": {
+    "source": "The terminal checkpoint and optimizer state must be fully finite, all source losses finite, and the applied source spring field nondegenerate.",
+    "target": "Only the locked disjoint target-prefix family gate may select learned versus exact teacher per case; ties and regressions select teacher.",
+    "future": "No target future is opened unless the source competence gate and target-prefix family gate artifacts validate."
+  },
+  "unchanged": [
+    "source and target membership",
+    "source causal-video boundaries",
+    "complete source-only outcome supervision",
+    "target target-outcome non-access",
+    "teacher residual bound",
+    "target prefix family gate thresholds",
+    "exploratory claim boundary"
+  ]
+}

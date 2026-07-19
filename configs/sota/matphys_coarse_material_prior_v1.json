@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "material_names": [
+    "fabric",
+    "leather",
+    "rubber",
+    "plastic",
+    "metal",
+    "wood",
+    "paper",
+    "silk",
+    "denim",
+    "fur"
+  ],
+  "claim_boundary": "Coarse object-level material hypotheses fixed from released object identity and static appearance only. Repeated across graph parts; not a reproduction of MatPhys's unpublished VLM outputs and not evidence from future motion.",
+  "cases": {
+    "double_lift_cloth_1": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "double_lift_cloth_3": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "double_lift_sloth": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "double_lift_zebra": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "double_stretch_sloth": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "double_stretch_zebra": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "rope_double_hand": {"shared_weights": {"fabric": 0.20, "rubber": 0.20, "fur": 0.60}},
+    "single_clift_cloth_1": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "single_clift_cloth_3": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "single_lift_cloth": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "single_lift_cloth_1": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "single_lift_cloth_3": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "single_lift_cloth_4": {"shared_weights": {"fabric": 0.65, "silk": 0.15, "denim": 0.20}},
+    "single_lift_dinosor": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "single_lift_rope": {"shared_weights": {"fabric": 0.20, "rubber": 0.20, "fur": 0.60}},
+    "single_lift_sloth": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "single_lift_zebra": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "single_push_rope": {"shared_weights": {"fabric": 0.20, "rubber": 0.20, "fur": 0.60}},
+    "single_push_rope_1": {"shared_weights": {"fabric": 0.20, "rubber": 0.20, "fur": 0.60}},
+    "single_push_rope_4": {"shared_weights": {"fabric": 0.20, "rubber": 0.20, "fur": 0.60}},
+    "single_push_sloth": {"shared_weights": {"fabric": 0.55, "rubber": 0.05, "fur": 0.40}},
+    "weird_package": {"shared_weights": {"fabric": 0.15, "plastic": 0.35, "paper": 0.50}}
+  }
+}

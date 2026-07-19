@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "contract": "matphys-fork-vs-upstream-zero-residual-parity-audit-v1",
+  "status": "failed",
+  "units": "metres",
+  "comparison": {
+    "candidate_runtime": {
+      "repository": "https://github.com/Yrainy0615/MatPhys",
+      "commit": "c16b858dfb79bf21024ead24b45a710600de7b4f"
+    },
+    "reference_runtime": {
+      "repository": "https://github.com/Jianghanxiao/PhysTwin",
+      "commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390"
+    },
+    "candidate_parameterization": "exact released PhysTwin teacher spring and global parameters",
+    "reference_trajectory": "archived profile_raw/baseline_trajectory.pkl from phystwin_combined_main_v1"
+  },
+  "cases": {
+    "single_clift_cloth_1": {
+      "mean_node_frame_distance_m": 0.0007711347065737448,
+      "maximum_node_frame_distance_m": 0.01421252758668814,
+      "final_mean_node_distance_m": 0.004477842020284446
+    },
+    "single_clift_cloth_3": {
+      "mean_node_frame_distance_m": 0.0004376046943166459,
+      "maximum_node_frame_distance_m": 0.02801865033339197,
+      "final_mean_node_distance_m": 0.0010070700924450726
+    },
+    "double_lift_cloth_1": {
+      "mean_node_frame_distance_m": 0.0033375294859257515,
+      "maximum_node_frame_distance_m": 0.04470715204567713,
+      "final_mean_node_distance_m": 0.02454685362346277
+    },
+    "double_lift_zebra": {
+      "mean_node_frame_distance_m": 0.18645691120361148,
+      "maximum_node_frame_distance_m": 0.609228971720359,
+      "final_mean_node_distance_m": 0.18685210567957863
+    },
+    "single_push_sloth": {
+      "mean_node_frame_distance_m": 0.19655934823464016,
+      "maximum_node_frame_distance_m": 0.5744734044188382,
+      "final_mean_node_distance_m": 0.227291616133821
+    }
+  },
+  "decision": "Reject target predictive and SOTA interpretation. Require an upstream-simulator coefficient-zero parity gate before evaluating another learned spring field."
+}

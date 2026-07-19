@@ -8,6 +8,7 @@ import heapq
 import json
 import pickle
 from pathlib import Path
+import shutil
 from typing import Mapping, Sequence
 
 import numpy as np
@@ -16,6 +17,9 @@ from .matphys_causal_bridge import sha256_file
 
 
 GRAPH_PART_PROXY_CONTRACT = "causal-dino-graph-voronoi-parts-v1"
+GRAPH_PART_COMPACT_PROXY_CONTRACT = (
+    "causal-dino-graph-parts-compact-unused-edge-semantics-v1"
+)
 
 
 def _array_sha256(value: np.ndarray) -> str:
@@ -414,6 +418,105 @@ def prepare_graph_part_proxy(
         "semantic_cache_dir": str(destination / "semantic_cache"),
         "results_dir": str(destination / "results"),
         "cases": case_records,
+    }
+    summary_path = destination / "proxy_summary.json"
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    summary["summary_path"] = str(summary_path)
+    return summary
+
+
+def compact_graph_part_proxy(
+    source_summary_path: str | Path,
+    output_root: str | Path,
+) -> dict[str, object]:
+    """Remove edge-semantic bulk unused by the simple part-aware decoder.
+
+    MatPhys's dataset eagerly expands node semantics to every spring even
+    though ``train_model_video_material_simple`` never consumes ``z_sem`` or
+    ``ctrl_sem``. The learned adapter consumes ``part_features`` from
+    ``train_ready.pt`` instead. This derivative proxy preserves those bytes,
+    assignments, material distributions, and graph provenance exactly while
+    replacing only the dead node-semantic input with one constant channel.
+    """
+
+    source_path = Path(source_summary_path).resolve()
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+    if source.get("contract") != GRAPH_PART_PROXY_CONTRACT:
+        raise ValueError("compact conversion requires a full graph-part proxy")
+    destination = Path(output_root).resolve()
+    mapping_source = Path(source["mapping"]["path"]).resolve()
+    if sha256_file(mapping_source) != source["mapping"]["sha256"]:
+        raise ValueError("source graph-part mapping bytes changed")
+    mapping_path = destination / "case_to_material.json"
+    mapping_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(mapping_source, mapping_path)
+
+    import torch
+
+    records = []
+    for raw_record in source.get("cases", []):
+        case = str(raw_record["name"])
+        source_node_sem = raw_record["node_sem"]
+        source_train_ready = raw_record["train_ready"]
+        if sha256_file(source_node_sem["path"]) != source_node_sem["sha256"]:
+            raise ValueError(f"{case}: source node semantics changed")
+        if sha256_file(source_train_ready["path"]) != source_train_ready["sha256"]:
+            raise ValueError(f"{case}: source train-ready bytes changed")
+        train_ready = torch.load(
+            source_train_ready["path"], map_location="cpu", weights_only=False
+        )
+        point_count = int(train_ready["xyz"].shape[0])
+        if point_count != int(raw_record["structure_point_count"]):
+            raise ValueError(f"{case}: source point count changed")
+
+        node_sem_path = destination / "semantic_cache" / f"{case}_node_sem.npz"
+        node_sem_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            node_sem_path,
+            node_sem=np.ones((point_count, 1), dtype=np.float32),
+        )
+        train_ready_path = destination / "results" / case / "train" / "train_ready.pt"
+        train_ready_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_train_ready["path"], train_ready_path)
+        records.append(
+            {
+                **raw_record,
+                "source_node_sem": dict(source_node_sem),
+                "node_sem": {
+                    "path": str(node_sem_path),
+                    "sha256": sha256_file(node_sem_path),
+                },
+                "train_ready": {
+                    "path": str(train_ready_path),
+                    "sha256": sha256_file(train_ready_path),
+                },
+                "edge_semantic_dimension": 1,
+                "edge_semantics_consumed_by_model": False,
+            }
+        )
+    if not records:
+        raise ValueError("source graph-part proxy contains no cases")
+
+    summary = {
+        **source,
+        "contract": GRAPH_PART_COMPACT_PROXY_CONTRACT,
+        "claim_boundary": (
+            f"{source.get('claim_boundary', '')} The 1024-D DINO part features "
+            "and all part assignments remain unchanged; only node/edge semantic "
+            "tensors unused by the simple decoder are represented by one constant "
+            "channel."
+        ).strip(),
+        "source_proxy": {
+            "path": str(source_path),
+            "sha256": sha256_file(source_path),
+        },
+        "mapping": {"path": str(mapping_path), "sha256": sha256_file(mapping_path)},
+        "semantic_cache_dir": str(destination / "semantic_cache"),
+        "results_dir": str(destination / "results"),
+        "cases": records,
     }
     summary_path = destination / "proxy_summary.json"
     summary_path.write_text(

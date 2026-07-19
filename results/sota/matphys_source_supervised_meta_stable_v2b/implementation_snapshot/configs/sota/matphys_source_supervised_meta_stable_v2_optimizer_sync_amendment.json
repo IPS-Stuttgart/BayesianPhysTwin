@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-stable-v2-optimizer-sync-amendment",
+  "locked_at_utc": "2026-07-18T23:04:38Z",
+  "parent_amendment": {
+    "path": "configs/sota/matphys_source_supervised_meta_stable_v2_aux_amendment.json",
+    "sha256": "40dd008ff2d459ef5d23d81d8db7c0b13234ea03210cef158c68a72c1d65b30f"
+  },
+  "triggering_failure": {
+    "path": "results/sota/matphys_source_supervised_meta_stable_v2a/failure_summary.json",
+    "sha256": "80c9b7050b6787780d9dff193ff72c94647781dc7c486bf02847e0ff9673c566",
+    "observation": "The terminal model was fully finite, but opaque NCCL object broadcast left 2433 non-finite optimizer values. Rank 0 accepted exactly its 923 first-epoch steps and rejected all 4256 later updates."
+  },
+  "timing": "Locked after source-only optimizer diagnostics and before any target prefix metric, target future rollout, target future observation, or target outcome access.",
+  "repair": {
+    "behavior": "Broadcast only small optimizer shape/type metadata as an object. Broadcast every Adam tensor with a native tensor collective, leave the authoritative rank's state untouched, load the received state only on other ranks, and all-reduce a finite-state assertion after synchronization.",
+    "runner": {
+      "path": "scripts/remote/run_matphys_causal.py",
+      "sha256": "ba4cd9ac8785c59f3f536cb2c3703246a4a93a0b80fcf1853a1728f0972bcb55"
+    },
+    "uneven_ddp_test": {
+      "path": "tests/test_matphys_uneven_ddp.py",
+      "sha256": "cd1d0dc4cd22671bb573d9fc6f8f13c93da3cbe0b9f5da3f5041a48ffe412ee1",
+      "assertion": "Ranks with one versus two updates end with equal model, Adam first-moment, and Adam second-moment state."
+    }
+  },
+  "unchanged": [
+    "model architecture and initialization",
+    "training objective and all hyperparameters",
+    "source and target membership",
+    "causal input and outcome boundaries",
+    "five fixed terminal epochs",
+    "target family gate",
+    "exploratory claim boundary"
+  ]
+}

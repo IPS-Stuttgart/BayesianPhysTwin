@@ -12,6 +12,7 @@ from bayesian_phystwin.phystwin_external_backbone import (
     _development_comparison,
     _load_cached_summary,
     _stage_trajectory,
+    _subset_comparison,
     validate_external_backbone_manifest,
 )
 
@@ -277,3 +278,22 @@ def test_development_comparison_rejects_non_development_case() -> None:
         _development_comparison(
             {"not_a_development_case": _case_result((1, 1), (1, 1), (1, 1), "backbone")}
         )
+
+
+def test_registered_subset_comparison_accepts_explicit_nondevelopment_order() -> None:
+    result = _subset_comparison(
+        {
+            "case_b": _case_result(
+                (0.02, 0.03), (0.01, 0.02), (0.015, 0.025), "bayesian_anchor"
+            )
+        },
+        expected_order=("case_b",),
+        status="registered exploratory subset",
+    )
+
+    assert result["status"] == "registered exploratory subset"
+    assert result["cases"] == ["case_b"]
+    assert result["methods"]["external_validation_selected"]["equal_case_mean"] == {
+        "chamfer_distance_m": 0.01,
+        "track_error_m": 0.02,
+    }

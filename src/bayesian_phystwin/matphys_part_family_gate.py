@@ -12,11 +12,17 @@ from typing import Any
 
 import numpy as np
 
-from .matphys_causal_bridge import validate_causal_training_audit
+from .matphys_causal_bridge import (
+    MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT,
+    validate_causal_training_audit,
+    validate_source_supervised_training_audit,
+)
 from .matphys_graph_parts import GRAPH_PART_PROXY_CONTRACT
+from .matphys_graph_parts import GRAPH_PART_COMPACT_PROXY_CONTRACT
 from .matphys_part_model import PART_AWARE_MODEL_CONTRACT
 from .phystwin_confirmation_lock import exclusively_owned_confirmation_output
 from .phystwin_confirmatory import _lock_protocol
+from .phystwin_external_backbone import validate_external_backbone_manifest
 from .phystwin_official_evaluation import evaluate_official_phystwin_interval
 
 
@@ -186,7 +192,10 @@ def run_matphys_part_family_gate(
         raise ValueError("candidate manifest omits its backbone")
     if backbone.get("future_observations_used") is not False:
         raise ValueError("candidate backbone does not forbid future observations")
-    if backbone.get("proxy_contract") != GRAPH_PART_PROXY_CONTRACT:
+    if backbone.get("proxy_contract") not in (
+        GRAPH_PART_PROXY_CONTRACT,
+        GRAPH_PART_COMPACT_PROXY_CONTRACT,
+    ):
         raise ValueError("family gate requires the causal graph-part proxy")
     parameterization = backbone.get("parameterization")
     if not isinstance(parameterization, Mapping):
@@ -207,8 +216,17 @@ def run_matphys_part_family_gate(
         backbone.get("causal_training_audit"),
         label="candidate causal audit",
     )
-    audit = validate_causal_training_audit(audit_path, checkpoint)
-    audit_cases = {str(record["name"]): record for record in audit["cases"]}
+    raw_audit = json.loads(audit_path.read_text(encoding="utf-8"))
+    source_supervised = (
+        raw_audit.get("contract") == MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT
+    )
+    audit = (
+        validate_source_supervised_training_audit(audit_path, checkpoint)
+        if source_supervised
+        else validate_causal_training_audit(audit_path, checkpoint)
+    )
+    audit_records = audit["target_cases"] if source_supervised else audit["cases"]
+    audit_cases = {str(record["name"]): record for record in audit_records}
 
     raw_cases = manifest.get("cases")
     if not isinstance(raw_cases, list) or not raw_cases:
@@ -255,6 +273,11 @@ def run_matphys_part_family_gate(
         "required_learned_case_count": required_learned_case_count,
         "fallback": "exact_teacher",
         "status": "source/development family selection; not future evidence",
+        "training_contract": (
+            "registered-source-supervised-target-disjoint-v1"
+            if source_supervised
+            else "independent-per-case-causal-v1"
+        ),
         "source_protocol": protocol_identity,
     }
     locked = _lock_protocol(output, specification)
@@ -270,7 +293,9 @@ def run_matphys_part_family_gate(
         fit_end = int(audit_case["evidence_end_frame_exclusive"])
         if not 1 <= fit_end < train_end:
             raise ValueError(f"{case}: no disjoint validation suffix remains")
-        if audit_case.get("validation_frame_interval") != [fit_end, train_end]:
+        if not source_supervised and audit_case.get(
+            "validation_frame_interval"
+        ) != [fit_end, train_end]:
             raise ValueError(f"{case}: causal audit validation interval changed")
         validation = entry.get("causal_validation")
         if not isinstance(validation, Mapping):
@@ -395,6 +420,202 @@ def run_matphys_part_family_gate(
         "future_metrics_opened": False,
     }
     summary_path = output / "matphys_part_family_gate.json"
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    summary["summary_path"] = str(summary_path)
+    return summary
+
+
+def _full_trajectory_path(
+    manifest_path: Path,
+    entry: Mapping[str, object],
+    *,
+    family: str,
+) -> tuple[Path, str]:
+    if family == "candidate":
+        path = _resolve(manifest_path, entry.get("trajectory"))
+        expected = str(entry.get("sha256", ""))
+    elif family == "teacher":
+        control = entry.get("teacher_control")
+        if not isinstance(control, Mapping):
+            raise ValueError(f"{entry.get('name')}: export omits full teacher control")
+        path = _resolve(manifest_path, control.get("trajectory"))
+        expected = str(control.get("sha256", ""))
+    else:
+        raise ValueError(f"unsupported MatPhys family: {family}")
+    if not path.is_file() or not expected or _sha256_file(path) != expected:
+        raise ValueError(f"{entry.get('name')}: {family} trajectory identity changed")
+    return path, expected
+
+
+@exclusively_owned_confirmation_output
+def open_matphys_part_family_future(
+    data_root: str | Path,
+    output_dir: str | Path,
+    candidate_manifest: str | Path,
+    gate_summary: str | Path,
+) -> dict[str, object]:
+    """Open exploratory futures only after target-prefix choices are frozen."""
+
+    root = Path(data_root).resolve()
+    output = Path(output_dir).resolve()
+    manifest_path = Path(candidate_manifest).resolve()
+    gate_path = Path(gate_summary).resolve()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    if gate.get("future_metrics_opened") is not False:
+        raise ValueError("family gate is not a sealed prefix-only decision")
+    gate_manifest = gate.get("contract", {}).get("candidate_manifest")
+    expected_manifest = {
+        "path": str(manifest_path),
+        "sha256": _sha256_file(manifest_path),
+    }
+    if gate_manifest != expected_manifest:
+        raise ValueError("family gate does not bind the candidate manifest")
+    raw_entries = manifest.get("cases")
+    if not isinstance(raw_entries, list):
+        raise ValueError("candidate manifest contains no cases")
+    entries = {str(entry["name"]): entry for entry in raw_entries}
+    gate_results = gate.get("case_results")
+    if not isinstance(gate_results, Mapping) or set(gate_results) != set(entries):
+        raise ValueError("family gate and candidate manifest cases disagree")
+
+    specification = {
+        "contract": "matphys-prefix-gated-future-evaluation-v1",
+        "candidate_manifest": expected_manifest,
+        "family_gate": {"path": str(gate_path), "sha256": _sha256_file(gate_path)},
+        "selection": "frozen target-prefix learned-versus-exact-teacher decision",
+        "future_access": "after selection lock only",
+        "status": "exploratory on a previously examined matched-SOTA split",
+    }
+    locked = _lock_protocol(output, specification)
+
+    selected_cases = []
+    selected_sources: dict[str, dict[str, object]] = {}
+    for case, entry in entries.items():
+        decision = gate_results[case]["decision"]
+        selected_family = (
+            "candidate" if bool(decision["learned_accepted"]) else "teacher"
+        )
+        path, trajectory_hash = _full_trajectory_path(
+            manifest_path, entry, family=selected_family
+        )
+        selected_sources[case] = {
+            "family": selected_family,
+            "path": str(path),
+            "sha256": trajectory_hash,
+        }
+        selected_cases.append(
+            {
+                "name": case,
+                "trajectory": str(path),
+                "sha256": trajectory_hash,
+                "evidence_end_frame_exclusive": int(
+                    entry["evidence_end_frame_exclusive"]
+                ),
+                "initial_alignment_tolerance_m": float(
+                    entry.get("initial_alignment_tolerance_m", 1.0e-6)
+                ),
+            }
+        )
+
+    backbone = manifest.get("backbone")
+    if not isinstance(backbone, Mapping):
+        raise ValueError("candidate manifest omits its backbone")
+    selected_manifest = {
+        "schema_version": 1,
+        "backbone": {
+            **dict(backbone),
+            "name": f"{backbone.get('name')} with frozen prefix family gate",
+            "training_scope": "registered-source-supervised-target-disjoint-v1",
+            "selection_gate": {
+                "path": str(gate_path),
+                "sha256": _sha256_file(gate_path),
+            },
+            "claim_boundary": (
+                "Prefix-gated exploratory trajectory bank; target future metrics "
+                "were unavailable when each learned-versus-teacher choice was made."
+            ),
+        },
+        "cases": selected_cases,
+    }
+    selected_manifest_path = output / "selected_external_backbone_manifest.json"
+    selected_manifest_path.write_text(
+        json.dumps(selected_manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    validate_external_backbone_manifest(
+        root, selected_manifest_path, require_full_cohort=False
+    )
+
+    case_results: dict[str, dict[str, object]] = {}
+    for case, entry in entries.items():
+        split = json.loads((root / case / "split.json").read_text(encoding="utf-8"))
+        train_end = int(split["train"][1])
+        test_end = int(split["test"][1])
+        family_metrics = {}
+        for family in ("teacher", "candidate"):
+            path, _ = _full_trajectory_path(manifest_path, entry, family=family)
+            trajectory = np.asarray(_load_pickle(path), dtype=float)
+            family_metrics[family] = _official_metrics(
+                root / case,
+                trajectory,
+                fit_end=train_end,
+                train_end=test_end,
+            )
+        selected_family = selected_sources[case]["family"]
+        case_results[case] = {
+            "selected_family": selected_family,
+            "future_metrics_by_family": family_metrics,
+            "selected_future_metrics": family_metrics[selected_family],
+            "selected_trajectory": selected_sources[case],
+        }
+
+    metrics = ("chamfer_distance_m", "track_error_m")
+    comparison = {
+        "case_count": len(case_results),
+        "selected_equal_case_mean": {
+            metric: float(
+                np.mean(
+                    [
+                        result["selected_future_metrics"][metric]
+                        for result in case_results.values()
+                    ]
+                )
+            )
+            for metric in metrics
+        },
+        "family_equal_case_means": {
+            family: {
+                metric: float(
+                    np.mean(
+                        [
+                            result["future_metrics_by_family"][family][metric]
+                            for result in case_results.values()
+                        ]
+                    )
+                )
+                for metric in metrics
+            }
+            for family in ("teacher", "candidate")
+        },
+    }
+    summary = {
+        "schema_version": 1,
+        "protocol_id": locked["protocol_id"],
+        "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "contract": specification,
+        "future_metrics_opened": True,
+        "selected_manifest": {
+            "path": str(selected_manifest_path),
+            "sha256": _sha256_file(selected_manifest_path),
+        },
+        "case_results": case_results,
+        "comparison": comparison,
+    }
+    summary_path = output / "matphys_part_family_future.json"
     summary_path.write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

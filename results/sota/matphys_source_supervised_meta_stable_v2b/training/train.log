@@ -1,0 +1,9 @@
+SimpleVideoMaterialPhysicsModel trainable_params=500,683 frozen_backbone=True d_motion=128 d_mat=32 main_loss=tracking+geo numeric_phys_prior=disabled class_prior=material_dist@learnable_codebook logk=absolute_head(base=30000, min=1000, max=100000, scale=1, soft_clamp=0.25)
+[Epoch 0001] Train: loss=0.001375 track=0.000621 geo=0.000754 render=0.000000 acc=6.402865e-04 phys_part=0.000000 phys_global=0.000000 teacher_k=0.003297 teacher_global=0.000000 graphs=18
+[Epoch 0002] Train: loss=0.001536 track=0.000574 geo=0.000962 render=0.000000 acc=1.475715e-03 phys_part=0.000000 phys_global=0.000000 teacher_k=0.002212 teacher_global=0.000000 graphs=18
+[Epoch 0003] Train: loss=0.001084 track=0.000472 geo=0.000612 render=0.000000 acc=1.370106e-03 phys_part=0.000000 phys_global=0.000000 teacher_k=0.002781 teacher_global=0.000000 graphs=18
+[Epoch 0004] Train: loss=0.002414 track=0.000865 geo=0.001549 render=0.000000 acc=7.363303e-04 phys_part=0.000000 phys_global=0.000000 teacher_k=0.004674 teacher_global=0.000000 graphs=18
+[Epoch 0005] Train: loss=0.001949 track=0.000726 geo=0.001223 render=0.000000 acc=6.215880e-04 phys_part=0.000000 phys_global=0.000000 teacher_k=0.005918 teacher_global=0.000000 graphs=18
+[Epoch 0005] Test: loss=0.000000 track=0.000000 geo=0.000000 render=0.000000 graphs=0
+Saved last checkpoint to: /mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2b/last_checkpoint.pth
+Saved best checkpoint (test_loss=0.000000) to: /mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2b/best_checkpoint.pth

@@ -9,6 +9,10 @@ import pytest
 import bayesian_phystwin.matphys_part_family_gate as family_gate
 from bayesian_phystwin.matphys_graph_parts import GRAPH_PART_PROXY_CONTRACT
 from bayesian_phystwin.matphys_part_model import PART_AWARE_MODEL_CONTRACT
+from bayesian_phystwin.phystwin_external_backbone import (
+    EXTERNAL_COORDINATE_FRAME,
+    EXTERNAL_VERTEX_CONTRACT,
+)
 
 
 def _sha256(path: Path) -> str:
@@ -80,6 +84,14 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     candidate[1:, :, 1] -= 0.001
     candidate_identity = _dump(tmp_path / "candidate_validation.pkl", candidate)
     teacher_identity = _dump(tmp_path / "teacher_validation.pkl", teacher)
+    teacher_full = np.zeros((8, 4, 3), dtype=np.float32)
+    teacher_full[:, :3] = observed
+    teacher_full[:, 3, 0] = 0.03
+    teacher_full[1:, :, 1] += 0.002
+    candidate_full = teacher_full.copy()
+    candidate_full[1:, :, 1] -= 0.001
+    candidate_full_identity = _dump(tmp_path / "candidate_full.pkl", candidate_full)
+    teacher_full_identity = _dump(tmp_path / "teacher_full.pkl", teacher_full)
     checkpoint = tmp_path / "checkpoint.pth"
     checkpoint.write_bytes(b"checkpoint")
     audit = tmp_path / "audit.json"
@@ -97,7 +109,12 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
     manifest = {
         "schema_version": 1,
         "backbone": {
+            "name": "test MatPhys residual",
+            "source_repository": "https://example.test/matphys",
+            "source_commit": "a" * 40,
             "future_observations_used": False,
+            "coordinate_frame": EXTERNAL_COORDINATE_FRAME,
+            "vertex_contract": EXTERNAL_VERTEX_CONTRACT,
             "proxy_contract": GRAPH_PART_PROXY_CONTRACT,
             "checkpoint": {"path": str(checkpoint), "sha256": _sha256(checkpoint)},
             "causal_training_audit": {
@@ -112,6 +129,14 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
         "cases": [
             {
                 "name": "case_a",
+                "trajectory": candidate_full_identity["path"],
+                "sha256": candidate_full_identity["sha256"],
+                "evidence_end_frame_exclusive": 4,
+                "initial_alignment_tolerance_m": 1e-6,
+                "teacher_control": {
+                    "trajectory": teacher_full_identity["path"],
+                    "sha256": teacher_full_identity["sha256"],
+                },
                 "spring_field_summary": {
                     "path": str(spring_summary),
                     "sha256": _sha256(spring_summary),
@@ -210,3 +235,86 @@ def test_gate_reads_only_prefix_truncated_pair_and_falls_back_fail_closed(
             manifest_path,
             case_names=("case_a",),
         )
+
+
+def test_gate_accepts_registered_source_supervised_target_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root, manifest_path, _, audit_path = _fixture(tmp_path)
+    audit_path.write_text(
+        json.dumps(
+            {"contract": family_gate.MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT}
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["backbone"]["causal_training_audit"]["sha256"] = _sha256(audit_path)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(
+        family_gate,
+        "validate_source_supervised_training_audit",
+        lambda audit, checkpoint: {
+            "target_cases": [
+                {"name": "case_a", "evidence_end_frame_exclusive": 4}
+            ]
+        },
+    )
+
+    result = family_gate.run_matphys_part_family_gate(
+        data_root,
+        tmp_path / "source_supervised_gate",
+        manifest_path,
+        case_names=("case_a",),
+    )
+
+    assert result["future_metrics_opened"] is False
+    assert result["contract"]["training_contract"] == (
+        "registered-source-supervised-target-disjoint-v1"
+    )
+
+
+def test_future_opener_freezes_selected_manifest_before_scoring(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data_root, manifest_path, _, _ = _fixture(tmp_path)
+    monkeypatch.setattr(
+        family_gate,
+        "validate_causal_training_audit",
+        lambda audit, checkpoint: {
+            "cases": [
+                {
+                    "name": "case_a",
+                    "evidence_end_frame_exclusive": 4,
+                    "validation_frame_interval": [4, 6],
+                }
+            ]
+        },
+    )
+    gate = family_gate.run_matphys_part_family_gate(
+        data_root,
+        tmp_path / "gate_for_future",
+        manifest_path,
+        case_names=("case_a",),
+    )
+
+    future = family_gate.open_matphys_part_family_future(
+        data_root,
+        tmp_path / "future",
+        manifest_path,
+        gate["summary_path"],
+    )
+
+    assert future["future_metrics_opened"] is True
+    assert future["case_results"]["case_a"]["selected_family"] == "candidate"
+    assert future["comparison"]["selected_equal_case_mean"] == future[
+        "comparison"
+    ]["family_equal_case_means"]["candidate"]
+    selected_manifest = json.loads(
+        Path(future["selected_manifest"]["path"]).read_text(encoding="utf-8")
+    )
+    assert selected_manifest["cases"][0]["sha256"] == json.loads(
+        manifest_path.read_text(encoding="utf-8")
+    )["cases"][0]["sha256"]

@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "protocol_name": "matphys-source-supervised-meta-smoke-v1",
+  "locked_at_utc": "2026-07-18T18:45:44Z",
+  "status": "Exploratory matched-SOTA smoke test; the five target outcomes were examined before this method family was registered.",
+  "claim_boundary": "This experiment can diagnose whether causal shared training closes the matched MatPhys split gap. It cannot establish a new SOTA claim; a successful family must be frozen and evaluated on an independent preregistered cohort.",
+  "scientific_hypothesis": "A shared teacher-centered spring residual can learn transferable material/dynamics structure when its input is restricted to an early causal video prefix but its supervision uses complete trajectories from disjoint source interactions.",
+  "source_split_provenance": {
+    "repository": "https://github.com/Yrainy0615/MatPhys",
+    "commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "checkpoint_sha256": "38af188bd3ce7f7ab804faa80531c48480684e08721e6ee64a09859bcf0b6a15",
+    "split_rule": "MatPhys random case split with seed 42, reconstructed from the released checkpoint and dataset ordering",
+    "published_reference_m": {
+      "future_chamfer_distance": 0.008,
+      "future_track_error": 0.015
+    }
+  },
+  "source_cases": [
+    "weird_package",
+    "double_stretch_zebra",
+    "double_lift_sloth",
+    "single_lift_sloth",
+    "single_lift_cloth",
+    "single_lift_cloth_4",
+    "single_lift_zebra",
+    "single_push_rope_4",
+    "rope_double_hand",
+    "single_lift_dinosor",
+    "single_push_rope_1",
+    "single_lift_rope",
+    "single_lift_cloth_1",
+    "double_lift_cloth_3",
+    "single_lift_cloth_3",
+    "double_stretch_sloth",
+    "single_push_rope"
+  ],
+  "target_cases": [
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "double_lift_cloth_1",
+    "double_lift_zebra",
+    "single_push_sloth"
+  ],
+  "information_boundary": {
+    "source_video_input": "first 75 percent of each released source training prefix",
+    "source_supervision": "complete registered source trajectory, including frames after the source video prefix",
+    "target_training_access": "none beyond split metadata and predeclared evidence boundaries",
+    "target_inference_input": "first 75 percent of each released target training prefix",
+    "target_family_selection": "remaining 25 percent of the released target training prefix",
+    "target_future": "opened only after the target family choice is frozen",
+    "checkpoint_selection": "fixed terminal epoch; no target metric or target frame is used"
+  },
+  "model": {
+    "training_contract": "source-supervised-meta",
+    "epochs": 20,
+    "eval_every_epochs": 5,
+    "graph_parts": true,
+    "part_count": 5,
+    "dino_model": "dinov2_vitl14_reg",
+    "dino_keyframes": 4,
+    "semantic_edge_weight": 4.0,
+    "part_feature_scale": 1.0,
+    "teacher_parameterization": "released-phystwin-bounded-logk-residual-v1",
+    "teacher_residual_log_scale": 0.6931471805599453,
+    "identity_fallback": "zero residual is the exact released PhysTwin spring field",
+    "global_parameters": "frozen at released PhysTwin values"
+  },
+  "competence_gate": {
+    "public_checkpoint_control": "Reject an imported proposal when at least 99 percent of object springs lie at one decoder bound or spatial log-stiffness standard deviation is below 1e-4.",
+    "source_training_smoke": "Require finite source loss and a nondegenerate predicted spring field before target Warp evaluation.",
+    "target_family_gate": "Choose learned or exact teacher separately per target using only the disjoint target prefix validation interval; ties select teacher."
+  },
+  "primary_metrics": [
+    "equal-case mean future chamfer_distance_m",
+    "equal-case mean future track_error_m",
+    "target family selection count",
+    "late-horizon track error",
+    "NEES and coverage when covariance is available"
+  ],
+  "success_rule": {
+    "minimum": "improve both matched target future metrics over the exact-teacher/discrepancy reference without target-tuned hyperparameters",
+    "frontier": "close the approximately 8.5 percent CD and 14 percent track gap to the published MatPhys means on its own five-case split",
+    "next_step": "Only a passing frozen family advances to an independent preregistered evaluation."
+  },
+  "forbidden": [
+    "target future RGB, depth, tracks, masks, or point clouds during training",
+    "target metrics for checkpoint or hyperparameter selection",
+    "changing source or target membership after target inspection",
+    "calling this already examined split independent, confirmatory, or a new SOTA result",
+    "calling graph-part proxy inputs a reproduction of unpublished MatPhys preprocessing"
+  ]
+}

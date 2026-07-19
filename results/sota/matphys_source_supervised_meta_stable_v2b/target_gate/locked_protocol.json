@@ -1,0 +1,32 @@
+{
+  "locked_at_utc": "2026-07-19T00:25:09.365795+00:00",
+  "protocol_id": "f830fa30f26329a21fa605b3b2d7657c5372050febe01d6068fdef634b434758",
+  "schema_version": 1,
+  "specification": {
+    "candidate_manifest": {
+      "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/target5_export_v2b/external_backbone_manifest.json",
+      "sha256": "ebc3bf3129531d78f82b174820e7e42506798e9600d66269f60992a0d82e846a"
+    },
+    "cases": [
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "double_lift_cloth_1",
+      "double_lift_zebra",
+      "single_push_sloth"
+    ],
+    "contract": "causal-matphys-part-family-fit-validation-v1",
+    "fallback": "exact_teacher",
+    "future_trajectory_access": "forbidden; gate reads truncated validation artifacts only",
+    "maximum_metric_regression": 0.0,
+    "minimum_relative_score_improvement": 0.001,
+    "reference": "paired exact released-PhysTwin teacher rerun",
+    "required_learned_case_count": 1,
+    "selection_interval": "[fit_end, released_train_end)",
+    "source_protocol": {
+      "path": "/mnt/corsair/florianpfaff/matphys-shared-prior-v1/Bayesian-PhysTwin/configs/sota/matphys_source_supervised_meta_smoke_v1_gate_amendment.json",
+      "sha256": "7716377c7d1e0292527e88c6bd1d0235a36f30c533d12ebc43566a8bb7de6be7"
+    },
+    "status": "source/development family selection; not future evidence",
+    "training_contract": "registered-source-supervised-target-disjoint-v1"
+  }
+}

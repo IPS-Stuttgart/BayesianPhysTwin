@@ -484,16 +484,15 @@ def _fit_external_case(
     return case, case_summary
 
 
-def _development_comparison(
+def _subset_comparison(
     case_results: dict[str, dict[str, object]],
+    *,
+    expected_order: tuple[str, ...],
+    status: str,
 ) -> dict[str, object]:
     case_names = tuple(case_results)
-    expected_order = tuple(case for case in DEVELOPMENT_CASES if case in case_names)
     if case_names != expected_order:
-        raise ValueError(
-            "development smoke cases must be an ordered subset of "
-            f"{list(DEVELOPMENT_CASES)}"
-        )
+        raise ValueError("subset comparison cases differ from the registered order")
 
     method_names = (
         "external_backbone",
@@ -542,11 +541,28 @@ def _development_comparison(
             "per_case": per_case,
         }
     return {
-        "status": "development-only integration smoke; not cohort evidence",
+        "status": status,
         "case_count": len(case_names),
         "cases": list(case_names),
         "methods": per_method,
     }
+
+
+def _development_comparison(
+    case_results: dict[str, dict[str, object]],
+) -> dict[str, object]:
+    case_names = tuple(case_results)
+    expected_order = tuple(case for case in DEVELOPMENT_CASES if case in case_names)
+    if case_names != expected_order:
+        raise ValueError(
+            "development smoke cases must be an ordered subset of "
+            f"{list(DEVELOPMENT_CASES)}"
+        )
+    return _subset_comparison(
+        case_results,
+        expected_order=expected_order,
+        status="development-only integration smoke; not cohort evidence",
+    )
 
 
 @exclusively_owned_confirmation_output
@@ -558,17 +574,35 @@ def run_external_backbone_overlay(
     force: bool = False,
     workers: int = 1,
     development_smoke: bool = False,
+    registered_subset_protocol: str | Path | None = None,
 ) -> dict[str, object]:
     """Run frozen corrections over a full or explicit development backbone."""
 
     if workers < 1:
         raise ValueError("workers must be positive")
+    if development_smoke and registered_subset_protocol is not None:
+        raise ValueError("development smoke and registered subset are exclusive")
     root = Path(data_root).resolve()
     output = Path(output_dir).resolve()
+    subset_protocol_identity = None
+    registered_order = None
+    if registered_subset_protocol is not None:
+        protocol_path = Path(registered_subset_protocol).resolve()
+        protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+        raw_order = protocol.get("target_cases")
+        if not isinstance(raw_order, list) or not raw_order:
+            raise ValueError("registered subset protocol omits target_cases")
+        registered_order = tuple(str(case) for case in raw_order)
+        if len(registered_order) != len(set(registered_order)):
+            raise ValueError("registered target cases must be unique")
+        subset_protocol_identity = {
+            "path": str(protocol_path),
+            "sha256": _sha256_file(protocol_path),
+        }
     validated = validate_external_backbone_manifest(
         root,
         manifest_path,
-        require_full_cohort=not development_smoke,
+        require_full_cohort=not development_smoke and registered_order is None,
     )
     if development_smoke:
         names = tuple(str(entry["name"]) for entry in validated["cases"])
@@ -577,6 +611,12 @@ def run_external_backbone_overlay(
             raise ValueError(
                 "development smoke manifest must be an ordered subset of "
                 f"{list(DEVELOPMENT_CASES)}"
+            )
+    elif registered_order is not None:
+        names = tuple(str(entry["name"]) for entry in validated["cases"])
+        if names != registered_order:
+            raise ValueError(
+                "external manifest cases differ from the registered target order"
             )
     bayesian_protocol = BayesianAnchorConfirmationProtocol()
     residual_protocol = PhysTwinConfirmatoryProtocol()
@@ -593,8 +633,11 @@ def run_external_backbone_overlay(
         "status": (
             "development-only integration smoke; not cohort evidence"
             if development_smoke
+            else "exploratory registered subset; not independent SOTA evidence"
+            if registered_order is not None
             else "exploratory on the previously examined PhysTwin cohort"
         ),
+        "registered_subset_protocol": subset_protocol_identity,
     }
     locked = _lock_protocol(output, specification)
     jobs = [
@@ -617,6 +660,12 @@ def run_external_backbone_overlay(
 
     if development_smoke:
         comparison = _development_comparison(case_results)
+    elif registered_order is not None:
+        comparison = _subset_comparison(
+            case_results,
+            expected_order=registered_order,
+            status="exploratory registered subset; not independent SOTA evidence",
+        )
     else:
         trajectory_root = output / "cases" / "{case}"
         comparison = aggregate_phystwin_sota_comparison(
@@ -657,6 +706,8 @@ def run_external_backbone_overlay(
     summary_name = (
         "external_backbone_development_smoke_summary.json"
         if development_smoke
+        else "external_backbone_registered_subset_summary.json"
+        if registered_order is not None
         else "external_backbone_overlay_summary.json"
     )
     summary_path = output / summary_name

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "completed_at_utc": "2026-07-18T21:38:53Z",
+  "protocol": "matphys-source-supervised-meta-smoke-v1",
+  "status": "rejected_before_target_future_evaluation",
+  "claim_boundary": "Exploratory source-supervised competence test. No target future observation or target metric was opened.",
+  "remote_run": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join_v6",
+  "checkpoint": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_compact_join_v6/last_checkpoint.pth",
+    "sha256": "ac2b90278d148deb09286d930ad41de5692ad98ada897c207c1dd2aab059288f",
+    "model_nonfinite_count": 155939,
+    "optimizer_nonfinite_count": 710400
+  },
+  "source_epoch_metrics": [
+    {
+      "epoch": 1,
+      "loss": 0.000771,
+      "track": 0.000341,
+      "geo": 0.000430
+    },
+    {
+      "epoch": 2,
+      "loss": 0.003070,
+      "track": 0.000832,
+      "geo": 0.002237
+    },
+    {
+      "epoch": 3,
+      "loss": 0.005212,
+      "track": 0.001429,
+      "geo": 0.003783
+    },
+    {
+      "epoch": 4,
+      "loss": 0.004611,
+      "track": 0.001317,
+      "geo": 0.003294
+    },
+    {
+      "epoch": 5,
+      "loss": 0.004416,
+      "track": 0.001211,
+      "geo": 0.003205
+    }
+  ],
+  "failure": {
+    "stage": "first target causal-prefix spring-field competence check",
+    "case": "single_clift_cloth_1",
+    "error": "spring fields must be finite",
+    "target_prefix_features_generated": true,
+    "target_prefix_metrics_computed": false,
+    "target_future_rollout_computed": false,
+    "target_future_metrics_computed": false
+  },
+  "diagnosis": "All compact source proxy tensors were finite. The terminal checkpoint itself contains widespread non-finite learned parameters and Adam moments, so the model fails closed before target family selection.",
+  "artifacts": {
+    "source_supervised_training_audit": {
+      "path": "source_supervised_training_audit.json",
+      "sha256": "095962504be318cf0a14d23a3a7f61507cdd7bf29c345753f634c2836526da86"
+    },
+    "train_log": {
+      "path": "train.log",
+      "sha256": "7b496735d36a4dff085eed3a909a4f1d26031588e20499a6e0467fc1f3b75db6"
+    },
+    "target_export_log": {
+      "path": "target5_export.log",
+      "sha256": "7cf97e8f06bc22210f9ff4c959b9cf4e6a4c29796437a83ff7791e2d09df4030"
+    }
+  }
+}

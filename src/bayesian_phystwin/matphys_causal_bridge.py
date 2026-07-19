@@ -12,6 +12,10 @@ import numpy as np
 
 
 MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION = 2
+MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION = 1
+MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT = (
+    "matphys-source-supervised-meta-audit-v1"
+)
 _EXTERNAL_BACKBONE_SHARED_FIELDS = (
     "name",
     "source_repository",
@@ -30,6 +34,32 @@ def sha256_file(path: str | Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _artifact_identities(paths: Sequence[str | Path]) -> list[dict[str, str]]:
+    identities = []
+    for raw_path in paths:
+        path = Path(raw_path).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        identities.append({"path": str(path), "sha256": sha256_file(path)})
+    return identities
+
+
+def _validate_artifact_identities(
+    identities: object,
+    *,
+    label: str,
+) -> None:
+    if identities is None:
+        return
+    if not isinstance(identities, list):
+        raise ValueError(f"{label} identities must be a list")
+    for identity in identities:
+        if not isinstance(identity, dict):
+            raise ValueError(f"{label} identity must be an object")
+        if sha256_file(identity.get("path", "")) != identity.get("sha256"):
+            raise ValueError(f"{label} bytes changed")
 
 
 def causal_uniform_frame_indices(
@@ -274,6 +304,7 @@ def write_causal_training_audit(
     split_by_case: Mapping[str, Mapping[str, object]],
     proxy_summary_path: str | Path,
     parameterization: Mapping[str, object] | None = None,
+    runtime_access_log_paths: Sequence[str | Path] = (),
 ) -> dict[str, object]:
     """Bind checkpoint bytes to an observed-frame access log."""
 
@@ -358,6 +389,7 @@ def write_causal_training_audit(
         "proxy": {"path": str(proxy_path), "sha256": sha256_file(proxy_path)},
         "checkpoints": checkpoints,
         "cases": cases,
+        "runtime_access_logs": _artifact_identities(runtime_access_log_paths),
     }
     if parameterization is not None:
         audit["parameterization"] = dict(parameterization)
@@ -400,6 +432,9 @@ def validate_causal_training_audit(
         raise ValueError("MatPhys checkpoint audit does not bind objective access")
     if audit.get("checkpoint_policy") != "fixed-terminal-epoch-v1":
         raise ValueError("MatPhys checkpoint audit does not use the terminal epoch")
+    _validate_artifact_identities(
+        audit.get("runtime_access_logs"), label="MatPhys runtime access log"
+    )
     checkpoint = Path(checkpoint_path).resolve()
     identity = {"path": str(checkpoint), "sha256": sha256_file(checkpoint)}
     if identity not in audit.get("checkpoints", []):
@@ -471,6 +506,349 @@ def validate_causal_training_audit(
         if not isinstance(teacher, dict):
             raise ValueError("teacher parameterization omits its source manifest")
         validate_matphys_teacher_manifest(teacher)
+    return {
+        **audit,
+        "audit_path": str(source),
+        "audit_sha256": sha256_file(source),
+    }
+
+
+def _case_split_identity(
+    data_root: Path,
+    case: str,
+    split: Mapping[str, object],
+) -> dict[str, object]:
+    split_path = data_root / case / "split.json"
+    if not split_path.is_file():
+        raise FileNotFoundError(split_path)
+    train = [int(value) for value in split["train"]]
+    test = [int(value) for value in split["test"]]
+    frame_len = int(split.get("frame_len", test[1]))
+    if train[0] < 0 or train[0] >= train[1] or train[1] > frame_len:
+        raise ValueError(f"{case}: malformed training interval")
+    if test[0] < train[1] or test[0] >= test[1] or test[1] > frame_len:
+        raise ValueError(f"{case}: malformed test interval")
+    return {
+        "path": str(split_path.resolve()),
+        "sha256": sha256_file(split_path),
+        "train": train,
+        "test": test,
+        "frame_len": frame_len,
+    }
+
+
+def write_source_supervised_training_audit(
+    checkpoint_paths: Iterable[str | Path],
+    output_path: str | Path,
+    *,
+    source_repository: str,
+    source_commit: str,
+    data_root: str | Path,
+    source_cases: Sequence[str],
+    target_cases: Sequence[str],
+    accessed_frame_indices: Mapping[str, Sequence[int]],
+    accessed_frame_paths: Mapping[str, Mapping[int, str | Path]],
+    objective_end_frames_exclusive: Mapping[str, int],
+    evidence_end_frames_exclusive: Mapping[str, int],
+    target_evidence_end_frames_exclusive: Mapping[str, int],
+    split_by_case: Mapping[str, Mapping[str, object]],
+    proxy_summary_path: str | Path,
+    split_registration_path: str | Path,
+    parameterization: Mapping[str, object] | None = None,
+    runtime_access_log_paths: Sequence[str | Path] = (),
+    implementation_paths: Sequence[str | Path] = (),
+) -> dict[str, object]:
+    """Bind a causal-input/full-source-outcome checkpoint to a disjoint split.
+
+    Source outcomes may extend beyond the source input prefix. Target videos,
+    outcomes, and metrics are forbidden during training and checkpoint
+    selection. This is a separate contract from per-case causal adaptation.
+    """
+
+    sources = tuple(str(case) for case in source_cases)
+    targets = tuple(str(case) for case in target_cases)
+    if not sources or not targets:
+        raise ValueError("source and target case lists must both be nonempty")
+    if len(sources) != len(set(sources)) or len(targets) != len(set(targets)):
+        raise ValueError("source and target case lists must be unique")
+    if set(sources) & set(targets):
+        raise ValueError("source and target cases must be disjoint")
+    if set(accessed_frame_indices) != set(sources):
+        raise ValueError("video access log must contain exactly the source cases")
+    if set(objective_end_frames_exclusive) != set(sources):
+        raise ValueError("objective log must contain exactly the source cases")
+    if set(evidence_end_frames_exclusive) != set(sources):
+        raise ValueError("evidence boundaries must contain exactly the source cases")
+    if set(target_evidence_end_frames_exclusive) != set(targets):
+        raise ValueError("target evidence boundaries must match the target cases")
+    if set(split_by_case) != set(sources) | set(targets):
+        raise ValueError("split metadata must contain every registered case exactly")
+    if not source_repository or not source_commit:
+        raise ValueError("source repository and commit are required")
+
+    root = Path(data_root).resolve()
+    split_registration = Path(split_registration_path).resolve()
+    registration = json.loads(split_registration.read_text(encoding="utf-8"))
+    if set(registration.get("source_cases", [])) != set(sources):
+        raise ValueError("registered source cases differ from the training request")
+    if set(registration.get("target_cases", [])) != set(targets):
+        raise ValueError("registered target cases differ from the training request")
+
+    proxy_path = Path(proxy_summary_path).resolve()
+    proxy_summary = json.loads(proxy_path.read_text(encoding="utf-8"))
+    proxy_cases = {str(record.get("name")) for record in proxy_summary.get("cases", [])}
+    if proxy_cases != set(sources):
+        raise ValueError("training proxy must contain exactly the source cases")
+
+    source_records: list[dict[str, object]] = []
+    for case in sources:
+        split_identity = _case_split_identity(root, case, split_by_case[case])
+        train_end = int(split_identity["train"][1])
+        frame_len = int(split_identity["frame_len"])
+        evidence_end = int(evidence_end_frames_exclusive[case])
+        objective_end = int(objective_end_frames_exclusive[case])
+        if not 1 <= evidence_end <= train_end:
+            raise ValueError(f"{case}: source video evidence crosses its prefix")
+        if not evidence_end <= objective_end <= frame_len:
+            raise ValueError(f"{case}: source objective boundary is invalid")
+        indices = sorted(set(int(index) for index in accessed_frame_indices[case]))
+        if not indices or indices[0] < 0 or indices[-1] >= evidence_end:
+            raise ValueError(f"{case}: source video access crossed its evidence prefix")
+        case_paths = accessed_frame_paths.get(case)
+        if not isinstance(case_paths, Mapping):
+            raise ValueError(f"{case}: exact source frame paths were not recorded")
+        frame_files = []
+        for frame_id in indices:
+            if frame_id not in case_paths:
+                raise ValueError(f"{case}: frame {frame_id} has no bound source file")
+            frame_path = Path(case_paths[frame_id]).resolve()
+            if int(frame_path.stem) != frame_id:
+                raise ValueError(f"{case}: source frame id disagrees with its filename")
+            frame_files.append(
+                {
+                    "frame_id": frame_id,
+                    "path": str(frame_path),
+                    "sha256": sha256_file(frame_path),
+                }
+            )
+        source_records.append(
+            {
+                "name": case,
+                "split": split_identity,
+                "evidence_end_frame_exclusive": evidence_end,
+                "accessed_frame_indices": indices,
+                "maximum_accessed_frame": indices[-1],
+                "accessed_frame_files": frame_files,
+                "objective_frame_interval": [1, objective_end],
+                "maximum_objective_frame": objective_end - 1,
+                "source_future_outcomes_used": objective_end > evidence_end,
+            }
+        )
+
+    target_records = []
+    for case in targets:
+        split_identity = _case_split_identity(root, case, split_by_case[case])
+        evidence_end = int(target_evidence_end_frames_exclusive[case])
+        if not 1 <= evidence_end <= int(split_identity["train"][1]):
+            raise ValueError(f"{case}: target evidence boundary crosses its prefix")
+        target_records.append(
+            {
+                "name": case,
+                "split": split_identity,
+                "evidence_end_frame_exclusive": evidence_end,
+                "video_accessed_during_training": False,
+                "outcome_accessed_during_training": False,
+                "metric_accessed_during_training": False,
+            }
+        )
+
+    checkpoints = []
+    for raw_path in checkpoint_paths:
+        path = Path(raw_path).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        checkpoints.append({"path": str(path), "sha256": sha256_file(path)})
+    if not checkpoints:
+        raise ValueError("at least one checkpoint is required")
+    audit = {
+        "schema_version": MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION,
+        "contract": MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT,
+        "source_repository": source_repository,
+        "source_commit": source_commit,
+        "data_root": str(root),
+        "frame_id_contract": "numeric-filename-stem-v2",
+        "video_sampling": "uniform-numeric-ids-before-evidence-boundary-v2",
+        "training_semantics": "causal-input-full-registered-source-outcome-v1",
+        "checkpoint_policy": "fixed-terminal-epoch-v1",
+        "source_future_video_used": False,
+        "source_future_outcomes_used": any(
+            bool(record["source_future_outcomes_used"])
+            for record in source_records
+        ),
+        "target_future_observations_used": False,
+        "target_metrics_used_for_checkpoint_selection": False,
+        "split_registration": {
+            "path": str(split_registration),
+            "sha256": sha256_file(split_registration),
+        },
+        "proxy": {"path": str(proxy_path), "sha256": sha256_file(proxy_path)},
+        "checkpoints": checkpoints,
+        "source_cases": source_records,
+        "target_cases": target_records,
+        "runtime_access_logs": _artifact_identities(runtime_access_log_paths),
+        "implementation_files": _artifact_identities(implementation_paths),
+    }
+    if parameterization is not None:
+        audit["parameterization"] = dict(parameterization)
+    destination = Path(output_path).resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(audit, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        **audit,
+        "audit_path": str(destination),
+        "audit_sha256": sha256_file(destination),
+    }
+
+
+def validate_source_supervised_training_audit(
+    audit_path: str | Path,
+    checkpoint_path: str | Path,
+) -> dict[str, object]:
+    """Validate source-only supervision and exact target non-access."""
+
+    source = Path(audit_path).resolve()
+    audit = json.loads(source.read_text(encoding="utf-8"))
+    if (
+        audit.get("schema_version")
+        != MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION
+        or audit.get("contract") != MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT
+    ):
+        raise ValueError("unsupported MatPhys source-supervised audit")
+    expected_fields = {
+        "source_future_video_used": False,
+        "target_future_observations_used": False,
+        "target_metrics_used_for_checkpoint_selection": False,
+        "frame_id_contract": "numeric-filename-stem-v2",
+        "video_sampling": "uniform-numeric-ids-before-evidence-boundary-v2",
+        "training_semantics": "causal-input-full-registered-source-outcome-v1",
+        "checkpoint_policy": "fixed-terminal-epoch-v1",
+    }
+    for field, expected in expected_fields.items():
+        if audit.get(field) != expected:
+            raise ValueError(f"source-supervised audit violates {field}")
+    _validate_artifact_identities(
+        audit.get("runtime_access_logs"),
+        label="MatPhys source-supervised runtime access log",
+    )
+    _validate_artifact_identities(
+        audit.get("implementation_files"),
+        label="MatPhys source-supervised implementation file",
+    )
+    checkpoint = Path(checkpoint_path).resolve()
+    identity = {"path": str(checkpoint), "sha256": sha256_file(checkpoint)}
+    if identity not in audit.get("checkpoints", []):
+        raise ValueError("checkpoint bytes are not bound by the source audit")
+    for identity_field in ("split_registration", "proxy"):
+        artifact = audit.get(identity_field)
+        if not isinstance(artifact, dict):
+            raise ValueError(f"source-supervised audit omits {identity_field}")
+        if sha256_file(artifact["path"]) != artifact.get("sha256"):
+            raise ValueError(f"source-supervised {identity_field} bytes changed")
+
+    registration = json.loads(
+        Path(audit["split_registration"]["path"]).read_text(encoding="utf-8")
+    )
+    sources = audit.get("source_cases", [])
+    targets = audit.get("target_cases", [])
+    source_names = {str(record.get("name")) for record in sources}
+    target_names = {str(record.get("name")) for record in targets}
+    if not source_names or not target_names or source_names & target_names:
+        raise ValueError("source-supervised audit has an invalid case partition")
+    if source_names != set(registration.get("source_cases", [])):
+        raise ValueError("audited sources differ from the registered split")
+    if target_names != set(registration.get("target_cases", [])):
+        raise ValueError("audited targets differ from the registered split")
+
+    proxy_summary = json.loads(Path(audit["proxy"]["path"]).read_text(encoding="utf-8"))
+    proxy_names = {
+        str(record.get("name")) for record in proxy_summary.get("cases", [])
+    }
+    if proxy_names != source_names:
+        raise ValueError("source-supervised proxy includes non-source cases")
+    for proxy_case in proxy_summary.get("cases", []):
+        for key in ("node_sem", "train_ready"):
+            artifact = proxy_case.get(key)
+            if not isinstance(artifact, dict):
+                raise ValueError(f"MatPhys source proxy omits {key}")
+            if sha256_file(artifact["path"]) != artifact.get("sha256"):
+                raise ValueError(f"MatPhys source proxy {key} bytes changed")
+
+    for record in sources:
+        split = record["split"]
+        if sha256_file(split["path"]) != split["sha256"]:
+            raise ValueError(f"{record.get('name')}: source split bytes changed")
+        evidence_end = int(record["evidence_end_frame_exclusive"])
+        objective_start, objective_end = (
+            int(value) for value in record["objective_frame_interval"]
+        )
+        if not 1 <= evidence_end <= int(split["train"][1]):
+            raise ValueError(f"{record.get('name')}: invalid source evidence boundary")
+        if objective_start != 1 or not evidence_end <= objective_end <= int(
+            split["frame_len"]
+        ):
+            raise ValueError(f"{record.get('name')}: invalid source objective boundary")
+        indices = [int(index) for index in record["accessed_frame_indices"]]
+        if not indices or min(indices) < 0 or max(indices) >= evidence_end:
+            raise ValueError(f"{record.get('name')}: source video crossed its prefix")
+        frame_files = record.get("accessed_frame_files")
+        if not isinstance(frame_files, list) or len(frame_files) != len(indices):
+            raise ValueError(f"{record.get('name')}: source frame files are unbound")
+        bound_ids = []
+        for frame in frame_files:
+            frame_id = int(frame["frame_id"])
+            path = Path(frame["path"])
+            if int(path.stem) != frame_id or sha256_file(path) != frame["sha256"]:
+                raise ValueError(f"{record.get('name')}: source frame bytes changed")
+            bound_ids.append(frame_id)
+        if sorted(bound_ids) != sorted(indices):
+            raise ValueError(f"{record.get('name')}: source frame ids are inconsistent")
+        if int(record["maximum_objective_frame"]) != objective_end - 1:
+            raise ValueError(f"{record.get('name')}: source objective audit changed")
+
+    for record in targets:
+        split = record["split"]
+        if sha256_file(split["path"]) != split["sha256"]:
+            raise ValueError(f"{record.get('name')}: target split bytes changed")
+        if any(
+            record.get(field) is not False
+            for field in (
+                "video_accessed_during_training",
+                "outcome_accessed_during_training",
+                "metric_accessed_during_training",
+            )
+        ):
+            raise ValueError(f"{record.get('name')}: target data were accessed")
+        evidence_end = int(record["evidence_end_frame_exclusive"])
+        if not 1 <= evidence_end <= int(split["train"][1]):
+            raise ValueError(f"{record.get('name')}: invalid target evidence boundary")
+    parameterization = audit.get("parameterization")
+    if parameterization is not None:
+        if not isinstance(parameterization, dict):
+            raise ValueError("source-supervised parameterization must be an object")
+        from .matphys_teacher_residual import (
+            TEACHER_PARAMETERIZATION,
+            validate_matphys_teacher_manifest,
+        )
+
+        if parameterization.get("name") != TEACHER_PARAMETERIZATION:
+            raise ValueError("unsupported source-supervised parameterization")
+        scale = float(parameterization.get("residual_log_scale", -1.0))
+        if not np.isfinite(scale) or scale < 0.0:
+            raise ValueError("invalid source-supervised teacher residual scale")
+        validate_matphys_teacher_manifest(parameterization.get("teacher", {}))
     return {
         **audit,
         "audit_path": str(source),
