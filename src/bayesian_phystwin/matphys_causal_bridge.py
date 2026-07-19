@@ -13,9 +13,13 @@ import numpy as np
 
 MATPHYS_CAUSAL_AUDIT_SCHEMA_VERSION = 2
 MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION = 1
-MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT = (
-    "matphys-source-supervised-meta-audit-v1"
+MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT = "matphys-source-supervised-meta-audit-v1"
+MATPHYS_FRESH_FOLD_INITIALIZATION_CONTRACT = "generic-videomae-fresh-fold-v1"
+MATPHYS_GENERIC_MOTION_BACKBONE = "MCG-NJU/videomae-base"
+MATPHYS_FRESH_TRAINABLE_INITIALIZATION = (
+    "fresh seeded initialization independently in every fold"
 )
+MATPHYS_DISTRIBUTED_SEED_RULE = "base-seed-plus-ddp-rank-v1"
 _EXTERNAL_BACKBONE_SHARED_FIELDS = (
     "name",
     "source_repository",
@@ -34,6 +38,39 @@ def sha256_file(path: str | Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def matphys_fresh_fold_initialization(random_seed: int) -> dict[str, object]:
+    """Describe the only benchmark-clean initialization accepted by LOO v2."""
+
+    if isinstance(random_seed, bool) or not isinstance(random_seed, int):
+        raise TypeError("MatPhys fresh-fold random seed must be an integer")
+    if random_seed < 0:
+        raise ValueError("MatPhys fresh-fold random seed must be nonnegative")
+    return {
+        "contract": MATPHYS_FRESH_FOLD_INITIALIZATION_CONTRACT,
+        "benchmark_trained_checkpoint_used": False,
+        "frozen_motion_backbone": MATPHYS_GENERIC_MOTION_BACKBONE,
+        "trainable_parameters": MATPHYS_FRESH_TRAINABLE_INITIALIZATION,
+        "random_seed": random_seed,
+        "distributed_seed_rule": MATPHYS_DISTRIBUTED_SEED_RULE,
+    }
+
+
+def validate_matphys_fresh_fold_initialization(
+    value: object,
+) -> dict[str, object]:
+    """Fail closed on an incomplete or extended fresh-fold claim."""
+
+    if not isinstance(value, Mapping):
+        raise ValueError("MatPhys fresh-fold initialization must be an object")
+    random_seed = value.get("random_seed")
+    if isinstance(random_seed, bool) or not isinstance(random_seed, int):
+        raise ValueError("MatPhys fresh-fold initialization has no integer seed")
+    expected = matphys_fresh_fold_initialization(random_seed)
+    if dict(value) != expected:
+        raise ValueError("MatPhys fresh-fold initialization contract changed")
+    return expected
 
 
 def _artifact_identities(paths: Sequence[str | Path]) -> list[dict[str, str]]:
@@ -211,9 +248,7 @@ def prepare_global_material_proxy(
                 (len(structure_points), semantic_dimension), dtype=np.float32
             ),
         )
-        material_distribution = torch.zeros(
-            (1, num_materials), dtype=torch.float32
-        )
+        material_distribution = torch.zeros((1, num_materials), dtype=torch.float32)
         material_distribution[0, material_id] = 1.0
         train_ready_path = destination / "results" / case / "train" / "train_ready.pt"
         train_ready_path.parent.mkdir(parents=True, exist_ok=True)
@@ -345,7 +380,9 @@ def write_causal_training_audit(
             except ValueError as exc:
                 raise ValueError(f"{case}: frame source has a nonnumeric stem") from exc
             if path_frame_id != frame_id:
-                raise ValueError(f"{case}: audited frame id disagrees with its filename")
+                raise ValueError(
+                    f"{case}: audited frame id disagrees with its filename"
+                )
             frame_files.append(
                 {
                     "frame_id": frame_id,
@@ -423,10 +460,7 @@ def validate_causal_training_audit(
         raise ValueError("MatPhys checkpoint audit permits fit_all_frames")
     if audit.get("frame_id_contract") != "numeric-filename-stem-v2":
         raise ValueError("MatPhys checkpoint audit does not bind numeric frame ids")
-    if (
-        audit.get("video_sampling")
-        != "uniform-numeric-ids-before-evidence-boundary-v2"
-    ):
+    if audit.get("video_sampling") != "uniform-numeric-ids-before-evidence-boundary-v2":
         raise ValueError("MatPhys checkpoint audit uses an unsafe frame order")
     if audit.get("optimization_and_checkpoint_selection") != "fit-prefix-only-v2":
         raise ValueError("MatPhys checkpoint audit does not bind objective access")
@@ -682,8 +716,7 @@ def write_source_supervised_training_audit(
         "checkpoint_policy": "fixed-terminal-epoch-v1",
         "source_future_video_used": False,
         "source_future_outcomes_used": any(
-            bool(record["source_future_outcomes_used"])
-            for record in source_records
+            bool(record["source_future_outcomes_used"]) for record in source_records
         ),
         "target_future_observations_used": False,
         "target_metrics_used_for_checkpoint_selection": False,
@@ -722,8 +755,7 @@ def validate_source_supervised_training_audit(
     source = Path(audit_path).resolve()
     audit = json.loads(source.read_text(encoding="utf-8"))
     if (
-        audit.get("schema_version")
-        != MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION
+        audit.get("schema_version") != MATPHYS_SOURCE_SUPERVISED_AUDIT_SCHEMA_VERSION
         or audit.get("contract") != MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT
     ):
         raise ValueError("unsupported MatPhys source-supervised audit")
@@ -773,9 +805,7 @@ def validate_source_supervised_training_audit(
         raise ValueError("audited targets differ from the registered split")
 
     proxy_summary = json.loads(Path(audit["proxy"]["path"]).read_text(encoding="utf-8"))
-    proxy_names = {
-        str(record.get("name")) for record in proxy_summary.get("cases", [])
-    }
+    proxy_names = {str(record.get("name")) for record in proxy_summary.get("cases", [])}
     if proxy_names != source_names:
         raise ValueError("source-supervised proxy includes non-source cases")
     for proxy_case in proxy_summary.get("cases", []):
@@ -849,6 +879,11 @@ def validate_source_supervised_training_audit(
         if not np.isfinite(scale) or scale < 0.0:
             raise ValueError("invalid source-supervised teacher residual scale")
         validate_matphys_teacher_manifest(parameterization.get("teacher", {}))
+        initialization = parameterization.get("initialization")
+        if isinstance(initialization, Mapping) and (
+            initialization.get("contract") == MATPHYS_FRESH_FOLD_INITIALIZATION_CONTRACT
+        ):
+            validate_matphys_fresh_fold_initialization(initialization)
     return {
         **audit,
         "audit_path": str(source),
@@ -878,7 +913,9 @@ def merge_matphys_external_manifests(
         raw_cases = payload.get("cases")
         if not isinstance(backbone, dict) or not isinstance(raw_cases, list):
             raise ValueError(f"{source}: malformed external manifest")
-        identity = {field: backbone.get(field) for field in _EXTERNAL_BACKBONE_SHARED_FIELDS}
+        identity = {
+            field: backbone.get(field) for field in _EXTERNAL_BACKBONE_SHARED_FIELDS
+        }
         if shared_backbone is None:
             shared_backbone = identity
         elif identity != shared_backbone:

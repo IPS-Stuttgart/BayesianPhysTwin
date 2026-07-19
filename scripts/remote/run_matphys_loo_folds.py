@@ -12,6 +12,7 @@ from pathlib import Path
 
 from bayesian_phystwin.matphys_causal_bridge import (
     sha256_file,
+    validate_matphys_fresh_fold_initialization,
     validate_source_supervised_training_audit,
 )
 
@@ -26,7 +27,9 @@ def _validated_identity(identity: object, label: str) -> Path:
     return path
 
 
-def _run(command: list[str], log_path: Path, env: dict[str, str], dry_run: bool) -> None:
+def _run(
+    command: list[str], log_path: Path, env: dict[str, str], dry_run: bool
+) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     rendered = shlex.join(command)
     if dry_run:
@@ -53,7 +56,7 @@ def main() -> None:
     parser.add_argument("--data-root", required=True)
     parser.add_argument("--experiments-dir", required=True)
     parser.add_argument("--experiments-optimization-dir", required=True)
-    parser.add_argument("--initialization-checkpoint", required=True)
+    parser.add_argument("--initialization-checkpoint")
     parser.add_argument("--nproc-per-node", type=int, default=2)
     parser.add_argument("--folds", help="Optional comma-separated fold indices.")
     parser.add_argument("--dry-run", action="store_true")
@@ -72,10 +75,28 @@ def main() -> None:
     protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
     training = protocol["source_training"]
     graph = training["graph_parts"]
-    initialization = Path(args.initialization_checkpoint).resolve()
-    expected_initialization = str(training["initialization_checkpoint_sha256"])
-    if sha256_file(initialization) != expected_initialization:
-        raise ValueError("MatPhys initialization checkpoint bytes changed")
+    initialization = (
+        None
+        if args.initialization_checkpoint is None
+        else Path(args.initialization_checkpoint).resolve()
+    )
+    expected_initialization = training.get("initialization_checkpoint_sha256")
+    fresh_initialization = training.get("initialization")
+    if fresh_initialization is not None:
+        clean_initialization = validate_matphys_fresh_fold_initialization(
+            fresh_initialization
+        )
+        if clean_initialization["random_seed"] != training.get("random_seed"):
+            raise ValueError("fresh-fold initialization seed differs from training")
+        if expected_initialization is not None or initialization is not None:
+            raise ValueError(
+                "fresh-fold protocol forbids a benchmark-trained initialization"
+            )
+    else:
+        if initialization is None or not isinstance(expected_initialization, str):
+            raise ValueError("legacy protocol requires its initialization checkpoint")
+        if sha256_file(initialization) != expected_initialization:
+            raise ValueError("MatPhys initialization checkpoint bytes changed")
     runner = Path(args.runner).resolve()
     # Resolving a venv's Python symlink discards its pyvenv.cfg context and
     # silently launches the base interpreter without the pinned dependencies.
@@ -177,16 +198,29 @@ def main() -> None:
             "0.75",
             "--learning-rate",
             str(float(training["learning_rate"])),
+            "--random-seed",
+            str(int(training["random_seed"])),
+            "--videomae-model",
+            str(
+                fresh_initialization["frozen_motion_backbone"]
+                if fresh_initialization is not None
+                else "MCG-NJU/videomae-base"
+            ),
             "--grad-clip",
             str(float(training["gradient_clip"])),
             "--teacher-proximity-weight",
             str(float(training["teacher_proximity_weight"])),
             "--finite-optimizer-guard",
-            "--initialization-checkpoint",
-            str(initialization),
-            "--initialization-sha256",
-            expected_initialization,
         ]
+        if initialization is not None:
+            train_command.extend(
+                [
+                    "--initialization-checkpoint",
+                    str(initialization),
+                    "--initialization-sha256",
+                    str(expected_initialization),
+                ]
+            )
         if not training_complete:
             _run(train_command, fold_root / "train.log", env, args.dry_run)
         if args.dry_run:

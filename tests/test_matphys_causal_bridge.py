@@ -7,6 +7,7 @@ import pytest
 from bayesian_phystwin.matphys_causal_bridge import (
     causal_uniform_frame_ids,
     causal_uniform_frame_indices,
+    matphys_fresh_fold_initialization,
     merge_matphys_external_manifests,
     numeric_frame_paths,
     sha256_file,
@@ -131,7 +132,9 @@ def test_training_audit_binds_checkpoint_and_rejects_future_access(
             source_commit="a" * 40,
             data_root=tmp_path,
             accessed_frame_indices={"case_a": [0, 5]},
-            accessed_frame_paths={"case_a": {**frames, 5: _frame_sources(tmp_path, [5])[5]}},
+            accessed_frame_paths={
+                "case_a": {**frames, 5: _frame_sources(tmp_path, [5])[5]}
+            },
             objective_end_frames_exclusive={"case_a": 5},
             evidence_end_frames_exclusive={"case_a": 5},
             split_by_case={"case_a": {"train": [0, 5], "test": [5, 8]}},
@@ -178,7 +181,10 @@ def test_audit_rejects_legacy_unsafe_frame_order(tmp_path: Path) -> None:
                 "optimization_and_checkpoint_selection": "released-prefix-only-v1",
                 "checkpoint_policy": "fixed-terminal-epoch-v1",
                 "checkpoints": [
-                    {"path": str(checkpoint.resolve()), "sha256": sha256_file(checkpoint)}
+                    {
+                        "path": str(checkpoint.resolve()),
+                        "sha256": sha256_file(checkpoint),
+                    }
                 ],
                 "cases": [
                     {
@@ -235,13 +241,36 @@ def test_source_supervised_audit_allows_only_source_future_outcomes(
     proxy = _proxy_summary(tmp_path)
     registration = tmp_path / "registered_split.json"
     registration.write_text(
-        json.dumps({"source_cases": ["case_a"], "target_cases": ["case_b"]})
-        + "\n"
+        json.dumps({"source_cases": ["case_a"], "target_cases": ["case_b"]}) + "\n"
     )
     frames = _frame_sources(tmp_path, [0, 1])
     audit_path = tmp_path / "source_audit.json"
     implementation = tmp_path / "runner.py"
     implementation.write_text("# frozen implementation\n")
+    teacher_checkpoint = tmp_path / "teacher.pth"
+    teacher_checkpoint.write_bytes(b"teacher checkpoint")
+    teacher_optimal = tmp_path / "teacher.pkl"
+    teacher_optimal.write_bytes(b"teacher parameters")
+    parameterization = {
+        "name": "released-phystwin-bounded-logk-residual-v1",
+        "residual_log_scale": 0.5,
+        "teacher": {
+            "cases": [
+                {
+                    "case_name": "case_a",
+                    "checkpoint": {
+                        "path": str(teacher_checkpoint),
+                        "sha256": sha256_file(teacher_checkpoint),
+                    },
+                    "optimal_params": {
+                        "path": str(teacher_optimal),
+                        "sha256": sha256_file(teacher_optimal),
+                    },
+                }
+            ]
+        },
+        "initialization": matphys_fresh_fold_initialization(42),
+    }
 
     written = write_source_supervised_training_audit(
         [checkpoint],
@@ -259,6 +288,7 @@ def test_source_supervised_audit_allows_only_source_future_outcomes(
         split_by_case={"case_a": split, "case_b": split},
         proxy_summary_path=proxy,
         split_registration_path=registration,
+        parameterization=parameterization,
         implementation_paths=[implementation],
     )
 
@@ -268,6 +298,19 @@ def test_source_supervised_audit_allows_only_source_future_outcomes(
     assert validated["target_future_observations_used"] is False
     assert validated["target_cases"][0]["outcome_accessed_during_training"] is False
     assert validated["implementation_files"][0]["path"] == str(implementation)
+    assert validated["parameterization"]["initialization"] == (
+        matphys_fresh_fold_initialization(42)
+    )
+
+    original_audit = audit_path.read_text(encoding="utf-8")
+    contaminated = json.loads(original_audit)
+    contaminated["parameterization"]["initialization"][
+        "benchmark_trained_checkpoint_used"
+    ] = True
+    audit_path.write_text(json.dumps(contaminated), encoding="utf-8")
+    with pytest.raises(ValueError, match="initialization contract changed"):
+        validate_source_supervised_training_audit(audit_path, checkpoint)
+    audit_path.write_text(original_audit, encoding="utf-8")
 
     implementation.write_text("# changed implementation\n")
     with pytest.raises(ValueError, match="implementation file bytes changed"):
@@ -286,8 +329,7 @@ def test_source_supervised_audit_rejects_target_access_and_overlap(
     proxy = _proxy_summary(tmp_path)
     registration = tmp_path / "registered_split.json"
     registration.write_text(
-        json.dumps({"source_cases": ["case_a"], "target_cases": ["case_a"]})
-        + "\n"
+        json.dumps({"source_cases": ["case_a"], "target_cases": ["case_a"]}) + "\n"
     )
     frames = _frame_sources(tmp_path, [0])
 

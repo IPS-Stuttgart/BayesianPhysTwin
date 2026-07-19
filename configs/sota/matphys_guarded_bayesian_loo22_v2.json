@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-guarded-bayesian-loo22-v2",
+  "locked_at_utc": "2026-07-19T22:10:00Z",
+  "status": "retrospective full-benchmark evaluation with benchmark-clean object-disjoint model fitting",
+  "claim_boundary": "The PhysTwin benchmark informed method development. Every fold starts from a generic frozen VideoMAE backbone and fresh trainable parameters; no checkpoint trained on any PhysTwin benchmark case is used. Object-disjoint fitting and sealed future opening prevent within-run target leakage but do not make this an untouched external confirmation.",
+  "supersedes": {
+    "protocol_id": "matphys-guarded-bayesian-loo22-v1",
+    "reason": "v1 warm-started from an epoch-200 checkpoint whose metadata identifies video_allcases training; resetting residual heads did not make its trunk object-disjoint"
+  },
+  "case_order": [
+    "double_lift_cloth_1",
+    "double_lift_cloth_3",
+    "double_lift_sloth",
+    "double_lift_zebra",
+    "double_stretch_sloth",
+    "double_stretch_zebra",
+    "rope_double_hand",
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "single_lift_cloth",
+    "single_lift_cloth_1",
+    "single_lift_cloth_3",
+    "single_lift_cloth_4",
+    "single_lift_dinosor",
+    "single_lift_rope",
+    "single_lift_sloth",
+    "single_lift_zebra",
+    "single_push_rope",
+    "single_push_rope_1",
+    "single_push_rope_4",
+    "single_push_sloth",
+    "weird_package"
+  ],
+  "folds": [
+    {"object": "cloth_1", "targets": ["double_lift_cloth_1", "single_clift_cloth_1", "single_lift_cloth_1"]},
+    {"object": "cloth_3", "targets": ["double_lift_cloth_3", "single_clift_cloth_3", "single_lift_cloth_3"]},
+    {"object": "sloth", "targets": ["double_lift_sloth", "double_stretch_sloth", "single_lift_sloth", "single_push_sloth"]},
+    {"object": "zebra", "targets": ["double_lift_zebra", "double_stretch_zebra", "single_lift_zebra"]},
+    {"object": "rope", "targets": ["rope_double_hand", "single_lift_rope", "single_push_rope"]},
+    {"object": "cloth", "targets": ["single_lift_cloth"]},
+    {"object": "cloth_4", "targets": ["single_lift_cloth_4"]},
+    {"object": "dinosor", "targets": ["single_lift_dinosor"]},
+    {"object": "rope_1", "targets": ["single_push_rope_1"]},
+    {"object": "rope_4", "targets": ["single_push_rope_4"]},
+    {"object": "weird_package", "targets": ["weird_package"]}
+  ],
+  "source_training": {
+    "contract": "source-supervised-meta",
+    "source_cases": "all case_order entries outside the target physical object",
+    "source_supervision": "complete source trajectories",
+    "target_video_evidence_fraction_of_training_prefix": 0.75,
+    "epochs": 5,
+    "checkpoint_policy": "fixed terminal epoch",
+    "learning_rate": 0.00003,
+    "gradient_clip": 5.0,
+    "teacher_proximity_weight": 1.0,
+    "finite_optimizer_guard": true,
+    "teacher_residual_log_scale": 0.6931471805599453,
+    "random_seed": 42,
+    "initialization": {
+      "contract": "generic-videomae-fresh-fold-v1",
+      "benchmark_trained_checkpoint_used": false,
+      "frozen_motion_backbone": "MCG-NJU/videomae-base",
+      "trainable_parameters": "fresh seeded initialization independently in every fold",
+      "random_seed": 42,
+      "distributed_seed_rule": "base-seed-plus-ddp-rank-v1"
+    },
+    "graph_parts": {
+      "contract": "causal-dino-graph-voronoi-parts-v1",
+      "part_count": 5,
+      "dino_model": "dinov2_vitl14_reg",
+      "dino_keyframes": 4,
+      "semantic_edge_weight": 4.0,
+      "part_feature_scale": 1.0
+    }
+  },
+  "proposal_families": {
+    "parameterization": "log(k_alpha) = log(k_released) + alpha * (log(k_proposal) - log(k_released))",
+    "strengths": [0.25, 0.5, 0.75, 1.0],
+    "identity_fallback": 0.0
+  },
+  "selection": {
+    "fit_interval": "first 75 percent of released training prefix",
+    "validation_interval": "remaining 25 percent of released training prefix",
+    "minimum_relative_score_improvement": 0.01,
+    "maximum_per_metric_regression": 0.0,
+    "maximum_identity_replay_coordinate_rmse_m": 0.001,
+    "score": "equal mean of validation CD and track ratios to the released-family raw backbone",
+    "tie_break": "lowest proposal strength, then exact incumbent",
+    "future_opening": "write and hash prefix-only overlay summaries and the cross-family selection artifact before running the future evaluator"
+  },
+  "evaluation": {
+    "primary": ["future_chamfer_distance_m", "future_track_error_m"],
+    "secondary": ["early_middle_late_error", "paired_object_cluster_bootstrap", "NEES", "coverage", "worst_case_regression"],
+    "published_reference_m": {"MatPhys_CD": 0.008, "MatPhys_track": 0.015},
+    "sota_gate": "both full-22 equal-case means below the published MatPhys values with paired uncertainty reported"
+  },
+  "forbidden": [
+    "initializing from any model trained or fine-tuned on a PhysTwin benchmark case",
+    "training on another interaction of the target physical object",
+    "using target future observations or metrics for fitting, strength selection, or family selection",
+    "changing the strength grid or gates after any loo22-v2 future is opened",
+    "calling this retrospective benchmark an untouched external confirmation"
+  ]
+}

@@ -1,5 +1,19 @@
 # Object-Disjoint MatPhys + Bayesian-PhysTwin Evaluation
 
+## Initialization correction
+
+Protocol v1 was stopped before any fold completed or future was opened. Its epoch-200
+warm start records `video_allcases` in the checkpoint metadata. Resetting the residual
+spring heads preserved the identity arm but could not remove benchmark-object
+information from the learned trunk, so v1 was not genuinely object-disjoint.
+
+Protocol v2 is authoritative. Every fold uses the generic frozen
+`MCG-NJU/videomae-base` representation and freshly seeded trainable projectors, material
+codes, geometry encoders, and spring heads. The base seed is 42 and the pinned upstream
+DDP rule uses `seed + rank`; both are recorded in every training audit. No checkpoint
+trained or fine-tuned on a PhysTwin benchmark case is loaded. The invalidation record is
+`results/sota/matphys_loo22_v1_initialization_invalidation.json`.
+
 ## Question
 
 Can an object-disjoint, source-trained MatPhys spring proposal improve the official
@@ -14,7 +28,8 @@ leakage within this run.
 ## Fixed design
 
 - Cohort: the official 22 PhysTwin cases grouped into 11 physical objects.
-- Training: one MatPhys model per held-out object, using every other object.
+- Training: one freshly initialized MatPhys model per held-out object, using every
+  other object.
 - Target evidence: the first 75% of the released training prefix only.
 - Spring arms: exact incumbent plus log-space proposal strengths 0.25, 0.50, 0.75,
   and 1.00.
@@ -27,8 +42,14 @@ leakage within this run.
   identity-replay tolerance are required.
 - Tie break: exact incumbent first, then the lowest accepted proposal strength.
 
+The validation track ratio uses the released manual 3D tracks on the permitted past
+prefix. This makes the study a causally separated, online-supervised benchmark test,
+not a label-free deployment result. No manual track at or after `train_end_frame` is
+available to fitting or selection. A label-free selector must be frozen and evaluated
+on a separate future-opening protocol rather than retrofitted after this run.
+
 The authoritative machine-readable protocol is
-`configs/sota/matphys_guarded_bayesian_loo22_v1.json`.
+`configs/sota/matphys_guarded_bayesian_loo22_v2.json`.
 
 ## Information boundary
 
@@ -76,6 +97,18 @@ python scripts/remote/run_matphys_loo_strength_sweep.py \
 
 This command stops after writing `family_selection/backbone_family_selection.json`.
 Future metrics are opened separately with `bpt-open-phystwin-backbone-family-future`.
+The strictly post-opening report is then generated with:
+
+```bash
+bpt-report-matphys-loo-sota DATA_ROOT \
+  SWEEP_OUTPUT/family_selection/backbone_family_selection.json \
+  FUTURE_OUTPUT/backbone_family_future.json \
+  FUTURE_OUTPUT/matphys_loo_sota_report.json
+```
+
+The reporter verifies that the opener names the exact SHA-256 of the sealed selection,
+then computes the predeclared horizon, worst-case, and physical-object-clustered paired
+analyses. It cannot alter or rerun family selection.
 
 ## Decision rule
 

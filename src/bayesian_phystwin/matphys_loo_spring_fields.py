@@ -10,6 +10,7 @@ from typing import Any
 
 from .matphys_causal_bridge import (
     sha256_file,
+    validate_matphys_fresh_fold_initialization,
     validate_source_supervised_training_audit,
 )
 
@@ -148,7 +149,27 @@ def collect_loo_spring_fields(
             backbone.get("causal_training_audit"),
             "source-supervised training audit",
         )
-        validate_source_supervised_training_audit(audit, checkpoint)
+        validated_audit = validate_source_supervised_training_audit(audit, checkpoint)
+        expected_initialization = protocol.get("source_training", {}).get(
+            "initialization"
+        )
+        if expected_initialization is not None:
+            actual_initialization = validated_audit.get("parameterization", {}).get(
+                "initialization"
+            )
+            try:
+                expected_clean = validate_matphys_fresh_fold_initialization(
+                    expected_initialization
+                )
+                actual_clean = validate_matphys_fresh_fold_initialization(
+                    actual_initialization
+                )
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    f"fold {index}: training initialization is not clean"
+                ) from error
+            if actual_clean != expected_clean:
+                raise ValueError(f"fold {index}: training initialization differs")
         provenance_root = output / "provenance" / f"fold_{index:02d}"
         copied_export = provenance_root / "external_backbone_manifest.json"
         copied_audit = provenance_root / "source_supervised_training_audit.json"

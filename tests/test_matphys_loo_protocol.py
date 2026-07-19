@@ -14,10 +14,10 @@ from bayesian_phystwin.phystwin_sota_comparison import PHYSTWIN_TABLE1_CASES
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = (
-    REPOSITORY_ROOT
-    / "configs"
-    / "sota"
-    / "matphys_guarded_bayesian_loo22_v1.json"
+    REPOSITORY_ROOT / "configs" / "sota" / "matphys_guarded_bayesian_loo22_v1.json"
+)
+PROTOCOL_V2 = (
+    REPOSITORY_ROOT / "configs" / "sota" / "matphys_guarded_bayesian_loo22_v2.json"
 )
 
 
@@ -30,6 +30,45 @@ def test_registered_loo_protocol_is_exhaustive_and_object_disjoint() -> None:
     assert len(protocol["folds"]) == 11
     for fold in protocol["folds"]:
         assert not set(fold["targets"]) & set(fold["sources"])
+
+
+def test_v2_protocol_forbids_benchmark_trained_initialization() -> None:
+    protocol = load_matphys_loo_protocol(PROTOCOL_V2)
+
+    initialization = protocol["source_training"]["initialization"]
+    assert initialization == {
+        "contract": "generic-videomae-fresh-fold-v1",
+        "benchmark_trained_checkpoint_used": False,
+        "frozen_motion_backbone": "MCG-NJU/videomae-base",
+        "trainable_parameters": (
+            "fresh seeded initialization independently in every fold"
+        ),
+        "random_seed": 42,
+        "distributed_seed_rule": "base-seed-plus-ddp-rank-v1",
+    }
+    assert "initialization_checkpoint_sha256" not in protocol["source_training"]
+
+
+def test_v2_protocol_rejects_benchmark_checkpoint_flag(tmp_path: Path) -> None:
+    payload = json.loads(PROTOCOL_V2.read_text(encoding="utf-8"))
+    payload["source_training"]["initialization"][
+        "benchmark_trained_checkpoint_used"
+    ] = True
+    changed = tmp_path / "protocol.json"
+    changed.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="invalid fresh initialization"):
+        load_matphys_loo_protocol(changed)
+
+
+def test_v2_protocol_rejects_seed_disagreement(tmp_path: Path) -> None:
+    payload = json.loads(PROTOCOL_V2.read_text(encoding="utf-8"))
+    payload["source_training"]["initialization"]["random_seed"] = 43
+    changed = tmp_path / "protocol.json"
+    changed.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="seed differs"):
+        load_matphys_loo_protocol(changed)
 
 
 def test_loo_protocol_rejects_interaction_leakage(tmp_path: Path) -> None:
@@ -53,9 +92,7 @@ def test_prepare_loo_workspace_materializes_every_partition(tmp_path: Path) -> N
     mapping.write_text(
         json.dumps(
             {
-                "case_to_material": {
-                    case: "generic" for case in PHYSTWIN_TABLE1_CASES
-                },
+                "case_to_material": {case: "generic" for case in PHYSTWIN_TABLE1_CASES},
                 "class_to_id": {"generic": 0},
             }
         )

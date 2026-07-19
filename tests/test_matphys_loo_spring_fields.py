@@ -5,7 +5,10 @@ import numpy as np
 import pytest
 
 import bayesian_phystwin.matphys_loo_spring_fields as spring_fields_module
-from bayesian_phystwin.matphys_causal_bridge import sha256_file
+from bayesian_phystwin.matphys_causal_bridge import (
+    matphys_fresh_fold_initialization,
+    sha256_file,
+)
 from bayesian_phystwin.matphys_loo_spring_fields import (
     collect_loo_spring_fields,
     merge_loo_spring_field_bundles,
@@ -17,17 +20,17 @@ def _identity(path: Path) -> dict[str, str]:
     return {"path": str(path), "sha256": sha256_file(path)}
 
 
-def _workspace(tmp_path: Path) -> Path:
+def _workspace(tmp_path: Path, *, fresh: bool = False) -> Path:
     protocol = tmp_path / "protocol.json"
-    protocol.write_text(
-        json.dumps(
-            {
-                "protocol_id": "loo-test",
-                "case_order": ["case_a", "case_b"],
-            }
-        ),
-        encoding="utf-8",
-    )
+    protocol_payload = {
+        "protocol_id": "loo-test",
+        "case_order": ["case_a", "case_b"],
+    }
+    if fresh:
+        protocol_payload["source_training"] = {
+            "initialization": matphys_fresh_fold_initialization(42)
+        }
+    protocol.write_text(json.dumps(protocol_payload), encoding="utf-8")
     folds = []
     for index, case in enumerate(("case_a", "case_b")):
         root = tmp_path / f"fold_{index:02d}"
@@ -161,3 +164,21 @@ def test_merge_rejects_duplicate_case_bundles(
             [first["manifest_path"], first["manifest_path"]],
             tmp_path / "merged",
         )
+
+
+def test_collect_rejects_fold_with_different_fresh_initialization(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        spring_fields_module,
+        "validate_source_supervised_training_audit",
+        lambda audit, checkpoint: {
+            "parameterization": {
+                "initialization": matphys_fresh_fold_initialization(43)
+            }
+        },
+    )
+    workspace = _workspace(tmp_path, fresh=True)
+
+    with pytest.raises(ValueError, match="training initialization differs"):
+        collect_loo_spring_fields(workspace, tmp_path / "bundle", fold_indices=(0,))

@@ -7,7 +7,10 @@ import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from .matphys_causal_bridge import sha256_file
+from .matphys_causal_bridge import (
+    sha256_file,
+    validate_matphys_fresh_fold_initialization,
+)
 from .matphys_graph_parts import materialize_compact_graph_proxy_subset
 from .phystwin_comparison import phystwin_physical_object_cluster
 from .phystwin_sota_comparison import PHYSTWIN_TABLE1_CASES
@@ -26,6 +29,28 @@ def load_matphys_loo_protocol(path: str | Path) -> dict[str, object]:
     raw_folds = payload.get("folds")
     if not isinstance(raw_folds, list) or not raw_folds:
         raise ValueError("MatPhys LOO protocol contains no folds")
+    training = payload.get("source_training")
+    if not isinstance(training, Mapping):
+        raise ValueError("MatPhys LOO protocol omits source training")
+    initialization = training.get("initialization")
+    legacy_checkpoint_hash = training.get("initialization_checkpoint_sha256")
+    if initialization is None:
+        if not isinstance(legacy_checkpoint_hash, str) or not legacy_checkpoint_hash:
+            raise ValueError("MatPhys LOO protocol omits its initialization contract")
+    else:
+        try:
+            clean_initialization = validate_matphys_fresh_fold_initialization(
+                initialization
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "object-disjoint training has an invalid fresh initialization"
+            ) from error
+        random_seed = training.get("random_seed")
+        if clean_initialization["random_seed"] != random_seed:
+            raise ValueError("fresh-fold initialization seed differs from training")
+        if legacy_checkpoint_hash is not None:
+            raise ValueError("fresh-fold training must not declare a checkpoint hash")
 
     target_to_object: dict[str, str] = {}
     fold_objects: set[str] = set()
@@ -43,11 +68,15 @@ def load_matphys_loo_protocol(path: str | Path) -> dict[str, object]:
             if case in target_to_object:
                 raise ValueError(f"MatPhys LOO target appears twice: {case}")
             if phystwin_physical_object_cluster(case) != object_name:
-                raise ValueError(f"MatPhys LOO target is in the wrong object fold: {case}")
+                raise ValueError(
+                    f"MatPhys LOO target is in the wrong object fold: {case}"
+                )
             target_to_object[case] = object_name
         fold_objects.add(object_name)
         sources = tuple(case for case in case_order if case not in targets)
-        if any(phystwin_physical_object_cluster(case) == object_name for case in sources):
+        if any(
+            phystwin_physical_object_cluster(case) == object_name for case in sources
+        ):
             raise ValueError(f"MatPhys LOO source leaks target object: {object_name}")
         normalized_folds.append(
             {"object": object_name, "targets": targets, "sources": sources}
