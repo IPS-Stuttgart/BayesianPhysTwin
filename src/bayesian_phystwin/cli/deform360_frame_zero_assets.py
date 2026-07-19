@@ -4,6 +4,7 @@ import argparse
 import json
 
 from bayesian_phystwin.deform360_frame_zero_assets import (
+    APPROVED_CALIBRATION_SMOKE_CASE,
     FrameZeroAssetConfig,
     PinnedFrameZeroSam2Runtime,
     load_generic_held_lock,
@@ -26,8 +27,23 @@ def main() -> None:
     parser.add_argument("--sam2-repository", required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--role", choices=("calibration", "confirmation"), required=True)
+    parser.add_argument(
+        "--smoke-only",
+        action="store_true",
+        help=(
+            "Restrict this invocation to the pre-approved 083-blanket-cloth-ep0000 "
+            "calibration smoke without narrowing the lock-bound builder."
+        ),
+    )
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
+    if args.smoke_only and not (
+        args.role == "calibration" and args.case_name == APPROVED_CALIBRATION_SMOKE_CASE
+    ):
+        parser.error(
+            "--smoke-only permits only calibration case "
+            f"{APPROVED_CALIBRATION_SMOKE_CASE}"
+        )
 
     lock = load_generic_held_lock(args.lock)
     config = FrameZeroAssetConfig()

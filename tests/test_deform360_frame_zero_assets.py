@@ -138,8 +138,20 @@ def test_calibration_lock_authorizes_only_calibration_cases() -> None:
     authorization = authorize_frame_zero_case(
         lock, APPROVED_CALIBRATION_SMOKE_CASE, role="calibration"
     )
+    non_smoke = authorize_frame_zero_case(
+        lock, "002-rope-silk-ep0003", role="calibration"
+    )
 
     assert authorization["role"] == "calibration"
+    assert non_smoke == {
+        "case_name": "002-rope-silk-ep0003",
+        "object_id": "002-rope-silk",
+        "episode_id": 3,
+        "role": "calibration",
+        "lock_artifact_sha256": lock["artifact_sha256"],
+    }
+    with pytest.raises(ValueError, match="not authorized for calibration"):
+        authorize_frame_zero_case(lock, "001-rope-ep0000", role="calibration")
     with pytest.raises(ValueError, match="not authorized for calibration"):
         authorize_frame_zero_case(lock, HELD_TARGET_CASES_V1[0], role="calibration")
     with pytest.raises(ValueError, match="promoted held lock"):

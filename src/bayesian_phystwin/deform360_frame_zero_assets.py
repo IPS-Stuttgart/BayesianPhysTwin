@@ -1276,11 +1276,6 @@ def run_frame_zero_asset_builder(
     cfg = config or FrameZeroAssetConfig()
     _require(_valid_sha256(lock_file_sha256), "invalid held lock file checksum")
     authorization = authorize_frame_zero_case(lock, case_name, role=role)
-    if role == "calibration":
-        _require(
-            case_name == APPROVED_CALIBRATION_SMOKE_CASE,
-            "this implementation smoke is restricted to the approved calibration case",
-        )
     episode = reject_future_derived_input(episode_dir, purpose="aligned episode directory")
     _require(episode.is_dir(), f"aligned episode directory is missing: {episode}")
     _validate_case_directory(episode, authorization)
