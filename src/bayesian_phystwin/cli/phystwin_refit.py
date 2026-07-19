@@ -92,6 +92,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--released-trajectory")
     parser.add_argument("--gt-track-3d")
     parser.add_argument("--profile-weights")
+    parser.add_argument(
+        "--selection-only",
+        action="store_true",
+        help="Generate the rollout but score observations only through train_end_frame.",
+    )
     return parser
 
 
@@ -119,9 +124,7 @@ def main() -> None:
             model_discrepancy_variance=args.model_discrepancy_variance,
             outlier_variance_multiplier=args.outlier_variance_multiplier,
             flow_scale=None if args.disable_flow_cue else args.flow_scale,
-            boundary_scale=(
-                None if args.disable_boundary_cue else args.boundary_scale
-            ),
+            boundary_scale=(None if args.disable_boundary_cue else args.boundary_scale),
             confidence_power=args.confidence_power,
             visibility_power=args.visibility_power,
             forward_backward_scale_px=args.forward_backward_scale_px,
@@ -154,6 +157,7 @@ def main() -> None:
             profile_likelihood_temperature=args.profile_likelihood_temperature,
             profile_prediction_mass=args.profile_prediction_mass,
             deterministic_spring_forces=not args.atomic_spring_forces,
+            evaluate_future=not args.selection_only,
             device=args.device,
         ),
     )

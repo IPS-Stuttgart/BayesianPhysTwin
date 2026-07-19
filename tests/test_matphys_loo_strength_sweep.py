@@ -1,0 +1,137 @@
+import json
+import pickle
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from bayesian_phystwin.matphys_causal_bridge import sha256_file
+from bayesian_phystwin.matphys_loo_strength_sweep import (
+    _refit_command,
+    _validate_replay_cache,
+    build_strength_external_manifest,
+    strength_family_name,
+)
+
+
+def _identity(path: Path) -> dict[str, str]:
+    return {"path": str(path), "sha256": sha256_file(path)}
+
+
+def test_strength_family_name_is_order_preserving() -> None:
+    assert [strength_family_name(value) for value in (0.0, 0.25, 0.5, 1.0)] == [
+        "alpha_0000",
+        "alpha_0250",
+        "alpha_0500",
+        "alpha_1000",
+    ]
+    with pytest.raises(ValueError, match=r"\[0, 1\]"):
+        strength_family_name(1.1)
+
+
+def test_refit_command_seals_future_scoring(tmp_path: Path) -> None:
+    command = _refit_command(
+        tmp_path / "python",
+        tmp_path / "official",
+        tmp_path / "case",
+        tmp_path / "cues.npz",
+        tmp_path / "checkpoint.pt",
+        tmp_path / "output",
+        train_end=8,
+        fit_end=6,
+    )
+
+    assert "--selection-only" in command
+    assert "--released-trajectory" in command
+    assert "--gt-track-3d" not in command
+    assert command[command.index("--fit-end-frame") + 1] == "6"
+
+
+def test_replay_cache_requires_sealed_summary_and_exact_overlay(tmp_path: Path) -> None:
+    source = tmp_path / "source.pt"
+    candidate = tmp_path / "candidate.npy"
+    output_checkpoint = tmp_path / "overlay.pt"
+    source.write_bytes(b"source")
+    candidate.write_bytes(b"candidate")
+    output_checkpoint.write_bytes(b"overlay")
+    overlay_summary = tmp_path / "overlay.json"
+    overlay_summary.write_text(
+        json.dumps(
+            {
+                "proposal_strength": 0.5,
+                "source_checkpoint": _identity(source),
+                "candidate_spring_y": _identity(candidate),
+                "output_checkpoint": _identity(output_checkpoint),
+            }
+        ),
+        encoding="utf-8",
+    )
+    replay_root = tmp_path / "replay"
+    replay_root.mkdir()
+    trajectory = replay_root / "trajectory.pkl"
+    trajectory.write_bytes(b"trajectory")
+    summary = {
+        "future_metrics_opened": False,
+        "config": {"evaluate_future": False},
+        "inputs": {"checkpoint": _identity(output_checkpoint)},
+        "outputs": {"trajectory": str(trajectory)},
+    }
+    (replay_root / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+
+    assert _validate_replay_cache(
+        replay_root,
+        overlay_summary,
+        source_checkpoint=source,
+        candidate_field=candidate,
+        strength=0.5,
+    )
+    summary["future_metrics_opened"] = True
+    (replay_root / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+    assert not _validate_replay_cache(
+        replay_root,
+        overlay_summary,
+        source_checkpoint=source,
+        candidate_field=candidate,
+        strength=0.5,
+    )
+
+
+def test_strength_manifest_binds_future_sealed_replays(tmp_path: Path) -> None:
+    source_manifest = tmp_path / "fields.json"
+    source_manifest.write_text("{}\n", encoding="utf-8")
+    replay_root = tmp_path / "replays"
+    case_root = replay_root / "alpha_0500" / "cases" / "case_a"
+    replay = case_root / "replay"
+    replay.mkdir(parents=True)
+    trajectory = np.zeros((4, 2, 3), dtype=np.float32)
+    with (replay / "trajectory.pkl").open("wb") as handle:
+        pickle.dump(trajectory, handle)
+    (replay / "summary.json").write_text(
+        json.dumps({"future_metrics_opened": False}), encoding="utf-8"
+    )
+    (case_root / "overlay.json").write_text("{}\n", encoding="utf-8")
+    fields = {
+        "manifest": _identity(source_manifest),
+        "backbone": {
+            "source_repository": "https://example.test/matphys",
+            "source_commit": "a" * 40,
+            "proxy_contract": "test-proxy",
+        },
+        "cases": [
+            {
+                "name": "case_a",
+                "evidence_end_frame_exclusive": 3,
+            }
+        ],
+    }
+
+    result = build_strength_external_manifest(
+        fields,
+        replay_root,
+        tmp_path / "external.json",
+        strength=0.5,
+    )
+
+    assert result["backbone"]["future_observations_used"] is False
+    assert result["backbone"]["proposal_strength"] == pytest.approx(0.5)
+    assert result["cases"][0]["sha256"] == sha256_file(replay / "trajectory.pkl")

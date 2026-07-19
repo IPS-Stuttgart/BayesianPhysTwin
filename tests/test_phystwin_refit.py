@@ -2,6 +2,11 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.cli.phystwin_refit import build_parser
+from bayesian_phystwin.phystwin_headless_refit import (
+    HeadlessPhysTwinRefitConfig,
+    _common_objective_metrics,
+    _evaluation_intervals,
+)
 from bayesian_phystwin.phystwin_prior_evaluation import (
     evaluate_phystwin_prior_arrays,
 )
@@ -16,9 +21,7 @@ from bayesian_phystwin.phystwin_refit import (
 
 
 def _masks():
-    visible = np.array(
-        [[True, True], [True, False], [True, True], [True, True]]
-    )
+    visible = np.array([[True, True], [True, False], [True, True], [True, True]])
     motion_valid = np.array(
         [[True, False], [False, False], [True, False], [False, False]]
     )
@@ -145,9 +148,7 @@ def test_tracking_metrics_and_split_evaluation_use_direct_correspondence():
     metrics = phystwin_tracking_metrics(
         observed,
         trajectory,
-        np.array(
-            [[False, False], [False, False], [True, False], [False, True]]
-        ),
+        np.array([[False, False], [False, False], [True, False], [False, True]]),
     )
     evaluation = evaluate_phystwin_trajectory(
         observed,
@@ -222,6 +223,74 @@ def test_refit_cli_accepts_grouped_spring_parameterization():
     assert args.profile_prediction_mass == pytest.approx(0.999)
     assert args.boundary_scale == pytest.approx(0.004)
     assert not args.atomic_spring_forces
+
+
+def test_refit_cli_can_seal_future_metrics():
+    args = build_parser().parse_args(
+        [
+            "official",
+            "final.pkl",
+            "optimal.pkl",
+            "checkpoint.pt",
+            "cues.npz",
+            "output",
+            "--variant",
+            "mixture",
+            "--train-end-frame",
+            "64",
+            "--selection-only",
+        ]
+    )
+
+    assert args.selection_only
+
+
+def test_selection_only_headless_intervals_exclude_test():
+    config = HeadlessPhysTwinRefitConfig(
+        variant="mixture",
+        train_end_frame=8,
+        fit_end_frame=6,
+        evaluate_future=False,
+    )
+
+    assert _evaluation_intervals(config, 12) == {
+        "fit": (1, 6),
+        "validation": (6, 8),
+    }
+
+
+def test_default_headless_intervals_preserve_future_evaluation():
+    config = HeadlessPhysTwinRefitConfig(
+        variant="mixture",
+        train_end_frame=8,
+        fit_end_frame=6,
+    )
+
+    assert _evaluation_intervals(config, 12) == {
+        "fit": (1, 6),
+        "validation": (6, 8),
+        "test": (8, 12),
+    }
+
+
+def test_selection_only_common_metrics_do_not_score_future():
+    observed = np.zeros((6, 1, 3), dtype=float)
+    trajectory = np.zeros_like(observed)
+    trajectory[4:] = 100.0
+    metrics = _common_objective_metrics(
+        observed,
+        trajectory,
+        np.ones((6, 1), dtype=float),
+        np.ones((6, 1), dtype=bool),
+        train_end_frame=4,
+        observation_variance=1.0,
+        outlier_variance_multiplier=100.0,
+        prior=np.full((6, 1), 0.9),
+        evaluate_future=False,
+    )
+
+    assert tuple(metrics) == ("train",)
+    assert metrics["train"]["weighted_vector_rmse_m"] == pytest.approx(0.0)
 
 
 def test_refit_cli_accepts_regenerated_cue_controls():
@@ -341,11 +410,7 @@ def test_refit_cli_accepts_canonical_spring_basis():
 
 def test_prior_evaluation_uses_target_visible_refit_support():
     visible, motion_valid = _masks()
-    cues = {
-        "flow_inconsistency": np.array(
-            [[0.0, 0.1], [0.02, 0.1], [0.0, 0.1]]
-        )
-    }
+    cues = {"flow_inconsistency": np.array([[0.0, 0.1], [0.02, 0.1], [0.0, 0.1]])}
 
     result = evaluate_phystwin_prior_arrays(
         visible,
