@@ -1,0 +1,53 @@
+{
+  "protocol_id": "deform360-raw-camera-alltracker-v1-development",
+  "status": "outcome-open development; requires newly held-out transfer",
+  "panel": {
+    "episode_count": 27,
+    "physical_object_count": 5,
+    "excluded_objects": [
+      "003-*",
+      "004-*",
+      "086-*",
+      "171-*"
+    ]
+  },
+  "observation": {
+    "tracker": "AllTracker vendored by MolmoMotion at 61f5b21b694ad8f854ec7ecd2400005acc73f685",
+    "tracker_source_tree": "eab012351a01051fa31a348e5b1f21c0e1ed970d",
+    "tracker_runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "tracker_checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "center_count": 16,
+    "camera_count": 8,
+    "updates": [19, 38, 57],
+    "causal_prefix": "update u receives exactly RGB frames [0, u]",
+    "frame_zero_camera_selection": "sealed point cloud, calibration, SAM2 mask index 0, rendered-depth index 0",
+    "minimum_initial_views": 2,
+    "minimum_triangulation_views": 2,
+    "minimum_ray_angle_degrees": 2.0,
+    "ransac_reprojection_threshold_px": 3.0,
+    "maximum_displacement_from_initial_m": 0.5
+  },
+  "information_boundary": {
+    "measurement_builder_reads_target": false,
+    "measurement_builder_reads_outcome_manifest": false,
+    "measurement_npz_and_manifest_hashed_before_evaluation": true,
+    "evaluation_target_role": "scoring and explicitly labeled same-support oracle only"
+  },
+  "uncertainty": {
+    "base": "projection-Jacobian covariance plus leave-one-inlier-camera-out jackknife covariance",
+    "cycle_control": "forward AllTracker through [0,u], reverse only the same prefix, and track the endpoint back to frame zero",
+    "nominal_gate": "median squared Mahalanobis innovation greater than chi-square(3) 95% = 7.814727903251179",
+    "calibrated_uncertainty_claim": false
+  },
+  "selector": {
+    "minimum_reliable_support": 3,
+    "sufficient_support_metric": "current observed-centre symmetric set Chamfer",
+    "insufficient_support_default": "persistence",
+    "legacy_ablation": "physical-prior default",
+    "freeze_status": "open-development rule frozen before held-target use"
+  },
+  "primary_candidate": "support-gated selected-backbone full-blend Euclidean RBF without the uncalibrated covariance gate",
+  "primary_field_ablation": "measurement-selected raw physical/persistence backbone",
+  "uncertainty_diagnostic": "cycle-inflated chi-square-95 gate; negative calibration audit, not selected by accuracy",
+  "claim_boundary": "Raw-camera online observation development on an open reconstructed-proxy panel; not official Deform360 Table-4 parity or a state-of-the-art claim."
+}

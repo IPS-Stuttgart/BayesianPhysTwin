@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "config_sha256": "af4100e373233280a1c39e35fe38d213e611b8c8ff852307c151f148c43fbb87",
+  "config": {
+    "protocol_id": "deform360-selective-virtual-sensing-v1",
+    "status": "locked-before-selected-object-download-or-media-access",
+    "locked_at": "2026-07-19",
+    "claim_boundary": "Prospective public-data confirmation of causal sparse-camera full-field virtual sensing; not official Deform360 Table-4 parity and not a direct state-of-the-art claim.",
+    "dataset": {
+      "repository": "brownu/deform360",
+      "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+      "public_object_count_at_lock": 190,
+      "selection_evidence": "Top-level object directory names only; no selected-object image, video, geometry, tactile stream, or metric was accessed.",
+      "prelock_server_path_audit": "No selected object path existed under /mnt/corsair/florianpfaff or /home/florianpfaff on gpuserver6000 or gpuserver4090.",
+      "existing_frame_zero_confirmatory_objects_reused": false
+    },
+    "cohort": {
+      "selection_seed": "deform360-selective-virtual-sensing-v1",
+      "selection_method": "Four metadata-named objects per stratum, with the first two of episodes 0..9 under SHA-256 rank seed:object/episode_NNNN.",
+      "unit_of_replication": "physical object with two episodes nested inside object",
+      "strata": {
+        "filament": [
+          {
+            "object_id": "005-thread",
+            "episode_ids": [5, 2]
+          },
+          {
+            "object_id": "069-jump-rope",
+            "episode_ids": [1, 4]
+          },
+          {
+            "object_id": "071-climbing-rope",
+            "episode_ids": [0, 7]
+          },
+          {
+            "object_id": "077-hemp-rope",
+            "episode_ids": [8, 0]
+          }
+        ],
+        "sheet": [
+          {
+            "object_id": "009-yellow-cloth",
+            "episode_ids": [9, 3]
+          },
+          {
+            "object_id": "022-handkerchief",
+            "episode_ids": [0, 4]
+          },
+          {
+            "object_id": "035-wipe-cloth",
+            "episode_ids": [8, 5]
+          },
+          {
+            "object_id": "041-wrap-paper-cloth",
+            "episode_ids": [2, 8]
+          }
+        ],
+        "volumetric": [
+          {
+            "object_id": "044-doll",
+            "episode_ids": [0, 1]
+          },
+          {
+            "object_id": "049-ball",
+            "episode_ids": [5, 2]
+          },
+          {
+            "object_id": "125-rabbit",
+            "episode_ids": [8, 9]
+          },
+          {
+            "object_id": "146-frog",
+            "episode_ids": [5, 2]
+          }
+        ]
+      },
+      "quality_failure_policy": "Use every episode whose frame-zero, calibration, video-prefix, and prediction-seal checks pass without target access; never replace an object or choose between successful episodes using outcomes.",
+      "minimum_evaluable_objects": 9,
+      "minimum_evaluable_objects_per_stratum": 3
+    },
+    "observation": {
+      "frame_count": 76,
+      "update_frames": [19, 38, 57],
+      "post_update_scored_frames": "20..37, 39..56, and 58..75",
+      "center_count": 16,
+      "camera_count": 8,
+      "causal_prefix": "Update u receives exactly RGB frames [0,u].",
+      "tracker": "AllTracker vendored by MolmoMotion at 61f5b21b694ad8f854ec7ecd2400005acc73f685",
+      "tracker_source_tree": "eab012351a01051fa31a348e5b1f21c0e1ed970d",
+      "tracker_runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+      "tracker_checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+      "alltracker_inference_iterations": 4,
+      "alltracker_max_side": 512,
+      "alltracker_window_length": 16,
+      "minimum_initial_views": 2,
+      "minimum_triangulation_views": 2,
+      "minimum_ray_angle_degrees": 2.0,
+      "ransac_reprojection_threshold_px": 3.0,
+      "maximum_displacement_from_initial_m": 0.5
+    },
+    "method": {
+      "primary_arm": "persistence_full_blend_rbf_pairwise_clique",
+      "base_backbone": "persistence",
+      "insufficient_support_fallback": "bit-exact persistence",
+      "pairwise_rejection_fallback": "bit-exact persistence",
+      "secondary_compositional_arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique when a target-free physical prior is already sealed",
+      "pairwise_gate": {
+        "absolute_pair_strain_m": 0.03,
+        "maximum_exact_center_count": 24,
+        "minimum_inlier_count": 9,
+        "minimum_inlier_fraction": 0.7,
+        "relative_pair_strain": 0.1
+      },
+      "belief": {
+        "degrees_of_freedom": 4.0,
+        "global_prior_std_m": 0.1,
+        "length_scale_fraction": 0.1,
+        "local_blend": 1.0,
+        "local_prior_std_m": 0.02,
+        "maximum_correction_m": 0.1,
+        "minimum_length_scale_m": 0.0001,
+        "minimum_reliability": 0.02,
+        "observation_std_m": 0.005,
+        "process_std_m_per_sqrt_frame": 0.003
+      }
+    },
+    "information_boundary": {
+      "allowed_before_prediction_seal": [
+        "frame-zero reconstructed object geometry",
+        "camera calibration and frame-zero SAM2/depth assets",
+        "raw RGB prefixes [0,19], [0,38], and [0,57]",
+        "measurement support, reprojection, pairwise-consensus, and numerical diagnostics"
+      ],
+      "future_dense_reconstruction_allowed_before_prediction_seal": false,
+      "future_particle_tracks_allowed_before_prediction_seal": false,
+      "target_metrics_allowed_before_prediction_seal": false,
+      "measurement_artifacts_hashed_before_target_open": true,
+      "predictions_hashed_before_target_open": true,
+      "observed_centers_permanently_excluded_from_scoring": true,
+      "existing_frame_zero_confirmation_remains_sealed": true,
+      "no_failed_object_replacement": true,
+      "target_open_order": "Verify all measurement and prediction hashes for every quality-passing episode, then construct or open dense future targets once for scoring."
+    },
+    "evaluation": {
+      "co_primary_metrics": [
+        "post_update_hidden_identity_rmse_m",
+        "post_update_hidden_symmetric_chamfer_m"
+      ],
+      "primary_comparator": "bit-exact persistence",
+      "secondary_comparators": [
+        "selected raw physical/persistence backbone when available",
+        "ungated persistence RBF",
+        "independent unordered CPD",
+        "direct sparse camera measurements on observed centers as an audit only"
+      ],
+      "aggregation": "Average successful episodes within each object, then weight physical objects equally.",
+      "uncertainty_resampling": "Object-clustered bootstrap retaining both episodes inside each sampled object.",
+      "exact_directional_test": "One-sided exact sign test over object-mean paired differences.",
+      "all_success_gates_conjunctive": true,
+      "minimum_relative_improvement_each_primary_metric": 0.1,
+      "maximum_object_regression_fraction_each_primary_metric": 0.1,
+      "object_cluster_upper_95_difference_m_must_be_below": 0.0,
+      "one_sided_exact_sign_p_must_be_at_most": 0.05,
+      "stratum_mean_regression_allowed": false,
+      "report_all_episode_object_and_stratum_results": true
+    },
+    "development_evidence": {
+      "cohort": "27 already-open episodes from five physical objects",
+      "selected_physical_or_persistence_pairwise_arm_identity_relative_change_vs_physical": -0.2882768549631447,
+      "selected_physical_or_persistence_pairwise_arm_chamfer_relative_change_vs_physical": -0.24145504104960336,
+      "selected_pairwise_arm_improved_over_selected_raw_on_objects": 5,
+      "persistence_pairwise_arm_identity_rmse_m": 0.0076459246566048655,
+      "persistence_pairwise_arm_chamfer_m": 0.006787173381275998,
+      "persistence_baseline_identity_rmse_m": 0.009357210014402158,
+      "persistence_baseline_chamfer_m": 0.008242887172585901,
+      "persistence_pairwise_arm_identity_relative_change": -0.18288414550527,
+      "persistence_pairwise_arm_chamfer_relative_change": -0.17660241622029,
+      "used_for_method_selection": true,
+      "eligible_as_confirmatory_evidence": false
+    },
+    "source_provenance": {
+      "pre_explicit_arm_server_algorithm_sha256": "815f76252c2255d214466124ababb243c4fe6ed4b1a6df703d9d5dbbcf9e644d",
+      "explicit_arm_algorithm_sha256": "8a5df910d7354d418ae745925784d8f4a90c92ff8a6a38c32a5ebdb93718cc17",
+      "pairwise_gate_sha256": "4141e766abc61df0b527c46e6bff4b0d359920518608c7b353b62f406c4329be",
+      "online_belief_sha256": "ed0da8142d854433e7dbb5ffc60ce80570258d0fdf8d1e1ceb6ba0fa4123ae4e",
+      "raw_camera_builder_sha256": "e6321e8378914757656860e2c58965ec48b2bc5e92f2410ba64b44218890abf8",
+      "development_summary_sha256": "686086fdb4ea3b62b5ef947dd8de2696508b3eed5374b6ebca523bf5df8d832d"
+    },
+    "decision_rule": {
+      "if_any_success_gate_fails": "Report the prospective negative or mixed result and make no general confirmation claim; held outcomes may not select a replacement method.",
+      "if_all_success_gates_pass": "Permit the claim that the frozen sparse-camera virtual sensor prospectively improves hidden future full-field state over persistence across new deformable objects.",
+      "direct_sota_language_allowed": false
+    }
+  }
+}
