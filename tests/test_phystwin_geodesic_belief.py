@@ -14,6 +14,8 @@ from bayesian_phystwin.phystwin_online_belief import (
     RecursiveRbfBeliefConfig,
     RecursiveRbfBeliefSnapshot,
     decode_recursive_rbf_belief,
+    initialize_recursive_rbf_belief,
+    update_recursive_rbf_belief,
 )
 
 
@@ -224,3 +226,82 @@ def test_deform_diagnostic_selects_observation_closer_backbone() -> None:
     ]
     selected = trajectories["selected_backbone_euclidean_rbf_ungated"]
     assert np.mean(np.abs(selected[20:, :, 1] - target[20:, :, 1])) < 0.001
+
+
+def test_deform_diagnostic_keeps_separate_beliefs_when_backbone_switches() -> None:
+    point_count = 20
+    frame_count = 76
+    frame_zero = np.stack(
+        (
+            np.linspace(0.0, 0.19, point_count),
+            np.zeros(point_count),
+            np.zeros(point_count),
+        ),
+        axis=1,
+    )
+    prior = np.repeat(frame_zero[None], frame_count, axis=0).astype(np.float32)
+    persistence = prior.copy()
+    persistence[1:, :, 1] = 0.020
+    target = prior.copy()
+    target[19, :, 1] = 0.001
+    target[38:57, :, 1] = 0.019
+    target[57:, :, 1] = 0.001
+    visible = np.ones((frame_count, point_count), dtype=bool)
+    centers = np.arange(16)
+    updates = [
+        {
+            "frame": frame,
+            "available_center_count": 16,
+            "accepted": True,
+            "causal_continuation_selected": True,
+        }
+        for frame in (19, 38, 57)
+    ]
+    config = RecursiveRbfBeliefConfig(local_blend=1.0)
+
+    report, trajectories = evaluate_geodesic_decoder_arrays(
+        prior,
+        persistence,
+        target,
+        visible,
+        visible,
+        center_ids=centers,
+        update_records=updates,
+        belief_config=config,
+        neighbor_count=2,
+        scored_frames=tuple(range(20, frame_count)),
+    )
+
+    assert report["observed_backbone_selector"]["selected_by_update"] == [
+        "physical_prior",
+        "persistence",
+        "physical_prior",
+    ]
+    persistence_belief = initialize_recursive_rbf_belief(
+        centers,
+        persistence[0, centers],
+        persistence[0],
+        config=config,
+    )
+    available = np.ones(len(centers), dtype=bool)
+    for frame in (19, 38):
+        residual = target[frame, centers] - persistence[frame, centers]
+        persistence_belief, _ = update_recursive_rbf_belief(
+            persistence_belief,
+            frame,
+            persistence[frame, centers],
+            residual,
+            available,
+            config=config,
+        )
+    decoded = decode_recursive_rbf_belief(
+        persistence_belief,
+        persistence[38],
+        forecast_frames=1,
+        config=config,
+    )
+    expected = (persistence[39] + decoded.mean_m).astype(np.float32)
+    np.testing.assert_array_equal(
+        trajectories["selected_backbone_euclidean_rbf_ungated"][39],
+        expected,
+    )

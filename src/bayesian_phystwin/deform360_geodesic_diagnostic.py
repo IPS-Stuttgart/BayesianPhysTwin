@@ -102,8 +102,7 @@ def _corrected_frame(
     dtype: np.dtype[Any],
 ) -> np.ndarray:
     return (
-        np.asarray(prior_frame_m, dtype=float)
-        + np.asarray(correction_m, dtype=float)
+        np.asarray(prior_frame_m, dtype=float) + np.asarray(correction_m, dtype=float)
     ).astype(dtype, copy=False)
 
 
@@ -190,9 +189,7 @@ def evaluate_geodesic_decoder_arrays(
     if measurement_mask.shape != (len(target), len(centers)):
         raise ValueError("measurement_available must have shape (T, K)")
 
-    graph = build_reference_knn_geodesic_graph(
-        prior[0], neighbor_count=neighbor_count
-    )
+    graph = build_reference_knn_geodesic_graph(prior[0], neighbor_count=neighbor_count)
     center_distance = geodesic_distances_to_centers_m(graph, centers)
     risk_belief = initialize_recursive_rbf_belief(
         centers,
@@ -218,18 +215,25 @@ def evaluate_geodesic_decoder_arrays(
         prior[0],
         config=belief_config,
     )
-    selected_geodesic_belief = initialize_recursive_rbf_belief(
-        centers,
-        prior[0, centers],
-        prior[0],
-        config=belief_config,
-    )
-    selected_euclidean_belief = initialize_recursive_rbf_belief(
-        centers,
-        prior[0, centers],
-        prior[0],
-        config=belief_config,
-    )
+    backbones = {"physical_prior": prior, "persistence": persistence}
+    selected_geodesic_beliefs = {
+        name: initialize_recursive_rbf_belief(
+            centers,
+            trajectory[0, centers],
+            trajectory[0],
+            config=belief_config,
+        )
+        for name, trajectory in backbones.items()
+    }
+    selected_euclidean_beliefs = {
+        name: initialize_recursive_rbf_belief(
+            centers,
+            trajectory[0, centers],
+            trajectory[0],
+            config=belief_config,
+        )
+        for name, trajectory in backbones.items()
+    }
     output_dtype = prior_input.dtype
     risk = prior_input.copy()
     ungated = prior_input.copy()
@@ -279,27 +283,33 @@ def evaluate_geodesic_decoder_arrays(
             selected_trajectory = (
                 prior if selected_backbone == "physical_prior" else persistence
             )
-            selected_residual = np.full((len(centers), 3), np.nan, dtype=float)
-            selected_residual[available] = (
-                target_current
-                - selected_trajectory[update, available_ids]
-            )
-            selected_geodesic_belief, _ = update_recursive_rbf_belief(
-                selected_geodesic_belief,
-                update,
-                selected_trajectory[update, centers],
-                selected_residual,
-                available,
-                config=belief_config,
-            )
-            selected_euclidean_belief, _ = update_recursive_rbf_belief(
-                selected_euclidean_belief,
-                update,
-                selected_trajectory[update, centers],
-                selected_residual,
-                available,
-                config=belief_config,
-            )
+            for backbone_name, backbone in backbones.items():
+                backbone_residual = np.full((len(centers), 3), np.nan, dtype=float)
+                backbone_residual[available] = (
+                    target_current - backbone[update, available_ids]
+                )
+                selected_geodesic_beliefs[backbone_name], _ = (
+                    update_recursive_rbf_belief(
+                        selected_geodesic_beliefs[backbone_name],
+                        update,
+                        backbone[update, centers],
+                        backbone_residual,
+                        available,
+                        config=belief_config,
+                    )
+                )
+                selected_euclidean_beliefs[backbone_name], _ = (
+                    update_recursive_rbf_belief(
+                        selected_euclidean_beliefs[backbone_name],
+                        update,
+                        backbone[update, centers],
+                        backbone_residual,
+                        available,
+                        config=belief_config,
+                    )
+                )
+            selected_geodesic_belief = selected_geodesic_beliefs[selected_backbone]
+            selected_euclidean_belief = selected_euclidean_beliefs[selected_backbone]
             ungated_belief, _ = update_recursive_rbf_belief(
                 ungated_belief,
                 update,
@@ -368,7 +378,9 @@ def evaluate_geodesic_decoder_arrays(
             selected_backbones.append(None)
         accepted = bool(record["accepted"])
         if not accepted:
-            if not np.array_equal(risk[update + 1 : stop], prior_input[update + 1 : stop]):
+            if not np.array_equal(
+                risk[update + 1 : stop], prior_input[update + 1 : stop]
+            ):
                 raise AssertionError("rejected geodesic interval changed the prior")
             continue
 
@@ -481,9 +493,7 @@ def evaluate_geodesic_decoder_arrays(
             "finite_node_center_distance_fraction": float(
                 len(finite_distance) / center_distance.size
             ),
-            "median_finite_node_center_distance_m": float(
-                np.median(finite_distance)
-            ),
+            "median_finite_node_center_distance_m": float(np.median(finite_distance)),
         },
         "decision_source": (
             "frozen accepted/rejected and causal-continuation decisions from "
@@ -492,6 +502,10 @@ def evaluate_geodesic_decoder_arrays(
         "observed_backbone_selector": {
             "metric": "current observed-centre symmetric set Chamfer",
             "tie_break": "physical_prior",
+            "belief_state_reference": (
+                "one recursively updated discrepancy belief per backbone; "
+                "the selected state is decoded without cross-backbone mixing"
+            ),
             "selected_by_update": selected_backbones,
             "physical_prior_count": int(
                 sum(value == "physical_prior" for value in selected_backbones)
@@ -560,7 +574,11 @@ def run_open_deform360_geodesic_diagnostic(
     if observed != tuple(sorted(expected)):
         raise ValueError("input directory is not exactly the fixed open 27 panel")
     counts = tuple(int(value) for value in neighbor_counts)
-    if not counts or any(value < 1 for value in counts) or len(set(counts)) != len(counts):
+    if (
+        not counts
+        or any(value < 1 for value in counts)
+        or len(set(counts)) != len(counts)
+    ):
         raise ValueError("neighbor_counts must be unique positive integers")
     overrides = dict(belief_config_overrides or {})
     permitted_overrides = {"length_scale_fraction", "local_blend"}
@@ -579,7 +597,10 @@ def run_open_deform360_geodesic_diagnostic(
             raise ValueError(f"{case} report identity changed")
         target_record = source_report.get("inputs", {}).get("target_data", {})
         target_path = Path(str(target_record.get("path", ""))).resolve()
-        if target_path.parent.name != case or "independent-source-v1" not in target_path.parts:
+        if (
+            target_path.parent.name != case
+            or "independent-source-v1" not in target_path.parts
+        ):
             raise ValueError(f"{case} target path is outside the open source panel")
         expected_target_hash = str(target_record.get("sha256", ""))
         if not expected_target_hash or _sha256(target_path) != expected_target_hash:
@@ -671,12 +692,12 @@ def run_open_deform360_geodesic_diagnostic(
                         "matched_euclidean_rbf_risk_limited": report["scores"][
                             "matched_euclidean_rbf_risk_limited"
                         ],
-                        "matched_euclidean_rbf_causal_continuation": report[
-                            "scores"
-                        ]["matched_euclidean_rbf_causal_continuation"],
-                        "selected_backbone_euclidean_rbf_ungated": report[
-                            "scores"
-                        ]["selected_backbone_euclidean_rbf_ungated"],
+                        "matched_euclidean_rbf_causal_continuation": report["scores"][
+                            "matched_euclidean_rbf_causal_continuation"
+                        ],
+                        "selected_backbone_euclidean_rbf_ungated": report["scores"][
+                            "selected_backbone_euclidean_rbf_ungated"
+                        ],
                     },
                 }
             )
