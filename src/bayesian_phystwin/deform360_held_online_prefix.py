@@ -20,7 +20,7 @@ import hashlib
 import json
 from pathlib import Path
 import time
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 
@@ -35,6 +35,10 @@ from .deform360_held_protocol import (
     validate_frame_zero_bundle_manifest,
     validate_physical_prior_seal,
     validate_prefix_stage_authorization,
+)
+from .deform360_held_physical_prior import (
+    FRAME_ZERO_ARRAYS,
+    validate_physical_prediction_manifest,
 )
 from .deform360_raw_camera_cycle_uncertainty import inflate_covariance_from_cycle
 from .deform360_raw_camera_observation import (
@@ -64,6 +68,55 @@ from .phystwin_online_belief import (
 SCHEMA_VERSION = 1
 FRAME_COUNT = 76
 MINIMUM_SELECTOR_SUPPORT = 3
+HELD_OBSERVATION_CONFIG = RawCameraObservationConfig()
+HELD_UNCERTAINTY_CONFIG = RawCameraUncertaintyConfig()
+HELD_RBF_CONFIG = RecursiveRbfBeliefConfig(local_blend=1.0)
+HELD_FRAME_ZERO_SAM2_PARAMETERS = {
+    "points_per_side": 24,
+    "points_per_batch": 64,
+    "predicted_iou_threshold": 0.70,
+    "stability_score_threshold": 0.80,
+    "minimum_mask_region_area": 100,
+    "minimum_area_fraction": 0.0005,
+    "maximum_area_fraction": 0.65,
+    "minimum_foreground_contrast": 0.06,
+    "maximum_normalized_center_distance": 0.90,
+    "border_side_penalty": 0.55,
+    "minimum_reference_appearance_similarity": 0.35,
+}
+HELD_FRAME_ZERO_CONFIG = {
+    "reference_camera": "brics-odroid-001_cam0",
+    "minimum_camera_count": 8,
+    "cube_half_extent_m": 0.5,
+    "requested_voxel_size_m": 0.008,
+    "maximum_grid_point_count": 1_500_000,
+    "consensus_fraction_of_peak": 0.55,
+    "minimum_consensus_votes": 8,
+    "minimum_hull_point_count": 1_000,
+    "minimum_largest_component_fraction": 0.50,
+    "object_point_count": 10_000,
+    "depth_splat_radius_pixels": 2,
+    "minimum_median_depth_mask_coverage": 0.10,
+    "minimum_median_hull_mask_containment": 0.60,
+    "action_window_length_frames": 81,
+    "prediction_frame_count": 76,
+    "action_candidate_first_frame": 8,
+    "action_candidate_stride_frames": 6,
+    "rng_seed": 0,
+    "sam2": HELD_FRAME_ZERO_SAM2_PARAMETERS,
+}
+HELD_FRAME_ZERO_SAM2 = {
+    "repository": "https://github.com/facebookresearch/sam2",
+    "commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+    "checkpoint_sha256": (
+        "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
+    ),
+    "model_config": "configs/sam2.1/sam2.1_hiera_s.yaml",
+    "model_id": "bayesian_phystwin/frame-zero-sam2.1-small-automatic-v1@2b90b9f5ceec",
+    "parameters": HELD_FRAME_ZERO_SAM2_PARAMETERS,
+    "image_model_only": True,
+    "video_propagator_constructed": False,
+}
 MEASUREMENT_ARCHIVE_FILENAME = "measurement.npz"
 MEASUREMENT_MANIFEST_FILENAME = "measurement_manifest.json"
 UNCERTAINTY_ARCHIVE_FILENAME = "measurement_uncertainty.npz"
@@ -77,19 +130,15 @@ MEASUREMENT_KIND = "Deform360HeldCausalRawCameraMeasurement"
 UNCERTAINTY_KIND = "Deform360HeldCausalRawCameraMeasurementUncertainty"
 CYCLE_KIND = "Deform360HeldCausalRawCameraCycleUncertainty"
 
-_REQUIRED_FRAME_ZERO_ARRAYS = frozenset(
+_EXPECTED_FRAME_ZERO_ARRAYS = FRAME_ZERO_ARRAYS
+_EXPECTED_PHYSICAL_ARRAYS = frozenset(
     {
-        "frame_indices",
-        "camera_names",
-        "rgb_frame0",
-        "mask_frame0",
-        "depth_frame0_m",
-        "depth_valid_frame0",
-        "intrinsics",
-        "camera_to_world",
-        "projection_world_to_pixel",
-        "object_points_world_m",
-        "object_colors_rgb",
+        "prediction_m",
+        "persistence_m",
+        "driven_readout_m",
+        "zero_action_readout_m",
+        "action_support",
+        "frame_zero_points_m",
     }
 )
 _FORBIDDEN_SUFFIXES = frozenset({".h5", ".hdf5", ".hdf"})
@@ -189,6 +238,24 @@ def _load_frame_zero_arrays(
         expected_case_name=case_name,
         expected_role=role,
     )
+    _require(
+        manifest.get("config") == HELD_FRAME_ZERO_CONFIG,
+        "held frame-zero configuration changed",
+    )
+    sam2 = manifest.get("sam2")
+    _require(
+        isinstance(sam2, Mapping)
+        and set(sam2) == set(HELD_FRAME_ZERO_SAM2) | {"view_diagnostics"}
+        and all(sam2.get(key) == value for key, value in HELD_FRAME_ZERO_SAM2.items())
+        and isinstance(sam2.get("view_diagnostics"), list),
+        "held frame-zero SAM2 configuration changed",
+    )
+    geometry_qa = manifest.get("geometry_qa")
+    _require(
+        isinstance(geometry_qa, Mapping)
+        and geometry_qa.get("geometry_qa_passed") is True,
+        "held frame-zero geometry did not pass QA",
+    )
     bundle_record = manifest["bundle"]
     bundle_path = reject_forbidden_prefix_input(
         str(bundle_record["path"]), purpose="frame-zero bundle"
@@ -197,39 +264,129 @@ def _load_frame_zero_arrays(
         _sha256_file(bundle_path) == bundle_record["sha256"],
         "frame-zero bundle changed",
     )
+    manifest_arrays = manifest.get("arrays")
+    _require(
+        isinstance(manifest_arrays, Mapping)
+        and set(manifest_arrays) == set(_EXPECTED_FRAME_ZERO_ARRAYS),
+        "frame-zero manifest array set changed",
+    )
     with np.load(bundle_path, allow_pickle=False) as stored:
         _require(
-            _REQUIRED_FRAME_ZERO_ARRAYS.issubset(stored.files),
-            "frame-zero bundle is missing required arrays",
+            set(stored.files) == set(_EXPECTED_FRAME_ZERO_ARRAYS),
+            "frame-zero bundle array set changed",
         )
-        arrays = {name: np.asarray(stored[name]).copy() for name in stored.files}
+        for name in sorted(_EXPECTED_FRAME_ZERO_ARRAYS):
+            value = np.asarray(stored[name])
+            record = manifest_arrays[name]
+            _require(
+                isinstance(record, Mapping)
+                and set(record) == {"shape", "dtype", "sha256"},
+                f"invalid frame-zero array record: {name}",
+            )
+            _require(
+                record["shape"] == list(value.shape)
+                and record["dtype"] == value.dtype.str
+                and record["sha256"] == _sha256_array(value),
+                f"frame-zero array binding changed: {name}",
+            )
+        # Copy only the exact named contract after every stored array has been
+        # checksum/shape/dtype verified against the sealed manifest.
+        arrays = {
+            name: np.asarray(stored[name]).copy()
+            for name in sorted(_EXPECTED_FRAME_ZERO_ARRAYS)
+        }
     _require(
-        np.array_equal(arrays["frame_indices"], np.asarray([0], dtype=np.int64)),
+        arrays["frame_indices"].dtype == np.dtype(np.int64)
+        and np.array_equal(arrays["frame_indices"], np.asarray([0], dtype=np.int64)),
         "frame-zero bundle contains another logical frame",
     )
     cameras = np.asarray(arrays["camera_names"])
     camera_count = len(cameras)
     _require(
-        len(set(map(str, cameras.tolist()))) == camera_count, "camera names repeat"
+        cameras.ndim == 1
+        and cameras.dtype.kind == "U"
+        and camera_count >= HELD_OBSERVATION_CONFIG.selected_camera_count
+        and all(str(value) for value in cameras.tolist())
+        and len(set(map(str, cameras.tolist()))) == camera_count,
+        "camera names are invalid",
     )
-    _require(arrays["rgb_frame0"].shape[0] == camera_count, "RGB camera axis changed")
+    camera_policy = manifest.get("camera_policy")
     _require(
-        arrays["mask_frame0"].shape == arrays["rgb_frame0"].shape[:3],
+        isinstance(camera_policy, Mapping)
+        and camera_policy.get("rule")
+        == "all calibrated cameras with an aligned undistorted video"
+        and camera_policy.get("reference_camera")
+        == HELD_FRAME_ZERO_CONFIG["reference_camera"]
+        and camera_policy.get("reference_camera")
+        in [str(value) for value in cameras.tolist()]
+        and camera_policy.get("selected_cameras")
+        == [str(value) for value in cameras.tolist()]
+        and camera_policy.get("selected_camera_count") == camera_count,
+        "frame-zero camera policy changed",
+    )
+    _require(
+        len(sam2["view_diagnostics"]) == camera_count
+        and {
+            str(record.get("camera"))
+            for record in sam2["view_diagnostics"]
+            if isinstance(record, Mapping)
+        }
+        == set(map(str, cameras.tolist())),
+        "frame-zero SAM2 camera diagnostics changed",
+    )
+    _require(
+        arrays["rgb_frame0"].dtype == np.dtype(np.uint8)
+        and arrays["rgb_frame0"].ndim == 4
+        and arrays["rgb_frame0"].shape[0] == camera_count
+        and arrays["rgb_frame0"].shape[-1] == 3,
+        "RGB frame-zero array changed",
+    )
+    _require(
+        arrays["mask_frame0"].dtype == np.dtype(bool)
+        and arrays["mask_frame0"].shape == arrays["rgb_frame0"].shape[:3],
         "mask/RGB shapes differ",
     )
     _require(
-        arrays["depth_frame0_m"].shape == arrays["mask_frame0"].shape
-        and arrays["depth_valid_frame0"].shape == arrays["mask_frame0"].shape,
+        arrays["depth_frame0_m"].dtype == np.dtype(np.float32)
+        and arrays["depth_frame0_m"].shape == arrays["mask_frame0"].shape
+        and arrays["depth_valid_frame0"].dtype == np.dtype(bool)
+        and arrays["depth_valid_frame0"].shape == arrays["mask_frame0"].shape
+        and np.all(np.isfinite(arrays["depth_frame0_m"])),
         "depth/mask shapes differ",
     )
-    _require(arrays["intrinsics"].shape == (camera_count, 3, 3), "intrinsics changed")
     _require(
-        arrays["camera_to_world"].shape == (camera_count, 4, 4),
-        "camera poses changed",
+        arrays["intrinsics"].dtype == np.dtype(np.float64)
+        and arrays["intrinsics"].shape == (camera_count, 3, 3)
+        and arrays["camera_to_world"].dtype == np.dtype(np.float64)
+        and arrays["camera_to_world"].shape == (camera_count, 4, 4)
+        and arrays["projection_world_to_pixel"].dtype == np.dtype(np.float64)
+        and arrays["projection_world_to_pixel"].shape == (camera_count, 3, 4)
+        and np.all(np.isfinite(arrays["intrinsics"]))
+        and np.all(np.isfinite(arrays["camera_to_world"]))
+        and np.all(np.isfinite(arrays["projection_world_to_pixel"])),
+        "calibration arrays changed",
     )
+    points = arrays["object_points_world_m"]
+    colors = arrays["object_colors_rgb"]
+    color_support = arrays["object_color_support_count"]
+    hull = arrays["visual_hull_points_world_m"]
     _require(
-        arrays["projection_world_to_pixel"].shape == (camera_count, 3, 4),
-        "projection matrices changed",
+        points.dtype == np.dtype(np.float32)
+        and points.ndim == 2
+        and points.shape[1] == 3
+        and len(points) >= HELD_OBSERVATION_CONFIG.center_count
+        and np.all(np.isfinite(points))
+        and colors.dtype == np.dtype(np.uint8)
+        and colors.shape == points.shape
+        and color_support.dtype == np.dtype(np.uint8)
+        and color_support.shape == (len(points),)
+        and np.all(color_support > 0)
+        and hull.dtype == np.dtype(np.float32)
+        and hull.ndim == 2
+        and hull.shape[1] == 3
+        and len(hull) > 0
+        and np.all(np.isfinite(hull)),
+        "frame-zero object arrays changed",
     )
     for index in range(camera_count):
         expected = _projection_matrix(
@@ -237,7 +394,10 @@ def _load_frame_zero_arrays(
         )
         _require(
             np.allclose(
-                expected, arrays["projection_world_to_pixel"][index], atol=1e-9
+                expected,
+                arrays["projection_world_to_pixel"][index],
+                rtol=0.0,
+                atol=1e-9,
             ),
             "stored projection differs from immutable calibration",
         )
@@ -306,6 +466,7 @@ def _decode_action_aligned_prefix(
         raise RuntimeError("OpenCV is required for causal RGB prefixes") from error
     capture = cv2.VideoCapture(str(path))
     frames: list[np.ndarray] = []
+    frame_hashes: list[str] = []
     digest = hashlib.sha256()
     try:
         if source_frame_start:
@@ -321,6 +482,7 @@ def _decode_action_aligned_prefix(
             )
             rgb = np.ascontiguousarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
             frames.append(rgb)
+            frame_hashes.append(_sha256_array(rgb))
             digest.update(str(rgb.dtype).encode("ascii"))
             digest.update(np.asarray(rgb.shape, dtype=np.int64).tobytes())
             digest.update(rgb.tobytes())
@@ -340,6 +502,7 @@ def _decode_action_aligned_prefix(
         "maximum_source_rgb_frame_read": source_frame_start + logical_update_frame,
         "decoded_frame_count": logical_update_frame + 1,
         "decoded_rgb_prefix_sha256": digest.hexdigest(),
+        "decoded_rgb_frame_sha256": frame_hashes,
         "logical_frame_zero_matches_bundle": True,
         "whole_video_hashed_or_read": False,
     }
@@ -498,8 +661,8 @@ def predict_support_gated_selected_backbone_rbf(
         and np.all((0 <= centers) & (centers < prior.shape[1])),
         "invalid center IDs",
     )
-    config = rbf_config or RecursiveRbfBeliefConfig(local_blend=1.0)
-    _require(config.local_blend == 1.0, "held primary requires full local blend")
+    config = rbf_config or HELD_RBF_CONFIG
+    _require(config == HELD_RBF_CONFIG, "held RBF configuration changed")
     output_dtype = prior_input.dtype
     selected_raw = prior_input.copy()
     prediction = prior_input.copy()
@@ -618,6 +781,54 @@ def predict_support_gated_selected_backbone_rbf(
     )
 
 
+def _validate_physical_archive_arrays(
+    arrays: Mapping[str, np.ndarray],
+    bundle_frame_zero: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    _require(
+        set(arrays) == set(_EXPECTED_PHYSICAL_ARRAYS),
+        "physical prediction archive array set changed",
+    )
+    prior = np.asarray(arrays["prediction_m"])
+    persistence = np.asarray(arrays["persistence_m"])
+    frame_zero = np.asarray(arrays["frame_zero_points_m"])
+    driven = np.asarray(arrays["driven_readout_m"])
+    zero_action = np.asarray(arrays["zero_action_readout_m"])
+    support = np.asarray(arrays["action_support"])
+    bundle = np.asarray(bundle_frame_zero)
+    point_count = len(bundle)
+    _require(
+        frame_zero.dtype == bundle.dtype == np.dtype(np.float32)
+        and frame_zero.shape == bundle.shape == (point_count, 3)
+        and np.array_equal(frame_zero, bundle),
+        "physical material identities differ from frame-zero bundle",
+    )
+    trajectory_shape = (FRAME_COUNT, point_count, 3)
+    _require(
+        all(
+            value.dtype == np.dtype(np.float32)
+            and value.shape == trajectory_shape
+            and np.all(np.isfinite(value))
+            for value in (prior, persistence, driven, zero_action)
+        )
+        and support.dtype == np.dtype(np.float32)
+        and support.shape == (point_count,)
+        and np.all(np.isfinite(support))
+        and np.all((0.0 <= support) & (support <= 1.0)),
+        "physical prediction arrays are invalid",
+    )
+    _require(
+        np.array_equal(prior[0], frame_zero)
+        and np.array_equal(persistence[0], frame_zero)
+        and np.array_equal(
+            persistence,
+            np.repeat(frame_zero[None], FRAME_COUNT, axis=0),
+        ),
+        "physical frame zero or persistence contract changed",
+    )
+    return prior.copy(), persistence.copy(), frame_zero.copy()
+
+
 def _pixel_sigma(median_reprojection_px: float, floor_px: float) -> float:
     return max(
         float(floor_px),
@@ -632,6 +843,245 @@ def _archive_record(path: Path, arrays: Mapping[str, np.ndarray]) -> dict[str, A
             name: _sha256_array(np.asarray(value)) for name, value in arrays.items()
         },
     }
+
+
+def logical_state_action_alignment(
+    source_frame_start: int,
+    logical_frame: int,
+) -> dict[str, Any]:
+    """Return the frozen state/action indices for one logical RGB frame.
+
+    Selected robot rows are state-aligned controller poses.  Thus state ``u``
+    is raw video/robot frame ``start+u`` and its incoming displacement uses
+    selected action rows ``u-1 -> u`` (never ``u -> u+1``).
+    """
+
+    _require(source_frame_start >= 0, "negative source frame start")
+    _require(0 <= logical_frame < FRAME_COUNT, "logical frame is out of range")
+    return {
+        "logical_state_frame": int(logical_frame),
+        "source_state_frame": int(source_frame_start + logical_frame),
+        "selected_action_state_index": int(logical_frame),
+        "incoming_selected_action_transition": (
+            None if logical_frame == 0 else [logical_frame - 1, logical_frame]
+        ),
+        "incoming_source_action_transition": (
+            None
+            if logical_frame == 0
+            else [
+                source_frame_start + logical_frame - 1,
+                source_frame_start + logical_frame,
+            ]
+        ),
+    }
+
+
+def _validate_selected_action_bundle(
+    action_alignment: Mapping[str, Any],
+    *,
+    source_frame_start: int,
+) -> tuple[Path, dict[str, Any]]:
+    record = action_alignment.get("selected_action_bundle")
+    _require(isinstance(record, Mapping), "selected action bundle is missing")
+    path = reject_forbidden_prefix_input(
+        str(record.get("path")), purpose="selected action bundle"
+    )
+    _require(path.suffix.lower() == ".npz", "selected action bundle is not NPZ")
+    observed = _bound_file(path)
+    _require(
+        all(
+            observed[key] == record.get(key) for key in ("path", "sha256", "size_bytes")
+        ),
+        "selected action bundle binding changed",
+    )
+    expected_arrays = action_alignment.get("selected_action_arrays")
+    _require(
+        isinstance(expected_arrays, Mapping) and bool(expected_arrays),
+        "selected action array bindings are missing",
+    )
+    with np.load(path, allow_pickle=False) as stored:
+        _require(
+            set(stored.files) == set(expected_arrays),
+            "selected action array set changed",
+        )
+        for name in stored.files:
+            value = np.asarray(stored[name])
+            array_record = expected_arrays[name]
+            _require(
+                isinstance(array_record, Mapping)
+                and array_record.get("shape") == list(value.shape)
+                and array_record.get("dtype") == value.dtype.str
+                and array_record.get("sha256") == _sha256_array(value),
+                f"selected action array binding changed: {name}",
+            )
+        _require(
+            "actions" in stored.files and "openings" in stored.files,
+            "selected action fields are missing",
+        )
+        actions = np.asarray(stored["actions"])
+        openings = np.asarray(stored["openings"])
+        _require(
+            actions.ndim in (3, 4)
+            and len(actions) == FRAME_COUNT
+            and actions.shape[-1] == 3
+            and np.all(np.isfinite(actions)),
+            "selected actions are invalid",
+        )
+        _require(
+            openings.ndim in (1, 2)
+            and len(openings) == FRAME_COUNT
+            and np.all(np.isfinite(openings)),
+            "selected openings are invalid",
+        )
+    source_count = action_alignment.get("source_robot_frame_count")
+    _require(
+        isinstance(source_count, int)
+        and source_count >= source_frame_start + FRAME_COUNT,
+        "source robot frame count is incompatible with the selected action",
+    )
+    _require(
+        action_alignment.get("prediction_frame_count") == FRAME_COUNT,
+        "selected action prediction frame count changed",
+    )
+    contract = {
+        "dataset_layout": "deform360.processing/robot/v1 aligned raw index",
+        "shared_state_index": (
+            "raw frame k indexes the same aligned state in robot arrays and every "
+            "camera undistorted.mp4"
+        ),
+        "selected_action_semantics": "state-aligned controller pose",
+        "transition_semantics": (
+            "logical state u uses raw state start+u; incoming displacement uses "
+            "selected rows u-1 -> u"
+        ),
+        "source_robot_frame_count": source_count,
+        "frame_zero": logical_state_action_alignment(source_frame_start, 0),
+        "updates": [
+            logical_state_action_alignment(source_frame_start, update)
+            for update in UPDATE_FRAMES
+        ],
+    }
+    return path, contract
+
+
+def _validate_aligned_robot_video_metadata(
+    frame_manifest: Mapping[str, Any],
+    cameras: Sequence[str],
+    *,
+    source_frame_start: int,
+    source_frame_stop: int,
+) -> dict[str, Any]:
+    record = frame_manifest.get("action_inputs", {}).get("robot_metadata")
+    _require(isinstance(record, Mapping), "bound robot metadata is missing")
+    path = reject_forbidden_prefix_input(
+        str(record.get("path")), purpose="aligned robot/video metadata"
+    )
+    observed = _bound_file(path)
+    _require(
+        all(
+            observed[key] == record.get(key) for key in ("path", "sha256", "size_bytes")
+        ),
+        "aligned robot/video metadata binding changed",
+    )
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    _require(isinstance(metadata, Mapping), "robot metadata is not a JSON object")
+    _require(
+        metadata.get("schema") == "deform360.processing/robot/v1",
+        "robot/video alignment schema changed",
+    )
+    outputs = metadata.get("outputs")
+    inputs = metadata.get("inputs")
+    parameters = metadata.get("parameters")
+    _require(
+        isinstance(outputs, Mapping)
+        and isinstance(inputs, Mapping)
+        and isinstance(parameters, Mapping),
+        "robot/video alignment metadata is incomplete",
+    )
+    frame_count = outputs.get("num_frames")
+    _require(
+        isinstance(frame_count, int)
+        and 0 <= source_frame_start < source_frame_stop <= frame_count,
+        "selected source window is outside aligned robot/video metadata",
+    )
+    camera_names = tuple(str(value) for value in cameras)
+    declared_cameras = parameters.get("cameras")
+    video_sha256 = inputs.get("video_sha256")
+    _require(
+        isinstance(declared_cameras, list)
+        and tuple(str(value) for value in declared_cameras) == camera_names
+        and isinstance(video_sha256, Mapping)
+        and set(map(str, video_sha256)) == set(camera_names),
+        "robot/video aligned camera set changed",
+    )
+    declared_hashes = {str(name): str(value) for name, value in video_sha256.items()}
+    timestamp_sha256 = inputs.get("aligned_timestamps_sha256")
+    _require(
+        isinstance(timestamp_sha256, str)
+        and len(timestamp_sha256) == 64
+        and all(digit in "0123456789abcdef" for digit in timestamp_sha256)
+        and all(
+            isinstance(video_sha256[name], str)
+            and len(video_sha256[name]) == 64
+            and all(digit in "0123456789abcdef" for digit in video_sha256[name])
+            for name in video_sha256
+        )
+        and len(declared_hashes) == len(camera_names),
+        "robot/video declared checksum is invalid",
+    )
+    accesses = frame_manifest.get("camera_frame_zero_access")
+    _require(
+        isinstance(accesses, list) and len(accesses) == len(camera_names),
+        "frame-zero camera access records changed",
+    )
+    access_by_camera = {
+        str(value.get("camera")): value
+        for value in accesses
+        if isinstance(value, Mapping)
+    }
+    _require(
+        set(access_by_camera) == set(camera_names)
+        and all(
+            access_by_camera[camera].get("source_aligned_frame_index")
+            == source_frame_start
+            for camera in camera_names
+        ),
+        "frame-zero camera source index differs from the action start",
+    )
+    return {
+        "metadata": observed,
+        "schema": metadata["schema"],
+        "aligned_frame_count": frame_count,
+        "aligned_timestamps_sha256": timestamp_sha256,
+        "declared_video_sha256": declared_hashes,
+        "declared_video_hashes_verified_by_whole_file_read": False,
+        "camera_order": list(camera_names),
+        "source_frame_range_half_open": [source_frame_start, source_frame_stop],
+        "frame_zero_source_index_verified_for_every_camera": True,
+    }
+
+
+def _require_nested_prefix_hashes(
+    previous: Sequence[str],
+    current: Sequence[str],
+    *,
+    camera: str,
+    update: int,
+) -> tuple[str, ...]:
+    current_tuple = tuple(str(value) for value in current)
+    _require(
+        len(current_tuple) == update + 1
+        and all(
+            len(value) == 64 and all(digit in "0123456789abcdef" for digit in value)
+            for value in current_tuple
+        ),
+        f"invalid per-frame prefix hashes for {camera}",
+    )
+    _require(
+        current_tuple[: len(previous)] == tuple(previous),
+        f"nested causal prefixes differ for {camera}",
+    )
+    return current_tuple
 
 
 def _canonical_json_utf8(value: Any) -> np.ndarray:
@@ -661,8 +1111,17 @@ def run_held_online_prefix_case(
     """Build all target-free held prefix artifacts and the online seal."""
 
     cfg = observation_config or runtime.config
-    uncertainty_cfg = uncertainty_config or RawCameraUncertaintyConfig()
+    uncertainty_cfg = uncertainty_config or HELD_UNCERTAINTY_CONFIG
     uncertainty_cfg.validate()
+    _require(cfg == HELD_OBSERVATION_CONFIG, "held observation configuration changed")
+    _require(
+        runtime.config == HELD_OBSERVATION_CONFIG,
+        "AllTracker runtime configuration changed",
+    )
+    _require(
+        uncertainty_cfg == HELD_UNCERTAINTY_CONFIG,
+        "held uncertainty configuration changed",
+    )
     _require(
         tuple(cfg.update_frames) == tuple(UPDATE_FRAMES), "held update frames changed"
     )
@@ -727,30 +1186,91 @@ def run_held_online_prefix_case(
         and prediction_range == [source_start, source_start + FRAME_COUNT],
         "held prediction action range changed",
     )
+    selected_action_path, state_action_contract = _validate_selected_action_bundle(
+        action_alignment,
+        source_frame_start=source_start,
+    )
 
     prediction_archive = Path(
         physical["physical_artifacts"]["physical_prediction_archive"]["path"]
     )
     reject_forbidden_prefix_input(prediction_archive, purpose="physical prediction")
-    with np.load(prediction_archive, allow_pickle=False) as stored:
-        prior = np.asarray(stored["prediction_m"]).copy()
-        persistence = np.asarray(stored["persistence_m"]).copy()
-        physical_frame_zero = np.asarray(stored["frame_zero_points_m"]).copy()
-    bundle_frame_zero = np.asarray(frame_arrays["object_points_world_m"])
+    prediction_manifest_path = Path(
+        physical["physical_artifacts"]["physical_prediction_manifest"]["path"]
+    )
+    prediction_manifest = validate_physical_prediction_manifest(
+        prediction_manifest_path,
+        verify_archive=True,
+    )
+    physical_archive_record = physical["physical_artifacts"][
+        "physical_prediction_archive"
+    ]
+    manifest_archive_record = prediction_manifest.get("physical_prediction_archive", {})
     _require(
-        physical_frame_zero.dtype == bundle_frame_zero.dtype
-        and np.array_equal(physical_frame_zero, bundle_frame_zero),
-        "physical material identities differ from frame-zero bundle",
+        Path(str(manifest_archive_record.get("path"))).resolve()
+        == prediction_archive.resolve()
+        and all(
+            manifest_archive_record.get(key) == physical_archive_record.get(key)
+            for key in ("path", "sha256", "size_bytes")
+        ),
+        "physical manifest binds another prediction archive",
     )
     _require(
-        prior.shape == persistence.shape
-        and prior.shape == (FRAME_COUNT, len(bundle_frame_zero), 3),
-        "physical trajectory shape changed",
+        prediction_manifest.get("case_name") == case_name
+        and prediction_manifest.get("role") == role
+        and prediction_manifest.get("held_lock_sha256") == _sha256_file(lock_path)
+        and prediction_manifest.get("frame_zero_manifest_sha256")
+        == _sha256_file(frame_zero_manifest_path)
+        and prediction_manifest.get("frame_zero_manifest_artifact_sha256")
+        == frame_manifest["artifact_sha256"],
+        "physical prediction manifest identity changed",
+    )
+    expected_physical_hashes = manifest_archive_record.get("array_sha256")
+    _require(
+        isinstance(expected_physical_hashes, Mapping)
+        and set(expected_physical_hashes) == set(_EXPECTED_PHYSICAL_ARRAYS),
+        "physical prediction archive array contract changed",
+    )
+    with np.load(prediction_archive, allow_pickle=False) as stored:
+        _require(
+            set(stored.files) == set(_EXPECTED_PHYSICAL_ARRAYS),
+            "physical prediction archive array set changed",
+        )
+        for name in stored.files:
+            _require(
+                _sha256_array(np.asarray(stored[name]))
+                == expected_physical_hashes[name],
+                f"physical prediction array changed: {name}",
+            )
+        physical_arrays = {
+            name: np.asarray(stored[name]).copy()
+            for name in sorted(_EXPECTED_PHYSICAL_ARRAYS)
+        }
+    bundle_frame_zero = np.asarray(frame_arrays["object_points_world_m"])
+    prior, persistence, physical_frame_zero = _validate_physical_archive_arrays(
+        physical_arrays,
+        bundle_frame_zero,
+    )
+    _require(
+        prediction_manifest.get("frozen_predictor", {}).get("point_count")
+        == len(physical_frame_zero),
+        "physical prediction point count changed",
     )
     cameras, support, projected = _frame_zero_support_from_bundle(
         physical_frame_zero,
         frame_arrays,
         depth_tolerance_m=cfg.frame_zero_depth_tolerance_m,
+    )
+    aligned_metadata = _validate_aligned_robot_video_metadata(
+        frame_manifest,
+        cameras,
+        source_frame_start=source_start,
+        source_frame_stop=int(raw_range[1]),
+    )
+    _require(
+        aligned_metadata["aligned_frame_count"]
+        == state_action_contract["source_robot_frame_count"],
+        "selected action and aligned video frame counts differ",
     )
     intrinsic_by_camera = {
         camera: frame_arrays["intrinsics"][index]
@@ -829,10 +1349,15 @@ def run_held_online_prefix_case(
             "video_path": str((episode / camera / "undistorted.mp4").resolve()),
             "source_frame_start": source_start,
             "decoded_prefix_sha256_by_update": {},
+            "decoded_frame_sha256_by_update": {},
+            "nested_prefix_overlap_verified": False,
             "whole_video_hashed_or_read": False,
             "frame_zero_source": "sealed frame_zero_bundle.npz",
         }
         for camera in selected_cameras
+    }
+    prefix_frame_hashes: dict[str, tuple[str, ...]] = {
+        camera: () for camera in selected_cameras
     }
     started = time.perf_counter()
     for update_index, update in enumerate(UPDATE_FRAMES):
@@ -848,6 +1373,22 @@ def run_held_online_prefix_case(
                 source_frame_start=source_start,
                 logical_update_frame=update,
                 expected_frame_zero=rgb_zero_by_camera[camera],
+            )
+            _require(
+                access.get("logical_prefix_frame_range_half_open") == [0, update + 1]
+                and access.get("source_prefix_frame_range_half_open")
+                == [source_start, source_start + update + 1]
+                and access.get("maximum_logical_rgb_frame_read") == update
+                and access.get("maximum_source_rgb_frame_read") == source_start + update
+                and access.get("logical_frame_zero_matches_bundle") is True
+                and access.get("whole_video_hashed_or_read") is False,
+                f"causal RGB access contract changed for {camera}",
+            )
+            prefix_frame_hashes[camera] = _require_nested_prefix_hashes(
+                prefix_frame_hashes[camera],
+                access.get("decoded_rgb_frame_sha256", ()),
+                camera=camera,
+                update=update,
             )
             endpoints, forward_visible, forward = _infer_tracks_from_rgb(
                 runtime,
@@ -878,6 +1419,9 @@ def run_held_online_prefix_case(
             selected_camera_inputs[camera]["decoded_prefix_sha256_by_update"][
                 str(update)
             ] = access["decoded_rgb_prefix_sha256"]
+            selected_camera_inputs[camera]["decoded_frame_sha256_by_update"][
+                str(update)
+            ] = list(prefix_frame_hashes[camera])
             camera_records.append(
                 {
                     "camera": camera,
@@ -893,6 +1437,9 @@ def run_held_online_prefix_case(
                     ),
                 }
             )
+
+        for camera in selected_cameras:
+            selected_camera_inputs[camera]["nested_prefix_overlap_verified"] = True
 
         measurement_centers: list[dict[str, Any]] = []
         uncertainty_centers: list[dict[str, Any]] = []
@@ -1074,7 +1621,7 @@ def run_held_online_prefix_case(
             measurement,
             measurement_validity,
             center_ids=centers,
-            rbf_config=RecursiveRbfBeliefConfig(local_blend=1.0),
+            rbf_config=HELD_RBF_CONFIG,
         )
     )
     measurement_arrays = {
@@ -1098,6 +1645,9 @@ def run_held_online_prefix_case(
         "physical_prior_seal": _bound_file(physical_prior_seal_path),
         "prefix_authorization": _bound_file(prefix_authorization_path),
         "physical_prediction_archive": _bound_file(prediction_archive),
+        "physical_prediction_manifest": _bound_file(prediction_manifest_path),
+        "selected_action_bundle": _bound_file(selected_action_path),
+        "robot_video_metadata": aligned_metadata["metadata"],
     }
     tracker_descriptor = {
         "name": "AllTracker",
@@ -1147,6 +1697,8 @@ def run_held_online_prefix_case(
             "logical_update_frames": list(UPDATE_FRAMES),
             "maximum_logical_rgb_frame_read": UPDATE_FRAMES[-1],
             "maximum_source_rgb_frame_read": source_start + UPDATE_FRAMES[-1],
+            "state_action_index_contract": state_action_contract,
+            "aligned_robot_video_metadata": aligned_metadata,
         },
         "inputs": common_inputs,
         "selected_camera_inputs": selected_camera_inputs,
@@ -1158,6 +1710,8 @@ def run_held_online_prefix_case(
             "original_calibration_read_after_bundle": False,
             "logical_video_prefix_rule": "update u reads exactly logical frames [0,u]",
             "source_video_prefix_rule": "logical [0,u] maps to raw [start,start+u]",
+            "nested_prefix_overlap_verified_per_camera": True,
+            "whole_video_hashed_or_read": False,
             "maximum_logical_rgb_frame_read": UPDATE_FRAMES[-1],
             "future_tactile_read": False,
             "target_data_read": False,
@@ -1310,6 +1864,9 @@ def run_held_online_prefix_case(
 __all__ = [
     "CYCLE_ARCHIVE_FILENAME",
     "CYCLE_MANIFEST_FILENAME",
+    "HELD_OBSERVATION_CONFIG",
+    "HELD_RBF_CONFIG",
+    "HELD_UNCERTAINTY_CONFIG",
     "MEASUREMENT_ARCHIVE_FILENAME",
     "MEASUREMENT_MANIFEST_FILENAME",
     "ONLINE_PREDICTION_ARCHIVE_FILENAME",
