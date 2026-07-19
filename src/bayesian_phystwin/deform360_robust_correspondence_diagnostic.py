@@ -49,7 +49,9 @@ from .phystwin_online_belief import (
 )
 
 
-PROTOCOL_ID = "deform360-open27-pairwise-correspondence-gate-v1-development"
+PROTOCOL_ID = (
+    "deform360-open27-pairwise-correspondence-gate-v2-association-adaptive-posthoc"
+)
 CORRUPTION_SEEDS = tuple(range(8))
 
 PHYSICAL_ARM = "physical_prior"
@@ -61,6 +63,7 @@ LEGACY_MIXED_UNGATED_RBF_ARM = (
 )
 ROBUST_RBF_ARM = "selected_backbone_full_blend_euclidean_rbf_pairwise_consensus"
 CPD_ARM = "independent_cpd_selected_backbone"
+ASSOCIATION_ADAPTIVE_ARM = "association_adaptive_rbf_or_cpd"
 ARMS = (
     PHYSICAL_ARM,
     PERSISTENCE_ARM,
@@ -69,6 +72,7 @@ ARMS = (
     LEGACY_MIXED_UNGATED_RBF_ARM,
     ROBUST_RBF_ARM,
     CPD_ARM,
+    ASSOCIATION_ADAPTIVE_ARM,
 )
 
 
@@ -286,6 +290,7 @@ def evaluate_robust_correspondence_arrays(
         LEGACY_MIXED_UNGATED_RBF_ARM,
         ROBUST_RBF_ARM,
         CPD_ARM,
+        ASSOCIATION_ADAPTIVE_ARM,
     )
     trajectories = {arm: prior_input.copy() for arm in dynamic_arms}
     if cpd_trajectory_override_m is not None:
@@ -453,6 +458,30 @@ def evaluate_robust_correspondence_arrays(
         ):
             raise AssertionError("failed CPD update did not preserve raw backbone")
 
+        if gate.accepted:
+            trajectories[ASSOCIATION_ADAPTIVE_ARM][update + 1 : stop] = trajectories[
+                ROBUST_RBF_ARM
+            ][update + 1 : stop]
+            adaptive_route = "pairwise_consensus_rbf"
+        elif cpd_reused or cpd_fit is not None:
+            trajectories[ASSOCIATION_ADAPTIVE_ARM][update + 1 : stop] = trajectories[
+                CPD_ARM
+            ][update + 1 : stop]
+            adaptive_route = "unordered_cpd"
+        else:
+            adaptive_route = "selected_raw_backbone"
+        routed_trajectory = {
+            "pairwise_consensus_rbf": trajectories[ROBUST_RBF_ARM],
+            "unordered_cpd": trajectories[CPD_ARM],
+            "selected_raw_backbone": selected,
+        }[adaptive_route]
+        adaptive_exact = np.array_equal(
+            trajectories[ASSOCIATION_ADAPTIVE_ARM][update + 1 : stop],
+            routed_trajectory[update + 1 : stop],
+        )
+        if not adaptive_exact:
+            raise AssertionError("association-adaptive route is not bit-exact")
+
         interval_frames = tuple(range(update + 1, stop))
         retained_clean = gate.inlier_mask & available & ~mismatch_mask
         retained_bad = gate.inlier_mask & mismatch_mask
@@ -519,6 +548,13 @@ def evaluate_robust_correspondence_arrays(
                         None
                         if cpd_fit is None
                         else cpd_fit.effective_correspondence_count
+                    ),
+                },
+                "association_adaptive": {
+                    "route": adaptive_route,
+                    "bit_exact_selected_route": adaptive_exact,
+                    "posthoc_development_status": (
+                        "defined after the frozen clique-only open27 stress result"
                     ),
                 },
             }
@@ -797,6 +833,7 @@ def _coverage_and_risk(
                 UNGATED_RBF_ARM,
                 LEGACY_MIXED_UNGATED_RBF_ARM,
                 CPD_ARM,
+                ASSOCIATION_ADAPTIVE_ARM,
             )
         }
 
@@ -897,6 +934,10 @@ def evaluate_deform360_robust_correspondence_cohort(
         for condition in condition_names
     }
     pairs = (
+        (ASSOCIATION_ADAPTIVE_ARM, ROBUST_RBF_ARM),
+        (ASSOCIATION_ADAPTIVE_ARM, UNGATED_RBF_ARM),
+        (ASSOCIATION_ADAPTIVE_ARM, CPD_ARM),
+        (ASSOCIATION_ADAPTIVE_ARM, SELECTED_RAW_ARM),
         (ROBUST_RBF_ARM, UNGATED_RBF_ARM),
         (UNGATED_RBF_ARM, LEGACY_MIXED_UNGATED_RBF_ARM),
         (ROBUST_RBF_ARM, LEGACY_MIXED_UNGATED_RBF_ARM),
@@ -969,7 +1010,13 @@ def evaluate_deform360_robust_correspondence_cohort(
                 "a separately reported mixed-state ungated arm reproduces the old "
                 "cross-backbone state semantics but is never the candidate"
             ),
-            "rejection": (
+            "association_adaptive_posthoc_arm": (
+                "defined only after inspecting the frozen clique-only open27 result: "
+                "route to separate-state clique-filtered RBF when accepted, otherwise "
+                "to independent unordered CPD when at least three observations support "
+                "a fit, otherwise bit-exact selected raw backbone"
+            ),
+            "clique_only_rejection": (
                 "bit-exact selected raw physical or persistence trajectory for the "
                 "whole following interval"
             ),
@@ -1000,6 +1047,7 @@ def evaluate_deform360_robust_correspondence_cohort(
 
 __all__ = [
     "ARMS",
+    "ASSOCIATION_ADAPTIVE_ARM",
     "CORRUPTION_SEEDS",
     "CPD_ARM",
     "LEGACY_MIXED_UNGATED_RBF_ARM",

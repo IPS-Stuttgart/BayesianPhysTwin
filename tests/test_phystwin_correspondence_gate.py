@@ -2,6 +2,8 @@ import numpy as np
 
 from bayesian_phystwin.cpd_registration import NonrigidCpdConfig
 from bayesian_phystwin.deform360_robust_correspondence_diagnostic import (
+    ASSOCIATION_ADAPTIVE_ARM,
+    CPD_ARM,
     LEGACY_MIXED_UNGATED_RBF_ARM,
     ROBUST_RBF_ARM,
     SELECTED_RAW_ARM,
@@ -171,6 +173,50 @@ def test_rejected_update_is_bit_exact_selected_backbone_fallback() -> None:
     )
     np.testing.assert_array_equal(
         trajectories[ROBUST_RBF_ARM], trajectories[SELECTED_RAW_ARM]
+    )
+    np.testing.assert_array_equal(
+        trajectories[ASSOCIATION_ADAPTIVE_ARM], trajectories[CPD_ARM]
+    )
+
+
+def test_association_adaptive_raw_fallback_is_exact_without_cpd_support() -> None:
+    rng = np.random.default_rng(25)
+    point_count = 24
+    frame_count = 76
+    frame_zero = rng.uniform(-0.4, 0.4, size=(point_count, 3)).astype(np.float32)
+    prior = np.repeat(frame_zero[None], frame_count, axis=0)
+    persistence = prior.copy()
+    target = prior.copy()
+    visible = np.ones((frame_count, point_count), dtype=bool)
+    validity = visible.copy()
+    centers = np.arange(16, dtype=np.int64)
+    for frame in (19, 38, 57):
+        visible[frame, centers[2:]] = False
+
+    report, trajectories = evaluate_robust_correspondence_arrays(
+        prior,
+        persistence,
+        target,
+        visible,
+        validity,
+        center_ids=centers,
+        scored_frames=tuple(range(20, frame_count)),
+        case_name="synthetic-insufficient-support",
+        stress=MatchedObservationStress(name="clean"),
+        seed=0,
+        cpd_config=NonrigidCpdConfig(maximum_iterations=5),
+    )
+
+    assert all(
+        update["association_adaptive"]["route"] == "selected_raw_backbone"
+        for update in report["updates"]
+    )
+    assert all(
+        update["association_adaptive"]["bit_exact_selected_route"]
+        for update in report["updates"]
+    )
+    np.testing.assert_array_equal(
+        trajectories[ASSOCIATION_ADAPTIVE_ARM], trajectories[SELECTED_RAW_ARM]
     )
 
 
