@@ -1422,17 +1422,43 @@ def _namespace_from_checkpoint(raw: dict[str, object], args) -> SimpleNamespace:
     return SimpleNamespace(**values)
 
 
-def _rollout_model_output(training, runtime, model_out, device, train_end: int):
+def _model_spring_y(training, runtime, model_out, device):
+    """Materialize the complete positive spring field applied by MatPhys."""
+
+    import torch
+
+    model_logk = training._build_model_logk(
+        model_out, runtime, runtime.sim, device
+    )
+    if model_logk is None:
+        raise RuntimeError("MatPhys spring field does not match the runtime topology")
+    spring_y = torch.exp(model_logk).detach().cpu().numpy().reshape(-1)
+    expected_count = int(runtime.sim.wp_spring_Y.shape[0])
+    if spring_y.shape != (expected_count,):
+        raise RuntimeError("MatPhys produced an invalid complete spring field")
+    if not np.isfinite(spring_y).all() or np.any(spring_y <= 0.0):
+        raise RuntimeError("MatPhys produced a non-positive or non-finite spring field")
+    return model_logk, spring_y.astype(np.float32, copy=False)
+
+
+def _rollout_model_output(
+    training,
+    runtime,
+    model_out,
+    device,
+    train_end: int,
+    *,
+    model_logk=None,
+):
     """Apply one spring field and run one fresh official Warp trajectory."""
 
     import warp as wp
 
     sim = runtime.sim
-    model_logk = training._build_model_logk(
-        model_out, runtime, sim, device
-    )
     if model_logk is None:
-        raise RuntimeError("MatPhys spring field does not match the runtime topology")
+        model_logk, _ = _model_spring_y(
+            training, runtime, model_out, device
+        )
     training._apply_model_out_to_sim(model_out, model_logk, sim)
     sim.set_init_state(sim.wp_init_vertices, sim.wp_init_velocities)
     vertices = [
@@ -1530,6 +1556,15 @@ def export(args) -> None:
     proxy = _prepare_proxy(args, cases, evidence_end_by_case)
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
+    # MatPhys's warning filter targets a Warp-private helper removed in newer
+    # Warp builds. Supplying the standard equivalent keeps export-only replays
+    # compatible without changing any simulation path.
+    import warnings
+
+    import warp._src.utils as warp_utils
+
+    if not hasattr(warp_utils, "warn"):
+        warp_utils.warn = warnings.warn
     from material_param_dataset import (
         MaterialDatasetConfig,
         MaterialParamDataset,
@@ -1647,6 +1682,9 @@ def export(args) -> None:
         teacher_trajectory = None
         if parameterization is not None:
             teacher_bundle = teacher_bundles[case]
+            model_logk, candidate_spring_y = _model_spring_y(
+                training, runtime, model_out, device
+            )
             object_log_k = (
                 model_out["log_k"].detach().cpu().numpy().reshape(-1)
             )
@@ -1676,9 +1714,20 @@ def export(args) -> None:
                 json.dumps(spring_summary, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
+            spring_field_path = (
+                output_root / "cases" / case / "candidate_spring_y.npy"
+            )
+            np.save(spring_field_path, candidate_spring_y, allow_pickle=False)
             spring_field_identity = {
                 "path": str(spring_summary_path),
                 "sha256": sha256_file(spring_summary_path),
+                "complete_spring_y": {
+                    "path": str(spring_field_path),
+                    "sha256": sha256_file(spring_field_path),
+                    "count": int(len(candidate_spring_y)),
+                    "minimum": float(np.min(candidate_spring_y)),
+                    "maximum": float(np.max(candidate_spring_y)),
+                },
             }
             teacher_runtime = training._init_runtime(case, train_end, model_args)
             teacher_model_out = apply_matphys_teacher_residual(
@@ -1714,6 +1763,11 @@ def export(args) -> None:
             model_out,
             device,
             train_end,
+            **(
+                {"model_logk": model_logk}
+                if parameterization is not None
+                else {}
+            ),
         )
         causal_validation_identity = None
         if teacher_trajectory is not None:

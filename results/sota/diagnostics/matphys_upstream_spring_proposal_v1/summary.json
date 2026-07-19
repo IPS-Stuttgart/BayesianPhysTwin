@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-upstream-spring-proposal-exploratory-v1",
+  "completed_at_utc": "2026-07-19T19:21:15Z",
+  "status": "exploratory-after-future-opening",
+  "claim_boundary": "Pinned-runtime bridge and selector diagnostic only; the five futures were previously opened and cannot establish an independent state-of-the-art result.",
+  "artifacts": {
+    "source_checkpoint_sha256": "cb59db8bb8e7344337cbaab71f7f3b33fdb0067dba2ae45964f93dc8d2e84dd8",
+    "registered_exporter_sha256": "ba4cd9ac8785c59f3f536cb2c3703246a4a93a0b80fcf1853a1728f0972bcb55",
+    "diagnostic_field_exporter_sha256": "824007ef16136b95266f373bdc4115e90968b9dc67e446471932239d3dbd068c",
+    "external_backbone_manifest": {
+      "path": "external_backbone_manifest.json",
+      "sha256": "1ba4237c80b84bc2d76f7078e4dbfb83af2a4093d21dc8c4c96cc2ba05cfba6d"
+    }
+  },
+  "selector": {
+    "score": "mean validation ratio over chamfer_distance_m and track_error_m",
+    "minimum_relative_score_improvement": 0.001,
+    "maximum_per_metric_regression": 0.0,
+    "fallback": "baseline",
+    "accepted_case_count": 1,
+    "rejected_case_count": 4
+  },
+  "case_results": {
+    "single_clift_cloth_1": {
+      "selected": "baseline",
+      "baseline": {
+        "validation": {"chamfer_distance_m": 0.0035805286395196568, "track_error_m": 0.005076270292457247},
+        "future": {"chamfer_distance_m": 0.006011438177978934, "track_error_m": 0.011677800365254419}
+      },
+      "candidate": {
+        "validation": {"chamfer_distance_m": 0.003674957709650361, "track_error_m": 0.004809988202151067},
+        "future": {"chamfer_distance_m": 0.00539759378230911, "track_error_m": 0.01066754894754795}
+      },
+      "validation_ratios": {"chamfer_distance_m": 1.0263729408804205, "track_error_m": 0.9475437526047727},
+      "future_candidate_ratios": {"chamfer_distance_m": 0.897887264661815, "track_error_m": 0.9134895797060957},
+      "future_both_metric_oracle": true
+    },
+    "single_clift_cloth_3": {
+      "selected": "baseline",
+      "baseline": {
+        "validation": {"chamfer_distance_m": 0.0019399827956361128, "track_error_m": 0.007283764586822133},
+        "future": {"chamfer_distance_m": 0.004163518383705477, "track_error_m": 0.01321029804774706}
+      },
+      "candidate": {
+        "validation": {"chamfer_distance_m": 0.0019981252764382134, "track_error_m": 0.00786103090588773},
+        "future": {"chamfer_distance_m": 0.004660737534801121, "track_error_m": 0.01536924634216809}
+      },
+      "validation_ratios": {"chamfer_distance_m": 1.0299706167152043, "track_error_m": 1.07925384081056},
+      "future_candidate_ratios": {"chamfer_distance_m": 1.1194228307100988, "track_error_m": 1.163429188850832},
+      "future_both_metric_oracle": false
+    },
+    "double_lift_cloth_1": {
+      "selected": "baseline",
+      "baseline": {
+        "validation": {"chamfer_distance_m": 0.0042072486276846285, "track_error_m": 0.004619091331463885},
+        "future": {"chamfer_distance_m": 0.013265052829093987, "track_error_m": 0.023214120644334566}
+      },
+      "candidate": {
+        "validation": {"chamfer_distance_m": 0.004268054169939276, "track_error_m": 0.004656197349493187},
+        "future": {"chamfer_distance_m": 0.011566115696163209, "track_error_m": 0.022716348843157957}
+      },
+      "validation_ratios": {"chamfer_distance_m": 1.0144525668995488, "track_error_m": 1.0080331856130549},
+      "future_candidate_ratios": {"chamfer_distance_m": 0.871923832130956, "track_error_m": 0.9785573699386244},
+      "future_both_metric_oracle": true
+    },
+    "double_lift_zebra": {
+      "selected": "candidate",
+      "baseline": {
+        "validation": {"chamfer_distance_m": 0.005054243277026553, "track_error_m": 0.007866906879814197},
+        "future": {"chamfer_distance_m": 0.015085716809814841, "track_error_m": 0.030988638776611135}
+      },
+      "candidate": {
+        "validation": {"chamfer_distance_m": 0.004686256912574469, "track_error_m": 0.005940609861024645},
+        "future": {"chamfer_distance_m": 0.012405960820527648, "track_error_m": 0.025710180451898778}
+      },
+      "validation_ratios": {"chamfer_distance_m": 0.9271925896157945, "track_error_m": 0.755139211863272},
+      "future_candidate_ratios": {"chamfer_distance_m": 0.8223646895224939, "track_error_m": 0.8296647244571353},
+      "future_both_metric_oracle": true
+    },
+    "single_push_sloth": {
+      "selected": "baseline",
+      "baseline": {
+        "validation": {"chamfer_distance_m": 0.009920710468353858, "track_error_m": 0.015802480932254687},
+        "future": {"chamfer_distance_m": 0.01371875527466112, "track_error_m": 0.022586791296495143}
+      },
+      "candidate": {
+        "validation": {"chamfer_distance_m": 0.03570773746745442, "track_error_m": 0.06645421271653167},
+        "future": {"chamfer_distance_m": 0.08876097067940775, "track_error_m": 0.13716867138967279}
+      },
+      "validation_ratios": {"chamfer_distance_m": 3.599312527198407, "track_error_m": 4.205302509233911},
+      "future_candidate_ratios": {"chamfer_distance_m": 6.4700454889921, "track_error_m": 6.072959615603198},
+      "future_both_metric_oracle": false
+    }
+  },
+  "equal_case_future": {
+    "baseline": {"chamfer_distance_m": 0.010448896295050872, "track_error_m": 0.020335529826088463},
+    "ungated_candidate": {"chamfer_distance_m": 0.024558275702641765, "track_error_m": 0.04232639919488911},
+    "prefix_selected": {"chamfer_distance_m": 0.009912945097193433, "track_error_m": 0.019279838161145993},
+    "future_both_metric_oracle": {"chamfer_distance_m": 0.009450388791473313, "track_error_m": 0.018978233517369377},
+    "prefix_selected_change_percent": {"chamfer_distance_m": -5.12926133749928, "track_error_m": -5.191365427755523},
+    "future_oracle_change_percent": {"chamfer_distance_m": -9.556105021833773, "track_error_m": -6.674506739321884}
+  },
+  "conclusion": "A source-trained spring proposal can materially improve the pinned upstream simulator, but only with prefix validation and exact fallback. The exploratory stack improves both five-case means by about 5.2%; independent confirmation remains required."
+}

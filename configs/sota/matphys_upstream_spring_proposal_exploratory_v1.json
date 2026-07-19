@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-upstream-spring-proposal-exploratory-v1",
+  "status": "exploratory-after-future-opening",
+  "claim_boundary": "These five target futures were opened by the earlier MatPhys family experiment. This audit diagnoses pinned-runtime transfer and selector safety; it cannot confirm a state-of-the-art claim or tune a future-facing selector.",
+  "candidate": {
+    "training_scope": "registered-source-supervised-target-disjoint-v1",
+    "export": "complete MatPhys-predicted spring_Y",
+    "injection": "replace spring_Y only in the released PhysTwin checkpoint",
+    "runtime": "pinned upstream PhysTwin/Warp",
+    "global_parameters": "released values",
+    "optimization_after_injection": "none"
+  },
+  "selector": {
+    "interval": "[fit_end_frame_exclusive, train_end_frame_exclusive)",
+    "future_access": "forbidden during selection",
+    "candidate_score": "mean(candidate_validation_metric / baseline_validation_metric) over CD and track",
+    "minimum_relative_score_improvement": 0.001,
+    "maximum_per_metric_regression": 0.0,
+    "fallback": "exact released checkpoint",
+    "provenance": "unchanged decision rule from causal-matphys-part-family-fit-validation-v1"
+  },
+  "cases": [
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "double_lift_cloth_1",
+    "double_lift_zebra",
+    "single_push_sloth"
+  ],
+  "required_reporting": [
+    "per-case prefix CD and track",
+    "per-case untouched-future CD and track",
+    "equal-case aggregate",
+    "ungated candidate",
+    "prefix-selected candidate with exact fallback",
+    "future oracle diagnostic"
+  ],
+  "independent_follow_up": {
+    "required": true,
+    "selector_must_be_frozen_before_future_access": true,
+    "target_prefix_may_select_or_fall_back": true,
+    "target_future_may_not_tune_the_candidate_or_selector": true
+  }
+}

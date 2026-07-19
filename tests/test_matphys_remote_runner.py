@@ -223,3 +223,41 @@ def test_checkpoint_finiteness_report_detects_model_and_optimizer_nan(
     assert report["finite"] is False
     assert report["model_nonfinite_count"] == 1
     assert report["optimizer_nonfinite_count"] == 1
+
+
+def test_model_spring_y_exports_complete_positive_field() -> None:
+    torch = pytest.importorskip("torch")
+    runner = _load_runner()
+    expected_logk = torch.log(torch.tensor([1000.0, 2000.0, 3000.0]))
+    training = SimpleNamespace(
+        _build_model_logk=lambda model_out, runtime, sim, device: (
+            expected_logk
+        )
+    )
+    runtime = SimpleNamespace(
+        sim=SimpleNamespace(wp_spring_Y=SimpleNamespace(shape=(3,)))
+    )
+
+    model_logk, spring_y = runner._model_spring_y(
+        training, runtime, {"log_k": expected_logk}, "cpu"
+    )
+
+    torch.testing.assert_close(model_logk, expected_logk)
+    assert spring_y.dtype == np.float32
+    np.testing.assert_allclose(
+        spring_y, [1000.0, 2000.0, 3000.0], rtol=1e-6
+    )
+
+
+def test_model_spring_y_rejects_topology_mismatch() -> None:
+    torch = pytest.importorskip("torch")
+    runner = _load_runner()
+    training = SimpleNamespace(
+        _build_model_logk=lambda model_out, runtime, sim, device: torch.zeros(2)
+    )
+    runtime = SimpleNamespace(
+        sim=SimpleNamespace(wp_spring_Y=SimpleNamespace(shape=(3,)))
+    )
+
+    with pytest.raises(RuntimeError, match="invalid complete spring field"):
+        runner._model_spring_y(training, runtime, {}, "cpu")
