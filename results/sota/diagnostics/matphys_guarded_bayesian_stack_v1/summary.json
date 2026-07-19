@@ -1,0 +1,543 @@
+{
+  "case_results": {
+    "double_lift_cloth_1": {
+      "family_decisions": {
+        "incumbent": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "proposal": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9997418224767312,
+            "track_error_m": 0.9903045755012244
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.004976801011022269,
+          "stability_eligible": false
+        }
+      },
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/guarded_family_gate_v1/cases/double_lift_cloth_1/trajectory.pkl",
+        "sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.004208335132135847,
+        "frame_count": 21,
+        "frame_end_exclusive": 81,
+        "frame_start": 60,
+        "track_error_m": 0.004664313581706374
+      },
+      "selected_family": "incumbent",
+      "selected_test_metrics": {
+        "chamfer_distance_m": 0.006951045653557239,
+        "frame_count": 35,
+        "frame_end_exclusive": 116,
+        "frame_start": 81,
+        "track_error_m": 0.01438284523274443
+      },
+      "selected_within_family_method": "backbone",
+      "stability": {
+        "incumbent": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "proposal": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/double_lift_cloth_1/baseline/trajectory.pkl",
+            "sha256": "11d9e504689ed2606a2c2ade09279a1d92bced9d3e31c15d00e9cbdd36824523"
+          },
+          "coordinate_rmse_m": 0.00508328012040498,
+          "eligible": false
+        }
+      },
+      "test_metrics_by_family": {
+        "incumbent": {
+          "chamfer_distance_m": 0.006951045653557239,
+          "frame_count": 35,
+          "frame_end_exclusive": 116,
+          "frame_start": 81,
+          "track_error_m": 0.01438284523274443
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.013265052842154809,
+          "frame_count": 35,
+          "frame_end_exclusive": 116,
+          "frame_start": 81,
+          "track_error_m": 0.023214120519782944
+        }
+      },
+      "validation_metrics": {
+        "incumbent": {
+          "chamfer_distance_m": 0.004208335132135847,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.004664313581706374
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.004207248634594347,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.004619091081536326
+        }
+      },
+      "validation_scores": {
+        "incumbent": 1.0,
+        "proposal": 0.9950231989889777
+      }
+    },
+    "double_lift_zebra": {
+      "family_decisions": {
+        "incumbent": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "proposal": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8760059055724249,
+            "track_error_m": 0.8894928603581539
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.11651905903891202,
+          "stability_eligible": true
+        }
+      },
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/guarded_family_gate_v1/cases/double_lift_zebra/trajectory.pkl",
+        "sha256": "29bf5d79f87db4d5d06dbb772f1592385cf5e8ddb34bd7430a81cb7e8d8ee323"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.005069346035654615,
+        "frame_count": 10,
+        "frame_end_exclusive": 40,
+        "frame_start": 30,
+        "track_error_m": 0.007921024442119309
+      },
+      "selected_family": "proposal",
+      "selected_test_metrics": {
+        "chamfer_distance_m": 0.011949758040862376,
+        "frame_count": 18,
+        "frame_end_exclusive": 58,
+        "frame_start": 40,
+        "track_error_m": 0.02339314676946047
+      },
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "incumbent": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "proposal": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/double_lift_zebra/baseline/trajectory.pkl",
+            "sha256": "1ffc7e464620abf93378cedbd304dfc6894f8a1500b2f6258ce9d55e4c74dcba"
+          },
+          "coordinate_rmse_m": 0.00017798648919620415,
+          "eligible": true
+        }
+      },
+      "test_metrics_by_family": {
+        "incumbent": {
+          "chamfer_distance_m": 0.01439674025893147,
+          "frame_count": 18,
+          "frame_end_exclusive": 58,
+          "frame_start": 40,
+          "track_error_m": 0.02602456651573023
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.011949758040862376,
+          "frame_count": 18,
+          "frame_end_exclusive": 58,
+          "frame_start": 40,
+          "track_error_m": 0.02339314676946047
+        }
+      },
+      "validation_metrics": {
+        "incumbent": {
+          "chamfer_distance_m": 0.004009756338637304,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.007790180176064182
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.003512570232552742,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.006929309647512716
+        }
+      },
+      "validation_scores": {
+        "incumbent": 0.8872311922788934,
+        "proposal": 0.7838518486045847
+      }
+    },
+    "single_clift_cloth_1": {
+      "family_decisions": {
+        "incumbent": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "proposal": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0043900316080376,
+            "track_error_m": 1.0232249333814063
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.014792812366129615,
+          "stability_eligible": true
+        }
+      },
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/guarded_family_gate_v1/cases/single_clift_cloth_1/trajectory.pkl",
+        "sha256": "39939dffe0ba9b195ca484824f9cd3c044d75487e77ab7fcfdbb87e7a6ea4394"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0036187621538450116,
+        "frame_count": 14,
+        "frame_end_exclusive": 56,
+        "frame_start": 42,
+        "track_error_m": 0.004867275783978213
+      },
+      "selected_family": "incumbent",
+      "selected_test_metrics": {
+        "chamfer_distance_m": 0.004989224666802899,
+        "frame_count": 24,
+        "frame_end_exclusive": 80,
+        "frame_start": 56,
+        "track_error_m": 0.010785222798503922
+      },
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "incumbent": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "proposal": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/single_clift_cloth_1/baseline/trajectory.pkl",
+            "sha256": "1ae5dc6398e73cf1f5fa0aaf971da12eba74d0325259a79133ca93b82b08e942"
+          },
+          "coordinate_rmse_m": 0.0009681655291786513,
+          "eligible": true
+        }
+      },
+      "test_metrics_by_family": {
+        "incumbent": {
+          "chamfer_distance_m": 0.004989224666802899,
+          "frame_count": 24,
+          "frame_end_exclusive": 80,
+          "frame_start": 56,
+          "track_error_m": 0.010785222798503922
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.0057648777361102325,
+          "frame_count": 24,
+          "frame_end_exclusive": 80,
+          "frame_start": 56,
+          "track_error_m": 0.01184022689265885
+        }
+      },
+      "validation_metrics": {
+        "incumbent": {
+          "chamfer_distance_m": 0.003206954019616958,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.005321465646582683
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.0032210326491286,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.005445056331716008
+        }
+      },
+      "validation_scores": {
+        "incumbent": 0.9897584693712245,
+        "proposal": 1.0043997806964207
+      }
+    },
+    "single_clift_cloth_3": {
+      "family_decisions": {
+        "incumbent": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "proposal": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8466457348111579,
+            "track_error_m": 0.9453871534983987
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.10198954709089147,
+          "stability_eligible": true
+        }
+      },
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/guarded_family_gate_v1/cases/single_clift_cloth_3/trajectory.pkl",
+        "sha256": "a051d3406f11bff243e4a89a198b2949334b536d8893919aabfa55c7c62cbcfb"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.002254123389311541,
+        "frame_count": 17,
+        "frame_end_exclusive": 67,
+        "frame_start": 50,
+        "track_error_m": 0.007709852351054988
+      },
+      "selected_family": "proposal",
+      "selected_test_metrics": {
+        "chamfer_distance_m": 0.004063814982727492,
+        "frame_count": 30,
+        "frame_end_exclusive": 97,
+        "frame_start": 67,
+        "track_error_m": 0.013141942126408353
+      },
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "incumbent": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "proposal": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/single_clift_cloth_3/baseline/trajectory.pkl",
+            "sha256": "635580ca3fbc269238e26babdbd623f7e24e3266b83bdf2c12bd44736455c206"
+          },
+          "coordinate_rmse_m": 0.00040996104442482425,
+          "eligible": true
+        }
+      },
+      "test_metrics_by_family": {
+        "incumbent": {
+          "chamfer_distance_m": 0.004239448533911176,
+          "frame_count": 30,
+          "frame_end_exclusive": 97,
+          "frame_start": 67,
+          "track_error_m": 0.013666608987289693
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.004063814982727492,
+          "frame_count": 30,
+          "frame_end_exclusive": 97,
+          "frame_start": 67,
+          "track_error_m": 0.013141942126408353
+        }
+      },
+      "validation_metrics": {
+        "incumbent": {
+          "chamfer_distance_m": 0.0020546943581223687,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.007619311002304733
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.0017395982146448533,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.007203198740087903
+        }
+      },
+      "validation_scores": {
+        "incumbent": 0.9498917108400852,
+        "proposal": 0.8530126854661129
+      }
+    },
+    "single_push_sloth": {
+      "family_decisions": {
+        "incumbent": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "proposal": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.020970121945675,
+            "track_error_m": 0.9681043221494803
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.004659344693549006,
+          "stability_eligible": false
+        }
+      },
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/guarded_family_gate_v1/cases/single_push_sloth/trajectory.pkl",
+        "sha256": "a028f966330740d8fedd9aa8f199105b1838080460e6cdc05c34270806f9d94f"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.009758867381196794,
+        "frame_count": 12,
+        "frame_end_exclusive": 47,
+        "frame_start": 35,
+        "track_error_m": 0.015583248306609539
+      },
+      "selected_family": "incumbent",
+      "selected_test_metrics": {
+        "chamfer_distance_m": 0.01073707011055044,
+        "frame_count": 21,
+        "frame_end_exclusive": 68,
+        "frame_start": 47,
+        "track_error_m": 0.015555531994725398
+      },
+      "selected_within_family_method": "last_residual",
+      "stability": {
+        "incumbent": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "proposal": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/single_push_sloth/baseline/trajectory.pkl",
+            "sha256": "840ce3d3e95ce12b171051e74d4e62f4d90b304bc5d321992932adc0ee09a821"
+          },
+          "coordinate_rmse_m": 0.005251839813590631,
+          "eligible": false
+        }
+      },
+      "test_metrics_by_family": {
+        "incumbent": {
+          "chamfer_distance_m": 0.01073707011055044,
+          "frame_count": 21,
+          "frame_end_exclusive": 68,
+          "frame_start": 47,
+          "track_error_m": 0.015555531994725398
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.010969109862383971,
+          "frame_count": 21,
+          "frame_end_exclusive": 68,
+          "frame_start": 47,
+          "track_error_m": 0.016970812340115164
+        }
+      },
+      "validation_metrics": {
+        "incumbent": {
+          "chamfer_distance_m": 0.006863826202513665,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.010313730607667776
+        },
+        "proposal": {
+          "chamfer_distance_m": 0.007007761474994296,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.00998476717876856
+        }
+      },
+      "validation_scores": {
+        "incumbent": 0.6825948943839526,
+        "proposal": 0.6794144494849611
+      }
+    }
+  },
+  "comparison": {
+    "case_count": 5,
+    "family_equal_case_means": {
+      "incumbent": {
+        "chamfer_distance_m": 0.008262705844750645,
+        "track_error_m": 0.016082955105798734
+      },
+      "proposal": {
+        "chamfer_distance_m": 0.009202522692847775,
+        "track_error_m": 0.017712049729685157
+      }
+    },
+    "selected_equal_case_mean": {
+      "chamfer_distance_m": 0.007738182690900089,
+      "track_error_m": 0.015451737784368513
+    }
+  },
+  "completed_at_utc": "2026-07-19T19:52:14.240777+00:00",
+  "contract": {
+    "cases": [
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "double_lift_cloth_1",
+      "double_lift_zebra",
+      "single_push_sloth"
+    ],
+    "families": {
+      "incumbent": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/external_backbone_registered_subset_summary.json",
+        "sha256": "cbf917e2dde31fe91551838e0f9fe9bc2092fc63b25265e2b51e8b173a58fffd"
+      },
+      "proposal": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/bayesian_overlay_v1/external_backbone_registered_subset_summary.json",
+        "sha256": "3f3e685d5ac1a90e720b9014165aa8ebd26463ec1f1a46a5817663fe44820a28"
+      }
+    },
+    "information_boundary": "selection ends at released training boundary",
+    "maximum_metric_regression": 0.0,
+    "maximum_stability_coordinate_rmse_m": 0.001,
+    "method": "causal validation gate across backbone families",
+    "minimum_relative_improvement": 0.001,
+    "reference_family": "incumbent",
+    "registered_subset_protocol": {
+      "path": "/tmp/bpt-family-gate-v2/configs/sota/matphys_source_supervised_meta_smoke_v1.json",
+      "sha256": "89c59ed5ffe5a4e944939192623cf3e9761bdd8331932c9b2f3232558b448f71"
+    },
+    "score": "equal weight mean of validation CD and track error, each normalized to the reference family's raw backbone",
+    "stability_boundary": "full simulator rollouts under known actions; no future observations",
+    "stability_controls": {
+      "proposal": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/proposal_stability_control_manifest.json",
+        "sha256": "3da6cd832d07f85981eb2cf2727b6d921fef3d62594376e99845e93d236ffd5f"
+      }
+    },
+    "status": "exploratory registered subset; not independent SOTA evidence",
+    "tie_break": "family declaration order; reference family declared first",
+    "within_family_candidate": "existing validation-selected trajectory"
+  },
+  "protocol_id": "e837605957d6e63ab3281e3b69fe3ff5a8e22577974f3738ba5e5aba675952b0",
+  "schema_version": 1,
+  "selection_counts": {
+    "incumbent": 3,
+    "proposal": 2
+  }
+}

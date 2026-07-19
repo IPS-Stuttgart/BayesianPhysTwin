@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-guarded-bayesian-stack-exploratory-v1",
+  "status": "exploratory-after-future-opening",
+  "claim_boundary": "The five target futures were previously opened. This diagnostic may define a future protocol but cannot establish an independent SOTA result.",
+  "families": {
+    "incumbent": "released PhysTwin trajectory followed by its frozen validation-selected Bayesian-anchor/last-residual overlay",
+    "proposal": "prefix-gated MatPhys spring proposal replayed in pinned upstream PhysTwin, followed by the same frozen overlay"
+  },
+  "within_family_selection": "minimum balanced validation score among raw backbone, Bayesian anchor, and last residual",
+  "cross_family_selection": {
+    "fallback": "incumbent",
+    "minimum_relative_score_improvement": 0.001,
+    "maximum_per_metric_regression": 0.0,
+    "score": "equal mean of validation CD and track ratios to the incumbent raw backbone",
+    "tie_break": "incumbent"
+  },
+  "simulation_stability_gate": {
+    "identity_control": "zero-change pinned Warp replay under the same known action",
+    "reference": "released PhysTwin trajectory",
+    "maximum_coordinate_rmse_m": 0.001,
+    "observation_access": "none; full simulated trajectories and known actions only",
+    "threshold_status": "exploratory threshold to freeze or recalibrate on source-only replays before independent evaluation"
+  },
+  "cases": [
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "double_lift_cloth_1",
+    "double_lift_zebra",
+    "single_push_sloth"
+  ],
+  "independent_requirement": "Grouped out-of-fold spring proposals and a frozen source-derived stability threshold over the complete 22-case benchmark, or a separately sealed external cohort."
+}

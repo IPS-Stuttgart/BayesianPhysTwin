@@ -65,6 +65,130 @@ def choose_backbone_family(
     return selected, scores
 
 
+def choose_guarded_backbone_family(
+    validation_metrics: Mapping[str, Mapping[str, object]],
+    reference_metrics: Mapping[str, object],
+    *,
+    fallback_family: str,
+    minimum_relative_improvement: float = 0.0,
+    maximum_metric_regression: float | None = 0.0,
+    eligible_families: Mapping[str, bool] | None = None,
+) -> tuple[str, dict[str, float], dict[str, dict[str, object]]]:
+    """Choose a family only when it clears explicit fallback safeguards."""
+
+    if fallback_family not in validation_metrics:
+        raise ValueError("fallback family is absent from validation metrics")
+    if minimum_relative_improvement < 0.0:
+        raise ValueError("minimum relative improvement must be nonnegative")
+    if maximum_metric_regression is not None and maximum_metric_regression < 0.0:
+        raise ValueError("maximum metric regression must be nonnegative")
+    selected_unconstrained, scores = choose_backbone_family(
+        validation_metrics, reference_metrics
+    )
+    del selected_unconstrained
+    fallback_score = scores[fallback_family]
+    if fallback_score <= 0.0:
+        raise ValueError("fallback validation score must be positive")
+
+    decisions: dict[str, dict[str, object]] = {}
+    accepted: list[str] = []
+    fallback_metrics = validation_metrics[fallback_family]
+    for family, metrics in validation_metrics.items():
+        metric_ratios = {
+            name: float(metrics[name]) / float(fallback_metrics[name])
+            for name in ("chamfer_distance_m", "track_error_m")
+        }
+        relative_improvement = 1.0 - scores[family] / fallback_score
+        stability_eligible = (
+            True
+            if eligible_families is None
+            else bool(eligible_families.get(family, False))
+        )
+        no_metric_regression = (
+            True
+            if maximum_metric_regression is None
+            else all(
+                ratio <= 1.0 + maximum_metric_regression
+                for ratio in metric_ratios.values()
+            )
+        )
+        passes = (
+            family == fallback_family
+            or (
+                stability_eligible
+                and no_metric_regression
+                and relative_improvement >= minimum_relative_improvement
+            )
+        )
+        if passes:
+            accepted.append(family)
+        decisions[family] = {
+            "accepted": passes,
+            "stability_eligible": stability_eligible,
+            "no_metric_regression": no_metric_regression,
+            "metric_ratios_to_fallback": metric_ratios,
+            "relative_score_improvement_over_fallback": relative_improvement,
+        }
+    selected = min(accepted, key=scores.get)
+    return selected, scores, decisions
+
+
+def trajectory_coordinate_rmse(
+    reference: np.ndarray, candidate: np.ndarray
+) -> float:
+    """Measure numerical family drift without consulting observations."""
+
+    reference_array = np.asarray(reference, dtype=float)
+    candidate_array = np.asarray(candidate, dtype=float)
+    if reference_array.shape != candidate_array.shape:
+        raise ValueError("stability trajectories must have identical shapes")
+    if reference_array.ndim != 3 or reference_array.shape[2] != 3:
+        raise ValueError("stability trajectories must have shape (T, N, 3)")
+    if not np.isfinite(reference_array).all() or not np.isfinite(
+        candidate_array
+    ).all():
+        raise ValueError("stability trajectories must be finite")
+    return float(np.sqrt(np.mean(np.square(candidate_array - reference_array))))
+
+
+def _load_stability_control_manifest(
+    path: Path,
+    *,
+    expected_family: str,
+    expected_cases: Sequence[str],
+) -> dict[str, Path]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported stability-control schema")
+    if payload.get("contract") != "phystwin-family-stability-control-v1":
+        raise ValueError("unsupported stability-control contract")
+    if payload.get("family") != expected_family:
+        raise ValueError("stability-control family mismatch")
+    if payload.get("future_observations_used") is not False:
+        raise ValueError("stability controls must forbid future observations")
+    raw_cases = payload.get("cases")
+    if not isinstance(raw_cases, list):
+        raise ValueError("stability controls must contain a case list")
+    names = [str(entry.get("name", "")) for entry in raw_cases]
+    if names != list(expected_cases):
+        raise ValueError("stability-control cases differ from the gate cohort")
+    controls: dict[str, Path] = {}
+    for entry in raw_cases:
+        identity = entry.get("trajectory")
+        if not isinstance(identity, dict):
+            raise ValueError("stability trajectory must be a file identity")
+        trajectory = Path(str(identity.get("path", "")))
+        if not trajectory.is_absolute():
+            trajectory = path.parent / trajectory
+        trajectory = trajectory.resolve()
+        if not trajectory.is_file():
+            raise FileNotFoundError(trajectory)
+        if _sha256_file(trajectory) != str(identity.get("sha256", "")):
+            raise ValueError("stability trajectory SHA-256 mismatch")
+        controls[str(entry["name"])] = trajectory
+    return controls
+
+
 def _baseline_validation_metrics(
     data_root: Path,
     case: str,
@@ -157,6 +281,11 @@ def run_backbone_family_gate(
     *,
     case_names: Sequence[str] | None = None,
     development_smoke: bool = False,
+    registered_subset_protocol: str | Path | None = None,
+    minimum_relative_improvement: float = 0.0,
+    maximum_metric_regression: float | None = None,
+    stability_control_manifests: Mapping[str, str | Path] | None = None,
+    maximum_stability_rmse_m: float | None = None,
 ) -> dict[str, object]:
     """Select one future-blind backbone family on the permitted validation split."""
 
@@ -164,6 +293,16 @@ def run_backbone_family_gate(
         raise ValueError("the backbone-family gate requires at least two families")
     if len(family_summaries) != len(set(family_summaries)):
         raise ValueError("backbone family names must be unique")
+    if development_smoke and registered_subset_protocol is not None:
+        raise ValueError("development smoke and registered subset are exclusive")
+    if (stability_control_manifests is None) != (
+        maximum_stability_rmse_m is None
+    ):
+        raise ValueError(
+            "stability controls and maximum stability RMSE must be set together"
+        )
+    if maximum_stability_rmse_m is not None and maximum_stability_rmse_m <= 0.0:
+        raise ValueError("maximum stability RMSE must be positive")
     root = Path(data_root).resolve()
     output = Path(output_dir).resolve()
     loaded: dict[str, dict[str, object]] = {}
@@ -176,19 +315,56 @@ def run_backbone_family_gate(
         loaded[family] = summary
         provenance[family] = {"path": str(path), "sha256": _sha256_file(path)}
 
-    requested = tuple(case_names or PHYSTWIN_TABLE1_CASES)
+    subset_protocol_identity = None
+    registered_order = None
+    if registered_subset_protocol is not None:
+        protocol_path = Path(registered_subset_protocol).resolve()
+        protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
+        raw_order = protocol.get("target_cases")
+        if not isinstance(raw_order, list) or not raw_order:
+            raise ValueError("registered subset protocol omits target_cases")
+        registered_order = tuple(str(case) for case in raw_order)
+        subset_protocol_identity = {
+            "path": str(protocol_path),
+            "sha256": _sha256_file(protocol_path),
+        }
+    requested = tuple(case_names or registered_order or PHYSTWIN_TABLE1_CASES)
     if len(requested) != len(set(requested)) or not requested:
         raise ValueError("case names must be nonempty and unique")
     if development_smoke:
         expected = tuple(case for case in DEVELOPMENT_CASES if case in requested)
         if requested != expected:
             raise ValueError("development cases must be an ordered declared subset")
+    elif registered_order is not None:
+        if requested != registered_order:
+            raise ValueError("case names differ from the registered target order")
     elif requested != PHYSTWIN_TABLE1_CASES:
         raise ValueError("full family gating requires the ordered 22-case cohort")
     for family, summary in loaded.items():
         missing = [case for case in requested if case not in summary["case_results"]]
         if missing:
             raise ValueError(f"{family}: overlay summary omits {missing}")
+
+    reference_family = next(iter(family_summaries))
+    stability_controls: dict[str, dict[str, Path]] = {}
+    stability_provenance: dict[str, dict[str, str]] = {}
+    if stability_control_manifests is not None:
+        expected_families = set(family_summaries) - {reference_family}
+        if set(stability_control_manifests) != expected_families:
+            raise ValueError(
+                "stability controls must cover every non-reference family"
+            )
+        for family, raw_path in stability_control_manifests.items():
+            path = Path(raw_path).resolve()
+            stability_controls[family] = _load_stability_control_manifest(
+                path,
+                expected_family=family,
+                expected_cases=requested,
+            )
+            stability_provenance[family] = {
+                "path": str(path),
+                "sha256": _sha256_file(path),
+            }
 
     specification = {
         "method": "causal validation gate across backbone families",
@@ -202,14 +378,25 @@ def run_backbone_family_gate(
         "within_family_candidate": "existing validation-selected trajectory",
         "tie_break": "family declaration order; reference family declared first",
         "information_boundary": "selection ends at released training boundary",
+        "minimum_relative_improvement": minimum_relative_improvement,
+        "maximum_metric_regression": maximum_metric_regression,
+        "stability_controls": stability_provenance,
+        "maximum_stability_coordinate_rmse_m": maximum_stability_rmse_m,
+        "stability_boundary": (
+            "full simulator rollouts under known actions; no future observations"
+            if stability_controls
+            else None
+        ),
+        "registered_subset_protocol": subset_protocol_identity,
         "status": (
             "development-only integration smoke; not cohort evidence"
             if development_smoke
+            else "exploratory registered subset; not independent SOTA evidence"
+            if registered_order is not None
             else "exploratory on the previously examined PhysTwin cohort"
         ),
     }
     locked = _lock_protocol(output, specification)
-    reference_family = next(iter(family_summaries))
     case_results: dict[str, dict[str, object]] = {}
     selection_counts = {family: 0 for family in family_summaries}
     for case in requested:
@@ -219,6 +406,7 @@ def run_backbone_family_gate(
         frame_count = int(first["frame_count"])
         validation_by_family: dict[str, dict[str, object]] = {}
         trajectory_by_family: dict[str, Path] = {}
+        backbone_by_family: dict[str, Path] = {}
         method_by_family: dict[str, str] = {}
         for family, summary in loaded.items():
             result = summary["case_results"][case]
@@ -240,6 +428,7 @@ def run_backbone_family_gate(
             validation_by_family[family] = _selected_validation_metrics(
                 result, baseline_validation
             )
+            backbone_by_family[family] = backbone_path
             trajectory_by_family[family] = Path(
                 str(result["outputs"]["validation_selected"])
             ).resolve()
@@ -251,9 +440,55 @@ def run_backbone_family_gate(
             fit_end=fit_end,
             train_end=train_end,
         )
-        selected_family, scores = choose_backbone_family(
-            validation_by_family, reference_validation
-        )
+        stability_by_family = {
+            family: {
+                "coordinate_rmse_m": 0.0,
+                "eligible": True,
+                "control": "reference family",
+            }
+            for family in family_summaries
+        }
+        if stability_controls:
+            reference_trajectory = np.asarray(
+                _load_pickle(backbone_by_family[reference_family]), dtype=float
+            )
+            for family, controls in stability_controls.items():
+                control_path = controls[case]
+                rmse = trajectory_coordinate_rmse(
+                    reference_trajectory,
+                    np.asarray(_load_pickle(control_path), dtype=float),
+                )
+                stability_by_family[family] = {
+                    "coordinate_rmse_m": rmse,
+                    "eligible": rmse <= float(maximum_stability_rmse_m),
+                    "control": {
+                        "path": str(control_path),
+                        "sha256": _sha256_file(control_path),
+                    },
+                }
+        if (
+            minimum_relative_improvement > 0.0
+            or maximum_metric_regression is not None
+            or stability_controls
+        ):
+            selected_family, scores, decisions = choose_guarded_backbone_family(
+                validation_by_family,
+                reference_validation,
+                fallback_family=reference_family,
+                minimum_relative_improvement=minimum_relative_improvement,
+                maximum_metric_regression=maximum_metric_regression,
+                eligible_families={
+                    family: bool(details["eligible"])
+                    for family, details in stability_by_family.items()
+                },
+            )
+        else:
+            selected_family, scores = choose_backbone_family(
+                validation_by_family, reference_validation
+            )
+            decisions = {
+                family: {"accepted": True} for family in family_summaries
+            }
         selection_counts[selected_family] += 1
         selected_source = trajectory_by_family[selected_family]
         staged = output / "cases" / case / "trajectory.pkl"
@@ -272,6 +507,8 @@ def run_backbone_family_gate(
             "selected_family": selected_family,
             "selected_within_family_method": method_by_family[selected_family],
             "validation_scores": scores,
+            "family_decisions": decisions,
+            "stability": stability_by_family,
             "validation_metrics": validation_by_family,
             "reference_raw_validation_metrics": reference_validation,
             "test_metrics_by_family": family_test,

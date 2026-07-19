@@ -1,0 +1,440 @@
+{
+  "backbone": {
+    "claim_boundary": "Previously released PhysTwin trajectories; target prefix only for correction fitting and selection.",
+    "coordinate_frame": "phystwin-world-metres-v1",
+    "future_observations_used": false,
+    "name": "Released PhysTwin trajectory incumbent",
+    "source_commit": "0d41297",
+    "source_repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "vertex_contract": "phystwin-observed-prefix-then-surface-v1"
+  },
+  "case_results": {
+    "double_lift_cloth_1": {
+      "backbone_sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0",
+      "fit_end_frame_exclusive": 60,
+      "frame_count": 116,
+      "name": "double_lift_cloth_1",
+      "outputs": {
+        "backbone": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_cloth_1/backbone/trajectory.pkl",
+        "bayesian_anchor": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_cloth_1/bayesian_anchor/trajectory.pkl",
+        "last_residual": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_cloth_1/residual_baselines/last_residual/trajectory.pkl",
+        "validation_selected": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_cloth_1/validation_selected/trajectory.pkl"
+      },
+      "selector": {
+        "candidates": {
+          "backbone": 1.0,
+          "bayesian_anchor": 1.027321666849591,
+          "last_residual": 1.0576044718452504
+        },
+        "selected_method": "backbone",
+        "selected_validation_score_relative_to_backbone": 1.0
+      },
+      "test": {
+        "bayesian_anchor": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "frame_count": 35,
+            "frame_end_exclusive": 116,
+            "frame_start": 81,
+            "track_error_m": 0.01438284523274443
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "frame_count": 35,
+            "frame_end_exclusive": 116,
+            "frame_start": 81,
+            "track_error_m": 0.01438284523274443
+          },
+          "selection_score_relative_to_baseline": 1.0
+        },
+        "last_residual": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "frame_count": 35,
+            "frame_end_exclusive": 116,
+            "frame_start": 81,
+            "track_error_m": 0.01438284523274443
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "frame_count": 35,
+            "frame_end_exclusive": 116,
+            "frame_start": 81,
+            "track_error_m": 0.01438284523274443
+          },
+          "selection_score_relative_to_baseline": 1.0
+        }
+      },
+      "train_end_frame_exclusive": 81
+    },
+    "double_lift_zebra": {
+      "backbone_sha256": "7aa5f9efb411733d03c7791b4da86c0a53d2c13a4d365064f791ac35e8d35fd3",
+      "fit_end_frame_exclusive": 30,
+      "frame_count": 58,
+      "name": "double_lift_zebra",
+      "outputs": {
+        "backbone": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_zebra/backbone/trajectory.pkl",
+        "bayesian_anchor": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_zebra/bayesian_anchor/trajectory.pkl",
+        "last_residual": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_zebra/residual_baselines/last_residual/trajectory.pkl",
+        "validation_selected": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/double_lift_zebra/validation_selected/trajectory.pkl"
+      },
+      "selector": {
+        "candidates": {
+          "backbone": 1.0,
+          "bayesian_anchor": 0.8872311922788934,
+          "last_residual": 0.8990456910169875
+        },
+        "selected_method": "bayesian_anchor",
+        "selected_validation_score_relative_to_backbone": 0.8872311922788934
+      },
+      "test": {
+        "bayesian_anchor": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.015266328313215536,
+            "frame_count": 18,
+            "frame_end_exclusive": 58,
+            "frame_start": 40,
+            "track_error_m": 0.03120281112995001
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.014396740460131821,
+            "frame_count": 18,
+            "frame_end_exclusive": 58,
+            "frame_start": 40,
+            "track_error_m": 0.026024563565686925
+          },
+          "selection_score_relative_to_baseline": 0.8885421569386119
+        },
+        "last_residual": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.015266328313215536,
+            "frame_count": 18,
+            "frame_end_exclusive": 58,
+            "frame_start": 40,
+            "track_error_m": 0.03120281112995001
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.014213514932790914,
+            "frame_count": 18,
+            "frame_end_exclusive": 58,
+            "frame_start": 40,
+            "track_error_m": 0.025470471243539565
+          },
+          "selection_score_relative_to_baseline": 0.8736623032320552
+        }
+      },
+      "train_end_frame_exclusive": 40
+    },
+    "single_clift_cloth_1": {
+      "backbone_sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1",
+      "fit_end_frame_exclusive": 42,
+      "frame_count": 80,
+      "name": "single_clift_cloth_1",
+      "outputs": {
+        "backbone": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_1/backbone/trajectory.pkl",
+        "bayesian_anchor": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_1/bayesian_anchor/trajectory.pkl",
+        "last_residual": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_1/residual_baselines/last_residual/trajectory.pkl",
+        "validation_selected": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_1/validation_selected/trajectory.pkl"
+      },
+      "selector": {
+        "candidates": {
+          "backbone": 1.0,
+          "bayesian_anchor": 0.9897584693712245,
+          "last_residual": 1.0485834910459204
+        },
+        "selected_method": "bayesian_anchor",
+        "selected_validation_score_relative_to_backbone": 0.9897584693712245
+      },
+      "test": {
+        "bayesian_anchor": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.005248691614301362,
+            "frame_count": 24,
+            "frame_end_exclusive": 80,
+            "frame_start": 56,
+            "track_error_m": 0.010426523009187545
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.004989224671429432,
+            "frame_count": 24,
+            "frame_end_exclusive": 80,
+            "frame_start": 56,
+            "track_error_m": 0.010785222109102153
+          },
+          "selection_score_relative_to_baseline": 0.9924839834208816
+        },
+        "last_residual": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.005248691614301362,
+            "frame_count": 24,
+            "frame_end_exclusive": 80,
+            "frame_start": 56,
+            "track_error_m": 0.010426523009187545
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.005248691614301362,
+            "frame_count": 24,
+            "frame_end_exclusive": 80,
+            "frame_start": 56,
+            "track_error_m": 0.010426523009187545
+          },
+          "selection_score_relative_to_baseline": 1.0
+        }
+      },
+      "train_end_frame_exclusive": 56
+    },
+    "single_clift_cloth_3": {
+      "backbone_sha256": "bdac8025fdcaf2acbe1f0d2be05c96b9801f1c0a5d27f37c1cbad6d8e136a184",
+      "fit_end_frame_exclusive": 50,
+      "frame_count": 97,
+      "name": "single_clift_cloth_3",
+      "outputs": {
+        "backbone": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_3/backbone/trajectory.pkl",
+        "bayesian_anchor": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_3/bayesian_anchor/trajectory.pkl",
+        "last_residual": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_3/residual_baselines/last_residual/trajectory.pkl",
+        "validation_selected": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_clift_cloth_3/validation_selected/trajectory.pkl"
+      },
+      "selector": {
+        "candidates": {
+          "backbone": 1.0,
+          "bayesian_anchor": 0.9498917108400852,
+          "last_residual": 1.0941037789307029
+        },
+        "selected_method": "bayesian_anchor",
+        "selected_validation_score_relative_to_backbone": 0.9498917108400852
+      },
+      "test": {
+        "bayesian_anchor": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.0042787352526218085,
+            "frame_count": 30,
+            "frame_end_exclusive": 97,
+            "frame_start": 67,
+            "track_error_m": 0.013651232506294726
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.004239448520223468,
+            "frame_count": 30,
+            "frame_end_exclusive": 97,
+            "frame_start": 67,
+            "track_error_m": 0.013666609725937215
+          },
+          "selection_score_relative_to_baseline": 0.9959722890948632
+        },
+        "last_residual": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.0042787352526218085,
+            "frame_count": 30,
+            "frame_end_exclusive": 97,
+            "frame_start": 67,
+            "track_error_m": 0.013651232506294726
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.0042787352526218085,
+            "frame_count": 30,
+            "frame_end_exclusive": 97,
+            "frame_start": 67,
+            "track_error_m": 0.013651232506294726
+          },
+          "selection_score_relative_to_baseline": 1.0
+        }
+      },
+      "train_end_frame_exclusive": 67
+    },
+    "single_push_sloth": {
+      "backbone_sha256": "62be23ac95fe42ca5a303eae34d3bdc631cebeafcef082cfe37a6d2dba2d1e7b",
+      "fit_end_frame_exclusive": 35,
+      "frame_count": 68,
+      "name": "single_push_sloth",
+      "outputs": {
+        "backbone": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_push_sloth/backbone/trajectory.pkl",
+        "bayesian_anchor": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_push_sloth/bayesian_anchor/trajectory.pkl",
+        "last_residual": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_push_sloth/residual_baselines/last_residual/trajectory.pkl",
+        "validation_selected": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/cases/single_push_sloth/validation_selected/trajectory.pkl"
+      },
+      "selector": {
+        "candidates": {
+          "backbone": 1.0,
+          "bayesian_anchor": 0.6829083753314658,
+          "last_residual": 0.6825948943839526
+        },
+        "selected_method": "last_residual",
+        "selected_validation_score_relative_to_backbone": 0.6825948943839526
+      },
+      "test": {
+        "bayesian_anchor": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.013461644054661607,
+            "frame_count": 21,
+            "frame_end_exclusive": 68,
+            "frame_start": 47,
+            "track_error_m": 0.02112459716483006
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.010738072975090013,
+            "frame_count": 21,
+            "frame_end_exclusive": 68,
+            "frame_start": 47,
+            "track_error_m": 0.015567389698402415
+          },
+          "selection_score_relative_to_baseline": 0.7673055360760082
+        },
+        "last_residual": {
+          "baseline_official_evaluation": {
+            "chamfer_distance_m": 0.013461644054661607,
+            "frame_count": 21,
+            "frame_end_exclusive": 68,
+            "frame_start": 47,
+            "track_error_m": 0.02112459716483006
+          },
+          "corrected_official_evaluation": {
+            "chamfer_distance_m": 0.010737070310953209,
+            "frame_count": 21,
+            "frame_end_exclusive": 68,
+            "frame_start": 47,
+            "track_error_m": 0.015555532352018524
+          },
+          "selection_score_relative_to_baseline": 0.7669876419538493
+        }
+      },
+      "train_end_frame_exclusive": 47
+    }
+  },
+  "comparison": {
+    "case_count": 5,
+    "cases": [
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "double_lift_cloth_1",
+      "double_lift_zebra",
+      "single_push_sloth"
+    ],
+    "methods": {
+      "external_backbone": {
+        "equal_case_mean": {
+          "chamfer_distance_m": 0.009041288977671511,
+          "track_error_m": 0.018157601808601355
+        },
+        "per_case": {
+          "double_lift_cloth_1": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "track_error_m": 0.01438284523274443
+          },
+          "double_lift_zebra": {
+            "chamfer_distance_m": 0.015266328313215536,
+            "track_error_m": 0.03120281112995001
+          },
+          "single_clift_cloth_1": {
+            "chamfer_distance_m": 0.005248691614301362,
+            "track_error_m": 0.010426523009187545
+          },
+          "single_clift_cloth_3": {
+            "chamfer_distance_m": 0.0042787352526218085,
+            "track_error_m": 0.013651232506294726
+          },
+          "single_push_sloth": {
+            "chamfer_distance_m": 0.013461644054661607,
+            "track_error_m": 0.02112459716483006
+          }
+        }
+      },
+      "external_plus_bayesian": {
+        "equal_case_mean": {
+          "chamfer_distance_m": 0.008262906456086395,
+          "track_error_m": 0.01608532606637463
+        },
+        "per_case": {
+          "double_lift_cloth_1": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "track_error_m": 0.01438284523274443
+          },
+          "double_lift_zebra": {
+            "chamfer_distance_m": 0.014396740460131821,
+            "track_error_m": 0.026024563565686925
+          },
+          "single_clift_cloth_1": {
+            "chamfer_distance_m": 0.004989224671429432,
+            "track_error_m": 0.010785222109102153
+          },
+          "single_clift_cloth_3": {
+            "chamfer_distance_m": 0.004239448520223468,
+            "track_error_m": 0.013666609725937215
+          },
+          "single_push_sloth": {
+            "chamfer_distance_m": 0.010738072975090013,
+            "track_error_m": 0.015567389698402415
+          }
+        }
+      },
+      "external_plus_last_residual": {
+        "equal_case_mean": {
+          "chamfer_distance_m": 0.008285811552844908,
+          "track_error_m": 0.015897320868756955
+        },
+        "per_case": {
+          "double_lift_cloth_1": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "track_error_m": 0.01438284523274443
+          },
+          "double_lift_zebra": {
+            "chamfer_distance_m": 0.014213514932790914,
+            "track_error_m": 0.025470471243539565
+          },
+          "single_clift_cloth_1": {
+            "chamfer_distance_m": 0.005248691614301362,
+            "track_error_m": 0.010426523009187545
+          },
+          "single_clift_cloth_3": {
+            "chamfer_distance_m": 0.0042787352526218085,
+            "track_error_m": 0.013651232506294726
+          },
+          "single_push_sloth": {
+            "chamfer_distance_m": 0.010737070310953209,
+            "track_error_m": 0.015555532352018524
+          }
+        }
+      },
+      "external_validation_selected": {
+        "equal_case_mean": {
+          "chamfer_distance_m": 0.008262705923259034,
+          "track_error_m": 0.016082954597097847
+        },
+        "per_case": {
+          "double_lift_cloth_1": {
+            "chamfer_distance_m": 0.006951045653557239,
+            "track_error_m": 0.01438284523274443
+          },
+          "double_lift_zebra": {
+            "chamfer_distance_m": 0.014396740460131821,
+            "track_error_m": 0.026024563565686925
+          },
+          "single_clift_cloth_1": {
+            "chamfer_distance_m": 0.004989224671429432,
+            "track_error_m": 0.010785222109102153
+          },
+          "single_clift_cloth_3": {
+            "chamfer_distance_m": 0.004239448520223468,
+            "track_error_m": 0.013666609725937215
+          },
+          "single_push_sloth": {
+            "chamfer_distance_m": 0.010737070310953209,
+            "track_error_m": 0.015555532352018524
+          }
+        }
+      }
+    },
+    "status": "exploratory registered subset; not independent SOTA evidence"
+  },
+  "completed_at_utc": "2026-07-19T19:48:17.061508+00:00",
+  "manifest": {
+    "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/external_backbone_manifest.json",
+    "sha256": "4bd56c1953bb57373d312b818766dfba6c38b1ea92f01dba68aee07ac0b5d2a6"
+  },
+  "protocol_id": "4be2db8e6c15a46b581f7478793546d5d8ffc90e12a223fd2507c1dc13ac2fd1",
+  "schema_version": 1,
+  "selection_counts": {
+    "backbone": 1,
+    "bayesian_anchor": 3,
+    "last_residual": 1
+  }
+}

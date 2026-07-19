@@ -1,0 +1,49 @@
+{
+  "backbone": {
+    "claim_boundary": "Previously released PhysTwin trajectories; target prefix only for correction fitting and selection.",
+    "coordinate_frame": "phystwin-world-metres-v1",
+    "future_observations_used": false,
+    "name": "Released PhysTwin trajectory incumbent",
+    "source_commit": "0d41297",
+    "source_repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "vertex_contract": "phystwin-observed-prefix-then-surface-v1"
+  },
+  "cases": [
+    {
+      "evidence_end_frame_exclusive": 42,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "single_clift_cloth_1",
+      "sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1",
+      "trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_clift_cloth_1/inference.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 50,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "single_clift_cloth_3",
+      "sha256": "bdac8025fdcaf2acbe1f0d2be05c96b9801f1c0a5d27f37c1cbad6d8e136a184",
+      "trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_clift_cloth_3/inference.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 60,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "double_lift_cloth_1",
+      "sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0",
+      "trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_cloth_1/inference.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 30,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "double_lift_zebra",
+      "sha256": "7aa5f9efb411733d03c7791b4da86c0a53d2c13a4d365064f791ac35e8d35fd3",
+      "trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/double_lift_zebra/inference.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 35,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "single_push_sloth",
+      "sha256": "62be23ac95fe42ca5a303eae34d3bdc631cebeafcef082cfe37a6d2dba2d1e7b",
+      "trajectory": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_push_sloth/inference.pkl"
+    }
+  ],
+  "schema_version": 1
+}
