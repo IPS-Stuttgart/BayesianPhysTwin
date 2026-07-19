@@ -5,7 +5,9 @@ from bayesian_phystwin.deform360_raw_pairwise_correspondence_diagnostic import (
     ASSOCIATION_ADAPTIVE_ARM,
     CLIQUE_RBF_ARM,
     CPD_ARM,
+    GRAPH_RESIDUAL_ARM,
     LEGACY_PHYSICAL_DEFAULT_ARM,
+    LOO_ADAPTIVE_FIELD_ARM,
     SELECTED_RAW_ARM,
     evaluate_raw_pairwise_correspondence_arrays,
 )
@@ -85,6 +87,12 @@ def test_raw_insufficient_support_uses_persistence_and_preserves_legacy_ablation
         trajectories[ASSOCIATION_ADAPTIVE_ARM][post_update], persistence[post_update]
     )
     np.testing.assert_array_equal(
+        trajectories[GRAPH_RESIDUAL_ARM][post_update], persistence[post_update]
+    )
+    np.testing.assert_array_equal(
+        trajectories[LOO_ADAPTIVE_FIELD_ARM][post_update], persistence[post_update]
+    )
+    np.testing.assert_array_equal(
         trajectories[LEGACY_PHYSICAL_DEFAULT_ARM][post_update], prior[post_update]
     )
 
@@ -125,4 +133,53 @@ def test_raw_association_adaptive_routes_rejected_identity_swaps_to_cpd() -> Non
     )
     np.testing.assert_array_equal(
         trajectories[ASSOCIATION_ADAPTIVE_ARM], trajectories[CPD_ARM]
+    )
+
+
+def test_raw_graph_residual_control_uses_only_current_sparse_translation() -> None:
+    arrays = list(_arrays(seed=19))
+    prior = arrays[0]
+    target = arrays[2]
+    target[1:, :, 1] += np.float32(0.01)
+    measurement = arrays[5]
+    measurement_visibility = arrays[6]
+    measurement_validity = arrays[7]
+    centers = np.arange(16, dtype=np.int64)
+    for frame in (19, 38, 57):
+        measurement[frame, centers] = target[frame, centers]
+        measurement_visibility[frame, centers] = True
+        measurement_validity[frame, centers] = True
+
+    report, trajectories = evaluate_raw_pairwise_correspondence_arrays(
+        *arrays,
+        center_ids=centers,
+        scored_frames=tuple(range(20, 76)),
+        cpd_config=NonrigidCpdConfig(maximum_iterations=5),
+    )
+
+    assert all(
+        update["graph_residual_mapping"]["fit_performed"]
+        for update in report["updates"]
+    )
+    assert all(
+        update["graph_residual_mapping"][
+            "selection_reads_current_measurements_only"
+        ]
+        for update in report["updates"]
+    )
+    assert all(
+        update["leave_one_out_adaptive_field"][
+            "selection_reads_current_measurements_only"
+        ]
+        for update in report["updates"]
+    )
+    expected = prior.copy()
+    expected[20:38, :, 1] += np.float32(0.01)
+    expected[39:57, :, 1] += np.float32(0.01)
+    expected[58:76, :, 1] += np.float32(0.01)
+    scored = np.asarray(
+        [*range(20, 38), *range(39, 57), *range(58, 76)], dtype=np.int64
+    )
+    np.testing.assert_allclose(
+        trajectories[GRAPH_RESIDUAL_ARM][scored], expected[scored], atol=2e-6
     )

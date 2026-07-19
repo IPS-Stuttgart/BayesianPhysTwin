@@ -39,8 +39,14 @@ from .phystwin_correspondence_gate import (
     PairwiseCorrespondenceGateConfig,
     detect_pairwise_consensus_correspondences,
 )
+from .phystwin_geodesic_belief import build_reference_knn_geodesic_graph
+from .phystwin_graph_residual_mapping import (
+    GraphResidualMappingConfig,
+    fit_graph_residual_mapping,
+)
 from .phystwin_online_belief import (
     RecursiveRbfBeliefConfig,
+    RecursiveRbfBeliefSnapshot,
     decode_recursive_rbf_belief,
     initialize_recursive_rbf_belief,
     update_recursive_rbf_belief,
@@ -57,6 +63,8 @@ UNGATED_RBF_ARM = "raw_selected_backbone_full_blend_rbf_support_gated"
 CLIQUE_RBF_ARM = "raw_selected_backbone_full_blend_rbf_pairwise_clique"
 CPD_ARM = "raw_independent_cpd_selected_backbone"
 ASSOCIATION_ADAPTIVE_ARM = "raw_association_adaptive_rbf_or_cpd"
+GRAPH_RESIDUAL_ARM = "raw_graph_regularized_residual_mapping"
+LOO_ADAPTIVE_FIELD_ARM = "raw_leave_one_out_adaptive_rbf_or_graph"
 ARMS = (
     PHYSICAL_ARM,
     PERSISTENCE_ARM,
@@ -66,6 +74,8 @@ ARMS = (
     CLIQUE_RBF_ARM,
     CPD_ARM,
     ASSOCIATION_ADAPTIVE_ARM,
+    GRAPH_RESIDUAL_ARM,
+    LOO_ADAPTIVE_FIELD_ARM,
 )
 
 
@@ -79,6 +89,45 @@ def _corrected_frame(
         np.asarray(backbone_frame_m, dtype=float)
         + np.asarray(correction_m, dtype=float)
     ).astype(dtype, copy=False)
+
+
+def _rbf_leave_one_current_observation_out_rmse_m(
+    prior_state: RecursiveRbfBeliefSnapshot,
+    frame_index: int,
+    center_positions_m: np.ndarray,
+    measured_residual_m: np.ndarray,
+    available: np.ndarray,
+    *,
+    config: RecursiveRbfBeliefConfig,
+) -> float:
+    """Score one RBF update without reading any unobserved or future point."""
+
+    positions = np.asarray(center_positions_m, dtype=float)
+    residual = np.asarray(measured_residual_m, dtype=float)
+    mask = np.asarray(available, dtype=bool)
+    held_errors = []
+    for held in np.flatnonzero(mask):
+        training = mask.copy()
+        training[held] = False
+        trial, _ = update_recursive_rbf_belief(
+            prior_state,
+            frame_index,
+            positions,
+            residual,
+            training,
+            config=config,
+        )
+        prediction = decode_recursive_rbf_belief(
+            trial,
+            positions[[held]],
+            forecast_frames=0,
+            config=config,
+        )
+        held_errors.append(prediction.mean_m[0] - residual[held])
+    if not held_errors:
+        raise ValueError("RBF leave-one-out score requires a finite observation")
+    error = np.asarray(held_errors, dtype=float)
+    return float(np.sqrt(np.mean(np.sum(error**2, axis=1))))
 
 
 def evaluate_raw_pairwise_correspondence_arrays(
@@ -96,6 +145,7 @@ def evaluate_raw_pairwise_correspondence_arrays(
     gate_config: PairwiseCorrespondenceGateConfig | None = None,
     belief_config: RecursiveRbfBeliefConfig | None = None,
     cpd_config: NonrigidCpdConfig | None = None,
+    graph_residual_config: GraphResidualMappingConfig | None = None,
 ) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
     """Apply the frozen clique gate and explicit routing controls."""
 
@@ -140,7 +190,11 @@ def evaluate_raw_pairwise_correspondence_arrays(
         local_blend=1.0,
     )
     cpd_cfg = cpd_config or NonrigidCpdConfig()
+    graph_residual_cfg = graph_residual_config or GraphResidualMappingConfig()
     backbones = {PHYSICAL_ARM: prior, PERSISTENCE_ARM: persistence}
+    material_graph = build_reference_knn_geodesic_graph(
+        prior[0], neighbor_count=graph_residual_cfg.neighbor_count
+    )
 
     def initial_belief(backbone: np.ndarray):
         return initialize_recursive_rbf_belief(
@@ -163,6 +217,8 @@ def evaluate_raw_pairwise_correspondence_arrays(
         CLIQUE_RBF_ARM,
         CPD_ARM,
         ASSOCIATION_ADAPTIVE_ARM,
+        GRAPH_RESIDUAL_ARM,
+        LOO_ADAPTIVE_FIELD_ARM,
     )
     trajectories = {arm: prior_input.copy() for arm in dynamic_arms}
     output_dtype = prior_input.dtype
@@ -232,7 +288,18 @@ def evaluate_raw_pairwise_correspondence_arrays(
                 config=gate_cfg,
             )
 
+        rbf_leave_one_out_rmse_m = None
         if selector_support:
+            rbf_leave_one_out_rmse_m = (
+                _rbf_leave_one_current_observation_out_rmse_m(
+                    ungated_states[selected_name],
+                    update,
+                    selected[update, centers],
+                    residuals[selected_name],
+                    available.copy(),
+                    config=belief_cfg,
+                )
+            )
             for backbone_name, backbone in backbones.items():
                 ungated_states[backbone_name], _ = update_recursive_rbf_belief(
                     ungated_states[backbone_name],
@@ -302,6 +369,52 @@ def evaluate_raw_pairwise_correspondence_arrays(
         ):
             raise AssertionError("CPD failure did not preserve selected backbone")
 
+        graph_residual = None
+        graph_residual_error = None
+        if selector_support:
+            try:
+                graph_residual = fit_graph_residual_mapping(
+                    prior[0],
+                    centers,
+                    residuals[selected_name],
+                    available.copy(),
+                    config=graph_residual_cfg,
+                    graph=material_graph,
+                )
+                for frame in range(update + 1, stop):
+                    trajectories[GRAPH_RESIDUAL_ARM][frame] = _corrected_frame(
+                        selected[frame],
+                        graph_residual.correction_m,
+                        dtype=output_dtype,
+                    )
+            except (ValueError, RuntimeError, np.linalg.LinAlgError) as error:
+                graph_residual_error = f"{type(error).__name__}: {error}"
+        if graph_residual is None and not np.array_equal(
+            trajectories[GRAPH_RESIDUAL_ARM][update + 1 : stop],
+            selected[update + 1 : stop],
+        ):
+            raise AssertionError(
+                "graph residual mapping failure did not preserve selected backbone"
+            )
+
+        if (
+            selector_support
+            and graph_residual is not None
+            and graph_residual.leave_one_out_rmse_m
+            < float(rbf_leave_one_out_rmse_m)
+        ):
+            adaptive_field_route = "graph_residual_mapping"
+            adaptive_field = trajectories[GRAPH_RESIDUAL_ARM]
+        elif selector_support:
+            adaptive_field_route = "recursive_rbf"
+            adaptive_field = trajectories[UNGATED_RBF_ARM]
+        else:
+            adaptive_field_route = "selected_raw_backbone"
+            adaptive_field = selected
+        trajectories[LOO_ADAPTIVE_FIELD_ARM][update + 1 : stop] = adaptive_field[
+            update + 1 : stop
+        ]
+
         if selector_support and selected_gate.accepted:
             adaptive_route = "pairwise_consensus_rbf"
             routed = trajectories[CLIQUE_RBF_ARM]
@@ -369,6 +482,43 @@ def evaluate_raw_pairwise_correspondence_arrays(
                     "route": adaptive_route,
                     "bit_exact_selected_route": True,
                 },
+                "graph_residual_mapping": {
+                    "fit_performed": graph_residual is not None,
+                    "fit_error": graph_residual_error,
+                    "selected_regularization": (
+                        None
+                        if graph_residual is None
+                        else graph_residual.selected_regularization
+                    ),
+                    "leave_one_out_rmse_m": (
+                        None
+                        if graph_residual is None
+                        else graph_residual.leave_one_out_rmse_m
+                    ),
+                    "observation_count": (
+                        None
+                        if graph_residual is None
+                        else graph_residual.observation_count
+                    ),
+                    "clipped_point_count": (
+                        None
+                        if graph_residual is None
+                        else graph_residual.clipped_point_count
+                    ),
+                    "selection_reads_current_measurements_only": True,
+                },
+                "leave_one_out_adaptive_field": {
+                    "route": adaptive_field_route,
+                    "recursive_rbf_leave_one_out_rmse_m": (
+                        rbf_leave_one_out_rmse_m
+                    ),
+                    "graph_leave_one_out_rmse_m": (
+                        None
+                        if graph_residual is None
+                        else graph_residual.leave_one_out_rmse_m
+                    ),
+                    "selection_reads_current_measurements_only": True,
+                },
             }
         )
 
@@ -414,6 +564,7 @@ def evaluate_raw_pairwise_correspondence_arrays(
         "gate_config": asdict(gate_cfg),
         "belief_config": asdict(belief_cfg),
         "cpd_config": asdict(cpd_cfg),
+        "graph_residual_config": asdict(graph_residual_cfg),
         "updates": updates,
         "scores": scores,
         "raw_measurement_target_open_audit": {
@@ -435,6 +586,16 @@ def evaluate_raw_pairwise_correspondence_arrays(
             "association_adaptive": (
                 "clique RBF if accepted; otherwise independent unordered CPD; "
                 "otherwise bit-exact selected raw backbone"
+            ),
+            "graph_residual_mapping": (
+                "frame-zero graph-Laplacian residual field with regularization "
+                "selected independently at each update by exact leave-one-current-"
+                "measurement-out error; no target or future observation access"
+            ),
+            "leave_one_out_adaptive_field": (
+                "choose recursive RBF or graph residual mapping independently at "
+                "each update by lower leave-one-current-measurement-out radial RMSE; "
+                "ties route to recursive RBF"
             ),
         },
     }
@@ -591,13 +752,22 @@ def evaluate_raw_pairwise_correspondence_cohort(
         (ASSOCIATION_ADAPTIVE_ARM, CPD_ARM),
         (ASSOCIATION_ADAPTIVE_ARM, CLIQUE_RBF_ARM),
         (ASSOCIATION_ADAPTIVE_ARM, SELECTED_RAW_ARM),
+        (LOO_ADAPTIVE_FIELD_ARM, UNGATED_RBF_ARM),
+        (LOO_ADAPTIVE_FIELD_ARM, GRAPH_RESIDUAL_ARM),
+        (LOO_ADAPTIVE_FIELD_ARM, CPD_ARM),
+        (LOO_ADAPTIVE_FIELD_ARM, SELECTED_RAW_ARM),
         (UNGATED_RBF_ARM, CPD_ARM),
+        (UNGATED_RBF_ARM, GRAPH_RESIDUAL_ARM),
         (UNGATED_RBF_ARM, SELECTED_RAW_ARM),
         (UNGATED_RBF_ARM, PHYSICAL_ARM),
         (UNGATED_RBF_ARM, PERSISTENCE_ARM),
         (CPD_ARM, SELECTED_RAW_ARM),
         (CPD_ARM, PHYSICAL_ARM),
         (CPD_ARM, PERSISTENCE_ARM),
+        (GRAPH_RESIDUAL_ARM, CPD_ARM),
+        (GRAPH_RESIDUAL_ARM, SELECTED_RAW_ARM),
+        (GRAPH_RESIDUAL_ARM, PHYSICAL_ARM),
+        (GRAPH_RESIDUAL_ARM, PERSISTENCE_ARM),
         (SELECTED_RAW_ARM, LEGACY_PHYSICAL_DEFAULT_ARM),
     )
     comparisons = {
@@ -618,6 +788,19 @@ def evaluate_raw_pairwise_correspondence_cohort(
             "selected_raw_backbone",
         )
     }
+    field_route_counts = {
+        route: int(
+            sum(
+                update["leave_one_out_adaptive_field"]["route"] == route
+                for update in updates
+            )
+        )
+        for route in (
+            "recursive_rbf",
+            "graph_residual_mapping",
+            "selected_raw_backbone",
+        )
+    }
     error_counts = np.asarray(
         [report["raw_measurement_target_open_audit"]["count"] for report in reports],
         dtype=float,
@@ -630,6 +813,7 @@ def evaluate_raw_pairwise_correspondence_cohort(
         "gate_config": reports[0]["gate_config"],
         "belief_config": reports[0]["belief_config"],
         "cpd_config": reports[0]["cpd_config"],
+        "graph_residual_config": reports[0]["graph_residual_config"],
         "aggregate": aggregate,
         "comparisons": comparisons,
         "coverage": {
@@ -640,6 +824,7 @@ def evaluate_raw_pairwise_correspondence_cohort(
                 sum(not update["selector_support_sufficient"] for update in updates)
             ),
             "association_adaptive_routes": route_counts,
+            "leave_one_out_adaptive_field_routes": field_route_counts,
             "clique_rejected_exact_raw_fallback_count": int(
                 sum(
                     update["selected_pairwise_gate"]["bit_exact_raw_fallback"]
@@ -692,7 +877,9 @@ __all__ = [
     "ASSOCIATION_ADAPTIVE_ARM",
     "CLIQUE_RBF_ARM",
     "CPD_ARM",
+    "GRAPH_RESIDUAL_ARM",
     "LEGACY_PHYSICAL_DEFAULT_ARM",
+    "LOO_ADAPTIVE_FIELD_ARM",
     "PROTOCOL_ID",
     "SELECTED_RAW_ARM",
     "UNGATED_RBF_ARM",
