@@ -860,10 +860,17 @@ def evaluate_covariance_gated_cohort(
         }
         for arm in arms
     }
-    primary_rbf = _arm_name(RBF_ARM_PREFIX, "chi2_df3_95")
-    primary_cpd = _arm_name(CPD_ARM_PREFIX, "chi2_df3_95")
+    primary_rbf = _arm_name(RBF_ARM_PREFIX, "ungated")
+    primary_cpd = _arm_name(CPD_ARM_PREFIX, "ungated")
+    diagnostic_rbf = _arm_name(RBF_ARM_PREFIX, "chi2_df3_95")
+    diagnostic_cpd = _arm_name(CPD_ARM_PREFIX, "chi2_df3_95")
     comparisons: dict[str, Any] = {}
-    for candidate in (primary_rbf, primary_cpd):
+    for candidate in (
+        primary_rbf,
+        primary_cpd,
+        diagnostic_rbf,
+        diagnostic_cpd,
+    ):
         for baseline in ("physical_prior", "persistence", SELECTED_BACKBONE_ARM):
             for metric in PRIMARY_METRICS:
                 differences = {
@@ -995,6 +1002,18 @@ def evaluate_covariance_gated_cohort(
         "episode_count": len(reports),
         "physical_object_count": len(set(groups.values())),
         "covariance_source": reports[0]["covariance_source"],
+        "primary_candidate_arms": {
+            "rbf": primary_rbf,
+            "cpd": primary_cpd,
+            "selection_reason": (
+                "support-gated raw-measurement development arms; covariance "
+                "gates remain uncalibrated diagnostics"
+            ),
+        },
+        "nominal_chi2_95_diagnostic_arms": {
+            "rbf": diagnostic_rbf,
+            "cpd": diagnostic_cpd,
+        },
         "observed_backbone_selector_counts": {
             "physical_prior": int(
                 sum(
