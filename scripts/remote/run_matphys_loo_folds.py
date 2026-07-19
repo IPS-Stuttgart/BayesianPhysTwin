@@ -77,7 +77,9 @@ def main() -> None:
     if sha256_file(initialization) != expected_initialization:
         raise ValueError("MatPhys initialization checkpoint bytes changed")
     runner = Path(args.runner).resolve()
-    python = Path(args.python).resolve()
+    # Resolving a venv's Python symlink discards its pyvenv.cfg context and
+    # silently launches the base interpreter without the pinned dependencies.
+    python = Path(args.python).expanduser().absolute()
     if not runner.is_file() or not python.is_file():
         raise FileNotFoundError("runner or Python executable is missing")
     selected_folds = (
