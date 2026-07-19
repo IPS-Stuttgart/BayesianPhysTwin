@@ -1,0 +1,90 @@
+{
+  "schema_version": 2,
+  "protocol_id": "phystwin-risk-limited-recursive-rbf-belief-v2-development",
+  "status": "post-transfer development; not an independent confirmation",
+  "provenance": {
+    "parent_protocol": "phystwin-recursive-rbf-belief-v1",
+    "parent_protocol_sha256": "e97307ef4721cb923034dfa79fab6e5e1f70d1e77fe7884250bc99279e398461",
+    "reason_for_revision": "the fixed v1 transfer test exposed harmful updates when fewer than a majority of selected centres remained observable",
+    "additional_11_outcomes_were_inspected_before_revision": true,
+    "threshold_rationale": "nine is the smallest strict majority of the sixteen preselected centres"
+  },
+  "confirmation_cohort": {
+    "name": "phys_twin_additional_11_cloth",
+    "role": "development replay for the risk gate; never claim as v2 confirmation",
+    "case_root": "/home/florianpfaff/bayesian-phystwin-additional-confirmatory-data",
+    "baseline_filename": "inference.pkl",
+    "manual_tracks_available": false,
+    "physical_object_groups": {
+      "cloth_blue_fold": "cloth_blue",
+      "cloth_blue_lift": "cloth_blue",
+      "cloth_pant_fold": "cloth_pant",
+      "cloth_pant_lift": "cloth_pant",
+      "cloth_red_fold": "cloth_red",
+      "cloth_red_lift": "cloth_red",
+      "cloth_shirt_fold": "cloth_shirt",
+      "cloth_shirt_lift": "cloth_shirt",
+      "cloth_skirt_1_fold": "cloth_skirt_1",
+      "cloth_skirt_1_lift": "cloth_skirt_1",
+      "cloth_skirt_2_fold": "cloth_skirt_2"
+    }
+  },
+  "information_boundary": {
+    "selection_evidence": "frame-zero geometry and visibility/motion-valid frequency strictly before split.test[0]",
+    "online_evidence": "selected point measurements only at the three declared update frames",
+    "risk_gate_evidence": "available selected-centre count at the current update only",
+    "forbidden_for_prediction": [
+      "object observations after the current update frame",
+      "manual tracks",
+      "future metrics"
+    ],
+    "scoring": "only frames strictly after an update; identity metric permanently excludes every selected centre",
+    "rejected_update_behavior": "do not update the belief and return the physical-prior trajectory exactly throughout that interval"
+  },
+  "measurement_policy": {
+    "center_count": 16,
+    "minimum_training_availability_fraction": 0.8,
+    "fallback_candidate_count": 64,
+    "selector": "deterministic farthest-point traversal starting from the smallest eligible source point ID",
+    "online_available": "object_visibilities AND object_motions_valid AND finite coordinates",
+    "update_fractions": [0.25, 0.5, 0.75],
+    "skip_update_frames_in_metrics": true,
+    "minimum_update_center_count": 9
+  },
+  "belief": {
+    "length_scale_fraction": 0.1,
+    "local_blend": 0.25,
+    "observation_std_m": 0.005,
+    "process_std_m_per_sqrt_frame": 0.003,
+    "global_prior_std_m": 0.1,
+    "local_prior_std_m": 0.02,
+    "degrees_of_freedom": 4.0,
+    "minimum_reliability": 0.02,
+    "maximum_correction_m": 0.1,
+    "minimum_length_scale_m": 0.0001
+  },
+  "fixed_arms": [
+    "open_loop",
+    "recursive_global_translation",
+    "recursive_rbf_belief"
+  ],
+  "primary_metrics": [
+    "future_noncenter_point_error_m",
+    "future_chamfer_distance_m"
+  ],
+  "aggregation": {
+    "case_weighting": "equal",
+    "bootstrap_unit": "physical_object_group",
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 20260719,
+    "confidence_interval": 0.95
+  },
+  "confirmation_gate": {
+    "minimum_relative_improvement_over_open_loop_each_primary_metric": 0.05,
+    "minimum_two_metric_case_wins": 4,
+    "maximum_case_regression_each_primary_metric": 0.05,
+    "primary_paired_bootstrap_intervals_must_exclude_zero": true,
+    "minimum_noncenter_improvement_over_global_translation": 0.02
+  },
+  "claim_boundary": "This replay may quantify the post-hoc support-gate mechanism but cannot confirm v2. A separately locked, outcome-unseen cohort is required for any paper claim."
+}

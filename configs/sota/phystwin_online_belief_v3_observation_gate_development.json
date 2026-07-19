@@ -1,0 +1,76 @@
+{
+  "schema_version": 3,
+  "protocol_id": "phystwin-observation-gated-recursive-rbf-belief-v3-development",
+  "status": "post-transfer development; not an independent confirmation",
+  "provenance": {
+    "support_gate": "strict majority of sixteen fixed centres",
+    "dispersion_gate": "post-hoc corruption diagnostic on the released PhysTwin 22",
+    "additional_11_outcomes_were_inspected_before_revision": true
+  },
+  "confirmation_cohort": {
+    "name": "phys_twin_additional_11_cloth",
+    "role": "development replay only",
+    "case_root": "/home/florianpfaff/bayesian-phystwin-additional-confirmatory-data",
+    "baseline_filename": "inference.pkl",
+    "manual_tracks_available": false,
+    "physical_object_groups": {
+      "cloth_blue_fold": "cloth_blue",
+      "cloth_blue_lift": "cloth_blue",
+      "cloth_pant_fold": "cloth_pant",
+      "cloth_pant_lift": "cloth_pant",
+      "cloth_red_fold": "cloth_red",
+      "cloth_red_lift": "cloth_red",
+      "cloth_shirt_fold": "cloth_shirt",
+      "cloth_shirt_lift": "cloth_shirt",
+      "cloth_skirt_1_fold": "cloth_skirt_1",
+      "cloth_skirt_1_lift": "cloth_skirt_1",
+      "cloth_skirt_2_fold": "cloth_skirt_2"
+    }
+  },
+  "measurement_policy": {
+    "center_count": 16,
+    "minimum_training_availability_fraction": 0.8,
+    "fallback_candidate_count": 64,
+    "update_fractions": [0.25, 0.5, 0.75],
+    "minimum_update_center_count": 9,
+    "residual_dispersion_gate": {
+      "minimum_history_center_count": 3,
+      "history_quantile": 0.95,
+      "history_multiplier": 1.5,
+      "minimum_threshold_m": 0.01
+    }
+  },
+  "belief": {
+    "length_scale_fraction": 0.1,
+    "local_blend": 0.25,
+    "observation_std_m": 0.005,
+    "process_std_m_per_sqrt_frame": 0.003,
+    "global_prior_std_m": 0.1,
+    "local_prior_std_m": 0.02,
+    "degrees_of_freedom": 4.0,
+    "minimum_reliability": 0.02,
+    "maximum_correction_m": 0.1,
+    "minimum_length_scale_m": 0.0001
+  },
+  "fixed_arms": [
+    "open_loop",
+    "recursive_global_translation",
+    "recursive_rbf_belief"
+  ],
+  "primary_metrics": [
+    "future_noncenter_point_error_m",
+    "future_chamfer_distance_m"
+  ],
+  "aggregation": {
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 20260719
+  },
+  "confirmation_gate": {
+    "minimum_relative_improvement_over_open_loop_each_primary_metric": 0.05,
+    "minimum_two_metric_case_wins": 4,
+    "maximum_case_regression_each_primary_metric": 0.05,
+    "primary_paired_bootstrap_intervals_must_exclude_zero": true,
+    "minimum_noncenter_improvement_over_global_translation": 0.02
+  },
+  "claim_boundary": "Post-hoc development only. Confirmation requires a separately locked outcome-unseen cohort."
+}

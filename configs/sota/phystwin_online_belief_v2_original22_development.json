@@ -1,0 +1,89 @@
+{
+  "schema_version": 2,
+  "protocol_id": "phystwin-risk-limited-recursive-rbf-belief-v2-original22-development",
+  "status": "retrospective development replay; all cohort outcomes were previously inspected",
+  "confirmation_cohort": {
+    "name": "released_phys_twin_22",
+    "role": "development only",
+    "case_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/data-links/original22-risk-limited-v2",
+    "baseline_filename": "trajectory.pkl",
+    "manual_tracks_available": true,
+    "physical_object_groups": {
+      "double_lift_cloth_1": "cloth_1",
+      "double_lift_cloth_3": "cloth_3",
+      "double_lift_sloth": "sloth",
+      "double_lift_zebra": "zebra",
+      "double_stretch_sloth": "sloth",
+      "double_stretch_zebra": "zebra",
+      "rope_double_hand": "rope",
+      "single_clift_cloth_1": "cloth_1",
+      "single_clift_cloth_3": "cloth_3",
+      "single_lift_cloth": "cloth_generic",
+      "single_lift_cloth_1": "cloth_1",
+      "single_lift_cloth_3": "cloth_3",
+      "single_lift_cloth_4": "cloth_4",
+      "single_lift_dinosor": "dinosaur",
+      "single_lift_rope": "rope",
+      "single_lift_sloth": "sloth",
+      "single_lift_zebra": "zebra",
+      "single_push_rope": "rope",
+      "single_push_rope_1": "rope",
+      "single_push_rope_4": "rope",
+      "single_push_sloth": "sloth",
+      "weird_package": "weird_package"
+    }
+  },
+  "information_boundary": {
+    "selection_evidence": "frame-zero geometry and visibility/motion-valid frequency strictly before split.test[0]",
+    "online_evidence": "selected point measurements only at the three declared update frames",
+    "risk_gate_evidence": "available selected-centre count at the current update only",
+    "scoring": "frames strictly after updates; identity and manual-track metrics exclude no future information from prediction",
+    "rejected_update_behavior": "exact physical-prior trajectory for the interval"
+  },
+  "measurement_policy": {
+    "center_count": 16,
+    "minimum_training_availability_fraction": 0.8,
+    "fallback_candidate_count": 64,
+    "selector": "deterministic farthest-point traversal starting from the smallest eligible source point ID",
+    "online_available": "object_visibilities AND object_motions_valid AND finite coordinates",
+    "update_fractions": [0.25, 0.5, 0.75],
+    "skip_update_frames_in_metrics": true,
+    "minimum_update_center_count": 9
+  },
+  "belief": {
+    "length_scale_fraction": 0.1,
+    "local_blend": 0.25,
+    "observation_std_m": 0.005,
+    "process_std_m_per_sqrt_frame": 0.003,
+    "global_prior_std_m": 0.1,
+    "local_prior_std_m": 0.02,
+    "degrees_of_freedom": 4.0,
+    "minimum_reliability": 0.02,
+    "maximum_correction_m": 0.1,
+    "minimum_length_scale_m": 0.0001
+  },
+  "fixed_arms": [
+    "open_loop",
+    "recursive_global_translation",
+    "recursive_rbf_belief"
+  ],
+  "primary_metrics": [
+    "future_noncenter_point_error_m",
+    "future_chamfer_distance_m"
+  ],
+  "aggregation": {
+    "case_weighting": "equal",
+    "bootstrap_unit": "physical_object_group",
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 20260719,
+    "confidence_interval": 0.95
+  },
+  "confirmation_gate": {
+    "minimum_relative_improvement_over_open_loop_each_primary_metric": 0.05,
+    "minimum_two_metric_case_wins": 12,
+    "maximum_case_regression_each_primary_metric": 0.1,
+    "primary_paired_bootstrap_intervals_must_exclude_zero": true,
+    "minimum_noncenter_improvement_over_global_translation": 0.02
+  },
+  "claim_boundary": "Development evidence only: this cohort selected the belief parameters and cannot confirm them."
+}

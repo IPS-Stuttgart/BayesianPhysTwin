@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-recursive-rbf-belief-v1",
+  "frozen_before_additional_11_evaluation": true,
+  "development_cohort": {
+    "name": "released_phys_twin_22",
+    "role": "exploratory method development; all outcomes previously examined"
+  },
+  "confirmation_cohort": {
+    "name": "phys_twin_additional_11_cloth",
+    "role": "fixed-method transfer check",
+    "case_root": "/home/florianpfaff/bayesian-phystwin-additional-confirmatory-data",
+    "baseline_filename": "inference.pkl",
+    "manual_tracks_available": false,
+    "physical_object_groups": {
+      "cloth_blue_fold": "cloth_blue",
+      "cloth_blue_lift": "cloth_blue",
+      "cloth_pant_fold": "cloth_pant",
+      "cloth_pant_lift": "cloth_pant",
+      "cloth_red_fold": "cloth_red",
+      "cloth_red_lift": "cloth_red",
+      "cloth_shirt_fold": "cloth_shirt",
+      "cloth_shirt_lift": "cloth_shirt",
+      "cloth_skirt_1_fold": "cloth_skirt_1",
+      "cloth_skirt_1_lift": "cloth_skirt_1",
+      "cloth_skirt_2_fold": "cloth_skirt_2"
+    }
+  },
+  "information_boundary": {
+    "selection_evidence": "frame-zero geometry and visibility/motion-valid frequency strictly before split.test[0]",
+    "online_evidence": "selected point measurements only at the three declared update frames",
+    "forbidden_for_prediction": [
+      "object observations after the current update frame",
+      "manual tracks",
+      "future metrics",
+      "confirmation-case outcomes for method or threshold selection"
+    ],
+    "scoring": "only frames strictly after an update; identity metric permanently excludes every selected centre",
+    "identity_null_frame_policy": "omit a frame only from identity metrics when object_motions_valid leaves zero non-centre identities; retain it in Chamfer and all other supported metrics"
+  },
+  "measurement_policy": {
+    "center_count": 16,
+    "minimum_training_availability_fraction": 0.8,
+    "fallback_candidate_count": 64,
+    "selector": "deterministic farthest-point traversal starting from the smallest eligible source point ID",
+    "online_available": "object_visibilities AND object_motions_valid AND finite coordinates",
+    "update_fractions": [0.25, 0.5, 0.75],
+    "skip_update_frames_in_metrics": true
+  },
+  "belief": {
+    "length_scale_fraction": 0.1,
+    "local_blend": 0.25,
+    "observation_std_m": 0.005,
+    "process_std_m_per_sqrt_frame": 0.003,
+    "global_prior_std_m": 0.1,
+    "local_prior_std_m": 0.02,
+    "degrees_of_freedom": 4.0,
+    "minimum_reliability": 0.02,
+    "maximum_correction_m": 0.1,
+    "minimum_length_scale_m": 0.0001
+  },
+  "fixed_arms": [
+    "open_loop",
+    "recursive_global_translation",
+    "recursive_rbf_belief"
+  ],
+  "primary_metrics": [
+    "future_noncenter_point_error_m",
+    "future_chamfer_distance_m"
+  ],
+  "secondary_metrics": [
+    "manual_track_error_m_when_available",
+    "late_horizon_noncenter_point_error_m",
+    "maximum_case_regression",
+    "active_measurement_count",
+    "update_reliability"
+  ],
+  "aggregation": {
+    "case_weighting": "equal",
+    "bootstrap_unit": "physical_object_group",
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 20260719,
+    "confidence_interval": 0.95
+  },
+  "confirmation_gate": {
+    "minimum_relative_improvement_over_open_loop_each_primary_metric": 0.05,
+    "minimum_two_metric_case_wins": 8,
+    "maximum_case_regression_each_primary_metric": 0.1,
+    "primary_paired_bootstrap_intervals_must_exclude_zero": true,
+    "minimum_noncenter_improvement_over_global_translation": 0.02
+  },
+  "claim_boundary": "A pass supports recursive sparse-observation correction on a separate public PhysTwin cohort. It is not an open-loop or Deform360 state-of-the-art claim."
+}

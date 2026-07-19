@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-recursive-rbf-belief-v1-pre-metric-null-frame-amendment",
+  "original_protocol_sha256": "94ce836b5f0e37ed7a9b3005bef2366ddcbab0729006619b876805c9c63763d2",
+  "frozen_at_utc": "2026-07-19T18:34:00Z",
+  "trigger": "The first confirmation launch stopped before cohort aggregation because one scored frame in every case had zero motion-valid non-centre identities.",
+  "evidence_read_before_amendment": "validity masks and per-case zero/nonzero counts only; no partial case metric or prediction output was opened",
+  "observed_contract_pattern": {
+    "case_count": 11,
+    "zero_identity_frames_per_case": 1,
+    "cases_with_at_least_five_supported_identity_frames": 11
+  },
+  "amendment": "Omit an identity-null frame only from identity-based metrics. Retain the same frame in Chamfer and every other supported metric. Apply the identical support to all arms. Do not impute an identity error and do not change update frames, measurements, selector, model, hyperparameters, arms, gates, aggregation, or any target value.",
+  "restart_policy": "Delete no evidence; abandon the incomplete output directory and write the complete evaluation to a new versioned directory."
+}

@@ -51,6 +51,25 @@ supplies the causal correction layers and evaluation orchestration. See the
 [full evidence report](docs/phystwin_sota_22_v1.md) for the frozen protocol,
 uncertainty intervals, render metrics, provenance, and ownership boundary.
 
+## Recursive Sparse-Observation Result
+
+A separate online path now maintains a robust global-plus-local discrepancy
+belief from 16 sparse material identities and decodes it at every physical
+point. On an open 27-episode Deform360 source panel, the fixed risk-limited RBF
+field improves hidden-identity RMSE by 25.77% and symmetric hidden-point
+Chamfer by 26.59% relative to sealed physical predictions, with 27/27 joint
+episode wins. It also beats a matched global-translation update in every
+episode. This uses fused material tracks, not raw-camera observations, and is
+not parity with the official Deform360 open-loop benchmark. A post-hoc causal
+continue/freeze selector improves those errors by 30.83% and 30.39% and beats
+both continuation and frozen-state controls; a separate 13-of-16 inlier arm
+provides exact fallback under the tested correspondence mismatches. Both are
+development hypotheses requiring a newly held-out transfer, and Gaussian-noise
+safety remains unresolved. See the
+[recursive online-belief report](docs/phystwin_recursive_online_belief.md) for
+the full controls, corruption stress, calibration audit, ownership boundary,
+and reproducible GPU-server command.
+
 An opt-in external-backbone path now validates hash-locked,
 PhysTwin-compatible trajectories before applying the frozen Bayesian and
 last-residual overlays. An absolute causal MatPhys spring field is a frozen
