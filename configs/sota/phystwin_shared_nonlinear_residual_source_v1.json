@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "contract": "source-trained-graph-local-multistep-residual-v1",
+  "locked_at_utc": "2026-07-19T01:42:00Z",
+  "status": "Source-only model-family gate; target future remains closed.",
+  "claim_boundary": "This protocol may admit an exploratory five-case target-prefix gate. The five targets have been examined previously and cannot establish an independent SOTA claim.",
+  "hypothesis": "A graph-local nonlinear model trained with recursive multi-step source losses can predict action-conditioned residual evolution that endpoint persistence and one-step linear regressions miss.",
+  "fit_fraction": 0.75,
+  "source_cases": [
+    "weird_package",
+    "double_stretch_zebra",
+    "double_lift_sloth",
+    "single_lift_sloth",
+    "single_lift_cloth",
+    "single_lift_cloth_4",
+    "single_lift_zebra",
+    "single_push_rope_4",
+    "rope_double_hand",
+    "single_lift_dinosor",
+    "single_push_rope_1",
+    "single_lift_rope",
+    "single_lift_cloth_1",
+    "double_lift_cloth_3",
+    "single_lift_cloth_3",
+    "double_stretch_sloth",
+    "single_push_rope"
+  ],
+  "target_cases": [
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "double_lift_cloth_1",
+    "double_lift_zebra",
+    "single_push_sloth"
+  ],
+  "source_folds": [
+    {
+      "name": "fold_0",
+      "held_out_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "single_lift_cloth",
+        "single_push_rope_4",
+        "single_lift_dinosor",
+        "double_lift_cloth_3"
+      ]
+    },
+    {
+      "name": "fold_1",
+      "held_out_cases": [
+        "double_lift_sloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "rope_double_hand",
+        "single_lift_rope",
+        "single_lift_cloth_3"
+      ]
+    },
+    {
+      "name": "fold_2",
+      "held_out_cases": [
+        "single_lift_sloth",
+        "single_push_rope_1",
+        "single_lift_cloth_1",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ]
+    }
+  ],
+  "model": {
+    "hidden_dim": 96,
+    "hidden_layers": 3,
+    "rollout_horizon": 12,
+    "training_steps": 2000,
+    "maximum_training_points": 384,
+    "neighbor_count": 8,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.00001,
+    "gradient_clip": 1.0,
+    "seeds": [17, 43, 101],
+    "blend_candidates": [0.25, 0.5, 0.75, 1.0],
+    "interpolation_neighbors": 4,
+    "controller_kernel_fraction": 0.25,
+    "maximum_velocity_multiplier": 2.0,
+    "maximum_residual_m": 0.01,
+    "minimum_balanced_improvement": 0.03,
+    "minimum_both_win_folds": 2,
+    "maximum_case_metric_ratio": 1.05,
+    "device": "cuda:0"
+  },
+  "source_gate": {
+    "reference": "endpoint residual persistence",
+    "minimum_balanced_improvement": 0.03,
+    "minimum_both_win_folds": 2,
+    "both_aggregate_metrics_must_improve": true,
+    "maximum_single_case_metric_ratio": 1.05
+  },
+  "information_boundary": {
+    "source_training": "Complete registered source outcomes may supervise multi-step dynamics.",
+    "source_validation": "Each source case is scored only by a model trained without that case.",
+    "target_access": "No target trajectory, observation, metric, or future artifact is read by this gate.",
+    "prob4d": "Prob4D is intentionally deferred until this dynamics family passes using trusted source residuals; a causal prefix-only Prob4D adapter is then evaluated as a separate observation arm."
+  },
+  "forbidden": [
+    "opening any target future when the source gate fails",
+    "changing folds, architecture, seeds, blend candidates, or thresholds after source results",
+    "calling a passing target-five result independent or state of the art",
+    "using all-frame Prob4D overlap archives as causal target-prefix observations"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "contract": "source-trained-graph-local-multistep-residual-v1",
+  "run_date": "2026-07-19",
+  "scientific_status": "rejected_source_gate",
+  "target_future_opened": false,
+  "remote_output": "/mnt/corsair/florianpfaff/phystwin-shared-nonlinear-residual-v1/source_gate_v1b",
+  "data_root": "/home/florianpfaff/bayesian-phystwin-confirmatory-data",
+  "invocation": "CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_shared_nonlinear_residual /home/florianpfaff/bayesian-phystwin-confirmatory-data configs/sota/phystwin_shared_nonlinear_residual_source_v1.json /mnt/corsair/florianpfaff/phystwin-shared-nonlinear-residual-v1/source_gate_v1b --device cuda:0",
+  "implementation_sha256": {
+    "src/bayesian_phystwin/phystwin_shared_nonlinear_residual.py": "b41b647eea8d3aef5f1beced1f43bcf6ad97ec366d3e47106710fd81ab0bbcb8",
+    "src/bayesian_phystwin/cli/phystwin_shared_nonlinear_residual.py": "86dc9ba931b20d60770eb8cc77c46698182bf3f028d2e679e08bb523b96e4066",
+    "configs/sota/phystwin_shared_nonlinear_residual_source_v1.json": "2fab65f68f9103df3740c50202e095a3d97febe88910e692c33c92f393397b3d"
+  },
+  "source_gate_summary_sha256": "7441eac2c5af535f8fd849163217fbe838935a3875c43125f324837627480379",
+  "checkpoint_sha256": {
+    "fold_00/model_seed_17.pt": "51228c17ea0cde3e54debe5601e95188beb61d9826a90ebac1fc179b9510d5ce",
+    "fold_00/model_seed_43.pt": "0615db0cea943e2054dd1623103c4390ccecee97bd4456b5a81d398d99f49d58",
+    "fold_00/model_seed_101.pt": "63eb4e835d7bbcf9516e40ef7cf02d203db38d56d41078907c5cb216bb58a4cd",
+    "fold_01/model_seed_17.pt": "f334ac3202ed2149aa9ef64fa9a0cf274c565188e97fd148e56ecb21be3cc8fb",
+    "fold_01/model_seed_43.pt": "ab65bd38921f3b124ae6cbac09c2cbc6e5a65ef6843e41f4566ac4d0df3c08fc",
+    "fold_01/model_seed_101.pt": "33cecacd39b1fc87cb0414f7ac458abf20757227f3f3ffc1fcabe8b111bf9eca",
+    "fold_02/model_seed_17.pt": "7dbaac707af53442ed8eef033408885ef152fb2a512d4b676993b0c43d85ddd5",
+    "fold_02/model_seed_43.pt": "e5ff902f99b8805d084896e8e2f7ddcc104687c4552efba4fc23dccdb9a14467",
+    "fold_02/model_seed_101.pt": "d53b1d722b0b306b32bd4522c1f62688c6c8ad44e6fb1fb32a3c340e14d70e53"
+  },
+  "operational_note": "source_gate_v1a stopped before source loading because the raw-video extraction root lacks inference.pkl; v1b changed only the data-root argument"
+}
