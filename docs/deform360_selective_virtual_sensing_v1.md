@@ -55,6 +55,15 @@ that no target or future outcome was read. This fixes only prefix
 materialization and does not alter the protocol, cohort, method, thresholds, or
 information boundary.
 
+The same FFmpeg 7 cadence behavior also affects the 23-frame tail that becomes
+authorized only after the prediction-cohort seal. Before any selected future
+was opened,
+`scripts/remote/stage_deform360_selective_authorized_future_cadence_safe.py`
+was added as a fail-closed wrapper around the frozen target-staging script. It
+requires the frozen script hash, uses the same exact source-frame indices at
+explicit 30 Hz CFR, verifies 58 decoded prefix frames and 81 decoded full-window
+frames, and leaves the target reconstruction and evaluation unchanged.
+
 The executable lock is
 `configs/sota/deform360_selective_virtual_sensing_v1.json`. Its canonical
 checksum is
