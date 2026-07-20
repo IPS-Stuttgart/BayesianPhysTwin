@@ -1,11 +1,15 @@
 # Deform360 Selective Full-Field Virtual Sensing V1
 
 Status: locked before download or media access for the 12 selected objects.
+The temporal rule was added before any selected-object access because the
+initial lock specified 76 frames but omitted their deterministic source window.
+The inherited target pipeline, automatic-mask provenance, comparator builders,
+and all execution hashes were likewise added before selected-object access.
 
 The executable lock is
 `configs/sota/deform360_selective_virtual_sensing_v1.json`. Its canonical
 checksum is
-`e2b52d91ab2e4c28e15e7642f8e67b18c97d86096d37e6fe92ae277af9b97b89`.
+`d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd`.
 The lock is validated by
 `bayesian_phystwin.deform360_selective_virtual_sensing_protocol`.
 
@@ -58,9 +62,17 @@ archived development summary is under
 
 ## Frozen method
 
-For each 76-frame episode:
+For each episode, the frozen action-only rule chooses an 81-frame raw window.
+It maximizes mean gripper-centre path length weighted by endpoint closure
+confidence over candidate starts 8, 14, 20, and so on, breaking ties at the
+earliest start. It reads released robot actions and apertures only, never object
+geometry, tracks, tactile data, or outcomes. The official five-frame tracking
+tail leaves the 76 evaluation frames.
 
-1. Reconstruct frame-zero material points without reading later dense states.
+For each resulting 76-frame episode:
+
+1. Select frame-zero object masks with the pinned generic SAM2 selector, then
+   reconstruct material points without reading later dense states.
 2. Select 16 deterministic farthest-point centers visible in at least two
    cameras.
 3. At updates 19, 38, and 57, run the pinned AllTracker model on exactly RGB
@@ -72,10 +84,19 @@ For each 76-frame episode:
    accepted clique and add its decayed field to persistence.
 6. On insufficient support or correspondence rejection, emit persistence
    bit-for-bit.
+7. Before any target opens, also seal an ungated RBF control and an independently
+   refit unordered CPD control from the same sparse measurements.
 
 The belief parameters, tracker revision and checkpoint, camera count, center
-count, update frames, correction cap, and correspondence thresholds are all in
-the lock. Held outcomes may not change them.
+count, update frames, correction cap, correspondence thresholds, SAM2 source,
+and control hyperparameters are all in the lock. Held outcomes may not change
+them.
+
+The target is inherited from the development pipeline: the exact eight sealed
+measurement cameras, the same frame-zero splat, a 512-point strict visual-hull
+minimum on a 120-cubed grid, 500/250 Splatfacto iterations, pinned CoTracker3,
+official expected depth with URDF gripper masks, and deterministic Deform360
+point fusion. The 81 raw frames yield 76 identity-preserving target frames.
 
 ## Prospective cohort
 
@@ -101,12 +122,17 @@ used. Their seal therefore remains intact.
 
 1. Commit and publish the code, tests, method lock, and source hashes.
 2. Download only the 12 named objects at the pinned dataset revision.
-3. Build frame-zero geometry, calibration assets, and causal RGB measurements.
-4. Write and hash every measurement and prediction artifact.
-5. Verify that the builders did not read future dense reconstructions, particle
-   tracks, or target metrics.
-6. Only then construct or open full future targets once for scoring.
-7. Report all successful episodes, all object means, all strata, all failures,
+3. Select the action window, then expose only its RGB prefix through frame 57
+   to the prediction-facing process.
+4. Build frame-zero geometry, calibration assets, and causal RGB measurements.
+5. Write and hash the frame-zero backbone, every measurement, and every
+   virtual-sensor prediction artifact.
+6. Account for all 24 episodes with exactly one validated prediction or
+   target-free quality failure. Recompute the 9-object and 3-per-stratum gate.
+7. Revalidate every underlying artifact and seal the complete cohort.
+8. Only then propagate future masks, reconstruct dense futures, build particle
+   tracks, and score the authorized successful cases.
+9. Report all successful episodes, all object means, all strata, all failures,
    and every predefined comparator.
 
 Any future dense reconstruction, particle track, or target metric opened before

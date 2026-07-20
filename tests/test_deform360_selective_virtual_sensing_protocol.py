@@ -82,6 +82,52 @@ def test_registered_protocol_pins_algorithm_and_information_boundary() -> None:
         / "bayesian_phystwin"
         / "phystwin_online_belief.py"
     )
+    local_sources = {
+        "raw_camera_builder_sha256": (
+            "src/bayesian_phystwin/deform360_raw_camera_observation.py"
+        ),
+        "selective_prediction_builder_sha256": (
+            "src/bayesian_phystwin/deform360_selective_virtual_sensing_prediction.py"
+        ),
+        "selective_artifact_seal_sha256": (
+            "src/bayesian_phystwin/deform360_selective_virtual_sensing_artifacts.py"
+        ),
+        "selective_evaluation_sha256": (
+            "src/bayesian_phystwin/deform360_selective_virtual_sensing_evaluation.py"
+        ),
+    }
+    for key, relative_path in local_sources.items():
+        assert source_hashes[key] == _sha256(REPOSITORY_ROOT / relative_path)
+    remote_sources = {
+        "prepare_source_alignment": (
+            "scripts/remote/prepare_deform360_selective_source_alignment.py"
+        ),
+        "stage_prediction_prefix": (
+            "scripts/remote/stage_deform360_selective_prediction_prefix.py"
+        ),
+        "reconstruct_frame_zero": (
+            "scripts/remote/run_deform360_selective_frame_zero.py"
+        ),
+        "build_measurement_prediction": (
+            "scripts/remote/run_deform360_selective_measurement_prediction.py"
+        ),
+        "manage_prediction_seals": (
+            "scripts/remote/manage_deform360_selective_prediction_seals.py"
+        ),
+        "stage_authorized_future": (
+            "scripts/remote/stage_deform360_selective_authorized_future.py"
+        ),
+        "build_authorized_outcome": (
+            "scripts/remote/build_deform360_selective_authorized_outcome.py"
+        ),
+        "evaluate_and_aggregate": (
+            "scripts/remote/evaluate_deform360_selective_virtual_sensing.py"
+        ),
+    }
+    for key, relative_path in remote_sources.items():
+        assert source_hashes["remote_execution_sha256"][key] == _sha256(
+            REPOSITORY_ROOT / relative_path
+        )
 
 
 def test_protocol_rejects_unhashed_edit(tmp_path: Path) -> None:

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "config_sha256": "e2b52d91ab2e4c28e15e7642f8e67b18c97d86096d37e6fe92ae277af9b97b89",
+  "config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
   "config": {
     "protocol_id": "deform360-selective-virtual-sensing-v1",
-    "status": "locked-before-selected-object-download-or-media-access",
+    "status": "locked-before-selected-object-download-or-media-access-amended-window-and-target-rules",
     "locked_at": "2026-07-19",
     "claim_boundary": "Prospective public-data confirmation of causal sparse-camera full-field virtual sensing; not official Deform360 Table-4 parity and not a direct state-of-the-art claim.",
     "dataset": {
@@ -96,7 +96,40 @@
       "minimum_triangulation_views": 2,
       "minimum_ray_angle_degrees": 2.0,
       "ransac_reprojection_threshold_px": 3.0,
-      "maximum_displacement_from_initial_m": 0.5
+      "maximum_displacement_from_initial_m": 0.5,
+      "initial_object_masks": {
+        "selector": "generic automatic SAM2 object selector frozen before prospective access",
+        "selector_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+        "sam2_repository_revision": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+        "sam2_checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+        "minimum_accepted_cameras": 8,
+        "future_propagation_allowed_only_after_prediction_cohort_seal": true
+      }
+    },
+    "temporal_staging": {
+      "rule": "maximize mean gripper-centre path weighted at each step by the minimum endpoint closure confidence",
+      "raw_window_length_frames": 81,
+      "processed_frame_count": 76,
+      "tracking_tail_frames_skipped": 5,
+      "controller_centre": "arithmetic mean of the five released action points per gripper",
+      "closure_confidence": "per gripper, clip((episode aperture p90 - aperture)/(episode aperture p90 - episode aperture p10), 0, 1); smaller released aperture means more closed",
+      "static_aperture_fallback": "confidence one, reducing exactly to unweighted path when aperture cannot identify closure",
+      "step_weight": "minimum closure confidence at the two endpoints of each gripper-centre path step",
+      "gripper_aggregation": "mean of per-gripper closure-weighted path lengths; gripper vectors are never averaged before taking their norms",
+      "candidate_starts": {
+        "first": 8,
+        "stride": 6,
+        "stop": "last start whose complete 81-frame window exists"
+      },
+      "tie_break": "earliest start",
+      "input_fields": [
+        "robot/robot.npz:actions",
+        "robot/robot.npz:openings",
+        "episode frame count"
+      ],
+      "known_future_action_is_conditioning_input": true,
+      "object_geometry_or_tactile_used_for_selection": false,
+      "inheritance": "unchanged deform360-reusable-sota-window-v1 action-only rule locked on 2026-07-17"
     },
     "method": {
       "primary_arm": "persistence_full_blend_rbf_pairwise_clique",
@@ -122,10 +155,23 @@
         "minimum_reliability": 0.02,
         "observation_std_m": 0.005,
         "process_std_m_per_sqrt_frame": 0.003
+      },
+      "ungated_control": "same recursive RBF belief with every finite supported centre and no pairwise gate",
+      "independent_cpd_control": {
+        "beta": 2.0,
+        "regularization": 3.0,
+        "outlier_weight": 0.1,
+        "maximum_iterations": 100,
+        "relative_tolerance": 0.00001,
+        "minimum_variance": 0.00000001,
+        "minimum_scale_m": 0.000001,
+        "refit_independently_at_each_update": true,
+        "failure_fallback": "bit-exact persistence"
       }
     },
     "information_boundary": {
       "allowed_before_prediction_seal": [
+        "full released robot actions and gripper apertures for action-only window selection",
         "frame-zero reconstructed object geometry",
         "camera calibration and frame-zero SAM2/depth assets",
         "raw RGB prefixes [0,19], [0,38], and [0,57]",
@@ -139,7 +185,68 @@
       "observed_centers_permanently_excluded_from_scoring": true,
       "existing_frame_zero_confirmation_remains_sealed": true,
       "no_failed_object_replacement": true,
+      "window_selection_may_read_full_robot_action": true,
+      "window_selection_may_read_object_geometry": false,
+      "window_selection_may_read_object_tracks": false,
+      "window_selection_may_read_tactile": false,
       "target_open_order": "Verify all measurement and prediction hashes for every quality-passing episode, then construct or open dense future targets once for scoring."
+    },
+    "target_construction": {
+      "role": "independent Deform360 outcome construction after an eligible all-case prediction cohort seal",
+      "deform360_processing_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "source_sha256": {
+        "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+        "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467",
+        "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+        "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+        "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+      },
+      "camera_policy": "exact eight cameras sealed by the target-free raw-camera measurement",
+      "future_mask_policy": "propagate each sealed frame-zero mask with the pinned SAM2 model only after cohort authorization",
+      "reconstruction": {
+        "minimum_visual_hull_points": 512,
+        "voxel_resolution": 120,
+        "cube_half_extent_m": 0.5,
+        "first_frame_iterations": 500,
+        "warm_start_iterations": 250,
+        "warm_start_from_previous_frame": true,
+        "sealed_frame_zero_splat_reused_bit_exactly": true
+      },
+      "depth": {
+        "expected_depth": true,
+        "object_mask_applied": true,
+        "gripper_urdf_mask_applied": true,
+        "preview_video": false
+      },
+      "tracking": {
+        "model": "facebook/cotracker3-scaled-offline",
+        "repository_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+        "repository_tree": "f0296ad047b50c1530063b67e575908257478cab",
+        "predictor_source_sha256": "783536d6c77790fa6c8e005f2df1d6bd4f0d8955c2c67d464bfb4e64d366375f",
+        "checkpoint_sha256": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+        "pivot_skip": 5,
+        "sequence_length": 15,
+        "gap": 5,
+        "grid_size": 40,
+        "resize_factor": 4
+      },
+      "point_cloud": {
+        "seed_point_count": 10000,
+        "crop_half_extent_m": 0.5,
+        "radius_neighbors": 30,
+        "radius_m": 0.02,
+        "statistical_neighbors": 30,
+        "statistical_std_ratio": 3.5,
+        "fusion_ransac_threshold_m_per_s": 0.01,
+        "fusion_minimum_inliers": 4,
+        "rng_seed": 0,
+        "raw_frame_count": 81,
+        "output_frame_count": 76,
+        "tracking_tail_frames_skipped": 5,
+        "frame_rate_hz": 30.0
+      },
+      "material_identity_contract": "the full outcome frame-zero points must be bit-exact to the sealed prediction persistence frame zero",
+      "future_tactile_read": false
     },
     "evaluation": {
       "co_primary_metrics": [
@@ -184,11 +291,34 @@
       "eligible_as_confirmatory_evidence": false
     },
     "source_provenance": {
+      "preaccess_lock_amendment": {
+        "superseded_config_sha256": "e2b52d91ab2e4c28e15e7642f8e67b18c97d86096d37e6fe92ae277af9b97b89",
+        "reason": "seal the deterministic action-only 81-to-76-frame staging rule omitted from the initial lock",
+        "selected_object_download_or_media_access_before_amendment": false
+      },
+      "preaccess_target_pipeline_amendment": {
+        "superseded_config_sha256": "5652a94f58c0c03d7f55262a7296934aa6e2116b889170a3a9786b44855931a2",
+        "reason": "seal the inherited target construction, initial-mask provenance, and target-free comparator rules omitted from the temporal amendment",
+        "selected_object_download_or_media_access_before_amendment": false
+      },
       "pre_explicit_arm_server_algorithm_sha256": "815f76252c2255d214466124ababb243c4fe6ed4b1a6df703d9d5dbbcf9e644d",
       "explicit_arm_algorithm_sha256": "8a5df910d7354d418ae745925784d8f4a90c92ff8a6a38c32a5ebdb93718cc17",
       "pairwise_gate_sha256": "4141e766abc61df0b527c46e6bff4b0d359920518608c7b353b62f406c4329be",
       "online_belief_sha256": "ed0da8142d854433e7dbb5ffc60ce80570258d0fdf8d1e1ceb6ba0fa4123ae4e",
-      "raw_camera_builder_sha256": "e6321e8378914757656860e2c58965ec48b2bc5e92f2410ba64b44218890abf8",
+      "raw_camera_builder_sha256": "2c24e587e9acd1dda589363240a81b268863fbe808ce05c58f8a5b70f12f76c3",
+      "selective_prediction_builder_sha256": "0f1ecc5740e36c11075f73fc16e0c848e3feaeb8850e6abab6a1de3c561f8aa6",
+      "selective_artifact_seal_sha256": "a4dd4a53a47a91ea477236ee506bc5739a57c1831eaa3feae1e70d2e123102bb",
+      "selective_evaluation_sha256": "c0926a5cf56af3122bc945436298ba46923af0498754be182f2bd6a6d5a84d39",
+      "remote_execution_sha256": {
+        "prepare_source_alignment": "81189d876eda8ddd6b9b286cf293d36e74546ac7f2380f89ceb4e59831643098",
+        "stage_prediction_prefix": "fb610256f11f5a36986e79386f27aedbd5b27716fc7b83c430bccc16c9d013e2",
+        "reconstruct_frame_zero": "fea1f2b02f11c0dd525ba1ed9ada77c3a988f11c97bd8d2786c24636f141fb79",
+        "build_measurement_prediction": "5636aced4b386def5ff761c00fa61f474d20037a1ee6951cd08bbd37632ee1ca",
+        "manage_prediction_seals": "7002cda3b17298dc86d6b1c843e8209e8a9eae50cc2d0e9dc82abfe3f8fbc585",
+        "stage_authorized_future": "2ed2ffb0cd6ceeb2f08a485d578a7257701e92d94c1f4d8e9063843aacff778c",
+        "build_authorized_outcome": "771774a15a3a2dd5453b0f6ff39ebb695214524d9b546e8dcd1315fa2173fe24",
+        "evaluate_and_aggregate": "2650693358c88e677d3c07d5e29830161ddafacf5d0fde090655b2d84be199e7"
+      },
       "development_summary_sha256": "686086fdb4ea3b62b5ef947dd8de2696508b3eed5374b6ebca523bf5df8d832d",
       "explicit_arm_development_summary_sha256": "bca32e2af053b673f0fc0f44662c44f5ebcdb42872fffefe4ccc853a0df80bd0"
     },

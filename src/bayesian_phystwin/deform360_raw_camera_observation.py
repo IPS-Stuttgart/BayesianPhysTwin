@@ -23,7 +23,7 @@ import pickle
 from pathlib import Path
 import sys
 import time
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 
@@ -920,25 +920,29 @@ def _validate_prediction_seal(seal: Mapping[str, Any]) -> None:
         raise ValueError("physical prediction crossed the frame-zero boundary")
 
 
-def build_raw_camera_measurement_case(
+def build_raw_camera_measurement_case_with_contract(
     panel_case_dir: str | Path,
     processed_episode_dir: str | Path,
     output_dir: str | Path,
     runtime: AllTrackerPrefixRuntime,
     *,
+    protocol_id: str,
+    expected_case_names: Sequence[str],
+    prediction_seal_validator: Callable[[Mapping[str, Any]], None],
+    claim_boundary: str,
     config: RawCameraObservationConfig | None = None,
 ) -> dict[str, Any]:
-    """Build one measurement archive without opening an outcome or target."""
+    """Build one target-free measurement under an explicit case contract."""
 
     cfg = config or runtime.config
     case_dir = Path(panel_case_dir).resolve()
     processed = Path(processed_episode_dir).resolve()
     output = Path(output_dir).resolve()
-    if case_dir.name not in expected_open_case_names():
-        raise ValueError("case is outside the explicit outcome-open panel")
+    if case_dir.name not in set(expected_case_names):
+        raise ValueError("case is outside the explicit measurement contract")
     seal_path = case_dir / "prediction_seal.json"
     seal = json.loads(seal_path.read_text(encoding="utf-8"))
-    _validate_prediction_seal(seal)
+    prediction_seal_validator(seal)
     archive_path = _resolve_prediction_archive(case_dir, seal)
     with np.load(archive_path, allow_pickle=False) as stored:
         prior = np.asarray(stored["prediction_m"]).copy()
@@ -1088,7 +1092,7 @@ def build_raw_camera_measurement_case(
     manifest: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": "Deform360CausalRawCameraMeasurement",
-        "protocol_id": PROTOCOL_ID,
+        "protocol_id": protocol_id,
         "case": case_dir.name,
         "object_id": str(seal["object_id"]),
         "episode_id": int(seal["episode_id"]),
@@ -1136,10 +1140,7 @@ def build_raw_camera_measurement_case(
             "maximum_video_frame_read_by_update": list(cfg.update_frames),
             "frame_zero_hdf5_indices_read": [0],
         },
-        "claim_boundary": (
-            "outcome-unaware raw-RGB measurement construction on an already-open "
-            "development panel; evaluation occurs in a separate process"
-        ),
+        "claim_boundary": claim_boundary,
     }
     manifest["result_sha256"] = _canonical_sha256(manifest)
     manifest_path = output / MANIFEST_FILENAME
@@ -1148,6 +1149,32 @@ def build_raw_camera_measurement_case(
         encoding="utf-8",
     )
     return manifest
+
+
+def build_raw_camera_measurement_case(
+    panel_case_dir: str | Path,
+    processed_episode_dir: str | Path,
+    output_dir: str | Path,
+    runtime: AllTrackerPrefixRuntime,
+    *,
+    config: RawCameraObservationConfig | None = None,
+) -> dict[str, Any]:
+    """Build one measurement for the immutable outcome-open development panel."""
+
+    return build_raw_camera_measurement_case_with_contract(
+        panel_case_dir,
+        processed_episode_dir,
+        output_dir,
+        runtime,
+        protocol_id=PROTOCOL_ID,
+        expected_case_names=expected_open_case_names(),
+        prediction_seal_validator=_validate_prediction_seal,
+        claim_boundary=(
+            "outcome-unaware raw-RGB measurement construction on an already-open "
+            "development panel; evaluation occurs in a separate process"
+        ),
+        config=config,
+    )
 
 
 def build_raw_camera_measurement_cohort(
@@ -1544,6 +1571,7 @@ __all__ = [
     "PROTOCOL_ID",
     "RawCameraObservationConfig",
     "build_raw_camera_measurement_case",
+    "build_raw_camera_measurement_case_with_contract",
     "build_raw_camera_measurement_cohort",
     "evaluate_raw_camera_measurement_case",
     "evaluate_raw_camera_measurement_cohort",
