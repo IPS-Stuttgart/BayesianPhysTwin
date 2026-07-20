@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexActionGuardDevelopmentLock",
+  "lock_id": "pokeflex-action-guard-development-v1",
+  "parent_protocol_id": "pokeflex-bayesian-registration-v1",
+  "parent_protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33",
+  "status": "candidate frozen after T3 pilot and before additional development takes",
+  "evidence_boundary": {
+    "opened_for_family_design": [
+      "FoamDice_T3",
+      "MemoryFoam_T3",
+      "PlushOctopus_T3",
+      "3dPrintedHeart_T3",
+      "ToiletPaperRoll_T3"
+    ],
+    "prospective_development_validation_takes": [
+      "T1",
+      "T4",
+      "T5",
+      "T6"
+    ],
+    "reserved_development_takes": [
+      "T7",
+      "T8"
+    ],
+    "intentionally_unopened_take": "T2",
+    "calibration_and_target_objects_remain_sealed": true
+  },
+  "candidate": {
+    "field": "action_local_state",
+    "tool_history_frames": 4,
+    "tool_step_estimator": "coordinatewise median of the three observed T_WT translation increments",
+    "contact_axis": "latest T_WT to T_WE translation",
+    "contact_candidate_count": 32,
+    "influence_radius_m": 0.06,
+    "minimum_action_force_n": 3.0,
+    "strong_update_force_n": 15.0,
+    "weak_scale": 0.125,
+    "strong_scale": 0.5,
+    "support_rule": "nonzero only when measured action support and accepted two-view Bayesian registration are both present",
+    "fallback": "released checkpoint vertices byte-for-byte"
+  },
+  "pilot_result": {
+    "take": "T3",
+    "object_count": 5,
+    "released_checkpoint_object_mean_CD_UL1_mm": 5.907963346799112,
+    "guarded_object_mean_CD_UL1_mm": 5.572617444562735,
+    "relative_improvement": 0.056761676156651175,
+    "object_wins": 5
+  },
+  "prospective_gate": {
+    "aggregation": "equal mean over the five objects after equal mean over T1/T4/T5/T6 frames and takes",
+    "minimum_relative_CD_UL1_improvement": 0.05,
+    "required_object_wins": 4,
+    "maximum_per_object_relative_regression": 0.1,
+    "decision": "open calibration objects only if all development gates pass without changing this candidate"
+  },
+  "lock_sha256": "4796ca2cf1f45d9e6cd810de13650126ef3f9dba48087f3d839754d2c37630c6"
+}

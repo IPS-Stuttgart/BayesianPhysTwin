@@ -35,11 +35,16 @@ POKEFLEX_REGISTRATION_PROTOCOL_ID = "pokeflex-bayesian-registration-v1"
 POKEFLEX_REGISTRATION_PROTOCOL_SHA256 = (
     "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33"
 )
+POKEFLEX_ACTION_GUARD_DEVELOPMENT_LOCK_ID = "pokeflex-action-guard-development-v1"
+POKEFLEX_ACTION_GUARD_DEVELOPMENT_LOCK_SHA256 = (
+    "4796ca2cf1f45d9e6cd810de13650126ef3f9dba48087f3d839754d2c37630c6"
+)
 
 
 def _canonical_protocol_bytes(payload: Mapping[str, Any]) -> bytes:
     canonical = dict(payload)
     canonical.pop("protocol_sha256", None)
+    canonical.pop("lock_sha256", None)
     return json.dumps(
         canonical, sort_keys=True, separators=(",", ":"), allow_nan=False
     ).encode("utf-8")
@@ -184,6 +189,83 @@ def load_pokeflex_registration_protocol(path: str | Path) -> dict[str, Any]:
     source = Path(path).resolve()
     payload = json.loads(source.read_text(encoding="utf-8"))
     result = validate_pokeflex_registration_protocol(payload)
+    result["path"] = str(source)
+    result["payload"] = payload
+    return result
+
+
+def validate_pokeflex_action_guard_development_lock(
+    payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the prospective take boundary and frozen action policy."""
+
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported PokeFlex action-guard lock schema")
+    if payload.get("artifact_kind") != "PokeFlexActionGuardDevelopmentLock":
+        raise ValueError("unexpected PokeFlex action-guard artifact kind")
+    if payload.get("lock_id") != POKEFLEX_ACTION_GUARD_DEVELOPMENT_LOCK_ID:
+        raise ValueError("PokeFlex action-guard lock id changed")
+    if payload.get("parent_protocol_sha256") != POKEFLEX_REGISTRATION_PROTOCOL_SHA256:
+        raise ValueError("PokeFlex action-guard parent protocol changed")
+
+    observed_hash = hashlib.sha256(_canonical_protocol_bytes(payload)).hexdigest()
+    if payload.get("lock_sha256") != observed_hash:
+        raise ValueError("PokeFlex action-guard checksum mismatch")
+    if observed_hash != POKEFLEX_ACTION_GUARD_DEVELOPMENT_LOCK_SHA256:
+        raise ValueError("PokeFlex action-guard differs from canonical lock")
+
+    boundary = payload.get("evidence_boundary")
+    if not isinstance(boundary, Mapping):
+        raise ValueError("PokeFlex action-guard omits evidence boundary")
+    if boundary.get("prospective_development_validation_takes") != [
+        "T1",
+        "T4",
+        "T5",
+        "T6",
+    ]:
+        raise ValueError("PokeFlex prospective development takes changed")
+    if boundary.get("reserved_development_takes") != ["T7", "T8"]:
+        raise ValueError("PokeFlex reserved development takes changed")
+    if boundary.get("intentionally_unopened_take") != "T2":
+        raise ValueError("PokeFlex held-out take changed")
+    if boundary.get("calibration_and_target_objects_remain_sealed") is not True:
+        raise ValueError("PokeFlex calibration or target boundary changed")
+
+    candidate = payload.get("candidate")
+    if not isinstance(candidate, Mapping):
+        raise ValueError("PokeFlex action-guard candidate is missing")
+    required_candidate = {
+        "field": "action_local_state",
+        "tool_history_frames": 4,
+        "contact_candidate_count": 32,
+        "influence_radius_m": 0.06,
+        "minimum_action_force_n": 3.0,
+        "strong_update_force_n": 15.0,
+        "weak_scale": 0.125,
+        "strong_scale": 0.5,
+        "fallback": "released checkpoint vertices byte-for-byte",
+    }
+    for key, expected in required_candidate.items():
+        if candidate.get(key) != expected:
+            raise ValueError(f"PokeFlex action-guard candidate changed: {key}")
+
+    return {
+        "passed": True,
+        "lock_sha256": observed_hash,
+        "prospective_development_validation_takes": tuple(
+            boundary["prospective_development_validation_takes"]
+        ),
+    }
+
+
+def load_pokeflex_action_guard_development_lock(
+    path: str | Path,
+) -> dict[str, Any]:
+    """Load and validate the canonical action-guard development lock."""
+
+    source = Path(path).resolve()
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    result = validate_pokeflex_action_guard_development_lock(payload)
     result["path"] = str(source)
     result["payload"] = payload
     return result

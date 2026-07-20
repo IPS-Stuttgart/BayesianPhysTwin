@@ -5,7 +5,9 @@ import pytest
 
 from bayesian_phystwin.pokeflex_registration_protocol import (
     POKEFLEX_OBJECTS,
+    load_pokeflex_action_guard_development_lock,
     load_pokeflex_registration_protocol,
+    validate_pokeflex_action_guard_development_lock,
     validate_pokeflex_registration_protocol,
 )
 
@@ -16,6 +18,12 @@ PROTOCOL = (
     / "configs"
     / "sota"
     / "pokeflex_bayesian_registration_v1.json"
+)
+ACTION_GUARD_LOCK = (
+    REPOSITORY_ROOT
+    / "configs"
+    / "sota"
+    / "pokeflex_action_guard_development_v1.json"
 )
 
 
@@ -59,3 +67,23 @@ def test_pokeflex_registration_protocol_rejects_overlap() -> None:
 
     with pytest.raises(ValueError, match="checksum mismatch|overlap"):
         validate_pokeflex_registration_protocol(payload)
+
+
+def test_pokeflex_action_guard_lock_preserves_prospective_takes() -> None:
+    result = load_pokeflex_action_guard_development_lock(ACTION_GUARD_LOCK)
+
+    assert result["prospective_development_validation_takes"] == (
+        "T1",
+        "T4",
+        "T5",
+        "T6",
+    )
+    assert result["payload"]["candidate"]["strong_update_force_n"] == 15.0
+
+
+def test_pokeflex_action_guard_lock_rejects_policy_changes() -> None:
+    payload = json.loads(ACTION_GUARD_LOCK.read_text(encoding="utf-8"))
+    payload["candidate"]["strong_scale"] = 0.75
+
+    with pytest.raises(ValueError, match="checksum mismatch|candidate changed"):
+        validate_pokeflex_action_guard_development_lock(payload)
