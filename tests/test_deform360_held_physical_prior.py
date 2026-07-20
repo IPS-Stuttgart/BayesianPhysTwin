@@ -27,11 +27,15 @@ from bayesian_phystwin.deform360_held_physical_prior import (
     build_persistence_fallback_archive,
     build_physical_prediction_archive,
     build_prediction_only_artifacts,
+    load_controller_trajectory,
     run_held_physical_prior,
-    select_action_window,
     sha256_file,
     validate_physical_prediction_manifest,
     validate_python_runtime,
+)
+from bayesian_phystwin.deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
 )
 from bayesian_phystwin.deform360_held_protocol import (
     create_held_protocol_lock,
@@ -42,10 +46,19 @@ from bayesian_phystwin.deform360_held_protocol import (
 CASE_NAME = "083-blanket-cloth-ep0000"
 
 
-def test_v2_uses_fixed_1024_node_capacity() -> None:
+def test_v3_uses_fixed_1024_node_capacity_and_shared_robot_contract() -> None:
     assert CANONICAL_NODE_COUNT == 1024
-    assert physical_prior.HELD_PHYSICAL_NUMERIC_CONTRACT["contract_id"].endswith("-v2")
+    assert physical_prior.HELD_PHYSICAL_NUMERIC_CONTRACT["contract_id"].endswith("-v3")
     assert physical_prior.HELD_PHYSICAL_NUMERIC_CONTRACT["canonical_node_count"] == 1024
+    assert physical_prior.HELD_PHYSICAL_NUMERIC_CONTRACT["robot_kinematics"] == {
+        "policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+        "contract_sha256": ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+        "trajectory_semantics": (
+            "aligned absolute end-effector pose/opening annotation in the "
+            "Deform360 world frame; not a delta command"
+        ),
+        "controller_source": "T_worlds absolute end-effector pose and openings",
+    }
 
 
 def test_physical_runner_rejects_lock_numeric_contract_mismatch(tmp_path: Path) -> None:
@@ -88,11 +101,11 @@ def _write_json(path: Path, value: dict[str, object]) -> None:
 
 def _make_robot(path: Path, frame_count: int = FRAME_COUNT) -> None:
     poses = np.repeat(np.eye(4, dtype=np.float64)[None], frame_count, axis=0)
-    poses[:, 0, 3] = np.linspace(0.0, 0.02, frame_count)
+    poses[:, 0, 3] = np.arange(frame_count, dtype=np.float64) * 0.001
     actions = np.zeros((frame_count, 5, 3), dtype=np.float64)
     actions[:, 0] = poses[:, :3, 3]
     actions[:, 1:4] = poses[:, :3, :3]
-    openings = np.linspace(0.10, 0.05, frame_count)
+    openings = np.full(frame_count, 0.05, dtype=np.float64)
     actions[:, 4, 0] = openings
     np.savez_compressed(
         path,
@@ -102,6 +115,18 @@ def _make_robot(path: Path, frame_count: int = FRAME_COUNT) -> None:
         openings=openings,
         bimanual=np.asarray(False, dtype=np.bool_),
     )
+
+
+def _slice_robot(source: Path, destination: Path, *, start: int, count: int) -> None:
+    with np.load(source, allow_pickle=False) as stored:
+        np.savez_compressed(
+            destination,
+            format_version=stored["format_version"],
+            actions=stored["actions"][start : start + count],
+            T_worlds=stored["T_worlds"][start : start + count],
+            openings=stored["openings"][start : start + count],
+            bimanual=stored["bimanual"],
+        )
 
 
 def _make_frame_zero_bundle(
@@ -155,7 +180,7 @@ def _make_locked_frame_zero(
     robot_path = tmp_path / "robot.npz"
     _make_robot(robot_path, frame_count=100)
     selected_robot_path = tmp_path / "known_action_76.npz"
-    _make_robot(selected_robot_path)
+    _slice_robot(robot_path, selected_robot_path, start=8, count=FRAME_COUNT)
     robot_metadata_path = tmp_path / "robot.meta.json"
     robot_metadata_path.write_text("{}\n", encoding="utf-8")
     manifest: dict[str, object] = {
@@ -222,6 +247,17 @@ def test_prediction_input_repeats_only_frame_zero(tmp_path: Path) -> None:
     )
     assert data["controller_points"].shape == (FRAME_COUNT, 768, 3)
     assert summary["information_boundary"]["future_object_geometry_read"] is False
+    assert summary["information_boundary"][
+        "known_future_aligned_robot_kinematics_read"
+    ] is True
+    audit = summary["robot_kinematics_window"]
+    assert audit["policy_id"] == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+    assert audit["contract_sha256"] == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+    assert audit["prediction_raw_frame_range_half_open"] == [8, 84]
+    assert audit["exact_source_slice_verified"] is True
+    assert data["prediction_only_input"][
+        "known_future_realized_robot_kinematics_used"
+    ] is True
     assert summary["point_count"] == 128
 
 
@@ -238,15 +274,94 @@ def test_prediction_input_rejects_multiframe_bundle(tmp_path: Path) -> None:
         )
 
 
-def test_action_window_uses_earliest_closed_path_maximum() -> None:
-    frame_count = 100
-    actions = np.zeros((frame_count, 5, 3), dtype=np.float64)
-    openings = np.ones(frame_count, dtype=np.float64) * 0.05
-    # Identical action path in two overlapping candidates; the first must win.
-    actions[:, 0, 0] = np.arange(frame_count, dtype=np.float64)
-    result = select_action_window(actions, openings)
-    assert result["prediction_frame_range_half_open"] == [8, 84]
-    assert result["staging_frame_range_half_open"] == [8, 89]
+def test_raw_controller_trajectory_uses_shared_realized_kinematics_selector(
+    tmp_path: Path,
+) -> None:
+    robot_path = tmp_path / "raw_robot.npz"
+    _make_robot(robot_path, frame_count=100)
+
+    controllers, audit = load_controller_trajectory(robot_path)
+
+    assert controllers.shape == (FRAME_COUNT, 768, 3)
+    assert audit["policy_id"] == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+    assert audit["contract_sha256"] == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+    assert audit["input_mode"] == "raw_episode_robot_kinematics"
+    assert audit["selected_raw_frame_range_half_open"] == [8, 89]
+    assert audit["prediction_raw_frame_range_half_open"] == [8, 84]
+    assert audit["exact_source_slice_verified"] is True
+    # With identity EEF rotations and a fixed opening, the whole taxel cloud
+    # must translate exactly with T_worlds[..., :3, 3].
+    expected_dx = np.arange(FRAME_COUNT, dtype=np.float64) * 0.001
+    observed_dx = np.mean(controllers[:, :, 0], axis=1) - np.mean(
+        controllers[0, :, 0]
+    )
+    assert np.allclose(observed_dx, expected_dx, atol=1e-7)
+
+
+def test_preselected_controller_slice_is_verified_against_raw_source(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "raw_robot.npz"
+    selected = tmp_path / "selected_robot.npz"
+    _make_robot(source, frame_count=100)
+    _slice_robot(source, selected, start=8, count=FRAME_COUNT)
+
+    _, audit = load_controller_trajectory(
+        selected,
+        source_robot_path=source,
+        expected_selected_raw_frame_range=[8, 89],
+        expected_prediction_raw_frame_range=[8, 84],
+    )
+
+    assert audit["input_mode"] == "preselected_exact_prediction_slice"
+    assert audit["selected_raw_frame_range_half_open"] == [8, 89]
+    assert audit["prediction_raw_frame_range_half_open"] == [8, 84]
+    assert audit["selected_prediction_frame_range_half_open"] == [0, FRAME_COUNT]
+    assert audit["exact_source_slice_verified"] is True
+    assert audit["selected_bundle_validation"]["exact_source_slice"] is True
+
+    _, standalone = load_controller_trajectory(selected)
+    assert standalone["selection_performed"] is False
+    assert standalone["selected_raw_frame_range_half_open"] is None
+    assert standalone["exact_source_slice_verified"] is False
+
+
+def test_controller_trajectory_fails_closed_on_schema_parity_and_slice_changes(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "raw_robot.npz"
+    _make_robot(source, frame_count=100)
+    with np.load(source, allow_pickle=False) as stored:
+        arrays = {name: np.array(stored[name], copy=True) for name in stored.files}
+
+    extra = tmp_path / "extra_field.npz"
+    np.savez_compressed(extra, **arrays, unexpected=np.asarray(1))
+    with pytest.raises(ValueError, match="field set changed"):
+        load_controller_trajectory(extra)
+
+    parity = tmp_path / "bad_action_parity.npz"
+    parity_arrays = {name: np.array(value, copy=True) for name, value in arrays.items()}
+    parity_arrays["actions"][10, 0, 0] += 0.1
+    np.savez_compressed(parity, **parity_arrays)
+    with pytest.raises(ValueError, match="row 0 does not match"):
+        load_controller_trajectory(parity)
+
+    selected = tmp_path / "wrong_selected_slice.npz"
+    _slice_robot(source, selected, start=8, count=FRAME_COUNT)
+    with np.load(selected, allow_pickle=False) as stored:
+        selected_arrays = {
+            name: np.array(stored[name], copy=True) for name in stored.files
+        }
+    selected_arrays["actions"][:, 0, 0] += 0.1
+    selected_arrays["T_worlds"][:, 0, 3] += 0.1
+    np.savez_compressed(selected, **selected_arrays)
+    with pytest.raises(ValueError, match="not the exact source slice"):
+        load_controller_trajectory(
+            selected,
+            source_robot_path=source,
+            expected_selected_raw_frame_range=[8, 89],
+            expected_prediction_raw_frame_range=[8, 84],
+        )
 
 
 def _warp_result(
@@ -389,6 +504,14 @@ def test_physical_archive_matches_frozen_driven_minus_zero_formula(
         assert np.all(stored["action_support"] <= 1.0)
         assert np.all(stored["action_support"] > 0.0)
 
+    tampered = json.loads(manifest_path.read_text(encoding="utf-8"))
+    tampered["robot_kinematics_window"]["contract_sha256"] = "f" * 64
+    tampered["artifact_sha256"] = held_artifact_sha256(tampered)
+    _write_json(manifest_path, tampered)
+    with pytest.raises(ValueError, match="robot kinematics contract"):
+        validate_physical_prediction_manifest(manifest_path, verify_archive=True)
+
+    _write_json(manifest_path, result)
     tampered = json.loads(manifest_path.read_text(encoding="utf-8"))
     tampered["information_boundary"]["future_object_geometry_read"] = True
     tampered["artifact_sha256"] = held_artifact_sha256(tampered)

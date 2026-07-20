@@ -6,7 +6,8 @@ missing security boundary around that code:
 
 * the case must be in the exact calibration or confirmation whitelist;
 * the only object input is a validated :class:`Deform360HeldFrameZeroBundle`;
-* the known robot action is selected without reading object motion;
+* the aligned realized end-effector kinematics are selected without reading
+  object motion;
 * the upstream source files, official PhysTwin revision, and Warp config are
   checked before a subprocess is started; and
 * driven and zero-action trajectories are converted into the frozen
@@ -38,6 +39,18 @@ from .deform360_held_protocol import (
     held_contract_sha256,
     load_held_protocol_lock,
     validate_frame_zero_bundle_manifest,
+)
+from .deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
+    ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+    Deform360RobotKinematics,
+    artifact_sha256 as robot_artifact_sha256,
+    load_robot_kinematics_archive,
+    robot_kinematics_array_records,
+    select_robot_kinematics_window,
+    slice_robot_kinematics,
+    validate_selected_robot_kinematics_bundle,
 )
 
 
@@ -159,7 +172,7 @@ UPSTREAM_RUNTIME_BUNDLE_CONTRACT = {
 }
 
 HELD_PHYSICAL_NUMERIC_CONTRACT = {
-    "contract_id": "deform360-held-physical-prior-v2",
+    "contract_id": "deform360-held-physical-prior-v3",
     "official_phystwin_revision": OFFICIAL_PHYSTWIN_REVISION,
     "official_real_config_sha256": OFFICIAL_REAL_CONFIG_SHA256,
     "length_scale_m": LENGTH_SCALE_M,
@@ -181,6 +194,14 @@ HELD_PHYSICAL_NUMERIC_CONTRACT = {
         "physical_admitted": False,
     },
     "warp_dynamics": WARP_DYNAMICS,
+    "robot_kinematics": {
+        "policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+        "contract_sha256": ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+        "trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "controller_source": "T_worlds absolute end-effector pose and openings",
+    },
     "upstream_file_sha256": UPSTREAM_FILE_SHA256,
 }
 
@@ -454,80 +475,6 @@ def _load_frame_zero_geometry(
     return manifest, points, np.clip(colors, 0.0, 1.0)
 
 
-def _controller_centres(actions: np.ndarray) -> np.ndarray:
-    values = np.asarray(actions, dtype=np.float64)
-    _require(np.all(np.isfinite(values)), "robot actions are non-finite")
-    if values.ndim == 3:
-        values = values[:, None, :, :]
-    _require(
-        values.ndim == 4 and values.shape[-1] == 3 and values.shape[2] >= 1,
-        "robot actions have an invalid shape",
-    )
-    return np.mean(values, axis=2)
-
-
-def _closure_confidence(openings: np.ndarray) -> np.ndarray:
-    aperture = np.asarray(openings, dtype=np.float64)
-    if aperture.ndim == 1:
-        aperture = aperture[:, None]
-    _require(aperture.ndim == 2 and np.all(np.isfinite(aperture)), "invalid openings")
-    low = np.quantile(aperture, 0.1, axis=0)
-    high = np.quantile(aperture, 0.9, axis=0)
-    span = high - low
-    confidence = np.ones_like(aperture)
-    varying = span > 1e-9
-    confidence[:, varying] = np.clip(
-        (high[varying] - aperture[:, varying]) / span[varying], 0.0, 1.0
-    )
-    return confidence
-
-
-def select_action_window(
-    actions: np.ndarray,
-    openings: np.ndarray,
-    *,
-    frame_count: int = FRAME_COUNT,
-) -> dict[str, Any]:
-    """Port the frozen action-only 81-frame selection, then drop its 5-frame tail."""
-
-    centres = _controller_centres(actions)
-    closed = _closure_confidence(openings)
-    _require(closed.shape == centres.shape[:2], "openings differ from action groups")
-    staging_length = frame_count + 5
-    _require(
-        len(centres) >= staging_length, "robot trajectory is shorter than 81 frames"
-    )
-    starts = np.arange(8, len(centres) - staging_length + 1, 6, dtype=np.int64)
-    _require(len(starts) > 0, "robot trajectory has no locked action candidate")
-    candidates: list[tuple[float, int]] = []
-    for start_value in starts:
-        start = int(start_value)
-        selected = centres[start : start + staging_length]
-        selected_closed = closed[start : start + staging_length]
-        step = np.linalg.norm(np.diff(selected, axis=0), axis=-1)
-        weighted = step * np.minimum(selected_closed[:-1], selected_closed[1:])
-        candidates.append((float(np.mean(np.sum(weighted, axis=0))), start))
-    # ``max`` preserves the first candidate on equal values, the locked earliest tie break.
-    best_score = max(score for score, _ in candidates)
-    selected_start = next(start for score, start in candidates if score == best_score)
-    return {
-        "selection_rule": "maximum_mean_closed_weighted_gripper_path",
-        "candidate_start_frame": 8,
-        "candidate_stride_frames": 6,
-        "candidate_count": len(candidates),
-        "staging_frame_range_half_open": [
-            selected_start,
-            selected_start + staging_length,
-        ],
-        "prediction_frame_range_half_open": [
-            selected_start,
-            selected_start + frame_count,
-        ],
-        "tracking_tail_frames_skipped": 5,
-        "mean_closed_weighted_path_length_m": best_score,
-    }
-
-
 def _taxel_grid_root_frame(joint: float) -> np.ndarray:
     rows, columns = np.meshgrid(
         np.arange(_TAXEL_ROWS), np.arange(_TAXEL_COLS), indexing="ij"
@@ -567,66 +514,266 @@ def _gripper_taxel_points(opening_m: float, world_from_eef: np.ndarray) -> np.nd
     return points @ pose[:3, :3].T + pose[:3, 3]
 
 
-def load_controller_trajectory(
-    robot_path: str | Path,
+def _validated_expected_range(
+    value: Sequence[int] | None,
     *,
-    frame_count: int = FRAME_COUNT,
-) -> tuple[np.ndarray, dict[str, Any]]:
-    """Load the bound action and reproduce Deform360's controller taxel cloud."""
-
-    with np.load(robot_path, allow_pickle=False) as robot:
-        required = {"format_version", "actions", "T_worlds", "openings", "bimanual"}
-        _require(
-            required.issubset(robot.files), "robot archive is missing required arrays"
-        )
-        _require(
-            int(np.asarray(robot["format_version"]).item()) == 1, "robot format changed"
-        )
-        actions = np.asarray(robot["actions"], dtype=np.float64)
-        poses = np.asarray(robot["T_worlds"], dtype=np.float64)
-        openings = np.asarray(robot["openings"], dtype=np.float64)
-        bimanual_value = np.asarray(robot["bimanual"])
+    expected_length: int,
+    label: str,
+) -> list[int] | None:
+    if value is None:
+        return None
     _require(
-        bimanual_value.shape == () and bimanual_value.dtype == np.bool_,
-        "invalid bimanual flag",
+        isinstance(value, (list, tuple)) and len(value) == 2,
+        f"{label} is not a two-element range",
     )
-    bimanual = bool(bimanual_value.item())
-    _require(len(actions) == len(poses) == len(openings), "robot frame axes differ")
-    _require(np.all(np.isfinite(actions)), "robot actions are non-finite")
-    _require(np.all(np.isfinite(poses)), "robot poses are non-finite")
-    _require(np.all(np.isfinite(openings)), "robot openings are non-finite")
-    selection = (
-        {
-            "selection_rule": "preselected_exact_prediction_window",
-            "candidate_start_frame": 0,
-            "candidate_stride_frames": None,
-            "candidate_count": 1,
-            "staging_frame_range_half_open": [0, len(actions)],
-            "prediction_frame_range_half_open": [0, frame_count],
-            "tracking_tail_frames_skipped": max(0, len(actions) - frame_count),
-            "mean_closed_weighted_path_length_m": None,
-        }
-        if len(actions) in {frame_count, frame_count + 5}
-        else select_action_window(actions, openings, frame_count=frame_count)
+    start, stop = value
+    _require(
+        isinstance(start, int)
+        and not isinstance(start, bool)
+        and isinstance(stop, int)
+        and not isinstance(stop, bool)
+        and start >= 0
+        and stop - start == expected_length,
+        f"{label} has the wrong extent",
     )
-    start, stop = selection["prediction_frame_range_half_open"]
-    poses = poses[start:stop]
-    openings = openings[start:stop]
-    _require(len(poses) == frame_count, "selected robot window is not 76 frames")
-    controllers = []
+    return [start, stop]
+
+
+def _controller_trajectory_from_state(
+    state: Deform360RobotKinematics,
+    *,
+    frame_count: int,
+) -> np.ndarray:
+    """Reproduce the taxel cloud from validated absolute EEF kinematics."""
+
+    _require(
+        state.frame_count == frame_count,
+        "selected robot kinematics are not the prediction frame count",
+    )
+    poses = state.T_worlds
+    openings = state.openings
+    controllers: list[np.ndarray] = []
     for frame in range(frame_count):
-        blocks = []
-        gripper_count = 2 if bimanual else 1
-        for gripper in range(gripper_count):
-            pose = poses[frame, gripper] if bimanual else poses[frame]
-            opening = openings[frame, gripper] if bimanual else openings[frame]
+        blocks: list[np.ndarray] = []
+        for gripper in range(state.gripper_count):
+            pose = poses[frame, gripper] if state.bimanual else poses[frame]
+            opening = openings[frame, gripper] if state.bimanual else openings[frame]
             blocks.append(_gripper_taxel_points(float(opening), pose))
         controllers.append(np.concatenate(blocks, axis=0))
     trajectory = np.stack(controllers).astype(np.float32)
     _require(np.all(np.isfinite(trajectory)), "controller trajectory is non-finite")
-    selection["controller_point_count"] = int(trajectory.shape[1])
-    selection["controller_trajectory_sha256"] = sha256_array(trajectory)
-    return trajectory, selection
+    return trajectory
+
+
+def load_controller_trajectory(
+    robot_path: str | Path,
+    *,
+    frame_count: int = FRAME_COUNT,
+    source_robot_path: str | Path | None = None,
+    expected_selected_raw_frame_range: Sequence[int] | None = None,
+    expected_prediction_raw_frame_range: Sequence[int] | None = None,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Load strict realized EEF kinematics and reproduce the taxel cloud.
+
+    A 76-frame input is explicitly a preselected prediction slice.  When its
+    raw source is supplied, this function independently recomputes the shared
+    81-frame selector and proves that all five selected archive fields are the
+    exact corresponding 76-frame source slice.  Longer inputs are raw episode
+    archives and are selected directly with the same shared contract.
+    """
+
+    _require(frame_count >= 2, "prediction frame count is invalid")
+    selected_range = _validated_expected_range(
+        expected_selected_raw_frame_range,
+        expected_length=frame_count + 5,
+        label="expected selected raw frame range",
+    )
+    prediction_range = _validated_expected_range(
+        expected_prediction_raw_frame_range,
+        expected_length=frame_count,
+        label="expected prediction raw frame range",
+    )
+    state = load_robot_kinematics_archive(robot_path)
+
+    if state.frame_count == frame_count:
+        if source_robot_path is None:
+            _require(
+                selected_range is None and prediction_range is None,
+                "raw ranges require the source robot archive",
+            )
+            selected_state = state
+            audit: dict[str, Any] = {
+                "policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+                "contract_sha256": ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+                "trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+                    "trajectory_semantics"
+                ],
+                "input_mode": "preselected_exact_prediction_slice",
+                "selection_performed": False,
+                "source_robot_frame_count": None,
+                "selected_raw_frame_range_half_open": None,
+                "prediction_raw_frame_range_half_open": None,
+                "selected_prediction_frame_range_half_open": [0, frame_count],
+                "prediction_frame_count": frame_count,
+                "bimanual": state.bimanual,
+                "gripper_count": state.gripper_count,
+                "exact_source_slice_verified": False,
+                "selected_array_records": robot_kinematics_array_records(state),
+            }
+        else:
+            source_state = load_robot_kinematics_archive(source_robot_path)
+            source_audit = select_robot_kinematics_window(
+                source_state,
+                window_length_frames=frame_count + 5,
+                prediction_frame_count=frame_count,
+            )
+            source_selected_range = source_audit[
+                "selected_raw_frame_range_half_open"
+            ]
+            source_prediction_range = source_audit[
+                "prediction_raw_frame_range_half_open"
+            ]
+            if selected_range is not None:
+                _require(
+                    selected_range == source_selected_range,
+                    "manifest selected raw range disagrees with the shared selector",
+                )
+            if prediction_range is not None:
+                _require(
+                    prediction_range == source_prediction_range,
+                    "manifest prediction raw range disagrees with the shared selector",
+                )
+            source_slice_audit = validate_selected_robot_kinematics_bundle(
+                state,
+                source_state=source_state,
+                prediction_start_frame=int(source_prediction_range[0]),
+                prediction_frame_count=frame_count,
+            )
+            selected_state = state
+            audit = dict(source_audit)
+            audit.pop("artifact_sha256", None)
+            audit.update(
+                {
+                    "input_mode": "preselected_exact_prediction_slice",
+                    "selection_performed": True,
+                    "selected_prediction_frame_range_half_open": [0, frame_count],
+                    "exact_source_slice_verified": True,
+                    "selected_array_records": robot_kinematics_array_records(state),
+                    "selected_bundle_validation": source_slice_audit,
+                }
+            )
+    else:
+        _require(
+            source_robot_path is None,
+            "raw robot input must not also name a source archive",
+        )
+        source_audit = select_robot_kinematics_window(
+            state,
+            window_length_frames=frame_count + 5,
+            prediction_frame_count=frame_count,
+        )
+        if selected_range is not None:
+            _require(
+                selected_range
+                == source_audit["selected_raw_frame_range_half_open"],
+                "expected selected raw range disagrees with the shared selector",
+            )
+        if prediction_range is not None:
+            _require(
+                prediction_range
+                == source_audit["prediction_raw_frame_range_half_open"],
+                "expected prediction raw range disagrees with the shared selector",
+            )
+        prediction_start = int(
+            source_audit["prediction_raw_frame_range_half_open"][0]
+        )
+        selected_state = slice_robot_kinematics(
+            state,
+            start_frame=prediction_start,
+            frame_count=frame_count,
+        )
+        audit = dict(source_audit)
+        audit.pop("artifact_sha256", None)
+        audit.update(
+            {
+                "input_mode": "raw_episode_robot_kinematics",
+                "selection_performed": True,
+                "selected_prediction_frame_range_half_open": [0, frame_count],
+                "exact_source_slice_verified": True,
+                "selected_array_records": robot_kinematics_array_records(
+                    selected_state
+                ),
+            }
+        )
+
+    trajectory = _controller_trajectory_from_state(
+        selected_state,
+        frame_count=frame_count,
+    )
+    audit["controller_point_count"] = int(trajectory.shape[1])
+    audit["controller_trajectory_sha256"] = sha256_array(trajectory)
+    audit["artifact_sha256"] = robot_artifact_sha256(audit)
+    return trajectory, audit
+
+
+def _validate_controller_kinematics_audit(
+    audit: object,
+    *,
+    require_raw_source: bool,
+    controller_trajectory: np.ndarray | None = None,
+) -> dict[str, Any]:
+    _require(isinstance(audit, Mapping), "robot kinematics audit is missing")
+    value = dict(audit)
+    _require(
+        value.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+        and value.get("contract_sha256")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+        and value.get("trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"],
+        "robot kinematics contract changed",
+    )
+    _require(
+        value.get("prediction_frame_count") == FRAME_COUNT
+        and value.get("selected_prediction_frame_range_half_open")
+        == [0, FRAME_COUNT],
+        "robot kinematics prediction range changed",
+    )
+    if require_raw_source:
+        selected_range = value.get("selected_raw_frame_range_half_open")
+        prediction_range = value.get("prediction_raw_frame_range_half_open")
+        _require(
+            isinstance(selected_range, list)
+            and len(selected_range) == 2
+            and all(
+                isinstance(item, int) and not isinstance(item, bool)
+                for item in selected_range
+            )
+            and isinstance(prediction_range, list)
+            and len(prediction_range) == 2
+            and all(
+                isinstance(item, int) and not isinstance(item, bool)
+                for item in prediction_range
+            )
+            and selected_range[0] == prediction_range[0]
+            and selected_range[1] - selected_range[0] == FRAME_COUNT + 5
+            and prediction_range[1] - prediction_range[0] == FRAME_COUNT
+            and value.get("selection_performed") is True
+            and value.get("exact_source_slice_verified") is True,
+            "robot kinematics audit lacks a verified raw source range",
+        )
+    _require(
+        value.get("artifact_sha256") == robot_artifact_sha256(value),
+        "robot kinematics audit checksum changed",
+    )
+    if controller_trajectory is not None:
+        controllers = np.asarray(controller_trajectory)
+        _require(
+            value.get("controller_point_count") == controllers.shape[1]
+            and value.get("controller_trajectory_sha256")
+            == sha256_array(controllers),
+            "robot kinematics audit does not bind the controller trajectory",
+        )
+    return value
 
 
 def build_prediction_only_artifacts(
@@ -665,9 +812,25 @@ def build_prediction_only_artifacts(
     )
     robot_path = _validate_bound_file(
         alignment.get("selected_action_bundle", {}),
-        label="selected robot trajectory",
+        label="selected realized robot kinematics",
     )
-    controllers, action_window = load_controller_trajectory(robot_path)
+    action_inputs = manifest.get("action_inputs", {})
+    _require(isinstance(action_inputs, Mapping), "frame-zero robot inputs are missing")
+    source_robot_path = _validate_bound_file(
+        action_inputs.get("robot_trajectory", {}),
+        label="source realized robot kinematics",
+    )
+    controllers, robot_kinematics_window = load_controller_trajectory(
+        robot_path,
+        source_robot_path=source_robot_path,
+        expected_selected_raw_frame_range=staging_range,
+        expected_prediction_raw_frame_range=prediction_range,
+    )
+    robot_kinematics_window = _validate_controller_kinematics_audit(
+        robot_kinematics_window,
+        require_raw_source=True,
+        controller_trajectory=controllers,
+    )
     object_points = np.repeat(points[None], FRAME_COUNT, axis=0).astype(np.float32)
     object_colors = np.repeat(colors[None], FRAME_COUNT, axis=0).astype(np.float32)
     observed = np.ones(object_points.shape[:2], dtype=bool)
@@ -679,6 +842,8 @@ def build_prediction_only_artifacts(
         "episode_id": int(manifest["episode_id"]),
         "role": role,
         "object_observation_frames_used": [0],
+        "known_future_realized_robot_kinematics_used": True,
+        # Compatibility alias for the original upstream input marker.
         "known_future_robot_trajectory_used": True,
         "future_object_observations_present": False,
         "future_tactile_used": False,
@@ -688,7 +853,9 @@ def build_prediction_only_artifacts(
             "sha256"
         ],
         "selected_robot_trajectory_sha256": sha256_file(robot_path),
-        "action_window": action_window,
+        "robot_kinematics_window": robot_kinematics_window,
+        # Compatibility alias retained for already-frozen upstream consumers.
+        "action_window": robot_kinematics_window,
     }
     payload = {
         "object_points": object_points,
@@ -718,7 +885,8 @@ def build_prediction_only_artifacts(
         "frame_zero_points_sha256": sha256_array(points),
         "frame_zero_colors_sha256": sha256_array(colors),
         "controller_trajectory_sha256": sha256_array(controllers),
-        "action_window": action_window,
+        "robot_kinematics_window": robot_kinematics_window,
+        "action_window": robot_kinematics_window,
         "input_sha256": {
             "held_lock": sha256_file(lock_path),
             "frame_zero_manifest": sha256_file(frame_zero_manifest_path),
@@ -730,6 +898,8 @@ def build_prediction_only_artifacts(
         "output_sha256": sha256_file(destination),
         "information_boundary": {
             "object_observation_frames_used": [0],
+            "known_future_aligned_robot_kinematics_read": True,
+            # Compatibility alias in the held protocol v1/v2 schema.
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,
@@ -1229,7 +1399,7 @@ def build_physical_prediction_archive(
     )
     prediction_data = _load_prediction_pickle(prediction_data_path)
     points = np.asarray(prediction_data["object_points"], dtype=np.float64)
-    controllers = np.asarray(prediction_data["controller_points"], dtype=np.float64)
+    controllers = np.asarray(prediction_data["controller_points"])
     marker = prediction_data.get("prediction_only_input", {})
     _require(
         points.ndim == 3 and points.shape[0] == FRAME_COUNT, "invalid prediction points"
@@ -1249,6 +1419,15 @@ def build_physical_prediction_archive(
         "future object data present",
     )
     _require(marker.get("future_tactile_used") is False, "future tactile present")
+    _require(
+        marker.get("known_future_realized_robot_kinematics_used") is True,
+        "prediction marker lacks realized robot kinematics",
+    )
+    robot_kinematics_window = _validate_controller_kinematics_audit(
+        marker.get("robot_kinematics_window"),
+        require_raw_source=True,
+        controller_trajectory=controllers,
+    )
     twin = _load_json(twin_summary_path)
     _require(twin.get("passed") is True, "automatic twin failed admission")
     _require(twin.get("object_id") == frame_zero["object_id"], "twin object changed")
@@ -1446,12 +1625,14 @@ def build_physical_prediction_archive(
         "held_lock_sha256": sha256_file(lock_path),
         "frame_zero_manifest_sha256": sha256_file(frame_zero_manifest_path),
         "frame_zero_manifest_artifact_sha256": frame_zero["artifact_sha256"],
+        "robot_kinematics_window": robot_kinematics_window,
         "runtime_provenance": dict(runtime_provenance),
         "stage_runtime_seconds": {
             key: float(value) for key, value in stage_runtime_seconds.items()
         },
         "information_boundary": {
             "object_observation_frames_used": [0],
+            "known_future_aligned_robot_kinematics_read": True,
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,
@@ -1513,6 +1694,17 @@ def build_persistence_fallback_archive(
     )
     prediction_data = _load_prediction_pickle(prediction_data_path)
     points = np.asarray(prediction_data["object_points"], dtype=np.float32)
+    controllers = np.asarray(prediction_data["controller_points"])
+    marker = prediction_data.get("prediction_only_input", {})
+    _require(
+        marker.get("known_future_realized_robot_kinematics_used") is True,
+        "prediction marker lacks realized robot kinematics",
+    )
+    robot_kinematics_window = _validate_controller_kinematics_audit(
+        marker.get("robot_kinematics_window"),
+        require_raw_source=True,
+        controller_trajectory=controllers,
+    )
     _require(
         points.shape[0] == FRAME_COUNT
         and np.array_equal(points, np.repeat(points[:1], FRAME_COUNT, axis=0)),
@@ -1587,12 +1779,14 @@ def build_persistence_fallback_archive(
         "held_lock_sha256": sha256_file(lock_path),
         "frame_zero_manifest_sha256": sha256_file(frame_zero_manifest_path),
         "frame_zero_manifest_artifact_sha256": frame_zero["artifact_sha256"],
+        "robot_kinematics_window": robot_kinematics_window,
         "runtime_provenance": dict(runtime_provenance),
         "stage_runtime_seconds": {
             key: float(value) for key, value in stage_runtime_seconds.items()
         },
         "information_boundary": {
             "object_observation_frames_used": [0],
+            "known_future_aligned_robot_kinematics_read": True,
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,
@@ -1728,6 +1922,10 @@ def validate_physical_prediction_manifest(
     )
     for label, record in inputs.items():
         _validate_bound_file(record, label=str(label))
+    _validate_controller_kinematics_audit(
+        manifest.get("robot_kinematics_window"),
+        require_raw_source=True,
+    )
     if mode == PHYSICAL_MODE_PERSISTENCE_FALLBACK:
         twin = _validate_inadmissible_automatic_twin(
             inputs["prediction_only_input"]["path"],
@@ -1752,6 +1950,7 @@ def validate_physical_prediction_manifest(
     boundary = manifest.get("information_boundary", {})
     _require(
         boundary.get("object_observation_frames_used") == [0]
+        and boundary.get("known_future_aligned_robot_kinematics_read") is True
         and boundary.get("known_future_robot_action_read") is True
         and boundary.get("future_object_rgb_read") is False
         and boundary.get("future_object_geometry_read") is False
@@ -2084,7 +2283,6 @@ __all__ = [
     "build_prediction_only_artifacts",
     "load_controller_trajectory",
     "run_held_physical_prior",
-    "select_action_window",
     "sha256_array",
     "sha256_file",
     "validate_physical_prediction_manifest",
