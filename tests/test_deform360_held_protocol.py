@@ -24,7 +24,9 @@ from bayesian_phystwin.deform360_held_protocol import (
     ONLINE_ARTIFACT_ROLES,
     PHYSICAL_ARTIFACT_ROLES,
     PRIMARY_METHOD,
+    PROTOCOL_ID,
     REQUIRED_IMMUTABLE_BINDING_KEYS,
+    SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
     authorize_outcome_phase,
     create_calibration_gate_decision,
     create_confirmation_protocol_lock,
@@ -196,7 +198,7 @@ def _score_evidence(
     artifact: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": CALIBRATION_SCORE_EVIDENCE_KIND,
-        "protocol_id": "deform360-held-online-belief-v1",
+        "protocol_id": PROTOCOL_ID,
         "role": "calibration",
         "cohort_barrier_sha256": permit.cohort_barrier_sha256,
         "lock": _record(lock_path),
@@ -258,7 +260,7 @@ def _frame_zero_manifest(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": FRAME_ZERO_KIND,
-        "protocol_id": "deform360-held-online-belief-v1",
+        "protocol_id": PROTOCOL_ID,
         "case_name": case_name,
         "object_id": object_id,
         "episode_id": episode_id,
@@ -428,8 +430,88 @@ def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> No
     with pytest.raises(ValueError, match="immutable binding keys changed"):
         create_held_protocol_lock(tmp_path / "extra.json", immutable_bindings=extra)
 
+    invalid_report = dummy_immutable_bindings()
+    invalid_report["v1_preoutcome_feasibility_report"] = "not-a-sha256"
+    with pytest.raises(ValueError, match="must be a named SHA-256"):
+        create_held_protocol_lock(
+            tmp_path / "invalid-report.json",
+            immutable_bindings=invalid_report,
+        )
+
     assert not (tmp_path / "missing.json").exists()
     assert not (tmp_path / "extra.json").exists()
+    assert not (tmp_path / "invalid-report.json").exists()
+
+
+def test_v2_lock_binds_the_abandoned_v1_source_feasibility_amendment(
+    tmp_path: Path,
+) -> None:
+    bindings = dummy_immutable_bindings()
+    lock_path = tmp_path / "v2-lock.json"
+    lock = create_held_protocol_lock(lock_path, immutable_bindings=bindings)
+
+    assert lock["protocol_id"] == "deform360-held-online-belief-v2"
+    assert set(REQUIRED_IMMUTABLE_BINDING_KEYS) >= {
+        "v1_preoutcome_feasibility_report",
+        "held_source_feasibility_amendment_contract",
+    }
+    assert (
+        lock["immutable_bindings"]["held_source_feasibility_amendment_contract"]
+        == hashlib.sha256(
+            json.dumps(
+                SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+    )
+    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["parent_execution"] == {
+        "protocol_id": "deform360-held-online-belief-v1",
+        "disposition": "ABANDONED_PREOUTCOME",
+        "evidence_binding_key": "v1_preoutcome_feasibility_report",
+        "exact_target_free_census": {
+            "requested_case_count": 15,
+            "sealed_case_count": 5,
+            "frame_zero_failure_count": 9,
+            "physical_admission_failure_count": 1,
+        },
+        "predictions_reused_by_v2": False,
+    }
+    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["information_boundary"] == {
+        "selection_evidence": (
+            "frame-zero source inputs and automatic-twin admission diagnostics only"
+        ),
+        "outcome_payloads_accessed": False,
+        "target_payloads_accessed": False,
+        "confirmation_payloads_accessed": False,
+        "outcome_permit_created": False,
+    }
+
+    wrong_contract = dummy_immutable_bindings()
+    wrong_contract["held_source_feasibility_amendment_contract"] = "f" * 64
+    with pytest.raises(
+        ValueError,
+        match="source-feasibility amendment contract binding changed",
+    ):
+        create_held_protocol_lock(
+            tmp_path / "wrong-contract.json",
+            immutable_bindings=wrong_contract,
+        )
+    assert not (tmp_path / "wrong-contract.json").exists()
+
+    tampered_lock = deepcopy(lock)
+    tampered_lock["immutable_bindings"][
+        "held_source_feasibility_amendment_contract"
+    ] = "f" * 64
+    tampered_lock["artifact_sha256"] = held_artifact_sha256(tampered_lock)
+    tampered_path = tmp_path / "tampered-contract-lock.json"
+    tampered_path.write_text(json.dumps(tampered_lock), encoding="utf-8")
+    with pytest.raises(
+        ValueError,
+        match="source-feasibility amendment contract binding changed",
+    ):
+        load_held_protocol_lock(tampered_path)
 
 
 def test_frame_zero_contract_allows_action_but_rejects_object_future_and_hdf5(

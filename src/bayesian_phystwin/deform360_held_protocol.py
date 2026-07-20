@@ -29,7 +29,7 @@ import re
 from typing import Any, Callable, Mapping, TypeVar
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v1"
+PROTOCOL_ID = "deform360-held-online-belief-v2"
 SCHEMA_VERSION = 1
 DATASET_REVISION = "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
 REMOTE_INVENTORY_COMBINED_SHA256 = (
@@ -96,6 +96,58 @@ CONFIRMATION_GATE = {
     "aggregate_hidden_identity_rmse_must_improve": True,
     "maximum_case_chamfer_regression_fraction": 0.10,
     "all_cases_must_be_reported": True,
+}
+
+# This amendment records why a second prospective execution exists without
+# importing the first execution's predictions into it.  The external v1 report
+# is deliberately supplied by checksum when the v2 lock is created; its digest
+# is not a source-code constant that could silently bless a different file.
+SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
+    "contract_id": "deform360-held-source-feasibility-amendment-v2",
+    "protocol_id": PROTOCOL_ID,
+    "parent_execution": {
+        "protocol_id": "deform360-held-online-belief-v1",
+        "disposition": "ABANDONED_PREOUTCOME",
+        "evidence_binding_key": "v1_preoutcome_feasibility_report",
+        "exact_target_free_census": {
+            "requested_case_count": 15,
+            "sealed_case_count": 5,
+            "frame_zero_failure_count": 9,
+            "physical_admission_failure_count": 1,
+        },
+        "predictions_reused_by_v2": False,
+    },
+    "information_boundary": {
+        "selection_evidence": (
+            "frame-zero source inputs and automatic-twin admission diagnostics only"
+        ),
+        "outcome_payloads_accessed": False,
+        "target_payloads_accessed": False,
+        "confirmation_payloads_accessed": False,
+        "outcome_permit_created": False,
+    },
+    "v2_repairs": {
+        "camera_policy": {
+            "mechanism": "camera_abstention",
+            "selection_scope": "source_only",
+        },
+        "frame_zero_geometry": {
+            "mechanism": "geometrically_consistent_source_only_repair",
+            "target_or_outcome_guidance_permitted": False,
+        },
+        "depth_quality_assurance": {
+            "mechanism": "resolution_aware_depth_rasterization",
+        },
+        "physical_prior": {
+            "canonical_node_count": 1024,
+        },
+        "automatic_twin_admission": {
+            "mechanism": "validated_persistence_fallback",
+            "fallback_scope": "automatic_twin_admission_rejection_only",
+            "requires_valid_checksummed_inadmissible_twin": True,
+            "all_other_failures": "fail_closed",
+        },
+    },
 }
 
 
@@ -243,6 +295,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "held_physical_numeric_contract",
     "held_primary_method_contract",
     "held_protocol_source",
+    "held_source_feasibility_amendment_contract",
     "independent_cpd_source",
     "method_commit_object",
     "method_deployed_snapshot_tree",
@@ -291,6 +344,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "upstream_phystwin_graph_source",
     "upstream_reusable_graph_source",
     "upstream_runtime_bundle_tree",
+    "v1_preoutcome_feasibility_report",
 )
 
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -437,6 +491,11 @@ def create_held_protocol_lock(
     _require(
         all(key and _valid_sha256(value) for key, value in bindings.items()),
         "every immutable implementation binding must be a named SHA-256",
+    )
+    _require(
+        bindings["held_source_feasibility_amendment_contract"]
+        == held_contract_sha256(SOURCE_FEASIBILITY_AMENDMENT_CONTRACT),
+        "source-feasibility amendment contract binding changed",
     )
     artifact: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -585,6 +644,11 @@ def load_held_protocol_lock(path: str | Path) -> dict[str, Any]:
             for key, value in bindings.items()
         ),
         "immutable implementation binding is invalid",
+    )
+    _require(
+        bindings["held_source_feasibility_amendment_contract"]
+        == held_contract_sha256(SOURCE_FEASIBILITY_AMENDMENT_CONTRACT),
+        "source-feasibility amendment contract binding changed",
     )
     boundary = artifact.get("information_boundary", {})
     _require(
@@ -1946,6 +2010,7 @@ __all__ = [
     "PRIMARY_METHOD",
     "PROTOCOL_ID",
     "REQUIRED_IMMUTABLE_BINDING_KEYS",
+    "SOURCE_FEASIBILITY_AMENDMENT_CONTRACT",
     "UPDATE_FRAMES",
     "authorize_outcome_phase",
     "create_calibration_gate_decision",

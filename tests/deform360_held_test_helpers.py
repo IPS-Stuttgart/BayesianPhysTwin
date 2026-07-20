@@ -18,6 +18,7 @@ from bayesian_phystwin.deform360_held_physical_prior import (
 )
 from bayesian_phystwin.deform360_held_protocol import (
     REQUIRED_IMMUTABLE_BINDING_KEYS,
+    SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
     held_contract_sha256,
 )
 
@@ -37,6 +38,9 @@ def dummy_immutable_bindings() -> dict[str, str]:
     )
     bindings["held_physical_numeric_contract"] = held_contract_sha256(
         HELD_PHYSICAL_NUMERIC_CONTRACT
+    )
+    bindings["held_source_feasibility_amendment_contract"] = held_contract_sha256(
+        SOURCE_FEASIBILITY_AMENDMENT_CONTRACT
     )
     bindings["upstream_runtime_bundle_tree"] = held_contract_sha256(
         UPSTREAM_RUNTIME_BUNDLE_CONTRACT
