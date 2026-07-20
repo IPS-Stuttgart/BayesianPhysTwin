@@ -1,0 +1,451 @@
+{
+  "artifact_kind": "PokeFlexActionGuardDevelopmentResult",
+  "candidate_commit": "2863afa1602057abde64a3422b17b22c187ce310",
+  "candidate_lock_sha256": "4796ca2cf1f45d9e6cd810de13650126ef3f9dba48087f3d839754d2c37630c6",
+  "claim_boundary": "Development evidence only. The frozen force guard failed its primary transfer gate. Post-open diagnostics cannot confirm a replacement method.",
+  "parent_protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33",
+  "post_open_diagnostics": {
+    "camera_only_arm_ranking": {
+      "covariance_intersection_upper_score": {
+        "camera_acceptance_rate": 0.89099645928174,
+        "false_safe_rate_given_camera_acceptance": 0.29094521714447913,
+        "mean_true_regret_mm_given_camera_acceptance": -0.061838025086573684,
+        "pair_count": 15816,
+        "pearson_correlation": -0.25261876427647156,
+        "sign_agreement": 0.7138340920586748,
+        "spearman_correlation": 0.041739232600215136
+      },
+      "interpretation": "camera fit has near-zero rank correlation with hidden CD regret and cannot safely rank arms under coherent bias",
+      "mean_view_score": {
+        "camera_acceptance_rate": 0.922040971168437,
+        "false_safe_rate_given_camera_acceptance": 0.29040663786600834,
+        "mean_true_regret_mm_given_camera_acceptance": -0.060088676609000136,
+        "pair_count": 15816,
+        "pearson_correlation": -0.30227938311360786,
+        "sign_agreement": 0.7278072837632777,
+        "spearman_correlation": 0.03380548546974797
+      }
+    },
+    "relative_radius_best_fixed": {
+      "candidate": "checkpoint_action_local_state_relative_0.7_residual_scale_0.25",
+      "object_balanced_CD_UL1_mm": 4.503973887854412,
+      "object_wins": 5,
+      "per_object": [
+        {
+          "baseline_CD_UL1_mm": 3.6947482159835747,
+          "candidate_CD_UL1_mm": 3.6442007770627463,
+          "object": "3dPrintedHeart",
+          "relative_improvement": 0.013680888646798395
+        },
+        {
+          "baseline_CD_UL1_mm": 6.034383751003034,
+          "candidate_CD_UL1_mm": 5.734596244021035,
+          "object": "FoamDice",
+          "relative_improvement": 0.0496798876823451
+        },
+        {
+          "baseline_CD_UL1_mm": 2.3496798763864972,
+          "candidate_CD_UL1_mm": 2.3454074234322637,
+          "object": "MemoryFoam",
+          "relative_improvement": 0.0018183127825923684
+        },
+        {
+          "baseline_CD_UL1_mm": 5.584861305719388,
+          "candidate_CD_UL1_mm": 5.450148491573409,
+          "object": "PlushOctopus",
+          "relative_improvement": 0.02412106707251993
+        },
+        {
+          "baseline_CD_UL1_mm": 5.580949954965871,
+          "candidate_CD_UL1_mm": 5.345516503182609,
+          "object": "ToiletPaperRoll",
+          "relative_improvement": 0.04218519314508018
+        }
+      ],
+      "relative_improvement": 0.031179411322000194,
+      "status": "exploratory; outcomes used for selection"
+    },
+    "relative_radius_frame_oracle": {
+      "object_balanced_CD_UL1_mm": 4.2495822315618295,
+      "relative_improvement": 0.08589994930486122,
+      "status": "diagnostic upper bound only"
+    }
+  },
+  "prospective_validation": {
+    "baseline_object_balanced_CD_UL1_mm": 4.648924620811673,
+    "decision": "FAILED: do not open calibration or target objects",
+    "frame_count": 1418,
+    "gates": {
+      "all_passed": false,
+      "maximum_object_regression": {
+        "passed": true,
+        "threshold": 0.1
+      },
+      "minimum_relative_improvement": {
+        "passed": false,
+        "threshold": 0.05
+      },
+      "object_wins": {
+        "passed": true,
+        "threshold": 4
+      }
+    },
+    "guarded_object_balanced_CD_UL1_mm": 4.53665615234583,
+    "maximum_object_regression": 0.07135498707867516,
+    "object_count": 5,
+    "object_wins": 4,
+    "per_object": [
+      {
+        "baseline_CD_UL1_mm": 3.6947482159835747,
+        "candidate_CD_UL1_mm": 3.9583869271940406,
+        "object": "3dPrintedHeart",
+        "relative_improvement": -0.07135498707867516
+      },
+      {
+        "baseline_CD_UL1_mm": 6.034383751003034,
+        "candidate_CD_UL1_mm": 5.647294431199233,
+        "object": "FoamDice",
+        "relative_improvement": 0.06414728260188274
+      },
+      {
+        "baseline_CD_UL1_mm": 2.3496798763864972,
+        "candidate_CD_UL1_mm": 2.2879586962342136,
+        "object": "MemoryFoam",
+        "relative_improvement": 0.02626791026835662
+      },
+      {
+        "baseline_CD_UL1_mm": 5.584861305719388,
+        "candidate_CD_UL1_mm": 5.479594981326842,
+        "object": "PlushOctopus",
+        "relative_improvement": 0.018848511830498627
+      },
+      {
+        "baseline_CD_UL1_mm": 5.580949954965871,
+        "candidate_CD_UL1_mm": 5.310045725774824,
+        "object": "ToiletPaperRoll",
+        "relative_improvement": 0.04854088127953904
+      }
+    ],
+    "relative_improvement": 0.0241493415408921,
+    "take_count": 20,
+    "takes": [
+      "T1",
+      "T4",
+      "T5",
+      "T6"
+    ]
+  },
+  "registered_bugfix_commit": "ccde94e",
+  "schema_version": 1,
+  "source_artifacts": [
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "43bf84b2c053d1a32352e54e0035a0cde9ba25ee58d746cc574bc42326b9b35f",
+      "take": "3dPrintedHeart_T1"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "f7167a587f8e59740f2aea8878623a30b8e9ef25a40b31673392876e3250c86e",
+      "take": "3dPrintedHeart_T4"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "73d816ea1356050ece17d74be949476bfb82e05776b283787d765604e1e6db98",
+      "take": "3dPrintedHeart_T5"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "853f8a20b99e2556656fd7a2e3d65b728fa26d2f3cc46b57efbf114e19655a39",
+      "take": "3dPrintedHeart_T6"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "2d7864dffca678f4866df744771741de9557507454bf6795e510510ae9a97b46",
+      "take": "FoamDice_T1"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "8aca81db8377edfd211092825be5551dbf970eca119c6177a5fe74729f07aa3c",
+      "take": "FoamDice_T4"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "2169df4719b53d9c10551c34823e7ff5b2c1c1891fb034caee5b983e141062a2",
+      "take": "FoamDice_T5"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "100cb70e55f9e2a67796d1d20daafa31424fc7c500a3dd5d38b2fd219bff1cbc",
+      "take": "FoamDice_T6"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "2dc5a06311c2f6ec16c29d046650de69830d7921d8c87b5dbbf3d02e81ccee62",
+      "take": "MemoryFoam_T1"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "f1e4c32e6062617083c887c29c450616983973e89edf2e4177aca64f566dca14",
+      "take": "MemoryFoam_T4"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "ed7f8ffeadcdc7ab955777aa7fae4912648b1b6a82c28b3eda4157e1522ba303",
+      "take": "MemoryFoam_T5"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "3761967f33ee60e48f8eb022785ffdd94a5eb11401839fe44b9e201e7f811b41",
+      "take": "MemoryFoam_T6"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "b025cbdb52d8a265cb4e77fb7c181b8e1c8bc911b898e5448daacec12c07b7b4",
+      "take": "PlushOctopus_T1"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "d7003ef36f0056cf4d50e44ab1d5c4d491d3cf9d4d0bc14e4746ebe6fc4a1966",
+      "take": "PlushOctopus_T4"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "bca99966cde2ed03993a592afb8a38870f68f1fc599479837c095536d91b8840",
+      "take": "PlushOctopus_T5"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "456ee61a44cf9d34be6e218d56d4156fcecb2cfe6d32a6389da6fa4cae7b2453",
+      "take": "PlushOctopus_T6"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "d8ced1b40398250bb7db6c67ba24b7c3ec73dfd711a8148a1bc9fbde4d45e033",
+      "take": "ToiletPaperRoll_T1"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "dece1f9671eb4876e5f2071d6bf02f922248caa8e837088c5d20de98b7f9e6f7",
+      "take": "ToiletPaperRoll_T4"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "b2bf2c0177235d6368fe9b1395a6a8eeee7d6c123ac3cb316ba97d8fd33dadd6",
+      "take": "ToiletPaperRoll_T5"
+    },
+    {
+      "role": "checkpoint_action_guard_prospective_v1",
+      "sha256": "0c993e2697c0a36b41c72b68876cda28c6a24cbb776c19080698eb6d20802099",
+      "take": "ToiletPaperRoll_T6"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "f0336aed52d9e5456dfba22c2a400bc6f00cb5deb8fff7c33789ac319b12b7f7",
+      "take": "3dPrintedHeart_T1"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "4d6c4f66c2545f2a6533e24d1bc3d0adbfede464431b78946f7a16f0a7bdf1fa",
+      "take": "3dPrintedHeart_T4"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "08513a82a82327637240a0e6d6e0ba568eba87311eb0179e674e672d49a63913",
+      "take": "3dPrintedHeart_T5"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "cb09bf34d383f4bcfb31d6cdf2ba9b30b87f64ad0ab5b649234c916bcb292a81",
+      "take": "3dPrintedHeart_T6"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "038417bba2ce544c8df56e887ce317d823cbcf6b73473cfe41efe470c79aa632",
+      "take": "FoamDice_T1"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "da05eaf1c2e47459fcf75c1235dda7883d199c82213ed7e12eb871f6f4f4fc58",
+      "take": "FoamDice_T4"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "bbacb20e7c0b16310ae36073b363ca0c70ab5a26be868dbc2fa786d099328ede",
+      "take": "FoamDice_T5"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "c9eeecfd8efdbfdf530d981ecca52b0bdb2f85abcc24ed0038851817b1f2efec",
+      "take": "FoamDice_T6"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "2c23ac89aea32d63cb88610784f76f30a20ea11e565e3a429a2ae594b4122084",
+      "take": "MemoryFoam_T1"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "3d765e4d6011818b21ccc41d618c80d6ff943e8b4baa2ac1951c0c437d60967a",
+      "take": "MemoryFoam_T4"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "1e7461e77d6d06fb5a1a906ea971cc8c9ecdb48a8a7069bb50633795c12139a8",
+      "take": "MemoryFoam_T5"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "0b54702d82516c43d06b0ebfb420380f8efda718c4a59ab1961d617c17a39c7f",
+      "take": "MemoryFoam_T6"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "ee3bec4099cc49dc0da6d0b162491343bf088abb5802c9ee5ecf5b91ed6db3f8",
+      "take": "PlushOctopus_T1"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "d30faecd95d3f4a577522463c7b4f47e0a5464efa0bf5f9134329cbbc93b8c71",
+      "take": "PlushOctopus_T4"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "e2af7b2455b5d98ad46ae19fb02df0f420a66a1abf2e53bb0932b1316f3896a9",
+      "take": "PlushOctopus_T5"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "b5166ddc141e1b5b4bc3d7f9667abe1a9a71c74966c562d131ae9fa61e7bae8d",
+      "take": "PlushOctopus_T6"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "54502bba518eb9a2073ce1c61c4d7809c0ccb761a0b2ef4cc9303b9b16068f06",
+      "take": "ToiletPaperRoll_T1"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "8e1fbe564bf878729f928fd7d425cf9a48e4fcc6ea3b83082185e3f0f7d3ea44",
+      "take": "ToiletPaperRoll_T4"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "48bfd5417bbf6ad89f06e56aa13a4b35bc4e7702cb72593f55f178192ebff971",
+      "take": "ToiletPaperRoll_T5"
+    },
+    {
+      "role": "checkpoint_relative_radius_design_v1",
+      "sha256": "e3bda418bb5204d6852f20937064e341c5e4ed6234caa27d95e321cc28001b15",
+      "take": "ToiletPaperRoll_T6"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "146ef240b47f0a327f6605e3352c1625ad1792c67644756c7b75dcc73d308817",
+      "take": "3dPrintedHeart_T1"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "9b17c03fe4f3fe48ca164aec8f734a27a4ab67cfb8a9751093819b758683d249",
+      "take": "3dPrintedHeart_T4"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "69a5735c4c2052e8c0892e1314fae75ac5d425eafa07a23ada43b8026022127c",
+      "take": "3dPrintedHeart_T5"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "d57ed41805d811c4b96234556de3ae1fa26fd0c8c5d0f14c82c0e23162832858",
+      "take": "3dPrintedHeart_T6"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "822a2c6a59cc8dbc672dce5c50e9f5160a932cdc5bdb5eba6225b1e614b42d3e",
+      "take": "FoamDice_T1"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "0afc5ae66b424ed79fa15c1d7a78109a344986f810f32c9b7180e1f13d81766e",
+      "take": "FoamDice_T4"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "8d19f4b390f79f0e8c23acb9c477dff33cc84c7cd47dd3ae879debde03f3d4bf",
+      "take": "FoamDice_T5"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "4e9664c82cc82c2ed9983cc064be293b71fe40f6f5901eebd4971490e3712b9f",
+      "take": "FoamDice_T6"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "77917da9d7c3cd3a6a29be86ef486fb7bae17ed9d2f7b92dbe467c4d785152d3",
+      "take": "MemoryFoam_T1"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "cd281b232d60e023bac428c8f5ef2069ce4e82c15c2a62c8d6b2d3b783e60553",
+      "take": "MemoryFoam_T4"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "9d0aac4e13082f67f78931ab5b53cf9e535393547ac5275cc876705eb58dd2ad",
+      "take": "MemoryFoam_T5"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "a34c1e96b27347aa02ce8195bd863784bd4a04abf853600d4cf9195fdb09d23a",
+      "take": "MemoryFoam_T6"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "bbb7acda535bc245aecab90bc4b6606d98ec7d76cbe6ecc406160a2cd0785f0d",
+      "take": "PlushOctopus_T1"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "69f8109f7c496db1575f6d530e470d486c422b366745b9738effc9ea3afd9037",
+      "take": "PlushOctopus_T4"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "b4741fdf3bfddc1151288d34bd73edce71d406814966315157b7a41fb7018a3b",
+      "take": "PlushOctopus_T5"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "6fbb4b4f50309a0f2b0a4369adebd65da90b2fa459b24049dbd4a711e22a28b6",
+      "take": "PlushOctopus_T6"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "f05c148dbadf5ba3139a02dcf2990f83e1db3716d707ba859a51eaff7d87d281",
+      "take": "ToiletPaperRoll_T1"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "d575539886f4d8a6c7accf551907a49199f5cef3ebb82c7e8a9bbd02843e7bac",
+      "take": "ToiletPaperRoll_T4"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "1ab682de8d934fdb97521657adb0ca4a9d07241e69ab098a07dc91eb055a9585",
+      "take": "ToiletPaperRoll_T5"
+    },
+    {
+      "role": "online_regret_design_v1",
+      "sha256": "b21a9171a4322990712bdd9e854bee6b7d4a45c3baafb5dc268bbc03107802b4",
+      "take": "ToiletPaperRoll_T6"
+    }
+  ],
+  "unopened_boundaries": {
+    "calibration_objects": true,
+    "development_take_T2": true,
+    "development_takes": [
+      "T7",
+      "T8"
+    ],
+    "target_objects": true
+  }
+}

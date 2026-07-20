@@ -74,3 +74,11 @@ below zero, and avoid more than 10% regression on any target object.
 Calibration is fitted only on the four calibration objects. Target outcomes are
 opened once after implementation, hyperparameters, calibration, scorer samples,
 and checkpoint hashes are frozen.
+
+## Development outcome
+
+The first prospectively frozen action guard improved the released checkpoint by
+2.41% on 20 previously unopened development takes but failed the locked 5%
+transfer gate. Calibration and target objects remain sealed. See
+`docs/pokeflex_action_guard_development_result.md` for the result and the
+post-open common-mode-bias diagnostic.

@@ -270,3 +270,30 @@ def test_action_guard_has_exact_unsupported_fallback() -> None:
     assert guard.selected_scale(
         20.0, observation_update_accepted=True, action_supported=True
     ) == 0.5
+
+
+def test_relative_contact_radius_controls_spatial_support() -> None:
+    source = _grid()
+    tool = np.array([[0.0, -0.05, 0.0], [0.0, -0.048, 0.0]])
+    end_effector = tool + np.array([0.0, -0.1, 0.0])
+
+    narrow = pokeflex_action_contact_fields(
+        source,
+        source.copy(),
+        np.zeros_like(source),
+        tool,
+        end_effector,
+        influence_radius_m=0.01,
+    )["action_local_state"]
+    broad = pokeflex_action_contact_fields(
+        source,
+        source.copy(),
+        np.zeros_like(source),
+        tool,
+        end_effector,
+        influence_radius_m=0.05,
+    )["action_local_state"]
+
+    assert np.sum(np.linalg.norm(narrow, axis=1)) < np.sum(
+        np.linalg.norm(broad, axis=1)
+    )

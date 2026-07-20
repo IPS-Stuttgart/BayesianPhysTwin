@@ -379,7 +379,7 @@ def test_duplicate_camera_does_not_create_independent_confidence() -> None:
 
     assert fused.reliability[0, 0] <= 0.9 + 1e-6
     assert fused.prior_reliability[0, 0] <= 0.9 + 1e-6
-    assert fused.observation_covariance_m2[0, 0, 0, 0] >= 1e-4
+    assert fused.observation_covariance_m2[0, 0, 0, 0] >= covariance[0, 0, 0, 0]
 
 
 def test_metric_variance_controls_graph_smoothing_weight() -> None:

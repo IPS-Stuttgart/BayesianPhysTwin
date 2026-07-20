@@ -24,6 +24,7 @@ from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
     pokeflex_action_contact_fields,
     pokeflex_correction_field_variants,
     register_pokeflex_graph_posterior,
+    voxel_cluster_centroids,
 )
 from bayesian_phystwin.pokeflex_registration_protocol import (  # noqa: E402
     load_pokeflex_registration_protocol,
@@ -118,6 +119,28 @@ def _field_cosine(first: np.ndarray, second: np.ndarray) -> float | None:
     return float(np.dot(flat_first, flat_second) / denominator)
 
 
+def _observation_fit_score_mm(
+    vertices_m: np.ndarray,
+    observation_views_m: tuple[np.ndarray, ...],
+) -> tuple[float, ...]:
+    """Return robust, equal-view fit scores for online baseline regret."""
+
+    from scipy.spatial import cKDTree
+
+    tree = cKDTree(vertices_m)
+    scores = []
+    for view in observation_views_m:
+        clustered = voxel_cluster_centroids(view, 0.004)
+        if len(clustered) > 128:
+            indices = np.linspace(0, len(clustered) - 1, 128, dtype=np.int64)
+            clustered = clustered[indices]
+        distance = np.asarray(tree.query(clustered, k=1)[0], dtype=np.float64)
+        cutoff = float(np.quantile(distance, 0.9))
+        inliers = distance <= cutoff
+        scores.append(float(1000.0 * np.mean(distance[inliers])))
+    return tuple(scores)
+
+
 def _candidate_name(field: str, scale: float) -> str:
     prefix = "checkpoint_residual" if field == "raw" else f"checkpoint_{field}_residual"
     return f"{prefix}_scale_{scale:g}"
@@ -148,6 +171,21 @@ def _correction_field_variants(
             end_effector_positions,
         )
     )
+    object_radius = float(
+        np.max(np.linalg.norm(source_prior - source_prior.mean(axis=0), axis=1))
+    )
+    for radius_fraction in (0.25, 0.4, 0.55, 0.7):
+        relative_fields = pokeflex_action_contact_fields(
+            source_prior,
+            target_prior,
+            correction,
+            tool_positions,
+            end_effector_positions,
+            influence_radius_m=radius_fraction * object_radius,
+        )
+        available[f"action_local_state_relative_{radius_fraction:g}"] = (
+            relative_fields["action_local_state"]
+        )
     unknown = set(names) - set(available)
     if unknown:
         raise ValueError(f"unknown correction fields: {sorted(unknown)}")
@@ -165,6 +203,7 @@ def run_smoke(
     residual_geometry: str,
     maximum_frame: int | None,
     include_frozen_action_guard: bool,
+    record_online_observation_regret: bool,
 ) -> dict[str, object]:
     protocol = load_pokeflex_registration_protocol(protocol_path)
     development_objects = set(
@@ -249,6 +288,8 @@ def run_smoke(
     guarded_action_errors: list[float] = []
     target_records = []
     update_records = []
+    previous_prediction_frame: int | None = None
+    previous_candidate_predictions: dict[str, np.ndarray] = {}
     sample_count = int(protocol["payload"]["evaluation"]["sampling"]["surface_points"])
     base_seed = int(protocol["payload"]["evaluation"]["sampling"]["seed"])
 
@@ -365,6 +406,10 @@ def run_smoke(
                 "action_velocity",
                 "action_local_state",
                 "action_augmented",
+                "action_local_state_relative_0.25",
+                "action_local_state_relative_0.4",
+                "action_local_state_relative_0.55",
+                "action_local_state_relative_0.7",
             ):
                 if field in correction_variants:
                     correction_variants[field] = np.zeros_like(target_prior)
@@ -374,6 +419,28 @@ def run_smoke(
             observation_update_accepted=update_accepted,
             action_supported=bool(action_supported),
         )
+        online_observation_regret: dict[str, dict[str, object]] = {}
+        if (
+            record_online_observation_regret
+            and previous_prediction_frame == source_frame
+        ):
+            baseline_scores = _observation_fit_score_mm(
+                previous_candidate_predictions["released_checkpoint"],
+                views_by_frame[source_frame],
+            )
+            for name, candidate in previous_candidate_predictions.items():
+                if name == "released_checkpoint":
+                    continue
+                candidate_scores = _observation_fit_score_mm(
+                    candidate,
+                    views_by_frame[source_frame],
+                )
+                regret = np.asarray(candidate_scores) - np.asarray(baseline_scores)
+                online_observation_regret[name] = {
+                    "per_view_mm": regret.tolist(),
+                    "mean_mm": float(np.mean(regret)),
+                    "covariance_intersection_upper_mm": float(np.max(regret)),
+                }
 
         target_mesh = _load_mesh(
             take_root / "meshes" / f"mesh-f{target_frame:05d}.obj"
@@ -413,6 +480,7 @@ def run_smoke(
         checkpoint_errors.append(checkpoint_error)
 
         frame_errors: dict[str, float] = {}
+        current_candidate_predictions = {"released_checkpoint": target_prior}
         for field, field_correction in correction_variants.items():
             for scale in correction_scales:
                 candidate = target_prior + scale * field_correction
@@ -428,7 +496,10 @@ def run_smoke(
                 )
                 error = _cd_ul1_mm(candidate_sample, target_sample)
                 corrected_errors[(field, scale)].append(error)
-                frame_errors[_candidate_name(field, scale)] = error
+                candidate_name = _candidate_name(field, scale)
+                frame_errors[candidate_name] = error
+                if record_online_observation_regret and scale > 0.0:
+                    current_candidate_predictions[candidate_name] = candidate
         if include_frozen_action_guard:
             action_field = correction_variants["action_local_state"]
             guarded_candidate = target_prior + guarded_action_scale * action_field
@@ -449,12 +520,16 @@ def run_smoke(
             {
                 "target_frame": target_frame,
                 "action_guard_scale": guarded_action_scale,
+                "online_observation_regret": online_observation_regret,
                 "template_CD_UL1_mm": template_error,
                 "oracle_previous_mesh_CD_UL1_mm": oracle_error,
                 "released_checkpoint_CD_UL1_mm": checkpoint_error,
                 **frame_errors,
             }
         )
+        if record_online_observation_regret:
+            previous_prediction_frame = target_frame
+            previous_candidate_predictions = current_candidate_predictions
 
     aggregates = {
         "template": _summary(template_errors),
@@ -515,6 +590,7 @@ def run_smoke(
         "residual_transfer": "correction fitted at f-1 is transferred once to f by material vertex identity",
         "correction_fields": list(correction_fields),
         "future_observation_used": False,
+        "online_observation_regret_recorded": record_online_observation_regret,
         "aggregates": aggregates,
         "best_development_candidate": best_candidate,
         "published_kinect_reference_CD_UL1_mm": 6.498,
@@ -561,6 +637,10 @@ def main() -> None:
             "action_velocity",
             "action_local_state",
             "action_augmented",
+            "action_local_state_relative_0.25",
+            "action_local_state_relative_0.4",
+            "action_local_state_relative_0.55",
+            "action_local_state_relative_0.7",
         ),
         default=("raw",),
     )
@@ -571,6 +651,7 @@ def main() -> None:
     )
     parser.add_argument("--maximum-frame", type=int)
     parser.add_argument("--include-frozen-action-guard", action="store_true")
+    parser.add_argument("--record-online-observation-regret", action="store_true")
     args = parser.parse_args()
     result = run_smoke(
         args.take_root.resolve(),
@@ -582,6 +663,7 @@ def main() -> None:
         residual_geometry=args.residual_geometry,
         maximum_frame=args.maximum_frame,
         include_frozen_action_guard=args.include_frozen_action_guard,
+        record_online_observation_regret=args.record_online_observation_regret,
     )
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output.exists() and args.output.read_text(encoding="utf-8") != rendered:
