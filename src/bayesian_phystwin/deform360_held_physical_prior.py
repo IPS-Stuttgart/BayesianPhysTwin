@@ -35,6 +35,8 @@ from .deform360_held_protocol import (
     PROTOCOL_ID,
     create_physical_prior_seal,
     held_artifact_sha256,
+    held_contract_sha256,
+    load_held_protocol_lock,
     validate_frame_zero_bundle_manifest,
 )
 
@@ -82,6 +84,12 @@ UPSTREAM_FILE_SHA256 = {
     "src/causal4d_public/deform360_action_support.py": (
         "132283722400ac102ec84e9b7d21974edcdac0ff750168d70860cd89c8446783"
     ),
+    "src/causal4d_public/deform360_contact_conditioned_action.py": (
+        "1d4e2bbd4389d8d7055d0803f3feda3ea540d45123e0aa3f646bccf2cfa6c57e"
+    ),
+    "src/causal4d_public/deform360_dense_source.py": (
+        "6c9ffa0043302079acf303f23af9e9ebb895f0aa8cf03930effe8936a879bb29"
+    ),
     "src/bayesian_phystwin/phystwin_graph.py": (
         "f6f1ef8d3a1fb95fc069a550ae7db12d6b32efe80582f479efb411452062b6fb"
     ),
@@ -91,6 +99,59 @@ UPSTREAM_FILE_SHA256 = {
     "configs/causal4d_public/deform360_independent_source_split_v1.json": (
         "c150b2c8ea3947fe2ffe359c5da45d321b5086cd67141c2da9f912aac154ff4a"
     ),
+}
+
+UPSTREAM_LOCK_BINDING_BY_PATH = {
+    "scripts/remote/build_deform360_automatic_episode_twin.py": (
+        "upstream_automatic_twin_builder"
+    ),
+    "scripts/remote/run_deform360_official_phystwin_smoke.py": (
+        "upstream_official_phystwin_smoke"
+    ),
+    "src/causal4d_public/deform360_reusable_graph.py": (
+        "upstream_reusable_graph_source"
+    ),
+    "src/causal4d_public/deform360_partial_graph_state.py": (
+        "upstream_partial_graph_state_source"
+    ),
+    "src/causal4d_public/deform360_dense_reusable_panel.py": (
+        "upstream_dense_reusable_panel_source"
+    ),
+    "src/causal4d_public/deform360_action_support.py": (
+        "upstream_action_support_source"
+    ),
+    "src/causal4d_public/deform360_contact_conditioned_action.py": (
+        "upstream_contact_conditioned_action_source"
+    ),
+    "src/causal4d_public/deform360_dense_source.py": "upstream_dense_source",
+    "src/bayesian_phystwin/phystwin_graph.py": "upstream_phystwin_graph_source",
+    "configs/causal4d_public/deform360_dense_reusable_panel_v1.json": (
+        "upstream_dense_reusable_panel_config"
+    ),
+    "configs/causal4d_public/deform360_independent_source_split_v1.json": (
+        "upstream_independent_source_split_config"
+    ),
+}
+
+UPSTREAM_RUNTIME_BUNDLE_CONTRACT = {
+    "artifact_kind": "Deform360HeldUpstreamRuntimeBundleV1",
+    "files": [
+        {"path": path, "sha256": UPSTREAM_FILE_SHA256[path]}
+        for path in sorted(UPSTREAM_FILE_SHA256)
+    ],
+}
+
+HELD_PHYSICAL_NUMERIC_CONTRACT = {
+    "contract_id": "deform360-held-physical-prior-v1",
+    "official_phystwin_revision": OFFICIAL_PHYSTWIN_REVISION,
+    "official_real_config_sha256": OFFICIAL_REAL_CONFIG_SHA256,
+    "length_scale_m": LENGTH_SCALE_M,
+    "action_response": ACTION_RESPONSE,
+    "autonomous_drift_response": AUTONOMOUS_DRIFT_RESPONSE,
+    "canonical_node_count": CANONICAL_NODE_COUNT,
+    "minimum_node_count": MINIMUM_NODE_COUNT,
+    "warp_dynamics": WARP_DYNAMICS,
+    "upstream_file_sha256": UPSTREAM_FILE_SHA256,
 }
 
 FRAME_ZERO_ARRAYS = frozenset(
@@ -1038,6 +1099,23 @@ def run_held_physical_prior(
     """Run and seal one prediction-only held/calibration physical forecast."""
 
     # Both authorization and all source/config hashes are checked before a GPU process.
+    lock = load_held_protocol_lock(lock_path)
+    _require(
+        lock["immutable_bindings"]["held_physical_numeric_contract"]
+        == held_contract_sha256(HELD_PHYSICAL_NUMERIC_CONTRACT),
+        "physical numeric contract differs from the immutable lock",
+    )
+    _require(
+        lock["immutable_bindings"]["upstream_runtime_bundle_tree"]
+        == held_contract_sha256(UPSTREAM_RUNTIME_BUNDLE_CONTRACT),
+        "upstream runtime bundle differs from the immutable lock",
+    )
+    for relative_path, binding_key in UPSTREAM_LOCK_BINDING_BY_PATH.items():
+        _require(
+            lock["immutable_bindings"][binding_key]
+            == UPSTREAM_FILE_SHA256[relative_path],
+            f"upstream source binding changed: {relative_path}",
+        )
     validate_frame_zero_bundle_manifest(
         frame_zero_manifest_path,
         lock_path,
@@ -1212,10 +1290,13 @@ __all__ = [
     "ACTION_RESPONSE",
     "ARTIFACT_KIND",
     "AUTONOMOUS_DRIFT_RESPONSE",
+    "HELD_PHYSICAL_NUMERIC_CONTRACT",
     "LENGTH_SCALE_M",
     "OFFICIAL_PHYSTWIN_REVISION",
     "OFFICIAL_REAL_CONFIG_SHA256",
     "UPSTREAM_FILE_SHA256",
+    "UPSTREAM_LOCK_BINDING_BY_PATH",
+    "UPSTREAM_RUNTIME_BUNDLE_CONTRACT",
     "WARP_DYNAMICS",
     "build_physical_prediction_archive",
     "build_prediction_only_artifacts",
