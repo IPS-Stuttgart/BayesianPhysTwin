@@ -72,6 +72,14 @@ of the 21 newly selected objects.
 
 Failed objects or episodes are never replaced.
 
+Transport QA found three released `metadata.json` labels that differ from their
+pinned directory identifiers: `112-wristband-cloth` is labeled
+`112-wristband`, `163-bear` is labeled `teddy bear`, and `164-sheep` is labeled
+`white sheep`. The downloader accepts exactly these aliases at the pinned
+dataset revision, records both identities in the download manifest, and still
+fails closed on every unlisted mismatch. This check reads metadata only; no
+selected target media or outcome was opened to resolve the release convention.
+
 ## Calibration Gate
 
 Calibration is a prospective test of the already frozen selector, not a new

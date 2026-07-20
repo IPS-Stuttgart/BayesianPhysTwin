@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from bayesian_phystwin.deform360_bias_aware_prospective_download import (
+    RELEASED_METADATA_OBJECT_ALIASES,
     bias_aware_prospective_download_plan,
     build_bias_aware_download_manifest,
     download_bias_aware_prospective_panel_by_object,
@@ -161,7 +162,7 @@ def test_download_manifest_preserves_roles_and_information_boundary(
         object_root = tmp_path / "raw" / object_id
         object_root.mkdir(parents=True)
         metadata = {
-            "object": object_id,
+            "object": RELEASED_METADATA_OBJECT_ALIASES.get(object_id, object_id),
             "sequences": {str(index): {} for index in range(10)},
         }
         (object_root / "metadata.json").write_text(
@@ -175,8 +176,36 @@ def test_download_manifest_preserves_roles_and_information_boundary(
     assert manifest["object_count"] == 21
     assert sum(row["role"] == "calibration" for row in manifest["objects"]) == 9
     assert sum(row["role"] == "target" for row in manifest["objects"]) == 12
+    aliases = {
+        row["object_id"]: row["released_metadata_object"]
+        for row in manifest["objects"]
+        if row["metadata_identity_alias"]
+    }
+    assert aliases == RELEASED_METADATA_OBJECT_ALIASES
     assert manifest["information_boundary"]["target_future_opened"] is False
     assert len(manifest["manifest_sha256"]) == 64
+
+
+def test_download_manifest_rejects_unlisted_metadata_alias(tmp_path: Path) -> None:
+    plan = bias_aware_prospective_download_plan(PROTOCOL)
+    for _, object_id, _ in plan.episodes_by_object:
+        object_root = tmp_path / "raw" / object_id
+        object_root.mkdir(parents=True)
+        released_object = RELEASED_METADATA_OBJECT_ALIASES.get(object_id, object_id)
+        if object_id == "163-bear":
+            released_object = "163-bear"
+        (object_root / "metadata.json").write_text(
+            json.dumps(
+                {
+                    "object": released_object,
+                    "sequences": {str(index): {} for index in range(10)},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    with pytest.raises(ValueError, match="metadata object changed: 163-bear"):
+        build_bias_aware_download_manifest(tmp_path, plan=plan)
 
 
 def test_by_object_download_avoids_global_tree_and_preserves_allowlist(
@@ -206,7 +235,9 @@ def test_by_object_download_avoids_global_tree_and_preserves_allowlist(
             destination.write_text(
                 json.dumps(
                     {
-                        "object": object_id,
+                        "object": RELEASED_METADATA_OBJECT_ALIASES.get(
+                            object_id, object_id
+                        ),
                         "sequences": {str(index): {} for index in range(10)},
                     }
                 ),

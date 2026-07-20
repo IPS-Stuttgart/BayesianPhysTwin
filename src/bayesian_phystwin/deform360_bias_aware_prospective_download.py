@@ -24,6 +24,16 @@ ListRepoTree = Callable[..., Any]
 HubDownload = Callable[..., str]
 
 
+# A few released directory identifiers intentionally differ from the human-readable
+# ``object`` field in metadata.json. Keep this exception list explicit so a new or
+# misspelled identity still fails closed at the pinned dataset revision.
+RELEASED_METADATA_OBJECT_ALIASES = {
+    "112-wristband-cloth": "112-wristband",
+    "163-bear": "teddy bear",
+    "164-sheep": "white sheep",
+}
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
@@ -124,11 +134,16 @@ def _validate_object_metadata(
     *,
     object_id: str,
     selected_episode_ids: tuple[int, ...],
-) -> None:
+) -> str:
     _require(metadata_path.is_file(), f"object metadata is missing: {object_id}")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     _require(isinstance(metadata, Mapping), f"object metadata is invalid: {object_id}")
-    _require(metadata.get("object") == object_id, f"metadata object changed: {object_id}")
+    released_object = metadata.get("object")
+    expected_object = RELEASED_METADATA_OBJECT_ALIASES.get(object_id, object_id)
+    _require(
+        released_object == expected_object,
+        f"metadata object changed: {object_id}",
+    )
     sequences = metadata.get("sequences")
     _require(isinstance(sequences, Mapping), f"sequences are missing: {object_id}")
     _require(
@@ -139,6 +154,7 @@ def _validate_object_metadata(
         all(str(index) in sequences for index in selected_episode_ids),
         f"selected episode is missing: {object_id}",
     )
+    return str(released_object)
 
 
 def build_bias_aware_download_manifest(
@@ -154,7 +170,7 @@ def build_bias_aware_download_manifest(
     for role, object_id, episode_ids in plan.episodes_by_object:
         object_root = root / "raw" / object_id
         metadata_path = object_root / "metadata.json"
-        _validate_object_metadata(
+        released_object = _validate_object_metadata(
             metadata_path,
             object_id=object_id,
             selected_episode_ids=episode_ids,
@@ -165,6 +181,8 @@ def build_bias_aware_download_manifest(
                 "role": role,
                 "object_id": object_id,
                 "selected_episode_ids": list(episode_ids),
+                "released_metadata_object": released_object,
+                "metadata_identity_alias": released_object != object_id,
                 "file_count": len(files),
                 "total_bytes": sum(path.stat().st_size for path in files),
                 "metadata_sha256": _file_sha256(metadata_path),
@@ -292,6 +310,7 @@ def write_bias_aware_download_manifest(
 
 __all__ = [
     "BiasAwareProspectiveDownloadPlan",
+    "RELEASED_METADATA_OBJECT_ALIASES",
     "bias_aware_prospective_download_plan",
     "build_bias_aware_download_manifest",
     "download_bias_aware_prospective_panel",
