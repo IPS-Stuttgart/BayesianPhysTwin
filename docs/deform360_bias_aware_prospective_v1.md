@@ -177,6 +177,13 @@ bpt-deform360-bias-aware-prospective validate \
 bpt-deform360-bias-aware-prospective plan \
   configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json
 
+# Anonymous snapshot listing may be rate-limited on this large repository.
+# This transport lists each already locked object subtree separately while
+# preserving the same revision, object allowlist, audio exclusion, and manifest.
+bpt-deform360-bias-aware-prospective download-by-object \
+  configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
+  /path/to/download --manifest /path/to/download_manifest.json
+
 bpt-deform360-bias-aware-prospective seal-predictions \
   configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
   calibration /path/to/predictions \

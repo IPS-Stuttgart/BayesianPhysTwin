@@ -1,12 +1,14 @@
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from bayesian_phystwin.deform360_bias_aware_prospective_download import (
     bias_aware_prospective_download_plan,
     build_bias_aware_download_manifest,
+    download_bias_aware_prospective_panel_by_object,
     validate_bias_aware_download_root,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_protocol import (
@@ -175,6 +177,59 @@ def test_download_manifest_preserves_roles_and_information_boundary(
     assert sum(row["role"] == "target" for row in manifest["objects"]) == 12
     assert manifest["information_boundary"]["target_future_opened"] is False
     assert len(manifest["manifest_sha256"]) == 64
+
+
+def test_by_object_download_avoids_global_tree_and_preserves_allowlist(
+    tmp_path: Path,
+) -> None:
+    plan = bias_aware_prospective_download_plan(PROTOCOL)
+    listed_paths: list[str] = []
+    downloaded: list[str] = []
+
+    def list_repo_tree(**kwargs: object) -> list[SimpleNamespace]:
+        path = str(kwargs["path_in_repo"])
+        listed_paths.append(path)
+        return [
+            SimpleNamespace(blob_id="metadata", path=f"{path}/metadata.json"),
+            SimpleNamespace(blob_id="video", path=f"{path}/camera/episode.mp4"),
+            SimpleNamespace(blob_id="audio", path=f"{path}/audio.wav"),
+            SimpleNamespace(tree_id="camera", path=f"{path}/camera"),
+        ]
+
+    def hub_download(**kwargs: object) -> str:
+        filename = str(kwargs["filename"])
+        downloaded.append(filename)
+        destination = Path(str(kwargs["local_dir"])) / filename
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.name == "metadata.json":
+            object_id = destination.parent.name
+            destination.write_text(
+                json.dumps(
+                    {
+                        "object": object_id,
+                        "sequences": {str(index): {} for index in range(10)},
+                    }
+                ),
+                encoding="utf-8",
+            )
+        else:
+            destination.write_bytes(b"video")
+        return str(destination)
+
+    manifest = download_bias_aware_prospective_panel_by_object(
+        PROTOCOL,
+        tmp_path,
+        max_workers=2,
+        object_delay_seconds=0.0,
+        list_repo_tree=list_repo_tree,
+        hub_download=hub_download,
+    )
+
+    assert listed_paths == [f"raw/{object_id}" for object_id in plan.object_ids]
+    assert len(downloaded) == 2 * len(plan.object_ids)
+    assert all(path.startswith("raw/") for path in downloaded)
+    assert not any(path.endswith(".wav") for path in downloaded)
+    assert manifest["object_count"] == 21
 
 
 def test_any_protocol_mutation_fails_canonical_hash(tmp_path: Path) -> None:

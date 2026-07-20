@@ -13,6 +13,7 @@ from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
 from bayesian_phystwin.deform360_bias_aware_prospective_download import (
     bias_aware_prospective_download_plan,
     download_bias_aware_prospective_panel,
+    download_bias_aware_prospective_panel_by_object,
     write_bias_aware_download_manifest,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_protocol import (
@@ -35,6 +36,13 @@ def build_parser() -> argparse.ArgumentParser:
     download.add_argument("output_root", type=Path)
     download.add_argument("--manifest", type=Path, required=True)
     download.add_argument("--max-workers", type=int, default=4)
+
+    object_download = subparsers.add_parser("download-by-object")
+    object_download.add_argument("protocol", type=Path)
+    object_download.add_argument("output_root", type=Path)
+    object_download.add_argument("--manifest", type=Path, required=True)
+    object_download.add_argument("--max-workers", type=int, default=4)
+    object_download.add_argument("--object-delay-seconds", type=float, default=2.0)
 
     seal = subparsers.add_parser("seal-predictions")
     seal.add_argument("protocol", type=Path)
@@ -69,15 +77,27 @@ def main(argv: Sequence[str] | None = None) -> int:
             "ignore_patterns": list(plan.ignore_patterns),
             "protocol_config_sha256": plan.protocol_config_sha256,
         }
-    elif args.command == "download":
-        from huggingface_hub import snapshot_download
+    elif args.command in {"download", "download-by-object"}:
+        if args.command == "download":
+            from huggingface_hub import snapshot_download
 
-        result = download_bias_aware_prospective_panel(
-            args.protocol,
-            args.output_root,
-            max_workers=args.max_workers,
-            snapshot_download=snapshot_download,
-        )
+            result = download_bias_aware_prospective_panel(
+                args.protocol,
+                args.output_root,
+                max_workers=args.max_workers,
+                snapshot_download=snapshot_download,
+            )
+        else:
+            from huggingface_hub import HfApi, hf_hub_download
+
+            result = download_bias_aware_prospective_panel_by_object(
+                args.protocol,
+                args.output_root,
+                max_workers=args.max_workers,
+                object_delay_seconds=args.object_delay_seconds,
+                list_repo_tree=HfApi().list_repo_tree,
+                hub_download=hf_hub_download,
+            )
         write_bias_aware_download_manifest(args.manifest, result)
     else:
         result = build_prospective_prediction_cohort_seal(

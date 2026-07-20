@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import time
 from typing import Any, Callable, Mapping
 
 from .deform360_bias_aware_prospective_protocol import (
@@ -18,6 +20,8 @@ from .deform360_bias_aware_prospective_protocol import (
 
 
 SnapshotDownload = Callable[..., str]
+ListRepoTree = Callable[..., Any]
+HubDownload = Callable[..., str]
 
 
 def _require(condition: bool, message: str) -> None:
@@ -214,6 +218,67 @@ def download_bias_aware_prospective_panel(
     return build_bias_aware_download_manifest(output_root, plan=plan)
 
 
+def download_bias_aware_prospective_panel_by_object(
+    protocol_path: str | Path,
+    output_root: str | Path,
+    *,
+    max_workers: int,
+    object_delay_seconds: float,
+    list_repo_tree: ListRepoTree,
+    hub_download: HubDownload,
+) -> dict[str, Any]:
+    """Download locked object subtrees without enumerating the whole repository."""
+
+    _require(max_workers >= 1, "download workers must be positive")
+    _require(object_delay_seconds >= 0.0, "object delay must be non-negative")
+    plan = bias_aware_prospective_download_plan(protocol_path)
+    root = Path(output_root).resolve()
+    validate_bias_aware_download_root(root, plan=plan, require_complete=False)
+    for object_index, object_id in enumerate(plan.object_ids):
+        prefix = f"raw/{object_id}/"
+        entries = list(
+            list_repo_tree(
+                repo_id=plan.repository,
+                path_in_repo=f"raw/{object_id}",
+                recursive=True,
+                expand=False,
+                revision=plan.revision,
+                repo_type="dataset",
+            )
+        )
+        files = sorted(
+            str(entry.path)
+            for entry in entries
+            if getattr(entry, "blob_id", None) is not None
+            and str(entry.path).startswith(prefix)
+            and Path(str(entry.path)).suffix.lower() not in {".flac", ".wav"}
+        )
+        _require(files, f"locked object subtree is empty: {object_id}")
+        _require(
+            f"raw/{object_id}/metadata.json" in files,
+            f"locked object metadata is absent: {object_id}",
+        )
+        _require(
+            all(path.startswith(prefix) for path in files),
+            f"object listing escaped its locked subtree: {object_id}",
+        )
+
+        def download_one(filename: str) -> str:
+            return hub_download(
+                repo_id=plan.repository,
+                filename=filename,
+                repo_type="dataset",
+                revision=plan.revision,
+                local_dir=str(root),
+            )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            tuple(executor.map(download_one, files))
+        if object_index + 1 < len(plan.object_ids) and object_delay_seconds:
+            time.sleep(object_delay_seconds)
+    return build_bias_aware_download_manifest(root, plan=plan)
+
+
 def write_bias_aware_download_manifest(
     path: str | Path, payload: Mapping[str, Any]
 ) -> None:
@@ -230,6 +295,7 @@ __all__ = [
     "bias_aware_prospective_download_plan",
     "build_bias_aware_download_manifest",
     "download_bias_aware_prospective_panel",
+    "download_bias_aware_prospective_panel_by_object",
     "validate_bias_aware_download_root",
     "write_bias_aware_download_manifest",
 ]
