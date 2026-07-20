@@ -4,8 +4,8 @@ This module deliberately has no HDF5 reader and no outcome argument.  It decodes
 exactly one RGB frame from each selected camera, segments those materialized
 frames with the pinned SAM 2.1 image model, and derives a multiview visual hull,
 surface colors, depth maps, and projection matrices from immutable calibration.
-The known robot trajectory is bound as an exogenous action input; it is never
-used to construct object geometry.
+The aligned realized robot kinematics are bound as an exogenous known input;
+they are never used to construct object geometry.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from collections import deque
 from dataclasses import asdict, dataclass, field
 import hashlib
 import importlib
+import itertools
 import json
 import math
 from pathlib import Path
@@ -42,23 +43,79 @@ from causal4d_public.deform360_visual_hull import (
     regular_grid_in_bounds,
 )
 
+from .deform360_robot_kinematics import (
+    Deform360RobotKinematics,
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+    load_robot_kinematics_archive,
+    select_robot_kinematics_window,
+    slice_robot_kinematics,
+    validate_robot_kinematics_selection_audit,
+    validate_selected_robot_kinematics_bundle,
+)
+
 
 FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
 HELD_PROTOCOL_ID = "deform360-held-online-belief-v2"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
 FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
-    "deform360-frame-zero-reference-consistent-camera-abstention-v2"
+    "deform360-frame-zero-reference-anchored-inlier-abstention-v3"
 )
 FRAME_ZERO_CAMERA_SELECTION_RULE = (
     "process every aligned calibrated camera; keep the fixed reference and "
-    "only non-reference views with a frozen-threshold-eligible mask"
+    "frozen-threshold-eligible views, except that the audited common-geometry "
+    "fallback retains the fixed reference plus seven deterministic "
+    "maximum-consensus inliers"
+)
+FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID = (
+    "deform360-frame-zero-reference-anchored-exact-eight-v2"
+)
+
+# These are source-bound policy constants rather than user-facing configuration.
+# The held lock binds this module byte-for-byte, and keeping them out of
+# ``FrameZeroAssetConfig`` preserves the already frozen legacy configuration.
+_FALLBACK_STRICT_CONSENSUS_VOTES = 8
+_FALLBACK_COMMON_GRID_AXIS_COUNT = 64
+_FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M = 0.004
+_FALLBACK_REFERENCE_SEED_POLICY = "top-eight-frozen-local-mask-score"
+_FALLBACK_REFERENCE_SEED_COUNT = 8
+_FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT = 64
+_FALLBACK_LOCAL_REQUESTED_VOXEL_SIZE_M = 0.002
+_FALLBACK_STABILITY_REQUESTED_VOXEL_SIZE_M = 0.0025
+_FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT = 8_000_000
+_FALLBACK_LOCAL_MARGIN_COARSE_CELLS = 3
+_FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT = 128
+_FALLBACK_MINIMUM_SCALE_STABILITY = 0.70
+_FALLBACK_ACCEPTANCE_GATE_NAMES = (
+    "camera_count",
+    "coarse_strict_consensus_vote_count",
+    "refined_strict_consensus_vote_count",
+    "stability_strict_consensus_vote_count",
+    "coarse_connected_core_point_count",
+    "coarse_largest_component_fraction",
+    "refined_surface_point_count",
+    "refined_largest_component_fraction",
+    "refined_grid_not_coarsened",
+    "local_scale_stability",
+    "stability_largest_component_fraction",
+    "stability_grid_not_coarsened",
+    "raw_median_hull_mask_containment",
+    "median_depth_mask_coverage",
+    "all_refined_surface_points_have_footprint_support",
+    "all_sampled_surface_points_colored",
 )
 
 _NO_AUTOMATIC_CANDIDATES = "no-automatic-mask-candidates"
 _NO_MASK_THRESHOLD_CANDIDATES = "no-candidate-met-frozen-mask-thresholds"
 _NO_REFERENCE_CONSISTENT_CANDIDATES = (
     "no-candidate-met-frozen-reference-appearance-threshold"
+)
+_COMMON_INLIER_ABSTENTION_REASON = (
+    "excluded-by-deterministic-reference-anchored-max-consensus-selection"
+)
+_COMMON_INLIER_SELECTION_RULE = (
+    "top-eight-local-mask-reference-seeds-anchored-global-local-exact-eight"
 )
 
 HELD_TARGET_CASES_V1 = (
@@ -75,6 +132,14 @@ APPROVED_CALIBRATION_SMOKE_CASE = "083-blanket-cloth-ep0000"
 FRAME_ZERO_INFORMATION_BOUNDARY: dict[str, Any] = {
     "maximum_object_rgb_frame_read": 0,
     "object_observation_frames_used": [0],
+    "known_aligned_realized_robot_kinematics_read": True,
+    "known_robot_trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+        "trajectory_semantics"
+    ],
+    "robot_delta_command_read": False,
+    "commanded_control_read": False,
+    # Compatibility key retained for the v2 held-protocol validator.  The
+    # truthful fields above state what the public Deform360 archive contains.
     "known_future_robot_action_read": True,
     "future_object_rgb_read": False,
     "future_object_geometry_read": False,
@@ -99,11 +164,32 @@ _FORBIDDEN_DERIVATION_TOKENS = (
     "ground_truth",
     "outcome",
 )
+_FRAME_ZERO_CAMERA_ACCESS_FIELDS = frozenset(
+    {
+        "camera",
+        "path",
+        "decoded_frame_count",
+        "maximum_rgb_frame_read",
+        "action_window_frame_index",
+        "source_aligned_frame_index",
+        "decoded_rgb_sha256",
+        "whole_file_hashed_or_read",
+    }
+)
 
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+class FrameZeroGeometryQAError(ValueError):
+    """A source-only geometry gate failure eligible for audited fallback."""
+
+
+def _require_geometry(condition: bool, message: str) -> None:
+    if not condition:
+        raise FrameZeroGeometryQAError(message)
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -580,11 +666,12 @@ class PinnedFrameZeroSam2Runtime:
 def decode_exact_frame_zero(
     video_path: str | Path, *, source_aligned_frame_index: int = 0
 ) -> tuple[np.ndarray, dict[str, Any]]:
-    """Decode exactly action-window frame zero and audit its source alignment.
+    """Decode exactly the selected robot-window frame zero and audit alignment.
 
-    ``source_aligned_frame_index`` is selected from the known robot action only.
-    The returned RGB material has action-window index zero; no later object frame
-    is decoded, hashed, or passed to the segmentation model.
+    ``source_aligned_frame_index`` is selected from known aligned realized robot
+    kinematics only.  The returned RGB material has selected-window index zero;
+    no later object frame is decoded, hashed, or passed to the segmentation
+    model.
     """
 
     path = reject_future_derived_input(video_path, purpose="camera video")
@@ -783,12 +870,17 @@ def segment_frame_zero_views(
     *,
     reference_camera: str,
     config: DeformableObjectSam2MaskConfig,
+    proposal_sink: dict[str, list[Mapping[str, Any]]] | None = None,
 ) -> tuple[dict[str, np.ndarray], list[dict[str, Any]]]:
     cameras = tuple(sorted(rgb_by_camera))
     _require(reference_camera in cameras, "reference camera is unavailable")
     reference_rgb = np.asarray(rgb_by_camera[reference_camera], dtype=np.uint8)
+    reference_annotations = list(runtime.generate(reference_rgb))
+    if proposal_sink is not None:
+        _require(not proposal_sink, "proposal sink must initially be empty")
+        proposal_sink[reference_camera] = reference_annotations
     reference_mask, reference_diagnostic = _select_reference_mask(
-        reference_rgb, runtime.generate(reference_rgb), config
+        reference_rgb, reference_annotations, config
     )
     reference_descriptor = mask_appearance_descriptor(reference_rgb, reference_mask)
     masks = {reference_camera: reference_mask}
@@ -803,8 +895,11 @@ def segment_frame_zero_views(
         if camera == reference_camera:
             continue
         rgb = np.asarray(rgb_by_camera[camera], dtype=np.uint8)
+        annotations = list(runtime.generate(rgb))
+        if proposal_sink is not None:
+            proposal_sink[camera] = annotations
         mask, diagnostic = _select_reference_consistent_mask(
-            rgb, runtime.generate(rgb), reference_descriptor, config
+            rgb, annotations, reference_descriptor, config
         )
         if mask is not None:
             masks[camera] = mask
@@ -818,6 +913,890 @@ def segment_frame_zero_views(
         )
     diagnostics.sort(key=lambda item: str(item["camera"]))
     return masks, diagnostics
+
+
+def _mask_set_sha256(masks_by_camera: Mapping[str, np.ndarray]) -> str:
+    return hashlib.sha256(
+        _canonical_bytes(
+            {
+                camera: _sha256_array(np.asarray(masks_by_camera[camera], dtype=bool))
+                for camera in sorted(masks_by_camera)
+            }
+        )
+    ).hexdigest()
+
+
+def _basic_mask_candidate_records(
+    rgb: np.ndarray,
+    annotations: Sequence[Mapping[str, Any]],
+    config: DeformableObjectSam2MaskConfig,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for index, annotation in enumerate(annotations):
+        mask = np.asarray(annotation["segmentation"], dtype=bool)
+        diagnostic = deformable_object_mask_candidate_diagnostics(rgb, mask, config)
+        predicted_iou = float(annotation.get("predicted_iou", 1.0))
+        stability = float(annotation.get("stability_score", 1.0))
+        basic = bool(
+            diagnostic["eligible"]
+            and predicted_iou >= config.predicted_iou_threshold
+            and stability >= config.stability_score_threshold
+        )
+        local_score = (
+            float(diagnostic["score"]) * math.sqrt(max(0.0, predicted_iou * stability))
+            if basic
+            else -1.0
+        )
+        diagnostic.update(
+            {
+                "eligible": basic,
+                "score": local_score,
+                "candidate_index": index,
+                "predicted_iou": predicted_iou,
+                "stability_score": stability,
+            }
+        )
+        records.append(
+            {
+                "candidate_index": index,
+                "mask": mask,
+                "mask_sha256": _sha256_array(mask),
+                "basic_eligible": basic,
+                "local_score": local_score,
+                "descriptor": (
+                    mask_appearance_descriptor(rgb, mask) if basic else None
+                ),
+                "diagnostic": diagnostic,
+            }
+        )
+    return records
+
+
+def _reference_consistent_candidate_records(
+    basic_records: Sequence[Mapping[str, Any]],
+    reference_descriptor: Mapping[str, Any],
+    config: DeformableObjectSam2MaskConfig,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for source in basic_records:
+        basic = bool(source["basic_eligible"])
+        similarity = (
+            mask_appearance_similarity(reference_descriptor, source["descriptor"])
+            if basic
+            else {
+                "combined": 0.0,
+                "hs_histogram_intersection": 0.0,
+                "lab_similarity": 0.0,
+                "shape_similarity": 0.0,
+            }
+        )
+        eligible = bool(
+            basic
+            and similarity["combined"] >= config.minimum_reference_appearance_similarity
+        )
+        diagnostic = dict(source["diagnostic"])
+        score = (
+            similarity["combined"] ** 3
+            * similarity["shape_similarity"] ** 4
+            * math.sqrt(float(diagnostic["area_fraction"]))
+            * math.sqrt(
+                max(
+                    0.0,
+                    float(diagnostic["predicted_iou"])
+                    * float(diagnostic["stability_score"]),
+                )
+            )
+            if eligible
+            else -1.0
+        )
+        diagnostic.update(
+            {
+                "eligible": eligible,
+                "score": float(score),
+                "reference_appearance": similarity,
+            }
+        )
+        records.append(
+            {
+                **source,
+                "eligible": eligible,
+                "appearance_score": float(score),
+                "reference_appearance": similarity,
+                "diagnostic": diagnostic,
+            }
+        )
+    return records
+
+
+def _proposal_inventory_sha256(
+    basic_by_camera: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> str:
+    payload = {
+        camera: [
+            {
+                "candidate_index": int(record["candidate_index"]),
+                "mask_sha256": str(record["mask_sha256"]),
+                "basic_eligible": bool(record["basic_eligible"]),
+                "local_score": float(record["local_score"]),
+                "predicted_iou": float(record["diagnostic"]["predicted_iou"]),
+                "stability_score": float(record["diagnostic"]["stability_score"]),
+            }
+            for record in records
+        ]
+        for camera, records in sorted(basic_by_camera.items())
+    }
+    return hashlib.sha256(_canonical_bytes(payload)).hexdigest()
+
+
+def _selection_view_diagnostic(
+    camera: str,
+    records: Sequence[Mapping[str, Any]],
+    selected: Mapping[str, Any] | None,
+    *,
+    reference_camera: str,
+    geometry_inlier_selection: Mapping[str, Any],
+) -> dict[str, Any]:
+    reference = camera == reference_camera
+    automatic_count = len(records)
+    if reference:
+        eligible_records = [record for record in records if record["basic_eligible"]]
+        mask_rejections = automatic_count - len(eligible_records)
+        appearance_rejections = 0
+        maximum_similarity = 1.0
+    else:
+        eligible_records = [record for record in records if record["eligible"]]
+        mask_rejections = sum(not record["basic_eligible"] for record in records)
+        appearance_rejections = sum(
+            bool(record["basic_eligible"]) and not bool(record["eligible"])
+            for record in records
+        )
+        maximum_similarity = max(
+            (float(record["reference_appearance"]["combined"]) for record in records),
+            default=0.0,
+        )
+    rejected_count = automatic_count - len(eligible_records)
+    diagnostic: dict[str, Any] = {
+        "camera": camera,
+        "initialization": (
+            "automatic-reference-frame-zero"
+            if reference
+            else "reference-appearance-frame-zero"
+        ),
+        "automatic_candidate_count": automatic_count,
+        "eligible_candidate_count": len(eligible_records),
+        "rejected_candidate_count": rejected_count,
+        "rejection_counts": {
+            "mask_threshold": int(mask_rejections),
+            "reference_appearance_threshold": int(appearance_rejections),
+            "total": rejected_count,
+        },
+        "maximum_reference_appearance_similarity": maximum_similarity,
+        "geometry_inlier_selection": dict(geometry_inlier_selection),
+    }
+    if not reference:
+        diagnostic["reference_camera"] = reference_camera
+    if selected is not None:
+        diagnostic.update(
+            {
+                "view_selected": True,
+                "abstained": False,
+                "abstention_reason": None,
+                "selected": dict(selected["diagnostic"]),
+            }
+        )
+        return diagnostic
+    if (
+        geometry_inlier_selection.get("candidate_index") is not None
+        and geometry_inlier_selection.get("retained") is False
+    ):
+        reason = _COMMON_INLIER_ABSTENTION_REASON
+    elif not records:
+        reason = _NO_AUTOMATIC_CANDIDATES
+    elif mask_rejections == automatic_count:
+        reason = _NO_MASK_THRESHOLD_CANDIDATES
+    else:
+        reason = _NO_REFERENCE_CONSISTENT_CANDIDATES
+    diagnostic.update(
+        {
+            "view_selected": False,
+            "abstained": True,
+            "abstention_reason": reason,
+            "selected": None,
+        }
+    )
+    return diagnostic
+
+
+def _common_voxel_mask_assignment(
+    rgb_by_camera: Mapping[str, np.ndarray],
+    proposals_by_camera: Mapping[str, Sequence[Mapping[str, Any]]],
+    intrinsics_by_camera: Mapping[str, np.ndarray],
+    camera_to_world_by_camera: Mapping[str, np.ndarray],
+    *,
+    reference_camera: str,
+    config: FrameZeroAssetConfig,
+) -> tuple[dict[str, np.ndarray], list[dict[str, Any]], dict[str, Any]]:
+    """Select one coherent proposal per camera using a strict common voxel."""
+
+    cameras = tuple(sorted(rgb_by_camera))
+    _require(
+        cameras == tuple(sorted(proposals_by_camera)),
+        "proposal/RGB camera sets differ",
+    )
+    _require(reference_camera in cameras, "common search reference is unavailable")
+    _require(
+        set(cameras) <= set(intrinsics_by_camera)
+        and set(cameras) <= set(camera_to_world_by_camera),
+        "common search calibration is incomplete",
+    )
+    basic_by_camera = {
+        camera: _basic_mask_candidate_records(
+            np.asarray(rgb_by_camera[camera], dtype=np.uint8),
+            proposals_by_camera[camera],
+            config.sam2,
+        )
+        for camera in cameras
+    }
+    ranked_reference_candidates = sorted(
+        (
+            record
+            for record in basic_by_camera[reference_camera]
+            if record["basic_eligible"]
+        ),
+        key=lambda record: (-float(record["local_score"]), record["candidate_index"]),
+    )
+    reference_candidates = ranked_reference_candidates[:_FALLBACK_REFERENCE_SEED_COUNT]
+    _require_geometry(
+        bool(reference_candidates),
+        "common search has no eligible semantic reference seed",
+    )
+
+    centers = np.stack(
+        [np.asarray(camera_to_world_by_camera[camera])[:3, 3] for camera in cameras]
+    )
+    grid_center = np.mean(centers, axis=0)
+    minimum = grid_center - config.cube_half_extent_m
+    maximum = grid_center + config.cube_half_extent_m
+    axes = [
+        np.linspace(minimum[axis], maximum[axis], _FALLBACK_COMMON_GRID_AXIS_COUNT)
+        for axis in range(3)
+    ]
+    grid = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1).reshape(-1, 3)
+    grid_shape = [_FALLBACK_COMMON_GRID_AXIS_COUNT] * 3
+    grid_spacing = [float(axis[1] - axis[0]) for axis in axes]
+    hit_cache: dict[tuple[str, int], np.ndarray] = {}
+    for camera in cameras:
+        for record in basic_by_camera[camera]:
+            hits, _in_bounds = _point_mask_hits(
+                grid,
+                record["mask"],
+                intrinsics_by_camera[camera],
+                camera_to_world_by_camera[camera],
+            )
+            hit_cache[(camera, int(record["candidate_index"]))] = hits
+
+    seed_evaluations: list[dict[str, Any]] = []
+    seed_audit: list[dict[str, Any]] = []
+    for rank, reference_record in enumerate(reference_candidates):
+        reference_descriptor = reference_record["descriptor"]
+        records_by_camera: dict[str, list[dict[str, Any]]] = {
+            reference_camera: [reference_record]
+        }
+        for camera in cameras:
+            if camera == reference_camera:
+                continue
+            records_by_camera[camera] = _reference_consistent_candidate_records(
+                basic_by_camera[camera], reference_descriptor, config.sam2
+            )
+        support = np.zeros(len(grid), dtype=np.uint16)
+        eligible_camera_count = 0
+        for camera in cameras:
+            eligible = (
+                records_by_camera[camera]
+                if camera == reference_camera
+                else [
+                    record for record in records_by_camera[camera] if record["eligible"]
+                ]
+            )
+            if not eligible:
+                continue
+            eligible_camera_count += 1
+            camera_union = np.zeros(len(grid), dtype=bool)
+            for record in eligible:
+                camera_union |= hit_cache[(camera, int(record["candidate_index"]))]
+            support += camera_union.astype(np.uint16)
+        reference_hits = hit_cache[
+            (reference_camera, int(reference_record["candidate_index"]))
+        ]
+        feasible = (support >= _FALLBACK_STRICT_CONSENSUS_VOTES) & reference_hits
+        feasible_ids = np.flatnonzero(feasible)
+        component_ids = np.empty(0, dtype=np.int64)
+        largest_count = 0
+        component_count = 0
+        local_feasible_count = 0
+        local_largest_count = 0
+        local_component_count = 0
+        local_peak = 0
+        local_grid_shape: list[int] | None = None
+        local_grid_point_count = 0
+        local_grid_coarsened = False
+        local_feasible_sha256: str | None = None
+        if len(feasible_ids):
+            keep, _surface, components = _largest_grid_component(
+                grid[feasible],
+                bounds_minimum=minimum,
+                bounds_maximum=maximum,
+                grid_shape=grid_shape,
+            )
+            component_ids = feasible_ids[keep]
+            largest_count = int(components["largest_component_point_count"])
+            component_count = int(components["component_count"])
+            seed_local_minimum, seed_local_maximum, _seed_local_bounds = (
+                _local_refinement_bounds(
+                    grid[component_ids],
+                    global_minimum_world_m=minimum,
+                    global_maximum_world_m=maximum,
+                    coarse_axis_spacing_m=grid_spacing,
+                )
+            )
+            seed_local_grid, seed_local_grid_diagnostics = regular_grid_in_bounds(
+                seed_local_minimum,
+                seed_local_maximum,
+                requested_voxel_size_m=(_FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M),
+                maximum_point_count=_FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT,
+            )
+            local_grid_shape = [
+                int(value) for value in seed_local_grid_diagnostics["grid_shape"]
+            ]
+            local_grid_point_count = len(seed_local_grid)
+            local_grid_coarsened = bool(
+                seed_local_grid_diagnostics["coarsened_for_grid_cap"]
+            )
+            if not local_grid_coarsened:
+                seed_local_support = np.zeros(len(seed_local_grid), dtype=np.uint16)
+                seed_local_reference_hits, _in_bounds = _point_mask_hits(
+                    seed_local_grid,
+                    reference_record["mask"],
+                    intrinsics_by_camera[reference_camera],
+                    camera_to_world_by_camera[reference_camera],
+                )
+                for camera in cameras:
+                    eligible = (
+                        records_by_camera[camera]
+                        if camera == reference_camera
+                        else [
+                            record
+                            for record in records_by_camera[camera]
+                            if record["eligible"]
+                        ]
+                    )
+                    if not eligible:
+                        continue
+                    camera_union = np.zeros(len(seed_local_grid), dtype=bool)
+                    for record in eligible:
+                        hits, _in_bounds = _point_mask_hits(
+                            seed_local_grid,
+                            record["mask"],
+                            intrinsics_by_camera[camera],
+                            camera_to_world_by_camera[camera],
+                        )
+                        camera_union |= hits
+                    seed_local_support += camera_union.astype(np.uint16)
+                seed_local_feasible = (
+                    seed_local_support >= _FALLBACK_STRICT_CONSENSUS_VOTES
+                ) & seed_local_reference_hits
+                seed_local_feasible_ids = np.flatnonzero(seed_local_feasible)
+                local_feasible_count = len(seed_local_feasible_ids)
+                local_feasible_sha256 = _sha256_array(seed_local_feasible)
+                if local_feasible_count:
+                    local_keep, _local_surface, local_components = (
+                        _largest_grid_component(
+                            seed_local_grid[seed_local_feasible],
+                            bounds_minimum=seed_local_minimum,
+                            bounds_maximum=seed_local_maximum,
+                            grid_shape=local_grid_shape,
+                        )
+                    )
+                    local_component_ids = seed_local_feasible_ids[local_keep]
+                    local_largest_count = int(
+                        local_components["largest_component_point_count"]
+                    )
+                    local_component_count = int(local_components["component_count"])
+                    local_peak = int(
+                        np.max(seed_local_support[local_component_ids], initial=0)
+                    )
+        peak = int(support.max(initial=0))
+        objective = (
+            local_largest_count,
+            local_feasible_count,
+            local_peak,
+            largest_count,
+            int(len(feasible_ids)),
+            float(reference_record["local_score"]),
+            -int(reference_record["candidate_index"]),
+        )
+        evaluation = {
+            "rank": rank,
+            "reference_record": reference_record,
+            "records_by_camera": records_by_camera,
+            "support": support,
+            "feasible_ids": feasible_ids,
+            "component_ids": component_ids,
+            "local_largest_component_point_count": local_largest_count,
+            "objective": objective,
+        }
+        seed_evaluations.append(evaluation)
+        seed_audit.append(
+            {
+                "reference_seed_rank": rank,
+                "reference_candidate_index": int(reference_record["candidate_index"]),
+                "reference_mask_sha256": reference_record["mask_sha256"],
+                "reference_local_score": float(reference_record["local_score"]),
+                "eligible_camera_count": eligible_camera_count,
+                "strict_feasible_voxel_count": int(len(feasible_ids)),
+                "strict_feasible_component_count": component_count,
+                "largest_strict_component_voxel_count": largest_count,
+                "maximum_union_support_count": peak,
+                "reference_anchor_hit_count": int(np.count_nonzero(reference_hits)),
+                "local_grid_shape": local_grid_shape,
+                "local_grid_point_count": local_grid_point_count,
+                "local_grid_coarsened_for_cap": local_grid_coarsened,
+                "local_strict_feasible_voxel_count": local_feasible_count,
+                "local_strict_feasible_component_count": local_component_count,
+                "local_largest_strict_component_voxel_count": local_largest_count,
+                "local_maximum_union_support_count": local_peak,
+                "local_strict_feasible_mask_sha256": local_feasible_sha256,
+                "lexicographic_objective": list(objective),
+                "strict_feasible_mask_sha256": _sha256_array(feasible),
+            }
+        )
+    selected_evaluation = max(
+        seed_evaluations, key=lambda evaluation: evaluation["objective"]
+    )
+    _require_geometry(
+        len(selected_evaluation["component_ids"]) > 0
+        and selected_evaluation["local_largest_component_point_count"] > 0,
+        "common search found no reference-anchored strict-eight component",
+    )
+    component_ids = np.asarray(selected_evaluation["component_ids"], dtype=np.int64)
+    support = np.asarray(selected_evaluation["support"], dtype=np.uint16)
+    global_selected_seed_id = max(
+        component_ids.tolist(), key=lambda index: (int(support[index]), -int(index))
+    )
+    component_mask = np.zeros(len(grid), dtype=bool)
+    component_mask[component_ids] = True
+
+    local_minimum, local_maximum, local_bounds = _local_refinement_bounds(
+        grid[component_ids],
+        global_minimum_world_m=minimum,
+        global_maximum_world_m=maximum,
+        coarse_axis_spacing_m=grid_spacing,
+    )
+    local_grid, local_grid_diagnostics = regular_grid_in_bounds(
+        local_minimum,
+        local_maximum,
+        requested_voxel_size_m=_FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M,
+        maximum_point_count=_FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT,
+    )
+    _require_geometry(
+        not bool(local_grid_diagnostics["coarsened_for_grid_cap"]),
+        "selected common local grid exceeds the exact-grid cap",
+    )
+    local_hit_cache: dict[tuple[str, int], np.ndarray] = {}
+    local_support = np.zeros(len(local_grid), dtype=np.uint16)
+    for camera in cameras:
+        records = selected_evaluation["records_by_camera"][camera]
+        eligible_records = (
+            records
+            if camera == reference_camera
+            else [record for record in records if record["eligible"]]
+        )
+        if not eligible_records:
+            continue
+        camera_union = np.zeros(len(local_grid), dtype=bool)
+        for record in eligible_records:
+            cache_key = (camera, int(record["candidate_index"]))
+            hits, _in_bounds = _point_mask_hits(
+                local_grid,
+                record["mask"],
+                intrinsics_by_camera[camera],
+                camera_to_world_by_camera[camera],
+            )
+            local_hit_cache[cache_key] = hits
+            camera_union |= hits
+        local_support += camera_union.astype(np.uint16)
+    local_reference_hits = local_hit_cache[
+        (
+            reference_camera,
+            int(selected_evaluation["reference_record"]["candidate_index"]),
+        )
+    ]
+    local_feasible = (
+        local_support >= _FALLBACK_STRICT_CONSENSUS_VOTES
+    ) & local_reference_hits
+    local_feasible_ids = np.flatnonzero(local_feasible)
+    _require_geometry(
+        bool(len(local_feasible_ids)),
+        "local common search found no strict-eight common voxel",
+    )
+    local_keep, _local_surface, local_components = _largest_grid_component(
+        local_grid[local_feasible],
+        bounds_minimum=local_minimum,
+        bounds_maximum=local_maximum,
+        grid_shape=local_grid_diagnostics["grid_shape"],
+    )
+    local_component_ids = local_feasible_ids[local_keep]
+    local_selected_seed_id = max(
+        local_component_ids.tolist(),
+        key=lambda index: (int(local_support[index]), -int(index)),
+    )
+    local_component_mask = np.zeros(len(local_grid), dtype=bool)
+    local_component_mask[local_component_ids] = True
+    selected_candidate_by_camera: dict[str, Mapping[str, Any]] = {}
+    candidate_metrics_by_camera: dict[str, dict[str, Any]] = {}
+    for camera in cameras:
+        records = selected_evaluation["records_by_camera"][camera]
+        eligible_records = (
+            records
+            if camera == reference_camera
+            else [record for record in records if record["eligible"]]
+        )
+        if not eligible_records:
+            continue
+
+        def candidate_objective(record: Mapping[str, Any]) -> tuple[Any, ...]:
+            hits = local_hit_cache[(camera, int(record["candidate_index"]))]
+            overlap = int(np.count_nonzero(hits & local_component_mask))
+            hit_count = int(np.count_nonzero(hits))
+            coverage = overlap / len(local_component_ids)
+            precision = overlap / hit_count if hit_count else 0.0
+            score = (
+                float(record["local_score"])
+                if camera == reference_camera
+                else float(record["appearance_score"])
+            )
+            return (
+                coverage,
+                precision,
+                int(hits[local_selected_seed_id]),
+                score,
+                -int(record["candidate_index"]),
+            )
+
+        selected = max(eligible_records, key=candidate_objective)
+        objective = candidate_objective(selected)
+        selected_candidate_by_camera[camera] = selected
+        candidate_metrics_by_camera[camera] = {
+            "seed_conditioned_candidate_count": len(eligible_records),
+            "raw_component_hit_count": int(
+                np.count_nonzero(
+                    local_hit_cache[(camera, int(selected["candidate_index"]))]
+                    & local_component_mask
+                )
+            ),
+            "raw_component_coverage": float(objective[0]),
+            "raw_component_precision": float(objective[1]),
+            "hits_local_union_peak": bool(objective[2]),
+            "semantic_score": float(objective[3]),
+            "candidate_lexicographic_objective": list(objective),
+        }
+    _require_geometry(
+        reference_camera in selected_candidate_by_camera
+        and len(selected_candidate_by_camera) >= _FALLBACK_STRICT_CONSENSUS_VOTES,
+        "common search found too few eligible exact-eight candidates",
+    )
+
+    nonreference_candidates = tuple(
+        camera
+        for camera in cameras
+        if camera in selected_candidate_by_camera and camera != reference_camera
+    )
+    subset_audit: list[dict[str, Any]] = []
+    best_subset: dict[str, Any] | None = None
+    best_subset_key: tuple[Any, ...] | None = None
+    for nonreference_subset in itertools.combinations(
+        nonreference_candidates, _FALLBACK_STRICT_CONSENSUS_VOTES - 1
+    ):
+        subset = (reference_camera, *nonreference_subset)
+        exact_mask = np.logical_and.reduce(
+            [
+                local_hit_cache[
+                    (
+                        camera,
+                        int(selected_candidate_by_camera[camera]["candidate_index"]),
+                    )
+                ]
+                for camera in subset
+            ]
+        )
+        exact_ids = np.flatnonzero(exact_mask)
+        exact_component_ids = np.empty(0, dtype=np.int64)
+        exact_component_count = 0
+        exact_largest_count = 0
+        if len(exact_ids):
+            exact_keep, _exact_surface, exact_components = _largest_grid_component(
+                local_grid[exact_mask],
+                bounds_minimum=local_minimum,
+                bounds_maximum=local_maximum,
+                grid_shape=local_grid_diagnostics["grid_shape"],
+            )
+            exact_component_ids = exact_ids[exact_keep]
+            exact_component_count = int(exact_components["component_count"])
+            exact_largest_count = int(exact_components["largest_component_point_count"])
+        coverage_sum = float(
+            sum(
+                candidate_metrics_by_camera[camera]["raw_component_coverage"]
+                for camera in subset
+            )
+        )
+        semantic_score_sum = float(
+            sum(
+                candidate_metrics_by_camera[camera]["semantic_score"]
+                for camera in subset
+            )
+        )
+        subset_record = {
+            "cameras": list(subset),
+            "largest_exact_component_voxel_count": exact_largest_count,
+            "exact_common_voxel_count": len(exact_ids),
+            "exact_component_count": exact_component_count,
+            "raw_component_coverage_sum": coverage_sum,
+            "semantic_score_sum": semantic_score_sum,
+            "exact_common_mask_sha256": _sha256_array(exact_mask),
+        }
+        subset_audit.append(subset_record)
+        subset_key = (
+            -exact_largest_count,
+            -len(exact_ids),
+            -coverage_sum,
+            -semantic_score_sum,
+            subset,
+        )
+        if best_subset_key is None or subset_key < best_subset_key:
+            best_subset_key = subset_key
+            best_subset = {
+                **subset_record,
+                "exact_mask": exact_mask,
+                "exact_component_ids": exact_component_ids,
+            }
+    _require_geometry(
+        best_subset is not None
+        and best_subset["largest_exact_component_voxel_count"] > 0,
+        "common search found no reference-anchored exact-eight component",
+    )
+    selected_cameras = tuple(sorted(best_subset["cameras"]))
+    selected_by_camera = {
+        camera: selected_candidate_by_camera[camera] for camera in selected_cameras
+    }
+    masks = {
+        camera: np.asarray(record["mask"], dtype=bool)
+        for camera, record in sorted(selected_by_camera.items())
+    }
+    _require_geometry(
+        len(masks) == _FALLBACK_STRICT_CONSENSUS_VOTES and reference_camera in masks,
+        "common search did not retain fixed-reference exact-eight cameras",
+    )
+
+    ranked_nonreference = sorted(
+        nonreference_candidates,
+        key=lambda camera: (
+            -candidate_metrics_by_camera[camera]["raw_component_coverage"],
+            camera,
+        ),
+    )
+    coverage_rank = {
+        camera: rank for rank, camera in enumerate(ranked_nonreference, start=1)
+    }
+    camera_inlier_records: list[dict[str, Any]] = []
+    for camera in cameras:
+        selected = selected_candidate_by_camera.get(camera)
+        metrics = candidate_metrics_by_camera.get(camera)
+        retained = camera in masks
+        camera_inlier_records.append(
+            {
+                "camera": camera,
+                "candidate_index": (
+                    int(selected["candidate_index"]) if selected is not None else None
+                ),
+                "mask_sha256": (
+                    str(selected["mask_sha256"]) if selected is not None else None
+                ),
+                "seed_conditioned_candidate_count": (
+                    int(metrics["seed_conditioned_candidate_count"])
+                    if metrics is not None
+                    else 0
+                ),
+                "fixed_reference": camera == reference_camera,
+                "nonreference_coverage_rank": (
+                    0 if camera == reference_camera else coverage_rank.get(camera)
+                ),
+                "retained": retained,
+                "raw_component_hit_count": (
+                    int(metrics["raw_component_hit_count"])
+                    if metrics is not None
+                    else 0
+                ),
+                "raw_component_coverage": (
+                    float(metrics["raw_component_coverage"])
+                    if metrics is not None
+                    else 0.0
+                ),
+                "raw_component_precision": (
+                    float(metrics["raw_component_precision"])
+                    if metrics is not None
+                    else 0.0
+                ),
+                "hits_local_union_peak": (
+                    bool(metrics["hits_local_union_peak"])
+                    if metrics is not None
+                    else False
+                ),
+                "semantic_score": (
+                    float(metrics["semantic_score"]) if metrics is not None else None
+                ),
+                "candidate_lexicographic_objective": (
+                    list(metrics["candidate_lexicographic_objective"])
+                    if metrics is not None
+                    else None
+                ),
+            }
+        )
+    inlier_record_by_camera = {
+        record["camera"]: record for record in camera_inlier_records
+    }
+    selection_records = [
+        dict(inlier_record_by_camera[camera]) for camera in selected_cameras
+    ]
+    selected_reference = selected_evaluation["reference_record"]
+    selected_reference_descriptor = selected_reference["descriptor"]
+    final_records_by_camera: dict[str, list[dict[str, Any]]] = {}
+    for camera in cameras:
+        if camera == reference_camera:
+            final_records_by_camera[camera] = basic_by_camera[camera]
+        else:
+            final_records_by_camera[camera] = _reference_consistent_candidate_records(
+                basic_by_camera[camera],
+                selected_reference_descriptor,
+                config.sam2,
+            )
+    diagnostics = [
+        _selection_view_diagnostic(
+            camera,
+            final_records_by_camera[camera],
+            selected_by_camera.get(camera),
+            reference_camera=reference_camera,
+            geometry_inlier_selection=inlier_record_by_camera[camera],
+        )
+        for camera in cameras
+    ]
+    selected_rank = int(selected_evaluation["rank"])
+    selected_exact_component_ids = np.asarray(
+        best_subset["exact_component_ids"], dtype=np.int64
+    )
+    selected_exact_component_mask = np.zeros(len(local_grid), dtype=bool)
+    selected_exact_component_mask[selected_exact_component_ids] = True
+    selected_exact_seed_id = int(np.min(selected_exact_component_ids))
+    audit: dict[str, Any] = {
+        "policy_id": FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID,
+        "strategy": "reference-anchored-exhaustive-exact-eight-assignment",
+        "reference_seed_policy": _FALLBACK_REFERENCE_SEED_POLICY,
+        "reference_seed_limit": _FALLBACK_REFERENCE_SEED_COUNT,
+        "inlier_selection_rule": _COMMON_INLIER_SELECTION_RULE,
+        "search_hit_representation": "nearest-pixel-raw-center",
+        "evaluated_reference_seed_count": len(reference_candidates),
+        "strict_consensus_vote_count": _FALLBACK_STRICT_CONSENSUS_VOTES,
+        "grid": {
+            "bounds_minimum_world_m": minimum.tolist(),
+            "bounds_maximum_world_m": maximum.tolist(),
+            "grid_shape": grid_shape,
+            "effective_axis_spacing_m": grid_spacing,
+            "grid_point_count": len(grid),
+            "grid_points_sha256": _sha256_array(grid),
+        },
+        "proposal_count_by_camera": {
+            camera: len(basic_by_camera[camera]) for camera in cameras
+        },
+        "proposal_inventory_sha256": _proposal_inventory_sha256(basic_by_camera),
+        "reference_candidate_ranking": [
+            {
+                "rank": rank,
+                "candidate_index": int(record["candidate_index"]),
+                "mask_sha256": record["mask_sha256"],
+                "local_mask_score": float(record["local_score"]),
+                "selected_for_seed_evaluation": rank < _FALLBACK_REFERENCE_SEED_COUNT,
+            }
+            for rank, record in enumerate(ranked_reference_candidates)
+        ],
+        "reference_seed_evaluations": seed_audit,
+        "reference_seed_objective_order": [
+            "local_largest_component_voxel_count_desc",
+            "local_strict_feasible_voxel_count_desc",
+            "local_peak_support_desc",
+            "global_largest_component_voxel_count_desc",
+            "global_strict_feasible_voxel_count_desc",
+            "reference_semantic_score_desc",
+            "reference_candidate_index_asc",
+        ],
+        "selected_reference_seed_rank": selected_rank,
+        "selected_reference_candidate_index": int(
+            selected_reference["candidate_index"]
+        ),
+        "selected_reference_mask_sha256": selected_reference["mask_sha256"],
+        "global_selected_common_voxel_flat_index": int(global_selected_seed_id),
+        "global_selected_common_voxel_world_m": grid[global_selected_seed_id].tolist(),
+        "global_selected_common_voxel_support_count": int(
+            support[global_selected_seed_id]
+        ),
+        "global_selected_strict_component_voxel_count": len(component_ids),
+        "global_selected_strict_component_sha256": _sha256_array(component_mask),
+        "local_refinement": {
+            "requested_voxel_size_m": (_FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M),
+            "bounds": local_bounds,
+            "grid": local_grid_diagnostics,
+            "grid_points_sha256": _sha256_array(local_grid),
+            "strict_feasible_voxel_count": len(local_feasible_ids),
+            "strict_feasible_mask_sha256": _sha256_array(local_feasible),
+            "components": local_components,
+        },
+        "local_union_peak_voxel_flat_index": int(local_selected_seed_id),
+        "local_union_peak_voxel_world_m": local_grid[local_selected_seed_id].tolist(),
+        "local_union_peak_support_count": int(local_support[local_selected_seed_id]),
+        "local_union_strict_component_voxel_count": len(local_component_ids),
+        "local_union_strict_component_sha256": _sha256_array(local_component_mask),
+        "candidate_objective_order": [
+            "local_component_coverage_desc",
+            "local_component_precision_desc",
+            "hits_local_union_peak_desc",
+            "semantic_score_desc",
+            "candidate_index_asc",
+        ],
+        "camera_inlier_ranking": camera_inlier_records,
+        "evaluated_exact_eight_subset_count": len(subset_audit),
+        "exact_eight_subset_objective_order": [
+            "largest_exact_component_voxel_count_desc",
+            "exact_common_voxel_count_desc",
+            "raw_component_coverage_sum_desc",
+            "semantic_score_sum_desc",
+            "camera_tuple_asc",
+        ],
+        "exact_eight_subset_evaluations": subset_audit,
+        "selected_exact_eight_cameras": list(selected_cameras),
+        "selected_common_voxel_flat_index": selected_exact_seed_id,
+        "selected_common_voxel_world_m": local_grid[selected_exact_seed_id].tolist(),
+        "selected_common_voxel_support_count": _FALLBACK_STRICT_CONSENSUS_VOTES,
+        "selected_exact_common_voxel_count": int(
+            best_subset["exact_common_voxel_count"]
+        ),
+        "selected_exact_common_mask_sha256": best_subset["exact_common_mask_sha256"],
+        "selected_strict_component_voxel_count": len(selected_exact_component_ids),
+        "selected_strict_component_sha256": _sha256_array(
+            selected_exact_component_mask
+        ),
+        "selected_proposals": selection_records,
+        "selected_mask_set_sha256": _mask_set_sha256(masks),
+    }
+    audit["artifact_sha256"] = artifact_sha256(audit)
+    return masks, diagnostics, audit
 
 
 def _projection_matrix(
@@ -847,6 +1826,396 @@ def _project_points(
         camera[front, 1] / depth[front] * intrinsics[1, 1] + intrinsics[1, 2]
     )
     return pixels, depth
+
+
+def _projected_half_voxel_radii(
+    points_world_m: np.ndarray,
+    intrinsics: np.ndarray,
+    camera_to_world: np.ndarray,
+    *,
+    axis_spacing_m: Sequence[float],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Project an axis-aligned voxel's half extents into pixel coordinates.
+
+    The first-order footprint is deliberately evaluated independently at every
+    candidate point.  A half-pixel term covers nearest-pixel quantisation; the
+    remaining term is the L1 support radius of the world-axis-aligned voxel
+    under the local projection Jacobian.
+    """
+
+    points = np.asarray(points_world_m, dtype=np.float64)
+    intrinsics_array = np.asarray(intrinsics, dtype=np.float64)
+    camera_to_world_array = np.asarray(camera_to_world, dtype=np.float64)
+    spacing = np.asarray(axis_spacing_m, dtype=np.float64)
+    _require(
+        points.ndim == 2 and points.shape[1] == 3,
+        "footprint points must have shape (N,3)",
+    )
+    _require(np.all(np.isfinite(points)), "footprint points are non-finite")
+    _require(intrinsics_array.shape == (3, 3), "invalid footprint intrinsics")
+    _require(
+        camera_to_world_array.shape == (4, 4),
+        "invalid footprint camera transform",
+    )
+    _require(
+        spacing.shape == (3,)
+        and np.all(np.isfinite(spacing))
+        and np.all(spacing > 0.0),
+        "invalid footprint axis spacing",
+    )
+    world_to_camera = np.linalg.inv(camera_to_world_array)
+    rotation = world_to_camera[:3, :3]
+    camera = points @ rotation.T + world_to_camera[:3, 3]
+    depth = camera[:, 2]
+    front = depth > 1e-8
+    safe_depth = np.where(front, depth, 1.0)
+    x = camera[:, 0]
+    y = camera[:, 1]
+    fx = float(intrinsics_array[0, 0])
+    fy = float(intrinsics_array[1, 1])
+    pixels = np.empty((len(points), 2), dtype=np.float64)
+    pixels[:, 0] = x / safe_depth * fx + intrinsics_array[0, 2]
+    pixels[:, 1] = y / safe_depth * fy + intrinsics_array[1, 2]
+
+    du_camera = np.stack(
+        (
+            np.full(len(points), fx, dtype=np.float64) / safe_depth,
+            np.zeros(len(points), dtype=np.float64),
+            -fx * x / np.square(safe_depth),
+        ),
+        axis=1,
+    )
+    dv_camera = np.stack(
+        (
+            np.zeros(len(points), dtype=np.float64),
+            np.full(len(points), fy, dtype=np.float64) / safe_depth,
+            -fy * y / np.square(safe_depth),
+        ),
+        axis=1,
+    )
+    du_world = du_camera @ rotation
+    dv_world = dv_camera @ rotation
+    radius_u = 0.5 * np.sum(np.abs(du_world) * spacing[None, :], axis=1) + 0.5
+    radius_v = 0.5 * np.sum(np.abs(dv_world) * spacing[None, :], axis=1) + 0.5
+    return pixels, depth, radius_u, radius_v
+
+
+def _projected_footprint_hits(
+    points_world_m: np.ndarray,
+    mask: np.ndarray,
+    intrinsics: np.ndarray,
+    camera_to_world: np.ndarray,
+    *,
+    axis_spacing_m: Sequence[float],
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    """Test whether each projected voxel footprint overlaps a source mask."""
+
+    source_mask = np.asarray(mask, dtype=bool)
+    _require(source_mask.ndim == 2, "footprint mask must be two-dimensional")
+    pixels, depth, radius_u, radius_v = _projected_half_voxel_radii(
+        points_world_m,
+        intrinsics,
+        camera_to_world,
+        axis_spacing_m=axis_spacing_m,
+    )
+    height, width = source_mask.shape
+    finite = (
+        (depth > 1e-8)
+        & np.all(np.isfinite(pixels), axis=1)
+        & np.isfinite(radius_u)
+        & np.isfinite(radius_v)
+    )
+    safe_u = np.where(finite, pixels[:, 0], 0.0)
+    safe_v = np.where(finite, pixels[:, 1], 0.0)
+    safe_radius_u = np.where(finite, radius_u, 0.5)
+    safe_radius_v = np.where(finite, radius_v, 0.5)
+    left = np.ceil(safe_u - safe_radius_u).astype(np.int64)
+    right = np.floor(safe_u + safe_radius_u).astype(np.int64)
+    top = np.ceil(safe_v - safe_radius_v).astype(np.int64)
+    bottom = np.floor(safe_v + safe_radius_v).astype(np.int64)
+    overlaps_image = (
+        finite
+        & (left <= right)
+        & (top <= bottom)
+        & (right >= 0)
+        & (left < width)
+        & (bottom >= 0)
+        & (top < height)
+    )
+    left_clipped = np.clip(left, 0, width - 1)
+    right_clipped = np.clip(right, 0, width - 1)
+    top_clipped = np.clip(top, 0, height - 1)
+    bottom_clipped = np.clip(bottom, 0, height - 1)
+    integral = (
+        np.pad(source_mask.astype(np.int64), ((1, 0), (1, 0)), mode="constant")
+        .cumsum(axis=0)
+        .cumsum(axis=1)
+    )
+    sums = (
+        integral[bottom_clipped + 1, right_clipped + 1]
+        - integral[top_clipped, right_clipped + 1]
+        - integral[bottom_clipped + 1, left_clipped]
+        + integral[top_clipped, left_clipped]
+    )
+    hits = overlaps_image & (sums > 0)
+    visible_ids = np.flatnonzero(overlaps_image)
+
+    def radius_summary(values: np.ndarray) -> dict[str, float | None]:
+        selected = values[visible_ids]
+        if not len(selected):
+            return {"minimum": None, "median": None, "maximum": None}
+        return {
+            "minimum": float(np.min(selected)),
+            "median": float(np.median(selected)),
+            "maximum": float(np.max(selected)),
+        }
+
+    return (
+        hits,
+        overlaps_image,
+        {
+            "in_bounds_footprint_count": int(np.count_nonzero(overlaps_image)),
+            "mask_overlap_footprint_count": int(np.count_nonzero(hits)),
+            "projected_half_voxel_radius_u_pixels": radius_summary(radius_u),
+            "projected_half_voxel_radius_v_pixels": radius_summary(radius_v),
+        },
+    )
+
+
+def _nearest_projected_footprint_mask_pixels(
+    points_world_m: np.ndarray,
+    mask: np.ndarray,
+    intrinsics: np.ndarray,
+    camera_to_world: np.ndarray,
+    *,
+    axis_spacing_m: Sequence[float],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Choose one deterministic RGB pixel inside each overlapping footprint.
+
+    Distance from the continuous projection is the primary key.  Image row and
+    then column are explicit tie-breaks, so symmetric footprints remain stable
+    across platforms and NumPy versions.
+    """
+
+    source_mask = np.asarray(mask, dtype=bool)
+    _require(source_mask.ndim == 2, "footprint mask must be two-dimensional")
+    pixels, depth, radius_u, radius_v = _projected_half_voxel_radii(
+        points_world_m,
+        intrinsics,
+        camera_to_world,
+        axis_spacing_m=axis_spacing_m,
+    )
+    height, width = source_mask.shape
+    finite = (
+        (depth > 1e-8)
+        & np.all(np.isfinite(pixels), axis=1)
+        & np.isfinite(radius_u)
+        & np.isfinite(radius_v)
+    )
+    safe_u = np.where(finite, pixels[:, 0], 0.0)
+    safe_v = np.where(finite, pixels[:, 1], 0.0)
+    left = np.ceil(safe_u - np.where(finite, radius_u, 0.5)).astype(np.int64)
+    right = np.floor(safe_u + np.where(finite, radius_u, 0.5)).astype(np.int64)
+    top = np.ceil(safe_v - np.where(finite, radius_v, 0.5)).astype(np.int64)
+    bottom = np.floor(safe_v + np.where(finite, radius_v, 0.5)).astype(np.int64)
+    overlaps_image = (
+        finite
+        & (left <= right)
+        & (top <= bottom)
+        & (right >= 0)
+        & (left < width)
+        & (bottom >= 0)
+        & (top < height)
+    )
+    selected_pixels = np.full((len(pixels), 2), -1, dtype=np.int64)
+    found = np.zeros(len(pixels), dtype=bool)
+    for point_index in np.flatnonzero(overlaps_image):
+        left_value = max(0, int(left[point_index]))
+        right_value = min(width - 1, int(right[point_index]))
+        top_value = max(0, int(top[point_index]))
+        bottom_value = min(height - 1, int(bottom[point_index]))
+        candidates = np.argwhere(
+            source_mask[
+                top_value : bottom_value + 1,
+                left_value : right_value + 1,
+            ]
+        )
+        if not len(candidates):
+            continue
+        rows = candidates[:, 0] + top_value
+        columns = candidates[:, 1] + left_value
+        squared_distance = np.square(columns - pixels[point_index, 0]) + np.square(
+            rows - pixels[point_index, 1]
+        )
+        order = np.lexsort((columns, rows, squared_distance))
+        selected = int(order[0])
+        selected_pixels[point_index] = [columns[selected], rows[selected]]
+        found[point_index] = True
+    return found, selected_pixels
+
+
+def _point_mask_hits(
+    points_world_m: np.ndarray,
+    mask: np.ndarray,
+    intrinsics: np.ndarray,
+    camera_to_world: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Nearest-pixel point/mask membership used by the legacy-compatible search."""
+
+    source_mask = np.asarray(mask, dtype=bool)
+    pixels, depth = _project_points(points_world_m, intrinsics, camera_to_world)
+    finite = (depth > 1e-8) & np.all(np.isfinite(pixels), axis=1)
+    safe = np.where(np.isfinite(pixels), pixels, 0.0)
+    rounded = np.rint(safe).astype(np.int64)
+    height, width = source_mask.shape
+    in_bounds = (
+        finite
+        & (rounded[:, 0] >= 0)
+        & (rounded[:, 0] < width)
+        & (rounded[:, 1] >= 0)
+        & (rounded[:, 1] < height)
+    )
+    hits = np.zeros(len(rounded), dtype=bool)
+    ids = np.flatnonzero(in_bounds)
+    if len(ids):
+        hits[ids] = source_mask[rounded[ids, 1], rounded[ids, 0]]
+    return hits, in_bounds
+
+
+def _carve_candidate_points_with_footprints(
+    candidate_points_world_m: np.ndarray,
+    masks_by_camera: Mapping[str, np.ndarray],
+    intrinsics_by_camera: Mapping[str, np.ndarray],
+    camera_to_world_by_camera: Mapping[str, np.ndarray],
+    *,
+    axis_spacing_m: Sequence[float],
+    required_vote_count: int = _FALLBACK_STRICT_CONSENSUS_VOTES,
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    """Carve with source-mask overlap by projected voxel footprints.
+
+    Unlike the legacy carver, the quorum is absolute.  A low peak therefore
+    produces an empty hull rather than silently relaxing the physical support
+    requirement.
+    """
+
+    points = np.asarray(candidate_points_world_m, dtype=np.float64)
+    _require(
+        points.ndim == 2 and points.shape[1] == 3 and len(points) > 0,
+        "candidate points must have shape (N,3)",
+    )
+    cameras = tuple(sorted(masks_by_camera))
+    _require(len(cameras) >= required_vote_count, "too few cameras for strict quorum")
+    _require(
+        set(cameras) <= set(intrinsics_by_camera)
+        and set(cameras) <= set(camera_to_world_by_camera),
+        "footprint calibration is incomplete",
+    )
+    votes = np.zeros(len(points), dtype=np.uint16)
+    per_camera: list[dict[str, Any]] = []
+    for camera in cameras:
+        hits, _in_bounds, footprint = _projected_footprint_hits(
+            points,
+            masks_by_camera[camera],
+            intrinsics_by_camera[camera],
+            camera_to_world_by_camera[camera],
+            axis_spacing_m=axis_spacing_m,
+        )
+        votes += hits.astype(np.uint16)
+        per_camera.append({"camera": camera, **footprint})
+    accepted = votes >= required_vote_count
+    peak = int(votes.max(initial=0))
+    return (
+        points[accepted],
+        accepted,
+        {
+            "candidate_point_count": len(points),
+            "camera_count": len(cameras),
+            "peak_vote_count": peak,
+            "required_vote_count": required_vote_count,
+            "hull_point_count": int(np.count_nonzero(accepted)),
+            "accepted_candidate_fraction": float(np.mean(accepted)),
+            "axis_spacing_m": np.asarray(axis_spacing_m, dtype=np.float64).tolist(),
+            "vote_count_sha256": _sha256_array(votes),
+            "accepted_mask_sha256": _sha256_array(accepted),
+            "per_camera": per_camera,
+        },
+    )
+
+
+def _local_refinement_bounds(
+    coarse_component_points_world_m: np.ndarray,
+    *,
+    global_minimum_world_m: np.ndarray,
+    global_maximum_world_m: np.ndarray,
+    coarse_axis_spacing_m: Sequence[float],
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    points = np.asarray(coarse_component_points_world_m, dtype=np.float64)
+    spacing = np.asarray(coarse_axis_spacing_m, dtype=np.float64)
+    global_minimum = np.asarray(global_minimum_world_m, dtype=np.float64)
+    global_maximum = np.asarray(global_maximum_world_m, dtype=np.float64)
+    _require(
+        points.ndim == 2 and points.shape[1] == 3 and len(points) > 0,
+        "coarse component is empty",
+    )
+    _require(
+        spacing.shape == (3,) and np.all(spacing > 0.0),
+        "invalid coarse spacing",
+    )
+    margin = _FALLBACK_LOCAL_MARGIN_COARSE_CELLS * spacing
+    minimum = np.maximum(global_minimum, np.min(points, axis=0) - margin)
+    maximum = np.minimum(global_maximum, np.max(points, axis=0) + margin)
+    _require(np.all(maximum > minimum), "local refinement bounds collapsed")
+    return (
+        minimum,
+        maximum,
+        {
+            "coarse_margin_cell_count": _FALLBACK_LOCAL_MARGIN_COARSE_CELLS,
+            "margin_m": margin.tolist(),
+            "bounds_minimum_world_m": minimum.tolist(),
+            "bounds_maximum_world_m": maximum.tolist(),
+        },
+    )
+
+
+def _resolution_aware_depth_radius(
+    hull_points_world_m: np.ndarray,
+    intrinsics: np.ndarray,
+    camera_to_world: np.ndarray,
+    *,
+    axis_spacing_m: Sequence[float],
+    image_shape: Sequence[int],
+) -> tuple[int, dict[str, Any]]:
+    """Choose a deterministic per-camera splat radius from projected voxels."""
+
+    pixels, depth, radius_u, radius_v = _projected_half_voxel_radii(
+        hull_points_world_m,
+        intrinsics,
+        camera_to_world,
+        axis_spacing_m=axis_spacing_m,
+    )
+    height, width = (int(image_shape[0]), int(image_shape[1]))
+    visible = (
+        (depth > 1e-8)
+        & np.all(np.isfinite(pixels), axis=1)
+        & (pixels[:, 0] >= 0.0)
+        & (pixels[:, 0] < width)
+        & (pixels[:, 1] >= 0.0)
+        & (pixels[:, 1] < height)
+    )
+    projected = np.maximum(radius_u[visible], radius_v[visible])
+    radius = (
+        max(1, int(math.ceil(float(np.median(projected))))) if len(projected) else 1
+    )
+    return radius, {
+        "policy": "ceil-median-projected-half-voxel-radius",
+        "visible_hull_point_count": int(np.count_nonzero(visible)),
+        "radius_pixels": radius,
+        "projected_radius_pixels": {
+            "minimum": float(np.min(projected)) if len(projected) else None,
+            "median": float(np.median(projected)) if len(projected) else None,
+            "maximum": float(np.max(projected)) if len(projected) else None,
+        },
+    }
 
 
 def _largest_grid_component(
@@ -1052,7 +2421,7 @@ def build_frame_zero_geometry(
         consensus_fraction_of_peak=config.consensus_fraction_of_peak,
         minimum_consensus_votes=config.minimum_consensus_votes,
     )
-    _require(
+    _require_geometry(
         len(hull) >= config.minimum_hull_point_count,
         "frame-zero visual hull is too small",
     )
@@ -1062,7 +2431,7 @@ def build_frame_zero_geometry(
         bounds_maximum=maximum,
         grid_shape=grid_diagnostics["grid_shape"],
     )
-    _require(
+    _require_geometry(
         components["largest_component_fraction"]
         >= config.minimum_largest_component_fraction,
         "visual hull is dominated by disconnected clutter",
@@ -1073,7 +2442,7 @@ def build_frame_zero_geometry(
         count=config.object_point_count,
         rng_seed=config.rng_seed,
     )
-    _require(len(surface_points) >= 128, "too few object surface points")
+    _require_geometry(len(surface_points) >= 128, "too few object surface points")
 
     rgb_stack = np.stack(
         [np.asarray(rgb_by_camera[camera], dtype=np.uint8) for camera in cameras]
@@ -1155,7 +2524,7 @@ def build_frame_zero_geometry(
             }
         )
     support_count = np.sum(np.all(np.isfinite(sampled_colors), axis=2), axis=0)
-    _require(
+    _require_geometry(
         np.all(support_count > 0), "one or more surface points have no RGB support"
     )
     object_colors = np.nanmedian(sampled_colors, axis=0).astype(np.uint8)
@@ -1227,8 +2596,603 @@ def build_frame_zero_geometry(
         "acceptance_gates": gates,
         "geometry_qa_passed": all(gates.values()),
     }
-    _require(diagnostics["geometry_qa_passed"], "frame-zero geometry failed QA")
+    failed_gates = sorted(name for name, passed in gates.items() if not passed)
+    _require_geometry(
+        diagnostics["geometry_qa_passed"],
+        "frame-zero geometry failed QA: " + ",".join(failed_gates),
+    )
     return arrays, diagnostics
+
+
+def _build_frame_zero_fallback_geometry(
+    rgb_by_camera: Mapping[str, np.ndarray],
+    masks_by_camera: Mapping[str, np.ndarray],
+    intrinsics_by_camera: Mapping[str, np.ndarray],
+    camera_to_world_by_camera: Mapping[str, np.ndarray],
+    *,
+    config: FrameZeroAssetConfig,
+    strategy: str,
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    """Build strict-quorum footprint geometry after an audited legacy failure."""
+
+    _require(
+        strategy
+        in {
+            "same-masks-projected-footprint",
+            "common-voxel-assignment-projected-footprint",
+        },
+        "unknown geometry fallback strategy",
+    )
+    cameras = tuple(sorted(masks_by_camera))
+    _require(
+        len(cameras) >= _FALLBACK_STRICT_CONSENSUS_VOTES,
+        "too few selected cameras for geometry fallback",
+    )
+    _require(set(cameras) == set(rgb_by_camera), "fallback RGB/mask cameras differ")
+    _require(
+        set(cameras) <= set(intrinsics_by_camera)
+        and set(cameras) <= set(camera_to_world_by_camera),
+        "fallback calibration is incomplete",
+    )
+    image_shapes = {np.asarray(rgb_by_camera[camera]).shape for camera in cameras}
+    _require(len(image_shapes) == 1, "fallback RGB frame shapes differ")
+    image_shape = next(iter(image_shapes))
+    _require(
+        len(image_shape) == 3 and image_shape[2] == 3,
+        "invalid fallback RGB frame shape",
+    )
+    for camera in cameras:
+        _require(
+            np.asarray(masks_by_camera[camera]).shape == image_shape[:2],
+            f"fallback mask/RGB shape mismatch for {camera}",
+        )
+
+    centers = np.stack(
+        [np.asarray(camera_to_world_by_camera[camera])[:3, 3] for camera in cameras]
+    )
+    grid_center = np.mean(centers, axis=0)
+    global_minimum = grid_center - config.cube_half_extent_m
+    global_maximum = grid_center + config.cube_half_extent_m
+    coarse_grid, coarse_grid_diagnostics = regular_grid_in_bounds(
+        global_minimum,
+        global_maximum,
+        requested_voxel_size_m=config.requested_voxel_size_m,
+        maximum_point_count=config.maximum_grid_point_count,
+    )
+    coarse_spacing = coarse_grid_diagnostics["effective_axis_spacing_m"]
+    coarse_hull, _coarse_accepted, coarse_carving = (
+        _carve_candidate_points_with_footprints(
+            coarse_grid,
+            masks_by_camera,
+            intrinsics_by_camera,
+            camera_to_world_by_camera,
+            axis_spacing_m=coarse_spacing,
+        )
+    )
+    _require_geometry(
+        len(coarse_hull) >= _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT,
+        "projected-footprint coarse hull is too small",
+    )
+    coarse_keep, _coarse_surface, coarse_components = _largest_grid_component(
+        coarse_hull,
+        bounds_minimum=global_minimum,
+        bounds_maximum=global_maximum,
+        grid_shape=coarse_grid_diagnostics["grid_shape"],
+    )
+    _require_geometry(
+        coarse_components["largest_component_point_count"]
+        >= _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT,
+        "projected-footprint coarse connected core is too small",
+    )
+    _require_geometry(
+        coarse_components["largest_component_fraction"]
+        >= config.minimum_largest_component_fraction,
+        "projected-footprint coarse hull is dominated by disconnected clutter",
+    )
+    coarse_component = np.asarray(coarse_hull[coarse_keep], dtype=np.float64)
+    local_minimum, local_maximum, local_bounds = _local_refinement_bounds(
+        coarse_component,
+        global_minimum_world_m=global_minimum,
+        global_maximum_world_m=global_maximum,
+        coarse_axis_spacing_m=coarse_spacing,
+    )
+
+    refined_grid, refined_grid_diagnostics = regular_grid_in_bounds(
+        local_minimum,
+        local_maximum,
+        requested_voxel_size_m=_FALLBACK_LOCAL_REQUESTED_VOXEL_SIZE_M,
+        maximum_point_count=_FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT,
+    )
+    refined_spacing = refined_grid_diagnostics["effective_axis_spacing_m"]
+    refined_hull, _refined_accepted, refined_carving = (
+        _carve_candidate_points_with_footprints(
+            refined_grid,
+            masks_by_camera,
+            intrinsics_by_camera,
+            camera_to_world_by_camera,
+            axis_spacing_m=refined_spacing,
+        )
+    )
+    _require_geometry(
+        len(refined_hull) >= _FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT,
+        "projected-footprint refined hull is too small",
+    )
+    refined_keep, refined_surface, refined_components = _largest_grid_component(
+        refined_hull,
+        bounds_minimum=local_minimum,
+        bounds_maximum=local_maximum,
+        grid_shape=refined_grid_diagnostics["grid_shape"],
+    )
+    _require_geometry(
+        refined_components["largest_component_fraction"]
+        >= config.minimum_largest_component_fraction,
+        "projected-footprint refined hull is dominated by disconnected clutter",
+    )
+    hull = np.asarray(refined_hull[refined_keep], dtype=np.float64)
+    all_surface_points = np.asarray(
+        refined_hull[refined_keep][refined_surface[refined_keep]], dtype=np.float64
+    )
+    _require_geometry(
+        len(all_surface_points) >= _FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT,
+        "too few projected-footprint refined surface points",
+    )
+
+    stability_grid, stability_grid_diagnostics = regular_grid_in_bounds(
+        local_minimum,
+        local_maximum,
+        requested_voxel_size_m=_FALLBACK_STABILITY_REQUESTED_VOXEL_SIZE_M,
+        maximum_point_count=_FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT,
+    )
+    stability_spacing = stability_grid_diagnostics["effective_axis_spacing_m"]
+    stability_hull, _stability_accepted, stability_carving = (
+        _carve_candidate_points_with_footprints(
+            stability_grid,
+            masks_by_camera,
+            intrinsics_by_camera,
+            camera_to_world_by_camera,
+            axis_spacing_m=stability_spacing,
+        )
+    )
+    _require_geometry(
+        len(stability_hull) >= _FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT,
+        "projected-footprint stability hull is too small",
+    )
+    stability_keep, _stability_surface, stability_components = _largest_grid_component(
+        stability_hull,
+        bounds_minimum=local_minimum,
+        bounds_maximum=local_maximum,
+        grid_shape=stability_grid_diagnostics["grid_shape"],
+    )
+    stability_component = np.asarray(stability_hull[stability_keep], dtype=np.float64)
+    _require_geometry(
+        stability_components["largest_component_fraction"]
+        >= config.minimum_largest_component_fraction,
+        "projected-footprint stability hull is dominated by disconnected clutter",
+    )
+    refined_voxel_volume = float(np.prod(np.asarray(refined_spacing)))
+    stability_voxel_volume = float(np.prod(np.asarray(stability_spacing)))
+    refined_physical_volume = float(len(hull) * refined_voxel_volume)
+    stability_physical_volume = float(len(stability_component) * stability_voxel_volume)
+    scale_stability = (
+        min(refined_physical_volume, stability_physical_volume)
+        / max(refined_physical_volume, stability_physical_volume)
+        if max(refined_physical_volume, stability_physical_volume) > 0.0
+        else 0.0
+    )
+    _require_geometry(
+        scale_stability >= _FALLBACK_MINIMUM_SCALE_STABILITY,
+        "projected-footprint local hull is not resolution stable",
+    )
+
+    rgb_stack = np.stack(
+        [np.asarray(rgb_by_camera[camera], dtype=np.uint8) for camera in cameras]
+    )
+    mask_stack = np.stack(
+        [np.asarray(masks_by_camera[camera], dtype=bool) for camera in cameras]
+    )
+    intrinsics_stack = np.stack(
+        [
+            np.asarray(intrinsics_by_camera[camera], dtype=np.float64)
+            for camera in cameras
+        ]
+    )
+    extrinsics_stack = np.stack(
+        [
+            np.asarray(camera_to_world_by_camera[camera], dtype=np.float64)
+            for camera in cameras
+        ]
+    )
+    projection_stack = np.stack(
+        [
+            _projection_matrix(
+                intrinsics_by_camera[camera], camera_to_world_by_camera[camera]
+            )
+            for camera in cameras
+        ]
+    )
+
+    footprint_surface_hits: list[np.ndarray] = []
+    surface_camera_qa: list[dict[str, Any]] = []
+    raw_containment_values = []
+    footprint_containment_values = []
+    for camera_index, camera in enumerate(cameras):
+        raw_hits, raw_visible = _point_mask_hits(
+            all_surface_points,
+            mask_stack[camera_index],
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
+        )
+        footprint_hits, footprint_visible, footprint_qa = _projected_footprint_hits(
+            all_surface_points,
+            mask_stack[camera_index],
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
+            axis_spacing_m=refined_spacing,
+        )
+        raw_containment = (
+            float(np.count_nonzero(raw_hits) / np.count_nonzero(raw_visible))
+            if np.any(raw_visible)
+            else 0.0
+        )
+        footprint_containment = (
+            float(
+                np.count_nonzero(footprint_hits) / np.count_nonzero(footprint_visible)
+            )
+            if np.any(footprint_visible)
+            else 0.0
+        )
+        footprint_surface_hits.append(footprint_hits)
+        raw_containment_values.append(raw_containment)
+        footprint_containment_values.append(footprint_containment)
+        surface_camera_qa.append(
+            {
+                "camera": camera,
+                "visible_refined_surface_point_count": int(
+                    np.count_nonzero(raw_visible)
+                ),
+                "inside_raw_mask_refined_surface_point_count": int(
+                    np.count_nonzero(raw_hits)
+                ),
+                "raw_hull_mask_containment": raw_containment,
+                "footprint_hull_mask_containment": footprint_containment,
+                "refined_surface_footprint": footprint_qa,
+            }
+        )
+    footprint_hit_stack = np.stack(footprint_surface_hits)
+    _require_geometry(
+        np.all(np.any(footprint_hit_stack, axis=0)),
+        "one or more refined surface points have no footprint color support",
+    )
+    surface_points = _sample_surface_points(
+        all_surface_points,
+        count=config.object_point_count,
+        rng_seed=config.rng_seed,
+    )
+    sampled_colors = np.full((len(cameras), len(surface_points), 3), np.nan)
+    sampled_raw_center_support = np.zeros(
+        (len(cameras), len(surface_points)), dtype=bool
+    )
+    sampled_footprint_support = np.zeros(
+        (len(cameras), len(surface_points)), dtype=bool
+    )
+    depth_maps = []
+    depth_valid = []
+    depth_coverage_values = []
+    camera_qa = []
+    for camera_index, camera in enumerate(cameras):
+        mask = mask_stack[camera_index]
+        raw_inside, visible = _point_mask_hits(
+            surface_points,
+            mask,
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
+        )
+        footprint_inside, footprint_pixels = _nearest_projected_footprint_mask_pixels(
+            surface_points,
+            mask,
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
+            axis_spacing_m=refined_spacing,
+        )
+        sampled_raw_center_support[camera_index] = raw_inside
+        sampled_footprint_support[camera_index] = footprint_inside
+        color_ids = np.flatnonzero(footprint_inside)
+        if len(color_ids):
+            sampled_colors[camera_index, color_ids] = rgb_stack[
+                camera_index,
+                footprint_pixels[color_ids, 1],
+                footprint_pixels[color_ids, 0],
+            ]
+        depth_radius, depth_radius_qa = _resolution_aware_depth_radius(
+            hull,
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
+            axis_spacing_m=refined_spacing,
+            image_shape=mask.shape,
+        )
+        depth_map, valid_map, depth_qa = _render_depth(
+            hull,
+            mask,
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
+            radius=depth_radius,
+        )
+        depth_maps.append(depth_map)
+        depth_valid.append(valid_map)
+        depth_coverage_values.append(float(depth_qa["depth_mask_coverage"]))
+        camera_qa.append(
+            {
+                **surface_camera_qa[camera_index],
+                "mask_area_pixels": int(np.count_nonzero(mask)),
+                "mask_area_fraction": float(np.mean(mask)),
+                "visible_sampled_surface_point_count": int(np.count_nonzero(visible)),
+                "inside_raw_mask_sampled_surface_point_count": int(
+                    np.count_nonzero(raw_inside)
+                ),
+                "inside_footprint_sampled_surface_point_count": int(
+                    np.count_nonzero(footprint_inside)
+                ),
+                "depth_radius": depth_radius_qa,
+                **depth_qa,
+            }
+        )
+    raw_center_support_count = np.sum(sampled_raw_center_support, axis=0)
+    support_count = np.sum(sampled_footprint_support, axis=0)
+    _require_geometry(
+        np.all(support_count > 0)
+        and np.all(np.all(np.isfinite(sampled_colors), axis=2).sum(axis=0) > 0),
+        "one or more fallback surface points have no footprint RGB support",
+    )
+    object_colors = np.nanmedian(sampled_colors, axis=0).astype(np.uint8)
+    raw_containment = np.asarray(raw_containment_values, dtype=np.float64)
+    footprint_containment = np.asarray(footprint_containment_values, dtype=np.float64)
+    coverage = np.asarray(depth_coverage_values, dtype=np.float64)
+    quantiles = np.percentile(surface_points, [1.0, 50.0, 99.0], axis=0)
+    surface_area_proxy = float(
+        len(all_surface_points) * refined_voxel_volume ** (2.0 / 3.0)
+    )
+    gates = {
+        "camera_count": len(cameras) >= config.minimum_camera_count,
+        "coarse_strict_consensus_vote_count": (
+            coarse_carving["required_vote_count"] == _FALLBACK_STRICT_CONSENSUS_VOTES
+        ),
+        "refined_strict_consensus_vote_count": (
+            refined_carving["required_vote_count"] == _FALLBACK_STRICT_CONSENSUS_VOTES
+        ),
+        "stability_strict_consensus_vote_count": (
+            stability_carving["required_vote_count"] == _FALLBACK_STRICT_CONSENSUS_VOTES
+        ),
+        "coarse_connected_core_point_count": (
+            coarse_components["largest_component_point_count"]
+            >= _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT
+        ),
+        "coarse_largest_component_fraction": (
+            coarse_components["largest_component_fraction"]
+            >= config.minimum_largest_component_fraction
+        ),
+        "refined_surface_point_count": (
+            len(all_surface_points) >= _FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT
+        ),
+        "refined_largest_component_fraction": (
+            refined_components["largest_component_fraction"]
+            >= config.minimum_largest_component_fraction
+        ),
+        "refined_grid_not_coarsened": not bool(
+            refined_grid_diagnostics["coarsened_for_grid_cap"]
+        ),
+        "local_scale_stability": (scale_stability >= _FALLBACK_MINIMUM_SCALE_STABILITY),
+        "stability_largest_component_fraction": (
+            stability_components["largest_component_fraction"]
+            >= config.minimum_largest_component_fraction
+        ),
+        "stability_grid_not_coarsened": not bool(
+            stability_grid_diagnostics["coarsened_for_grid_cap"]
+        ),
+        "raw_median_hull_mask_containment": (
+            float(np.median(raw_containment))
+            >= config.minimum_median_hull_mask_containment
+        ),
+        "median_depth_mask_coverage": (
+            float(np.median(coverage)) >= config.minimum_median_depth_mask_coverage
+        ),
+        "all_refined_surface_points_have_footprint_support": bool(
+            np.all(np.any(footprint_hit_stack, axis=0))
+        ),
+        "all_sampled_surface_points_colored": bool(np.all(support_count > 0)),
+    }
+    _require(
+        set(gates) == set(_FALLBACK_ACCEPTANCE_GATE_NAMES),
+        "frame-zero geometry fallback acceptance-gate contract changed",
+    )
+    arrays = {
+        "frame_indices": np.asarray([0], dtype=np.int64),
+        "camera_names": np.asarray(cameras),
+        "rgb_frame0": rgb_stack,
+        "mask_frame0": mask_stack,
+        "depth_frame0_m": np.stack(depth_maps).astype(np.float32),
+        "depth_valid_frame0": np.stack(depth_valid),
+        "intrinsics": intrinsics_stack,
+        "camera_to_world": extrinsics_stack,
+        "projection_world_to_pixel": projection_stack,
+        "object_points_world_m": surface_points.astype(np.float32),
+        "object_colors_rgb": object_colors,
+        "object_color_support_count": support_count.astype(np.uint8),
+        "visual_hull_points_world_m": hull.astype(np.float32),
+    }
+    diagnostics = {
+        "strategy": strategy,
+        "fallback_policy_id": FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID,
+        "coarse_grid": coarse_grid_diagnostics,
+        "coarse_carving": coarse_carving,
+        "coarse_components": coarse_components,
+        "local_bounds": local_bounds,
+        "refined_grid": refined_grid_diagnostics,
+        "refined_carving": refined_carving,
+        "refined_components": refined_components,
+        "stability_grid": stability_grid_diagnostics,
+        "stability_carving": stability_carving,
+        "stability_components": stability_components,
+        "local_resolution_stability": {
+            "refined_requested_voxel_size_m": (_FALLBACK_LOCAL_REQUESTED_VOXEL_SIZE_M),
+            "stability_requested_voxel_size_m": (
+                _FALLBACK_STABILITY_REQUESTED_VOXEL_SIZE_M
+            ),
+            "maximum_local_grid_point_count": (
+                _FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT
+            ),
+            "refined_component_physical_volume_m3": refined_physical_volume,
+            "stability_component_physical_volume_m3": stability_physical_volume,
+            "symmetric_volume_ratio": scale_stability,
+            "minimum_symmetric_volume_ratio": _FALLBACK_MINIMUM_SCALE_STABILITY,
+        },
+        "visual_hull_point_count": len(hull),
+        "visual_hull_points_sha256": _sha256_array(hull.astype(np.float32)),
+        "refined_surface_point_count": len(all_surface_points),
+        "refined_component_physical_volume_m3": refined_physical_volume,
+        "refined_surface_area_proxy_m2": surface_area_proxy,
+        "object_point_count": len(surface_points),
+        "object_world_m": {
+            "q01": quantiles[0].tolist(),
+            "median": quantiles[1].tolist(),
+            "q99": quantiles[2].tolist(),
+            "q01_to_q99_span": (quantiles[2] - quantiles[0]).tolist(),
+        },
+        "object_color_support_count": {
+            "minimum": int(np.min(support_count)),
+            "median": float(np.median(support_count)),
+            "maximum": int(np.max(support_count)),
+        },
+        "raw_center_object_color_support_count": {
+            "minimum": int(np.min(raw_center_support_count)),
+            "median": float(np.median(raw_center_support_count)),
+            "maximum": int(np.max(raw_center_support_count)),
+        },
+        "depth_mask_coverage": {
+            "minimum": float(np.min(coverage)),
+            "median": float(np.median(coverage)),
+            "maximum": float(np.max(coverage)),
+        },
+        "raw_hull_mask_containment": {
+            "minimum": float(np.min(raw_containment)),
+            "median": float(np.median(raw_containment)),
+            "maximum": float(np.max(raw_containment)),
+        },
+        "footprint_hull_mask_containment": {
+            "minimum": float(np.min(footprint_containment)),
+            "median": float(np.median(footprint_containment)),
+            "maximum": float(np.max(footprint_containment)),
+        },
+        "per_camera": camera_qa,
+        "acceptance_gates": gates,
+        "geometry_qa_passed": all(gates.values()),
+    }
+    failed_gates = sorted(name for name, passed in gates.items() if not passed)
+    _require_geometry(
+        diagnostics["geometry_qa_passed"],
+        "projected-footprint frame-zero geometry failed QA: " + ",".join(failed_gates),
+    )
+    return arrays, diagnostics
+
+
+def _selected_proposal_audit(
+    diagnostics: Sequence[Mapping[str, Any]],
+    masks_by_camera: Mapping[str, np.ndarray],
+) -> list[dict[str, Any]]:
+    by_camera = {str(record["camera"]): record for record in diagnostics}
+    records = []
+    for camera in sorted(masks_by_camera):
+        diagnostic = by_camera[camera]
+        selected = diagnostic["selected"]
+        records.append(
+            {
+                "camera": camera,
+                "candidate_index": int(selected["candidate_index"]),
+                "automatic_candidate_count": int(
+                    diagnostic["automatic_candidate_count"]
+                ),
+                "eligible_candidate_count": int(diagnostic["eligible_candidate_count"]),
+                "mask_sha256": _sha256_array(
+                    np.asarray(masks_by_camera[camera], dtype=bool)
+                ),
+            }
+        )
+    return records
+
+
+def _fallback_attempt_pass_record(
+    strategy: str,
+    geometry_qa: Mapping[str, Any],
+    masks_by_camera: Mapping[str, np.ndarray],
+) -> dict[str, Any]:
+    footprint_payload = {
+        stage: geometry_qa[stage]["per_camera"]
+        for stage in ("coarse_carving", "refined_carving", "stability_carving")
+    }
+    return {
+        "strategy": strategy,
+        "status": "passed",
+        "selected_camera_count": len(masks_by_camera),
+        "selected_mask_set_sha256": _mask_set_sha256(masks_by_camera),
+        "coarse_peak_vote_count": int(geometry_qa["coarse_carving"]["peak_vote_count"]),
+        "coarse_required_vote_count": int(
+            geometry_qa["coarse_carving"]["required_vote_count"]
+        ),
+        "coarse_connected_core_point_count": int(
+            geometry_qa["coarse_components"]["largest_component_point_count"]
+        ),
+        "refined_surface_point_count": int(geometry_qa["refined_surface_point_count"]),
+        "refined_required_vote_count": int(
+            geometry_qa["refined_carving"]["required_vote_count"]
+        ),
+        "stability_required_vote_count": int(
+            geometry_qa["stability_carving"]["required_vote_count"]
+        ),
+        "refined_grid_coarsened_for_cap": bool(
+            geometry_qa["refined_grid"]["coarsened_for_grid_cap"]
+        ),
+        "stability_grid_coarsened_for_cap": bool(
+            geometry_qa["stability_grid"]["coarsened_for_grid_cap"]
+        ),
+        "refined_effective_axis_spacing_m": list(
+            geometry_qa["refined_grid"]["effective_axis_spacing_m"]
+        ),
+        "stability_effective_axis_spacing_m": list(
+            geometry_qa["stability_grid"]["effective_axis_spacing_m"]
+        ),
+        "raw_median_hull_mask_containment": float(
+            geometry_qa["raw_hull_mask_containment"]["median"]
+        ),
+        "footprint_median_hull_mask_containment": float(
+            geometry_qa["footprint_hull_mask_containment"]["median"]
+        ),
+        "median_depth_mask_coverage": float(
+            geometry_qa["depth_mask_coverage"]["median"]
+        ),
+        "local_scale_stability": float(
+            geometry_qa["local_resolution_stability"]["symmetric_volume_ratio"]
+        ),
+        "stability_component_count": int(
+            geometry_qa["stability_components"]["component_count"]
+        ),
+        "stability_largest_component_fraction": float(
+            geometry_qa["stability_components"]["largest_component_fraction"]
+        ),
+        "projected_footprint_diagnostics_sha256": hashlib.sha256(
+            _canonical_bytes(footprint_payload)
+        ).hexdigest(),
+        "geometry_qa_sha256": hashlib.sha256(_canonical_bytes(geometry_qa)).hexdigest(),
+    }
+
+
+def _fallback_attempt_failure_record(
+    strategy: str, error: FrameZeroGeometryQAError
+) -> dict[str, Any]:
+    return {
+        "strategy": strategy,
+        "status": "failed",
+        "error_type": type(error).__name__,
+        "reason": str(error),
+    }
 
 
 def _load_calibration(
@@ -1275,108 +3239,33 @@ def _load_calibration(
     )
 
 
-def _controller_centres(actions: np.ndarray) -> np.ndarray:
-    values = np.asarray(actions, dtype=np.float64)
-    _require(np.all(np.isfinite(values)), "robot actions are non-finite")
-    if values.ndim == 3:
-        _require(values.shape[-1] == 3, "robot actions must end in xyz")
-        values = values[:, None, :, :]
-    _require(
-        values.ndim == 4 and values.shape[-1] == 3,
-        "robot actions must have shape (T,P,3) or (T,G,P,3)",
-    )
-    _require(len(values) >= 2, "robot action is too short")
-    return np.mean(values, axis=2)
-
-
-def _closure_confidence(openings: np.ndarray, gripper_count: int) -> np.ndarray:
-    aperture = np.asarray(openings, dtype=np.float64)
-    if aperture.ndim == 1:
-        aperture = aperture[:, None]
-    _require(
-        aperture.ndim == 2 and aperture.shape[1] == gripper_count,
-        "robot openings do not match action groups",
-    )
-    _require(np.all(np.isfinite(aperture)), "robot openings are non-finite")
-    low = np.quantile(aperture, 0.1, axis=0)
-    high = np.quantile(aperture, 0.9, axis=0)
-    span = high - low
-    confidence = np.ones_like(aperture)
-    varying = span > 1e-9
-    confidence[:, varying] = np.clip(
-        (high[varying] - aperture[:, varying]) / span[varying], 0.0, 1.0
-    )
-    return confidence
-
-
 def select_action_only_window(
-    actions: np.ndarray,
-    openings: np.ndarray,
+    state: Deform360RobotKinematics,
     *,
     window_length_frames: int,
     prediction_frame_count: int,
     candidate_first_frame: int,
     candidate_stride_frames: int,
 ) -> dict[str, Any]:
-    """Apply the frozen action-only Deform360 window rule.
+    """Compatibility name for the shared, validated robot-state selector.
 
-    The score is the mean per-gripper centre path, with each step weighted by
-    the minimum endpoint closure confidence.  Candidate order supplies the
-    frozen earliest-start tie break.
+    The old two-array helper treated all five heterogeneous ``actions`` rows as
+    points and averaged them.  Requiring a complete validated robot state makes
+    that failure mode impossible: selection uses only ``T_worlds`` translation
+    and ``openings`` through the shared contract.
     """
 
-    centres = _controller_centres(actions)
-    closed = _closure_confidence(openings, centres.shape[1])
-    _require(len(closed) == len(centres), "action/opening frame counts differ")
     _require(
-        2 <= prediction_frame_count < window_length_frames <= len(centres),
-        "action episode is shorter than its frozen window",
+        isinstance(state, Deform360RobotKinematics),
+        "window selection requires a complete validated robot state",
     )
-    starts = np.arange(
-        candidate_first_frame,
-        len(centres) - window_length_frames + 1,
-        candidate_stride_frames,
-        dtype=np.int64,
+    return select_robot_kinematics_window(
+        state,
+        window_length_frames=window_length_frames,
+        prediction_frame_count=prediction_frame_count,
+        candidate_first_frame=candidate_first_frame,
+        candidate_stride_frames=candidate_stride_frames,
     )
-    _require(len(starts) > 0, "action window has no complete candidate")
-    candidates = []
-    for start_value in starts:
-        start = int(start_value)
-        stop = start + window_length_frames
-        selected = centres[start:stop]
-        step = np.linalg.norm(np.diff(selected, axis=0), axis=-1)
-        weighted = step * np.minimum(closed[start : stop - 1], closed[start + 1 : stop])
-        per_gripper_path = np.sum(weighted, axis=0)
-        candidates.append(
-            {
-                "frame_range_half_open": [start, stop],
-                "mean_closed_weighted_path_length_m": float(np.mean(per_gripper_path)),
-                "maximum_closed_weighted_path_length_m": float(
-                    np.max(per_gripper_path)
-                ),
-            }
-        )
-    selected = max(
-        candidates,
-        key=lambda record: float(record["mean_closed_weighted_path_length_m"]),
-    )
-    start, stop = selected["frame_range_half_open"]
-    return {
-        "selection_rule": (
-            "maximize mean per-gripper centre path weighted per step by minimum "
-            "endpoint closure confidence; earliest candidate breaks ties"
-        ),
-        "selection_inputs": ["robot.npz:actions", "robot.npz:openings"],
-        "candidate_first_frame": candidate_first_frame,
-        "candidate_stride_frames": candidate_stride_frames,
-        "candidate_count": len(candidates),
-        "selected_raw_frame_range_half_open": [start, stop],
-        "prediction_raw_frame_range_half_open": [start, start + prediction_frame_count],
-        "tracking_tail_frame_count": stop - (start + prediction_frame_count),
-        "selected_score": selected,
-        "object_geometry_used_for_selection": False,
-        "tactile_used_for_selection": False,
-    }
 
 
 def _slice_known_action(
@@ -1385,52 +3274,62 @@ def _slice_known_action(
     *,
     config: FrameZeroAssetConfig,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    with np.load(robot_path, allow_pickle=False) as stored:
-        _require(
-            "actions" in stored and "openings" in stored,
-            "robot action fields are missing",
-        )
-        alignment = select_action_only_window(
-            stored["actions"],
-            stored["openings"],
-            window_length_frames=config.action_window_length_frames,
-            prediction_frame_count=config.prediction_frame_count,
-            candidate_first_frame=config.action_candidate_first_frame,
-            candidate_stride_frames=config.action_candidate_stride_frames,
-        )
-        start, stop = alignment["prediction_raw_frame_range_half_open"]
-        source_frame_count = len(stored["actions"])
-        arrays: dict[str, np.ndarray] = {}
-        for name in stored.files:
-            value = np.asarray(stored[name])
-            if value.ndim >= 1 and len(value) == source_frame_count:
-                arrays[name] = value[start:stop]
-            else:
-                arrays[name] = value
-    _require(
-        len(arrays["actions"])
-        == len(arrays["openings"])
-        == config.prediction_frame_count,
-        "sliced action has the wrong prediction length",
+    source_state = load_robot_kinematics_archive(robot_path)
+    selection_audit = select_action_only_window(
+        source_state,
+        window_length_frames=config.action_window_length_frames,
+        prediction_frame_count=config.prediction_frame_count,
+        candidate_first_frame=config.action_candidate_first_frame,
+        candidate_stride_frames=config.action_candidate_stride_frames,
     )
+    start, stop = selection_audit["prediction_raw_frame_range_half_open"]
+    selected_state = slice_robot_kinematics(
+        source_state,
+        start_frame=int(start),
+        frame_count=int(stop) - int(start),
+    )
+    arrays = selected_state.archive_arrays()
     np.savez_compressed(output_path, **arrays)
-    alignment.update(
-        {
-            "source_robot_frame_count": source_frame_count,
-            "prediction_frame_count": config.prediction_frame_count,
-            "selected_action_bundle": _file_record(output_path),
-            "selected_action_arrays": _bundle_array_records(arrays),
-        }
+    selected_bundle = _file_record(output_path)
+    exact_slice_audit = validate_selected_robot_kinematics_bundle(
+        output_path,
+        source_state=source_state,
+        prediction_start_frame=int(start),
+        prediction_frame_count=config.prediction_frame_count,
     )
+    alignment: dict[str, Any] = {
+        "policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+        "trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "selection_audit": selection_audit,
+        # Compatibility mirrors used by the v2 held consumers.  They are
+        # checked against the nested shared audit by the local validator.
+        "selected_raw_frame_range_half_open": list(
+            selection_audit["selected_raw_frame_range_half_open"]
+        ),
+        "prediction_raw_frame_range_half_open": list(
+            selection_audit["prediction_raw_frame_range_half_open"]
+        ),
+        "tracking_tail_frame_count": selection_audit["tracking_tail_frame_count"],
+        "source_robot_frame_count": source_state.frame_count,
+        "prediction_frame_count": config.prediction_frame_count,
+        "selected_robot_kinematics_bundle": selected_bundle,
+        "selected_action_bundle": selected_bundle,
+        "selected_action_bundle_is_compatibility_alias": True,
+        "selected_action_arrays": _bundle_array_records(arrays),
+        "selected_bundle_exact_slice_audit": exact_slice_audit,
+    }
     return arrays, alignment
 
 
 def _action_inputs(episode_dir: Path) -> tuple[dict[str, dict[str, Any]], Path]:
     robot = reject_future_derived_input(
-        episode_dir / "robot" / "robot.npz", purpose="robot action"
+        episode_dir / "robot" / "robot.npz", purpose="realized robot kinematics"
     )
     metadata = reject_future_derived_input(
-        episode_dir / "robot" / "robot.meta.json", purpose="robot action metadata"
+        episode_dir / "robot" / "robot.meta.json",
+        purpose="realized robot kinematics metadata",
     )
     return {
         "robot_trajectory": _file_record(robot),
@@ -1542,6 +3441,7 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
         _NO_AUTOMATIC_CANDIDATES,
         _NO_MASK_THRESHOLD_CANDIDATES,
         _NO_REFERENCE_CONSISTENT_CANDIDATES,
+        _COMMON_INLIER_ABSTENTION_REASON,
     }
     for record in diagnostics:
         automatic_count = record.get("automatic_candidate_count")
@@ -1576,6 +3476,7 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
             "invalid per-camera maximum appearance similarity",
         )
         camera = str(record["camera"])
+        geometry_inlier = record.get("geometry_inlier_selection")
         if record.get("view_selected") is True:
             _require(
                 record.get("abstained") is False
@@ -1584,13 +3485,31 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
                 and isinstance(record.get("selected"), Mapping),
                 "selected camera diagnostics are inconsistent",
             )
+            if geometry_inlier is not None:
+                _require(
+                    isinstance(geometry_inlier, Mapping)
+                    and geometry_inlier.get("retained") is True,
+                    "selected geometry-inlier diagnostics are inconsistent",
+                )
             diagnostic_selected.append(camera)
         else:
+            inlier_exclusion = (
+                record.get("abstention_reason") == _COMMON_INLIER_ABSTENTION_REASON
+            )
             _require(
                 record.get("view_selected") is False
                 and record.get("abstained") is True
                 and record.get("abstention_reason") in allowed_abstention_reasons
-                and eligible_count == 0
+                and (
+                    (
+                        inlier_exclusion
+                        and eligible_count >= 1
+                        and isinstance(geometry_inlier, Mapping)
+                        and geometry_inlier.get("retained") is False
+                        and geometry_inlier.get("candidate_index") is not None
+                    )
+                    or (not inlier_exclusion and eligible_count == 0)
+                )
                 and record.get("selected") is None,
                 "abstained camera diagnostics are inconsistent",
             )
@@ -1600,6 +3519,906 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
         and diagnostic_abstained == abstained_cameras,
         "frame-zero camera policy differs from its diagnostics",
     )
+
+
+def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
+    fallback = payload.get("geometry_fallback")
+    if fallback is None:
+        return
+    keys = {
+        "policy_id",
+        "ordered_strategies",
+        "strict_consensus_vote_count",
+        "reference_seed_policy",
+        "reference_seed_limit",
+        "common_grid_axis_count",
+        "common_local_requested_voxel_size_m",
+        "minimum_coarse_component_point_count",
+        "local_requested_voxel_size_m",
+        "stability_requested_voxel_size_m",
+        "maximum_local_grid_point_count",
+        "minimum_scale_stability",
+        "selected_strategy",
+        "attempts",
+        "legacy_selected_proposals",
+        "legacy_selected_mask_set_sha256",
+        "common_assignment",
+        "final_selected_proposals",
+        "final_selected_mask_set_sha256",
+        "artifact_sha256",
+    }
+    _require(
+        isinstance(fallback, Mapping) and set(fallback) == keys,
+        "invalid frame-zero geometry fallback record",
+    )
+    _require(
+        fallback.get("artifact_sha256") == artifact_sha256(fallback),
+        "frame-zero geometry fallback checksum mismatch",
+    )
+    ordered = [
+        "legacy",
+        "same-masks-projected-footprint",
+        "common-voxel-assignment-projected-footprint",
+    ]
+    _require(
+        fallback.get("policy_id") == FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID
+        and fallback.get("ordered_strategies") == ordered
+        and fallback.get("strict_consensus_vote_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and fallback.get("reference_seed_policy") == _FALLBACK_REFERENCE_SEED_POLICY
+        and fallback.get("reference_seed_limit") == _FALLBACK_REFERENCE_SEED_COUNT
+        and fallback.get("common_grid_axis_count") == _FALLBACK_COMMON_GRID_AXIS_COUNT
+        and fallback.get("common_local_requested_voxel_size_m")
+        == _FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and fallback.get("minimum_coarse_component_point_count")
+        == _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT
+        and fallback.get("local_requested_voxel_size_m")
+        == _FALLBACK_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and fallback.get("stability_requested_voxel_size_m")
+        == _FALLBACK_STABILITY_REQUESTED_VOXEL_SIZE_M
+        and fallback.get("maximum_local_grid_point_count")
+        == _FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT
+        and fallback.get("minimum_scale_stability")
+        == _FALLBACK_MINIMUM_SCALE_STABILITY,
+        "frame-zero geometry fallback policy changed",
+    )
+    selected_strategy = fallback.get("selected_strategy")
+    _require(
+        selected_strategy in set(ordered[1:]),
+        "invalid selected geometry fallback strategy",
+    )
+    attempts = fallback.get("attempts")
+    expected_attempt_strategies = (
+        ordered[:2]
+        if selected_strategy == "same-masks-projected-footprint"
+        else ordered
+    )
+    _require(
+        isinstance(attempts, list)
+        and all(isinstance(attempt, Mapping) for attempt in attempts)
+        and [attempt.get("strategy") for attempt in attempts]
+        == expected_attempt_strategies,
+        "geometry fallback attempt order changed",
+    )
+    failure_keys = {"strategy", "status", "error_type", "reason"}
+    pass_keys = {
+        "strategy",
+        "status",
+        "selected_camera_count",
+        "selected_mask_set_sha256",
+        "coarse_peak_vote_count",
+        "coarse_required_vote_count",
+        "coarse_connected_core_point_count",
+        "refined_surface_point_count",
+        "refined_required_vote_count",
+        "stability_required_vote_count",
+        "refined_grid_coarsened_for_cap",
+        "stability_grid_coarsened_for_cap",
+        "refined_effective_axis_spacing_m",
+        "stability_effective_axis_spacing_m",
+        "raw_median_hull_mask_containment",
+        "footprint_median_hull_mask_containment",
+        "median_depth_mask_coverage",
+        "local_scale_stability",
+        "stability_component_count",
+        "stability_largest_component_fraction",
+        "projected_footprint_diagnostics_sha256",
+        "geometry_qa_sha256",
+    }
+    for attempt in attempts[:-1]:
+        _require(
+            isinstance(attempt, Mapping)
+            and set(attempt) == failure_keys
+            and attempt.get("status") == "failed"
+            and attempt.get("error_type") == "FrameZeroGeometryQAError"
+            and isinstance(attempt.get("reason"), str)
+            and bool(attempt["reason"]),
+            "invalid failed geometry fallback attempt",
+        )
+    passed = attempts[-1]
+
+    def integer_at_least(record: Mapping[str, Any], key: str, minimum: int) -> bool:
+        value = record.get(key)
+        return (
+            isinstance(value, int) and not isinstance(value, bool) and value >= minimum
+        )
+
+    def number_at_least(record: Mapping[str, Any], key: str, minimum: float) -> bool:
+        value = record.get(key)
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(float(value))
+            and float(value) >= minimum
+        )
+
+    _require(
+        isinstance(passed, Mapping)
+        and set(passed) == pass_keys
+        and passed.get("status") == "passed"
+        and passed.get("strategy") == selected_strategy
+        and passed.get("selected_camera_count")
+        == payload["camera_policy"]["selected_camera_count"]
+        and passed.get("selected_mask_set_sha256")
+        == fallback.get("final_selected_mask_set_sha256")
+        and all(
+            _valid_sha256(passed.get(key))
+            for key in (
+                "selected_mask_set_sha256",
+                "projected_footprint_diagnostics_sha256",
+                "geometry_qa_sha256",
+            )
+        )
+        and integer_at_least(
+            passed,
+            "coarse_peak_vote_count",
+            _FALLBACK_STRICT_CONSENSUS_VOTES,
+        )
+        and passed.get("coarse_required_vote_count") == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and passed.get("refined_required_vote_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and passed.get("stability_required_vote_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and passed.get("refined_grid_coarsened_for_cap") is False
+        and passed.get("stability_grid_coarsened_for_cap") is False
+        and all(
+            isinstance(spacing, list)
+            and len(spacing) == 3
+            and all(
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(float(value))
+                and float(value) > 0.0
+                for value in spacing
+            )
+            for spacing in (
+                passed.get("refined_effective_axis_spacing_m"),
+                passed.get("stability_effective_axis_spacing_m"),
+            )
+        )
+        and integer_at_least(
+            passed,
+            "coarse_connected_core_point_count",
+            _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT,
+        )
+        and integer_at_least(
+            passed,
+            "refined_surface_point_count",
+            _FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT,
+        )
+        and number_at_least(
+            passed,
+            "raw_median_hull_mask_containment",
+            float(payload["config"]["minimum_median_hull_mask_containment"]),
+        )
+        and number_at_least(
+            passed,
+            "median_depth_mask_coverage",
+            float(payload["config"]["minimum_median_depth_mask_coverage"]),
+        )
+        and number_at_least(
+            passed,
+            "local_scale_stability",
+            _FALLBACK_MINIMUM_SCALE_STABILITY,
+        )
+        and number_at_least(
+            passed,
+            "stability_largest_component_fraction",
+            float(payload["config"]["minimum_largest_component_fraction"]),
+        ),
+        "invalid passed geometry fallback attempt",
+    )
+
+    def validate_proposals(
+        value: object, *, expected_cameras: Sequence[str] | None
+    ) -> list[str]:
+        _require(isinstance(value, list) and bool(value), "proposal audit is missing")
+        cameras = []
+        proposal_keys = {
+            "camera",
+            "candidate_index",
+            "automatic_candidate_count",
+            "eligible_candidate_count",
+            "mask_sha256",
+        }
+        for record in value:
+            _require(
+                isinstance(record, Mapping)
+                and set(record) == proposal_keys
+                and isinstance(record.get("camera"), str)
+                and isinstance(record.get("candidate_index"), int)
+                and not isinstance(record.get("candidate_index"), bool)
+                and int(record["candidate_index"]) >= 0
+                and isinstance(record.get("automatic_candidate_count"), int)
+                and not isinstance(record.get("automatic_candidate_count"), bool)
+                and isinstance(record.get("eligible_candidate_count"), int)
+                and not isinstance(record.get("eligible_candidate_count"), bool)
+                and 1
+                <= int(record["eligible_candidate_count"])
+                <= int(record["automatic_candidate_count"])
+                and _valid_sha256(record.get("mask_sha256")),
+                "invalid selected proposal audit",
+            )
+            cameras.append(str(record["camera"]))
+        _require(cameras == sorted(set(cameras)), "proposal camera order changed")
+        if expected_cameras is not None:
+            _require(cameras == list(expected_cameras), "proposal cameras changed")
+        return cameras
+
+    legacy_proposals = fallback.get("legacy_selected_proposals")
+    final_proposals = fallback.get("final_selected_proposals")
+    validate_proposals(legacy_proposals, expected_cameras=None)
+    final_cameras = payload["camera_policy"]["selected_cameras"]
+    validate_proposals(final_proposals, expected_cameras=final_cameras)
+
+    def proposal_mask_set_sha256(value: Sequence[Mapping[str, Any]]) -> str:
+        return hashlib.sha256(
+            _canonical_bytes(
+                {str(record["camera"]): record["mask_sha256"] for record in value}
+            )
+        ).hexdigest()
+
+    _require(
+        fallback.get("legacy_selected_mask_set_sha256")
+        == proposal_mask_set_sha256(legacy_proposals)
+        and fallback.get("final_selected_mask_set_sha256")
+        == proposal_mask_set_sha256(final_proposals),
+        "invalid geometry fallback mask checksum",
+    )
+    geometry_qa = payload.get("geometry_qa")
+    acceptance_gates = (
+        geometry_qa.get("acceptance_gates")
+        if isinstance(geometry_qa, Mapping)
+        else None
+    )
+    _require(
+        isinstance(geometry_qa, Mapping)
+        and geometry_qa.get("geometry_qa_passed") is True
+        and isinstance(acceptance_gates, Mapping)
+        and set(acceptance_gates) == set(_FALLBACK_ACCEPTANCE_GATE_NAMES)
+        and all(value is True for value in acceptance_gates.values())
+        and geometry_qa.get("fallback_policy_id")
+        == FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID
+        and geometry_qa.get("strategy") == selected_strategy
+        and passed.get("geometry_qa_sha256")
+        == hashlib.sha256(_canonical_bytes(geometry_qa)).hexdigest(),
+        "geometry fallback differs from geometry QA",
+    )
+    common = fallback.get("common_assignment")
+    if selected_strategy == "same-masks-projected-footprint":
+        _require(
+            common is None
+            and legacy_proposals == final_proposals
+            and fallback.get("legacy_selected_mask_set_sha256")
+            == fallback.get("final_selected_mask_set_sha256"),
+            "same-mask fallback unexpectedly changed proposals",
+        )
+        return
+    common_grid = common.get("grid") if isinstance(common, Mapping) else None
+    common_local = (
+        common.get("local_refinement") if isinstance(common, Mapping) else None
+    )
+    common_proposals = (
+        common.get("selected_proposals") if isinstance(common, Mapping) else None
+    )
+    common_proposal_bindings = (
+        [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("mask_sha256"),
+            }
+            for record in common_proposals
+        ]
+        if isinstance(common_proposals, list)
+        and all(isinstance(record, Mapping) for record in common_proposals)
+        else None
+    )
+    final_proposal_bindings = [
+        {
+            "camera": record["camera"],
+            "candidate_index": record["candidate_index"],
+            "mask_sha256": record["mask_sha256"],
+        }
+        for record in final_proposals
+    ]
+    camera_inliers = (
+        common.get("camera_inlier_ranking") if isinstance(common, Mapping) else None
+    )
+    candidate_cameras = payload["camera_policy"]["candidate_cameras"]
+    reference_camera = payload["camera_policy"]["reference_camera"]
+    inlier_keys = {
+        "camera",
+        "candidate_index",
+        "mask_sha256",
+        "seed_conditioned_candidate_count",
+        "fixed_reference",
+        "nonreference_coverage_rank",
+        "retained",
+        "raw_component_hit_count",
+        "raw_component_coverage",
+        "raw_component_precision",
+        "hits_local_union_peak",
+        "semantic_score",
+        "candidate_lexicographic_objective",
+    }
+    valid_inliers = isinstance(camera_inliers, list) and len(camera_inliers) == len(
+        candidate_cameras
+    )
+    if valid_inliers:
+        valid_inliers = all(
+            isinstance(record, Mapping)
+            and set(record) == inlier_keys
+            and record.get("camera") == camera
+            and isinstance(record.get("seed_conditioned_candidate_count"), int)
+            and not isinstance(record.get("seed_conditioned_candidate_count"), bool)
+            and int(record["seed_conditioned_candidate_count"]) >= 0
+            and isinstance(record.get("retained"), bool)
+            and isinstance(record.get("fixed_reference"), bool)
+            and record.get("fixed_reference") == (camera == reference_camera)
+            and isinstance(record.get("raw_component_hit_count"), int)
+            and not isinstance(record.get("raw_component_hit_count"), bool)
+            and int(record["raw_component_hit_count"]) >= 0
+            and all(
+                isinstance(record.get(key), (int, float))
+                and not isinstance(record.get(key), bool)
+                and math.isfinite(float(record[key]))
+                and 0.0 <= float(record[key]) <= 1.0
+                for key in ("raw_component_coverage", "raw_component_precision")
+            )
+            and isinstance(record.get("hits_local_union_peak"), bool)
+            for camera, record in zip(candidate_cameras, camera_inliers, strict=True)
+        )
+    retained_inliers = (
+        [record for record in camera_inliers if record.get("retained") is True]
+        if valid_inliers
+        else []
+    )
+    chosen_nonreference = (
+        [
+            record
+            for record in camera_inliers
+            if record.get("candidate_index") is not None
+            and record.get("camera") != reference_camera
+        ]
+        if valid_inliers
+        else []
+    )
+    expected_coverage_order = sorted(
+        chosen_nonreference,
+        key=lambda record: (-float(record["raw_component_coverage"]), record["camera"]),
+    )
+    valid_inlier_details = valid_inliers and all(
+        (
+            isinstance(record.get("candidate_index"), int)
+            and not isinstance(record.get("candidate_index"), bool)
+            and int(record["candidate_index"]) >= 0
+            and _valid_sha256(record.get("mask_sha256"))
+            and isinstance(record.get("semantic_score"), (int, float))
+            and not isinstance(record.get("semantic_score"), bool)
+            and math.isfinite(float(record["semantic_score"]))
+            and isinstance(record.get("candidate_lexicographic_objective"), list)
+            and len(record["candidate_lexicographic_objective"]) == 5
+            and record["candidate_lexicographic_objective"]
+            == [
+                float(record["raw_component_coverage"]),
+                float(record["raw_component_precision"]),
+                int(bool(record["hits_local_union_peak"])),
+                float(record["semantic_score"]),
+                -int(record["candidate_index"]),
+            ]
+        )
+        if record.get("seed_conditioned_candidate_count", 0) > 0
+        else (
+            record.get("candidate_index") is None
+            and record.get("mask_sha256") is None
+            and record.get("semantic_score") is None
+            and record.get("candidate_lexicographic_objective") is None
+            and record.get("retained") is False
+            and record.get("nonreference_coverage_rank") is None
+        )
+        for record in camera_inliers
+    )
+    valid_inlier_details = valid_inlier_details and all(
+        record.get("nonreference_coverage_rank") == rank
+        for rank, record in enumerate(expected_coverage_order, start=1)
+    )
+    reference_inlier = (
+        next(
+            (
+                record
+                for record in camera_inliers
+                if record.get("camera") == reference_camera
+            ),
+            None,
+        )
+        if valid_inliers
+        else None
+    )
+    seed_evaluations = (
+        common.get("reference_seed_evaluations")
+        if isinstance(common, Mapping)
+        else None
+    )
+    selected_seed_rank = common.get("selected_reference_seed_rank")
+    seed_keys = {
+        "reference_seed_rank",
+        "reference_candidate_index",
+        "reference_mask_sha256",
+        "reference_local_score",
+        "eligible_camera_count",
+        "strict_feasible_voxel_count",
+        "strict_feasible_component_count",
+        "largest_strict_component_voxel_count",
+        "maximum_union_support_count",
+        "reference_anchor_hit_count",
+        "local_grid_shape",
+        "local_grid_point_count",
+        "local_grid_coarsened_for_cap",
+        "local_strict_feasible_voxel_count",
+        "local_strict_feasible_component_count",
+        "local_largest_strict_component_voxel_count",
+        "local_maximum_union_support_count",
+        "local_strict_feasible_mask_sha256",
+        "lexicographic_objective",
+        "strict_feasible_mask_sha256",
+    }
+    seed_objective_order = [
+        "local_largest_component_voxel_count_desc",
+        "local_strict_feasible_voxel_count_desc",
+        "local_peak_support_desc",
+        "global_largest_component_voxel_count_desc",
+        "global_strict_feasible_voxel_count_desc",
+        "reference_semantic_score_desc",
+        "reference_candidate_index_asc",
+    ]
+    reference_diagnostic = next(
+        (
+            record
+            for record in payload["sam2"]["view_diagnostics"]
+            if record.get("camera") == reference_camera
+        ),
+        None,
+    )
+    expected_seed_count = (
+        min(
+            int(reference_diagnostic["eligible_candidate_count"]),
+            _FALLBACK_REFERENCE_SEED_COUNT,
+        )
+        if isinstance(reference_diagnostic, Mapping)
+        and isinstance(reference_diagnostic.get("eligible_candidate_count"), int)
+        and not isinstance(reference_diagnostic.get("eligible_candidate_count"), bool)
+        else -1
+    )
+    reference_ranking = (
+        common.get("reference_candidate_ranking")
+        if isinstance(common, Mapping)
+        else None
+    )
+    reference_ranking_keys = {
+        "rank",
+        "candidate_index",
+        "mask_sha256",
+        "local_mask_score",
+        "selected_for_seed_evaluation",
+    }
+    valid_reference_ranking = (
+        isinstance(reference_ranking, list)
+        and isinstance(reference_diagnostic, Mapping)
+        and len(reference_ranking)
+        == int(reference_diagnostic["eligible_candidate_count"])
+        and all(
+            isinstance(record, Mapping)
+            and set(record) == reference_ranking_keys
+            and record.get("rank") == rank
+            and isinstance(record.get("candidate_index"), int)
+            and not isinstance(record.get("candidate_index"), bool)
+            and int(record["candidate_index"]) >= 0
+            and _valid_sha256(record.get("mask_sha256"))
+            and isinstance(record.get("local_mask_score"), (int, float))
+            and not isinstance(record.get("local_mask_score"), bool)
+            and math.isfinite(float(record["local_mask_score"]))
+            and record.get("selected_for_seed_evaluation")
+            is (rank < _FALLBACK_REFERENCE_SEED_COUNT)
+            for rank, record in enumerate(reference_ranking)
+        )
+        and [
+            int(record["candidate_index"])
+            for record in sorted(
+                reference_ranking,
+                key=lambda record: (
+                    -float(record["local_mask_score"]),
+                    int(record["candidate_index"]),
+                ),
+            )
+        ]
+        == [int(record["candidate_index"]) for record in reference_ranking]
+    )
+
+    def valid_seed_record(record: object) -> bool:
+        if not isinstance(record, Mapping) or set(record) != seed_keys:
+            return False
+        integer_keys = (
+            "reference_seed_rank",
+            "reference_candidate_index",
+            "eligible_camera_count",
+            "strict_feasible_voxel_count",
+            "strict_feasible_component_count",
+            "largest_strict_component_voxel_count",
+            "maximum_union_support_count",
+            "reference_anchor_hit_count",
+            "local_grid_point_count",
+            "local_strict_feasible_voxel_count",
+            "local_strict_feasible_component_count",
+            "local_largest_strict_component_voxel_count",
+            "local_maximum_union_support_count",
+        )
+        if not all(
+            isinstance(record.get(key), int)
+            and not isinstance(record.get(key), bool)
+            and int(record[key]) >= 0
+            for key in integer_keys
+        ):
+            return False
+        score = record.get("reference_local_score")
+        if (
+            not isinstance(score, (int, float))
+            or isinstance(score, bool)
+            or not math.isfinite(float(score))
+            or not _valid_sha256(record.get("reference_mask_sha256"))
+            or not _valid_sha256(record.get("strict_feasible_mask_sha256"))
+            or not isinstance(record.get("local_grid_coarsened_for_cap"), bool)
+        ):
+            return False
+        local_shape = record.get("local_grid_shape")
+        local_hash = record.get("local_strict_feasible_mask_sha256")
+        local_zero_metrics = all(
+            record[key] == 0
+            for key in (
+                "local_strict_feasible_voxel_count",
+                "local_strict_feasible_component_count",
+                "local_largest_strict_component_voxel_count",
+                "local_maximum_union_support_count",
+            )
+        )
+        if record["local_grid_point_count"] == 0:
+            if (
+                local_shape is not None
+                or local_hash is not None
+                or record["local_grid_coarsened_for_cap"] is True
+                or not local_zero_metrics
+            ):
+                return False
+        elif (
+            not isinstance(local_shape, list)
+            or len(local_shape) != 3
+            or not all(
+                isinstance(value, int) and not isinstance(value, bool) and value >= 1
+                for value in local_shape
+            )
+            or math.prod(local_shape) != record["local_grid_point_count"]
+            or (
+                record["local_grid_coarsened_for_cap"] is False
+                and not _valid_sha256(local_hash)
+            )
+            or (
+                record["local_grid_coarsened_for_cap"] is True
+                and (local_hash is not None or not local_zero_metrics)
+            )
+        ):
+            return False
+        expected_objective = [
+            record["local_largest_strict_component_voxel_count"],
+            record["local_strict_feasible_voxel_count"],
+            record["local_maximum_union_support_count"],
+            record["largest_strict_component_voxel_count"],
+            record["strict_feasible_voxel_count"],
+            float(score),
+            -int(record["reference_candidate_index"]),
+        ]
+        return record.get("lexicographic_objective") == expected_objective
+
+    valid_seed_audit = (
+        isinstance(seed_evaluations, list)
+        and valid_reference_ranking
+        and len(seed_evaluations) == expected_seed_count
+        and common.get("evaluated_reference_seed_count") == len(seed_evaluations)
+        and common.get("reference_seed_objective_order") == seed_objective_order
+        and all(valid_seed_record(record) for record in seed_evaluations)
+        and [record.get("reference_seed_rank") for record in seed_evaluations]
+        == list(range(len(seed_evaluations)))
+        and [
+            (
+                record["reference_candidate_index"],
+                record["reference_mask_sha256"],
+                float(record["reference_local_score"]),
+            )
+            for record in seed_evaluations
+        ]
+        == [
+            (
+                record["candidate_index"],
+                record["mask_sha256"],
+                float(record["local_mask_score"]),
+            )
+            for record in reference_ranking[:expected_seed_count]
+        ]
+        and len(
+            {record.get("reference_candidate_index") for record in seed_evaluations}
+        )
+        == len(seed_evaluations)
+        and [
+            int(record["reference_candidate_index"])
+            for record in sorted(
+                seed_evaluations,
+                key=lambda record: (
+                    -float(record["reference_local_score"]),
+                    int(record["reference_candidate_index"]),
+                ),
+            )
+        ]
+        == [int(record["reference_candidate_index"]) for record in seed_evaluations]
+        and isinstance(selected_seed_rank, int)
+        and not isinstance(selected_seed_rank, bool)
+        and 0 <= selected_seed_rank < len(seed_evaluations)
+        and selected_seed_rank
+        == max(
+            range(len(seed_evaluations)),
+            key=lambda index: tuple(seed_evaluations[index]["lexicographic_objective"]),
+        )
+    )
+    subset_evaluations = (
+        common.get("exact_eight_subset_evaluations")
+        if isinstance(common, Mapping)
+        else None
+    )
+    subset_keys = {
+        "cameras",
+        "largest_exact_component_voxel_count",
+        "exact_common_voxel_count",
+        "exact_component_count",
+        "raw_component_coverage_sum",
+        "semantic_score_sum",
+        "exact_common_mask_sha256",
+    }
+    valid_subsets = isinstance(subset_evaluations, list) and all(
+        isinstance(record, Mapping)
+        and set(record) == subset_keys
+        and isinstance(record.get("cameras"), list)
+        and len(record["cameras"]) == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and record["cameras"][0] == reference_camera
+        and len(set(record["cameras"])) == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and all(camera in candidate_cameras for camera in record["cameras"])
+        and _valid_sha256(record.get("exact_common_mask_sha256"))
+        and all(
+            isinstance(record.get(key), int)
+            and not isinstance(record.get(key), bool)
+            and int(record[key]) >= 0
+            for key in (
+                "largest_exact_component_voxel_count",
+                "exact_common_voxel_count",
+                "exact_component_count",
+            )
+        )
+        and all(
+            isinstance(record.get(key), (int, float))
+            and not isinstance(record.get(key), bool)
+            and math.isfinite(float(record[key]))
+            for key in ("raw_component_coverage_sum", "semantic_score_sum")
+        )
+        for record in (subset_evaluations or [])
+    )
+    expected_subset_count = (
+        math.comb(len(chosen_nonreference), _FALLBACK_STRICT_CONSENSUS_VOTES - 1)
+        if len(chosen_nonreference) >= _FALLBACK_STRICT_CONSENSUS_VOTES - 1
+        else 0
+    )
+    expected_subset_cameras = [
+        [reference_camera, *combination]
+        for combination in itertools.combinations(
+            [record["camera"] for record in chosen_nonreference],
+            _FALLBACK_STRICT_CONSENSUS_VOTES - 1,
+        )
+    ]
+    subset_objective_order = [
+        "largest_exact_component_voxel_count_desc",
+        "exact_common_voxel_count_desc",
+        "raw_component_coverage_sum_desc",
+        "semantic_score_sum_desc",
+        "camera_tuple_asc",
+    ]
+    valid_subsets = (
+        valid_subsets
+        and [record["cameras"] for record in subset_evaluations]
+        == expected_subset_cameras
+        and len({tuple(record["cameras"]) for record in subset_evaluations})
+        == len(subset_evaluations)
+        and common.get("exact_eight_subset_objective_order") == subset_objective_order
+    )
+    selected_subset = (
+        min(
+            subset_evaluations,
+            key=lambda record: (
+                -int(record["largest_exact_component_voxel_count"]),
+                -int(record["exact_common_voxel_count"]),
+                -float(record["raw_component_coverage_sum"]),
+                -float(record["semantic_score_sum"]),
+                tuple(record["cameras"]),
+            ),
+        )
+        if valid_subsets and subset_evaluations
+        else None
+    )
+    diagnostic_inliers = [
+        record.get("geometry_inlier_selection")
+        for record in payload["sam2"]["view_diagnostics"]
+    ]
+    common_keys = {
+        "policy_id",
+        "strategy",
+        "reference_seed_policy",
+        "reference_seed_limit",
+        "inlier_selection_rule",
+        "search_hit_representation",
+        "evaluated_reference_seed_count",
+        "strict_consensus_vote_count",
+        "grid",
+        "proposal_count_by_camera",
+        "proposal_inventory_sha256",
+        "reference_candidate_ranking",
+        "reference_seed_evaluations",
+        "reference_seed_objective_order",
+        "selected_reference_seed_rank",
+        "selected_reference_candidate_index",
+        "selected_reference_mask_sha256",
+        "global_selected_common_voxel_flat_index",
+        "global_selected_common_voxel_world_m",
+        "global_selected_common_voxel_support_count",
+        "global_selected_strict_component_voxel_count",
+        "global_selected_strict_component_sha256",
+        "local_refinement",
+        "local_union_peak_voxel_flat_index",
+        "local_union_peak_voxel_world_m",
+        "local_union_peak_support_count",
+        "local_union_strict_component_voxel_count",
+        "local_union_strict_component_sha256",
+        "candidate_objective_order",
+        "camera_inlier_ranking",
+        "evaluated_exact_eight_subset_count",
+        "exact_eight_subset_objective_order",
+        "exact_eight_subset_evaluations",
+        "selected_exact_eight_cameras",
+        "selected_common_voxel_flat_index",
+        "selected_common_voxel_world_m",
+        "selected_common_voxel_support_count",
+        "selected_exact_common_voxel_count",
+        "selected_exact_common_mask_sha256",
+        "selected_strict_component_voxel_count",
+        "selected_strict_component_sha256",
+        "selected_proposals",
+        "selected_mask_set_sha256",
+        "artifact_sha256",
+    }
+    _require(
+        isinstance(common, Mapping)
+        and set(common) == common_keys
+        and common.get("artifact_sha256") == artifact_sha256(common)
+        and common.get("policy_id") == FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID
+        and common.get("strategy")
+        == "reference-anchored-exhaustive-exact-eight-assignment"
+        and common.get("reference_seed_policy") == _FALLBACK_REFERENCE_SEED_POLICY
+        and common.get("reference_seed_limit") == _FALLBACK_REFERENCE_SEED_COUNT
+        and common.get("inlier_selection_rule") == _COMMON_INLIER_SELECTION_RULE
+        and common.get("search_hit_representation") == "nearest-pixel-raw-center"
+        and common.get("strict_consensus_vote_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and isinstance(common_grid, Mapping)
+        and common_grid.get("grid_shape") == [_FALLBACK_COMMON_GRID_AXIS_COUNT] * 3
+        and common_grid.get("grid_point_count") == _FALLBACK_COMMON_GRID_AXIS_COUNT**3
+        and isinstance(common_local, Mapping)
+        and common_local.get("requested_voxel_size_m")
+        == _FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and isinstance(common_local.get("grid"), Mapping)
+        and common_local["grid"].get("requested_voxel_size_m")
+        == _FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and common_local["grid"].get("coarsened_for_grid_cap") is False
+        and common.get("selected_common_voxel_support_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and integer_at_least(common, "selected_exact_common_voxel_count", 1)
+        and integer_at_least(common, "selected_strict_component_voxel_count", 1)
+        and _valid_sha256(common.get("selected_exact_common_mask_sha256"))
+        and _valid_sha256(common.get("selected_strict_component_sha256"))
+        and common.get("selected_mask_set_sha256")
+        == fallback.get("final_selected_mask_set_sha256")
+        and common_proposal_bindings == final_proposal_bindings
+        and common_proposals == retained_inliers
+        and isinstance(common_proposals, list)
+        and all(isinstance(record, Mapping) for record in common_proposals)
+        and [
+            record.get("camera")
+            for record in common_proposals
+            if isinstance(record, Mapping)
+        ]
+        == final_cameras
+        and len(final_cameras) == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and reference_camera in final_cameras
+        and valid_inlier_details
+        and [record["camera"] for record in retained_inliers] == final_cameras
+        and reference_inlier is not None
+        and reference_inlier.get("retained") is True
+        and reference_inlier.get("nonreference_coverage_rank") == 0
+        and reference_inlier.get("candidate_index")
+        == common.get("selected_reference_candidate_index")
+        and reference_inlier.get("mask_sha256")
+        == common.get("selected_reference_mask_sha256")
+        and diagnostic_inliers == camera_inliers
+        and valid_seed_audit
+        and seed_evaluations[selected_seed_rank].get("reference_candidate_index")
+        == common.get("selected_reference_candidate_index")
+        and seed_evaluations[selected_seed_rank].get("reference_mask_sha256")
+        == common.get("selected_reference_mask_sha256")
+        and seed_evaluations[selected_seed_rank].get("local_grid_coarsened_for_cap")
+        is False
+        and valid_subsets
+        and len(subset_evaluations) == expected_subset_count
+        and common.get("evaluated_exact_eight_subset_count") == expected_subset_count
+        and selected_subset is not None
+        and sorted(selected_subset["cameras"])
+        == common.get("selected_exact_eight_cameras")
+        == final_cameras
+        and common.get("selected_exact_common_voxel_count")
+        == selected_subset["exact_common_voxel_count"]
+        and common.get("selected_exact_common_mask_sha256")
+        == selected_subset["exact_common_mask_sha256"]
+        and common.get("selected_strict_component_voxel_count")
+        == selected_subset["largest_exact_component_voxel_count"],
+        "invalid common-voxel assignment audit",
+    )
+
+
+def _validate_local_bound_file_record(
+    record: object,
+    *,
+    label: str,
+) -> Path:
+    """Validate a manifest file binding against the materialized local file."""
+
+    _require(
+        isinstance(record, Mapping) and set(record) == {"path", "sha256", "size_bytes"},
+        f"invalid {label} file record",
+    )
+    path = Path(str(record.get("path")))
+    _require(path.is_absolute(), f"{label} path is not absolute")
+    _require(not path.is_symlink(), f"{label} must not be a symlink")
+    resolved = path.resolve()
+    _require(str(path) == str(resolved), f"{label} path is not canonical")
+    _require(resolved.is_file(), f"{label} is missing")
+    _require(
+        record.get("sha256") == _sha256_file(resolved)
+        and record.get("size_bytes") == resolved.stat().st_size,
+        f"{label} binding changed",
+    )
+    return resolved
 
 
 def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -1641,46 +4460,118 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
         "frame-zero manifest lacks exact action inputs",
     )
     for record in action_inputs.values():
-        _require(isinstance(record, Mapping), "invalid action input record")
-        _require(
-            Path(str(record.get("path"))).is_absolute(), "action path is not absolute"
-        )
-        _require(_valid_sha256(record.get("sha256")), "invalid action checksum")
-        _require(isinstance(record.get("size_bytes"), int), "invalid action size")
+        _require(isinstance(record, Mapping), "invalid robot input record")
+    raw_robot_path = _validate_local_bound_file_record(
+        action_inputs["robot_trajectory"],
+        label="source realized robot kinematics",
+    )
+    _validate_local_bound_file_record(
+        action_inputs["robot_metadata"],
+        label="source realized robot kinematics metadata",
+    )
     action_alignment = payload.get("action_alignment")
     _require(
         isinstance(action_alignment, Mapping),
-        "frame-zero manifest lacks action alignment",
+        "frame-zero manifest lacks robot kinematics alignment",
+    )
+    config = payload["config"]
+    selection_audit = action_alignment.get("selection_audit")
+    _require(
+        isinstance(selection_audit, Mapping),
+        "frame-zero manifest lacks the shared robot selection audit",
+    )
+    source_state = load_robot_kinematics_archive(raw_robot_path)
+    validated_selection = validate_robot_kinematics_selection_audit(
+        selection_audit,
+        source_state,
+        window_length_frames=int(config["action_window_length_frames"]),
+        prediction_frame_count=int(config["prediction_frame_count"]),
+        candidate_first_frame=int(config["action_candidate_first_frame"]),
+        candidate_stride_frames=int(config["action_candidate_stride_frames"]),
     )
     raw_range = action_alignment.get("selected_raw_frame_range_half_open")
     prediction_range = action_alignment.get("prediction_raw_frame_range_half_open")
     _require(
-        isinstance(raw_range, list)
-        and len(raw_range) == 2
-        and int(raw_range[1]) - int(raw_range[0]) == 81,
+        raw_range == validated_selection["selected_raw_frame_range_half_open"]
+        and int(raw_range[1]) - int(raw_range[0])
+        == int(config["action_window_length_frames"]),
         "action selection is not an 81-frame window",
     )
     _require(
-        isinstance(prediction_range, list)
-        and len(prediction_range) == 2
+        prediction_range == validated_selection["prediction_raw_frame_range_half_open"]
         and int(prediction_range[0]) == int(raw_range[0])
-        and int(prediction_range[1]) - int(prediction_range[0]) == 76,
-        "known action bundle is not the 76-frame prediction window",
+        and int(prediction_range[1]) - int(prediction_range[0])
+        == int(config["prediction_frame_count"]),
+        "known robot kinematics bundle is not the 76-frame prediction window",
+    )
+    _require(
+        action_alignment.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+        and action_alignment.get("trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+        and action_alignment.get("tracking_tail_frame_count")
+        == validated_selection["tracking_tail_frame_count"]
+        and action_alignment.get("source_robot_frame_count") == source_state.frame_count
+        and action_alignment.get("prediction_frame_count")
+        == int(config["prediction_frame_count"]),
+        "robot kinematics alignment compatibility fields changed",
     )
     selected_action = action_alignment.get("selected_action_bundle")
-    _require(isinstance(selected_action, Mapping), "selected action bundle is missing")
     _require(
-        Path(str(selected_action.get("path"))).is_absolute(),
-        "selected action bundle path is not absolute",
+        selected_action == action_alignment.get("selected_robot_kinematics_bundle")
+        and action_alignment.get("selected_action_bundle_is_compatibility_alias")
+        is True,
+        "selected action compatibility alias changed",
+    )
+    selected_robot_path = _validate_local_bound_file_record(
+        selected_action,
+        label="selected realized robot kinematics",
+    )
+    selected_state = load_robot_kinematics_archive(
+        selected_robot_path,
+        expected_frame_count=int(config["prediction_frame_count"]),
     )
     _require(
-        _valid_sha256(selected_action.get("sha256")), "invalid selected action checksum"
+        action_alignment.get("selected_action_arrays")
+        == _bundle_array_records(selected_state.archive_arrays()),
+        "selected robot kinematics array bindings changed",
+    )
+    exact_slice_audit = validate_selected_robot_kinematics_bundle(
+        selected_state,
+        source_state=source_state,
+        prediction_start_frame=int(prediction_range[0]),
+        prediction_frame_count=int(config["prediction_frame_count"]),
     )
     _require(
-        isinstance(selected_action.get("size_bytes"), int),
-        "invalid selected action size",
+        action_alignment.get("selected_bundle_exact_slice_audit") == exact_slice_audit,
+        "selected robot kinematics exact-slice proof changed",
+    )
+    camera_access = payload.get("camera_frame_zero_access")
+    candidate_cameras = payload.get("camera_policy", {}).get("candidate_cameras")
+    selected_raw_start = int(raw_range[0])
+    _require(
+        isinstance(camera_access, list)
+        and isinstance(candidate_cameras, list)
+        and len(camera_access) == len(candidate_cameras)
+        and all(
+            isinstance(record, Mapping)
+            and set(record) == set(_FRAME_ZERO_CAMERA_ACCESS_FIELDS)
+            and Path(str(record.get("path"))).is_absolute()
+            and _valid_sha256(record.get("decoded_rgb_sha256"))
+            for record in camera_access
+        )
+        and [record.get("camera") for record in camera_access] == candidate_cameras
+        and all(
+            record.get("source_aligned_frame_index") == selected_raw_start
+            and record.get("action_window_frame_index") == 0
+            and record.get("decoded_frame_count") == 1
+            and record.get("maximum_rgb_frame_read") == 0
+            and record.get("whole_file_hashed_or_read") is False
+            for record in camera_access
+        ),
+        "camera frame-zero access differs from the selected raw start",
     )
     _validate_camera_selection_contract(payload)
+    _validate_geometry_fallback_contract(payload)
     _require(
         payload.get("artifact_sha256") == artifact_sha256(payload),
         "frame-zero manifest checksum mismatch",
@@ -1754,12 +4645,16 @@ def run_frame_zero_asset_builder(
             )
             rgb_by_camera[camera] = rgb
             access_records.append({"camera": camera, **access})
+        proposals_by_camera: dict[str, list[Mapping[str, Any]]] = {}
         masks, mask_diagnostics = segment_frame_zero_views(
             rgb_by_camera,
             runtime,
             reference_camera=cfg.reference_camera,
             config=cfg.sam2,
+            proposal_sink=proposals_by_camera,
         )
+        legacy_masks = dict(masks)
+        legacy_mask_diagnostics = list(mask_diagnostics)
         selected_cameras = tuple(sorted(masks))
         abstained_cameras = tuple(
             camera for camera in cameras if camera not in selected_cameras
@@ -1768,10 +4663,6 @@ def run_frame_zero_asset_builder(
             cfg.reference_camera in selected_cameras,
             "fixed frame-zero reference camera did not produce a mask",
         )
-        _require(
-            len(selected_cameras) >= cfg.minimum_camera_count,
-            "too few non-abstaining frame-zero cameras",
-        )
         selected_rgb = {camera: rgb_by_camera[camera] for camera in selected_cameras}
         selected_intrinsics = {
             camera: intrinsics[camera] for camera in selected_cameras
@@ -1779,13 +4670,149 @@ def run_frame_zero_asset_builder(
         selected_extrinsics = {
             camera: extrinsics[camera] for camera in selected_cameras
         }
-        arrays, geometry_qa = build_frame_zero_geometry(
-            selected_rgb,
-            masks,
-            selected_intrinsics,
-            selected_extrinsics,
-            config=cfg,
-        )
+        geometry_fallback: dict[str, Any] | None = None
+        common_assignment: dict[str, Any] | None = None
+        fallback_attempts: list[dict[str, Any]] | None = None
+        needs_common_assignment = False
+        if len(selected_cameras) < cfg.minimum_camera_count:
+            legacy_inapplicable = FrameZeroGeometryQAError(
+                "legacy segmentation retained too few cameras for its frozen "
+                f"geometry quorum: {len(selected_cameras)} < "
+                f"{cfg.minimum_camera_count}"
+            )
+            same_mask_inapplicable = FrameZeroGeometryQAError(
+                "same-mask projected-footprint geometry is inapplicable because "
+                "legacy segmentation retained too few cameras for its frozen "
+                "quorum"
+            )
+            fallback_attempts = [
+                _fallback_attempt_failure_record("legacy", legacy_inapplicable),
+                _fallback_attempt_failure_record(
+                    "same-masks-projected-footprint", same_mask_inapplicable
+                ),
+            ]
+            needs_common_assignment = True
+        else:
+            try:
+                arrays, geometry_qa = build_frame_zero_geometry(
+                    selected_rgb,
+                    masks,
+                    selected_intrinsics,
+                    selected_extrinsics,
+                    config=cfg,
+                )
+            except FrameZeroGeometryQAError as legacy_error:
+                fallback_attempts = [
+                    _fallback_attempt_failure_record("legacy", legacy_error)
+                ]
+                try:
+                    arrays, geometry_qa = _build_frame_zero_fallback_geometry(
+                        selected_rgb,
+                        masks,
+                        selected_intrinsics,
+                        selected_extrinsics,
+                        config=cfg,
+                        strategy="same-masks-projected-footprint",
+                    )
+                    fallback_attempts.append(
+                        _fallback_attempt_pass_record(
+                            "same-masks-projected-footprint", geometry_qa, masks
+                        )
+                    )
+                    selected_strategy = "same-masks-projected-footprint"
+                except FrameZeroGeometryQAError as same_mask_error:
+                    fallback_attempts.append(
+                        _fallback_attempt_failure_record(
+                            "same-masks-projected-footprint", same_mask_error
+                        )
+                    )
+                    needs_common_assignment = True
+
+        if needs_common_assignment:
+            masks, mask_diagnostics, common_assignment = _common_voxel_mask_assignment(
+                rgb_by_camera,
+                proposals_by_camera,
+                intrinsics,
+                extrinsics,
+                reference_camera=cfg.reference_camera,
+                config=cfg,
+            )
+            selected_cameras = tuple(sorted(masks))
+            abstained_cameras = tuple(
+                camera for camera in cameras if camera not in selected_cameras
+            )
+            _require_geometry(
+                len(selected_cameras) >= cfg.minimum_camera_count,
+                "common assignment retained too few cameras for the frozen quorum",
+            )
+            selected_rgb = {
+                camera: rgb_by_camera[camera] for camera in selected_cameras
+            }
+            selected_intrinsics = {
+                camera: intrinsics[camera] for camera in selected_cameras
+            }
+            selected_extrinsics = {
+                camera: extrinsics[camera] for camera in selected_cameras
+            }
+            arrays, geometry_qa = _build_frame_zero_fallback_geometry(
+                selected_rgb,
+                masks,
+                selected_intrinsics,
+                selected_extrinsics,
+                config=cfg,
+                strategy="common-voxel-assignment-projected-footprint",
+            )
+            _require(fallback_attempts is not None, "missing fallback attempt audit")
+            fallback_attempts.append(
+                _fallback_attempt_pass_record(
+                    "common-voxel-assignment-projected-footprint",
+                    geometry_qa,
+                    masks,
+                )
+            )
+            selected_strategy = "common-voxel-assignment-projected-footprint"
+
+        if fallback_attempts is not None:
+            geometry_fallback = {
+                "policy_id": FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID,
+                "ordered_strategies": [
+                    "legacy",
+                    "same-masks-projected-footprint",
+                    "common-voxel-assignment-projected-footprint",
+                ],
+                "strict_consensus_vote_count": (_FALLBACK_STRICT_CONSENSUS_VOTES),
+                "reference_seed_policy": _FALLBACK_REFERENCE_SEED_POLICY,
+                "reference_seed_limit": _FALLBACK_REFERENCE_SEED_COUNT,
+                "common_grid_axis_count": _FALLBACK_COMMON_GRID_AXIS_COUNT,
+                "common_local_requested_voxel_size_m": (
+                    _FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M
+                ),
+                "minimum_coarse_component_point_count": (
+                    _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT
+                ),
+                "local_requested_voxel_size_m": (
+                    _FALLBACK_LOCAL_REQUESTED_VOXEL_SIZE_M
+                ),
+                "stability_requested_voxel_size_m": (
+                    _FALLBACK_STABILITY_REQUESTED_VOXEL_SIZE_M
+                ),
+                "maximum_local_grid_point_count": (
+                    _FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT
+                ),
+                "minimum_scale_stability": _FALLBACK_MINIMUM_SCALE_STABILITY,
+                "selected_strategy": selected_strategy,
+                "attempts": fallback_attempts,
+                "legacy_selected_proposals": _selected_proposal_audit(
+                    legacy_mask_diagnostics, legacy_masks
+                ),
+                "legacy_selected_mask_set_sha256": _mask_set_sha256(legacy_masks),
+                "common_assignment": common_assignment,
+                "final_selected_proposals": _selected_proposal_audit(
+                    mask_diagnostics, masks
+                ),
+                "final_selected_mask_set_sha256": _mask_set_sha256(masks),
+            }
+            geometry_fallback["artifact_sha256"] = artifact_sha256(geometry_fallback)
         bundle_path = output / "frame_zero_bundle.npz"
         np.savez_compressed(bundle_path, **arrays)
         bundle_record = _file_record(bundle_path)
@@ -1846,6 +4873,8 @@ def run_frame_zero_asset_builder(
             },
             "information_boundary": dict(FRAME_ZERO_INFORMATION_BOUNDARY),
         }
+        if geometry_fallback is not None:
+            manifest["geometry_fallback"] = geometry_fallback
         manifest["artifact_sha256"] = artifact_sha256(manifest)
         validate_frame_zero_bundle_manifest(manifest)
         manifest_path = output / "frame_zero_bundle.manifest.json"
