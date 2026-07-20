@@ -10,6 +10,7 @@ from bayesian_phystwin.deform360_bias_aware_belief_development import (
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     BACKBONE_SEAL_FILENAME,
+    authorize_prospective_outcome_case,
     build_prospective_backbone_seal,
     build_prospective_prediction_cohort_seal,
     load_physical_archive,
@@ -18,6 +19,7 @@ from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     select_raw_backbone_arrays,
     source_reliability_and_variance,
     validate_prospective_backbone_seal,
+    validate_prospective_prediction_cohort_seal,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_staging import (
     select_action_only_window,
@@ -111,9 +113,7 @@ def test_backbone_seal_round_trip_and_mutation_rejection(tmp_path: Path) -> None
         physical_archive=physical,
         physical_manifest=physical_manifest,
     )
-    validate_prospective_backbone_seal(
-        seal, protocol_path=PROTOCOL, case_dir=output
-    )
+    validate_prospective_backbone_seal(seal, protocol_path=PROTOCOL, case_dir=output)
     loaded = load_physical_archive(output / "physical_prediction.npz")
     assert np.array_equal(loaded["prediction_m"], _physical_arrays()["prediction_m"])
 
@@ -282,11 +282,11 @@ def test_controller_taxel_cloud_and_prediction_bundle_are_prediction_only(
     with output.open("rb") as stream:
         payload = pickle.load(stream)
     assert summary["frame_count"] == 76
-    assert np.array_equal(
-        payload["object_points"], np.repeat(points[None], 76, axis=0)
-    )
+    assert np.array_equal(payload["object_points"], np.repeat(points[None], 76, axis=0))
     assert payload["prediction_only_input"]["object_observation_frames_used"] == [0]
-    assert payload["prediction_only_input"]["future_object_observations_present"] is False
+    assert (
+        payload["prediction_only_input"]["future_object_observations_present"] is False
+    )
 
 
 def test_warp_backbone_uses_driven_minus_zero_graph_support() -> None:
@@ -354,3 +354,18 @@ def test_prediction_cohort_seal_requires_every_locked_case(tmp_path: Path) -> No
     assert seal["prediction_count"] == 0
     assert seal["quality_failure_count"] == 9
     assert seal["replacement_count"] == 0
+    validate_prospective_prediction_cohort_seal(
+        seal,
+        protocol_path=PROTOCOL,
+        role="calibration",
+        artifact_root=tmp_path,
+    )
+    with pytest.raises(ValueError, match="quality failure has no authorized future"):
+        authorize_prospective_outcome_case(
+            seal,
+            protocol_path=PROTOCOL,
+            role="calibration",
+            artifact_root=tmp_path,
+            object_id="160-hose",
+            episode_id=1,
+        )

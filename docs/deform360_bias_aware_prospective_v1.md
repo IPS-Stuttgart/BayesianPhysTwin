@@ -162,6 +162,28 @@ One case passes through five outcome-blind boundaries:
    Missing cases, duplicate dispositions, and replacements fail the cohort
    seal.
 
+Outcome access is separately executable and cannot be authorized by a single
+case prediction. The complete role cohort seal is validated first. Calibration
+outcomes may then be constructed and scored; target-object source preparation,
+prefix staging, future construction, outcome construction, and scoring all
+require a checksummed calibration-gate artifact with
+`target_access_authorized=true`.
+
+The calibration implementation preserves the locked arithmetic:
+
+- each fresh object contributes the maximum worst-primary regret over its
+  target-free eligible update intervals;
+- those object scores are combined with the four source-lock group scores;
+- the exact group-level finite-sample rank is recomputed at nominal 90%;
+- both object-balanced primary regrets must be negative;
+- any harmful accepted calibration object rejects the gate;
+- every target-free rejection must remain bit-exact to the selected raw
+  baseline.
+
+No failed calibration gate can be repaired by changing the candidate, bound,
+camera model, covariance, graph rank, or selected cohort. Its only valid result
+is a published calibration failure with all target media kept sealed.
+
 Dense camera pixels and views are not interpreted as independent samples.
 Cycle and leave-one-view disagreement only inflate or invalidate metric
 covariance; they cannot establish safety against coherent common-mode camera
@@ -188,4 +210,20 @@ bpt-deform360-bias-aware-prospective seal-predictions \
   configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
   calibration /path/to/predictions \
   /path/to/calibration_prediction_cohort_seal.json
+
+# After all calibration predictions are sealed, construct authorized outcomes,
+# write one evaluation.json per evaluable case, then freeze the only gate that
+# may authorize target access.
+bpt-deform360-bias-aware-result calibration-gate \
+  --protocol configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
+  --cohort-seal /path/to/calibration_prediction_cohort_seal.json \
+  --artifact-root /path/to/calibration/predictions \
+  --evaluation-root /path/to/calibration/evaluations \
+  --outcome-failure-root /path/to/calibration/outcome-failures \
+  --source-lock results/sota/deform360_bias_aware_guarded_belief_v4/prospective_lock.json \
+  --output /path/to/calibration_gate.json
+
+bpt-deform360-bias-aware-result validate-gate \
+  --protocol configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
+  --gate /path/to/calibration_gate.json --require-passed
 ```

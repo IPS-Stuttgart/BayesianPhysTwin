@@ -18,6 +18,9 @@ from bayesian_phystwin.deform360_bias_aware_prospective_download import (
     bias_aware_prospective_download_plan,
     validate_bias_aware_download_root,
 )
+from bayesian_phystwin.deform360_bias_aware_prospective_evaluation import (
+    validate_bias_aware_calibration_gate,
+)
 from bayesian_phystwin.deform360_bias_aware_prospective_protocol import (
     DATASET_REVISION,
     PROTOCOL_ID,
@@ -120,6 +123,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--aligned-root", type=Path, required=True)
     parser.add_argument("--object-id", required=True)
     parser.add_argument("--episode-id", type=int, required=True)
+    parser.add_argument("--calibration-gate", type=Path)
     return parser.parse_args()
 
 
@@ -130,6 +134,21 @@ def main() -> int:
     record = prospective_case_record(
         protocol_path, object_id=args.object_id, episode_id=args.episode_id
     )
+    calibration_gate: dict[str, Any] | None = None
+    calibration_gate_path: Path | None = None
+    if record["role"] == "target":
+        _require(
+            args.calibration_gate is not None, "target access needs calibration gate"
+        )
+        calibration_gate_path = args.calibration_gate.resolve()
+        calibration_gate = json.loads(calibration_gate_path.read_text(encoding="utf-8"))
+        validate_bias_aware_calibration_gate(
+            calibration_gate, protocol_path=protocol_path, require_passed=True
+        )
+    else:
+        _require(
+            args.calibration_gate is None, "calibration must not consume target gate"
+        )
     code_revision = _require_clean_repository(args.repo.resolve())
     deform360_repo = args.deform360_repo.resolve()
     _require(
@@ -206,7 +225,20 @@ def main() -> int:
             "object_metadata": file_sha256(metadata_path),
             "official_undistort_source": file_sha256(sources["undistort"]),
             "official_robot_stage_source": file_sha256(sources["robot_stage"]),
+            "calibration_gate": (
+                None
+                if calibration_gate_path is None
+                else file_sha256(calibration_gate_path)
+            ),
         },
+        "target_access_authorization": (
+            None
+            if calibration_gate is None
+            else {
+                "calibration_gate_result_sha256": calibration_gate["result_sha256"],
+                "target_access_authorized": True,
+            }
+        ),
         "outputs_sha256": {
             "alignment": file_sha256(alignment_path),
             "undistorted_intrinsics": file_sha256(
@@ -230,6 +262,7 @@ def main() -> int:
             "tactile_created_or_read": False,
             "target_metric_created_or_read": False,
             "prediction_process_receives_only_separately_staged_prefix": True,
+            "target_access_gate_verified": record["role"] == "target",
         },
     }
     payload["result_sha256"] = canonical_sha256(payload, digest_key="result_sha256")

@@ -21,6 +21,9 @@ from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     file_sha256,
     prospective_case_record,
 )
+from bayesian_phystwin.deform360_bias_aware_prospective_evaluation import (
+    validate_bias_aware_calibration_gate,
+)
 from bayesian_phystwin.deform360_bias_aware_prospective_protocol import (
     PROTOCOL_ID,
     load_bias_aware_prospective_protocol,
@@ -41,6 +44,7 @@ SAM2_REPOSITORY_REVISION = "2b90b9f5ceec907a1c18123530e92e794ad901a4"
 SAM2_CHECKPOINT_SHA256 = (
     "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
 )
+SOURCE_PREPARATION_FILENAME = "bias_aware_source_preparation_manifest.json"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -155,6 +159,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--sam2-repository", type=Path, required=True)
     parser.add_argument("--sam2-checkpoint", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--calibration-gate", type=Path)
     return parser.parse_args()
 
 
@@ -170,6 +175,43 @@ def main() -> int:
         / f"episode_{args.episode_id:04d}"
     )
     _require(source_episode.is_dir(), "aligned source episode is missing")
+    source_manifest_path = source_episode / SOURCE_PREPARATION_FILENAME
+    source_manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
+    _require(
+        source_manifest.get("artifact_kind") == "Deform360BiasAwareSourcePreparation"
+        and source_manifest.get("protocol_id") == PROTOCOL_ID
+        and source_manifest.get("protocol_config_sha256") == protocol["config_sha256"]
+        and source_manifest.get("result_sha256")
+        == canonical_sha256(source_manifest, digest_key="result_sha256")
+        and all(source_manifest.get(key) == value for key, value in record.items()),
+        "source preparation manifest changed",
+    )
+    calibration_gate: dict[str, object] | None = None
+    calibration_gate_path: Path | None = None
+    if record["role"] == "target":
+        _require(
+            args.calibration_gate is not None, "target access needs calibration gate"
+        )
+        calibration_gate_path = args.calibration_gate.resolve()
+        calibration_gate = json.loads(calibration_gate_path.read_text(encoding="utf-8"))
+        validate_bias_aware_calibration_gate(
+            calibration_gate, protocol_path=args.protocol, require_passed=True
+        )
+        _require(
+            source_manifest.get("target_access_authorization", {}).get(
+                "calibration_gate_result_sha256"
+            )
+            == calibration_gate["result_sha256"],
+            "source preparation used another target gate",
+        )
+    else:
+        _require(
+            args.calibration_gate is None, "calibration must not consume target gate"
+        )
+        _require(
+            source_manifest.get("target_access_authorization") is None,
+            "calibration source preparation consumed a target gate",
+        )
     robot_path = source_episode / "robot" / "robot.npz"
     robot = load_robot_state(robot_path)
     selection = select_action_only_window(robot.actions, robot.openings)
@@ -307,6 +349,7 @@ def main() -> int:
             },
             "inputs_sha256": {
                 "protocol": file_sha256(args.protocol.resolve()),
+                "source_preparation_manifest": file_sha256(source_manifest_path),
                 "source_robot": file_sha256(robot_path),
                 "source_intrinsics": file_sha256(
                     source_episode / "undistorted_intrinsics.npy"
@@ -316,7 +359,20 @@ def main() -> int:
                     args.generic_selector_source.resolve()
                 ),
                 "sam2_checkpoint": file_sha256(checkpoint),
+                "calibration_gate": (
+                    None
+                    if calibration_gate_path is None
+                    else file_sha256(calibration_gate_path)
+                ),
             },
+            "target_access_authorization": (
+                None
+                if calibration_gate is None
+                else {
+                    "calibration_gate_result_sha256": calibration_gate["result_sha256"],
+                    "target_access_authorized": True,
+                }
+            ),
             "implementation_revisions": {"sam2": _git_revision(sam2_repository)},
             "information_boundary": {
                 "full_robot_action_read_for_window_selection": True,
@@ -330,6 +386,7 @@ def main() -> int:
                 "future_dense_reconstruction_read": False,
                 "future_particle_tracks_read": False,
                 "target_metric_read": False,
+                "target_access_gate_verified": record["role"] == "target",
             },
         }
         manifest["result_sha256"] = canonical_sha256(

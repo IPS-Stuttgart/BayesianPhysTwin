@@ -990,6 +990,144 @@ def build_prospective_prediction_cohort_seal(
     return payload
 
 
+def validate_prospective_prediction_cohort_seal(
+    seal: Mapping[str, Any],
+    *,
+    protocol_path: str | Path,
+    role: str,
+    artifact_root: str | Path,
+) -> None:
+    """Validate one complete prediction-first cohort and every disposition."""
+
+    _require(role in {"calibration", "target"}, "invalid prospective role")
+    protocol = load_bias_aware_prospective_protocol(protocol_path)
+    expected = prospective_case_records(protocol_path, role=role)
+    _require(
+        seal.get("artifact_kind") == PREDICTION_COHORT_ARTIFACT_KIND
+        and seal.get("protocol_id") == PROTOCOL_ID
+        and seal.get("protocol_config_sha256") == protocol["config_sha256"]
+        and seal.get("role") == role,
+        "prediction cohort contract changed",
+    )
+    _require(
+        seal.get("result_sha256") == canonical_sha256(seal, digest_key="result_sha256"),
+        "prediction cohort checksum changed",
+    )
+    _require(
+        seal.get("information_boundary")
+        == {
+            "predictions_or_failures_sealed_before_future_open": True,
+            "target_data_read": False,
+            "outcome_manifest_read": False,
+            "replacement_allowed": False,
+        },
+        "prediction cohort boundary changed",
+    )
+    rows = seal.get("cases")
+    _require(
+        isinstance(rows, Sequence)
+        and len(rows) == len(expected)
+        and seal.get("expected_case_count") == len(expected)
+        and seal.get("complete") is True
+        and seal.get("replacement_count") == 0,
+        "prediction cohort is incomplete",
+    )
+    root = Path(artifact_root).resolve()
+    prediction_count = 0
+    failure_count = 0
+    for row, case in zip(rows, expected, strict=True):
+        _require(isinstance(row, Mapping), "prediction cohort row is invalid")
+        _require(
+            all(row.get(key) == value for key, value in case.items()),
+            f"prediction cohort case order changed: {case['case']}",
+        )
+        case_dir = root / str(case["case"])
+        disposition = row.get("disposition")
+        if disposition == "prediction":
+            path = case_dir / PREDICTION_SEAL_FILENAME
+            prediction = json.loads(path.read_text(encoding="utf-8"))
+            validate_prospective_prediction_seal(
+                prediction,
+                protocol_path=protocol_path,
+                prediction_dir=case_dir,
+            )
+            expected_result = prediction["result_sha256"]
+            prediction_count += 1
+        elif disposition == "quality_failure":
+            path = case_dir / QUALITY_FAILURE_FILENAME
+            failure = json.loads(path.read_text(encoding="utf-8"))
+            _require(
+                failure.get("artifact_kind") == QUALITY_FAILURE_ARTIFACT_KIND
+                and failure.get("protocol_id") == PROTOCOL_ID
+                and failure.get("protocol_config_sha256") == protocol["config_sha256"]
+                and failure.get("result_sha256")
+                == canonical_sha256(failure, digest_key="result_sha256"),
+                f"quality failure changed: {case['case']}",
+            )
+            _require(
+                all(failure.get(key) == value for key, value in case.items()),
+                f"quality-failure identity changed: {case['case']}",
+            )
+            expected_result = failure["result_sha256"]
+            failure_count += 1
+        else:
+            raise ValueError(f"unknown cohort disposition: {case['case']}")
+        _require(
+            path.is_file()
+            and row.get("artifact_file_sha256") == file_sha256(path)
+            and row.get("artifact_result_sha256") == expected_result,
+            f"cohort artifact changed: {case['case']}",
+        )
+    _require(
+        seal.get("prediction_count") == prediction_count
+        and seal.get("quality_failure_count") == failure_count
+        and prediction_count + failure_count == len(expected),
+        "prediction cohort counts changed",
+    )
+
+
+def authorize_prospective_outcome_case(
+    cohort_seal: Mapping[str, Any],
+    *,
+    protocol_path: str | Path,
+    role: str,
+    artifact_root: str | Path,
+    object_id: str,
+    episode_id: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Authorize one future only after the complete role cohort was sealed."""
+
+    validate_prospective_prediction_cohort_seal(
+        cohort_seal,
+        protocol_path=protocol_path,
+        role=role,
+        artifact_root=artifact_root,
+    )
+    record = prospective_case_record(
+        protocol_path, object_id=object_id, episode_id=episode_id
+    )
+    _require(record["role"] == role, "case role differs from cohort authorization")
+    matches = [row for row in cohort_seal["cases"] if row.get("case") == record["case"]]
+    _require(len(matches) == 1, "authorized case is absent from cohort seal")
+    _require(
+        matches[0].get("disposition") == "prediction",
+        "a pre-outcome quality failure has no authorized future",
+    )
+    prediction_dir = Path(artifact_root).resolve() / str(record["case"])
+    prediction_path = prediction_dir / PREDICTION_SEAL_FILENAME
+    prediction = json.loads(prediction_path.read_text(encoding="utf-8"))
+    validate_prospective_prediction_seal(
+        prediction,
+        protocol_path=protocol_path,
+        prediction_dir=prediction_dir,
+    )
+    _require(
+        matches[0].get("artifact_result_sha256") == prediction["result_sha256"],
+        "authorized prediction differs from cohort seal",
+    )
+    return record, prediction
+
+
 def record_prospective_quality_failure(
     protocol_path: str | Path,
     output_dir: str | Path,
@@ -1051,6 +1189,7 @@ __all__ = [
     "PREDICTION_SEAL_FILENAME",
     "QUALITY_FAILURE_FILENAME",
     "array_sha256",
+    "authorize_prospective_outcome_case",
     "build_prospective_backbone_seal",
     "build_prospective_bias_aware_prediction_case",
     "build_prospective_prediction_cohort_seal",
@@ -1065,5 +1204,6 @@ __all__ = [
     "select_raw_backbone_arrays",
     "source_reliability_and_variance",
     "validate_prospective_backbone_seal",
+    "validate_prospective_prediction_cohort_seal",
     "validate_prospective_prediction_seal",
 ]
