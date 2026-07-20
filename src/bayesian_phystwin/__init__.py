@@ -1,6 +1,23 @@
 """Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
 
 from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
+from .bias_aware_belief import (
+    BiasAwareStateUpdateConfig,
+    BiasAwareStateUpdateResult,
+    GuardedUpdateDecision,
+    IdentifiableStateBasis,
+    PhysicalResponseBasis,
+    SourceGroupRegretBound,
+    SourceRegretCertificate,
+    apply_group_regret_bound,
+    apply_regret_guard,
+    build_physical_response_basis,
+    decode_bias_aware_state,
+    fit_source_regret_certificate,
+    fit_source_group_regret_bound,
+    restrict_state_basis_to_identifiable_subspace,
+    update_bias_aware_state,
+)
 from .drift_bias import (
     RandomWalkBiasConfig,
     RandomWalkBiasResult,
@@ -43,6 +60,12 @@ from .synthetic_benchmark import (
 
 __all__ = [
     "BinaryCalibrationMetrics",
+    "BiasAwareStateUpdateConfig",
+    "BiasAwareStateUpdateResult",
+    "GuardedUpdateDecision",
+    "IdentifiableStateBasis",
+    "PhysicalResponseBasis",
+    "SourceGroupRegretBound",
     "ParameterEnsemble",
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
@@ -55,12 +78,19 @@ __all__ = [
     "RobustLikelihoodConfig",
     "RobustLikelihoodResult",
     "SyntheticBenchmarkConfig",
+    "SourceRegretCertificate",
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "binary_calibration_metrics",
+    "apply_regret_guard",
+    "apply_group_regret_bound",
     "build_phystwin_motion_cues",
+    "build_physical_response_basis",
+    "decode_bias_aware_state",
     "filter_random_walk_bias",
     "export_phystwin_residuals",
+    "fit_source_regret_certificate",
+    "fit_source_group_regret_bound",
     "measurement_variance",
     "markov_log_evidence_batch",
     "reliability_weighted_loss",
@@ -71,5 +101,7 @@ __all__ = [
     "run_synthetic_case",
     "score_reliability",
     "smooth_markov_reliability",
+    "restrict_state_basis_to_identifiable_subspace",
+    "update_bias_aware_state",
     "write_export_summary",
 ]

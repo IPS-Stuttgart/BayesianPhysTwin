@@ -1,0 +1,44 @@
+{
+  "all_gates_pass": true,
+  "claim_boundary": "Controls implementation and identifiability logic only; no empirical accuracy, calibration, or state-of-the-art claim.",
+  "config": {
+    "point_count": 12,
+    "seed": 20260720,
+    "source_group_count": 12,
+    "source_samples_per_group": 12,
+    "target_sample_count": 512,
+    "trial_count": 128,
+    "view_count": 4
+  },
+  "correlation": {
+    "duplicated_to_single_variance_ratio": 1.0000000000000004,
+    "duplicated_view_state_variance_m2": 4.7587093995566254e-07,
+    "single_view_state_variance_m2": 4.7587093995566233e-07
+  },
+  "gates": {
+    "accepted_updates_are_nonharmful": true,
+    "action_local_state_is_recovered": true,
+    "confounded_worlds_fall_back": true,
+    "duplicated_views_do_not_shrink_variance": true,
+    "independent_anchor_beats_camera_as_state": true,
+    "out_of_support_is_exact_fallback": true,
+    "regret_bound_covers_at_nominal_rate": true
+  },
+  "identifiability": {
+    "action_local_state_rmse_m": 0.00039331604623386613,
+    "anchored_state_rmse_m": 0.0008460206019602035,
+    "camera_as_state_rmse_m": 0.027470370853995774,
+    "confounded_exact_fallback_rate": 1.0
+  },
+  "protocol_id": "bias-aware-guarded-belief-synthetic-v1",
+  "regret_guard": {
+    "accepted_harmful_rate": 0.0,
+    "out_of_support_exact_fallback": true,
+    "selected_mean_regret_m": -0.010324809705141371,
+    "source_group_count": 12,
+    "target_acceptance_rate": 0.736328125,
+    "target_upper_bound_coverage": 0.9921875,
+    "upper_residual_quantile_m": 0.0034896486206325555
+  },
+  "status": "synthetic-mechanism-control-only"
+}
