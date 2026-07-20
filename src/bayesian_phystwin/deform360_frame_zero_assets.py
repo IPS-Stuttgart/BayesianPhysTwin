@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import asdict, dataclass, field
 import hashlib
+import importlib
 import json
 import math
 from pathlib import Path
@@ -239,10 +240,93 @@ def validate_generic_held_lock(payload: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def load_generic_held_lock(path: str | Path) -> dict[str, Any]:
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    _require(isinstance(payload, dict), "held lock must contain a JSON object")
+    """Load a frame-zero lock through the complete held-protocol validator.
+
+    In particular, a confirmation lock is not trusted merely because it is a
+    self-consistent JSON object with non-empty parent/evidence mappings.  The
+    full validator recursively replays the calibration GO decision before any
+    confirmation payload can be opened.
+    """
+
+    # The held protocol does not import this module, so this local import is
+    # cycle-free while keeping the future-blind builder usable in isolation.
+    from .deform360_held_protocol import load_held_protocol_lock
+
+    payload = load_held_protocol_lock(path)
     validate_generic_held_lock(payload)
     return payload
+
+
+def _git_stdout(repository: Path, *arguments: str) -> bytes:
+    return subprocess.run(
+        ["git", "-C", str(repository), *arguments],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def _literal_sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+def _verify_clean_pinned_git_runtime(
+    repository: Path,
+    bindings: Mapping[str, str],
+    *,
+    prefix: str,
+    expected_revision: str,
+) -> dict[str, str]:
+    """Verify the checked-out bytes, not only the name of ``HEAD``."""
+
+    try:
+        revision = _git_stdout(repository, "rev-parse", "HEAD").decode().strip()
+        commit_object = _git_stdout(repository, "cat-file", "commit", "HEAD")
+        tree_lines = _git_stdout(
+            repository, "ls-tree", "-r", "--full-tree", "HEAD"
+        ).splitlines()
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "diff",
+                "--quiet",
+                "--ignore-submodules",
+                "--",
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "diff",
+                "--cached",
+                "--quiet",
+                "--ignore-submodules",
+                "--",
+            ],
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise ValueError(
+            f"{prefix} repository is unavailable or has dirty tracked files"
+        ) from error
+    tree_manifest = b"".join(line + b"\n" for line in sorted(tree_lines))
+    observed = {
+        "revision_literal": _literal_sha256(revision),
+        "commit_object": hashlib.sha256(commit_object).hexdigest(),
+        "git_tree_manifest": hashlib.sha256(tree_manifest).hexdigest(),
+    }
+    expected = {
+        "revision_literal": bindings[f"{prefix}_revision_literal"],
+        "commit_object": bindings[f"{prefix}_commit_object"],
+        "git_tree_manifest": bindings[f"{prefix}_git_tree_manifest"],
+    }
+    _require(revision == expected_revision, f"{prefix} repository revision mismatch")
+    _require(observed == expected, f"{prefix} runtime differs from the held lock")
+    return {"revision": revision, **observed}
 
 
 def authorize_frame_zero_case(
@@ -370,6 +454,7 @@ class PinnedFrameZeroSam2Runtime:
         checkpoint: str | Path,
         *,
         config: DeformableObjectSam2MaskConfig,
+        immutable_bindings: Mapping[str, str],
         device: str = "cuda",
     ) -> None:
         self.repository = Path(repository).resolve()
@@ -378,30 +463,55 @@ class PinnedFrameZeroSam2Runtime:
         self.device = device
         _require(self.repository.is_dir(), "SAM2 repository does not exist")
         _require(self.checkpoint.is_file(), "SAM2 checkpoint does not exist")
-        try:
-            commit = subprocess.run(
-                ["git", "-C", str(self.repository), "rev-parse", "HEAD"],
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip()
-        except (OSError, subprocess.CalledProcessError) as error:
-            raise ValueError("cannot verify SAM2 repository revision") from error
-        _require(commit == PINNED_SAM2_COMMIT, "SAM2 repository revision mismatch")
+        self.git_binding = _verify_clean_pinned_git_runtime(
+            self.repository,
+            immutable_bindings,
+            prefix="sam2",
+            expected_revision=PINNED_SAM2_COMMIT,
+        )
         _require(
-            _sha256_file(self.checkpoint) == PINNED_SAM2_CHECKPOINT_SHA256,
+            _sha256_file(self.checkpoint)
+            == PINNED_SAM2_CHECKPOINT_SHA256
+            == immutable_bindings["sam2_checkpoint"],
             "SAM2 checkpoint checksum mismatch",
+        )
+        # ``PINNED_SAM2_MODEL_CONFIG`` is the Hydra identifier expected by
+        # build_sam2.  The actual tracked file lives below the Python package.
+        self.model_config_path = (
+            self.repository / "sam2" / PINNED_SAM2_MODEL_CONFIG
+        ).resolve()
+        _require(
+            self.model_config_path.is_file()
+            and not self.model_config_path.is_symlink()
+            and self.model_config_path.is_relative_to(self.repository),
+            "SAM2 model config file is missing from the pinned repository",
+        )
+        _require(
+            _sha256_file(self.model_config_path)
+            == immutable_bindings["sam2_model_config"],
+            "SAM2 model config differs from the held lock",
         )
         if str(self.repository) not in sys.path:
             sys.path.insert(0, str(self.repository))
         try:
             import torch
-            from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
-            from sam2.build_sam import build_sam2
+
+            automatic_mask_generator = importlib.import_module(
+                "sam2.automatic_mask_generator"
+            )
+            build_sam_module = importlib.import_module("sam2.build_sam")
         except ImportError as error:  # pragma: no cover - GPU integration
             raise RuntimeError(
                 "pinned SAM2 runtime dependencies are unavailable"
             ) from error
+        for module in (automatic_mask_generator, build_sam_module):
+            module_path = Path(str(module.__file__)).resolve()
+            _require(
+                module_path.is_relative_to(self.repository),
+                "imported SAM2 runtime comes from another repository",
+            )
+        SAM2AutomaticMaskGenerator = automatic_mask_generator.SAM2AutomaticMaskGenerator
+        build_sam2 = build_sam_module.build_sam2
         self._torch = torch
         model = build_sam2(
             PINNED_SAM2_MODEL_CONFIG,
@@ -1351,18 +1461,19 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
 def run_frame_zero_asset_builder(
     episode_dir: str | Path,
     case_name: str,
-    lock: Mapping[str, Any],
+    lock_path: str | Path,
     output_dir: str | Path,
     runtime: FrameZeroMaskRuntime,
     *,
     role: str,
-    lock_file_sha256: str,
     config: FrameZeroAssetConfig | None = None,
 ) -> dict[str, Any]:
     """Build and seal one held-compatible, outcome-blind frame-zero bundle."""
 
     cfg = config or FrameZeroAssetConfig()
-    _require(_valid_sha256(lock_file_sha256), "invalid held lock file checksum")
+    lock_source = Path(lock_path).resolve()
+    lock = load_generic_held_lock(lock_source)
+    lock_file_sha256 = sha256_file(lock_source)
     authorization = authorize_frame_zero_case(lock, case_name, role=role)
     expected_config_sha256 = lock["immutable_bindings"].get("frame_zero_default_config")
     _require(

@@ -80,6 +80,119 @@ def _score_evidence(
 ) -> Path:
     lock_path = Path(permit.lock_path)
     lock = load_held_protocol_lock(lock_path)
+    scored_frames = [
+        *range(20, 38),
+        *range(39, 57),
+        *range(58, 76),
+    ]
+    case_records: dict[str, object] = {}
+    evidence_files = path.parent / f"{path.stem}-files"
+    evidence_files.mkdir(parents=True, exist_ok=True)
+    for case_name in CALIBRATION_CASE_NAMES:
+        seal_path = Path(dict(permit.seal_paths)[case_name])
+        seal = json.loads(seal_path.read_text(encoding="utf-8"))
+        authorization_path = Path(seal["prefix_authorization"]["path"])
+        authorization = json.loads(authorization_path.read_text(encoding="utf-8"))
+        physical_path = Path(authorization["physical_prior_seal"]["path"])
+        physical = json.loads(physical_path.read_text(encoding="utf-8"))
+        frame_zero_path = Path(physical["frame_zero_manifest"]["path"])
+        frame_zero = json.loads(frame_zero_path.read_text(encoding="utf-8"))
+        target_path = evidence_files / f"{case_name}-target.bin"
+        outcome_path = evidence_files / f"{case_name}-outcome.bin"
+        target_path.write_bytes(f"target:{case_name}".encode())
+        outcome_path.write_bytes(f"outcome:{case_name}".encode())
+        object_id, episode = case_name.rsplit("-ep", maxsplit=1)
+        score = scores[case_name]
+
+        def detailed(identity: float, chamfer: float) -> dict[str, object]:
+            return {
+                "frame_count": len(scored_frames),
+                "scored_frames": scored_frames,
+                "permanently_excluded_center_count": 1,
+                "post_update_hidden_identity_rmse_m": identity,
+                "post_update_hidden_symmetric_chamfer_m": chamfer,
+                "hidden_identity_count_per_frame": {
+                    "minimum": 1,
+                    "mean": 1.0,
+                    "maximum": 1,
+                },
+                "by_frame": {
+                    "hidden_identity_rmse_m": [identity] * len(scored_frames),
+                    "hidden_symmetric_chamfer_m": [chamfer] * len(scored_frames),
+                },
+            }
+
+        case_records[case_name] = {
+            "case_name": case_name,
+            "gate_score": dict(score),
+            "scored_frames": scored_frames,
+            "permanently_excluded_center_ids": [0],
+            "identity_transport": {
+                "algorithm": "scipy-sparse-minimum-weight-full-bipartite-matching",
+                "scipy_version": "test-only",
+                "maximum_assignment_distance_m": 0.015,
+                "candidate_edge_count": 2,
+                "sealed_point_coverage_fraction": 1.0,
+                "assigned_official_identity_collision_count": 0,
+                "assigned_official_identity_count": 2,
+                "official_identity_count": 2,
+                "mean_assignment_distance_m": 0.0,
+                "p95_assignment_distance_m": 0.0,
+                "observed_maximum_assignment_distance_m": 0.0,
+                "assignment_ids_sha256": "1" * 64,
+                "assignment_distances_sha256": "2" * 64,
+                "eligible_official_frame_zero_identity_count": 2,
+                "official_identity_ids_sha256": "3" * 64,
+                "raw_official_frame_zero_sha256": "4" * 64,
+                "sealed_frame_zero_sha256": "5" * 64,
+                "transported_frame_zero_replaced_with_sealed_identity": True,
+                "claim_limitation": (
+                    "one-to-one transported official reconstruction proxy; not native "
+                    "official material identity and not Deform360 Table-4 parity"
+                ),
+            },
+            "scores": {
+                "primary": detailed(
+                    score["primary_identity_rmse_m"], score["primary_chamfer_m"]
+                ),
+                "selected_raw_backbone": detailed(
+                    score["comparator_identity_rmse_m"],
+                    score["comparator_chamfer_m"],
+                ),
+            },
+            "sealed_inputs": {
+                "online_prediction_seal": _record(seal_path),
+                "online_prediction_archive": seal["online_artifacts"][
+                    "online_prediction_archive"
+                ],
+                "physical_prediction_archive": physical["physical_artifacts"][
+                    "physical_prediction_archive"
+                ],
+                "frame_zero_bundle": frame_zero["bundle"],
+            },
+            "outcome_provenance": {
+                "target_artifact_kind": "Deform360OfficialReconstructionTarget",
+                "outcome_artifact_kind": "Deform360HeldOfficialOutcome",
+                "case_name": case_name,
+                "object_id": object_id,
+                "episode_id": int(episode),
+                "dataset_revision": lock["dataset_revision"],
+                "cohort_barrier_sha256": permit.cohort_barrier_sha256,
+                "target_file": _record(target_path),
+                "outcome_file": _record(outcome_path),
+                "array_sha256": {
+                    "object_points": "6" * 64,
+                    "object_visibilities": "7" * 64,
+                    "object_motions_valid": "8" * 64,
+                },
+                "information_boundary": {
+                    "complete_cohort_barrier_validated_before_future_open": True,
+                    "official_target_constructed_or_read_after_barrier": True,
+                    "prediction_metric_computed_during_target_construction": False,
+                },
+            },
+            "method_selection_or_tuning_performed": False,
+        }
     artifact: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": CALIBRATION_SCORE_EVIDENCE_KIND,
@@ -92,14 +205,7 @@ def _score_evidence(
         ],
         "ordered_case_names": list(CALIBRATION_CASE_NAMES),
         "metric_lock": METRIC_LOCK,
-        "case_records": {
-            case_name: {
-                "case_name": case_name,
-                "gate_score": dict(scores[case_name]),
-                "method_selection_or_tuning_performed": False,
-            }
-            for case_name in CALIBRATION_CASE_NAMES
-        },
+        "case_records": case_records,
         "information_boundary": {
             "all_15_online_predictions_sealed_before_any_outcome": True,
             "outcomes_opened_only_through_live_permit": True,
@@ -458,6 +564,38 @@ def test_calibration_decision_scores_must_equal_sealed_evidence(
             permit,
             mismatched_scores,
             score_evidence_path=evidence_path,
+        )
+
+    assert not (tmp_path / "forbidden-decision.json").exists()
+
+
+def test_calibration_gate_rejects_skeletal_self_hashed_score_evidence(
+    tmp_path: Path,
+) -> None:
+    calibration_lock = _calibration_lock(tmp_path)
+    seals = _seal_calibration_cohort(tmp_path / "calibration-chain", calibration_lock)
+    permit = authorize_outcome_phase(calibration_lock, seals, role="calibration")
+    scores = _passing_scores()
+    evidence_path = _score_evidence(tmp_path / "complete-evidence.json", permit, scores)
+    evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+    for record in evidence["case_records"].values():
+        for key in tuple(record):
+            if key not in {
+                "case_name",
+                "gate_score",
+                "method_selection_or_tuning_performed",
+            }:
+                record.pop(key)
+    evidence["artifact_sha256"] = held_artifact_sha256(evidence)
+    skeletal = tmp_path / "skeletal-evidence.json"
+    skeletal.write_text(json.dumps(evidence), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="exact score record schema"):
+        create_calibration_gate_decision(
+            tmp_path / "forbidden-decision.json",
+            permit,
+            scores,
+            score_evidence_path=skeletal,
         )
 
     assert not (tmp_path / "forbidden-decision.json").exists()

@@ -9,7 +9,6 @@ from bayesian_phystwin.deform360_frame_zero_assets import (
     PinnedFrameZeroSam2Runtime,
     load_generic_held_lock,
     run_frame_zero_asset_builder,
-    sha256_file,
 )
 
 
@@ -26,7 +25,9 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--sam2-repository", required=True)
     parser.add_argument("--checkpoint", required=True)
-    parser.add_argument("--role", choices=("calibration", "confirmation"), required=True)
+    parser.add_argument(
+        "--role", choices=("calibration", "confirmation"), required=True
+    )
     parser.add_argument(
         "--smoke-only",
         action="store_true",
@@ -51,17 +52,17 @@ def main() -> None:
         args.sam2_repository,
         args.checkpoint,
         config=config.sam2,
+        immutable_bindings=lock["immutable_bindings"],
         device=args.device,
     )
     try:
         manifest = run_frame_zero_asset_builder(
             args.episode_dir,
             args.case_name,
-            lock,
+            args.lock,
             args.output_dir,
             runtime,
             role=args.role,
-            lock_file_sha256=sha256_file(args.lock),
             config=config,
         )
     finally:

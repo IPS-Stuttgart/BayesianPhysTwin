@@ -1270,6 +1270,363 @@ def _calibration_gate_summary(
     return normalized, summary
 
 
+_SCORE_RECORD_KEYS = frozenset(
+    {
+        "case_name",
+        "gate_score",
+        "scored_frames",
+        "permanently_excluded_center_ids",
+        "identity_transport",
+        "scores",
+        "sealed_inputs",
+        "outcome_provenance",
+        "method_selection_or_tuning_performed",
+    }
+)
+_DETAILED_SCORE_KEYS = frozenset(
+    {
+        "frame_count",
+        "scored_frames",
+        "permanently_excluded_center_count",
+        "post_update_hidden_identity_rmse_m",
+        "post_update_hidden_symmetric_chamfer_m",
+        "hidden_identity_count_per_frame",
+        "by_frame",
+    }
+)
+_TRANSPORT_KEYS = frozenset(
+    {
+        "algorithm",
+        "scipy_version",
+        "maximum_assignment_distance_m",
+        "candidate_edge_count",
+        "sealed_point_coverage_fraction",
+        "assigned_official_identity_collision_count",
+        "assigned_official_identity_count",
+        "official_identity_count",
+        "mean_assignment_distance_m",
+        "p95_assignment_distance_m",
+        "observed_maximum_assignment_distance_m",
+        "assignment_ids_sha256",
+        "assignment_distances_sha256",
+        "eligible_official_frame_zero_identity_count",
+        "official_identity_ids_sha256",
+        "raw_official_frame_zero_sha256",
+        "sealed_frame_zero_sha256",
+        "transported_frame_zero_replaced_with_sealed_identity",
+        "claim_limitation",
+    }
+)
+_OUTCOME_PROVENANCE_KEYS = frozenset(
+    {
+        "target_artifact_kind",
+        "outcome_artifact_kind",
+        "case_name",
+        "object_id",
+        "episode_id",
+        "dataset_revision",
+        "cohort_barrier_sha256",
+        "target_file",
+        "outcome_file",
+        "array_sha256",
+        "information_boundary",
+    }
+)
+
+
+def _finite_nonnegative(value: object) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+        and float(value) >= 0.0
+    )
+
+
+def _validate_detailed_score(
+    value: object,
+    *,
+    scored_frames: list[int],
+    center_count: int,
+    label: str,
+) -> Mapping[str, Any]:
+    _require(
+        isinstance(value, Mapping) and set(value) == set(_DETAILED_SCORE_KEYS),
+        f"{label} detailed score schema changed",
+    )
+    _require(
+        value.get("frame_count") == len(scored_frames)
+        and value.get("scored_frames") == scored_frames
+        and value.get("permanently_excluded_center_count") == center_count,
+        f"{label} detailed score protocol changed",
+    )
+    identity = value.get("post_update_hidden_identity_rmse_m")
+    chamfer = value.get("post_update_hidden_symmetric_chamfer_m")
+    _require(
+        _finite_nonnegative(identity) and _finite_nonnegative(chamfer),
+        f"{label} aggregate score is invalid",
+    )
+    by_frame = value.get("by_frame")
+    _require(
+        isinstance(by_frame, Mapping)
+        and set(by_frame) == {"hidden_identity_rmse_m", "hidden_symmetric_chamfer_m"},
+        f"{label} per-frame score schema changed",
+    )
+    identity_frames = by_frame["hidden_identity_rmse_m"]
+    chamfer_frames = by_frame["hidden_symmetric_chamfer_m"]
+    _require(
+        isinstance(identity_frames, list)
+        and isinstance(chamfer_frames, list)
+        and len(identity_frames) == len(scored_frames)
+        and len(chamfer_frames) == len(scored_frames)
+        and all(_finite_nonnegative(item) for item in identity_frames)
+        and all(_finite_nonnegative(item) for item in chamfer_frames),
+        f"{label} per-frame scores are invalid",
+    )
+    _require(
+        math.isclose(
+            float(identity),
+            math.fsum(float(item) for item in identity_frames) / len(identity_frames),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        )
+        and math.isclose(
+            float(chamfer),
+            math.fsum(float(item) for item in chamfer_frames) / len(chamfer_frames),
+            rel_tol=1e-12,
+            abs_tol=1e-15,
+        ),
+        f"{label} aggregate differs from its per-frame evidence",
+    )
+    counts = value.get("hidden_identity_count_per_frame")
+    _require(
+        isinstance(counts, Mapping)
+        and set(counts) == {"minimum", "mean", "maximum"}
+        and isinstance(counts.get("minimum"), int)
+        and not isinstance(counts.get("minimum"), bool)
+        and isinstance(counts.get("maximum"), int)
+        and not isinstance(counts.get("maximum"), bool)
+        and _finite_nonnegative(counts.get("mean"))
+        and 0 < counts["minimum"] <= counts["mean"] <= counts["maximum"],
+        f"{label} hidden-identity support summary is invalid",
+    )
+    return value
+
+
+def _validate_calibration_case_score_record(
+    record: object,
+    permit: OutcomePhasePermit,
+    case_name: str,
+    *,
+    expected_score_fields: set[str],
+) -> None:
+    _require(
+        isinstance(record, Mapping) and set(record) == set(_SCORE_RECORD_KEYS),
+        f"invalid exact score record schema for {case_name}",
+    )
+    _require(record.get("case_name") == case_name, "score evidence case changed")
+    _require(
+        record.get("method_selection_or_tuning_performed") is False,
+        "score evidence performed method selection",
+    )
+    scored_frames = [
+        frame
+        for start, stop in SCORED_FRAME_INTERVALS_HALF_OPEN
+        for frame in range(start, stop)
+    ]
+    _require(
+        record.get("scored_frames") == scored_frames,
+        f"score evidence frames changed for {case_name}",
+    )
+    centers = record.get("permanently_excluded_center_ids")
+    _require(
+        isinstance(centers, list)
+        and bool(centers)
+        and all(
+            isinstance(item, int) and not isinstance(item, bool) for item in centers
+        )
+        and len(set(centers)) == len(centers)
+        and min(centers) >= 0,
+        f"score evidence center IDs are invalid for {case_name}",
+    )
+    gate_score = record.get("gate_score")
+    _require(
+        isinstance(gate_score, Mapping)
+        and set(gate_score) == expected_score_fields
+        and all(_finite_nonnegative(value) for value in gate_score.values()),
+        f"invalid gate score evidence for {case_name}",
+    )
+    detailed = record.get("scores")
+    _require(
+        isinstance(detailed, Mapping)
+        and set(detailed) == {"primary", "selected_raw_backbone"},
+        f"score evidence detailed methods changed for {case_name}",
+    )
+    primary = _validate_detailed_score(
+        detailed["primary"],
+        scored_frames=scored_frames,
+        center_count=len(centers),
+        label=f"{case_name} primary",
+    )
+    comparator = _validate_detailed_score(
+        detailed["selected_raw_backbone"],
+        scored_frames=scored_frames,
+        center_count=len(centers),
+        label=f"{case_name} comparator",
+    )
+    _require(
+        gate_score
+        == {
+            "primary_chamfer_m": primary["post_update_hidden_symmetric_chamfer_m"],
+            "comparator_chamfer_m": comparator[
+                "post_update_hidden_symmetric_chamfer_m"
+            ],
+            "primary_identity_rmse_m": primary["post_update_hidden_identity_rmse_m"],
+            "comparator_identity_rmse_m": comparator[
+                "post_update_hidden_identity_rmse_m"
+            ],
+        },
+        f"{case_name} gate score differs from detailed metric evidence",
+    )
+    transport = record.get("identity_transport")
+    _require(
+        isinstance(transport, Mapping) and set(transport) == set(_TRANSPORT_KEYS),
+        f"{case_name} identity-transport schema changed",
+    )
+    assigned_count = transport.get("assigned_official_identity_count")
+    _require(
+        transport.get("algorithm")
+        == "scipy-sparse-minimum-weight-full-bipartite-matching"
+        and isinstance(transport.get("scipy_version"), str)
+        and bool(transport.get("scipy_version"))
+        and transport.get("maximum_assignment_distance_m") == 0.015
+        and isinstance(transport.get("candidate_edge_count"), int)
+        and transport["candidate_edge_count"] > 0
+        and transport.get("sealed_point_coverage_fraction") == 1.0
+        and transport.get("assigned_official_identity_collision_count") == 0
+        and isinstance(assigned_count, int)
+        and assigned_count > max(centers)
+        and isinstance(transport.get("official_identity_count"), int)
+        and transport["official_identity_count"] >= assigned_count
+        and isinstance(
+            transport.get("eligible_official_frame_zero_identity_count"), int
+        )
+        and transport["eligible_official_frame_zero_identity_count"] >= assigned_count
+        and all(
+            _finite_nonnegative(transport.get(key))
+            for key in (
+                "mean_assignment_distance_m",
+                "p95_assignment_distance_m",
+                "observed_maximum_assignment_distance_m",
+            )
+        )
+        and transport["observed_maximum_assignment_distance_m"] <= 0.015
+        and all(
+            _valid_sha256(transport.get(key))
+            for key in (
+                "assignment_ids_sha256",
+                "assignment_distances_sha256",
+                "official_identity_ids_sha256",
+                "raw_official_frame_zero_sha256",
+                "sealed_frame_zero_sha256",
+            )
+        )
+        and transport.get("transported_frame_zero_replaced_with_sealed_identity")
+        is True
+        and transport.get("claim_limitation")
+        == (
+            "one-to-one transported official reconstruction proxy; not native "
+            "official material identity and not Deform360 Table-4 parity"
+        ),
+        f"{case_name} identity-transport evidence is invalid",
+    )
+
+    seal_path = Path(dict(permit.seal_paths)[case_name]).resolve()
+    seal = validate_online_prediction_seal(
+        seal_path,
+        permit.lock_path,
+        expected_case_name=case_name,
+        expected_role="calibration",
+    )
+    authorization_path = _validate_bound_file(
+        seal["prefix_authorization"], role=f"{case_name} prefix authorization"
+    )
+    authorization = validate_prefix_stage_authorization(
+        authorization_path, permit.lock_path
+    )
+    physical_path = _validate_bound_file(
+        authorization["physical_prior_seal"], role=f"{case_name} physical seal"
+    )
+    physical = validate_physical_prior_seal(
+        physical_path,
+        permit.lock_path,
+        expected_case_name=case_name,
+        expected_role="calibration",
+    )
+    frame_zero_path = _validate_bound_file(
+        physical["frame_zero_manifest"], role=f"{case_name} frame-zero manifest"
+    )
+    frame_zero = validate_frame_zero_bundle_manifest(
+        frame_zero_path,
+        permit.lock_path,
+        expected_case_name=case_name,
+        expected_role="calibration",
+    )
+    expected_sealed_inputs = {
+        "online_prediction_seal": _bound_file(seal_path),
+        "online_prediction_archive": seal["online_artifacts"][
+            "online_prediction_archive"
+        ],
+        "physical_prediction_archive": physical["physical_artifacts"][
+            "physical_prediction_archive"
+        ],
+        "frame_zero_bundle": frame_zero["bundle"],
+    }
+    _require(
+        record.get("sealed_inputs") == expected_sealed_inputs,
+        f"{case_name} score evidence binds different sealed inputs",
+    )
+
+    provenance = record.get("outcome_provenance")
+    _require(
+        isinstance(provenance, Mapping)
+        and set(provenance) == set(_OUTCOME_PROVENANCE_KEYS),
+        f"{case_name} outcome provenance schema changed",
+    )
+    object_id, encoded_episode = case_name.rsplit("-ep", maxsplit=1)
+    _require(
+        provenance.get("target_artifact_kind")
+        == "Deform360OfficialReconstructionTarget"
+        and provenance.get("outcome_artifact_kind") == "Deform360HeldOfficialOutcome"
+        and provenance.get("case_name") == case_name
+        and provenance.get("object_id") == object_id
+        and provenance.get("episode_id") == int(encoded_episode)
+        and provenance.get("dataset_revision") == DATASET_REVISION
+        and provenance.get("cohort_barrier_sha256") == permit.cohort_barrier_sha256,
+        f"{case_name} outcome provenance identity changed",
+    )
+    _validate_bound_file(provenance.get("target_file", {}), role="official target")
+    _validate_bound_file(provenance.get("outcome_file", {}), role="held outcome")
+    array_sha256 = provenance.get("array_sha256")
+    _require(
+        isinstance(array_sha256, Mapping)
+        and set(array_sha256)
+        == {"object_points", "object_visibilities", "object_motions_valid"}
+        and all(_valid_sha256(value) for value in array_sha256.values()),
+        f"{case_name} target array bindings changed",
+    )
+    outcome_boundary = provenance.get("information_boundary")
+    _require(
+        outcome_boundary
+        == {
+            "complete_cohort_barrier_validated_before_future_open": True,
+            "official_target_constructed_or_read_after_barrier": True,
+            "prediction_metric_computed_during_target_construction": False,
+        },
+        f"{case_name} outcome provenance crossed the information boundary",
+    )
+
+
 def validate_calibration_score_evidence(
     evidence_path: str | Path,
     permit: OutcomePhasePermit,
@@ -1327,24 +1684,11 @@ def validate_calibration_score_evidence(
     }
     for case_name in CALIBRATION_CASE_NAMES:
         record = records[case_name]
-        _require(isinstance(record, Mapping), f"invalid score record for {case_name}")
-        _require(record.get("case_name") == case_name, "score evidence case changed")
-        _require(
-            record.get("method_selection_or_tuning_performed") is False,
-            "score evidence performed method selection",
-        )
-        gate_score = record.get("gate_score")
-        _require(
-            isinstance(gate_score, Mapping)
-            and set(gate_score) == expected_score_fields
-            and all(
-                isinstance(value, (int, float))
-                and not isinstance(value, bool)
-                and math.isfinite(float(value))
-                and float(value) >= 0.0
-                for value in gate_score.values()
-            ),
-            f"invalid gate score evidence for {case_name}",
+        _validate_calibration_case_score_record(
+            record,
+            permit,
+            case_name,
+            expected_score_fields=expected_score_fields,
         )
     boundary = evidence.get("information_boundary", {})
     _require(

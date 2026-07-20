@@ -19,6 +19,7 @@ from bayesian_phystwin.deform360_held_physical_prior import (
     WARP_DYNAMICS,
     build_physical_prediction_archive,
     build_prediction_only_artifacts,
+    run_held_physical_prior,
     select_action_window,
     sha256_file,
     validate_physical_prediction_manifest,
@@ -30,6 +31,29 @@ from bayesian_phystwin.deform360_held_protocol import (
 
 
 CASE_NAME = "083-blanket-cloth-ep0000"
+
+
+def test_physical_runner_rejects_lock_numeric_contract_mismatch(tmp_path: Path) -> None:
+    bindings = dummy_immutable_bindings()
+    bindings["held_physical_numeric_contract"] = "f" * 64
+    lock_path = tmp_path / "mismatched-lock.json"
+    create_held_protocol_lock(lock_path, immutable_bindings=bindings)
+
+    with pytest.raises(ValueError, match="physical numeric contract"):
+        run_held_physical_prior(
+            tmp_path / "unread-frame-zero.json",
+            lock_path,
+            tmp_path / "output",
+            case_name=CASE_NAME,
+            role="calibration",
+            upstream_repo=tmp_path / "upstream",
+            official_phystwin_repo=tmp_path / "phystwin",
+            official_config=tmp_path / "real.yaml",
+            deform360_repo=tmp_path / "deform360",
+            python=tmp_path / "python",
+        )
+
+    assert not (tmp_path / "output").exists()
 
 
 def _bound_file(path: Path) -> dict[str, object]:

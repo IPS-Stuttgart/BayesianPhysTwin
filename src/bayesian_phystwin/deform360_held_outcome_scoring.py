@@ -500,6 +500,7 @@ def load_sealed_case_predictions(
             "online_prediction_seal": {
                 "path": str(seal_path),
                 "sha256": _sha256_file(seal_path),
+                "size_bytes": seal_path.stat().st_size,
             },
             "online_prediction_archive": dict(archive_record),
             "physical_prediction_archive": dict(physical_archive_record),
@@ -592,7 +593,7 @@ def validate_permitted_target_provenance(
         "information_boundary",
     }
     _require(
-        isinstance(provenance, Mapping) and required.issubset(provenance),
+        isinstance(provenance, Mapping) and set(provenance) == required,
         "permitted official target provenance is incomplete",
     )
     _require(

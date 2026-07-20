@@ -5,6 +5,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 import sys
 
@@ -24,11 +25,13 @@ from bayesian_phystwin.deform360_frame_zero_assets import (
     artifact_sha256,
     authorize_frame_zero_case,
     decode_exact_frame_zero,
+    load_generic_held_lock,
     reject_future_derived_input,
     run_frame_zero_asset_builder,
     select_action_only_window,
     validate_frame_zero_bundle_manifest,
     validate_generic_held_lock,
+    _verify_clean_pinned_git_runtime,
 )
 from bayesian_phystwin.deform360_held_protocol import (
     create_held_protocol_lock,
@@ -181,21 +184,88 @@ def test_promoted_lock_is_required_for_confirmation() -> None:
         )
 
 
+def test_generic_loader_rejects_self_promoted_confirmation_lock(tmp_path: Path) -> None:
+    calibration_path = tmp_path / "calibration-lock.json"
+    lock = create_held_protocol_lock(
+        calibration_path, immutable_bindings=dummy_immutable_bindings()
+    )
+    forged = deepcopy(lock)
+    forged.pop("artifact_sha256")
+    forged["stage"] = "confirmation"
+    forged["confirmation_access_authorized"] = True
+    forged["parent_calibration_lock"] = {}
+    forged["calibration_gate_evidence"] = {}
+    forged["information_boundary"]["calibration_outcomes_read_before_lock"] = True
+    forged["artifact_sha256"] = artifact_sha256(forged)
+    forged_path = tmp_path / "forged-confirmation-lock.json"
+    forged_path.write_text(json.dumps(forged), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="parent calibration lock path is missing"):
+        load_generic_held_lock(forged_path)
+
+
+def test_pinned_runtime_rejects_dirty_tracked_source(tmp_path: Path) -> None:
+    repository = tmp_path / "runtime"
+    repository.mkdir()
+
+    def git(*arguments: str) -> bytes:
+        return subprocess.run(
+            ["git", "-C", str(repository), *arguments],
+            check=True,
+            capture_output=True,
+        ).stdout
+
+    git("init", "-q")
+    git("config", "user.email", "held-test@example.invalid")
+    git("config", "user.name", "Held Test")
+    source = repository / "runtime.py"
+    source.write_text("PINNED = True\n", encoding="utf-8")
+    git("add", "runtime.py")
+    git("commit", "-qm", "pinned runtime")
+    revision = git("rev-parse", "HEAD").decode().strip()
+    tree_lines = git("ls-tree", "-r", "--full-tree", "HEAD").splitlines()
+    bindings = {
+        "sam2_revision_literal": hashlib.sha256(revision.encode()).hexdigest(),
+        "sam2_commit_object": hashlib.sha256(
+            git("cat-file", "commit", "HEAD")
+        ).hexdigest(),
+        "sam2_git_tree_manifest": hashlib.sha256(
+            b"".join(line + b"\n" for line in sorted(tree_lines))
+        ).hexdigest(),
+    }
+    observed = _verify_clean_pinned_git_runtime(
+        repository,
+        bindings,
+        prefix="sam2",
+        expected_revision=revision,
+    )
+    assert observed["revision"] == revision
+
+    source.write_text("PINNED = False\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="dirty tracked files"):
+        _verify_clean_pinned_git_runtime(
+            repository,
+            bindings,
+            prefix="sam2",
+            expected_revision=revision,
+        )
+
+
 def test_builder_rejects_effective_config_change_before_episode_access(
     tmp_path: Path,
 ) -> None:
-    lock = _lock()
+    lock_path = tmp_path / "calibration-lock.json"
+    create_held_protocol_lock(lock_path, immutable_bindings=dummy_immutable_bindings())
     changed = replace(FrameZeroAssetConfig(), rng_seed=1)
 
     with pytest.raises(ValueError, match="configuration differs"):
         run_frame_zero_asset_builder(
             tmp_path / "deliberately-missing-episode",
             APPROVED_CALIBRATION_SMOKE_CASE,
-            lock,
+            lock_path,
             tmp_path / "output-must-not-be-created",
             SimpleNamespace(),
             role="calibration",
-            lock_file_sha256="0" * 64,
             config=changed,
         )
 
