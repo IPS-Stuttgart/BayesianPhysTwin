@@ -34,6 +34,7 @@ import numpy as np
 
 from .deform360_held_protocol import (
     CALIBRATION_CASE_NAMES,
+    CALIBRATION_SCORE_EVIDENCE_KIND,
     DATASET_REVISION,
     FRAME_COUNT,
     METRIC_LOCK,
@@ -41,6 +42,8 @@ from .deform360_held_protocol import (
     PROTOCOL_ID,
     create_calibration_gate_decision,
     held_artifact_sha256,
+    held_contract_sha256,
+    load_held_protocol_lock,
     run_outcome_operation,
     validate_frame_zero_bundle_manifest,
     validate_online_prediction_seal,
@@ -57,7 +60,161 @@ MAXIMUM_SPARSE_ASSIGNMENT_EDGE_COUNT = 5_000_000
 ASSIGNMENT_CHUNK_SIZE = 256
 TARGET_ARTIFACT_KIND = "Deform360OfficialReconstructionTarget"
 OUTCOME_ARTIFACT_KIND = "Deform360HeldOfficialOutcome"
-SCORE_EVIDENCE_KIND = "Deform360HeldCalibrationScoreEvidence"
+SCORE_EVIDENCE_KIND = CALIBRATION_SCORE_EVIDENCE_KIND
+
+OUTCOME_RECONSTRUCTION_CONTRACT: dict[str, Any] = {
+    "contract_id": "deform360-held-official-reconstruction-v1",
+    "dataset_revision": DATASET_REVISION,
+    "ordered_stages": [
+        "held-action-window-staging-v1",
+        "sealed-frame-zero-sam2-propagation-v1",
+        "official-strict-hull-reconstruct-v1",
+        "official-depth-v1",
+        "official-cotracker3-v1",
+        "official-pcd-clean-v1",
+        "held-official-target-v1",
+    ],
+    "temporal_contract": {
+        "staged_raw_interval": "[selected_start, selected_start + 81)",
+        "staged_rgb_and_mask_context_frame_count": 81,
+        "logical_target_interval": "[0, 76)",
+        "logical_target_frame_count": 76,
+        "prediction_raw_interval": "[selected_start, selected_start + 76)",
+        "final_context_only_frame_count": 5,
+        "final_context_frames_scored": False,
+        "reason": "official pcd_stage TAIL_FRAMES_SKIPPED=5",
+    },
+    "sealed_frame_zero_anchor": {
+        "camera_order": "exact frame_zero_bundle camera_names order",
+        "arrays": [
+            "intrinsics",
+            "camera_to_world",
+            "rgb_frame0",
+            "mask_frame0",
+        ],
+        "automatic_initial_mask_selection": False,
+        "decoded_staged_rgb_frame0_bit_exact": True,
+        "propagated_mask_frame0_bit_exact": True,
+        "mask_seed_source": "sealed mask_frame0 only",
+    },
+    "video_staging": {
+        "tool": "ffmpeg",
+        "selection": "exact selected raw 81-frame interval",
+        "video_codec": "libx264rgb",
+        "crf": 0,
+        "pixel_format": "rgb24",
+        "audio": False,
+    },
+    "sam2_video_propagation": {
+        "commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+        "checkpoint_sha256": (
+            "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
+        ),
+        "model_config": "configs/sam2.1/sam2.1_hiera_s.yaml",
+        "sealed_frame_zero_seed_only": True,
+    },
+    "strict_visual_hull": {
+        "minimum_visual_hull_points": 512,
+        "voxel_resolution": 120,
+        "cube_half_extent_m": 0.5,
+        "iteration_limit": 500,
+        "warm_iteration_count": 250,
+        "warm_start_previous_frame": True,
+    },
+    "depth": {
+        "mode": "expected_depth",
+        "object_mask": True,
+        "gripper_mask_when_available": True,
+        "preview": False,
+    },
+    "cotracker": {
+        "revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+        "model_id": "facebook/cotracker3-scaled-offline",
+        "checkpoint_sha256": (
+            "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834"
+        ),
+        "pivot_skip": 5,
+        "sequence_length": 15,
+        "gap": 5,
+        "grid_size": 40,
+        "resize_factor": 4,
+    },
+    "point_cloud": {
+        "seed_point_count": 10_000,
+        "radius_outlier_neighbour_count": 30,
+        "radius_outlier_radius_m": 0.02,
+        "statistical_outlier_neighbour_count": 30,
+        "statistical_outlier_std_ratio": 3.5,
+        "crop_half_extent_m": 0.5,
+        "tail_frames_skipped": 5,
+        "frame_rate_hz": 30,
+        "fusion_max_speed_m_per_s": 0.05,
+        "minimum_camera_inliers": 2,
+        "rng_seed": 0,
+        "exact_output_file_count": 76,
+    },
+    "tactile": {
+        "copied": False,
+        "read": False,
+    },
+    "official_processing": {
+        "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+        "pipeline_config_file_sha256": (
+            "8692dc89651a91dcb1732a7b7185983ffd0aa2312aeb2bd202bafaf85309d7e8"
+        ),
+        "pipeline_config_semantic_sha256": (
+            "e32c20e98442e7112a79c1d54de3f58a4608d9c382739f05a10085df53d42039"
+        ),
+        "stage_runner_sha256": (
+            "2f379581786b6b6072eaf88cf4430b514b1bf47b4ab3b8dacd46201edc6a7739"
+        ),
+        "strict_reconstruction_sha256": (
+            "14ab64761037074314383d67af5ce56d744ae0fbc8c64cccddce3ea7a57fd450"
+        ),
+        "official_outcome_builder_sha256": (
+            "3e188e4b8d507543a4472c62453ce2c94fa1696370fc4ac1de31bc196f1da827"
+        ),
+        "object_sam2_source_sha256": (
+            "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
+        ),
+        "sam2_source_sha256": (
+            "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184"
+        ),
+        "stage_source_sha256": {
+            "processing/reconstruct_stage.py": (
+                "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c"
+            ),
+            "processing/depth_stage.py": (
+                "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0"
+            ),
+            "processing/tracking_stage.py": (
+                "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2"
+            ),
+            "processing/pcd_stage.py": (
+                "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+            ),
+            "processing/episode.py": (
+                "7bd865a461788f7bae1992fd7e21577045ccffd54b58abd18781df4584e13db9"
+            ),
+            "processing/robot.py": (
+                "376e4dec6f2340a3ee03af1a3bd5462e06e3284cc82f312872a7bedbe863825f"
+            ),
+        },
+    },
+    "target_arrays": [
+        "object_points",
+        "object_visibilities",
+        "object_motions_valid",
+    ],
+    "identity_transport": {
+        "method": "sparse minimum-cost one-to-one frame-zero assignment",
+        "maximum_assignment_distance_m": 0.015,
+        "required_coverage_fraction": 1.0,
+        "required_collision_count": 0,
+        "assimilation_centres_excluded_from_scores": True,
+    },
+    "metric_lock": METRIC_LOCK,
+}
 
 ONLINE_ARRAY_NAMES = frozenset(
     {
@@ -730,6 +887,13 @@ def score_calibration_cohort(
     """Score all 15 cases, opening each target only through its live permit."""
 
     _require(permit.role == "calibration", "calibration scorer requires its permit")
+    lock = load_held_protocol_lock(permit.lock_path)
+    contract_sha256 = held_contract_sha256(OUTCOME_RECONSTRUCTION_CONTRACT)
+    _require(
+        lock["immutable_bindings"].get("outcome_reconstruction_contract")
+        == contract_sha256,
+        "outcome reconstruction contract differs from the immutable lock",
+    )
     _require(
         set(target_operations) == set(CALIBRATION_CASE_NAMES),
         "target operations must contain all 15 locked calibration cases",
@@ -791,6 +955,14 @@ def calibration_score_evidence(
             "score evidence gate fields changed",
         )
         ordered[case_name] = dict(record)
+    lock = load_held_protocol_lock(permit.lock_path)
+    contract_sha256 = held_contract_sha256(OUTCOME_RECONSTRUCTION_CONTRACT)
+    _require(
+        lock["immutable_bindings"].get("outcome_reconstruction_contract")
+        == contract_sha256,
+        "score evidence uses another outcome reconstruction contract",
+    )
+    lock_path = Path(permit.lock_path).resolve()
     artifact: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": SCORE_EVIDENCE_KIND,
@@ -798,9 +970,11 @@ def calibration_score_evidence(
         "role": "calibration",
         "cohort_barrier_sha256": permit.cohort_barrier_sha256,
         "lock": {
-            "path": str(Path(permit.lock_path).resolve()),
-            "sha256": _sha256_file(permit.lock_path),
+            "path": str(lock_path),
+            "sha256": _sha256_file(lock_path),
+            "size_bytes": lock_path.stat().st_size,
         },
+        "outcome_reconstruction_contract_sha256": contract_sha256,
         "ordered_case_names": list(CALIBRATION_CASE_NAMES),
         "metric_lock": dict(METRIC_LOCK),
         "case_records": ordered,
@@ -845,13 +1019,19 @@ def score_and_create_calibration_gate(
         else Path(decision_path).with_name("calibration-score-evidence.json")
     )
     evidence = write_calibration_score_evidence(destination, permit, records)
-    decision = create_calibration_gate_decision(decision_path, permit, gate_scores)
+    decision = create_calibration_gate_decision(
+        decision_path,
+        permit,
+        gate_scores,
+        score_evidence_path=destination,
+    )
     return decision, evidence, records
 
 
 __all__ = [
     "MAXIMUM_FRAME_ZERO_ASSIGNMENT_DISTANCE_M",
     "OfficialTarget",
+    "OUTCOME_RECONSTRUCTION_CONTRACT",
     "OUTCOME_ARTIFACT_KIND",
     "SCORE_EVIDENCE_KIND",
     "SealedCasePredictions",

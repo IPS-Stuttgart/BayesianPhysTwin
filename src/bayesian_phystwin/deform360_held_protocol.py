@@ -41,6 +41,7 @@ PHYSICAL_SEAL_KIND = "Deform360HeldPhysicalPriorSeal"
 PREFIX_AUTHORIZATION_KIND = "Deform360HeldCausalPrefixAuthorization"
 ONLINE_SEAL_KIND = "Deform360HeldOnlinePredictionSeal"
 CALIBRATION_DECISION_KIND = "Deform360HeldCalibrationGateDecision"
+CALIBRATION_SCORE_EVIDENCE_KIND = "Deform360HeldCalibrationScoreEvidence"
 
 FRAME_COUNT = 76
 UPDATE_FRAMES = (19, 38, 57)
@@ -193,6 +194,105 @@ ONLINE_ARTIFACT_ROLES = (
     "online_prediction_archive",
 )
 
+# Every implementation, model, data revision, runtime, and reconstruction
+# contract that can affect a held prediction or its score must be named before
+# the prospective lock is created.  Requiring the exact set prevents a caller
+# from silently omitting a decisive component while still supplying one
+# syntactically valid checksum.
+REQUIRED_IMMUTABLE_BINDING_KEYS = (
+    "alltracker_checkpoint",
+    "alltracker_molmomotion_revision_literal",
+    "alltracker_provenance_tree_literal",
+    "alltracker_runtime_tree",
+    "cpd_registration_source",
+    "cotracker_checkpoint",
+    "cotracker_commit_object",
+    "cotracker_git_tree_manifest",
+    "cotracker_revision_literal",
+    "dataset_revision_literal",
+    "deform360_code_commit_object",
+    "deform360_code_git_tree_manifest",
+    "deform360_code_revision_literal",
+    "deform360_hidden_metric_source",
+    "deform360_object_sam2_source",
+    "deform360_official_outcome_builder_source",
+    "deform360_pipeline_config",
+    "deform360_pipeline_config_semantic",
+    "deform360_sam2_source",
+    "deform360_stage_script",
+    "deform360_strict_reconstruction_source",
+    "ffmpeg_executable",
+    "ffmpeg_version_literal",
+    "frame_zero_builder_cli",
+    "frame_zero_builder_source",
+    "frame_zero_default_config",
+    "frame_zero_deform360_protocol_dependency",
+    "frame_zero_object_sam2_source",
+    "frame_zero_sam2_constants_source",
+    "frame_zero_visual_hull_source",
+    "graph_residual_mapping_source",
+    "held_calibration_gate_contract",
+    "held_confirmation_gate_contract",
+    "held_metric_contract",
+    "held_online_runner_cli",
+    "held_online_runner_source",
+    "held_outcome_reconstruction_adapter_source",
+    "held_outcome_scorer_source",
+    "held_physical_builder_cli",
+    "held_physical_builder_source",
+    "held_physical_numeric_contract",
+    "held_primary_method_contract",
+    "held_protocol_source",
+    "independent_cpd_source",
+    "method_commit_object",
+    "method_deployed_snapshot_tree",
+    "method_git_tree_manifest",
+    "method_head_literal",
+    "nearest_distance_metric_source",
+    "official_phystwin_commit_object",
+    "official_phystwin_git_tree_manifest",
+    "official_phystwin_real_config",
+    "official_phystwin_revision_literal",
+    "outcome_reconstruction_contract",
+    "pairwise_clique_source",
+    "primary_rbf_config",
+    "pyproject_toml",
+    "python_executable",
+    "python_pip_freeze_sorted",
+    "raw_cycle_cli",
+    "raw_cycle_default_config",
+    "raw_cycle_source",
+    "raw_gated_evaluator_cli",
+    "raw_gated_evaluator_source",
+    "raw_observation_cli",
+    "raw_observation_default_config",
+    "raw_observation_source",
+    "raw_uncertainty_cli",
+    "raw_uncertainty_default_config",
+    "raw_uncertainty_source",
+    "recursive_cpd_source",
+    "recursive_rbf_source",
+    "remote_confirmation_inventory_combined",
+    "robust_correspondence_source",
+    "sam2_checkpoint",
+    "sam2_commit_object",
+    "sam2_git_tree_manifest",
+    "sam2_model_config",
+    "sam2_revision_literal",
+    "upstream_action_support_source",
+    "upstream_automatic_twin_builder",
+    "upstream_contact_conditioned_action_source",
+    "upstream_dense_reusable_panel_config",
+    "upstream_dense_reusable_panel_source",
+    "upstream_dense_source",
+    "upstream_independent_source_split_config",
+    "upstream_official_phystwin_smoke",
+    "upstream_partial_graph_state_source",
+    "upstream_phystwin_graph_source",
+    "upstream_reusable_graph_source",
+    "upstream_runtime_bundle_tree",
+)
+
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _FORBIDDEN_PREOUTCOME_FILENAMES = frozenset({"outcome.json", "target_data.pkl"})
 _FORBIDDEN_FRAME_ZERO_SUFFIXES = frozenset({".h5", ".hdf5"})
@@ -220,6 +320,12 @@ def held_artifact_sha256(artifact: Mapping[str, Any]) -> str:
     unsigned = deepcopy(dict(artifact))
     unsigned.pop("artifact_sha256", None)
     return hashlib.sha256(_canonical_bytes(unsigned)).hexdigest()
+
+
+def held_contract_sha256(value: Any) -> str:
+    """Hash one immutable configuration/contract using canonical JSON."""
+
+    return hashlib.sha256(_canonical_bytes(value)).hexdigest()
 
 
 def _valid_sha256(value: object) -> bool:
@@ -320,8 +426,13 @@ def create_held_protocol_lock(
     """Create the prospective lock without reading any episode payload."""
 
     bindings = {str(key): str(value) for key, value in immutable_bindings.items()}
+    required = set(REQUIRED_IMMUTABLE_BINDING_KEYS)
+    observed = set(bindings)
     _require(
-        bool(bindings), "at least one immutable implementation binding is required"
+        observed == required,
+        "immutable binding keys changed; "
+        f"missing={sorted(required - observed)!r}, "
+        f"unexpected={sorted(observed - required)!r}",
     )
     _require(
         all(key and _valid_sha256(value) for key, value in bindings.items()),
@@ -464,8 +575,9 @@ def load_held_protocol_lock(path: str | Path) -> dict[str, Any]:
             )
     bindings = artifact.get("immutable_bindings")
     _require(
-        isinstance(bindings, Mapping) and bool(bindings),
-        "immutable bindings are missing",
+        isinstance(bindings, Mapping)
+        and set(bindings) == set(REQUIRED_IMMUTABLE_BINDING_KEYS),
+        "immutable binding key set changed",
     )
     _require(
         all(
@@ -571,6 +683,10 @@ def validate_frame_zero_bundle_manifest(
         manifest.get("artifact_kind") == FRAME_ZERO_KIND,
         "unsupported frame-zero artifact",
     )
+    _require(
+        manifest.get("protocol_id") == PROTOCOL_ID,
+        "frame-zero protocol changed",
+    )
     case_name = manifest.get("case_name")
     role = manifest.get("role")
     _require(
@@ -590,6 +706,17 @@ def validate_frame_zero_bundle_manifest(
     _require(
         manifest.get("lock_sha256") == _sha256_file(lock_path),
         "frame-zero bundle binds another lock",
+    )
+    _require(
+        manifest.get("lock_artifact_sha256") == lock["artifact_sha256"],
+        "frame-zero bundle binds another lock artifact",
+    )
+    config = manifest.get("config")
+    _require(isinstance(config, Mapping), "frame-zero configuration is missing")
+    _require(
+        held_contract_sha256(config)
+        == lock["immutable_bindings"]["frame_zero_default_config"],
+        "frame-zero configuration changed from the immutable lock",
     )
     for key in ("object_id", "episode_id"):
         _require(manifest.get(key) == identity[key], f"frame-zero {key} changed")
@@ -1143,10 +1270,103 @@ def _calibration_gate_summary(
     return normalized, summary
 
 
+def validate_calibration_score_evidence(
+    evidence_path: str | Path,
+    permit: OutcomePhasePermit,
+) -> dict[str, Any]:
+    """Validate the immutable scorer output behind the live cohort barrier."""
+
+    _require(permit.role == "calibration", "score evidence requires calibration")
+    _revalidate_outcome_permit(permit)
+    evidence = _load_json(evidence_path)
+    _require(
+        evidence.get("schema_version") == SCHEMA_VERSION,
+        "unsupported calibration score evidence schema",
+    )
+    _require(
+        evidence.get("artifact_kind") == CALIBRATION_SCORE_EVIDENCE_KIND,
+        "unsupported calibration score evidence",
+    )
+    _require(
+        evidence.get("protocol_id") == PROTOCOL_ID,
+        "calibration score evidence protocol changed",
+    )
+    _require(evidence.get("role") == "calibration", "score evidence role changed")
+    _require(
+        evidence.get("cohort_barrier_sha256") == permit.cohort_barrier_sha256,
+        "score evidence binds another cohort barrier",
+    )
+    _require(
+        _validate_bound_file(evidence.get("lock", {}), role="calibration lock")
+        == Path(permit.lock_path).resolve(),
+        "score evidence binds another calibration lock",
+    )
+    _require(
+        evidence.get("ordered_case_names") == list(CALIBRATION_CASE_NAMES),
+        "score evidence case order changed",
+    )
+    _require(
+        evidence.get("metric_lock") == METRIC_LOCK, "score evidence metric changed"
+    )
+    lock = load_held_protocol_lock(permit.lock_path)
+    _require(
+        evidence.get("outcome_reconstruction_contract_sha256")
+        == lock["immutable_bindings"]["outcome_reconstruction_contract"],
+        "score evidence reconstruction contract changed",
+    )
+    records = evidence.get("case_records")
+    _require(
+        isinstance(records, Mapping) and set(records) == set(CALIBRATION_CASE_NAMES),
+        "score evidence must contain all 15 locked calibration cases",
+    )
+    expected_score_fields = {
+        "primary_chamfer_m",
+        "comparator_chamfer_m",
+        "primary_identity_rmse_m",
+        "comparator_identity_rmse_m",
+    }
+    for case_name in CALIBRATION_CASE_NAMES:
+        record = records[case_name]
+        _require(isinstance(record, Mapping), f"invalid score record for {case_name}")
+        _require(record.get("case_name") == case_name, "score evidence case changed")
+        _require(
+            record.get("method_selection_or_tuning_performed") is False,
+            "score evidence performed method selection",
+        )
+        gate_score = record.get("gate_score")
+        _require(
+            isinstance(gate_score, Mapping)
+            and set(gate_score) == expected_score_fields
+            and all(
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(float(value))
+                and float(value) >= 0.0
+                for value in gate_score.values()
+            ),
+            f"invalid gate score evidence for {case_name}",
+        )
+    boundary = evidence.get("information_boundary", {})
+    _require(
+        boundary.get("all_15_online_predictions_sealed_before_any_outcome") is True
+        and boundary.get("outcomes_opened_only_through_live_permit") is True
+        and boundary.get("method_selection_or_tuning_performed") is False
+        and boundary.get("confirmation_payload_read") is False,
+        "score evidence crossed the confirmation boundary",
+    )
+    _require(
+        evidence.get("artifact_sha256") == held_artifact_sha256(evidence),
+        "calibration score evidence content checksum changed",
+    )
+    return evidence
+
+
 def create_calibration_gate_decision(
     output_path: str | Path,
     permit: OutcomePhasePermit,
     scores: Mapping[str, Mapping[str, float]],
+    *,
+    score_evidence_path: str | Path,
 ) -> dict[str, Any]:
     """Apply the frozen GO/NO-GO rule after all calibration seals exist."""
 
@@ -1158,7 +1378,17 @@ def create_calibration_gate_decision(
     _require(
         lock.get("stage") == "calibration", "calibration gate uses another lock stage"
     )
+    evidence = validate_calibration_score_evidence(score_evidence_path, permit)
+    evidence_scores = {
+        case_name: evidence["case_records"][case_name]["gate_score"]
+        for case_name in CALIBRATION_CASE_NAMES
+    }
     normalized, summary = _calibration_gate_summary(scores)
+    normalized_evidence, _ = _calibration_gate_summary(evidence_scores)
+    _require(
+        normalized == normalized_evidence,
+        "calibration gate scores differ from immutable score evidence",
+    )
     artifact: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "artifact_kind": CALIBRATION_DECISION_KIND,
@@ -1170,6 +1400,8 @@ def create_calibration_gate_decision(
             case_name: _bound_file(seal_paths[case_name])
             for case_name in CALIBRATION_CASE_NAMES
         },
+        "calibration_score_evidence": _bound_file(score_evidence_path),
+        "calibration_score_evidence_artifact_sha256": evidence["artifact_sha256"],
         "score_definition": {
             "primary_method": deepcopy(PRIMARY_METHOD),
             "comparator": METRIC_LOCK["comparator"],
@@ -1180,6 +1412,7 @@ def create_calibration_gate_decision(
         "summary": summary,
         "information_boundary": {
             "all_calibration_predictions_sealed_before_outcomes": True,
+            "immutable_score_evidence_validated": True,
             "calibration_role": "go_no_go_only",
             "method_selected_from_calibration": False,
             "confirmation_payload_read": False,
@@ -1238,6 +1471,24 @@ def validate_calibration_gate_decision(
         decision.get("cohort_barrier_sha256") == barrier_sha256,
         "calibration decision binds another cohort barrier",
     )
+    permit = authorize_outcome_phase(
+        calibration_lock_path,
+        seal_paths,
+        role="calibration",
+    )
+    score_evidence_path = _validate_bound_file(
+        decision.get("calibration_score_evidence", {}),
+        role="calibration score evidence",
+    )
+    score_evidence = validate_calibration_score_evidence(
+        score_evidence_path,
+        permit,
+    )
+    _require(
+        decision.get("calibration_score_evidence_artifact_sha256")
+        == score_evidence["artifact_sha256"],
+        "calibration decision binds another score evidence artifact",
+    )
     _require(
         decision.get("score_definition")
         == {
@@ -1249,7 +1500,16 @@ def validate_calibration_gate_decision(
         "calibration score definition changed",
     )
     normalized, summary = _calibration_gate_summary(decision.get("scores", {}))
+    evidence_scores = {
+        case_name: score_evidence["case_records"][case_name]["gate_score"]
+        for case_name in CALIBRATION_CASE_NAMES
+    }
+    normalized_evidence, _ = _calibration_gate_summary(evidence_scores)
     _require(decision.get("scores") == normalized, "calibration scores changed")
+    _require(
+        normalized == normalized_evidence,
+        "calibration decision scores differ from immutable evidence",
+    )
     _require(
         decision.get("summary") == summary, "calibration decision arithmetic changed"
     )
@@ -1260,6 +1520,7 @@ def validate_calibration_gate_decision(
     boundary = decision.get("information_boundary", {})
     _require(
         boundary.get("all_calibration_predictions_sealed_before_outcomes") is True
+        and boundary.get("immutable_score_evidence_validated") is True
         and boundary.get("calibration_role") == "go_no_go_only"
         and boundary.get("method_selected_from_calibration") is False
         and boundary.get("confirmation_payload_read") is False
@@ -1328,6 +1589,7 @@ def run_outcome_operation(
 __all__ = [
     "CALIBRATION_CASE_NAMES",
     "CALIBRATION_GATE",
+    "CALIBRATION_SCORE_EVIDENCE_KIND",
     "CONFIRMATION_CASES",
     "CONFIRMATION_GATE",
     "CONTROL_METHODS",
@@ -1339,6 +1601,7 @@ __all__ = [
     "PHYSICAL_ARTIFACT_ROLES",
     "PRIMARY_METHOD",
     "PROTOCOL_ID",
+    "REQUIRED_IMMUTABLE_BINDING_KEYS",
     "UPDATE_FRAMES",
     "authorize_outcome_phase",
     "create_calibration_gate_decision",
@@ -1348,11 +1611,13 @@ __all__ = [
     "create_physical_prior_seal",
     "create_prefix_stage_authorization",
     "held_artifact_sha256",
+    "held_contract_sha256",
     "load_held_protocol_lock",
     "locked_case_names",
     "run_outcome_operation",
     "validate_frame_zero_bundle_manifest",
     "validate_calibration_gate_decision",
+    "validate_calibration_score_evidence",
     "validate_online_prediction_seal",
     "validate_physical_prior_seal",
     "validate_prefix_stage_authorization",

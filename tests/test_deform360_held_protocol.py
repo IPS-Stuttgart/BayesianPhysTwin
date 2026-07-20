@@ -8,15 +8,23 @@ from pathlib import Path
 
 import pytest
 
+from deform360_held_test_helpers import (
+    default_frame_zero_config,
+    dummy_immutable_bindings,
+)
+
 from bayesian_phystwin.deform360_held_protocol import (
     CALIBRATION_CASE_NAMES,
     CALIBRATION_GATE,
+    CALIBRATION_SCORE_EVIDENCE_KIND,
     CONFIRMATION_CASES,
     CONFIRMATION_GATE,
     FRAME_ZERO_KIND,
+    METRIC_LOCK,
     ONLINE_ARTIFACT_ROLES,
     PHYSICAL_ARTIFACT_ROLES,
     PRIMARY_METHOD,
+    REQUIRED_IMMUTABLE_BINDING_KEYS,
     authorize_outcome_phase,
     create_calibration_gate_decision,
     create_confirmation_protocol_lock,
@@ -48,11 +56,7 @@ def _calibration_lock(tmp_path: Path) -> Path:
     path = tmp_path / "calibration-lock.json"
     create_held_protocol_lock(
         path,
-        immutable_bindings={
-            "analysis_source": "a" * 64,
-            "analysis_configuration": "b" * 64,
-            "alltracker_checkpoint": "c" * 64,
-        },
+        immutable_bindings=dummy_immutable_bindings(),
     )
     return path
 
@@ -67,6 +71,45 @@ def _passing_scores(*, primary_chamfer_m: float = 0.90) -> dict[str, dict[str, f
         }
         for case_name in CALIBRATION_CASE_NAMES
     }
+
+
+def _score_evidence(
+    path: Path,
+    permit: object,
+    scores: dict[str, dict[str, float]],
+) -> Path:
+    lock_path = Path(permit.lock_path)
+    lock = load_held_protocol_lock(lock_path)
+    artifact: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": CALIBRATION_SCORE_EVIDENCE_KIND,
+        "protocol_id": "deform360-held-online-belief-v1",
+        "role": "calibration",
+        "cohort_barrier_sha256": permit.cohort_barrier_sha256,
+        "lock": _record(lock_path),
+        "outcome_reconstruction_contract_sha256": lock["immutable_bindings"][
+            "outcome_reconstruction_contract"
+        ],
+        "ordered_case_names": list(CALIBRATION_CASE_NAMES),
+        "metric_lock": METRIC_LOCK,
+        "case_records": {
+            case_name: {
+                "case_name": case_name,
+                "gate_score": dict(scores[case_name]),
+                "method_selection_or_tuning_performed": False,
+            }
+            for case_name in CALIBRATION_CASE_NAMES
+        },
+        "information_boundary": {
+            "all_15_online_predictions_sealed_before_any_outcome": True,
+            "outcomes_opened_only_through_live_permit": True,
+            "method_selection_or_tuning_performed": False,
+            "confirmation_payload_read": False,
+        },
+    }
+    artifact["artifact_sha256"] = held_artifact_sha256(artifact)
+    path.write_text(json.dumps(artifact), encoding="utf-8")
+    return path
 
 
 def _identity(case_name: str) -> tuple[str, int]:
@@ -109,12 +152,15 @@ def _frame_zero_manifest(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": FRAME_ZERO_KIND,
+        "protocol_id": "deform360-held-online-belief-v1",
         "case_name": case_name,
         "object_id": object_id,
         "episode_id": episode_id,
         "role": role,
         "lock_sha256": _sha256(lock_path),
+        "lock_artifact_sha256": load_held_protocol_lock(lock_path)["artifact_sha256"],
         "frame_indices": [0],
+        "config": default_frame_zero_config(),
         "bundle": _record(bundle),
         "action_inputs": {
             "robot_trajectory": _record(robot),
@@ -220,10 +266,15 @@ def _lock(tmp_path: Path) -> Path:
         role="calibration",
     )
     decision_path = tmp_path / "calibration-decision.json"
+    scores = _passing_scores()
+    evidence_path = _score_evidence(
+        tmp_path / "calibration-score-evidence.json", permit, scores
+    )
     create_calibration_gate_decision(
         decision_path,
         permit,
-        _passing_scores(),
+        scores,
+        score_evidence_path=evidence_path,
     )
     confirmation_lock = tmp_path / "confirmation-lock.json"
     create_confirmation_protocol_lock(
@@ -258,6 +309,21 @@ def test_lock_freezes_exact_cases_method_metrics_and_decision_gates(
     mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
     with pytest.raises(ValueError, match="confirmation whitelist changed"):
         load_held_protocol_lock(mutated_path)
+
+
+def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> None:
+    missing = dummy_immutable_bindings()
+    missing.pop(REQUIRED_IMMUTABLE_BINDING_KEYS[0])
+    with pytest.raises(ValueError, match="immutable binding keys changed"):
+        create_held_protocol_lock(tmp_path / "missing.json", immutable_bindings=missing)
+
+    extra = dummy_immutable_bindings()
+    extra["unlocked_runtime_component"] = "f" * 64
+    with pytest.raises(ValueError, match="immutable binding keys changed"):
+        create_held_protocol_lock(tmp_path / "extra.json", immutable_bindings=extra)
+
+    assert not (tmp_path / "missing.json").exists()
+    assert not (tmp_path / "extra.json").exists()
 
 
 def test_frame_zero_contract_allows_action_but_rejects_object_future_and_hdf5(
@@ -345,10 +411,13 @@ def test_calibration_no_go_cannot_create_a_confirmation_lock(tmp_path: Path) -> 
         role="calibration",
     )
     decision_path = tmp_path / "no-go.json"
+    scores = _passing_scores(primary_chamfer_m=1.10)
+    evidence_path = _score_evidence(tmp_path / "no-go-evidence.json", permit, scores)
     decision = create_calibration_gate_decision(
         decision_path,
         permit,
-        _passing_scores(primary_chamfer_m=1.10),
+        scores,
+        score_evidence_path=evidence_path,
     )
     assert decision["decision"] == "NO_GO"
 
@@ -367,6 +436,31 @@ def test_calibration_no_go_cannot_create_a_confirmation_lock(tmp_path: Path) -> 
     )
     with pytest.raises(ValueError, match="confirmation remains sealed"):
         validate_frame_zero_bundle_manifest(target_manifest, calibration_lock)
+
+
+def test_calibration_decision_scores_must_equal_sealed_evidence(
+    tmp_path: Path,
+) -> None:
+    calibration_lock = _calibration_lock(tmp_path)
+    seals = _seal_calibration_cohort(tmp_path / "calibration-chain", calibration_lock)
+    permit = authorize_outcome_phase(calibration_lock, seals, role="calibration")
+    evidence_scores = _passing_scores(primary_chamfer_m=0.90)
+    evidence_path = _score_evidence(
+        tmp_path / "calibration-score-evidence.json",
+        permit,
+        evidence_scores,
+    )
+    mismatched_scores = _passing_scores(primary_chamfer_m=0.89)
+
+    with pytest.raises(ValueError, match="differ from immutable score evidence"):
+        create_calibration_gate_decision(
+            tmp_path / "forbidden-decision.json",
+            permit,
+            mismatched_scores,
+            score_evidence_path=evidence_path,
+        )
+
+    assert not (tmp_path / "forbidden-decision.json").exists()
 
 
 def test_physical_and_online_seals_are_ordered_and_write_once(tmp_path: Path) -> None:

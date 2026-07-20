@@ -7,6 +7,11 @@ import pickle
 import numpy as np
 import pytest
 
+from deform360_held_test_helpers import (
+    default_frame_zero_config,
+    dummy_immutable_bindings,
+)
+
 from bayesian_phystwin.deform360_held_physical_prior import (
     FRAME_COUNT,
     OFFICIAL_PHYSTWIN_REVISION,
@@ -105,7 +110,7 @@ def _make_locked_frame_zero(
     tmp_path: Path, *, encoded_frames: tuple[int, ...] = (0,)
 ) -> tuple[Path, Path]:
     lock_path = tmp_path / "held_lock.json"
-    create_held_protocol_lock(lock_path, immutable_bindings={"test": "0" * 64})
+    create_held_protocol_lock(lock_path, immutable_bindings=dummy_immutable_bindings())
     bundle_path = tmp_path / "frame_zero.npz"
     _make_frame_zero_bundle(bundle_path, encoded_frames=encoded_frames)
     robot_path = tmp_path / "robot.npz"
@@ -124,6 +129,10 @@ def _make_locked_frame_zero(
         "role": "calibration",
         "frame_indices": [0],
         "lock_sha256": sha256_file(lock_path),
+        "lock_artifact_sha256": json.loads(lock_path.read_text(encoding="utf-8"))[
+            "artifact_sha256"
+        ],
+        "config": default_frame_zero_config(),
         "bundle": _bound_file(bundle_path),
         "action_inputs": {
             "robot_trajectory": _bound_file(robot_path),

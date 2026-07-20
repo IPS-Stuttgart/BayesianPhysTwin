@@ -10,6 +10,8 @@ import sys
 import numpy as np
 import pytest
 
+from deform360_held_test_helpers import dummy_immutable_bindings
+
 import bayesian_phystwin.deform360_held_online_prefix as held_prefix
 import bayesian_phystwin.deform360_held_physical_prior as held_physical
 from bayesian_phystwin.deform360_held_online_prefix import (
@@ -371,7 +373,7 @@ def test_forbidden_prefix_inputs_fail_closed(
 def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     lock = tmp_path / "held-lock.json"
     lock_payload = create_held_protocol_lock(
-        lock, immutable_bindings={"test": "a" * 64}
+        lock, immutable_bindings=dummy_immutable_bindings()
     )
     bundle = tmp_path / "frame_zero_bundle.npz"
     camera_count = len(TEST_CAMERAS)

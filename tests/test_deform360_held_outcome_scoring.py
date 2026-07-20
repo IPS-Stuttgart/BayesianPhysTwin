@@ -8,6 +8,11 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+from deform360_held_test_helpers import (
+    default_frame_zero_config,
+    dummy_immutable_bindings,
+)
+
 from bayesian_phystwin.deform360_held_outcome_scoring import (
     OUTCOME_ARTIFACT_KIND,
     TARGET_ARTIFACT_KIND,
@@ -245,12 +250,17 @@ def _frame_zero_manifest(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": FRAME_ZERO_KIND,
+        "protocol_id": "deform360-held-online-belief-v1",
         "case_name": case_name,
         "object_id": object_id,
         "episode_id": int(episode),
         "role": "calibration",
         "lock_sha256": _sha256(lock_path),
+        "lock_artifact_sha256": json.loads(lock_path.read_text(encoding="utf-8"))[
+            "artifact_sha256"
+        ],
         "frame_indices": [0],
+        "config": default_frame_zero_config(),
         "bundle": _record(bundle),
         "action_inputs": {
             "robot_trajectory": _record(robot),
@@ -336,11 +346,7 @@ def _complete_calibration_fixture(
     lock_path = tmp_path / "lock.json"
     create_held_protocol_lock(
         lock_path,
-        immutable_bindings={
-            "held_online_runner": "a" * 64,
-            "held_outcome_scorer": "b" * 64,
-            "scipy_runtime": "c" * 64,
-        },
+        immutable_bindings=dummy_immutable_bindings(),
     )
     frame_zero = _synthetic_frame_zero()
     target = _synthetic_target(frame_zero)

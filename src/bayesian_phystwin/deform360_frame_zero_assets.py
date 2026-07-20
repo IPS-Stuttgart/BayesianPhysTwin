@@ -115,7 +115,9 @@ def _sha256_array(value: np.ndarray) -> str:
     descriptor = _canonical_bytes(
         {"dtype": array.dtype.str, "shape": list(array.shape)}
     )
-    return hashlib.sha256(descriptor + b"\0" + array.view(np.uint8).tobytes()).hexdigest()
+    return hashlib.sha256(
+        descriptor + b"\0" + array.view(np.uint8).tobytes()
+    ).hexdigest()
 
 
 def _file_record(path: Path) -> dict[str, Any]:
@@ -166,7 +168,9 @@ def validate_generic_held_lock(payload: Mapping[str, Any]) -> dict[str, Any]:
     _require(tuple(whitelist) == HELD_TARGET_CASES_V1, "held target whitelist changed")
     cohort = payload.get("cohort")
     _require(isinstance(cohort, list) and len(cohort) == 6, "held cohort changed")
-    cohort_names = [record.get("case_name") for record in cohort if isinstance(record, Mapping)]
+    cohort_names = [
+        record.get("case_name") for record in cohort if isinstance(record, Mapping)
+    ]
     _require(cohort_names == list(HELD_TARGET_CASES_V1), "held cohort order changed")
     _require(payload.get("update_frames") == [19, 38, 57], "held update frames changed")
     _require(payload.get("frame_count") == 76, "held frame count changed")
@@ -177,7 +181,10 @@ def validate_generic_held_lock(payload: Mapping[str, Any]) -> dict[str, Any]:
             payload.get("confirmation_access_authorized") is False,
             "calibration lock authorized confirmation",
         )
-        _require(payload.get("parent_calibration_lock") is None, "calibration lock has a parent")
+        _require(
+            payload.get("parent_calibration_lock") is None,
+            "calibration lock has a parent",
+        )
         _require(
             payload.get("calibration_gate_evidence") is None,
             "calibration lock already contains gate evidence",
@@ -197,10 +204,13 @@ def validate_generic_held_lock(payload: Mapping[str, Any]) -> dict[str, Any]:
         )
     calibration = payload.get("calibration_case_whitelist")
     _require(
-        isinstance(calibration, list) and APPROVED_CALIBRATION_SMOKE_CASE in calibration,
+        isinstance(calibration, list)
+        and APPROVED_CALIBRATION_SMOKE_CASE in calibration,
         "held lock does not authorize the calibration smoke case",
     )
-    _require(not set(whitelist) & set(calibration), "held/calibration whitelists overlap")
+    _require(
+        not set(whitelist) & set(calibration), "held/calibration whitelists overlap"
+    )
     for case_name in [*whitelist, *calibration]:
         object_id, _ = _case_parts(str(case_name))
         _require(
@@ -210,8 +220,15 @@ def validate_generic_held_lock(payload: Mapping[str, Any]) -> dict[str, Any]:
     bindings = payload.get("immutable_bindings")
     _require(isinstance(bindings, Mapping), "held lock lacks immutable bindings")
     _require(
-        all(isinstance(key, str) and _valid_sha256(value) for key, value in bindings.items()),
+        all(
+            isinstance(key, str) and _valid_sha256(value)
+            for key, value in bindings.items()
+        ),
         "held lock contains an invalid immutable binding",
+    )
+    _require(
+        _valid_sha256(bindings.get("frame_zero_default_config")),
+        "held lock lacks the frame-zero configuration binding",
     )
     return {
         "passed": True,
@@ -237,12 +254,16 @@ def authorize_frame_zero_case(
     _require(prefix not in ABSOLUTELY_FORBIDDEN_OBJECT_PREFIXES, "object is forbidden")
     _require(role in {"calibration", "confirmation"}, "unknown frame-zero role")
     if role == "calibration":
-        _require(lock.get("stage") == "calibration", "calibration requires the initial lock")
+        _require(
+            lock.get("stage") == "calibration", "calibration requires the initial lock"
+        )
         _require(
             case_name in lock["calibration_case_whitelist"],
             "case is not authorized for calibration",
         )
-        _require(case_name not in lock["case_whitelist"], "confirmation used as calibration")
+        _require(
+            case_name not in lock["case_whitelist"], "confirmation used as calibration"
+        )
     else:
         _require(
             lock.get("stage") == "confirmation"
@@ -378,7 +399,9 @@ class PinnedFrameZeroSam2Runtime:
             from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
             from sam2.build_sam import build_sam2
         except ImportError as error:  # pragma: no cover - GPU integration
-            raise RuntimeError("pinned SAM2 runtime dependencies are unavailable") from error
+            raise RuntimeError(
+                "pinned SAM2 runtime dependencies are unavailable"
+            ) from error
         self._torch = torch
         model = build_sam2(
             PINNED_SAM2_MODEL_CONFIG,
@@ -437,7 +460,9 @@ def decode_exact_frame_zero(
     capture = cv2.VideoCapture(str(path))
     try:
         if source_aligned_frame_index:
-            positioned = capture.set(cv2.CAP_PROP_POS_FRAMES, source_aligned_frame_index)
+            positioned = capture.set(
+                cv2.CAP_PROP_POS_FRAMES, source_aligned_frame_index
+            )
             _require(bool(positioned), "cannot seek to action-window frame zero")
         ok, bgr = capture.read()
     finally:
@@ -594,10 +619,13 @@ def segment_frame_zero_views(
     return masks, diagnostics
 
 
-def _projection_matrix(intrinsics: np.ndarray, camera_to_world: np.ndarray) -> np.ndarray:
-    return np.asarray(intrinsics, dtype=np.float64) @ np.linalg.inv(
-        np.asarray(camera_to_world, dtype=np.float64)
-    )[:3]
+def _projection_matrix(
+    intrinsics: np.ndarray, camera_to_world: np.ndarray
+) -> np.ndarray:
+    return (
+        np.asarray(intrinsics, dtype=np.float64)
+        @ np.linalg.inv(np.asarray(camera_to_world, dtype=np.float64))[:3]
+    )
 
 
 def _project_points(
@@ -628,7 +656,9 @@ def _largest_grid_component(
     grid_shape: Sequence[int],
 ) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
     shape = tuple(int(value) for value in grid_shape)
-    _require(len(shape) == 3 and all(value >= 2 for value in shape), "invalid grid shape")
+    _require(
+        len(shape) == 3 and all(value >= 2 for value in shape), "invalid grid shape"
+    )
     scale = (np.asarray(shape, dtype=np.float64) - 1.0) / (
         np.asarray(bounds_maximum) - np.asarray(bounds_minimum)
     )
@@ -688,13 +718,17 @@ def _largest_grid_component(
     surface_occupancy = keep_occupancy & ~interior
     surface = surface_occupancy[indices[:, 0], indices[:, 1], indices[:, 2]]
     sizes = sorted((len(component) for component in components), reverse=True)
-    return keep, surface, {
-        "component_count": len(components),
-        "component_point_counts_descending": sizes[:20],
-        "largest_component_point_count": int(np.count_nonzero(keep)),
-        "largest_component_fraction": float(np.mean(keep)),
-        "surface_point_count": int(np.count_nonzero(surface)),
-    }
+    return (
+        keep,
+        surface,
+        {
+            "component_count": len(components),
+            "component_point_counts_descending": sizes[:20],
+            "largest_component_point_count": int(np.count_nonzero(keep)),
+            "largest_component_fraction": float(np.mean(keep)),
+            "surface_point_count": int(np.count_nonzero(surface)),
+        },
+    )
 
 
 def _sample_surface_points(
@@ -748,16 +782,22 @@ def _render_depth(
     result = np.zeros((height, width), dtype=np.float32)
     result[valid] = depth_map[valid].astype(np.float32)
     mask_count = int(np.count_nonzero(mask))
-    return result, valid, {
-        "mask_pixel_count": mask_count,
-        "valid_depth_pixel_count": int(np.count_nonzero(valid)),
-        "depth_mask_coverage": (
-            float(np.count_nonzero(valid) / mask_count) if mask_count else 0.0
-        ),
-        "minimum_depth_m": float(np.min(result[valid])) if np.any(valid) else None,
-        "median_depth_m": float(np.median(result[valid])) if np.any(valid) else None,
-        "maximum_depth_m": float(np.max(result[valid])) if np.any(valid) else None,
-    }
+    return (
+        result,
+        valid,
+        {
+            "mask_pixel_count": mask_count,
+            "valid_depth_pixel_count": int(np.count_nonzero(valid)),
+            "depth_mask_coverage": (
+                float(np.count_nonzero(valid) / mask_count) if mask_count else 0.0
+            ),
+            "minimum_depth_m": float(np.min(result[valid])) if np.any(valid) else None,
+            "median_depth_m": float(np.median(result[valid]))
+            if np.any(valid)
+            else None,
+            "maximum_depth_m": float(np.max(result[valid])) if np.any(valid) else None,
+        },
+    )
 
 
 def build_frame_zero_geometry(
@@ -834,17 +874,29 @@ def build_frame_zero_geometry(
     )
     _require(len(surface_points) >= 128, "too few object surface points")
 
-    rgb_stack = np.stack([np.asarray(rgb_by_camera[camera], dtype=np.uint8) for camera in cameras])
-    mask_stack = np.stack([np.asarray(masks_by_camera[camera], dtype=bool) for camera in cameras])
+    rgb_stack = np.stack(
+        [np.asarray(rgb_by_camera[camera], dtype=np.uint8) for camera in cameras]
+    )
+    mask_stack = np.stack(
+        [np.asarray(masks_by_camera[camera], dtype=bool) for camera in cameras]
+    )
     intrinsics_stack = np.stack(
-        [np.asarray(intrinsics_by_camera[camera], dtype=np.float64) for camera in cameras]
+        [
+            np.asarray(intrinsics_by_camera[camera], dtype=np.float64)
+            for camera in cameras
+        ]
     )
     extrinsics_stack = np.stack(
-        [np.asarray(camera_to_world_by_camera[camera], dtype=np.float64) for camera in cameras]
+        [
+            np.asarray(camera_to_world_by_camera[camera], dtype=np.float64)
+            for camera in cameras
+        ]
     )
     projection_stack = np.stack(
         [
-            _projection_matrix(intrinsics_by_camera[camera], camera_to_world_by_camera[camera])
+            _projection_matrix(
+                intrinsics_by_camera[camera], camera_to_world_by_camera[camera]
+            )
             for camera in cameras
         ]
     )
@@ -855,7 +907,9 @@ def build_frame_zero_geometry(
     for camera_index, camera in enumerate(cameras):
         mask = mask_stack[camera_index]
         pixels, point_depth = _project_points(
-            surface_points, intrinsics_stack[camera_index], extrinsics_stack[camera_index]
+            surface_points,
+            intrinsics_stack[camera_index],
+            extrinsics_stack[camera_index],
         )
         rounded = np.rint(pixels).astype(np.int64)
         height, width = mask.shape
@@ -900,7 +954,9 @@ def build_frame_zero_geometry(
             }
         )
     support_count = np.sum(np.all(np.isfinite(sampled_colors), axis=2), axis=0)
-    _require(np.all(support_count > 0), "one or more surface points have no RGB support")
+    _require(
+        np.all(support_count > 0), "one or more surface points have no RGB support"
+    )
     object_colors = np.nanmedian(sampled_colors, axis=0).astype(np.uint8)
     containment = np.asarray(
         [record["hull_mask_containment"] for record in camera_qa], dtype=np.float64
@@ -920,8 +976,7 @@ def build_frame_zero_geometry(
             float(np.median(coverage)) >= config.minimum_median_depth_mask_coverage
         ),
         "median_hull_mask_containment": (
-            float(np.median(containment))
-            >= config.minimum_median_hull_mask_containment
+            float(np.median(containment)) >= config.minimum_median_hull_mask_containment
         ),
         "all_surface_points_colored": bool(np.all(support_count > 0)),
     }
@@ -975,7 +1030,9 @@ def build_frame_zero_geometry(
     return arrays, diagnostics
 
 
-def _load_calibration(episode_dir: Path) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict[str, Any]]:
+def _load_calibration(
+    episode_dir: Path,
+) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict[str, Any]]:
     intrinsic_path = reject_future_derived_input(
         episode_dir / "undistorted_intrinsics.npy", purpose="camera intrinsics"
     )
@@ -988,7 +1045,9 @@ def _load_calibration(episode_dir: Path) -> tuple[dict[str, np.ndarray], dict[st
     extrinsics_raw = np.load(extrinsic_path, allow_pickle=True).item()
     _require(isinstance(intrinsics_raw, Mapping), "intrinsics archive is not a mapping")
     _require(isinstance(extrinsics_raw, Mapping), "extrinsics archive is not a mapping")
-    _require(set(intrinsics_raw) == set(extrinsics_raw), "calibration camera sets differ")
+    _require(
+        set(intrinsics_raw) == set(extrinsics_raw), "calibration camera sets differ"
+    )
     intrinsics = {
         str(camera): np.asarray(value, dtype=np.float64)
         for camera, value in intrinsics_raw.items()
@@ -1001,13 +1060,18 @@ def _load_calibration(episode_dir: Path) -> tuple[dict[str, np.ndarray], dict[st
         _require(intrinsics[camera].shape == (3, 3), f"invalid intrinsics for {camera}")
         _require(extrinsics[camera].shape == (4, 4), f"invalid extrinsics for {camera}")
         _require(
-            np.isfinite(intrinsics[camera]).all() and np.isfinite(extrinsics[camera]).all(),
+            np.isfinite(intrinsics[camera]).all()
+            and np.isfinite(extrinsics[camera]).all(),
             f"non-finite calibration for {camera}",
         )
-    return intrinsics, extrinsics, {
-        "intrinsics": _file_record(intrinsic_path),
-        "extrinsics": _file_record(extrinsic_path),
-    }
+    return (
+        intrinsics,
+        extrinsics,
+        {
+            "intrinsics": _file_record(intrinsic_path),
+            "extrinsics": _file_record(extrinsic_path),
+        },
+    )
 
 
 def _controller_centres(actions: np.ndarray) -> np.ndarray:
@@ -1085,9 +1149,7 @@ def select_action_only_window(
         candidates.append(
             {
                 "frame_range_half_open": [start, stop],
-                "mean_closed_weighted_path_length_m": float(
-                    np.mean(per_gripper_path)
-                ),
+                "mean_closed_weighted_path_length_m": float(np.mean(per_gripper_path)),
                 "maximum_closed_weighted_path_length_m": float(
                     np.max(per_gripper_path)
                 ),
@@ -1123,7 +1185,10 @@ def _slice_known_action(
     config: FrameZeroAssetConfig,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     with np.load(robot_path, allow_pickle=False) as stored:
-        _require("actions" in stored and "openings" in stored, "robot action fields are missing")
+        _require(
+            "actions" in stored and "openings" in stored,
+            "robot action fields are missing",
+        )
         alignment = select_action_only_window(
             stored["actions"],
             stored["openings"],
@@ -1142,7 +1207,9 @@ def _slice_known_action(
             else:
                 arrays[name] = value
     _require(
-        len(arrays["actions"]) == len(arrays["openings"]) == config.prediction_frame_count,
+        len(arrays["actions"])
+        == len(arrays["openings"])
+        == config.prediction_frame_count,
         "sliced action has the wrong prediction length",
     )
     np.savez_compressed(output_path, **arrays)
@@ -1158,7 +1225,9 @@ def _slice_known_action(
 
 
 def _action_inputs(episode_dir: Path) -> tuple[dict[str, dict[str, Any]], Path]:
-    robot = reject_future_derived_input(episode_dir / "robot" / "robot.npz", purpose="robot action")
+    robot = reject_future_derived_input(
+        episode_dir / "robot" / "robot.npz", purpose="robot action"
+    )
     metadata = reject_future_derived_input(
         episode_dir / "robot" / "robot.meta.json", purpose="robot action metadata"
     )
@@ -1168,10 +1237,15 @@ def _action_inputs(episode_dir: Path) -> tuple[dict[str, dict[str, Any]], Path]:
     }, robot
 
 
-def _validate_case_directory(episode_dir: Path, authorization: Mapping[str, Any]) -> None:
+def _validate_case_directory(
+    episode_dir: Path, authorization: Mapping[str, Any]
+) -> None:
     expected_episode = f"episode_{int(authorization['episode_id']):04d}"
     _require(episode_dir.name == expected_episode, "episode directory/case mismatch")
-    _require(episode_dir.parent.name == authorization["object_id"], "object directory/case mismatch")
+    _require(
+        episode_dir.parent.name == authorization["object_id"],
+        "object directory/case mismatch",
+    )
 
 
 def _bundle_array_records(arrays: Mapping[str, np.ndarray]) -> dict[str, Any]:
@@ -1186,21 +1260,28 @@ def _bundle_array_records(arrays: Mapping[str, np.ndarray]) -> dict[str, Any]:
 
 
 def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str, Any]:
-    _require(payload.get("schema_version") == 1, "unsupported frame-zero manifest schema")
+    _require(
+        payload.get("schema_version") == 1, "unsupported frame-zero manifest schema"
+    )
     _require(
         payload.get("artifact_kind") == FRAME_ZERO_BUNDLE_ARTIFACT_KIND,
         "unexpected frame-zero manifest kind",
     )
-    _require(payload.get("protocol_id") == HELD_PROTOCOL_ID, "frame-zero protocol changed")
+    _require(
+        payload.get("protocol_id") == HELD_PROTOCOL_ID, "frame-zero protocol changed"
+    )
     object_id, episode_id = _case_parts(str(payload.get("case_name")))
     _require(payload.get("object_id") == object_id, "manifest object/case mismatch")
     _require(payload.get("episode_id") == episode_id, "manifest episode/case mismatch")
-    _require(_valid_sha256(payload.get("lock_sha256")), "invalid held lock file checksum")
+    _require(
+        _valid_sha256(payload.get("lock_sha256")), "invalid held lock file checksum"
+    )
     _require(
         _valid_sha256(payload.get("lock_artifact_sha256")),
         "invalid held lock artifact checksum",
     )
     _require(payload.get("frame_indices") == [0], "frame-zero bundle is multi-frame")
+    _require(isinstance(payload.get("config"), Mapping), "frame-zero config is missing")
     _require(
         payload.get("information_boundary") == FRAME_ZERO_INFORMATION_BOUNDARY,
         "frame-zero information boundary changed",
@@ -1218,11 +1299,16 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
     )
     for record in action_inputs.values():
         _require(isinstance(record, Mapping), "invalid action input record")
-        _require(Path(str(record.get("path"))).is_absolute(), "action path is not absolute")
+        _require(
+            Path(str(record.get("path"))).is_absolute(), "action path is not absolute"
+        )
         _require(_valid_sha256(record.get("sha256")), "invalid action checksum")
         _require(isinstance(record.get("size_bytes"), int), "invalid action size")
     action_alignment = payload.get("action_alignment")
-    _require(isinstance(action_alignment, Mapping), "frame-zero manifest lacks action alignment")
+    _require(
+        isinstance(action_alignment, Mapping),
+        "frame-zero manifest lacks action alignment",
+    )
     raw_range = action_alignment.get("selected_raw_frame_range_half_open")
     prediction_range = action_alignment.get("prediction_raw_frame_range_half_open")
     _require(
@@ -1244,7 +1330,9 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
         Path(str(selected_action.get("path"))).is_absolute(),
         "selected action bundle path is not absolute",
     )
-    _require(_valid_sha256(selected_action.get("sha256")), "invalid selected action checksum")
+    _require(
+        _valid_sha256(selected_action.get("sha256")), "invalid selected action checksum"
+    )
     _require(
         isinstance(selected_action.get("size_bytes"), int),
         "invalid selected action size",
@@ -1276,7 +1364,14 @@ def run_frame_zero_asset_builder(
     cfg = config or FrameZeroAssetConfig()
     _require(_valid_sha256(lock_file_sha256), "invalid held lock file checksum")
     authorization = authorize_frame_zero_case(lock, case_name, role=role)
-    episode = reject_future_derived_input(episode_dir, purpose="aligned episode directory")
+    expected_config_sha256 = lock["immutable_bindings"].get("frame_zero_default_config")
+    _require(
+        expected_config_sha256 == artifact_sha256(asdict(cfg)),
+        "effective frame-zero configuration differs from the immutable lock",
+    )
+    episode = reject_future_derived_input(
+        episode_dir, purpose="aligned episode directory"
+    )
     _require(episode.is_dir(), f"aligned episode directory is missing: {episode}")
     _validate_case_directory(episode, authorization)
     output = Path(output_dir).resolve()
@@ -1301,7 +1396,9 @@ def run_frame_zero_asset_builder(
                 if (episode / camera / "undistorted.mp4").is_file()
             )
         )
-        _require(len(cameras) >= cfg.minimum_camera_count, "too few aligned camera videos")
+        _require(
+            len(cameras) >= cfg.minimum_camera_count, "too few aligned camera videos"
+        )
         _require(cfg.reference_camera in cameras, "reference camera is not aligned")
         rgb_by_camera: dict[str, np.ndarray] = {}
         access_records: list[dict[str, Any]] = []

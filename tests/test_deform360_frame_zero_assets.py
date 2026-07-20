@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
@@ -10,14 +11,21 @@ import sys
 import numpy as np
 import pytest
 
+from deform360_held_test_helpers import (
+    default_frame_zero_config,
+    dummy_immutable_bindings,
+)
+
 from bayesian_phystwin.deform360_frame_zero_assets import (
     APPROVED_CALIBRATION_SMOKE_CASE,
     FRAME_ZERO_INFORMATION_BOUNDARY,
+    FrameZeroAssetConfig,
     HELD_TARGET_CASES_V1,
     artifact_sha256,
     authorize_frame_zero_case,
     decode_exact_frame_zero,
     reject_future_derived_input,
+    run_frame_zero_asset_builder,
     select_action_only_window,
     validate_frame_zero_bundle_manifest,
     validate_generic_held_lock,
@@ -69,7 +77,7 @@ def _lock(*, stage: str = "calibration") -> dict:
         "calibration_case_whitelist": CALIBRATION_CASES,
         "update_frames": [19, 38, 57],
         "frame_count": 76,
-        "immutable_bindings": {"dataset_revision": "a" * 64},
+        "immutable_bindings": dummy_immutable_bindings(),
     }
     payload["artifact_sha256"] = artifact_sha256(payload)
     return payload
@@ -91,6 +99,7 @@ def _manifest(tmp_path: Path) -> dict:
         "lock_sha256": "0" * 64,
         "lock_artifact_sha256": "a" * 64,
         "frame_indices": [0],
+        "config": default_frame_zero_config(),
         "bundle": {
             "path": str(bundle.resolve()),
             "sha256": "1" * 64,
@@ -170,6 +179,27 @@ def test_promoted_lock_is_required_for_confirmation() -> None:
         authorize_frame_zero_case(
             lock, APPROVED_CALIBRATION_SMOKE_CASE, role="calibration"
         )
+
+
+def test_builder_rejects_effective_config_change_before_episode_access(
+    tmp_path: Path,
+) -> None:
+    lock = _lock()
+    changed = replace(FrameZeroAssetConfig(), rng_seed=1)
+
+    with pytest.raises(ValueError, match="configuration differs"):
+        run_frame_zero_asset_builder(
+            tmp_path / "deliberately-missing-episode",
+            APPROVED_CALIBRATION_SMOKE_CASE,
+            lock,
+            tmp_path / "output-must-not-be-created",
+            SimpleNamespace(),
+            role="calibration",
+            lock_file_sha256="0" * 64,
+            config=changed,
+        )
+
+    assert not (tmp_path / "output-must-not-be-created").exists()
 
 
 @pytest.mark.parametrize(
@@ -283,7 +313,7 @@ def test_manifest_matches_the_independent_held_validator(tmp_path: Path) -> None
     lock_path = tmp_path / "calibration-lock.json"
     lock = create_held_protocol_lock(
         lock_path,
-        immutable_bindings={"frame_zero_builder": "f" * 64},
+        immutable_bindings=dummy_immutable_bindings(),
     )
     payload = _manifest(tmp_path)
     for path in (
