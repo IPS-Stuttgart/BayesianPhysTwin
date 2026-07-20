@@ -81,7 +81,7 @@ STAGED_EPISODE_ID = 0
 
 STAGE_IDS = (
     "held-action-window-staging-v1",
-    "sealed-frame-zero-sam2-propagation-v1",
+    "sealed-frame-zero-sam2-propagation-v2",
     "official-strict-hull-reconstruct-v1",
     "official-depth-v1",
     "official-cotracker3-v1",
@@ -472,7 +472,7 @@ def _validate_contract_semantics(contract: Mapping[str, Any]) -> None:
     """Require the exported contract to describe this exact backend."""
 
     expected = {
-        "contract_id": "deform360-held-official-reconstruction-v1",
+        "contract_id": "deform360-held-official-reconstruction-v2",
         "dataset_revision": DATASET_REVISION,
         "ordered_stages": list(STAGE_IDS),
         "temporal_contract": {
@@ -495,7 +495,7 @@ def _validate_contract_semantics(contract: Mapping[str, Any]) -> None:
             ],
             "automatic_initial_mask_selection": False,
             "decoded_staged_rgb_frame0_bit_exact": True,
-            "propagated_mask_frame0_bit_exact": True,
+            "mask_archive_frame_zero_bit_exact": True,
             "mask_seed_source": "sealed mask_frame0 only",
         },
         "video_staging": {
@@ -510,7 +510,14 @@ def _validate_contract_semantics(contract: Mapping[str, Any]) -> None:
             "commit": SAM2_COMMIT,
             "checkpoint_sha256": SAM2_CHECKPOINT_SHA256,
             "model_config": SAM2_MODEL_CONFIG,
-            "sealed_frame_zero_seed_only": True,
+            "initialization_mask_source": "sealed mask_frame0 only",
+            "raw_output_frame_range_half_open": [0, 81],
+            "archive_frame_zero_source": "sealed mask_frame0",
+            "archive_future_frame_range_half_open": [1, 81],
+            "archive_future_source": "unmodified thresholded SAM2 output",
+            "frame_zero_archive_substitution_timing": (
+                "after complete SAM2 propagation"
+            ),
         },
         "strict_visual_hull": {
             "minimum_visual_hull_points": 512,
@@ -1014,8 +1021,7 @@ def _stage_action_window(
         and candidate_first >= 0
         and type(candidate_stride) is int
         and candidate_stride >= 1
-        and config.get("action_window_length_frames")
-        == TRACKING_CONTEXT_FRAME_COUNT
+        and config.get("action_window_length_frames") == TRACKING_CONTEXT_FRAME_COUNT
         and config.get("prediction_frame_count") == FRAME_COUNT,
         "frame-zero robot-window configuration changed",
     )
@@ -1146,9 +1152,7 @@ def _stage_action_window(
     }
     rgb_zero = np.asarray(arrays["rgb_frame0"])
     for index, camera in enumerate(request.camera_names):
-        dataset_layout.directory(
-            camera, label=f"outcome camera directory {camera}"
-        )
+        dataset_layout.directory(camera, label=f"outcome camera directory {camera}")
         source_video = dataset_layout.file(
             camera,
             "undistorted.mp4",
@@ -1295,10 +1299,31 @@ def _propagate_sealed_masks(
                 == list(range(TRACKING_CONTEXT_FRAME_COUNT)),
                 f"SAM2 propagation is incomplete: {camera}",
             )
-            masks = [np.asarray(mask, dtype=bool) for _, mask in propagated]
+            sam2_masks = [np.asarray(mask, dtype=bool) for _, mask in propagated]
             _require(
-                np.array_equal(masks[0], sealed_masks[index]),
-                f"propagated frame-zero mask differs from seal: {camera}",
+                all(mask.shape == sealed_masks[index].shape for mask in sam2_masks),
+                f"SAM2 propagated mask shape changed: {camera}",
+            )
+            # SAM2 re-estimates even its prompted frame and therefore does not
+            # promise bit identity with the input mask.  The sealed source mask
+            # is the authoritative observed frame-zero output; only SAM2 frames
+            # strictly after zero enter the reconstructed trajectory.  This
+            # replacement does not alter SAM2 state or any future propagated
+            # mask.
+            masks = [
+                np.array(sealed_masks[index], dtype=bool, copy=True),
+                *sam2_masks[1:],
+            ]
+            _require(
+                len(masks) == TRACKING_CONTEXT_FRAME_COUNT
+                and np.array_equal(masks[0], sealed_masks[index]),
+                f"authoritative frame-zero mask changed: {camera}",
+            )
+            sam2_future = np.stack(sam2_masks[1:], axis=0)
+            archive_future = np.stack(masks[1:], axis=0)
+            _require(
+                np.array_equal(archive_future, sam2_future),
+                f"SAM2 future masks changed while anchoring frame zero: {camera}",
             )
             destination = episode / camera / "mask_refined.h5"
             _write_mask_h5(destination, masks)
@@ -1306,7 +1331,10 @@ def _propagate_sealed_masks(
                 "mask_archive": _bound_file(destination),
                 "frame_count": len(masks),
                 "sealed_frame_zero_mask_sha256": _sha256_array(sealed_masks[index]),
-                "propagated_frame_zero_mask_sha256": _sha256_array(masks[0]),
+                "sam2_raw_frame_zero_mask_sha256": _sha256_array(sam2_masks[0]),
+                "archived_frame_zero_mask_sha256": _sha256_array(masks[0]),
+                "sam2_future_mask_stack_sha256": _sha256_array(sam2_future),
+                "archive_future_mask_stack_sha256": _sha256_array(archive_future),
                 "initialization": initialization,
             }
     finally:
@@ -1317,7 +1345,10 @@ def _propagate_sealed_masks(
         "sam2_checkpoint": _bound_file(checkpoint),
         "sam2_model_config": _bound_file(model_config),
         "camera_masks": records,
-        "sealed_mask_is_only_initialization": True,
+        "sam2_initialization_mask_source": "sealed mask_frame0 only",
+        "archive_frame_zero_source": "sealed mask_frame0",
+        "archive_future_source": "unmodified thresholded SAM2 output",
+        "frame_zero_archive_substitution_after_complete_propagation": True,
         "target_dependent_mask_selection_or_tuning": False,
     }
 
@@ -1615,9 +1646,7 @@ def _validate_staged_robot_kinematics(
     _require(
         source_inputs.get("robot_kinematics")
         == source_inputs.get("robot_trajectory")
-        == request.frame_zero_manifest.get("action_inputs", {}).get(
-            "robot_trajectory"
-        )
+        == request.frame_zero_manifest.get("action_inputs", {}).get("robot_trajectory")
         and source_inputs.get("selected_prediction_robot_kinematics")
         == source_inputs.get("selected_prediction_action")
         == request.frame_zero_manifest.get("action_alignment", {}).get(
@@ -1682,7 +1711,9 @@ def _validate_staged_robot_kinematics(
     for name in ("actions", "T_worlds", "openings"):
         _require(
             np.array_equal(staged_arrays[name], expected_staged_arrays[name])
-            and np.array_equal(staged_arrays[name][:FRAME_COUNT], selected_arrays[name]),
+            and np.array_equal(
+                staged_arrays[name][:FRAME_COUNT], selected_arrays[name]
+            ),
             f"backend staged robot temporal field changed: {name}",
         )
     for name in ("format_version", "bimanual"):
@@ -1693,12 +1724,10 @@ def _validate_staged_robot_kinematics(
         )
     source_arrays = source_state.archive_arrays()
     expected_source_sha = {
-        name: robot_array_sha256(value)
-        for name, value in sorted(source_arrays.items())
+        name: robot_array_sha256(value) for name, value in sorted(source_arrays.items())
     }
     expected_staged_sha = {
-        name: robot_array_sha256(value)
-        for name, value in sorted(staged_arrays.items())
+        name: robot_array_sha256(value) for name, value in sorted(staged_arrays.items())
     }
     expected_selected_sha = {
         name: robot_array_sha256(value)
@@ -1706,8 +1735,7 @@ def _validate_staged_robot_kinematics(
     }
     _require(
         evidence.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
-        and evidence.get("contract_sha256")
-        == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+        and evidence.get("contract_sha256") == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
         and evidence.get("trajectory_semantics")
         == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
         and evidence.get("selection_audit") == selection
@@ -1807,11 +1835,22 @@ def _validate_backend_result(
             "sam2_checkpoint",
             "sam2_model_config",
             "camera_masks",
-            "sealed_mask_is_only_initialization",
+            "sam2_initialization_mask_source",
+            "archive_frame_zero_source",
+            "archive_future_source",
+            "frame_zero_archive_substitution_after_complete_propagation",
             "target_dependent_mask_selection_or_tuning",
         }
         and propagation.get("stage_id") == STAGE_IDS[1]
-        and propagation.get("sealed_mask_is_only_initialization") is True
+        and propagation.get("sam2_initialization_mask_source")
+        == "sealed mask_frame0 only"
+        and propagation.get("archive_frame_zero_source") == "sealed mask_frame0"
+        and propagation.get("archive_future_source")
+        == "unmodified thresholded SAM2 output"
+        and propagation.get(
+            "frame_zero_archive_substitution_after_complete_propagation"
+        )
+        is True
         and propagation.get("target_dependent_mask_selection_or_tuning") is False
         and isinstance(camera_masks, Mapping)
         and set(camera_masks) == set(request.camera_names),
@@ -1829,12 +1868,29 @@ def _validate_backend_result(
                 "mask_archive",
                 "frame_count",
                 "sealed_frame_zero_mask_sha256",
-                "propagated_frame_zero_mask_sha256",
+                "sam2_raw_frame_zero_mask_sha256",
+                "archived_frame_zero_mask_sha256",
+                "sam2_future_mask_stack_sha256",
+                "archive_future_mask_stack_sha256",
                 "initialization",
             }
             and record.get("frame_count") == TRACKING_CONTEXT_FRAME_COUNT
             and record.get("sealed_frame_zero_mask_sha256") == expected
-            and record.get("propagated_frame_zero_mask_sha256") == expected
+            and record.get("archived_frame_zero_mask_sha256") == expected
+            and isinstance(record.get("sam2_raw_frame_zero_mask_sha256"), str)
+            and len(record["sam2_raw_frame_zero_mask_sha256"]) == 64
+            and all(
+                character in "0123456789abcdef"
+                for character in record["sam2_raw_frame_zero_mask_sha256"]
+            )
+            and isinstance(record.get("sam2_future_mask_stack_sha256"), str)
+            and len(record["sam2_future_mask_stack_sha256"]) == 64
+            and all(
+                character in "0123456789abcdef"
+                for character in record["sam2_future_mask_stack_sha256"]
+            )
+            and record.get("archive_future_mask_stack_sha256")
+            == record.get("sam2_future_mask_stack_sha256")
             and initialization
             == {
                 "case_name": request.case_name,

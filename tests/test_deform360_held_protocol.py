@@ -695,20 +695,21 @@ def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> No
     assert not (tmp_path / "invalid-report.json").exists()
 
 
-def test_v5_lock_binds_v1_through_failed_closed_v4_lineage(
+def test_v6_lock_binds_v1_through_failed_closed_v5_lineage(
     tmp_path: Path,
 ) -> None:
     bindings = dummy_immutable_bindings()
-    lock_path = tmp_path / "v5-lock.json"
+    lock_path = tmp_path / "v6-lock.json"
     lock = create_held_protocol_lock(lock_path, immutable_bindings=bindings)
 
-    assert lock["protocol_id"] == "deform360-held-online-belief-v5"
-    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 112
+    assert lock["protocol_id"] == "deform360-held-online-belief-v6"
+    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 113
     assert set(REQUIRED_IMMUTABLE_BINDING_KEYS) >= {
         "v1_preoutcome_feasibility_report",
         "v2_design_withdrawal_report",
         "v3_prelock_boundary_incident_report",
         "v4_execution_withdrawal_report",
+        "v5_outcome_withdrawal_report",
         "held_frozen_runtime_manifest",
         "held_source_feasibility_amendment_contract",
         "deform360_robot_kinematics_source",
@@ -747,8 +748,8 @@ def test_v5_lock_binds_v1_through_failed_closed_v4_lineage(
         "target_payloads_accessed": False,
         "confirmation_payloads_accessed": False,
         "outcome_permit_created": False,
-        "execution_artifacts_reused_by_v5": False,
-        "predictions_reused_by_v5": False,
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
     }
     assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v2_design"] == {
         "protocol_id": "deform360-held-online-belief-v2",
@@ -779,8 +780,8 @@ def test_v5_lock_binds_v1_through_failed_closed_v4_lineage(
             "target_data_read": False,
             "target_or_outcome_path_accessed": False,
         },
-        "execution_artifacts_reused_by_v5": False,
-        "predictions_reused_by_v5": False,
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
     }
     v3_design = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v3_design"]
     assert v3_design["protocol_id"] == "deform360-held-online-belief-v3"
@@ -875,20 +876,68 @@ def test_v5_lock_binds_v1_through_failed_closed_v4_lineage(
     )
     assert v4_execution["failure"]["failure_time_inventory_recorded"] is False
 
+    v5_execution = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v5_execution"]
+    assert v5_execution["protocol_id"] == "deform360-held-online-belief-v5"
+    assert v5_execution["disposition"] == (
+        "WITHDRAWN_DURING_FIRST_TARGET_OPERATION_BEFORE_ANY_COMPLETED_OUTCOME"
+    )
+    assert v5_execution["evidence_binding_key"] == "v5_outcome_withdrawal_report"
+    v5_counts = v5_execution["exact_execution_census"]
+    assert v5_counts["formal_physical_prediction_count"] == 15
+    assert v5_counts["formal_online_prediction_count"] == 15
+    assert v5_counts["target_operation_planned_count"] == 15
+    assert v5_counts["target_operation_started_count"] == 1
+    assert v5_counts["target_operation_completed_count"] == 0
+    assert v5_counts["target_reconstruction_artifact_count"] == 0
+    assert v5_counts["calibration_score_evidence_count"] == 0
+    assert v5_counts["calibration_decision_count"] == 0
+    assert v5_counts["confirmation_lock_count"] == 0
+    assert v5_execution["information_boundary"]["object_future_rgb_read"] == (
+        "POSSIBLE_WITHIN_FIRST_CALIBRATION_CASE_ONLY"
+    )
+    assert (
+        v5_execution["information_boundary"][
+            "forensic_audit_disclosed_arrays_images_masks_metrics_or_protected_values"
+        ]
+        is False
+    )
+    assert v5_execution["execution_artifacts_reused_by_v6"] is False
+    assert v5_execution["predictions_reused_by_v6"] is False
+    assert v5_execution["partial_target_staging_reused_by_v6"] is False
+
+    repair = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v6_repair"]
+    assert repair["sam2_initialization_mask_source"] == "sealed frame-zero mask only"
+    assert repair["sam2_raw_output_frame_range_half_open"] == [0, 81]
+    assert repair["mask_archive_frame_zero_source"] == "sealed frame-zero mask"
+    assert repair["mask_archive_frame_zero_bit_exact"] is True
+    assert repair["mask_archive_future_frame_range_half_open"] == [1, 81]
+    assert repair["mask_archive_future_source"] == (
+        "unmodified thresholded SAM2 output"
+    )
+    assert repair["frame_zero_archive_substitution_timing"] == (
+        "after complete SAM2 propagation"
+    )
+    assert repair["sam2_internal_state_or_future_prediction_changed"] is False
+    assert repair["downstream_target_reconstruction_must_be_recomputed"] is True
+    assert repair["v5_predictions_or_partial_target_artifacts_reused"] is False
+
     assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["reuse"] == {
-        "v1_execution_artifacts_reused_by_v5": False,
-        "v1_predictions_reused_by_v5": False,
-        "v2_execution_artifacts_reused_by_v5": False,
-        "v2_predictions_reused_by_v5": False,
-        "v3_execution_artifacts_reused_by_v5": False,
-        "v3_predictions_reused_by_v5": False,
-        "v4_execution_artifacts_reused_by_v5": False,
-        "v4_predictions_reused_by_v5": False,
-        "sealed_lineage_reports_bound_by_v5": [
+        "v1_execution_artifacts_reused_by_v6": False,
+        "v1_predictions_reused_by_v6": False,
+        "v2_execution_artifacts_reused_by_v6": False,
+        "v2_predictions_reused_by_v6": False,
+        "v3_execution_artifacts_reused_by_v6": False,
+        "v3_predictions_reused_by_v6": False,
+        "v4_execution_artifacts_reused_by_v6": False,
+        "v4_predictions_reused_by_v6": False,
+        "v5_execution_artifacts_reused_by_v6": False,
+        "v5_predictions_reused_by_v6": False,
+        "sealed_lineage_reports_bound_by_v6": [
             "v1_preoutcome_feasibility_report",
             "v2_design_withdrawal_report",
             "v3_prelock_boundary_incident_report",
             "v4_execution_withdrawal_report",
+            "v5_outcome_withdrawal_report",
         ],
     }
 

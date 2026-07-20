@@ -67,11 +67,11 @@ OUTCOME_ARTIFACT_KIND = "Deform360HeldOfficialOutcome"
 SCORE_EVIDENCE_KIND = CALIBRATION_SCORE_EVIDENCE_KIND
 
 OUTCOME_RECONSTRUCTION_CONTRACT: dict[str, Any] = {
-    "contract_id": "deform360-held-official-reconstruction-v1",
+    "contract_id": "deform360-held-official-reconstruction-v2",
     "dataset_revision": DATASET_REVISION,
     "ordered_stages": [
         "held-action-window-staging-v1",
-        "sealed-frame-zero-sam2-propagation-v1",
+        "sealed-frame-zero-sam2-propagation-v2",
         "official-strict-hull-reconstruct-v1",
         "official-depth-v1",
         "official-cotracker3-v1",
@@ -98,7 +98,7 @@ OUTCOME_RECONSTRUCTION_CONTRACT: dict[str, Any] = {
         ],
         "automatic_initial_mask_selection": False,
         "decoded_staged_rgb_frame0_bit_exact": True,
-        "propagated_mask_frame0_bit_exact": True,
+        "mask_archive_frame_zero_bit_exact": True,
         "mask_seed_source": "sealed mask_frame0 only",
     },
     "video_staging": {
@@ -115,7 +115,12 @@ OUTCOME_RECONSTRUCTION_CONTRACT: dict[str, Any] = {
             "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
         ),
         "model_config": "configs/sam2.1/sam2.1_hiera_s.yaml",
-        "sealed_frame_zero_seed_only": True,
+        "initialization_mask_source": "sealed mask_frame0 only",
+        "raw_output_frame_range_half_open": [0, 81],
+        "archive_frame_zero_source": "sealed mask_frame0",
+        "archive_future_frame_range_half_open": [1, 81],
+        "archive_future_source": "unmodified thresholded SAM2 output",
+        "frame_zero_archive_substitution_timing": ("after complete SAM2 propagation"),
     },
     "strict_visual_hull": {
         "minimum_visual_hull_points": 512,
@@ -1117,8 +1122,7 @@ def confirmation_score_evidence(
         )
         gate_score = record.get("gate_score", {})
         _require(
-            isinstance(gate_score, Mapping)
-            and set(gate_score) == expected_gate_fields,
+            isinstance(gate_score, Mapping) and set(gate_score) == expected_gate_fields,
             "score evidence gate fields changed",
         )
         ordered[case_name] = dict(record)

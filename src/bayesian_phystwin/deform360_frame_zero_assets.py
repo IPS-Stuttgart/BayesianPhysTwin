@@ -72,7 +72,7 @@ from .deform360_frame_zero_semantic_gate import (
 )
 
 FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
-HELD_PROTOCOL_ID = "deform360-held-online-belief-v5"
+HELD_PROTOCOL_ID = "deform360-held-online-belief-v6"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
 FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (

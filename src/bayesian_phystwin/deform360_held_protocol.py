@@ -57,7 +57,7 @@ from .deform360_robot_kinematics import (
 )
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v5"
+PROTOCOL_ID = "deform360-held-online-belief-v6"
 SCHEMA_VERSION = 1
 DATASET_REVISION = "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
 REMOTE_INVENTORY_COMBINED_SHA256 = (
@@ -128,17 +128,17 @@ CONFIRMATION_GATE = {
     "all_cases_must_be_reported": True,
 }
 
-# This amendment records the complete lineage through the failed-closed v4
-# execution, including the v3 pre-lock filename-only rg incident.  It
+# This amendment records the complete lineage through the failed-closed v5
+# outcome execution, including the v3 pre-lock filename-only rg incident.  It
 # deliberately does not claim
 # that protected regular files were unopened: rg is a content scanner and may
 # have opened any regular file under its broad search roots.  No held payload
 # content or value was returned to the research agent or used to select a
-# method/gate.  The three external lineage reports are supplied by checksum
+# method/gate.  The five external lineage reports are supplied by checksum
 # when the lock is created; those digests are not source constants that could
 # silently bless different files.
 SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
-    "contract_id": "deform360-held-source-feasibility-amendment-v5",
+    "contract_id": "deform360-held-source-feasibility-amendment-v6",
     "protocol_id": PROTOCOL_ID,
     "v1_execution": {
         "protocol_id": "deform360-held-online-belief-v1",
@@ -154,8 +154,8 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
         "target_payloads_accessed": False,
         "confirmation_payloads_accessed": False,
         "outcome_permit_created": False,
-        "execution_artifacts_reused_by_v5": False,
-        "predictions_reused_by_v5": False,
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
     },
     "v2_design": {
         "protocol_id": "deform360-held-online-belief-v2",
@@ -186,8 +186,8 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "target_data_read": False,
             "target_or_outcome_path_accessed": False,
         },
-        "execution_artifacts_reused_by_v5": False,
-        "predictions_reused_by_v5": False,
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
     },
     "v3_design": {
         "protocol_id": "deform360-held-online-belief-v3",
@@ -236,8 +236,8 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "held_cohort_payload_content_or_value_returned_to_research_agent": False,
             "method_or_gate_choice_used_outcome_values": False,
         },
-        "execution_artifacts_reused_by_v5": False,
-        "predictions_reused_by_v5": False,
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
     },
     "v4_repairs": {
         "robot_window_selection": {
@@ -342,23 +342,107 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "confirmation_payload_read": False,
             "outcome_created_or_read": False,
         },
-        "execution_artifacts_reused_by_v5": False,
-        "predictions_reused_by_v5": False,
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
+    },
+    "v5_execution": {
+        "protocol_id": "deform360-held-online-belief-v5",
+        "disposition": (
+            "WITHDRAWN_DURING_FIRST_TARGET_OPERATION_BEFORE_ANY_COMPLETED_OUTCOME"
+        ),
+        "evidence_binding_key": "v5_outcome_withdrawal_report",
+        "exact_execution_census": {
+            "calibration_case_execution_count": 15,
+            "calibration_decision_count": 0,
+            "calibration_lock_count": 1,
+            "calibration_score_evidence_count": 0,
+            "confirmation_case_execution_count": 0,
+            "confirmation_lock_count": 0,
+            "confirmation_prediction_seal_count": 0,
+            "deployed_snapshot_count": 1,
+            "formal_online_prediction_count": 15,
+            "formal_physical_prediction_count": 15,
+            "frame_zero_bundle_count": 15,
+            "frame_zero_manifest_count": 15,
+            "online_prediction_seal_count": 15,
+            "outcome_created_count": 0,
+            "outcome_permit_count": 1,
+            "outcome_phase_claim_count": 1,
+            "outcome_read_count": 0,
+            "partial_target_case_directory_count": 1,
+            "partial_target_staging_directory_count": 12,
+            "partial_target_staging_file_count": 28,
+            "physical_prior_seal_count": 15,
+            "prefix_authorization_count": 15,
+            "shard_start_count": 2,
+            "staged_camera_video_count": 8,
+            "target_operation_completed_count": 0,
+            "target_operation_failed_count": 1,
+            "target_operation_planned_count": 15,
+            "target_operation_started_count": 1,
+            "target_reconstruction_artifact_count": 0,
+        },
+        "failure": {
+            "classification": "PROPAGATED_FRAME_ZERO_MASK_SEAL_MISMATCH",
+            "phase": "first calibration target reconstruction operation",
+            "failed_case": "002-rope-silk-ep0003",
+            "failed_camera": "brics-odroid-001_cam0",
+        },
+        "information_boundary": {
+            "all_15_calibration_predictions_exist_and_are_sealed": True,
+            "all_15_prediction_artifact_sets_revalidated_bytewise_for_outcome_permit": True,
+            "first_case_online_prediction_arrays_decoded_before_target_callback": True,
+            "later_case_online_prediction_arrays_decoded": False,
+            "partial_target_source_staging_created": True,
+            "object_future_rgb_read": "POSSIBLE_WITHIN_FIRST_CALIBRATION_CASE_ONLY",
+            "object_future_rgb_read_case_upper_bound": 1,
+            "object_future_depth_read": False,
+            "object_future_tracking_read": False,
+            "tactile_read": False,
+            "future_tactile_read": False,
+            "official_target_reconstruction_created": False,
+            "calibration_gate_or_metric_created_or_read": False,
+            "confirmation_payload_read": False,
+            "forensic_audit_disclosed_arrays_images_masks_metrics_or_protected_values": False,
+        },
+        "execution_artifacts_reused_by_v6": False,
+        "predictions_reused_by_v6": False,
+        "partial_target_staging_reused_by_v6": False,
+    },
+    "v6_repair": {
+        "withdrawn_v5_defect": (
+            "required SAM2's inferred frame-zero output mask to be bit-identical "
+            "to the sealed prompt mask, although add_new_mask treats that mask as "
+            "a prompt and does not promise identity after model inference"
+        ),
+        "sam2_initialization_mask_source": "sealed frame-zero mask only",
+        "sam2_raw_output_frame_range_half_open": [0, 81],
+        "mask_archive_frame_zero_source": "sealed frame-zero mask",
+        "mask_archive_frame_zero_bit_exact": True,
+        "mask_archive_future_frame_range_half_open": [1, 81],
+        "mask_archive_future_source": "unmodified thresholded SAM2 output",
+        "frame_zero_archive_substitution_timing": "after complete SAM2 propagation",
+        "sam2_internal_state_or_future_prediction_changed": False,
+        "downstream_target_reconstruction_must_be_recomputed": True,
+        "v5_predictions_or_partial_target_artifacts_reused": False,
     },
     "reuse": {
-        "v1_execution_artifacts_reused_by_v5": False,
-        "v1_predictions_reused_by_v5": False,
-        "v2_execution_artifacts_reused_by_v5": False,
-        "v2_predictions_reused_by_v5": False,
-        "v3_execution_artifacts_reused_by_v5": False,
-        "v3_predictions_reused_by_v5": False,
-        "v4_execution_artifacts_reused_by_v5": False,
-        "v4_predictions_reused_by_v5": False,
-        "sealed_lineage_reports_bound_by_v5": [
+        "v1_execution_artifacts_reused_by_v6": False,
+        "v1_predictions_reused_by_v6": False,
+        "v2_execution_artifacts_reused_by_v6": False,
+        "v2_predictions_reused_by_v6": False,
+        "v3_execution_artifacts_reused_by_v6": False,
+        "v3_predictions_reused_by_v6": False,
+        "v4_execution_artifacts_reused_by_v6": False,
+        "v4_predictions_reused_by_v6": False,
+        "v5_execution_artifacts_reused_by_v6": False,
+        "v5_predictions_reused_by_v6": False,
+        "sealed_lineage_reports_bound_by_v6": [
             "v1_preoutcome_feasibility_report",
             "v2_design_withdrawal_report",
             "v3_prelock_boundary_incident_report",
             "v4_execution_withdrawal_report",
+            "v5_outcome_withdrawal_report",
         ],
     },
 }
@@ -578,6 +662,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "v2_design_withdrawal_report",
     "v3_prelock_boundary_incident_report",
     "v4_execution_withdrawal_report",
+    "v5_outcome_withdrawal_report",
 )
 
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -709,10 +794,7 @@ def _write_new_json(path: str | Path, artifact: Mapping[str, Any]) -> Path:
     )
     descriptor = os.open(
         destination,
-        os.O_WRONLY
-        | os.O_CREAT
-        | os.O_EXCL
-        | getattr(os, "O_NOFOLLOW", 0),
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
         0o444,
     )
     try:
@@ -1099,8 +1181,7 @@ def _reference_optional_camera_strategy(manifest: Mapping[str, Any]) -> bool:
         safeguard.get("semantic_gate") if isinstance(safeguard, Mapping) else None
     )
     _require(
-        fallback.get("policy_id")
-        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        fallback.get("policy_id") == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
         and fallback.get("ordered_strategies")
         == list(FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"])
         and isinstance(attempts, list)
@@ -1116,8 +1197,7 @@ def _reference_optional_camera_strategy(manifest: Mapping[str, Any]) -> bool:
         == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
         and assignment == safeguarded_assignment
         and isinstance(safeguard, Mapping)
-        and safeguard.get("contract_sha256")
-        == FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256
+        and safeguard.get("contract_sha256") == FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256
         and safeguard.get("artifact_sha256") == held_artifact_sha256(safeguard)
         and isinstance(safeguard.get("official_urdf"), Mapping)
         and isinstance(safeguard.get("robot_subtraction"), Mapping)
@@ -1187,9 +1267,7 @@ def _validate_frame_zero_robot_kinematics(
     window_length = _validated_positive_config_int(
         config, "action_window_length_frames"
     )
-    prediction_count = _validated_positive_config_int(
-        config, "prediction_frame_count"
-    )
+    prediction_count = _validated_positive_config_int(config, "prediction_frame_count")
     candidate_first_value = config.get("action_candidate_first_frame")
     _require(
         type(candidate_first_value) is int and candidate_first_value >= 0,
@@ -1330,8 +1408,7 @@ def _validate_frame_zero_robot_kinematics(
         and camera_policy.get("rule") == expected_camera_rule
         and type(minimum_camera_count) is int
         and minimum_camera_count >= 2
-        and camera_policy.get("minimum_selected_camera_count")
-        == minimum_camera_count
+        and camera_policy.get("minimum_selected_camera_count") == minimum_camera_count
         and camera_policy.get("candidate_camera_count") == len(candidates)
         and camera_policy.get("selected_camera_count") == len(selected)
         and camera_policy.get("abstained_camera_count") == len(abstained)
@@ -1991,8 +2068,7 @@ def _confirmation_gate_summary(
     for case_name in CONFIRMATION_CASE_NAMES:
         record = scores[case_name]
         _require(
-            isinstance(record, Mapping)
-            and set(record) == set(_CALIBRATION_SCORE_KEYS),
+            isinstance(record, Mapping) and set(record) == set(_CALIBRATION_SCORE_KEYS),
             f"confirmation score fields changed for {case_name}",
         )
         values = {key: float(record[key]) for key in _CALIBRATION_SCORE_KEYS}
@@ -2006,12 +2082,10 @@ def _confirmation_gate_summary(
         normalized[case]["primary_chamfer_m"] for case in CONFIRMATION_CASE_NAMES
     ]
     comparator_chamfer = [
-        normalized[case]["comparator_chamfer_m"]
-        for case in CONFIRMATION_CASE_NAMES
+        normalized[case]["comparator_chamfer_m"] for case in CONFIRMATION_CASE_NAMES
     ]
     primary_identity = [
-        normalized[case]["primary_identity_rmse_m"]
-        for case in CONFIRMATION_CASE_NAMES
+        normalized[case]["primary_identity_rmse_m"] for case in CONFIRMATION_CASE_NAMES
     ]
     comparator_identity = [
         normalized[case]["comparator_identity_rmse_m"]
@@ -2053,12 +2127,9 @@ def _confirmation_gate_summary(
         == CONFIRMATION_GATE["one_sided_sign_test_p"],
         "mean_chamfer_improvement_at_least_5_percent": (
             chamfer_improvement
-            >= CONFIRMATION_GATE[
-                "minimum_equal_case_mean_chamfer_improvement_fraction"
-            ]
+            >= CONFIRMATION_GATE["minimum_equal_case_mean_chamfer_improvement_fraction"]
         ),
-        "aggregate_identity_improves": primary_identity_mean
-        < comparator_identity_mean,
+        "aggregate_identity_improves": primary_identity_mean < comparator_identity_mean,
         "no_case_over_10_percent_chamfer_regression": no_large_regression,
     }
     summary = {

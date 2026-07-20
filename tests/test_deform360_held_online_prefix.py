@@ -467,7 +467,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     frame_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v5",
+        "protocol_id": "deform360-held-online-belief-v6",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -584,7 +584,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     physical_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": held_physical.ARTIFACT_KIND,
-        "protocol_id": "deform360-held-online-belief-v5",
+        "protocol_id": "deform360-held-online-belief-v6",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,

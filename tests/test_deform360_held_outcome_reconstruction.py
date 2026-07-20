@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 from pathlib import Path
 import subprocess
@@ -8,6 +9,8 @@ from typing import Any
 
 import numpy as np
 import pytest
+
+from causal4d_public import deform360_object_sam2
 
 from deform360_held_test_helpers import (
     bound_file,
@@ -41,9 +44,7 @@ def _request(tmp_path: Path, output_dir: Path) -> reconstruction.ReconstructionR
         "rgb_frame0": rgb,
         "mask_frame0": masks,
     }
-    aligned_episode = (
-        tmp_path / "aligned" / "083-blanket-cloth" / "episode_0000"
-    )
+    aligned_episode = tmp_path / "aligned" / "083-blanket-cloth" / "episode_0000"
     raw_robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
         aligned_episode / "robot",
         selected_start=62,
@@ -96,9 +97,7 @@ class _SyntheticOfficialBackend:
     ) -> reconstruction.ReconstructionBackendResult:
         self.calls += 1
         episode = request.output_dir / "staged-aligned" / "episode_0000"
-        source_record = request.frame_zero_manifest["action_inputs"][
-            "robot_trajectory"
-        ]
+        source_record = request.frame_zero_manifest["action_inputs"]["robot_trajectory"]
         selected_record = request.frame_zero_manifest["action_alignment"][
             "selected_robot_kinematics_bundle"
         ]
@@ -125,9 +124,7 @@ class _SyntheticOfficialBackend:
         ]
         robot_evidence = {
             "policy_id": reconstruction.ROBOT_KINEMATICS_WINDOW_POLICY_ID,
-            "contract_sha256": (
-                reconstruction.ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
-            ),
+            "contract_sha256": (reconstruction.ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256),
             "trajectory_semantics": reconstruction.ROBOT_KINEMATICS_WINDOW_CONTRACT[
                 "trajectory_semantics"
             ],
@@ -185,7 +182,10 @@ class _SyntheticOfficialBackend:
                 "mask_archive": reconstruction._bound_file(mask_files[camera]),
                 "frame_count": reconstruction.TRACKING_CONTEXT_FRAME_COUNT,
                 "sealed_frame_zero_mask_sha256": mask_sha,
-                "propagated_frame_zero_mask_sha256": mask_sha,
+                "sam2_raw_frame_zero_mask_sha256": mask_sha,
+                "archived_frame_zero_mask_sha256": mask_sha,
+                "sam2_future_mask_stack_sha256": mask_sha,
+                "archive_future_mask_stack_sha256": mask_sha,
                 "initialization": {
                     "case_name": request.case_name,
                     "cohort_barrier_sha256": request.cohort_barrier_sha256,
@@ -247,7 +247,10 @@ class _SyntheticOfficialBackend:
                 "sam2_checkpoint": bound_runtime,
                 "sam2_model_config": bound_runtime,
                 "camera_masks": camera_masks,
-                "sealed_mask_is_only_initialization": True,
+                "sam2_initialization_mask_source": "sealed mask_frame0 only",
+                "archive_frame_zero_source": "sealed mask_frame0",
+                "archive_future_source": "unmodified thresholded SAM2 output",
+                "frame_zero_archive_substitution_after_complete_propagation": True,
                 "target_dependent_mask_selection_or_tuning": False,
             },
             "official_stages": {
@@ -547,6 +550,259 @@ def test_sam2_hydra_id_and_bound_repository_path_are_distinct(
     )
 
 
+def test_sealed_frame_zero_replaces_only_sam2_frame_zero_after_propagation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    checkpoint = _write(tmp_path / "sam2" / "checkpoint.pt")
+    model_config = _write(tmp_path / "sam2" / "model.yaml")
+    request = _request(tmp_path / "request", tmp_path / "out")
+    request = reconstruction.ReconstructionRequest(
+        **{
+            **request.__dict__,
+            "immutable_bindings": {
+                "sam2_checkpoint": reconstruction.SAM2_CHECKPOINT_SHA256
+            },
+        }
+    )
+    staged_root = tmp_path / "staged"
+    episode = staged_root / f"episode_{reconstruction.STAGED_EPISODE_ID:04d}"
+    for camera in request.camera_names:
+        _write(episode / camera / "undistorted.mp4", b"video")
+
+    raw_outputs: dict[str, np.ndarray] = {}
+
+    class FakePredictor:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.closed = False
+
+        def segment_from_initial_mask(
+            self,
+            video: Path,
+            initial_mask: np.ndarray,
+            *,
+            initialization: object,
+        ) -> object:
+            del initialization
+            values: list[np.ndarray] = []
+            for frame in range(reconstruction.TRACKING_CONTEXT_FRAME_COUNT):
+                mask = np.full_like(initial_mask, bool(frame % 2), dtype=bool)
+                values.append(mask)
+                yield frame, mask
+            raw_outputs[video.parent.name] = np.stack(values, axis=0)
+
+        def close(self) -> None:
+            self.closed = True
+
+    monkeypatch.setattr(
+        deform360_object_sam2,
+        "DeformableObjectSam2VideoPredictor",
+        FakePredictor,
+    )
+    monkeypatch.setattr(
+        reconstruction,
+        "_validate_git_runtime_binding",
+        lambda *_args, **_kwargs: {"revision": reconstruction.SAM2_COMMIT},
+    )
+    monkeypatch.setattr(
+        reconstruction,
+        "_validate_sam2_model_config",
+        lambda *_args, **_kwargs: model_config,
+    )
+    original_sha256 = reconstruction._sha256_file
+    monkeypatch.setattr(
+        reconstruction,
+        "_sha256_file",
+        lambda path: (
+            reconstruction.SAM2_CHECKPOINT_SHA256
+            if Path(path).resolve() == checkpoint.resolve()
+            else original_sha256(path)
+        ),
+    )
+    written: dict[str, np.ndarray] = {}
+
+    def capture_archive(path: Path, values: object) -> None:
+        written[path.parent.name] = np.stack(list(values), axis=0)
+        _write(path, written[path.parent.name].tobytes())
+
+    monkeypatch.setattr(reconstruction, "_write_mask_h5", capture_archive)
+    backend = reconstruction.PinnedOfficialPipelineBackend(
+        deform360_repo="unused",
+        sam2_repository=str(tmp_path / "sam2"),
+        sam2_checkpoint=str(checkpoint),
+        cotracker_repo="unused",
+        cotracker_checkpoint="unused",
+    )
+
+    audit = reconstruction._propagate_sealed_masks(request, backend, staged_root)
+
+    sealed = np.asarray(request.frame_zero_arrays["mask_frame0"], dtype=bool)
+    for index, camera in enumerate(request.camera_names):
+        assert not np.array_equal(raw_outputs[camera][0], sealed[index])
+        assert np.array_equal(written[camera][0], sealed[index])
+        assert np.array_equal(written[camera][1:], raw_outputs[camera][1:])
+        record = audit["camera_masks"][camera]
+        assert (
+            record["sealed_frame_zero_mask_sha256"]
+            == (record["archived_frame_zero_mask_sha256"])
+        )
+        assert (
+            record["sam2_raw_frame_zero_mask_sha256"]
+            != (record["archived_frame_zero_mask_sha256"])
+        )
+        assert (
+            record["sam2_future_mask_stack_sha256"]
+            == (record["archive_future_mask_stack_sha256"])
+        )
+    assert audit == {
+        **audit,
+        "sam2_initialization_mask_source": "sealed mask_frame0 only",
+        "archive_frame_zero_source": "sealed mask_frame0",
+        "archive_future_source": "unmodified thresholded SAM2 output",
+        "frame_zero_archive_substitution_after_complete_propagation": True,
+        "target_dependent_mask_selection_or_tuning": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("malformation", "message"),
+    [
+        ("frame-order", "SAM2 propagation is incomplete"),
+        ("frame-count", "SAM2 propagation is incomplete"),
+        ("mask-shape", "SAM2 propagated mask shape changed"),
+    ],
+)
+def test_sam2_propagation_fails_closed_on_malformed_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    malformation: str,
+    message: str,
+) -> None:
+    checkpoint = _write(tmp_path / "sam2" / "checkpoint.pt")
+    model_config = _write(tmp_path / "sam2" / "model.yaml")
+    request = _request(tmp_path / "request", tmp_path / "out")
+    request = reconstruction.ReconstructionRequest(
+        **{
+            **request.__dict__,
+            "immutable_bindings": {
+                "sam2_checkpoint": reconstruction.SAM2_CHECKPOINT_SHA256
+            },
+        }
+    )
+    staged_root = tmp_path / "staged"
+    episode = staged_root / f"episode_{reconstruction.STAGED_EPISODE_ID:04d}"
+    for camera in request.camera_names:
+        _write(episode / camera / "undistorted.mp4", b"video")
+
+    predictors: list[FakeMalformedPredictor] = []
+
+    class FakeMalformedPredictor:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            self.closed = False
+            predictors.append(self)
+
+        def segment_from_initial_mask(
+            self,
+            video: Path,
+            initial_mask: np.ndarray,
+            *,
+            initialization: object,
+        ) -> object:
+            del video, initialization
+            frame_indices = list(range(reconstruction.TRACKING_CONTEXT_FRAME_COUNT))
+            if malformation == "frame-order":
+                frame_indices[1], frame_indices[2] = (
+                    frame_indices[2],
+                    frame_indices[1],
+                )
+            elif malformation == "frame-count":
+                frame_indices.pop()
+            for frame in frame_indices:
+                shape = initial_mask.shape
+                if malformation == "mask-shape" and frame == 40:
+                    shape = (shape[0] + 1, shape[1])
+                yield frame, np.zeros(shape, dtype=bool)
+
+        def close(self) -> None:
+            self.closed = True
+
+    monkeypatch.setattr(
+        deform360_object_sam2,
+        "DeformableObjectSam2VideoPredictor",
+        FakeMalformedPredictor,
+    )
+    monkeypatch.setattr(
+        reconstruction,
+        "_validate_git_runtime_binding",
+        lambda *_args, **_kwargs: {"revision": reconstruction.SAM2_COMMIT},
+    )
+    monkeypatch.setattr(
+        reconstruction,
+        "_validate_sam2_model_config",
+        lambda *_args, **_kwargs: model_config,
+    )
+    original_sha256 = reconstruction._sha256_file
+    monkeypatch.setattr(
+        reconstruction,
+        "_sha256_file",
+        lambda path: (
+            reconstruction.SAM2_CHECKPOINT_SHA256
+            if Path(path).resolve() == checkpoint.resolve()
+            else original_sha256(path)
+        ),
+    )
+    monkeypatch.setattr(
+        reconstruction,
+        "_write_mask_h5",
+        lambda *_args, **_kwargs: pytest.fail(
+            "malformed SAM2 output reached the mask archive"
+        ),
+    )
+    backend = reconstruction.PinnedOfficialPipelineBackend(
+        deform360_repo="unused",
+        sam2_repository=str(tmp_path / "sam2"),
+        sam2_checkpoint=str(checkpoint),
+        cotracker_repo="unused",
+        cotracker_checkpoint="unused",
+    )
+
+    with pytest.raises(ValueError, match=message):
+        reconstruction._propagate_sealed_masks(request, backend, staged_root)
+
+    assert len(predictors) == 1
+    assert predictors[0].closed is True
+    assert not any(episode.glob("*/mask_refined.h5"))
+
+
+@pytest.mark.parametrize(
+    "audit_field",
+    [
+        "archived_frame_zero_mask_sha256",
+        "archive_future_mask_stack_sha256",
+    ],
+)
+def test_backend_rejects_false_sam2_archive_hash_claims(
+    tmp_path: Path, audit_field: str
+) -> None:
+    request = _request(tmp_path / "request", tmp_path / "out")
+    result = _SyntheticOfficialBackend().build(request)
+    reconstruction._validate_backend_result(request, result)
+
+    audit = copy.deepcopy(result.audit)
+    record = audit["mask_propagation"]["camera_masks"][CAMERAS[0]]
+    original = record[audit_field]
+    record[audit_field] = ("0" if original[0] != "0" else "1") + original[1:]
+    tampered = reconstruction.ReconstructionBackendResult(
+        object_points=result.object_points,
+        object_colors=result.object_colors,
+        object_visibilities=result.object_visibilities,
+        object_motions_valid=result.object_motions_valid,
+        audit=audit,
+    )
+
+    with pytest.raises(ValueError, match="backend changed the sealed mask anchor"):
+        reconstruction._validate_backend_result(request, tampered)
+
+
 def _prepare_staging_inputs(request: reconstruction.ReconstructionRequest) -> None:
     assert request.aligned_episode_dir is not None
     for camera in request.camera_names:
@@ -584,9 +840,7 @@ def test_action_window_staging_slices_all_fields_and_preserves_scalars(
         _write(output, b"lossless")
 
     monkeypatch.setattr(reconstruction, "_trim_lossless_video", fake_trim)
-    _root, staging = reconstruction._stage_action_window(
-        request, Path("/bin/true")
-    )
+    _root, staging = reconstruction._stage_action_window(request, Path("/bin/true"))
     robot_path = Path(staging["staged_outputs"]["robot"]["path"])
     with np.load(robot_path, allow_pickle=False) as stored:
         assert set(stored.files) == {

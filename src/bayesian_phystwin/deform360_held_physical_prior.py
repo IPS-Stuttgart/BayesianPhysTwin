@@ -68,7 +68,7 @@ ACTION_RESPONSE = 0.9
 AUTONOMOUS_DRIFT_RESPONSE = 0.0
 CANONICAL_NODE_COUNT = 1024
 MINIMUM_NODE_COUNT = 128
-HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v5-pycache"
+HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v6-pycache"
 
 HELD_PYTHON_RUNTIME = Path(
     "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
