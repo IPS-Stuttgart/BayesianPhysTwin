@@ -269,7 +269,7 @@ def pokeflex_correction_field_variants(
     }
 
 
-def pokeflex_action_contact_fields(
+def _pokeflex_action_contact_support(
     source_prior_m: np.ndarray,
     target_prior_m: np.ndarray,
     current_correction_m: np.ndarray,
@@ -278,8 +278,8 @@ def pokeflex_action_contact_fields(
     *,
     influence_radius_m: float = 0.060,
     contact_candidate_count: int = 32,
-) -> dict[str, np.ndarray]:
-    """Predict a local correction from causal measured-tool motion."""
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return validated state, support, and action mismatch for contact fields."""
 
     source_prior = _points(source_prior_m, "source prior")
     target_prior = _points(target_prior_m, "target prior")
@@ -325,12 +325,111 @@ def pokeflex_action_contact_fields(
     local_weight = influence / max(float(np.sum(influence)), 1e-12)
     baseline_contact_step = np.sum(local_weight[:, None] * prior_motion, axis=0)
     action_mismatch = predicted_tool_step - baseline_contact_step
+    return current_state, correction, influence, action_mismatch, predicted_tool_step
+
+
+def pokeflex_action_contact_fields(
+    source_prior_m: np.ndarray,
+    target_prior_m: np.ndarray,
+    current_correction_m: np.ndarray,
+    tool_positions_m: np.ndarray,
+    end_effector_positions_m: np.ndarray,
+    *,
+    influence_radius_m: float = 0.060,
+    contact_candidate_count: int = 32,
+) -> dict[str, np.ndarray]:
+    """Predict a local correction from causal measured-tool motion."""
+
+    _, correction, influence, action_mismatch, _ = _pokeflex_action_contact_support(
+        source_prior_m,
+        target_prior_m,
+        current_correction_m,
+        tool_positions_m,
+        end_effector_positions_m,
+        influence_radius_m=influence_radius_m,
+        contact_candidate_count=contact_candidate_count,
+    )
     action_velocity = influence[:, None] * action_mismatch[None, :]
     local_state = influence[:, None] * (correction + action_mismatch[None, :])
     return {
         "action_velocity": action_velocity,
         "action_local_state": local_state,
         "action_augmented": correction + action_velocity,
+    }
+
+
+def pokeflex_force_supported_contact_fields(
+    source_prior_m: np.ndarray,
+    target_prior_m: np.ndarray,
+    current_correction_m: np.ndarray,
+    tool_positions_m: np.ndarray,
+    end_effector_positions_m: np.ndarray,
+    force_vectors_n: np.ndarray,
+    *,
+    influence_radius_m: float = 0.060,
+    contact_candidate_count: int = 32,
+) -> dict[str, np.ndarray]:
+    """Restrict visual state innovations to measured physical directions."""
+
+    _, correction, influence, action_mismatch, tool_step = (
+        _pokeflex_action_contact_support(
+            source_prior_m,
+            target_prior_m,
+            current_correction_m,
+            tool_positions_m,
+            end_effector_positions_m,
+            influence_radius_m=influence_radius_m,
+            contact_candidate_count=contact_candidate_count,
+        )
+    )
+    forces = _points(force_vectors_n, "force vectors")
+    force_on_object = -np.median(forces[-3:], axis=0)
+    force_norm = float(np.linalg.norm(force_on_object))
+    if force_norm <= 1e-8:
+        zero = np.zeros_like(correction)
+        return {
+            "force_parallel_local_state": zero.copy(),
+            "action_axis_local_state": zero.copy(),
+            "force_action_plane_local_state": zero.copy(),
+            "force_mean_local_state": zero.copy(),
+        }
+    force_direction = force_on_object / force_norm
+
+    step_norm = float(np.linalg.norm(tool_step))
+    if step_norm > 1e-8:
+        action_direction = tool_step / step_norm
+    else:
+        tool = _points(tool_positions_m, "tool positions")
+        end_effector = _points(end_effector_positions_m, "end-effector positions")
+        action_direction = tool[-1] - end_effector[-1]
+        action_direction /= max(float(np.linalg.norm(action_direction)), 1e-12)
+
+    force_projection = (
+        correction @ force_direction
+    )[:, None] * force_direction[None, :]
+    action_projection = (
+        correction @ action_direction
+    )[:, None] * action_direction[None, :]
+    basis = np.stack((force_direction, action_direction), axis=0)
+    orthogonal_basis = np.linalg.svd(basis, full_matrices=False)[2]
+    rank = int(np.linalg.matrix_rank(basis, tol=1e-6))
+    orthogonal_basis = orthogonal_basis[:rank]
+    plane_projection = (correction @ orthogonal_basis.T) @ orthogonal_basis
+
+    local_weight = influence / max(float(np.sum(influence)), 1e-12)
+    local_mean = np.sum(local_weight[:, None] * correction, axis=0)
+    force_mean = float(local_mean @ force_direction) * force_direction
+    action_velocity = influence[:, None] * action_mismatch[None, :]
+    return {
+        "force_parallel_local_state": influence[:, None] * force_projection
+        + action_velocity,
+        "action_axis_local_state": influence[:, None] * action_projection
+        + action_velocity,
+        "force_action_plane_local_state": influence[:, None] * plane_projection
+        + action_velocity,
+        "force_mean_local_state": influence[:, None] * (
+            force_mean[None, :] + action_mismatch[None, :]
+        ),
     }
 
 

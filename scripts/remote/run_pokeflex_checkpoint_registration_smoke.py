@@ -23,6 +23,7 @@ from bayesian_phystwin.pokeflex_bayesian_registration import (  # noqa: E402
     PokeFlexBayesianRegistrationConfig,
     pokeflex_action_contact_fields,
     pokeflex_correction_field_variants,
+    pokeflex_force_supported_contact_fields,
     register_pokeflex_graph_posterior,
     voxel_cluster_centroids,
 )
@@ -155,6 +156,7 @@ def _correction_field_variants(
     previous_correction: np.ndarray | None,
     tool_positions: np.ndarray,
     end_effector_positions: np.ndarray,
+    force_vectors: np.ndarray,
 ) -> dict[str, np.ndarray]:
     available = pokeflex_correction_field_variants(
         source_prior,
@@ -169,6 +171,16 @@ def _correction_field_variants(
             correction,
             tool_positions,
             end_effector_positions,
+        )
+    )
+    available.update(
+        pokeflex_force_supported_contact_fields(
+            source_prior,
+            target_prior,
+            correction,
+            tool_positions,
+            end_effector_positions,
+            force_vectors,
         )
     )
     object_radius = float(
@@ -186,6 +198,17 @@ def _correction_field_variants(
         available[f"action_local_state_relative_{radius_fraction:g}"] = (
             relative_fields["action_local_state"]
         )
+        relative_force_fields = pokeflex_force_supported_contact_fields(
+            source_prior,
+            target_prior,
+            correction,
+            tool_positions,
+            end_effector_positions,
+            force_vectors,
+            influence_radius_m=radius_fraction * object_radius,
+        )
+        for field, value in relative_force_fields.items():
+            available[f"{field}_relative_{radius_fraction:g}"] = value
     unknown = set(names) - set(available)
     if unknown:
         raise ValueError(f"unknown correction fields: {sorted(unknown)}")
@@ -400,18 +423,17 @@ def run_smoke(
                 ],
                 dtype=np.float64,
             )[:, :3, 3],
+            force_vectors=np.asarray(
+                [
+                    robot_by_frame[frame]["forces"][:3]
+                    for frame in range(max(1, source_frame - 3), source_frame + 1)
+                ],
+                dtype=np.float64,
+            ),
         )
         if not update_accepted or not action_supported:
-            for field in (
-                "action_velocity",
-                "action_local_state",
-                "action_augmented",
-                "action_local_state_relative_0.25",
-                "action_local_state_relative_0.4",
-                "action_local_state_relative_0.55",
-                "action_local_state_relative_0.7",
-            ):
-                if field in correction_variants:
+            for field in correction_variants:
+                if field.startswith(("action_", "force_")):
                     correction_variants[field] = np.zeros_like(target_prior)
         action_guard = PokeFlexActionGuardConfig()
         guarded_action_scale = action_guard.selected_scale(
@@ -641,6 +663,26 @@ def main() -> None:
             "action_local_state_relative_0.4",
             "action_local_state_relative_0.55",
             "action_local_state_relative_0.7",
+            "force_parallel_local_state",
+            "action_axis_local_state",
+            "force_action_plane_local_state",
+            "force_mean_local_state",
+            "force_parallel_local_state_relative_0.25",
+            "force_parallel_local_state_relative_0.4",
+            "force_parallel_local_state_relative_0.55",
+            "force_parallel_local_state_relative_0.7",
+            "action_axis_local_state_relative_0.25",
+            "action_axis_local_state_relative_0.4",
+            "action_axis_local_state_relative_0.55",
+            "action_axis_local_state_relative_0.7",
+            "force_action_plane_local_state_relative_0.25",
+            "force_action_plane_local_state_relative_0.4",
+            "force_action_plane_local_state_relative_0.55",
+            "force_action_plane_local_state_relative_0.7",
+            "force_mean_local_state_relative_0.25",
+            "force_mean_local_state_relative_0.4",
+            "force_mean_local_state_relative_0.55",
+            "force_mean_local_state_relative_0.7",
         ),
         default=("raw",),
     )

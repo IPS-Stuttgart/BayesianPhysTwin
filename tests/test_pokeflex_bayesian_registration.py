@@ -7,6 +7,7 @@ from bayesian_phystwin.pokeflex_bayesian_registration import (
     depth_image_to_world_points,
     pokeflex_action_contact_fields,
     pokeflex_correction_field_variants,
+    pokeflex_force_supported_contact_fields,
     register_pokeflex_graph_posterior,
     voxel_cluster_centroids,
 )
@@ -297,3 +298,71 @@ def test_relative_contact_radius_controls_spatial_support() -> None:
     assert np.sum(np.linalg.norm(narrow, axis=1)) < np.sum(
         np.linalg.norm(broad, axis=1)
     )
+
+
+def test_force_support_rejects_orthogonal_camera_correction() -> None:
+    source = _grid()
+    correction = np.zeros_like(source)
+    correction[:, 1] = 0.004
+    tool = np.array([[0.0, -0.05, 0.0], [0.0, -0.05, 0.0]])
+    end_effector = tool + np.array([0.0, -0.1, 0.0])
+    force = np.array([[10.0, 0.0, 0.0], [10.0, 0.0, 0.0]])
+
+    fields = pokeflex_force_supported_contact_fields(
+        source,
+        source.copy(),
+        correction,
+        tool,
+        end_effector,
+        force,
+    )
+
+    np.testing.assert_allclose(fields["force_parallel_local_state"], 0.0, atol=1e-12)
+    assert np.max(np.abs(fields["action_axis_local_state"][:, 1])) > 0.0
+
+
+def test_force_support_has_exact_fallback_without_force() -> None:
+    source = _grid()
+    correction = np.full_like(source, 0.004)
+    tool = np.array([[0.0, -0.05, 0.0], [0.0, -0.04, 0.0]])
+    end_effector = tool + np.array([0.0, -0.1, 0.0])
+
+    fields = pokeflex_force_supported_contact_fields(
+        source,
+        source.copy(),
+        correction,
+        tool,
+        end_effector,
+        np.zeros((2, 3)),
+    )
+
+    for value in fields.values():
+        np.testing.assert_array_equal(value, np.zeros_like(source))
+
+
+def test_force_support_uses_direction_not_force_magnitude() -> None:
+    source = _grid()
+    correction = np.zeros_like(source)
+    correction[:, 0] = 0.003
+    tool = np.array([[0.0, -0.05, 0.0], [0.0, -0.04, 0.0]])
+    end_effector = tool + np.array([0.0, -0.1, 0.0])
+
+    weak = pokeflex_force_supported_contact_fields(
+        source,
+        source.copy(),
+        correction,
+        tool,
+        end_effector,
+        np.array([[2.0, 1.0, 0.0], [2.0, 1.0, 0.0]]),
+    )
+    strong = pokeflex_force_supported_contact_fields(
+        source,
+        source.copy(),
+        correction,
+        tool,
+        end_effector,
+        np.array([[20.0, 10.0, 0.0], [20.0, 10.0, 0.0]]),
+    )
+
+    for field in weak:
+        np.testing.assert_allclose(weak[field], strong[field], atol=1e-12)
