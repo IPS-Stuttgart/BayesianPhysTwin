@@ -68,7 +68,24 @@ ACTION_RESPONSE = 0.9
 AUTONOMOUS_DRIFT_RESPONSE = 0.0
 CANONICAL_NODE_COUNT = 1024
 MINIMUM_NODE_COUNT = 128
-HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v4-pycache"
+HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v5-pycache"
+
+HELD_PYTHON_RUNTIME = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
+    "bpt-gpu-pip-"
+    "4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004"
+)
+HELD_PYTHON_RUNTIME_MANIFEST = Path(
+    f"{HELD_PYTHON_RUNTIME}.tree-manifest.json"
+)
+HELD_PYTHON_RUNTIME_MANIFEST_KIND = (
+    "Deform360HeldPythonRuntimeTreeManifestV1"
+)
+HELD_PYTHON_RUNTIME_SYMLINKS = {
+    "bin/python": "/usr/bin/python3",
+    "bin/python3": "python",
+    "bin/python3.12": "python",
+}
 
 _GIT_EXECUTABLE = Path("/usr/bin/git")
 _PYTHON_IMPORTABLE_SUFFIXES = (".py", ".pyc", ".pyo", ".pyd", ".so")
@@ -399,6 +416,412 @@ def _sorted_pip_freeze_sha256(stdout: bytes) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _stable_file_identity(observed: os.stat_result) -> tuple[int, ...]:
+    return (
+        observed.st_dev,
+        observed.st_ino,
+        observed.st_mode,
+        observed.st_nlink,
+        observed.st_size,
+        observed.st_mtime_ns,
+        observed.st_ctime_ns,
+    )
+
+
+def _open_regular_nofollow(path: Path) -> tuple[int, os.stat_result]:
+    _require(hasattr(os, "O_NOFOLLOW"), "O_NOFOLLOW is unavailable")
+    try:
+        before = os.lstat(path)
+        descriptor = os.open(
+            path,
+            os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0),
+        )
+    except OSError as error:
+        raise ValueError(f"cannot open locked regular file: {path}") from error
+    try:
+        opened = os.fstat(descriptor)
+        _require(stat.S_ISREG(before.st_mode), f"locked path is not a file: {path}")
+        _require(
+            _stable_file_identity(opened) == _stable_file_identity(before),
+            f"locked file changed while opening: {path}",
+        )
+    except Exception:
+        os.close(descriptor)
+        raise
+    return descriptor, opened
+
+
+def _finish_regular_nofollow(
+    path: Path,
+    descriptor: int,
+    opened: os.stat_result,
+) -> None:
+    try:
+        final_fd = os.fstat(descriptor)
+        final_path = os.lstat(path)
+        _require(
+            _stable_file_identity(final_fd) == _stable_file_identity(opened),
+            f"locked file changed while reading: {path}",
+        )
+        _require(
+            _stable_file_identity(final_path) == _stable_file_identity(opened),
+            f"locked file was replaced while reading: {path}",
+        )
+    finally:
+        os.close(descriptor)
+
+
+def _read_regular_nofollow(path: Path) -> bytes:
+    descriptor, opened = _open_regular_nofollow(path)
+    chunks: list[bytes] = []
+    try:
+        while True:
+            chunk = os.read(descriptor, 4 * 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        _finish_regular_nofollow(path, descriptor, opened)
+    except Exception:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        raise
+    return b"".join(chunks)
+
+
+def _sha256_regular_nofollow(
+    path: Path,
+    *,
+    expected: os.stat_result,
+) -> str:
+    descriptor, opened = _open_regular_nofollow(path)
+    try:
+        _require(
+            _stable_file_identity(opened) == _stable_file_identity(expected),
+            f"runtime entry changed before hashing: {path}",
+        )
+        digest = hashlib.sha256()
+        while True:
+            chunk = os.read(descriptor, 4 * 1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+        _finish_regular_nofollow(path, descriptor, opened)
+    except Exception:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        raise
+    return digest.hexdigest()
+
+
+def _json_object_without_duplicates(
+    pairs: list[tuple[str, Any]],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        _require(key not in result, f"duplicate runtime-manifest key: {key}")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite runtime-manifest value: {value}")
+
+
+def _runtime_entry_paths(root: Path) -> list[str]:
+    paths: list[str] = []
+
+    def visit(directory: Path) -> None:
+        try:
+            with os.scandir(directory) as scan:
+                children = sorted(scan, key=lambda item: os.fsencode(item.name))
+        except OSError as error:
+            raise ValueError(f"cannot scan held Python runtime: {directory}") from error
+        for child in children:
+            path = Path(child.path)
+            relative = os.path.relpath(path, root)
+            observed = os.lstat(path)
+            paths.append(relative)
+            if stat.S_ISDIR(observed.st_mode):
+                visit(path)
+            else:
+                _require(
+                    stat.S_ISREG(observed.st_mode)
+                    or stat.S_ISLNK(observed.st_mode),
+                    f"unsupported held Python runtime entry: {relative}",
+                )
+
+    visit(root)
+    return sorted(paths, key=os.fsencode)
+
+
+def _validate_runtime_manifest_path(path: str) -> None:
+    _require(path != "", "runtime-manifest entry path is empty")
+    _require("\x00" not in path, "runtime-manifest entry path contains NUL")
+    _require("\\" not in path, "runtime-manifest entry path is not POSIX")
+    _require(not path.startswith("/"), "runtime-manifest entry path is absolute")
+    parts = path.split("/")
+    _require(
+        all(part not in {"", ".", ".."} for part in parts),
+        "runtime-manifest entry path is not canonical",
+    )
+
+
+def _validate_held_python_runtime_tree(
+    immutable_bindings: Mapping[str, Any],
+) -> dict[str, str]:
+    root = _canonical_directory(
+        HELD_PYTHON_RUNTIME,
+        label="held Python runtime root",
+    )
+    root_stat = os.lstat(root)
+    _require(
+        stat.S_IMODE(root_stat.st_mode) == 0o555,
+        "held Python runtime root mode differs from 0555",
+    )
+    manifest_path = HELD_PYTHON_RUNTIME_MANIFEST
+    expected_manifest_path = root.parent / f"{root.name}.tree-manifest.json"
+    _require(
+        manifest_path == expected_manifest_path,
+        "held Python runtime manifest is not the exact sibling path",
+    )
+    _require(
+        manifest_path.parent.resolve(strict=True) == manifest_path.parent,
+        "held Python runtime manifest has aliased ancestry",
+    )
+    try:
+        manifest_stat = os.lstat(manifest_path)
+    except FileNotFoundError as error:
+        raise ValueError("held Python runtime manifest is missing") from error
+    _require(
+        stat.S_ISREG(manifest_stat.st_mode),
+        "held Python runtime manifest is not a regular file",
+    )
+    _require(
+        stat.S_IMODE(manifest_stat.st_mode) == 0o400,
+        "held Python runtime manifest mode differs from 0400",
+    )
+    raw_manifest = _read_regular_nofollow(manifest_path)
+    manifest_sha256 = hashlib.sha256(raw_manifest).hexdigest()
+    locked_manifest_sha256 = immutable_bindings.get("held_frozen_runtime_manifest")
+    _require(
+        isinstance(locked_manifest_sha256, str)
+        and len(locked_manifest_sha256) == 64
+        and all(character in "0123456789abcdef" for character in locked_manifest_sha256),
+        "held Python runtime manifest binding is invalid",
+    )
+    _require(
+        manifest_sha256 == locked_manifest_sha256,
+        "held Python runtime manifest differs from the immutable lock",
+    )
+    try:
+        manifest = json.loads(
+            raw_manifest,
+            object_pairs_hook=_json_object_without_duplicates,
+            parse_constant=_reject_json_constant,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("held Python runtime manifest is invalid JSON") from error
+    _require(isinstance(manifest, Mapping), "runtime manifest is not an object")
+    _require(
+        set(manifest)
+        == {
+            "artifact_kind",
+            "root_path",
+            "python_pip_freeze_sorted_sha256",
+            "entry_counts",
+            "total_regular_file_bytes",
+            "tree_sha256",
+            "entries",
+        },
+        "held Python runtime manifest fields changed",
+    )
+    canonical_manifest = (
+        json.dumps(
+            manifest,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+        + b"\n"
+    )
+    _require(
+        raw_manifest == canonical_manifest,
+        "held Python runtime manifest is not canonical JSON",
+    )
+    _require(
+        manifest["artifact_kind"] == HELD_PYTHON_RUNTIME_MANIFEST_KIND,
+        "held Python runtime manifest kind changed",
+    )
+    _require(
+        manifest["root_path"] == str(root),
+        "held Python runtime manifest root changed",
+    )
+    locked_freeze = immutable_bindings.get("python_pip_freeze_sorted")
+    _require(
+        manifest["python_pip_freeze_sorted_sha256"] == locked_freeze,
+        "held Python runtime manifest freeze identity changed",
+    )
+    entries = manifest["entries"]
+    _require(isinstance(entries, list), "runtime-manifest entries are not a list")
+    entry_paths: list[str] = []
+    observed_counts = {"directory": 0, "file": 0, "symlink": 0}
+    total_regular_file_bytes = 0
+    observed_symlinks: dict[str, str] = {}
+    for entry in entries:
+        _require(isinstance(entry, Mapping), "runtime-manifest entry is not an object")
+        path = entry.get("path")
+        entry_type = entry.get("type")
+        mode = entry.get("mode")
+        _require(isinstance(path, str), "runtime-manifest entry path is invalid")
+        _validate_runtime_manifest_path(path)
+        _require(
+            isinstance(mode, str)
+            and len(mode) == 4
+            and all(character in "01234567" for character in mode),
+            "runtime-manifest entry mode is invalid",
+        )
+        _require(
+            entry_type in observed_counts,
+            "runtime-manifest entry type is invalid",
+        )
+        if entry_type == "directory":
+            _require(
+                set(entry) == {"path", "mode", "type"},
+                "runtime-manifest directory fields changed",
+            )
+        elif entry_type == "file":
+            _require(
+                set(entry) == {"path", "mode", "type", "size", "sha256"},
+                "runtime-manifest file fields changed",
+            )
+            _require(
+                isinstance(entry["size"], int)
+                and not isinstance(entry["size"], bool)
+                and entry["size"] >= 0,
+                "runtime-manifest file size is invalid",
+            )
+            _require(
+                isinstance(entry["sha256"], str)
+                and len(entry["sha256"]) == 64
+                and all(
+                    character in "0123456789abcdef"
+                    for character in entry["sha256"]
+                ),
+                "runtime-manifest file checksum is invalid",
+            )
+        else:
+            _require(
+                set(entry) == {"path", "mode", "type", "target"},
+                "runtime-manifest symlink fields changed",
+            )
+            _require(
+                isinstance(entry["target"], str) and bool(entry["target"]),
+                "runtime-manifest symlink target is invalid",
+            )
+        entry_paths.append(path)
+    _require(
+        entry_paths == sorted(entry_paths, key=os.fsencode)
+        and len(entry_paths) == len(set(entry_paths)),
+        "runtime-manifest entry paths are unsorted or duplicated",
+    )
+    _require(
+        _runtime_entry_paths(root) == entry_paths,
+        "held Python runtime paths differ from the manifest",
+    )
+    for entry in entries:
+        path = str(entry["path"])
+        runtime_path = root.joinpath(*path.split("/"))
+        observed = os.lstat(runtime_path)
+        observed_mode = stat.S_IMODE(observed.st_mode)
+        _require(
+            format(observed_mode, "04o") == entry["mode"],
+            f"held Python runtime mode changed: {path}",
+        )
+        entry_type = str(entry["type"])
+        if entry_type == "directory":
+            _require(
+                stat.S_ISDIR(observed.st_mode),
+                f"held Python runtime directory changed type: {path}",
+            )
+            _require(
+                observed_mode & 0o222 == 0,
+                f"held Python runtime directory is writable: {path}",
+            )
+        elif entry_type == "file":
+            _require(
+                stat.S_ISREG(observed.st_mode),
+                f"held Python runtime file changed type: {path}",
+            )
+            _require(
+                observed_mode & 0o222 == 0,
+                f"held Python runtime file is writable: {path}",
+            )
+            _require(
+                observed.st_size == entry["size"],
+                f"held Python runtime file size changed: {path}",
+            )
+            _require(
+                _sha256_regular_nofollow(runtime_path, expected=observed)
+                == entry["sha256"],
+                f"held Python runtime file checksum changed: {path}",
+            )
+            total_regular_file_bytes += observed.st_size
+        else:
+            _require(
+                stat.S_ISLNK(observed.st_mode),
+                f"held Python runtime symlink changed type: {path}",
+            )
+            target = os.readlink(runtime_path)
+            _require(
+                target == entry["target"],
+                f"held Python runtime symlink target changed: {path}",
+            )
+            observed_symlinks[path] = target
+        observed_counts[entry_type] += 1
+    _require(
+        observed_symlinks == HELD_PYTHON_RUNTIME_SYMLINKS,
+        "held Python runtime symlink policy changed",
+    )
+    counts = manifest["entry_counts"]
+    _require(
+        isinstance(counts, Mapping)
+        and set(counts) == set(observed_counts)
+        and all(
+            isinstance(value, int) and not isinstance(value, bool) and value >= 0
+            for value in counts.values()
+        )
+        and dict(counts) == observed_counts,
+        "held Python runtime entry counts changed",
+    )
+    _require(
+        isinstance(manifest["total_regular_file_bytes"], int)
+        and not isinstance(manifest["total_regular_file_bytes"], bool)
+        and manifest["total_regular_file_bytes"] == total_regular_file_bytes,
+        "held Python runtime byte count changed",
+    )
+    canonical_entries = json.dumps(
+        entries,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("ascii")
+    tree_sha256 = hashlib.sha256(canonical_entries).hexdigest()
+    _require(
+        tree_sha256 == manifest["tree_sha256"],
+        "held Python runtime tree checksum changed",
+    )
+    return {
+        "runtime_root": str(root),
+        "runtime_manifest_path": str(manifest_path),
+        "runtime_manifest_sha256": manifest_sha256,
+        "runtime_tree_sha256": tree_sha256,
+    }
+
+
 def _canonical_directory(path: str | Path, *, label: str) -> Path:
     supplied = Path(os.path.abspath(os.fspath(Path(path).expanduser())))
     try:
@@ -714,7 +1137,7 @@ def validate_python_runtime(
     python: str | Path,
     immutable_bindings: Mapping[str, Any],
 ) -> dict[str, str]:
-    """Validate a venv interpreter without destroying its symlink semantics.
+    """Validate the frozen venv and interpreter without resolving its entry point.
 
     A virtualenv's ``bin/python`` is commonly a symlink.  Executing the resolved
     target bypasses Python's virtualenv discovery, so the supplied absolute path
@@ -722,7 +1145,19 @@ def validate_python_runtime(
     the symlink to its resolved regular file.
     """
 
-    supplied = Path(os.path.abspath(os.fspath(Path(python).expanduser())))
+    provided = os.fspath(python)
+    _require(
+        isinstance(provided, str)
+        and os.path.isabs(provided)
+        and os.path.abspath(provided) == provided,
+        "supplied Python interpreter path is not exact and absolute",
+    )
+    supplied = Path(provided)
+    _require(
+        supplied == HELD_PYTHON_RUNTIME / "bin/python",
+        "supplied Python interpreter is outside the frozen runtime",
+    )
+    runtime = _validate_held_python_runtime_tree(immutable_bindings)
     _require(supplied.is_file(), "supplied Python interpreter is missing")
     resolved = supplied.resolve(strict=True)
     _require(resolved.is_file(), "resolved Python interpreter is not a file")
@@ -732,7 +1167,17 @@ def validate_python_runtime(
         "Python executable bytes differ from the immutable lock",
     )
     completed = subprocess.run(
-        [str(supplied), "-I", "-m", "pip", "freeze", "--all"],
+        [
+            str(supplied),
+            "-I",
+            "-B",
+            "-X",
+            f"pycache_prefix={HELD_PYCACHE_PREFIX}",
+            "-m",
+            "pip",
+            "freeze",
+            "--all",
+        ],
         check=True,
         capture_output=True,
     )
@@ -742,6 +1187,7 @@ def validate_python_runtime(
         "Python pip freeze differs from the immutable lock",
     )
     return {
+        **runtime,
         "supplied_python_path": str(supplied),
         "resolved_python_path": str(resolved),
         "python_executable_sha256": executable_sha256,
@@ -2715,6 +3161,9 @@ __all__ = [
     "AUTONOMOUS_DRIFT_RESPONSE",
     "CANONICAL_NODE_COUNT",
     "HELD_PHYSICAL_NUMERIC_CONTRACT",
+    "HELD_PYCACHE_PREFIX",
+    "HELD_PYTHON_RUNTIME",
+    "HELD_PYTHON_RUNTIME_MANIFEST",
     "LENGTH_SCALE_M",
     "OFFICIAL_PHYSTWIN_REVISION",
     "OFFICIAL_REAL_CONFIG_SHA256",

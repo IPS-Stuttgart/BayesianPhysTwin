@@ -296,9 +296,7 @@ def _frame_zero_manifest(
         np.savez_compressed(bundle, camera_names=np.asarray(cameras))
     else:
         bundle.write_bytes(b"single extracted frame")
-    robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
-        directory
-    )
+    robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(directory)
     metadata = write_robot_metadata_fixture(
         directory / "robot.meta.json",
         source_frame_count=150,
@@ -310,9 +308,7 @@ def _frame_zero_manifest(
         "maximum_object_rgb_frame_read": 0,
         "object_observation_frames_used": [0],
         "known_aligned_realized_robot_kinematics_read": True,
-        "known_robot_trajectory_semantics": action_alignment[
-            "trajectory_semantics"
-        ],
+        "known_robot_trajectory_semantics": action_alignment["trajectory_semantics"],
         "robot_delta_command_read": False,
         "commanded_control_read": False,
         "known_future_robot_action_read": True,
@@ -613,11 +609,13 @@ def test_confirmation_evidence_and_final_decision_end_to_end_are_bound(
         held_scoring,
         "score_confirmation_cohort",
         lambda observed_permit, _operations: (
-            scores,
-            records,
-        )
-        if observed_permit is permit
-        else (_ for _ in ()).throw(AssertionError("another permit")),
+            (
+                scores,
+                records,
+            )
+            if observed_permit is permit
+            else (_ for _ in ()).throw(AssertionError("another permit"))
+        ),
     )
     evidence_path = tmp_path / "confirmation-score-evidence.json"
     decision_path = tmp_path / "confirmation-final-decision.json"
@@ -697,19 +695,21 @@ def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> No
     assert not (tmp_path / "invalid-report.json").exists()
 
 
-def test_v4_lock_binds_v1_v2_and_prelock_v3_lineage(
+def test_v5_lock_binds_v1_through_failed_closed_v4_lineage(
     tmp_path: Path,
 ) -> None:
     bindings = dummy_immutable_bindings()
-    lock_path = tmp_path / "v4-lock.json"
+    lock_path = tmp_path / "v5-lock.json"
     lock = create_held_protocol_lock(lock_path, immutable_bindings=bindings)
 
-    assert lock["protocol_id"] == "deform360-held-online-belief-v4"
-    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 110
+    assert lock["protocol_id"] == "deform360-held-online-belief-v5"
+    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 112
     assert set(REQUIRED_IMMUTABLE_BINDING_KEYS) >= {
         "v1_preoutcome_feasibility_report",
         "v2_design_withdrawal_report",
         "v3_prelock_boundary_incident_report",
+        "v4_execution_withdrawal_report",
+        "held_frozen_runtime_manifest",
         "held_source_feasibility_amendment_contract",
         "deform360_robot_kinematics_source",
         "robot_kinematics_window_contract",
@@ -747,8 +747,8 @@ def test_v4_lock_binds_v1_v2_and_prelock_v3_lineage(
         "target_payloads_accessed": False,
         "confirmation_payloads_accessed": False,
         "outcome_permit_created": False,
-        "execution_artifacts_reused_by_v4": False,
-        "predictions_reused_by_v4": False,
+        "execution_artifacts_reused_by_v5": False,
+        "predictions_reused_by_v5": False,
     }
     assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v2_design"] == {
         "protocol_id": "deform360-held-online-belief-v2",
@@ -779,19 +779,18 @@ def test_v4_lock_binds_v1_v2_and_prelock_v3_lineage(
             "target_data_read": False,
             "target_or_outcome_path_accessed": False,
         },
-        "execution_artifacts_reused_by_v4": False,
-        "predictions_reused_by_v4": False,
+        "execution_artifacts_reused_by_v5": False,
+        "predictions_reused_by_v5": False,
     }
     v3_design = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v3_design"]
     assert v3_design["protocol_id"] == "deform360-held-online-belief-v3"
     assert v3_design["disposition"] == "WITHDRAWN_BEFORE_LOCK_AND_PREDICTION"
-    assert v3_design["evidence_binding_key"] == (
-        "v3_prelock_boundary_incident_report"
-    )
+    assert v3_design["evidence_binding_key"] == ("v3_prelock_boundary_incident_report")
     assert set(v3_design["exact_formal_protocol_execution_census"].values()) == {0}
-    assert "excludes the separately disclosed rg content scanner" in v3_design[
-        "formal_protocol_execution_scope"
-    ]
+    assert (
+        "excludes the separately disclosed rg content scanner"
+        in v3_design["formal_protocol_execution_scope"]
+    )
     incident = v3_design["prelock_boundary_incident"]
     assert incident["program"] == "rg"
     assert incident["mode"] == "-l"
@@ -820,18 +819,30 @@ def test_v4_lock_binds_v1_v2_and_prelock_v3_lineage(
     assert repairs["robot_window_selection"]["selection_translation"] == (
         "T_worlds[..., :3, 3]"
     )
-    assert repairs["robot_window_selection"][
-        "selected_bundle_must_replay_exact_source_slice"
-    ] is True
-    assert repairs["robot_window_selection"][
-        "camera_frame_zero_must_match_selected_action_window_start"
-    ] is True
-    assert repairs["frame_zero_geometry"][
-        "official_current_frame_urdf_robot_exclusion_required"
-    ] is True
-    assert repairs["frame_zero_geometry"][
-        "pinned_siglip2_exclusive_semantic_rank_gate_required"
-    ] is True
+    assert (
+        repairs["robot_window_selection"][
+            "selected_bundle_must_replay_exact_source_slice"
+        ]
+        is True
+    )
+    assert (
+        repairs["robot_window_selection"][
+            "camera_frame_zero_must_match_selected_action_window_start"
+        ]
+        is True
+    )
+    assert (
+        repairs["frame_zero_geometry"][
+            "official_current_frame_urdf_robot_exclusion_required"
+        ]
+        is True
+    )
+    assert (
+        repairs["frame_zero_geometry"][
+            "pinned_siglip2_exclusive_semantic_rank_gate_required"
+        ]
+        is True
+    )
     assert repairs["information_boundary"] == {
         "rg_content_scanner_may_have_opened_any_regular_file_under_search_roots": True,
         "protected_file_open_status": "NOT_CLAIMED",
@@ -840,17 +851,44 @@ def test_v4_lock_binds_v1_v2_and_prelock_v3_lineage(
         "method_or_gate_choice_used_outcome_values": False,
     }
     assert "outcome_payloads_accessed" not in repairs["information_boundary"]
+    v4_execution = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v4_execution"]
+    assert v4_execution["protocol_id"] == "deform360-held-online-belief-v4"
+    assert v4_execution["disposition"] == (
+        "WITHDRAWN_AFTER_FRAME_ZERO_BEFORE_PHYSICAL_PREDICTION"
+    )
+    assert v4_execution["evidence_binding_key"] == ("v4_execution_withdrawal_report")
+    assert (
+        v4_execution["exact_execution_census"]["physical_builder_invocation_count"] == 2
+    )
+    assert (
+        v4_execution["exact_execution_census"]["formal_physical_prediction_count"] == 0
+    )
+    assert v4_execution["exact_execution_census"]["formal_online_prediction_count"] == 0
+    assert (
+        v4_execution["information_boundary"]["object_future_rgb_depth_or_tracking_read"]
+        is False
+    )
+    assert v4_execution["information_boundary"]["episode_payload_scope"] == (
+        "frame-zero RGB-D and masks; the frame-zero pipeline read the full "
+        "realized robot archive to select the window, then sealed the aligned "
+        "76-frame robot-kinematics window"
+    )
+    assert v4_execution["failure"]["failure_time_inventory_recorded"] is False
+
     assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["reuse"] == {
-        "v1_execution_artifacts_reused_by_v4": False,
-        "v1_predictions_reused_by_v4": False,
-        "v2_execution_artifacts_reused_by_v4": False,
-        "v2_predictions_reused_by_v4": False,
-        "v3_execution_artifacts_reused_by_v4": False,
-        "v3_predictions_reused_by_v4": False,
-        "sealed_source_only_lineage_reports_bound_by_v4": [
+        "v1_execution_artifacts_reused_by_v5": False,
+        "v1_predictions_reused_by_v5": False,
+        "v2_execution_artifacts_reused_by_v5": False,
+        "v2_predictions_reused_by_v5": False,
+        "v3_execution_artifacts_reused_by_v5": False,
+        "v3_predictions_reused_by_v5": False,
+        "v4_execution_artifacts_reused_by_v5": False,
+        "v4_predictions_reused_by_v5": False,
+        "sealed_lineage_reports_bound_by_v5": [
             "v1_preoutcome_feasibility_report",
             "v2_design_withdrawal_report",
             "v3_prelock_boundary_incident_report",
+            "v4_execution_withdrawal_report",
         ],
     }
 
@@ -940,14 +978,14 @@ def test_held_reference_optional_recognizer_requires_semantic_cross_links(
             ],
             "common_assignment": assignment,
             "reference_optional_safeguard": safeguard,
-        }
+        },
     }
     assert held_protocol._reference_optional_camera_strategy(manifest) is True
 
     tampered = deepcopy(manifest)
-    tampered["geometry_fallback"]["reference_optional_safeguard"][
-        "assignment"
-    ]["strategy"] = "other"
+    tampered["geometry_fallback"]["reference_optional_safeguard"]["assignment"][
+        "strategy"
+    ] = "other"
     with pytest.raises(ValueError, match="strategy audit changed"):
         held_protocol._reference_optional_camera_strategy(tampered)
 

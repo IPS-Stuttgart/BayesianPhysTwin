@@ -5,8 +5,11 @@ import json
 import os
 from pathlib import Path
 import pickle
+import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 from types import SimpleNamespace
 
 import numpy as np
@@ -271,7 +274,7 @@ def _make_locked_frame_zero(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v4",
+        "protocol_id": "deform360-held-online-belief-v5",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -886,18 +889,172 @@ def test_persistence_fallback_rejects_passing_or_unchecksummed_twin(
         )
 
 
-def test_python_runtime_preserves_supplied_venv_symlink(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    executable = tmp_path / "python-real"
+def _test_runtime_entries(root: Path) -> list[dict[str, object]]:
+    entries: list[dict[str, object]] = []
+    for directory, directories, files in os.walk(root, followlinks=False):
+        for name in directories + files:
+            path = Path(directory) / name
+            relative = os.path.relpath(path, root)
+            observed = os.lstat(path)
+            entry: dict[str, object] = {
+                "path": relative,
+                "mode": format(stat.S_IMODE(observed.st_mode), "04o"),
+            }
+            if stat.S_ISDIR(observed.st_mode):
+                entry["type"] = "directory"
+            elif stat.S_ISREG(observed.st_mode):
+                entry.update(
+                    {
+                        "type": "file",
+                        "size": observed.st_size,
+                        "sha256": sha256_file(path),
+                    }
+                )
+            else:
+                assert stat.S_ISLNK(observed.st_mode)
+                entry.update({"type": "symlink", "target": os.readlink(path)})
+            entries.append(entry)
+    return sorted(entries, key=lambda entry: os.fsencode(str(entry["path"])))
+
+
+def _write_test_runtime_manifest(
+    path: Path,
+    *,
+    root: Path,
+    freeze_sha256: str,
+) -> dict[str, object]:
+    entries = _test_runtime_entries(root)
+    counts = {"directory": 0, "file": 0, "symlink": 0}
+    total_bytes = 0
+    for entry in entries:
+        counts[str(entry["type"])] += 1
+        if entry["type"] == "file":
+            total_bytes += int(entry["size"])
+    entries_bytes = json.dumps(
+        entries,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("ascii")
+    payload: dict[str, object] = {
+        "artifact_kind": physical_prior.HELD_PYTHON_RUNTIME_MANIFEST_KIND,
+        "root_path": str(root),
+        "python_pip_freeze_sorted_sha256": freeze_sha256,
+        "entry_counts": counts,
+        "total_regular_file_bytes": total_bytes,
+        "tree_sha256": hashlib.sha256(entries_bytes).hexdigest(),
+        "entries": entries,
+    }
+    path.write_bytes(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+        + b"\n"
+    )
+    path.chmod(0o400)
+    return payload
+
+
+@pytest.fixture
+def frozen_python_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> dict[str, object]:
+    workspace = Path(tempfile.mkdtemp(prefix="bpt-frozen-runtime-", dir="/tmp"))
+    executable = workspace / "python-real"
     executable.write_bytes(b"locked interpreter bytes")
     executable.chmod(0o755)
-    venv_bin = tmp_path / "venv" / "bin"
+    root = workspace / "frozen-runtime"
+    venv_bin = root / "bin"
+    package_dir = root / "lib/python3.12/site-packages/example"
+    package_dir.mkdir(parents=True)
     venv_bin.mkdir(parents=True)
+    package_file = package_dir / "__init__.py"
+    package_file.write_bytes(b"VALUE = 1\n")
+    package_file.chmod(0o444)
     supplied = venv_bin / "python"
     supplied.symlink_to(executable)
+    (venv_bin / "python3").symlink_to("python")
+    (venv_bin / "python3.12").symlink_to("python")
+    for directory, directories, _files in os.walk(root):
+        Path(directory).chmod(0o555)
+        for name in directories:
+            path = Path(directory) / name
+            if not path.is_symlink():
+                path.chmod(0o555)
     freeze = b"zeta==2\nalpha==1\npip==24\n"
-    expected_freeze = hashlib.sha256(b"alpha==1\npip==24\nzeta==2\n").hexdigest()
+    expected_freeze = hashlib.sha256(
+        b"alpha==1\npip==24\nzeta==2\n"
+    ).hexdigest()
+    manifest_path = root.parent / f"{root.name}.tree-manifest.json"
+    manifest = _write_test_runtime_manifest(
+        manifest_path,
+        root=root,
+        freeze_sha256=expected_freeze,
+    )
+    monkeypatch.setattr(physical_prior, "HELD_PYTHON_RUNTIME", root)
+    monkeypatch.setattr(
+        physical_prior,
+        "HELD_PYTHON_RUNTIME_MANIFEST",
+        manifest_path,
+    )
+    monkeypatch.setattr(
+        physical_prior,
+        "HELD_PYTHON_RUNTIME_SYMLINKS",
+        {
+            "bin/python": str(executable),
+            "bin/python3": "python",
+            "bin/python3.12": "python",
+        },
+    )
+    bindings = {
+        "held_frozen_runtime_manifest": sha256_file(manifest_path),
+        "python_executable": sha256_file(executable),
+        "python_pip_freeze_sorted": expected_freeze,
+    }
+
+    def restore_permissions() -> None:
+        if manifest_path.exists():
+            manifest_path.chmod(0o600)
+        for directory, directories, files in os.walk(root, topdown=False):
+            for name in files:
+                path = Path(directory) / name
+                if not path.is_symlink():
+                    path.chmod(0o600)
+            for name in directories:
+                path = Path(directory) / name
+                if not path.is_symlink():
+                    path.chmod(0o700)
+            Path(directory).chmod(0o700)
+        shutil.rmtree(workspace)
+
+    request.addfinalizer(restore_permissions)
+    return {
+        "root": root,
+        "supplied": supplied,
+        "executable": executable,
+        "package_file": package_file,
+        "manifest_path": manifest_path,
+        "manifest": manifest,
+        "freeze": freeze,
+        "bindings": bindings,
+    }
+
+
+def test_python_runtime_preserves_supplied_venv_symlink(
+    frozen_python_runtime: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = frozen_python_runtime["executable"]
+    supplied = frozen_python_runtime["supplied"]
+    freeze = frozen_python_runtime["freeze"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(executable, Path)
+    assert isinstance(supplied, Path)
+    assert isinstance(freeze, bytes)
+    assert isinstance(bindings, dict)
     observed_command: list[str] = []
 
     def fake_run(command: list[str], **kwargs: object) -> SimpleNamespace:
@@ -906,21 +1063,157 @@ def test_python_runtime_preserves_supplied_venv_symlink(
         return SimpleNamespace(stdout=freeze)
 
     monkeypatch.setattr(physical_prior.subprocess, "run", fake_run)
-    result = validate_python_runtime(
-        supplied,
-        {
-            "python_executable": sha256_file(executable),
-            "python_pip_freeze_sorted": expected_freeze,
-        },
-    )
-    assert observed_command[:4] == [
+    result = validate_python_runtime(supplied, bindings)
+    assert observed_command == [
         str(supplied.absolute()),
         "-I",
+        "-B",
+        "-X",
+        f"pycache_prefix={physical_prior.HELD_PYCACHE_PREFIX}",
         "-m",
         "pip",
+        "freeze",
+        "--all",
     ]
     assert result["supplied_python_path"] == str(supplied.absolute())
     assert result["resolved_python_path"] == str(executable.resolve())
+    assert result["runtime_root"] == str(frozen_python_runtime["root"])
+    assert result["runtime_manifest_sha256"] == bindings[
+        "held_frozen_runtime_manifest"
+    ]
+
+
+def test_python_runtime_rejects_interpreter_outside_frozen_root(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    executable = frozen_python_runtime["executable"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(executable, Path)
+    assert isinstance(bindings, dict)
+
+    with pytest.raises(ValueError, match="outside the frozen runtime"):
+        validate_python_runtime(executable, bindings)
+
+
+def test_python_runtime_rejects_aliased_interpreter_path(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    root = frozen_python_runtime["root"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(root, Path)
+    assert isinstance(bindings, dict)
+
+    with pytest.raises(ValueError, match="not exact and absolute"):
+        validate_python_runtime(str(root / "bin/../bin/python"), bindings)
+
+
+def test_python_runtime_rejects_wrong_manifest_binding(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    supplied = frozen_python_runtime["supplied"]
+    bindings = dict(frozen_python_runtime["bindings"])
+    assert isinstance(supplied, Path)
+    bindings["held_frozen_runtime_manifest"] = "f" * 64
+
+    with pytest.raises(ValueError, match="manifest differs"):
+        validate_python_runtime(supplied, bindings)
+
+
+def test_python_runtime_rejects_writable_runtime_root(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    root = frozen_python_runtime["root"]
+    supplied = frozen_python_runtime["supplied"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(root, Path)
+    assert isinstance(supplied, Path)
+    assert isinstance(bindings, dict)
+    root.chmod(0o755)
+
+    with pytest.raises(ValueError, match="root mode differs"):
+        validate_python_runtime(supplied, bindings)
+
+
+def test_python_runtime_rejects_unlisted_symlink(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    root = frozen_python_runtime["root"]
+    supplied = frozen_python_runtime["supplied"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(root, Path)
+    assert isinstance(supplied, Path)
+    assert isinstance(bindings, dict)
+    bin_dir = root / "bin"
+    bin_dir.chmod(0o755)
+    (bin_dir / "unlisted-python").symlink_to("python")
+    bin_dir.chmod(0o555)
+
+    with pytest.raises(ValueError, match="paths differ"):
+        validate_python_runtime(supplied, bindings)
+
+
+def test_python_runtime_rejects_manifested_file_tamper(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    supplied = frozen_python_runtime["supplied"]
+    package_file = frozen_python_runtime["package_file"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(supplied, Path)
+    assert isinstance(package_file, Path)
+    assert isinstance(bindings, dict)
+    package_file.chmod(0o644)
+    package_file.write_bytes(b"VALUE = 2\n")
+    package_file.chmod(0o444)
+
+    with pytest.raises(ValueError, match="file checksum changed"):
+        validate_python_runtime(supplied, bindings)
+
+
+def test_python_runtime_rejects_manifested_symlink_tamper(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    root = frozen_python_runtime["root"]
+    supplied = frozen_python_runtime["supplied"]
+    bindings = frozen_python_runtime["bindings"]
+    assert isinstance(root, Path)
+    assert isinstance(supplied, Path)
+    assert isinstance(bindings, dict)
+    bin_dir = root / "bin"
+    python3 = bin_dir / "python3"
+    bin_dir.chmod(0o755)
+    python3.unlink()
+    python3.symlink_to("python3.12")
+    bin_dir.chmod(0o555)
+
+    with pytest.raises(ValueError, match="symlink target changed"):
+        validate_python_runtime(supplied, bindings)
+
+
+def test_python_runtime_rejects_wrong_tree_checksum_even_when_manifest_is_bound(
+    frozen_python_runtime: dict[str, object],
+) -> None:
+    supplied = frozen_python_runtime["supplied"]
+    manifest_path = frozen_python_runtime["manifest_path"]
+    manifest = dict(frozen_python_runtime["manifest"])
+    bindings = dict(frozen_python_runtime["bindings"])
+    assert isinstance(supplied, Path)
+    assert isinstance(manifest_path, Path)
+    manifest["tree_sha256"] = "f" * 64
+    manifest_path.chmod(0o600)
+    manifest_path.write_bytes(
+        json.dumps(
+            manifest,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+        + b"\n"
+    )
+    manifest_path.chmod(0o400)
+    bindings["held_frozen_runtime_manifest"] = sha256_file(manifest_path)
+
+    with pytest.raises(ValueError, match="tree checksum changed"):
+        validate_python_runtime(supplied, bindings)
 
 
 def test_official_phystwin_worktree_matches_all_locked_git_identities(

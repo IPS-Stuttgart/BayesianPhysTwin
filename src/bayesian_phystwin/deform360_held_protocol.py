@@ -57,7 +57,7 @@ from .deform360_robot_kinematics import (
 )
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v4"
+PROTOCOL_ID = "deform360-held-online-belief-v5"
 SCHEMA_VERSION = 1
 DATASET_REVISION = "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
 REMOTE_INVENTORY_COMBINED_SHA256 = (
@@ -128,8 +128,9 @@ CONFIRMATION_GATE = {
     "all_cases_must_be_reported": True,
 }
 
-# This amendment records the complete lineage of the v4 execution, including
-# the v3 pre-lock filename-only rg incident.  It deliberately does not claim
+# This amendment records the complete lineage through the failed-closed v4
+# execution, including the v3 pre-lock filename-only rg incident.  It
+# deliberately does not claim
 # that protected regular files were unopened: rg is a content scanner and may
 # have opened any regular file under its broad search roots.  No held payload
 # content or value was returned to the research agent or used to select a
@@ -137,7 +138,7 @@ CONFIRMATION_GATE = {
 # when the lock is created; those digests are not source constants that could
 # silently bless different files.
 SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
-    "contract_id": "deform360-held-source-feasibility-amendment-v4",
+    "contract_id": "deform360-held-source-feasibility-amendment-v5",
     "protocol_id": PROTOCOL_ID,
     "v1_execution": {
         "protocol_id": "deform360-held-online-belief-v1",
@@ -153,8 +154,8 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
         "target_payloads_accessed": False,
         "confirmation_payloads_accessed": False,
         "outcome_permit_created": False,
-        "execution_artifacts_reused_by_v4": False,
-        "predictions_reused_by_v4": False,
+        "execution_artifacts_reused_by_v5": False,
+        "predictions_reused_by_v5": False,
     },
     "v2_design": {
         "protocol_id": "deform360-held-online-belief-v2",
@@ -185,8 +186,8 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "target_data_read": False,
             "target_or_outcome_path_accessed": False,
         },
-        "execution_artifacts_reused_by_v4": False,
-        "predictions_reused_by_v4": False,
+        "execution_artifacts_reused_by_v5": False,
+        "predictions_reused_by_v5": False,
     },
     "v3_design": {
         "protocol_id": "deform360-held-online-belief-v3",
@@ -235,8 +236,8 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "held_cohort_payload_content_or_value_returned_to_research_agent": False,
             "method_or_gate_choice_used_outcome_values": False,
         },
-        "execution_artifacts_reused_by_v4": False,
-        "predictions_reused_by_v4": False,
+        "execution_artifacts_reused_by_v5": False,
+        "predictions_reused_by_v5": False,
     },
     "v4_repairs": {
         "robot_window_selection": {
@@ -290,17 +291,74 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "method_or_gate_choice_used_outcome_values": False,
         },
     },
+    "v4_execution": {
+        "protocol_id": "deform360-held-online-belief-v4",
+        "disposition": "WITHDRAWN_AFTER_FRAME_ZERO_BEFORE_PHYSICAL_PREDICTION",
+        "evidence_binding_key": "v4_execution_withdrawal_report",
+        "exact_execution_census": {
+            "calibration_decision_count": 0,
+            "calibration_lock_count": 1,
+            "case_attempt_count": 2,
+            "confirmation_lock_count": 0,
+            "deployed_snapshot_count": 1,
+            "deployment_count": 1,
+            "frame_zero_bundle_count": 2,
+            "frame_zero_manifest_count": 2,
+            "formal_online_prediction_count": 0,
+            "formal_physical_prediction_count": 0,
+            "online_prediction_seal_count": 0,
+            "outcome_api_operation_count": 0,
+            "outcome_created_count": 0,
+            "outcome_permit_count": 0,
+            "outcome_read_count": 0,
+            "physical_builder_invocation_count": 2,
+            "physical_prediction_artifact_count": 0,
+            "physical_prior_seal_count": 0,
+            "prefix_authorization_count": 0,
+            "shard_start_count": 2,
+            "target_operation_count": 0,
+        },
+        "failure": {
+            "classification": "IMMUTABLE_PYTHON_INVENTORY_MISMATCH",
+            "phase": "physical-build runtime preflight",
+            "failure_time_inventory_recorded": False,
+            "post_failure_diagnostic_is_not_failure_time_reconstruction": True,
+        },
+        "information_boundary": {
+            "frame_zero_source_artifacts_created": True,
+            "episode_payload_read": True,
+            "episode_payload_scope": (
+                "frame-zero RGB-D and masks; the frame-zero pipeline read the full "
+                "realized robot archive to select the window, then sealed the aligned "
+                "76-frame robot-kinematics window"
+            ),
+            "object_future_rgb_depth_or_tracking_read": False,
+            "physical_prediction_created": False,
+            "online_prediction_created": False,
+            "prediction_payload_read": False,
+            "target_data_read": False,
+            "tactile_data_read": False,
+            "future_tactile_read": False,
+            "confirmation_payload_read": False,
+            "outcome_created_or_read": False,
+        },
+        "execution_artifacts_reused_by_v5": False,
+        "predictions_reused_by_v5": False,
+    },
     "reuse": {
-        "v1_execution_artifacts_reused_by_v4": False,
-        "v1_predictions_reused_by_v4": False,
-        "v2_execution_artifacts_reused_by_v4": False,
-        "v2_predictions_reused_by_v4": False,
-        "v3_execution_artifacts_reused_by_v4": False,
-        "v3_predictions_reused_by_v4": False,
-        "sealed_source_only_lineage_reports_bound_by_v4": [
+        "v1_execution_artifacts_reused_by_v5": False,
+        "v1_predictions_reused_by_v5": False,
+        "v2_execution_artifacts_reused_by_v5": False,
+        "v2_predictions_reused_by_v5": False,
+        "v3_execution_artifacts_reused_by_v5": False,
+        "v3_predictions_reused_by_v5": False,
+        "v4_execution_artifacts_reused_by_v5": False,
+        "v4_predictions_reused_by_v5": False,
+        "sealed_lineage_reports_bound_by_v5": [
             "v1_preoutcome_feasibility_report",
             "v2_design_withdrawal_report",
             "v3_prelock_boundary_incident_report",
+            "v4_execution_withdrawal_report",
         ],
     },
 }
@@ -454,6 +512,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "held_confirmation_outcome_driver_source",
     "held_confirmation_shard_runner_source",
     "held_confirmation_gate_contract",
+    "held_frozen_runtime_manifest",
     "held_metric_contract",
     "held_online_runner_cli",
     "held_online_runner_source",
@@ -518,6 +577,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "v1_preoutcome_feasibility_report",
     "v2_design_withdrawal_report",
     "v3_prelock_boundary_incident_report",
+    "v4_execution_withdrawal_report",
 )
 
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")

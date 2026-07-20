@@ -288,7 +288,7 @@ def _frame_zero_manifest(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": FRAME_ZERO_KIND,
-        "protocol_id": "deform360-held-online-belief-v4",
+        "protocol_id": "deform360-held-online-belief-v5",
         "case_name": case_name,
         "object_id": object_id,
         "episode_id": int(episode),
