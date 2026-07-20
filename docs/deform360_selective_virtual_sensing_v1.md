@@ -1,10 +1,16 @@
 # Deform360 Selective Full-Field Virtual Sensing V1
 
-Status: locked before download or media access for the 12 selected objects.
-The temporal rule was added before any selected-object access because the
-initial lock specified 76 frames but omitted their deterministic source window.
-The inherited target pipeline, automatic-mask provenance, comparator builders,
-and all execution hashes were likewise added before selected-object access.
+Status: completed prospective negative result. The paper threshold failed on
+both co-primary metrics. The frozen result and post-open mechanism analysis are
+reported in `docs/deform360_selective_virtual_sensing_result.md`; held outcomes
+must not be used to revise this protocol.
+
+The protocol was locked before download or media access for the 12 selected
+objects. The temporal rule was added before any selected-object access because
+the initial lock specified 76 frames but omitted their deterministic source
+window. The inherited target pipeline, automatic-mask provenance, comparator
+builders, and all execution hashes were likewise added before selected-object
+access.
 
 ## Target-free operational amendment
 

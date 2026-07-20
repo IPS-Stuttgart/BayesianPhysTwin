@@ -1,0 +1,28 @@
+{
+  "artifact_kind": "Deform360SelectiveVirtualSensingQualityFailure",
+  "case": "146-frog-ep0002",
+  "disposition": "episode excluded without replacement",
+  "episode_id": 2,
+  "episode_key": "146-frog/2",
+  "error_message": "frame-zero point cloud failed",
+  "error_type": "ValueError",
+  "evidence_sha256": {
+    "frame_zero_log": "1e371903774c9d955199a6aad15540e5127e2b3e82921cb79f494bc5cfc6f3f2",
+    "prefix_manifest": "d30f7e6f41e222896542b1dce941188273ff9d3ef69a91218b41a3821fca5e47"
+  },
+  "information_boundary": {
+    "failure_determined_without_target_data": true,
+    "future_dense_reconstruction_read": false,
+    "future_particle_tracks_read": false,
+    "outcome_manifest_read": false,
+    "replacement_episode_selected": false,
+    "target_data_read": false
+  },
+  "object_id": "146-frog",
+  "protocol_config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
+  "protocol_id": "deform360-selective-virtual-sensing-v1",
+  "result_sha256": "2278c0db033fdb11200453286ab8aafd3dd2fddc6503c4c00770bf9ac03ea73d",
+  "schema_version": 1,
+  "stage": "frame-zero-reconstruction",
+  "stratum": "volumetric"
+}
