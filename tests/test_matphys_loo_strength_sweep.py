@@ -8,6 +8,7 @@ import pytest
 from bayesian_phystwin.matphys_causal_bridge import sha256_file
 from bayesian_phystwin.matphys_loo_strength_sweep import (
     _refit_command,
+    _resolve_released_artifact,
     _resolve_released_checkpoint,
     _validate_replay_cache,
     build_strength_external_manifest,
@@ -46,6 +47,26 @@ def test_refit_command_seals_future_scoring(tmp_path: Path) -> None:
     assert "--released-trajectory" in command
     assert "--gt-track-3d" not in command
     assert command[command.index("--fit-end-frame") + 1] == "6"
+
+
+def test_refit_command_accepts_split_upstream_inputs(tmp_path: Path) -> None:
+    optimal = tmp_path / "upstream" / "optimal.pkl"
+    trajectory = tmp_path / "upstream" / "inference.pkl"
+    command = _refit_command(
+        tmp_path / "python",
+        tmp_path / "official",
+        tmp_path / "case",
+        tmp_path / "cues.npz",
+        tmp_path / "checkpoint.pt",
+        tmp_path / "output",
+        train_end=8,
+        fit_end=6,
+        optimal_params=optimal,
+        released_trajectory=trajectory,
+    )
+
+    assert str(optimal) in command
+    assert command[command.index("--released-trajectory") + 1] == str(trajectory)
 
 
 def test_released_checkpoint_prefers_extracted_copy(tmp_path: Path) -> None:
@@ -91,6 +112,39 @@ def test_released_checkpoint_rejects_ambiguous_upstream_matches(
 
     with pytest.raises(FileNotFoundError, match="exactly one upstream"):
         _resolve_released_checkpoint(case_data, tmp_path / "official", "case_a")
+
+
+@pytest.mark.parametrize(
+    ("filename", "relative"),
+    [
+        ("inference.pkl", "experiments/case_a/inference.pkl"),
+        (
+            "optimal_params.pkl",
+            "experiments_optimization/case_a/optimal_params.pkl",
+        ),
+    ],
+)
+def test_released_artifact_accepts_compact_and_upstream_layouts(
+    tmp_path: Path,
+    filename: str,
+    relative: str,
+) -> None:
+    case_data = tmp_path / "data" / "case_a"
+    case_data.mkdir(parents=True)
+    upstream = tmp_path / "official" / relative
+    upstream.parent.mkdir(parents=True)
+    upstream.write_bytes(b"upstream")
+
+    assert (
+        _resolve_released_artifact(case_data, tmp_path / "official", "case_a", filename)
+        == upstream
+    )
+    extracted = case_data / filename
+    extracted.write_bytes(b"extracted")
+    assert (
+        _resolve_released_artifact(case_data, tmp_path / "official", "case_a", filename)
+        == extracted
+    )
 
 
 def test_replay_cache_requires_sealed_summary_and_exact_overlay(tmp_path: Path) -> None:

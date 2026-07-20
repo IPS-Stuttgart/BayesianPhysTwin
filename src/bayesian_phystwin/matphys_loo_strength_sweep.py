@@ -81,8 +81,19 @@ def _refit_command(
     *,
     train_end: int,
     fit_end: int,
+    optimal_params: Path | None = None,
+    released_trajectory: Path | None = None,
 ) -> list[str]:
     """Build a future-sealed epochs-zero replay command."""
+
+    optimal = (
+        case_root / "optimal_params.pkl" if optimal_params is None else optimal_params
+    )
+    released = (
+        case_root / "inference.pkl"
+        if released_trajectory is None
+        else released_trajectory
+    )
 
     return [
         str(python),
@@ -90,7 +101,7 @@ def _refit_command(
         "bayesian_phystwin.cli.phystwin_refit",
         str(official_repo),
         str(case_root / "final_data.pkl"),
-        str(case_root / "optimal_params.pkl"),
+        str(optimal),
         str(checkpoint),
         str(cues),
         str(output),
@@ -128,7 +139,7 @@ def _refit_command(
         "--device",
         "cuda:0",
         "--released-trajectory",
-        str(case_root / "inference.pkl"),
+        str(released),
         "--selection-only",
     ]
 
@@ -180,6 +191,32 @@ def _resolve_released_checkpoint(
             f"found {len(upstream)}"
         )
     return upstream[0]
+
+
+def _resolve_released_artifact(
+    case_data: Path,
+    official_repo: Path,
+    case: str,
+    filename: str,
+) -> Path:
+    """Resolve a released runtime artifact from compact or upstream layouts."""
+
+    extracted = case_data / filename
+    if extracted.is_file():
+        return extracted
+    upstream_paths = {
+        "inference.pkl": official_repo / "experiments" / case / "inference.pkl",
+        "optimal_params.pkl": (
+            official_repo / "experiments_optimization" / case / "optimal_params.pkl"
+        ),
+    }
+    try:
+        upstream = upstream_paths[filename]
+    except KeyError as error:
+        raise ValueError(f"unsupported released artifact: {filename}") from error
+    if not upstream.is_file():
+        raise FileNotFoundError(f"{case}: missing released {filename}")
+    return upstream
 
 
 def build_strength_external_manifest(
@@ -332,6 +369,18 @@ def run_loo_strength_sweep(
         case_data = data / case
         candidate = Path(str(entry["candidate_spring_y_path"]))
         source_checkpoint = _resolve_released_checkpoint(case_data, official, case)
+        optimal_params = _resolve_released_artifact(
+            case_data,
+            official,
+            case,
+            "optimal_params.pkl",
+        )
+        released_trajectory = _resolve_released_artifact(
+            case_data,
+            official,
+            case,
+            "inference.pkl",
+        )
         split = json.loads((case_data / "split.json").read_text(encoding="utf-8"))
         train_end = int(split["train"][1])
         fit_end = int(entry["evidence_end_frame_exclusive"])
@@ -377,6 +426,8 @@ def run_loo_strength_sweep(
                     replay_output,
                     train_end=train_end,
                     fit_end=fit_end,
+                    optimal_params=optimal_params,
+                    released_trajectory=released_trajectory,
                 ),
                 case_output / "replay.log",
                 env,
