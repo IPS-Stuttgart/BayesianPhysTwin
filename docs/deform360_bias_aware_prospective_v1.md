@@ -127,8 +127,46 @@ commit method, protocol, and runner
 ```
 
 The current execution status is `0/9` calibration objects and `0/12` target
-objects opened. The next software work is prediction-facing staging and seal
-generation; it may not read any selected future.
+objects opened. Prediction-facing staging and seal generation are implemented;
+they may not read any selected future. The runner must execute from a clean,
+committed checkout.
+
+## Prediction Construction
+
+One case passes through five outcome-blind boundaries:
+
+1. `prepare_deform360_bias_aware_source.py` performs official camera alignment
+   and released robot-pose recovery in a source-data-custodian process. It does
+   not create object geometry, tracks, tactile features, or metrics.
+2. `stage_deform360_bias_aware_prediction_prefix.py` selects the 81-frame raw
+   window from released robot action and openness only. It exports an RGB
+   prefix through frame 57, a separate frame-zero episode, and the known
+   76-frame robot action. Later object frames are absent from the prediction
+   process.
+3. `run_deform360_bias_aware_frame_zero.py` reconstructs frame zero only.
+   `run_deform360_bias_aware_physical_prior.py` then builds an automatic twin,
+   runs frozen driven and zero-action Warp rollouts, and seals the exact
+   driven-minus-zero graph-support predictor. Numerical source files, official
+   PhysTwin revision, and `real.yaml` are checksum-bound before GPU work. An
+   exact persistence fallback is permitted only after a checksummed automatic
+   twin returns the declared source-admission failure code; other failures are
+   quality failures, not fallback opportunities.
+4. `run_deform360_bias_aware_prediction.py` creates the sparse AllTracker
+   measurements from causal prefixes, estimates metric covariance using the
+   frozen jackknife and cycle rules, selects the raw physical/persistence
+   backbone from current observations only, and hashes the source-v4 candidate.
+   The state innovation is processed once. It is not reused as prior perception
+   reliability.
+5. `bpt-deform360-bias-aware-prospective seal-predictions` requires exactly one
+   prediction seal or pre-outcome quality-failure seal for every locked case.
+   Missing cases, duplicate dispositions, and replacements fail the cohort
+   seal.
+
+Dense camera pixels and views are not interpreted as independent samples.
+Cycle and leave-one-view disagreement only inflate or invalidate metric
+covariance; they cannot establish safety against coherent common-mode camera
+bias. That limitation motivates the physical/action support gate and bit-exact
+baseline fallback, and remains part of the claim boundary.
 
 Validate or inspect the download plan with:
 
@@ -138,4 +176,9 @@ bpt-deform360-bias-aware-prospective validate \
 
 bpt-deform360-bias-aware-prospective plan \
   configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json
+
+bpt-deform360-bias-aware-prospective seal-predictions \
+  configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
+  calibration /path/to/predictions \
+  /path/to/calibration_prediction_cohort_seal.json
 ```

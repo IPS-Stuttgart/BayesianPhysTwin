@@ -7,6 +7,9 @@ import json
 from pathlib import Path
 from typing import Sequence
 
+from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
+    build_prospective_prediction_cohort_seal,
+)
 from bayesian_phystwin.deform360_bias_aware_prospective_download import (
     bias_aware_prospective_download_plan,
     download_bias_aware_prospective_panel,
@@ -32,6 +35,12 @@ def build_parser() -> argparse.ArgumentParser:
     download.add_argument("output_root", type=Path)
     download.add_argument("--manifest", type=Path, required=True)
     download.add_argument("--max-workers", type=int, default=4)
+
+    seal = subparsers.add_parser("seal-predictions")
+    seal.add_argument("protocol", type=Path)
+    seal.add_argument("role", choices=("calibration", "target"))
+    seal.add_argument("artifact_root", type=Path)
+    seal.add_argument("output", type=Path)
     return parser
 
 
@@ -60,7 +69,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "ignore_patterns": list(plan.ignore_patterns),
             "protocol_config_sha256": plan.protocol_config_sha256,
         }
-    else:
+    elif args.command == "download":
         from huggingface_hub import snapshot_download
 
         result = download_bias_aware_prospective_panel(
@@ -70,6 +79,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             snapshot_download=snapshot_download,
         )
         write_bias_aware_download_manifest(args.manifest, result)
+    else:
+        result = build_prospective_prediction_cohort_seal(
+            args.protocol,
+            args.role,
+            args.artifact_root,
+            args.output,
+        )
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 
