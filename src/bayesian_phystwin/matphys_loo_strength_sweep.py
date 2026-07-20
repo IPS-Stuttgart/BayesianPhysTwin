@@ -290,6 +290,7 @@ def _write_stability_control(
     family: str,
     case_order: list[str],
     data_root: Path,
+    official_repo: Path,
     destination: Path,
 ) -> Path:
     payload = {
@@ -298,7 +299,17 @@ def _write_stability_control(
         "family": family,
         "future_observations_used": False,
         "cases": [
-            {"name": case, "trajectory": _identity(data_root / case / "inference.pkl")}
+            {
+                "name": case,
+                "trajectory": _identity(
+                    _resolve_released_artifact(
+                        data_root / case,
+                        official_repo,
+                        case,
+                        "inference.pkl",
+                    )
+                ),
+            }
             for case in case_order
         ],
     }
@@ -466,6 +477,7 @@ def run_loo_strength_sweep(
                 family,
                 case_order,
                 data,
+                official,
                 output / "stability_controls" / f"{family}.json",
             )
 

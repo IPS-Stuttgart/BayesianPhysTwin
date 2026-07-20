@@ -11,6 +11,7 @@ from bayesian_phystwin.matphys_loo_strength_sweep import (
     _resolve_released_artifact,
     _resolve_released_checkpoint,
     _validate_replay_cache,
+    _write_stability_control,
     build_strength_external_manifest,
     strength_family_name,
 )
@@ -145,6 +146,30 @@ def test_released_artifact_accepts_compact_and_upstream_layouts(
         _resolve_released_artifact(case_data, tmp_path / "official", "case_a", filename)
         == extracted
     )
+
+
+def test_stability_control_resolves_upstream_released_trajectory(
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "data"
+    (data_root / "case_a").mkdir(parents=True)
+    official = tmp_path / "official"
+    trajectory = official / "experiments" / "case_a" / "inference.pkl"
+    trajectory.parent.mkdir(parents=True)
+    trajectory.write_bytes(b"trajectory")
+    destination = tmp_path / "control.json"
+
+    _write_stability_control(
+        "alpha_0250",
+        ["case_a"],
+        data_root,
+        official,
+        destination,
+    )
+
+    payload = json.loads(destination.read_text(encoding="utf-8"))
+    assert payload["future_observations_used"] is False
+    assert payload["cases"][0]["trajectory"] == _identity(trajectory)
 
 
 def test_replay_cache_requires_sealed_summary_and_exact_overlay(tmp_path: Path) -> None:
