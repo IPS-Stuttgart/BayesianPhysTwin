@@ -34,6 +34,27 @@ all-tie case. On the first real 32-camera case it produced the 16-center plan
 in 6.17 seconds. This is an execution-equivalent optimization, not a method,
 threshold, cohort, or information-boundary amendment.
 
+### Prediction-prefix cadence repair
+
+After the first prediction shard was sealed, decoding the second shard exposed
+a systematic media-staging defect: FFmpeg 7 had materialized 49 rather than the
+locked 58 selected source frames for every case in that shard. The source
+episodes contain the complete ranges. No prediction artifact, future target,
+particle track, or metric had been opened for an affected case.
+
+The target-free repair utility
+`scripts/remote/repair_deform360_selective_prediction_prefix_cadence.py`
+re-encodes the same locked half-open source ranges at explicit 30 Hz CFR,
+requires exactly 58 decoded frames per camera, and reseals the staged manifests.
+It then rebuilds each persistence backbone from its already-sealed frame-zero
+points and requires every scientific array in the old and new backbone archives
+to be bit-exact. The original artifacts are retained; each repaired case records
+both superseded and repaired hashes in
+`prediction_prefix_cadence_repair_seal.json`, together with explicit assertions
+that no target or future outcome was read. This fixes only prefix
+materialization and does not alter the protocol, cohort, method, thresholds, or
+information boundary.
+
 The executable lock is
 `configs/sota/deform360_selective_virtual_sensing_v1.json`. Its canonical
 checksum is
