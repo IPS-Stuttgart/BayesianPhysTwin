@@ -6,6 +6,34 @@ initial lock specified 76 frames but omitted their deterministic source window.
 The inherited target pipeline, automatic-mask provenance, comparator builders,
 and all execution hashes were likewise added before selected-object access.
 
+## Target-free operational amendment
+
+After all frame-zero backbones had been sealed, but before any sparse
+measurement, virtual-sensor prediction, future target, or metric was opened,
+the first measurement launch exposed a runtime defect in the direct camera
+planner. The frozen specification evaluates all `C(32, 8) = 10,518,300`
+subsets in Python and recomputes ray-angle scores even when the first three
+lexicographic score components already rule a subset out. No case artifact was
+written by the interrupted launches.
+
+The frozen builder and protocol remain byte-for-byte unchanged. The
+operational runner
+`scripts/remote/run_deform360_selective_measurement_prediction_accelerated.py`
+temporarily replaces only the exhaustive plan function with an exact batched
+implementation from
+`bayesian_phystwin.deform360_exact_camera_subset`. It enumerates combinations
+in the same lexicographic order, evaluates the first three integer score
+components in NumPy, and computes the unchanged median ray-angle component
+only for tied candidates. Strict-greater replacement preserves the original
+first-tie rule.
+
+The accelerator is fail-closed against the frozen raw-camera builder SHA-256.
+Tests compare it with the literal exhaustive implementation over randomized
+support and geometry, batch-boundary ties, a full observation plan, and the
+all-tie case. On the first real 32-camera case it produced the 16-center plan
+in 6.17 seconds. This is an execution-equivalent optimization, not a method,
+threshold, cohort, or information-boundary amendment.
+
 The executable lock is
 `configs/sota/deform360_selective_virtual_sensing_v1.json`. Its canonical
 checksum is
