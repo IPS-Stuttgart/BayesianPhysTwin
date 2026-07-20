@@ -1,0 +1,3949 @@
+{
+  "case_results": {
+    "double_lift_cloth_1": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0007177748336016,
+            "track_error_m": 0.9986436619742739
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.0003192815960622042,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0025951453250268,
+            "track_error_m": 0.9985298288756351
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.0005624871003309106,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0055863608229378,
+            "track_error_m": 1.0000360663560892
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.002811213589513528,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0098659256185798,
+            "track_error_m": 1.0033847056100444
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.006625315614312122,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/double_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "2f710aa2db5ac5f49d7db22bc301bd82ba8d272d107f713ef3f7caae62a7d85d"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/double_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "c7b4edfe54a911fa6df1090116a0a8760da1f49e4d0db1fa1169120ff9a44e28"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/double_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "ea399e1c15958e01fca3d594f06920efddfe50aef5dffe0b3d66aa3983870e28"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/double_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "9d6594c2fea3fae364dd7e91804670ff7562bbce995dc5055114350b1434ef88"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/double_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "c59686a5e0724047c0a4015733920b98b9cc467cafd2352a4e2a0be5d94bc107"
+        }
+      },
+      "fit_end_frame_exclusive": 60,
+      "frame_count": 116,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/double_lift_cloth_1/trajectory.pkl",
+        "sha256": "2f710aa2db5ac5f49d7db22bc301bd82ba8d272d107f713ef3f7caae62a7d85d"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.004207248634594347,
+        "frame_count": 21,
+        "frame_end_exclusive": 81,
+        "frame_start": 60,
+        "track_error_m": 0.004619091081536326
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "backbone",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_1/inference.pkl",
+            "sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0"
+          },
+          "coordinate_rmse_m": 0.00508328012040498,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_1/inference.pkl",
+            "sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0"
+          },
+          "coordinate_rmse_m": 0.00508328012040498,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_1/inference.pkl",
+            "sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0"
+          },
+          "coordinate_rmse_m": 0.00508328012040498,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_1/inference.pkl",
+            "sha256": "c7c94ff763d7ed8e237b6fee5a611f37bf4015e45965ab3cc84c10eab2a70ff0"
+          },
+          "coordinate_rmse_m": 0.00508328012040498,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 81,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.004207248634594347,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.004619091081536326
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.004210268491782963,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.004612826032658146
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.00421816705621964,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.00461230022720744
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.004230751843539004,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.004619257675320081
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004248757036682126,
+          "frame_count": 21,
+          "frame_end_exclusive": 81,
+          "frame_start": 60,
+          "track_error_m": 0.0046347253450333085
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 1.0,
+        "alpha_0250": 0.9996807184039378,
+        "alpha_0500": 1.000562487100331,
+        "alpha_0750": 1.0028112135895135,
+        "alpha_1000": 1.0066253156143121
+      }
+    },
+    "double_lift_cloth_3": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9969656742632534,
+            "track_error_m": 0.9952239812480754
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.003883670550933749,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9966291003325973,
+            "track_error_m": 0.9819173801494715
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.010545139407941662,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9959699485407264,
+            "track_error_m": 0.9761140801176279
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.01371285935330191,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9968510424329762,
+            "track_error_m": 0.9580333471449987
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.022078589772139057,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/double_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "a68230b931540608f41ffd55b34963c851921b96c50ea54562e1c42510881385"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/double_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "8fbd951e010db9cb8a32d3628022efbbacd47cbac8425b392a4302e41e39d87f"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/double_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "98e8890842ee8c599a37b611372e5ad1063f10809e45b28c4e29880d33fd7799"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/double_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "54b1121566ef4669102fdd1e872e5dfefa1435879802650f20d4634ff1b86815"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/double_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "fedc7f693b855defb273621f7dea4aa5699740d1ff169dce3ead69c65caf5717"
+        }
+      },
+      "fit_end_frame_exclusive": 61,
+      "frame_count": 118,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/double_lift_cloth_3/trajectory.pkl",
+        "sha256": "a68230b931540608f41ffd55b34963c851921b96c50ea54562e1c42510881385"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.00427119152054235,
+        "frame_count": 21,
+        "frame_end_exclusive": 82,
+        "frame_start": 61,
+        "track_error_m": 0.004333459147052819
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "last_residual",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_3/inference.pkl",
+            "sha256": "cacf8a4eac034dfedf47dc8d268aa4b4a95b4677be29b6899d4548d91a49152e"
+          },
+          "coordinate_rmse_m": 0.002034117866984685,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_3/inference.pkl",
+            "sha256": "cacf8a4eac034dfedf47dc8d268aa4b4a95b4677be29b6899d4548d91a49152e"
+          },
+          "coordinate_rmse_m": 0.002034117866984685,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_3/inference.pkl",
+            "sha256": "cacf8a4eac034dfedf47dc8d268aa4b4a95b4677be29b6899d4548d91a49152e"
+          },
+          "coordinate_rmse_m": 0.002034117866984685,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_3/inference.pkl",
+            "sha256": "cacf8a4eac034dfedf47dc8d268aa4b4a95b4677be29b6899d4548d91a49152e"
+          },
+          "coordinate_rmse_m": 0.002034117866984685,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 82,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.00404327015825151,
+          "frame_count": 21,
+          "frame_end_exclusive": 82,
+          "frame_start": 61,
+          "track_error_m": 0.003904524106713767
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.004031001559549708,
+          "frame_count": 21,
+          "frame_end_exclusive": 82,
+          "frame_start": 61,
+          "track_error_m": 0.0038858760263627604
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.004029640700219841,
+          "frame_count": 21,
+          "frame_end_exclusive": 82,
+          "frame_start": 61,
+          "track_error_m": 0.003833920081594838
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.004026975571450011,
+          "frame_count": 21,
+          "frame_end_exclusive": 82,
+          "frame_start": 61,
+          "track_error_m": 0.0038112609567220114
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004030538072091162,
+          "frame_count": 21,
+          "frame_end_exclusive": 82,
+          "frame_start": 61,
+          "track_error_m": 0.003740664298963326
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.9238276934132034,
+        "alpha_0250": 0.9202398510061575,
+        "alpha_0500": 0.914085801597244,
+        "alpha_0750": 0.9111593741867428,
+        "alpha_1000": 0.9034308807501918
+      }
+    },
+    "double_lift_sloth": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9797441654869424,
+            "track_error_m": 0.9694337647961698
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.025265460714310684,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9693799584866727,
+            "track_error_m": 0.9448423463490583
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.042542397236203566,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.962907393429129,
+            "track_error_m": 0.9257527544768678
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0551453339454655,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9578094297561577,
+            "track_error_m": 0.9106073557487511
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.06512515385441153,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/double_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "957be5cbde3763e669432d5afb42ea1956f4ed41722415fecd9363ebf0eeab26"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/double_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "34e5d15cc2c93e023d0fa494f4c7a443fd36a9e1899ed96cc2ec08bf389e3d0e"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/double_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "4069f8edff060b195f87dcc5f724571e1222ba20aa118ec1a65eb4de9496ffdd"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/double_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "36e3fa4d4b346ac6bfc9431915f4f02469815d9ab90de2de7a1794c1bc079b59"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/double_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "24b4b903efcb50b870cd8bdd3a5e7967eb74cb8182e85a5676d77a1ecc87eb2e"
+        }
+      },
+      "fit_end_frame_exclusive": 32,
+      "frame_count": 62,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/double_lift_sloth/trajectory.pkl",
+        "sha256": "24b4b903efcb50b870cd8bdd3a5e7967eb74cb8182e85a5676d77a1ecc87eb2e"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.009342808154612994,
+        "frame_count": 11,
+        "frame_end_exclusive": 43,
+        "frame_start": 32,
+        "track_error_m": 0.018228766658895976
+      },
+      "selected_family": "alpha_1000",
+      "selected_within_family_method": "last_residual",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_sloth/inference.pkl",
+            "sha256": "357f75ea596015564d85613955cfb970bef2483079952de7dea1a0ce61ed94fe"
+          },
+          "coordinate_rmse_m": 9.642574420453929e-05,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_sloth/inference.pkl",
+            "sha256": "357f75ea596015564d85613955cfb970bef2483079952de7dea1a0ce61ed94fe"
+          },
+          "coordinate_rmse_m": 9.642574420453929e-05,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_sloth/inference.pkl",
+            "sha256": "357f75ea596015564d85613955cfb970bef2483079952de7dea1a0ce61ed94fe"
+          },
+          "coordinate_rmse_m": 9.642574420453929e-05,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_sloth/inference.pkl",
+            "sha256": "357f75ea596015564d85613955cfb970bef2483079952de7dea1a0ce61ed94fe"
+          },
+          "coordinate_rmse_m": 9.642574420453929e-05,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 43,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.006472753281785749,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01193534291896456
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.006341642262466046,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.01157052442006512
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.006274557307591943,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.011277017408035094
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.006232661990874156,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.011049176582857421
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.006199664129779506,
+          "frame_count": 11,
+          "frame_end_exclusive": 43,
+          "frame_start": 32,
+          "track_error_m": 0.010868411055392898
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.6737795753350981,
+        "alpha_0250": 0.6567562239443643,
+        "alpha_0500": 0.6451153769915519,
+        "alpha_0750": 0.6366237756476102,
+        "alpha_1000": 0.6298995768274398
+      }
+    },
+    "double_lift_zebra": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9344994077156802,
+            "track_error_m": 0.9433508722107063
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.06058381626764786,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8956598390303473,
+            "track_error_m": 0.9103704246034837
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.09616878386275218,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8819128290443558,
+            "track_error_m": 0.8956329796060025
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.11046595671877524,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8723505528929134,
+            "track_error_m": 0.8626269226314475
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.13305069026763106,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/double_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "d8608cb3bfcd8d8600398d1630f8d808ad554abfc3546c24334628ef5d97a231"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/double_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "d771e4ef6bba92b3f9fb52f729685d1f1be8f1a0a9be31312db065b49d17bb54"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/double_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "8b3239959e3d6226e8ff5e25a13b47342db5a8b9a3e4149f436fe48a799734e6"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/double_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "943248da81aa7d93d3478b2eb6ef98c3c505d414aad5bf32554169415f5ea46b"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/double_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "0db08efb8487c14d91dcb778f33e04c9b5578c822ce4f5f08d58c81c348bf280"
+        }
+      },
+      "fit_end_frame_exclusive": 30,
+      "frame_count": 58,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/double_lift_zebra/trajectory.pkl",
+        "sha256": "0db08efb8487c14d91dcb778f33e04c9b5578c822ce4f5f08d58c81c348bf280"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0050542432401567815,
+        "frame_count": 10,
+        "frame_end_exclusive": 40,
+        "frame_start": 30,
+        "track_error_m": 0.00786690680036831
+      },
+      "selected_family": "alpha_1000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_zebra/inference.pkl",
+            "sha256": "7aa5f9efb411733d03c7791b4da86c0a53d2c13a4d365064f791ac35e8d35fd3"
+          },
+          "coordinate_rmse_m": 0.00017798648919620415,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_zebra/inference.pkl",
+            "sha256": "7aa5f9efb411733d03c7791b4da86c0a53d2c13a4d365064f791ac35e8d35fd3"
+          },
+          "coordinate_rmse_m": 0.00017798648919620415,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_zebra/inference.pkl",
+            "sha256": "7aa5f9efb411733d03c7791b4da86c0a53d2c13a4d365064f791ac35e8d35fd3"
+          },
+          "coordinate_rmse_m": 0.00017798648919620415,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_zebra/inference.pkl",
+            "sha256": "7aa5f9efb411733d03c7791b4da86c0a53d2c13a4d365064f791ac35e8d35fd3"
+          },
+          "coordinate_rmse_m": 0.00017798648919620415,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 40,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.003988036242825456,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.007756700690456228
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.0037268175068690553,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.0073172903618192705
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.0035719238992962393,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.007061470901092772
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.0035171003252416214,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.0069471569513052485
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.0034789656213857637,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.00669113884638148
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8875191650401121,
+        "alpha_0250": 0.8337498670113057,
+        "alpha_0500": 0.8021675262833192,
+        "alpha_0750": 0.7894785113677075,
+        "alpha_1000": 0.7694341275057736
+      }
+    },
+    "double_stretch_sloth": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9946294301376614,
+            "track_error_m": 1.0001185913031247
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.002369695472356992,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9922516512417112,
+            "track_error_m": 0.9970517315216213
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.005124188609290536,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0044063592636876,
+            "track_error_m": 0.9976939759554017
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.0007367604746577605,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.1207757063827575,
+            "track_error_m": 1.0516548302616973
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.08298795326123587,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/double_stretch_sloth/validation_selected/trajectory.pkl",
+          "sha256": "1d2beeead00f01ee7d9a3c768d158c1f457e8390c38732270229089367c5683a"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/double_stretch_sloth/validation_selected/trajectory.pkl",
+          "sha256": "3ce1acf8d3fc5e5e213c0ceeab54c40c596cfc2e0475b7511c7d13164ba59dd1"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/double_stretch_sloth/validation_selected/trajectory.pkl",
+          "sha256": "5c264a48e6198a01b2cf49edd8806e3cafb569ac4947e8441317d6bc00deb3d7"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/double_stretch_sloth/validation_selected/trajectory.pkl",
+          "sha256": "071e24ea61a339316e983419262012acebf3f4780eb9714d00bfa8e16b64152d"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/double_stretch_sloth/validation_selected/trajectory.pkl",
+          "sha256": "be07c628a0c6ab3e9eb228ceb30535fdb0bfe0e9caade6d1eaa1617b66ae6a5b"
+        }
+      },
+      "fit_end_frame_exclusive": 100,
+      "frame_count": 192,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/double_stretch_sloth/trajectory.pkl",
+        "sha256": "1d2beeead00f01ee7d9a3c768d158c1f457e8390c38732270229089367c5683a"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.006571364703553866,
+        "frame_count": 34,
+        "frame_end_exclusive": 134,
+        "frame_start": 100,
+        "track_error_m": 0.009686601727499015
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_sloth/inference.pkl",
+            "sha256": "72119ee5d7e662599ae2e01671775e6e096893f65efb08627adccdc3359430c4"
+          },
+          "coordinate_rmse_m": 6.295562233741459e-05,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_sloth/inference.pkl",
+            "sha256": "72119ee5d7e662599ae2e01671775e6e096893f65efb08627adccdc3359430c4"
+          },
+          "coordinate_rmse_m": 6.295562233741459e-05,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_sloth/inference.pkl",
+            "sha256": "72119ee5d7e662599ae2e01671775e6e096893f65efb08627adccdc3359430c4"
+          },
+          "coordinate_rmse_m": 6.295562233741459e-05,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_sloth/inference.pkl",
+            "sha256": "72119ee5d7e662599ae2e01671775e6e096893f65efb08627adccdc3359430c4"
+          },
+          "coordinate_rmse_m": 6.295562233741459e-05,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 134,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.004406562509488039,
+          "frame_count": 34,
+          "frame_end_exclusive": 134,
+          "frame_start": 100,
+          "track_error_m": 0.007833632507139724
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.004382896757678071,
+          "frame_count": 34,
+          "frame_end_exclusive": 134,
+          "frame_start": 100,
+          "track_error_m": 0.007834561507826946
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.004372418926339325,
+          "frame_count": 34,
+          "frame_end_exclusive": 134,
+          "frame_start": 100,
+          "track_error_m": 0.007810536855347721
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.00442597940702274,
+          "frame_count": 34,
+          "frame_end_exclusive": 134,
+          "frame_start": 100,
+          "track_error_m": 0.007815567962221713
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004938768209291233,
+          "frame_count": 34,
+          "frame_end_exclusive": 134,
+          "frame_start": 100,
+          "track_error_m": 0.008238277464628541
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.7396391988987145,
+        "alpha_0250": 0.7378864792379065,
+        "alpha_0500": 0.735849148140733,
+        "alpha_0750": 0.7401841358259706,
+        "alpha_1000": 0.8010203421670989
+      }
+    },
+    "double_stretch_zebra": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0020494672256701,
+            "track_error_m": 0.9883773129032857
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.0054135745603567376,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0148479537360404,
+            "track_error_m": 0.9619908356133574
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.014004476681066302,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9555552126356949,
+            "track_error_m": 0.9160440719424221
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.06601222195101886,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9008744013644319,
+            "track_error_m": 0.8854381118807509
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.10755160603144043,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/double_stretch_zebra/validation_selected/trajectory.pkl",
+          "sha256": "dbc4c59fa971651473d6c0017a7efb18d4487940721704a17e932ec58c22dfdc"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/double_stretch_zebra/validation_selected/trajectory.pkl",
+          "sha256": "8f2f51df6681743b675c1d8a637401c73e3362b50ecc759319ff4e389d565af6"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/double_stretch_zebra/validation_selected/trajectory.pkl",
+          "sha256": "0d11614cc2666472c69935528cd9c4b22b00a9c8cfe45cffc5f85a1c9a85e708"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/double_stretch_zebra/validation_selected/trajectory.pkl",
+          "sha256": "0894a18cb8cc54a1061a9d70b75a539694de6b69253af7e3c1eaf8c9d462b897"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/double_stretch_zebra/validation_selected/trajectory.pkl",
+          "sha256": "304fc12d49314d3ff3af253967c6bec383c6338e984a8eb36420eba14df4234a"
+        }
+      },
+      "fit_end_frame_exclusive": 103,
+      "frame_count": 198,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/double_stretch_zebra/trajectory.pkl",
+        "sha256": "304fc12d49314d3ff3af253967c6bec383c6338e984a8eb36420eba14df4234a"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.005919614425125244,
+        "frame_count": 35,
+        "frame_end_exclusive": 138,
+        "frame_start": 103,
+        "track_error_m": 0.008729630364712887
+      },
+      "selected_family": "alpha_1000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_zebra/inference.pkl",
+            "sha256": "511ee1fb5b7033c4e336d2801645d5c53854be12567ef9b1d494d772073ae0ab"
+          },
+          "coordinate_rmse_m": 2.566032776906997e-05,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_zebra/inference.pkl",
+            "sha256": "511ee1fb5b7033c4e336d2801645d5c53854be12567ef9b1d494d772073ae0ab"
+          },
+          "coordinate_rmse_m": 2.566032776906997e-05,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_zebra/inference.pkl",
+            "sha256": "511ee1fb5b7033c4e336d2801645d5c53854be12567ef9b1d494d772073ae0ab"
+          },
+          "coordinate_rmse_m": 2.566032776906997e-05,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_stretch_zebra/inference.pkl",
+            "sha256": "511ee1fb5b7033c4e336d2801645d5c53854be12567ef9b1d494d772073ae0ab"
+          },
+          "coordinate_rmse_m": 2.566032776906997e-05,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 138,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.004441315088719733,
+          "frame_count": 35,
+          "frame_end_exclusive": 138,
+          "frame_start": 103,
+          "track_error_m": 0.007872276914616979
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.004450417418432938,
+          "frame_count": 35,
+          "frame_end_exclusive": 138,
+          "frame_start": 103,
+          "track_error_m": 0.007780779903299698
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.004507259529684222,
+          "frame_count": 35,
+          "frame_end_exclusive": 138,
+          "frame_start": 103,
+          "track_error_m": 0.00757305824727213
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.004243921783983705,
+          "frame_count": 35,
+          "frame_end_exclusive": 138,
+          "frame_start": 103,
+          "track_error_m": 0.007211352600324065
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004001067071821208,
+          "frame_count": 35,
+          "frame_end_exclusive": 138,
+          "frame_start": 103,
+          "track_error_m": 0.006970414007480881
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8260295622854239,
+        "alpha_0250": 0.821557789660933,
+        "alpha_0500": 0.8144614505425263,
+        "alpha_0750": 0.7715015154817355,
+        "alpha_1000": 0.7371887562321788
+      }
+    },
+    "rope_double_hand": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0233737203578495,
+            "track_error_m": 1.0008217572236904
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.012097738790769919,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0546998700384524,
+            "track_error_m": 1.0045589021312038
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.029629386084828013,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9489740124878394,
+            "track_error_m": 1.093413366371302
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.02119368942957056,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9843329786356109,
+            "track_error_m": 1.089920316003995
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.037126647319802863,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/rope_double_hand/validation_selected/trajectory.pkl",
+          "sha256": "d824f2160ee3351a8840c2ac6b3daa2481e7d7ea69fc41cd789b7d87692f03c3"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/rope_double_hand/validation_selected/trajectory.pkl",
+          "sha256": "d351381f4198b0721bb5fcbaf6a75f20754fc838403416dda290792e0e3dff6d"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/rope_double_hand/validation_selected/trajectory.pkl",
+          "sha256": "8dd7a6569beba0c175796351598fd0673fa0711f92305db3aecfa2910acfb91f"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/rope_double_hand/validation_selected/trajectory.pkl",
+          "sha256": "602ba5e55f1b30b621dd60762a0c21fd64e4e732034d72a304081342c214643c"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/rope_double_hand/validation_selected/trajectory.pkl",
+          "sha256": "5bde477d4726353f16ce198d2f994edb907b81f9b7a9654a166e31af1302abbf"
+        }
+      },
+      "fit_end_frame_exclusive": 138,
+      "frame_count": 264,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/rope_double_hand/trajectory.pkl",
+        "sha256": "d824f2160ee3351a8840c2ac6b3daa2481e7d7ea69fc41cd789b7d87692f03c3"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.004694501772681131,
+        "frame_count": 46,
+        "frame_end_exclusive": 184,
+        "frame_start": 138,
+        "track_error_m": 0.008046865948791624
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "backbone",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/rope_double_hand/inference.pkl",
+            "sha256": "8c502fdb7cee89e2e96935a66966027d90cdd9a8edded3e1f9bbf0e40f3084b8"
+          },
+          "coordinate_rmse_m": 0.00016898655080200458,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/rope_double_hand/inference.pkl",
+            "sha256": "8c502fdb7cee89e2e96935a66966027d90cdd9a8edded3e1f9bbf0e40f3084b8"
+          },
+          "coordinate_rmse_m": 0.00016898655080200458,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/rope_double_hand/inference.pkl",
+            "sha256": "8c502fdb7cee89e2e96935a66966027d90cdd9a8edded3e1f9bbf0e40f3084b8"
+          },
+          "coordinate_rmse_m": 0.00016898655080200458,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/rope_double_hand/inference.pkl",
+            "sha256": "8c502fdb7cee89e2e96935a66966027d90cdd9a8edded3e1f9bbf0e40f3084b8"
+          },
+          "coordinate_rmse_m": 0.00016898655080200458,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 184,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.004694501772681131,
+          "frame_count": 46,
+          "frame_end_exclusive": 184,
+          "frame_start": 138,
+          "track_error_m": 0.008046865948791624
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.004804229744335208,
+          "frame_count": 46,
+          "frame_end_exclusive": 184,
+          "frame_start": 138,
+          "track_error_m": 0.008053478519013111
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.0049512904095420735,
+          "frame_count": 46,
+          "frame_end_exclusive": 184,
+          "frame_start": 138,
+          "track_error_m": 0.008083550823115081
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.004454960183852488,
+          "frame_count": 46,
+          "frame_end_exclusive": 184,
+          "frame_start": 138,
+          "track_error_m": 0.008798550785806849
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004620952913113373,
+          "frame_count": 46,
+          "frame_end_exclusive": 184,
+          "frame_start": 138,
+          "track_error_m": 0.008770442677748753
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 1.0,
+        "alpha_0250": 1.01209773879077,
+        "alpha_0500": 1.029629386084828,
+        "alpha_0750": 1.0211936894295706,
+        "alpha_1000": 1.0371266473198029
+      }
+    },
+    "single_clift_cloth_1": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9970122344742521,
+            "track_error_m": 0.991806940027785
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.005818778634932631,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9961001646347982,
+            "track_error_m": 0.984975611093322
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.009950166856270815,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9973883338703633,
+            "track_error_m": 0.979531876841528
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.012323290409899323,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.000810961858099,
+            "track_error_m": 0.9752974680444121
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.013065109167368916,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_clift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "f7c49e916e2ed0ac60af31c7966dcb49e412ea94c87cef46ef51826685193514"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_clift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "0f157d1db76ab956853bb26b4d17f44a33a4cc1c199026de8a0af5521dc7d64b"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_clift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "eb0728a44d038c6194b9c7d1a0f3ea03ca627840f5ed25be48ce0d9dc3ed4e5b"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_clift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "626db066bd17bcd55dc89e691fe3d8f1e8a58bd6ed934fc6a82412b7c509ac61"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_clift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "b10c1114a123b3b14ec4116e2b5ef6d147851a62edeb705038e656d05e9f56ad"
+        }
+      },
+      "fit_end_frame_exclusive": 42,
+      "frame_count": 80,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_clift_cloth_1/trajectory.pkl",
+        "sha256": "626db066bd17bcd55dc89e691fe3d8f1e8a58bd6ed934fc6a82412b7c509ac61"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0035805287611791053,
+        "frame_count": 14,
+        "frame_end_exclusive": 56,
+        "frame_start": 42,
+        "track_error_m": 0.00507627001869611
+      },
+      "selected_family": "alpha_0750",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_1/inference.pkl",
+            "sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1"
+          },
+          "coordinate_rmse_m": 0.0009681655291786512,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_1/inference.pkl",
+            "sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1"
+          },
+          "coordinate_rmse_m": 0.0009681655291786512,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_1/inference.pkl",
+            "sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1"
+          },
+          "coordinate_rmse_m": 0.0009681655291786512,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_1/inference.pkl",
+            "sha256": "7c109b33b48fc96b21f8c555646376ae3dd5cb90da54593eefa09877ae9835b1"
+          },
+          "coordinate_rmse_m": 0.0009681655291786512,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 56,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.0032210326491286,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.005445056331716008
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.003211408958822225,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.00540044465863817
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.0032084711520910586,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.005363247687769537
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.003212620387256417,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.005333606248113627
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.0032236447837507344,
+          "frame_count": 14,
+          "frame_end_exclusive": 56,
+          "frame_start": 42,
+          "track_error_m": 0.005310549653681817
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.9861229971863763,
+        "alpha_0250": 0.9803849657589325,
+        "alpha_0500": 0.976310908823566,
+        "alpha_0750": 0.9739707171121682,
+        "alpha_1000": 0.9732391925756833
+      }
+    },
+    "single_clift_cloth_3": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0147241190360434,
+            "track_error_m": 1.0436676746994484
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.02990374181849087,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0380763326788165,
+            "track_error_m": 1.0953182306372684
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.06809719219122501,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0676300911345864,
+            "track_error_m": 1.1550000199234836
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.11345177859303535,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.1044961387676386,
+            "track_error_m": 1.2250508209510682
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.16772177080413564,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_clift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "c66ccc2073d9660f2d19768f0149846565c0e03010819bf734d6bfc7a2d770f1"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_clift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "0d2864bcf1cf853752cd15de2508c34820665cd6ad60bc7ad34b4c430e960200"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_clift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "d39b6588e4c431db53393e80cb22adf65fdded07ccae0bd3715b96002d0b557d"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_clift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "47f0d3e9ae6ba3720c41d8851c39ea5bf6b32f7db9bff2d17187ecf50543b25c"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_clift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "b3da26c273468b2899f4071210ca5085b33c3c328b4b569a16f8f6873f556e09"
+        }
+      },
+      "fit_end_frame_exclusive": 50,
+      "frame_count": 97,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_clift_cloth_3/trajectory.pkl",
+        "sha256": "c66ccc2073d9660f2d19768f0149846565c0e03010819bf734d6bfc7a2d770f1"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0019399828124323532,
+        "frame_count": 17,
+        "frame_end_exclusive": 67,
+        "frame_start": 50,
+        "track_error_m": 0.007283764457218777
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_3/inference.pkl",
+            "sha256": "bdac8025fdcaf2acbe1f0d2be05c96b9801f1c0a5d27f37c1cbad6d8e136a184"
+          },
+          "coordinate_rmse_m": 0.0004099610444248244,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_3/inference.pkl",
+            "sha256": "bdac8025fdcaf2acbe1f0d2be05c96b9801f1c0a5d27f37c1cbad6d8e136a184"
+          },
+          "coordinate_rmse_m": 0.0004099610444248244,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_3/inference.pkl",
+            "sha256": "bdac8025fdcaf2acbe1f0d2be05c96b9801f1c0a5d27f37c1cbad6d8e136a184"
+          },
+          "coordinate_rmse_m": 0.0004099610444248244,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_3/inference.pkl",
+            "sha256": "bdac8025fdcaf2acbe1f0d2be05c96b9801f1c0a5d27f37c1cbad6d8e136a184"
+          },
+          "coordinate_rmse_m": 0.0004099610444248244,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 67,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.001739598214644853,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.007203198740087903
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.0017652122658321724,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.007517745679465539
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.0018058357349931455,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.007889794898921684
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.0018572474004388481,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.00831969468831434
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.0019213795110823181,
+          "frame_count": 17,
+          "frame_end_exclusive": 67,
+          "frame_start": 50,
+          "track_error_m": 0.008824284530018387
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.9428235276502143,
+        "alpha_0250": 0.9710174790014651,
+        "alpha_0500": 1.0070271626150196,
+        "alpha_0750": 1.049788533761491,
+        "alpha_1000": 1.10095555926351
+      }
+    },
+    "single_lift_cloth": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0310401661232447,
+            "track_error_m": 1.0024153272815124
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.01671481191129498,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0650953535646097,
+            "track_error_m": 0.9729751519207648
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.018993626113122053,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.1423970191906496,
+            "track_error_m": 1.051890621753281
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.0971029230769076,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.4450354089055866,
+            "track_error_m": 1.4828336804322875
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.46395162468633777,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_cloth/validation_selected/trajectory.pkl",
+          "sha256": "970038482cc9585a25bba2f5fe911fcecb9b685fb1cdbb83a3c24bf770bc2bcc"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_cloth/validation_selected/trajectory.pkl",
+          "sha256": "4368c042a6a7f79d2012d678d1de91a18f4aeef216127f37cbdae3e602cbdbd2"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_cloth/validation_selected/trajectory.pkl",
+          "sha256": "ce1c2cf36593722063676a3a59198e48c33308834b40e8b76589f9290ad8d6c7"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_cloth/validation_selected/trajectory.pkl",
+          "sha256": "72e86d9bccfd4bb8f2bfd88fcb1a9cdeb0de02374d78f9d006ed8066b393b520"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_cloth/validation_selected/trajectory.pkl",
+          "sha256": "9435b16cd16f0e870fa0d10bbaf94bf2079e68743230a611af9b5bb05e9cf555"
+        }
+      },
+      "fit_end_frame_exclusive": 90,
+      "frame_count": 173,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_cloth/trajectory.pkl",
+        "sha256": "970038482cc9585a25bba2f5fe911fcecb9b685fb1cdbb83a3c24bf770bc2bcc"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0287304906947615,
+        "frame_count": 31,
+        "frame_end_exclusive": 121,
+        "frame_start": 90,
+        "track_error_m": 0.06015169479348959
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "last_residual",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth/inference.pkl",
+            "sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949"
+          },
+          "coordinate_rmse_m": 0.024392726601161183,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth/inference.pkl",
+            "sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949"
+          },
+          "coordinate_rmse_m": 0.024392726601161183,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth/inference.pkl",
+            "sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949"
+          },
+          "coordinate_rmse_m": 0.024392726601161183,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth/inference.pkl",
+            "sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949"
+          },
+          "coordinate_rmse_m": 0.024392726601161183,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 121,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.02486840811522891,
+          "frame_count": 31,
+          "frame_end_exclusive": 121,
+          "frame_start": 90,
+          "track_error_m": 0.052160025458119354
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.025640327634346264,
+          "frame_count": 31,
+          "frame_end_exclusive": 121,
+          "frame_start": 90,
+          "track_error_m": 0.052286008990612726
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.026487225934078748,
+          "frame_count": 31,
+          "frame_end_exclusive": 121,
+          "frame_start": 90,
+          "track_error_m": 0.05075040869430464
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.028409595302854068,
+          "frame_count": 31,
+          "frame_end_exclusive": 121,
+          "frame_start": 90,
+          "track_error_m": 0.054866641609808135
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.03593573028962082,
+          "frame_count": 31,
+          "frame_end_exclusive": 121,
+          "frame_start": 90,
+          "track_error_m": 0.07734464252150493
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8663584424157594,
+        "alpha_0250": 0.8808394608285014,
+        "alpha_0500": 0.8828137307509512,
+        "alpha_0750": 0.9504843796066864,
+        "alpha_1000": 1.268306849335276
+      }
+    },
+    "single_lift_cloth_1": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9906325501147967,
+            "track_error_m": 1.1037127156847437
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.047294544381145,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.746646490719231,
+            "track_error_m": 0.9690805244440357
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.14189668676878275,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8112795816831812,
+            "track_error_m": 1.0355889795578137
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.07632389190389399,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8138419636445842,
+            "track_error_m": 1.032649757078538
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.07651824343065183,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "6eca58542dcc6af1bc12759cc401dfcea3a31dda05f5621124c871e1db390092"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "d05008c8a79c5f5ca2234095e8228752f397a70249fcc325a33a882ba8f9fde0"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "1599dff17d7035bcc3a370d94d1d5607353649bd00967f70c6d1f640d5f0fa78"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "418102bbb848ff401e9042b37ee3c85b1728825700407e039ee652c3a1491c98"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_cloth_1/validation_selected/trajectory.pkl",
+          "sha256": "d45c8c758b1d422f212fc1a7fd6c619ca67f5e986af08bf4c78c3b96d74325f9"
+        }
+      },
+      "fit_end_frame_exclusive": 57,
+      "frame_count": 110,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_cloth_1/trajectory.pkl",
+        "sha256": "6eca58542dcc6af1bc12759cc401dfcea3a31dda05f5621124c871e1db390092"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.01342519760457713,
+        "frame_count": 20,
+        "frame_end_exclusive": 77,
+        "frame_start": 57,
+        "track_error_m": 0.020684934960867506
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "last_residual",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_1/inference.pkl",
+            "sha256": "fed20f84faac0081214562f9e58e67030e90f526ebf6721bc8844296c52cf5e4"
+          },
+          "coordinate_rmse_m": 0.014630310169374435,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_1/inference.pkl",
+            "sha256": "fed20f84faac0081214562f9e58e67030e90f526ebf6721bc8844296c52cf5e4"
+          },
+          "coordinate_rmse_m": 0.014630310169374435,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_1/inference.pkl",
+            "sha256": "fed20f84faac0081214562f9e58e67030e90f526ebf6721bc8844296c52cf5e4"
+          },
+          "coordinate_rmse_m": 0.014630310169374435,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_1/inference.pkl",
+            "sha256": "fed20f84faac0081214562f9e58e67030e90f526ebf6721bc8844296c52cf5e4"
+          },
+          "coordinate_rmse_m": 0.014630310169374435,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 77,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.011156053078135353,
+          "frame_count": 20,
+          "frame_end_exclusive": 77,
+          "frame_start": 57,
+          "track_error_m": 0.01726302484060255
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.011051549310009252,
+          "frame_count": 20,
+          "frame_end_exclusive": 77,
+          "frame_start": 57,
+          "track_error_m": 0.019053420027754633
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.008329627881067236,
+          "frame_count": 20,
+          "frame_end_exclusive": 77,
+          "frame_start": 57,
+          "track_error_m": 0.016729261166021536
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.009050678074465015,
+          "frame_count": 20,
+          "frame_end_exclusive": 77,
+          "frame_start": 57,
+          "track_error_m": 0.017877398278760784
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.009079264143632883,
+          "frame_count": 20,
+          "frame_end_exclusive": 77,
+          "frame_start": 57,
+          "track_error_m": 0.017826658408088992
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8327743113573445,
+        "alpha_0250": 0.8721599929853119,
+        "alpha_0500": 0.7146063957495826,
+        "alpha_0750": 0.7692137348369668,
+        "alpha_1000": 0.7690518838781097
+      }
+    },
+    "single_lift_cloth_3": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0616135993610438,
+            "track_error_m": 0.8477596035024315
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.04073130382136403,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9353511661688435,
+            "track_error_m": 0.9363943209062459
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.06414960738380837,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9873868046086389,
+            "track_error_m": 0.9784162260244094
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.016906278590517965,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0241486991002757,
+            "track_error_m": 0.9128486841059933
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.02911656355266734,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "f26fb88b16f853856c5adef848ffe550cbe428166188d7b8fb14e02f72a35c46"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "18796fea61b05c1eb15570060b236d671a8fc95ea8373683b1b13cd138e3e735"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "4c2047fd77d710fc7fdd9562ece507943075eff79cfc4e87b703856cad258c9c"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "ccb4779546b838ea39652d906707a6b95b6bccbfdf886d26e53570ed68c94d8e"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_cloth_3/validation_selected/trajectory.pkl",
+          "sha256": "ebf24e63965fb80b1de704cc4fcd8997bdf4fe0537424b0eee62dae7c245d415"
+        }
+      },
+      "fit_end_frame_exclusive": 81,
+      "frame_count": 156,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_cloth_3/trajectory.pkl",
+        "sha256": "f26fb88b16f853856c5adef848ffe550cbe428166188d7b8fb14e02f72a35c46"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.00853495287855611,
+        "frame_count": 28,
+        "frame_end_exclusive": 109,
+        "frame_start": 81,
+        "track_error_m": 0.018947875223687592
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_3/inference.pkl",
+            "sha256": "3f65c658406b2b49da226dfa319fbc0f74fa6f7faa9f22711dd5a3c73ccd8edf"
+          },
+          "coordinate_rmse_m": 0.01705929340753114,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_3/inference.pkl",
+            "sha256": "3f65c658406b2b49da226dfa319fbc0f74fa6f7faa9f22711dd5a3c73ccd8edf"
+          },
+          "coordinate_rmse_m": 0.01705929340753114,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_3/inference.pkl",
+            "sha256": "3f65c658406b2b49da226dfa319fbc0f74fa6f7faa9f22711dd5a3c73ccd8edf"
+          },
+          "coordinate_rmse_m": 0.01705929340753114,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_3/inference.pkl",
+            "sha256": "3f65c658406b2b49da226dfa319fbc0f74fa6f7faa9f22711dd5a3c73ccd8edf"
+          },
+          "coordinate_rmse_m": 0.01705929340753114,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 109,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.006887438764454562,
+          "frame_count": 28,
+          "frame_end_exclusive": 109,
+          "frame_start": 81,
+          "track_error_m": 0.014033728698254519
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.007311798657111388,
+          "frame_count": 28,
+          "frame_end_exclusive": 109,
+          "frame_start": 81,
+          "track_error_m": 0.011897228276892945
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.006442173880249073,
+          "frame_count": 28,
+          "frame_end_exclusive": 109,
+          "frame_start": 81,
+          "track_error_m": 0.013141103854184533
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.006800566153572462,
+          "frame_count": 28,
+          "frame_end_exclusive": 109,
+          "frame_start": 81,
+          "track_error_m": 0.013730827869996633
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.007053761450748951,
+          "frame_count": 28,
+          "frame_end_exclusive": 109,
+          "frame_start": 81,
+          "track_error_m": 0.012810670775302152
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.7738088895412953,
+        "alpha_0250": 0.7422906445617166,
+        "alpha_0500": 0.7241693530871205,
+        "alpha_0750": 0.7607266608788908,
+        "alpha_1000": 0.7512782338313473
+      }
+    },
+    "single_lift_cloth_4": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9681747275741444,
+            "track_error_m": 0.9510857207553559
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.040822208683534145,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9021644353573389,
+            "track_error_m": 0.8919051304030314
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.10323683305461528,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0870027792722385,
+            "track_error_m": 0.8794377378059702
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.022275042850300797,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0676998141529397,
+            "track_error_m": 0.8677361838495112
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.03757605440812728,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_cloth_4/validation_selected/trajectory.pkl",
+          "sha256": "e03cd732becc9638c198b7b03ffbcc43e659fbc12d82102dd5ea6fa10ee85477"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_cloth_4/validation_selected/trajectory.pkl",
+          "sha256": "06d31dc3716f5b4b519289e23fb010c77ebc18a691a6ed204f23d902dc071393"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_cloth_4/validation_selected/trajectory.pkl",
+          "sha256": "e10d624761d0008749106d68803be43358a6bd8226317e2b349e0de9cb00c25d"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_cloth_4/validation_selected/trajectory.pkl",
+          "sha256": "96f975b593b095f70ee5f27083235db65d66bc5861d0da2debf5bec026c2bd73"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_cloth_4/validation_selected/trajectory.pkl",
+          "sha256": "23e5fce340408a82d328428989350806494efd6d71a82b32a42f12b839d0a691"
+        }
+      },
+      "fit_end_frame_exclusive": 90,
+      "frame_count": 172,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_cloth_4/trajectory.pkl",
+        "sha256": "e03cd732becc9638c198b7b03ffbcc43e659fbc12d82102dd5ea6fa10ee85477"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.013565080778575217,
+        "frame_count": 30,
+        "frame_end_exclusive": 120,
+        "frame_start": 90,
+        "track_error_m": 0.0334122676028343
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_4/inference.pkl",
+            "sha256": "09a64e256cfda0526288eadb130208b0a2bba511261194d6cf3655ff1d71fc11"
+          },
+          "coordinate_rmse_m": 0.02343153044006968,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_4/inference.pkl",
+            "sha256": "09a64e256cfda0526288eadb130208b0a2bba511261194d6cf3655ff1d71fc11"
+          },
+          "coordinate_rmse_m": 0.02343153044006968,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_4/inference.pkl",
+            "sha256": "09a64e256cfda0526288eadb130208b0a2bba511261194d6cf3655ff1d71fc11"
+          },
+          "coordinate_rmse_m": 0.02343153044006968,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_cloth_4/inference.pkl",
+            "sha256": "09a64e256cfda0526288eadb130208b0a2bba511261194d6cf3655ff1d71fc11"
+          },
+          "coordinate_rmse_m": 0.02343153044006968,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 120,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.011293737796098909,
+          "frame_count": 30,
+          "frame_end_exclusive": 120,
+          "frame_start": 90,
+          "track_error_m": 0.030928314284779115
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.010934311514031878,
+          "frame_count": 30,
+          "frame_end_exclusive": 120,
+          "frame_start": 90,
+          "track_error_m": 0.029415478083287316
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.010188808581891409,
+          "frame_count": 30,
+          "frame_end_exclusive": 120,
+          "frame_start": 90,
+          "track_error_m": 0.027585122185311856
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.01227632437273144,
+          "frame_count": 30,
+          "frame_end_exclusive": 120,
+          "frame_start": 90,
+          "track_error_m": 0.02719952674875822
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.012058321745986835,
+          "frame_count": 30,
+          "frame_end_exclusive": 120,
+          "frame_start": 90,
+          "track_error_m": 0.026837617410372556
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.879108506975471,
+        "alpha_0250": 0.8432213560482482,
+        "alpha_0500": 0.7883521288039522,
+        "alpha_0750": 0.8595263273125284,
+        "alpha_1000": 0.8460750778867132
+      }
+    },
+    "single_lift_dinosor": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9988461736952705,
+            "track_error_m": 1.0172429071623197
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.008044540428794988,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.974142550586292,
+            "track_error_m": 1.0318758831161794
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.0030092168512356743,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9235330525762311,
+            "track_error_m": 1.0024289824150543
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.03701898250435731,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9124474510572419,
+            "track_error_m": 0.9937268849657427
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.04691283198850771,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_dinosor/validation_selected/trajectory.pkl",
+          "sha256": "1e6cff556115458a9ca5848d427010cefb6c2e478b555081fe21f7fdacc28acf"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_dinosor/validation_selected/trajectory.pkl",
+          "sha256": "778210105f61db812c2e879136906bc453ebd733ce14fad488f23adcd5678dad"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_dinosor/validation_selected/trajectory.pkl",
+          "sha256": "e184397c2aefb750c5fa3e5d3f3cfb3550ec71388983b9fb4029c94895ae3e32"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_dinosor/validation_selected/trajectory.pkl",
+          "sha256": "400e899cdd4130f87c0ffef8343e90ad8231fc2803a05b72b0f1c37ba6aee912"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_dinosor/validation_selected/trajectory.pkl",
+          "sha256": "54ded65b0a46be86b0f4ca96e0a12e74e50121fd4c197662a48c226d56b91ca6"
+        }
+      },
+      "fit_end_frame_exclusive": 45,
+      "frame_count": 86,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_dinosor/trajectory.pkl",
+        "sha256": "54ded65b0a46be86b0f4ca96e0a12e74e50121fd4c197662a48c226d56b91ca6"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0059159773093940046,
+        "frame_count": 15,
+        "frame_end_exclusive": 60,
+        "frame_start": 45,
+        "track_error_m": 0.007768272264462197
+      },
+      "selected_family": "alpha_1000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_dinosor/inference.pkl",
+            "sha256": "4e0c85e885871b48f7664d43310632261e1c486fb345c0e936754c6039a2bb5d"
+          },
+          "coordinate_rmse_m": 0.00019262407669214503,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_dinosor/inference.pkl",
+            "sha256": "4e0c85e885871b48f7664d43310632261e1c486fb345c0e936754c6039a2bb5d"
+          },
+          "coordinate_rmse_m": 0.00019262407669214503,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_dinosor/inference.pkl",
+            "sha256": "4e0c85e885871b48f7664d43310632261e1c486fb345c0e936754c6039a2bb5d"
+          },
+          "coordinate_rmse_m": 0.00019262407669214503,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_dinosor/inference.pkl",
+            "sha256": "4e0c85e885871b48f7664d43310632261e1c486fb345c0e936754c6039a2bb5d"
+          },
+          "coordinate_rmse_m": 0.00019262407669214503,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 60,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.0059159773093940046,
+          "frame_count": 15,
+          "frame_end_exclusive": 60,
+          "frame_start": 45,
+          "track_error_m": 0.007768272264462197
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.005909151299156243,
+          "frame_count": 15,
+          "frame_end_exclusive": 60,
+          "frame_start": 45,
+          "track_error_m": 0.007902219861929941
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.005763005225383705,
+          "frame_count": 15,
+          "frame_end_exclusive": 60,
+          "frame_start": 45,
+          "track_error_m": 0.008015892803178852
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.005463600583516364,
+          "frame_count": 15,
+          "frame_end_exclusive": 60,
+          "frame_start": 45,
+          "track_error_m": 0.00778714126118793
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.00539801841646904,
+          "frame_count": 15,
+          "frame_end_exclusive": 60,
+          "frame_start": 45,
+          "track_error_m": 0.007719540998929794
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 1.0,
+        "alpha_0250": 1.008044540428795,
+        "alpha_0500": 1.0030092168512357,
+        "alpha_0750": 0.9629810174956427,
+        "alpha_1000": 0.9530871680114923
+      }
+    },
+    "single_lift_rope": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9822341880297424,
+            "track_error_m": 1.0040778558942842
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.006691995551822538,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9301828943887596,
+            "track_error_m": 1.0244086579636822
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.022048625785133336,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.92662136928247,
+            "track_error_m": 1.009357836566232
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.03143473853367729,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.93015861642415,
+            "track_error_m": 1.0075101155732695
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.03062744264889916,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_rope/validation_selected/trajectory.pkl",
+          "sha256": "0decb682d5253f4df6997f4aea6b6881046e2e821dadf82f47dafc730743d627"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_rope/validation_selected/trajectory.pkl",
+          "sha256": "cde6cb5be3f33e9fcf4e960c479bd02853795fa08d97771bc1ff35808ed98fbd"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_rope/validation_selected/trajectory.pkl",
+          "sha256": "413fffb9860ec03c664a19556158a2e7a1cd643f927a4d23110176898f283b48"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_rope/validation_selected/trajectory.pkl",
+          "sha256": "2723120d2d8484cfc684fabc43e9b697b6ae0ed9a7edd28ebe3881a67677c168"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_rope/validation_selected/trajectory.pkl",
+          "sha256": "257e443546ddf596faa98246249dea316045307f71b98a724c7e9e51bb7af4ec"
+        }
+      },
+      "fit_end_frame_exclusive": 26,
+      "frame_count": 50,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_rope/trajectory.pkl",
+        "sha256": "0decb682d5253f4df6997f4aea6b6881046e2e821dadf82f47dafc730743d627"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.004543439195673629,
+        "frame_count": 9,
+        "frame_end_exclusive": 35,
+        "frame_start": 26,
+        "track_error_m": 0.007260907052524492
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_rope/inference.pkl",
+            "sha256": "a2214d4273474c98b29fb92196113917461d29074fdb652e01902dc6f335262d"
+          },
+          "coordinate_rmse_m": 6.007691163032014e-05,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_rope/inference.pkl",
+            "sha256": "a2214d4273474c98b29fb92196113917461d29074fdb652e01902dc6f335262d"
+          },
+          "coordinate_rmse_m": 6.007691163032014e-05,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_rope/inference.pkl",
+            "sha256": "a2214d4273474c98b29fb92196113917461d29074fdb652e01902dc6f335262d"
+          },
+          "coordinate_rmse_m": 6.007691163032014e-05,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_rope/inference.pkl",
+            "sha256": "a2214d4273474c98b29fb92196113917461d29074fdb652e01902dc6f335262d"
+          },
+          "coordinate_rmse_m": 6.007691163032014e-05,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 35,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.004287541592753577,
+          "frame_count": 9,
+          "frame_end_exclusive": 35,
+          "frame_start": 26,
+          "track_error_m": 0.0070453424858685
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.004211369935002058,
+          "frame_count": 9,
+          "frame_end_exclusive": 35,
+          "frame_start": 26,
+          "track_error_m": 0.0070740723772517505
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.003988197848559714,
+          "frame_count": 9,
+          "frame_end_exclusive": 35,
+          "frame_start": 26,
+          "track_error_m": 0.0072173098408430635
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.003972927661532862,
+          "frame_count": 9,
+          "frame_end_exclusive": 35,
+          "frame_start": 26,
+          "track_error_m": 0.007111271649404388
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.003988093755776663,
+          "frame_count": 9,
+          "frame_end_exclusive": 35,
+          "frame_start": 26,
+          "track_error_m": 0.007098253822190638
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.9569945877151376,
+        "alpha_0250": 0.9505903841910296,
+        "alpha_0500": 0.9358941721722085,
+        "alpha_0750": 0.9269117130721679,
+        "alpha_1000": 0.9276842908645853
+      }
+    },
+    "single_lift_sloth": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9665697086439442,
+            "track_error_m": 0.9730441822406838
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.030134374202881453,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9491468176951425,
+            "track_error_m": 0.9589468626995864
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.04586433866384021,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9266869427653396,
+            "track_error_m": 0.9461993797514084
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0633799908931737,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8843226389905114,
+            "track_error_m": 0.9572001440555954
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.07857809487833523,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "1bed77f9f9f34005e72c81960128d28ccdac890d4256e4f01a51e8a28e3b79e4"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "d22eab0a468a295543f608d959085cc7986eb0e802b1c5d8fef3904f83d87d20"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "0ae1f45261e294e54137adc0420e76c08456eef5b85ba846c4cff04978910a46"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "441433bb75d279a21789207caedf88e1778bc4b1a0f9a06b82e5b725f9e58c56"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_sloth/validation_selected/trajectory.pkl",
+          "sha256": "18a20baea768823ac88c3d5917830b5c7110855b9301de0f9ff2620b0c445f39"
+        }
+      },
+      "fit_end_frame_exclusive": 44,
+      "frame_count": 85,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_sloth/trajectory.pkl",
+        "sha256": "18a20baea768823ac88c3d5917830b5c7110855b9301de0f9ff2620b0c445f39"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0067986865814344925,
+        "frame_count": 15,
+        "frame_end_exclusive": 59,
+        "frame_start": 44,
+        "track_error_m": 0.009157422495625782
+      },
+      "selected_family": "alpha_1000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_sloth/inference.pkl",
+            "sha256": "001d0c5ff883ebb92180d97f708abdf1c918e1b98e439faa9bf977871c780666"
+          },
+          "coordinate_rmse_m": 1.2225412226557533e-05,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_sloth/inference.pkl",
+            "sha256": "001d0c5ff883ebb92180d97f708abdf1c918e1b98e439faa9bf977871c780666"
+          },
+          "coordinate_rmse_m": 1.2225412226557533e-05,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_sloth/inference.pkl",
+            "sha256": "001d0c5ff883ebb92180d97f708abdf1c918e1b98e439faa9bf977871c780666"
+          },
+          "coordinate_rmse_m": 1.2225412226557533e-05,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_sloth/inference.pkl",
+            "sha256": "001d0c5ff883ebb92180d97f708abdf1c918e1b98e439faa9bf977871c780666"
+          },
+          "coordinate_rmse_m": 1.2225412226557533e-05,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 59,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.005749206074814875,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00802975816242499
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.005557008440667808,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00781330946474728
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.00545684065018412,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.00770011139809384
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.005327714200798115,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.007597752192840334
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.005084153088180571,
+          "frame_count": 15,
+          "frame_end_exclusive": 59,
+          "frame_start": 44,
+          "track_error_m": 0.007686085669804793
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8612463526192802,
+        "alpha_0250": 0.835293232748584,
+        "alpha_0500": 0.8217458582297523,
+        "alpha_0750": 0.8066605666334912,
+        "alpha_1000": 0.7935712550095422
+      }
+    },
+    "single_lift_zebra": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9811816599829002,
+            "track_error_m": 0.9761596265134689
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.021382705970724114,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9908246636602845,
+            "track_error_m": 0.9897653062293784
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.009716268642351533,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0075775388973416,
+            "track_error_m": 1.0121382054709835
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.009906320288080472,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0135726305187645,
+            "track_error_m": 1.0253401948159848
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.019581419871634864,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "4dcd5ca1a09f952fdbac512856cdb121ef046162ad8cf217649efa6f0ab8074b"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "3a5b1ff7f7dd53e008c5e94481d2053c8903a46058d2f7f613f9f640823c44d7"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "6740ec8dc37147ce9e33e2fe3c3354b779e18cf2370a8b5835b70cce2ceefd8c"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "9ff4c8812e421c45b09aa056cba5734dbfb0479b40416cb28d0eb4c6abfbf3c2"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_lift_zebra/validation_selected/trajectory.pkl",
+          "sha256": "a8069702396532cf580240c9c6156061d17aad2cacaa4a4e21f001eb1d8b98a7"
+        }
+      },
+      "fit_end_frame_exclusive": 34,
+      "frame_count": 66,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_lift_zebra/trajectory.pkl",
+        "sha256": "3a5b1ff7f7dd53e008c5e94481d2053c8903a46058d2f7f613f9f640823c44d7"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0045090489342389075,
+        "frame_count": 12,
+        "frame_end_exclusive": 46,
+        "frame_start": 34,
+        "track_error_m": 0.008398312542556255
+      },
+      "selected_family": "alpha_0250",
+      "selected_within_family_method": "last_residual",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_zebra/inference.pkl",
+            "sha256": "49eb18a3e8a3d36022fd564e5218ee30cc26786658eb438d4f3ac197ce2aa77b"
+          },
+          "coordinate_rmse_m": 0.00011469387581065148,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_zebra/inference.pkl",
+            "sha256": "49eb18a3e8a3d36022fd564e5218ee30cc26786658eb438d4f3ac197ce2aa77b"
+          },
+          "coordinate_rmse_m": 0.00011469387581065148,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_zebra/inference.pkl",
+            "sha256": "49eb18a3e8a3d36022fd564e5218ee30cc26786658eb438d4f3ac197ce2aa77b"
+          },
+          "coordinate_rmse_m": 0.00011469387581065148,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_lift_zebra/inference.pkl",
+            "sha256": "49eb18a3e8a3d36022fd564e5218ee30cc26786658eb438d4f3ac197ce2aa77b"
+          },
+          "coordinate_rmse_m": 0.00011469387581065148,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 46,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.003757888901810988,
+          "frame_count": 12,
+          "frame_end_exclusive": 46,
+          "frame_start": 34,
+          "track_error_m": 0.007303110870447661
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.003687171670710223,
+          "frame_count": 12,
+          "frame_end_exclusive": 46,
+          "frame_start": 34,
+          "track_error_m": 0.007129001979682643
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.003723409007209588,
+          "frame_count": 12,
+          "frame_end_exclusive": 46,
+          "frame_start": 34,
+          "track_error_m": 0.007228365767115732
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.0037863644511363487,
+          "frame_count": 12,
+          "frame_end_exclusive": 46,
+          "frame_start": 34,
+          "track_error_m": 0.007391757530770528
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.003808893339405834,
+          "frame_count": 12,
+          "frame_end_exclusive": 46,
+          "frame_start": 34,
+          "track_error_m": 0.007488173122667541
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8515015950628484,
+        "alpha_0250": 0.833294186822017,
+        "alpha_0500": 0.843228176815827,
+        "alpha_0750": 0.8599368425893524,
+        "alpha_1000": 0.8681752053171408
+      }
+    },
+    "single_push_rope": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9060184570952394,
+            "track_error_m": 0.9225783439557164
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.08554107203640426,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8990243126201081,
+            "track_error_m": 0.8402058014027282
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.13095511505552815,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9971358189038891,
+            "track_error_m": 0.8114129532325892
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.09752596535187141,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.1545870092550559,
+            "track_error_m": 0.8268034489215571
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": 0.012482223489771571,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_push_rope/validation_selected/trajectory.pkl",
+          "sha256": "3c7a57fd2d434c14e277a39db9643700cb9b5b497348ae6db30029d2b8752f82"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_push_rope/validation_selected/trajectory.pkl",
+          "sha256": "b046990e5c5d2376e064ae20adc1ba412b6a18cabbda02047254f8e55cc77056"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_push_rope/validation_selected/trajectory.pkl",
+          "sha256": "fc81c056575cdec098b642fe5e5e5943d888de09c2d202492c012e001ff6a4a4"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_push_rope/validation_selected/trajectory.pkl",
+          "sha256": "8022bb2a05eb027a65549ba03635ec0a6650d92fccf82f103505d30f7ce4ea42"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_push_rope/validation_selected/trajectory.pkl",
+          "sha256": "bbe5a11969f7f3d9bb14dec7880cb237095770461185ebfe61737983ca4d168e"
+        }
+      },
+      "fit_end_frame_exclusive": 30,
+      "frame_count": 58,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_push_rope/trajectory.pkl",
+        "sha256": "fc81c056575cdec098b642fe5e5e5943d888de09c2d202492c012e001ff6a4a4"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.004403815415515072,
+        "frame_count": 10,
+        "frame_end_exclusive": 40,
+        "frame_start": 30,
+        "track_error_m": 0.008693297186172053
+      },
+      "selected_family": "alpha_0500",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope/inference.pkl",
+            "sha256": "2dda0ae3a9dcc72c3875b55ffa742f7db3510448578b946aba0f75ddc32a090f"
+          },
+          "coordinate_rmse_m": 0.0003868573049386661,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope/inference.pkl",
+            "sha256": "2dda0ae3a9dcc72c3875b55ffa742f7db3510448578b946aba0f75ddc32a090f"
+          },
+          "coordinate_rmse_m": 0.0003868573049386661,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope/inference.pkl",
+            "sha256": "2dda0ae3a9dcc72c3875b55ffa742f7db3510448578b946aba0f75ddc32a090f"
+          },
+          "coordinate_rmse_m": 0.0003868573049386661,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope/inference.pkl",
+            "sha256": "2dda0ae3a9dcc72c3875b55ffa742f7db3510448578b946aba0f75ddc32a090f"
+          },
+          "coordinate_rmse_m": 0.0003868573049386661,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 40,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.0037575737434130895,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.007710895441485957
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.0034044311654287105,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.007113905146821796
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.003378150151791319,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.0064787390839463515
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.0037468113717299633,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.0062567204422438304
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004338445830462644,
+          "frame_count": 10,
+          "frame_end_exclusive": 40,
+          "frame_start": 30,
+          "track_error_m": 0.006375394945294102
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8701236681718121,
+        "alpha_0250": 0.7956923567921468,
+        "alpha_0500": 0.7561765230938342,
+        "alpha_0750": 0.7852640174578447,
+        "alpha_1000": 0.8592625900819517
+      }
+    },
+    "single_push_rope_1": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.9589256029849194,
+            "track_error_m": 1.1290594664337252
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.043992534709322406,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0311128064029138,
+            "track_error_m": 1.2215752203595394
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.12634401338122658,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.1450037058376406,
+            "track_error_m": 1.3819922470274113
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.26349797643252604,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.34237523938175,
+            "track_error_m": 1.5927699345238089
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.46757258695277937,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_push_rope_1/validation_selected/trajectory.pkl",
+          "sha256": "a645f7e7a5ab558d30ff44d81b72775bdf235be112bdcf7d953f8ebf9eaea186"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_push_rope_1/validation_selected/trajectory.pkl",
+          "sha256": "1f19370dae167ae96dc947163a9dfc682f47853f973cee1b6e5b9b2518164ade"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_push_rope_1/validation_selected/trajectory.pkl",
+          "sha256": "6890f678ea9370a6956cf13cf0db6c95851cdbea4a0bf40f453233aa85e7e734"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_push_rope_1/validation_selected/trajectory.pkl",
+          "sha256": "bdca043ae240a3cab5192ed87e216e1bc6bd75488eca3d0aaaffe7e9b577568b"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_push_rope_1/validation_selected/trajectory.pkl",
+          "sha256": "3727caeefe0c8cf7e925b9aea3571c1ad2b3b1bd3fe22a9cdb6c362241854e38"
+        }
+      },
+      "fit_end_frame_exclusive": 48,
+      "frame_count": 92,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_push_rope_1/trajectory.pkl",
+        "sha256": "a645f7e7a5ab558d30ff44d81b72775bdf235be112bdcf7d953f8ebf9eaea186"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.0035592584675381445,
+        "frame_count": 16,
+        "frame_end_exclusive": 64,
+        "frame_start": 48,
+        "track_error_m": 0.004541895341020867
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "backbone",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_1/inference.pkl",
+            "sha256": "81c9d519d0dc88bde79ec78f380475a598cc23320b9116f0b109e2dcf09a57c0"
+          },
+          "coordinate_rmse_m": 4.689516238220702e-05,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_1/inference.pkl",
+            "sha256": "81c9d519d0dc88bde79ec78f380475a598cc23320b9116f0b109e2dcf09a57c0"
+          },
+          "coordinate_rmse_m": 4.689516238220702e-05,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_1/inference.pkl",
+            "sha256": "81c9d519d0dc88bde79ec78f380475a598cc23320b9116f0b109e2dcf09a57c0"
+          },
+          "coordinate_rmse_m": 4.689516238220702e-05,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_1/inference.pkl",
+            "sha256": "81c9d519d0dc88bde79ec78f380475a598cc23320b9116f0b109e2dcf09a57c0"
+          },
+          "coordinate_rmse_m": 4.689516238220702e-05,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 64,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.0035592584675381445,
+          "frame_count": 16,
+          "frame_end_exclusive": 64,
+          "frame_start": 48,
+          "track_error_m": 0.004541895341020867
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.003413064072163195,
+          "frame_count": 16,
+          "frame_end_exclusive": 64,
+          "frame_start": 48,
+          "track_error_m": 0.005128069930330843
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.0036699969871765905,
+          "frame_count": 16,
+          "frame_end_exclusive": 64,
+          "frame_start": 48,
+          "track_error_m": 0.00554826680205753
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.004075364135365177,
+          "frame_count": 16,
+          "frame_end_exclusive": 64,
+          "frame_start": 48,
+          "track_error_m": 0.006276864148100758
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.004777860437383038,
+          "frame_count": 16,
+          "frame_end_exclusive": 64,
+          "frame_start": 48,
+          "track_error_m": 0.007234194344931799
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 1.0,
+        "alpha_0250": 1.0439925347093224,
+        "alpha_0500": 1.1263440133812266,
+        "alpha_0750": 1.263497976432526,
+        "alpha_1000": 1.4675725869527794
+      }
+    },
+    "single_push_rope_4": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.000532129163009,
+            "track_error_m": 1.004502009033523
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.0028167739050670715,
+          "stability_eligible": true
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0143978269271967,
+            "track_error_m": 1.0145672467730285
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.014495327147002746,
+          "stability_eligible": true
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0433841927615424,
+            "track_error_m": 1.0305278795761013
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.035985452930765716,
+          "stability_eligible": true
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.1382020688060568,
+            "track_error_m": 1.0729615185215424
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.10065647925722376,
+          "stability_eligible": true
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_push_rope_4/validation_selected/trajectory.pkl",
+          "sha256": "923ae43aa613cf1b274620eeb2bc3c06d4a7098ef255df31d345483a6ce96302"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_push_rope_4/validation_selected/trajectory.pkl",
+          "sha256": "ff5713af12f0681faf4001ee66f4a8846bd3366b32099fe4207743f2cf4f7add"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_push_rope_4/validation_selected/trajectory.pkl",
+          "sha256": "d59bb781cb0b0d66a51aef141c8f79add831dab29d84e40b137354b64124e226"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_push_rope_4/validation_selected/trajectory.pkl",
+          "sha256": "e2f2ced72ef564d9eb3e760f2e3112016f817b1cede0ccac3803b613f9710ecf"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_push_rope_4/validation_selected/trajectory.pkl",
+          "sha256": "3bb55e56cbd2c210d2a8eb75a5dae9b07dd0edfcf9bc8cc27d5e2b4a467fd40a"
+        }
+      },
+      "fit_end_frame_exclusive": 43,
+      "frame_count": 83,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_push_rope_4/trajectory.pkl",
+        "sha256": "923ae43aa613cf1b274620eeb2bc3c06d4a7098ef255df31d345483a6ce96302"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.003917925537051649,
+        "frame_count": 15,
+        "frame_end_exclusive": 58,
+        "frame_start": 43,
+        "track_error_m": 0.008860316656712264
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_4/inference.pkl",
+            "sha256": "c885fce3e01815fa9a33ed71638d75109b98aa9110b69a11166f0978c2a87a05"
+          },
+          "coordinate_rmse_m": 0.00010061187407034992,
+          "eligible": true
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_4/inference.pkl",
+            "sha256": "c885fce3e01815fa9a33ed71638d75109b98aa9110b69a11166f0978c2a87a05"
+          },
+          "coordinate_rmse_m": 0.00010061187407034992,
+          "eligible": true
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_4/inference.pkl",
+            "sha256": "c885fce3e01815fa9a33ed71638d75109b98aa9110b69a11166f0978c2a87a05"
+          },
+          "coordinate_rmse_m": 0.00010061187407034992,
+          "eligible": true
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_rope_4/inference.pkl",
+            "sha256": "c885fce3e01815fa9a33ed71638d75109b98aa9110b69a11166f0978c2a87a05"
+          },
+          "coordinate_rmse_m": 0.00010061187407034992,
+          "eligible": true
+        }
+      },
+      "train_end_frame_exclusive": 58,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.0027928249105497256,
+          "frame_count": 15,
+          "frame_end_exclusive": 58,
+          "frame_start": 43,
+          "track_error_m": 0.008562388901462175
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.002794311054131807,
+          "frame_count": 15,
+          "frame_end_exclusive": 58,
+          "frame_start": 43,
+          "track_error_m": 0.008600936853645096
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.002833035520249784,
+          "frame_count": 15,
+          "frame_end_exclusive": 58,
+          "frame_start": 43,
+          "track_error_m": 0.008687119333556413
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.0029139893648182525,
+          "frame_count": 15,
+          "frame_end_exclusive": 58,
+          "frame_start": 43,
+          "track_error_m": 0.008823780478729757
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.0031787990910007884,
+          "frame_count": 15,
+          "frame_end_exclusive": 58,
+          "frame_start": 43,
+          "track_error_m": 0.009187113797884856
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8396038047029015,
+        "alpha_0250": 0.8419687787905837,
+        "alpha_0500": 0.8517741365259384,
+        "alpha_0750": 0.8698173278975296,
+        "alpha_1000": 0.9241153676552653
+      }
+    },
+    "single_push_sloth": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0659764557237055,
+            "track_error_m": 1.1358237519660397
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.09895512432079623,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.2098705648764643,
+            "track_error_m": 1.3778541923207894
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.2891846783391103,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.6395228531725552,
+            "track_error_m": 2.079390349048101
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.8472079770574159,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.9548088819115361,
+            "track_error_m": 2.5645994365158713
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -1.242723829172498,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/single_push_sloth/validation_selected/trajectory.pkl",
+          "sha256": "4bcfeb7c49dcf6f050d13bcec556576efe4c3ef6c7b3806a6229df56a3625d38"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/single_push_sloth/validation_selected/trajectory.pkl",
+          "sha256": "1e919b359ceafad405cb856f3b94002e2cdc128c403b92fde10ff719c68c04e0"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/single_push_sloth/validation_selected/trajectory.pkl",
+          "sha256": "f3041ff70753dcf44e9aaa98fcf97d819b3f8f1d86b8d29708006ec3f3aba92b"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/single_push_sloth/validation_selected/trajectory.pkl",
+          "sha256": "74b0c04c66a1c3b33733a68496cb3918d047827bb84bae21d9906ea923310545"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/single_push_sloth/validation_selected/trajectory.pkl",
+          "sha256": "d7f17dc916d0c1309ae6c477d68301c6a8ca5f621ecb90270cef0b6a9c21310b"
+        }
+      },
+      "fit_end_frame_exclusive": 35,
+      "frame_count": 68,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/single_push_sloth/trajectory.pkl",
+        "sha256": "4bcfeb7c49dcf6f050d13bcec556576efe4c3ef6c7b3806a6229df56a3625d38"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.009920710479232516,
+        "frame_count": 12,
+        "frame_end_exclusive": 47,
+        "frame_start": 35,
+        "track_error_m": 0.0158024804144233
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_sloth/inference.pkl",
+            "sha256": "62be23ac95fe42ca5a303eae34d3bdc631cebeafcef082cfe37a6d2dba2d1e7b"
+          },
+          "coordinate_rmse_m": 0.005251839813590631,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_sloth/inference.pkl",
+            "sha256": "62be23ac95fe42ca5a303eae34d3bdc631cebeafcef082cfe37a6d2dba2d1e7b"
+          },
+          "coordinate_rmse_m": 0.005251839813590631,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_sloth/inference.pkl",
+            "sha256": "62be23ac95fe42ca5a303eae34d3bdc631cebeafcef082cfe37a6d2dba2d1e7b"
+          },
+          "coordinate_rmse_m": 0.005251839813590631,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_sloth/inference.pkl",
+            "sha256": "62be23ac95fe42ca5a303eae34d3bdc631cebeafcef082cfe37a6d2dba2d1e7b"
+          },
+          "coordinate_rmse_m": 0.005251839813590631,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 47,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.007007761474994296,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.00998476717876856
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.007470108739671547,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.011340935719496273
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.008478484334270873,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.013757553316613281
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.011489385087835362,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.02076222850902358
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.013698834373636337,
+          "frame_count": 12,
+          "frame_end_exclusive": 47,
+          "frame_start": 35,
+          "track_error_m": 0.025606928280412014
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.6691125368806459,
+        "alpha_0250": 0.7353246511522735,
+        "alpha_0500": 0.8626096306311415,
+        "alpha_0750": 1.2359900156750534,
+        "alpha_1000": 1.5006346308602865
+      }
+    },
+    "weird_package": {
+      "family_decisions": {
+        "alpha_0000": {
+          "accepted": true,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.0,
+            "track_error_m": 1.0
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.0,
+          "stability_eligible": true
+        },
+        "alpha_0250": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 0.8238262272607821,
+            "track_error_m": 0.9209364163899393
+          },
+          "no_metric_regression": true,
+          "relative_score_improvement_over_fallback": 0.12549704576962017,
+          "stability_eligible": false
+        },
+        "alpha_0500": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.9785969123447396,
+            "track_error_m": 1.3486595517431839
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.6498655617271842,
+          "stability_eligible": false
+        },
+        "alpha_0750": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 2.303384922041159,
+            "track_error_m": 1.6049100483776515
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.9388874291911309,
+          "stability_eligible": false
+        },
+        "alpha_1000": {
+          "accepted": false,
+          "metric_ratios_to_fallback": {
+            "chamfer_distance_m": 1.9907581607908635,
+            "track_error_m": 1.5066861371088736
+          },
+          "no_metric_regression": false,
+          "relative_score_improvement_over_fallback": -0.7381462979396212,
+          "stability_eligible": false
+        }
+      },
+      "family_outputs": {
+        "alpha_0000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/cases/weird_package/validation_selected/trajectory.pkl",
+          "sha256": "b75305451901383ec0bd079fa0a665faa74f886175a24b43cb6024ce2349a799"
+        },
+        "alpha_0250": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/cases/weird_package/validation_selected/trajectory.pkl",
+          "sha256": "e8eb5133205cd43f1f82c557f04ce276cc39925b057953b29210567c6fe4385c"
+        },
+        "alpha_0500": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/cases/weird_package/validation_selected/trajectory.pkl",
+          "sha256": "bd7fad1d41192b39107859882683fe289b0d00b3de868fdc769d4ffae23b17ef"
+        },
+        "alpha_0750": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/cases/weird_package/validation_selected/trajectory.pkl",
+          "sha256": "8c3357dd9c13af004ea30952adbe1f3b88d72dd630e52b82008af043225d8a9a"
+        },
+        "alpha_1000": {
+          "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/cases/weird_package/validation_selected/trajectory.pkl",
+          "sha256": "5f0451e29b6a49dbe204d521c1dc29b115cea679a7abd6cbd9b846e9d7ad1182"
+        }
+      },
+      "fit_end_frame_exclusive": 20,
+      "frame_count": 39,
+      "output": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/cases/weird_package/trajectory.pkl",
+        "sha256": "b75305451901383ec0bd079fa0a665faa74f886175a24b43cb6024ce2349a799"
+      },
+      "reference_raw_validation_metrics": {
+        "chamfer_distance_m": 0.01852232822240288,
+        "frame_count": 7,
+        "frame_end_exclusive": 27,
+        "frame_start": 20,
+        "track_error_m": 0.050100386507320495
+      },
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "bayesian_anchor",
+      "stability": {
+        "alpha_0000": {
+          "control": "reference family",
+          "coordinate_rmse_m": 0.0,
+          "eligible": true
+        },
+        "alpha_0250": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/weird_package/inference.pkl",
+            "sha256": "aa28c6d24615c01764589043ce00599e403215234494470a5d6d197059054ffe"
+          },
+          "coordinate_rmse_m": 0.008571886733873747,
+          "eligible": false
+        },
+        "alpha_0500": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/weird_package/inference.pkl",
+            "sha256": "aa28c6d24615c01764589043ce00599e403215234494470a5d6d197059054ffe"
+          },
+          "coordinate_rmse_m": 0.008571886733873747,
+          "eligible": false
+        },
+        "alpha_0750": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/weird_package/inference.pkl",
+            "sha256": "aa28c6d24615c01764589043ce00599e403215234494470a5d6d197059054ffe"
+          },
+          "coordinate_rmse_m": 0.008571886733873747,
+          "eligible": false
+        },
+        "alpha_1000": {
+          "control": {
+            "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/weird_package/inference.pkl",
+            "sha256": "aa28c6d24615c01764589043ce00599e403215234494470a5d6d197059054ffe"
+          },
+          "coordinate_rmse_m": 0.008571886733873747,
+          "eligible": false
+        }
+      },
+      "train_end_frame_exclusive": 27,
+      "validation_metrics": {
+        "alpha_0000": {
+          "chamfer_distance_m": 0.014330472432123393,
+          "frame_count": 7,
+          "frame_end_exclusive": 27,
+          "frame_start": 20,
+          "track_error_m": 0.04230420124713636
+        },
+        "alpha_0250": {
+          "chamfer_distance_m": 0.01180581903862086,
+          "frame_count": 7,
+          "frame_end_exclusive": 27,
+          "frame_start": 20,
+          "track_error_m": 0.03895947949477656
+        },
+        "alpha_0500": {
+          "chamfer_distance_m": 0.028354228506640756,
+          "frame_count": 7,
+          "frame_end_exclusive": 27,
+          "frame_start": 20,
+          "track_error_m": 0.05705396509081636
+        },
+        "alpha_0750": {
+          "chamfer_distance_m": 0.03300859412587952,
+          "frame_count": 7,
+          "frame_end_exclusive": 27,
+          "frame_start": 20,
+          "track_error_m": 0.06789443767011952
+        },
+        "alpha_1000": {
+          "chamfer_distance_m": 0.028528504942238138,
+          "frame_count": 7,
+          "frame_end_exclusive": 27,
+          "frame_start": 20,
+          "track_error_m": 0.06373915356052427
+        }
+      },
+      "validation_scores": {
+        "alpha_0000": 0.8090375328655819,
+        "alpha_0250": 0.7075057125742094,
+        "alpha_0500": 1.3348031636196485,
+        "alpha_0750": 1.5686327022168831,
+        "alpha_1000": 1.4062255926445157
+      }
+    }
+  },
+  "comparison": {
+    "case_count": 22,
+    "status": "family choices sealed; future metrics remain unopened"
+  },
+  "completed_at_utc": "2026-07-20T07:34:18.216781+00:00",
+  "contract": {
+    "cases": [
+      "double_lift_cloth_1",
+      "double_lift_cloth_3",
+      "double_lift_sloth",
+      "double_lift_zebra",
+      "double_stretch_sloth",
+      "double_stretch_zebra",
+      "rope_double_hand",
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_cloth",
+      "single_lift_cloth_1",
+      "single_lift_cloth_3",
+      "single_lift_cloth_4",
+      "single_lift_dinosor",
+      "single_lift_rope",
+      "single_lift_sloth",
+      "single_lift_zebra",
+      "single_push_rope",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "weird_package"
+    ],
+    "families": {
+      "alpha_0000": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0000/external_backbone_selection_summary.json",
+        "sha256": "708e3e3628523804136c5bd36cd72cdf26c70be508bcbf53ea6fa5223e74dcc4"
+      },
+      "alpha_0250": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0250/external_backbone_selection_summary.json",
+        "sha256": "9d6a452ba866bd542be0397f3d98b73c10a718bf97ab93dca03e0a7090c84abe"
+      },
+      "alpha_0500": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0500/external_backbone_selection_summary.json",
+        "sha256": "40b05c99fee2957909da90b3495e4ed1e9c629822573976acb4769baa35803e0"
+      },
+      "alpha_0750": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_0750/external_backbone_selection_summary.json",
+        "sha256": "9d68a679102c7606c882743bcf3bf61dd4dfac521ad7ee748f8601de5942799f"
+      },
+      "alpha_1000": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/prefix_overlays/alpha_1000/external_backbone_selection_summary.json",
+        "sha256": "63103e9553db6b6187c6c3cd732dc6b7d37cd8beb12b0abb7b658cd5090a6b7c"
+      }
+    },
+    "future_evaluation": "forbidden; selected trajectories are frozen before future opening",
+    "future_metrics_opened": false,
+    "information_boundary": "selection ends at released training boundary",
+    "maximum_metric_regression": 0.0,
+    "maximum_stability_coordinate_rmse_m": 0.001,
+    "method": "causal validation gate across backbone families",
+    "minimum_relative_improvement": 0.01,
+    "reference_family": "alpha_0000",
+    "registered_subset_protocol": null,
+    "score": "equal weight mean of validation CD and track error, each normalized to the reference family's raw backbone",
+    "stability_boundary": "full simulator rollouts under known actions; no future observations",
+    "stability_controls": {
+      "alpha_0250": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/stability_controls/alpha_0250.json",
+        "sha256": "71636f39f7909532cc81b53193dca915f3eb6f6c883743fe4cb974e55d272269"
+      },
+      "alpha_0500": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/stability_controls/alpha_0500.json",
+        "sha256": "03dfc1bfda48218d1a7d08d0735301402bee24311c315614e19052cf978eabbb"
+      },
+      "alpha_0750": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/stability_controls/alpha_0750.json",
+        "sha256": "d6ab8588e9a13cef3673ea709f8be5c7a6b4e5d8863ae5ae633cb9fc1dfa6f18"
+      },
+      "alpha_1000": {
+        "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/stability_controls/alpha_1000.json",
+        "sha256": "0cd8dc59ad0ce4e5c95761bef1d7be6c29b53879cc1a7af0064fd79845ff8555"
+      }
+    },
+    "status": "exploratory on the previously examined PhysTwin cohort",
+    "tie_break": "family declaration order; reference family declared first",
+    "within_family_candidate": "existing validation-selected trajectory"
+  },
+  "future_metrics_opened": false,
+  "protocol_id": "d556e77271c7096ab5a9a9fe788685b4148f269a2bbc74ec522b2fbea5fd9217",
+  "schema_version": 1,
+  "selection_counts": {
+    "alpha_0000": 14,
+    "alpha_0250": 1,
+    "alpha_0500": 1,
+    "alpha_0750": 1,
+    "alpha_1000": 5
+  }
+}
