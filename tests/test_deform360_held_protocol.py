@@ -6,11 +6,15 @@ import inspect
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from deform360_held_test_helpers import (
+    bound_file,
     default_frame_zero_config,
     dummy_immutable_bindings,
+    write_robot_kinematics_fixture,
+    write_robot_metadata_fixture,
 )
 
 from bayesian_phystwin.deform360_held_protocol import (
@@ -27,6 +31,8 @@ from bayesian_phystwin.deform360_held_protocol import (
     PROTOCOL_ID,
     REQUIRED_IMMUTABLE_BINDING_KEYS,
     SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
+    _FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+    _FRAME_ZERO_CAMERA_SELECTION_RULE,
     authorize_outcome_phase,
     create_calibration_gate_decision,
     create_confirmation_protocol_lock,
@@ -39,6 +45,10 @@ from bayesian_phystwin.deform360_held_protocol import (
     locked_case_names,
     run_outcome_operation,
     validate_frame_zero_bundle_manifest,
+)
+from bayesian_phystwin.deform360_robot_kinematics import (
+    load_robot_kinematics_archive,
+    robot_kinematics_array_records,
 )
 
 
@@ -237,15 +247,44 @@ def _frame_zero_manifest(
     directory = root / case_name
     directory.mkdir(parents=True, exist_ok=True)
     bundle = directory / f"frame-zero{bundle_suffix}"
-    bundle.write_bytes(b"single extracted frame")
-    robot = directory / "robot.npz"
-    robot.write_bytes(b"known robot trajectory")
-    metadata = directory / "robot.meta.json"
-    metadata.write_text('{"frame_count": 76}\n', encoding="utf-8")
+    config = default_frame_zero_config()
+    cameras = tuple(
+        sorted(
+            (
+                str(config["reference_camera"]),
+                "cam1",
+                "cam2",
+                "cam3",
+                "cam4",
+                "cam5",
+                "cam6",
+                "cam7",
+            )
+        )
+    )
+    if bundle_suffix == ".npz":
+        np.savez_compressed(bundle, camera_names=np.asarray(cameras))
+    else:
+        bundle.write_bytes(b"single extracted frame")
+    robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
+        directory
+    )
+    metadata = write_robot_metadata_fixture(
+        directory / "robot.meta.json",
+        source_frame_count=150,
+        cameras=cameras,
+    )
+    source_start = int(action_alignment["selected_raw_frame_range_half_open"][0])
     object_id, episode_id = _identity(case_name)
     boundary: dict[str, object] = {
         "maximum_object_rgb_frame_read": 0,
         "object_observation_frames_used": [0],
+        "known_aligned_realized_robot_kinematics_read": True,
+        "known_robot_trajectory_semantics": action_alignment[
+            "trajectory_semantics"
+        ],
+        "robot_delta_command_read": False,
+        "commanded_control_read": False,
         "known_future_robot_action_read": True,
         "future_object_rgb_read": False,
         "future_object_geometry_read": False,
@@ -268,12 +307,38 @@ def _frame_zero_manifest(
         "lock_sha256": _sha256(lock_path),
         "lock_artifact_sha256": load_held_protocol_lock(lock_path)["artifact_sha256"],
         "frame_indices": [0],
-        "config": default_frame_zero_config(),
+        "config": config,
         "bundle": _record(bundle),
         "action_inputs": {
-            "robot_trajectory": _record(robot),
-            "robot_metadata": _record(metadata),
+            "robot_trajectory": bound_file(robot),
+            "robot_metadata": bound_file(metadata),
         },
+        "action_alignment": action_alignment,
+        "camera_policy": {
+            "policy_id": _FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+            "rule": _FRAME_ZERO_CAMERA_SELECTION_RULE,
+            "reference_camera": config["reference_camera"],
+            "minimum_selected_camera_count": config["minimum_camera_count"],
+            "candidate_cameras": list(cameras),
+            "candidate_camera_count": len(cameras),
+            "selected_cameras": list(cameras),
+            "selected_camera_count": len(cameras),
+            "abstained_cameras": [],
+            "abstained_camera_count": 0,
+        },
+        "camera_frame_zero_access": [
+            {
+                "camera": camera,
+                "path": str((directory / camera / "undistorted.mp4").resolve()),
+                "decoded_frame_count": 1,
+                "maximum_rgb_frame_read": 0,
+                "action_window_frame_index": 0,
+                "source_aligned_frame_index": source_start,
+                "decoded_rgb_sha256": "d" * 64,
+                "whole_file_hashed_or_read": False,
+            }
+            for camera in cameras
+        ],
         "information_boundary": boundary,
     }
     manifest["artifact_sha256"] = held_artifact_sha256(manifest)
@@ -541,6 +606,131 @@ def test_frame_zero_contract_allows_action_but_rejects_object_future_and_hdf5(
     )
     with pytest.raises(ValueError, match="extracted"):
         validate_frame_zero_bundle_manifest(future_container, lock_path)
+
+
+def _rewrite_npz(path: Path, arrays: dict[str, np.ndarray]) -> None:
+    np.savez_compressed(path, **arrays)
+
+
+def _load_npz_arrays(path: Path) -> dict[str, np.ndarray]:
+    with np.load(path, allow_pickle=False) as stored:
+        return {name: np.asarray(stored[name]).copy() for name in stored.files}
+
+
+def _rewrite_frame_manifest(path: Path, manifest: dict[str, object]) -> None:
+    manifest["artifact_sha256"] = held_artifact_sha256(manifest)
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ("extra_field", "field set changed"),
+        ("wrong_dtype", "actions must have dtype float64"),
+        ("parity", "row 0 does not match"),
+        ("nonscalar_bimanual", "bimanual must be a bool scalar"),
+    ),
+)
+def test_frame_zero_robot_archive_schema_and_parity_fail_closed(
+    tmp_path: Path,
+    mutation: str,
+    message: str,
+) -> None:
+    lock_path = _calibration_lock(tmp_path)
+    case_name = CALIBRATION_CASE_NAMES[0]
+    manifest_path = _frame_zero_manifest(
+        tmp_path / "frame-zero", lock_path, case_name, role="calibration"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    robot_path = Path(manifest["action_inputs"]["robot_trajectory"]["path"])
+    arrays = _load_npz_arrays(robot_path)
+    if mutation == "extra_field":
+        arrays["unexpected"] = np.asarray(1, dtype=np.int64)
+    elif mutation == "wrong_dtype":
+        arrays["actions"] = arrays["actions"].astype(np.float32)
+    elif mutation == "parity":
+        arrays["actions"][0, 0, 0] += 0.1
+    else:
+        arrays["bimanual"] = np.asarray([False], dtype=np.bool_)
+    _rewrite_npz(robot_path, arrays)
+    manifest["action_inputs"]["robot_trajectory"] = _record(robot_path)
+    _rewrite_frame_manifest(manifest_path, manifest)
+
+    with pytest.raises(ValueError, match=message):
+        validate_frame_zero_bundle_manifest(
+            manifest_path, lock_path, expected_role="calibration"
+        )
+
+
+def test_frame_zero_robot_selection_start_and_selected_slice_fail_closed(
+    tmp_path: Path,
+) -> None:
+    lock_path = _calibration_lock(tmp_path)
+    case_name = CALIBRATION_CASE_NAMES[0]
+    manifest_path = _frame_zero_manifest(
+        tmp_path / "frame-zero", lock_path, case_name, role="calibration"
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["action_alignment"]["selected_raw_frame_range_half_open"] = [68, 149]
+    _rewrite_frame_manifest(manifest_path, manifest)
+    with pytest.raises(ValueError, match="selection mirrors changed"):
+        validate_frame_zero_bundle_manifest(
+            manifest_path, lock_path, expected_role="calibration"
+        )
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_range = manifest["action_alignment"]["selection_audit"][
+        "selected_raw_frame_range_half_open"
+    ]
+    manifest["action_alignment"]["selected_raw_frame_range_half_open"] = expected_range
+    manifest["camera_frame_zero_access"][0]["source_aligned_frame_index"] += 1
+    _rewrite_frame_manifest(manifest_path, manifest)
+    with pytest.raises(ValueError, match="camera source index"):
+        validate_frame_zero_bundle_manifest(
+            manifest_path, lock_path, expected_role="calibration"
+        )
+    manifest["camera_frame_zero_access"][0]["source_aligned_frame_index"] -= 1
+    removed_camera = manifest["camera_policy"]["selected_cameras"].pop()
+    manifest["camera_policy"]["selected_camera_count"] -= 1
+    manifest["camera_policy"]["abstained_cameras"] = [removed_camera]
+    manifest["camera_policy"]["abstained_camera_count"] = 1
+    _rewrite_frame_manifest(manifest_path, manifest)
+    with pytest.raises(ValueError, match="partition or bundle order"):
+        validate_frame_zero_bundle_manifest(
+            manifest_path, lock_path, expected_role="calibration"
+        )
+    manifest["camera_policy"]["selected_cameras"].append(removed_camera)
+    manifest["camera_policy"]["selected_camera_count"] += 1
+    manifest["camera_policy"]["abstained_cameras"] = []
+    manifest["camera_policy"]["abstained_camera_count"] = 0
+    for field in ("policy_id", "rule"):
+        original = manifest["camera_policy"][field]
+        manifest["camera_policy"][field] = "tampered"
+        _rewrite_frame_manifest(manifest_path, manifest)
+        with pytest.raises(ValueError, match="reference policy changed"):
+            validate_frame_zero_bundle_manifest(
+                manifest_path, lock_path, expected_role="calibration"
+            )
+        manifest["camera_policy"][field] = original
+    selected_path = Path(
+        manifest["action_alignment"]["selected_robot_kinematics_bundle"]["path"]
+    )
+    selected_arrays = _load_npz_arrays(selected_path)
+    selected_arrays["T_worlds"][:, 0, 3] += 0.1
+    selected_arrays["actions"][:, 0, 0] += 0.1
+    _rewrite_npz(selected_path, selected_arrays)
+    selected_record = _record(selected_path)
+    selected_state = load_robot_kinematics_archive(selected_path)
+    manifest["action_alignment"]["selected_robot_kinematics_bundle"] = selected_record
+    manifest["action_alignment"]["selected_action_bundle"] = selected_record
+    manifest["action_alignment"]["selected_action_arrays"] = (
+        robot_kinematics_array_records(selected_state)
+    )
+    _rewrite_frame_manifest(manifest_path, manifest)
+    with pytest.raises(ValueError, match="exact source slice"):
+        validate_frame_zero_bundle_manifest(
+            manifest_path, lock_path, expected_role="calibration"
+        )
 
 
 def test_calibration_authorization_cannot_be_relabelled_as_confirmation(

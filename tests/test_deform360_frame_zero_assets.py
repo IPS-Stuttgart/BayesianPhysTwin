@@ -1868,7 +1868,10 @@ def test_manifest_matches_the_independent_held_validator(tmp_path: Path) -> None
     )
     payload = _manifest(tmp_path)
     bundle_path = Path(payload["bundle"]["path"])
-    bundle_path.write_bytes(bundle_path.name.encode("utf-8"))
+    np.savez_compressed(
+        bundle_path,
+        camera_names=np.asarray(payload["camera_policy"]["selected_cameras"]),
+    )
     payload["bundle"] = _record_existing(bundle_path)
     payload["lock_sha256"] = hashlib.sha256(lock_path.read_bytes()).hexdigest()
     payload["lock_artifact_sha256"] = lock["artifact_sha256"]

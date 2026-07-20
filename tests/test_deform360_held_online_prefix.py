@@ -10,7 +10,11 @@ import sys
 import numpy as np
 import pytest
 
-from deform360_held_test_helpers import dummy_immutable_bindings
+from deform360_held_test_helpers import (
+    dummy_immutable_bindings,
+    write_robot_kinematics_fixture,
+    write_robot_metadata_fixture,
+)
 
 import bayesian_phystwin.deform360_held_online_prefix as held_prefix
 import bayesian_phystwin.deform360_held_physical_prior as held_physical
@@ -276,6 +280,10 @@ def test_state_action_alignment_uses_incoming_not_future_transition() -> None:
     assert update["selected_action_state_index"] == 19
     assert update["incoming_selected_action_transition"] == [18, 19]
     assert update["incoming_source_action_transition"] == [80, 81]
+    assert update["selected_robot_kinematics_state_index"] == 19
+    assert update["incoming_selected_robot_kinematics_transition"] == [18, 19]
+    assert update["commanded_control_or_delta_action_used"] is False
+    assert update["selected_action_fields_are_compatibility_aliases"] is True
 
 
 def test_nested_prefix_hashes_reject_earlier_frame_drift() -> None:
@@ -428,32 +436,17 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "visual_hull_points_world_m": points.copy(),
     }
     np.savez_compressed(bundle, **bundle_arrays)
-    robot = tmp_path / "robot.npz"
     source_frame_count = 150
-    np.savez_compressed(
-        robot,
-        actions=np.zeros((source_frame_count, 5, 3), dtype=np.float64),
-        openings=np.zeros(source_frame_count, dtype=np.float64),
+    robot, _selected_action, action_alignment = write_robot_kinematics_fixture(
+        tmp_path,
+        source_frame_count=source_frame_count,
+        selected_start=62,
     )
-    robot_metadata = tmp_path / "robot.meta.json"
-    _write_json(
-        robot_metadata,
-        {
-            "schema": "deform360.processing/robot/v1",
-            "outputs": {"num_frames": source_frame_count},
-            "inputs": {
-                "aligned_timestamps_sha256": "b" * 64,
-                "video_sha256": {camera: "c" * 64 for camera in TEST_CAMERAS},
-            },
-            "parameters": {"cameras": list(TEST_CAMERAS)},
-        },
+    robot_metadata = write_robot_metadata_fixture(
+        tmp_path / "robot.meta.json",
+        source_frame_count=source_frame_count,
+        cameras=TEST_CAMERAS,
     )
-    selected_action = tmp_path / "known_action_76.npz"
-    selected_action_arrays = {
-        "actions": np.zeros((76, 5, 3), dtype=np.float64),
-        "openings": np.zeros(76, dtype=np.float64),
-    }
-    np.savez_compressed(selected_action, **selected_action_arrays)
     view_diagnostics = [_selected_view_diagnostic(camera) for camera in TEST_CAMERAS]
     frame_manifest: dict[str, object] = {
         "schema_version": 1,
@@ -472,14 +465,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
             "robot_trajectory": _record(robot),
             "robot_metadata": _record(robot_metadata),
         },
-        "action_alignment": {
-            "selected_raw_frame_range_half_open": [62, 143],
-            "prediction_raw_frame_range_half_open": [62, 138],
-            "selected_action_bundle": _record(selected_action),
-            "selected_action_arrays": _array_records(selected_action_arrays),
-            "source_robot_frame_count": source_frame_count,
-            "prediction_frame_count": 76,
-        },
+        "action_alignment": action_alignment,
         "camera_policy": {
             "policy_id": held_prefix.FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
             "rule": held_prefix.FRAME_ZERO_CAMERA_SELECTION_RULE,
@@ -495,8 +481,13 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "camera_frame_zero_access": [
             {
                 "camera": camera,
+                "path": str((tmp_path / camera / "undistorted.mp4").resolve()),
                 "source_aligned_frame_index": 62,
                 "decoded_frame_count": 1,
+                "maximum_rgb_frame_read": 0,
+                "action_window_frame_index": 0,
+                "decoded_rgb_sha256": "d" * 64,
+                "whole_file_hashed_or_read": False,
             }
             for camera in TEST_CAMERAS
         ],
@@ -512,6 +503,12 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "information_boundary": {
             "maximum_object_rgb_frame_read": 0,
             "object_observation_frames_used": [0],
+            "known_aligned_realized_robot_kinematics_read": True,
+            "known_robot_trajectory_semantics": action_alignment[
+                "trajectory_semantics"
+            ],
+            "robot_delta_command_read": False,
+            "commanded_control_read": False,
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,
@@ -558,6 +555,12 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     prediction_summary = tmp_path / "prediction_only_summary.json"
     prediction_summary.write_text("{}\n", encoding="utf-8")
     physical_manifest_path = tmp_path / "physical_prediction_manifest.json"
+    _controllers, robot_kinematics_window = held_physical.load_controller_trajectory(
+        action_alignment["selected_robot_kinematics_bundle"]["path"],
+        source_robot_path=robot,
+        expected_selected_raw_frame_range=[62, 143],
+        expected_prediction_raw_frame_range=[62, 138],
+    )
     physical_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": held_physical.ARTIFACT_KIND,
@@ -596,8 +599,10 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
             frame_manifest_path.read_bytes()
         ).hexdigest(),
         "frame_zero_manifest_artifact_sha256": frame_manifest["artifact_sha256"],
+        "robot_kinematics_window": robot_kinematics_window,
         "information_boundary": {
             "object_observation_frames_used": [0],
+            "known_future_aligned_robot_kinematics_read": True,
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,
@@ -655,6 +660,146 @@ def test_frame_zero_consumer_rejects_altered_builder_configuration(
             case_name=CASE_NAME,
             role="calibration",
         )
+
+
+def _npz_arrays(path: Path) -> dict[str, np.ndarray]:
+    with np.load(path, allow_pickle=False) as stored:
+        return {name: np.asarray(stored[name]).copy() for name in stored.files}
+
+
+def test_online_prefix_independently_rejects_robot_schema_parity_and_scalar_drift(
+    tmp_path: Path,
+) -> None:
+    _lock, manifest_path, _physical, _authorization, _episode = _make_held_chain(
+        tmp_path
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    raw_path = Path(manifest["action_inputs"]["robot_trajectory"]["path"])
+    baseline = _npz_arrays(raw_path)
+    cases: tuple[tuple[str, dict[str, np.ndarray], str], ...] = (
+        (
+            "extra",
+            {**baseline, "unexpected": np.asarray(1, dtype=np.int64)},
+            "field set changed",
+        ),
+        (
+            "dtype",
+            {**baseline, "actions": baseline["actions"].astype(np.float32)},
+            "actions must have dtype float64",
+        ),
+        (
+            "scalar",
+            {**baseline, "bimanual": np.asarray([False], dtype=np.bool_)},
+            "bimanual must be a bool scalar",
+        ),
+    )
+    parity = {name: value.copy() for name, value in baseline.items()}
+    parity["actions"][0, 0, 0] += 0.1
+    cases = (*cases, ("parity", parity, "row 0 does not match"))
+    for _name, arrays, message in cases:
+        np.savez_compressed(raw_path, **arrays)
+        manifest["action_inputs"]["robot_trajectory"] = _record(raw_path)
+        with pytest.raises(ValueError, match=message):
+            held_prefix._validate_selected_action_bundle(
+                manifest, source_frame_start=62
+            )
+    np.savez_compressed(raw_path, **baseline)
+
+
+def test_online_prefix_rejects_valid_but_wrong_selected_robot_slice(
+    tmp_path: Path,
+) -> None:
+    _lock, manifest_path, _physical, _authorization, _episode = _make_held_chain(
+        tmp_path
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    selected_path = Path(
+        manifest["action_alignment"]["selected_robot_kinematics_bundle"]["path"]
+    )
+    arrays = _npz_arrays(selected_path)
+    arrays["T_worlds"][:, 1, 3] += 0.05
+    arrays["actions"][:, 0, 1] += 0.05
+    np.savez_compressed(selected_path, **arrays)
+    selected_record = _record(selected_path)
+    selected_state = held_prefix.load_robot_kinematics_archive(selected_path)
+    manifest["action_alignment"]["selected_robot_kinematics_bundle"] = selected_record
+    manifest["action_alignment"]["selected_action_bundle"] = selected_record
+    manifest["action_alignment"]["selected_action_arrays"] = (
+        held_prefix.robot_kinematics_array_records(selected_state)
+    )
+    with pytest.raises(ValueError, match="exact source slice"):
+        held_prefix._validate_selected_action_bundle(
+            manifest, source_frame_start=62
+        )
+
+
+def test_aligned_metadata_validates_all_candidates_for_selected_subset(
+    tmp_path: Path,
+) -> None:
+    _lock, manifest_path, _physical, _authorization, _episode = _make_held_chain(
+        tmp_path
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    selected_subset = TEST_CAMERAS[1:5]
+    manifest["camera_policy"]["selected_cameras"] = list(selected_subset)
+    audit = held_prefix._validate_aligned_robot_video_metadata(
+        manifest,
+        selected_subset,
+        source_frame_start=62,
+        source_frame_stop=143,
+    )
+    assert audit["declared_candidate_camera_order"] == list(TEST_CAMERAS)
+    assert audit["selected_bundle_camera_order"] == list(selected_subset)
+    assert (
+        audit["frame_zero_source_index_verified_for_every_candidate_camera"] is True
+    )
+
+    manifest["camera_frame_zero_access"][-1]["source_aligned_frame_index"] = 63
+    with pytest.raises(ValueError, match="source index"):
+        held_prefix._validate_aligned_robot_video_metadata(
+            manifest,
+            selected_subset,
+            source_frame_start=62,
+            source_frame_stop=143,
+        )
+
+
+def test_reference_abstention_requires_exact_preregistered_strategy_audit() -> None:
+    assert held_prefix._reference_camera_may_be_absent({}) is False
+    assert (
+        held_prefix._reference_camera_may_be_absent(
+            {"geometry_strategy": {"selected_strategy": "legacy"}}
+        )
+        is False
+    )
+    strategy = held_prefix.REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+    valid = {
+        "geometry_strategy": {
+            "selected_strategy": strategy,
+            "attempts": [
+                {"strategy": "legacy", "status": "failed"},
+                {"strategy": strategy, "status": "passed"},
+            ],
+            "common_assignment": {
+                "strategy": held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY,
+                "policy_id": (
+                    held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID
+                ),
+            },
+        }
+    }
+    assert held_prefix._reference_camera_may_be_absent(valid) is True
+
+    for tampered in ("attempt", "assignment", "policy"):
+        value = deepcopy(valid)
+        if tampered == "attempt":
+            value["geometry_strategy"]["attempts"][-1]["strategy"] = "other"
+        elif tampered == "assignment":
+            value["geometry_strategy"]["common_assignment"]["strategy"] = "other"
+        else:
+            value["geometry_strategy"]["common_assignment"]["policy_id"] = "other"
+        with pytest.raises(ValueError, match="strategy audit changed"):
+            held_prefix._reference_camera_may_be_absent(value)
 
 
 def test_runner_emits_exact_seven_roles_and_frozen_prediction_schema(
@@ -800,6 +945,17 @@ def test_runner_emits_exact_seven_roles_and_frozen_prediction_schema(
             "legacy_open27_routing_reused"
         ]
         is False
+    )
+    alignment = result["measurement_manifest"]["action_alignment"]
+    assert alignment["commanded_control_or_delta_action_used"] is False
+    assert (
+        alignment["robot_kinematics_semantics"]
+        == held_prefix.ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+    )
+    inputs = result["measurement_manifest"]["inputs"]
+    assert (
+        inputs["selected_robot_kinematics_bundle"]
+        == inputs["selected_action_bundle"]
     )
     with np.load(output / "online_prediction.npz", allow_pickle=False) as stored:
         required = {

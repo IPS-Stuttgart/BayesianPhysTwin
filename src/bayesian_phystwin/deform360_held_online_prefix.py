@@ -1,9 +1,9 @@
 """Outcome-blind causal RGB-prefix predictions for held Deform360 cases.
 
 This stage starts only after a frame-zero physical prior has been sealed.  It
-reads logical RGB prefixes ``[0,u]`` for ``u in (19, 38, 57)`` from the
-action-aligned source interval recorded in the frame-zero manifest.  Masks,
-depth, and calibration come exclusively from the extracted frame-zero NPZ;
+reads logical RGB prefixes ``[0,u]`` for ``u in (19, 38, 57)`` from the source
+interval aligned to the realized robot kinematics in the frame-zero manifest.
+Masks, depth, and calibration come exclusively from the extracted frame-zero NPZ;
 the future-bearing processed HDF5 files are neither accepted nor opened.
 
 The primary forecast is the method frozen by :mod:`deform360_held_protocol`:
@@ -62,6 +62,14 @@ from .deform360_raw_camera_uncertainty import (
     RawCameraUncertaintyConfig,
     jacobian_measurement_covariance,
     leave_one_camera_out_covariance,
+)
+from .deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+    load_robot_kinematics_archive,
+    robot_kinematics_array_records,
+    validate_robot_kinematics_selection_audit,
+    validate_selected_robot_kinematics_bundle,
 )
 from .phystwin_online_belief import (
     RecursiveRbfBeliefConfig,
@@ -131,6 +139,16 @@ CYCLE_ARCHIVE_FILENAME = "measurement_cycle_uncertainty.npz"
 CYCLE_MANIFEST_FILENAME = "measurement_cycle_uncertainty_manifest.json"
 ONLINE_PREDICTION_ARCHIVE_FILENAME = "online_prediction.npz"
 ONLINE_SEAL_FILENAME = "online_prediction_seal.json"
+
+REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY = (
+    "reference-optional-common-exact8-projected-footprint"
+)
+REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY = (
+    "reference-conditioned-reference-optional-exhaustive-exact-eight-assignment"
+)
+REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID = (
+    "diagnostic-reference-conditioned-reference-optional-exact8-v1"
+)
 
 MEASUREMENT_KIND = "Deform360HeldCausalRawCameraMeasurement"
 UNCERTAINTY_KIND = "Deform360HeldCausalRawCameraMeasurementUncertainty"
@@ -203,6 +221,34 @@ def _write_manifest(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
         encoding="utf-8",
     )
     return payload
+
+
+def _reference_camera_may_be_absent(manifest: Mapping[str, Any]) -> bool:
+    """Recognize only the fully audited preregistered reference-optional arm."""
+
+    geometry_strategy = manifest.get("geometry_strategy")
+    if not isinstance(geometry_strategy, Mapping):
+        return False
+    selected_strategy = geometry_strategy.get("selected_strategy")
+    if selected_strategy != REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY:
+        return False
+    attempts = geometry_strategy.get("attempts")
+    assignment = geometry_strategy.get("common_assignment")
+    _require(
+        isinstance(attempts, list)
+        and bool(attempts)
+        and isinstance(attempts[-1], Mapping)
+        and attempts[-1].get("status") == "passed"
+        and attempts[-1].get("strategy")
+        == REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+        and isinstance(assignment, Mapping)
+        and assignment.get("strategy")
+        == REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY
+        and assignment.get("policy_id")
+        == REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID,
+        "reference-optional geometry strategy audit changed",
+    )
+    return True
 
 
 def reject_forbidden_prefix_input(path: str | Path, *, purpose: str) -> Path:
@@ -321,16 +367,24 @@ def _load_frame_zero_arrays(
         "camera names are invalid",
     )
     camera_policy = manifest.get("camera_policy")
+    selected_camera_names = [str(value) for value in cameras.tolist()]
+    reference_camera = (
+        camera_policy.get("reference_camera")
+        if isinstance(camera_policy, Mapping)
+        else None
+    )
+    reference_optional = _reference_camera_may_be_absent(manifest)
     _require(
         isinstance(camera_policy, Mapping)
         and camera_policy.get("policy_id") == FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
         and camera_policy.get("rule") == FRAME_ZERO_CAMERA_SELECTION_RULE
-        and camera_policy.get("reference_camera")
-        == HELD_FRAME_ZERO_CONFIG["reference_camera"]
-        and camera_policy.get("reference_camera")
-        in [str(value) for value in cameras.tolist()]
-        and camera_policy.get("selected_cameras")
-        == [str(value) for value in cameras.tolist()]
+        and reference_camera == HELD_FRAME_ZERO_CONFIG["reference_camera"]
+        and (reference_camera in selected_camera_names or reference_optional)
+        and (
+            not reference_optional
+            or camera_count == HELD_OBSERVATION_CONFIG.selected_camera_count
+        )
+        and camera_policy.get("selected_cameras") == selected_camera_names
         and camera_policy.get("selected_camera_count") == camera_count
         and camera_policy.get("minimum_selected_camera_count")
         == HELD_FRAME_ZERO_CONFIG["minimum_camera_count"],
@@ -867,99 +921,140 @@ def logical_state_action_alignment(
     source_frame_start: int,
     logical_frame: int,
 ) -> dict[str, Any]:
-    """Return the frozen state/action indices for one logical RGB frame.
+    """Return aligned realized-kinematics indices for one logical RGB frame.
 
-    Selected robot rows are state-aligned controller poses.  Thus state ``u``
-    is raw video/robot frame ``start+u`` and its incoming displacement uses
-    selected action rows ``u-1 -> u`` (never ``u -> u+1``).
+    Selected robot rows are aligned absolute end-effector poses/openings, not
+    commanded controls or delta actions.  Thus state ``u`` is raw video/robot
+    frame ``start+u`` and its incoming displacement uses rows ``u-1 -> u``
+    (never ``u -> u+1``).
     """
 
     _require(source_frame_start >= 0, "negative source frame start")
     _require(0 <= logical_frame < FRAME_COUNT, "logical frame is out of range")
+    selected_transition = (
+        None if logical_frame == 0 else [logical_frame - 1, logical_frame]
+    )
+    source_transition = (
+        None
+        if logical_frame == 0
+        else [
+            source_frame_start + logical_frame - 1,
+            source_frame_start + logical_frame,
+        ]
+    )
     return {
         "logical_state_frame": int(logical_frame),
         "source_state_frame": int(source_frame_start + logical_frame),
+        "selected_robot_kinematics_state_index": int(logical_frame),
+        "incoming_selected_robot_kinematics_transition": selected_transition,
+        "incoming_source_robot_kinematics_transition": source_transition,
+        "robot_kinematics_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "commanded_control_or_delta_action_used": False,
+        # Compatibility aliases retained for already frozen downstream readers.
         "selected_action_state_index": int(logical_frame),
-        "incoming_selected_action_transition": (
-            None if logical_frame == 0 else [logical_frame - 1, logical_frame]
-        ),
-        "incoming_source_action_transition": (
-            None
-            if logical_frame == 0
-            else [
-                source_frame_start + logical_frame - 1,
-                source_frame_start + logical_frame,
-            ]
-        ),
+        "incoming_selected_action_transition": selected_transition,
+        "incoming_source_action_transition": source_transition,
+        "selected_action_fields_are_compatibility_aliases": True,
     }
 
 
 def _validate_selected_action_bundle(
-    action_alignment: Mapping[str, Any],
+    frame_manifest: Mapping[str, Any],
     *,
     source_frame_start: int,
 ) -> tuple[Path, dict[str, Any]]:
-    record = action_alignment.get("selected_action_bundle")
-    _require(isinstance(record, Mapping), "selected action bundle is missing")
-    path = reject_forbidden_prefix_input(
-        str(record.get("path")), purpose="selected action bundle"
+    action_alignment = frame_manifest.get("action_alignment")
+    _require(isinstance(action_alignment, Mapping), "robot alignment is missing")
+    raw_record = frame_manifest.get("action_inputs", {}).get("robot_trajectory")
+    _require(isinstance(raw_record, Mapping), "raw robot kinematics are missing")
+    raw_path = reject_forbidden_prefix_input(
+        str(raw_record.get("path")), purpose="raw aligned robot kinematics"
     )
-    _require(path.suffix.lower() == ".npz", "selected action bundle is not NPZ")
+    _require(
+        _bound_file(raw_path) == dict(raw_record),
+        "raw robot kinematics binding changed",
+    )
+    source_state = load_robot_kinematics_archive(raw_path)
+    selection = action_alignment.get("selection_audit")
+    _require(isinstance(selection, Mapping), "robot selection audit is missing")
+    expected_selection = validate_robot_kinematics_selection_audit(
+        selection,
+        source_state,
+        window_length_frames=HELD_FRAME_ZERO_CONFIG["action_window_length_frames"],
+        prediction_frame_count=FRAME_COUNT,
+        candidate_first_frame=HELD_FRAME_ZERO_CONFIG["action_candidate_first_frame"],
+        candidate_stride_frames=HELD_FRAME_ZERO_CONFIG[
+            "action_candidate_stride_frames"
+        ],
+    )
+    expected_raw_range = expected_selection["selected_raw_frame_range_half_open"]
+    expected_prediction_range = expected_selection[
+        "prediction_raw_frame_range_half_open"
+    ]
+    _require(
+        action_alignment.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+        and action_alignment.get("trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+        and action_alignment.get("selected_raw_frame_range_half_open")
+        == expected_raw_range
+        and action_alignment.get("prediction_raw_frame_range_half_open")
+        == expected_prediction_range
+        and source_frame_start == int(expected_raw_range[0])
+        and action_alignment.get("source_robot_frame_count")
+        == source_state.frame_count
+        and action_alignment.get("prediction_frame_count") == FRAME_COUNT
+        and action_alignment.get("tracking_tail_frame_count")
+        == HELD_FRAME_ZERO_CONFIG["action_window_length_frames"] - FRAME_COUNT,
+        "selected robot kinematics alignment changed",
+    )
+    record = action_alignment.get("selected_action_bundle")
+    _require(
+        isinstance(record, Mapping)
+        and record == action_alignment.get("selected_robot_kinematics_bundle")
+        and action_alignment.get("selected_action_bundle_is_compatibility_alias")
+        is True,
+        "selected robot kinematics bundle or compatibility alias is missing",
+    )
+    path = reject_forbidden_prefix_input(
+        str(record.get("path")), purpose="selected robot kinematics bundle"
+    )
+    _require(path.suffix.lower() == ".npz", "selected robot bundle is not NPZ")
     observed = _bound_file(path)
     _require(
         all(
             observed[key] == record.get(key) for key in ("path", "sha256", "size_bytes")
         ),
-        "selected action bundle binding changed",
+        "selected robot kinematics bundle binding changed",
     )
-    expected_arrays = action_alignment.get("selected_action_arrays")
+    selected_state = load_robot_kinematics_archive(
+        path, expected_frame_count=FRAME_COUNT
+    )
+    expected_arrays = robot_kinematics_array_records(selected_state)
     _require(
-        isinstance(expected_arrays, Mapping) and bool(expected_arrays),
-        "selected action array bindings are missing",
+        action_alignment.get("selected_action_arrays") == expected_arrays,
+        "selected robot kinematics array bindings changed",
     )
-    with np.load(path, allow_pickle=False) as stored:
-        _require(
-            set(stored.files) == set(expected_arrays),
-            "selected action array set changed",
-        )
-        for name in stored.files:
-            value = np.asarray(stored[name])
-            array_record = expected_arrays[name]
-            _require(
-                isinstance(array_record, Mapping)
-                and array_record.get("shape") == list(value.shape)
-                and array_record.get("dtype") == value.dtype.str
-                and array_record.get("sha256") == _sha256_array(value),
-                f"selected action array binding changed: {name}",
-            )
-        _require(
-            "actions" in stored.files and "openings" in stored.files,
-            "selected action fields are missing",
-        )
-        actions = np.asarray(stored["actions"])
-        openings = np.asarray(stored["openings"])
-        _require(
-            actions.ndim in (3, 4)
-            and len(actions) == FRAME_COUNT
-            and actions.shape[-1] == 3
-            and np.all(np.isfinite(actions)),
-            "selected actions are invalid",
-        )
-        _require(
-            openings.ndim in (1, 2)
-            and len(openings) == FRAME_COUNT
-            and np.all(np.isfinite(openings)),
-            "selected openings are invalid",
-        )
+    exact_slice = validate_selected_robot_kinematics_bundle(
+        selected_state,
+        source_state=source_state,
+        prediction_start_frame=source_frame_start,
+        prediction_frame_count=FRAME_COUNT,
+    )
+    _require(
+        action_alignment.get("selected_bundle_exact_slice_audit") == exact_slice,
+        "selected robot kinematics exact-slice proof changed",
+    )
     source_count = action_alignment.get("source_robot_frame_count")
     _require(
         isinstance(source_count, int)
         and source_count >= source_frame_start + FRAME_COUNT,
-        "source robot frame count is incompatible with the selected action",
+        "source robot frame count is incompatible with selected kinematics",
     )
     _require(
         action_alignment.get("prediction_frame_count") == FRAME_COUNT,
-        "selected action prediction frame count changed",
+        "selected robot kinematics prediction frame count changed",
     )
     contract = {
         "dataset_layout": "deform360.processing/robot/v1 aligned raw index",
@@ -967,11 +1062,22 @@ def _validate_selected_action_bundle(
             "raw frame k indexes the same aligned state in robot arrays and every "
             "camera undistorted.mp4"
         ),
-        "selected_action_semantics": "state-aligned controller pose",
+        "selected_robot_kinematics_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "commanded_control_or_delta_action_used": False,
         "transition_semantics": (
             "logical state u uses raw state start+u; incoming displacement uses "
             "selected rows u-1 -> u"
         ),
+        "selection_policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+        "selection_audit_artifact_sha256": expected_selection["artifact_sha256"],
+        "selected_bundle_exact_slice_audit_sha256": exact_slice["artifact_sha256"],
+        # Compatibility alias retained for older manifest readers.
+        "selected_action_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "selected_action_semantics_is_compatibility_alias": True,
         "source_robot_frame_count": source_count,
         "frame_zero": logical_state_action_alignment(source_frame_start, 0),
         "updates": [
@@ -1023,13 +1129,34 @@ def _validate_aligned_robot_video_metadata(
         "selected source window is outside aligned robot/video metadata",
     )
     camera_names = tuple(str(value) for value in cameras)
+    camera_policy = frame_manifest.get("camera_policy")
+    _require(
+        isinstance(camera_policy, Mapping)
+        and isinstance(camera_policy.get("candidate_cameras"), list),
+        "frame-zero candidate camera policy is missing",
+    )
+    candidate_cameras = tuple(
+        str(value) for value in camera_policy["candidate_cameras"]
+    )
+    policy_selected_cameras = camera_policy.get("selected_cameras")
+    _require(
+        candidate_cameras
+        and len(set(candidate_cameras)) == len(candidate_cameras)
+        and isinstance(policy_selected_cameras, list)
+        and tuple(str(value) for value in policy_selected_cameras) == camera_names
+        and tuple(
+            camera for camera in candidate_cameras if camera in set(camera_names)
+        )
+        == camera_names,
+        "selected frame-zero cameras are not an ordered candidate subset",
+    )
     declared_cameras = parameters.get("cameras")
     video_sha256 = inputs.get("video_sha256")
     _require(
         isinstance(declared_cameras, list)
-        and tuple(str(value) for value in declared_cameras) == camera_names
+        and tuple(str(value) for value in declared_cameras) == candidate_cameras
         and isinstance(video_sha256, Mapping)
-        and set(map(str, video_sha256)) == set(camera_names),
+        and set(map(str, video_sha256)) == set(candidate_cameras),
         "robot/video aligned camera set changed",
     )
     declared_hashes = {str(name): str(value) for name, value in video_sha256.items()}
@@ -1044,12 +1171,12 @@ def _validate_aligned_robot_video_metadata(
             and all(digit in "0123456789abcdef" for digit in video_sha256[name])
             for name in video_sha256
         )
-        and len(declared_hashes) == len(camera_names),
+        and len(declared_hashes) == len(candidate_cameras),
         "robot/video declared checksum is invalid",
     )
     accesses = frame_manifest.get("camera_frame_zero_access")
     _require(
-        isinstance(accesses, list) and len(accesses) == len(camera_names),
+        isinstance(accesses, list) and len(accesses) == len(candidate_cameras),
         "frame-zero camera access records changed",
     )
     access_by_camera = {
@@ -1058,11 +1185,11 @@ def _validate_aligned_robot_video_metadata(
         if isinstance(value, Mapping)
     }
     _require(
-        set(access_by_camera) == set(camera_names)
+        set(access_by_camera) == set(candidate_cameras)
         and all(
             access_by_camera[camera].get("source_aligned_frame_index")
             == source_frame_start
-            for camera in camera_names
+            for camera in candidate_cameras
         ),
         "frame-zero camera source index differs from the action start",
     )
@@ -1073,9 +1200,10 @@ def _validate_aligned_robot_video_metadata(
         "aligned_timestamps_sha256": timestamp_sha256,
         "declared_video_sha256": declared_hashes,
         "declared_video_hashes_verified_by_whole_file_read": False,
-        "camera_order": list(camera_names),
+        "declared_candidate_camera_order": list(candidate_cameras),
+        "selected_bundle_camera_order": list(camera_names),
         "source_frame_range_half_open": [source_frame_start, source_frame_stop],
-        "frame_zero_source_index_verified_for_every_camera": True,
+        "frame_zero_source_index_verified_for_every_candidate_camera": True,
     }
 
 
@@ -1205,7 +1333,7 @@ def run_held_online_prefix_case(
         "held prediction action range changed",
     )
     selected_action_path, state_action_contract = _validate_selected_action_bundle(
-        action_alignment,
+        frame_manifest,
         source_frame_start=source_start,
     )
 
@@ -1664,6 +1792,11 @@ def run_held_online_prefix_case(
         "prefix_authorization": _bound_file(prefix_authorization_path),
         "physical_prediction_archive": _bound_file(prediction_archive),
         "physical_prediction_manifest": _bound_file(prediction_manifest_path),
+        "raw_robot_kinematics": dict(
+            frame_manifest["action_inputs"]["robot_trajectory"]
+        ),
+        "selected_robot_kinematics_bundle": _bound_file(selected_action_path),
+        # Compatibility alias for already frozen downstream readers.
         "selected_action_bundle": _bound_file(selected_action_path),
         "robot_video_metadata": aligned_metadata["metadata"],
     }
@@ -1709,6 +1842,11 @@ def run_held_online_prefix_case(
         },
         "tracker": tracker_descriptor,
         "action_alignment": {
+            "robot_kinematics_policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+            "robot_kinematics_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+                "trajectory_semantics"
+            ],
+            "commanded_control_or_delta_action_used": False,
             "source_frame_start": source_start,
             "selected_raw_frame_range_half_open": raw_range,
             "prediction_raw_frame_range_half_open": prediction_range,
@@ -1716,6 +1854,7 @@ def run_held_online_prefix_case(
             "maximum_logical_rgb_frame_read": UPDATE_FRAMES[-1],
             "maximum_source_rgb_frame_read": source_start + UPDATE_FRAMES[-1],
             "state_action_index_contract": state_action_contract,
+            "state_action_index_contract_is_compatibility_name": True,
             "aligned_robot_video_metadata": aligned_metadata,
         },
         "inputs": common_inputs,
@@ -1724,6 +1863,8 @@ def run_held_online_prefix_case(
         "output": _archive_record(measurement_path, measurement_arrays),
         "information_boundary": {
             "frame_zero_bundle_only_for_mask_depth_calibration": True,
+            "known_aligned_realized_robot_kinematics_read": True,
+            "commanded_control_or_delta_action_read": False,
             "processed_hdf5_read": False,
             "original_calibration_read_after_bundle": False,
             "logical_video_prefix_rule": "update u reads exactly logical frames [0,u]",

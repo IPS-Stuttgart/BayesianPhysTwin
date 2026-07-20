@@ -12,10 +12,16 @@ import pytest
 import bayesian_phystwin.deform360_held_physical_prior as physical_prior
 
 from deform360_held_test_helpers import (
+    bound_file,
     default_frame_zero_config,
     dummy_immutable_bindings,
+    write_robot_kinematics_fixture,
 )
 
+from bayesian_phystwin.deform360_frame_zero_assets import (
+    FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_CAMERA_SELECTION_RULE,
+)
 from bayesian_phystwin.deform360_held_physical_prior import (
     AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256,
     AUTOMATIC_TWIN_PROTOCOL_ID,
@@ -34,6 +40,7 @@ from bayesian_phystwin.deform360_held_physical_prior import (
     validate_python_runtime,
 )
 from bayesian_phystwin.deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
     ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
     ROBOT_KINEMATICS_WINDOW_POLICY_ID,
 )
@@ -44,6 +51,9 @@ from bayesian_phystwin.deform360_held_protocol import (
 
 
 CASE_NAME = "083-blanket-cloth-ep0000"
+TEST_CAMERAS = tuple(
+    sorted(["brics-odroid-001_cam0", *(f"camera-{index:02d}" for index in range(7))])
+)
 
 
 def test_v3_uses_fixed_1024_node_capacity_and_shared_robot_contract() -> None:
@@ -132,7 +142,7 @@ def _slice_robot(source: Path, destination: Path, *, start: int, count: int) -> 
 def _make_frame_zero_bundle(
     path: Path, *, encoded_frames: tuple[int, ...] = (0,)
 ) -> None:
-    camera_count = 2
+    camera_count = len(TEST_CAMERAS)
     point_count = 128
     points = np.column_stack(
         (
@@ -155,7 +165,7 @@ def _make_frame_zero_bundle(
     np.savez_compressed(
         path,
         frame_indices=np.asarray(encoded_frames, dtype=np.int64),
-        camera_names=np.asarray(["cam0", "cam1"]),
+        camera_names=np.asarray(TEST_CAMERAS),
         rgb_frame0=rgb,
         mask_frame0=mask,
         depth_frame0_m=depth,
@@ -177,12 +187,16 @@ def _make_locked_frame_zero(
     create_held_protocol_lock(lock_path, immutable_bindings=dummy_immutable_bindings())
     bundle_path = tmp_path / "frame_zero.npz"
     _make_frame_zero_bundle(bundle_path, encoded_frames=encoded_frames)
-    robot_path = tmp_path / "robot.npz"
-    _make_robot(robot_path, frame_count=100)
-    selected_robot_path = tmp_path / "known_action_76.npz"
-    _slice_robot(robot_path, selected_robot_path, start=8, count=FRAME_COUNT)
+    robot_path, _selected_robot_path, action_alignment = (
+        write_robot_kinematics_fixture(
+            tmp_path,
+            source_frame_count=100,
+            selected_start=8,
+        )
+    )
     robot_metadata_path = tmp_path / "robot.meta.json"
     robot_metadata_path.write_text("{}\n", encoding="utf-8")
+    config = default_frame_zero_config()
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
@@ -196,20 +210,47 @@ def _make_locked_frame_zero(
         "lock_artifact_sha256": json.loads(lock_path.read_text(encoding="utf-8"))[
             "artifact_sha256"
         ],
-        "config": default_frame_zero_config(),
+        "config": config,
         "bundle": _bound_file(bundle_path),
         "action_inputs": {
-            "robot_trajectory": _bound_file(robot_path),
+            "robot_trajectory": bound_file(robot_path),
             "robot_metadata": _bound_file(robot_metadata_path),
         },
-        "action_alignment": {
-            "selected_raw_frame_range_half_open": [8, 89],
-            "prediction_raw_frame_range_half_open": [8, 84],
-            "selected_action_bundle": _bound_file(selected_robot_path),
+        "action_alignment": action_alignment,
+        "camera_policy": {
+            "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+            "rule": FRAME_ZERO_CAMERA_SELECTION_RULE,
+            "reference_camera": config["reference_camera"],
+            "minimum_selected_camera_count": config["minimum_camera_count"],
+            "candidate_cameras": list(TEST_CAMERAS),
+            "candidate_camera_count": len(TEST_CAMERAS),
+            "selected_cameras": list(TEST_CAMERAS),
+            "selected_camera_count": len(TEST_CAMERAS),
+            "abstained_cameras": [],
+            "abstained_camera_count": 0,
         },
+        "camera_frame_zero_access": [
+            {
+                "camera": camera,
+                "path": str((tmp_path / f"{camera}.mp4").resolve()),
+                "decoded_frame_count": 1,
+                "maximum_rgb_frame_read": 0,
+                "action_window_frame_index": 0,
+                "source_aligned_frame_index": 8,
+                "decoded_rgb_sha256": "d" * 64,
+                "whole_file_hashed_or_read": False,
+            }
+            for camera in TEST_CAMERAS
+        ],
         "information_boundary": {
             "maximum_object_rgb_frame_read": 0,
             "object_observation_frames_used": [0],
+            "known_aligned_realized_robot_kinematics_read": True,
+            "known_robot_trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+                "trajectory_semantics"
+            ],
+            "robot_delta_command_read": False,
+            "commanded_control_read": False,
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,

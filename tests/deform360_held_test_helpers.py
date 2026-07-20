@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
 
 from bayesian_phystwin.deform360_frame_zero_assets import (
     FrameZeroAssetConfig,
@@ -20,6 +24,15 @@ from bayesian_phystwin.deform360_held_protocol import (
     REQUIRED_IMMUTABLE_BINDING_KEYS,
     SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
     held_contract_sha256,
+)
+from bayesian_phystwin.deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+    load_robot_kinematics_archive,
+    robot_kinematics_array_records,
+    select_robot_kinematics_window,
+    slice_robot_kinematics,
+    validate_selected_robot_kinematics_bundle,
 )
 
 
@@ -52,3 +65,115 @@ def dummy_immutable_bindings() -> dict[str, str]:
 
 def default_frame_zero_config() -> dict[str, object]:
     return asdict(FrameZeroAssetConfig())
+
+
+def bound_file(path: Path) -> dict[str, object]:
+    return {
+        "path": str(path.resolve()),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "size_bytes": path.stat().st_size,
+    }
+
+
+def write_robot_kinematics_fixture(
+    directory: Path,
+    *,
+    source_frame_count: int = 150,
+    selected_start: int = 62,
+    window_length_frames: int = 81,
+    prediction_frame_count: int = 76,
+    candidate_first_frame: int = 8,
+    candidate_stride_frames: int = 6,
+) -> tuple[Path, Path, dict[str, object]]:
+    """Write a strict monomanual archive with a uniquely selected window."""
+
+    directory.mkdir(parents=True, exist_ok=True)
+    transforms = np.repeat(
+        np.eye(4, dtype=np.float64)[None], source_frame_count, axis=0
+    )
+    # Motion exists on every transition inside the requested 81-frame window.
+    for frame in range(selected_start + 1, selected_start + window_length_frames):
+        transforms[frame:, 0, 3] += 0.001
+    openings = np.zeros(source_frame_count, dtype=np.float64)
+    actions = np.zeros((source_frame_count, 5, 3), dtype=np.float64)
+    actions[:, 0, :] = transforms[:, :3, 3]
+    actions[:, 1:4, :] = transforms[:, :3, :3]
+    actions[:, 4, 0] = openings
+    raw_path = directory / "robot.npz"
+    np.savez_compressed(
+        raw_path,
+        format_version=np.asarray(1, dtype=np.uint16),
+        actions=actions,
+        T_worlds=transforms,
+        openings=openings,
+        bimanual=np.asarray(False, dtype=np.bool_),
+    )
+    source_state = load_robot_kinematics_archive(raw_path)
+    selection = select_robot_kinematics_window(
+        source_state,
+        window_length_frames=window_length_frames,
+        prediction_frame_count=prediction_frame_count,
+        candidate_first_frame=candidate_first_frame,
+        candidate_stride_frames=candidate_stride_frames,
+    )
+    assert selection["selected_raw_frame_range_half_open"][0] == selected_start
+    selected_state = slice_robot_kinematics(
+        source_state,
+        start_frame=selected_start,
+        frame_count=prediction_frame_count,
+    )
+    selected_path = directory / "known_action_76.npz"
+    np.savez_compressed(selected_path, **selected_state.archive_arrays())
+    exact_slice = validate_selected_robot_kinematics_bundle(
+        selected_path,
+        source_state=source_state,
+        prediction_start_frame=selected_start,
+        prediction_frame_count=prediction_frame_count,
+    )
+    selected_record = bound_file(selected_path)
+    alignment: dict[str, object] = {
+        "policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+        "trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "selection_audit": selection,
+        "selected_raw_frame_range_half_open": list(
+            selection["selected_raw_frame_range_half_open"]
+        ),
+        "prediction_raw_frame_range_half_open": list(
+            selection["prediction_raw_frame_range_half_open"]
+        ),
+        "tracking_tail_frame_count": window_length_frames - prediction_frame_count,
+        "source_robot_frame_count": source_frame_count,
+        "prediction_frame_count": prediction_frame_count,
+        "selected_robot_kinematics_bundle": selected_record,
+        "selected_action_bundle": selected_record,
+        "selected_action_bundle_is_compatibility_alias": True,
+        "selected_action_arrays": robot_kinematics_array_records(selected_state),
+        "selected_bundle_exact_slice_audit": exact_slice,
+    }
+    return raw_path, selected_path, alignment
+
+
+def write_robot_metadata_fixture(
+    path: Path,
+    *,
+    source_frame_count: int,
+    cameras: tuple[str, ...],
+) -> Path:
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "deform360.processing/robot/v1",
+                "outputs": {"num_frames": source_frame_count},
+                "inputs": {
+                    "aligned_timestamps_sha256": "b" * 64,
+                    "video_sha256": {camera: "c" * 64 for camera in cameras},
+                },
+                "parameters": {"cameras": list(cameras)},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return path

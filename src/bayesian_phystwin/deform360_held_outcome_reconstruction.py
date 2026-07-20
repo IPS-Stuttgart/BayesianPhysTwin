@@ -3,7 +3,8 @@
 No path supplied by the operator is resolved, opened, enumerated, copied, or
 hashed when a callback is constructed.  The callback first crosses
 ``run_outcome_operation`` with the complete cohort capability.  Only inside
-that callback may the exact action-selected 81-frame tracking window be read.
+that callback may the exact realized-robot-kinematics-selected 81-frame
+tracking window be read.
 The official Deform360 point-cloud stage consumes the final five frames only as
 fixed tracking context and emits exactly 76 target frames.
 
@@ -54,6 +55,17 @@ from .deform360_held_outcome_scoring import (
     OfficialTarget,
     TargetOperation,
     official_target_array_sha256,
+)
+from .deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
+    ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+    load_robot_kinematics_archive,
+    robot_kinematics_array_records,
+    sha256_array as robot_array_sha256,
+    slice_robot_kinematics,
+    validate_robot_kinematics_selection_audit,
+    validate_selected_robot_kinematics_bundle,
 )
 
 
@@ -972,40 +984,114 @@ def _stage_action_window(
     )
     selected_action_path = _validate_bound_file(
         request.frame_zero_manifest["action_alignment"]["selected_action_bundle"],
-        label="selected 76-frame action",
+        label="selected 76-frame realized robot kinematics",
     )
-    with np.load(raw_robot_path, allow_pickle=False) as stored:
-        source_count = len(stored["actions"])
+    source_state = load_robot_kinematics_archive(raw_robot_path)
+    alignment = request.frame_zero_manifest["action_alignment"]
+    config = request.frame_zero_manifest.get("config")
+    _require(isinstance(config, Mapping), "frame-zero configuration is missing")
+    candidate_first = config.get("action_candidate_first_frame")
+    candidate_stride = config.get("action_candidate_stride_frames")
+    _require(
+        type(candidate_first) is int
+        and candidate_first >= 0
+        and type(candidate_stride) is int
+        and candidate_stride >= 1
+        and config.get("action_window_length_frames")
+        == TRACKING_CONTEXT_FRAME_COUNT
+        and config.get("prediction_frame_count") == FRAME_COUNT,
+        "frame-zero robot-window configuration changed",
+    )
+    selection = alignment.get("selection_audit")
+    _require(isinstance(selection, Mapping), "robot selection audit is missing")
+    selection_audit = validate_robot_kinematics_selection_audit(
+        selection,
+        source_state,
+        window_length_frames=TRACKING_CONTEXT_FRAME_COUNT,
+        prediction_frame_count=FRAME_COUNT,
+        candidate_first_frame=candidate_first,
+        candidate_stride_frames=candidate_stride,
+    )
+    _require(
+        alignment.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+        and alignment.get("trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+        and alignment.get("selected_raw_frame_range_half_open")
+        == selection_audit["selected_raw_frame_range_half_open"]
+        == [request.source_frame_start, request.source_frame_stop]
+        and alignment.get("prediction_raw_frame_range_half_open")
+        == selection_audit["prediction_raw_frame_range_half_open"]
+        == [request.source_frame_start, request.source_frame_start + FRAME_COUNT]
+        and alignment.get("source_robot_frame_count") == source_state.frame_count
+        and alignment.get("prediction_frame_count") == FRAME_COUNT
+        and alignment.get("tracking_tail_frame_count") == TRACKING_TAIL_FRAME_COUNT,
+        "outcome robot selection alignment changed",
+    )
+    _require(
+        alignment.get("selected_action_bundle")
+        == alignment.get("selected_robot_kinematics_bundle")
+        and alignment.get("selected_action_bundle_is_compatibility_alias") is True,
+        "outcome selected-action compatibility alias changed",
+    )
+    selected_state = load_robot_kinematics_archive(
+        selected_action_path, expected_frame_count=FRAME_COUNT
+    )
+    _require(
+        alignment.get("selected_action_arrays")
+        == robot_kinematics_array_records(selected_state),
+        "sealed selected robot kinematics array bindings changed",
+    )
+    exact_slice_audit = validate_selected_robot_kinematics_bundle(
+        selected_state,
+        source_state=source_state,
+        prediction_start_frame=request.source_frame_start,
+        prediction_frame_count=FRAME_COUNT,
+    )
+    _require(
+        alignment.get("selected_bundle_exact_slice_audit") == exact_slice_audit,
+        "sealed selected robot kinematics exact-slice proof changed",
+    )
+
+    staged_state = slice_robot_kinematics(
+        source_state,
+        start_frame=request.source_frame_start,
+        frame_count=TRACKING_CONTEXT_FRAME_COUNT,
+    )
+    staged_robot = staged_state.archive_arrays()
+    source_arrays = source_state.archive_arrays()
+    selected_arrays = selected_state.archive_arrays()
+    temporal_fields = ("actions", "T_worlds", "openings")
+    scalar_fields = ("format_version", "bimanual")
+    for name in temporal_fields:
         _require(
-            request.source_frame_stop <= source_count,
-            "raw robot action is shorter than the tracking context",
+            np.array_equal(
+                staged_robot[name],
+                source_arrays[name][
+                    request.source_frame_start : request.source_frame_stop
+                ],
+            ),
+            f"staged robot temporal slice changed: {name}",
         )
-        staged_robot: dict[str, np.ndarray] = {}
-        for name in stored.files:
-            value = np.asarray(stored[name])
-            staged_robot[name] = (
-                value[request.source_frame_start : request.source_frame_stop]
-                if value.ndim >= 1 and len(value) == source_count
-                else value
-            )
-    with np.load(selected_action_path, allow_pickle=False) as selected:
-        for name in selected.files:
-            expected = np.asarray(selected[name])
-            observed = staged_robot[name]
-            if expected.ndim >= 1 and len(expected) == FRAME_COUNT:
-                observed = observed[:FRAME_COUNT]
-            _require(
-                np.array_equal(observed, expected),
-                f"staged tracking action differs from sealed prediction action: {name}",
-            )
+        _require(
+            np.array_equal(staged_robot[name][:FRAME_COUNT], selected_arrays[name]),
+            f"staged robot prediction prefix differs from sealed bundle: {name}",
+        )
+    for name in scalar_fields:
+        _require(
+            np.array_equal(staged_robot[name], source_arrays[name])
+            and np.array_equal(staged_robot[name], selected_arrays[name]),
+            f"staged robot scalar field changed: {name}",
+        )
     robot_dir = episode / "robot"
     robot_dir.mkdir()
     np.savez_compressed(robot_dir / "robot.npz", **staged_robot)
     shutil.copy2(robot_meta_path, robot_dir / "robot.meta.json")
 
     source_inputs: dict[str, Any] = {
+        "robot_kinematics": _bound_file(raw_robot_path),
         "robot_trajectory": _bound_file(raw_robot_path),
         "robot_metadata": _bound_file(robot_meta_path),
+        "selected_prediction_robot_kinematics": _bound_file(selected_action_path),
         "selected_prediction_action": _bound_file(selected_action_path),
         "cameras": {},
     }
@@ -1015,6 +1101,31 @@ def _stage_action_window(
         "robot": _bound_file(robot_dir / "robot.npz"),
         "robot_metadata": _bound_file(robot_dir / "robot.meta.json"),
         "cameras": {},
+    }
+    robot_kinematics_staging = {
+        "policy_id": ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+        "contract_sha256": ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256,
+        "trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+            "trajectory_semantics"
+        ],
+        "selection_audit": selection_audit,
+        "selected_bundle_exact_slice_audit": exact_slice_audit,
+        "temporal_fields_sliced_exactly_81": list(temporal_fields),
+        "scalar_fields_copied_unchanged": list(scalar_fields),
+        "all_five_fields_first_76_equal_selected_bundle": True,
+        "source_array_sha256": {
+            name: robot_array_sha256(value)
+            for name, value in sorted(source_arrays.items())
+        },
+        "staged_array_sha256": {
+            name: robot_array_sha256(value)
+            for name, value in sorted(staged_robot.items())
+        },
+        "selected_array_sha256": {
+            name: robot_array_sha256(value)
+            for name, value in sorted(selected_arrays.items())
+        },
+        "commanded_control_or_delta_action_used": False,
     }
     rgb_zero = np.asarray(arrays["rgb_frame0"])
     for index, camera in enumerate(request.camera_names):
@@ -1086,6 +1197,7 @@ def _stage_action_window(
     return staged_root, {
         "source_inputs": source_inputs,
         "staged_outputs": staged_outputs,
+        "robot_kinematics": robot_kinematics_staging,
         "source_frame_range_half_open": [
             request.source_frame_start,
             request.source_frame_stop,
@@ -1442,6 +1554,153 @@ def _run_pinned_official_pipeline(
     )
 
 
+_ROBOT_KINEMATICS_STAGING_FIELDS = frozenset(
+    {
+        "policy_id",
+        "contract_sha256",
+        "trajectory_semantics",
+        "selection_audit",
+        "selected_bundle_exact_slice_audit",
+        "temporal_fields_sliced_exactly_81",
+        "scalar_fields_copied_unchanged",
+        "all_five_fields_first_76_equal_selected_bundle",
+        "source_array_sha256",
+        "staged_array_sha256",
+        "selected_array_sha256",
+        "commanded_control_or_delta_action_used",
+    }
+)
+
+
+def _validate_staged_robot_kinematics(
+    request: ReconstructionRequest,
+    staging: Mapping[str, Any],
+) -> None:
+    """Replay the raw-to-81-to-76 robot staging proof after the barrier."""
+
+    source_inputs = staging.get("source_inputs")
+    staged_outputs = staging.get("staged_outputs")
+    evidence = staging.get("robot_kinematics")
+    _require(
+        isinstance(source_inputs, Mapping)
+        and isinstance(staged_outputs, Mapping)
+        and isinstance(evidence, Mapping)
+        and set(evidence) == set(_ROBOT_KINEMATICS_STAGING_FIELDS),
+        "backend robot kinematics staging evidence changed",
+    )
+    _require(
+        source_inputs.get("robot_kinematics")
+        == source_inputs.get("robot_trajectory")
+        == request.frame_zero_manifest.get("action_inputs", {}).get(
+            "robot_trajectory"
+        )
+        and source_inputs.get("selected_prediction_robot_kinematics")
+        == source_inputs.get("selected_prediction_action")
+        == request.frame_zero_manifest.get("action_alignment", {}).get(
+            "selected_robot_kinematics_bundle"
+        ),
+        "backend robot compatibility aliases changed",
+    )
+    raw_path = _validate_bound_file(
+        source_inputs["robot_kinematics"], label="staging source robot kinematics"
+    )
+    selected_path = _validate_bound_file(
+        source_inputs["selected_prediction_robot_kinematics"],
+        label="staging selected robot kinematics",
+    )
+    staged_path = _validate_bound_file(
+        staged_outputs["robot"], label="staged 81-frame robot kinematics"
+    )
+    source_state = load_robot_kinematics_archive(raw_path)
+    selected_state = load_robot_kinematics_archive(
+        selected_path, expected_frame_count=FRAME_COUNT
+    )
+    staged_state = load_robot_kinematics_archive(
+        staged_path, expected_frame_count=TRACKING_CONTEXT_FRAME_COUNT
+    )
+    alignment = request.frame_zero_manifest.get("action_alignment")
+    config = request.frame_zero_manifest.get("config")
+    _require(
+        isinstance(alignment, Mapping) and isinstance(config, Mapping),
+        "sealed robot alignment or configuration is missing",
+    )
+    selection = validate_robot_kinematics_selection_audit(
+        alignment.get("selection_audit", {}),
+        source_state,
+        window_length_frames=TRACKING_CONTEXT_FRAME_COUNT,
+        prediction_frame_count=FRAME_COUNT,
+        candidate_first_frame=int(config["action_candidate_first_frame"]),
+        candidate_stride_frames=int(config["action_candidate_stride_frames"]),
+    )
+    _require(
+        selection.get("selected_raw_frame_range_half_open")
+        == alignment.get("selected_raw_frame_range_half_open")
+        == [request.source_frame_start, request.source_frame_stop]
+        and selection.get("prediction_raw_frame_range_half_open")
+        == alignment.get("prediction_raw_frame_range_half_open")
+        == [request.source_frame_start, request.source_frame_start + FRAME_COUNT],
+        "backend robot kinematics range changed",
+    )
+    exact_slice = validate_selected_robot_kinematics_bundle(
+        selected_state,
+        source_state=source_state,
+        prediction_start_frame=request.source_frame_start,
+        prediction_frame_count=FRAME_COUNT,
+    )
+    expected_staged = slice_robot_kinematics(
+        source_state,
+        start_frame=request.source_frame_start,
+        frame_count=TRACKING_CONTEXT_FRAME_COUNT,
+    )
+    staged_arrays = staged_state.archive_arrays()
+    expected_staged_arrays = expected_staged.archive_arrays()
+    selected_arrays = selected_state.archive_arrays()
+    for name in ("actions", "T_worlds", "openings"):
+        _require(
+            np.array_equal(staged_arrays[name], expected_staged_arrays[name])
+            and np.array_equal(staged_arrays[name][:FRAME_COUNT], selected_arrays[name]),
+            f"backend staged robot temporal field changed: {name}",
+        )
+    for name in ("format_version", "bimanual"):
+        _require(
+            np.array_equal(staged_arrays[name], expected_staged_arrays[name])
+            and np.array_equal(staged_arrays[name], selected_arrays[name]),
+            f"backend staged robot scalar field changed: {name}",
+        )
+    source_arrays = source_state.archive_arrays()
+    expected_source_sha = {
+        name: robot_array_sha256(value)
+        for name, value in sorted(source_arrays.items())
+    }
+    expected_staged_sha = {
+        name: robot_array_sha256(value)
+        for name, value in sorted(staged_arrays.items())
+    }
+    expected_selected_sha = {
+        name: robot_array_sha256(value)
+        for name, value in sorted(selected_arrays.items())
+    }
+    _require(
+        evidence.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+        and evidence.get("contract_sha256")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+        and evidence.get("trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+        and evidence.get("selection_audit") == selection
+        and evidence.get("selected_bundle_exact_slice_audit") == exact_slice
+        and evidence.get("temporal_fields_sliced_exactly_81")
+        == ["actions", "T_worlds", "openings"]
+        and evidence.get("scalar_fields_copied_unchanged")
+        == ["format_version", "bimanual"]
+        and evidence.get("all_five_fields_first_76_equal_selected_bundle") is True
+        and evidence.get("source_array_sha256") == expected_source_sha
+        and evidence.get("staged_array_sha256") == expected_staged_sha
+        and evidence.get("selected_array_sha256") == expected_selected_sha
+        and evidence.get("commanded_control_or_delta_action_used") is False,
+        "backend robot kinematics staging proof changed",
+    )
+
+
 def _validate_backend_result(
     request: ReconstructionRequest,
     result: ReconstructionBackendResult,
@@ -1572,6 +1831,7 @@ def _validate_backend_result(
         == {
             "source_inputs",
             "staged_outputs",
+            "robot_kinematics",
             "source_frame_range_half_open",
             "tracking_context_frame_count",
             "prediction_frame_range_half_open",
@@ -1589,6 +1849,7 @@ def _validate_backend_result(
         and staging.get("tactile_paths_read_or_copied") == [],
         "backend staging contract changed",
     )
+    _validate_staged_robot_kinematics(request, staging)
     official = audit.get("official_stages", {})
     _require(
         isinstance(official, Mapping)

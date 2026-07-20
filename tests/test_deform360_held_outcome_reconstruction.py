@@ -9,6 +9,12 @@ from typing import Any
 import numpy as np
 import pytest
 
+from deform360_held_test_helpers import (
+    bound_file,
+    write_robot_kinematics_fixture,
+    write_robot_metadata_fixture,
+)
+
 from bayesian_phystwin import deform360_held_outcome_reconstruction as reconstruction
 
 
@@ -35,6 +41,15 @@ def _request(tmp_path: Path, output_dir: Path) -> reconstruction.ReconstructionR
         "rgb_frame0": rgb,
         "mask_frame0": masks,
     }
+    raw_robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
+        tmp_path / "sealed" / "robot",
+        selected_start=62,
+    )
+    robot_metadata = write_robot_metadata_fixture(
+        tmp_path / "sealed" / "robot" / "robot.meta.json",
+        source_frame_count=150,
+        cameras=CAMERAS,
+    )
     contract = reconstruction._copy_contract()
     return reconstruction.ReconstructionRequest(
         case_name=CASE_NAME,
@@ -48,7 +63,20 @@ def _request(tmp_path: Path, output_dir: Path) -> reconstruction.ReconstructionR
         source_frame_stop=143,
         camera_names=CAMERAS,
         frame_zero_arrays=arrays,
-        frame_zero_manifest={"bundle": reconstruction._bound_file(bundle)},
+        frame_zero_manifest={
+            "bundle": reconstruction._bound_file(bundle),
+            "action_inputs": {
+                "robot_trajectory": bound_file(raw_robot),
+                "robot_metadata": bound_file(robot_metadata),
+            },
+            "action_alignment": action_alignment,
+            "config": {
+                "action_candidate_first_frame": 8,
+                "action_candidate_stride_frames": 6,
+                "action_window_length_frames": 81,
+                "prediction_frame_count": 76,
+            },
+        },
         frame_zero_manifest_path=manifest,
         online_seal_path=online_seal,
         contract=contract,
@@ -65,6 +93,66 @@ class _SyntheticOfficialBackend:
     ) -> reconstruction.ReconstructionBackendResult:
         self.calls += 1
         episode = request.output_dir / "staged-aligned" / "episode_0000"
+        source_record = request.frame_zero_manifest["action_inputs"][
+            "robot_trajectory"
+        ]
+        selected_record = request.frame_zero_manifest["action_alignment"][
+            "selected_robot_kinematics_bundle"
+        ]
+        source_state = reconstruction.load_robot_kinematics_archive(
+            source_record["path"]
+        )
+        selected_state = reconstruction.load_robot_kinematics_archive(
+            selected_record["path"], expected_frame_count=reconstruction.FRAME_COUNT
+        )
+        staged_state = reconstruction.slice_robot_kinematics(
+            source_state,
+            start_frame=request.source_frame_start,
+            frame_count=reconstruction.TRACKING_CONTEXT_FRAME_COUNT,
+        )
+        robot_path = episode / "robot" / "robot.npz"
+        robot_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(robot_path, **staged_state.archive_arrays())
+        source_arrays = source_state.archive_arrays()
+        selected_arrays = selected_state.archive_arrays()
+        staged_arrays = staged_state.archive_arrays()
+        selection = request.frame_zero_manifest["action_alignment"]["selection_audit"]
+        exact_slice = request.frame_zero_manifest["action_alignment"][
+            "selected_bundle_exact_slice_audit"
+        ]
+        robot_evidence = {
+            "policy_id": reconstruction.ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+            "contract_sha256": (
+                reconstruction.ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+            ),
+            "trajectory_semantics": reconstruction.ROBOT_KINEMATICS_WINDOW_CONTRACT[
+                "trajectory_semantics"
+            ],
+            "selection_audit": selection,
+            "selected_bundle_exact_slice_audit": exact_slice,
+            "temporal_fields_sliced_exactly_81": [
+                "actions",
+                "T_worlds",
+                "openings",
+            ],
+            "scalar_fields_copied_unchanged": ["format_version", "bimanual"],
+            "all_five_fields_first_76_equal_selected_bundle": True,
+            "source_array_sha256": {
+                name: reconstruction.robot_array_sha256(value)
+                for name, value in sorted(source_arrays.items())
+            },
+            "staged_array_sha256": {
+                name: reconstruction.robot_array_sha256(value)
+                for name, value in sorted(staged_arrays.items())
+            },
+            "selected_array_sha256": {
+                name: reconstruction.robot_array_sha256(value)
+                for name, value in sorted(selected_arrays.items())
+            },
+            "commanded_control_or_delta_action_used": False,
+        }
+        robot_source_binding = reconstruction._bound_file(source_record["path"])
+        selected_binding = reconstruction._bound_file(selected_record["path"])
         reconstruction_files = {
             str(frame): _write(episode / "splats" / f"splat_{frame}.ply")
             for frame in range(reconstruction.TRACKING_CONTEXT_FRAME_COUNT)
@@ -133,8 +221,16 @@ class _SyntheticOfficialBackend:
                 "mask_frame0_sha256": reconstruction._sha256_array(masks),
             },
             "staging": {
-                "source_inputs": {},
-                "staged_outputs": {},
+                "source_inputs": {
+                    "robot_kinematics": robot_source_binding,
+                    "robot_trajectory": robot_source_binding,
+                    "selected_prediction_robot_kinematics": selected_binding,
+                    "selected_prediction_action": selected_binding,
+                },
+                "staged_outputs": {
+                    "robot": reconstruction._bound_file(robot_path),
+                },
+                "robot_kinematics": robot_evidence,
                 "source_frame_range_half_open": [62, 143],
                 "tracking_context_frame_count": 81,
                 "prediction_frame_range_half_open": [0, 76],
@@ -446,3 +542,99 @@ def test_sam2_hydra_id_and_bound_repository_path_are_distinct(
         )
         == config.resolve()
     )
+
+
+def _prepare_staging_inputs(request: reconstruction.ReconstructionRequest) -> None:
+    assert request.aligned_episode_dir is not None
+    for camera in request.camera_names:
+        camera_dir = request.aligned_episode_dir / camera
+        camera_dir.mkdir(parents=True, exist_ok=True)
+        _write(camera_dir / "undistorted.mp4", b"video")
+        (camera_dir / "aligned_timestamps.txt").write_text(
+            "\n".join(str(frame) for frame in range(150)) + "\n",
+            encoding="utf-8",
+        )
+
+
+def test_action_window_staging_slices_all_fields_and_preserves_scalars(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    request = _request(tmp_path, tmp_path / "out")
+    _prepare_staging_inputs(request)
+    monkeypatch.setattr(
+        reconstruction,
+        "_decode_video_frame",
+        lambda _path, _frame: np.zeros((3, 4, 3), dtype=np.uint8),
+    )
+    monkeypatch.setattr(reconstruction, "_video_frame_count", lambda _path: 81)
+
+    def fake_trim(
+        _ffmpeg: str,
+        _source: Path,
+        output: Path,
+        *,
+        start: int,
+        frame_count: int,
+    ) -> None:
+        assert start == 62
+        assert frame_count == 81
+        _write(output, b"lossless")
+
+    monkeypatch.setattr(reconstruction, "_trim_lossless_video", fake_trim)
+    _root, staging = reconstruction._stage_action_window(
+        request, Path("/bin/true")
+    )
+    robot_path = Path(staging["staged_outputs"]["robot"]["path"])
+    with np.load(robot_path, allow_pickle=False) as stored:
+        assert set(stored.files) == {
+            "format_version",
+            "actions",
+            "T_worlds",
+            "openings",
+            "bimanual",
+        }
+        assert stored["actions"].shape[0] == 81
+        assert stored["T_worlds"].shape[0] == 81
+        assert stored["openings"].shape[0] == 81
+        assert stored["format_version"].shape == ()
+        assert stored["bimanual"].shape == ()
+    evidence = staging["robot_kinematics"]
+    assert evidence["all_five_fields_first_76_equal_selected_bundle"] is True
+    assert evidence["scalar_fields_copied_unchanged"] == [
+        "format_version",
+        "bimanual",
+    ]
+    reconstruction._validate_staged_robot_kinematics(request, staging)
+
+
+def test_action_window_staging_rejects_valid_but_wrong_selected_slice(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    request = _request(tmp_path, tmp_path / "out")
+    _prepare_staging_inputs(request)
+    selected_path = Path(
+        request.frame_zero_manifest["action_alignment"][
+            "selected_robot_kinematics_bundle"
+        ]["path"]
+    )
+    with np.load(selected_path, allow_pickle=False) as stored:
+        arrays = {name: np.asarray(stored[name]).copy() for name in stored.files}
+    arrays["T_worlds"][:, 2, 3] += 0.02
+    arrays["actions"][:, 0, 2] += 0.02
+    np.savez_compressed(selected_path, **arrays)
+    manifest = {
+        **request.frame_zero_manifest,
+        "action_alignment": dict(request.frame_zero_manifest["action_alignment"]),
+    }
+    selected_record = reconstruction._bound_file(selected_path)
+    selected_state = reconstruction.load_robot_kinematics_archive(selected_path)
+    manifest["action_alignment"]["selected_robot_kinematics_bundle"] = selected_record
+    manifest["action_alignment"]["selected_action_bundle"] = selected_record
+    manifest["action_alignment"]["selected_action_arrays"] = (
+        reconstruction.robot_kinematics_array_records(selected_state)
+    )
+    request = reconstruction.ReconstructionRequest(
+        **{**request.__dict__, "frame_zero_manifest": manifest}
+    )
+    with pytest.raises(ValueError, match="exact source slice"):
+        reconstruction._stage_action_window(request, Path("/bin/true"))

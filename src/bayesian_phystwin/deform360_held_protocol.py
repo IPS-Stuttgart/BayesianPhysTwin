@@ -9,9 +9,10 @@ The artifact chain is::
          -> causal-prefix authorization -> online-prediction seal
          -> complete-cohort outcome permit
 
-The frame-zero bundle may contain the known 76-frame robot action, but object
-evidence is restricted to frame zero.  Outcome callbacks are invoked only
-after every prediction seal in the requested cohort has been revalidated.
+The frame-zero bundle may contain the known 76-frame aligned realized robot
+kinematics, but object evidence is restricted to frame zero.  Outcome callbacks
+are invoked only after every prediction seal in the requested cohort has been
+revalidated.
 The module never constructs frame-zero assets and never accepts a target or
 outcome path as a sealing input.
 """
@@ -27,6 +28,17 @@ import os
 from pathlib import Path
 import re
 from typing import Any, Callable, Mapping, TypeVar
+
+import numpy as np
+
+from .deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
+    ROBOT_KINEMATICS_WINDOW_POLICY_ID,
+    load_robot_kinematics_archive,
+    robot_kinematics_array_records,
+    validate_robot_kinematics_selection_audit,
+    validate_selected_robot_kinematics_bundle,
+)
 
 
 PROTOCOL_ID = "deform360-held-online-belief-v2"
@@ -723,6 +735,298 @@ def _authorize_case(
     }
 
 
+_FRAME_ZERO_ACTION_ALIGNMENT_FIELDS = frozenset(
+    {
+        "policy_id",
+        "trajectory_semantics",
+        "selection_audit",
+        "selected_raw_frame_range_half_open",
+        "prediction_raw_frame_range_half_open",
+        "tracking_tail_frame_count",
+        "source_robot_frame_count",
+        "prediction_frame_count",
+        "selected_robot_kinematics_bundle",
+        "selected_action_bundle",
+        "selected_action_bundle_is_compatibility_alias",
+        "selected_action_arrays",
+        "selected_bundle_exact_slice_audit",
+    }
+)
+_FRAME_ZERO_CAMERA_ACCESS_FIELDS = frozenset(
+    {
+        "camera",
+        "path",
+        "decoded_frame_count",
+        "maximum_rgb_frame_read",
+        "action_window_frame_index",
+        "source_aligned_frame_index",
+        "decoded_rgb_sha256",
+        "whole_file_hashed_or_read",
+    }
+)
+_FRAME_ZERO_CAMERA_POLICY_FIELDS = frozenset(
+    {
+        "policy_id",
+        "rule",
+        "reference_camera",
+        "minimum_selected_camera_count",
+        "candidate_cameras",
+        "candidate_camera_count",
+        "selected_cameras",
+        "selected_camera_count",
+        "abstained_cameras",
+        "abstained_camera_count",
+    }
+)
+_FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
+    "deform360-frame-zero-reference-anchored-inlier-abstention-v3"
+)
+_FRAME_ZERO_CAMERA_SELECTION_RULE = (
+    "process every aligned calibrated camera; keep the fixed reference and "
+    "frozen-threshold-eligible views, except that the audited common-geometry "
+    "fallback retains the fixed reference plus seven deterministic "
+    "maximum-consensus inliers"
+)
+_REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY = (
+    "reference-optional-common-exact8-projected-footprint"
+)
+_REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY = (
+    "reference-conditioned-reference-optional-exhaustive-exact-eight-assignment"
+)
+_REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID = (
+    "diagnostic-reference-conditioned-reference-optional-exact8-v1"
+)
+
+
+def _validated_positive_config_int(config: Mapping[str, Any], key: str) -> int:
+    value = config.get(key)
+    _require(
+        type(value) is int and value > 0,
+        f"frame-zero {key} is not a positive integer",
+    )
+    return value
+
+
+def _reference_optional_camera_strategy(manifest: Mapping[str, Any]) -> bool:
+    geometry_strategy = manifest.get("geometry_strategy")
+    if not isinstance(geometry_strategy, Mapping):
+        return False
+    if (
+        geometry_strategy.get("selected_strategy")
+        != _REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+    ):
+        return False
+    attempts = geometry_strategy.get("attempts")
+    assignment = geometry_strategy.get("common_assignment")
+    _require(
+        isinstance(attempts, list)
+        and bool(attempts)
+        and isinstance(attempts[-1], Mapping)
+        and attempts[-1].get("status") == "passed"
+        and attempts[-1].get("strategy")
+        == _REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+        and isinstance(assignment, Mapping)
+        and assignment.get("strategy")
+        == _REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY
+        and assignment.get("policy_id")
+        == _REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID,
+        "reference-optional geometry strategy audit changed",
+    )
+    return True
+
+
+def _validate_frame_zero_robot_kinematics(
+    manifest: Mapping[str, Any],
+    config: Mapping[str, Any],
+) -> None:
+    """Independently prove the sealed robot window and camera alignment."""
+
+    action_inputs = manifest.get("action_inputs", {})
+    _require(
+        isinstance(action_inputs, Mapping)
+        and set(action_inputs) == {"robot_trajectory", "robot_metadata"},
+        "frame-zero manifest must bind the known robot kinematics and metadata",
+    )
+    raw_robot_path = _validate_bound_file(
+        action_inputs["robot_trajectory"], role="raw robot kinematics"
+    )
+    _validate_bound_file(action_inputs["robot_metadata"], role="robot metadata")
+    source_state = load_robot_kinematics_archive(raw_robot_path)
+
+    window_length = _validated_positive_config_int(
+        config, "action_window_length_frames"
+    )
+    prediction_count = _validated_positive_config_int(
+        config, "prediction_frame_count"
+    )
+    candidate_first_value = config.get("action_candidate_first_frame")
+    _require(
+        type(candidate_first_value) is int and candidate_first_value >= 0,
+        "frame-zero action_candidate_first_frame is not a non-negative integer",
+    )
+    candidate_first = candidate_first_value
+    candidate_stride = _validated_positive_config_int(
+        config, "action_candidate_stride_frames"
+    )
+    _require(
+        window_length == 81 and prediction_count == FRAME_COUNT,
+        "held robot window dimensions changed",
+    )
+
+    alignment = manifest.get("action_alignment")
+    _require(
+        isinstance(alignment, Mapping)
+        and set(alignment) == set(_FRAME_ZERO_ACTION_ALIGNMENT_FIELDS),
+        "frame-zero robot alignment fields changed",
+    )
+    selection = alignment.get("selection_audit")
+    _require(
+        isinstance(selection, Mapping), "frame-zero robot selection audit is missing"
+    )
+    expected_selection = validate_robot_kinematics_selection_audit(
+        selection,
+        source_state,
+        window_length_frames=window_length,
+        prediction_frame_count=prediction_count,
+        candidate_first_frame=candidate_first,
+        candidate_stride_frames=candidate_stride,
+    )
+    selected_range = expected_selection["selected_raw_frame_range_half_open"]
+    prediction_range = expected_selection["prediction_raw_frame_range_half_open"]
+    _require(
+        alignment.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
+        and alignment.get("trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+        and alignment.get("selected_raw_frame_range_half_open") == selected_range
+        and alignment.get("prediction_raw_frame_range_half_open") == prediction_range
+        and alignment.get("tracking_tail_frame_count")
+        == window_length - prediction_count
+        and alignment.get("source_robot_frame_count") == source_state.frame_count
+        and alignment.get("prediction_frame_count") == prediction_count,
+        "frame-zero robot selection mirrors changed",
+    )
+
+    selected_record = alignment.get("selected_robot_kinematics_bundle")
+    _require(
+        isinstance(selected_record, Mapping)
+        and alignment.get("selected_action_bundle") == selected_record
+        and alignment.get("selected_action_bundle_is_compatibility_alias") is True,
+        "selected action compatibility alias changed",
+    )
+    selected_path = _validate_bound_file(
+        selected_record, role="selected robot kinematics"
+    )
+    selected_state = load_robot_kinematics_archive(
+        selected_path, expected_frame_count=prediction_count
+    )
+    _require(
+        alignment.get("selected_action_arrays")
+        == robot_kinematics_array_records(selected_state),
+        "selected robot kinematics array bindings changed",
+    )
+    exact_slice = validate_selected_robot_kinematics_bundle(
+        selected_state,
+        source_state=source_state,
+        prediction_start_frame=int(prediction_range[0]),
+        prediction_frame_count=prediction_count,
+    )
+    _require(
+        alignment.get("selected_bundle_exact_slice_audit") == exact_slice,
+        "selected robot kinematics exact-slice proof changed",
+    )
+
+    bundle_path = _validate_bound_file(
+        manifest.get("bundle", {}), role="frame-zero bundle", frame_zero_bundle=True
+    )
+    with np.load(bundle_path, allow_pickle=False) as stored:
+        _require(
+            "camera_names" in stored.files,
+            "frame-zero bundle camera_names are missing",
+        )
+        bundle_cameras_array = np.asarray(stored["camera_names"])
+    _require(
+        bundle_cameras_array.ndim == 1
+        and bundle_cameras_array.dtype.kind == "U"
+        and len(bundle_cameras_array) > 0,
+        "frame-zero bundle camera_names are invalid",
+    )
+    bundle_cameras = [str(value) for value in bundle_cameras_array.tolist()]
+    _require(
+        len(set(bundle_cameras)) == len(bundle_cameras),
+        "frame-zero bundle camera_names are duplicated",
+    )
+
+    camera_policy = manifest.get("camera_policy")
+    camera_access = manifest.get("camera_frame_zero_access")
+    _require(
+        isinstance(camera_policy, Mapping)
+        and set(camera_policy) == set(_FRAME_ZERO_CAMERA_POLICY_FIELDS),
+        "frame-zero camera policy fields changed",
+    )
+    candidates = camera_policy["candidate_cameras"]
+    selected = camera_policy["selected_cameras"]
+    abstained = camera_policy["abstained_cameras"]
+    _require(
+        isinstance(candidates, list)
+        and isinstance(selected, list)
+        and isinstance(abstained, list)
+        and all(isinstance(camera, str) and camera for camera in candidates)
+        and all(isinstance(camera, str) and camera for camera in selected)
+        and all(isinstance(camera, str) and camera for camera in abstained)
+        and candidates == sorted(set(candidates))
+        and selected == sorted(set(selected))
+        and abstained == sorted(set(abstained))
+        and set(candidates) == set(selected) | set(abstained)
+        and not set(selected) & set(abstained)
+        and selected == bundle_cameras,
+        "frame-zero camera partition or bundle order changed",
+    )
+    minimum_camera_count = config.get("minimum_camera_count")
+    reference_camera = camera_policy.get("reference_camera")
+    reference_optional = _reference_optional_camera_strategy(manifest)
+    _require(
+        camera_policy.get("policy_id") == _FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+        and camera_policy.get("rule") == _FRAME_ZERO_CAMERA_SELECTION_RULE
+        and type(minimum_camera_count) is int
+        and minimum_camera_count >= 2
+        and camera_policy.get("minimum_selected_camera_count")
+        == minimum_camera_count
+        and camera_policy.get("candidate_camera_count") == len(candidates)
+        and camera_policy.get("selected_camera_count") == len(selected)
+        and camera_policy.get("abstained_camera_count") == len(abstained)
+        and len(selected) >= minimum_camera_count
+        and isinstance(reference_camera, str)
+        and reference_camera == config.get("reference_camera")
+        and reference_camera in candidates
+        and (reference_camera in selected or reference_optional)
+        and (not reference_optional or len(selected) == 8),
+        "frame-zero camera counts or reference policy changed",
+    )
+    _require(
+        isinstance(camera_access, list)
+        and len(camera_access) == len(candidates)
+        and all(
+            isinstance(record, Mapping)
+            and set(record) == set(_FRAME_ZERO_CAMERA_ACCESS_FIELDS)
+            for record in camera_access
+        )
+        and [record["camera"] for record in camera_access] == candidates,
+        "frame-zero camera access audit changed",
+    )
+    start = int(selected_range[0])
+    _require(
+        all(
+            record["source_aligned_frame_index"] == start
+            and record["action_window_frame_index"] == 0
+            and record["decoded_frame_count"] == 1
+            and record["maximum_rgb_frame_read"] == 0
+            and record["whole_file_hashed_or_read"] is False
+            for record in camera_access
+        ),
+        "frame-zero camera source index differs from the robot window start",
+    )
+
+
 def validate_frame_zero_bundle_manifest(
     manifest_path: str | Path,
     lock_path: str | Path,
@@ -788,6 +1092,11 @@ def validate_frame_zero_bundle_manifest(
     _require(
         boundary.get("maximum_object_rgb_frame_read") == 0
         and boundary.get("object_observation_frames_used") == [0]
+        and boundary.get("known_aligned_realized_robot_kinematics_read") is True
+        and boundary.get("known_robot_trajectory_semantics")
+        == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"]
+        and boundary.get("robot_delta_command_read") is False
+        and boundary.get("commanded_control_read") is False
         and boundary.get("known_future_robot_action_read") is True
         and boundary.get("future_object_rgb_read") is False
         and boundary.get("future_object_geometry_read") is False
@@ -801,14 +1110,7 @@ def validate_frame_zero_bundle_manifest(
     _validate_bound_file(
         manifest.get("bundle", {}), role="frame-zero bundle", frame_zero_bundle=True
     )
-    action_inputs = manifest.get("action_inputs", {})
-    _require(
-        isinstance(action_inputs, Mapping)
-        and set(action_inputs) == {"robot_trajectory", "robot_metadata"},
-        "frame-zero manifest must bind the known robot action and metadata",
-    )
-    for action_role, record in action_inputs.items():
-        _validate_bound_file(record, role=action_role)
+    _validate_frame_zero_robot_kinematics(manifest, config)
     _require(
         manifest.get("artifact_sha256") == held_artifact_sha256(manifest),
         "frame-zero manifest content checksum changed",
