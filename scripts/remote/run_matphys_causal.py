@@ -506,6 +506,23 @@ def _validated_existing_proxy(
     return summary
 
 
+def _apply_export_proxy_contract(args, proxy_summary: dict[str, object]) -> None:
+    """Recover proxy construction flags from the byte-bound training proxy."""
+
+    contract = proxy_summary.get("contract")
+    if contract == GRAPH_PART_COMPACT_PROXY_CONTRACT:
+        args.graph_parts = True
+        args.compact_unused_edge_semantics = True
+    elif contract == GRAPH_PART_PROXY_CONTRACT:
+        args.graph_parts = True
+        args.compact_unused_edge_semantics = False
+    elif contract == "global-onehot-single-part-v1":
+        args.graph_parts = False
+        args.compact_unused_edge_semantics = False
+    else:
+        raise ValueError("training audit uses an unknown MatPhys proxy contract")
+
+
 def _prepare_proxy(
     args,
     cases: list[str],
@@ -1516,10 +1533,7 @@ def export(args) -> None:
     if not isinstance(audit_proxy, dict):
         raise ValueError("training audit omits its proxy")
     proxy_summary = json.loads(Path(audit_proxy["path"]).read_text(encoding="utf-8"))
-    args.graph_parts = proxy_summary.get("contract") in (
-        GRAPH_PART_PROXY_CONTRACT,
-        GRAPH_PART_COMPACT_PROXY_CONTRACT,
-    )
+    _apply_export_proxy_contract(args, proxy_summary)
     if source_supervised and args.graph_parts:
         source_proxy_cases = proxy_summary.get("cases", [])
         if not isinstance(source_proxy_cases, list) or not source_proxy_cases:

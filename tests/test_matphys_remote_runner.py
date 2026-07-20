@@ -261,3 +261,36 @@ def test_model_spring_y_rejects_topology_mismatch() -> None:
 
     with pytest.raises(RuntimeError, match="invalid complete spring field"):
         runner._model_spring_y(training, runtime, {}, "cpu")
+
+
+@pytest.mark.parametrize(
+    ("contract", "graph_parts", "compact"),
+    (
+        ("global-onehot-single-part-v1", False, False),
+        ("causal-dino-graph-voronoi-parts-v1", True, False),
+        ("causal-dino-graph-parts-compact-unused-edge-semantics-v1", True, True),
+    ),
+)
+def test_export_recovers_proxy_contract_from_training_audit(
+    contract: str,
+    graph_parts: bool,
+    compact: bool,
+) -> None:
+    runner = _load_runner()
+    args = SimpleNamespace(
+        graph_parts=not graph_parts,
+        compact_unused_edge_semantics=not compact,
+    )
+
+    runner._apply_export_proxy_contract(args, {"contract": contract})
+
+    assert args.graph_parts is graph_parts
+    assert args.compact_unused_edge_semantics is compact
+
+
+def test_export_rejects_unknown_training_proxy_contract() -> None:
+    runner = _load_runner()
+    args = SimpleNamespace()
+
+    with pytest.raises(ValueError, match="unknown MatPhys proxy contract"):
+        runner._apply_export_proxy_contract(args, {"contract": "unregistered"})
