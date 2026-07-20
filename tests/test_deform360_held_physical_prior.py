@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import pickle
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
+
+import bayesian_phystwin.deform360_held_physical_prior as physical_prior
 
 from deform360_held_test_helpers import (
     default_frame_zero_config,
@@ -13,16 +17,21 @@ from deform360_held_test_helpers import (
 )
 
 from bayesian_phystwin.deform360_held_physical_prior import (
+    AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256,
+    AUTOMATIC_TWIN_PROTOCOL_ID,
+    CANONICAL_NODE_COUNT,
     FRAME_COUNT,
     OFFICIAL_PHYSTWIN_REVISION,
     OFFICIAL_REAL_CONFIG_SHA256,
     WARP_DYNAMICS,
+    build_persistence_fallback_archive,
     build_physical_prediction_archive,
     build_prediction_only_artifacts,
     run_held_physical_prior,
     select_action_window,
     sha256_file,
     validate_physical_prediction_manifest,
+    validate_python_runtime,
 )
 from bayesian_phystwin.deform360_held_protocol import (
     create_held_protocol_lock,
@@ -31,6 +40,12 @@ from bayesian_phystwin.deform360_held_protocol import (
 
 
 CASE_NAME = "083-blanket-cloth-ep0000"
+
+
+def test_v2_uses_fixed_1024_node_capacity() -> None:
+    assert CANONICAL_NODE_COUNT == 1024
+    assert physical_prior.HELD_PHYSICAL_NUMERIC_CONTRACT["contract_id"].endswith("-v2")
+    assert physical_prior.HELD_PHYSICAL_NUMERIC_CONTRACT["canonical_node_count"] == 1024
 
 
 def test_physical_runner_rejects_lock_numeric_contract_mismatch(tmp_path: Path) -> None:
@@ -380,3 +395,417 @@ def test_physical_archive_matches_frozen_driven_minus_zero_formula(
     _write_json(manifest_path, tampered)
     with pytest.raises(ValueError, match="information boundary"):
         validate_physical_prediction_manifest(manifest_path, verify_archive=True)
+
+
+def _upstream_result_sha256(value: dict[str, object]) -> str:
+    canonical = dict(value)
+    canonical.pop("result_sha256", None)
+    return hashlib.sha256(
+        json.dumps(
+            canonical,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _make_inadmissible_twin_artifacts(
+    root: Path,
+    prediction_path: Path,
+) -> tuple[Path, Path, Path, Path, Path]:
+    with prediction_path.open("rb") as stream:
+        prediction = pickle.load(stream)
+    points = np.asarray(prediction["object_points"])[0]
+    controllers = np.asarray(prediction["controller_points"])
+    point_count = len(points)
+    graph_sha256 = "b" * 64
+    graph_path = root / "episode_graph.npz"
+    springs = np.column_stack(
+        (np.arange(point_count - 1), np.arange(1, point_count))
+    ).astype(np.int32)
+    rest_lengths = np.linalg.norm(
+        points[springs[:, 1]] - points[springs[:, 0]], axis=1
+    ).astype(np.float32)
+    np.savez_compressed(
+        graph_path,
+        vertices=points.astype(np.float32),
+        colors=np.asarray(prediction["object_colors"])[0].astype(np.float32),
+        source_indices=np.arange(point_count, dtype=np.int64),
+        springs=springs,
+        rest_lengths=rest_lengths,
+        masses=np.ones(point_count, dtype=np.float32),
+        bridge_spring_count=np.asarray(0, dtype=np.int64),
+        observed_node_count=np.asarray(point_count, dtype=np.int64),
+        latent_node_count=np.asarray(0, dtype=np.int64),
+        contact_anchor_indices=np.asarray([0], dtype=np.int64),
+        contact_chain_spring_count=np.asarray(0, dtype=np.int64),
+        reusable_graph_sha256=np.asarray(graph_sha256),
+    )
+    reliability = np.full(point_count, 0.69, dtype=np.float64)
+    state_path = root / "state_artifact.npz"
+    np.savez_compressed(
+        state_path,
+        vertices=points.astype(np.float32),
+        readout_weights=np.eye(point_count, dtype=np.float64),
+        readout_covariance_m2=np.zeros((point_count, 3, 3), dtype=np.float64),
+        target_prior_reliability=reliability,
+        state_covariance_m2=np.zeros((point_count, 3, 3), dtype=np.float64),
+        source_to_target_distance_m=np.zeros(point_count, dtype=np.float64),
+        target_to_source_distance_m=np.zeros(point_count, dtype=np.float64),
+        relative_edge_strain=np.zeros(len(springs), dtype=np.float64),
+        canonical_graph_sha256=np.asarray(graph_sha256),
+        state_frame=np.asarray(0, dtype=np.int64),
+    )
+    simulator_path = root / "simulator_final_data.pkl"
+    simulator_path.write_bytes(b"checksummed automatic-twin simulator input")
+    metrics: dict[str, object] = {
+        "passed": False,
+        "finite": True,
+        "symmetric_chamfer_m": 0.0,
+        "source_to_target_p95_m": 0.0,
+        "target_to_source_p95_m": 0.0,
+        "observed_target_fraction": 1.0,
+        "canonical_supported_fraction": 1.0,
+        "effective_target_reliability": 0.69,
+        "initial_readout_rmse_m": 0.0,
+        "p99_absolute_relative_edge_strain": 0.0,
+        "maximum_absolute_relative_edge_strain": 0.0,
+        "maximum_bridge_absolute_relative_edge_strain": 0.0,
+        "maximum_contact_anchor_error_m": 0.0,
+    }
+    summary: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360AutomaticEpisodeTwin",
+        "protocol_id": AUTOMATIC_TWIN_PROTOCOL_ID,
+        "protocol_config_sha256": AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256,
+        "object_id": "083-blanket-cloth",
+        "episode_id": 0,
+        "phase": "calibration",
+        "graph_mode": "episode_specific_frame_zero_control",
+        "capacity_diagnostic": {
+            "configured_canonical_node_count": 192,
+            "requested_canonical_node_count": CANONICAL_NODE_COUNT,
+            "effective_canonical_node_count": point_count,
+            "source_only_override": point_count != 192,
+            "capacity_is_a_maximum": True,
+        },
+        "graph": {
+            "schema_version": 1,
+            "artifact_kind": "Deform360CanonicalReusableGraph",
+            "path": str(graph_path.resolve()),
+            "reusable_graph_sha256": graph_sha256,
+            "node_count": point_count,
+            "object_spring_count": len(springs),
+            "bridge_spring_count": 0,
+            "observed_node_count": point_count,
+            "latent_node_count": 0,
+            "contact_anchor_count": 1,
+            "contact_chain_spring_count": 0,
+        },
+        "state_metrics": metrics,
+        "input_sha256": {
+            "episode_final_data": sha256_file(prediction_path),
+            "development_observations": None,
+            "contact_conditioned_action": None,
+        },
+        "output_sha256": {
+            "episode_graph": sha256_file(graph_path),
+            "simulator_final_data": sha256_file(simulator_path),
+            "state_artifact": sha256_file(state_path),
+        },
+        "information_boundary": {
+            "object_observation_frames_used": [0],
+            "future_robot_action_available": True,
+            "post_initial_object_observation_used": False,
+            "simulator_residual_used": False,
+            "target_access": False,
+            "prediction_only_input_required": True,
+            "future_object_tracks_present": False,
+            "contact_conditioned_action_used": False,
+            "contact_conditioned_action_result_sha256": None,
+        },
+        "prediction_input_validation": {
+            "frame_count": FRAME_COUNT,
+            "point_count": point_count,
+            "controller_point_count": controllers.shape[1],
+            "frame_zero_points_sha256": physical_prior.sha256_array(points),
+            "controller_trajectory_sha256": physical_prior.sha256_array(controllers),
+        },
+        "sota_input_validation": None,
+        "passed": False,
+        "claim_boundary": (
+            "benchmark-fair automatic frame-zero episode-twin control; physical "
+            "parameters may be pooled across source episodes"
+        ),
+    }
+    summary["result_sha256"] = _upstream_result_sha256(summary)
+    summary_path = root / "twin_summary.json"
+    _write_json(summary_path, summary)
+    log_path = root / "automatic_twin.log"
+    _write_json(log_path, summary)
+    return simulator_path, graph_path, state_path, summary_path, log_path
+
+
+def test_inadmissible_twin_seals_explicit_persistence_fallback(
+    tmp_path: Path,
+) -> None:
+    lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    prediction_path = tmp_path / "prediction.pkl"
+    prediction_summary = tmp_path / "prediction_summary.json"
+    build_prediction_only_artifacts(
+        frame_zero_manifest,
+        lock_path,
+        prediction_path,
+        prediction_summary,
+        case_name=CASE_NAME,
+        role="calibration",
+    )
+    simulator, graph, state, twin, log = _make_inadmissible_twin_artifacts(
+        tmp_path, prediction_path
+    )
+    archive = tmp_path / "fallback.npz"
+    manifest_path = tmp_path / "fallback.json"
+    manifest = build_persistence_fallback_archive(
+        prediction_path,
+        simulator,
+        graph,
+        state,
+        twin,
+        log,
+        archive,
+        manifest_path,
+        frame_zero_manifest_path=frame_zero_manifest,
+        lock_path=lock_path,
+        case_name=CASE_NAME,
+        role="calibration",
+        automatic_twin_exit_code=2,
+        runtime_provenance={"test": True},
+        stage_runtime_seconds={"automatic_twin": 0.1},
+    )
+    assert manifest["physical_mode"] == "persistence_fallback"
+    assert manifest["physical_admitted"] is False
+    assert manifest["fallback_diagnostics"]["warp_attempted"] is False
+    assert set(manifest["input_files"]) == {
+        "prediction_only_input",
+        "simulator_final_data",
+        "episode_graph",
+        "state_artifact",
+        "twin_summary",
+        "automatic_twin_log",
+    }
+    with np.load(archive, allow_pickle=False) as stored:
+        persistence = stored["persistence_m"]
+        assert np.array_equal(stored["prediction_m"], persistence)
+        assert np.array_equal(stored["driven_readout_m"], persistence)
+        assert np.array_equal(stored["zero_action_readout_m"], persistence)
+        assert np.count_nonzero(stored["action_support"]) == 0
+
+    tampered = json.loads(manifest_path.read_text(encoding="utf-8"))
+    tampered["physical_admitted"] = True
+    tampered["artifact_sha256"] = held_artifact_sha256(tampered)
+    _write_json(manifest_path, tampered)
+    with pytest.raises(ValueError, match="admission flag"):
+        validate_physical_prediction_manifest(manifest_path, verify_archive=True)
+
+
+def test_persistence_fallback_rejects_passing_or_unchecksummed_twin(
+    tmp_path: Path,
+) -> None:
+    lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    prediction_path = tmp_path / "prediction.pkl"
+    build_prediction_only_artifacts(
+        frame_zero_manifest,
+        lock_path,
+        prediction_path,
+        tmp_path / "prediction_summary.json",
+        case_name=CASE_NAME,
+        role="calibration",
+    )
+    simulator, graph, state, twin, log = _make_inadmissible_twin_artifacts(
+        tmp_path, prediction_path
+    )
+    summary = json.loads(twin.read_text(encoding="utf-8"))
+    summary["state_metrics"]["effective_target_reliability"] = 0.71
+    summary["state_metrics"]["passed"] = True
+    summary["passed"] = True
+    summary["result_sha256"] = _upstream_result_sha256(summary)
+    _write_json(twin, summary)
+    with pytest.raises(ValueError, match="inadmissible result"):
+        build_persistence_fallback_archive(
+            prediction_path,
+            simulator,
+            graph,
+            state,
+            twin,
+            log,
+            tmp_path / "fallback.npz",
+            tmp_path / "fallback.json",
+            frame_zero_manifest_path=frame_zero_manifest,
+            lock_path=lock_path,
+            case_name=CASE_NAME,
+            role="calibration",
+            automatic_twin_exit_code=2,
+            runtime_provenance={},
+            stage_runtime_seconds={"automatic_twin": 0.1},
+        )
+
+
+def test_python_runtime_preserves_supplied_venv_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = tmp_path / "python-real"
+    executable.write_bytes(b"locked interpreter bytes")
+    executable.chmod(0o755)
+    venv_bin = tmp_path / "venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    supplied = venv_bin / "python"
+    supplied.symlink_to(executable)
+    freeze = b"zeta==2\nalpha==1\npip==24\n"
+    expected_freeze = hashlib.sha256(b"alpha==1\npip==24\nzeta==2\n").hexdigest()
+    observed_command: list[str] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        observed_command.extend(command)
+        assert kwargs == {"check": True, "capture_output": True}
+        return SimpleNamespace(stdout=freeze)
+
+    monkeypatch.setattr(physical_prior.subprocess, "run", fake_run)
+    result = validate_python_runtime(
+        supplied,
+        {
+            "python_executable": sha256_file(executable),
+            "python_pip_freeze_sorted": expected_freeze,
+        },
+    )
+    assert observed_command[0] == str(supplied.absolute())
+    assert result["supplied_python_path"] == str(supplied.absolute())
+    assert result["resolved_python_path"] == str(executable.resolve())
+
+
+def test_runner_does_not_convert_arbitrary_subprocess_failure_to_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    monkeypatch.setattr(
+        physical_prior,
+        "validate_python_runtime",
+        lambda *_: {"supplied_python_path": str(tmp_path / "python")},
+    )
+    monkeypatch.setattr(
+        physical_prior, "validate_upstream_runtime", lambda *_: {"test": True}
+    )
+
+    def fail(*args: object, **kwargs: object) -> float:
+        raise physical_prior._LoggedCommandError(
+            "not an admission rejection", returncode=1, elapsed_seconds=0.1
+        )
+
+    monkeypatch.setattr(physical_prior, "_run_logged", fail)
+    with pytest.raises(RuntimeError, match="not an admission rejection"):
+        run_held_physical_prior(
+            frame_zero_manifest,
+            lock_path,
+            tmp_path / "output",
+            case_name=CASE_NAME,
+            role="calibration",
+            upstream_repo=tmp_path / "upstream",
+            official_phystwin_repo=tmp_path / "phystwin",
+            official_config=tmp_path / "real.yaml",
+            deform360_repo=tmp_path / "deform360",
+            python=tmp_path / "venv" / "bin" / "python",
+        )
+    assert not (tmp_path / "output" / "prediction.npz").exists()
+
+
+def test_runner_converts_only_valid_exit_two_admission_to_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    supplied_python = tmp_path / "venv" / "bin" / "python"
+    monkeypatch.setattr(
+        physical_prior,
+        "validate_python_runtime",
+        lambda *_: {"supplied_python_path": str(supplied_python)},
+    )
+    monkeypatch.setattr(
+        physical_prior, "validate_upstream_runtime", lambda *_: {"test": True}
+    )
+    calls: list[list[str]] = []
+
+    def fail_with_valid_admission(
+        command: list[str], *, env: object, log_path: Path
+    ) -> float:
+        del env
+        calls.append(command)
+        assert command[command.index("--canonical-node-count") + 1] == "1024"
+        prediction = Path(command[command.index("--episode-final-data") + 1])
+        output = prediction.parent
+        _, _, _, summary, _ = _make_inadmissible_twin_artifacts(output, prediction)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(summary.read_text(encoding="utf-8"), encoding="utf-8")
+        raise physical_prior._LoggedCommandError(
+            "explicit source admission rejection", returncode=2, elapsed_seconds=0.1
+        )
+
+    monkeypatch.setattr(physical_prior, "_run_logged", fail_with_valid_admission)
+    result = run_held_physical_prior(
+        frame_zero_manifest,
+        lock_path,
+        tmp_path / "output",
+        case_name=CASE_NAME,
+        role="calibration",
+        upstream_repo=tmp_path / "upstream",
+        official_phystwin_repo=tmp_path / "phystwin",
+        official_config=tmp_path / "real.yaml",
+        deform360_repo=tmp_path / "deform360",
+        python=supplied_python,
+    )
+    assert len(calls) == 1
+    assert result["physical_prediction_manifest"]["physical_mode"] == (
+        "persistence_fallback"
+    )
+    assert result["physical_prediction_manifest"]["physical_admitted"] is False
+    assert not (tmp_path / "output" / "warp_driven").exists()
+
+
+def test_runner_keeps_warp_failure_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    monkeypatch.setattr(
+        physical_prior,
+        "validate_python_runtime",
+        lambda *_: {"supplied_python_path": str(tmp_path / "python")},
+    )
+    monkeypatch.setattr(
+        physical_prior, "validate_upstream_runtime", lambda *_: {"test": True}
+    )
+    call_count = 0
+
+    def fail_warp(*args: object, **kwargs: object) -> float:
+        nonlocal call_count
+        del args, kwargs
+        call_count += 1
+        if call_count == 1:
+            return 0.1
+        raise physical_prior._LoggedCommandError(
+            "Warp rollout failed", returncode=2, elapsed_seconds=0.2
+        )
+
+    monkeypatch.setattr(physical_prior, "_run_logged", fail_warp)
+    with pytest.raises(RuntimeError, match="Warp rollout failed"):
+        run_held_physical_prior(
+            frame_zero_manifest,
+            lock_path,
+            tmp_path / "output",
+            case_name=CASE_NAME,
+            role="calibration",
+            upstream_repo=tmp_path / "upstream",
+            official_phystwin_repo=tmp_path / "phystwin",
+            official_config=tmp_path / "real.yaml",
+            deform360_repo=tmp_path / "deform360",
+            python=tmp_path / "venv" / "bin" / "python",
+        )
+    assert call_count == 2
+    assert not (tmp_path / "output" / "prediction.npz").exists()

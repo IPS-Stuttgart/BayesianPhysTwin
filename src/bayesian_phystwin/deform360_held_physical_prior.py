@@ -52,8 +52,25 @@ OFFICIAL_REAL_CONFIG_SHA256 = (
 LENGTH_SCALE_M = 0.12
 ACTION_RESPONSE = 0.9
 AUTONOMOUS_DRIFT_RESPONSE = 0.0
-CANONICAL_NODE_COUNT = 384
+CANONICAL_NODE_COUNT = 1024
 MINIMUM_NODE_COUNT = 128
+
+PHYSICAL_MODE_WARP_TWIN = "warp_twin"
+PHYSICAL_MODE_PERSISTENCE_FALLBACK = "persistence_fallback"
+PERSISTENCE_FALLBACK_REASON = "automatic_twin_source_admission_failed"
+AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE = 2
+AUTOMATIC_TWIN_PROTOCOL_ID = "deform360-dense-reusable-panel-v1"
+AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256 = (
+    "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd"
+)
+AUTOMATIC_TWIN_ADMISSION_THRESHOLDS = {
+    "maximum_supported_distance_m": 0.02,
+    "minimum_observed_target_fraction": 0.95,
+    "minimum_effective_target_reliability": 0.70,
+    "maximum_p99_relative_edge_strain": 0.50,
+    "maximum_bridge_relative_edge_strain": 0.50,
+    "maximum_contact_anchor_error_m": 0.015,
+}
 
 WARP_DYNAMICS = {
     "init_spring_y": 10_000.0,
@@ -142,7 +159,7 @@ UPSTREAM_RUNTIME_BUNDLE_CONTRACT = {
 }
 
 HELD_PHYSICAL_NUMERIC_CONTRACT = {
-    "contract_id": "deform360-held-physical-prior-v1",
+    "contract_id": "deform360-held-physical-prior-v2",
     "official_phystwin_revision": OFFICIAL_PHYSTWIN_REVISION,
     "official_real_config_sha256": OFFICIAL_REAL_CONFIG_SHA256,
     "length_scale_m": LENGTH_SCALE_M,
@@ -150,6 +167,19 @@ HELD_PHYSICAL_NUMERIC_CONTRACT = {
     "autonomous_drift_response": AUTONOMOUS_DRIFT_RESPONSE,
     "canonical_node_count": CANONICAL_NODE_COUNT,
     "minimum_node_count": MINIMUM_NODE_COUNT,
+    "automatic_twin_admission_thresholds": AUTOMATIC_TWIN_ADMISSION_THRESHOLDS,
+    "persistence_fallback": {
+        "physical_mode": PHYSICAL_MODE_PERSISTENCE_FALLBACK,
+        "reason": PERSISTENCE_FALLBACK_REASON,
+        "required_automatic_twin_exit_code": AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE,
+        "requires_valid_checksummed_inadmissible_twin": True,
+        "warp_attempted": False,
+        "prediction_equals_persistence": True,
+        "driven_equals_persistence": True,
+        "zero_action_equals_persistence": True,
+        "action_support": "all_zero",
+        "physical_admitted": False,
+    },
     "warp_dynamics": WARP_DYNAMICS,
     "upstream_file_sha256": UPSTREAM_FILE_SHA256,
 }
@@ -169,6 +199,17 @@ FRAME_ZERO_ARRAYS = frozenset(
         "object_colors_rgb",
         "object_color_support_count",
         "visual_hull_points_world_m",
+    }
+)
+
+PHYSICAL_ARCHIVE_ARRAYS = frozenset(
+    {
+        "prediction_m",
+        "persistence_m",
+        "driven_readout_m",
+        "zero_action_readout_m",
+        "action_support",
+        "frame_zero_points_m",
     }
 )
 
@@ -250,6 +291,62 @@ def _validate_bound_file(
     if not allow_metadata:
         _require(set(record) == set(observed), f"{label} binding has unexpected fields")
     return Path(observed["path"])
+
+
+class _LoggedCommandError(RuntimeError):
+    """A subprocess failure with its exact exit status and elapsed runtime."""
+
+    def __init__(
+        self, message: str, *, returncode: int, elapsed_seconds: float
+    ) -> None:
+        super().__init__(message)
+        self.returncode = int(returncode)
+        self.elapsed_seconds = float(elapsed_seconds)
+
+
+def _sorted_pip_freeze_sha256(stdout: bytes) -> str:
+    lines = stdout.splitlines()
+    canonical = b"\n".join(sorted(lines)) + b"\n"
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def validate_python_runtime(
+    python: str | Path,
+    immutable_bindings: Mapping[str, Any],
+) -> dict[str, str]:
+    """Validate a venv interpreter without destroying its symlink semantics.
+
+    A virtualenv's ``bin/python`` is commonly a symlink.  Executing the resolved
+    target bypasses Python's virtualenv discovery, so the supplied absolute path
+    is retained for every subprocess.  Only the executable-byte checksum follows
+    the symlink to its resolved regular file.
+    """
+
+    supplied = Path(os.path.abspath(os.fspath(Path(python).expanduser())))
+    _require(supplied.is_file(), "supplied Python interpreter is missing")
+    resolved = supplied.resolve(strict=True)
+    _require(resolved.is_file(), "resolved Python interpreter is not a file")
+    executable_sha256 = sha256_file(resolved)
+    _require(
+        executable_sha256 == immutable_bindings.get("python_executable"),
+        "Python executable bytes differ from the immutable lock",
+    )
+    completed = subprocess.run(
+        [str(supplied), "-m", "pip", "freeze", "--all"],
+        check=True,
+        capture_output=True,
+    )
+    freeze_sha256 = _sorted_pip_freeze_sha256(completed.stdout)
+    _require(
+        freeze_sha256 == immutable_bindings.get("python_pip_freeze_sorted"),
+        "Python pip freeze differs from the immutable lock",
+    )
+    return {
+        "supplied_python_path": str(supplied),
+        "resolved_python_path": str(resolved),
+        "python_executable_sha256": executable_sha256,
+        "python_pip_freeze_sorted_sha256": freeze_sha256,
+    }
 
 
 def validate_upstream_runtime(
@@ -666,9 +763,11 @@ def _run_logged(
     elapsed = time.perf_counter() - started
     if completed.returncode:
         tail = log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-80:]
-        raise RuntimeError(
+        raise _LoggedCommandError(
             f"command failed with exit {completed.returncode}: {' '.join(command)}\n"
-            + "\n".join(tail)
+            + "\n".join(tail),
+            returncode=completed.returncode,
+            elapsed_seconds=elapsed,
         )
     return elapsed
 
@@ -688,6 +787,379 @@ def _load_prediction_pickle(path: str | Path) -> Mapping[str, Any]:
         value = pickle.load(stream)
     _require(isinstance(value, Mapping), "prediction-only pickle is not a mapping")
     return value
+
+
+def _upstream_result_sha256(payload: Mapping[str, Any]) -> str:
+    canonical = dict(payload)
+    canonical.pop("result_sha256", None)
+    return hashlib.sha256(
+        json.dumps(
+            canonical,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _metric_matches(observed: Any, expected: float) -> bool:
+    return isinstance(observed, (int, float)) and np.isclose(
+        float(observed), float(expected), rtol=1e-12, atol=1e-12
+    )
+
+
+def _validate_inadmissible_automatic_twin(
+    prediction_data_path: str | Path,
+    simulator_data_path: str | Path,
+    graph_path: str | Path,
+    state_path: str | Path,
+    twin_summary_path: str | Path,
+    *,
+    case_name: str,
+    object_id: str,
+    episode_id: int,
+    role: str,
+) -> dict[str, Any]:
+    """Validate the one upstream exit-2 result eligible for persistence fallback."""
+
+    prediction_path = Path(prediction_data_path).resolve()
+    simulator_path = Path(simulator_data_path).resolve()
+    graph_file = Path(graph_path).resolve()
+    state_file = Path(state_path).resolve()
+    summary_file = Path(twin_summary_path).resolve()
+    for label, path in (
+        ("prediction-only input", prediction_path),
+        ("automatic-twin simulator data", simulator_path),
+        ("automatic-twin graph", graph_file),
+        ("automatic-twin state", state_file),
+        ("automatic-twin summary", summary_file),
+    ):
+        _require(path.is_file() and not path.is_symlink(), f"missing {label}")
+
+    prediction = _load_prediction_pickle(prediction_path)
+    points = np.asarray(prediction.get("object_points"))
+    colors = np.asarray(prediction.get("object_colors"))
+    controllers = np.asarray(prediction.get("controller_points"))
+    _require(
+        points.ndim == 3
+        and points.shape[0] == FRAME_COUNT
+        and points.shape[2] == 3
+        and colors.shape == points.shape
+        and controllers.ndim == 3
+        and controllers.shape[0] == FRAME_COUNT
+        and controllers.shape[2] == 3,
+        "inadmissible twin used an invalid prediction-only input",
+    )
+    _require(
+        np.array_equal(points, np.repeat(points[:1], FRAME_COUNT, axis=0)),
+        "inadmissible twin input contains future object geometry",
+    )
+
+    with np.load(graph_file, allow_pickle=False) as stored:
+        expected_graph_arrays = {
+            "vertices",
+            "colors",
+            "source_indices",
+            "springs",
+            "rest_lengths",
+            "masses",
+            "bridge_spring_count",
+            "observed_node_count",
+            "latent_node_count",
+            "contact_anchor_indices",
+            "contact_chain_spring_count",
+            "reusable_graph_sha256",
+        }
+        _require(
+            set(stored.files) == expected_graph_arrays,
+            "inadmissible twin graph array set changed",
+        )
+        vertices = np.asarray(stored["vertices"], dtype=np.float64)
+        springs = np.asarray(stored["springs"], dtype=np.int64)
+        rest_lengths = np.asarray(stored["rest_lengths"], dtype=np.float64)
+        bridge_count = int(np.asarray(stored["bridge_spring_count"]).item())
+        observed_count = int(np.asarray(stored["observed_node_count"]).item())
+        latent_count = int(np.asarray(stored["latent_node_count"]).item())
+        anchors = np.asarray(stored["contact_anchor_indices"], dtype=np.int64)
+        contact_chain_count = int(
+            np.asarray(stored["contact_chain_spring_count"]).item()
+        )
+        graph_sha256 = str(np.asarray(stored["reusable_graph_sha256"]).item())
+    effective_count = min(CANONICAL_NODE_COUNT, points.shape[1])
+    _require(
+        vertices.ndim == 2
+        and vertices.shape[1] == 3
+        and springs.ndim == 2
+        and springs.shape[1] == 2
+        and rest_lengths.shape == (len(springs),)
+        and observed_count == effective_count
+        and latent_count == len(vertices) - observed_count
+        and 0 <= bridge_count <= len(springs)
+        and 0 <= contact_chain_count <= bridge_count
+        and np.all(np.isfinite(vertices))
+        and np.all(np.isfinite(rest_lengths))
+        and np.all(rest_lengths > 0.0)
+        and np.all((springs >= 0) & (springs < len(vertices)))
+        and np.all((anchors >= 0) & (anchors < len(vertices))),
+        "inadmissible twin graph failed structural validation",
+    )
+
+    with np.load(state_file, allow_pickle=False) as stored:
+        expected_state_arrays = {
+            "vertices",
+            "readout_weights",
+            "readout_covariance_m2",
+            "target_prior_reliability",
+            "state_covariance_m2",
+            "source_to_target_distance_m",
+            "target_to_source_distance_m",
+            "relative_edge_strain",
+            "canonical_graph_sha256",
+            "state_frame",
+        }
+        _require(
+            set(stored.files) == expected_state_arrays,
+            "inadmissible twin state array set changed",
+        )
+        state_vertices = np.asarray(stored["vertices"], dtype=np.float64)
+        weights = np.asarray(stored["readout_weights"], dtype=np.float64)
+        readout_covariance = np.asarray(
+            stored["readout_covariance_m2"], dtype=np.float64
+        )
+        reliability = np.asarray(stored["target_prior_reliability"], dtype=np.float64)
+        state_covariance = np.asarray(stored["state_covariance_m2"], dtype=np.float64)
+        source_distance = np.asarray(
+            stored["source_to_target_distance_m"], dtype=np.float64
+        )
+        target_distance = np.asarray(
+            stored["target_to_source_distance_m"], dtype=np.float64
+        )
+        strain = np.asarray(stored["relative_edge_strain"], dtype=np.float64)
+        state_graph_sha256 = str(np.asarray(stored["canonical_graph_sha256"]).item())
+        state_frame = int(np.asarray(stored["state_frame"]).item())
+    point_count = points.shape[1]
+    _require(
+        state_vertices.shape == vertices.shape
+        and np.array_equal(state_vertices, vertices)
+        and weights.shape == (point_count, len(vertices))
+        and readout_covariance.shape == (point_count, 3, 3)
+        and reliability.shape == (point_count,)
+        and state_covariance.shape == (len(vertices), 3, 3)
+        and source_distance.shape == (len(vertices),)
+        and target_distance.shape == (point_count,)
+        and strain.shape == (len(springs),)
+        and state_graph_sha256 == graph_sha256
+        and state_frame == 0
+        and np.all(np.isfinite(weights))
+        and np.all(weights >= 0.0)
+        and np.allclose(np.sum(weights, axis=1), 1.0, atol=1e-6)
+        and np.all(np.isfinite(reliability))
+        and np.all((0.0 <= reliability) & (reliability <= 1.0))
+        and np.all(np.isfinite(source_distance))
+        and np.all(np.isfinite(target_distance))
+        and np.all(np.isfinite(strain)),
+        "inadmissible twin state failed structural validation",
+    )
+
+    twin = _load_json(summary_file)
+    expected_summary_keys = {
+        "schema_version",
+        "artifact_kind",
+        "protocol_id",
+        "protocol_config_sha256",
+        "object_id",
+        "episode_id",
+        "phase",
+        "graph_mode",
+        "capacity_diagnostic",
+        "graph",
+        "state_metrics",
+        "input_sha256",
+        "output_sha256",
+        "information_boundary",
+        "prediction_input_validation",
+        "sota_input_validation",
+        "passed",
+        "claim_boundary",
+        "result_sha256",
+    }
+    _require(
+        set(twin) == expected_summary_keys,
+        "inadmissible automatic-twin summary schema changed",
+    )
+    _require(
+        twin.get("schema_version") == 1
+        and twin.get("artifact_kind") == "Deform360AutomaticEpisodeTwin"
+        and twin.get("protocol_id") == AUTOMATIC_TWIN_PROTOCOL_ID
+        and twin.get("protocol_config_sha256") == AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256
+        and twin.get("object_id") == object_id
+        and int(twin.get("episode_id", -1)) == episode_id
+        and twin.get("phase") == ("calibration" if role == "calibration" else "source")
+        and twin.get("graph_mode") == "episode_specific_frame_zero_control"
+        and twin.get("passed") is False
+        and twin.get("sota_input_validation") is None
+        and twin.get("result_sha256") == _upstream_result_sha256(twin),
+        "automatic twin is not a checksummed explicit inadmissible result",
+    )
+    capacity = twin.get("capacity_diagnostic", {})
+    _require(
+        capacity
+        == {
+            "configured_canonical_node_count": 192,
+            "requested_canonical_node_count": CANONICAL_NODE_COUNT,
+            "effective_canonical_node_count": effective_count,
+            "source_only_override": effective_count != 192,
+            "capacity_is_a_maximum": True,
+        },
+        "inadmissible twin used another graph capacity",
+    )
+    graph = twin.get("graph", {})
+    _require(
+        graph
+        == {
+            "schema_version": 1,
+            "artifact_kind": "Deform360CanonicalReusableGraph",
+            "path": str(graph_file),
+            "reusable_graph_sha256": graph_sha256,
+            "node_count": len(vertices),
+            "object_spring_count": len(springs),
+            "bridge_spring_count": bridge_count,
+            "observed_node_count": observed_count,
+            "latent_node_count": latent_count,
+            "contact_anchor_count": len(anchors),
+            "contact_chain_spring_count": contact_chain_count,
+        },
+        "inadmissible twin summary binds another graph",
+    )
+    _require(
+        twin.get("input_sha256")
+        == {
+            "episode_final_data": sha256_file(prediction_path),
+            "development_observations": None,
+            "contact_conditioned_action": None,
+        }
+        and twin.get("output_sha256")
+        == {
+            "episode_graph": sha256_file(graph_file),
+            "simulator_final_data": sha256_file(simulator_path),
+            "state_artifact": sha256_file(state_file),
+        },
+        "inadmissible twin input/output checksums changed",
+    )
+    _require(
+        twin.get("prediction_input_validation")
+        == {
+            "frame_count": FRAME_COUNT,
+            "point_count": point_count,
+            "controller_point_count": controllers.shape[1],
+            "frame_zero_points_sha256": sha256_array(points[0]),
+            "controller_trajectory_sha256": sha256_array(controllers),
+        },
+        "inadmissible twin prediction-input validation changed",
+    )
+    _require(
+        twin.get("information_boundary")
+        == {
+            "object_observation_frames_used": [0],
+            "future_robot_action_available": True,
+            "post_initial_object_observation_used": False,
+            "simulator_residual_used": False,
+            "target_access": False,
+            "prediction_only_input_required": True,
+            "future_object_tracks_present": False,
+            "contact_conditioned_action_used": False,
+            "contact_conditioned_action_result_sha256": None,
+        },
+        "inadmissible twin crossed the prediction-only boundary",
+    )
+
+    metrics = twin.get("state_metrics", {})
+    expected_metric_keys = {
+        "passed",
+        "finite",
+        "symmetric_chamfer_m",
+        "source_to_target_p95_m",
+        "target_to_source_p95_m",
+        "observed_target_fraction",
+        "canonical_supported_fraction",
+        "effective_target_reliability",
+        "initial_readout_rmse_m",
+        "p99_absolute_relative_edge_strain",
+        "maximum_absolute_relative_edge_strain",
+        "maximum_bridge_absolute_relative_edge_strain",
+        "maximum_contact_anchor_error_m",
+    }
+    _require(
+        isinstance(metrics, Mapping)
+        and set(metrics) == expected_metric_keys
+        and metrics.get("passed") is False,
+        "automatic twin lacks explicit failed state metrics",
+    )
+    finite = bool(
+        np.all(np.isfinite(state_vertices))
+        and np.all(np.isfinite(readout_covariance))
+        and np.all(np.isfinite(state_covariance))
+    )
+    readout = weights @ state_vertices
+    bridge_strain = strain[-bridge_count:] if bridge_count else np.empty(0)
+    expected_metrics = {
+        "symmetric_chamfer_m": 0.5
+        * (float(np.mean(source_distance)) + float(np.mean(target_distance))),
+        "source_to_target_p95_m": float(np.quantile(source_distance, 0.95)),
+        "target_to_source_p95_m": float(np.quantile(target_distance, 0.95)),
+        "observed_target_fraction": float(
+            np.mean(
+                target_distance
+                <= AUTOMATIC_TWIN_ADMISSION_THRESHOLDS["maximum_supported_distance_m"]
+            )
+        ),
+        "canonical_supported_fraction": float(
+            np.mean(
+                source_distance
+                <= AUTOMATIC_TWIN_ADMISSION_THRESHOLDS["maximum_supported_distance_m"]
+            )
+        ),
+        "effective_target_reliability": float(np.mean(reliability)),
+        "initial_readout_rmse_m": float(np.sqrt(np.mean((readout - points[0]) ** 2))),
+        "p99_absolute_relative_edge_strain": float(np.quantile(strain, 0.99)),
+        "maximum_absolute_relative_edge_strain": float(np.max(strain)),
+        "maximum_bridge_absolute_relative_edge_strain": float(
+            np.max(bridge_strain, initial=0.0)
+        ),
+    }
+    _require(metrics.get("finite") is finite, "automatic twin finite metric changed")
+    for name, expected in expected_metrics.items():
+        _require(
+            _metric_matches(metrics.get(name), expected),
+            f"automatic twin metric changed: {name}",
+        )
+    contact_error = metrics.get("maximum_contact_anchor_error_m")
+    _require(
+        isinstance(contact_error, (int, float))
+        and np.isfinite(float(contact_error))
+        and float(contact_error) >= 0.0,
+        "automatic twin contact metric is invalid",
+    )
+    threshold = AUTOMATIC_TWIN_ADMISSION_THRESHOLDS
+    recomputed_pass = bool(
+        finite
+        and float(metrics["observed_target_fraction"])
+        >= threshold["minimum_observed_target_fraction"]
+        and float(metrics["effective_target_reliability"])
+        >= threshold["minimum_effective_target_reliability"]
+        and float(metrics["p99_absolute_relative_edge_strain"])
+        <= threshold["maximum_p99_relative_edge_strain"]
+        and float(metrics["maximum_bridge_absolute_relative_edge_strain"])
+        <= threshold["maximum_bridge_relative_edge_strain"]
+        and float(contact_error) <= threshold["maximum_contact_anchor_error_m"]
+    )
+    _require(not recomputed_pass, "automatic twin metrics actually pass admission")
+    _require(
+        isinstance(twin.get("claim_boundary"), str)
+        and "frame-zero episode-twin control" in twin["claim_boundary"],
+        "automatic twin claim boundary changed",
+    )
+    return twin
 
 
 def _graph_contact_distances(
@@ -949,6 +1421,9 @@ def build_physical_prediction_archive(
         "object_id": frame_zero["object_id"],
         "episode_id": int(frame_zero["episode_id"]),
         "role": role,
+        "physical_mode": PHYSICAL_MODE_WARP_TWIN,
+        "physical_admitted": True,
+        "fallback_diagnostics": None,
         "frozen_predictor": {
             "official_phystwin_revision": OFFICIAL_PHYSTWIN_REVISION,
             "official_real_config_sha256": OFFICIAL_REAL_CONFIG_SHA256,
@@ -958,6 +1433,147 @@ def build_physical_prediction_archive(
             "frame_count": FRAME_COUNT,
             "observed_graph_node_count": observed_nodes,
             "total_graph_node_count": len(vertices),
+            "point_count": points.shape[1],
+            "warp_dynamics": dict(WARP_DYNAMICS),
+        },
+        "physical_prediction_archive": {
+            **_bound_file(archive),
+            "array_sha256": {
+                name: sha256_array(value) for name, value in arrays.items()
+            },
+        },
+        "input_files": {name: _bound_file(path) for name, path in input_paths.items()},
+        "held_lock_sha256": sha256_file(lock_path),
+        "frame_zero_manifest_sha256": sha256_file(frame_zero_manifest_path),
+        "frame_zero_manifest_artifact_sha256": frame_zero["artifact_sha256"],
+        "runtime_provenance": dict(runtime_provenance),
+        "stage_runtime_seconds": {
+            key: float(value) for key, value in stage_runtime_seconds.items()
+        },
+        "information_boundary": {
+            "object_observation_frames_used": [0],
+            "known_future_robot_action_read": True,
+            "future_object_rgb_read": False,
+            "future_object_geometry_read": False,
+            "future_object_track_read": False,
+            "future_object_visibility_read": False,
+            "future_tactile_read": False,
+            "external_target_scoring_in_warp": False,
+            "outcome_created": False,
+            "outcome_read": False,
+            "physical_prediction_hashed_before_outcome": True,
+        },
+        "passed": True,
+    }
+    manifest["artifact_sha256"] = held_artifact_sha256(manifest)
+    _write_json(manifest_path, manifest)
+    return validate_physical_prediction_manifest(manifest_path, verify_archive=True)
+
+
+def build_persistence_fallback_archive(
+    prediction_data_path: str | Path,
+    simulator_data_path: str | Path,
+    graph_path: str | Path,
+    state_path: str | Path,
+    twin_summary_path: str | Path,
+    automatic_twin_log_path: str | Path,
+    archive_path: str | Path,
+    manifest_path: str | Path,
+    *,
+    frame_zero_manifest_path: str | Path,
+    lock_path: str | Path,
+    case_name: str,
+    role: str,
+    automatic_twin_exit_code: int,
+    runtime_provenance: Mapping[str, Any],
+    stage_runtime_seconds: Mapping[str, float],
+) -> dict[str, Any]:
+    """Seal persistence only after a genuine automatic-twin admission rejection."""
+
+    _require(
+        automatic_twin_exit_code == AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE,
+        "persistence fallback requires the frozen inadmissible exit code",
+    )
+    frame_zero = validate_frame_zero_bundle_manifest(
+        frame_zero_manifest_path,
+        lock_path,
+        expected_case_name=case_name,
+        expected_role=role,
+    )
+    twin = _validate_inadmissible_automatic_twin(
+        prediction_data_path,
+        simulator_data_path,
+        graph_path,
+        state_path,
+        twin_summary_path,
+        case_name=case_name,
+        object_id=str(frame_zero["object_id"]),
+        episode_id=int(frame_zero["episode_id"]),
+        role=role,
+    )
+    prediction_data = _load_prediction_pickle(prediction_data_path)
+    points = np.asarray(prediction_data["object_points"], dtype=np.float32)
+    _require(
+        points.shape[0] == FRAME_COUNT
+        and np.array_equal(points, np.repeat(points[:1], FRAME_COUNT, axis=0)),
+        "persistence fallback input contains changing object geometry",
+    )
+    persistence = np.repeat(points[:1], FRAME_COUNT, axis=0).astype(
+        np.float32, copy=False
+    )
+    zeros = np.zeros(points.shape[1], dtype=np.float32)
+    arrays = {
+        "prediction_m": persistence.copy(),
+        "persistence_m": persistence.copy(),
+        "driven_readout_m": persistence.copy(),
+        "zero_action_readout_m": persistence.copy(),
+        "action_support": zeros,
+        "frame_zero_points_m": points[0].copy(),
+    }
+    archive = Path(archive_path).resolve()
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(archive, **arrays)
+    with np.load(graph_path, allow_pickle=False) as graph:
+        observed_nodes = int(np.asarray(graph["observed_node_count"]).item())
+        total_nodes = len(np.asarray(graph["vertices"]))
+    input_paths = {
+        "prediction_only_input": prediction_data_path,
+        "simulator_final_data": simulator_data_path,
+        "episode_graph": graph_path,
+        "state_artifact": state_path,
+        "twin_summary": twin_summary_path,
+        "automatic_twin_log": automatic_twin_log_path,
+    }
+    summary_record = _bound_file(twin_summary_path)
+    log_record = _bound_file(automatic_twin_log_path)
+    manifest: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": ARTIFACT_KIND,
+        "protocol_id": PROTOCOL_ID,
+        "case_name": case_name,
+        "object_id": frame_zero["object_id"],
+        "episode_id": int(frame_zero["episode_id"]),
+        "role": role,
+        "physical_mode": PHYSICAL_MODE_PERSISTENCE_FALLBACK,
+        "physical_admitted": False,
+        "fallback_diagnostics": {
+            "reason": PERSISTENCE_FALLBACK_REASON,
+            "automatic_twin_exit_code": automatic_twin_exit_code,
+            "automatic_twin_result_sha256": twin["result_sha256"],
+            "automatic_twin_summary_sha256": summary_record["sha256"],
+            "automatic_twin_log_sha256": log_record["sha256"],
+            "automatic_twin_state_metrics": dict(twin["state_metrics"]),
+            "warp_attempted": False,
+        },
+        "frozen_predictor": {
+            "official_phystwin_revision": OFFICIAL_PHYSTWIN_REVISION,
+            "official_real_config_sha256": OFFICIAL_REAL_CONFIG_SHA256,
+            "length_scale_m": LENGTH_SCALE_M,
+            "action_response": ACTION_RESPONSE,
+            "autonomous_drift_response": AUTONOMOUS_DRIFT_RESPONSE,
+            "frame_count": FRAME_COUNT,
+            "observed_graph_node_count": observed_nodes,
+            "total_graph_node_count": total_nodes,
             "point_count": points.shape[1],
             "warp_dynamics": dict(WARP_DYNAMICS),
         },
@@ -1011,6 +1627,38 @@ def validate_physical_prediction_manifest(
     )
     _require(manifest.get("protocol_id") == PROTOCOL_ID, "prediction protocol changed")
     _require(manifest.get("passed") is True, "physical prediction did not pass")
+    mode = manifest.get("physical_mode")
+    _require(
+        mode in {PHYSICAL_MODE_WARP_TWIN, PHYSICAL_MODE_PERSISTENCE_FALLBACK},
+        "physical prediction mode changed",
+    )
+    admitted = manifest.get("physical_admitted")
+    _require(
+        admitted is (mode == PHYSICAL_MODE_WARP_TWIN),
+        "physical admission flag disagrees with prediction mode",
+    )
+    fallback = manifest.get("fallback_diagnostics")
+    if mode == PHYSICAL_MODE_WARP_TWIN:
+        _require(fallback is None, "Warp-twin prediction carries fallback diagnostics")
+    else:
+        _require(
+            isinstance(fallback, Mapping)
+            and set(fallback)
+            == {
+                "reason",
+                "automatic_twin_exit_code",
+                "automatic_twin_result_sha256",
+                "automatic_twin_summary_sha256",
+                "automatic_twin_log_sha256",
+                "automatic_twin_state_metrics",
+                "warp_attempted",
+            }
+            and fallback.get("reason") == PERSISTENCE_FALLBACK_REASON
+            and fallback.get("automatic_twin_exit_code")
+            == AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE
+            and fallback.get("warp_attempted") is False,
+            "persistence fallback diagnostics changed",
+        )
     frozen = manifest.get("frozen_predictor", {})
     _require(
         frozen.get("official_phystwin_revision") == OFFICIAL_PHYSTWIN_REVISION,
@@ -1035,6 +1683,16 @@ def validate_physical_prediction_manifest(
     )
     _require(int(frozen.get("frame_count", -1)) == FRAME_COUNT, "frame count changed")
     _require(frozen.get("warp_dynamics") == WARP_DYNAMICS, "Warp dynamics changed")
+    _require(
+        isinstance(frozen.get("point_count"), int)
+        and int(frozen.get("point_count")) >= MINIMUM_NODE_COUNT
+        and MINIMUM_NODE_COUNT
+        <= int(frozen.get("observed_graph_node_count", -1))
+        <= CANONICAL_NODE_COUNT
+        and int(frozen.get("total_graph_node_count", -1))
+        >= int(frozen.get("observed_graph_node_count", -1)),
+        "physical graph capacity changed",
+    )
     archive_record = manifest.get("physical_prediction_archive", {})
     archive_path = _validate_bound_file(
         archive_record,
@@ -1042,11 +1700,55 @@ def validate_physical_prediction_manifest(
         allow_metadata=True,
     )
     inputs = manifest.get("input_files", {})
+    expected_input_roles = (
+        {
+            "prediction_only_input",
+            "simulator_final_data",
+            "episode_graph",
+            "state_artifact",
+            "twin_summary",
+            "driven_result",
+            "zero_action_result",
+            "driven_trajectory",
+            "zero_action_trajectory",
+        }
+        if mode == PHYSICAL_MODE_WARP_TWIN
+        else {
+            "prediction_only_input",
+            "simulator_final_data",
+            "episode_graph",
+            "state_artifact",
+            "twin_summary",
+            "automatic_twin_log",
+        }
+    )
     _require(
-        isinstance(inputs, Mapping) and bool(inputs), "prediction inputs are missing"
+        isinstance(inputs, Mapping) and set(inputs) == expected_input_roles,
+        "prediction input roles changed",
     )
     for label, record in inputs.items():
         _validate_bound_file(record, label=str(label))
+    if mode == PHYSICAL_MODE_PERSISTENCE_FALLBACK:
+        twin = _validate_inadmissible_automatic_twin(
+            inputs["prediction_only_input"]["path"],
+            inputs["simulator_final_data"]["path"],
+            inputs["episode_graph"]["path"],
+            inputs["state_artifact"]["path"],
+            inputs["twin_summary"]["path"],
+            case_name=str(manifest.get("case_name")),
+            object_id=str(manifest.get("object_id")),
+            episode_id=int(manifest.get("episode_id", -1)),
+            role=str(manifest.get("role")),
+        )
+        _require(
+            fallback.get("automatic_twin_result_sha256") == twin["result_sha256"]
+            and fallback.get("automatic_twin_summary_sha256")
+            == inputs["twin_summary"]["sha256"]
+            and fallback.get("automatic_twin_log_sha256")
+            == inputs["automatic_twin_log"]["sha256"]
+            and fallback.get("automatic_twin_state_metrics") == twin["state_metrics"],
+            "persistence fallback diagnostics do not bind the failed twin",
+        )
     boundary = manifest.get("information_boundary", {})
     _require(
         boundary.get("object_observation_frames_used") == [0]
@@ -1068,16 +1770,40 @@ def validate_physical_prediction_manifest(
     )
     if verify_archive:
         expected = archive_record.get("array_sha256")
-        _require(isinstance(expected, Mapping), "archive array checksums are missing")
+        _require(
+            isinstance(expected, Mapping) and set(expected) == PHYSICAL_ARCHIVE_ARRAYS,
+            "archive array checksums are missing or changed",
+        )
         with np.load(archive_path, allow_pickle=False) as stored:
             _require(
-                set(stored.files) == set(expected),
+                set(stored.files) == PHYSICAL_ARCHIVE_ARRAYS,
                 "prediction archive array set changed",
             )
             for name in stored.files:
                 _require(
                     sha256_array(stored[name]) == expected[name],
                     f"{name} checksum changed",
+                )
+            if mode == PHYSICAL_MODE_PERSISTENCE_FALLBACK:
+                persistence = np.asarray(stored["persistence_m"])
+                frame_zero = np.asarray(stored["frame_zero_points_m"])
+                _require(
+                    persistence.dtype == np.dtype(np.float32)
+                    and persistence.shape
+                    == (FRAME_COUNT, int(frozen["point_count"]), 3)
+                    and frame_zero.dtype == np.dtype(np.float32)
+                    and frame_zero.shape == (int(frozen["point_count"]), 3)
+                    and np.array_equal(
+                        persistence,
+                        np.repeat(frame_zero[None], FRAME_COUNT, axis=0),
+                    )
+                    and np.array_equal(stored["prediction_m"], persistence)
+                    and np.array_equal(stored["driven_readout_m"], persistence)
+                    and np.array_equal(stored["zero_action_readout_m"], persistence)
+                    and stored["action_support"].dtype == np.dtype(np.float32)
+                    and stored["action_support"].shape == (int(frozen["point_count"]),)
+                    and np.count_nonzero(stored["action_support"]) == 0,
+                    "persistence fallback arrays changed",
                 )
     return manifest
 
@@ -1116,6 +1842,7 @@ def run_held_physical_prior(
             == UPSTREAM_FILE_SHA256[relative_path],
             f"upstream source binding changed: {relative_path}",
         )
+    python_runtime = validate_python_runtime(python, lock["immutable_bindings"])
     validate_frame_zero_bundle_manifest(
         frame_zero_manifest_path,
         lock_path,
@@ -1127,6 +1854,7 @@ def run_held_physical_prior(
         official_phystwin_repo,
         official_config,
     )
+    provenance["python_runtime"] = python_runtime
     root = Path(output_dir).resolve()
     root.mkdir(parents=True, exist_ok=True)
     prediction_data = root / "prediction_only_input.pkl"
@@ -1143,7 +1871,9 @@ def run_held_physical_prior(
         frame_zero_manifest_path, lock_path
     )
     upstream = Path(upstream_repo).resolve()
-    python_path = Path(python).resolve()
+    # Do not resolve this path: executing a venv symlink through its base
+    # interpreter silently disables the virtualenv's prefix/site-packages.
+    python_path = Path(python_runtime["supplied_python_path"])
     env = dict(os.environ)
     env.update(
         {
@@ -1187,11 +1917,59 @@ def run_held_physical_prior(
     ]
     if role == "calibration":
         twin_command.append("--source-admission-passed")
-    runtimes["automatic_twin"] = _run_logged(
-        twin_command,
-        env=env,
-        log_path=root / "logs/automatic_twin.log",
-    )
+    automatic_twin_log = root / "logs/automatic_twin.log"
+    try:
+        runtimes["automatic_twin"] = _run_logged(
+            twin_command,
+            env=env,
+            log_path=automatic_twin_log,
+        )
+    except _LoggedCommandError as error:
+        if error.returncode != AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE:
+            raise
+        runtimes["automatic_twin"] = error.elapsed_seconds
+        prediction_archive = root / "prediction.npz"
+        physical_manifest = root / "physical_prediction_manifest.json"
+        seal_started = time.perf_counter()
+        prediction_manifest = build_persistence_fallback_archive(
+            prediction_data,
+            simulator_data,
+            graph_path,
+            state_path,
+            twin_summary,
+            automatic_twin_log,
+            prediction_archive,
+            physical_manifest,
+            frame_zero_manifest_path=frame_zero_manifest_path,
+            lock_path=lock_path,
+            case_name=case_name,
+            role=role,
+            automatic_twin_exit_code=error.returncode,
+            runtime_provenance=provenance,
+            stage_runtime_seconds=runtimes,
+        )
+        runtimes["prediction_seal"] = time.perf_counter() - seal_started
+        physical_seal_path = root / "physical_prior_seal.json"
+        physical_seal = create_physical_prior_seal(
+            physical_seal_path,
+            lock_path,
+            frame_zero_manifest_path,
+            {
+                "prediction_only_input": prediction_data,
+                "prediction_only_summary": prediction_summary,
+                "physical_prediction_archive": prediction_archive,
+                "physical_prediction_manifest": physical_manifest,
+            },
+            case_name=case_name,
+            role=role,
+        )
+        return {
+            "case_name": case_name,
+            "role": role,
+            "physical_prediction_manifest": prediction_manifest,
+            "physical_prior_seal": physical_seal,
+            "runtime_seconds": runtimes,
+        }
 
     smoke_script = upstream / "scripts/remote/run_deform360_official_phystwin_smoke.py"
     split_path = (
@@ -1290,14 +2068,18 @@ __all__ = [
     "ACTION_RESPONSE",
     "ARTIFACT_KIND",
     "AUTONOMOUS_DRIFT_RESPONSE",
+    "CANONICAL_NODE_COUNT",
     "HELD_PHYSICAL_NUMERIC_CONTRACT",
     "LENGTH_SCALE_M",
     "OFFICIAL_PHYSTWIN_REVISION",
     "OFFICIAL_REAL_CONFIG_SHA256",
+    "PHYSICAL_MODE_PERSISTENCE_FALLBACK",
+    "PHYSICAL_MODE_WARP_TWIN",
     "UPSTREAM_FILE_SHA256",
     "UPSTREAM_LOCK_BINDING_BY_PATH",
     "UPSTREAM_RUNTIME_BUNDLE_CONTRACT",
     "WARP_DYNAMICS",
+    "build_persistence_fallback_archive",
     "build_physical_prediction_archive",
     "build_prediction_only_artifacts",
     "load_controller_trajectory",
@@ -1306,5 +2088,6 @@ __all__ = [
     "sha256_array",
     "sha256_file",
     "validate_physical_prediction_manifest",
+    "validate_python_runtime",
     "validate_upstream_runtime",
 ]
