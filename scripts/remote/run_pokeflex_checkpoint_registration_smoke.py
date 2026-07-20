@@ -366,7 +366,8 @@ def run_smoke(
                 "action_local_state",
                 "action_augmented",
             ):
-                correction_variants[field] = np.zeros_like(target_prior)
+                if field in correction_variants:
+                    correction_variants[field] = np.zeros_like(target_prior)
         action_guard = PokeFlexActionGuardConfig()
         guarded_action_scale = action_guard.selected_scale(
             float(robot_by_frame[source_frame]["forces"][1]),
