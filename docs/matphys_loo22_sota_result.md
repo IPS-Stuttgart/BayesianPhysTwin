@@ -77,6 +77,13 @@ Every unguarded global proposal strength is worse than the incumbent on both ful
 means. Full strength reaches 12.281 mm CD and 24.868 mm track error. The positive result
 is therefore the guarded selective transfer, not a generally superior spring field.
 
+A post-opening model-class oracle strengthens this conclusion. Selecting the best of
+the five already frozen families separately for each case and metric gives 9.730 mm CD
+and 18.433 mm track error. A joint equal-ratio oracle gives 9.790 mm CD and 18.481 mm
+track error. Both remain above the 8/15 mm reference, so no improved selector can make
+this frozen spring family SOTA. This oracle is diagnostic only and must not be used to
+revise the closed protocol.
+
 Predictive calibration is not established by this deterministic family report. The
 paired intervals quantify point-estimate change only; they are not NEES or predictive
 coverage results.
@@ -94,6 +101,12 @@ structurally redundant observation evidence, models common-mode camera bias, and
 back exactly when innovation support is weak. That method must be frozen on open source
 objects and evaluated on fresh objects; the present LOO22 future cannot be reused for
 selection.
+
+The largest remaining selected errors are concentrated in `single_lift_cloth_4`
+(23.370 mm CD, 46.761 mm track) and `single_lift_cloth` (21.436 mm CD, 54.517 mm
+track). This concentration is another reason to seek an observation/state update that
+can help fallback cases, rather than increasing a spring proposal that already fails
+the model-class oracle bound.
 
 ## Evidence
 
