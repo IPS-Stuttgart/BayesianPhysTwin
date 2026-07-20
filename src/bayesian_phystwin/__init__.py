@@ -7,6 +7,17 @@ from .drift_bias import (
     filter_random_walk_bias,
     robust_random_walk_log_evidence_batch,
 )
+from .deform360_frozen_query_field import (
+    CenterExclusion,
+    FieldQueryResult,
+    FrameZeroQuerySet,
+    FrozenFieldConfig,
+    FrozenFieldGeometry,
+    FrozenNodalDisplacementField,
+    build_frozen_nodal_field,
+    map_assimilation_centers_to_queries,
+    query_frozen_nodal_field,
+)
 from .parameter_posterior import ParameterEnsemble
 from .phystwin_adapter import (
     PhysTwinExportConfig,
@@ -55,6 +66,12 @@ from .synthetic_benchmark import (
 __all__ = [
     "BinaryCalibrationMetrics",
     "BeliefFieldPrediction",
+    "CenterExclusion",
+    "FieldQueryResult",
+    "FrameZeroQuerySet",
+    "FrozenFieldConfig",
+    "FrozenFieldGeometry",
+    "FrozenNodalDisplacementField",
     "ParameterEnsemble",
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
@@ -72,6 +89,7 @@ __all__ = [
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "binary_calibration_metrics",
+    "build_frozen_nodal_field",
     "build_phystwin_motion_cues",
     "decode_recursive_rbf_belief",
     "deterministic_farthest_point_ids",
@@ -80,9 +98,11 @@ __all__ = [
     "finite_sample_absolute_residual_quantile_m",
     "measurement_variance",
     "markov_log_evidence_batch",
+    "map_assimilation_centers_to_queries",
     "initialize_recursive_rbf_belief",
     "reliability_weighted_loss",
     "replay_residual_csv",
+    "query_frozen_nodal_field",
     "robust_mixture_likelihood",
     "robust_huber_continuation_gain",
     "robust_random_walk_log_evidence_batch",
