@@ -81,6 +81,25 @@ def _array_records(arrays: dict[str, np.ndarray]) -> dict[str, object]:
     }
 
 
+def _selected_view_diagnostic(camera: str) -> dict[str, object]:
+    return {
+        "camera": camera,
+        "automatic_candidate_count": 1,
+        "eligible_candidate_count": 1,
+        "rejected_candidate_count": 0,
+        "rejection_counts": {
+            "mask_threshold": 0,
+            "reference_appearance_threshold": 0,
+            "total": 0,
+        },
+        "maximum_reference_appearance_similarity": 1.0,
+        "view_selected": True,
+        "abstained": False,
+        "abstention_reason": None,
+        "selected": {"candidate_index": 0},
+    }
+
+
 def _synthetic_inputs() -> tuple[
     np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
 ]:
@@ -378,7 +397,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     bundle = tmp_path / "frame_zero_bundle.npz"
     camera_count = len(TEST_CAMERAS)
     camera_names = np.asarray(TEST_CAMERAS)
-    point_count = 16
+    point_count = 128
     points = np.column_stack(
         (
             np.linspace(0.0, 0.03, point_count),
@@ -435,6 +454,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "openings": np.zeros(76, dtype=np.float64),
     }
     np.savez_compressed(selected_action, **selected_action_arrays)
+    view_diagnostics = [_selected_view_diagnostic(camera) for camera in TEST_CAMERAS]
     frame_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
@@ -461,10 +481,16 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
             "prediction_frame_count": 76,
         },
         "camera_policy": {
-            "rule": "all calibrated cameras with an aligned undistorted video",
+            "policy_id": held_prefix.FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+            "rule": held_prefix.FRAME_ZERO_CAMERA_SELECTION_RULE,
             "reference_camera": TEST_CAMERAS[0],
+            "minimum_selected_camera_count": 8,
+            "candidate_cameras": list(TEST_CAMERAS),
+            "candidate_camera_count": len(TEST_CAMERAS),
             "selected_cameras": list(TEST_CAMERAS),
             "selected_camera_count": len(TEST_CAMERAS),
+            "abstained_cameras": [],
+            "abstained_camera_count": 0,
         },
         "camera_frame_zero_access": [
             {
@@ -476,7 +502,10 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         ],
         "sam2": {
             **held_prefix.HELD_FRAME_ZERO_SAM2,
-            "view_diagnostics": [{"camera": camera} for camera in TEST_CAMERAS],
+            "view_diagnostics": view_diagnostics,
+            "view_diagnostics_sha256": (
+                held_prefix.frame_zero_view_diagnostics_sha256(view_diagnostics)
+            ),
         },
         "config": held_prefix.HELD_FRAME_ZERO_CONFIG,
         "geometry_qa": {"geometry_qa_passed": True},
@@ -512,6 +541,20 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     np.savez_compressed(prediction_archive, **physical_arrays)
     prediction_input = tmp_path / "prediction_only_input.bin"
     prediction_input.write_bytes(b"prediction-only input")
+    physical_input_paths = {"prediction_only_input": prediction_input}
+    for input_role in (
+        "simulator_final_data",
+        "episode_graph",
+        "state_artifact",
+        "twin_summary",
+        "driven_result",
+        "zero_action_result",
+        "driven_trajectory",
+        "zero_action_trajectory",
+    ):
+        path = tmp_path / f"{input_role}.bin"
+        path.write_bytes(input_role.encode("utf-8"))
+        physical_input_paths[input_role] = path
     prediction_summary = tmp_path / "prediction_only_summary.json"
     prediction_summary.write_text("{}\n", encoding="utf-8")
     physical_manifest_path = tmp_path / "physical_prediction_manifest.json"
@@ -523,6 +566,9 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
         "role": "calibration",
+        "physical_mode": "warp_twin",
+        "physical_admitted": True,
+        "fallback_diagnostics": None,
         "frozen_predictor": {
             "official_phystwin_revision": held_physical.OFFICIAL_PHYSTWIN_REVISION,
             "official_real_config_sha256": held_physical.OFFICIAL_REAL_CONFIG_SHA256,
@@ -530,6 +576,8 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
             "action_response": held_physical.ACTION_RESPONSE,
             "autonomous_drift_response": held_physical.AUTONOMOUS_DRIFT_RESPONSE,
             "frame_count": 76,
+            "observed_graph_node_count": 128,
+            "total_graph_node_count": 128,
             "point_count": point_count,
             "warp_dynamics": held_physical.WARP_DYNAMICS,
         },
@@ -540,7 +588,9 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
                 for name, value in physical_arrays.items()
             },
         },
-        "input_files": {"prediction_only_input": _record(prediction_input)},
+        "input_files": {
+            role: _record(path) for role, path in physical_input_paths.items()
+        },
         "held_lock_sha256": hashlib.sha256(lock.read_bytes()).hexdigest(),
         "frame_zero_manifest_sha256": hashlib.sha256(
             frame_manifest_path.read_bytes()
@@ -761,9 +811,9 @@ def test_runner_emits_exact_seven_roles_and_frozen_prediction_schema(
         }
         assert required.issubset(stored.files)
         assert stored["center_ids"].shape == (16,)
-        assert stored["primary_prediction_m"].shape == (76, 16, 3)
-        assert stored["selected_raw_backbone_m"].shape == (76, 16, 3)
-        assert stored["frame_zero_points_m"].shape == (16, 3)
+        assert stored["primary_prediction_m"].shape == (76, 128, 3)
+        assert stored["selected_raw_backbone_m"].shape == (76, 128, 3)
+        assert stored["frame_zero_points_m"].shape == (128, 3)
         diagnostic = json.loads(
             stored["prediction_diagnostic_json_utf8"].tobytes().decode("utf-8")
         )

@@ -47,6 +47,19 @@ FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
 HELD_PROTOCOL_ID = "deform360-held-online-belief-v1"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
+FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
+    "deform360-frame-zero-reference-consistent-camera-abstention-v2"
+)
+FRAME_ZERO_CAMERA_SELECTION_RULE = (
+    "process every aligned calibrated camera; keep the fixed reference and "
+    "only non-reference views with a frozen-threshold-eligible mask"
+)
+
+_NO_AUTOMATIC_CANDIDATES = "no-automatic-mask-candidates"
+_NO_MASK_THRESHOLD_CANDIDATES = "no-candidate-met-frozen-mask-thresholds"
+_NO_REFERENCE_CONSISTENT_CANDIDATES = (
+    "no-candidate-met-frozen-reference-appearance-threshold"
+)
 
 HELD_TARGET_CASES_V1 = (
     "002-rope-silk-ep0001",
@@ -137,6 +150,21 @@ def artifact_sha256(payload: Mapping[str, Any]) -> str:
     canonical = dict(payload)
     canonical.pop("artifact_sha256", None)
     return hashlib.sha256(_canonical_bytes(canonical)).hexdigest()
+
+
+def frame_zero_view_diagnostics_sha256(
+    diagnostics: Sequence[Mapping[str, Any]],
+) -> str:
+    """Bind all attempted views to the source-only v2 selection policy."""
+
+    return hashlib.sha256(
+        _canonical_bytes(
+            {
+                "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+                "view_diagnostics": list(diagnostics),
+            }
+        )
+    ).hexdigest()
 
 
 def _case_parts(case_name: str) -> tuple[str, int]:
@@ -601,10 +629,20 @@ def _select_reference_mask(
         diagnostic = deformable_object_mask_candidate_diagnostics(rgb, mask, config)
         predicted_iou = float(annotation.get("predicted_iou", 1.0))
         stability = float(annotation.get("stability_score", 1.0))
-        if diagnostic["eligible"]:
-            diagnostic["score"] *= math.sqrt(max(0.0, predicted_iou * stability))
+        eligible = bool(
+            diagnostic["eligible"]
+            and predicted_iou >= config.predicted_iou_threshold
+            and stability >= config.stability_score_threshold
+        )
+        score = (
+            float(diagnostic["score"]) * math.sqrt(max(0.0, predicted_iou * stability))
+            if eligible
+            else -1.0
+        )
         diagnostic.update(
             {
+                "eligible": eligible,
+                "score": score,
                 "candidate_index": index,
                 "predicted_iou": predicted_iou,
                 "stability_score": stability,
@@ -617,6 +655,16 @@ def _select_reference_mask(
     return np.asarray(annotations[selected_index]["segmentation"], dtype=bool), {
         "automatic_candidate_count": len(annotations),
         "eligible_candidate_count": len(eligible),
+        "rejected_candidate_count": len(annotations) - len(eligible),
+        "rejection_counts": {
+            "mask_threshold": len(annotations) - len(eligible),
+            "reference_appearance_threshold": 0,
+            "total": len(annotations) - len(eligible),
+        },
+        "maximum_reference_appearance_similarity": 1.0,
+        "view_selected": True,
+        "abstained": False,
+        "abstention_reason": None,
         "selected": selected,
     }
 
@@ -626,17 +674,19 @@ def _select_reference_consistent_mask(
     annotations: Sequence[Mapping[str, Any]],
     reference_descriptor: Mapping[str, Any],
     config: DeformableObjectSam2MaskConfig,
-) -> tuple[np.ndarray, dict[str, Any]]:
+) -> tuple[np.ndarray | None, dict[str, Any]]:
     candidates: list[tuple[float, int, dict[str, Any]]] = []
+    mask_threshold_rejections = 0
+    appearance_threshold_rejections = 0
     for index, annotation in enumerate(annotations):
         mask = np.asarray(annotation["segmentation"], dtype=bool)
         diagnostic = deformable_object_mask_candidate_diagnostics(rgb, mask, config)
+        predicted_iou = float(annotation.get("predicted_iou", 1.0))
+        stability = float(annotation.get("stability_score", 1.0))
         basic = bool(
-            diagnostic["area_pixels"] >= config.minimum_mask_region_area
-            and config.minimum_area_fraction
-            <= diagnostic["area_fraction"]
-            <= config.maximum_area_fraction
-            and diagnostic["foreground_contrast"] >= config.minimum_foreground_contrast
+            diagnostic["eligible"]
+            and predicted_iou >= config.predicted_iou_threshold
+            and stability >= config.stability_score_threshold
         )
         similarity = (
             mask_appearance_similarity(
@@ -654,8 +704,11 @@ def _select_reference_consistent_mask(
             basic
             and similarity["combined"] >= config.minimum_reference_appearance_similarity
         )
-        predicted_iou = float(annotation.get("predicted_iou", 1.0))
-        stability = float(annotation.get("stability_score", 1.0))
+        mask_threshold_rejections += int(not basic)
+        appearance_threshold_rejections += int(
+            basic
+            and similarity["combined"] < config.minimum_reference_appearance_similarity
+        )
         score = (
             similarity["combined"] ** 3
             * similarity["shape_similarity"] ** 4
@@ -676,15 +729,52 @@ def _select_reference_consistent_mask(
         )
         candidates.append((float(score), index, diagnostic))
     eligible_candidates = [candidate for candidate in candidates if candidate[0] >= 0.0]
-    _require(bool(eligible_candidates), "SAM2 found no reference-consistent mask")
+    maximum_similarity = max(
+        (
+            float(candidate[2]["reference_appearance"]["combined"])
+            for candidate in candidates
+        ),
+        default=0.0,
+    )
+    summary: dict[str, Any] = {
+        "automatic_candidate_count": len(annotations),
+        "eligible_candidate_count": len(eligible_candidates),
+        "rejected_candidate_count": len(annotations) - len(eligible_candidates),
+        "rejection_counts": {
+            "mask_threshold": mask_threshold_rejections,
+            "reference_appearance_threshold": appearance_threshold_rejections,
+            "total": len(annotations) - len(eligible_candidates),
+        },
+        "maximum_reference_appearance_similarity": maximum_similarity,
+    }
+    if not eligible_candidates:
+        if not annotations:
+            abstention_reason = _NO_AUTOMATIC_CANDIDATES
+        elif mask_threshold_rejections == len(annotations):
+            abstention_reason = _NO_MASK_THRESHOLD_CANDIDATES
+        else:
+            abstention_reason = _NO_REFERENCE_CONSISTENT_CANDIDATES
+        summary.update(
+            {
+                "view_selected": False,
+                "abstained": True,
+                "abstention_reason": abstention_reason,
+                "selected": None,
+            }
+        )
+        return None, summary
     _, selected_index, selected = max(
         eligible_candidates, key=lambda item: (item[0], -item[1])
     )
-    return np.asarray(annotations[selected_index]["segmentation"], dtype=bool), {
-        "automatic_candidate_count": len(annotations),
-        "eligible_candidate_count": len(eligible_candidates),
-        "selected": selected,
-    }
+    summary.update(
+        {
+            "view_selected": True,
+            "abstained": False,
+            "abstention_reason": None,
+            "selected": selected,
+        }
+    )
+    return np.asarray(annotations[selected_index]["segmentation"], dtype=bool), summary
 
 
 def segment_frame_zero_views(
@@ -716,7 +806,8 @@ def segment_frame_zero_views(
         mask, diagnostic = _select_reference_consistent_mask(
             rgb, runtime.generate(rgb), reference_descriptor, config
         )
-        masks[camera] = mask
+        if mask is not None:
+            masks[camera] = mask
         diagnostics.append(
             {
                 "camera": camera,
@@ -1369,6 +1460,148 @@ def _bundle_array_records(arrays: Mapping[str, np.ndarray]) -> dict[str, Any]:
     }
 
 
+def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
+    config = payload.get("config")
+    _require(isinstance(config, Mapping), "frame-zero config is missing")
+    minimum_camera_count = config.get("minimum_camera_count")
+    _require(
+        isinstance(minimum_camera_count, int)
+        and not isinstance(minimum_camera_count, bool)
+        and minimum_camera_count >= 3,
+        "invalid minimum selected camera count",
+    )
+    policy = payload.get("camera_policy")
+    policy_keys = {
+        "policy_id",
+        "rule",
+        "reference_camera",
+        "minimum_selected_camera_count",
+        "candidate_cameras",
+        "candidate_camera_count",
+        "selected_cameras",
+        "selected_camera_count",
+        "abstained_cameras",
+        "abstained_camera_count",
+    }
+    _require(
+        isinstance(policy, Mapping)
+        and set(policy) == policy_keys
+        and policy.get("policy_id") == FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+        and policy.get("rule") == FRAME_ZERO_CAMERA_SELECTION_RULE,
+        "frame-zero camera selection policy changed",
+    )
+    candidate_cameras = policy.get("candidate_cameras")
+    selected_cameras = policy.get("selected_cameras")
+    abstained_cameras = policy.get("abstained_cameras")
+    _require(
+        isinstance(candidate_cameras, list)
+        and isinstance(selected_cameras, list)
+        and isinstance(abstained_cameras, list)
+        and all(isinstance(camera, str) and camera for camera in candidate_cameras)
+        and all(isinstance(camera, str) and camera for camera in selected_cameras)
+        and all(isinstance(camera, str) and camera for camera in abstained_cameras)
+        and candidate_cameras == sorted(set(candidate_cameras))
+        and selected_cameras == sorted(set(selected_cameras))
+        and abstained_cameras == sorted(set(abstained_cameras))
+        and set(candidate_cameras) == set(selected_cameras) | set(abstained_cameras)
+        and not set(selected_cameras) & set(abstained_cameras),
+        "frame-zero camera selection sets are invalid",
+    )
+    reference_camera = policy.get("reference_camera")
+    _require(
+        isinstance(reference_camera, str)
+        and reference_camera == config.get("reference_camera")
+        and reference_camera in selected_cameras
+        and policy.get("minimum_selected_camera_count") == minimum_camera_count
+        and policy.get("candidate_camera_count") == len(candidate_cameras)
+        and policy.get("selected_camera_count") == len(selected_cameras)
+        and policy.get("abstained_camera_count") == len(abstained_cameras)
+        and len(selected_cameras) >= minimum_camera_count,
+        "frame-zero selected camera requirement failed",
+    )
+    sam2 = payload.get("sam2")
+    diagnostics = sam2.get("view_diagnostics") if isinstance(sam2, Mapping) else None
+    _require(
+        isinstance(diagnostics, list)
+        and sam2.get("view_diagnostics_sha256")
+        == frame_zero_view_diagnostics_sha256(diagnostics),
+        "frame-zero view diagnostics checksum changed",
+    )
+    _require(
+        len(diagnostics) == len(candidate_cameras)
+        and all(isinstance(record, Mapping) for record in diagnostics),
+        "frame-zero per-camera diagnostics are incomplete",
+    )
+    _require(
+        [record.get("camera") for record in diagnostics] == candidate_cameras,
+        "frame-zero per-camera diagnostic order changed",
+    )
+    diagnostic_selected: list[str] = []
+    diagnostic_abstained: list[str] = []
+    allowed_abstention_reasons = {
+        _NO_AUTOMATIC_CANDIDATES,
+        _NO_MASK_THRESHOLD_CANDIDATES,
+        _NO_REFERENCE_CONSISTENT_CANDIDATES,
+    }
+    for record in diagnostics:
+        automatic_count = record.get("automatic_candidate_count")
+        eligible_count = record.get("eligible_candidate_count")
+        rejected_count = record.get("rejected_candidate_count")
+        rejection_counts = record.get("rejection_counts")
+        maximum_similarity = record.get("maximum_reference_appearance_similarity")
+        _require(
+            all(
+                isinstance(value, int) and not isinstance(value, bool) and value >= 0
+                for value in (automatic_count, eligible_count, rejected_count)
+            )
+            and automatic_count == eligible_count + rejected_count
+            and isinstance(rejection_counts, Mapping)
+            and set(rejection_counts)
+            == {"mask_threshold", "reference_appearance_threshold", "total"}
+            and all(
+                isinstance(value, int) and not isinstance(value, bool) and value >= 0
+                for value in rejection_counts.values()
+            )
+            and rejection_counts["mask_threshold"]
+            + rejection_counts["reference_appearance_threshold"]
+            == rejection_counts["total"]
+            == rejected_count,
+            "invalid per-camera candidate rejection counts",
+        )
+        _require(
+            isinstance(maximum_similarity, (int, float))
+            and not isinstance(maximum_similarity, bool)
+            and math.isfinite(float(maximum_similarity))
+            and 0.0 <= float(maximum_similarity) <= 1.0,
+            "invalid per-camera maximum appearance similarity",
+        )
+        camera = str(record["camera"])
+        if record.get("view_selected") is True:
+            _require(
+                record.get("abstained") is False
+                and record.get("abstention_reason") is None
+                and eligible_count >= 1
+                and isinstance(record.get("selected"), Mapping),
+                "selected camera diagnostics are inconsistent",
+            )
+            diagnostic_selected.append(camera)
+        else:
+            _require(
+                record.get("view_selected") is False
+                and record.get("abstained") is True
+                and record.get("abstention_reason") in allowed_abstention_reasons
+                and eligible_count == 0
+                and record.get("selected") is None,
+                "abstained camera diagnostics are inconsistent",
+            )
+            diagnostic_abstained.append(camera)
+    _require(
+        diagnostic_selected == selected_cameras
+        and diagnostic_abstained == abstained_cameras,
+        "frame-zero camera policy differs from its diagnostics",
+    )
+
+
 def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str, Any]:
     _require(
         payload.get("schema_version") == 1, "unsupported frame-zero manifest schema"
@@ -1447,6 +1680,7 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
         isinstance(selected_action.get("size_bytes"), int),
         "invalid selected action size",
     )
+    _validate_camera_selection_contract(payload)
     _require(
         payload.get("artifact_sha256") == artifact_sha256(payload),
         "frame-zero manifest checksum mismatch",
@@ -1526,11 +1760,30 @@ def run_frame_zero_asset_builder(
             reference_camera=cfg.reference_camera,
             config=cfg.sam2,
         )
+        selected_cameras = tuple(sorted(masks))
+        abstained_cameras = tuple(
+            camera for camera in cameras if camera not in selected_cameras
+        )
+        _require(
+            cfg.reference_camera in selected_cameras,
+            "fixed frame-zero reference camera did not produce a mask",
+        )
+        _require(
+            len(selected_cameras) >= cfg.minimum_camera_count,
+            "too few non-abstaining frame-zero cameras",
+        )
+        selected_rgb = {camera: rgb_by_camera[camera] for camera in selected_cameras}
+        selected_intrinsics = {
+            camera: intrinsics[camera] for camera in selected_cameras
+        }
+        selected_extrinsics = {
+            camera: extrinsics[camera] for camera in selected_cameras
+        }
         arrays, geometry_qa = build_frame_zero_geometry(
-            rgb_by_camera,
+            selected_rgb,
             masks,
-            {camera: intrinsics[camera] for camera in cameras},
-            {camera: extrinsics[camera] for camera in cameras},
+            selected_intrinsics,
+            selected_extrinsics,
             config=cfg,
         )
         bundle_path = output / "frame_zero_bundle.npz"
@@ -1555,10 +1808,16 @@ def run_frame_zero_asset_builder(
             "action_alignment": action_alignment,
             "calibration_inputs": calibration_inputs,
             "camera_policy": {
-                "rule": "all calibrated cameras with an aligned undistorted video",
+                "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+                "rule": FRAME_ZERO_CAMERA_SELECTION_RULE,
                 "reference_camera": cfg.reference_camera,
-                "selected_cameras": list(cameras),
-                "selected_camera_count": len(cameras),
+                "minimum_selected_camera_count": cfg.minimum_camera_count,
+                "candidate_cameras": list(cameras),
+                "candidate_camera_count": len(cameras),
+                "selected_cameras": list(selected_cameras),
+                "selected_camera_count": len(selected_cameras),
+                "abstained_cameras": list(abstained_cameras),
+                "abstained_camera_count": len(abstained_cameras),
             },
             "camera_frame_zero_access": access_records,
             "sam2": {
@@ -1571,12 +1830,17 @@ def run_frame_zero_asset_builder(
                 "image_model_only": True,
                 "video_propagator_constructed": False,
                 "view_diagnostics": mask_diagnostics,
+                "view_diagnostics_sha256": frame_zero_view_diagnostics_sha256(
+                    mask_diagnostics
+                ),
             },
             "config": asdict(cfg),
             "geometry_qa": geometry_qa,
             "runtime": {
                 "elapsed_seconds": elapsed,
-                "camera_count": len(cameras),
+                "camera_count": len(selected_cameras),
+                "candidate_camera_count": len(cameras),
+                "abstained_camera_count": len(abstained_cameras),
                 "maximum_object_rgb_frame_read": 0,
                 "decoded_rgb_frame_count_per_camera": 1,
             },
@@ -1599,6 +1863,8 @@ def run_frame_zero_asset_builder(
 __all__ = [
     "ABSOLUTELY_FORBIDDEN_OBJECT_PREFIXES",
     "APPROVED_CALIBRATION_SMOKE_CASE",
+    "FRAME_ZERO_CAMERA_SELECTION_POLICY_ID",
+    "FRAME_ZERO_CAMERA_SELECTION_RULE",
     "FRAME_ZERO_INFORMATION_BOUNDARY",
     "FrameZeroAssetConfig",
     "HELD_TARGET_CASES_V1",
@@ -1607,6 +1873,7 @@ __all__ = [
     "authorize_frame_zero_case",
     "build_frame_zero_geometry",
     "decode_exact_frame_zero",
+    "frame_zero_view_diagnostics_sha256",
     "load_generic_held_lock",
     "reject_future_derived_input",
     "run_frame_zero_asset_builder",

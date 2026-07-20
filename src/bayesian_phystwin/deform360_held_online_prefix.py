@@ -25,6 +25,12 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from .deform360_cpd_diagnostic import _symmetric_set_chamfer_m
+from .deform360_frame_zero_assets import (
+    FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_CAMERA_SELECTION_RULE,
+    frame_zero_view_diagnostics_sha256,
+    validate_frame_zero_bundle_manifest as validate_frame_zero_asset_manifest,
+)
 from .deform360_held_protocol import (
     ONLINE_ARTIFACT_ROLES,
     PRIMARY_METHOD,
@@ -238,6 +244,7 @@ def _load_frame_zero_arrays(
         expected_case_name=case_name,
         expected_role=role,
     )
+    validate_frame_zero_asset_manifest(manifest)
     _require(
         manifest.get("config") == HELD_FRAME_ZERO_CONFIG,
         "held frame-zero configuration changed",
@@ -245,9 +252,12 @@ def _load_frame_zero_arrays(
     sam2 = manifest.get("sam2")
     _require(
         isinstance(sam2, Mapping)
-        and set(sam2) == set(HELD_FRAME_ZERO_SAM2) | {"view_diagnostics"}
+        and set(sam2)
+        == set(HELD_FRAME_ZERO_SAM2) | {"view_diagnostics", "view_diagnostics_sha256"}
         and all(sam2.get(key) == value for key, value in HELD_FRAME_ZERO_SAM2.items())
-        and isinstance(sam2.get("view_diagnostics"), list),
+        and isinstance(sam2.get("view_diagnostics"), list)
+        and sam2.get("view_diagnostics_sha256")
+        == frame_zero_view_diagnostics_sha256(sam2["view_diagnostics"]),
         "held frame-zero SAM2 configuration changed",
     )
     geometry_qa = manifest.get("geometry_qa")
@@ -313,25 +323,33 @@ def _load_frame_zero_arrays(
     camera_policy = manifest.get("camera_policy")
     _require(
         isinstance(camera_policy, Mapping)
-        and camera_policy.get("rule")
-        == "all calibrated cameras with an aligned undistorted video"
+        and camera_policy.get("policy_id") == FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+        and camera_policy.get("rule") == FRAME_ZERO_CAMERA_SELECTION_RULE
         and camera_policy.get("reference_camera")
         == HELD_FRAME_ZERO_CONFIG["reference_camera"]
         and camera_policy.get("reference_camera")
         in [str(value) for value in cameras.tolist()]
         and camera_policy.get("selected_cameras")
         == [str(value) for value in cameras.tolist()]
-        and camera_policy.get("selected_camera_count") == camera_count,
+        and camera_policy.get("selected_camera_count") == camera_count
+        and camera_policy.get("minimum_selected_camera_count")
+        == HELD_FRAME_ZERO_CONFIG["minimum_camera_count"],
         "frame-zero camera policy changed",
     )
+    candidate_cameras = camera_policy["candidate_cameras"]
+    abstained_cameras = camera_policy["abstained_cameras"]
     _require(
-        len(sam2["view_diagnostics"]) == camera_count
-        and {
-            str(record.get("camera"))
+        camera_policy.get("candidate_camera_count") == len(candidate_cameras)
+        and camera_policy.get("abstained_camera_count") == len(abstained_cameras)
+        and len(sam2["view_diagnostics"]) == len(candidate_cameras)
+        and [record.get("camera") for record in sam2["view_diagnostics"]]
+        == candidate_cameras
+        and [
+            record.get("camera")
             for record in sam2["view_diagnostics"]
-            if isinstance(record, Mapping)
-        }
-        == set(map(str, cameras.tolist())),
+            if record.get("view_selected") is True
+        ]
+        == [str(value) for value in cameras.tolist()],
         "frame-zero SAM2 camera diagnostics changed",
     )
     _require(

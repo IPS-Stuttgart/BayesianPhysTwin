@@ -17,17 +17,22 @@ from deform360_held_test_helpers import (
     dummy_immutable_bindings,
 )
 
+import bayesian_phystwin.deform360_frame_zero_assets as frame_zero_assets
 from bayesian_phystwin.deform360_frame_zero_assets import (
     APPROVED_CALIBRATION_SMOKE_CASE,
+    FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_CAMERA_SELECTION_RULE,
     FRAME_ZERO_INFORMATION_BOUNDARY,
     FrameZeroAssetConfig,
     HELD_TARGET_CASES_V1,
     artifact_sha256,
     authorize_frame_zero_case,
     decode_exact_frame_zero,
+    frame_zero_view_diagnostics_sha256,
     load_generic_held_lock,
     reject_future_derived_input,
     run_frame_zero_asset_builder,
+    segment_frame_zero_views,
     select_action_only_window,
     validate_frame_zero_bundle_manifest,
     validate_generic_held_lock,
@@ -56,6 +61,25 @@ CALIBRATION_CASES = [
     "170-spider-ep0004",
     "170-spider-ep0007",
 ]
+
+
+def _selected_view_diagnostic(camera: str) -> dict[str, object]:
+    return {
+        "camera": camera,
+        "automatic_candidate_count": 1,
+        "eligible_candidate_count": 1,
+        "rejected_candidate_count": 0,
+        "rejection_counts": {
+            "mask_threshold": 0,
+            "reference_appearance_threshold": 0,
+            "total": 0,
+        },
+        "maximum_reference_appearance_similarity": 1.0,
+        "view_selected": True,
+        "abstained": False,
+        "abstention_reason": None,
+        "selected": {"candidate_index": 0},
+    }
 
 
 def _lock(*, stage: str = "calibration") -> dict:
@@ -91,6 +115,9 @@ def _manifest(tmp_path: Path) -> dict:
     robot = tmp_path / "robot.npz"
     metadata = tmp_path / "robot.meta.json"
     action = tmp_path / "known_action_76.npz"
+    reference_camera = FrameZeroAssetConfig().reference_camera
+    cameras = sorted([reference_camera, *(f"camera-{index:02d}" for index in range(7))])
+    diagnostics = [_selected_view_diagnostic(camera) for camera in cameras]
     payload = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
@@ -128,6 +155,22 @@ def _manifest(tmp_path: Path) -> dict:
                 "sha256": "4" * 64,
                 "size_bytes": 40,
             },
+        },
+        "camera_policy": {
+            "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+            "rule": FRAME_ZERO_CAMERA_SELECTION_RULE,
+            "reference_camera": reference_camera,
+            "minimum_selected_camera_count": 8,
+            "candidate_cameras": cameras,
+            "candidate_camera_count": len(cameras),
+            "selected_cameras": cameras,
+            "selected_camera_count": len(cameras),
+            "abstained_cameras": [],
+            "abstained_camera_count": 0,
+        },
+        "sam2": {
+            "view_diagnostics": diagnostics,
+            "view_diagnostics_sha256": frame_zero_view_diagnostics_sha256(diagnostics),
         },
         "information_boundary": deepcopy(FRAME_ZERO_INFORMATION_BOUNDARY),
     }
@@ -286,6 +329,311 @@ def test_future_derived_inputs_are_rejected(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         reject_future_derived_input(tmp_path / name, purpose="frame-zero mask")
+
+
+def test_nonreference_zero_eligible_abstains_without_stopping_later_cameras(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reference_camera = FrameZeroAssetConfig().reference_camera
+    cameras = [reference_camera, *(f"camera-{index:02d}" for index in range(1, 10))]
+    rgb_by_camera = {
+        camera: np.full((4, 4, 3), index, dtype=np.uint8)
+        for index, camera in enumerate(cameras)
+    }
+    calls: list[int] = []
+
+    class Runtime:
+        model_id = "test-only"
+
+        def generate(self, rgb: np.ndarray) -> list[dict[str, object]]:
+            camera_index = int(rgb[0, 0, 0])
+            calls.append(camera_index)
+            return [
+                {
+                    "segmentation": np.ones((4, 4), dtype=bool),
+                    "predicted_iou": 0.69 if camera_index == 4 else 0.95,
+                    "stability_score": 0.95,
+                }
+            ]
+
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "deformable_object_mask_candidate_diagnostics",
+        lambda _rgb, _mask, _config: {
+            "eligible": True,
+            "score": 1.0,
+            "area_pixels": 100,
+            "area_fraction": 0.25,
+            "foreground_contrast": 0.25,
+        },
+    )
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "mask_appearance_descriptor",
+        lambda rgb, _mask: {"camera_index": int(rgb[0, 0, 0])},
+    )
+
+    def similarity(
+        _reference: dict[str, object], candidate: dict[str, object]
+    ) -> dict[str, float]:
+        combined = 0.349 if candidate["camera_index"] == 3 else 0.90
+        return {
+            "combined": combined,
+            "hs_histogram_intersection": combined,
+            "lab_similarity": combined,
+            "shape_similarity": 0.90,
+        }
+
+    monkeypatch.setattr(frame_zero_assets, "mask_appearance_similarity", similarity)
+
+    masks, diagnostics = segment_frame_zero_views(
+        rgb_by_camera,
+        Runtime(),
+        reference_camera=reference_camera,
+        config=FrameZeroAssetConfig().sam2,
+    )
+
+    assert calls == list(range(10))
+    assert len(diagnostics) == 10
+    assert len(masks) == 8
+    assert reference_camera in masks
+    assert "camera-03" not in masks
+    assert "camera-04" not in masks
+    appearance_abstention = next(
+        record for record in diagnostics if record["camera"] == "camera-03"
+    )
+    assert appearance_abstention["eligible_candidate_count"] == 0
+    assert appearance_abstention["rejected_candidate_count"] == 1
+    assert appearance_abstention["maximum_reference_appearance_similarity"] == 0.349
+    assert (
+        appearance_abstention["abstention_reason"]
+        == "no-candidate-met-frozen-reference-appearance-threshold"
+    )
+    quality_abstention = next(
+        record for record in diagnostics if record["camera"] == "camera-04"
+    )
+    assert quality_abstention["rejection_counts"] == {
+        "mask_threshold": 1,
+        "reference_appearance_threshold": 0,
+        "total": 1,
+    }
+    assert quality_abstention["abstention_reason"] == (
+        "no-candidate-met-frozen-mask-thresholds"
+    )
+
+
+def test_fixed_reference_camera_cannot_abstain() -> None:
+    reference_camera = FrameZeroAssetConfig().reference_camera
+    rgb_by_camera = {
+        reference_camera: np.zeros((4, 4, 3), dtype=np.uint8),
+        "camera-01": np.ones((4, 4, 3), dtype=np.uint8),
+    }
+    runtime = SimpleNamespace(model_id="test-only", generate=lambda _rgb: [])
+
+    with pytest.raises(ValueError, match="no eligible reference mask"):
+        segment_frame_zero_views(
+            rgb_by_camera,
+            runtime,
+            reference_camera=reference_camera,
+            config=FrameZeroAssetConfig().sam2,
+        )
+
+
+def test_manifest_rejects_modified_or_incomplete_camera_abstention_diagnostics(
+    tmp_path: Path,
+) -> None:
+    payload = _manifest(tmp_path)
+    payload["sam2"]["view_diagnostics"][1][
+        "maximum_reference_appearance_similarity"
+    ] = 0.5
+    payload["artifact_sha256"] = artifact_sha256(payload)
+
+    with pytest.raises(ValueError, match="diagnostics checksum"):
+        validate_frame_zero_bundle_manifest(payload)
+
+    below_minimum = _manifest(tmp_path)
+    removed = below_minimum["camera_policy"]["selected_cameras"][-1]
+    below_minimum["camera_policy"]["selected_cameras"] = below_minimum["camera_policy"][
+        "selected_cameras"
+    ][:-1]
+    below_minimum["camera_policy"]["selected_camera_count"] = 7
+    below_minimum["camera_policy"]["abstained_cameras"] = [removed]
+    below_minimum["camera_policy"]["abstained_camera_count"] = 1
+    record = next(
+        item
+        for item in below_minimum["sam2"]["view_diagnostics"]
+        if item["camera"] == removed
+    )
+    record.update(
+        {
+            "eligible_candidate_count": 0,
+            "rejected_candidate_count": 1,
+            "rejection_counts": {
+                "mask_threshold": 0,
+                "reference_appearance_threshold": 1,
+                "total": 1,
+            },
+            "view_selected": False,
+            "abstained": True,
+            "abstention_reason": (
+                "no-candidate-met-frozen-reference-appearance-threshold"
+            ),
+            "selected": None,
+        }
+    )
+    below_minimum["sam2"]["view_diagnostics_sha256"] = (
+        frame_zero_view_diagnostics_sha256(below_minimum["sam2"]["view_diagnostics"])
+    )
+    below_minimum["artifact_sha256"] = artifact_sha256(below_minimum)
+
+    with pytest.raises(ValueError, match="selected camera requirement"):
+        validate_frame_zero_bundle_manifest(below_minimum)
+
+
+def test_builder_slices_rgb_and_calibration_to_nonabstaining_views(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lock_path = tmp_path / "calibration-lock.json"
+    create_held_protocol_lock(lock_path, immutable_bindings=dummy_immutable_bindings())
+    episode = tmp_path / "083-blanket-cloth" / "episode_0000"
+    reference_camera = FrameZeroAssetConfig().reference_camera
+    cameras = tuple(
+        sorted([reference_camera, *(f"camera-{index:02d}" for index in range(8))])
+    )
+    selected_cameras = cameras[:-1]
+    abstained_camera = cameras[-1]
+    for camera in cameras:
+        video = episode / camera / "undistorted.mp4"
+        video.parent.mkdir(parents=True, exist_ok=True)
+        video.write_bytes(b"frame-zero-only-test")
+    intrinsics = {camera: np.eye(3) for camera in cameras}
+    extrinsics = {camera: np.eye(4) for camera in cameras}
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "_load_calibration",
+        lambda _episode: (intrinsics, extrinsics, {"test_only": True}),
+    )
+    robot_path = episode / "robot" / "robot.npz"
+    robot_path.parent.mkdir(parents=True)
+    robot_path.write_bytes(b"robot")
+    metadata_path = robot_path.with_name("robot.meta.json")
+    metadata_path.write_bytes(b"{}")
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "_action_inputs",
+        lambda _episode: (
+            {
+                "robot_trajectory": _record_existing(robot_path),
+                "robot_metadata": _record_existing(metadata_path),
+            },
+            robot_path,
+        ),
+    )
+
+    def fake_slice(
+        _robot_path: Path,
+        output_path: Path,
+        *,
+        config: FrameZeroAssetConfig,
+    ) -> tuple[dict[str, np.ndarray], dict[str, object]]:
+        del config
+        np.savez_compressed(output_path, actions=np.zeros((76, 1, 3)))
+        return {}, {
+            "selected_raw_frame_range_half_open": [0, 81],
+            "prediction_raw_frame_range_half_open": [0, 76],
+            "selected_action_bundle": _record_existing(output_path),
+        }
+
+    monkeypatch.setattr(frame_zero_assets, "_slice_known_action", fake_slice)
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "decode_exact_frame_zero",
+        lambda _path, *, source_aligned_frame_index: (
+            np.zeros((4, 4, 3), dtype=np.uint8),
+            {
+                "decoded_frame_count": 1,
+                "maximum_rgb_frame_read": 0,
+                "source_aligned_frame_index": source_aligned_frame_index,
+            },
+        ),
+    )
+    diagnostics = [_selected_view_diagnostic(camera) for camera in cameras]
+    diagnostics[-1].update(
+        {
+            "eligible_candidate_count": 0,
+            "rejected_candidate_count": 1,
+            "rejection_counts": {
+                "mask_threshold": 0,
+                "reference_appearance_threshold": 1,
+                "total": 1,
+            },
+            "maximum_reference_appearance_similarity": 0.2,
+            "view_selected": False,
+            "abstained": True,
+            "abstention_reason": (
+                "no-candidate-met-frozen-reference-appearance-threshold"
+            ),
+            "selected": None,
+        }
+    )
+    masks = {camera: np.ones((4, 4), dtype=bool) for camera in selected_cameras}
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "segment_frame_zero_views",
+        lambda rgb, *_args, **_kwargs: (
+            (
+                masks,
+                diagnostics,
+            )
+            if tuple(sorted(rgb)) == cameras
+            else pytest.fail("builder did not process every candidate camera")
+        ),
+    )
+    received: dict[str, tuple[str, ...]] = {}
+
+    def fake_geometry(
+        rgb: dict[str, np.ndarray],
+        selected_masks: dict[str, np.ndarray],
+        selected_intrinsics: dict[str, np.ndarray],
+        selected_extrinsics: dict[str, np.ndarray],
+        *,
+        config: FrameZeroAssetConfig,
+    ) -> tuple[dict[str, np.ndarray], dict[str, object]]:
+        del config
+        received.update(
+            {
+                "rgb": tuple(sorted(rgb)),
+                "masks": tuple(sorted(selected_masks)),
+                "intrinsics": tuple(sorted(selected_intrinsics)),
+                "extrinsics": tuple(sorted(selected_extrinsics)),
+            }
+        )
+        return {
+            "frame_indices": np.asarray([0], dtype=np.int64),
+            "camera_names": np.asarray(selected_cameras),
+        }, {"geometry_qa_passed": True}
+
+    monkeypatch.setattr(frame_zero_assets, "build_frame_zero_geometry", fake_geometry)
+
+    manifest = run_frame_zero_asset_builder(
+        episode,
+        APPROVED_CALIBRATION_SMOKE_CASE,
+        lock_path,
+        tmp_path / "frame-zero-output",
+        SimpleNamespace(model_id="test-only"),
+        role="calibration",
+    )
+
+    assert received == {
+        "rgb": selected_cameras,
+        "masks": selected_cameras,
+        "intrinsics": selected_cameras,
+        "extrinsics": selected_cameras,
+    }
+    assert manifest["camera_policy"]["candidate_cameras"] == list(cameras)
+    assert manifest["camera_policy"]["selected_cameras"] == list(selected_cameras)
+    assert manifest["camera_policy"]["abstained_cameras"] == [abstained_camera]
+    assert len(manifest["camera_frame_zero_access"]) == len(cameras)
 
 
 def test_decode_reads_once_and_labels_action_window_frame_zero(
