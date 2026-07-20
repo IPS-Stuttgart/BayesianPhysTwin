@@ -8,6 +8,7 @@ import pytest
 from bayesian_phystwin.matphys_causal_bridge import sha256_file
 from bayesian_phystwin.matphys_loo_strength_sweep import (
     _refit_command,
+    _resolve_released_checkpoint,
     _validate_replay_cache,
     build_strength_external_manifest,
     strength_family_name,
@@ -45,6 +46,51 @@ def test_refit_command_seals_future_scoring(tmp_path: Path) -> None:
     assert "--released-trajectory" in command
     assert "--gt-track-3d" not in command
     assert command[command.index("--fit-end-frame") + 1] == "6"
+
+
+def test_released_checkpoint_prefers_extracted_copy(tmp_path: Path) -> None:
+    case_data = tmp_path / "data" / "case_a"
+    case_data.mkdir(parents=True)
+    extracted = case_data / "checkpoint.pth"
+    extracted.write_bytes(b"extracted")
+    upstream = tmp_path / "official" / "experiments" / "case_a" / "train"
+    upstream.mkdir(parents=True)
+    (upstream / "best_99.pth").write_bytes(b"upstream")
+
+    assert (
+        _resolve_released_checkpoint(case_data, tmp_path / "official", "case_a")
+        == extracted
+    )
+
+
+def test_released_checkpoint_accepts_one_pinned_upstream_checkpoint(
+    tmp_path: Path,
+) -> None:
+    case_data = tmp_path / "data" / "case_a"
+    case_data.mkdir(parents=True)
+    upstream = tmp_path / "official" / "experiments" / "case_a" / "train"
+    upstream.mkdir(parents=True)
+    checkpoint = upstream / "best_199.pth"
+    checkpoint.write_bytes(b"upstream")
+
+    assert (
+        _resolve_released_checkpoint(case_data, tmp_path / "official", "case_a")
+        == checkpoint
+    )
+
+
+def test_released_checkpoint_rejects_ambiguous_upstream_matches(
+    tmp_path: Path,
+) -> None:
+    case_data = tmp_path / "data" / "case_a"
+    case_data.mkdir(parents=True)
+    upstream = tmp_path / "official" / "experiments" / "case_a" / "train"
+    upstream.mkdir(parents=True)
+    (upstream / "best_80.pth").write_bytes(b"first")
+    (upstream / "best_99.pth").write_bytes(b"second")
+
+    with pytest.raises(FileNotFoundError, match="exactly one upstream"):
+        _resolve_released_checkpoint(case_data, tmp_path / "official", "case_a")
 
 
 def test_replay_cache_requires_sealed_summary_and_exact_overlay(tmp_path: Path) -> None:

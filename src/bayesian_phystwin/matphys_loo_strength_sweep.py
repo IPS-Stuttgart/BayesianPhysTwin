@@ -161,6 +161,27 @@ def _validate_replay_cache(
     return all(checks) and trajectory.is_file()
 
 
+def _resolve_released_checkpoint(
+    case_data: Path,
+    official_repo: Path,
+    case: str,
+) -> Path:
+    """Resolve one authoritative released PhysTwin checkpoint."""
+
+    extracted = case_data / "checkpoint.pth"
+    if extracted.is_file():
+        return extracted
+    upstream = sorted(
+        (official_repo / "experiments" / case / "train").glob("best_*.pth")
+    )
+    if len(upstream) != 1:
+        raise FileNotFoundError(
+            f"{case}: expected checkpoint.pth or exactly one upstream best_*.pth; "
+            f"found {len(upstream)}"
+        )
+    return upstream[0]
+
+
 def build_strength_external_manifest(
     spring_fields: dict[str, object],
     replay_root: str | Path,
@@ -310,7 +331,7 @@ def run_loo_strength_sweep(
         replay_output = case_output / "replay"
         case_data = data / case
         candidate = Path(str(entry["candidate_spring_y_path"]))
-        source_checkpoint = case_data / "checkpoint.pth"
+        source_checkpoint = _resolve_released_checkpoint(case_data, official, case)
         split = json.loads((case_data / "split.json").read_text(encoding="utf-8"))
         train_end = int(split["train"][1])
         fit_end = int(entry["evidence_end_frame_exclusive"])
