@@ -9,6 +9,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import bayesian_phystwin.deform360_held_protocol as held_protocol
+import bayesian_phystwin.deform360_held_outcome_scoring as held_scoring
 from deform360_held_test_helpers import (
     bound_file,
     default_frame_zero_config,
@@ -22,7 +24,10 @@ from bayesian_phystwin.deform360_held_protocol import (
     CALIBRATION_GATE,
     CALIBRATION_SCORE_EVIDENCE_KIND,
     CONFIRMATION_CASES,
+    CONFIRMATION_CASE_NAMES,
+    CONFIRMATION_DECISION_KIND,
     CONFIRMATION_GATE,
+    CONFIRMATION_SCORE_EVIDENCE_KIND,
     FRAME_ZERO_KIND,
     METRIC_LOCK,
     ONLINE_ARTIFACT_ROLES,
@@ -41,6 +46,7 @@ from bayesian_phystwin.deform360_held_protocol import (
     create_physical_prior_seal,
     create_prefix_stage_authorization,
     held_artifact_sha256,
+    held_contract_sha256,
     load_held_protocol_lock,
     locked_case_names,
     run_outcome_operation,
@@ -73,7 +79,11 @@ def _calibration_lock(tmp_path: Path) -> Path:
     return path
 
 
-def _passing_scores(*, primary_chamfer_m: float = 0.90) -> dict[str, dict[str, float]]:
+def _passing_scores(
+    *,
+    primary_chamfer_m: float = 0.90,
+    case_names: tuple[str, ...] = CALIBRATION_CASE_NAMES,
+) -> dict[str, dict[str, float]]:
     return {
         case_name: {
             "primary_chamfer_m": primary_chamfer_m,
@@ -81,7 +91,7 @@ def _passing_scores(*, primary_chamfer_m: float = 0.90) -> dict[str, dict[str, f
             "primary_identity_rmse_m": 0.9,
             "comparator_identity_rmse_m": 1.0,
         }
-        for case_name in CALIBRATION_CASE_NAMES
+        for case_name in case_names
     }
 
 
@@ -89,6 +99,8 @@ def _score_evidence(
     path: Path,
     permit: object,
     scores: dict[str, dict[str, float]],
+    *,
+    role: str = "calibration",
 ) -> Path:
     lock_path = Path(permit.lock_path)
     lock = load_held_protocol_lock(lock_path)
@@ -100,7 +112,10 @@ def _score_evidence(
     case_records: dict[str, object] = {}
     evidence_files = path.parent / f"{path.stem}-files"
     evidence_files.mkdir(parents=True, exist_ok=True)
-    for case_name in CALIBRATION_CASE_NAMES:
+    case_names = (
+        CALIBRATION_CASE_NAMES if role == "calibration" else CONFIRMATION_CASE_NAMES
+    )
+    for case_name in case_names:
         seal_path = Path(dict(permit.seal_paths)[case_name])
         seal = json.loads(seal_path.read_text(encoding="utf-8"))
         authorization_path = Path(seal["prefix_authorization"]["path"])
@@ -160,7 +175,9 @@ def _score_evidence(
                 "transported_frame_zero_replaced_with_sealed_identity": True,
                 "claim_limitation": (
                     "one-to-one transported official reconstruction proxy; not native "
-                    "official material identity and not Deform360 Table-4 parity"
+                    "material identity and not parity with the Deform360 Tables 3-5 "
+                    "world-model benchmarks "
+                    "or their native tactile-refined material identities"
                 ),
             },
             "scores": {
@@ -207,23 +224,36 @@ def _score_evidence(
         }
     artifact: dict[str, object] = {
         "schema_version": 1,
-        "artifact_kind": CALIBRATION_SCORE_EVIDENCE_KIND,
+        "artifact_kind": (
+            CALIBRATION_SCORE_EVIDENCE_KIND
+            if role == "calibration"
+            else CONFIRMATION_SCORE_EVIDENCE_KIND
+        ),
         "protocol_id": PROTOCOL_ID,
-        "role": "calibration",
+        "role": role,
         "cohort_barrier_sha256": permit.cohort_barrier_sha256,
         "lock": _record(lock_path),
         "outcome_reconstruction_contract_sha256": lock["immutable_bindings"][
             "outcome_reconstruction_contract"
         ],
-        "ordered_case_names": list(CALIBRATION_CASE_NAMES),
+        "ordered_case_names": list(case_names),
         "metric_lock": METRIC_LOCK,
         "case_records": case_records,
-        "information_boundary": {
-            "all_15_online_predictions_sealed_before_any_outcome": True,
-            "outcomes_opened_only_through_live_permit": True,
-            "method_selection_or_tuning_performed": False,
-            "confirmation_payload_read": False,
-        },
+        "information_boundary": (
+            {
+                "all_15_online_predictions_sealed_before_any_outcome": True,
+                "outcomes_opened_only_through_live_permit": True,
+                "method_selection_or_tuning_performed": False,
+                "confirmation_payload_read": False,
+            }
+            if role == "calibration"
+            else {
+                "all_6_online_predictions_sealed_before_any_outcome": True,
+                "outcomes_opened_only_through_live_permit": True,
+                "method_selection_or_tuning_performed": False,
+                "calibration_method_and_gate_unchanged": True,
+            }
+        ),
     }
     artifact["artifact_sha256"] = held_artifact_sha256(artifact)
     path.write_text(json.dumps(artifact), encoding="utf-8")
@@ -472,8 +502,6 @@ def test_lock_freezes_exact_cases_method_metrics_and_decision_gates(
     assert lock["primary_method"]["calibration_selects_method"] is False
     assert CALIBRATION_GATE["minimum_case_chamfer_wins"] == 10
     assert CALIBRATION_GATE["no_go_keeps_confirmation_payload_sealed"] is True
-    assert CONFIRMATION_GATE["required_case_chamfer_wins"] == 6
-    assert CONFIRMATION_GATE["one_sided_sign_test_p"] == 1.0 / 64.0
 
     mutated = deepcopy(lock)
     mutated["case_whitelist"] = mutated["case_whitelist"][:-1]
@@ -482,6 +510,167 @@ def test_lock_freezes_exact_cases_method_metrics_and_decision_gates(
     mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
     with pytest.raises(ValueError, match="confirmation whitelist changed"):
         load_held_protocol_lock(mutated_path)
+
+
+def test_exact_six_case_confirmation_gate_arithmetic_passes() -> None:
+    scores = _passing_scores(case_names=CONFIRMATION_CASE_NAMES)
+    normalized, summary = held_protocol._confirmation_gate_summary(scores)
+
+    assert tuple(normalized) == CONFIRMATION_CASE_NAMES
+    assert summary["case_chamfer_wins"] == 6
+    assert summary["one_sided_sign_test_p"] == 1.0 / 64.0
+    assert summary["equal_case_mean_chamfer_improvement_fraction"] == (
+        pytest.approx(0.1)
+    )
+    assert all(summary["checks"].values())
+    assert summary["passed"] is True
+    assert CONFIRMATION_DECISION_KIND == "Deform360HeldConfirmationDecision"
+    assert CONFIRMATION_SCORE_EVIDENCE_KIND == (
+        "Deform360HeldConfirmationScoreEvidence"
+    )
+
+
+def test_confirmation_gate_reports_all_cases_and_rejects_one_nonwin() -> None:
+    scores = _passing_scores(case_names=CONFIRMATION_CASE_NAMES)
+    scores[CONFIRMATION_CASE_NAMES[-1]]["primary_chamfer_m"] = 1.0
+    _normalized, summary = held_protocol._confirmation_gate_summary(scores)
+
+    assert summary["passed"] is False
+    assert summary["case_chamfer_wins"] == 5
+    assert summary["one_sided_sign_test_p"] == 7.0 / 64.0
+    assert summary["checks"]["all_6_cases_chamfer_win"] is False
+    assert summary["checks"]["one_sided_sign_test_p_is_1_over_64"] is False
+
+
+def test_confirmation_evidence_and_final_decision_end_to_end_are_bound(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Exercise the complete confirmation artifact chain without GPU payloads."""
+
+    lock_path = tmp_path / "confirmation-lock.json"
+    lock_path.write_text("test-only confirmation lock\n", encoding="utf-8")
+    lock = {
+        "stage": "confirmation",
+        "case_whitelist": list(CONFIRMATION_CASE_NAMES),
+        "calibration_case_whitelist": [],
+        "immutable_bindings": {
+            "outcome_reconstruction_contract": held_contract_sha256(
+                held_scoring.OUTCOME_RECONSTRUCTION_CONTRACT
+            )
+        },
+    }
+    seal_paths: dict[str, Path] = {}
+    for case_name in CONFIRMATION_CASE_NAMES:
+        path = tmp_path / "seals" / f"{case_name}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"sealed:{case_name}\n", encoding="utf-8")
+        seal_paths[case_name] = path
+
+    def fake_online_seal(
+        path: str | Path,
+        _lock: str | Path,
+        *,
+        expected_case_name: str,
+        expected_role: str,
+    ) -> dict[str, str]:
+        assert Path(path) == seal_paths[expected_case_name]
+        assert expected_role == "confirmation"
+        digest = hashlib.sha256(expected_case_name.encode()).hexdigest()
+        return {"artifact_sha256": digest}
+
+    monkeypatch.setattr(held_protocol, "load_held_protocol_lock", lambda _path: lock)
+    monkeypatch.setattr(
+        held_scoring,
+        "load_held_protocol_lock",
+        lambda _path: lock,
+    )
+    monkeypatch.setattr(
+        held_protocol,
+        "validate_online_prediction_seal",
+        fake_online_seal,
+    )
+    monkeypatch.setattr(
+        held_protocol,
+        "_validate_case_score_record",
+        lambda *_args, **_kwargs: None,
+    )
+    permit = authorize_outcome_phase(
+        lock_path,
+        seal_paths,
+        role="confirmation",
+    )
+    scores = _passing_scores(case_names=CONFIRMATION_CASE_NAMES)
+    records = {
+        case_name: {
+            "case_name": case_name,
+            "gate_score": dict(scores[case_name]),
+            "method_selection_or_tuning_performed": False,
+        }
+        for case_name in CONFIRMATION_CASE_NAMES
+    }
+    monkeypatch.setattr(
+        held_scoring,
+        "score_confirmation_cohort",
+        lambda observed_permit, _operations: (
+            scores,
+            records,
+        )
+        if observed_permit is permit
+        else (_ for _ in ()).throw(AssertionError("another permit")),
+    )
+    evidence_path = tmp_path / "confirmation-score-evidence.json"
+    decision_path = tmp_path / "confirmation-final-decision.json"
+
+    decision, evidence, observed_records = (
+        held_scoring.score_and_create_confirmation_gate(
+            decision_path,
+            permit,
+            {},
+            evidence_path=evidence_path,
+        )
+    )
+
+    assert tuple(observed_records) == CONFIRMATION_CASE_NAMES
+    assert evidence["role"] == "confirmation"
+    assert evidence["cohort_barrier_sha256"] == permit.cohort_barrier_sha256
+    assert decision["decision"] == "CONFIRMED"
+    assert decision["summary"]["one_sided_sign_test_p"] == 1.0 / 64.0
+
+    wrong_barrier = deepcopy(evidence)
+    wrong_barrier["cohort_barrier_sha256"] = "0" * 64
+    wrong_barrier["artifact_sha256"] = held_artifact_sha256(wrong_barrier)
+    wrong_barrier_path = tmp_path / "wrong-barrier-evidence.json"
+    wrong_barrier_path.write_text(json.dumps(wrong_barrier), encoding="utf-8")
+    with pytest.raises(ValueError, match="another cohort barrier"):
+        held_protocol.validate_confirmation_score_evidence(
+            wrong_barrier_path,
+            permit,
+        )
+
+    wrong_role = deepcopy(evidence)
+    wrong_role["role"] = "calibration"
+    wrong_role["artifact_sha256"] = held_artifact_sha256(wrong_role)
+    wrong_role_path = tmp_path / "wrong-role-evidence.json"
+    wrong_role_path.write_text(json.dumps(wrong_role), encoding="utf-8")
+    with pytest.raises(ValueError, match="role changed"):
+        held_protocol.validate_confirmation_score_evidence(
+            wrong_role_path,
+            permit,
+        )
+
+    tampered_decision = deepcopy(decision)
+    tampered_decision["summary"]["case_chamfer_wins"] = 5
+    tampered_decision["artifact_sha256"] = held_artifact_sha256(tampered_decision)
+    tampered_path = tmp_path / "tampered-final-decision.json"
+    tampered_path.write_text(json.dumps(tampered_decision), encoding="utf-8")
+    with pytest.raises(ValueError, match="arithmetic changed"):
+        held_protocol.validate_confirmation_gate_decision(
+            tampered_path,
+            lock_path,
+        )
+    assert CONFIRMATION_GATE["required_case_chamfer_wins"] == 6
+    assert CONFIRMATION_GATE["one_sided_sign_test_p"] == 1.0 / 64.0
 
 
 def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> None:
@@ -508,17 +697,30 @@ def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> No
     assert not (tmp_path / "invalid-report.json").exists()
 
 
-def test_v2_lock_binds_the_abandoned_v1_source_feasibility_amendment(
+def test_v4_lock_binds_v1_v2_and_prelock_v3_lineage(
     tmp_path: Path,
 ) -> None:
     bindings = dummy_immutable_bindings()
-    lock_path = tmp_path / "v2-lock.json"
+    lock_path = tmp_path / "v4-lock.json"
     lock = create_held_protocol_lock(lock_path, immutable_bindings=bindings)
 
-    assert lock["protocol_id"] == "deform360-held-online-belief-v2"
+    assert lock["protocol_id"] == "deform360-held-online-belief-v4"
+    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 110
     assert set(REQUIRED_IMMUTABLE_BINDING_KEYS) >= {
         "v1_preoutcome_feasibility_report",
+        "v2_design_withdrawal_report",
+        "v3_prelock_boundary_incident_report",
         "held_source_feasibility_amendment_contract",
+        "deform360_robot_kinematics_source",
+        "robot_kinematics_window_contract",
+        "frame_zero_semantic_gate_contract",
+        "frame_zero_siglip2_model_tree",
+        "frame_zero_siglip2_revision_literal",
+        "frame_zero_siglip2_transformers_sources",
+        "held_calibration_case_runner_source",
+        "held_calibration_outcome_driver_source",
+        "held_calibration_shard_runner_source",
+        "held_protocol_lock_operator_source",
     }
     assert (
         lock["immutable_bindings"]["held_source_feasibility_amendment_contract"]
@@ -531,7 +733,7 @@ def test_v2_lock_binds_the_abandoned_v1_source_feasibility_amendment(
             ).encode("utf-8")
         ).hexdigest()
     )
-    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["parent_execution"] == {
+    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v1_execution"] == {
         "protocol_id": "deform360-held-online-belief-v1",
         "disposition": "ABANDONED_PREOUTCOME",
         "evidence_binding_key": "v1_preoutcome_feasibility_report",
@@ -541,16 +743,115 @@ def test_v2_lock_binds_the_abandoned_v1_source_feasibility_amendment(
             "frame_zero_failure_count": 9,
             "physical_admission_failure_count": 1,
         },
-        "predictions_reused_by_v2": False,
-    }
-    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["information_boundary"] == {
-        "selection_evidence": (
-            "frame-zero source inputs and automatic-twin admission diagnostics only"
-        ),
         "outcome_payloads_accessed": False,
         "target_payloads_accessed": False,
         "confirmation_payloads_accessed": False,
         "outcome_permit_created": False,
+        "execution_artifacts_reused_by_v4": False,
+        "predictions_reused_by_v4": False,
+    }
+    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v2_design"] == {
+        "protocol_id": "deform360-held-online-belief-v2",
+        "disposition": "WITHDRAWN_BEFORE_LOCK_AND_PREDICTION",
+        "evidence_binding_key": "v2_design_withdrawal_report",
+        "exact_execution_census": {
+            "calibration_lock_count": 0,
+            "case_attempt_count": 0,
+            "deployed_snapshot_count": 0,
+            "frame_zero_manifest_count": 0,
+            "online_prediction_seal_count": 0,
+            "outcome_created_count": 0,
+            "outcome_permit_count": 0,
+            "outcome_read_count": 0,
+            "physical_prior_seal_count": 0,
+            "prediction_count": 0,
+            "prefix_authorization_count": 0,
+            "shard_start_count": 0,
+            "target_operation_count": 0,
+        },
+        "information_access": {
+            "confirmation_payload_read": False,
+            "episode_payload_read": False,
+            "frame_zero_payload_read": False,
+            "future_tactile_read": False,
+            "outcome_read": False,
+            "prediction_payload_read": False,
+            "target_data_read": False,
+            "target_or_outcome_path_accessed": False,
+        },
+        "execution_artifacts_reused_by_v4": False,
+        "predictions_reused_by_v4": False,
+    }
+    v3_design = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v3_design"]
+    assert v3_design["protocol_id"] == "deform360-held-online-belief-v3"
+    assert v3_design["disposition"] == "WITHDRAWN_BEFORE_LOCK_AND_PREDICTION"
+    assert v3_design["evidence_binding_key"] == (
+        "v3_prelock_boundary_incident_report"
+    )
+    assert set(v3_design["exact_formal_protocol_execution_census"].values()) == {0}
+    assert "excludes the separately disclosed rg content scanner" in v3_design[
+        "formal_protocol_execution_scope"
+    ]
+    incident = v3_design["prelock_boundary_incident"]
+    assert incident["program"] == "rg"
+    assert incident["mode"] == "-l"
+    assert incident["stdout_consumer"] == "head"
+    assert incident["stdout_maximum_line_count"] == 100
+    assert incident["content_scanner_may_have_opened_any_regular_file"] is True
+    assert incident["protected_file_open_status"] == "NOT_CLAIMED"
+    assert incident["only_matching_absolute_filenames_returned"] is True
+    assert incident["included_unrelated_171_outcome_or_log_paths"] is True
+    assert incident["payload_bytes_metrics_labels_arrays_or_values_returned"] is False
+    assert (
+        incident["held_cohort_payload_content_or_value_returned_to_research_agent"]
+        is False
+    )
+    assert incident["method_or_gate_choice_used_outcome_values"] is False
+    assert "outcome_payloads_accessed" not in v3_design
+
+    repairs = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v4_repairs"]
+    assert repairs["robot_window_selection"]["archive_fields"] == [
+        "format_version",
+        "actions",
+        "T_worlds",
+        "openings",
+        "bimanual",
+    ]
+    assert repairs["robot_window_selection"]["selection_translation"] == (
+        "T_worlds[..., :3, 3]"
+    )
+    assert repairs["robot_window_selection"][
+        "selected_bundle_must_replay_exact_source_slice"
+    ] is True
+    assert repairs["robot_window_selection"][
+        "camera_frame_zero_must_match_selected_action_window_start"
+    ] is True
+    assert repairs["frame_zero_geometry"][
+        "official_current_frame_urdf_robot_exclusion_required"
+    ] is True
+    assert repairs["frame_zero_geometry"][
+        "pinned_siglip2_exclusive_semantic_rank_gate_required"
+    ] is True
+    assert repairs["information_boundary"] == {
+        "rg_content_scanner_may_have_opened_any_regular_file_under_search_roots": True,
+        "protected_file_open_status": "NOT_CLAIMED",
+        "held_cohort_payload_content_or_value_returned_to_research_agent": False,
+        "outcome_metric_label_array_or_value_returned_to_research_agent": False,
+        "method_or_gate_choice_used_outcome_values": False,
+    }
+    assert "outcome_payloads_accessed" not in repairs["information_boundary"]
+    assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["reuse"] == {
+        "v1_execution_artifacts_reused_by_v4": False,
+        "v1_predictions_reused_by_v4": False,
+        "v2_execution_artifacts_reused_by_v4": False,
+        "v2_predictions_reused_by_v4": False,
+        "v3_execution_artifacts_reused_by_v4": False,
+        "v3_predictions_reused_by_v4": False,
+        "sealed_source_only_lineage_reports_bound_by_v4": [
+            "v1_preoutcome_feasibility_report",
+            "v2_design_withdrawal_report",
+            "v3_prelock_boundary_incident_report",
+        ],
     }
 
     wrong_contract = dummy_immutable_bindings()
@@ -577,6 +878,94 @@ def test_v2_lock_binds_the_abandoned_v1_source_feasibility_amendment(
         match="source-feasibility amendment contract binding changed",
     ):
         load_held_protocol_lock(tampered_path)
+
+
+def test_held_reference_optional_recognizer_requires_semantic_cross_links(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        held_protocol,
+        "validate_semantic_gate_audit",
+        lambda _audit: {
+            "true_label": "spider toy",
+            "selected_cameras": ["camera-00"],
+        },
+    )
+    proposal = {
+        "camera": "camera-00",
+        "candidate_index": 2,
+        "mask_sha256": "a" * 64,
+    }
+    assignment = {
+        "strategy": held_protocol.FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY,
+        "policy_id": held_protocol.FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID,
+        "selected_proposals": [proposal],
+    }
+    semantic_gate = {
+        "selected_exact8": [
+            {
+                "camera": "camera-00",
+                "candidate_index": 2,
+                "selected_mask_sha256": "a" * 64,
+            }
+        ]
+    }
+    safeguard = {
+        "contract_sha256": held_protocol.FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256,
+        "assignment": assignment,
+        "official_urdf": {},
+        "semantic_selected_proposals": [proposal],
+        "semantic_gate": semantic_gate,
+        "robot_subtraction": {},
+    }
+    safeguard["artifact_sha256"] = held_artifact_sha256(safeguard)
+    manifest = {
+        "object_id": "170-spider",
+        "geometry_fallback": {
+            "policy_id": held_protocol.FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID,
+            "ordered_strategies": list(
+                held_protocol.FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"]
+            ),
+            "selected_strategy": (
+                held_protocol.FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
+            ),
+            "attempts": [
+                {"strategy": "legacy", "status": "failed"},
+                {
+                    "strategy": (
+                        held_protocol.FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
+                    ),
+                    "status": "passed",
+                },
+            ],
+            "common_assignment": assignment,
+            "reference_optional_safeguard": safeguard,
+        }
+    }
+    assert held_protocol._reference_optional_camera_strategy(manifest) is True
+
+    tampered = deepcopy(manifest)
+    tampered["geometry_fallback"]["reference_optional_safeguard"][
+        "assignment"
+    ]["strategy"] = "other"
+    with pytest.raises(ValueError, match="strategy audit changed"):
+        held_protocol._reference_optional_camera_strategy(tampered)
+
+    wrong_object = deepcopy(manifest)
+    wrong_object["object_id"] = "083-blanket-cloth"
+    with pytest.raises(ValueError, match="held object/assignment"):
+        held_protocol._reference_optional_camera_strategy(wrong_object)
+
+    wrong_semantic_mask = deepcopy(manifest)
+    wrong_semantic_mask["geometry_fallback"]["reference_optional_safeguard"][
+        "semantic_gate"
+    ]["selected_exact8"][0]["selected_mask_sha256"] = "b" * 64
+    wrong_safeguard = wrong_semantic_mask["geometry_fallback"][
+        "reference_optional_safeguard"
+    ]
+    wrong_safeguard["artifact_sha256"] = held_artifact_sha256(wrong_safeguard)
+    with pytest.raises(ValueError, match="held object/assignment"):
+        held_protocol._reference_optional_camera_strategy(wrong_semantic_mask)
 
 
 def test_frame_zero_contract_allows_action_but_rejects_object_future_and_hdf5(

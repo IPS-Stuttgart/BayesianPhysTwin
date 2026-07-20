@@ -31,6 +31,10 @@ from typing import Any, Literal, Mapping, Protocol, Sequence
 import numpy as np
 
 from . import deform360_held_outcome_scoring as outcome_scoring
+from .deform360_dataset_containment import (
+    validate_aligned_episode,
+    validate_regular_file_nofollow,
+)
 from .deform360_frame_zero_assets import (
     validate_frame_zero_bundle_manifest as validate_asset_manifest,
 )
@@ -148,7 +152,7 @@ VIDEO_STAGING_PARAMETERS = {
 CLAIM_LIMITATION = (
     "official released reconstruction proxy built after complete prediction "
     "sealing; later one-to-one frame-zero transport is not native material "
-    "identity or Deform360 Table-4 parity"
+    "identity or parity with the Deform360 Tables 3-5 world-model benchmarks"
 )
 
 DEFORM360_SOURCE_SHA256 = {
@@ -264,8 +268,9 @@ def _canonical_sha256(value: Any) -> str:
 
 
 def _sha256_file(path: str | Path) -> str:
+    source = validate_regular_file_nofollow(path, label="SHA-256 input")
     digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
+    with source.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
@@ -282,12 +287,7 @@ def _sha256_array(value: np.ndarray) -> str:
 
 
 def _bound_file(path: str | Path) -> dict[str, Any]:
-    source = Path(path)
-    _require(
-        source.is_file() and not source.is_symlink(),
-        f"missing regular non-symlink file: {source}",
-    )
-    resolved = source.resolve()
+    resolved = validate_regular_file_nofollow(path, label="bound input")
     return {
         "path": str(resolved),
         "sha256": _sha256_file(resolved),
@@ -674,7 +674,7 @@ class PinnedOfficialPipelineBackend:
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    _require(path.is_file() and not path.is_symlink(), f"missing JSON file: {path}")
+    path = validate_regular_file_nofollow(path, label="JSON input")
     value = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(value, dict), f"{path} is not a JSON object")
     return value
@@ -789,16 +789,11 @@ def _load_sealed_request(
             aligned_episode_dir is not None,
             "aligned outcome episode is required for creation",
         )
-        aligned = Path(aligned_episode_dir).resolve()
-        _require(
-            aligned.is_dir() and not aligned.is_symlink(),
-            "aligned outcome episode is missing or a symlink",
-        )
-        _require(
-            aligned.name == f"episode_{int(seal['episode_id']):04d}"
-            and aligned.parent.name == seal["object_id"],
-            "aligned outcome episode identity changed",
-        )
+        aligned = validate_aligned_episode(
+            aligned_episode_dir,
+            object_id=str(seal["object_id"]),
+            episode_id=int(seal["episode_id"]),
+        ).episode_dir
         _require(
             not os.path.lexists(output),
             "outcome reconstruction output already exists",
@@ -830,6 +825,7 @@ def _load_sealed_request(
 
 
 def _decode_video_frame(path: Path, frame_index: int) -> np.ndarray:
+    path = validate_regular_file_nofollow(path, label="video frame input")
     try:
         import cv2
     except ImportError as error:  # pragma: no cover - integration runtime
@@ -849,6 +845,7 @@ def _decode_video_frame(path: Path, frame_index: int) -> np.ndarray:
 
 
 def _video_frame_count(path: Path) -> int:
+    path = validate_regular_file_nofollow(path, label="video frame-count input")
     try:
         import cv2
     except ImportError as error:  # pragma: no cover - integration runtime
@@ -869,6 +866,7 @@ def _trim_lossless_video(
     start: int,
     frame_count: int,
 ) -> None:
+    source = validate_regular_file_nofollow(source, label="video staging input")
     stop = start + frame_count - 1
     subprocess.run(
         [
@@ -960,6 +958,11 @@ def _stage_action_window(
         request.aligned_episode_dir is not None,
         "creation request has no aligned outcome episode",
     )
+    dataset_layout = validate_aligned_episode(
+        request.aligned_episode_dir,
+        object_id=request.object_id,
+        episode_id=request.episode_id,
+    )
     staged_root = request.output_dir / "staged-aligned"
     episode = staged_root / f"episode_{STAGED_EPISODE_ID:04d}"
     episode.mkdir(parents=True)
@@ -976,11 +979,25 @@ def _stage_action_window(
     np.save(episode / "extrinsics.npy", extrinsics)
 
     action_inputs = request.frame_zero_manifest["action_inputs"]
+    raw_robot_record = action_inputs["robot_trajectory"]
+    raw_robot_path = dataset_layout.validate_file(
+        str(raw_robot_record["path"]),
+        "robot",
+        "robot.npz",
+        label="bound raw robot action",
+    )
     raw_robot_path = _validate_bound_file(
-        action_inputs["robot_trajectory"], label="bound raw robot action"
+        raw_robot_record, label="bound raw robot action"
+    )
+    robot_metadata_record = action_inputs["robot_metadata"]
+    robot_meta_path = dataset_layout.validate_file(
+        str(robot_metadata_record["path"]),
+        "robot",
+        "robot.meta.json",
+        label="bound robot metadata",
     )
     robot_meta_path = _validate_bound_file(
-        action_inputs["robot_metadata"], label="bound robot metadata"
+        robot_metadata_record, label="bound robot metadata"
     )
     selected_action_path = _validate_bound_file(
         request.frame_zero_manifest["action_alignment"]["selected_action_bundle"],
@@ -1129,15 +1146,18 @@ def _stage_action_window(
     }
     rgb_zero = np.asarray(arrays["rgb_frame0"])
     for index, camera in enumerate(request.camera_names):
-        source_camera = request.aligned_episode_dir / camera
-        source_video = source_camera / "undistorted.mp4"
-        source_timestamps = source_camera / "aligned_timestamps.txt"
-        _require(
-            source_video.is_file()
-            and not source_video.is_symlink()
-            and source_timestamps.is_file()
-            and not source_timestamps.is_symlink(),
-            f"outcome camera inputs are missing: {camera}",
+        dataset_layout.directory(
+            camera, label=f"outcome camera directory {camera}"
+        )
+        source_video = dataset_layout.file(
+            camera,
+            "undistorted.mp4",
+            label=f"outcome camera video {camera}",
+        )
+        source_timestamps = dataset_layout.file(
+            camera,
+            "aligned_timestamps.txt",
+            label=f"outcome camera timestamps {camera}",
         )
         _require(
             np.array_equal(
@@ -1176,10 +1196,14 @@ def _stage_action_window(
         output_timestamps.write_text(
             "\n".join(selected_timestamps) + "\n", encoding="utf-8"
         )
-        metadata = source_camera / "metadata.json"
+        metadata = dataset_layout.optional_file(
+            camera,
+            "metadata.json",
+            label=f"outcome camera metadata {camera}",
+        )
         metadata_record = None
         output_metadata_record = None
-        if metadata.is_file() and not metadata.is_symlink():
+        if metadata is not None:
             shutil.copy2(metadata, output_camera / "metadata.json")
             metadata_record = _bound_file(metadata)
             output_metadata_record = _bound_file(output_camera / "metadata.json")

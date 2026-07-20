@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 
 from bayesian_phystwin.deform360_frame_zero_assets import (
     APPROVED_CALIBRATION_SMOKE_CASE,
@@ -9,6 +10,9 @@ from bayesian_phystwin.deform360_frame_zero_assets import (
     PinnedFrameZeroSam2Runtime,
     load_generic_held_lock,
     run_frame_zero_asset_builder,
+)
+from bayesian_phystwin.deform360_frame_zero_semantic_gate import (
+    PinnedFrameZeroSemanticGateRuntime,
 )
 
 
@@ -37,6 +41,18 @@ def main() -> None:
         ),
     )
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--semantic-model",
+        help="Absolute path to the sealed pinned SigLIP2 snapshot.",
+    )
+    parser.add_argument(
+        "--semantic-model-lock",
+        help="Absolute path to the immutable SigLIP2 snapshot lock.",
+    )
+    parser.add_argument(
+        "--deform360-code",
+        help="Absolute path to the clean pinned official Deform360 repository.",
+    )
     args = parser.parse_args()
     if args.smoke_only and not (
         args.role == "calibration" and args.case_name == APPROVED_CALIBRATION_SMOKE_CASE
@@ -44,6 +60,30 @@ def main() -> None:
         parser.error(
             "--smoke-only permits only calibration case "
             f"{APPROVED_CALIBRATION_SMOKE_CASE}"
+        )
+    optional_paths = (
+        args.semantic_model,
+        args.semantic_model_lock,
+        args.deform360_code,
+    )
+    if any(optional_paths) and not all(optional_paths):
+        parser.error(
+            "--semantic-model, --semantic-model-lock, and --deform360-code "
+            "must be supplied together"
+        )
+    semantic_runtime = None
+    if all(optional_paths):
+        # This prerequisite must be present before the SAM runtime first opens
+        # CUDA/CuBLAS; setting it only when SigLIP is loaded is too late.
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+        os.environ["PYOPENGL_PLATFORM"] = "egl"
+        os.environ["HF_HUB_OFFLINE"] = "1"
+        os.environ["TRANSFORMERS_OFFLINE"] = "1"
+        semantic_runtime = PinnedFrameZeroSemanticGateRuntime(
+            args.semantic_model,
+            args.semantic_model_lock,
+            args.deform360_code,
+            device=args.device,
         )
 
     lock = load_generic_held_lock(args.lock)
@@ -64,9 +104,12 @@ def main() -> None:
             runtime,
             role=args.role,
             config=config,
+            semantic_runtime=semantic_runtime,
         )
     finally:
         runtime.close()
+        if semantic_runtime is not None:
+            semantic_runtime.close()
     print(
         json.dumps(
             {

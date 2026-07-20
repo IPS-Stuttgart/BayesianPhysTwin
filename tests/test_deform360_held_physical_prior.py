@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import pickle
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import numpy as np
@@ -54,6 +57,74 @@ CASE_NAME = "083-blanket-cloth-ep0000"
 TEST_CAMERAS = tuple(
     sorted(["brics-odroid-001_cam0", *(f"camera-{index:02d}" for index in range(7))])
 )
+
+
+def _run_git(repository: Path, *arguments: str) -> bytes:
+    return subprocess.run(
+        ["/usr/bin/git", *arguments],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def _official_worktree_fixture(tmp_path: Path) -> tuple[Path, str, dict[str, str]]:
+    repository = tmp_path / "official-phystwin"
+    for relative in physical_prior._QQTT_IMPORTED_PROVENANCE.values():
+        source = repository / relative
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(f"# locked test source: {relative}\n", encoding="utf-8")
+    (repository / "README.md").write_text("locked fixture\n", encoding="utf-8")
+    _run_git(repository, "init", "-q")
+    _run_git(repository, "add", ".")
+    _run_git(
+        repository,
+        "-c",
+        "user.name=Held Test",
+        "-c",
+        "user.email=held@example.invalid",
+        "commit",
+        "-qm",
+        "fixture",
+    )
+    revision = _run_git(repository, "rev-parse", "HEAD").decode("ascii").strip()
+    tree_lines = _run_git(
+        repository,
+        "ls-tree",
+        "-r",
+        "--full-tree",
+        "HEAD",
+    ).splitlines()
+    tree_manifest = b"".join(line + b"\n" for line in sorted(tree_lines))
+    bindings = {
+        "official_phystwin_revision_literal": hashlib.sha256(
+            revision.encode("ascii")
+        ).hexdigest(),
+        "official_phystwin_commit_object": hashlib.sha256(
+            _run_git(repository, "cat-file", "commit", "HEAD")
+        ).hexdigest(),
+        "official_phystwin_git_tree_manifest": hashlib.sha256(
+            tree_manifest
+        ).hexdigest(),
+    }
+    return repository, revision, bindings
+
+
+def _mock_runtime_provenance(tmp_path: Path) -> dict[str, object]:
+    upstream = tmp_path / "upstream"
+    official = tmp_path / "phystwin"
+    deform360 = tmp_path / "deform360"
+    upstream.mkdir(exist_ok=True)
+    official.mkdir(exist_ok=True)
+    deform360.mkdir(exist_ok=True)
+    config = tmp_path / "real.yaml"
+    config.touch()
+    return {
+        "upstream_repository_root": str(upstream),
+        "official_phystwin_repository_root": str(official),
+        "official_config_path": str(config),
+        "test": True,
+    }
 
 
 def test_v3_uses_fixed_1024_node_capacity_and_shared_robot_contract() -> None:
@@ -200,7 +271,7 @@ def _make_locked_frame_zero(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v2",
+        "protocol_id": "deform360-held-online-belief-v4",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -842,22 +913,228 @@ def test_python_runtime_preserves_supplied_venv_symlink(
             "python_pip_freeze_sorted": expected_freeze,
         },
     )
-    assert observed_command[0] == str(supplied.absolute())
+    assert observed_command[:4] == [
+        str(supplied.absolute()),
+        "-I",
+        "-m",
+        "pip",
+    ]
     assert result["supplied_python_path"] == str(supplied.absolute())
     assert result["resolved_python_path"] == str(executable.resolve())
+
+
+def test_official_phystwin_worktree_matches_all_locked_git_identities(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, revision, bindings = _official_worktree_fixture(tmp_path)
+    monkeypatch.setattr(physical_prior, "OFFICIAL_PHYSTWIN_REVISION", revision)
+
+    result = physical_prior._validate_official_phystwin_worktree(
+        repository,
+        bindings,
+    )
+
+    assert result["revision"] == revision
+    assert result["revision_literal_sha256"] == bindings[
+        "official_phystwin_revision_literal"
+    ]
+    assert result["commit_object_sha256"] == bindings[
+        "official_phystwin_commit_object"
+    ]
+    assert result["git_tree_manifest_sha256"] == bindings[
+        "official_phystwin_git_tree_manifest"
+    ]
+    assert result["qqtt_imported_provenance"] == {
+        name: str(repository / relative)
+        for name, relative in physical_prior._QQTT_IMPORTED_PROVENANCE.items()
+    }
+
+
+@pytest.mark.parametrize(
+    ("binding", "message"),
+    (
+        ("official_phystwin_revision_literal", "revision differs"),
+        ("official_phystwin_commit_object", "commit object differs"),
+        ("official_phystwin_git_tree_manifest", "Git tree differs"),
+    ),
+)
+def test_official_phystwin_worktree_rejects_wrong_locked_git_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    binding: str,
+    message: str,
+) -> None:
+    repository, revision, bindings = _official_worktree_fixture(tmp_path)
+    monkeypatch.setattr(physical_prior, "OFFICIAL_PHYSTWIN_REVISION", revision)
+    bindings[binding] = "f" * 64
+
+    with pytest.raises(ValueError, match=message):
+        physical_prior._validate_official_phystwin_worktree(repository, bindings)
+
+
+def test_official_phystwin_worktree_rejects_dirty_tracked_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, revision, bindings = _official_worktree_fixture(tmp_path)
+    monkeypatch.setattr(physical_prior, "OFFICIAL_PHYSTWIN_REVISION", revision)
+    (repository / "qqtt/engine/trainer_warp.py").write_text(
+        "# malicious tracked edit\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="tracked worktree is dirty"):
+        physical_prior._validate_official_phystwin_worktree(repository, bindings)
+
+
+def test_official_phystwin_worktree_rejects_untracked_import_shadow(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, revision, bindings = _official_worktree_fixture(tmp_path)
+    monkeypatch.setattr(physical_prior, "OFFICIAL_PHYSTWIN_REVISION", revision)
+    (repository / "qqtt/engine/torch.py").write_text(
+        "raise RuntimeError('shadowed')\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="untracked importable file"):
+        physical_prior._validate_official_phystwin_worktree(repository, bindings)
+
+
+def test_official_phystwin_worktree_rejects_untracked_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, revision, bindings = _official_worktree_fixture(tmp_path)
+    monkeypatch.setattr(physical_prior, "OFFICIAL_PHYSTWIN_REVISION", revision)
+    (repository / "qqtt/engine/shadow.py").symlink_to(
+        repository / "qqtt/engine/trainer_warp.py"
+    )
+
+    with pytest.raises(ValueError, match="contains a symlink"):
+        physical_prior._validate_official_phystwin_worktree(repository, bindings)
+
+
+def test_isolated_runpy_ignores_malicious_cwd_pythonpath_and_sitecustomize(
+    tmp_path: Path,
+) -> None:
+    trusted = tmp_path / "trusted"
+    malicious = tmp_path / "malicious"
+    trusted.mkdir()
+    malicious.mkdir()
+    output = tmp_path / "result.txt"
+    startup_marker = tmp_path / "startup-ran.txt"
+    (trusted / "trusted_module.py").write_text("VALUE = 'locked'\n", encoding="utf-8")
+    script = trusted / "runner.py"
+    script.write_text(
+        "from pathlib import Path\n"
+        "import sys\n"
+        "import trusted_module\n"
+        "Path(sys.argv[1]).write_text(trusted_module.VALUE, encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    (malicious / "trusted_module.py").write_text(
+        "VALUE = 'shadowed'\n",
+        encoding="utf-8",
+    )
+    (malicious / "sitecustomize.py").write_text(
+        "from pathlib import Path\n"
+        f"Path({str(startup_marker)!r}).write_text('ran', encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    environment = dict(os.environ)
+    environment["PYTHONPATH"] = str(malicious)
+    command = physical_prior._isolated_runpy_command(
+        sys.executable,
+        script,
+        import_roots=(trusted,),
+        arguments=(str(output),),
+    )
+
+    completed = subprocess.run(
+        command,
+        cwd=malicious,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert output.read_text(encoding="utf-8") == "locked"
+    assert not startup_marker.exists()
+
+
+def test_isolated_runpy_verifies_qqtt_module_file_provenance(tmp_path: Path) -> None:
+    trusted = tmp_path / "trusted"
+    official = tmp_path / "official"
+    wrong_official = tmp_path / "wrong-official"
+    trusted.mkdir()
+    wrong_official.mkdir()
+    for relative in (
+        "qqtt/__init__.py",
+        "qqtt/engine/__init__.py",
+        "qqtt/engine/trainer_warp.py",
+        "qqtt/model/__init__.py",
+        "qqtt/model/diff_simulator/__init__.py",
+        "qqtt/model/diff_simulator/spring_mass_warp.py",
+        "qqtt/utils/__init__.py",
+    ):
+        source = official / relative
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("LOCKED = True\n", encoding="utf-8")
+    output = tmp_path / "qqtt-provenance.txt"
+    script = trusted / "smoke.py"
+    script.write_text(
+        "from pathlib import Path\n"
+        "import sys\n"
+        "sys.path.insert(0, sys.argv[1])\n"
+        "import qqtt\n"
+        "import qqtt.engine.trainer_warp\n"
+        "import qqtt.model.diff_simulator.spring_mass_warp\n"
+        "import qqtt.utils\n"
+        "Path(sys.argv[2]).write_text('passed', encoding='utf-8')\n"
+        "raise SystemExit(0)\n",
+        encoding="utf-8",
+    )
+    command = physical_prior._isolated_runpy_command(
+        sys.executable,
+        script,
+        import_roots=(trusted,),
+        arguments=(str(official), str(output)),
+        provenance_root=official,
+    )
+    passed = subprocess.run(command, check=False, capture_output=True, text=True)
+    assert passed.returncode == 0, passed.stderr
+    assert output.read_text(encoding="utf-8") == "passed"
+
+    wrong_command = physical_prior._isolated_runpy_command(
+        sys.executable,
+        script,
+        import_roots=(trusted,),
+        arguments=(str(official), str(output)),
+        provenance_root=wrong_official,
+    )
+    rejected = subprocess.run(
+        wrong_command,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert rejected.returncode != 0
+    assert "official PhysTwin import provenance changed" in rejected.stderr
 
 
 def test_runner_does_not_convert_arbitrary_subprocess_failure_to_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    runtime = _mock_runtime_provenance(tmp_path)
     monkeypatch.setattr(
         physical_prior,
         "validate_python_runtime",
         lambda *_: {"supplied_python_path": str(tmp_path / "python")},
     )
     monkeypatch.setattr(
-        physical_prior, "validate_upstream_runtime", lambda *_: {"test": True}
+        physical_prior, "validate_upstream_runtime", lambda *_: dict(runtime)
     )
 
     def fail(*args: object, **kwargs: object) -> float:
@@ -886,6 +1163,7 @@ def test_runner_converts_only_valid_exit_two_admission_to_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    runtime = _mock_runtime_provenance(tmp_path)
     supplied_python = tmp_path / "venv" / "bin" / "python"
     monkeypatch.setattr(
         physical_prior,
@@ -893,15 +1171,24 @@ def test_runner_converts_only_valid_exit_two_admission_to_fallback(
         lambda *_: {"supplied_python_path": str(supplied_python)},
     )
     monkeypatch.setattr(
-        physical_prior, "validate_upstream_runtime", lambda *_: {"test": True}
+        physical_prior, "validate_upstream_runtime", lambda *_: dict(runtime)
     )
     calls: list[list[str]] = []
 
     def fail_with_valid_admission(
         command: list[str], *, env: object, log_path: Path
     ) -> float:
-        del env
+        assert isinstance(env, dict)
+        assert "PYTHONPATH" not in env
+        assert "PYTHONSAFEPATH" not in env
         calls.append(command)
+        assert command[1:6] == [
+            "-I",
+            "-B",
+            "-X",
+            f"pycache_prefix={physical_prior.HELD_PYCACHE_PREFIX}",
+            "-c",
+        ]
         assert command[command.index("--canonical-node-count") + 1] == "1024"
         prediction = Path(command[command.index("--episode-final-data") + 1])
         output = prediction.parent
@@ -937,21 +1224,23 @@ def test_runner_keeps_warp_failure_fail_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     lock_path, frame_zero_manifest = _make_locked_frame_zero(tmp_path)
+    runtime = _mock_runtime_provenance(tmp_path)
     monkeypatch.setattr(
         physical_prior,
         "validate_python_runtime",
         lambda *_: {"supplied_python_path": str(tmp_path / "python")},
     )
     monkeypatch.setattr(
-        physical_prior, "validate_upstream_runtime", lambda *_: {"test": True}
+        physical_prior, "validate_upstream_runtime", lambda *_: dict(runtime)
     )
-    call_count = 0
+    calls: list[tuple[list[str], dict[str, str]]] = []
 
-    def fail_warp(*args: object, **kwargs: object) -> float:
-        nonlocal call_count
-        del args, kwargs
-        call_count += 1
-        if call_count == 1:
+    def fail_warp(
+        command: list[str], *, env: dict[str, str], log_path: Path
+    ) -> float:
+        del log_path
+        calls.append((command, env))
+        if len(calls) == 1:
             return 0.1
         raise physical_prior._LoggedCommandError(
             "Warp rollout failed", returncode=2, elapsed_seconds=0.2
@@ -971,5 +1260,23 @@ def test_runner_keeps_warp_failure_fail_closed(
             deform360_repo=tmp_path / "deform360",
             python=tmp_path / "venv" / "bin" / "python",
         )
-    assert call_count == 2
+    assert len(calls) == 2
+    expected_flags = [
+        "-I",
+        "-B",
+        "-X",
+        f"pycache_prefix={physical_prior.HELD_PYCACHE_PREFIX}",
+        "-c",
+    ]
+    assert all(command[1:6] == expected_flags for command, _ in calls)
+    assert all("PYTHONPATH" not in env for _, env in calls)
+    assert all("PYTHONSAFEPATH" not in env for _, env in calls)
+    assert any(
+        value.endswith("build_deform360_automatic_episode_twin.py")
+        for value in calls[0][0]
+    )
+    assert any(
+        value.endswith("run_deform360_official_phystwin_smoke.py")
+        for value in calls[1][0]
+    )
     assert not (tmp_path / "output" / "prediction.npz").exists()

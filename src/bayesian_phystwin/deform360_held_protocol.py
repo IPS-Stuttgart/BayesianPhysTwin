@@ -27,10 +27,26 @@ import math
 import os
 from pathlib import Path
 import re
+import stat
 from typing import Any, Callable, Mapping, TypeVar
 
 import numpy as np
 
+from .deform360_frame_zero_assets import (
+    FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_CAMERA_SELECTION_RULE,
+    FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE,
+)
+from .deform360_frame_zero_semantic_gate import (
+    FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY,
+    FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID,
+    FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
+    FRAME_ZERO_SEMANTIC_GATE_CONTRACT,
+    FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256,
+    semantic_label_for_object_id,
+    validate_semantic_gate_audit,
+)
 from .deform360_robot_kinematics import (
     ROBOT_KINEMATICS_WINDOW_CONTRACT,
     ROBOT_KINEMATICS_WINDOW_POLICY_ID,
@@ -41,7 +57,7 @@ from .deform360_robot_kinematics import (
 )
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v2"
+PROTOCOL_ID = "deform360-held-online-belief-v4"
 SCHEMA_VERSION = 1
 DATASET_REVISION = "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
 REMOTE_INVENTORY_COMBINED_SHA256 = (
@@ -54,6 +70,8 @@ PREFIX_AUTHORIZATION_KIND = "Deform360HeldCausalPrefixAuthorization"
 ONLINE_SEAL_KIND = "Deform360HeldOnlinePredictionSeal"
 CALIBRATION_DECISION_KIND = "Deform360HeldCalibrationGateDecision"
 CALIBRATION_SCORE_EVIDENCE_KIND = "Deform360HeldCalibrationScoreEvidence"
+CONFIRMATION_DECISION_KIND = "Deform360HeldConfirmationDecision"
+CONFIRMATION_SCORE_EVIDENCE_KIND = "Deform360HeldConfirmationScoreEvidence"
 
 FRAME_COUNT = 76
 UPDATE_FRAMES = (19, 38, 57)
@@ -110,14 +128,18 @@ CONFIRMATION_GATE = {
     "all_cases_must_be_reported": True,
 }
 
-# This amendment records why a second prospective execution exists without
-# importing the first execution's predictions into it.  The external v1 report
-# is deliberately supplied by checksum when the v2 lock is created; its digest
-# is not a source-code constant that could silently bless a different file.
+# This amendment records the complete lineage of the v4 execution, including
+# the v3 pre-lock filename-only rg incident.  It deliberately does not claim
+# that protected regular files were unopened: rg is a content scanner and may
+# have opened any regular file under its broad search roots.  No held payload
+# content or value was returned to the research agent or used to select a
+# method/gate.  The three external lineage reports are supplied by checksum
+# when the lock is created; those digests are not source constants that could
+# silently bless different files.
 SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
-    "contract_id": "deform360-held-source-feasibility-amendment-v2",
+    "contract_id": "deform360-held-source-feasibility-amendment-v4",
     "protocol_id": PROTOCOL_ID,
-    "parent_execution": {
+    "v1_execution": {
         "protocol_id": "deform360-held-online-belief-v1",
         "disposition": "ABANDONED_PREOUTCOME",
         "evidence_binding_key": "v1_preoutcome_feasibility_report",
@@ -127,38 +149,159 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
             "frame_zero_failure_count": 9,
             "physical_admission_failure_count": 1,
         },
-        "predictions_reused_by_v2": False,
-    },
-    "information_boundary": {
-        "selection_evidence": (
-            "frame-zero source inputs and automatic-twin admission diagnostics only"
-        ),
         "outcome_payloads_accessed": False,
         "target_payloads_accessed": False,
         "confirmation_payloads_accessed": False,
         "outcome_permit_created": False,
+        "execution_artifacts_reused_by_v4": False,
+        "predictions_reused_by_v4": False,
     },
-    "v2_repairs": {
-        "camera_policy": {
-            "mechanism": "camera_abstention",
-            "selection_scope": "source_only",
+    "v2_design": {
+        "protocol_id": "deform360-held-online-belief-v2",
+        "disposition": "WITHDRAWN_BEFORE_LOCK_AND_PREDICTION",
+        "evidence_binding_key": "v2_design_withdrawal_report",
+        "exact_execution_census": {
+            "calibration_lock_count": 0,
+            "case_attempt_count": 0,
+            "deployed_snapshot_count": 0,
+            "frame_zero_manifest_count": 0,
+            "online_prediction_seal_count": 0,
+            "outcome_created_count": 0,
+            "outcome_permit_count": 0,
+            "outcome_read_count": 0,
+            "physical_prior_seal_count": 0,
+            "prediction_count": 0,
+            "prefix_authorization_count": 0,
+            "shard_start_count": 0,
+            "target_operation_count": 0,
+        },
+        "information_access": {
+            "confirmation_payload_read": False,
+            "episode_payload_read": False,
+            "frame_zero_payload_read": False,
+            "future_tactile_read": False,
+            "outcome_read": False,
+            "prediction_payload_read": False,
+            "target_data_read": False,
+            "target_or_outcome_path_accessed": False,
+        },
+        "execution_artifacts_reused_by_v4": False,
+        "predictions_reused_by_v4": False,
+    },
+    "v3_design": {
+        "protocol_id": "deform360-held-online-belief-v3",
+        "disposition": "WITHDRAWN_BEFORE_LOCK_AND_PREDICTION",
+        "evidence_binding_key": "v3_prelock_boundary_incident_report",
+        "exact_formal_protocol_execution_census": {
+            "calibration_lock_count": 0,
+            "case_attempt_count": 0,
+            "deployed_snapshot_count": 0,
+            "deployment_count": 0,
+            "frame_zero_manifest_count": 0,
+            "online_prediction_seal_count": 0,
+            "outcome_api_operation_count": 0,
+            "outcome_created_count": 0,
+            "outcome_permit_count": 0,
+            "physical_prior_seal_count": 0,
+            "prediction_count": 0,
+            "prefix_authorization_count": 0,
+            "shard_start_count": 0,
+            "target_operation_count": 0,
+        },
+        "formal_protocol_execution_scope": (
+            "canonical held-v3 pipeline and artifacts only; excludes the "
+            "separately disclosed rg content scanner"
+        ),
+        "prelock_boundary_incident": {
+            "execution_context": "SSH",
+            "program": "rg",
+            "mode": "-l",
+            "search_terms": [
+                "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+                "facebook/cotracker3-scaled-offline",
+            ],
+            "search_roots": [
+                "/mnt/corsair/florianpfaff/bpt-online-belief-v1",
+                "/mnt/corsair/florianpfaff/deform360-processing-deps",
+                "/mnt/lexar4tb/datasets/deform360",
+            ],
+            "stdout_consumer": "head",
+            "stdout_maximum_line_count": 100,
+            "only_matching_absolute_filenames_returned": True,
+            "included_unrelated_171_outcome_or_log_paths": True,
+            "content_scanner_may_have_opened_any_regular_file": True,
+            "protected_file_open_status": "NOT_CLAIMED",
+            "payload_bytes_metrics_labels_arrays_or_values_returned": False,
+            "held_cohort_payload_content_or_value_returned_to_research_agent": False,
+            "method_or_gate_choice_used_outcome_values": False,
+        },
+        "execution_artifacts_reused_by_v4": False,
+        "predictions_reused_by_v4": False,
+    },
+    "v4_repairs": {
+        "robot_window_selection": {
+            "withdrawn_v2_defect": (
+                "averaged heterogeneous robot.npz:actions rows (translation, "
+                "three rotation rows, and opening) into a pseudo-centre"
+            ),
+            "archive_fields": [
+                "format_version",
+                "actions",
+                "T_worlds",
+                "openings",
+                "bimanual",
+            ],
+            "selection_translation": "T_worlds[..., :3, 3]",
+            "selection_openings": "openings",
+            "bimanual_semantics_preserved": True,
+            "redundant_actions_state_parity_required": True,
+            "selected_prediction_slice_frame_count": 76,
+            "selected_bundle_must_replay_exact_source_slice": True,
+            "camera_frame_zero_must_match_selected_action_window_start": True,
         },
         "frame_zero_geometry": {
-            "mechanism": "geometrically_consistent_source_only_repair",
+            "ordered_reference_anchored_strategies": [
+                "legacy",
+                "same-masks-projected-footprint",
+                "common-voxel-assignment-projected-footprint",
+            ],
+            "direct_common_geometry_fallback_preserved": True,
+            "final_fallback": (
+                "reference-conditioned-reference-optional-exhaustive-exact-eight"
+            ),
+            "official_current_frame_urdf_robot_exclusion_required": True,
+            "pinned_siglip2_exclusive_semantic_rank_gate_required": True,
+            "reference_camera_may_abstain_only_in_final_fallback": True,
+            "selection_scope": "source_only_frame_zero",
             "target_or_outcome_guidance_permitted": False,
         },
-        "depth_quality_assurance": {
-            "mechanism": "resolution_aware_depth_rasterization",
+        "failed_source_only_diagnostics_disclosed": [
+            "faithful_groundedsam_reference_produced_zero_detections",
+            "multi_reference_groundedsam_failed_object_specificity",
+            "official_current_frame_urdf_exclusion_alone_did_not_remove_the_spider4_false_region",
+            "bilateral_taxel_interaction_gate_failed_its_frozen_20mm_threshold",
+            "first_siglip2_attempt_failed_before_logits_until_the_pinned_cublas_workspace_was_declared",
+        ],
+        "information_boundary": {
+            "rg_content_scanner_may_have_opened_any_regular_file_under_search_roots": True,
+            "protected_file_open_status": "NOT_CLAIMED",
+            "held_cohort_payload_content_or_value_returned_to_research_agent": False,
+            "outcome_metric_label_array_or_value_returned_to_research_agent": False,
+            "method_or_gate_choice_used_outcome_values": False,
         },
-        "physical_prior": {
-            "canonical_node_count": 1024,
-        },
-        "automatic_twin_admission": {
-            "mechanism": "validated_persistence_fallback",
-            "fallback_scope": "automatic_twin_admission_rejection_only",
-            "requires_valid_checksummed_inadmissible_twin": True,
-            "all_other_failures": "fail_closed",
-        },
+    },
+    "reuse": {
+        "v1_execution_artifacts_reused_by_v4": False,
+        "v1_predictions_reused_by_v4": False,
+        "v2_execution_artifacts_reused_by_v4": False,
+        "v2_predictions_reused_by_v4": False,
+        "v3_execution_artifacts_reused_by_v4": False,
+        "v3_predictions_reused_by_v4": False,
+        "sealed_source_only_lineage_reports_bound_by_v4": [
+            "v1_preoutcome_feasibility_report",
+            "v2_design_withdrawal_report",
+            "v3_prelock_boundary_incident_report",
+        ],
     },
 }
 
@@ -223,6 +366,7 @@ CONFIRMATION_CASES = (
         47_269_453,
     ),
 )
+CONFIRMATION_CASE_NAMES = tuple(case.case_name for case in CONFIRMATION_CASES)
 
 CALIBRATION_CASE_NAMES = (
     "002-rope-silk-ep0003",
@@ -277,11 +421,13 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "deform360_code_commit_object",
     "deform360_code_git_tree_manifest",
     "deform360_code_revision_literal",
+    "deform360_dataset_containment_source",
     "deform360_hidden_metric_source",
     "deform360_object_sam2_source",
     "deform360_official_outcome_builder_source",
     "deform360_pipeline_config",
     "deform360_pipeline_config_semantic",
+    "deform360_robot_kinematics_source",
     "deform360_sam2_source",
     "deform360_stage_script",
     "deform360_strict_reconstruction_source",
@@ -293,9 +439,20 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "frame_zero_deform360_protocol_dependency",
     "frame_zero_object_sam2_source",
     "frame_zero_sam2_constants_source",
+    "frame_zero_semantic_gate_contract",
+    "frame_zero_semantic_gate_source",
+    "frame_zero_siglip2_model_tree",
+    "frame_zero_siglip2_revision_literal",
+    "frame_zero_siglip2_transformers_sources",
     "frame_zero_visual_hull_source",
     "graph_residual_mapping_source",
+    "held_calibration_case_runner_source",
     "held_calibration_gate_contract",
+    "held_calibration_outcome_driver_source",
+    "held_calibration_shard_runner_source",
+    "held_confirmation_case_runner_source",
+    "held_confirmation_outcome_driver_source",
+    "held_confirmation_shard_runner_source",
     "held_confirmation_gate_contract",
     "held_metric_contract",
     "held_online_runner_cli",
@@ -306,6 +463,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "held_physical_builder_source",
     "held_physical_numeric_contract",
     "held_primary_method_contract",
+    "held_protocol_lock_operator_source",
     "held_protocol_source",
     "held_source_feasibility_amendment_contract",
     "independent_cpd_source",
@@ -338,6 +496,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "recursive_cpd_source",
     "recursive_rbf_source",
     "remote_confirmation_inventory_combined",
+    "robot_kinematics_window_contract",
     "robust_correspondence_source",
     "sam2_checkpoint",
     "sam2_commit_object",
@@ -357,6 +516,8 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "upstream_reusable_graph_source",
     "upstream_runtime_bundle_tree",
     "v1_preoutcome_feasibility_report",
+    "v2_design_withdrawal_report",
+    "v3_prelock_boundary_incident_report",
 )
 
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -399,26 +560,84 @@ def _valid_sha256(value: object) -> bool:
 
 
 def _sha256_file(path: str | Path) -> str:
+    source, descriptor, opened = _open_regular_file_snapshot(path)
     digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
+    try:
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+        _require_unchanged_open_file(source, descriptor, opened)
+    finally:
+        os.close(descriptor)
     return digest.hexdigest()
 
 
-def _load_json(path: str | Path) -> dict[str, Any]:
-    source = Path(path)
+def _open_regular_file_snapshot(
+    path: str | Path,
+) -> tuple[Path, int, os.stat_result]:
+    """Open one canonical regular file without following its final component."""
+
+    source = Path(os.path.abspath(os.fspath(path)))
+    before = os.lstat(source)
+    _require(stat.S_ISREG(before.st_mode), f"{source} is not a regular file")
     _require(
-        source.is_file() and not source.is_symlink(), f"{source} is not a regular file"
+        source.resolve() == source,
+        f"{source} has a symlinked or non-canonical ancestor",
     )
-    value = json.loads(source.read_text(encoding="utf-8"))
+    descriptor = os.open(source, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        opened = os.fstat(descriptor)
+        _require(
+            stat.S_ISREG(opened.st_mode)
+            and (before.st_dev, before.st_ino) == (opened.st_dev, opened.st_ino),
+            f"{source} changed while opening",
+        )
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return source, descriptor, opened
+
+
+def _require_unchanged_open_file(
+    source: Path,
+    descriptor: int,
+    opened: os.stat_result,
+) -> os.stat_result:
+    after = os.fstat(descriptor)
+    current = os.lstat(source)
+    identity = (opened.st_dev, opened.st_ino)
+    _require(
+        (after.st_dev, after.st_ino) == identity
+        and (current.st_dev, current.st_ino) == identity
+        and after.st_size == opened.st_size
+        and after.st_mtime_ns == opened.st_mtime_ns
+        and after.st_ctime_ns == opened.st_ctime_ns,
+        f"{source} changed while reading",
+    )
+    return after
+
+
+def _load_json(path: str | Path) -> dict[str, Any]:
+    source, descriptor, opened = _open_regular_file_snapshot(path)
+    try:
+        with os.fdopen(descriptor, "r", encoding="utf-8", closefd=False) as stream:
+            value = json.load(stream)
+        _require_unchanged_open_file(source, descriptor, opened)
+    finally:
+        os.close(descriptor)
     _require(isinstance(value, dict), f"{source.name} must contain a JSON object")
     return value
 
 
 def _write_new_json(path: str | Path, artifact: Mapping[str, Any]) -> Path:
-    destination = Path(path)
+    destination = Path(os.path.abspath(os.fspath(path)))
     destination.parent.mkdir(parents=True, exist_ok=True)
+    parent_stat = os.lstat(destination.parent)
+    _require(
+        stat.S_ISDIR(parent_stat.st_mode)
+        and destination.parent.resolve() == destination.parent,
+        f"{destination.parent} is linked or non-canonical",
+    )
     payload = (
         json.dumps(
             artifact,
@@ -430,7 +649,10 @@ def _write_new_json(path: str | Path, artifact: Mapping[str, Any]) -> Path:
     )
     descriptor = os.open(
         destination,
-        os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0),
         0o444,
     )
     try:
@@ -445,11 +667,8 @@ def _write_new_json(path: str | Path, artifact: Mapping[str, Any]) -> Path:
 
 
 def _bound_file(path: str | Path, *, frame_zero_bundle: bool = False) -> dict[str, Any]:
-    source = Path(path)
-    _require(
-        source.is_file() and not source.is_symlink(), f"{source} is not a regular file"
-    )
-    resolved = source.resolve()
+    source, descriptor, opened = _open_regular_file_snapshot(path)
+    resolved = source
     _require(
         resolved.name not in _FORBIDDEN_PREOUTCOME_FILENAMES,
         "outcome payload cannot be a pre-outcome sealing input",
@@ -459,10 +678,18 @@ def _bound_file(path: str | Path, *, frame_zero_bundle: bool = False) -> dict[st
             resolved.suffix.lower() not in _FORBIDDEN_FRAME_ZERO_SUFFIXES,
             "frame-zero bundle must be extracted, not a future-bearing HDF5 container",
         )
+    digest = hashlib.sha256()
+    try:
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+        after = _require_unchanged_open_file(source, descriptor, opened)
+    finally:
+        os.close(descriptor)
     return {
         "path": str(resolved),
-        "sha256": _sha256_file(resolved),
-        "size_bytes": resolved.stat().st_size,
+        "sha256": digest.hexdigest(),
+        "size_bytes": after.st_size,
     }
 
 
@@ -778,24 +1005,10 @@ _FRAME_ZERO_CAMERA_POLICY_FIELDS = frozenset(
         "abstained_camera_count",
     }
 )
-_FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
-    "deform360-frame-zero-reference-anchored-inlier-abstention-v3"
-)
-_FRAME_ZERO_CAMERA_SELECTION_RULE = (
-    "process every aligned calibrated camera; keep the fixed reference and "
-    "frozen-threshold-eligible views, except that the audited common-geometry "
-    "fallback retains the fixed reference plus seven deterministic "
-    "maximum-consensus inliers"
-)
-_REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY = (
-    "reference-optional-common-exact8-projected-footprint"
-)
-_REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY = (
-    "reference-conditioned-reference-optional-exhaustive-exact-eight-assignment"
-)
-_REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID = (
-    "diagnostic-reference-conditioned-reference-optional-exact8-v1"
-)
+# Backward-compatible private aliases used by the independent held validator
+# and its tests.  The values themselves have one canonical production owner.
+_FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+_FRAME_ZERO_CAMERA_SELECTION_RULE = FRAME_ZERO_CAMERA_SELECTION_RULE
 
 
 def _validated_positive_config_int(config: Mapping[str, Any], key: str) -> int:
@@ -808,29 +1021,87 @@ def _validated_positive_config_int(config: Mapping[str, Any], key: str) -> int:
 
 
 def _reference_optional_camera_strategy(manifest: Mapping[str, Any]) -> bool:
-    geometry_strategy = manifest.get("geometry_strategy")
-    if not isinstance(geometry_strategy, Mapping):
+    fallback = manifest.get("geometry_fallback")
+    if not isinstance(fallback, Mapping):
         return False
     if (
-        geometry_strategy.get("selected_strategy")
-        != _REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+        fallback.get("selected_strategy")
+        != FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
     ):
         return False
-    attempts = geometry_strategy.get("attempts")
-    assignment = geometry_strategy.get("common_assignment")
+    attempts = fallback.get("attempts")
+    assignment = fallback.get("common_assignment")
+    safeguard = fallback.get("reference_optional_safeguard")
+    safeguarded_assignment = (
+        safeguard.get("assignment") if isinstance(safeguard, Mapping) else None
+    )
+    semantic_gate = (
+        safeguard.get("semantic_gate") if isinstance(safeguard, Mapping) else None
+    )
     _require(
-        isinstance(attempts, list)
+        fallback.get("policy_id")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        and fallback.get("ordered_strategies")
+        == list(FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"])
+        and isinstance(attempts, list)
         and bool(attempts)
         and isinstance(attempts[-1], Mapping)
         and attempts[-1].get("status") == "passed"
         and attempts[-1].get("strategy")
-        == _REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+        == FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
         and isinstance(assignment, Mapping)
         and assignment.get("strategy")
-        == _REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY
+        == FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY
         and assignment.get("policy_id")
-        == _REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID,
+        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        and assignment == safeguarded_assignment
+        and isinstance(safeguard, Mapping)
+        and safeguard.get("contract_sha256")
+        == FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256
+        and safeguard.get("artifact_sha256") == held_artifact_sha256(safeguard)
+        and isinstance(safeguard.get("official_urdf"), Mapping)
+        and isinstance(safeguard.get("robot_subtraction"), Mapping)
+        and isinstance(semantic_gate, Mapping),
         "reference-optional geometry strategy audit changed",
+    )
+    semantic_result = validate_semantic_gate_audit(semantic_gate)
+    semantic_proposals = safeguard.get("semantic_selected_proposals")
+    assignment_proposals = assignment.get("selected_proposals")
+    semantic_selected = semantic_gate.get("selected_exact8")
+    _require(
+        isinstance(manifest.get("object_id"), str)
+        and semantic_result["true_label"]
+        == semantic_label_for_object_id(str(manifest["object_id"]))
+        and isinstance(semantic_proposals, list)
+        and isinstance(assignment_proposals, list)
+        and isinstance(semantic_selected, list)
+        and semantic_result["selected_cameras"]
+        == [record.get("camera") for record in semantic_proposals]
+        and [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("mask_sha256"),
+            }
+            for record in semantic_proposals
+        ]
+        == [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("mask_sha256"),
+            }
+            for record in assignment_proposals
+        ]
+        == [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("selected_mask_sha256"),
+            }
+            for record in semantic_selected
+        ],
+        "semantic gate differs from held object/assignment",
     )
     return True
 
@@ -984,9 +1255,19 @@ def _validate_frame_zero_robot_kinematics(
     minimum_camera_count = config.get("minimum_camera_count")
     reference_camera = camera_policy.get("reference_camera")
     reference_optional = _reference_optional_camera_strategy(manifest)
+    expected_camera_policy_id = (
+        FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID
+        if reference_optional
+        else FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+    )
+    expected_camera_rule = (
+        FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE
+        if reference_optional
+        else FRAME_ZERO_CAMERA_SELECTION_RULE
+    )
     _require(
-        camera_policy.get("policy_id") == _FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
-        and camera_policy.get("rule") == _FRAME_ZERO_CAMERA_SELECTION_RULE
+        camera_policy.get("policy_id") == expected_camera_policy_id
+        and camera_policy.get("rule") == expected_camera_rule
         and type(minimum_camera_count) is int
         and minimum_camera_count >= 2
         and camera_policy.get("minimum_selected_camera_count")
@@ -1636,6 +1917,104 @@ def _calibration_gate_summary(
     return normalized, summary
 
 
+def _confirmation_gate_summary(
+    scores: Mapping[str, Mapping[str, float]],
+) -> tuple[dict[str, dict[str, float]], dict[str, Any]]:
+    """Apply the exact frozen six-case confirmation arithmetic."""
+
+    expected = set(CONFIRMATION_CASE_NAMES)
+    _require(
+        set(scores) == expected,
+        "confirmation scores must contain all six locked cases",
+    )
+    normalized: dict[str, dict[str, float]] = {}
+    for case_name in CONFIRMATION_CASE_NAMES:
+        record = scores[case_name]
+        _require(
+            isinstance(record, Mapping)
+            and set(record) == set(_CALIBRATION_SCORE_KEYS),
+            f"confirmation score fields changed for {case_name}",
+        )
+        values = {key: float(record[key]) for key in _CALIBRATION_SCORE_KEYS}
+        _require(
+            all(math.isfinite(value) and value >= 0.0 for value in values.values()),
+            f"confirmation scores are invalid for {case_name}",
+        )
+        normalized[case_name] = values
+
+    primary_chamfer = [
+        normalized[case]["primary_chamfer_m"] for case in CONFIRMATION_CASE_NAMES
+    ]
+    comparator_chamfer = [
+        normalized[case]["comparator_chamfer_m"]
+        for case in CONFIRMATION_CASE_NAMES
+    ]
+    primary_identity = [
+        normalized[case]["primary_identity_rmse_m"]
+        for case in CONFIRMATION_CASE_NAMES
+    ]
+    comparator_identity = [
+        normalized[case]["comparator_identity_rmse_m"]
+        for case in CONFIRMATION_CASE_NAMES
+    ]
+    count = len(CONFIRMATION_CASE_NAMES)
+    _require(
+        count == CONFIRMATION_GATE["case_count"] == 6,
+        "confirmation gate case count changed",
+    )
+    comparator_chamfer_mean = math.fsum(comparator_chamfer) / count
+    _require(
+        comparator_chamfer_mean > 0.0,
+        "confirmation comparator mean Chamfer must be positive",
+    )
+    primary_chamfer_mean = math.fsum(primary_chamfer) / count
+    primary_identity_mean = math.fsum(primary_identity) / count
+    comparator_identity_mean = math.fsum(comparator_identity) / count
+    chamfer_improvement = (
+        comparator_chamfer_mean - primary_chamfer_mean
+    ) / comparator_chamfer_mean
+    wins = sum(
+        primary < comparator
+        for primary, comparator in zip(primary_chamfer, comparator_chamfer, strict=True)
+    )
+    sign_test_p = math.fsum(
+        math.comb(count, successes) for successes in range(wins, count + 1)
+    ) / (2**count)
+    no_large_regression = all(
+        primary
+        <= (1.0 + CONFIRMATION_GATE["maximum_case_chamfer_regression_fraction"])
+        * comparator
+        for primary, comparator in zip(primary_chamfer, comparator_chamfer, strict=True)
+    )
+    checks = {
+        "all_6_cases_chamfer_win": wins
+        == CONFIRMATION_GATE["required_case_chamfer_wins"],
+        "one_sided_sign_test_p_is_1_over_64": sign_test_p
+        == CONFIRMATION_GATE["one_sided_sign_test_p"],
+        "mean_chamfer_improvement_at_least_5_percent": (
+            chamfer_improvement
+            >= CONFIRMATION_GATE[
+                "minimum_equal_case_mean_chamfer_improvement_fraction"
+            ]
+        ),
+        "aggregate_identity_improves": primary_identity_mean
+        < comparator_identity_mean,
+        "no_case_over_10_percent_chamfer_regression": no_large_regression,
+    }
+    summary = {
+        "primary_equal_case_mean_chamfer_m": primary_chamfer_mean,
+        "comparator_equal_case_mean_chamfer_m": comparator_chamfer_mean,
+        "equal_case_mean_chamfer_improvement_fraction": chamfer_improvement,
+        "primary_equal_case_mean_identity_rmse_m": primary_identity_mean,
+        "comparator_equal_case_mean_identity_rmse_m": comparator_identity_mean,
+        "case_chamfer_wins": wins,
+        "one_sided_sign_test_p": sign_test_p,
+        "checks": checks,
+        "passed": all(checks.values()),
+    }
+    return normalized, summary
+
+
 _SCORE_RECORD_KEYS = frozenset(
     {
         "case_name",
@@ -1779,12 +2158,13 @@ def _validate_detailed_score(
     return value
 
 
-def _validate_calibration_case_score_record(
+def _validate_case_score_record(
     record: object,
     permit: OutcomePhasePermit,
     case_name: str,
     *,
     expected_score_fields: set[str],
+    expected_role: str,
 ) -> None:
     _require(
         isinstance(record, Mapping) and set(record) == set(_SCORE_RECORD_KEYS),
@@ -1902,7 +2282,9 @@ def _validate_calibration_case_score_record(
         and transport.get("claim_limitation")
         == (
             "one-to-one transported official reconstruction proxy; not native "
-            "official material identity and not Deform360 Table-4 parity"
+            "material identity and not parity with the Deform360 Tables 3-5 "
+            "world-model benchmarks "
+            "or their native tactile-refined material identities"
         ),
         f"{case_name} identity-transport evidence is invalid",
     )
@@ -1912,7 +2294,7 @@ def _validate_calibration_case_score_record(
         seal_path,
         permit.lock_path,
         expected_case_name=case_name,
-        expected_role="calibration",
+        expected_role=expected_role,
     )
     authorization_path = _validate_bound_file(
         seal["prefix_authorization"], role=f"{case_name} prefix authorization"
@@ -1927,7 +2309,7 @@ def _validate_calibration_case_score_record(
         physical_path,
         permit.lock_path,
         expected_case_name=case_name,
-        expected_role="calibration",
+        expected_role=expected_role,
     )
     frame_zero_path = _validate_bound_file(
         physical["frame_zero_manifest"], role=f"{case_name} frame-zero manifest"
@@ -1936,7 +2318,7 @@ def _validate_calibration_case_score_record(
         frame_zero_path,
         permit.lock_path,
         expected_case_name=case_name,
-        expected_role="calibration",
+        expected_role=expected_role,
     )
     expected_sealed_inputs = {
         "online_prediction_seal": _bound_file(seal_path),
@@ -2050,11 +2432,12 @@ def validate_calibration_score_evidence(
     }
     for case_name in CALIBRATION_CASE_NAMES:
         record = records[case_name]
-        _validate_calibration_case_score_record(
+        _validate_case_score_record(
             record,
             permit,
             case_name,
             expected_score_fields=expected_score_fields,
+            expected_role="calibration",
         )
     boundary = evidence.get("information_boundary", {})
     _require(
@@ -2244,6 +2627,279 @@ def validate_calibration_gate_decision(
     return decision
 
 
+def validate_confirmation_score_evidence(
+    evidence_path: str | Path,
+    permit: OutcomePhasePermit,
+) -> dict[str, Any]:
+    """Validate immutable score evidence for the exact six-case panel."""
+
+    _require(permit.role == "confirmation", "score evidence requires confirmation")
+    _revalidate_outcome_permit(permit)
+    evidence = _load_json(evidence_path)
+    _require(
+        evidence.get("schema_version") == SCHEMA_VERSION,
+        "unsupported confirmation score evidence schema",
+    )
+    _require(
+        evidence.get("artifact_kind") == CONFIRMATION_SCORE_EVIDENCE_KIND,
+        "unsupported confirmation score evidence",
+    )
+    _require(
+        evidence.get("protocol_id") == PROTOCOL_ID,
+        "confirmation score evidence protocol changed",
+    )
+    _require(evidence.get("role") == "confirmation", "score evidence role changed")
+    _require(
+        evidence.get("cohort_barrier_sha256") == permit.cohort_barrier_sha256,
+        "score evidence binds another cohort barrier",
+    )
+    _require(
+        _validate_bound_file(evidence.get("lock", {}), role="confirmation lock")
+        == Path(permit.lock_path).resolve(),
+        "score evidence binds another confirmation lock",
+    )
+    _require(
+        evidence.get("ordered_case_names") == list(CONFIRMATION_CASE_NAMES),
+        "confirmation score evidence case order changed",
+    )
+    _require(
+        evidence.get("metric_lock") == METRIC_LOCK,
+        "confirmation score evidence metric changed",
+    )
+    lock = load_held_protocol_lock(permit.lock_path)
+    _require(
+        lock.get("stage") == "confirmation",
+        "confirmation score evidence uses another lock stage",
+    )
+    _require(
+        evidence.get("outcome_reconstruction_contract_sha256")
+        == lock["immutable_bindings"]["outcome_reconstruction_contract"],
+        "confirmation score evidence reconstruction contract changed",
+    )
+    records = evidence.get("case_records")
+    _require(
+        isinstance(records, Mapping) and set(records) == set(CONFIRMATION_CASE_NAMES),
+        "score evidence must contain all six locked confirmation cases",
+    )
+    expected_score_fields = {
+        "primary_chamfer_m",
+        "comparator_chamfer_m",
+        "primary_identity_rmse_m",
+        "comparator_identity_rmse_m",
+    }
+    for case_name in CONFIRMATION_CASE_NAMES:
+        _validate_case_score_record(
+            records[case_name],
+            permit,
+            case_name,
+            expected_score_fields=expected_score_fields,
+            expected_role="confirmation",
+        )
+    _require(
+        evidence.get("information_boundary")
+        == {
+            "all_6_online_predictions_sealed_before_any_outcome": True,
+            "outcomes_opened_only_through_live_permit": True,
+            "method_selection_or_tuning_performed": False,
+            "calibration_method_and_gate_unchanged": True,
+        },
+        "confirmation score evidence crossed the frozen-method boundary",
+    )
+    _require(
+        evidence.get("artifact_sha256") == held_artifact_sha256(evidence),
+        "confirmation score evidence content checksum changed",
+    )
+    return evidence
+
+
+def create_confirmation_gate_decision(
+    output_path: str | Path,
+    permit: OutcomePhasePermit,
+    scores: Mapping[str, Mapping[str, float]],
+    *,
+    score_evidence_path: str | Path,
+) -> dict[str, Any]:
+    """Apply the frozen final gate with no selection or tuning."""
+
+    _require(
+        permit.role == "confirmation",
+        "confirmation gate requires a confirmation permit",
+    )
+    seal_paths = _revalidate_outcome_permit(permit)
+    lock = load_held_protocol_lock(permit.lock_path)
+    _require(
+        lock.get("stage") == "confirmation",
+        "confirmation gate uses another lock stage",
+    )
+    evidence = validate_confirmation_score_evidence(score_evidence_path, permit)
+    evidence_scores = {
+        case_name: evidence["case_records"][case_name]["gate_score"]
+        for case_name in CONFIRMATION_CASE_NAMES
+    }
+    normalized, summary = _confirmation_gate_summary(scores)
+    normalized_evidence, _ = _confirmation_gate_summary(evidence_scores)
+    _require(
+        normalized == normalized_evidence,
+        "confirmation gate scores differ from immutable score evidence",
+    )
+    artifact: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "artifact_kind": CONFIRMATION_DECISION_KIND,
+        "protocol_id": PROTOCOL_ID,
+        "decision": "CONFIRMED" if summary["passed"] else "NOT_CONFIRMED",
+        "confirmation_lock": _bound_file(permit.lock_path),
+        "cohort_barrier_sha256": permit.cohort_barrier_sha256,
+        "online_prediction_seals": {
+            case_name: _bound_file(seal_paths[case_name])
+            for case_name in CONFIRMATION_CASE_NAMES
+        },
+        "confirmation_score_evidence": _bound_file(score_evidence_path),
+        "confirmation_score_evidence_artifact_sha256": evidence["artifact_sha256"],
+        "score_definition": {
+            "primary_method": deepcopy(PRIMARY_METHOD),
+            "comparator": METRIC_LOCK["comparator"],
+            "metrics": [METRIC_LOCK["primary"], METRIC_LOCK["secondary"]],
+            "aggregation": METRIC_LOCK["episode_aggregation"],
+        },
+        "confirmation_gate": deepcopy(CONFIRMATION_GATE),
+        "scores": normalized,
+        "summary": summary,
+        "information_boundary": {
+            "all_confirmation_predictions_sealed_before_outcomes": True,
+            "immutable_score_evidence_validated": True,
+            "primary_method_fixed_before_calibration": True,
+            "method_selection_or_tuning_performed": False,
+            "all_6_cases_reported": True,
+        },
+    }
+    artifact["artifact_sha256"] = held_artifact_sha256(artifact)
+    _write_new_json(output_path, artifact)
+    return validate_confirmation_gate_decision(
+        output_path,
+        permit.lock_path,
+    )
+
+
+def validate_confirmation_gate_decision(
+    decision_path: str | Path,
+    confirmation_lock_path: str | Path,
+) -> dict[str, Any]:
+    """Recompute every final-gate value from bound immutable evidence."""
+
+    lock = load_held_protocol_lock(confirmation_lock_path)
+    _require(
+        lock.get("stage") == "confirmation",
+        "final-gate parent is not a confirmation lock",
+    )
+    decision = _load_json(decision_path)
+    _require(
+        decision.get("schema_version") == SCHEMA_VERSION,
+        "unsupported confirmation decision schema",
+    )
+    _require(
+        decision.get("artifact_kind") == CONFIRMATION_DECISION_KIND,
+        "unsupported confirmation decision",
+    )
+    _require(
+        decision.get("protocol_id") == PROTOCOL_ID,
+        "confirmation decision protocol changed",
+    )
+    _require(
+        _validate_bound_file(
+            decision.get("confirmation_lock", {}), role="confirmation lock"
+        )
+        == Path(confirmation_lock_path).resolve(),
+        "confirmation decision binds another lock path",
+    )
+    seal_records = decision.get("online_prediction_seals", {})
+    _require(
+        isinstance(seal_records, Mapping)
+        and set(seal_records) == set(CONFIRMATION_CASE_NAMES),
+        "confirmation decision seal cohort changed",
+    )
+    seal_paths = {
+        case_name: _validate_bound_file(record, role=f"{case_name} online seal")
+        for case_name, record in seal_records.items()
+    }
+    barrier_sha256, _ = _validate_cohort_barrier(
+        confirmation_lock_path,
+        seal_paths,
+        role="confirmation",
+    )
+    _require(
+        decision.get("cohort_barrier_sha256") == barrier_sha256,
+        "confirmation decision binds another cohort barrier",
+    )
+    permit = authorize_outcome_phase(
+        confirmation_lock_path,
+        seal_paths,
+        role="confirmation",
+    )
+    score_evidence_path = _validate_bound_file(
+        decision.get("confirmation_score_evidence", {}),
+        role="confirmation score evidence",
+    )
+    score_evidence = validate_confirmation_score_evidence(
+        score_evidence_path,
+        permit,
+    )
+    _require(
+        decision.get("confirmation_score_evidence_artifact_sha256")
+        == score_evidence["artifact_sha256"],
+        "confirmation decision binds another score evidence artifact",
+    )
+    _require(
+        decision.get("score_definition")
+        == {
+            "primary_method": PRIMARY_METHOD,
+            "comparator": METRIC_LOCK["comparator"],
+            "metrics": [METRIC_LOCK["primary"], METRIC_LOCK["secondary"]],
+            "aggregation": METRIC_LOCK["episode_aggregation"],
+        },
+        "confirmation score definition changed",
+    )
+    _require(
+        decision.get("confirmation_gate") == CONFIRMATION_GATE,
+        "confirmation gate contract changed",
+    )
+    normalized, summary = _confirmation_gate_summary(decision.get("scores", {}))
+    evidence_scores = {
+        case_name: score_evidence["case_records"][case_name]["gate_score"]
+        for case_name in CONFIRMATION_CASE_NAMES
+    }
+    normalized_evidence, _ = _confirmation_gate_summary(evidence_scores)
+    _require(decision.get("scores") == normalized, "confirmation scores changed")
+    _require(
+        normalized == normalized_evidence,
+        "confirmation decision scores differ from immutable evidence",
+    )
+    _require(
+        decision.get("summary") == summary,
+        "confirmation decision arithmetic changed",
+    )
+    expected_decision = "CONFIRMED" if summary["passed"] else "NOT_CONFIRMED"
+    _require(
+        decision.get("decision") == expected_decision,
+        "confirmation decision changed",
+    )
+    _require(
+        decision.get("information_boundary")
+        == {
+            "all_confirmation_predictions_sealed_before_outcomes": True,
+            "immutable_score_evidence_validated": True,
+            "primary_method_fixed_before_calibration": True,
+            "method_selection_or_tuning_performed": False,
+            "all_6_cases_reported": True,
+        },
+        "confirmation decision weakened the frozen-method boundary",
+    )
+    _require(
+        decision.get("artifact_sha256") == held_artifact_sha256(decision),
+        "confirmation decision content checksum changed",
+    )
+    return decision
+
+
 def create_confirmation_protocol_lock(
     output_path: str | Path,
     calibration_lock_path: str | Path,
@@ -2301,7 +2957,10 @@ __all__ = [
     "CALIBRATION_GATE",
     "CALIBRATION_SCORE_EVIDENCE_KIND",
     "CONFIRMATION_CASES",
+    "CONFIRMATION_CASE_NAMES",
+    "CONFIRMATION_DECISION_KIND",
     "CONFIRMATION_GATE",
+    "CONFIRMATION_SCORE_EVIDENCE_KIND",
     "CONTROL_METHODS",
     "FRAME_COUNT",
     "FRAME_ZERO_KIND",
@@ -2316,6 +2975,7 @@ __all__ = [
     "UPDATE_FRAMES",
     "authorize_outcome_phase",
     "create_calibration_gate_decision",
+    "create_confirmation_gate_decision",
     "create_confirmation_protocol_lock",
     "create_held_protocol_lock",
     "create_online_prediction_seal",
@@ -2329,6 +2989,8 @@ __all__ = [
     "validate_frame_zero_bundle_manifest",
     "validate_calibration_gate_decision",
     "validate_calibration_score_evidence",
+    "validate_confirmation_gate_decision",
+    "validate_confirmation_score_evidence",
     "validate_online_prediction_seal",
     "validate_physical_prior_seal",
     "validate_prefix_stage_authorization",

@@ -25,11 +25,28 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from .deform360_cpd_diagnostic import _symmetric_set_chamfer_m
+from .deform360_dataset_containment import (
+    AlignedEpisodeLayout,
+    layout_from_dataset_file,
+    validate_aligned_episode,
+    validate_regular_file_nofollow,
+)
 from .deform360_frame_zero_assets import (
     FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
     FRAME_ZERO_CAMERA_SELECTION_RULE,
+    FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE,
     frame_zero_view_diagnostics_sha256,
     validate_frame_zero_bundle_manifest as validate_frame_zero_asset_manifest,
+)
+from .deform360_frame_zero_semantic_gate import (
+    FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY,
+    FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID,
+    FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
+    FRAME_ZERO_SEMANTIC_GATE_CONTRACT,
+    FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256,
+    semantic_label_for_object_id,
+    validate_semantic_gate_audit,
 )
 from .deform360_held_protocol import (
     ONLINE_ARTIFACT_ROLES,
@@ -141,13 +158,13 @@ ONLINE_PREDICTION_ARCHIVE_FILENAME = "online_prediction.npz"
 ONLINE_SEAL_FILENAME = "online_prediction_seal.json"
 
 REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY = (
-    "reference-optional-common-exact8-projected-footprint"
+    FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
 )
 REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY = (
-    "reference-conditioned-reference-optional-exhaustive-exact-eight-assignment"
+    FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY
 )
 REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID = (
-    "diagnostic-reference-conditioned-reference-optional-exact8-v1"
+    FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
 )
 
 MEASUREMENT_KIND = "Deform360HeldCausalRawCameraMeasurement"
@@ -182,8 +199,9 @@ def _require(condition: bool, message: str) -> None:
 
 
 def _sha256_file(path: str | Path) -> str:
+    source = validate_regular_file_nofollow(path, label="SHA-256 input")
     digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
+    with source.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
@@ -203,10 +221,7 @@ def _sha256_array(value: np.ndarray) -> str:
 
 
 def _bound_file(path: str | Path) -> dict[str, Any]:
-    source = Path(path).resolve()
-    _require(
-        source.is_file() and not source.is_symlink(), f"missing regular file: {source}"
-    )
+    source = validate_regular_file_nofollow(path, label="bound input")
     return {
         "path": str(source),
         "sha256": _sha256_file(source),
@@ -226,16 +241,27 @@ def _write_manifest(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
 def _reference_camera_may_be_absent(manifest: Mapping[str, Any]) -> bool:
     """Recognize only the fully audited preregistered reference-optional arm."""
 
-    geometry_strategy = manifest.get("geometry_strategy")
-    if not isinstance(geometry_strategy, Mapping):
+    fallback = manifest.get("geometry_fallback")
+    if not isinstance(fallback, Mapping):
         return False
-    selected_strategy = geometry_strategy.get("selected_strategy")
+    selected_strategy = fallback.get("selected_strategy")
     if selected_strategy != REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY:
         return False
-    attempts = geometry_strategy.get("attempts")
-    assignment = geometry_strategy.get("common_assignment")
+    attempts = fallback.get("attempts")
+    assignment = fallback.get("common_assignment")
+    safeguard = fallback.get("reference_optional_safeguard")
+    safeguarded_assignment = (
+        safeguard.get("assignment") if isinstance(safeguard, Mapping) else None
+    )
+    semantic_gate = (
+        safeguard.get("semantic_gate") if isinstance(safeguard, Mapping) else None
+    )
     _require(
-        isinstance(attempts, list)
+        fallback.get("policy_id")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        and fallback.get("ordered_strategies")
+        == list(FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"])
+        and isinstance(attempts, list)
         and bool(attempts)
         and isinstance(attempts[-1], Mapping)
         and attempts[-1].get("status") == "passed"
@@ -245,8 +271,55 @@ def _reference_camera_may_be_absent(manifest: Mapping[str, Any]) -> bool:
         and assignment.get("strategy")
         == REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY
         and assignment.get("policy_id")
-        == REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID,
+        == REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID
+        and assignment == safeguarded_assignment
+        and isinstance(safeguard, Mapping)
+        and safeguard.get("contract_sha256")
+        == FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256
+        and safeguard.get("artifact_sha256") == held_artifact_sha256(safeguard)
+        and isinstance(safeguard.get("official_urdf"), Mapping)
+        and isinstance(safeguard.get("robot_subtraction"), Mapping)
+        and isinstance(semantic_gate, Mapping),
         "reference-optional geometry strategy audit changed",
+    )
+    semantic_result = validate_semantic_gate_audit(semantic_gate)
+    semantic_proposals = safeguard.get("semantic_selected_proposals")
+    assignment_proposals = assignment.get("selected_proposals")
+    semantic_selected = semantic_gate.get("selected_exact8")
+    _require(
+        isinstance(manifest.get("object_id"), str)
+        and semantic_result["true_label"]
+        == semantic_label_for_object_id(str(manifest["object_id"]))
+        and isinstance(semantic_proposals, list)
+        and isinstance(assignment_proposals, list)
+        and isinstance(semantic_selected, list)
+        and semantic_result["selected_cameras"]
+        == [record.get("camera") for record in semantic_proposals]
+        and [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("mask_sha256"),
+            }
+            for record in semantic_proposals
+        ]
+        == [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("mask_sha256"),
+            }
+            for record in assignment_proposals
+        ]
+        == [
+            {
+                "camera": record.get("camera"),
+                "candidate_index": record.get("candidate_index"),
+                "mask_sha256": record.get("selected_mask_sha256"),
+            }
+            for record in semantic_selected
+        ],
+        "semantic gate differs from held object/assignment",
     )
     return True
 
@@ -254,18 +327,18 @@ def _reference_camera_may_be_absent(manifest: Mapping[str, Any]) -> bool:
 def reject_forbidden_prefix_input(path: str | Path, *, purpose: str) -> Path:
     """Reject any future-bearing processed or outcome path before opening it."""
 
-    resolved = Path(path).resolve()
-    lowered = resolved.as_posix().lower()
-    _require(resolved.name.lower() not in _FORBIDDEN_NAMES, f"{purpose} is an outcome")
+    candidate = Path(path)
+    lowered = candidate.as_posix().lower()
+    _require(candidate.name.lower() not in _FORBIDDEN_NAMES, f"{purpose} is an outcome")
     _require(
-        resolved.suffix.lower() not in _FORBIDDEN_SUFFIXES,
+        candidate.suffix.lower() not in _FORBIDDEN_SUFFIXES,
         f"{purpose} may not be an HDF5 container",
     )
     _require(
         not any(token in lowered for token in _FORBIDDEN_TOKENS),
         f"{purpose} appears future-derived",
     )
-    return resolved
+    return candidate
 
 
 def _projection_matrix(
@@ -303,7 +376,10 @@ def _load_frame_zero_arrays(
         and all(sam2.get(key) == value for key, value in HELD_FRAME_ZERO_SAM2.items())
         and isinstance(sam2.get("view_diagnostics"), list)
         and sam2.get("view_diagnostics_sha256")
-        == frame_zero_view_diagnostics_sha256(sam2["view_diagnostics"]),
+        == frame_zero_view_diagnostics_sha256(
+            sam2["view_diagnostics"],
+            policy_id=str(manifest.get("camera_policy", {}).get("policy_id")),
+        ),
         "held frame-zero SAM2 configuration changed",
     )
     geometry_qa = manifest.get("geometry_qa")
@@ -315,6 +391,9 @@ def _load_frame_zero_arrays(
     bundle_record = manifest["bundle"]
     bundle_path = reject_forbidden_prefix_input(
         str(bundle_record["path"]), purpose="frame-zero bundle"
+    )
+    bundle_path = validate_regular_file_nofollow(
+        bundle_path, label="frame-zero bundle"
     )
     _require(
         _sha256_file(bundle_path) == bundle_record["sha256"],
@@ -374,10 +453,20 @@ def _load_frame_zero_arrays(
         else None
     )
     reference_optional = _reference_camera_may_be_absent(manifest)
+    expected_camera_policy_id = (
+        FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID
+        if reference_optional
+        else FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+    )
+    expected_camera_rule = (
+        FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE
+        if reference_optional
+        else FRAME_ZERO_CAMERA_SELECTION_RULE
+    )
     _require(
         isinstance(camera_policy, Mapping)
-        and camera_policy.get("policy_id") == FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
-        and camera_policy.get("rule") == FRAME_ZERO_CAMERA_SELECTION_RULE
+        and camera_policy.get("policy_id") == expected_camera_policy_id
+        and camera_policy.get("rule") == expected_camera_rule
         and reference_camera == HELD_FRAME_ZERO_CONFIG["reference_camera"]
         and (reference_camera in selected_camera_names or reference_optional)
         and (
@@ -532,6 +621,7 @@ def _decode_action_aligned_prefix(
 
     path = reject_forbidden_prefix_input(video_path, purpose="aligned RGB video")
     _require(path.suffix.lower() in {".mp4", ".mov", ".mkv"}, "unsupported RGB video")
+    path = validate_regular_file_nofollow(path, label="aligned RGB video")
     try:
         import cv2
     except ImportError as error:  # pragma: no cover - GPU integration
@@ -964,6 +1054,7 @@ def _validate_selected_action_bundle(
     frame_manifest: Mapping[str, Any],
     *,
     source_frame_start: int,
+    dataset_layout: AlignedEpisodeLayout | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     action_alignment = frame_manifest.get("action_alignment")
     _require(isinstance(action_alignment, Mapping), "robot alignment is missing")
@@ -971,6 +1062,20 @@ def _validate_selected_action_bundle(
     _require(isinstance(raw_record, Mapping), "raw robot kinematics are missing")
     raw_path = reject_forbidden_prefix_input(
         str(raw_record.get("path")), purpose="raw aligned robot kinematics"
+    )
+    if dataset_layout is None:
+        dataset_layout = layout_from_dataset_file(
+            raw_path,
+            object_id=str(frame_manifest.get("object_id")),
+            episode_id=int(frame_manifest.get("episode_id")),
+            relative_parts=("robot", "robot.npz"),
+            label="raw aligned robot kinematics",
+        )
+    raw_path = dataset_layout.validate_file(
+        raw_path,
+        "robot",
+        "robot.npz",
+        label="raw aligned robot kinematics",
     )
     _require(
         _bound_file(raw_path) == dict(raw_record),
@@ -1094,11 +1199,28 @@ def _validate_aligned_robot_video_metadata(
     *,
     source_frame_start: int,
     source_frame_stop: int,
+    dataset_layout: AlignedEpisodeLayout | None = None,
 ) -> dict[str, Any]:
     record = frame_manifest.get("action_inputs", {}).get("robot_metadata")
     _require(isinstance(record, Mapping), "bound robot metadata is missing")
     path = reject_forbidden_prefix_input(
         str(record.get("path")), purpose="aligned robot/video metadata"
+    )
+    if dataset_layout is None:
+        raw_record = frame_manifest.get("action_inputs", {}).get("robot_trajectory")
+        _require(isinstance(raw_record, Mapping), "raw robot kinematics are missing")
+        dataset_layout = layout_from_dataset_file(
+            str(raw_record.get("path")),
+            object_id=str(frame_manifest.get("object_id")),
+            episode_id=int(frame_manifest.get("episode_id")),
+            relative_parts=("robot", "robot.npz"),
+            label="raw aligned robot kinematics",
+        )
+    path = dataset_layout.validate_file(
+        path,
+        "robot",
+        "robot.meta.json",
+        label="aligned robot/video metadata",
     )
     observed = _bound_file(path)
     _require(
@@ -1308,14 +1430,11 @@ def run_held_online_prefix_case(
         case_name=case_name,
         role=role,
     )
-    episode = reject_forbidden_prefix_input(
-        aligned_episode_dir, purpose="aligned RGB episode"
-    )
-    _require(episode.is_dir(), "aligned RGB episode is missing")
-    _require(
-        episode.name == f"episode_{int(authorization['episode_id']):04d}"
-        and episode.parent.name == authorization["object_id"],
-        "aligned RGB episode identity differs from authorization",
+    reject_forbidden_prefix_input(aligned_episode_dir, purpose="aligned RGB episode")
+    dataset_layout = validate_aligned_episode(
+        aligned_episode_dir,
+        object_id=str(authorization["object_id"]),
+        episode_id=int(authorization["episode_id"]),
     )
     action_alignment = frame_manifest.get("action_alignment", {})
     raw_range = action_alignment.get("selected_raw_frame_range_half_open")
@@ -1335,12 +1454,16 @@ def run_held_online_prefix_case(
     selected_action_path, state_action_contract = _validate_selected_action_bundle(
         frame_manifest,
         source_frame_start=source_start,
+        dataset_layout=dataset_layout,
     )
 
     prediction_archive = Path(
         physical["physical_artifacts"]["physical_prediction_archive"]["path"]
     )
     reject_forbidden_prefix_input(prediction_archive, purpose="physical prediction")
+    prediction_archive = validate_regular_file_nofollow(
+        prediction_archive, label="physical prediction"
+    )
     prediction_manifest_path = Path(
         physical["physical_artifacts"]["physical_prediction_manifest"]["path"]
     )
@@ -1412,6 +1535,7 @@ def run_held_online_prefix_case(
         cameras,
         source_frame_start=source_start,
         source_frame_stop=int(raw_range[1]),
+        dataset_layout=dataset_layout,
     )
     _require(
         aligned_metadata["aligned_frame_count"]
@@ -1492,7 +1616,13 @@ def run_held_online_prefix_case(
     cycle_updates: list[dict[str, Any]] = []
     selected_camera_inputs: dict[str, dict[str, Any]] = {
         camera: {
-            "video_path": str((episode / camera / "undistorted.mp4").resolve()),
+            "video_path": str(
+                dataset_layout.file(
+                    camera,
+                    "undistorted.mp4",
+                    label=f"aligned RGB video {camera}",
+                )
+            ),
             "source_frame_start": source_start,
             "decoded_prefix_sha256_by_update": {},
             "decoded_frame_sha256_by_update": {},
@@ -1513,7 +1643,11 @@ def run_held_online_prefix_case(
         for camera in selected_cameras:
             query_ids = np.asarray(plan["query_ids"][camera], dtype=np.int64)
             query_pixels = np.asarray(plan["query_pixels"][camera], dtype=float)
-            video_path = episode / camera / "undistorted.mp4"
+            video_path = dataset_layout.file(
+                camera,
+                "undistorted.mp4",
+                label=f"aligned RGB video {camera}",
+            )
             rgb_prefix, access = _decode_action_aligned_prefix(
                 video_path,
                 source_frame_start=source_start,

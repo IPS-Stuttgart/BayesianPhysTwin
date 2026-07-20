@@ -8,20 +8,30 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+import bayesian_phystwin.deform360_held_outcome_scoring as outcome_scoring
 from deform360_held_test_helpers import (
+    bound_file,
     default_frame_zero_config,
     dummy_immutable_bindings,
+    write_robot_kinematics_fixture,
+    write_robot_metadata_fixture,
 )
 
+from bayesian_phystwin.deform360_frame_zero_assets import (
+    FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+    FRAME_ZERO_CAMERA_SELECTION_RULE,
+)
 from bayesian_phystwin.deform360_held_outcome_scoring import (
     OUTCOME_ARTIFACT_KIND,
     TARGET_ARTIFACT_KIND,
     OfficialTarget,
     SealedCasePredictions,
     TargetOperation,
+    confirmation_score_evidence,
     official_target_array_sha256,
     score_and_create_calibration_gate,
     score_calibration_cohort,
+    score_confirmation_cohort,
     score_sealed_case,
     scored_frames,
     sparse_min_cost_frame_zero_assignment,
@@ -30,6 +40,7 @@ from bayesian_phystwin.deform360_held_outcome_scoring import (
 )
 from bayesian_phystwin.deform360_held_protocol import (
     CALIBRATION_CASE_NAMES,
+    CONFIRMATION_CASE_NAMES,
     DATASET_REVISION,
     FRAME_ZERO_KIND,
     ONLINE_ARTIFACT_ROLES,
@@ -40,6 +51,9 @@ from bayesian_phystwin.deform360_held_protocol import (
     create_physical_prior_seal,
     create_prefix_stage_authorization,
     held_artifact_sha256,
+)
+from bayesian_phystwin.deform360_robot_kinematics import (
+    ROBOT_KINEMATICS_WINDOW_CONTRACT,
 )
 
 
@@ -240,17 +254,41 @@ def _frame_zero_manifest(
 ) -> Path:
     directory = root / case_name
     directory.mkdir(parents=True, exist_ok=True)
+    config = default_frame_zero_config()
+    cameras = tuple(
+        sorted(
+            (
+                str(config["reference_camera"]),
+                "cam1",
+                "cam2",
+                "cam3",
+                "cam4",
+                "cam5",
+                "cam6",
+                "cam7",
+            )
+        )
+    )
     bundle = directory / "frame-zero.npz"
-    np.savez_compressed(bundle, object_points_world_m=frame_zero)
-    robot = directory / "robot.npz"
-    robot.write_bytes(b"known-action")
-    metadata = directory / "robot-metadata.json"
-    metadata.write_text("{}\n", encoding="utf-8")
+    np.savez_compressed(
+        bundle,
+        object_points_world_m=frame_zero,
+        camera_names=np.asarray(cameras),
+    )
+    robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
+        directory
+    )
+    metadata = write_robot_metadata_fixture(
+        directory / "robot-metadata.json",
+        source_frame_count=150,
+        cameras=cameras,
+    )
+    source_start = int(action_alignment["selected_raw_frame_range_half_open"][0])
     object_id, episode = case_name.rsplit("-ep", maxsplit=1)
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": FRAME_ZERO_KIND,
-        "protocol_id": "deform360-held-online-belief-v2",
+        "protocol_id": "deform360-held-online-belief-v4",
         "case_name": case_name,
         "object_id": object_id,
         "episode_id": int(episode),
@@ -260,15 +298,47 @@ def _frame_zero_manifest(
             "artifact_sha256"
         ],
         "frame_indices": [0],
-        "config": default_frame_zero_config(),
+        "config": config,
         "bundle": _record(bundle),
         "action_inputs": {
-            "robot_trajectory": _record(robot),
-            "robot_metadata": _record(metadata),
+            "robot_trajectory": bound_file(robot),
+            "robot_metadata": bound_file(metadata),
         },
+        "action_alignment": action_alignment,
+        "camera_policy": {
+            "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+            "rule": FRAME_ZERO_CAMERA_SELECTION_RULE,
+            "reference_camera": config["reference_camera"],
+            "minimum_selected_camera_count": config["minimum_camera_count"],
+            "candidate_cameras": list(cameras),
+            "candidate_camera_count": len(cameras),
+            "selected_cameras": list(cameras),
+            "selected_camera_count": len(cameras),
+            "abstained_cameras": [],
+            "abstained_camera_count": 0,
+        },
+        "camera_frame_zero_access": [
+            {
+                "camera": camera,
+                "path": str((directory / camera / "undistorted.mp4").resolve()),
+                "decoded_frame_count": 1,
+                "maximum_rgb_frame_read": 0,
+                "action_window_frame_index": 0,
+                "source_aligned_frame_index": source_start,
+                "decoded_rgb_sha256": "d" * 64,
+                "whole_file_hashed_or_read": False,
+            }
+            for camera in cameras
+        ],
         "information_boundary": {
             "maximum_object_rgb_frame_read": 0,
             "object_observation_frames_used": [0],
+            "known_aligned_realized_robot_kinematics_read": True,
+            "known_robot_trajectory_semantics": ROBOT_KINEMATICS_WINDOW_CONTRACT[
+                "trajectory_semantics"
+            ],
+            "robot_delta_command_read": False,
+            "commanded_control_read": False,
             "known_future_robot_action_read": True,
             "future_object_rgb_read": False,
             "future_object_geometry_read": False,
@@ -431,3 +501,72 @@ def test_all_15_permit_scoring_feeds_frozen_gate(tmp_path: Path) -> None:
             "comparator_identity_rmse_m",
         }
         assert records[case]["method_selection_or_tuning_performed"] is False
+
+
+def test_confirmation_scorer_uses_one_permit_and_exact_six_locked_cases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock_path = tmp_path / "confirmation-lock.json"
+    lock_path.write_text("test-only confirmation lock\n", encoding="utf-8")
+    permit = SimpleNamespace(
+        role="confirmation",
+        lock_path=str(lock_path),
+        seal_paths=tuple((case, f"/sealed/{case}.json") for case in CONFIRMATION_CASE_NAMES),
+        cohort_barrier_sha256="b" * 64,
+    )
+    frame_zero = _synthetic_frame_zero()
+    target = _synthetic_target(frame_zero)
+    calls: list[str] = []
+
+    def predictions_for(_permit: object, case_name: str) -> SealedCasePredictions:
+        base = _synthetic_predictions(frame_zero)
+        return SealedCasePredictions(
+            **{**base.__dict__, "case_name": case_name}
+        )
+
+    monkeypatch.setattr(
+        outcome_scoring,
+        "load_held_protocol_lock",
+        lambda _path: {
+            "stage": "confirmation",
+            "immutable_bindings": {
+                "outcome_reconstruction_contract": outcome_scoring.held_contract_sha256(
+                    outcome_scoring.OUTCOME_RECONSTRUCTION_CONTRACT
+                )
+            },
+        },
+    )
+    monkeypatch.setattr(
+        outcome_scoring,
+        "load_sealed_case_predictions",
+        predictions_for,
+    )
+    monkeypatch.setattr(
+        outcome_scoring,
+        "run_outcome_operation",
+        lambda _permit, *, case_name, operation, callback: (
+            calls.append(case_name) or callback()
+        ),
+    )
+    monkeypatch.setattr(
+        outcome_scoring,
+        "validate_permitted_target_provenance",
+        lambda value, _permit, _case_name: value,
+    )
+    operations = {
+        case_name: TargetOperation("create", lambda target=target: target)
+        for case_name in CONFIRMATION_CASE_NAMES
+    }
+
+    scores, records = score_confirmation_cohort(permit, operations)
+    evidence = confirmation_score_evidence(permit, records)
+
+    assert calls == list(CONFIRMATION_CASE_NAMES)
+    assert tuple(scores) == CONFIRMATION_CASE_NAMES
+    assert tuple(records) == CONFIRMATION_CASE_NAMES
+    assert evidence["artifact_kind"] == "Deform360HeldConfirmationScoreEvidence"
+    assert evidence["ordered_case_names"] == list(CONFIRMATION_CASE_NAMES)
+    assert evidence["information_boundary"][
+        "method_selection_or_tuning_performed"
+    ] is False

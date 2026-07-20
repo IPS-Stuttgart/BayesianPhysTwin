@@ -41,12 +41,15 @@ def _request(tmp_path: Path, output_dir: Path) -> reconstruction.ReconstructionR
         "rgb_frame0": rgb,
         "mask_frame0": masks,
     }
+    aligned_episode = (
+        tmp_path / "aligned" / "083-blanket-cloth" / "episode_0000"
+    )
     raw_robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
-        tmp_path / "sealed" / "robot",
+        aligned_episode / "robot",
         selected_start=62,
     )
     robot_metadata = write_robot_metadata_fixture(
-        tmp_path / "sealed" / "robot" / "robot.meta.json",
+        aligned_episode / "robot" / "robot.meta.json",
         source_frame_count=150,
         cameras=CAMERAS,
     )
@@ -57,7 +60,7 @@ def _request(tmp_path: Path, output_dir: Path) -> reconstruction.ReconstructionR
         episode_id=0,
         role="calibration",
         cohort_barrier_sha256="b" * 64,
-        aligned_episode_dir=tmp_path / "083-blanket-cloth" / "episode_0000",
+        aligned_episode_dir=aligned_episode,
         output_dir=output_dir,
         source_frame_start=62,
         source_frame_stop=143,
@@ -637,4 +640,24 @@ def test_action_window_staging_rejects_valid_but_wrong_selected_slice(
         **{**request.__dict__, "frame_zero_manifest": manifest}
     )
     with pytest.raises(ValueError, match="exact source slice"):
+        reconstruction._stage_action_window(request, Path("/bin/true"))
+
+
+@pytest.mark.parametrize("linked_component", ["robot", "camera"])
+def test_action_window_staging_rejects_symlinked_dataset_ancestor(
+    tmp_path: Path, linked_component: str
+) -> None:
+    request = _request(tmp_path, tmp_path / "out")
+    _prepare_staging_inputs(request)
+    assert request.aligned_episode_dir is not None
+    source = (
+        request.aligned_episode_dir / "robot"
+        if linked_component == "robot"
+        else request.aligned_episode_dir / request.camera_names[0]
+    )
+    outside = tmp_path / f"outside-{linked_component}"
+    source.rename(outside)
+    source.symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="symlink"):
         reconstruction._stage_action_window(request, Path("/bin/true"))

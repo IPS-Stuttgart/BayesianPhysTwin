@@ -25,6 +25,7 @@ import json
 import os
 from pathlib import Path
 import pickle
+import stat
 import subprocess
 import time
 from typing import Any, Mapping, Sequence
@@ -67,6 +68,73 @@ ACTION_RESPONSE = 0.9
 AUTONOMOUS_DRIFT_RESPONSE = 0.0
 CANONICAL_NODE_COUNT = 1024
 MINIMUM_NODE_COUNT = 128
+HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v4-pycache"
+
+_GIT_EXECUTABLE = Path("/usr/bin/git")
+_PYTHON_IMPORTABLE_SUFFIXES = (".py", ".pyc", ".pyo", ".pyd", ".so")
+_QQTT_IMPORTED_PROVENANCE = {
+    "qqtt": "qqtt/__init__.py",
+    "qqtt.engine.trainer_warp": "qqtt/engine/trainer_warp.py",
+    "qqtt.model.diff_simulator.spring_mass_warp": (
+        "qqtt/model/diff_simulator/spring_mass_warp.py"
+    ),
+    "qqtt.utils": "qqtt/utils/__init__.py",
+}
+
+# The interpreter starts in isolated mode before these roots are admitted.  The
+# numerical script may terminate through ``SystemExit(0)``; retain control long
+# enough to prove that its critical official-PhysTwin imports came from the
+# validated checkout rather than a working directory or startup hook.
+_ISOLATED_RUNPY_BOOTSTRAP = """\
+import os
+import runpy
+import sys
+
+root_count = int(sys.argv[1])
+roots = sys.argv[2 : 2 + root_count]
+script_index = 2 + root_count
+script = sys.argv[script_index]
+provenance_root = sys.argv[script_index + 1]
+script_arguments = sys.argv[script_index + 2 :]
+if not roots or any(not os.path.isabs(root) for root in roots):
+    raise RuntimeError("isolated bootstrap received a non-absolute import root")
+if not os.path.isabs(script):
+    raise RuntimeError("isolated bootstrap received a non-absolute script")
+sys.path[:0] = roots
+sys.argv = [script, *script_arguments]
+exit_status = 0
+try:
+    runpy.run_path(script, run_name="__main__")
+except SystemExit as error:
+    if error.code is None:
+        exit_status = 0
+    elif isinstance(error.code, int):
+        exit_status = error.code
+    else:
+        print(error.code, file=sys.stderr)
+        exit_status = 1
+if exit_status:
+    raise SystemExit(exit_status)
+if provenance_root:
+    expected = {
+        "qqtt": "qqtt/__init__.py",
+        "qqtt.engine.trainer_warp": "qqtt/engine/trainer_warp.py",
+        "qqtt.model.diff_simulator.spring_mass_warp":
+            "qqtt/model/diff_simulator/spring_mass_warp.py",
+        "qqtt.utils": "qqtt/utils/__init__.py",
+    }
+    for module_name, relative_path in expected.items():
+        module = sys.modules.get(module_name)
+        observed = getattr(module, "__file__", None)
+        locked = os.path.join(provenance_root, *relative_path.split("/"))
+        if (
+            not isinstance(observed, str)
+            or os.path.realpath(observed) != os.path.realpath(locked)
+        ):
+            raise RuntimeError(
+                f"official PhysTwin import provenance changed: {module_name}"
+            )
+"""
 
 PHYSICAL_MODE_WARP_TWIN = "warp_twin"
 PHYSICAL_MODE_PERSISTENCE_FALLBACK = "persistence_fallback"
@@ -331,6 +399,317 @@ def _sorted_pip_freeze_sha256(stdout: bytes) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _canonical_directory(path: str | Path, *, label: str) -> Path:
+    supplied = Path(os.path.abspath(os.fspath(Path(path).expanduser())))
+    try:
+        observed = os.lstat(supplied)
+    except FileNotFoundError as error:
+        raise ValueError(f"{label} is missing: {supplied}") from error
+    _require(stat.S_ISDIR(observed.st_mode), f"{label} is not a directory")
+    _require(
+        supplied.resolve(strict=True) == supplied,
+        f"{label} is a symlink or has aliased ancestry",
+    )
+    return supplied
+
+
+def _git_environment(root: Path) -> dict[str, str]:
+    environment = dict(os.environ)
+    for key in tuple(environment):
+        if key.startswith("GIT_CONFIG_KEY_") or key.startswith("GIT_CONFIG_VALUE_"):
+            environment.pop(key)
+    for key in (
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_CONFIG_COUNT",
+        "GIT_DIR",
+        "GIT_EXEC_PATH",
+        "GIT_INDEX_FILE",
+        "GIT_NAMESPACE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_REPLACE_REF_BASE",
+        "GIT_SHALLOW_FILE",
+        "GIT_WORK_TREE",
+    ):
+        environment.pop(key, None)
+    environment.update(
+        {
+            "GIT_ATTR_NOSYSTEM": "1",
+            "GIT_CEILING_DIRECTORIES": os.fspath(root.parent),
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_DISCOVERY_ACROSS_FILESYSTEM": "0",
+            "GIT_NO_LAZY_FETCH": "1",
+            "GIT_NO_REPLACE_OBJECTS": "1",
+            "GIT_OPTIONAL_LOCKS": "0",
+            "GIT_TERMINAL_PROMPT": "0",
+            "LC_ALL": "C",
+        }
+    )
+    return environment
+
+
+def _run_git(root: Path, arguments: Sequence[str]) -> bytes:
+    _require(
+        _GIT_EXECUTABLE.is_file() and not _GIT_EXECUTABLE.is_symlink(),
+        "pinned Git executable is unavailable",
+    )
+    completed = subprocess.run(
+        [
+            os.fspath(_GIT_EXECUTABLE),
+            "--no-replace-objects",
+            "-c",
+            "core.attributesFile=/dev/null",
+            "-c",
+            "core.excludesFile=/dev/null",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.hooksPath=/dev/null",
+            "-c",
+            "core.untrackedCache=false",
+            *arguments,
+        ],
+        cwd=root,
+        env=_git_environment(root),
+        check=False,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=120,
+    )
+    _require(
+        completed.returncode == 0,
+        "official PhysTwin Git provenance command failed: "
+        f"git {' '.join(arguments)}: "
+        f"{completed.stderr.decode('utf-8', 'replace').strip()}",
+    )
+    return completed.stdout
+
+
+def _parse_git_tree(raw: bytes) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for entry in raw.split(b"\0"):
+        if not entry:
+            continue
+        try:
+            metadata, path_bytes = entry.split(b"\t", 1)
+            mode_bytes, kind, object_bytes, size_bytes = metadata.split(b" ", 3)
+            relative = path_bytes.decode("utf-8")
+            mode = mode_bytes.decode("ascii")
+            object_id = object_bytes.decode("ascii")
+            size = int(size_bytes)
+        except (UnicodeDecodeError, ValueError) as error:
+            raise ValueError("official PhysTwin Git tree is malformed") from error
+        parts = relative.split("/")
+        _require(
+            relative
+            and not relative.startswith("/")
+            and all(part not in {"", ".", ".."} for part in parts),
+            "official PhysTwin Git tree contains an unsafe path",
+        )
+        _require(kind == b"blob", f"non-blob official PhysTwin entry: {relative}")
+        _require(
+            mode in {"100644", "100755"},
+            f"unsafe official PhysTwin Git mode: {relative}",
+        )
+        _require(
+            len(object_id) in {40, 64}
+            and all(character in "0123456789abcdef" for character in object_id),
+            "invalid official PhysTwin Git object id",
+        )
+        _require(size >= 0, "invalid official PhysTwin Git blob size")
+        records.append(
+            {
+                "git_object": object_id,
+                "mode": mode,
+                "path": relative,
+                "size_bytes": size,
+            }
+        )
+    _require(bool(records), "official PhysTwin Git tree is empty")
+    paths = [str(record["path"]) for record in records]
+    _require(paths == sorted(paths), "official PhysTwin Git tree order changed")
+    _require(len(paths) == len(set(paths)), "official PhysTwin Git paths repeat")
+    return records
+
+
+def _git_blob_digest(path: Path, *, size: int, algorithm: str) -> str:
+    before = os.lstat(path)
+    _require(stat.S_ISREG(before.st_mode), f"tracked path is not regular: {path}")
+    _require(before.st_size == size, f"tracked file size changed: {path}")
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    digest = hashlib.new(algorithm)
+    digest.update(f"blob {size}\0".encode("ascii"))
+    try:
+        after = os.fstat(descriptor)
+        _require(
+            (before.st_dev, before.st_ino) == (after.st_dev, after.st_ino),
+            f"tracked file changed while opening: {path}",
+        )
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    finally:
+        os.close(descriptor)
+    return digest.hexdigest()
+
+
+def _reject_untracked_importables_and_symlinks(
+    root: Path, tracked_paths: frozenset[str]
+) -> None:
+    stack = [root]
+    while stack:
+        directory = stack.pop()
+        with os.scandir(directory) as entries:
+            ordered = sorted(entries, key=lambda entry: entry.name)
+        for entry in ordered:
+            if directory == root and entry.name == ".git":
+                continue
+            path = Path(entry.path)
+            relative = path.relative_to(root).as_posix()
+            observed = entry.stat(follow_symlinks=False)
+            _require(
+                not stat.S_ISLNK(observed.st_mode),
+                f"official PhysTwin worktree contains a symlink: {relative}",
+            )
+            if stat.S_ISDIR(observed.st_mode):
+                stack.append(path)
+                continue
+            _require(
+                stat.S_ISREG(observed.st_mode),
+                f"official PhysTwin worktree contains a special file: {relative}",
+            )
+            if relative in tracked_paths:
+                continue
+            importable = entry.name in {"sitecustomize.py", "usercustomize.py"} or (
+                entry.name.endswith(_PYTHON_IMPORTABLE_SUFFIXES)
+            )
+            _require(
+                not importable,
+                f"official PhysTwin has an untracked importable file: {relative}",
+            )
+
+
+def _validate_official_phystwin_worktree(
+    repository: str | Path,
+    immutable_bindings: Mapping[str, Any],
+) -> dict[str, Any]:
+    root = _canonical_directory(repository, label="official PhysTwin repository")
+    top_level = Path(
+        _run_git(root, ("rev-parse", "--show-toplevel")).decode("utf-8").strip()
+    )
+    _require(top_level == root, "official PhysTwin Git top level changed")
+    revision = _run_git(root, ("rev-parse", "--verify", "HEAD")).decode(
+        "ascii"
+    ).strip()
+    _require(
+        revision == OFFICIAL_PHYSTWIN_REVISION,
+        "official PhysTwin revision changed",
+    )
+    _require(
+        hashlib.sha256(revision.encode("ascii")).hexdigest()
+        == immutable_bindings.get("official_phystwin_revision_literal"),
+        "official PhysTwin revision differs from the immutable lock",
+    )
+    status = _run_git(
+        root,
+        ("status", "--porcelain=v1", "--untracked-files=no"),
+    )
+    _require(status == b"", "official PhysTwin tracked worktree is dirty")
+    object_format = _run_git(root, ("rev-parse", "--show-object-format")).decode(
+        "ascii"
+    ).strip()
+    _require(
+        object_format in {"sha1", "sha256"},
+        "unsupported official PhysTwin Git object format",
+    )
+    binding_tree_lines = _run_git(
+        root,
+        ("ls-tree", "-r", "--full-tree", "HEAD"),
+    ).splitlines()
+    binding_tree_manifest = b"".join(
+        line + b"\n" for line in sorted(binding_tree_lines)
+    )
+    tree_sha256 = hashlib.sha256(binding_tree_manifest).hexdigest()
+    _require(
+        tree_sha256 == immutable_bindings.get("official_phystwin_git_tree_manifest"),
+        "official PhysTwin Git tree differs from the immutable lock",
+    )
+    tree = _parse_git_tree(
+        _run_git(root, ("ls-tree", "-r", "-l", "-z", "--full-tree", "HEAD"))
+    )
+    commit_payload = _run_git(root, ("cat-file", "commit", "HEAD"))
+    _require(
+        commit_payload.startswith(b"tree "),
+        "official PhysTwin commit object is malformed",
+    )
+    commit_sha256 = hashlib.sha256(commit_payload).hexdigest()
+    _require(
+        commit_sha256 == immutable_bindings.get("official_phystwin_commit_object"),
+        "official PhysTwin commit object differs from the immutable lock",
+    )
+    tracked_paths = frozenset(str(record["path"]) for record in tree)
+    for record in tree:
+        relative = str(record["path"])
+        path = root / relative
+        _require(
+            _git_blob_digest(
+                path,
+                size=int(record["size_bytes"]),
+                algorithm=object_format,
+            )
+            == record["git_object"],
+            f"tracked official PhysTwin bytes changed: {relative}",
+        )
+    _reject_untracked_importables_and_symlinks(root, tracked_paths)
+    for module_name, relative in _QQTT_IMPORTED_PROVENANCE.items():
+        _require(
+            relative in tracked_paths and (root / relative).is_file(),
+            f"official PhysTwin lacks locked import source: {module_name}",
+        )
+    return {
+        "repository_root": str(root),
+        "revision": revision,
+        "revision_literal_sha256": hashlib.sha256(
+            revision.encode("ascii")
+        ).hexdigest(),
+        "commit_object_sha256": commit_sha256,
+        "git_tree_manifest_sha256": tree_sha256,
+        "tracked_file_count": len(tree),
+        "qqtt_imported_provenance": {
+            name: str(root / relative)
+            for name, relative in _QQTT_IMPORTED_PROVENANCE.items()
+        },
+    }
+
+
+def _isolated_runpy_command(
+    python: str | Path,
+    script: str | Path,
+    *,
+    import_roots: Sequence[str | Path],
+    arguments: Sequence[str],
+    provenance_root: str | Path | None = None,
+) -> list[str]:
+    roots = [os.path.abspath(os.fspath(root)) for root in import_roots]
+    return [
+        os.fspath(python),
+        "-I",
+        "-B",
+        "-X",
+        f"pycache_prefix={HELD_PYCACHE_PREFIX}",
+        "-c",
+        _ISOLATED_RUNPY_BOOTSTRAP,
+        str(len(roots)),
+        *roots,
+        os.path.abspath(os.fspath(script)),
+        "" if provenance_root is None else os.path.abspath(os.fspath(provenance_root)),
+        *map(str, arguments),
+    ]
+
+
 def validate_python_runtime(
     python: str | Path,
     immutable_bindings: Mapping[str, Any],
@@ -353,7 +732,7 @@ def validate_python_runtime(
         "Python executable bytes differ from the immutable lock",
     )
     completed = subprocess.run(
-        [str(supplied), "-m", "pip", "freeze", "--all"],
+        [str(supplied), "-I", "-m", "pip", "freeze", "--all"],
         check=True,
         capture_output=True,
     )
@@ -374,37 +753,54 @@ def validate_upstream_runtime(
     upstream_repo: str | Path,
     official_phystwin_repo: str | Path,
     official_config: str | Path,
+    immutable_bindings: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Fail before computation if any frozen numerical implementation moved."""
 
-    upstream = Path(upstream_repo).resolve()
-    official = Path(official_phystwin_repo).resolve()
-    config = Path(official_config).resolve()
+    upstream = _canonical_directory(upstream_repo, label="frozen upstream repository")
+    official = _canonical_directory(
+        official_phystwin_repo,
+        label="official PhysTwin repository",
+    )
+    config = Path(os.path.abspath(os.fspath(official_config)))
+    _require(
+        config.is_file()
+        and not config.is_symlink()
+        and config.resolve(strict=True) == config,
+        "official PhysTwin config is missing, linked, or aliased",
+    )
     observed_files: dict[str, str] = {}
     for relative, expected in UPSTREAM_FILE_SHA256.items():
         path = upstream / relative
-        _require(path.is_file(), f"missing frozen upstream file: {relative}")
+        _require(
+            path.is_file()
+            and not path.is_symlink()
+            and path.resolve(strict=True) == path,
+            f"missing or linked frozen upstream file: {relative}",
+        )
         observed = sha256_file(path)
         _require(observed == expected, f"frozen upstream file changed: {relative}")
         observed_files[relative] = observed
-    _require(config.is_file(), "official PhysTwin config is missing")
+    config_sha256 = sha256_file(config)
     _require(
-        sha256_file(config) == OFFICIAL_REAL_CONFIG_SHA256,
+        config_sha256 == OFFICIAL_REAL_CONFIG_SHA256,
         "official PhysTwin real.yaml changed",
     )
-    revision = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=official,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
     _require(
-        revision == OFFICIAL_PHYSTWIN_REVISION, "official PhysTwin revision changed"
+        config_sha256 == immutable_bindings.get("official_phystwin_real_config"),
+        "official PhysTwin config differs from the immutable lock",
+    )
+    official_worktree = _validate_official_phystwin_worktree(
+        official,
+        immutable_bindings,
     )
     return {
-        "official_phystwin_revision": revision,
-        "official_config_sha256": OFFICIAL_REAL_CONFIG_SHA256,
+        "upstream_repository_root": str(upstream),
+        "official_phystwin_repository_root": str(official),
+        "official_phystwin_revision": official_worktree["revision"],
+        "official_config_path": str(config),
+        "official_config_sha256": config_sha256,
+        "official_phystwin_worktree": official_worktree,
         "upstream_file_sha256": observed_files,
     }
 
@@ -2052,8 +2448,15 @@ def run_held_physical_prior(
         upstream_repo,
         official_phystwin_repo,
         official_config,
+        lock["immutable_bindings"],
     )
+    validated_runtime = dict(provenance)
     provenance["python_runtime"] = python_runtime
+    deform360 = _canonical_directory(
+        deform360_repo,
+        label="Deform360 import repository",
+    )
+    provenance["deform360_import_root"] = str(deform360)
     root = Path(output_dir).resolve()
     root.mkdir(parents=True, exist_ok=True)
     prediction_data = root / "prediction_only_input.pkl"
@@ -2069,16 +2472,27 @@ def run_held_physical_prior(
     frame_zero = validate_frame_zero_bundle_manifest(
         frame_zero_manifest_path, lock_path
     )
-    upstream = Path(upstream_repo).resolve()
+    upstream = Path(provenance["upstream_repository_root"])
+    official = Path(provenance["official_phystwin_repository_root"])
+    config = Path(provenance["official_config_path"])
     # Do not resolve this path: executing a venv symlink through its base
     # interpreter silently disables the virtualenv's prefix/site-packages.
     python_path = Path(python_runtime["supplied_python_path"])
+    _require(
+        not os.path.lexists(HELD_PYCACHE_PREFIX),
+        "reserved held pycache prefix exists",
+    )
     env = dict(os.environ)
+    for variable in (
+        "PYTHONHOME",
+        "PYTHONPATH",
+        "PYTHONPYCACHEPREFIX",
+        "PYTHONSAFEPATH",
+        "PYTHONSTARTUP",
+    ):
+        env.pop(variable, None)
     env.update(
         {
-            "PYTHONPATH": os.pathsep.join(
-                (str(upstream / "src"), str(Path(deform360_repo).resolve()))
-            ),
             "PYNPUT_BACKEND": "dummy",
             "PYOPENGL_PLATFORM": "egl",
             "WANDB_MODE": "disabled",
@@ -2089,9 +2503,9 @@ def run_held_physical_prior(
     state_path = root / "state_artifact.npz"
     twin_summary = root / "twin_summary.json"
     runtimes: dict[str, float] = {}
-    twin_command = [
-        str(python_path),
-        str(upstream / "scripts/remote/build_deform360_automatic_episode_twin.py"),
+    import_roots = (upstream / "src", deform360)
+    twin_script = upstream / "scripts/remote/build_deform360_automatic_episode_twin.py"
+    twin_arguments = [
         "--repo",
         str(upstream),
         "--object-id",
@@ -2115,7 +2529,13 @@ def run_held_physical_prior(
         str(CANONICAL_NODE_COUNT),
     ]
     if role == "calibration":
-        twin_command.append("--source-admission-passed")
+        twin_arguments.append("--source-admission-passed")
+    twin_command = _isolated_runpy_command(
+        python_path,
+        twin_script,
+        import_roots=import_roots,
+        arguments=twin_arguments,
+    )
     automatic_twin_log = root / "logs/automatic_twin.log"
     try:
         runtimes["automatic_twin"] = _run_logged(
@@ -2127,6 +2547,16 @@ def run_held_physical_prior(
         if error.returncode != AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE:
             raise
         runtimes["automatic_twin"] = error.elapsed_seconds
+        _require(
+            validate_upstream_runtime(
+                upstream,
+                official,
+                config,
+                lock["immutable_bindings"],
+            )
+            == validated_runtime,
+            "validated runtime changed during automatic-twin execution",
+        )
         prediction_archive = root / "prediction.npz"
         physical_manifest = root / "physical_prediction_manifest.json"
         seal_started = time.perf_counter()
@@ -2177,15 +2607,13 @@ def run_held_physical_prior(
     result_paths: dict[str, Path] = {}
     for label, scale in (("driven", 1.0), ("zero_action", 0.0)):
         rollout_dir = root / f"warp_{label}"
-        command = [
-            str(python_path),
-            str(smoke_script),
+        smoke_arguments = [
             "--official-phystwin-repo",
-            str(Path(official_phystwin_repo).resolve()),
+            str(official),
             "--data",
             str(simulator_data),
             "--config",
-            str(Path(official_config).resolve()),
+            str(config),
             "--split-json",
             str(split_path),
             "--output-dir",
@@ -2212,12 +2640,30 @@ def run_held_physical_prior(
             str(WARP_DYNAMICS["support_dynamics"]),
             "--report-edge-strain",
         ]
+        command = _isolated_runpy_command(
+            python_path,
+            smoke_script,
+            import_roots=import_roots,
+            arguments=smoke_arguments,
+            provenance_root=official,
+        )
         runtimes[f"warp_{label}"] = _run_logged(
             command,
             env=env,
             log_path=root / f"logs/warp_{label}.log",
         )
         result_paths[label] = rollout_dir / "official_phystwin_smoke.json"
+
+    _require(
+        validate_upstream_runtime(
+            upstream,
+            official,
+            config,
+            lock["immutable_bindings"],
+        )
+        == validated_runtime,
+        "validated runtime changed during official PhysTwin execution",
+    )
 
     prediction_archive = root / "prediction.npz"
     physical_manifest = root / "physical_prediction_manifest.json"

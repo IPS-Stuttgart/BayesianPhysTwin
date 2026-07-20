@@ -46,7 +46,6 @@ from bayesian_phystwin.deform360_robot_kinematics import (
     validate_robot_kinematics_arrays,
 )
 
-
 CALIBRATION_CASES = [
     "002-rope-silk-ep0003",
     "002-rope-silk-ep0004",
@@ -90,7 +89,7 @@ def _lock(*, stage: str = "calibration") -> dict:
     payload = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldOnlineBeliefLock",
-        "protocol_id": "deform360-held-online-belief-v2",
+        "protocol_id": "deform360-held-online-belief-v4",
         "stage": stage,
         "confirmation_access_authorized": promoted,
         "parent_calibration_lock": ({"sha256": "b" * 64} if promoted else None),
@@ -134,13 +133,22 @@ def _write_robot_archive(path: Path, frame_count: int = 120) -> dict[str, np.nda
     return arrays
 
 
+def _write_file(path: Path, payload: bytes = b"fixture") -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+    return path
+
+
 def _manifest(tmp_path: Path) -> dict:
     bundle = tmp_path / "frame_zero_bundle.npz"
-    robot = tmp_path / "robot.npz"
-    metadata = tmp_path / "robot.meta.json"
+    episode = tmp_path / "aligned" / "083-blanket-cloth" / "episode_0000"
+    robot = episode / "robot" / "robot.npz"
+    metadata = episode / "robot" / "robot.meta.json"
     action = tmp_path / "known_action_76.npz"
     _write_robot_archive(robot)
     metadata.write_text("{}\n", encoding="utf-8")
+    intrinsics_path = episode / "undistorted_intrinsics.npy"
+    extrinsics_path = episode / "extrinsics.npy"
     _, action_alignment = frame_zero_assets._slice_known_action(
         robot,
         action,
@@ -149,11 +157,21 @@ def _manifest(tmp_path: Path) -> dict:
     selected_start = action_alignment["selected_raw_frame_range_half_open"][0]
     reference_camera = FrameZeroAssetConfig().reference_camera
     cameras = sorted([reference_camera, *(f"camera-{index:02d}" for index in range(7))])
+    np.save(
+        intrinsics_path,
+        {camera: np.eye(3, dtype=np.float64) for camera in cameras},
+    )
+    np.save(
+        extrinsics_path,
+        {camera: np.eye(4, dtype=np.float64) for camera in cameras},
+    )
+    for camera in cameras:
+        _write_file(episode / camera / "undistorted.mp4")
     diagnostics = [_selected_view_diagnostic(camera) for camera in cameras]
     payload = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v2",
+        "protocol_id": "deform360-held-online-belief-v4",
         "case_name": APPROVED_CALIBRATION_SMOKE_CASE,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -170,6 +188,10 @@ def _manifest(tmp_path: Path) -> dict:
         "action_inputs": {
             "robot_trajectory": _record_existing(robot),
             "robot_metadata": _record_existing(metadata),
+        },
+        "calibration_inputs": {
+            "intrinsics": _record_existing(intrinsics_path),
+            "extrinsics": _record_existing(extrinsics_path),
         },
         "action_alignment": action_alignment,
         "camera_policy": {
@@ -191,7 +213,7 @@ def _manifest(tmp_path: Path) -> dict:
         "camera_frame_zero_access": [
             {
                 "camera": camera,
-                "path": str((tmp_path / f"{camera}.mp4").resolve()),
+                "path": str((episode / camera / "undistorted.mp4").resolve()),
                 "decoded_frame_count": 1,
                 "maximum_rgb_frame_read": 0,
                 "action_window_frame_index": 0,
@@ -234,10 +256,14 @@ def _manifest_with_common_fallback(
     selected_start = payload["action_alignment"]["selected_raw_frame_range_half_open"][
         0
     ]
+    raw_robot = Path(payload["action_inputs"]["robot_trajectory"]["path"])
+    episode = raw_robot.parent.parent
+    for camera in candidate_cameras:
+        _write_file(episode / camera / "undistorted.mp4")
     payload["camera_frame_zero_access"] = [
         {
             "camera": camera,
-            "path": str((tmp_path / f"{camera}.mp4").resolve()),
+            "path": str((episode / camera / "undistorted.mp4").resolve()),
             "decoded_frame_count": 1,
             "maximum_rgb_frame_read": 0,
             "action_window_frame_index": 0,
@@ -1297,7 +1323,7 @@ def test_manifest_binds_geometry_fallback_audit_independently(
     mask_digest_tamper = deepcopy(payload)
     mask_digest_tamper["geometry_fallback"]["final_selected_proposals"][0][
         "mask_sha256"
-    ] = "8" * 64
+    ] = ("8" * 64)
     mask_digest_tamper["geometry_fallback"]["artifact_sha256"] = artifact_sha256(
         mask_digest_tamper["geometry_fallback"]
     )
@@ -1356,11 +1382,8 @@ def test_builder_slices_rgb_and_calibration_to_nonabstaining_views(
         video.write_bytes(b"frame-zero-only-test")
     intrinsics = {camera: np.eye(3) for camera in cameras}
     extrinsics = {camera: np.eye(4) for camera in cameras}
-    monkeypatch.setattr(
-        frame_zero_assets,
-        "_load_calibration",
-        lambda _episode: (intrinsics, extrinsics, {"test_only": True}),
-    )
+    np.save(episode / "undistorted_intrinsics.npy", intrinsics)
+    np.save(episode / "extrinsics.npy", extrinsics)
     robot_path = episode / "robot" / "robot.npz"
     _write_robot_archive(robot_path)
     metadata_path = robot_path.with_name("robot.meta.json")
@@ -1820,6 +1843,26 @@ def test_manifest_recomputes_robot_selection_and_exact_slice(tmp_path: Path) -> 
     proof_tamper["artifact_sha256"] = artifact_sha256(proof_tamper)
     with pytest.raises(ValueError, match="exact-slice proof changed"):
         validate_frame_zero_bundle_manifest(proof_tamper)
+
+
+@pytest.mark.parametrize("linked_component", ["robot", "camera"])
+def test_manifest_rejects_symlinked_dataset_ancestor(
+    tmp_path: Path, linked_component: str
+) -> None:
+    payload = _manifest(tmp_path)
+    raw_robot = Path(payload["action_inputs"]["robot_trajectory"]["path"])
+    episode = raw_robot.parent.parent
+    if linked_component == "robot":
+        source = episode / "robot"
+    else:
+        camera = payload["camera_policy"]["candidate_cameras"][0]
+        source = episode / camera
+    outside = tmp_path / f"outside-{linked_component}"
+    source.rename(outside)
+    source.symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="symlink"):
+        validate_frame_zero_bundle_manifest(payload)
 
 
 def test_manifest_rejects_camera_source_index_different_from_robot_start(

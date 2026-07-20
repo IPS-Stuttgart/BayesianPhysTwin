@@ -437,21 +437,37 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     }
     np.savez_compressed(bundle, **bundle_arrays)
     source_frame_count = 150
+    episode = tmp_path / "aligned" / "083-blanket-cloth" / "episode_0000"
+    robot_dir = episode / "robot"
     robot, _selected_action, action_alignment = write_robot_kinematics_fixture(
-        tmp_path,
+        robot_dir,
         source_frame_count=source_frame_count,
         selected_start=62,
     )
     robot_metadata = write_robot_metadata_fixture(
-        tmp_path / "robot.meta.json",
+        robot_dir / "robot.meta.json",
         source_frame_count=source_frame_count,
         cameras=TEST_CAMERAS,
     )
+    intrinsics_path = episode / "undistorted_intrinsics.npy"
+    extrinsics_path = episode / "extrinsics.npy"
+    np.save(
+        intrinsics_path,
+        {camera: np.eye(3, dtype=np.float64) for camera in TEST_CAMERAS},
+    )
+    np.save(
+        extrinsics_path,
+        {camera: np.eye(4, dtype=np.float64) for camera in TEST_CAMERAS},
+    )
+    for camera in camera_names:
+        camera_dir = episode / str(camera)
+        camera_dir.mkdir(parents=True)
+        (camera_dir / "undistorted.mp4").write_bytes(b"bounded RGB fixture")
     view_diagnostics = [_selected_view_diagnostic(camera) for camera in TEST_CAMERAS]
     frame_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v2",
+        "protocol_id": "deform360-held-online-belief-v4",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -464,6 +480,10 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "action_inputs": {
             "robot_trajectory": _record(robot),
             "robot_metadata": _record(robot_metadata),
+        },
+        "calibration_inputs": {
+            "intrinsics": _record(intrinsics_path),
+            "extrinsics": _record(extrinsics_path),
         },
         "action_alignment": action_alignment,
         "camera_policy": {
@@ -481,7 +501,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
         "camera_frame_zero_access": [
             {
                 "camera": camera,
-                "path": str((tmp_path / camera / "undistorted.mp4").resolve()),
+                "path": str((episode / camera / "undistorted.mp4").resolve()),
                 "source_aligned_frame_index": 62,
                 "decoded_frame_count": 1,
                 "maximum_rgb_frame_read": 0,
@@ -564,7 +584,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     physical_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": held_physical.ARTIFACT_KIND,
-        "protocol_id": "deform360-held-online-belief-v2",
+        "protocol_id": "deform360-held-online-belief-v4",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -635,11 +655,6 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     )
     authorization = tmp_path / "prefix_authorization.json"
     create_prefix_stage_authorization(authorization, lock, physical_seal)
-    episode = tmp_path / "083-blanket-cloth" / "episode_0000"
-    for camera in camera_names:
-        camera_dir = episode / str(camera)
-        camera_dir.mkdir(parents=True)
-        (camera_dir / "undistorted.mp4").write_bytes(b"bounded RGB fixture")
     return lock, frame_manifest_path, physical_seal, authorization, episode
 
 
@@ -764,28 +779,67 @@ def test_aligned_metadata_validates_all_candidates_for_selected_subset(
         )
 
 
-def test_reference_abstention_requires_exact_preregistered_strategy_audit() -> None:
+def test_reference_abstention_requires_exact_preregistered_strategy_audit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        held_prefix,
+        "validate_semantic_gate_audit",
+        lambda _audit: {
+            "true_label": "spider toy",
+            "selected_cameras": ["camera-00"],
+        },
+    )
     assert held_prefix._reference_camera_may_be_absent({}) is False
     assert (
         held_prefix._reference_camera_may_be_absent(
-            {"geometry_strategy": {"selected_strategy": "legacy"}}
+            {"geometry_fallback": {"selected_strategy": "legacy"}}
         )
         is False
     )
     strategy = held_prefix.REFERENCE_OPTIONAL_COMMON_EXACT8_STRATEGY
+    proposal = {
+        "camera": "camera-00",
+        "candidate_index": 2,
+        "mask_sha256": "a" * 64,
+    }
+    assignment = {
+        "strategy": held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY,
+        "policy_id": held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID,
+        "selected_proposals": [proposal],
+    }
+    semantic_gate = {
+        "selected_exact8": [
+            {
+                "camera": "camera-00",
+                "candidate_index": 2,
+                "selected_mask_sha256": "a" * 64,
+            }
+        ]
+    }
+    safeguard = {
+        "contract_sha256": held_prefix.FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256,
+        "assignment": assignment,
+        "official_urdf": {},
+        "semantic_selected_proposals": [proposal],
+        "semantic_gate": semantic_gate,
+        "robot_subtraction": {},
+    }
+    safeguard["artifact_sha256"] = held_prefix.held_artifact_sha256(safeguard)
     valid = {
-        "geometry_strategy": {
+        "object_id": "170-spider",
+        "geometry_fallback": {
+            "policy_id": held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID,
+            "ordered_strategies": list(
+                held_prefix.FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"]
+            ),
             "selected_strategy": strategy,
             "attempts": [
                 {"strategy": "legacy", "status": "failed"},
                 {"strategy": strategy, "status": "passed"},
             ],
-            "common_assignment": {
-                "strategy": held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_STRATEGY,
-                "policy_id": (
-                    held_prefix.REFERENCE_OPTIONAL_COMMON_ASSIGNMENT_POLICY_ID
-                ),
-            },
+            "common_assignment": assignment,
+            "reference_optional_safeguard": safeguard,
         }
     }
     assert held_prefix._reference_camera_may_be_absent(valid) is True
@@ -793,13 +847,31 @@ def test_reference_abstention_requires_exact_preregistered_strategy_audit() -> N
     for tampered in ("attempt", "assignment", "policy"):
         value = deepcopy(valid)
         if tampered == "attempt":
-            value["geometry_strategy"]["attempts"][-1]["strategy"] = "other"
+            value["geometry_fallback"]["attempts"][-1]["strategy"] = "other"
         elif tampered == "assignment":
-            value["geometry_strategy"]["common_assignment"]["strategy"] = "other"
+            value["geometry_fallback"]["common_assignment"]["strategy"] = "other"
         else:
-            value["geometry_strategy"]["common_assignment"]["policy_id"] = "other"
+            value["geometry_fallback"]["common_assignment"]["policy_id"] = "other"
         with pytest.raises(ValueError, match="strategy audit changed"):
             held_prefix._reference_camera_may_be_absent(value)
+
+    wrong_object = deepcopy(valid)
+    wrong_object["object_id"] = "083-blanket-cloth"
+    with pytest.raises(ValueError, match="held object/assignment"):
+        held_prefix._reference_camera_may_be_absent(wrong_object)
+
+    wrong_assignment_mask = deepcopy(valid)
+    wrong_assignment_mask["geometry_fallback"]["common_assignment"][
+        "selected_proposals"
+    ][0]["mask_sha256"] = "b" * 64
+    wrong_safeguard = wrong_assignment_mask["geometry_fallback"][
+        "reference_optional_safeguard"
+    ]
+    wrong_safeguard["artifact_sha256"] = held_prefix.held_artifact_sha256(
+        wrong_safeguard
+    )
+    with pytest.raises(ValueError, match="held object/assignment"):
+        held_prefix._reference_camera_may_be_absent(wrong_assignment_mask)
 
 
 def test_runner_emits_exact_seven_roles_and_frozen_prediction_schema(

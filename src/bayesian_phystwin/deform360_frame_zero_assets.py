@@ -4,8 +4,10 @@ This module deliberately has no HDF5 reader and no outcome argument.  It decodes
 exactly one RGB frame from each selected camera, segments those materialized
 frames with the pinned SAM 2.1 image model, and derives a multiview visual hull,
 surface colors, depth maps, and projection matrices from immutable calibration.
-The aligned realized robot kinematics are bound as an exogenous known input;
-they are never used to construct object geometry.
+The aligned realized robot kinematics are bound as an exogenous known input.
+Only the fourth, reference-optional fallback may use its current row to render
+and subtract the pinned official robot silhouette; the first three geometry
+paths remain robot-independent.
 """
 
 from __future__ import annotations
@@ -53,10 +55,24 @@ from .deform360_robot_kinematics import (
     validate_robot_kinematics_selection_audit,
     validate_selected_robot_kinematics_bundle,
 )
-
+from .deform360_dataset_containment import (
+    AlignedEpisodeLayout,
+    layout_from_dataset_file,
+    validate_aligned_episode,
+    validate_regular_file_nofollow,
+)
+from .deform360_frame_zero_semantic_gate import (
+    FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY,
+    FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID,
+    FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
+    FRAME_ZERO_SEMANTIC_GATE_CONTRACT,
+    FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256,
+    semantic_label_for_object_id,
+    validate_semantic_gate_audit,
+)
 
 FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
-HELD_PROTOCOL_ID = "deform360-held-online-belief-v2"
+HELD_PROTOCOL_ID = "deform360-held-online-belief-v4"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
 FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
@@ -70,6 +86,15 @@ FRAME_ZERO_CAMERA_SELECTION_RULE = (
 )
 FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID = (
     "deform360-frame-zero-reference-anchored-exact-eight-v2"
+)
+FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID = (
+    "deform360-frame-zero-reference-conditioned-exact-eight-abstention-v1"
+)
+FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE = (
+    "process every aligned calibrated camera; after the three reference-anchored "
+    "strategies fail, condition proposal eligibility on the frozen fixed-reference "
+    "seeds but exhaustively select exactly eight common-geometry cameras, allowing "
+    "the fixed reference itself to abstain"
 )
 
 # These are source-bound policy constants rather than user-facing configuration.
@@ -116,6 +141,9 @@ _COMMON_INLIER_ABSTENTION_REASON = (
 )
 _COMMON_INLIER_SELECTION_RULE = (
     "top-eight-local-mask-reference-seeds-anchored-global-local-exact-eight"
+)
+_REFERENCE_OPTIONAL_INLIER_SELECTION_RULE = (
+    "reference-conditioned-candidates-exhaustive-reference-optional-exact8"
 )
 
 HELD_TARGET_CASES_V1 = (
@@ -199,6 +227,7 @@ def _canonical_bytes(value: Any) -> bytes:
 
 
 def _sha256_file(path: Path) -> str:
+    path = validate_regular_file_nofollow(path, label="SHA-256 input")
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -221,8 +250,7 @@ def _sha256_array(value: np.ndarray) -> str:
 
 
 def _file_record(path: Path) -> dict[str, Any]:
-    resolved = path.resolve()
-    _require(resolved.is_file(), f"required input is missing: {resolved}")
+    resolved = validate_regular_file_nofollow(path, label="bound input")
     return {
         "path": str(resolved),
         "sha256": _sha256_file(resolved),
@@ -240,13 +268,15 @@ def artifact_sha256(payload: Mapping[str, Any]) -> str:
 
 def frame_zero_view_diagnostics_sha256(
     diagnostics: Sequence[Mapping[str, Any]],
+    *,
+    policy_id: str = FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
 ) -> str:
     """Bind all attempted views to the source-only v2 selection policy."""
 
     return hashlib.sha256(
         _canonical_bytes(
             {
-                "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
+                "policy_id": policy_id,
                 "view_diagnostics": list(diagnostics),
             }
         )
@@ -485,17 +515,17 @@ def authorize_frame_zero_case(
 def reject_future_derived_input(path: str | Path, *, purpose: str) -> Path:
     """Fail closed on HDF5 and conventional future-derived asset names."""
 
-    resolved = Path(path).resolve()
-    lowered = resolved.as_posix().lower()
+    candidate = Path(path)
+    lowered = candidate.as_posix().lower()
     _require(
-        resolved.suffix.lower() not in _FORBIDDEN_INPUT_SUFFIXES,
+        candidate.suffix.lower() not in _FORBIDDEN_INPUT_SUFFIXES,
         f"{purpose} may not use an HDF5 input",
     )
     _require(
         not any(token in lowered for token in _FORBIDDEN_DERIVATION_TOKENS),
         f"{purpose} appears future-derived",
     )
-    return resolved
+    return candidate
 
 
 @dataclass(frozen=True)
@@ -557,6 +587,42 @@ class FrameZeroMaskRuntime(Protocol):
     model_id: str
 
     def generate(self, rgb: np.ndarray) -> list[Mapping[str, Any]]: ...
+
+
+class FrameZeroSemanticGateRuntime(Protocol):
+    """Lazy seam used only after all three reference-anchored paths fail."""
+
+    model_id: str
+
+    def prepare_proposals(
+        self,
+        proposals_by_camera: Mapping[str, Sequence[Mapping[str, Any]]],
+        rgb_by_camera: Mapping[str, np.ndarray],
+        intrinsics_by_camera: Mapping[str, np.ndarray],
+        camera_to_world_by_camera: Mapping[str, np.ndarray],
+        selected_action_arrays: Mapping[str, np.ndarray],
+    ) -> tuple[
+        dict[str, list[dict[str, Any]]],
+        dict[str, np.ndarray],
+        dict[str, np.ndarray],
+        dict[str, Any],
+    ]: ...
+
+    def subtract_robot(
+        self,
+        selected_masks: Mapping[str, np.ndarray],
+        exact_robot_masks: Mapping[str, np.ndarray],
+        dilated_robot_masks: Mapping[str, np.ndarray],
+    ) -> tuple[dict[str, np.ndarray], dict[str, Any]]: ...
+
+    def evaluate(
+        self,
+        rgb_by_camera: Mapping[str, np.ndarray],
+        selected_masks: Mapping[str, np.ndarray],
+        *,
+        object_id: str,
+        selected_proposals: Sequence[Mapping[str, Any]],
+    ) -> dict[str, Any]: ...
 
 
 class PinnedFrameZeroSam2Runtime:
@@ -676,7 +742,7 @@ def decode_exact_frame_zero(
 
     path = reject_future_derived_input(video_path, purpose="camera video")
     _require(path.suffix.lower() in {".mp4", ".mov", ".mkv"}, "unsupported video input")
-    _require(path.is_file(), f"camera video is missing: {path}")
+    path = validate_regular_file_nofollow(path, label="camera video")
     _require(source_aligned_frame_index >= 0, "source frame index is negative")
     try:
         import cv2
@@ -1135,8 +1201,15 @@ def _common_voxel_mask_assignment(
     *,
     reference_camera: str,
     config: FrameZeroAssetConfig,
+    reference_optional: bool = False,
 ) -> tuple[dict[str, np.ndarray], list[dict[str, Any]], dict[str, Any]]:
-    """Select one coherent proposal per camera using a strict common voxel."""
+    """Select one coherent proposal per camera using a strict common voxel.
+
+    The default path is the original fixed-reference contract.  The optional
+    mode changes only the three reference-hit intersections and the exhaustive
+    exact-eight subset constraint; the reference still supplies the frozen
+    appearance-conditioning seeds.
+    """
 
     cameras = tuple(sorted(rgb_by_camera))
     _require(
@@ -1228,7 +1301,9 @@ def _common_voxel_mask_assignment(
         reference_hits = hit_cache[
             (reference_camera, int(reference_record["candidate_index"]))
         ]
-        feasible = (support >= _FALLBACK_STRICT_CONSENSUS_VOTES) & reference_hits
+        feasible = support >= _FALLBACK_STRICT_CONSENSUS_VOTES
+        if not reference_optional:
+            feasible &= reference_hits
         feasible_ids = np.flatnonzero(feasible)
         component_ids = np.empty(0, dtype=np.int64)
         largest_count = 0
@@ -1304,7 +1379,9 @@ def _common_voxel_mask_assignment(
                     seed_local_support += camera_union.astype(np.uint16)
                 seed_local_feasible = (
                     seed_local_support >= _FALLBACK_STRICT_CONSENSUS_VOTES
-                ) & seed_local_reference_hits
+                )
+                if not reference_optional:
+                    seed_local_feasible &= seed_local_reference_hits
                 seed_local_feasible_ids = np.flatnonzero(seed_local_feasible)
                 local_feasible_count = len(seed_local_feasible_ids)
                 local_feasible_sha256 = _sha256_array(seed_local_feasible)
@@ -1431,9 +1508,9 @@ def _common_voxel_mask_assignment(
             int(selected_evaluation["reference_record"]["candidate_index"]),
         )
     ]
-    local_feasible = (
-        local_support >= _FALLBACK_STRICT_CONSENSUS_VOTES
-    ) & local_reference_hits
+    local_feasible = local_support >= _FALLBACK_STRICT_CONSENSUS_VOTES
+    if not reference_optional:
+        local_feasible &= local_reference_hits
     local_feasible_ids = np.flatnonzero(local_feasible)
     _require_geometry(
         bool(len(local_feasible_ids)),
@@ -1501,9 +1578,14 @@ def _common_voxel_mask_assignment(
             "candidate_lexicographic_objective": list(objective),
         }
     _require_geometry(
-        reference_camera in selected_candidate_by_camera
-        and len(selected_candidate_by_camera) >= _FALLBACK_STRICT_CONSENSUS_VOTES,
-        "common search found too few eligible exact-eight candidates",
+        len(selected_candidate_by_camera) >= _FALLBACK_STRICT_CONSENSUS_VOTES
+        and (reference_optional or reference_camera in selected_candidate_by_camera),
+        (
+            "reference-optional common search found too few eligible exact-eight "
+            "candidates"
+            if reference_optional
+            else "common search found too few eligible exact-eight candidates"
+        ),
     )
 
     nonreference_candidates = tuple(
@@ -1514,10 +1596,22 @@ def _common_voxel_mask_assignment(
     subset_audit: list[dict[str, Any]] = []
     best_subset: dict[str, Any] | None = None
     best_subset_key: tuple[Any, ...] | None = None
-    for nonreference_subset in itertools.combinations(
-        nonreference_candidates, _FALLBACK_STRICT_CONSENSUS_VOTES - 1
-    ):
-        subset = (reference_camera, *nonreference_subset)
+    subset_candidates = (
+        tuple(sorted(selected_candidate_by_camera))
+        if reference_optional
+        else nonreference_candidates
+    )
+    subset_size = (
+        _FALLBACK_STRICT_CONSENSUS_VOTES
+        if reference_optional
+        else _FALLBACK_STRICT_CONSENSUS_VOTES - 1
+    )
+    for candidate_subset in itertools.combinations(subset_candidates, subset_size):
+        subset = (
+            candidate_subset
+            if reference_optional
+            else (reference_camera, *candidate_subset)
+        )
         exact_mask = np.logical_and.reduce(
             [
                 local_hit_cache[
@@ -1582,7 +1676,11 @@ def _common_voxel_mask_assignment(
     _require_geometry(
         best_subset is not None
         and best_subset["largest_exact_component_voxel_count"] > 0,
-        "common search found no reference-anchored exact-eight component",
+        (
+            "reference-optional common search found no exact-eight component"
+            if reference_optional
+            else "common search found no reference-anchored exact-eight component"
+        ),
     )
     selected_cameras = tuple(sorted(best_subset["cameras"]))
     selected_by_camera = {
@@ -1593,8 +1691,13 @@ def _common_voxel_mask_assignment(
         for camera, record in sorted(selected_by_camera.items())
     }
     _require_geometry(
-        len(masks) == _FALLBACK_STRICT_CONSENSUS_VOTES and reference_camera in masks,
-        "common search did not retain fixed-reference exact-eight cameras",
+        len(masks) == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and (reference_optional or reference_camera in masks),
+        (
+            "reference-optional common search did not retain exactly eight cameras"
+            if reference_optional
+            else "common search did not retain fixed-reference exact-eight cameras"
+        ),
     )
 
     ranked_nonreference = sorted(
@@ -1697,11 +1800,23 @@ def _common_voxel_mask_assignment(
     selected_exact_component_mask[selected_exact_component_ids] = True
     selected_exact_seed_id = int(np.min(selected_exact_component_ids))
     audit: dict[str, Any] = {
-        "policy_id": FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID,
-        "strategy": "reference-anchored-exhaustive-exact-eight-assignment",
+        "policy_id": (
+            FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+            if reference_optional
+            else FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID
+        ),
+        "strategy": (
+            "reference-conditioned-reference-optional-exhaustive-exact-eight-assignment"
+            if reference_optional
+            else "reference-anchored-exhaustive-exact-eight-assignment"
+        ),
         "reference_seed_policy": _FALLBACK_REFERENCE_SEED_POLICY,
         "reference_seed_limit": _FALLBACK_REFERENCE_SEED_COUNT,
-        "inlier_selection_rule": _COMMON_INLIER_SELECTION_RULE,
+        "inlier_selection_rule": (
+            _REFERENCE_OPTIONAL_INLIER_SELECTION_RULE
+            if reference_optional
+            else _COMMON_INLIER_SELECTION_RULE
+        ),
         "search_hit_representation": "nearest-pixel-raw-center",
         "evaluated_reference_seed_count": len(reference_candidates),
         "strict_consensus_vote_count": _FALLBACK_STRICT_CONSENSUS_VOTES,
@@ -2362,9 +2477,9 @@ def _render_depth(
                 float(np.count_nonzero(valid) / mask_count) if mask_count else 0.0
             ),
             "minimum_depth_m": float(np.min(result[valid])) if np.any(valid) else None,
-            "median_depth_m": float(np.median(result[valid]))
-            if np.any(valid)
-            else None,
+            "median_depth_m": (
+                float(np.median(result[valid])) if np.any(valid) else None
+            ),
             "maximum_depth_m": float(np.max(result[valid])) if np.any(valid) else None,
         },
     )
@@ -2620,6 +2735,7 @@ def _build_frame_zero_fallback_geometry(
         in {
             "same-masks-projected-footprint",
             "common-voxel-assignment-projected-footprint",
+            FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
         },
         "unknown geometry fallback strategy",
     )
@@ -3021,7 +3137,11 @@ def _build_frame_zero_fallback_geometry(
     }
     diagnostics = {
         "strategy": strategy,
-        "fallback_policy_id": FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID,
+        "fallback_policy_id": (
+            FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+            if strategy == FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
+            else FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID
+        ),
         "coarse_grid": coarse_grid_diagnostics,
         "coarse_carving": coarse_carving,
         "coarse_components": coarse_components,
@@ -3196,16 +3316,14 @@ def _fallback_attempt_failure_record(
 
 
 def _load_calibration(
-    episode_dir: Path,
+    layout: AlignedEpisodeLayout,
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict[str, Any]]:
-    intrinsic_path = reject_future_derived_input(
-        episode_dir / "undistorted_intrinsics.npy", purpose="camera intrinsics"
+    intrinsic_path = layout.file(
+        "undistorted_intrinsics.npy", label="camera intrinsics"
     )
-    extrinsic_path = reject_future_derived_input(
-        episode_dir / "extrinsics.npy", purpose="camera extrinsics"
+    extrinsic_path = layout.file(
+        "extrinsics.npy", label="camera extrinsics"
     )
-    _require(intrinsic_path.is_file(), "undistorted intrinsics are missing")
-    _require(extrinsic_path.is_file(), "camera extrinsics are missing")
     intrinsics_raw = np.load(intrinsic_path, allow_pickle=True).item()
     extrinsics_raw = np.load(extrinsic_path, allow_pickle=True).item()
     _require(isinstance(intrinsics_raw, Mapping), "intrinsics archive is not a mapping")
@@ -3323,29 +3441,21 @@ def _slice_known_action(
     return arrays, alignment
 
 
-def _action_inputs(episode_dir: Path) -> tuple[dict[str, dict[str, Any]], Path]:
-    robot = reject_future_derived_input(
-        episode_dir / "robot" / "robot.npz", purpose="realized robot kinematics"
+def _action_inputs(
+    layout: AlignedEpisodeLayout,
+) -> tuple[dict[str, dict[str, Any]], Path]:
+    robot = layout.file(
+        "robot", "robot.npz", label="realized robot kinematics"
     )
-    metadata = reject_future_derived_input(
-        episode_dir / "robot" / "robot.meta.json",
-        purpose="realized robot kinematics metadata",
+    metadata = layout.file(
+        "robot",
+        "robot.meta.json",
+        label="realized robot kinematics metadata",
     )
     return {
         "robot_trajectory": _file_record(robot),
         "robot_metadata": _file_record(metadata),
     }, robot
-
-
-def _validate_case_directory(
-    episode_dir: Path, authorization: Mapping[str, Any]
-) -> None:
-    expected_episode = f"episode_{int(authorization['episode_id']):04d}"
-    _require(episode_dir.name == expected_episode, "episode directory/case mismatch")
-    _require(
-        episode_dir.parent.name == authorization["object_id"],
-        "object directory/case mismatch",
-    )
 
 
 def _bundle_array_records(arrays: Mapping[str, np.ndarray]) -> dict[str, Any]:
@@ -3383,10 +3493,24 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
         "abstained_camera_count",
     }
     _require(
-        isinstance(policy, Mapping)
-        and set(policy) == policy_keys
-        and policy.get("policy_id") == FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
-        and policy.get("rule") == FRAME_ZERO_CAMERA_SELECTION_RULE,
+        isinstance(policy, Mapping) and set(policy) == policy_keys,
+        "frame-zero camera selection policy changed",
+    )
+    reference_optional = (
+        policy.get("policy_id")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID
+    )
+    _require(
+        (
+            reference_optional
+            and policy.get("rule")
+            == FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE
+        )
+        or (
+            not reference_optional
+            and policy.get("policy_id") == FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+            and policy.get("rule") == FRAME_ZERO_CAMERA_SELECTION_RULE
+        ),
         "frame-zero camera selection policy changed",
     )
     candidate_cameras = policy.get("candidate_cameras")
@@ -3410,7 +3534,7 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
     _require(
         isinstance(reference_camera, str)
         and reference_camera == config.get("reference_camera")
-        and reference_camera in selected_cameras
+        and (reference_optional or reference_camera in selected_cameras)
         and policy.get("minimum_selected_camera_count") == minimum_camera_count
         and policy.get("candidate_camera_count") == len(candidate_cameras)
         and policy.get("selected_camera_count") == len(selected_cameras)
@@ -3423,7 +3547,9 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
     _require(
         isinstance(diagnostics, list)
         and sam2.get("view_diagnostics_sha256")
-        == frame_zero_view_diagnostics_sha256(diagnostics),
+        == frame_zero_view_diagnostics_sha256(
+            diagnostics, policy_id=str(policy["policy_id"])
+        ),
         "frame-zero view diagnostics checksum changed",
     )
     _require(
@@ -3521,9 +3647,732 @@ def _validate_camera_selection_contract(payload: Mapping[str, Any]) -> None:
     )
 
 
+def _proposal_audit_cameras_and_hash(
+    value: object,
+    *,
+    expected_cameras: Sequence[str] | None,
+) -> tuple[list[str], str]:
+    _require(isinstance(value, list) and bool(value), "proposal audit is missing")
+    proposal_keys = {
+        "camera",
+        "candidate_index",
+        "automatic_candidate_count",
+        "eligible_candidate_count",
+        "mask_sha256",
+    }
+    cameras: list[str] = []
+    mask_bindings: dict[str, str] = {}
+    for record in value:
+        _require(
+            isinstance(record, Mapping)
+            and set(record) == proposal_keys
+            and isinstance(record.get("camera"), str)
+            and isinstance(record.get("candidate_index"), int)
+            and not isinstance(record.get("candidate_index"), bool)
+            and int(record["candidate_index"]) >= 0
+            and isinstance(record.get("automatic_candidate_count"), int)
+            and not isinstance(record.get("automatic_candidate_count"), bool)
+            and isinstance(record.get("eligible_candidate_count"), int)
+            and not isinstance(record.get("eligible_candidate_count"), bool)
+            and 1
+            <= int(record["eligible_candidate_count"])
+            <= int(record["automatic_candidate_count"])
+            and _valid_sha256(record.get("mask_sha256")),
+            "invalid selected proposal audit",
+        )
+        camera = str(record["camera"])
+        cameras.append(camera)
+        mask_bindings[camera] = str(record["mask_sha256"])
+    _require(cameras == sorted(set(cameras)), "proposal camera order changed")
+    if expected_cameras is not None:
+        _require(cameras == list(expected_cameras), "proposal cameras changed")
+    return cameras, hashlib.sha256(_canonical_bytes(mask_bindings)).hexdigest()
+
+
+def _validate_reference_optional_assignment_audit(
+    assignment: Mapping[str, Any],
+    *,
+    payload: Mapping[str, Any],
+    semantic_proposals: Sequence[Mapping[str, Any]],
+) -> None:
+    """Validate exhaustive all-camera exact-eight selection and its cross-links."""
+
+    common_keys = {
+        "policy_id",
+        "strategy",
+        "reference_seed_policy",
+        "reference_seed_limit",
+        "inlier_selection_rule",
+        "search_hit_representation",
+        "evaluated_reference_seed_count",
+        "strict_consensus_vote_count",
+        "grid",
+        "proposal_count_by_camera",
+        "proposal_inventory_sha256",
+        "reference_candidate_ranking",
+        "reference_seed_evaluations",
+        "reference_seed_objective_order",
+        "selected_reference_seed_rank",
+        "selected_reference_candidate_index",
+        "selected_reference_mask_sha256",
+        "global_selected_common_voxel_flat_index",
+        "global_selected_common_voxel_world_m",
+        "global_selected_common_voxel_support_count",
+        "global_selected_strict_component_voxel_count",
+        "global_selected_strict_component_sha256",
+        "local_refinement",
+        "local_union_peak_voxel_flat_index",
+        "local_union_peak_voxel_world_m",
+        "local_union_peak_support_count",
+        "local_union_strict_component_voxel_count",
+        "local_union_strict_component_sha256",
+        "candidate_objective_order",
+        "camera_inlier_ranking",
+        "evaluated_exact_eight_subset_count",
+        "exact_eight_subset_objective_order",
+        "exact_eight_subset_evaluations",
+        "selected_exact_eight_cameras",
+        "selected_common_voxel_flat_index",
+        "selected_common_voxel_world_m",
+        "selected_common_voxel_support_count",
+        "selected_exact_common_voxel_count",
+        "selected_exact_common_mask_sha256",
+        "selected_strict_component_voxel_count",
+        "selected_strict_component_sha256",
+        "selected_proposals",
+        "selected_mask_set_sha256",
+        "artifact_sha256",
+    }
+    _require(
+        isinstance(assignment, Mapping)
+        and set(assignment) == common_keys
+        and assignment.get("artifact_sha256") == artifact_sha256(assignment)
+        and assignment.get("policy_id")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        and assignment.get("strategy")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_ASSIGNMENT_STRATEGY
+        and assignment.get("reference_seed_policy") == _FALLBACK_REFERENCE_SEED_POLICY
+        and assignment.get("reference_seed_limit") == _FALLBACK_REFERENCE_SEED_COUNT
+        and assignment.get("inlier_selection_rule")
+        == _REFERENCE_OPTIONAL_INLIER_SELECTION_RULE
+        and assignment.get("search_hit_representation") == "nearest-pixel-raw-center"
+        and assignment.get("strict_consensus_vote_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES,
+        "invalid reference-optional assignment header",
+    )
+    candidate_cameras = payload["camera_policy"]["candidate_cameras"]
+    selected_cameras = payload["camera_policy"]["selected_cameras"]
+    reference_camera = payload["camera_policy"]["reference_camera"]
+    _require(
+        assignment.get("selected_exact_eight_cameras") == selected_cameras
+        and len(selected_cameras) == _FALLBACK_STRICT_CONSENSUS_VOTES,
+        "reference-optional selected cameras changed",
+    )
+    grid = assignment.get("grid")
+    local = assignment.get("local_refinement")
+    _require(
+        isinstance(grid, Mapping)
+        and grid.get("grid_shape") == [_FALLBACK_COMMON_GRID_AXIS_COUNT] * 3
+        and grid.get("grid_point_count") == _FALLBACK_COMMON_GRID_AXIS_COUNT**3
+        and _valid_sha256(grid.get("grid_points_sha256"))
+        and isinstance(local, Mapping)
+        and local.get("requested_voxel_size_m")
+        == _FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and isinstance(local.get("grid"), Mapping)
+        and local["grid"].get("coarsened_for_grid_cap") is False
+        and _valid_sha256(assignment.get("proposal_inventory_sha256"))
+        and _valid_sha256(assignment.get("selected_exact_common_mask_sha256"))
+        and _valid_sha256(assignment.get("selected_strict_component_sha256"))
+        and assignment.get("selected_common_voxel_support_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and isinstance(assignment.get("selected_exact_common_voxel_count"), int)
+        and assignment["selected_exact_common_voxel_count"] >= 1
+        and isinstance(assignment.get("selected_strict_component_voxel_count"), int)
+        and assignment["selected_strict_component_voxel_count"] >= 1,
+        "reference-optional geometry search binding changed",
+    )
+    inliers = assignment.get("camera_inlier_ranking")
+    inlier_keys = {
+        "camera",
+        "candidate_index",
+        "mask_sha256",
+        "seed_conditioned_candidate_count",
+        "fixed_reference",
+        "nonreference_coverage_rank",
+        "retained",
+        "raw_component_hit_count",
+        "raw_component_coverage",
+        "raw_component_precision",
+        "hits_local_union_peak",
+        "semantic_score",
+        "candidate_lexicographic_objective",
+    }
+    _require(
+        isinstance(inliers, list)
+        and len(inliers) == len(candidate_cameras)
+        and all(
+            isinstance(record, Mapping)
+            and set(record) == inlier_keys
+            and record.get("camera") == camera
+            and isinstance(record.get("retained"), bool)
+            and record.get("fixed_reference") == (camera == reference_camera)
+            and isinstance(record.get("seed_conditioned_candidate_count"), int)
+            and not isinstance(record.get("seed_conditioned_candidate_count"), bool)
+            and record["seed_conditioned_candidate_count"] >= 0
+            and isinstance(record.get("raw_component_hit_count"), int)
+            and not isinstance(record.get("raw_component_hit_count"), bool)
+            and record["raw_component_hit_count"] >= 0
+            and isinstance(record.get("hits_local_union_peak"), bool)
+            and all(
+                isinstance(record.get(key), (int, float))
+                and not isinstance(record.get(key), bool)
+                and math.isfinite(float(record[key]))
+                and 0.0 <= float(record[key]) <= 1.0
+                for key in ("raw_component_coverage", "raw_component_precision")
+            )
+            for camera, record in zip(candidate_cameras, inliers, strict=True)
+        ),
+        "reference-optional camera-inlier audit changed",
+    )
+    eligible = []
+    for record in inliers:
+        if record["seed_conditioned_candidate_count"] > 0:
+            _require(
+                isinstance(record.get("candidate_index"), int)
+                and not isinstance(record.get("candidate_index"), bool)
+                and record["candidate_index"] >= 0
+                and _valid_sha256(record.get("mask_sha256"))
+                and isinstance(record.get("semantic_score"), (int, float))
+                and not isinstance(record.get("semantic_score"), bool)
+                and math.isfinite(float(record["semantic_score"]))
+                and record.get("candidate_lexicographic_objective")
+                == [
+                    float(record["raw_component_coverage"]),
+                    float(record["raw_component_precision"]),
+                    int(bool(record["hits_local_union_peak"])),
+                    float(record["semantic_score"]),
+                    -int(record["candidate_index"]),
+                ],
+                "reference-optional candidate objective changed",
+            )
+            eligible.append(record)
+        else:
+            _require(
+                record.get("candidate_index") is None
+                and record.get("mask_sha256") is None
+                and record.get("semantic_score") is None
+                and record.get("candidate_lexicographic_objective") is None
+                and record.get("retained") is False,
+                "ineligible reference-optional candidate changed",
+            )
+    retained = [record for record in inliers if record["retained"]]
+    selected_proposals = assignment.get("selected_proposals")
+    _require(
+        retained == selected_proposals
+        and [record["camera"] for record in retained] == selected_cameras
+        and [
+            {
+                "camera": record["camera"],
+                "candidate_index": record["candidate_index"],
+                "mask_sha256": record["mask_sha256"],
+            }
+            for record in retained
+        ]
+        == [
+            {
+                "camera": record["camera"],
+                "candidate_index": record["candidate_index"],
+                "mask_sha256": record["mask_sha256"],
+            }
+            for record in semantic_proposals
+        ],
+        "reference-optional selected proposal binding changed",
+    )
+    semantic_mask_set = hashlib.sha256(
+        _canonical_bytes(
+            {
+                str(record["camera"]): str(record["mask_sha256"])
+                for record in semantic_proposals
+            }
+        )
+    ).hexdigest()
+    _require(
+        assignment.get("selected_mask_set_sha256") == semantic_mask_set,
+        "reference-optional selected mask-set checksum changed",
+    )
+    subsets = assignment.get("exact_eight_subset_evaluations")
+    subset_keys = {
+        "cameras",
+        "largest_exact_component_voxel_count",
+        "exact_common_voxel_count",
+        "exact_component_count",
+        "raw_component_coverage_sum",
+        "semantic_score_sum",
+        "exact_common_mask_sha256",
+    }
+    eligible_cameras = [str(record["camera"]) for record in eligible]
+    expected_subsets = [
+        list(combination)
+        for combination in itertools.combinations(
+            eligible_cameras, _FALLBACK_STRICT_CONSENSUS_VOTES
+        )
+    ]
+    _require(
+        isinstance(subsets, list)
+        and len(subsets) == len(expected_subsets)
+        and assignment.get("evaluated_exact_eight_subset_count") == len(subsets)
+        and assignment.get("exact_eight_subset_objective_order")
+        == [
+            "largest_exact_component_voxel_count_desc",
+            "exact_common_voxel_count_desc",
+            "raw_component_coverage_sum_desc",
+            "semantic_score_sum_desc",
+            "camera_tuple_asc",
+        ]
+        and [record.get("cameras") for record in subsets] == expected_subsets
+        and all(
+            isinstance(record, Mapping)
+            and set(record) == subset_keys
+            and _valid_sha256(record.get("exact_common_mask_sha256"))
+            and all(
+                isinstance(record.get(key), int)
+                and not isinstance(record.get(key), bool)
+                and record[key] >= 0
+                for key in (
+                    "largest_exact_component_voxel_count",
+                    "exact_common_voxel_count",
+                    "exact_component_count",
+                )
+            )
+            and all(
+                isinstance(record.get(key), (int, float))
+                and not isinstance(record.get(key), bool)
+                and math.isfinite(float(record[key]))
+                for key in ("raw_component_coverage_sum", "semantic_score_sum")
+            )
+            for record in subsets
+        ),
+        "reference-optional exhaustive subset audit changed",
+    )
+    winner = min(
+        subsets,
+        key=lambda record: (
+            -record["largest_exact_component_voxel_count"],
+            -record["exact_common_voxel_count"],
+            -record["raw_component_coverage_sum"],
+            -record["semantic_score_sum"],
+            tuple(record["cameras"]),
+        ),
+    )
+    _require(
+        winner["cameras"] == selected_cameras
+        and assignment.get("selected_exact_common_voxel_count")
+        == winner["exact_common_voxel_count"]
+        and assignment.get("selected_exact_common_mask_sha256")
+        == winner["exact_common_mask_sha256"]
+        and assignment.get("selected_strict_component_voxel_count")
+        == winner["largest_exact_component_voxel_count"],
+        "reference-optional winning subset changed",
+    )
+    diagnostics = payload["sam2"]["view_diagnostics"]
+    _require(
+        [record.get("geometry_inlier_selection") for record in diagnostics] == inliers,
+        "reference-optional diagnostics/inlier cross-link changed",
+    )
+    ranking = assignment.get("reference_candidate_ranking")
+    seeds = assignment.get("reference_seed_evaluations")
+    selected_seed_rank = assignment.get("selected_reference_seed_rank")
+    _require(
+        isinstance(ranking, list)
+        and isinstance(seeds, list)
+        and 1 <= len(seeds) <= _FALLBACK_REFERENCE_SEED_COUNT
+        and assignment.get("evaluated_reference_seed_count") == len(seeds)
+        and isinstance(selected_seed_rank, int)
+        and not isinstance(selected_seed_rank, bool)
+        and 0 <= selected_seed_rank < len(seeds)
+        and all(_valid_sha256(record.get("reference_mask_sha256")) for record in seeds)
+        and seeds[selected_seed_rank].get("reference_candidate_index")
+        == assignment.get("selected_reference_candidate_index")
+        and seeds[selected_seed_rank].get("reference_mask_sha256")
+        == assignment.get("selected_reference_mask_sha256"),
+        "reference-conditioning seed audit changed",
+    )
+
+
+def _validate_reference_optional_fallback_contract(
+    payload: Mapping[str, Any], fallback: Mapping[str, Any]
+) -> None:
+    keys = {
+        "policy_id",
+        "ordered_strategies",
+        "strict_consensus_vote_count",
+        "reference_seed_policy",
+        "reference_seed_limit",
+        "common_grid_axis_count",
+        "common_local_requested_voxel_size_m",
+        "minimum_coarse_component_point_count",
+        "local_requested_voxel_size_m",
+        "stability_requested_voxel_size_m",
+        "maximum_local_grid_point_count",
+        "minimum_scale_stability",
+        "selected_strategy",
+        "attempts",
+        "legacy_selected_proposals",
+        "legacy_selected_mask_set_sha256",
+        "common_assignment",
+        "final_selected_proposals",
+        "final_selected_mask_set_sha256",
+        "reference_optional_safeguard",
+        "artifact_sha256",
+    }
+    _require(
+        set(fallback) == keys
+        and fallback.get("artifact_sha256") == artifact_sha256(fallback)
+        and fallback.get("policy_id")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        and fallback.get("ordered_strategies")
+        == list(FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"])
+        and fallback.get("strict_consensus_vote_count")
+        == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and fallback.get("reference_seed_policy") == _FALLBACK_REFERENCE_SEED_POLICY
+        and fallback.get("reference_seed_limit") == _FALLBACK_REFERENCE_SEED_COUNT
+        and fallback.get("common_grid_axis_count") == _FALLBACK_COMMON_GRID_AXIS_COUNT
+        and fallback.get("common_local_requested_voxel_size_m")
+        == _FALLBACK_COMMON_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and fallback.get("minimum_coarse_component_point_count")
+        == _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT
+        and fallback.get("local_requested_voxel_size_m")
+        == _FALLBACK_LOCAL_REQUESTED_VOXEL_SIZE_M
+        and fallback.get("stability_requested_voxel_size_m")
+        == _FALLBACK_STABILITY_REQUESTED_VOXEL_SIZE_M
+        and fallback.get("maximum_local_grid_point_count")
+        == _FALLBACK_MAXIMUM_LOCAL_GRID_POINT_COUNT
+        and fallback.get("minimum_scale_stability") == _FALLBACK_MINIMUM_SCALE_STABILITY
+        and fallback.get("selected_strategy")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
+        "reference-optional fallback policy changed",
+    )
+    selected_cameras = payload["camera_policy"]["selected_cameras"]
+    legacy_cameras, legacy_hash = _proposal_audit_cameras_and_hash(
+        fallback.get("legacy_selected_proposals"), expected_cameras=None
+    )
+    final_cameras, final_hash = _proposal_audit_cameras_and_hash(
+        fallback.get("final_selected_proposals"),
+        expected_cameras=selected_cameras,
+    )
+    _require(
+        legacy_cameras
+        and fallback.get("legacy_selected_mask_set_sha256") == legacy_hash
+        and fallback.get("final_selected_mask_set_sha256") == final_hash,
+        "reference-optional outer mask-set binding changed",
+    )
+    attempts = fallback.get("attempts")
+    _require(
+        isinstance(attempts, list)
+        and len(attempts) == 4
+        and [record.get("strategy") for record in attempts]
+        == list(FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"])
+        and all(
+            isinstance(record, Mapping)
+            and set(record) == {"strategy", "status", "error_type", "reason"}
+            and record.get("status") == "failed"
+            and record.get("error_type") == "FrameZeroGeometryQAError"
+            and isinstance(record.get("reason"), str)
+            and bool(record["reason"])
+            for record in attempts[:3]
+        ),
+        "reference-optional attempt order changed",
+    )
+    passed = attempts[3]
+    geometry_qa = payload.get("geometry_qa")
+    pass_keys = {
+        "strategy",
+        "status",
+        "selected_camera_count",
+        "selected_mask_set_sha256",
+        "coarse_peak_vote_count",
+        "coarse_required_vote_count",
+        "coarse_connected_core_point_count",
+        "refined_surface_point_count",
+        "refined_required_vote_count",
+        "stability_required_vote_count",
+        "refined_grid_coarsened_for_cap",
+        "stability_grid_coarsened_for_cap",
+        "refined_effective_axis_spacing_m",
+        "stability_effective_axis_spacing_m",
+        "raw_median_hull_mask_containment",
+        "footprint_median_hull_mask_containment",
+        "median_depth_mask_coverage",
+        "local_scale_stability",
+        "stability_component_count",
+        "stability_largest_component_fraction",
+        "projected_footprint_diagnostics_sha256",
+        "geometry_qa_sha256",
+    }
+    _require(
+        isinstance(passed, Mapping)
+        and set(passed) == pass_keys
+        and passed.get("status") == "passed"
+        and passed.get("strategy") == FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
+        and passed.get("selected_camera_count") == len(selected_cameras) == 8
+        and passed.get("selected_mask_set_sha256") == final_hash
+        and passed.get("geometry_qa_sha256")
+        == hashlib.sha256(_canonical_bytes(geometry_qa)).hexdigest()
+        and isinstance(geometry_qa, Mapping)
+        and geometry_qa.get("strategy")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
+        and geometry_qa.get("fallback_policy_id")
+        == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+        and geometry_qa.get("geometry_qa_passed") is True
+        and set(geometry_qa.get("acceptance_gates", {}))
+        == set(_FALLBACK_ACCEPTANCE_GATE_NAMES)
+        and all(geometry_qa["acceptance_gates"].values())
+        and passed.get("coarse_required_vote_count") == 8
+        and passed.get("refined_required_vote_count") == 8
+        and passed.get("stability_required_vote_count") == 8
+        and passed.get("refined_grid_coarsened_for_cap") is False
+        and passed.get("stability_grid_coarsened_for_cap") is False
+        and passed.get("coarse_connected_core_point_count")
+        >= _FALLBACK_MINIMUM_COARSE_COMPONENT_POINT_COUNT
+        and passed.get("refined_surface_point_count")
+        >= _FALLBACK_MINIMUM_REFINED_SURFACE_POINT_COUNT
+        and passed.get("local_scale_stability") >= _FALLBACK_MINIMUM_SCALE_STABILITY,
+        "reference-optional geometry pass audit changed",
+    )
+    safeguard = fallback.get("reference_optional_safeguard")
+    safeguard_keys = {
+        "contract_sha256",
+        "assignment",
+        "official_urdf",
+        "semantic_selected_proposals",
+        "semantic_selected_mask_set_sha256",
+        "semantic_gate",
+        "robot_subtraction",
+        "final_selected_geometry_masks",
+        "final_selected_geometry_mask_set_sha256",
+        "artifact_sha256",
+    }
+    _require(
+        isinstance(safeguard, Mapping)
+        and set(safeguard) == safeguard_keys
+        and safeguard.get("artifact_sha256") == artifact_sha256(safeguard)
+        and safeguard.get("contract_sha256") == FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256
+        and fallback.get("common_assignment") == safeguard.get("assignment"),
+        "reference-optional safeguard checksum/cross-link changed",
+    )
+    semantic_proposals = safeguard["semantic_selected_proposals"]
+    semantic_cameras, semantic_hash = _proposal_audit_cameras_and_hash(
+        semantic_proposals, expected_cameras=selected_cameras
+    )
+    safeguard_final_cameras, safeguard_final_hash = _proposal_audit_cameras_and_hash(
+        safeguard["final_selected_geometry_masks"],
+        expected_cameras=selected_cameras,
+    )
+    _require(
+        semantic_cameras == final_cameras == safeguard_final_cameras
+        and safeguard.get("semantic_selected_mask_set_sha256") == semantic_hash
+        and safeguard.get("final_selected_geometry_mask_set_sha256")
+        == safeguard_final_hash
+        == final_hash
+        and safeguard["final_selected_geometry_masks"]
+        == fallback["final_selected_proposals"],
+        "reference-optional raw/final mask cross-link changed",
+    )
+    assignment = safeguard["assignment"]
+    _validate_reference_optional_assignment_audit(
+        assignment,
+        payload=payload,
+        semantic_proposals=semantic_proposals,
+    )
+    official = safeguard["official_urdf"]
+    _require(
+        isinstance(official, Mapping)
+        and set(official)
+        == {
+            "bindings",
+            "selected_action_frame_index",
+            "selected_action",
+            "render",
+            "proposal_exclusion",
+            "artifact_sha256",
+        }
+        and official.get("artifact_sha256") == artifact_sha256(official)
+        and official.get("selected_action_frame_index") == 0
+        and official.get("bindings", {}).get("commit")
+        == FRAME_ZERO_SEMANTIC_GATE_CONTRACT["official_urdf"]["repository_commit"]
+        and official.get("bindings", {}).get("source_and_asset_sha256")
+        == FRAME_ZERO_SEMANTIC_GATE_CONTRACT["official_urdf"]["source_and_asset_sha256"]
+        and _valid_sha256(official.get("selected_action", {}).get("T_worlds_sha256"))
+        and _valid_sha256(official.get("selected_action", {}).get("openings_sha256")),
+        "official URDF render audit changed",
+    )
+    selected_robot_bundle = Path(
+        str(payload["action_alignment"]["selected_robot_kinematics_bundle"]["path"])
+    )
+    selected_robot_state = load_robot_kinematics_archive(selected_robot_bundle)
+    selected_transforms = np.asarray(selected_robot_state.T_worlds[0])
+    selected_openings = np.asarray(selected_robot_state.openings[0])
+    if not selected_robot_state.bimanual:
+        selected_transforms = selected_transforms[None]
+        selected_openings = np.asarray([selected_openings])
+    _require(
+        official["selected_action"].get("bimanual") is selected_robot_state.bimanual
+        and official["selected_action"].get("gripper_count")
+        == selected_robot_state.gripper_count
+        and official["selected_action"].get("T_worlds_sha256")
+        == _sha256_array(selected_transforms)
+        and official["selected_action"].get("openings_sha256")
+        == _sha256_array(selected_openings)
+        and official.get("render")
+        == {
+            "implementation": (
+                "official deform360.processing.urdf_render." "PyrenderGripperRenderer"
+            ),
+            "camera_pose": "invert_transform(T_worlds[0,g]) @ camera_to_world",
+            "multi_gripper_union": "boolean union per camera",
+            "image_shape": payload["arrays"]["rgb_frame0"]["shape"][1:3],
+        },
+        "official URDF selected action/render cross-link changed",
+    )
+    exclusion = official["proposal_exclusion"]
+    _require(
+        isinstance(exclusion, Mapping)
+        and exclusion.get("artifact_sha256") == artifact_sha256(exclusion)
+        and exclusion.get("policy_id")
+        == FRAME_ZERO_SEMANTIC_GATE_CONTRACT["official_urdf"]["policy_id"]
+        and exclusion.get("dilation_shape") == "square/Chebyshev"
+        and exclusion.get("dilation_radius_pixels") == 5
+        and exclusion.get("kernel_shape_pixels") == [11, 11]
+        and exclusion.get("reject_if_overlap_fraction_greater_than_or_equal") == 0.5
+        and exclusion.get("candidate_indices_preserved") is True
+        and isinstance(exclusion.get("per_camera"), list)
+        and [record.get("camera") for record in exclusion["per_camera"]]
+        == payload["camera_policy"]["candidate_cameras"],
+        "official URDF proposal-exclusion policy changed",
+    )
+    urdf_by_camera = {}
+    for camera_record in exclusion["per_camera"]:
+        candidates = camera_record.get("candidates")
+        _require(
+            isinstance(candidates, list)
+            and camera_record.get("automatic_candidate_count") == len(candidates)
+            and [record.get("candidate_index") for record in candidates]
+            == list(range(len(candidates)))
+            and camera_record.get("rejected_candidate_count")
+            == sum(
+                record.get("rejected_as_robot_dominated") is True
+                for record in candidates
+            )
+            and _valid_sha256(camera_record.get("exact_robot_mask_sha256"))
+            and _valid_sha256(camera_record.get("dilated_robot_mask_sha256")),
+            "official URDF per-camera inventory changed",
+        )
+        for record in candidates:
+            count = record.get("mask_pixel_count")
+            exact = record.get("exact_robot_intersection_pixel_count")
+            broad = record.get("dilated_robot_intersection_pixel_count")
+            _require(
+                isinstance(count, int)
+                and not isinstance(count, bool)
+                and count > 0
+                and isinstance(exact, int)
+                and 0 <= exact <= broad
+                and isinstance(broad, int)
+                and broad <= count
+                and record.get("exact_robot_overlap_fraction") == exact / count
+                and record.get("dilated_robot_overlap_fraction") == broad / count
+                and record.get("rejected_as_robot_dominated") is (broad / count >= 0.5)
+                and _valid_sha256(record.get("mask_sha256")),
+                "official URDF proposal overlap arithmetic changed",
+            )
+        urdf_by_camera[str(camera_record["camera"])] = camera_record
+    _require(
+        assignment.get("proposal_count_by_camera")
+        == {
+            camera: int(urdf_by_camera[camera]["automatic_candidate_count"])
+            for camera in payload["camera_policy"]["candidate_cameras"]
+        },
+        "URDF/assignment proposal inventory count changed",
+    )
+    for record in semantic_proposals:
+        urdf_candidate = urdf_by_camera[str(record["camera"])]["candidates"][
+            int(record["candidate_index"])
+        ]
+        _require(
+            urdf_candidate["mask_sha256"] == record["mask_sha256"]
+            and urdf_candidate["rejected_as_robot_dominated"] is False,
+            "semantic assignment retained a robot-dominated or different proposal",
+        )
+    subtraction = safeguard["robot_subtraction"]
+    _require(
+        isinstance(subtraction, Mapping)
+        and subtraction.get("artifact_sha256") == artifact_sha256(subtraction)
+        and subtraction.get("policy_id") == exclusion.get("policy_id")
+        and subtraction.get("operation")
+        == "selected_mask AND NOT dilated_official_URDF"
+        and isinstance(subtraction.get("per_camera"), list)
+        and [record.get("camera") for record in subtraction["per_camera"]]
+        == selected_cameras,
+        "official URDF subtraction audit changed",
+    )
+    raw_by_camera = {record["camera"]: record for record in semantic_proposals}
+    final_by_camera = {
+        record["camera"]: record for record in fallback["final_selected_proposals"]
+    }
+    for record in subtraction["per_camera"]:
+        camera = record["camera"]
+        before = record.get("selected_pixel_count_before_subtraction")
+        removed = record.get("removed_pixel_count")
+        after = record.get("selected_pixel_count_after_subtraction")
+        _require(
+            record.get("selected_mask_sha256_before_subtraction")
+            == raw_by_camera[camera]["mask_sha256"]
+            and record.get("selected_mask_sha256_after_subtraction")
+            == final_by_camera[camera]["mask_sha256"]
+            and record.get("exact_robot_mask_sha256")
+            == urdf_by_camera[camera]["exact_robot_mask_sha256"]
+            and record.get("dilated_robot_mask_sha256")
+            == urdf_by_camera[camera]["dilated_robot_mask_sha256"]
+            and isinstance(before, int)
+            and isinstance(removed, int)
+            and isinstance(after, int)
+            and before > 0
+            and 0 <= removed < before
+            and after == before - removed > 0,
+            "official URDF subtraction cross-link changed",
+        )
+    semantic_result = validate_semantic_gate_audit(safeguard["semantic_gate"])
+    _require(
+        semantic_result["selected_cameras"] == selected_cameras
+        and semantic_result["true_label"]
+        == semantic_label_for_object_id(str(payload["object_id"]))
+        and [
+            {
+                "camera": record["camera"],
+                "candidate_index": record["candidate_index"],
+                "selected_mask_sha256": record["selected_mask_sha256"],
+            }
+            for record in safeguard["semantic_gate"]["selected_exact8"]
+        ]
+        == [
+            {
+                "camera": record["camera"],
+                "candidate_index": record["candidate_index"],
+                "selected_mask_sha256": record["mask_sha256"],
+            }
+            for record in semantic_proposals
+        ],
+        "semantic gate differs from locked object/assignment",
+    )
+
+
 def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
     fallback = payload.get("geometry_fallback")
     if fallback is None:
+        return
+    _require(isinstance(fallback, Mapping), "invalid geometry fallback record")
+    if fallback.get("policy_id") == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID:
+        _validate_reference_optional_fallback_contract(payload, fallback)
         return
     keys = {
         "policy_id",
@@ -3910,32 +4759,34 @@ def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
     )
     valid_inlier_details = valid_inliers and all(
         (
-            isinstance(record.get("candidate_index"), int)
-            and not isinstance(record.get("candidate_index"), bool)
-            and int(record["candidate_index"]) >= 0
-            and _valid_sha256(record.get("mask_sha256"))
-            and isinstance(record.get("semantic_score"), (int, float))
-            and not isinstance(record.get("semantic_score"), bool)
-            and math.isfinite(float(record["semantic_score"]))
-            and isinstance(record.get("candidate_lexicographic_objective"), list)
-            and len(record["candidate_lexicographic_objective"]) == 5
-            and record["candidate_lexicographic_objective"]
-            == [
-                float(record["raw_component_coverage"]),
-                float(record["raw_component_precision"]),
-                int(bool(record["hits_local_union_peak"])),
-                float(record["semantic_score"]),
-                -int(record["candidate_index"]),
-            ]
-        )
-        if record.get("seed_conditioned_candidate_count", 0) > 0
-        else (
-            record.get("candidate_index") is None
-            and record.get("mask_sha256") is None
-            and record.get("semantic_score") is None
-            and record.get("candidate_lexicographic_objective") is None
-            and record.get("retained") is False
-            and record.get("nonreference_coverage_rank") is None
+            (
+                isinstance(record.get("candidate_index"), int)
+                and not isinstance(record.get("candidate_index"), bool)
+                and int(record["candidate_index"]) >= 0
+                and _valid_sha256(record.get("mask_sha256"))
+                and isinstance(record.get("semantic_score"), (int, float))
+                and not isinstance(record.get("semantic_score"), bool)
+                and math.isfinite(float(record["semantic_score"]))
+                and isinstance(record.get("candidate_lexicographic_objective"), list)
+                and len(record["candidate_lexicographic_objective"]) == 5
+                and record["candidate_lexicographic_objective"]
+                == [
+                    float(record["raw_component_coverage"]),
+                    float(record["raw_component_precision"]),
+                    int(bool(record["hits_local_union_peak"])),
+                    float(record["semantic_score"]),
+                    -int(record["candidate_index"]),
+                ]
+            )
+            if record.get("seed_conditioned_candidate_count", 0) > 0
+            else (
+                record.get("candidate_index") is None
+                and record.get("mask_sha256") is None
+                and record.get("semantic_score") is None
+                and record.get("candidate_lexicographic_objective") is None
+                and record.get("retained") is False
+                and record.get("nonreference_coverage_rank") is None
+            )
         )
         for record in camera_inliers
     )
@@ -4407,12 +5258,9 @@ def _validate_local_bound_file_record(
         isinstance(record, Mapping) and set(record) == {"path", "sha256", "size_bytes"},
         f"invalid {label} file record",
     )
-    path = Path(str(record.get("path")))
-    _require(path.is_absolute(), f"{label} path is not absolute")
-    _require(not path.is_symlink(), f"{label} must not be a symlink")
-    resolved = path.resolve()
-    _require(str(path) == str(resolved), f"{label} path is not canonical")
-    _require(resolved.is_file(), f"{label} is missing")
+    resolved = validate_regular_file_nofollow(
+        str(record.get("path")), label=label
+    )
     _require(
         record.get("sha256") == _sha256_file(resolved)
         and record.get("size_bytes") == resolved.stat().st_size,
@@ -4461,14 +5309,45 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
     )
     for record in action_inputs.values():
         _require(isinstance(record, Mapping), "invalid robot input record")
-    raw_robot_path = _validate_local_bound_file_record(
-        action_inputs["robot_trajectory"],
+    raw_robot_record = action_inputs["robot_trajectory"]
+    raw_robot_record_path = Path(str(raw_robot_record.get("path")))
+    dataset_layout = layout_from_dataset_file(
+        raw_robot_record_path,
+        object_id=object_id,
+        episode_id=episode_id,
+        relative_parts=("robot", "robot.npz"),
         label="source realized robot kinematics",
     )
-    _validate_local_bound_file_record(
+    raw_robot_path = _validate_local_bound_file_record(
+        raw_robot_record,
+        label="source realized robot kinematics",
+    )
+    robot_metadata_path = _validate_local_bound_file_record(
         action_inputs["robot_metadata"],
         label="source realized robot kinematics metadata",
     )
+    dataset_layout.validate_file(
+        robot_metadata_path,
+        "robot",
+        "robot.meta.json",
+        label="source realized robot kinematics metadata",
+    )
+    calibration_inputs = payload.get("calibration_inputs")
+    _require(
+        isinstance(calibration_inputs, Mapping)
+        and set(calibration_inputs) == {"intrinsics", "extrinsics"},
+        "frame-zero manifest lacks exact calibration inputs",
+    )
+    for key, filename in (
+        ("intrinsics", "undistorted_intrinsics.npy"),
+        ("extrinsics", "extrinsics.npy"),
+    ):
+        calibration_path = _validate_local_bound_file_record(
+            calibration_inputs[key], label=f"source {key}"
+        )
+        dataset_layout.validate_file(
+            calibration_path, filename, label=f"source {key}"
+        )
     action_alignment = payload.get("action_alignment")
     _require(
         isinstance(action_alignment, Mapping),
@@ -4570,6 +5449,14 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
         ),
         "camera frame-zero access differs from the selected raw start",
     )
+    for record in camera_access:
+        camera = str(record["camera"])
+        dataset_layout.validate_file(
+            str(record["path"]),
+            camera,
+            "undistorted.mp4",
+            label=f"camera video {camera}",
+        )
     _validate_camera_selection_contract(payload)
     _validate_geometry_fallback_contract(payload)
     _require(
@@ -4592,6 +5479,7 @@ def run_frame_zero_asset_builder(
     *,
     role: str,
     config: FrameZeroAssetConfig | None = None,
+    semantic_runtime: FrameZeroSemanticGateRuntime | None = None,
 ) -> dict[str, Any]:
     """Build and seal one held-compatible, outcome-blind frame-zero bundle."""
 
@@ -4605,19 +5493,21 @@ def run_frame_zero_asset_builder(
         expected_config_sha256 == artifact_sha256(asdict(cfg)),
         "effective frame-zero configuration differs from the immutable lock",
     )
-    episode = reject_future_derived_input(
-        episode_dir, purpose="aligned episode directory"
+    reject_future_derived_input(episode_dir, purpose="aligned episode directory")
+    dataset_layout = validate_aligned_episode(
+        episode_dir,
+        object_id=str(authorization["object_id"]),
+        episode_id=int(authorization["episode_id"]),
     )
-    _require(episode.is_dir(), f"aligned episode directory is missing: {episode}")
-    _validate_case_directory(episode, authorization)
+    episode = dataset_layout.episode_dir
     output = Path(output_dir).resolve()
     _require(not output.exists(), f"frame-zero output already exists: {output}")
     output.mkdir(parents=True)
     started = time.perf_counter()
     try:
-        intrinsics, extrinsics, calibration_inputs = _load_calibration(episode)
-        action_inputs, robot_path = _action_inputs(episode)
-        _, action_alignment = _slice_known_action(
+        intrinsics, extrinsics, calibration_inputs = _load_calibration(dataset_layout)
+        action_inputs, robot_path = _action_inputs(dataset_layout)
+        selected_action_arrays, action_alignment = _slice_known_action(
             robot_path,
             output / "known_action_76.npz",
             config=cfg,
@@ -4625,13 +5515,15 @@ def run_frame_zero_asset_builder(
         action_frame_zero = int(
             action_alignment["selected_raw_frame_range_half_open"][0]
         )
-        cameras = tuple(
-            sorted(
-                camera
-                for camera in set(intrinsics) & set(extrinsics)
-                if (episode / camera / "undistorted.mp4").is_file()
+        available_cameras: list[str] = []
+        for camera in sorted(set(intrinsics) & set(extrinsics)):
+            video = dataset_layout.optional_file(
+                camera, "undistorted.mp4", label=f"camera video {camera}"
             )
-        )
+            if video is None:
+                continue
+            available_cameras.append(camera)
+        cameras = tuple(available_cameras)
         _require(
             len(cameras) >= cfg.minimum_camera_count, "too few aligned camera videos"
         )
@@ -4672,6 +5564,8 @@ def run_frame_zero_asset_builder(
         }
         geometry_fallback: dict[str, Any] | None = None
         common_assignment: dict[str, Any] | None = None
+        reference_optional_safeguard: dict[str, Any] | None = None
+        used_reference_optional = False
         fallback_attempts: list[dict[str, Any]] | None = None
         needs_common_assignment = False
         if len(selected_cameras) < cfg.minimum_camera_count:
@@ -4729,57 +5623,175 @@ def run_frame_zero_asset_builder(
                     needs_common_assignment = True
 
         if needs_common_assignment:
-            masks, mask_diagnostics, common_assignment = _common_voxel_mask_assignment(
-                rgb_by_camera,
-                proposals_by_camera,
-                intrinsics,
-                extrinsics,
-                reference_camera=cfg.reference_camera,
-                config=cfg,
-            )
-            selected_cameras = tuple(sorted(masks))
-            abstained_cameras = tuple(
-                camera for camera in cameras if camera not in selected_cameras
-            )
-            _require_geometry(
-                len(selected_cameras) >= cfg.minimum_camera_count,
-                "common assignment retained too few cameras for the frozen quorum",
-            )
-            selected_rgb = {
-                camera: rgb_by_camera[camera] for camera in selected_cameras
-            }
-            selected_intrinsics = {
-                camera: intrinsics[camera] for camera in selected_cameras
-            }
-            selected_extrinsics = {
-                camera: extrinsics[camera] for camera in selected_cameras
-            }
-            arrays, geometry_qa = _build_frame_zero_fallback_geometry(
-                selected_rgb,
-                masks,
-                selected_intrinsics,
-                selected_extrinsics,
-                config=cfg,
-                strategy="common-voxel-assignment-projected-footprint",
-            )
             _require(fallback_attempts is not None, "missing fallback attempt audit")
-            fallback_attempts.append(
-                _fallback_attempt_pass_record(
-                    "common-voxel-assignment-projected-footprint",
-                    geometry_qa,
-                    masks,
+            try:
+                masks, mask_diagnostics, common_assignment = (
+                    _common_voxel_mask_assignment(
+                        rgb_by_camera,
+                        proposals_by_camera,
+                        intrinsics,
+                        extrinsics,
+                        reference_camera=cfg.reference_camera,
+                        config=cfg,
+                    )
                 )
-            )
-            selected_strategy = "common-voxel-assignment-projected-footprint"
+                selected_cameras = tuple(sorted(masks))
+                abstained_cameras = tuple(
+                    camera for camera in cameras if camera not in selected_cameras
+                )
+                _require_geometry(
+                    len(selected_cameras) >= cfg.minimum_camera_count,
+                    "common assignment retained too few cameras for the frozen quorum",
+                )
+                selected_rgb = {
+                    camera: rgb_by_camera[camera] for camera in selected_cameras
+                }
+                selected_intrinsics = {
+                    camera: intrinsics[camera] for camera in selected_cameras
+                }
+                selected_extrinsics = {
+                    camera: extrinsics[camera] for camera in selected_cameras
+                }
+                arrays, geometry_qa = _build_frame_zero_fallback_geometry(
+                    selected_rgb,
+                    masks,
+                    selected_intrinsics,
+                    selected_extrinsics,
+                    config=cfg,
+                    strategy="common-voxel-assignment-projected-footprint",
+                )
+            except FrameZeroGeometryQAError as common_error:
+                fallback_attempts.append(
+                    _fallback_attempt_failure_record(
+                        "common-voxel-assignment-projected-footprint", common_error
+                    )
+                )
+                _require(
+                    semantic_runtime is not None,
+                    "the fourth frame-zero fallback requires the pinned official "
+                    "URDF and SigLIP2 runtime",
+                )
+                (
+                    filtered_proposals,
+                    exact_robot_masks,
+                    dilated_robot_masks,
+                    official_urdf_audit,
+                ) = semantic_runtime.prepare_proposals(
+                    proposals_by_camera,
+                    rgb_by_camera,
+                    intrinsics,
+                    extrinsics,
+                    selected_action_arrays,
+                )
+                (
+                    raw_optional_masks,
+                    mask_diagnostics,
+                    optional_assignment,
+                ) = _common_voxel_mask_assignment(
+                    rgb_by_camera,
+                    filtered_proposals,
+                    intrinsics,
+                    extrinsics,
+                    reference_camera=cfg.reference_camera,
+                    config=cfg,
+                    reference_optional=True,
+                )
+                # The outer cross-link remains populated for held/online
+                # consumers; the safeguard nests the exact same immutable
+                # assignment beside the URDF and semantic evidence.
+                common_assignment = optional_assignment
+                selected_cameras = tuple(sorted(raw_optional_masks))
+                abstained_cameras = tuple(
+                    camera for camera in cameras if camera not in selected_cameras
+                )
+                _require_geometry(
+                    len(selected_cameras) == _FALLBACK_STRICT_CONSENSUS_VOTES,
+                    "reference-optional assignment did not retain exactly eight cameras",
+                )
+                semantic_selected_proposals = _selected_proposal_audit(
+                    mask_diagnostics, raw_optional_masks
+                )
+                semantic_audit = semantic_runtime.evaluate(
+                    {camera: rgb_by_camera[camera] for camera in selected_cameras},
+                    raw_optional_masks,
+                    object_id=str(authorization["object_id"]),
+                    selected_proposals=semantic_selected_proposals,
+                )
+                masks, subtraction_audit = semantic_runtime.subtract_robot(
+                    raw_optional_masks,
+                    exact_robot_masks,
+                    dilated_robot_masks,
+                )
+                selected_rgb = {
+                    camera: rgb_by_camera[camera] for camera in selected_cameras
+                }
+                selected_intrinsics = {
+                    camera: intrinsics[camera] for camera in selected_cameras
+                }
+                selected_extrinsics = {
+                    camera: extrinsics[camera] for camera in selected_cameras
+                }
+                arrays, geometry_qa = _build_frame_zero_fallback_geometry(
+                    selected_rgb,
+                    masks,
+                    selected_intrinsics,
+                    selected_extrinsics,
+                    config=cfg,
+                    strategy=FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
+                )
+                fallback_attempts.append(
+                    _fallback_attempt_pass_record(
+                        FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY,
+                        geometry_qa,
+                        masks,
+                    )
+                )
+                reference_optional_safeguard = {
+                    "contract_sha256": FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256,
+                    "assignment": optional_assignment,
+                    "official_urdf": official_urdf_audit,
+                    "semantic_selected_proposals": semantic_selected_proposals,
+                    "semantic_selected_mask_set_sha256": _mask_set_sha256(
+                        raw_optional_masks
+                    ),
+                    "semantic_gate": semantic_audit,
+                    "robot_subtraction": subtraction_audit,
+                    "final_selected_geometry_masks": _selected_proposal_audit(
+                        mask_diagnostics, masks
+                    ),
+                    "final_selected_geometry_mask_set_sha256": _mask_set_sha256(masks),
+                }
+                reference_optional_safeguard["artifact_sha256"] = artifact_sha256(
+                    reference_optional_safeguard
+                )
+                selected_strategy = FRAME_ZERO_REFERENCE_OPTIONAL_GEOMETRY_STRATEGY
+                used_reference_optional = True
+            else:
+                fallback_attempts.append(
+                    _fallback_attempt_pass_record(
+                        "common-voxel-assignment-projected-footprint",
+                        geometry_qa,
+                        masks,
+                    )
+                )
+                selected_strategy = "common-voxel-assignment-projected-footprint"
 
         if fallback_attempts is not None:
             geometry_fallback = {
-                "policy_id": FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID,
-                "ordered_strategies": [
-                    "legacy",
-                    "same-masks-projected-footprint",
-                    "common-voxel-assignment-projected-footprint",
-                ],
+                "policy_id": (
+                    FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID
+                    if used_reference_optional
+                    else FRAME_ZERO_GEOMETRY_FALLBACK_POLICY_ID
+                ),
+                "ordered_strategies": (
+                    list(FRAME_ZERO_SEMANTIC_GATE_CONTRACT["application_order"])
+                    if used_reference_optional
+                    else [
+                        "legacy",
+                        "same-masks-projected-footprint",
+                        "common-voxel-assignment-projected-footprint",
+                    ]
+                ),
                 "strict_consensus_vote_count": (_FALLBACK_STRICT_CONSENSUS_VOTES),
                 "reference_seed_policy": _FALLBACK_REFERENCE_SEED_POLICY,
                 "reference_seed_limit": _FALLBACK_REFERENCE_SEED_COUNT,
@@ -4812,6 +5824,14 @@ def run_frame_zero_asset_builder(
                 ),
                 "final_selected_mask_set_sha256": _mask_set_sha256(masks),
             }
+            if used_reference_optional:
+                _require(
+                    reference_optional_safeguard is not None,
+                    "missing reference-optional safeguard audit",
+                )
+                geometry_fallback["reference_optional_safeguard"] = (
+                    reference_optional_safeguard
+                )
             geometry_fallback["artifact_sha256"] = artifact_sha256(geometry_fallback)
         bundle_path = output / "frame_zero_bundle.npz"
         np.savez_compressed(bundle_path, **arrays)
@@ -4835,8 +5855,16 @@ def run_frame_zero_asset_builder(
             "action_alignment": action_alignment,
             "calibration_inputs": calibration_inputs,
             "camera_policy": {
-                "policy_id": FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
-                "rule": FRAME_ZERO_CAMERA_SELECTION_RULE,
+                "policy_id": (
+                    FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID
+                    if used_reference_optional
+                    else FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+                ),
+                "rule": (
+                    FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE
+                    if used_reference_optional
+                    else FRAME_ZERO_CAMERA_SELECTION_RULE
+                ),
                 "reference_camera": cfg.reference_camera,
                 "minimum_selected_camera_count": cfg.minimum_camera_count,
                 "candidate_cameras": list(cameras),
@@ -4858,7 +5886,12 @@ def run_frame_zero_asset_builder(
                 "video_propagator_constructed": False,
                 "view_diagnostics": mask_diagnostics,
                 "view_diagnostics_sha256": frame_zero_view_diagnostics_sha256(
-                    mask_diagnostics
+                    mask_diagnostics,
+                    policy_id=(
+                        FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID
+                        if used_reference_optional
+                        else FRAME_ZERO_CAMERA_SELECTION_POLICY_ID
+                    ),
                 ),
             },
             "config": asdict(cfg),
@@ -4895,7 +5928,13 @@ __all__ = [
     "FRAME_ZERO_CAMERA_SELECTION_POLICY_ID",
     "FRAME_ZERO_CAMERA_SELECTION_RULE",
     "FRAME_ZERO_INFORMATION_BOUNDARY",
+    "FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_POLICY_ID",
+    "FRAME_ZERO_REFERENCE_OPTIONAL_CAMERA_SELECTION_RULE",
+    "FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID",
+    "FRAME_ZERO_SEMANTIC_GATE_CONTRACT",
+    "FRAME_ZERO_SEMANTIC_GATE_CONTRACT_SHA256",
     "FrameZeroAssetConfig",
+    "FrameZeroSemanticGateRuntime",
     "HELD_TARGET_CASES_V1",
     "PinnedFrameZeroSam2Runtime",
     "artifact_sha256",

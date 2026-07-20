@@ -1,9 +1,9 @@
 """Permit-gated scoring for the prospective held Deform360 protocol.
 
 This module contains no outcome reconstruction code.  A caller supplies one
-outcome callback per *locked* calibration case.  The callback is invoked only
-through :func:`deform360_held_protocol.run_outcome_operation`, after the
-complete 15-case online-prediction barrier has been authorized.
+outcome callback per locked case.  Each callback is invoked only through
+:func:`deform360_held_protocol.run_outcome_operation`, after the complete
+15-case calibration or six-case confirmation barrier has been authorized.
 
 The official Deform360 reconstruction and the new frame-zero visual hull need
 not contain the same material identities.  Their identities are therefore
@@ -18,7 +18,8 @@ joined by a frozen, one-to-one, sparse minimum-cost assignment at frame zero:
   sealed coordinates only after the raw assignment distances are recorded.
 
 This produces a transported reconstruction proxy.  It is not native official
-material identity and it is not Deform360 Table-4 parity.
+material identity and it is not parity with the Deform360 Tables 3-5
+world-model benchmarks or their native tactile-refined material identities.
 """
 
 from __future__ import annotations
@@ -35,12 +36,15 @@ import numpy as np
 from .deform360_held_protocol import (
     CALIBRATION_CASE_NAMES,
     CALIBRATION_SCORE_EVIDENCE_KIND,
+    CONFIRMATION_CASE_NAMES,
+    CONFIRMATION_SCORE_EVIDENCE_KIND,
     DATASET_REVISION,
     FRAME_COUNT,
     METRIC_LOCK,
     OutcomePhasePermit,
     PROTOCOL_ID,
     create_calibration_gate_decision,
+    create_confirmation_gate_decision,
     held_artifact_sha256,
     held_contract_sha256,
     load_held_protocol_lock,
@@ -384,7 +388,10 @@ def load_sealed_case_predictions(
 ) -> SealedCasePredictions:
     """Load only the four frozen arrays from one validated online seal."""
 
-    _require(permit.role == "calibration", "gate scoring requires calibration permit")
+    _require(
+        permit.role in {"calibration", "confirmation"},
+        "gate scoring requires a held cohort permit",
+    )
     seal_paths = dict(permit.seal_paths)
     _require(case_name in seal_paths, "case is outside the permit seal set")
     seal_path = Path(seal_paths[case_name]).resolve()
@@ -392,7 +399,7 @@ def load_sealed_case_predictions(
         seal_path,
         permit.lock_path,
         expected_case_name=case_name,
-        expected_role="calibration",
+        expected_role=permit.role,
     )
     authorization_path = _bound_path(
         seal["prefix_authorization"], label="prefix authorization"
@@ -407,7 +414,7 @@ def load_sealed_case_predictions(
         physical_seal_path,
         permit.lock_path,
         expected_case_name=case_name,
-        expected_role="calibration",
+        expected_role=permit.role,
     )
     frame_zero_manifest_path = _bound_path(
         physical["frame_zero_manifest"], label="frame-zero manifest"
@@ -416,7 +423,7 @@ def load_sealed_case_predictions(
         frame_zero_manifest_path,
         permit.lock_path,
         expected_case_name=case_name,
-        expected_role="calibration",
+        expected_role=permit.role,
     )
 
     archive_record = seal["online_artifacts"]["online_prediction_archive"]
@@ -805,7 +812,9 @@ def transport_official_target(
         "transported_frame_zero_replaced_with_sealed_identity": True,
         "claim_limitation": (
             "one-to-one transported official reconstruction proxy; not native "
-            "official material identity and not Deform360 Table-4 parity"
+            "material identity and not parity with the Deform360 Tables 3-5 "
+            "world-model benchmarks "
+            "or their native tactile-refined material identities"
         ),
     }
     return TransportedTarget(
@@ -924,6 +933,58 @@ def score_calibration_cohort(
     return gate_scores, records
 
 
+def score_confirmation_cohort(
+    permit: OutcomePhasePermit,
+    target_operations: Mapping[str, TargetOperation],
+) -> tuple[dict[str, dict[str, float]], dict[str, dict[str, Any]]]:
+    """Score the exact six-case panel behind one complete live permit."""
+
+    _require(
+        permit.role == "confirmation",
+        "confirmation scorer requires its permit",
+    )
+    lock = load_held_protocol_lock(permit.lock_path)
+    _require(
+        lock.get("stage") == "confirmation",
+        "confirmation scorer uses another lock stage",
+    )
+    contract_sha256 = held_contract_sha256(OUTCOME_RECONSTRUCTION_CONTRACT)
+    _require(
+        lock["immutable_bindings"].get("outcome_reconstruction_contract")
+        == contract_sha256,
+        "outcome reconstruction contract differs from the immutable lock",
+    )
+    _require(
+        set(target_operations) == set(CONFIRMATION_CASE_NAMES),
+        "target operations must contain all six locked confirmation cases",
+    )
+    gate_scores: dict[str, dict[str, float]] = {}
+    records: dict[str, dict[str, Any]] = {}
+    for case_name in CONFIRMATION_CASE_NAMES:
+        predictions = load_sealed_case_predictions(permit, case_name)
+        operation = target_operations[case_name]
+        _require(
+            isinstance(operation, TargetOperation),
+            f"invalid target operation for {case_name}",
+        )
+        target = run_outcome_operation(
+            permit,
+            case_name=case_name,
+            operation=operation.operation,
+            callback=operation.callback,
+        )
+        permitted_target = validate_permitted_target_provenance(
+            target,
+            permit,
+            case_name,
+        )
+        record = score_sealed_case(predictions, permitted_target)
+        record["outcome_provenance"] = dict(permitted_target.provenance)
+        gate_scores[case_name] = dict(record["gate_score"])
+        records[case_name] = record
+    return gate_scores, records
+
+
 def calibration_score_evidence(
     permit: OutcomePhasePermit,
     records: Mapping[str, Mapping[str, Any]],
@@ -1029,6 +1090,114 @@ def score_and_create_calibration_gate(
     return decision, evidence, records
 
 
+def confirmation_score_evidence(
+    permit: OutcomePhasePermit,
+    records: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Build the immutable exact-six confirmation score artifact."""
+
+    _require(permit.role == "confirmation", "score evidence requires confirmation")
+    _require(
+        set(records) == set(CONFIRMATION_CASE_NAMES),
+        "score evidence must contain all six locked confirmation cases",
+    )
+    ordered: dict[str, Mapping[str, Any]] = {}
+    expected_gate_fields = {
+        "primary_chamfer_m",
+        "comparator_chamfer_m",
+        "primary_identity_rmse_m",
+        "comparator_identity_rmse_m",
+    }
+    for case_name in CONFIRMATION_CASE_NAMES:
+        record = records[case_name]
+        _require(record.get("case_name") == case_name, "score evidence case changed")
+        _require(
+            record.get("method_selection_or_tuning_performed") is False,
+            "score evidence performed method selection",
+        )
+        gate_score = record.get("gate_score", {})
+        _require(
+            isinstance(gate_score, Mapping)
+            and set(gate_score) == expected_gate_fields,
+            "score evidence gate fields changed",
+        )
+        ordered[case_name] = dict(record)
+    lock = load_held_protocol_lock(permit.lock_path)
+    _require(
+        lock.get("stage") == "confirmation",
+        "score evidence uses another lock stage",
+    )
+    contract_sha256 = held_contract_sha256(OUTCOME_RECONSTRUCTION_CONTRACT)
+    _require(
+        lock["immutable_bindings"].get("outcome_reconstruction_contract")
+        == contract_sha256,
+        "score evidence uses another outcome reconstruction contract",
+    )
+    lock_path = Path(permit.lock_path).resolve()
+    artifact: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": CONFIRMATION_SCORE_EVIDENCE_KIND,
+        "protocol_id": PROTOCOL_ID,
+        "role": "confirmation",
+        "cohort_barrier_sha256": permit.cohort_barrier_sha256,
+        "lock": {
+            "path": str(lock_path),
+            "sha256": _sha256_file(lock_path),
+            "size_bytes": lock_path.stat().st_size,
+        },
+        "outcome_reconstruction_contract_sha256": contract_sha256,
+        "ordered_case_names": list(CONFIRMATION_CASE_NAMES),
+        "metric_lock": dict(METRIC_LOCK),
+        "case_records": ordered,
+        "information_boundary": {
+            "all_6_online_predictions_sealed_before_any_outcome": True,
+            "outcomes_opened_only_through_live_permit": True,
+            "method_selection_or_tuning_performed": False,
+            "calibration_method_and_gate_unchanged": True,
+        },
+    }
+    json.dumps(artifact, sort_keys=True, allow_nan=False)
+    artifact["artifact_sha256"] = held_artifact_sha256(artifact)
+    return artifact
+
+
+def write_confirmation_score_evidence(
+    output_path: str | Path,
+    permit: OutcomePhasePermit,
+    records: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Persist write-once confirmation score evidence."""
+
+    artifact = confirmation_score_evidence(permit, records)
+    _write_new_json(output_path, artifact)
+    return artifact
+
+
+def score_and_create_confirmation_gate(
+    decision_path: str | Path,
+    permit: OutcomePhasePermit,
+    target_operations: Mapping[str, TargetOperation],
+    *,
+    evidence_path: str | Path | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, dict[str, Any]]]:
+    """Score all six cases and create the immutable final decision."""
+
+    gate_scores, records = score_confirmation_cohort(permit, target_operations)
+    destination = (
+        Path(evidence_path)
+        if evidence_path is not None
+        else Path(decision_path).with_name("confirmation-score-evidence.json")
+    )
+    evidence = write_confirmation_score_evidence(destination, permit, records)
+    decision = create_confirmation_gate_decision(
+        decision_path,
+        permit,
+        gate_scores,
+        score_evidence_path=destination,
+    )
+    return decision, evidence, records
+
+
 __all__ = [
     "MAXIMUM_FRAME_ZERO_ASSIGNMENT_DISTANCE_M",
     "OfficialTarget",
@@ -1040,15 +1209,19 @@ __all__ = [
     "TARGET_ARTIFACT_KIND",
     "TransportedTarget",
     "calibration_score_evidence",
+    "confirmation_score_evidence",
     "load_sealed_case_predictions",
     "normalize_official_target",
     "official_target_array_sha256",
     "score_and_create_calibration_gate",
+    "score_and_create_confirmation_gate",
     "score_calibration_cohort",
+    "score_confirmation_cohort",
     "score_sealed_case",
     "scored_frames",
     "sparse_min_cost_frame_zero_assignment",
     "transport_official_target",
     "validate_permitted_target_provenance",
     "write_calibration_score_evidence",
+    "write_confirmation_score_evidence",
 ]
