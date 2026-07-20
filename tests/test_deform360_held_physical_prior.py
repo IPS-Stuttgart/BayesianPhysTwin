@@ -161,7 +161,7 @@ def _make_locked_frame_zero(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v1",
+        "protocol_id": "deform360-held-online-belief-v2",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,

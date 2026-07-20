@@ -44,7 +44,7 @@ from causal4d_public.deform360_visual_hull import (
 
 
 FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
-HELD_PROTOCOL_ID = "deform360-held-online-belief-v1"
+HELD_PROTOCOL_ID = "deform360-held-online-belief-v2"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
 FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
