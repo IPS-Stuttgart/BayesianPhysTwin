@@ -23,7 +23,11 @@ from bayesian_phystwin.deform360_held_physical_prior import (
 from bayesian_phystwin.deform360_held_protocol import (
     REQUIRED_IMMUTABLE_BINDING_KEYS,
     SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
+    V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256,
     held_contract_sha256,
+)
+from bayesian_phystwin.deform360_held_gsplat_runtime import (
+    GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256,
 )
 from bayesian_phystwin.deform360_robot_kinematics import (
     ROBOT_KINEMATICS_WINDOW_CONTRACT,
@@ -55,6 +59,8 @@ def dummy_immutable_bindings() -> dict[str, str]:
     bindings["held_source_feasibility_amendment_contract"] = held_contract_sha256(
         SOURCE_FEASIBILITY_AMENDMENT_CONTRACT
     )
+    bindings["held_outcome_cuda_smoke_contract"] = GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256
+    bindings["v6_outcome_withdrawal_report"] = V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256
     bindings["upstream_runtime_bundle_tree"] = held_contract_sha256(
         UPSTREAM_RUNTIME_BUNDLE_CONTRACT
     )

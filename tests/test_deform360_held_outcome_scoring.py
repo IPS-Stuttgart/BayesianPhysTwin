@@ -275,9 +275,7 @@ def _frame_zero_manifest(
         object_points_world_m=frame_zero,
         camera_names=np.asarray(cameras),
     )
-    robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(
-        directory
-    )
+    robot, _selected_robot, action_alignment = write_robot_kinematics_fixture(directory)
     metadata = write_robot_metadata_fixture(
         directory / "robot-metadata.json",
         source_frame_count=150,
@@ -288,7 +286,7 @@ def _frame_zero_manifest(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": FRAME_ZERO_KIND,
-        "protocol_id": "deform360-held-online-belief-v6",
+        "protocol_id": "deform360-held-online-belief-v7",
         "case_name": case_name,
         "object_id": object_id,
         "episode_id": int(episode),
@@ -512,7 +510,9 @@ def test_confirmation_scorer_uses_one_permit_and_exact_six_locked_cases(
     permit = SimpleNamespace(
         role="confirmation",
         lock_path=str(lock_path),
-        seal_paths=tuple((case, f"/sealed/{case}.json") for case in CONFIRMATION_CASE_NAMES),
+        seal_paths=tuple(
+            (case, f"/sealed/{case}.json") for case in CONFIRMATION_CASE_NAMES
+        ),
         cohort_barrier_sha256="b" * 64,
     )
     frame_zero = _synthetic_frame_zero()
@@ -521,9 +521,7 @@ def test_confirmation_scorer_uses_one_permit_and_exact_six_locked_cases(
 
     def predictions_for(_permit: object, case_name: str) -> SealedCasePredictions:
         base = _synthetic_predictions(frame_zero)
-        return SealedCasePredictions(
-            **{**base.__dict__, "case_name": case_name}
-        )
+        return SealedCasePredictions(**{**base.__dict__, "case_name": case_name})
 
     monkeypatch.setattr(
         outcome_scoring,
@@ -567,6 +565,7 @@ def test_confirmation_scorer_uses_one_permit_and_exact_six_locked_cases(
     assert tuple(records) == CONFIRMATION_CASE_NAMES
     assert evidence["artifact_kind"] == "Deform360HeldConfirmationScoreEvidence"
     assert evidence["ordered_case_names"] == list(CONFIRMATION_CASE_NAMES)
-    assert evidence["information_boundary"][
-        "method_selection_or_tuning_performed"
-    ] is False
+    assert (
+        evidence["information_boundary"]["method_selection_or_tuning_performed"]
+        is False
+    )

@@ -72,7 +72,7 @@ from .deform360_frame_zero_semantic_gate import (
 )
 
 FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
-HELD_PROTOCOL_ID = "deform360-held-online-belief-v6"
+HELD_PROTOCOL_ID = "deform360-held-online-belief-v7"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
 FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
@@ -3321,9 +3321,7 @@ def _load_calibration(
     intrinsic_path = layout.file(
         "undistorted_intrinsics.npy", label="camera intrinsics"
     )
-    extrinsic_path = layout.file(
-        "extrinsics.npy", label="camera extrinsics"
-    )
+    extrinsic_path = layout.file("extrinsics.npy", label="camera extrinsics")
     intrinsics_raw = np.load(intrinsic_path, allow_pickle=True).item()
     extrinsics_raw = np.load(extrinsic_path, allow_pickle=True).item()
     _require(isinstance(intrinsics_raw, Mapping), "intrinsics archive is not a mapping")
@@ -3444,9 +3442,7 @@ def _slice_known_action(
 def _action_inputs(
     layout: AlignedEpisodeLayout,
 ) -> tuple[dict[str, dict[str, Any]], Path]:
-    robot = layout.file(
-        "robot", "robot.npz", label="realized robot kinematics"
-    )
+    robot = layout.file("robot", "robot.npz", label="realized robot kinematics")
     metadata = layout.file(
         "robot",
         "robot.meta.json",
@@ -4226,7 +4222,7 @@ def _validate_reference_optional_fallback_contract(
         and official.get("render")
         == {
             "implementation": (
-                "official deform360.processing.urdf_render." "PyrenderGripperRenderer"
+                "official deform360.processing.urdf_render.PyrenderGripperRenderer"
             ),
             "camera_pose": "invert_transform(T_worlds[0,g]) @ camera_to_world",
             "multi_gripper_union": "boolean union per camera",
@@ -5258,9 +5254,7 @@ def _validate_local_bound_file_record(
         isinstance(record, Mapping) and set(record) == {"path", "sha256", "size_bytes"},
         f"invalid {label} file record",
     )
-    resolved = validate_regular_file_nofollow(
-        str(record.get("path")), label=label
-    )
+    resolved = validate_regular_file_nofollow(str(record.get("path")), label=label)
     _require(
         record.get("sha256") == _sha256_file(resolved)
         and record.get("size_bytes") == resolved.stat().st_size,
@@ -5345,9 +5339,7 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
         calibration_path = _validate_local_bound_file_record(
             calibration_inputs[key], label=f"source {key}"
         )
-        dataset_layout.validate_file(
-            calibration_path, filename, label=f"source {key}"
-        )
+        dataset_layout.validate_file(calibration_path, filename, label=f"source {key}")
     action_alignment = payload.get("action_alignment")
     _require(
         isinstance(action_alignment, Mapping),

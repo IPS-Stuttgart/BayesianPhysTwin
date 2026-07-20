@@ -47,6 +47,12 @@ from .deform360_frame_zero_semantic_gate import (
     semantic_label_for_object_id,
     validate_semantic_gate_audit,
 )
+from .deform360_held_gsplat_runtime import (
+    GSPLAT_CUDA_EXTENSION_CONTRACT,
+    GSPLAT_CUDA_EXTENSION_CONTRACT_SHA256,
+    GSPLAT_RUNTIME_SMOKE_CONTRACT,
+    GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256,
+)
 from .deform360_robot_kinematics import (
     ROBOT_KINEMATICS_WINDOW_CONTRACT,
     ROBOT_KINEMATICS_WINDOW_POLICY_ID,
@@ -57,7 +63,7 @@ from .deform360_robot_kinematics import (
 )
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v6"
+PROTOCOL_ID = "deform360-held-online-belief-v7"
 SCHEMA_VERSION = 1
 DATASET_REVISION = "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
 REMOTE_INVENTORY_COMBINED_SHA256 = (
@@ -128,17 +134,62 @@ CONFIRMATION_GATE = {
     "all_cases_must_be_reported": True,
 }
 
-# This amendment records the complete lineage through the failed-closed v5
+# This amendment records the complete lineage through the failed-closed v6
 # outcome execution, including the v3 pre-lock filename-only rg incident.  It
-# deliberately does not claim
-# that protected regular files were unopened: rg is a content scanner and may
+# deliberately does not claim that protected regular files were unopened: rg
+# is a content scanner and may
 # have opened any regular file under its broad search roots.  No held payload
 # content or value was returned to the research agent or used to select a
-# method/gate.  The five external lineage reports are supplied by checksum
-# when the lock is created; those digests are not source constants that could
-# silently bless different files.
+# method/gate.  The first five external lineage reports remain supplied by
+# checksum when the lock is created.  The terminal v6 report is additionally
+# pinned byte-for-byte here because it is the direct ancestry of v7.
+V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256 = (
+    "8a428535708057ff1c944b8ab81c93b3309539ae9d3dffb469ddc2b9f79de504"
+)
+V6_OUTCOME_WITHDRAWAL_REPORT_ARTIFACT_SHA256 = (
+    "383d2d72ba148703482df76cdbf89ad8d43c6a5026b89325984a5d786748c843"
+)
+V6_OUTCOME_WITHDRAWAL_REPORT_SIZE_BYTES = 16_780
+
+V7_GSPLAT_RUNTIME_REPAIR_CONTRACT = {
+    "contract_id": "deform360-held-gsplat-runtime-repair-v7",
+    "protocol_id": PROTOCOL_ID,
+    "withdrawn_v6_defect": (
+        "the frozen Python inventory admitted gsplat 1.4.0 without exercising its "
+        "CUDA backend; under the locked no-nvcc PATH, gsplat left its backend unset "
+        "and the first official Splatfacto training iteration failed"
+    ),
+    "runtime_repair": {
+        "strategy": "separately-frozen-aot-gsplat-cuda-extension",
+        "cuda_jit_compilation_permitted": False,
+        "nvcc_discovery_required": False,
+        "base_python_runtime_manifest_binding_key": "held_frozen_runtime_manifest",
+        "runtime_supplement_manifest_binding_key": (
+            "held_gsplat_runtime_supplement_manifest"
+        ),
+        "extension_contract": deepcopy(GSPLAT_CUDA_EXTENSION_CONTRACT),
+        "extension_contract_sha256": GSPLAT_CUDA_EXTENSION_CONTRACT_SHA256,
+    },
+    "pre_outcome_smoke": {
+        "operator_source_binding_key": "held_outcome_cuda_smoke_operator_source",
+        "contract_binding_key": "held_outcome_cuda_smoke_contract",
+        "evidence_binding_key": "held_outcome_cuda_smoke_evidence",
+        "contract": deepcopy(GSPLAT_RUNTIME_SMOKE_CONTRACT),
+        "contract_sha256": GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256,
+        "forward_pass_required": True,
+        "backward_pass_required": True,
+        "same_process_as_outcome_operations_required": True,
+        "must_complete_before_outcome_phase_authorization": True,
+        "must_complete_before_target_path_or_payload_access": True,
+    },
+    "method_cohorts_metrics_and_gates_changed": False,
+    "v6_predictions_or_partial_target_artifacts_reused": False,
+    "v7_requires_fresh_absent_held_root": True,
+    "v7_requires_fresh_predictions_and_outcome_phase": True,
+}
+
 SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
-    "contract_id": "deform360-held-source-feasibility-amendment-v6",
+    "contract_id": "deform360-held-source-feasibility-amendment-v7",
     "protocol_id": PROTOCOL_ID,
     "v1_execution": {
         "protocol_id": "deform360-held-online-belief-v1",
@@ -426,6 +477,122 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
         "downstream_target_reconstruction_must_be_recomputed": True,
         "v5_predictions_or_partial_target_artifacts_reused": False,
     },
+    "v6_execution": {
+        "protocol_id": "deform360-held-online-belief-v6",
+        "disposition": (
+            "WITHDRAWN_DURING_FIRST_TARGET_OPERATION_BEFORE_ANY_COMPLETED_OUTCOME"
+        ),
+        "evidence_binding_key": "v6_outcome_withdrawal_report",
+        "evidence_artifact_kind": ("Deform360HeldProtocolExecutionWithdrawalReport"),
+        "evidence_schema_version": 1,
+        "evidence_file_sha256": V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256,
+        "evidence_artifact_sha256": V6_OUTCOME_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+        "evidence_size_bytes": V6_OUTCOME_WITHDRAWAL_REPORT_SIZE_BYTES,
+        "replacement_protocol_id": PROTOCOL_ID,
+        "failure": {
+            "classification": "GSPLAT_CUDA_BACKEND_UNAVAILABLE",
+            "exception_message": (
+                "AttributeError: 'NoneType' object has no attribute 'CameraModelType'"
+            ),
+            "failed_case": "002-rope-silk-ep0003",
+            "phase": (
+                "first calibration target official Splatfacto reconstruction "
+                "training iteration"
+            ),
+            "preceding_console_message": (
+                "gsplat: No CUDA toolkit found. gsplat will be disabled."
+            ),
+        },
+        "exact_execution_census": {
+            "calibration_case_execution_count": 15,
+            "calibration_decision_count": 0,
+            "calibration_lock_count": 1,
+            "calibration_score_evidence_count": 0,
+            "confirmation_case_execution_count": 0,
+            "confirmation_lock_count": 0,
+            "confirmation_prediction_seal_count": 0,
+            "deployed_snapshot_count": 1,
+            "formal_online_prediction_count": 15,
+            "formal_physical_prediction_count": 15,
+            "frame_zero_bundle_count": 15,
+            "frame_zero_manifest_count": 15,
+            "online_prediction_seal_count": 15,
+            "outcome_created_count": 0,
+            "outcome_permit_count": 1,
+            "outcome_phase_claim_count": 1,
+            "outcome_read_count": 0,
+            "partial_target_case_directory_count": 1,
+            "partial_target_staging_directory_count": 13,
+            "partial_target_staging_file_count": 36,
+            "physical_prior_seal_count": 15,
+            "prefix_authorization_count": 15,
+            "sam2_camera_propagation_completed_count": 8,
+            "sam2_frame_count_per_camera": 81,
+            "sam2_mask_archive_count": 8,
+            "shard_start_count": 2,
+            "staged_camera_video_count": 8,
+            "target_operation_completed_count": 0,
+            "target_operation_failed_count": 1,
+            "target_operation_planned_count": 15,
+            "target_operation_started_count": 1,
+            "target_reconstruction_artifact_count": 0,
+            "target_reconstruction_training_started_count": 1,
+        },
+        "information_boundary": {
+            "all_15_calibration_predictions_exist_and_are_sealed": True,
+            "all_15_prediction_artifact_sets_revalidated_bytewise_for_outcome_permit": True,
+            "calibration_gate_or_metric_created_or_read": False,
+            "confirmation_payload_read": False,
+            "first_case_online_prediction_arrays_decoded_before_target_callback": True,
+            "forensic_audit_disclosed_arrays_images_masks_metrics_or_protected_values": False,
+            "forensic_audit_method": (
+                "filenames/stat metadata and stable O_NOFOLLOW SHA-256 byte streams "
+                "only; no payload was deserialized and no image or video was decoded"
+            ),
+            "future_tactile_read": False,
+            "later_case_online_prediction_arrays_decoded": False,
+            "object_future_depth_read": False,
+            "object_future_mask_archive_created": (
+                "CONFIRMED_WITHIN_FIRST_CALIBRATION_CASE_ONLY"
+            ),
+            "object_future_mask_archive_count_upper_bound": 8,
+            "object_future_mask_downstream_read": (
+                "POSSIBLE_WITHIN_FIRST_CALIBRATION_CASE_ONLY"
+            ),
+            "object_future_mask_read_reason": (
+                "eight complete 81-frame SAM2 propagation sequences and eight HDF5 "
+                "mask archives precede reconstruction training; the metadata-only "
+                "audit cannot establish downstream per-frame mask consumption"
+            ),
+            "object_future_rgb_read": ("CONFIRMED_WITHIN_FIRST_CALIBRATION_CASE_ONLY"),
+            "object_future_rgb_read_case_upper_bound": 1,
+            "object_future_rgb_read_reason": (
+                "eight complete 81-frame SAM2 propagation sequences, eight staged "
+                "videos, and reconstruction image caching precede the failure"
+            ),
+            "object_future_tracking_read": False,
+            "official_target_reconstruction_created": False,
+            "official_target_reconstruction_training_started": True,
+            "partial_target_source_staging_created": True,
+            "partial_target_source_staging_scope": (
+                "one calibration case, eight camera videos and timestamps/metadata, "
+                "eight propagated SAM2 HDF5 mask archives, camera calibration, robot "
+                "metadata/archive, and an empty Splatfacto staging directory"
+            ),
+            "target_arrays_metrics_or_labels_returned_to_research_agent": False,
+            "tactile_read": False,
+        },
+        "reuse": {
+            "v6_evidence_may_be_used_by_v7_only_as_immutable_lineage": True,
+            "v6_execution_artifacts_reused_by_v7": False,
+            "v6_partial_target_staging_reused_by_v7": False,
+            "v6_physical_or_online_predictions_reused_by_v7": False,
+            "v6_score_or_gate_available_for_reuse": False,
+            "v7_requires_fresh_absent_held_root": True,
+            "v7_requires_fresh_predictions_and_outcome_phase": True,
+        },
+    },
+    "v7_repair": deepcopy(V7_GSPLAT_RUNTIME_REPAIR_CONTRACT),
     "reuse": {
         "v1_execution_artifacts_reused_by_v6": False,
         "v1_predictions_reused_by_v6": False,
@@ -437,12 +604,25 @@ SOURCE_FEASIBILITY_AMENDMENT_CONTRACT = {
         "v4_predictions_reused_by_v6": False,
         "v5_execution_artifacts_reused_by_v6": False,
         "v5_predictions_reused_by_v6": False,
-        "sealed_lineage_reports_bound_by_v6": [
+        "v1_execution_artifacts_reused_by_v7": False,
+        "v1_predictions_reused_by_v7": False,
+        "v2_execution_artifacts_reused_by_v7": False,
+        "v2_predictions_reused_by_v7": False,
+        "v3_execution_artifacts_reused_by_v7": False,
+        "v3_predictions_reused_by_v7": False,
+        "v4_execution_artifacts_reused_by_v7": False,
+        "v4_predictions_reused_by_v7": False,
+        "v5_execution_artifacts_reused_by_v7": False,
+        "v5_predictions_reused_by_v7": False,
+        "v6_execution_artifacts_reused_by_v7": False,
+        "v6_predictions_reused_by_v7": False,
+        "sealed_lineage_reports_bound_by_v7": [
             "v1_preoutcome_feasibility_report",
             "v2_design_withdrawal_report",
             "v3_prelock_boundary_incident_report",
             "v4_execution_withdrawal_report",
             "v5_outcome_withdrawal_report",
+            "v6_outcome_withdrawal_report",
         ],
     },
 }
@@ -597,6 +777,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "held_confirmation_shard_runner_source",
     "held_confirmation_gate_contract",
     "held_frozen_runtime_manifest",
+    "held_gsplat_runtime_supplement_manifest",
     "held_metric_contract",
     "held_online_runner_cli",
     "held_online_runner_source",
@@ -609,6 +790,9 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "held_protocol_lock_operator_source",
     "held_protocol_source",
     "held_source_feasibility_amendment_contract",
+    "held_outcome_cuda_smoke_contract",
+    "held_outcome_cuda_smoke_evidence",
+    "held_outcome_cuda_smoke_operator_source",
     "independent_cpd_source",
     "method_commit_object",
     "method_deployed_snapshot_tree",
@@ -663,6 +847,7 @@ REQUIRED_IMMUTABLE_BINDING_KEYS = (
     "v3_prelock_boundary_incident_report",
     "v4_execution_withdrawal_report",
     "v5_outcome_withdrawal_report",
+    "v6_outcome_withdrawal_report",
 )
 
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -702,6 +887,34 @@ def held_contract_sha256(value: Any) -> str:
 
 def _valid_sha256(value: object) -> bool:
     return isinstance(value, str) and _SHA256_PATTERN.fullmatch(value) is not None
+
+
+def _validate_v7_lineage_and_runtime_bindings(bindings: Mapping[str, Any]) -> None:
+    _require(
+        held_contract_sha256(GSPLAT_CUDA_EXTENSION_CONTRACT)
+        == GSPLAT_CUDA_EXTENSION_CONTRACT_SHA256,
+        "gsplat CUDA extension contract checksum changed",
+    )
+    _require(
+        held_contract_sha256(GSPLAT_RUNTIME_SMOKE_CONTRACT)
+        == GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256,
+        "gsplat runtime smoke contract checksum changed",
+    )
+    _require(
+        bindings.get("v6_outcome_withdrawal_report")
+        == V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256,
+        "v6 outcome withdrawal report binding changed",
+    )
+    _require(
+        bindings.get("held_outcome_cuda_smoke_contract")
+        == GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256,
+        "outcome CUDA smoke contract binding changed",
+    )
+    _require(
+        bindings.get("held_gsplat_runtime_supplement_manifest")
+        != bindings.get("held_frozen_runtime_manifest"),
+        "gsplat runtime supplement cannot alias the base Python runtime manifest",
+    )
 
 
 def _sha256_file(path: str | Path) -> str:
@@ -878,6 +1091,7 @@ def create_held_protocol_lock(
         == held_contract_sha256(SOURCE_FEASIBILITY_AMENDMENT_CONTRACT),
         "source-feasibility amendment contract binding changed",
     )
+    _validate_v7_lineage_and_runtime_bindings(bindings)
     artifact: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "artifact_kind": LOCK_KIND,
@@ -1031,6 +1245,7 @@ def load_held_protocol_lock(path: str | Path) -> dict[str, Any]:
         == held_contract_sha256(SOURCE_FEASIBILITY_AMENDMENT_CONTRACT),
         "source-feasibility amendment contract binding changed",
     )
+    _validate_v7_lineage_and_runtime_bindings(bindings)
     boundary = artifact.get("information_boundary", {})
     _require(
         boundary.get("target_payload_read_before_lock") is False
@@ -3104,6 +3319,10 @@ __all__ = [
     "REQUIRED_IMMUTABLE_BINDING_KEYS",
     "SOURCE_FEASIBILITY_AMENDMENT_CONTRACT",
     "UPDATE_FRAMES",
+    "V6_OUTCOME_WITHDRAWAL_REPORT_ARTIFACT_SHA256",
+    "V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256",
+    "V6_OUTCOME_WITHDRAWAL_REPORT_SIZE_BYTES",
+    "V7_GSPLAT_RUNTIME_REPAIR_CONTRACT",
     "authorize_outcome_phase",
     "create_calibration_gate_decision",
     "create_confirmation_gate_decision",

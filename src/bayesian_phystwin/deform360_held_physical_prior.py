@@ -68,19 +68,15 @@ ACTION_RESPONSE = 0.9
 AUTONOMOUS_DRIFT_RESPONSE = 0.0
 CANONICAL_NODE_COUNT = 1024
 MINIMUM_NODE_COUNT = 128
-HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v6-pycache"
+HELD_PYCACHE_PREFIX = "/nonexistent/bpt-held-v7-pycache"
 
 HELD_PYTHON_RUNTIME = Path(
     "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
     "bpt-gpu-pip-"
     "4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004"
 )
-HELD_PYTHON_RUNTIME_MANIFEST = Path(
-    f"{HELD_PYTHON_RUNTIME}.tree-manifest.json"
-)
-HELD_PYTHON_RUNTIME_MANIFEST_KIND = (
-    "Deform360HeldPythonRuntimeTreeManifestV1"
-)
+HELD_PYTHON_RUNTIME_MANIFEST = Path(f"{HELD_PYTHON_RUNTIME}.tree-manifest.json")
+HELD_PYTHON_RUNTIME_MANIFEST_KIND = "Deform360HeldPythonRuntimeTreeManifestV1"
 HELD_PYTHON_RUNTIME_SYMLINKS = {
     "bin/python": "/usr/bin/python3",
     "bin/python3": "python",
@@ -549,8 +545,7 @@ def _runtime_entry_paths(root: Path) -> list[str]:
                 visit(path)
             else:
                 _require(
-                    stat.S_ISREG(observed.st_mode)
-                    or stat.S_ISLNK(observed.st_mode),
+                    stat.S_ISREG(observed.st_mode) or stat.S_ISLNK(observed.st_mode),
                     f"unsupported held Python runtime entry: {relative}",
                 )
 
@@ -610,7 +605,9 @@ def _validate_held_python_runtime_tree(
     _require(
         isinstance(locked_manifest_sha256, str)
         and len(locked_manifest_sha256) == 64
-        and all(character in "0123456789abcdef" for character in locked_manifest_sha256),
+        and all(
+            character in "0123456789abcdef" for character in locked_manifest_sha256
+        ),
         "held Python runtime manifest binding is invalid",
     )
     _require(
@@ -708,8 +705,7 @@ def _validate_held_python_runtime_tree(
                 isinstance(entry["sha256"], str)
                 and len(entry["sha256"]) == 64
                 and all(
-                    character in "0123456789abcdef"
-                    for character in entry["sha256"]
+                    character in "0123456789abcdef" for character in entry["sha256"]
                 ),
                 "runtime-manifest file checksum is invalid",
             )
@@ -1024,9 +1020,7 @@ def _validate_official_phystwin_worktree(
         _run_git(root, ("rev-parse", "--show-toplevel")).decode("utf-8").strip()
     )
     _require(top_level == root, "official PhysTwin Git top level changed")
-    revision = _run_git(root, ("rev-parse", "--verify", "HEAD")).decode(
-        "ascii"
-    ).strip()
+    revision = _run_git(root, ("rev-parse", "--verify", "HEAD")).decode("ascii").strip()
     _require(
         revision == OFFICIAL_PHYSTWIN_REVISION,
         "official PhysTwin revision changed",
@@ -1041,9 +1035,9 @@ def _validate_official_phystwin_worktree(
         ("status", "--porcelain=v1", "--untracked-files=no"),
     )
     _require(status == b"", "official PhysTwin tracked worktree is dirty")
-    object_format = _run_git(root, ("rev-parse", "--show-object-format")).decode(
-        "ascii"
-    ).strip()
+    object_format = (
+        _run_git(root, ("rev-parse", "--show-object-format")).decode("ascii").strip()
+    )
     _require(
         object_format in {"sha1", "sha256"},
         "unsupported official PhysTwin Git object format",
@@ -1095,9 +1089,7 @@ def _validate_official_phystwin_worktree(
     return {
         "repository_root": str(root),
         "revision": revision,
-        "revision_literal_sha256": hashlib.sha256(
-            revision.encode("ascii")
-        ).hexdigest(),
+        "revision_literal_sha256": hashlib.sha256(revision.encode("ascii")).hexdigest(),
         "commit_object_sha256": commit_sha256,
         "git_tree_manifest_sha256": tree_sha256,
         "tracked_file_count": len(tree),
@@ -1469,9 +1461,7 @@ def load_controller_trajectory(
                 window_length_frames=frame_count + 5,
                 prediction_frame_count=frame_count,
             )
-            source_selected_range = source_audit[
-                "selected_raw_frame_range_half_open"
-            ]
+            source_selected_range = source_audit["selected_raw_frame_range_half_open"]
             source_prediction_range = source_audit[
                 "prediction_raw_frame_range_half_open"
             ]
@@ -1516,8 +1506,7 @@ def load_controller_trajectory(
         )
         if selected_range is not None:
             _require(
-                selected_range
-                == source_audit["selected_raw_frame_range_half_open"],
+                selected_range == source_audit["selected_raw_frame_range_half_open"],
                 "expected selected raw range disagrees with the shared selector",
             )
         if prediction_range is not None:
@@ -1526,9 +1515,7 @@ def load_controller_trajectory(
                 == source_audit["prediction_raw_frame_range_half_open"],
                 "expected prediction raw range disagrees with the shared selector",
             )
-        prediction_start = int(
-            source_audit["prediction_raw_frame_range_half_open"][0]
-        )
+        prediction_start = int(source_audit["prediction_raw_frame_range_half_open"][0])
         selected_state = slice_robot_kinematics(
             state,
             start_frame=prediction_start,
@@ -1568,16 +1555,14 @@ def _validate_controller_kinematics_audit(
     value = dict(audit)
     _require(
         value.get("policy_id") == ROBOT_KINEMATICS_WINDOW_POLICY_ID
-        and value.get("contract_sha256")
-        == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
+        and value.get("contract_sha256") == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
         and value.get("trajectory_semantics")
         == ROBOT_KINEMATICS_WINDOW_CONTRACT["trajectory_semantics"],
         "robot kinematics contract changed",
     )
     _require(
         value.get("prediction_frame_count") == FRAME_COUNT
-        and value.get("selected_prediction_frame_range_half_open")
-        == [0, FRAME_COUNT],
+        and value.get("selected_prediction_frame_range_half_open") == [0, FRAME_COUNT],
         "robot kinematics prediction range changed",
     )
     if require_raw_source:
@@ -1611,8 +1596,7 @@ def _validate_controller_kinematics_audit(
         controllers = np.asarray(controller_trajectory)
         _require(
             value.get("controller_point_count") == controllers.shape[1]
-            and value.get("controller_trajectory_sha256")
-            == sha256_array(controllers),
+            and value.get("controller_trajectory_sha256") == sha256_array(controllers),
             "robot kinematics audit does not bind the controller trajectory",
         )
     return value

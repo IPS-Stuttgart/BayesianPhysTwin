@@ -467,7 +467,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     frame_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v6",
+        "protocol_id": "deform360-held-online-belief-v7",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -584,7 +584,7 @@ def _make_held_chain(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path]:
     physical_manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": held_physical.ARTIFACT_KIND,
-        "protocol_id": "deform360-held-online-belief-v6",
+        "protocol_id": "deform360-held-online-belief-v7",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -743,9 +743,7 @@ def test_online_prefix_rejects_valid_but_wrong_selected_robot_slice(
         held_prefix.robot_kinematics_array_records(selected_state)
     )
     with pytest.raises(ValueError, match="exact source slice"):
-        held_prefix._validate_selected_action_bundle(
-            manifest, source_frame_start=62
-        )
+        held_prefix._validate_selected_action_bundle(manifest, source_frame_start=62)
 
 
 def test_aligned_metadata_validates_all_candidates_for_selected_subset(
@@ -765,9 +763,7 @@ def test_aligned_metadata_validates_all_candidates_for_selected_subset(
     )
     assert audit["declared_candidate_camera_order"] == list(TEST_CAMERAS)
     assert audit["selected_bundle_camera_order"] == list(selected_subset)
-    assert (
-        audit["frame_zero_source_index_verified_for_every_candidate_camera"] is True
-    )
+    assert audit["frame_zero_source_index_verified_for_every_candidate_camera"] is True
 
     manifest["camera_frame_zero_access"][-1]["source_aligned_frame_index"] = 63
     with pytest.raises(ValueError, match="source index"):
@@ -840,7 +836,7 @@ def test_reference_abstention_requires_exact_preregistered_strategy_audit(
             ],
             "common_assignment": assignment,
             "reference_optional_safeguard": safeguard,
-        }
+        },
     }
     assert held_prefix._reference_camera_may_be_absent(valid) is True
 
@@ -1026,8 +1022,7 @@ def test_runner_emits_exact_seven_roles_and_frozen_prediction_schema(
     )
     inputs = result["measurement_manifest"]["inputs"]
     assert (
-        inputs["selected_robot_kinematics_bundle"]
-        == inputs["selected_action_bundle"]
+        inputs["selected_robot_kinematics_bundle"] == inputs["selected_action_bundle"]
     )
     with np.load(output / "online_prediction.npz", allow_pickle=False) as stored:
         required = {

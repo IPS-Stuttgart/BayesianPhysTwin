@@ -89,7 +89,7 @@ def _lock(*, stage: str = "calibration") -> dict:
     payload = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldOnlineBeliefLock",
-        "protocol_id": "deform360-held-online-belief-v6",
+        "protocol_id": "deform360-held-online-belief-v7",
         "stage": stage,
         "confirmation_access_authorized": promoted,
         "parent_calibration_lock": ({"sha256": "b" * 64} if promoted else None),
@@ -171,7 +171,7 @@ def _manifest(tmp_path: Path) -> dict:
     payload = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v6",
+        "protocol_id": "deform360-held-online-belief-v7",
         "case_name": APPROVED_CALIBRATION_SMOKE_CASE,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -1323,7 +1323,7 @@ def test_manifest_binds_geometry_fallback_audit_independently(
     mask_digest_tamper = deepcopy(payload)
     mask_digest_tamper["geometry_fallback"]["final_selected_proposals"][0][
         "mask_sha256"
-    ] = ("8" * 64)
+    ] = "8" * 64
     mask_digest_tamper["geometry_fallback"]["artifact_sha256"] = artifact_sha256(
         mask_digest_tamper["geometry_fallback"]
     )

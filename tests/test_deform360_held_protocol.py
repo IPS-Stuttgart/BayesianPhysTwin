@@ -36,6 +36,10 @@ from bayesian_phystwin.deform360_held_protocol import (
     PROTOCOL_ID,
     REQUIRED_IMMUTABLE_BINDING_KEYS,
     SOURCE_FEASIBILITY_AMENDMENT_CONTRACT,
+    V6_OUTCOME_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+    V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256,
+    V6_OUTCOME_WITHDRAWAL_REPORT_SIZE_BYTES,
+    V7_GSPLAT_RUNTIME_REPAIR_CONTRACT,
     _FRAME_ZERO_CAMERA_SELECTION_POLICY_ID,
     _FRAME_ZERO_CAMERA_SELECTION_RULE,
     authorize_outcome_phase,
@@ -51,6 +55,12 @@ from bayesian_phystwin.deform360_held_protocol import (
     locked_case_names,
     run_outcome_operation,
     validate_frame_zero_bundle_manifest,
+)
+from bayesian_phystwin.deform360_held_gsplat_runtime import (
+    GSPLAT_CUDA_EXTENSION_CONTRACT,
+    GSPLAT_CUDA_EXTENSION_CONTRACT_SHA256,
+    GSPLAT_RUNTIME_SMOKE_CONTRACT,
+    GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256,
 )
 from bayesian_phystwin.deform360_robot_kinematics import (
     load_robot_kinematics_archive,
@@ -695,22 +705,27 @@ def test_lock_requires_the_exact_immutable_binding_key_set(tmp_path: Path) -> No
     assert not (tmp_path / "invalid-report.json").exists()
 
 
-def test_v6_lock_binds_v1_through_failed_closed_v5_lineage(
+def test_v7_lock_binds_v1_through_terminal_v6_lineage_and_gsplat_repair(
     tmp_path: Path,
 ) -> None:
     bindings = dummy_immutable_bindings()
-    lock_path = tmp_path / "v6-lock.json"
+    lock_path = tmp_path / "v7-lock.json"
     lock = create_held_protocol_lock(lock_path, immutable_bindings=bindings)
 
-    assert lock["protocol_id"] == "deform360-held-online-belief-v6"
-    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 113
+    assert lock["protocol_id"] == "deform360-held-online-belief-v7"
+    assert len(REQUIRED_IMMUTABLE_BINDING_KEYS) == 118
     assert set(REQUIRED_IMMUTABLE_BINDING_KEYS) >= {
         "v1_preoutcome_feasibility_report",
         "v2_design_withdrawal_report",
         "v3_prelock_boundary_incident_report",
         "v4_execution_withdrawal_report",
         "v5_outcome_withdrawal_report",
+        "v6_outcome_withdrawal_report",
         "held_frozen_runtime_manifest",
+        "held_gsplat_runtime_supplement_manifest",
+        "held_outcome_cuda_smoke_contract",
+        "held_outcome_cuda_smoke_evidence",
+        "held_outcome_cuda_smoke_operator_source",
         "held_source_feasibility_amendment_contract",
         "deform360_robot_kinematics_source",
         "robot_kinematics_window_contract",
@@ -921,6 +936,122 @@ def test_v6_lock_binds_v1_through_failed_closed_v5_lineage(
     assert repair["downstream_target_reconstruction_must_be_recomputed"] is True
     assert repair["v5_predictions_or_partial_target_artifacts_reused"] is False
 
+    v6_execution = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v6_execution"]
+    assert v6_execution["protocol_id"] == "deform360-held-online-belief-v6"
+    assert v6_execution["disposition"] == (
+        "WITHDRAWN_DURING_FIRST_TARGET_OPERATION_BEFORE_ANY_COMPLETED_OUTCOME"
+    )
+    assert v6_execution["evidence_binding_key"] == "v6_outcome_withdrawal_report"
+    assert v6_execution["evidence_artifact_kind"] == (
+        "Deform360HeldProtocolExecutionWithdrawalReport"
+    )
+    assert v6_execution["evidence_schema_version"] == 1
+    assert v6_execution["replacement_protocol_id"] == PROTOCOL_ID
+    assert (
+        v6_execution["evidence_file_sha256"]
+        == V6_OUTCOME_WITHDRAWAL_REPORT_FILE_SHA256
+        == "8a428535708057ff1c944b8ab81c93b3309539ae9d3dffb469ddc2b9f79de504"
+    )
+    assert (
+        v6_execution["evidence_artifact_sha256"]
+        == V6_OUTCOME_WITHDRAWAL_REPORT_ARTIFACT_SHA256
+        == "383d2d72ba148703482df76cdbf89ad8d43c6a5026b89325984a5d786748c843"
+    )
+    assert (
+        v6_execution["evidence_size_bytes"]
+        == V6_OUTCOME_WITHDRAWAL_REPORT_SIZE_BYTES
+        == 16_780
+    )
+    v6_counts = v6_execution["exact_execution_census"]
+    assert v6_counts["formal_physical_prediction_count"] == 15
+    assert v6_counts["formal_online_prediction_count"] == 15
+    assert v6_counts["target_operation_planned_count"] == 15
+    assert v6_counts["target_operation_started_count"] == 1
+    assert v6_counts["target_operation_completed_count"] == 0
+    assert v6_counts["target_reconstruction_artifact_count"] == 0
+    assert v6_counts["target_reconstruction_training_started_count"] == 1
+    assert v6_counts["sam2_camera_propagation_completed_count"] == 8
+    assert v6_counts["sam2_mask_archive_count"] == 8
+    assert v6_counts["calibration_score_evidence_count"] == 0
+    assert v6_counts["calibration_decision_count"] == 0
+    assert v6_counts["confirmation_lock_count"] == 0
+    assert v6_execution["failure"] == {
+        "classification": "GSPLAT_CUDA_BACKEND_UNAVAILABLE",
+        "exception_message": (
+            "AttributeError: 'NoneType' object has no attribute 'CameraModelType'"
+        ),
+        "failed_case": "002-rope-silk-ep0003",
+        "phase": (
+            "first calibration target official Splatfacto reconstruction "
+            "training iteration"
+        ),
+        "preceding_console_message": (
+            "gsplat: No CUDA toolkit found. gsplat will be disabled."
+        ),
+    }
+    assert (
+        v6_execution["information_boundary"]["official_target_reconstruction_created"]
+        is False
+    )
+    assert (
+        v6_execution["information_boundary"][
+            "official_target_reconstruction_training_started"
+        ]
+        is True
+    )
+    assert (
+        v6_execution["information_boundary"][
+            "calibration_gate_or_metric_created_or_read"
+        ]
+        is False
+    )
+    assert (
+        v6_execution["information_boundary"][
+            "target_arrays_metrics_or_labels_returned_to_research_agent"
+        ]
+        is False
+    )
+    assert v6_execution["reuse"] == {
+        "v6_evidence_may_be_used_by_v7_only_as_immutable_lineage": True,
+        "v6_execution_artifacts_reused_by_v7": False,
+        "v6_partial_target_staging_reused_by_v7": False,
+        "v6_physical_or_online_predictions_reused_by_v7": False,
+        "v6_score_or_gate_available_for_reuse": False,
+        "v7_requires_fresh_absent_held_root": True,
+        "v7_requires_fresh_predictions_and_outcome_phase": True,
+    }
+
+    v7_repair = SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["v7_repair"]
+    assert v7_repair == V7_GSPLAT_RUNTIME_REPAIR_CONTRACT
+    assert v7_repair["runtime_repair"] == {
+        "strategy": "separately-frozen-aot-gsplat-cuda-extension",
+        "cuda_jit_compilation_permitted": False,
+        "nvcc_discovery_required": False,
+        "base_python_runtime_manifest_binding_key": "held_frozen_runtime_manifest",
+        "runtime_supplement_manifest_binding_key": (
+            "held_gsplat_runtime_supplement_manifest"
+        ),
+        "extension_contract": GSPLAT_CUDA_EXTENSION_CONTRACT,
+        "extension_contract_sha256": GSPLAT_CUDA_EXTENSION_CONTRACT_SHA256,
+    }
+    smoke = v7_repair["pre_outcome_smoke"]
+    assert smoke["contract"] == GSPLAT_RUNTIME_SMOKE_CONTRACT
+    assert smoke["contract_sha256"] == GSPLAT_RUNTIME_SMOKE_CONTRACT_SHA256
+    assert smoke["operator_source_binding_key"] == (
+        "held_outcome_cuda_smoke_operator_source"
+    )
+    assert smoke["contract_binding_key"] == "held_outcome_cuda_smoke_contract"
+    assert smoke["evidence_binding_key"] == "held_outcome_cuda_smoke_evidence"
+    assert smoke["forward_pass_required"] is True
+    assert smoke["backward_pass_required"] is True
+    assert smoke["same_process_as_outcome_operations_required"] is True
+    assert smoke["must_complete_before_outcome_phase_authorization"] is True
+    assert smoke["must_complete_before_target_path_or_payload_access"] is True
+    assert v7_repair["method_cohorts_metrics_and_gates_changed"] is False
+    assert v7_repair["v6_predictions_or_partial_target_artifacts_reused"] is False
+    assert v7_repair["v7_requires_fresh_absent_held_root"] is True
+    assert v7_repair["v7_requires_fresh_predictions_and_outcome_phase"] is True
+
     assert SOURCE_FEASIBILITY_AMENDMENT_CONTRACT["reuse"] == {
         "v1_execution_artifacts_reused_by_v6": False,
         "v1_predictions_reused_by_v6": False,
@@ -932,12 +1063,25 @@ def test_v6_lock_binds_v1_through_failed_closed_v5_lineage(
         "v4_predictions_reused_by_v6": False,
         "v5_execution_artifacts_reused_by_v6": False,
         "v5_predictions_reused_by_v6": False,
-        "sealed_lineage_reports_bound_by_v6": [
+        "v1_execution_artifacts_reused_by_v7": False,
+        "v1_predictions_reused_by_v7": False,
+        "v2_execution_artifacts_reused_by_v7": False,
+        "v2_predictions_reused_by_v7": False,
+        "v3_execution_artifacts_reused_by_v7": False,
+        "v3_predictions_reused_by_v7": False,
+        "v4_execution_artifacts_reused_by_v7": False,
+        "v4_predictions_reused_by_v7": False,
+        "v5_execution_artifacts_reused_by_v7": False,
+        "v5_predictions_reused_by_v7": False,
+        "v6_execution_artifacts_reused_by_v7": False,
+        "v6_predictions_reused_by_v7": False,
+        "sealed_lineage_reports_bound_by_v7": [
             "v1_preoutcome_feasibility_report",
             "v2_design_withdrawal_report",
             "v3_prelock_boundary_incident_report",
             "v4_execution_withdrawal_report",
             "v5_outcome_withdrawal_report",
+            "v6_outcome_withdrawal_report",
         ],
     }
 
@@ -965,6 +1109,41 @@ def test_v6_lock_binds_v1_through_failed_closed_v5_lineage(
         match="source-feasibility amendment contract binding changed",
     ):
         load_held_protocol_lock(tampered_path)
+
+    wrong_v6_report = dummy_immutable_bindings()
+    wrong_v6_report["v6_outcome_withdrawal_report"] = "f" * 64
+    with pytest.raises(
+        ValueError,
+        match="v6 outcome withdrawal report binding changed",
+    ):
+        create_held_protocol_lock(
+            tmp_path / "wrong-v6-report.json",
+            immutable_bindings=wrong_v6_report,
+        )
+
+    wrong_smoke_contract = dummy_immutable_bindings()
+    wrong_smoke_contract["held_outcome_cuda_smoke_contract"] = "f" * 64
+    with pytest.raises(
+        ValueError,
+        match="outcome CUDA smoke contract binding changed",
+    ):
+        create_held_protocol_lock(
+            tmp_path / "wrong-smoke-contract.json",
+            immutable_bindings=wrong_smoke_contract,
+        )
+
+    aliased_runtime_manifest = dummy_immutable_bindings()
+    aliased_runtime_manifest["held_gsplat_runtime_supplement_manifest"] = (
+        aliased_runtime_manifest["held_frozen_runtime_manifest"]
+    )
+    with pytest.raises(
+        ValueError,
+        match="cannot alias the base Python runtime manifest",
+    ):
+        create_held_protocol_lock(
+            tmp_path / "aliased-runtime-manifest.json",
+            immutable_bindings=aliased_runtime_manifest,
+        )
 
 
 def test_held_reference_optional_recognizer_requires_semantic_cross_links(

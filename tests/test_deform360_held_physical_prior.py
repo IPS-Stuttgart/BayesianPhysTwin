@@ -261,12 +261,10 @@ def _make_locked_frame_zero(
     create_held_protocol_lock(lock_path, immutable_bindings=dummy_immutable_bindings())
     bundle_path = tmp_path / "frame_zero.npz"
     _make_frame_zero_bundle(bundle_path, encoded_frames=encoded_frames)
-    robot_path, _selected_robot_path, action_alignment = (
-        write_robot_kinematics_fixture(
-            tmp_path,
-            source_frame_count=100,
-            selected_start=8,
-        )
+    robot_path, _selected_robot_path, action_alignment = write_robot_kinematics_fixture(
+        tmp_path,
+        source_frame_count=100,
+        selected_start=8,
     )
     robot_metadata_path = tmp_path / "robot.meta.json"
     robot_metadata_path.write_text("{}\n", encoding="utf-8")
@@ -274,7 +272,7 @@ def _make_locked_frame_zero(
     manifest: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": "Deform360HeldFrameZeroBundle",
-        "protocol_id": "deform360-held-online-belief-v6",
+        "protocol_id": "deform360-held-online-belief-v7",
         "case_name": CASE_NAME,
         "object_id": "083-blanket-cloth",
         "episode_id": 0,
@@ -362,17 +360,19 @@ def test_prediction_input_repeats_only_frame_zero(tmp_path: Path) -> None:
     )
     assert data["controller_points"].shape == (FRAME_COUNT, 768, 3)
     assert summary["information_boundary"]["future_object_geometry_read"] is False
-    assert summary["information_boundary"][
-        "known_future_aligned_robot_kinematics_read"
-    ] is True
+    assert (
+        summary["information_boundary"]["known_future_aligned_robot_kinematics_read"]
+        is True
+    )
     audit = summary["robot_kinematics_window"]
     assert audit["policy_id"] == ROBOT_KINEMATICS_WINDOW_POLICY_ID
     assert audit["contract_sha256"] == ROBOT_KINEMATICS_WINDOW_CONTRACT_SHA256
     assert audit["prediction_raw_frame_range_half_open"] == [8, 84]
     assert audit["exact_source_slice_verified"] is True
-    assert data["prediction_only_input"][
-        "known_future_realized_robot_kinematics_used"
-    ] is True
+    assert (
+        data["prediction_only_input"]["known_future_realized_robot_kinematics_used"]
+        is True
+    )
     assert summary["point_count"] == 128
 
 
@@ -407,9 +407,7 @@ def test_raw_controller_trajectory_uses_shared_realized_kinematics_selector(
     # With identity EEF rotations and a fixed opening, the whole taxel cloud
     # must translate exactly with T_worlds[..., :3, 3].
     expected_dx = np.arange(FRAME_COUNT, dtype=np.float64) * 0.001
-    observed_dx = np.mean(controllers[:, :, 0], axis=1) - np.mean(
-        controllers[0, :, 0]
-    )
+    observed_dx = np.mean(controllers[:, :, 0], axis=1) - np.mean(controllers[0, :, 0])
     assert np.allclose(observed_dx, expected_dx, atol=1e-7)
 
 
@@ -986,9 +984,7 @@ def frozen_python_runtime(
             if not path.is_symlink():
                 path.chmod(0o555)
     freeze = b"zeta==2\nalpha==1\npip==24\n"
-    expected_freeze = hashlib.sha256(
-        b"alpha==1\npip==24\nzeta==2\n"
-    ).hexdigest()
+    expected_freeze = hashlib.sha256(b"alpha==1\npip==24\nzeta==2\n").hexdigest()
     manifest_path = root.parent / f"{root.name}.tree-manifest.json"
     manifest = _write_test_runtime_manifest(
         manifest_path,
@@ -1078,9 +1074,7 @@ def test_python_runtime_preserves_supplied_venv_symlink(
     assert result["supplied_python_path"] == str(supplied.absolute())
     assert result["resolved_python_path"] == str(executable.resolve())
     assert result["runtime_root"] == str(frozen_python_runtime["root"])
-    assert result["runtime_manifest_sha256"] == bindings[
-        "held_frozen_runtime_manifest"
-    ]
+    assert result["runtime_manifest_sha256"] == bindings["held_frozen_runtime_manifest"]
 
 
 def test_python_runtime_rejects_interpreter_outside_frozen_root(
@@ -1228,15 +1222,15 @@ def test_official_phystwin_worktree_matches_all_locked_git_identities(
     )
 
     assert result["revision"] == revision
-    assert result["revision_literal_sha256"] == bindings[
-        "official_phystwin_revision_literal"
-    ]
-    assert result["commit_object_sha256"] == bindings[
-        "official_phystwin_commit_object"
-    ]
-    assert result["git_tree_manifest_sha256"] == bindings[
-        "official_phystwin_git_tree_manifest"
-    ]
+    assert (
+        result["revision_literal_sha256"]
+        == bindings["official_phystwin_revision_literal"]
+    )
+    assert result["commit_object_sha256"] == bindings["official_phystwin_commit_object"]
+    assert (
+        result["git_tree_manifest_sha256"]
+        == bindings["official_phystwin_git_tree_manifest"]
+    )
     assert result["qqtt_imported_provenance"] == {
         name: str(repository / relative)
         for name, relative in physical_prior._QQTT_IMPORTED_PROVENANCE.items()
@@ -1528,9 +1522,7 @@ def test_runner_keeps_warp_failure_fail_closed(
     )
     calls: list[tuple[list[str], dict[str, str]]] = []
 
-    def fail_warp(
-        command: list[str], *, env: dict[str, str], log_path: Path
-    ) -> float:
+    def fail_warp(command: list[str], *, env: dict[str, str], log_path: Path) -> float:
         del log_path
         calls.append((command, env))
         if len(calls) == 1:
