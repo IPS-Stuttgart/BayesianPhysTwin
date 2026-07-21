@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-prob4d-bias-guard-exploratory-v1",
+  "status": "locked-before-running-new-bias-aware-future-scores",
+  "locked_at": "2026-07-21",
+  "claim_boundary": "Post-open method development on the previously examined PhysTwin-19 cohort. Results may reject or motivate a fresh protocol, but cannot establish confirmation, calibration, or state of the art.",
+  "cohort": {
+    "source_summary": "results/sota/diagnostics/prob4d_observation_v1/exploratory19_summary.json",
+    "source_summary_sha256": "4026ae912a735ecb483b4487d7d1f03ecfb7bae72914f9909cf6298b9386ee33",
+    "cases": [
+      "double_lift_cloth_1",
+      "double_lift_cloth_3",
+      "double_lift_zebra",
+      "double_stretch_zebra",
+      "rope_double_hand",
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_cloth",
+      "single_lift_cloth_1",
+      "single_lift_cloth_3",
+      "single_lift_cloth_4",
+      "single_lift_dinosor",
+      "single_lift_rope",
+      "single_lift_zebra",
+      "single_push_rope",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "weird_package"
+    ]
+  },
+  "method": {
+    "selected_baseline": "released Bayesian validation-selected stack",
+    "physical_response": "released raw PhysTwin prefix displacement relative to frame zero",
+    "observation": "Prob4D arm-C direct position-flow association using prior reliability and metric covariance",
+    "bias_model": "source-v4 spatial and global camera bias",
+    "source_v4_lock": "results/sota/deform360_bias_aware_guarded_belief_v4/prospective_lock.json",
+    "source_v4_lock_sha256": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6",
+    "implementation": "src/bayesian_phystwin/phystwin_prob4d_bias_guard.py",
+    "implementation_sha256": "775761c5bb79cc16966615159a0991240d72aca51510e277494bf6b0e6154249",
+    "fit_fraction": 0.75,
+    "minimum_validation_frame_count": 3,
+    "minimum_balanced_validation_improvement_fraction": 0.001,
+    "validation_metrics": [
+      "released dense pseudo-observation Chamfer",
+      "released dense pseudo-identity error"
+    ],
+    "validation_rule": "Candidate must be available, improve or tie both validation metrics, and improve their mean relative ratio by at least 0.1%.",
+    "fallback": "bit-exact released Bayesian selected trajectory"
+  },
+  "information_boundary": {
+    "fit_observation_frames": "[0, floor(0.75 * train_end))",
+    "validation_observation_frames": "[floor(0.75 * train_end), train_end)",
+    "future_prob4d_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_selection": false,
+    "known_future_controller_action_in_physical_baseline": true,
+    "prior_reliability_uses_state_innovation": false,
+    "state_innovation_likelihood_count": 1
+  },
+  "evaluation": {
+    "future_interval": "released [train_end, test_end)",
+    "co_primary_metrics": [
+      "official Chamfer distance",
+      "official initial-nearest-node manual-track error"
+    ],
+    "report": [
+      "raw candidate",
+      "guarded candidate",
+      "selected baseline",
+      "acceptance count",
+      "wins/ties/losses",
+      "case-balanced means",
+      "physical-object-cluster bootstrap intervals",
+      "late-horizon metrics",
+      "bit-exact fallback count"
+    ]
+  },
+  "transfer_gate_for_fresh_evaluation": {
+    "both_case_balanced_future_means_improve": true,
+    "both_physical_object_cluster_95_percent_upper_bounds_below_zero": true,
+    "two_metric_win_or_tie_count_at_least": 12,
+    "accepted_harmful_case_count": 0,
+    "all_rejections_bit_exact": true,
+    "minimum_accepted_case_count": 3,
+    "calibration_required_before_bayesian_coverage_claim": true
+  }
+}
