@@ -70,6 +70,19 @@ def _git_revision(repository: Path) -> str:
     ).stdout.strip()
 
 
+def _require_clean_repository(repository: Path) -> str:
+    revision = _git_revision(repository)
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    _require(not status.strip(), "Bayesian-PhysTwin repository is not clean")
+    return revision
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
@@ -325,6 +338,8 @@ def _evaluate_case(
 
 def main() -> int:
     args = _parse_args()
+    repository = Path(__file__).resolve().parents[2]
+    code_revision = _require_clean_repository(repository)
     config, config_sha256 = _load_config(args.config.resolve())
     deform360_repo = args.deform360_repo.resolve()
     _require(
@@ -423,6 +438,13 @@ def main() -> int:
         "provenance": {
             "config_path": str(args.config.resolve()),
             "config_file_sha256": _file_sha256(args.config.resolve()),
+            "bayesian_phystwin_revision": code_revision,
+            "initializer_module_sha256": _file_sha256(
+                repository
+                / "src"
+                / "bayesian_phystwin"
+                / "deform360_frame_zero_initializer.py"
+            ),
             "deform360_revision": _git_revision(deform360_repo),
             "runner_sha256": _file_sha256(Path(__file__).resolve()),
         },
