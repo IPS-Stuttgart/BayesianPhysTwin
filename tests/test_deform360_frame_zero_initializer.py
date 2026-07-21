@@ -113,6 +113,30 @@ def test_postopen_config_reuses_the_source_frozen_candidate() -> None:
     assert len(postopen["config"]["cases"]) == 4
 
 
+def test_physical_config_reuses_the_frozen_postopen_result() -> None:
+    postopen = json.loads(
+        Path(
+            "configs/sota/deform360_frame_zero_postopen_failures_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    physical = json.loads(
+        Path(
+            "configs/sota/deform360_frame_zero_fallback_physical_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    encoded = json.dumps(
+        physical["config"],
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(encoded).hexdigest() == physical["config_sha256"]
+    assert physical["config"]["candidate"]["initializer_module_sha256"] == (
+        postopen["config"]["source_candidate"]["initializer_module_sha256"]
+    )
+    assert physical["config"]["gate"]["required_warp_twin_count"] == 4
+
+
 def test_original_admission_matches_point_only_gate() -> None:
     points = np.zeros((32, 3), dtype=np.float32)
     assert original_point_cloud_admissible(points, minimum_point_count=32)
