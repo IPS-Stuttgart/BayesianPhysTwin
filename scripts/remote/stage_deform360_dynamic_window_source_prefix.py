@@ -69,7 +69,7 @@ def main() -> int:
     finally:
         sys.argv = original_argv
     protocol = frozen.load_selective_virtual_sensing_protocol(args.protocol)
-    record = frozen._case(args.protocol, args.object_id, args.episode_id)
+    record = frozen._case_record(args.protocol, args.object_id, args.episode_id)
     selection_seal = json.loads(selection_path.read_text(encoding="utf-8"))
     source_row = dynamic_window_source_case(selection_seal, str(record["case"]))
     selection = source_row["translation_contact_v2"]
