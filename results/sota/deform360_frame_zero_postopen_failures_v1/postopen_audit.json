@@ -1,0 +1,675 @@
+{
+  "artifact_kind": "Deform360FrameZeroPostOpenFailureAudit",
+  "cases": [
+    {
+      "camera_count": 32,
+      "case": "015-airbag-cloth-ep0006",
+      "episode_id": 6,
+      "fallback_archive_sha256": "1f7a8593cadf131d56495f8ed7f43b602865872ec11b99e622f0768a7ec8f87d",
+      "fallback_colors_sha256": "5170da32932a15ae5daa6820aef0773d1217f1cc15f78cb6d52966f3587849ad",
+      "fallback_point_count": 3495,
+      "fallback_points_sha256": "a1c93d0a9d069e5d6794a10f9daf4b419591eb43c0b2cace3900f3def32cc3d7",
+      "frame_zero_inputs": {
+        "brics-odroid-001_cam0": {
+          "frame_zero_image_sha256": "70d8f612c7eb464c362766197f17419a40db50dd0c9e7a0f97d5294a3fd2795e",
+          "mask_sha256": "bb102cfb10660aad944fa28b4f66619e84691ce683fbfe70b8058fa9662229f3"
+        },
+        "brics-odroid-002_cam0": {
+          "frame_zero_image_sha256": "81379ec77365eb8ad12f7d2eca9041bb0f59f79fde1273984b24535a1a0b9d2a",
+          "mask_sha256": "3960c3c15ea3c2e7d57f8e8e6a5a92ce8ce3be7b0aaf78bd21a273bad1267be1"
+        },
+        "brics-odroid-006_cam0": {
+          "frame_zero_image_sha256": "8af7c0fcb319ca4bae8e33a15d7b1c6f978b36c41cfa72fe5af19b476ac2b65d",
+          "mask_sha256": "5f20ceffcc4a939985dd4869717e6f25c42408fe6a9441c3452c3a177c7d9292"
+        },
+        "brics-odroid-007_cam0": {
+          "frame_zero_image_sha256": "7ac5924bfe0afef63b84f3dec9e4a372313a8979f7ff575c70db13c8c6bc6b99",
+          "mask_sha256": "f8b18b0cc6882af71520d7299dc328a6963bca6ffefdd8a00db97c0378820e98"
+        },
+        "brics-odroid-007_cam1": {
+          "frame_zero_image_sha256": "72ae1617de52d66247795b37adfc947d27ec9c2cd55abb4f7a4f258961a42416",
+          "mask_sha256": "f03147f9a5414ed668447993cb2a3489a2d553458382bad2bcc9270c39823997"
+        },
+        "brics-odroid-008_cam0": {
+          "frame_zero_image_sha256": "2fbbdf1b1d012cb29e053e6294674a2a3962f0e9a62d4042144c9663424d3f41",
+          "mask_sha256": "89f72a1b8f3793e18f030880ef3eef163b3d1e7758dc45c9b094b74dd7fb12d0"
+        },
+        "brics-odroid-008_cam1": {
+          "frame_zero_image_sha256": "de1371cd71e45b87d16f41664659f99c686ac387bb6aa31860250325e1daecf6",
+          "mask_sha256": "ebd701e17082f2e4e951fb6a07e6368da0ea3c72c322383b017de32728577fac"
+        },
+        "brics-odroid-010_cam0": {
+          "frame_zero_image_sha256": "9af98bdd2108ace5ea44fce25e67854c7b4db5c222ac4ec908cf4788f97dbf29",
+          "mask_sha256": "b47097bc9f656823f5d1edf54339c09ea0f01243429193b9c351f07828e40694"
+        },
+        "brics-odroid-010_cam1": {
+          "frame_zero_image_sha256": "7c10079734e4fa04a67e89e66f9d972937443e024693441100acd3eb3fb71654",
+          "mask_sha256": "b48a47b277fadfb439de3110501bb9449c777b07988875b7cc52ed61d4329e47"
+        },
+        "brics-odroid-011_cam0": {
+          "frame_zero_image_sha256": "1f26ba37d23e41af3d7e63b19ec8ce1ea8f4dd270637eb848c4bc59bd9459150",
+          "mask_sha256": "966c715083b704792b0e122a940f9e5ff5987bf6a62a6e149ad04debe457dfd7"
+        },
+        "brics-odroid-012_cam0": {
+          "frame_zero_image_sha256": "f98b7d8a13093d92c5178073e32a65e28813a045cb30c92b39de9e7f16272c15",
+          "mask_sha256": "d33ffac1c146b821184cb7da6c246f84012d56e7cb2c4c4ed7923a01289c33a4"
+        },
+        "brics-odroid-012_cam1": {
+          "frame_zero_image_sha256": "95ddc4d107deb400ab2c291090ab3c1c96020d76bc28eee4ff2ebe9b381d8baf",
+          "mask_sha256": "5b9b7a482a2dfe0f62b18640186c1284704efc5c49c36dcf3a5d204ea6d97989"
+        },
+        "brics-odroid-013_cam0": {
+          "frame_zero_image_sha256": "c14da36a7b4c01c97a48622a0bc24aa7c5d94582e28d68e561046612e8f2caaf",
+          "mask_sha256": "6d351859c21f409574aa5861da76dec1c798a567435dd2bfde50bc30eb4dffbb"
+        },
+        "brics-odroid-014_cam1": {
+          "frame_zero_image_sha256": "40c7d0d4c1238087de8c365b720e9dfc5b6bbebb6a84e75cb63911e1fca77163",
+          "mask_sha256": "3192fb6b33b4a5d9eebc579307d60e61dd7b586622c9dd1a6facb5a893599170"
+        },
+        "brics-odroid-015_cam0": {
+          "frame_zero_image_sha256": "319098b9ff2109608a752cf479ea1529498eb23d95cb33a3e920ddcb4c69f022",
+          "mask_sha256": "758359406c566213023d4c2cb0ff626d818b981231df46d4919c488465909760"
+        },
+        "brics-odroid-015_cam1": {
+          "frame_zero_image_sha256": "57e768e729c654fd4b313011c6febefe74ffdcd8e73ba97844be637085a17d44",
+          "mask_sha256": "e28d5e43981718c46c0afbc1a3ddf1b87ef558dcdf4c98804a31839f7aa78450"
+        },
+        "brics-odroid-016_cam0": {
+          "frame_zero_image_sha256": "f34457f31c4424880f4d98695a611100b6825d9a39e416b003e2a50c4a13d2b1",
+          "mask_sha256": "3dc4e513d0aedbe8b455bca077e1eca6b940fe4de0afa6754c0a5e84abdd1a47"
+        },
+        "brics-odroid-017_cam0": {
+          "frame_zero_image_sha256": "1b02d722e74c51781575c102684441a0ca55d0ed23455f245a6055c234196e9e",
+          "mask_sha256": "ce747c7ca81b5664e22e2cc41cb14fedaad2c180479b24ce2aaa136149db7b89"
+        },
+        "brics-odroid-017_cam1": {
+          "frame_zero_image_sha256": "7e41a5eee6d1bb6e2aab31bd6c53a70b7326f087fa39273438b5608b516767f8",
+          "mask_sha256": "f8904dc8c62f45d3c64794f6013fb5d23c8985c465f15f9762cf4ba83508636f"
+        },
+        "brics-odroid-019_cam1": {
+          "frame_zero_image_sha256": "14bb22c9f444f5cb5610b0440f5241a928d232fd18d9f10b86e5a050c87c5333",
+          "mask_sha256": "2f12828fdd923d800a9ac65118604be3ef0da15338a0f6bb6c76178a0ee0f76d"
+        },
+        "brics-odroid-021_cam0": {
+          "frame_zero_image_sha256": "c3841ea9ef80a0510e857ad0988e8b4c2ac4423293fe98137846d9edc7ee4bc6",
+          "mask_sha256": "b75169747be4e4a25c093a87c67e8e990778877ee7dae319746cdb3749202490"
+        },
+        "brics-odroid-021_cam1": {
+          "frame_zero_image_sha256": "1ffb6d63be7e7d7a9348260eb949693991c6def85cea038d2b0a6b58c7584e34",
+          "mask_sha256": "7b71f4f35984bd5242416dd0d932766f3a315b51b692df0a994c5b9364cd07fe"
+        },
+        "brics-odroid-022_cam0": {
+          "frame_zero_image_sha256": "327300f420c07578a312b020c881f728c6932802fba6293514b161ecc66969ed",
+          "mask_sha256": "28ef5763603be9aa9d096fd8d6118b5f0c4226131c19304eae013c4fc10e29d1"
+        },
+        "brics-odroid-022_cam1": {
+          "frame_zero_image_sha256": "28b3c3e6aacb344e8cf4cc1bea4e79a4881f2a178788cf20da51ff2135b45522",
+          "mask_sha256": "8adc84cb1fe20da27e2d5185ba31dad5db55b94aff18e6e5c0ffcf4a3d4b7dba"
+        },
+        "brics-odroid-023_cam0": {
+          "frame_zero_image_sha256": "92def2fdebf8c60fc6b3cf495b09c01cf9493fe7fe2c4b44b7a261db95a340fb",
+          "mask_sha256": "6f85028b128616fc3366e8cc098ef26d7a4d9527b56f73c5341b7503c7ede125"
+        },
+        "brics-odroid-024_cam0": {
+          "frame_zero_image_sha256": "4ed7c2e57e4f476e0940873cb1f21ac4325da1c85369f519c263c06b56ab1bb3",
+          "mask_sha256": "f6c0ee3aabb7856cf5e71f4c7237478597691a094c1cd54a5b91d990dc71f261"
+        },
+        "brics-odroid-024_cam1": {
+          "frame_zero_image_sha256": "0563aafb2075f730fd33a48581cb11ed3e341d2fa412df9542f109a8c99824af",
+          "mask_sha256": "25973aef1b60672ec117858600a609afeaab50747e6c9f9ca5421f1df3963e1f"
+        },
+        "brics-odroid-025_cam0": {
+          "frame_zero_image_sha256": "4812487f1d64d3c159c5f517fabda41fd4404c1ee1e117798f1795915f601dad",
+          "mask_sha256": "5d03e06a0515f69d58c38a0c958078338d0bf9a093766b11717bc5e5fb138c9b"
+        },
+        "brics-odroid-025_cam1": {
+          "frame_zero_image_sha256": "1ac8465bc05edab2f8f9fde335e3224f50718ba253d1f3828e037d0db46a8a2a",
+          "mask_sha256": "2551eefb0c6c6336aaf918b6bfe081384f92819f187c3790f2154ddd0aefc983"
+        },
+        "brics-odroid-027_cam0": {
+          "frame_zero_image_sha256": "70f6954200835c486616aa1ebf5fd85273549ab316d5a76d06eae53aa60ee918",
+          "mask_sha256": "d0469d8bb58d20ea91fd5be75d348e11feb40673aa523c8b20f3142835af3905"
+        },
+        "brics-odroid-027_cam1": {
+          "frame_zero_image_sha256": "1b4fcef4af7b436f65488dcc5021e45c224297ccee23be9f643c46ce32484c85",
+          "mask_sha256": "f43ef1f9645d210a33414c1384fe3a3699cd0c1e4164cd0782a45b4c6fde55a2"
+        },
+        "brics-odroid-028_cam0": {
+          "frame_zero_image_sha256": "5f886d7dca12aeba0f8ff54188b03b781b7e8ebb9f05c32c04cf8fc06c6acb4e",
+          "mask_sha256": "0fb3e7adbee6189b23da4ae92263f1ac10e87365e9d804799a05a7d02d27064c"
+        }
+      },
+      "information_boundary": {
+        "future_dense_geometry_used": false,
+        "future_rgb_used": false,
+        "future_tracks_used": false,
+        "object_observation_frames_used": [
+          0
+        ],
+        "outcome_artifact_used": false,
+        "target_metric_used": false
+      },
+      "known_failure_result_sha256": "70f2c7a236ff40fdd5a029408b31d0b2cbf5edf75f0afefbb9a97e57301d3c4b",
+      "largest_component_fraction": 0.950611402255042,
+      "minimum_observed_vote_count": 7,
+      "object_id": "015-airbag-cloth",
+      "original_filtered_point_count": 48,
+      "original_points_sha256": "1e529292936215d9cacfcce82e747a50d8233a1a21e2dc5a001b54efa0721479",
+      "passed": true,
+      "required_vote_count": 7,
+      "selected_mask_dilation_radius_pixels": 0,
+      "stratum": "sheet"
+    },
+    {
+      "camera_count": 33,
+      "case": "100-puppet-ep0009",
+      "episode_id": 9,
+      "fallback_archive_sha256": "84a17d007787b18496a0d4c5ca80aa69bc858bca28ff42c89738a3346becbf04",
+      "fallback_colors_sha256": "74990efe390b03e6b2040ff8928a84b52caf34c10815b80497f2909cabc9d5e2",
+      "fallback_point_count": 3479,
+      "fallback_points_sha256": "6f207d289bb29fb348193bb12fdf392517286d4c98d3320496a4901bbdb62e50",
+      "frame_zero_inputs": {
+        "brics-odroid-001_cam0": {
+          "frame_zero_image_sha256": "0cb683e2cd02ee6a4d9ade92bef111b8cf6feec64f862dd3f1d3ece9970af29f",
+          "mask_sha256": "284f3a750ee9bbb8307def75ee9721d5b5bc936a8a18237881d538163db38039"
+        },
+        "brics-odroid-001_cam1": {
+          "frame_zero_image_sha256": "e9c3742c007de1241c988e28a86dc2df5ceacb385f443836da8bd92bae3b603a",
+          "mask_sha256": "0596d73851926e5060c185d8e7919d60de1670e9e6ecbbe73a16bd44bb43de68"
+        },
+        "brics-odroid-002_cam0": {
+          "frame_zero_image_sha256": "7987746fb9e69b1c700691e70cb55a0808404a8208e65581f1b9c6dcf2ed546d",
+          "mask_sha256": "92b3d6cabecc0f717d56e75a5c3a273aa7adedef82f8935f279343dfa33f47e0"
+        },
+        "brics-odroid-006_cam0": {
+          "frame_zero_image_sha256": "547ac5476f64943638231956f3b8a9c1088fb6cdda6effdff9a4fbaeff63569a",
+          "mask_sha256": "f04a49fd880603850b4804781554e7cf8ba3e31613d27880198a309af3a784a0"
+        },
+        "brics-odroid-007_cam0": {
+          "frame_zero_image_sha256": "2b21092ef292ef320326bcffac0734549d4cac27df9a03d178c7a0bf82d76909",
+          "mask_sha256": "ff69df5209a0513786bf63d83f7f6e578eb3005585266a6a75ffd2a68beca42b"
+        },
+        "brics-odroid-007_cam1": {
+          "frame_zero_image_sha256": "bd8df0bd6428b013bdc74632ea4df2747b0572463a9513e6d92ad851dfdc1b62",
+          "mask_sha256": "e267f9c9d3487646bb4632957159ae07ab74b0b959c7244d5847a69a1b80d288"
+        },
+        "brics-odroid-008_cam0": {
+          "frame_zero_image_sha256": "6e6f84bef819de37bc0ebe81a88d0881e09a475ff13f93264139788ac728df23",
+          "mask_sha256": "3e19dbb829e431ec358fdea90376bd7241adf3acc209f1f26d69cfa43e6b6608"
+        },
+        "brics-odroid-008_cam1": {
+          "frame_zero_image_sha256": "5d57531779acd93e43313cb632b02f9252d4ab49d12f0f3af54725baf4fd7819",
+          "mask_sha256": "a38853408d6398b057e8275efb3a13c094c11dd8ac0807aa51c53f9656172deb"
+        },
+        "brics-odroid-010_cam0": {
+          "frame_zero_image_sha256": "f45f3f31cffe2e8a9892730ad016f23f5fecbbe104cb98ee11e4b181d6d82568",
+          "mask_sha256": "2337fd612de1d59c90e31a1b0b66a633a1b60dbcb20499d6579487e9034a47e6"
+        },
+        "brics-odroid-010_cam1": {
+          "frame_zero_image_sha256": "cdf267179c5d22d07ecc507c652c582025314ccb2e1b6b77a28142e26f860eda",
+          "mask_sha256": "b61455ea206018f5fec4e5797ac0b428d45c05d4f44d5bf0993870c35994c16c"
+        },
+        "brics-odroid-011_cam0": {
+          "frame_zero_image_sha256": "c79415960409cb7271f2a5044c24892aa5bf58a4e59bdcb45956d4abbda01c22",
+          "mask_sha256": "7333231d3a3445c57f66ced685ec1c000c28c1ac74211aeb30b7e79ec71dba75"
+        },
+        "brics-odroid-012_cam0": {
+          "frame_zero_image_sha256": "214839164c64526c7f1f0a2a8830dc3b4a1ab64aeb25e113091a574148441cf1",
+          "mask_sha256": "3288b80fa2dbd5eb290e47ca951da4fe525b4dd5335f7b56d40327621001178f"
+        },
+        "brics-odroid-012_cam1": {
+          "frame_zero_image_sha256": "35e18ccae7922173831d64a2409c62c159711feb0de6ddca93dbca03f8e6e195",
+          "mask_sha256": "5a6a6da2f9132a20ef4ddfa3c92e84e93855962710dcb846a5e3e9d7d8b9d78e"
+        },
+        "brics-odroid-013_cam0": {
+          "frame_zero_image_sha256": "dfa28613f74fb95d062f6198813dc56ac8cd27e95a4acddece2a3368b86482a5",
+          "mask_sha256": "b6d68ffd2b568a12abc0167f13dac7efc9d49c67f161d853b9031934cf73081c"
+        },
+        "brics-odroid-014_cam1": {
+          "frame_zero_image_sha256": "0e091a63ce522af014b9d83af7350a7ff28c4ee6ec1ec4b06bfbd4ceb5dcb9dd",
+          "mask_sha256": "2efbebd672aa76ec9d4ba31f76e4aa0175edff6319874a4f81b55656395be26b"
+        },
+        "brics-odroid-015_cam0": {
+          "frame_zero_image_sha256": "a9d31441178df00939720641d6a783487c634dcf084f8ae918f9ed6015ccb1d1",
+          "mask_sha256": "bbe95aca517394fdd685706f6df5e66f542fa02c1aa48d28a0d7f51fa04352be"
+        },
+        "brics-odroid-015_cam1": {
+          "frame_zero_image_sha256": "024b42fb9441b64ec78fd7dd32662dd96293f41788c2200fa5ad73f0da1e60c7",
+          "mask_sha256": "5b3a9e2fc49d1c8e9d00285b4da3c799db5248ca28ebb0e8c4ef85fa0ad72dd6"
+        },
+        "brics-odroid-016_cam0": {
+          "frame_zero_image_sha256": "3d517bc741c92bd25f08eddccc08fc13b35ad9e249131d91463f46e738736d53",
+          "mask_sha256": "d73b4bbd3284abf8a7f7c4178abf1d3e53fb17547852abd2bfc3390006cdc4d5"
+        },
+        "brics-odroid-017_cam0": {
+          "frame_zero_image_sha256": "b6beafce4d062bc1a16378bb01071918d30cf26fc06e313c04209e1dcd6c0aa2",
+          "mask_sha256": "2049f3e3a858599aa41c78e5fbd97d097e90cc83da328d230f5448cd140930c5"
+        },
+        "brics-odroid-017_cam1": {
+          "frame_zero_image_sha256": "6449e1c625b8058bcde2ddb70735b78b8f8ea0a0c41f3b5453cd5cf5990f9744",
+          "mask_sha256": "00df95ec3456d94ae28c8e6dee7df5ddc9bbb3c4400c8b535183c83a837bb8e1"
+        },
+        "brics-odroid-019_cam1": {
+          "frame_zero_image_sha256": "6fb53d3be3efb344095ffe47ba74115bc0627015e0a1efa3d21a04000f7fc7e3",
+          "mask_sha256": "120f72ae49ee5000045f4f73fdec75c6bfaf674f553ba694a466e08eff66ca98"
+        },
+        "brics-odroid-021_cam0": {
+          "frame_zero_image_sha256": "773a7e5691e67a7a897f903486a4a8d17aa966c1229f80b12f244cd01a1f1ff4",
+          "mask_sha256": "77da1c1e52caa1278f01ccafcc4cf6ad49c72209bb3fbe6014ed80b77b2303af"
+        },
+        "brics-odroid-021_cam1": {
+          "frame_zero_image_sha256": "ccbda3eff3e65762cf339b637a5cdedef2175e9594bbec98d8b623685253e345",
+          "mask_sha256": "b55682e18cd7c8ae6890b3b9e5a88a6ccaae7ffac0ce3b38ad527d2f6d6def3c"
+        },
+        "brics-odroid-022_cam0": {
+          "frame_zero_image_sha256": "4a91e03a21fc193a2535bc206a78a84ff05a1ab0ff954922d5f3c0918a15bcd6",
+          "mask_sha256": "59bec266890ce0d0d45a7e5dca7cb587d9c114b8556727af0c63e7f1c67acf1e"
+        },
+        "brics-odroid-022_cam1": {
+          "frame_zero_image_sha256": "965d7200e640002c68abb8aea15c198c79145bd8371c16a10728aa873d6e2ffc",
+          "mask_sha256": "b434631b1637e1f7877878474ff1f2d203b18644aaa199c6056da426a22635e0"
+        },
+        "brics-odroid-023_cam0": {
+          "frame_zero_image_sha256": "db7b67c987f3376e23f410e51e5925e4a6d374b0d6cd701ba34267d3fba6d931",
+          "mask_sha256": "05fe527c69300318fd77e91d7b54d653452258712dbaefc70e8eb941e5f73cc5"
+        },
+        "brics-odroid-024_cam0": {
+          "frame_zero_image_sha256": "adc54e9638be23e795ab4a0f98a4e8805fe52da47312726236b46c3e20b1e4e8",
+          "mask_sha256": "901854ccd9d8b9c223b2988044f1ed45bfe95bd2ea9af336a4f13905f6d28933"
+        },
+        "brics-odroid-024_cam1": {
+          "frame_zero_image_sha256": "37d094f45a0754938228ab1da3750d61153c4010345dbec598e0e5e20e0f6529",
+          "mask_sha256": "86776d823317494596c6d5d7f653220f284ed8df05868ffd8cc50c630f7ec2b6"
+        },
+        "brics-odroid-025_cam0": {
+          "frame_zero_image_sha256": "9c16067cef5989767457a0ded982337a5c5a0b1e97e39754c361f876bbdc869d",
+          "mask_sha256": "c3f08c0853374c07e8c27451f676e532992f3f018784d9ff861c4fe439b3b3dd"
+        },
+        "brics-odroid-025_cam1": {
+          "frame_zero_image_sha256": "acb640fbd2fea627fad6956068a4ead797f6971405c442828ab187263ebeabb1",
+          "mask_sha256": "a437439b74148e8f52da2c84c0f751089e84b6158458bd4b92f8c1f7dddb9869"
+        },
+        "brics-odroid-027_cam0": {
+          "frame_zero_image_sha256": "0ac837da7b164692d75e0ee7dc20b586afe0a24c6aadfa9ce5ad899bf6d7dbca",
+          "mask_sha256": "ed6724062b50d12a95857c6cb0405fce029f7bf14ad29149e386e34045b45fda"
+        },
+        "brics-odroid-027_cam1": {
+          "frame_zero_image_sha256": "9f38d724f5dac58a42bcf2f5da247a2a1309b7c9d50e93d2861eb16f85224422",
+          "mask_sha256": "b07a7d880c0f32ffab3e80a6d51dbb49095641e737990a394e881d21e50f3f79"
+        },
+        "brics-odroid-028_cam0": {
+          "frame_zero_image_sha256": "a7772e0f0e1a4a3c327b8cd928f2d44cc5f4a77004e50f679a13cd59e3d625a8",
+          "mask_sha256": "60bd8c8cdb184a38f5423de8e627d4c7bdf5f6a87b18eccff0f2ee367dcf69ab"
+        }
+      },
+      "information_boundary": {
+        "future_dense_geometry_used": false,
+        "future_rgb_used": false,
+        "future_tracks_used": false,
+        "object_observation_frames_used": [
+          0
+        ],
+        "outcome_artifact_used": false,
+        "target_metric_used": false
+      },
+      "known_failure_result_sha256": "ed6410b52013edcf4c12ab9f0ec9d66995bb8c9e44d5e02293fbd9348f239cb0",
+      "largest_component_fraction": 0.9198594612681947,
+      "minimum_observed_vote_count": 7,
+      "object_id": "100-puppet",
+      "original_filtered_point_count": 63,
+      "original_points_sha256": "252ad6f15951202045718c1fb8e4b61350a05b17d16ccc8707a9cf9deff55f02",
+      "passed": true,
+      "required_vote_count": 7,
+      "selected_mask_dilation_radius_pixels": 0,
+      "stratum": "volumetric"
+    },
+    {
+      "camera_count": 32,
+      "case": "160-hose-ep0001",
+      "episode_id": 1,
+      "fallback_archive_sha256": "750a2f355d4fd883326676381e3a507f97f54e50a827cf49a3714026686b26c1",
+      "fallback_colors_sha256": "ab7037dd2ae6a29218cfefc2d46b0c8e9bc4b1b418876737bfb9fe9f68cd5e2e",
+      "fallback_point_count": 2675,
+      "fallback_points_sha256": "638f28500a780a0ee1a93c6182891eb361ac898c1ec8b941d2a92355ba967abc",
+      "frame_zero_inputs": {
+        "brics-odroid-001_cam0": {
+          "frame_zero_image_sha256": "d843d317e5d286a6d67e1063845d50d934ddf517a0ba121fa8ab5a5c51cf104a",
+          "mask_sha256": "6cfb5f11472f782a709df4a32e02a3508a47631e425703f1ca4454b2b2f183b1"
+        },
+        "brics-odroid-002_cam0": {
+          "frame_zero_image_sha256": "3a81f67237c52f446f42e64c5c97e3ccaee71862f60693d5d78efdcd2e5de126",
+          "mask_sha256": "428a343d544f3bd9274bd0b243be93162cf21aa8b1f00c35543ee4df0efc01b4"
+        },
+        "brics-odroid-006_cam0": {
+          "frame_zero_image_sha256": "33ba81aac56b821e38ee717bb2e00d431c00e68ed555dc797341215768ae0b5c",
+          "mask_sha256": "128d2315dcfef980b98596719a261cbeb08096370c1ff65411037e5ac9e20a6a"
+        },
+        "brics-odroid-007_cam0": {
+          "frame_zero_image_sha256": "01f10d82624e947526d726d553594cfdd6de3efe0a4a14dbd0776ade6dac5e21",
+          "mask_sha256": "b16353a8a04b2bd98c3094b3ce85d6167208753a746fc18807e20974ad61d9bf"
+        },
+        "brics-odroid-007_cam1": {
+          "frame_zero_image_sha256": "211f7f1ead9b030866942833dbad9dacc90e1434e1f9fe968ad5c4f881539cb2",
+          "mask_sha256": "e2b12c3cfe383b75fe62dd57eed6bcfeaefacbdd4bd119e759ab55e4cccdef54"
+        },
+        "brics-odroid-008_cam0": {
+          "frame_zero_image_sha256": "97675ac8f6a3884543664b47199938cc9c055b76e8a7647e3ddd6948887c5fa9",
+          "mask_sha256": "36cf273a5d28c0a5263dd32aeb70f8d047ac4431379091fccfb7c25424dd98df"
+        },
+        "brics-odroid-008_cam1": {
+          "frame_zero_image_sha256": "b0967353301cbd8d6dd086fa2efa55e13148413067c60603372b002913d005f2",
+          "mask_sha256": "554869c155446dee52233c43c5cd251fbbd2a284fee60d81701b712a5375554d"
+        },
+        "brics-odroid-010_cam0": {
+          "frame_zero_image_sha256": "5e11ddfd169f842d0b7a479aa3c7dac0cc3118a321147c69dc5f6509ba6ac9ab",
+          "mask_sha256": "81d90c3feb30f26f2e848797f46ddf6acf9628e7536e5a52ab616c1689d52884"
+        },
+        "brics-odroid-010_cam1": {
+          "frame_zero_image_sha256": "d73117354fbe13da4d5d2f6d753890a925f357f9ab44c02c1fcb225728efc08e",
+          "mask_sha256": "bc4d0677da13bc67547b1153aa72a3cd378c86a61043ee127ccbfaab6e742e3b"
+        },
+        "brics-odroid-011_cam0": {
+          "frame_zero_image_sha256": "a18c5cca5272ec3dfb772cf18d8aaeb4c9979531338b526d72133474324c4862",
+          "mask_sha256": "1aefa520f6aa70203ba0fb047cfc35e0fb81c3e3a003c86a8f5d7a39201f33ce"
+        },
+        "brics-odroid-012_cam0": {
+          "frame_zero_image_sha256": "babab6cbfffb2cd7e410d95edc0ccec58445f7527b173c8fe23a5b2bc4f60c7b",
+          "mask_sha256": "8d1f4096591f1df6dac0f330991098addde333cefcf240a235f08139ba2b8593"
+        },
+        "brics-odroid-012_cam1": {
+          "frame_zero_image_sha256": "ce6caa2198501b73b3ba70af0d61914d9819acf965d2769d4bda5233fe77375c",
+          "mask_sha256": "915bd2b844a2174b8e5b83e3c4ec8d9d631bbcd93b19abfd6f0dd553a1c6605b"
+        },
+        "brics-odroid-013_cam0": {
+          "frame_zero_image_sha256": "e2454163ee265def45ebd2bf1430f3b433d521a78cae04d9cc82c9f190890056",
+          "mask_sha256": "11035631a183d31a8631eb0b5d878de1d46b39b25178d3c7a91a36b3bd020cf9"
+        },
+        "brics-odroid-014_cam1": {
+          "frame_zero_image_sha256": "a15ada00dc88017dc1dc01f3fe7474302425b2d3db343d1d7308a60485941bce",
+          "mask_sha256": "ffc8dfd3a5127cf83bb13ac441a225a4d46ea62ebb011f3bc52a56808527c0bd"
+        },
+        "brics-odroid-015_cam0": {
+          "frame_zero_image_sha256": "730aab8047ca2007e0caf7b4b65b65581c2cada173ee564d16e5e672122651b6",
+          "mask_sha256": "08507737b651f1705f8d317e16a78b28eaaa1ba181ea5f9ede08c3ba166fde83"
+        },
+        "brics-odroid-015_cam1": {
+          "frame_zero_image_sha256": "3a8470df65fc51a3384df6024bb20e44db4ca0c981f72a6464ea38afdbda9aba",
+          "mask_sha256": "1ab705aae5a710e62b97172a41c920a43b1a533168aca0993e4914c3f8466dec"
+        },
+        "brics-odroid-016_cam0": {
+          "frame_zero_image_sha256": "872870ac9e7ba2f3e5f3d65d1ee7fee446525778f3b36b6262f7bb97a0548252",
+          "mask_sha256": "9150faab70ee28983e5cb0257706e624a84229fdaad522a358abe9ef15683a9d"
+        },
+        "brics-odroid-017_cam0": {
+          "frame_zero_image_sha256": "b7c1bd9085ad7af463a167c57f3ef10d88cd7fc490a40865526bb07a1fe40022",
+          "mask_sha256": "7f0ffe0cd03e3f97d7b67e29cd6532e8a119f5f8a909bb07ae753a357f0b5f29"
+        },
+        "brics-odroid-017_cam1": {
+          "frame_zero_image_sha256": "3cf67bf52cb060a53f8f7d50ac89fb8c36ab29739513ebea8eedbf5f82c13517",
+          "mask_sha256": "ace0eba96a50a622d844f8799943267bdcfaeeb3e88c183d308422f1e69a0cd9"
+        },
+        "brics-odroid-019_cam1": {
+          "frame_zero_image_sha256": "db675bbac1be1f76bebf723bbb80e8fe76190cf53d0167ea03af94a26cb30c8e",
+          "mask_sha256": "7bedc82f72e1f18f364ace75f86fbc7e97ce5753d140be3bf9cce0df38a128b8"
+        },
+        "brics-odroid-021_cam0": {
+          "frame_zero_image_sha256": "e7ffcdea413d4ab87aeddae89d70a1696803391c4271470f45c1f5cbe9720920",
+          "mask_sha256": "95a24175dcc653696da0b560679ee1443443ef0aac14c64ba9aa8d6527bf0afb"
+        },
+        "brics-odroid-021_cam1": {
+          "frame_zero_image_sha256": "116d4ed586fd8067534d09c55001413a11feed909295977feffd0477388d4a1e",
+          "mask_sha256": "d45e149c25e926a2a8e44a1ffe3b9fc52a05ba8e76a49cdbeae6fa4f6bf85038"
+        },
+        "brics-odroid-022_cam0": {
+          "frame_zero_image_sha256": "26a8a52254b8f958d9794b38d09464df993e600f77d1fad231e323a7714768b2",
+          "mask_sha256": "14860256568c07273e2a1493478fe45316b21f8318e4a7b39063adceaec1686d"
+        },
+        "brics-odroid-022_cam1": {
+          "frame_zero_image_sha256": "eaf0ff6f630675c69150a869cb45c009a06414106b2ce0f0e0597440aed88c6f",
+          "mask_sha256": "66fa8945fdc4fac08108d042d2337a3b5ddc5e66738078beb4d7b3b15655e5ba"
+        },
+        "brics-odroid-023_cam0": {
+          "frame_zero_image_sha256": "3db1d3f5ac496acf90b819a008f0d35224cf18b7dff3ff65d85817604310e084",
+          "mask_sha256": "6c7f3113b9ebef0000203cdfdd4649341002a7983c153ba37f12af903208aea0"
+        },
+        "brics-odroid-024_cam0": {
+          "frame_zero_image_sha256": "6dbebd1683bdbea13ccd47f74d9a89ac3bd336dd06b447397fafad5262e8cd75",
+          "mask_sha256": "83586288228567f703e66728f7933a43db8cfab5cc4cc48e5607e2287e40b7a2"
+        },
+        "brics-odroid-024_cam1": {
+          "frame_zero_image_sha256": "539f9e70fad5d19a81e20bc09cd5e7c5640dd4aacf4a5e6e2f8f49d10bd9cc6e",
+          "mask_sha256": "d576e6ac58d735f2fe8922384378e67e66683f0453218d8ab7273e8ef30cff54"
+        },
+        "brics-odroid-025_cam0": {
+          "frame_zero_image_sha256": "a3e35933dc836e265df1b9793c528e5bb1574303415d8877a2faacd273b21046",
+          "mask_sha256": "ae6b1b7c69c8de238267c1d17b0573bb4d6f4ba0680411f5050867d2ed87b14a"
+        },
+        "brics-odroid-025_cam1": {
+          "frame_zero_image_sha256": "249551918721aaf8c218c74200ffe0cc316d27c667f098d0eb4fff142cb7340f",
+          "mask_sha256": "e762f5bc3ac1351c9673c5461b6f30f0367801099035da1af48347930059949e"
+        },
+        "brics-odroid-027_cam0": {
+          "frame_zero_image_sha256": "3df5c1ade97a404130809d20964906adae2b3979a3cc059b570fee7a23514cf6",
+          "mask_sha256": "38ae3d4ff70c182a56926f8ac791974d0db8de2d796e94830b2cccac89bd45a3"
+        },
+        "brics-odroid-027_cam1": {
+          "frame_zero_image_sha256": "6ea7529a5413606e425e1b4f9ab6e8e5e6ee1d2660f9648597f249cb79df2cd0",
+          "mask_sha256": "e970e91884715fc435f4e2be0ac6d4b6495aa212bf91c9a38368445e2ace6354"
+        },
+        "brics-odroid-028_cam0": {
+          "frame_zero_image_sha256": "dc8d8d787ea7c7138e309eaeac4a77a08451c215f9968661a809eec8f854847b",
+          "mask_sha256": "7f521e9bba55d1e25e09c01cd6d5bc25f2d1608a0a8147559c9a29c2ced957e7"
+        }
+      },
+      "information_boundary": {
+        "future_dense_geometry_used": false,
+        "future_rgb_used": false,
+        "future_tracks_used": false,
+        "object_observation_frames_used": [
+          0
+        ],
+        "outcome_artifact_used": false,
+        "target_metric_used": false
+      },
+      "known_failure_result_sha256": "f1f864e6932b71c05800adaa4e283eca0381483690f451bb52bd0e19a073a0f2",
+      "largest_component_fraction": 0.8515981735159818,
+      "minimum_observed_vote_count": 7,
+      "object_id": "160-hose",
+      "original_filtered_point_count": 25,
+      "original_points_sha256": "3de31f435a754fe88fd038081a662bd01754f21bf2ca76764d1da91529a1769c",
+      "passed": true,
+      "required_vote_count": 7,
+      "selected_mask_dilation_radius_pixels": 0,
+      "stratum": "filament"
+    },
+    {
+      "camera_count": 32,
+      "case": "174-chain-ep0001",
+      "episode_id": 1,
+      "fallback_archive_sha256": "d53a1cc0da84d5342aa98a6c3a1e7db90bc96ad1fc8cc1a71afe1f311a0abde5",
+      "fallback_colors_sha256": "225307ec3942d3e89d0d2aaa99bebe980b44197021c19db3757eb6f518e9e89b",
+      "fallback_point_count": 264,
+      "fallback_points_sha256": "7ddcd683145957112b3d162adbdde3477a83fc147650ef45f0748fb8c05d1023",
+      "frame_zero_inputs": {
+        "brics-odroid-001_cam0": {
+          "frame_zero_image_sha256": "3d35fdf13dc614d3b8870da80208929403daea6ffff469ad2476d8730eddedad",
+          "mask_sha256": "adf0b26433c32b906101e519c2fd59844a1a217c500471925ae9f333939a26dd"
+        },
+        "brics-odroid-002_cam0": {
+          "frame_zero_image_sha256": "b6b1da2af40a3080817fb08a36ccbfd04eaac15357e76012279d5e6b103b7b57",
+          "mask_sha256": "885b1d5eae838e411387782bfcac2914822e279b2b0021991cbb844256115074"
+        },
+        "brics-odroid-006_cam0": {
+          "frame_zero_image_sha256": "2b272580805fb9258d27f1cc0a0630f02948d56766722ff5d0e3cc1671c137ad",
+          "mask_sha256": "8af12c3b030e590ab52a56da95e9ef365d41b706730b9865128d5b51442b104d"
+        },
+        "brics-odroid-007_cam0": {
+          "frame_zero_image_sha256": "0daadb367e41954e35066350cc9ea6207c9662504e1ad09e296c9738c559f05e",
+          "mask_sha256": "004ad647dae6a07070ca52da79f9605a3ed896484feb3c6be6abfc37cfcd94bb"
+        },
+        "brics-odroid-007_cam1": {
+          "frame_zero_image_sha256": "aaf32109368e90338dbda2f2e56e7f2627cdbbdb29ef8df5a8f76ac15c2cbe48",
+          "mask_sha256": "2509105fc5c840b05a0a52e4b313fa9b57a90ef5e5ef9570eff207205b622b38"
+        },
+        "brics-odroid-008_cam0": {
+          "frame_zero_image_sha256": "4aca28703d54d4d12d16af8b763c02cd3287f4ec59b4807e2195eb6442e657e5",
+          "mask_sha256": "4c9bc4ddb365055636e854993360e461433958d35e44e576567cc7ef9a53a29e"
+        },
+        "brics-odroid-008_cam1": {
+          "frame_zero_image_sha256": "6d8e04a9d4cb588d14e7b5078129bdc50200aa4d60f2433f1d74e74883a95737",
+          "mask_sha256": "d1bfbca70924728eda97ca8817c216071b4c490fad856a992ccb207ceccbc011"
+        },
+        "brics-odroid-010_cam0": {
+          "frame_zero_image_sha256": "a56d7c5cfb4ada6c43a6b8d3a9cb64330888707c8bc6f0a8e02fc3451a1e527e",
+          "mask_sha256": "74d8245c014a8092aaba75e11b556780595aa94a8e0797d812976eb87e6ff7c3"
+        },
+        "brics-odroid-010_cam1": {
+          "frame_zero_image_sha256": "cce00b5a5e2274bfcecdbc9c9c5a131e5aa50ff8b089ccc0ccbe5d474b619d60",
+          "mask_sha256": "b275280419d7298d35ef0151674d0401b38d64a7c4bca68177d2b7bc4beeb785"
+        },
+        "brics-odroid-011_cam0": {
+          "frame_zero_image_sha256": "108e012486a031f7b4b558f117701b60a5033f0bc0bf91bfb71a497c87a1d398",
+          "mask_sha256": "03f2c719eb5f20ae0518b522f895384ab2b62814d0081490f9e032a9555fdf69"
+        },
+        "brics-odroid-012_cam0": {
+          "frame_zero_image_sha256": "19879f30d76e66efd3bf764edbef98b0b827706f6321e46cc2ca96560eaa5d8e",
+          "mask_sha256": "a41a878171828e95f1f613683385f8ec3fe2147bd3d7358721b2b1eda3f206ed"
+        },
+        "brics-odroid-012_cam1": {
+          "frame_zero_image_sha256": "928f509ed1767ffbee6f11ade7c3b42df9b529fbf3f22f953554657c455dbdbc",
+          "mask_sha256": "ce431360df58af90bd923749116df00286173c553d3c25ea3910416f2983b6d6"
+        },
+        "brics-odroid-013_cam0": {
+          "frame_zero_image_sha256": "44f20d99e248abab8157193ce7b0a1a7d9073d5338797048a8f2c11e48977004",
+          "mask_sha256": "9031da39c82d4ee7e9c036e8f8d9796191ad4b5304ecae81837d18d96599216f"
+        },
+        "brics-odroid-014_cam1": {
+          "frame_zero_image_sha256": "7bbe8cfbb179ef05c6373f6ae798d73063b8d3a5d3bbaaaf596e1128a53df9a2",
+          "mask_sha256": "f19dc999daa755a4262fb871226cb6d6c49d58113db4422cade0c25d0651ab5a"
+        },
+        "brics-odroid-015_cam0": {
+          "frame_zero_image_sha256": "2e347a9537fb9b819265641aa63a553cbf09cfb5fdfb845da284bba7f0caaf44",
+          "mask_sha256": "399ed2c5dfa8ba1b8d3cc3990e59dd1f663bfb0fb3a4081a96e8efe3c8f87718"
+        },
+        "brics-odroid-015_cam1": {
+          "frame_zero_image_sha256": "de0fb8992f2339345b32a2027acc5b419e6b401bb40d75d462b9de6d3715673c",
+          "mask_sha256": "bc85c0b57c607d810cdf14d13c1a369e7258760fcb1b711cb56bb72760e49e79"
+        },
+        "brics-odroid-016_cam0": {
+          "frame_zero_image_sha256": "11b50a0c861d92e55576d7a601404e583bf726d170ad89f084ebcd0b8c935cf9",
+          "mask_sha256": "2af04eddd1ff74c4fec2b8b83e2f63555c13a92751e0fa523e552ee795cd6309"
+        },
+        "brics-odroid-017_cam0": {
+          "frame_zero_image_sha256": "fc02625e1f0a96379d375e8defa2514ae7971b0853936ced9ea3cbc4224e3c9b",
+          "mask_sha256": "0195fa0b355f16acd9d37ea7d24d69103e5f140d3b46266ee24d8234fcc5a49f"
+        },
+        "brics-odroid-017_cam1": {
+          "frame_zero_image_sha256": "fd8442fa8f183b336f9553a09c6d0ba26d25fe5a714ca0e32e93311bd17e8aa8",
+          "mask_sha256": "5457e14d16eea2ae232262750bae6934c3869dfd61aa02f8d0560134a54276af"
+        },
+        "brics-odroid-019_cam1": {
+          "frame_zero_image_sha256": "a34d3af69ea3de921fe035557af794b80c9bc447a3268a0ff89aa1bb4cdc6e42",
+          "mask_sha256": "5738abd28023a61176ca960d80945b3fedb59ae1f417fa1a0f0a047328bbad7a"
+        },
+        "brics-odroid-021_cam0": {
+          "frame_zero_image_sha256": "56f5a179f659e6aac18cc8d96e4010f9894e5ff48b54a540836c56fcbc4aaa5e",
+          "mask_sha256": "2cf2f75dc4107f174ac0d3d031f7ea1220c8a1fd2e6e03843e9132b806a60007"
+        },
+        "brics-odroid-021_cam1": {
+          "frame_zero_image_sha256": "dd3a9b88d3a67413fc31b075b8a0743d6682041d3a8857f9458fdf2df025d81e",
+          "mask_sha256": "bd1163ad2ed6537842be3c62ed66e4b8b27f8ae17bc04be2ba27f90992a6a2c7"
+        },
+        "brics-odroid-022_cam0": {
+          "frame_zero_image_sha256": "d221f2d07e0a72fde601ee384c795c24bd5287b1a33a59aa0dfceaf88b7a36ed",
+          "mask_sha256": "4769d0b74ec3ccace423c41d89260109548dc6044d67aa04c94076ea44838f46"
+        },
+        "brics-odroid-022_cam1": {
+          "frame_zero_image_sha256": "7c2c7a118035cfaa4540b5339521ac001ca76a7e4aa5a934f6733f06a2cf3a31",
+          "mask_sha256": "86616bbaa975d8e7e66e56f7ee7efc3179abdf201333777fb16272836d3bcbb1"
+        },
+        "brics-odroid-023_cam0": {
+          "frame_zero_image_sha256": "ea68c0e083cd1dce55398580ecb3dc157bd2a9b0dbb659fd235baabb1c2eb767",
+          "mask_sha256": "63fca142b83893449f438423bccdf362f2150d7ccbe3d07bb1aeb27fb731955c"
+        },
+        "brics-odroid-024_cam0": {
+          "frame_zero_image_sha256": "4a2c8a7d7392e195607bae68f023bb51cc4df8141c8fb696bfc30ce0c113609d",
+          "mask_sha256": "dc1be27437ff1e6f8c3210b1ac233ed8b843eea20c330e3bc1840d3822878709"
+        },
+        "brics-odroid-024_cam1": {
+          "frame_zero_image_sha256": "cd2b72e6d53d760bd03fb3a366b7f7d589eae6312c7a1bf665f261e13fa8b2d8",
+          "mask_sha256": "a87aeeb6b8559136b790ac46a739e1d4a7a1a91b8b12b5ea649526e563019f00"
+        },
+        "brics-odroid-025_cam0": {
+          "frame_zero_image_sha256": "08a32a9ca80ba23484b9be9f33f31aed26fdea7722035a70141d2b3c93e2d98e",
+          "mask_sha256": "5356f4fcea300d06b866e21a95ee6d8a08e065814a8363b3d55b62c529e59ecc"
+        },
+        "brics-odroid-025_cam1": {
+          "frame_zero_image_sha256": "7803066a2d21b4a18dc502706dd793dd54f3428beae31ddabec94fadd2da4b48",
+          "mask_sha256": "b8bfcb46e6b81a06c2a10a9e3788b05fd570066bc48625c9f966219b1f81a0d3"
+        },
+        "brics-odroid-027_cam0": {
+          "frame_zero_image_sha256": "e7411a896ee9b7e508e9f182c5c7d7e77b934931229c22bb50e9328a95ad0ba7",
+          "mask_sha256": "bdded9b4686b98c2c5e37f19d4575fef34d504638cbb760290fab968ac954678"
+        },
+        "brics-odroid-027_cam1": {
+          "frame_zero_image_sha256": "f09aab24a27359ed224ad1926a6dbe0affa176737ace038f31a6cfcf991771e8",
+          "mask_sha256": "940d99e1fcf6661b85e9bda5db69360cdfbed2591b7957dfe7f6c609ba84415e"
+        },
+        "brics-odroid-028_cam0": {
+          "frame_zero_image_sha256": "e0a8610d12ebc6600bcefe6cc94c16ac8d2eb332bf34faaf3be39b82d728ae79",
+          "mask_sha256": "0d5967c61531ff933c95d53f45a6c663cfbde87bb3f3d817e7e6b9863e0e941f"
+        }
+      },
+      "information_boundary": {
+        "future_dense_geometry_used": false,
+        "future_rgb_used": false,
+        "future_tracks_used": false,
+        "object_observation_frames_used": [
+          0
+        ],
+        "outcome_artifact_used": false,
+        "target_metric_used": false
+      },
+      "known_failure_result_sha256": "c437a31eb6d4452a0eebaa37a57a7da30a451dda64c2aa80dc1ac117127dd792",
+      "largest_component_fraction": 0.5057471264367817,
+      "minimum_observed_vote_count": 7,
+      "object_id": "174-chain",
+      "original_filtered_point_count": 103,
+      "original_points_sha256": "fe758cb9322dcfaa471aa6c6ebc9844beb3b17f0cfe9b53bfe9d813adfb84a47",
+      "passed": true,
+      "required_vote_count": 7,
+      "selected_mask_dilation_radius_pixels": 0,
+      "stratum": "filament"
+    }
+  ],
+  "claim_boundary": "Operational recovery check on four known frame-zero quality failures. The cases informed the fallback hypothesis, so this is neither confirmation nor predictive evidence.",
+  "information_boundary": {
+    "future_dense_geometry_used": false,
+    "future_rgb_used": false,
+    "future_tracks_used": false,
+    "known_quality_failure_status_used": true,
+    "object_observation_frames_used": [
+      0
+    ],
+    "outcome_artifact_used": false,
+    "reserved_target_objects_used": false,
+    "target_metric_used": false
+  },
+  "postopen_gate_passed": true,
+  "protocol_config_sha256": "2671d8c0d0d9edf597c74f9cef8ae7c480ac021ca943f986e57009557cbb241f",
+  "protocol_id": "deform360-frame-zero-postopen-failures-v1",
+  "provenance": {
+    "bayesian_phystwin_revision": "90cfd0645003dfa508c9e4ac528617e95e1e7913",
+    "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "initializer_module_sha256": "fdc5fefed2487e2a0f49377a5e518679686e09038c9aff7849c75e8490624f7b",
+    "runner_sha256": "805b176934a84602d51ecf4ddb882546bdee2d96f22e47182c71cfcb9bb7aa0c",
+    "source_result_sha256": "7f22378af2f458d0026ebc627be0df0e28f5a0937ac41b06e31ddf72c8d8c4b7"
+  },
+  "result_sha256": "f819e37b2ccac3959349298ba3824a82d342902c9d357ddc53d5f548278d06df",
+  "schema_version": 1,
+  "summary": {
+    "case_count": 4,
+    "failure_count": 0,
+    "recovery_count": 4
+  }
+}
