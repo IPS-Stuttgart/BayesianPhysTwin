@@ -1,0 +1,162 @@
+from __future__ import annotations
+
+import numpy as np
+
+from bayesian_phystwin.deform360_frame_zero_initializer import (
+    FrameZeroInitializerConfig,
+    FrameZeroPointCloud,
+    build_strict_multiview_surface,
+    multiview_mask_votes,
+    original_point_cloud_admissible,
+    select_frame_zero_point_cloud,
+)
+
+
+def _look_at(position: np.ndarray) -> np.ndarray:
+    forward = -position / np.linalg.norm(position)
+    up_hint = np.array([0.0, 1.0, 0.0])
+    if abs(float(np.dot(forward, up_hint))) > 0.9:
+        up_hint = np.array([0.0, 0.0, 1.0])
+    right = np.cross(up_hint, forward)
+    right /= np.linalg.norm(right)
+    up = np.cross(forward, right)
+    transform = np.eye(4)
+    transform[:3, :3] = np.column_stack([right, up, forward])
+    transform[:3, 3] = position
+    return transform
+
+
+def _synthetic_views() -> tuple[dict[str, np.ndarray], ...]:
+    image_size = 64
+    intrinsics = np.array(
+        [[48.0, 0.0, 31.5], [0.0, 48.0, 31.5], [0.0, 0.0, 1.0]]
+    )
+    positions = (
+        np.array([0.0, 0.0, -1.0]),
+        np.array([1.0, 0.0, 0.0]),
+        np.array([0.0, 1.0, 0.0]),
+        np.array([-0.7, -0.4, -0.7]),
+    )
+    rows, columns = np.ogrid[:image_size, :image_size]
+    disc = (rows - 31.5) ** 2 + (columns - 31.5) ** 2 <= 11.0**2
+    masks: dict[str, np.ndarray] = {}
+    images: dict[str, np.ndarray] = {}
+    intrinsics_by_camera: dict[str, np.ndarray] = {}
+    extrinsics: dict[str, np.ndarray] = {}
+    for index, position in enumerate(positions):
+        camera = f"camera-{index}"
+        masks[camera] = disc.copy()
+        image = np.zeros((image_size, image_size, 3), dtype=np.uint8)
+        image[..., index % 3] = 64 + 32 * index
+        images[camera] = image
+        intrinsics_by_camera[camera] = intrinsics.copy()
+        extrinsics[camera] = _look_at(position)
+    return masks, images, intrinsics_by_camera, extrinsics
+
+
+def _config(*, maximum_output_point_count: int = 512) -> FrameZeroInitializerConfig:
+    return FrameZeroInitializerConfig(
+        minimum_original_point_count=32,
+        minimum_camera_count=4,
+        cube_half_extent_m=0.5,
+        voxel_resolution=32,
+        consensus_fraction_of_peak=0.75,
+        minimum_consensus_votes=3,
+        maximum_mask_dilation_pixels=1,
+        minimum_fallback_point_count=32,
+        maximum_output_point_count=maximum_output_point_count,
+    )
+
+
+def test_original_admission_matches_point_only_gate() -> None:
+    points = np.zeros((32, 3), dtype=np.float32)
+    assert original_point_cloud_admissible(points, minimum_point_count=32)
+    assert not original_point_cloud_admissible(points[:31], minimum_point_count=32)
+    points[0, 0] = np.nan
+    assert not original_point_cloud_admissible(points, minimum_point_count=32)
+
+
+def test_admitted_original_is_exact_and_fallback_is_lazy() -> None:
+    points = np.arange(120, dtype=np.float32).reshape(40, 3)
+    colors = np.arange(120, dtype=np.uint8).reshape(40, 3)
+
+    def forbidden_fallback() -> FrameZeroPointCloud:
+        raise AssertionError("fallback must not be evaluated")
+
+    selected = select_frame_zero_point_cloud(
+        points,
+        colors,
+        forbidden_fallback,
+        config=_config(),
+    )
+    assert selected.method == "original-splat"
+    assert selected.points_m is points
+    assert selected.colors is colors
+    assert selected.points_m.tobytes() == points.tobytes()
+    assert selected.colors.tobytes() == colors.tobytes()
+    assert selected.diagnostics["fallback_evaluated"] is False
+
+
+def test_strict_surface_is_deterministic_connected_and_multiview_supported() -> None:
+    masks, images, intrinsics, extrinsics = _synthetic_views()
+    first = build_strict_multiview_surface(
+        masks,
+        images,
+        intrinsics,
+        extrinsics,
+        config=_config(),
+    )
+    second = build_strict_multiview_surface(
+        masks,
+        images,
+        intrinsics,
+        extrinsics,
+        config=_config(),
+    )
+    assert first.method == "strict-multiview-visual-hull-surface"
+    assert np.array_equal(first.points_m, second.points_m)
+    assert np.array_equal(first.colors, second.colors)
+    assert len(first.points_m) >= 32
+    assert first.points_m.dtype == np.float32
+    assert first.colors.dtype == np.float32
+    assert np.all(np.isfinite(first.points_m))
+    assert np.all((first.colors >= 0.0) & (first.colors <= 1.0))
+    selected = first.diagnostics["attempts"][-1]
+    assert selected["components"]["largest_component_point_count"] > selected[
+        "components"
+    ]["surface_point_count_before_subsampling"]
+    votes, _ = multiview_mask_votes(
+        first.points_m,
+        masks,
+        intrinsics,
+        extrinsics,
+        mask_dilation_radius_pixels=first.diagnostics[
+            "selected_mask_dilation_radius_pixels"
+        ],
+    )
+    assert np.all(votes >= selected["required_vote_count"])
+
+
+def test_surface_cap_is_spatial_and_fallback_selector_recovers() -> None:
+    masks, images, intrinsics, extrinsics = _synthetic_views()
+    config = _config(maximum_output_point_count=48)
+    fallback = build_strict_multiview_surface(
+        masks,
+        images,
+        intrinsics,
+        extrinsics,
+        config=config,
+    )
+    assert len(fallback.points_m) == 48
+    failed_points = np.zeros((8, 3), dtype=np.float32)
+    failed_colors = np.zeros_like(failed_points)
+    selected = select_frame_zero_point_cloud(
+        failed_points,
+        failed_colors,
+        lambda: fallback,
+        config=config,
+    )
+    assert selected.method == "strict-multiview-visual-hull-surface"
+    assert selected.diagnostics["fallback_evaluated"] is True
+    assert np.array_equal(selected.points_m, fallback.points_m)
+    assert np.ptp(selected.points_m, axis=0).min() > 0.1
