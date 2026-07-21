@@ -8,19 +8,26 @@
       "repository": "brownu/deform360",
       "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
       "deform360_code_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
-      "source_panel_origin": "Previously opened independent-source-v1 panel used by the Deform360 Bayesian-PhysTwin development studies"
+      "source_panel_origin": "Previously opened and exhausted deform360-selective-virtual-sensing-v1 frame-zero staging panel; only the first already-staged episode per object is used and no outcome artifact is read"
     },
     "source_objects": {
       "filament": {
-        "002-rope-silk": [2, 5, 6, 7, 9]
+        "005-thread": [5],
+        "069-jump-rope": [1],
+        "071-climbing-rope": [0],
+        "077-hemp-rope": [8]
       },
       "sheet": {
-        "083-blanket-cloth": [1, 2, 4, 5, 8, 9],
-        "085-scarf-cloth": [3, 4, 6, 8, 9]
+        "009-yellow-cloth": [9],
+        "022-handkerchief": [0],
+        "035-wipe-cloth": [8],
+        "041-wrap-paper-cloth": [2]
       },
       "volumetric": {
-        "092-squirrel": [4, 5, 7, 8, 9],
-        "170-spider": [0, 1, 3, 5, 8, 9]
+        "044-doll": [0],
+        "049-ball": [5],
+        "125-rabbit": [8],
+        "146-frog": [5]
       }
     },
     "method": {
@@ -37,8 +44,8 @@
       "maximum_output_point_count": 10000
     },
     "source_gates": {
-      "required_case_count": 27,
-      "required_object_count": 5,
+      "required_case_count": 12,
+      "required_object_count": 12,
       "required_strata": ["filament", "sheet", "volumetric"],
       "admitted_original_path_exact_in_every_case": true,
       "forced_fallback_builds_in_every_case": true,
@@ -58,5 +65,5 @@
     },
     "promotion_rule": "If the source gates pass, freeze this initializer before applying it to any new fresh-object cohort. Existing opened prospective calibration failures may be reported only as post-open operational diagnostics, never as confirmation."
   },
-  "config_sha256": "578e1c7b55713b7161afb11257837154ef68db6f8c95b02c80b919eac14a50fa"
+  "config_sha256": "13f0e79d32a37ccd5ba8f6a36375401471ec00ca0c5e283435acaf4ff662834d"
 }

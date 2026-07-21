@@ -7,7 +7,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import pickle
 import subprocess
 from typing import Any
 
@@ -73,8 +72,7 @@ def _git_revision(repository: Path) -> str:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
-    parser.add_argument("--aligned-root", type=Path, required=True)
-    parser.add_argument("--source-result-root", type=Path, required=True)
+    parser.add_argument("--staged-root", type=Path, required=True)
     parser.add_argument("--deform360-repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
@@ -163,30 +161,20 @@ def _load_frame_zero_views(
     return masks, images, selected_intrinsics, selected_extrinsics, inputs
 
 
-def _load_original_cloud(case_dir: Path) -> tuple[np.ndarray, np.ndarray, Path]:
-    candidates = (
-        case_dir / "prediction_only_input.pkl",
-        case_dir / "prediction_input.pkl",
-    )
-    paths = [path for path in candidates if path.is_file()]
-    _require(len(paths) == 1, f"source prediction bundle is ambiguous in {case_dir}")
-    path = paths[0]
-    with path.open("rb") as stream:
-        payload = pickle.load(stream)  # noqa: S301 - trusted local source artifact
-    points = np.asarray(payload["object_points"])
-    colors = np.asarray(payload["object_colors"])
+def _load_original_cloud(staged_case: Path) -> tuple[np.ndarray, np.ndarray, Path]:
+    path = staged_case / "frame_zero_points.npz"
+    _require(path.is_file(), f"sealed frame-zero geometry is missing in {staged_case}")
+    with np.load(path, allow_pickle=False) as stored:
+        _require({"points_m", "colors"} <= set(stored.files), "geometry is incomplete")
+        points = np.asarray(stored["points_m"])
+        colors = np.asarray(stored["colors"])
     _require(
-        points.ndim == 3
-        and points.shape[-1] == 3
+        points.ndim == 2
+        and points.shape[1:] == (3,)
         and colors.shape == points.shape,
-        "source prediction geometry is invalid",
+        "sealed frame-zero geometry is invalid",
     )
-    _require(
-        np.array_equal(points, np.repeat(points[:1], len(points), axis=0))
-        and np.array_equal(colors, np.repeat(colors[:1], len(colors), axis=0)),
-        "source bundle contains post-frame-zero object evidence",
-    )
-    return points[0], colors[0], path
+    return points, colors, path
 
 
 def _symmetric_chamfer_m(first: np.ndarray, second: np.ndarray) -> float:
@@ -210,19 +198,14 @@ def _initializer_config(config: dict[str, Any]) -> FrameZeroInitializerConfig:
 def _evaluate_case(
     record: dict[str, Any],
     *,
-    aligned_root: Path,
-    source_result_root: Path,
+    staged_root: Path,
     initializer_config: FrameZeroInitializerConfig,
 ) -> dict[str, Any]:
-    case_dir = source_result_root / record["case"]
-    episode_dir = (
-        aligned_root
-        / record["object_id"]
-        / f"episode_{record['episode_id']:04d}"
-    )
-    _require(case_dir.is_dir(), f"source result is missing: {record['case']}")
-    _require(episode_dir.is_dir(), f"aligned episode is missing: {record['case']}")
-    original_points, original_colors, original_path = _load_original_cloud(case_dir)
+    staged_case = staged_root / record["case"]
+    episode_dir = staged_case / "frame-zero" / "episode_0000"
+    _require(staged_case.is_dir(), f"staged source case is missing: {record['case']}")
+    _require(episode_dir.is_dir(), f"frame-zero episode is missing: {record['case']}")
+    original_points, original_colors, original_path = _load_original_cloud(staged_case)
 
     def forbidden_fallback() -> FrameZeroPointCloud:
         raise RuntimeError("admitted source path unexpectedly evaluated the fallback")
@@ -290,10 +273,10 @@ def _evaluate_case(
         "camera_count": len(masks),
         "original_point_count": len(original_points),
         "original_geometry_sha256": _array_sha256(original_points),
-        "original_bundle": {
+        "original_geometry": {
             "path": str(original_path),
             "sha256": _file_sha256(original_path),
-            "contains_only_persistent_frame_zero_object_geometry": True,
+            "frame_zero_only": True,
         },
         "admitted_original_exact_parity": exact_original_parity,
         "forced_fallback": {
@@ -347,8 +330,7 @@ def main() -> int:
         try:
             result = _evaluate_case(
                 record,
-                aligned_root=args.aligned_root.resolve(),
-                source_result_root=args.source_result_root.resolve(),
+                staged_root=args.staged_root.resolve(),
                 initializer_config=initializer_config,
             )
         except Exception as error:  # noqa: BLE001 - preserve every source failure

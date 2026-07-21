@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import numpy as np
 
 from bayesian_phystwin.deform360_frame_zero_initializer import (
@@ -66,6 +70,24 @@ def _config(*, maximum_output_point_count: int = 512) -> FrameZeroInitializerCon
         minimum_fallback_point_count=32,
         maximum_output_point_count=maximum_output_point_count,
     )
+
+
+def test_source_config_is_hash_locked_and_balanced() -> None:
+    path = Path("configs/sota/deform360_frame_zero_initializer_source_v1.json")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    config = payload["config"]
+    encoded = json.dumps(
+        config,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(encoded).hexdigest() == payload["config_sha256"]
+    counts = {
+        stratum: sum(len(episodes) for episodes in objects.values())
+        for stratum, objects in config["source_objects"].items()
+    }
+    assert counts == {"filament": 4, "sheet": 4, "volumetric": 4}
 
 
 def test_original_admission_matches_point_only_gate() -> None:
