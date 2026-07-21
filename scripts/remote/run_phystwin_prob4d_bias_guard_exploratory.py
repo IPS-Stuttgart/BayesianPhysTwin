@@ -13,6 +13,7 @@ from typing import Any, Mapping
 
 import numpy as np
 
+import bayesian_phystwin.phystwin_prob4d_action_guard as action_guard_module
 from bayesian_phystwin.phystwin_comparison import (
     phystwin_physical_object_cluster,
 )
@@ -51,6 +52,11 @@ def _parse_args() -> argparse.Namespace:
     predict.add_argument("--prefix-root", type=Path, required=True)
     predict.add_argument("--selected-baseline-root", type=Path, required=True)
     predict.add_argument("--output-root", type=Path, required=True)
+    predict.add_argument(
+        "--candidate-family",
+        choices=("static", "action_conditioned"),
+        default="static",
+    )
 
     evaluate = subparsers.add_parser("evaluate")
     evaluate.add_argument("--protocol", type=Path, required=True)
@@ -333,6 +339,7 @@ def _predict_case(
     prefix_root: Path,
     selected_baseline_root: Path,
     output_root: Path,
+    candidate_family: str,
 ) -> dict[str, Any]:
     prefix_dir = prefix_root / case
     prefix_manifest_path = prefix_dir / PREFIX_MANIFEST_FILENAME
@@ -361,7 +368,7 @@ def _predict_case(
             method["minimum_balanced_validation_improvement_fraction"]
         ),
     )
-    report, candidate, guarded = build_guarded_prob4d_prefix_candidate(
+    candidate_arguments = (
         selected,
         prefix["physical_prefix_m"],
         prefix["prob4d_prefix_positions_m"],
@@ -371,17 +378,39 @@ def _predict_case(
         prefix["prefix_object_points_m"],
         prefix["prefix_object_visibility"],
         prefix["prefix_object_motion_validity"],
-        num_surface_points=int(prefix["num_surface_points"]),
-        source_lock=source_lock,
-        config=config,
     )
+    candidate_keywords = {
+        "num_surface_points": int(prefix["num_surface_points"]),
+        "source_lock": source_lock,
+    }
+    if candidate_family == "static":
+        report, candidate, guarded = build_guarded_prob4d_prefix_candidate(
+            *candidate_arguments,
+            **candidate_keywords,
+            config=config,
+        )
+    else:
+        action_config = action_guard_module.Prob4DActionGuardConfig(
+            static_guard=config
+        )
+        report, candidate, guarded = (
+            action_guard_module.build_guarded_action_conditioned_prob4d_candidate(
+                *candidate_arguments,
+                **candidate_keywords,
+                config=action_config,
+            )
+        )
     case_dir = output_root / case
     candidate_path = case_dir / CANDIDATE_FILENAME
     guarded_path = case_dir / GUARDED_FILENAME
     _write_pickle(candidate_path, candidate)
     _write_pickle(guarded_path, guarded)
     payload = {
-        "artifact_kind": "PhysTwinProb4DBiasAwarePrediction",
+        "artifact_kind": (
+            "PhysTwinProb4DBiasAwarePrediction"
+            if candidate_family == "static"
+            else "PhysTwinProb4DActionConditionedPrediction"
+        ),
         "schema_version": 1,
         "case": case,
         "target_free_prediction": report,
@@ -425,6 +454,13 @@ def _predict_case(
             "target_metric_read": False,
         },
     }
+    if candidate_family == "action_conditioned":
+        implementation_path = Path(action_guard_module.__file__)
+        payload["candidate_family"] = candidate_family
+        payload["action_conditioned_implementation"] = {
+            "path": str(implementation_path),
+            "sha256": _sha256(implementation_path),
+        }
     return _write_json(case_dir / PREDICTION_REPORT_FILENAME, payload)
 
 
@@ -449,6 +485,7 @@ def predict(args: argparse.Namespace) -> None:
             prefix_root=args.prefix_root,
             selected_baseline_root=args.selected_baseline_root,
             output_root=args.output_root,
+            candidate_family=args.candidate_family,
         )
         for case in cases
     ]
@@ -473,6 +510,8 @@ def predict(args: argparse.Namespace) -> None:
             "future_manual_tracks_read": False,
         },
     }
+    if args.candidate_family == "action_conditioned":
+        seal["candidate_family"] = args.candidate_family
     seal = _write_json(
         args.output_root / PREDICTION_COHORT_SEAL_FILENAME, seal
     )
@@ -643,6 +682,9 @@ def evaluate(args: argparse.Namespace) -> None:
     cases_expected = _protocol_cases(protocol)
     seal_path = args.prediction_root / PREDICTION_COHORT_SEAL_FILENAME
     seal = _load_json(seal_path, verify=True)
+    candidate_family = str(seal.get("candidate_family", "static"))
+    if candidate_family not in {"static", "action_conditioned"}:
+        raise ValueError("prediction seal candidate family is unsupported")
     if tuple(row["case"] for row in seal["cases"]) != cases_expected:
         raise ValueError("prediction seal case order differs from protocol")
     cases = [
@@ -708,7 +750,11 @@ def evaluate(args: argparse.Namespace) -> None:
     )
     gates["all_pass"] = all(bool(gates[name]) for name in gate_names)
     payload = {
-        "artifact_kind": "PhysTwinProb4DBiasAwareExploratoryResult",
+        "artifact_kind": (
+            "PhysTwinProb4DBiasAwareExploratoryResult"
+            if candidate_family == "static"
+            else "PhysTwinProb4DActionConditionedExploratoryResult"
+        ),
         "schema_version": 1,
         "protocol_id": protocol["protocol_id"],
         "case_count": len(cases),
@@ -741,6 +787,8 @@ def evaluate(args: argparse.Namespace) -> None:
             "would justify but not replace an independent evaluation"
         ),
     }
+    if candidate_family == "action_conditioned":
+        payload["candidate_family"] = candidate_family
     payload = _write_json(args.output, payload)
     print(
         json.dumps(
