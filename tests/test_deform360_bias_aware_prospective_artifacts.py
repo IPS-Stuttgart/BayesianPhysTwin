@@ -28,10 +28,12 @@ from bayesian_phystwin.deform360_bias_aware_prospective_staging import (
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_physical import (
     ACTION_RESPONSE,
+    FRAME_ZERO_PERSISTENCE_FALLBACK_SOURCE_CONFIG_SHA256,
     LENGTH_SCALE_M,
     build_persistence_backbone_arrays,
     build_prediction_only_bundle,
     build_warp_backbone_arrays,
+    frame_zero_physical_policy,
     load_controller_trajectory,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_uncertainty import (
@@ -330,6 +332,42 @@ def test_inadmissible_twin_fallback_is_exact_persistence() -> None:
     assert np.array_equal(arrays["driven_readout_m"], arrays["persistence_m"])
     assert np.array_equal(arrays["zero_action_readout_m"], arrays["persistence_m"])
     assert np.count_nonzero(arrays["action_support"]) == 0
+
+
+def test_frame_zero_policy_preserves_legacy_and_validates_opt_in() -> None:
+    assert frame_zero_physical_policy({}) == "automatic_twin"
+    assert (
+        frame_zero_physical_policy(
+            {
+                "physical_policy": "persistence_only",
+                "material_point_source": "strict-multiview-visual-hull-surface",
+                "fallback_source_config_sha256": (
+                    FRAME_ZERO_PERSISTENCE_FALLBACK_SOURCE_CONFIG_SHA256
+                ),
+            }
+        )
+        == "persistence_only"
+    )
+    with pytest.raises(ValueError, match="requires the frozen visual-hull"):
+        frame_zero_physical_policy(
+            {
+                "physical_policy": "persistence_only",
+                "material_point_source": "original-splat",
+                "fallback_source_config_sha256": (
+                    FRAME_ZERO_PERSISTENCE_FALLBACK_SOURCE_CONFIG_SHA256
+                ),
+            }
+        )
+    with pytest.raises(ValueError, match="policy changed"):
+        frame_zero_physical_policy({"physical_policy": "warp_if_convenient"})
+    with pytest.raises(ValueError, match="expected source-frozen config"):
+        frame_zero_physical_policy(
+            {
+                "physical_policy": "persistence_only",
+                "material_point_source": "strict-multiview-visual-hull-surface",
+                "fallback_source_config_sha256": "wrong-source",
+            }
+        )
 
 
 def test_prediction_cohort_seal_requires_every_locked_case(tmp_path: Path) -> None:

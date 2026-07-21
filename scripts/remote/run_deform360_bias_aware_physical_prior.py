@@ -29,6 +29,7 @@ from bayesian_phystwin.deform360_bias_aware_prospective_physical import (
     build_persistence_backbone_arrays,
     build_prediction_only_bundle,
     build_warp_backbone_arrays,
+    frame_zero_physical_policy,
     write_physical_artifacts,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_protocol import (
@@ -76,7 +77,7 @@ def _validate_stage(
     protocol_path: Path,
     staged: Path,
     record: Mapping[str, Any],
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path, dict[str, Any]]:
     stage_path = staged / "prediction_prefix_manifest.json"
     frame_zero_path = staged / "frame_zero_reconstruction_manifest.json"
     stage = _load_json(stage_path)
@@ -132,7 +133,7 @@ def _validate_stage(
         file_sha256(protocol_path) == stage["inputs_sha256"]["protocol"],
         "staging used another protocol file",
     )
-    return geometry, action, frame_zero_path
+    return geometry, action, frame_zero_path, frame_zero
 
 
 def _validate_runtime(
@@ -339,13 +340,18 @@ def main() -> int:
         object_id=staged.name.rsplit("-ep", 1)[0],
         episode_id=int(staged.name.rsplit("-ep", 1)[1]),
     )
-    geometry, action, frame_zero_manifest = _validate_stage(
+    geometry, action, frame_zero_manifest, frame_zero = _validate_stage(
         protocol, protocol_path, staged, record
     )
+    policy = frame_zero_physical_policy(frame_zero)
     upstream = args.upstream_repo.resolve()
     official = args.official_phystwin_repo.resolve()
     official_config = args.official_config.resolve()
-    provenance = _validate_runtime(upstream, official, official_config)
+    provenance = (
+        _validate_runtime(upstream, official, official_config)
+        if policy == "automatic_twin"
+        else {"physical_runtime_required": False}
+    )
     provenance["bayesian_phystwin_revision"] = code_revision
     provenance["physical_runner_sha256"] = file_sha256(Path(__file__).resolve())
     provenance["automatic_twin_wrapper_sha256"] = file_sha256(
@@ -369,6 +375,73 @@ def main() -> int:
         json.dumps(prediction_summary, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    if policy == "persistence_only":
+        with np.load(geometry, allow_pickle=False) as stored:
+            arrays = build_persistence_backbone_arrays(stored["points_m"])
+        archive_path = root / "prediction.npz"
+        physical_manifest_path = root / "physical_prediction_manifest.json"
+        physical_manifest = write_physical_artifacts(
+            archive_path,
+            physical_manifest_path,
+            arrays,
+            case_record=record,
+            protocol_config_sha256=str(protocol["config_sha256"]),
+            physical_mode="persistence_fallback",
+            input_files={
+                "protocol": protocol_path,
+                "prediction_prefix_manifest": (
+                    staged / "prediction_prefix_manifest.json"
+                ),
+                "frame_zero_manifest": frame_zero_manifest,
+                "frame_zero_geometry": geometry,
+                "known_action": action,
+                "prediction_only_input": prediction_data,
+                "prediction_only_summary": prediction_summary_path,
+            },
+            runtime_provenance={
+                **provenance,
+                "runtime_seconds": {"automatic_twin": 0.0, "warp": 0.0},
+            },
+            fallback_diagnostics={
+                "reason": "frame_zero_reconstruction_persistence_only",
+                "material_point_source": frame_zero["material_point_source"],
+                "fallback_source_config_sha256": frame_zero[
+                    "fallback_source_config_sha256"
+                ],
+                "automatic_twin_attempted": False,
+                "warp_attempted": False,
+                "state_update_available": False,
+            },
+        )
+        backbone_dir = args.backbone_root.resolve() / str(record["case"])
+        seal = build_prospective_backbone_seal(
+            protocol_path,
+            backbone_dir,
+            object_id=str(record["object_id"]),
+            episode_id=int(record["episode_id"]),
+            physical_archive=archive_path,
+            physical_manifest=physical_manifest_path,
+        )
+        print(
+            json.dumps(
+                {
+                    "case": record["case"],
+                    "physical_mode": physical_manifest["physical_mode"],
+                    "physical_manifest_sha256": physical_manifest[
+                        "result_sha256"
+                    ],
+                    "backbone_seal_sha256": seal["result_sha256"],
+                    "runtime_seconds": {
+                        "automatic_twin": 0.0,
+                        "warp": 0.0,
+                    },
+                },
+                indent=2,
+                sort_keys=True,
+                allow_nan=False,
+            )
+        )
+        return 0
     graph_path = root / "episode_graph.npz"
     simulator_data = root / "simulator_final_data.pkl"
     state_path = root / "state_artifact.npz"

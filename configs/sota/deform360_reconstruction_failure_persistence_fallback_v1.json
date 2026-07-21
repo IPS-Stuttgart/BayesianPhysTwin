@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-reconstruction-failure-persistence-fallback-v1",
+    "status": "post-open-integration-qa",
+    "claim_boundary": "Target-free integration test of a source-frozen visual-hull support cloud used only for exact persistence after Splat reconstruction failure. It is not a physical-twin, absolute-accuracy, calibration, or state-of-the-art evaluation.",
+    "source_candidate": {
+      "protocol_id": "deform360-frame-zero-initializer-source-v1",
+      "config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759",
+      "result_sha256": "7f22378af2f458d0026ebc627be0df0e28f5a0937ac41b06e31ddf72c8d8c4b7",
+      "method": "strict-multiview-visual-hull-surface"
+    },
+    "known_postopen_failures": [
+      "160-hose-ep0001",
+      "174-chain-ep0001",
+      "015-airbag-cloth-ep0006",
+      "100-puppet-ep0009"
+    ],
+    "admitted_path_parity_case": "011-green-cloth-ep0000",
+    "fallback_contract": {
+      "physical_policy": "persistence_only",
+      "automatic_twin_attempted": false,
+      "warp_attempted": false,
+      "state_update_available": false,
+      "action_support": "all zeros",
+      "prediction": "bit-exact persistence for all 76 frames"
+    },
+    "gates": {
+      "known_failure_recovery": "4 of 4",
+      "admitted_path_point_array_parity": "bit exact",
+      "fallback_prediction_persistence_parity": "bit exact",
+      "fallback_driven_and_zero_readout_persistence_parity": "bit exact",
+      "fallback_action_support_nonzero_count": 0,
+      "automatic_twin_or_warp_artifact_count": 0,
+      "future_object_or_outcome_read": false
+    },
+    "scoring_boundary": {
+      "paired_candidate_minus_baseline_regret": "Provably zero for any deterministic metric because the complete trajectories are bit-identical.",
+      "absolute_identity_rmse": "Not available: visual-hull points do not inherit official Splat material identities.",
+      "absolute_chamfer": "Requires a separately declared variable-cardinality target protocol and is not evaluated here.",
+      "calibration": "Not available for persistence-only dispositions.",
+      "prospective_use": "A future protocol may count persistence-only cases as exact non-regression ties, but not as absolute-accuracy or calibration observations."
+    },
+    "information_boundary": {
+      "frame_zero_rgb_and_masks_read": true,
+      "camera_calibration_read": true,
+      "known_robot_action_read_for_archive_compatibility": true,
+      "future_object_rgb_read": false,
+      "future_object_geometry_read": false,
+      "future_object_tracks_read": false,
+      "future_tactile_read": false,
+      "outcome_metric_read": false
+    }
+  },
+  "config_sha256": "bf483664c191157fe98bd8624247e22bcbd371b709da90b9ce0bb5e5c790aa50"
+}

@@ -34,6 +34,10 @@ ACTION_RESPONSE = 0.9
 CANONICAL_NODE_COUNT = 1024
 MINIMUM_NODE_COUNT = 128
 AUTOMATIC_TWIN_EXIT_CODE_INADMISSIBLE = 2
+FRAME_ZERO_PHYSICAL_POLICIES = frozenset({"automatic_twin", "persistence_only"})
+FRAME_ZERO_PERSISTENCE_FALLBACK_SOURCE_CONFIG_SHA256 = (
+    "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759"
+)
 
 WARP_DYNAMICS = {
     "init_spring_y": 10_000.0,
@@ -91,6 +95,28 @@ _TAXEL_COLS = 32
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def frame_zero_physical_policy(manifest: Mapping[str, Any]) -> str:
+    """Read the opt-in frame-zero policy while preserving legacy behavior."""
+
+    policy = manifest.get("physical_policy", "automatic_twin")
+    _require(
+        isinstance(policy, str) and policy in FRAME_ZERO_PHYSICAL_POLICIES,
+        "frame-zero physical policy changed",
+    )
+    if policy == "persistence_only":
+        _require(
+            manifest.get("material_point_source")
+            == "strict-multiview-visual-hull-surface",
+            "persistence-only policy requires the frozen visual-hull fallback",
+        )
+        _require(
+            manifest.get("fallback_source_config_sha256")
+            == FRAME_ZERO_PERSISTENCE_FALLBACK_SOURCE_CONFIG_SHA256,
+            "persistence-only policy lacks the expected source-frozen config",
+        )
+    return policy
 
 
 def _taxel_grid_root_frame(joint: float) -> np.ndarray:

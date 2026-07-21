@@ -137,6 +137,26 @@ def test_physical_config_reuses_the_frozen_postopen_result() -> None:
     assert physical["config"]["gate"]["required_warp_twin_count"] == 4
 
 
+def test_persistence_only_integration_config_is_hash_locked_and_scoped() -> None:
+    path = Path(
+        "configs/sota/deform360_reconstruction_failure_persistence_fallback_v1.json"
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    encoded = json.dumps(
+        payload["config"],
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(encoded).hexdigest() == payload["config_sha256"]
+    config = payload["config"]
+    assert config["fallback_contract"]["physical_policy"] == "persistence_only"
+    assert config["gates"]["future_object_or_outcome_read"] is False
+    assert config["scoring_boundary"]["absolute_identity_rmse"].startswith(
+        "Not available"
+    )
+
+
 def test_original_admission_matches_point_only_gate() -> None:
     points = np.zeros((32, 3), dtype=np.float32)
     assert original_point_cloud_admissible(points, minimum_point_count=32)
