@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-frame-zero-postopen-failures-v1",
+    "status": "locked-post-open-operational-diagnostic",
+    "claim_boundary": "Operational recovery check on four known frame-zero quality failures. The cases informed the fallback hypothesis, so this is neither confirmation nor predictive evidence.",
+    "source_candidate": {
+      "source_protocol_id": "deform360-frame-zero-initializer-source-v1",
+      "source_config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759",
+      "source_result_sha256": "7f22378af2f458d0026ebc627be0df0e28f5a0937ac41b06e31ddf72c8d8c4b7",
+      "initializer_module_sha256": "fdc5fefed2487e2a0f49377a5e518679686e09038c9aff7849c75e8490624f7b",
+      "frozen_revision": "c7752cf4d54a8e11576c7babe3e1b6c6ef31559a"
+    },
+    "cases": [
+      {
+        "case": "015-airbag-cloth-ep0006",
+        "object_id": "015-airbag-cloth",
+        "episode_id": 6,
+        "stratum": "sheet"
+      },
+      {
+        "case": "100-puppet-ep0009",
+        "object_id": "100-puppet",
+        "episode_id": 9,
+        "stratum": "volumetric"
+      },
+      {
+        "case": "160-hose-ep0001",
+        "object_id": "160-hose",
+        "episode_id": 1,
+        "stratum": "filament"
+      },
+      {
+        "case": "174-chain-ep0001",
+        "object_id": "174-chain",
+        "episode_id": 1,
+        "stratum": "filament"
+      }
+    ],
+    "gate": {
+      "required_case_count": 4,
+      "required_recovery_count": 4,
+      "minimum_fallback_point_count": 128,
+      "minimum_largest_component_fraction": 0.4,
+      "all_points_must_meet_selected_vote_threshold": true,
+      "no_case_replacement": true,
+      "no_threshold_change_after_execution": true
+    },
+    "information_boundary": {
+      "object_observation_frames_used": [0],
+      "known_quality_failure_status_used": true,
+      "future_rgb_used": false,
+      "future_dense_geometry_used": false,
+      "future_tracks_used": false,
+      "outcome_artifact_used": false,
+      "target_metric_used": false,
+      "reserved_target_objects_used": false
+    }
+  },
+  "config_sha256": "2671d8c0d0d9edf597c74f9cef8ae7c480ac021ca943f986e57009557cbb241f"
+}

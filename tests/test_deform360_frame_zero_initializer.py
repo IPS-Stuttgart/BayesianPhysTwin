@@ -90,6 +90,29 @@ def test_source_config_is_hash_locked_and_balanced() -> None:
     assert counts == {"filament": 4, "sheet": 4, "volumetric": 4}
 
 
+def test_postopen_config_reuses_the_source_frozen_candidate() -> None:
+    source = json.loads(
+        Path(
+            "configs/sota/deform360_frame_zero_initializer_source_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    postopen = json.loads(
+        Path(
+            "configs/sota/deform360_frame_zero_postopen_failures_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    encoded = json.dumps(
+        postopen["config"],
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(encoded).hexdigest() == postopen["config_sha256"]
+    candidate = postopen["config"]["source_candidate"]
+    assert candidate["source_config_sha256"] == source["config_sha256"]
+    assert len(postopen["config"]["cases"]) == 4
+
+
 def test_original_admission_matches_point_only_gate() -> None:
     points = np.zeros((32, 3), dtype=np.float32)
     assert original_point_cloud_admissible(points, minimum_point_count=32)
