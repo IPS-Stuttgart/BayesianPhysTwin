@@ -1,0 +1,85 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveCalibrationSupportRejection",
+  "calibration_gate_passed": false,
+  "calibration_prediction_cohort_result_sha256": "581bfb211d312d0cadfdd5d1a0005d4cba1369f0eb70015438371a07a0503dc3",
+  "claim_boundary": "target-free rejection from irreversible calibration-support loss; no accuracy or non-regression claim",
+  "decision_stage": "pre-outcome-support",
+  "evaluable_object_count": 5,
+  "evaluable_object_count_by_stratum": {
+    "filament": 1,
+    "sheet": 2,
+    "volumetric": 2
+  },
+  "failed_gate_action": "publish calibration support failure and keep every calibration and target future sealed",
+  "failed_support_gates": [
+    "minimum_evaluable_objects",
+    "minimum_evaluable_objects_per_stratum"
+  ],
+  "information_boundary": {
+    "calibration_future_read": false,
+    "calibration_outcome_read": false,
+    "candidate_threshold_changed": false,
+    "method_family_changed": false,
+    "observation_model_changed": false,
+    "support_rejection_is_non_authorizing": true,
+    "target_future_read": false,
+    "target_object_media_read": false
+  },
+  "maximum_possible_combined_eligible_object_group_count": 9,
+  "maximum_possible_finite_sample_coverage": 0.9,
+  "maximum_possible_finite_sample_rank": 9,
+  "maximum_possible_new_eligible_object_group_count": 5,
+  "post_outcome_gates_evaluated": false,
+  "protocol_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+  "quality_failure_count": 4,
+  "quality_failures": [
+    {
+      "artifact_result_sha256": "f1f864e6932b71c05800adaa4e283eca0381483690f451bb52bd0e19a073a0f2",
+      "case": "160-hose-ep0001",
+      "episode_id": 1,
+      "error_type": "ValueError",
+      "object_id": "160-hose",
+      "stage": "frame-zero-reconstruction",
+      "stratum": "filament"
+    },
+    {
+      "artifact_result_sha256": "c437a31eb6d4452a0eebaa37a57a7da30a451dda64c2aa80dc1ac117127dd792",
+      "case": "174-chain-ep0001",
+      "episode_id": 1,
+      "error_type": "ValueError",
+      "object_id": "174-chain",
+      "stage": "frame-zero-reconstruction",
+      "stratum": "filament"
+    },
+    {
+      "artifact_result_sha256": "70f2c7a236ff40fdd5a029408b31d0b2cbf5edf75f0afefbb9a97e57301d3c4b",
+      "case": "015-airbag-cloth-ep0006",
+      "episode_id": 6,
+      "error_type": "ValueError",
+      "object_id": "015-airbag-cloth",
+      "stage": "frame-zero-reconstruction",
+      "stratum": "sheet"
+    },
+    {
+      "artifact_result_sha256": "ed6410b52013edcf4c12ab9f0ec9d66995bb8c9e44d5e02293fbd9348f239cb0",
+      "case": "100-puppet-ep0009",
+      "episode_id": 9,
+      "error_type": "ValueError",
+      "object_id": "100-puppet",
+      "stage": "frame-zero-reconstruction",
+      "stratum": "volumetric"
+    }
+  ],
+  "result_sha256": "eeee3907be8404935e32a43c9d11e5d2ffb29f2af0a7d0af3b0faa92429771e0",
+  "schema_version": 1,
+  "source_lock_sha256": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6",
+  "support_upper_bound_gates": {
+    "minimum_combined_eligible_object_groups_possible": true,
+    "minimum_evaluable_objects": false,
+    "minimum_evaluable_objects_per_stratum": false,
+    "minimum_new_eligible_object_groups_possible": true,
+    "required_finite_sample_coverage_possible": true
+  },
+  "target_access_authorized": false
+}

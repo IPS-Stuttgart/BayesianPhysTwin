@@ -1,0 +1,25 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveQualityFailure",
+  "case": "100-puppet-ep0009",
+  "episode_id": 9,
+  "episode_key": "100-puppet/9",
+  "error_message": "Frozen frame-zero point-cloud admission failed after 603 exported Gaussians.",
+  "error_type": "ValueError",
+  "evidence_sha256": {
+    "frame_zero_log": "69c8f25525086436a89b1f3d0438319103715c89a8f9cf770f97b150a6287e72"
+  },
+  "information_boundary": {
+    "failure_recorded_before_future_open": true,
+    "outcome_manifest_read": false,
+    "target_data_read": false
+  },
+  "object_id": "100-puppet",
+  "protocol_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+  "replacement_allowed": false,
+  "result_sha256": "ed6410b52013edcf4c12ab9f0ec9d66995bb8c9e44d5e02293fbd9348f239cb0",
+  "role": "calibration",
+  "schema_version": 1,
+  "stage": "frame-zero-reconstruction",
+  "stratum": "volumetric"
+}

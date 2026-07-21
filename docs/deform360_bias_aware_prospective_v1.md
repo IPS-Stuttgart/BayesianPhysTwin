@@ -144,10 +144,12 @@ commit method, protocol, and runner
 -> open target futures and score without replacement
 ```
 
-The current execution status is `0/9` calibration objects and `0/12` target
-objects opened. Prediction-facing staging and seal generation are implemented;
-they may not read any selected future. The runner must execute from a clean,
-committed checkout.
+The final execution status is nine of nine target-free calibration
+dispositions, zero calibration futures opened, and zero of twelve target
+objects staged or opened. Four reconstruction quality failures leave only five
+evaluable objects, so the pre-outcome support gate rejects the study. See
+`docs/deform360_bias_aware_prospective_result.md`. The runner executed from a
+clean, committed checkout.
 
 ## Prediction Construction
 
