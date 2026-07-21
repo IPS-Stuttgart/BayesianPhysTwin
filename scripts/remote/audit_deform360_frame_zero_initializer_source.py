@@ -17,6 +17,7 @@ from bayesian_phystwin.deform360_frame_zero_initializer import (
     FrameZeroPointCloud,
     build_strict_multiview_surface,
     multiview_mask_votes,
+    original_point_cloud_admissible,
     select_frame_zero_point_cloud,
 )
 from deform360.annotations import H5Array
@@ -200,29 +201,36 @@ def _evaluate_case(
     *,
     staged_root: Path,
     initializer_config: FrameZeroInitializerConfig,
+    minimum_component_fraction: float,
 ) -> dict[str, Any]:
     staged_case = staged_root / record["case"]
     episode_dir = staged_case / "frame-zero" / "episode_0000"
     _require(staged_case.is_dir(), f"staged source case is missing: {record['case']}")
     _require(episode_dir.is_dir(), f"frame-zero episode is missing: {record['case']}")
     original_points, original_colors, original_path = _load_original_cloud(staged_case)
+    original_admitted = original_point_cloud_admissible(
+        original_points,
+        minimum_point_count=initializer_config.minimum_original_point_count,
+    )
 
     def forbidden_fallback() -> FrameZeroPointCloud:
         raise RuntimeError("admitted source path unexpectedly evaluated the fallback")
 
-    selected_original = select_frame_zero_point_cloud(
-        original_points,
-        original_colors,
-        forbidden_fallback,
-        config=initializer_config,
-    )
-    exact_original_parity = bool(
-        selected_original.method == "original-splat"
-        and selected_original.points_m.dtype == original_points.dtype
-        and selected_original.colors.dtype == original_colors.dtype
-        and selected_original.points_m.tobytes() == original_points.tobytes()
-        and selected_original.colors.tobytes() == original_colors.tobytes()
-    )
+    exact_original_parity: bool | None = None
+    if original_admitted:
+        selected_original = select_frame_zero_point_cloud(
+            original_points,
+            original_colors,
+            forbidden_fallback,
+            config=initializer_config,
+        )
+        exact_original_parity = bool(
+            selected_original.method == "original-splat"
+            and selected_original.points_m.dtype == original_points.dtype
+            and selected_original.colors.dtype == original_colors.dtype
+            and selected_original.points_m.tobytes() == original_points.tobytes()
+            and selected_original.colors.tobytes() == original_colors.tobytes()
+        )
     masks, images, intrinsics, extrinsics, view_inputs = _load_frame_zero_views(
         episode_dir
     )
@@ -233,13 +241,14 @@ def _evaluate_case(
         extrinsics,
         config=initializer_config,
     )
-    forced_count = min(
-        initializer_config.minimum_original_point_count - 1,
-        len(original_points),
+    trigger_count = (
+        len(original_points)
+        if not original_admitted
+        else initializer_config.minimum_original_point_count - 1
     )
     forced = select_frame_zero_point_cloud(
-        original_points[:forced_count],
-        original_colors[:forced_count],
+        original_points[:trigger_count],
+        original_colors[:trigger_count],
         lambda: fallback,
         config=initializer_config,
     )
@@ -259,19 +268,20 @@ def _evaluate_case(
     )
     strict_support = bool(np.all(votes >= required_votes))
     passed = bool(
-        exact_original_parity
+        (not original_admitted or exact_original_parity)
         and forced.method == "strict-multiview-visual-hull-surface"
         and len(forced.points_m) >= initializer_config.minimum_fallback_point_count
         and np.all(np.isfinite(forced.points_m))
         and np.all(np.isfinite(forced.colors))
         and strict_support
-        and largest_fraction >= 0.5
+        and largest_fraction >= minimum_component_fraction
     )
     return {
         **record,
         "passed": passed,
         "camera_count": len(masks),
         "original_point_count": len(original_points),
+        "original_admitted": original_admitted,
         "original_geometry_sha256": _array_sha256(original_points),
         "original_geometry": {
             "path": str(original_path),
@@ -280,7 +290,8 @@ def _evaluate_case(
         },
         "admitted_original_exact_parity": exact_original_parity,
         "forced_fallback": {
-            "trigger_point_count": forced_count,
+            "trigger_point_count": trigger_count,
+            "trigger_is_natural_original_failure": not original_admitted,
             "method": forced.method,
             "point_count": len(forced.points_m),
             "points_sha256": _array_sha256(forced.points_m),
@@ -332,6 +343,9 @@ def main() -> int:
                 record,
                 staged_root=args.staged_root.resolve(),
                 initializer_config=initializer_config,
+                minimum_component_fraction=float(
+                    gates["fallback_largest_component_fraction_at_least"]
+                ),
             )
         except Exception as error:  # noqa: BLE001 - preserve every source failure
             result = {
@@ -344,8 +358,18 @@ def main() -> int:
     completed = [row for row in results if "forced_fallback" in row]
     objects = sorted({row["object_id"] for row in results})
     strata = sorted({row["stratum"] for row in results})
+    admitted_count = sum(bool(row.get("original_admitted")) for row in results)
     exact_count = sum(
         bool(row.get("admitted_original_exact_parity")) for row in results
+    )
+    natural_failure_count = sum(
+        row.get("original_admitted") is False for row in results
+    )
+    natural_recovery_count = sum(
+        row.get("original_admitted") is False
+        and row.get("forced_fallback", {}).get("method")
+        == "strict-multiview-visual-hull-surface"
+        for row in results
     )
     fallback_count = len(completed)
     passing_count = sum(bool(row["passed"]) for row in results)
@@ -360,7 +384,8 @@ def main() -> int:
         len(results) == gates["required_case_count"]
         and len(objects) == gates["required_object_count"]
         and strata == sorted(gates["required_strata"])
-        and exact_count == len(results)
+        and exact_count == admitted_count
+        and natural_recovery_count == natural_failure_count
         and fallback_count == len(results)
         and passing_count == len(results)
         and largest_minimum
@@ -380,7 +405,10 @@ def main() -> int:
             "case_count": len(results),
             "object_count": len(objects),
             "strata": strata,
+            "admitted_original_case_count": admitted_count,
             "exact_original_parity_count": exact_count,
+            "natural_original_failure_count": natural_failure_count,
+            "natural_original_failure_recovery_count": natural_recovery_count,
             "forced_fallback_build_count": fallback_count,
             "passing_case_count": passing_count,
             "minimum_largest_component_fraction": largest_minimum,
