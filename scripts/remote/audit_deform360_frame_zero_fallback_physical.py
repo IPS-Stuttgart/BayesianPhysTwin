@@ -162,7 +162,10 @@ def _write_robust_stage(
         "protocol_config_sha256": prospective_config_sha256,
         **authorization,
         "initializer": {
-            "method": "strict-multiview-visual-hull-surface",
+            "method": candidate.get(
+                "initializer_method",
+                "strict-multiview-visual-hull-surface",
+            ),
             "source_result_sha256": candidate["source_result_sha256"],
             "postopen_result_sha256": candidate["postopen_result_sha256"],
             "initializer_module_sha256": candidate["initializer_module_sha256"],
@@ -317,22 +320,25 @@ def main() -> int:
     code_revision = _require_clean_repository(repository)
     config, config_sha256 = _load_config(args.config.resolve())
     candidate = config["candidate"]
-    module_path = (
-        repository
-        / "src"
-        / "bayesian_phystwin"
-        / "deform360_frame_zero_initializer.py"
+    module_path = repository / candidate.get(
+        "initializer_module_path",
+        "src/bayesian_phystwin/deform360_frame_zero_initializer.py",
     )
     _require(
         file_sha256(module_path) == candidate["initializer_module_sha256"],
         "source-frozen initializer changed",
     )
     postopen = _load_sealed_json(args.postopen_root / "postopen_audit.json")
+    require_postopen_gate = candidate.get("require_postopen_gate_passed", True)
     _require(
-        postopen.get("postopen_gate_passed") is True
-        and postopen.get("result_sha256") == candidate["postopen_result_sha256"],
+        postopen.get("result_sha256") == candidate["postopen_result_sha256"],
         "post-open fallback result changed",
     )
+    if require_postopen_gate:
+        _require(
+            postopen.get("postopen_gate_passed") is True,
+            "post-open fallback gate did not pass",
+        )
     prospective = json.loads(
         args.prospective_protocol.read_text(encoding="utf-8")
     )
@@ -341,6 +347,15 @@ def main() -> int:
     _require(
         len(records) == config["gate"]["required_case_count"],
         "physical case count changed",
+    )
+    postopen_by_case = {row["case"]: row for row in postopen["cases"]}
+    _require(
+        all(
+            record["case"] in postopen_by_case
+            and postopen_by_case[record["case"]].get("passed") is True
+            for record in records
+        ),
+        "a selected physical case did not pass geometry recovery",
     )
     for root in (args.robust_staged_root, args.work_root, args.backbone_root):
         _require(not root.exists(), f"output root already exists: {root}")
@@ -396,7 +411,10 @@ def main() -> int:
     )
     output: dict[str, Any] = {
         "schema_version": 1,
-        "artifact_kind": "Deform360FrameZeroFallbackPhysicalAudit",
+        "artifact_kind": config.get(
+            "artifact_kind",
+            "Deform360FrameZeroFallbackPhysicalAudit",
+        ),
         "protocol_id": config["protocol_id"],
         "protocol_config_sha256": config_sha256,
         "physical_gate_passed": gate_passed,

@@ -1,0 +1,61 @@
+{
+  "config": {
+    "artifact_kind": "Deform360FrameZeroDepthPhysicalDiagnostic",
+    "candidate": {
+      "fallback_archive_name": "frame_zero_depth_fallback.npz",
+      "initializer_method": "depth-supported-strict-multiview-surface",
+      "initializer_module_path": "src/bayesian_phystwin/deform360_frame_zero_depth_initializer.py",
+      "initializer_module_sha256": "ff92c1531a4e4bd492408f626dc5515d084d5a9a538123c99d32f087b66cc6d8",
+      "postopen_result_sha256": "4a3d5fbb3a4a87c6e9a5dcd3254add8e7deff5e6ac096517229b7fb47626d9c5",
+      "require_postopen_gate_passed": false,
+      "source_result_sha256": "43ea9365acd1af2873d99fa6f073522152e2f3898c8392de65f563afb6625c19"
+    },
+    "cases": [
+      {
+        "case": "015-airbag-cloth-ep0006",
+        "episode_id": 6,
+        "object_id": "015-airbag-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "case": "100-puppet-ep0009",
+        "episode_id": 9,
+        "object_id": "100-puppet",
+        "stratum": "volumetric"
+      },
+      {
+        "case": "160-hose-ep0001",
+        "episode_id": 1,
+        "object_id": "160-hose",
+        "stratum": "filament"
+      }
+    ],
+    "claim_boundary": "Diagnostic-only official-Warp stability test for the three cases recovered by the failed 3/4 depth-supported post-open gate. Passing cannot promote v2 or erase the missing chain case.",
+    "gate": {
+      "all_rollout_values_must_be_finite": true,
+      "automatic_twin_must_pass": true,
+      "frame_zero_identity_must_be_exact": true,
+      "maximum_zero_action_displacement_m": 0.5,
+      "maximum_zero_action_p99_displacement_m": 0.25,
+      "no_case_replacement": true,
+      "required_case_count": 3,
+      "required_warp_twin_count": 3
+    },
+    "information_boundary": {
+      "future_dense_geometry_used": false,
+      "future_object_rgb_used": false,
+      "future_tracks_used": false,
+      "known_future_action_used_as_conditioning_input": true,
+      "object_observation_frames_used": [
+        0
+      ],
+      "outcome_artifact_used": false,
+      "reserved_target_objects_used": false,
+      "target_metric_used": false
+    },
+    "protocol_id": "deform360-frame-zero-depth-physical-v2",
+    "status": "locked-post-open-mechanism-diagnostic"
+  },
+  "config_sha256": "4d756ef8bdcede62399e3da1ae2fd4188ac63774c2cc7531de7d60ab6a43a441",
+  "schema_version": 1
+}

@@ -112,6 +112,34 @@ def test_postopen_v2_config_reuses_the_frozen_source_candidate() -> None:
     assert len(postopen["config"]["cases"]) == 4
 
 
+def test_physical_v2_config_is_diagnostic_only_after_failed_coverage() -> None:
+    postopen = json.loads(
+        Path("configs/sota/deform360_frame_zero_depth_postopen_v2.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    physical = json.loads(
+        Path("configs/sota/deform360_frame_zero_depth_physical_v2.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    encoded = json.dumps(
+        physical["config"],
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(encoded).hexdigest() == physical["config_sha256"]
+    candidate = physical["config"]["candidate"]
+    assert candidate["require_postopen_gate_passed"] is False
+    assert len(physical["config"]["cases"]) == 3
+    assert all(
+        case["case"] != "174-chain-ep0001"
+        for case in physical["config"]["cases"]
+    )
+    assert postopen["config"]["gate"]["required_recovery_count"] == 4
+
+
 def test_metric_depth_support_is_metric_and_deterministic() -> None:
     points, depths, intrinsics, extrinsics = _camera_inputs()
     first, diagnostics = metric_depth_support_counts(
