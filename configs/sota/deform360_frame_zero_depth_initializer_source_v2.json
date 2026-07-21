@@ -1,0 +1,106 @@
+{
+  "config": {
+    "claim_boundary": {
+      "depth_is_independent_evidence": false,
+      "geometry_accuracy_claimed": false,
+      "physical_stability_claimed": false,
+      "predictive_improvement_claimed": false,
+      "source_development_only": true
+    },
+    "information_boundary": {
+      "future_dense_reconstruction_read": false,
+      "future_object_rgb_read": false,
+      "future_particle_tracks_read": false,
+      "object_observation_frames_used": [
+        0
+      ],
+      "reserved_target_cases_read": false,
+      "target_metric_read": false
+    },
+    "method": {
+      "depth_support": {
+        "depth_origin": "Splatfacto expected-depth render at frame zero; correlated with the original Splat reconstruction",
+        "depth_tolerance_m": 0.05,
+        "minimum_depth_camera_count": 8,
+        "minimum_depth_support_views": 1,
+        "minimum_depth_supported_point_count": 128
+      },
+      "selector": "Return every admitted original Splatfacto material cloud byte-identically; evaluate the depth-supported fallback only after the frozen point-only admission check fails.",
+      "visual_hull": {
+        "consensus_fraction_of_peak": 0.55,
+        "cube_half_extent_m": 0.5,
+        "maximum_mask_dilation_pixels": 5,
+        "maximum_output_point_count": 10000,
+        "minimum_camera_count": 8,
+        "minimum_consensus_votes": 7,
+        "minimum_fallback_point_count": 128,
+        "minimum_original_point_count": 128,
+        "voxel_resolution": 120
+      }
+    },
+    "predecessor": {
+      "physical_gate_passed": false,
+      "physical_result_sha256": "858e03515ab8a45bd2ffbe6159ffbd3c7e042f00eed333ecdab53a0575d3d3ff",
+      "source_config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759",
+      "source_initializer_module_sha256": "fdc5fefed2487e2a0f49377a5e518679686e09038c9aff7849c75e8490624f7b",
+      "source_result_sha256": "7f22378af2f458d0026ebc627be0df0e28f5a0937ac41b06e31ddf72c8d8c4b7"
+    },
+    "source_gates": {
+      "maximum_allowed_symmetric_chamfer_regression_m": 0.002,
+      "minimum_admitted_original_exact_parity_count": 9,
+      "minimum_case_count": 12,
+      "minimum_forced_fallback_success_count": 12,
+      "minimum_improved_symmetric_chamfer_case_count": 9,
+      "minimum_median_paired_symmetric_chamfer_improvement_m": 0.003,
+      "minimum_natural_failure_recovery_count": 3,
+      "minimum_retained_point_count": 128
+    },
+    "source_objects": {
+      "filament": {
+        "005-thread": [
+          5
+        ],
+        "069-jump-rope": [
+          1
+        ],
+        "071-climbing-rope": [
+          0
+        ],
+        "077-hemp-rope": [
+          8
+        ]
+      },
+      "sheet": {
+        "009-yellow-cloth": [
+          9
+        ],
+        "022-handkerchief": [
+          0
+        ],
+        "035-wipe-cloth": [
+          8
+        ],
+        "041-wrap-paper-cloth": [
+          2
+        ]
+      },
+      "volumetric": {
+        "044-doll": [
+          0
+        ],
+        "049-ball": [
+          5
+        ],
+        "125-rabbit": [
+          8
+        ],
+        "146-frog": [
+          5
+        ]
+      }
+    }
+  },
+  "config_sha256": "3b44741985052512147d33a5b5878130eba12695e59b20765f356b7e16e0a21a",
+  "protocol_id": "deform360-frame-zero-depth-initializer-source-v2",
+  "schema_version": 1
+}
