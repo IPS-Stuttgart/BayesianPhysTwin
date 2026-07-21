@@ -124,6 +124,17 @@ def _write_robust_stage(
         and all(prefix.get(key) == value for key, value in record.items()),
         "prediction prefix identity changed",
     )
+    authorization = {
+        key: prefix[key]
+        for key in (
+            "case",
+            "object_id",
+            "episode_id",
+            "episode_key",
+            "stratum",
+            "role",
+        )
+    }
     shutil.copy2(prefix_path, destination / prefix_path.name)
     shutil.copytree(source / "known-action", destination / "known-action")
     fallback = (
@@ -149,7 +160,7 @@ def _write_robust_stage(
         "artifact_kind": "Deform360BiasAwareFrameZeroReconstruction",
         "protocol_id": PROTOCOL_ID,
         "protocol_config_sha256": prospective_config_sha256,
-        **record,
+        **authorization,
         "initializer": {
             "method": "strict-multiview-visual-hull-surface",
             "source_result_sha256": candidate["source_result_sha256"],
