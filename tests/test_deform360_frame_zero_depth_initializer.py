@@ -89,6 +89,29 @@ def test_source_v2_config_is_hash_locked_and_reuses_the_open_panel() -> None:
     assert counts == {"filament": 4, "sheet": 4, "volumetric": 4}
 
 
+def test_postopen_v2_config_reuses_the_frozen_source_candidate() -> None:
+    source = json.loads(
+        Path(
+            "configs/sota/deform360_frame_zero_depth_initializer_source_v2.json"
+        ).read_text(encoding="utf-8")
+    )
+    postopen = json.loads(
+        Path("configs/sota/deform360_frame_zero_depth_postopen_v2.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    encoded = json.dumps(
+        postopen["config"],
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    assert hashlib.sha256(encoded).hexdigest() == postopen["config_sha256"]
+    candidate = postopen["config"]["source_candidate"]
+    assert candidate["source_config_sha256"] == source["config_sha256"]
+    assert len(postopen["config"]["cases"]) == 4
+
+
 def test_metric_depth_support_is_metric_and_deterministic() -> None:
     points, depths, intrinsics, extrinsics = _camera_inputs()
     first, diagnostics = metric_depth_support_counts(

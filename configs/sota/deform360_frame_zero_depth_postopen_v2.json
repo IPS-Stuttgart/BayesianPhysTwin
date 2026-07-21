@@ -1,0 +1,62 @@
+{
+  "config": {
+    "cases": [
+      {
+        "case": "015-airbag-cloth-ep0006",
+        "episode_id": 6,
+        "object_id": "015-airbag-cloth",
+        "stratum": "sheet"
+      },
+      {
+        "case": "100-puppet-ep0009",
+        "episode_id": 9,
+        "object_id": "100-puppet",
+        "stratum": "volumetric"
+      },
+      {
+        "case": "160-hose-ep0001",
+        "episode_id": 1,
+        "object_id": "160-hose",
+        "stratum": "filament"
+      },
+      {
+        "case": "174-chain-ep0001",
+        "episode_id": 1,
+        "object_id": "174-chain",
+        "stratum": "filament"
+      }
+    ],
+    "claim_boundary": "Post-open operational and physical-admission diagnostic on four known frame-zero failures. These cases are not independent confirmation and no predictive outcome is read.",
+    "gate": {
+      "minimum_depth_supported_point_count": 128,
+      "minimum_informative_depth_camera_count": 8,
+      "no_case_replacement": true,
+      "no_threshold_change_after_execution": true,
+      "required_case_count": 4,
+      "required_recovery_count": 4
+    },
+    "information_boundary": {
+      "future_dense_geometry_used": false,
+      "future_object_rgb_used": false,
+      "future_tracks_used": false,
+      "known_quality_failure_status_used": true,
+      "object_observation_frames_used": [
+        0
+      ],
+      "outcome_artifact_used": false,
+      "reserved_target_objects_used": false,
+      "target_metric_used": false
+    },
+    "protocol_id": "deform360-frame-zero-depth-postopen-v2",
+    "source_candidate": {
+      "frozen_revision": "d98e39e690e66561ae8da8211eb1302ba2295a9b",
+      "initializer_module_sha256": "ff92c1531a4e4bd492408f626dc5515d084d5a9a538123c99d32f087b66cc6d8",
+      "source_config_sha256": "3b44741985052512147d33a5b5878130eba12695e59b20765f356b7e16e0a21a",
+      "source_protocol_id": "deform360-frame-zero-depth-initializer-source-v2",
+      "source_result_sha256": "43ea9365acd1af2873d99fa6f073522152e2f3898c8392de65f563afb6625c19"
+    },
+    "status": "locked-post-open-operational-diagnostic"
+  },
+  "config_sha256": "909692f27a3cbf541eaef6b26d581e7d34cee767c42128e6258cd8a00bd2bec2",
+  "schema_version": 1
+}
