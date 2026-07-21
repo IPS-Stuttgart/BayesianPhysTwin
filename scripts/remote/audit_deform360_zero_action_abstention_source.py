@@ -106,8 +106,9 @@ def main() -> int:
             "selected_raw_baseline": selected,
             "zero_action_abstention": guarded,
         }
-        scores = {
-            arm: score_deform360_hidden_trajectory(
+        scores = {}
+        for arm, value in arrays.items():
+            complete = score_deform360_hidden_trajectory(
                 value,
                 target,
                 visibility,
@@ -115,8 +116,9 @@ def main() -> int:
                 center_ids=center_ids,
                 scored_frames=frames,
             )
-            for arm, value in arrays.items()
-        }
+            scores[arm] = {
+                metric: float(complete[metric]) for metric in PRIMARY_METRICS
+            }
         rows.append(
             {
                 "case": case,
