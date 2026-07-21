@@ -368,7 +368,7 @@ def main() -> int:
                 official_phystwin_repo=args.official_phystwin_repo.resolve(),
                 official_config=args.official_config.resolve(),
                 deform360_repo=args.deform360_repo.resolve(),
-                python=args.python.resolve(),
+                python=args.python,
                 device=args.device,
             )
             _require(returncode == 0, f"physical runner failed; see {log}")
