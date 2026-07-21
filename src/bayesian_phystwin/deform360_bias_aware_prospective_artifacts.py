@@ -25,6 +25,7 @@ from .deform360_bias_aware_prospective_protocol import (
     EXPECTED_STRATA,
     EXPECTED_UPDATE_FRAMES,
     PROTOCOL_ID,
+    SOURCE_LOCK_GROUP_COUNT,
     SOURCE_LOCK_SHA256,
     load_bias_aware_prospective_protocol,
 )
@@ -49,12 +50,16 @@ PREDICTION_REPORT_FILENAME = "bias_aware_prediction.json"
 PREDICTION_SEAL_FILENAME = "bias_aware_prediction_seal.json"
 QUALITY_FAILURE_FILENAME = "quality_failure.json"
 PREDICTION_COHORT_SEAL_FILENAME = "prediction_cohort_seal.json"
+CALIBRATION_SUPPORT_REJECTION_FILENAME = "calibration_support_rejection.json"
 
 BACKBONE_ARTIFACT_KIND = "Deform360BiasAwareProspectiveBackboneSeal"
 PREDICTION_ARTIFACT_KIND = "Deform360BiasAwareProspectivePredictionSeal"
 QUALITY_FAILURE_ARTIFACT_KIND = "Deform360BiasAwareProspectiveQualityFailure"
 PREDICTION_COHORT_ARTIFACT_KIND = (
     "Deform360BiasAwareProspectivePredictionCohortSeal"
+)
+CALIBRATION_SUPPORT_REJECTION_ARTIFACT_KIND = (
+    "Deform360BiasAwareProspectiveCalibrationSupportRejection"
 )
 
 PHYSICAL_ARRAY_NAMES = frozenset(
@@ -1086,6 +1091,168 @@ def validate_prospective_prediction_cohort_seal(
     )
 
 
+def _calibration_support_rejection_payload(
+    protocol: Mapping[str, Any],
+    cohort_seal: Mapping[str, Any],
+) -> dict[str, Any]:
+    rows = tuple(cohort_seal["cases"])
+    prediction_rows = tuple(
+        row for row in rows if row["disposition"] == "prediction"
+    )
+    evaluable_objects = {str(row["object_id"]) for row in prediction_rows}
+    evaluable_by_stratum = {
+        stratum: len(
+            {
+                str(row["object_id"])
+                for row in prediction_rows
+                if row["stratum"] == stratum
+            }
+        )
+        for stratum in EXPECTED_STRATA
+    }
+    maximum_new_groups = len(evaluable_objects)
+    maximum_combined_groups = SOURCE_LOCK_GROUP_COUNT + maximum_new_groups
+    finite_sample_rank = min(
+        maximum_combined_groups,
+        int(np.ceil((maximum_combined_groups + 1) * 0.90)),
+    )
+    maximum_finite_sample_coverage = finite_sample_rank / (
+        maximum_combined_groups + 1
+    )
+    gate = protocol["config"]["calibration_gate"]
+    support_upper_bound_gates = {
+        "minimum_evaluable_objects": len(evaluable_objects)
+        >= int(gate["minimum_evaluable_objects"]),
+        "minimum_evaluable_objects_per_stratum": all(
+            count >= int(gate["minimum_evaluable_objects_per_stratum"])
+            for count in evaluable_by_stratum.values()
+        ),
+        "minimum_new_eligible_object_groups_possible": maximum_new_groups
+        >= int(gate["minimum_new_eligible_object_groups"]),
+        "minimum_combined_eligible_object_groups_possible": (
+            maximum_combined_groups
+            >= int(gate["minimum_combined_eligible_object_groups"])
+        ),
+        "required_finite_sample_coverage_possible": (
+            maximum_finite_sample_coverage
+            >= float(gate["required_finite_sample_coverage"])
+        ),
+    }
+    failed_support_gates = sorted(
+        name for name, passed in support_upper_bound_gates.items() if not passed
+    )
+    _require(
+        failed_support_gates,
+        "calibration support remains sufficient; authorized outcomes are required",
+    )
+    quality_failures = [
+        {
+            "case": str(row["case"]),
+            "object_id": str(row["object_id"]),
+            "episode_id": int(row["episode_id"]),
+            "stratum": str(row["stratum"]),
+            "stage": str(row["failure_stage"]),
+            "error_type": str(row["failure_type"]),
+            "artifact_result_sha256": str(row["artifact_result_sha256"]),
+        }
+        for row in rows
+        if row["disposition"] == "quality_failure"
+    ]
+    payload: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": CALIBRATION_SUPPORT_REJECTION_ARTIFACT_KIND,
+        "protocol_id": PROTOCOL_ID,
+        "protocol_config_sha256": protocol["config_sha256"],
+        "calibration_prediction_cohort_result_sha256": cohort_seal[
+            "result_sha256"
+        ],
+        "source_lock_sha256": SOURCE_LOCK_SHA256,
+        "decision_stage": "pre-outcome-support",
+        "evaluable_object_count": len(evaluable_objects),
+        "evaluable_object_count_by_stratum": evaluable_by_stratum,
+        "quality_failure_count": len(quality_failures),
+        "quality_failures": quality_failures,
+        "maximum_possible_new_eligible_object_group_count": maximum_new_groups,
+        "maximum_possible_combined_eligible_object_group_count": (
+            maximum_combined_groups
+        ),
+        "maximum_possible_finite_sample_rank": finite_sample_rank,
+        "maximum_possible_finite_sample_coverage": (
+            maximum_finite_sample_coverage
+        ),
+        "support_upper_bound_gates": support_upper_bound_gates,
+        "failed_support_gates": failed_support_gates,
+        "post_outcome_gates_evaluated": False,
+        "calibration_gate_passed": False,
+        "target_access_authorized": False,
+        "failed_gate_action": (
+            "publish calibration support failure and keep every calibration and "
+            "target future sealed"
+        ),
+        "information_boundary": {
+            "method_family_changed": False,
+            "candidate_threshold_changed": False,
+            "observation_model_changed": False,
+            "calibration_future_read": False,
+            "calibration_outcome_read": False,
+            "target_object_media_read": False,
+            "target_future_read": False,
+            "support_rejection_is_non_authorizing": True,
+        },
+        "claim_boundary": (
+            "target-free rejection from irreversible calibration-support loss; "
+            "no accuracy or non-regression claim"
+        ),
+    }
+    payload["result_sha256"] = canonical_sha256(
+        payload, digest_key="result_sha256"
+    )
+    return payload
+
+
+def build_prospective_calibration_support_rejection(
+    protocol_path: str | Path,
+    cohort_seal: Mapping[str, Any],
+    artifact_root: str | Path,
+    output_path: str | Path,
+) -> dict[str, Any]:
+    """Reject an impossible calibration gate without opening any future."""
+
+    protocol = load_bias_aware_prospective_protocol(protocol_path)
+    validate_prospective_prediction_cohort_seal(
+        cohort_seal,
+        protocol_path=protocol_path,
+        role="calibration",
+        artifact_root=artifact_root,
+    )
+    payload = _calibration_support_rejection_payload(protocol, cohort_seal)
+    destination = Path(output_path).resolve()
+    _require(not destination.exists(), "calibration support is already rejected")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    _write_json(destination, payload)
+    return payload
+
+
+def validate_prospective_calibration_support_rejection(
+    rejection: Mapping[str, Any],
+    *,
+    protocol_path: str | Path,
+    cohort_seal: Mapping[str, Any],
+    artifact_root: str | Path,
+) -> None:
+    """Validate a fail-closed rejection against its complete prediction cohort."""
+
+    protocol = load_bias_aware_prospective_protocol(protocol_path)
+    validate_prospective_prediction_cohort_seal(
+        cohort_seal,
+        protocol_path=protocol_path,
+        role="calibration",
+        artifact_root=artifact_root,
+    )
+    expected = _calibration_support_rejection_payload(protocol, cohort_seal)
+    _require(dict(rejection) == expected, "calibration support rejection changed")
+
+
 def authorize_prospective_outcome_case(
     cohort_seal: Mapping[str, Any],
     *,
@@ -1179,6 +1346,7 @@ def record_prospective_quality_failure(
 
 __all__ = [
     "BACKBONE_SEAL_FILENAME",
+    "CALIBRATION_SUPPORT_REJECTION_FILENAME",
     "MEASUREMENT_CYCLE_ARCHIVE_FILENAME",
     "MEASUREMENT_CYCLE_MANIFEST_FILENAME",
     "PHYSICAL_ARCHIVE_FILENAME",
@@ -1192,6 +1360,7 @@ __all__ = [
     "authorize_prospective_outcome_case",
     "build_prospective_backbone_seal",
     "build_prospective_bias_aware_prediction_case",
+    "build_prospective_calibration_support_rejection",
     "build_prospective_prediction_cohort_seal",
     "build_prospective_raw_camera_measurement_case",
     "canonical_sha256",
@@ -1204,6 +1373,7 @@ __all__ = [
     "select_raw_backbone_arrays",
     "source_reliability_and_variance",
     "validate_prospective_backbone_seal",
+    "validate_prospective_calibration_support_rejection",
     "validate_prospective_prediction_cohort_seal",
     "validate_prospective_prediction_seal",
 ]

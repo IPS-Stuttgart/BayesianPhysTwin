@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
+    build_prospective_calibration_support_rejection,
     build_prospective_prediction_cohort_seal,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_download import (
@@ -49,6 +50,12 @@ def build_parser() -> argparse.ArgumentParser:
     seal.add_argument("role", choices=("calibration", "target"))
     seal.add_argument("artifact_root", type=Path)
     seal.add_argument("output", type=Path)
+
+    reject = subparsers.add_parser("reject-calibration-support")
+    reject.add_argument("protocol", type=Path)
+    reject.add_argument("cohort_seal", type=Path)
+    reject.add_argument("artifact_root", type=Path)
+    reject.add_argument("output", type=Path)
     return parser
 
 
@@ -99,10 +106,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 hub_download=hf_hub_download,
             )
         write_bias_aware_download_manifest(args.manifest, result)
-    else:
+    elif args.command == "seal-predictions":
         result = build_prospective_prediction_cohort_seal(
             args.protocol,
             args.role,
+            args.artifact_root,
+            args.output,
+        )
+    else:
+        cohort = json.loads(args.cohort_seal.read_text(encoding="utf-8"))
+        if not isinstance(cohort, dict):
+            raise ValueError("prediction cohort seal must be a JSON object")
+        result = build_prospective_calibration_support_rejection(
+            args.protocol,
+            cohort,
             args.artifact_root,
             args.output,
         )

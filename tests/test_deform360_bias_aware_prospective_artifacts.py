@@ -12,6 +12,7 @@ from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     BACKBONE_SEAL_FILENAME,
     authorize_prospective_outcome_case,
     build_prospective_backbone_seal,
+    build_prospective_calibration_support_rejection,
     build_prospective_prediction_cohort_seal,
     load_physical_archive,
     prospective_case_records,
@@ -19,6 +20,7 @@ from bayesian_phystwin.deform360_bias_aware_prospective_artifacts import (
     select_raw_backbone_arrays,
     source_reliability_and_variance,
     validate_prospective_backbone_seal,
+    validate_prospective_calibration_support_rejection,
     validate_prospective_prediction_cohort_seal,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_staging import (
@@ -368,4 +370,31 @@ def test_prediction_cohort_seal_requires_every_locked_case(tmp_path: Path) -> No
             artifact_root=tmp_path,
             object_id="160-hose",
             episode_id=1,
+        )
+
+    rejection = build_prospective_calibration_support_rejection(
+        PROTOCOL,
+        seal,
+        tmp_path,
+        tmp_path / "calibration_support_rejection.json",
+    )
+    assert rejection["decision_stage"] == "pre-outcome-support"
+    assert rejection["evaluable_object_count"] == 0
+    assert rejection["quality_failure_count"] == 9
+    assert rejection["calibration_gate_passed"] is False
+    assert rejection["target_access_authorized"] is False
+    assert rejection["information_boundary"]["calibration_future_read"] is False
+    validate_prospective_calibration_support_rejection(
+        rejection,
+        protocol_path=PROTOCOL,
+        cohort_seal=seal,
+        artifact_root=tmp_path,
+    )
+    forged = {**rejection, "target_access_authorized": True}
+    with pytest.raises(ValueError, match="support rejection changed"):
+        validate_prospective_calibration_support_rejection(
+            forged,
+            protocol_path=PROTOCOL,
+            cohort_seal=seal,
+            artifact_root=tmp_path,
         )

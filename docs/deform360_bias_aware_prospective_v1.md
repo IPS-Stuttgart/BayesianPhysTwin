@@ -104,6 +104,15 @@ The target phase is admitted only when all of the following hold:
 No method change is allowed if this gate fails. The failure is reported and all
 target futures remain sealed.
 
+After the complete calibration prediction cohort is sealed, a target-free
+support rejection may stop the protocol before calibration futures are opened.
+It is permitted only when the maximum possible number of evaluable objects,
+per-stratum objects, eligible groups, combined groups, or finite-sample
+coverage already violates a locked gate. This monotone check cannot authorize
+target access and refuses to run while a passing calibration result remains
+mathematically possible. It implements the existing gates; it does not add or
+relax one after observing data.
+
 ## Target Evaluation
 
 Each update reads exactly RGB frames `[0,u]` for `u` in `[19, 38, 57]`.
@@ -128,6 +137,7 @@ A positive target claim requires:
 commit method, protocol, and runner
 -> download only the 21 locked objects
 -> stage and seal all calibration predictions
+-> reject without opening futures if locked support is already impossible
 -> open calibration futures and freeze or reject the regret bound
 -> if and only if calibration passes, stage and seal all target predictions
 -> verify the complete target prediction cohort seal
@@ -218,6 +228,15 @@ bpt-deform360-bias-aware-prospective seal-predictions \
   configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
   calibration /path/to/predictions \
   /path/to/calibration_prediction_cohort_seal.json
+
+# This command succeeds only when the complete target-free cohort proves that
+# at least one locked support gate is now impossible. Otherwise it fails closed
+# and the authorized calibration-outcome path below remains required.
+bpt-deform360-bias-aware-prospective reject-calibration-support \
+  configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json \
+  /path/to/calibration_prediction_cohort_seal.json \
+  /path/to/predictions \
+  /path/to/calibration_support_rejection.json
 
 # After all calibration predictions are sealed, construct authorized outcomes,
 # write one evaluation.json per evaluable case, then freeze the only gate that
