@@ -104,9 +104,33 @@ same-object temporal transfer only. Calibration and target objects remain
 sealed, and a positive result still does not establish independent-object
 generalization or beat the published PokeFlex benchmark.
 
+## Prospective result
+
+The locked replication passed every registered gate.
+
+| Method | Object-balanced CD_UL1 | Relative change | Object wins | Object losses |
+| --- | ---: | ---: | ---: | ---: |
+| Released checkpoint | 6.418 mm | reference | - | - |
+| Regret-guarded update | 6.222 mm | **-3.06%** | 2/2 | 0/2 |
+
+All three take means improve:
+
+| Take | Baseline | Guarded | Relative improvement |
+| --- | ---: | ---: | ---: |
+| `FoamDice_T7` | 4.244 mm | 4.231 mm | 0.30% |
+| `FoamDice_T8` | 5.407 mm | 4.985 mm | 7.81% |
+| `PlushOctopus_T7` | 8.010 mm | 7.835 mm | 2.19% |
+
+The guard accepts 87 of 241 target frames and falls back exactly on 154. Among
+accepted frames, 77 improve and 10 regress. This replication supports the
+source-calibrated guard as a safer same-object temporal update, while leaving
+the independent-object and published-SOTA questions open.
+
 ## Evidence
 
 - Source evaluation:
   `results/sota/pokeflex_independent_depth_regret_guard_source_v1/source_cross_object_evaluation.json`
+- Prospective evaluation:
+  `results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/prospective_evaluation.json`
 - Prospective protocol SHA-256:
   `be2bbf6f2e1ac1ce0a536bd02a09633d5607677fe3f7ce8d51cfd8e7d533c447`
