@@ -20,7 +20,10 @@ from typing import Any, Mapping, Sequence
 HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8")
 CALIBRATION_LOCK = HELD_ROOT / "calibration-lock.json"
 SOURCE_ROOT = HELD_ROOT / "replacement-source"
-PROCESSING_CODE = Path("/mnt/lexar4tb/datasets/deform360/code")
+PROCESSING_CODE = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-runtimes/"
+    "Deform360-processing-0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+)
 PINNED_PYTHON = Path(
     "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
     "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/"
@@ -33,6 +36,7 @@ PINNED_PYTHON_TARGET_SHA256 = (
 )
 PYCACHE_PREFIX = Path("/nonexistent/bpt-held-v8-pycache")
 PROCESSING_REVISION = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+PROCESSING_TREE = "c566ed29db7e0fd6a4cb768d840a4aa662864680"
 NORMALIZED_MARKER = "BPT_HELD_V8_REPLACEMENT_SOURCE_ENV_NORMALIZED"
 CODE_ENVIRONMENT_KEY = "BPT_HELD_V8_CODE"
 EXPECTED_HOST = "workstation2"
@@ -425,6 +429,15 @@ def validate_runtime_bindings(
 def validate_processing_revision(code: Path) -> str:
     _require(code == PROCESSING_CODE, "Deform360 processing path changed")
     _canonical_existing_directory(code, label="pinned Deform360 processing code")
+    _require(
+        not any(
+            os.lstat(Path(current) / name).st_mode & 0o222
+            for current, directories, files in os.walk(code, followlinks=False)
+            for name in [*directories, *files]
+        )
+        and os.lstat(code).st_mode & 0o222 == 0,
+        "pinned Deform360 processing snapshot is writable",
+    )
     head = (
         _run_git(code, ("rev-parse", "--verify", "HEAD"))
         .decode("ascii")
@@ -434,9 +447,24 @@ def validate_processing_revision(code: Path) -> str:
     _require(
         head == PROCESSING_REVISION, "pinned Deform360 processing revision changed"
     )
+    tree = (
+        _run_git(code, ("rev-parse", "--verify", "HEAD^{tree}"))
+        .decode("ascii")
+        .strip()
+        .lower()
+    )
+    _require(tree == PROCESSING_TREE, "pinned Deform360 processing tree changed")
     _require(
         _run_git(code, ("status", "--porcelain", "--untracked-files=all")) == b"",
         "pinned Deform360 processing worktree is dirty",
+    )
+    _require(
+        _run_git(
+            code,
+            ("ls-files", "--others", "--ignored", "--exclude-standard"),
+        )
+        == b"",
+        "pinned Deform360 processing snapshot contains ignored files",
     )
     return head
 

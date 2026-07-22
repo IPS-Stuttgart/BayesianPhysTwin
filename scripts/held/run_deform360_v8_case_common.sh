@@ -34,7 +34,8 @@ readonly SAM2="/mnt/lexar4tb/datasets/deform360/sam2-2b90b9f5"
 readonly SAM2_CHECKPOINT="$SAM2/checkpoints/sam2.1_hiera_small.pt"
 readonly UPSTREAM="/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/Bayesian-PhysTwin-upstream-58ab4808e59d"
 readonly OFFICIAL="/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/PhysTwin-upstream-2b6630528141"
-readonly DEFORM360="/mnt/lexar4tb/datasets/deform360/code"
+readonly DEFORM360="/mnt/corsair/florianpfaff/bpt-held-v81-runtimes/Deform360-processing-0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+readonly DEFORM360_HEAD="0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
 readonly SEMANTIC_MODEL="/mnt/corsair/florianpfaff/model-cache/siglip2-base-patch16-224-75de2d55"
 readonly SEMANTIC_MODEL_LOCK="/mnt/corsair/florianpfaff/bpt-framezero-field-dev-20260720/scratch_siglip2_model_lock.json"
 readonly ALLTRACKER="/mnt/corsair/florianpfaff/alltracker-molmomotion-61f5b21"
@@ -192,6 +193,22 @@ readonly OBJECT_DIR="$(dirname -- "$EPDIR")"
   die "frozen physical runtime is absent"
 [[ -d "$DEFORM360" && -d "$SEMANTIC_MODEL" && -f "$SEMANTIC_MODEL_LOCK" ]] || \
   die "frozen frame-zero runtime is absent"
+[[ ! -L "$DEFORM360" && "$(readlink -f -- "$DEFORM360")" == "$DEFORM360" ]] || \
+  die "Deform360 processing snapshot is linked or non-canonical"
+[[ -z "$(find "$DEFORM360" -xdev -perm /222 -print -quit)" ]] || \
+  die "Deform360 processing snapshot is writable"
+readonly -a DEFORM360_GIT=(
+  env -i HOME=/home/florianpfaff USER=florianpfaff LOGNAME=florianpfaff
+  PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 LC_ALL=C.UTF-8
+  GIT_CONFIG_NOSYSTEM=1 GIT_OPTIONAL_LOCKS=0
+  git -C "$DEFORM360"
+)
+[[ "$("${DEFORM360_GIT[@]}" rev-parse HEAD)" == "$DEFORM360_HEAD" ]] || \
+  die "Deform360 processing snapshot revision changed"
+[[ -z "$("${DEFORM360_GIT[@]}" status --porcelain=v1 --untracked-files=all)" ]] || \
+  die "Deform360 processing snapshot worktree changed"
+[[ -z "$("${DEFORM360_GIT[@]}" ls-files --others --ignored --exclude-standard)" ]] || \
+  die "Deform360 processing snapshot contains ignored files"
 [[ -d "$ALLTRACKER" && -f "$ALLTRACKER_CHECKPOINT" ]] || \
   die "frozen online runtime is absent"
 

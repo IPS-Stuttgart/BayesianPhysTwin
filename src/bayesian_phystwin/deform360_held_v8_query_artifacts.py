@@ -1148,8 +1148,7 @@ def _validate_queried_arrays(
         == (CENTER_COUNT,)
         and np.asarray(arrays["center_nearest_query_indices"]).dtype
         == np.dtype(np.int64)
-        and np.asarray(arrays["center_nearest_query_indices"]).shape
-        == (CENTER_COUNT,)
+        and np.asarray(arrays["center_nearest_query_indices"]).shape == (CENTER_COUNT,)
         and np.asarray(arrays["center_nearest_query_distance_m"]).dtype
         == np.dtype(np.float64)
         and np.asarray(arrays["center_nearest_query_distance_m"]).shape
@@ -1244,9 +1243,7 @@ def write_queried_prediction_artifact(
             "unsupported_queries_permanently_masked_false": True,
             "center_exclusion_mask_geometry_only": True,
             "center_exclusion_rule": "exclude-all-x0-queries-within-radius-v2",
-            "center_exclusion_contract_sha256": (
-                CENTER_EXCLUSION_CONTRACT_SHA256
-            ),
+            "center_exclusion_contract_sha256": (CENTER_EXCLUSION_CONTRACT_SHA256),
             "unmatched_assimilation_centers_allowed": True,
             "cohort_coverage_gate_imposed_here": False,
         },
@@ -1384,9 +1381,7 @@ def validate_queried_prediction_artifact(
             "unsupported_queries_permanently_masked_false": True,
             "center_exclusion_mask_geometry_only": True,
             "center_exclusion_rule": "exclude-all-x0-queries-within-radius-v2",
-            "center_exclusion_contract_sha256": (
-                CENTER_EXCLUSION_CONTRACT_SHA256
-            ),
+            "center_exclusion_contract_sha256": (CENTER_EXCLUSION_CONTRACT_SHA256),
             "unmatched_assimilation_centers_allowed": True,
             "cohort_coverage_gate_imposed_here": False,
         },

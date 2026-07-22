@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import importlib.util
 import json
 import os
@@ -60,6 +61,317 @@ def _make_tree_writable(root: Path) -> None:
         for name in directories:
             os.chmod(Path(current) / name, 0o700, follow_symlinks=False)
     os.chmod(root, 0o700, follow_symlinks=False)
+
+
+def _make_tree_read_only(root: Path) -> None:
+    for current, directories, files in os.walk(root, topdown=False):
+        for name in files:
+            path = Path(current) / name
+            mode = 0o500 if os.lstat(path).st_mode & 0o111 else 0o400
+            os.chmod(path, mode, follow_symlinks=False)
+        for name in directories:
+            os.chmod(Path(current) / name, 0o500, follow_symlinks=False)
+    os.chmod(root, 0o500, follow_symlinks=False)
+
+
+def _signed_artifact(value: dict[str, object]) -> dict[str, object]:
+    result = dict(value)
+    result["artifact_sha256"] = hashlib.sha256(
+        preparer._canonical_bytes(result)
+    ).hexdigest()
+    return result
+
+
+def _write_replay_file(path: Path, payload: bytes) -> dict[str, object]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+    return {
+        "path": str(path),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "size_bytes": len(payload),
+    }
+
+
+def _write_admission_replay_fixture(
+    root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    mutation: str | None = None,
+) -> tuple[dict[str, str], SimpleNamespace]:
+    root.mkdir()
+    boundary = {
+        "contact_conditioned_action_result_sha256": None,
+        "contact_conditioned_action_used": False,
+        "future_object_tracks_present": False,
+        "future_robot_action_available": True,
+        "object_observation_frames_used": [0],
+        "post_initial_object_observation_used": False,
+        "prediction_only_input_required": True,
+        "simulator_residual_used": False,
+        "target_access": False,
+    }
+    metrics = {"passed": True, "finite": True, "readout_rmse_m": 0.001}
+    summary_result_sha256 = "d" * 64
+    graph = {"node_count": 4, "edge_count": 3}
+    capacity_diagnostic = {"capacity_is_a_maximum": True}
+    prediction_input_validation = {"frame_count": 76}
+    outputs = {
+        "episode_graph.npz": _write_replay_file(
+            root / "episode_graph.npz", b"graph"
+        ),
+        "simulator_final_data.pkl": _write_replay_file(
+            root / "simulator_final_data.pkl", b"simulator"
+        ),
+        "state_artifact.npz": _write_replay_file(
+            root / "state_artifact.npz", b"state"
+        ),
+    }
+    summary_output_sha256 = {
+        "episode_graph": outputs["episode_graph.npz"]["sha256"],
+        "simulator_final_data": outputs["simulator_final_data.pkl"]["sha256"],
+        "state_artifact": outputs["state_artifact.npz"]["sha256"],
+    }
+    if mutation == "summary_output":
+        summary_output_sha256["episode_graph"] = "0" * 64
+    summary = {
+        "passed": True,
+        "result_sha256": summary_result_sha256,
+        "state_metrics": metrics,
+        "information_boundary": boundary,
+        "graph": graph,
+        "capacity_diagnostic": capacity_diagnostic,
+        "prediction_input_validation": prediction_input_validation,
+        "output_sha256": summary_output_sha256,
+    }
+    outputs["twin_summary.json"] = _write_replay_file(
+        root / "twin_summary.json",
+        (json.dumps(summary, sort_keys=True) + "\n").encode(),
+    )
+    success_stdout = _write_replay_file(root / "stdout.log", b"success\n")
+    success_stderr = _write_replay_file(root / "stderr.log", b"")
+    cross_stdout = _write_replay_file(root / "cross-auth/stdout.log", b"")
+    cross_stderr_payload = (
+        b"different rejection\n"
+        if mutation == "cross_log_marker"
+        else (
+            preparer._V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8")
+            + b"\n"
+        )
+    )
+    cross_stderr = _write_replay_file(
+        root / "cross-auth/stderr.log", cross_stderr_payload
+    )
+    if mutation == "cross_file":
+        _write_replay_file(root / "cross-auth/episode_graph.npz", b"unexpected")
+    bootstrap = "exact v8.1 bootstrap"
+    source_binding = {
+        "git_head": "1" * 40,
+        "adapter_source_sha256": "a" * 64,
+        "protocol_source_sha256": "b" * 64,
+        "replay_operator_source_sha256": "c" * 64,
+        "exact_child_bootstrap_sha256": hashlib.sha256(
+            bootstrap.encode("utf-8")
+        ).hexdigest(),
+        "uncommitted_correction_present": False,
+        "external_runtime": {
+            "python": {},
+            "upstream": {},
+            "deform360": {},
+        },
+    }
+    if mutation == "bootstrap":
+        source_binding["exact_child_bootstrap_sha256"] = "0" * 64
+    elif mutation == "uncommitted":
+        source_binding["uncommitted_correction_present"] = True
+    elif mutation == "source_sha":
+        source_binding["adapter_source_sha256"] = "0" * 64
+    contract_sha256 = "e" * 64
+    report_unsigned: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": preparer._V81_ADMISSION_REPLAY_REPORT_KIND,
+        "protocol_id": preparer._V81_PROTOCOL_ID,
+        "execution_attempt": preparer._V81_EXECUTION_ATTEMPT,
+        "case_name": "072-cotton-clohesline-ep0003",
+        "role": "calibration",
+        "development_replay_only": True,
+        "formal_outcome_evidence": False,
+        "source_evidence": {
+            "future_object_observation_used": False,
+            "source_used_for_numerical_replay": "prediction_only_input_only",
+        },
+        "admission": {
+            "protocol_id": "deform360-held-v8-replacement-admission-v1",
+            "contract_sha256": contract_sha256,
+            "exact_case_only": True,
+            "target_access": False,
+        },
+        "successful_replay": {
+            "exit_code": 0,
+            "hook_restoration_guard_completed": True,
+            "summary_result_sha256": summary_result_sha256,
+            "validator_result_sha256": summary_result_sha256,
+            "graph": graph,
+            "capacity_diagnostic": capacity_diagnostic,
+            "prediction_input_validation": prediction_input_validation,
+            "state_metrics": metrics,
+            "information_boundary": boundary,
+            "outputs": outputs,
+            "stdout_log": success_stdout,
+            "stderr_log": success_stderr,
+        },
+        "cross_authorization_rejection": {
+            "attempted_case_name": preparer._V81_CROSS_AUTHORIZATION_CASE_NAME,
+            "exit_code": 1,
+            "rejected": True,
+            "numerical_output_count": 0,
+            "stderr_marker": preparer._V81_CROSS_AUTHORIZATION_STDERR_MARKER,
+            "stderr_marker_present": True,
+            "stdout_log": cross_stdout,
+            "stderr_log": cross_stderr,
+        },
+        "information_boundary": {
+            "official_target_created": False,
+            "official_target_read": False,
+            "query_created": False,
+            "query_read": False,
+            "score_created": False,
+            "score_read": False,
+            "outcome_created": False,
+            "outcome_read": False,
+            "confirmation_accessed": False,
+        },
+        "local_source_at_replay": source_binding,
+    }
+    if mutation == "report_kind":
+        report_unsigned["artifact_kind"] = "Deform360HeldV8ExternalReplay"
+    elif mutation == "case_role":
+        report_unsigned["role"] = "confirmation"
+    elif mutation == "contract":
+        report_unsigned["admission"]["contract_sha256"] = "0" * 64  # type: ignore[index]
+    elif mutation == "formal_evidence":
+        report_unsigned["formal_outcome_evidence"] = True
+    elif mutation == "top_boundary":
+        report_unsigned["information_boundary"]["query_read"] = True  # type: ignore[index]
+    elif mutation == "metrics":
+        report_unsigned["successful_replay"]["state_metrics"]["finite"] = False  # type: ignore[index]
+    elif mutation == "successful_boundary":
+        report_unsigned["successful_replay"]["information_boundary"][  # type: ignore[index]
+            "target_access"
+        ] = True
+    elif mutation == "copied_graph":
+        report_unsigned["successful_replay"]["graph"] = {  # type: ignore[index]
+            "node_count": 5,
+            "edge_count": 3,
+        }
+    elif mutation == "validator_result":
+        report_unsigned["successful_replay"][  # type: ignore[index]
+            "validator_result_sha256"
+        ] = "0" * 64
+    elif mutation == "cross_output":
+        report_unsigned["cross_authorization_rejection"][  # type: ignore[index]
+            "numerical_output_count"
+        ] = 1
+    elif mutation == "cross_exit":
+        report_unsigned["cross_authorization_rejection"]["exit_code"] = 2  # type: ignore[index]
+    elif mutation == "cross_marker_field":
+        report_unsigned["cross_authorization_rejection"][  # type: ignore[index]
+            "stderr_marker"
+        ] = "different rejection"
+    elif mutation == "cross_marker_flag":
+        report_unsigned["cross_authorization_rejection"][  # type: ignore[index]
+            "stderr_marker_present"
+        ] = False
+    elif mutation == "output_record":
+        report_unsigned["successful_replay"]["outputs"]["episode_graph.npz"][  # type: ignore[index]
+            "sha256"
+        ] = "0" * 64
+
+    report = _signed_artifact(report_unsigned)
+    report_path = root / "metadata-only-replay-report.json"
+    report_payload = (json.dumps(report, sort_keys=True) + "\n").encode()
+    report_record = _write_replay_file(report_path, report_payload)
+    code_unsigned: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": preparer._V81_ADMISSION_REPLAY_CODE_BINDING_KIND,
+        "protocol_id": preparer._V81_PROTOCOL_ID,
+        "execution_attempt": preparer._V81_EXECUTION_ATTEMPT,
+        "admission_contract_sha256": contract_sha256,
+        "formal_outcome_evidence": False,
+        "target_query_score_or_outcome_accessed": False,
+        "local_worktree_at_replay": source_binding,
+        "replay_report": {
+            **report_record,
+            "artifact_sha256": report["artifact_sha256"],
+        },
+    }
+    if mutation == "code_kind":
+        code_unsigned["artifact_kind"] = "Deform360HeldV8ExternalBinding"
+    elif mutation == "report_cross_binding":
+        code_unsigned["replay_report"]["path"] = str(root / "other.json")  # type: ignore[index]
+    elif mutation == "binding_boundary":
+        code_unsigned["target_query_score_or_outcome_accessed"] = True
+
+    code_binding = _signed_artifact(code_unsigned)
+    code_path = root / "metadata-only-replay-code-binding.json"
+    code_payload = (json.dumps(code_binding, sort_keys=True) + "\n").encode()
+    _write_replay_file(code_path, code_payload)
+    if mutation == "extra_root":
+        _write_replay_file(root / "unexpected.txt", b"unexpected")
+    elif mutation == "hardlink_output":
+        os.link(root / "episode_graph.npz", root.parent / "hardlink-peer")
+    elif mutation == "symlink_output":
+        target = root.parent / "symlink-target"
+        target.write_bytes(b"graph")
+        (root / "episode_graph.npz").unlink()
+        (root / "episode_graph.npz").symlink_to(target)
+    elif mutation == "special_output":
+        (root / "episode_graph.npz").unlink()
+        os.mkfifo(root / "episode_graph.npz")
+    for path in root.rglob("*"):
+        os.chmod(path, 0o500 if path.is_dir() else 0o400)
+    if mutation == "cross_mode":
+        os.chmod(root / "cross-auth", 0o700)
+    os.chmod(root, 0o500)
+
+    monkeypatch.setattr(preparer, "_V8_ADMISSION_REPLAY_ROOT", root)
+    monkeypatch.setattr(preparer, "_V8_ADMISSION_REPLAY_REPORT", report_path)
+    monkeypatch.setattr(preparer, "_V8_ADMISSION_REPLAY_CODE_BINDING", code_path)
+    monkeypatch.setattr(
+        preparer,
+        "_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256",
+        hashlib.sha256(report_payload).hexdigest(),
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256",
+        report["artifact_sha256"],
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256",
+        hashlib.sha256(code_payload).hexdigest(),
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256",
+        code_binding["artifact_sha256"],
+    )
+    monkeypatch.setattr(preparer, "_validate_replay_source_commit", lambda *_: None)
+    monkeypatch.setattr(preparer, "_validate_replay_external_runtime", lambda *_: None)
+    bindings = {
+        "held_v8_builder_adapter_source": "a" * 64,
+        "held_v8_protocol_source": "b" * 64,
+        "held_v81_external_admission_replay_operator_source": "c" * 64,
+    }
+    builders = SimpleNamespace(
+        V8_EXTERNAL_CALIBRATION_CASE_NAME="072-cotton-clohesline-ep0003",
+        V8_EXTERNAL_ADMISSION_PROTOCOL_ID=(
+            "deform360-held-v8-replacement-admission-v1"
+        ),
+        V8_EXTERNAL_ADMISSION_CONTRACT_SHA256=contract_sha256,
+        _V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP=bootstrap,
+    )
+    return bindings, builders
 
 
 def test_repository_tree_binding_and_dirty_rejection(tmp_path: Path) -> None:
@@ -138,6 +450,7 @@ def test_prospective_bindings_include_named_deployment_contracts(
         HF_DATASET_REVISION="2" * 40,
         REPLACEMENT_SOURCE_INVENTORY_CONTRACT={"source": "frozen"},
     )
+    fake_builders = SimpleNamespace()
     monkeypatch.setattr(preparer, "__file__", str(operator))
     monkeypatch.setattr(
         preparer,
@@ -156,7 +469,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
         preparer, "_validate_attempt3_archive_lineage", lambda _bindings: None
     )
     monkeypatch.setattr(
-        preparer, "_validate_admission_replay_source_lineage", lambda _bindings: None
+        preparer,
+        "_validate_admission_replay_source_lineage",
+        lambda _bindings, _builders, _code: None,
     )
     monkeypatch.setattr(preparer, "_validate_pinned_python", lambda: "9" * 64)
     monkeypatch.setattr(
@@ -165,9 +480,15 @@ def test_prospective_bindings_include_named_deployment_contracts(
         lambda: {"frame_zero_default_config": "8" * 64},
     )
     monkeypatch.setattr(
-        preparer, "_import_v8_modules", lambda code: (fake_protocol, fake_replacement)
+        preparer,
+        "_import_v8_modules",
+        lambda code: (fake_protocol, fake_replacement, fake_builders),
     )
-    monkeypatch.setattr(preparer, "_processing_revision", lambda: "1" * 40)
+    monkeypatch.setattr(
+        preparer,
+        "_processing_revision",
+        lambda: ("1" * 40, "3" * 40),
+    )
 
     bindings, provenance = preparer.prospective_bindings(root)
 
@@ -177,6 +498,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
     assert "v7_inherited_immutable_bindings_contract" in bindings
     assert bindings["method_deployed_snapshot_tree"] == provenance["tree_sha256"]
     assert bindings["method_head_text_sha256"] == provenance["head_text_sha256"]
+    assert bindings["deform360_processing_tree_text_sha256"] == preparer._sha256_text(
+        "3" * 40
+    )
     assert "replacement_source_inventory_contract" in bindings
     assert bindings["replacement_automatic_twin_admission_contract"] == "7" * 64
     assert bindings["frame_zero_exact_eight_subset_bounded_audit_contract"] == "6" * 64
@@ -389,6 +713,11 @@ def test_attempt_three_archive_lineage_matches_local_operator_and_inventory(
     monkeypatch.setattr(preparer, "_V8_ATTEMPT3_WITHDRAWAL_REPORT", report)
     monkeypatch.setattr(preparer, "_V8_ATTEMPT3_WITHDRAWAL_POINTER", pointer)
     monkeypatch.setattr(preparer, "_V8_ATTEMPT3_INTEGRITY_COMPLETION", completion)
+    monkeypatch.setattr(
+        preparer,
+        "_validate_attempt3_excluded_deployed_code",
+        lambda _report: None,
+    )
     bindings = {
         "held_v8_attempt3_withdrawal_operator_source": (
             preparer._V8_ATTEMPT3_OPERATOR_SOURCE_SHA256
@@ -407,6 +736,78 @@ def test_attempt_three_archive_lineage_matches_local_operator_and_inventory(
         preparer._validate_attempt3_archive_lineage(
             {"held_v8_attempt3_withdrawal_operator_source": "0" * 64}
         )
+
+
+def test_attempt_three_excluded_deployment_is_exact_clean_git_tree(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive = tmp_path / "attempt-3-archive"
+    archive.mkdir()
+    code = _repository(archive)
+    deployed_name = "code-test-head"
+    code.rename(archive / deployed_name)
+    code = archive / deployed_name
+    (code / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8")
+    _git(code, "add", ".gitignore")
+    _git(code, "commit", "-m", "bind ignored-file policy")
+    head = _git(code, "rev-parse", "HEAD")
+    records = preparer._parse_git_tree(
+        preparer._run_isolated_filemode_git(
+            code, ["ls-tree", "-r", "-z", "HEAD"]
+        ).stdout
+    )
+    manifest_sha256 = hashlib.sha256(
+        preparer._canonical_bytes(records)
+    ).hexdigest()
+    binding = {
+        "path": deployed_name,
+        "git_head": head,
+        "head_text_sha256": preparer._sha256_text(head),
+        "git_tree_record_count": len(records),
+        "git_tree_manifest_sha256": manifest_sha256,
+    }
+    report = {
+        "deployed_code": binding,
+        "expected_postseal_inventory": {
+            "excluded_deployed_code_directory": deployed_name,
+        },
+    }
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_ARCHIVE", archive)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_DEPLOYED_CODE_NAME", deployed_name)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_DEPLOYED_HEAD", head)
+    monkeypatch.setattr(
+        preparer,
+        "_V8_ATTEMPT3_DEPLOYED_HEAD_TEXT_SHA256",
+        preparer._sha256_text(head),
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_V8_ATTEMPT3_DEPLOYED_TREE_MANIFEST_SHA256",
+        manifest_sha256,
+    )
+    monkeypatch.setattr(
+        preparer, "_V8_ATTEMPT3_DEPLOYED_TREE_RECORD_COUNT", len(records)
+    )
+
+    preparer._validate_attempt3_excluded_deployed_code(report)
+
+    (code / "ignored.tmp").write_text("hidden\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="dirty or has untracked"):
+        preparer._validate_attempt3_excluded_deployed_code(report)
+    (code / "ignored.tmp").unlink()
+    (code / "untracked.tmp").write_text("visible\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="dirty or has untracked"):
+        preparer._validate_attempt3_excluded_deployed_code(report)
+    (code / "untracked.tmp").unlink()
+
+    os.chmod(code / "method.py", 0o700)
+    with pytest.raises(ValueError, match="tracked blob changed"):
+        preparer._validate_attempt3_excluded_deployed_code(report)
+    os.chmod(code / "method.py", 0o600)
+    changed_report = {**report, "deployed_code": {**binding, "git_head": "0" * 40}}
+    with pytest.raises(ValueError, match="report binding changed"):
+        preparer._validate_attempt3_excluded_deployed_code(changed_report)
 
 
 def test_lock_creation_passes_all_attempt_three_lineage_paths() -> None:
@@ -449,29 +850,122 @@ def test_attempt_two_completion_binds_the_exact_local_operator_sources(
         preparer._validate_attempt2_operator_source_lineage(bindings)
 
 
-def test_admission_replay_binds_the_exact_adapter_and_protocol_sources(
+def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    _git(source, "init", "--initial-branch=main")
+    payloads = {
+        "held_v8_builder_adapter_source": b"# replayed adapter\n",
+        "held_v8_protocol_source": b"# replayed protocol\n",
+        "held_v81_external_admission_replay_operator_source": (
+            b"# replayed operator\n"
+        ),
+    }
+    for local_name, payload in payloads.items():
+        path = source / preparer._LOCAL_BINDING_FILES[local_name]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
+    preparer_path = source / "scripts/held/prepare_deform360_v8_lock.py"
+    preparer_path.write_text("# digest pins pending\n", encoding="utf-8")
+    (source / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8")
+    _git(source, "add", ".")
+    _git(source, "commit", "-m", "replayed source")
+    replay_head = _git(source, "rev-parse", "HEAD")
+    local_bindings = {
+        local_name: hashlib.sha256(payload).hexdigest()
+        for local_name, payload in payloads.items()
+    }
+    tested = {
+        "git_head": replay_head,
+        "adapter_source_sha256": local_bindings[
+            "held_v8_builder_adapter_source"
+        ],
+        "protocol_source_sha256": local_bindings["held_v8_protocol_source"],
+        "replay_operator_source_sha256": local_bindings[
+            "held_v81_external_admission_replay_operator_source"
+        ],
+    }
+    preparer_path.write_text("# digest pins populated\n", encoding="utf-8")
+    _git(source, "add", str(preparer_path.relative_to(source)))
+    _git(source, "commit", "-m", "populate replay digest pins")
+
+    preparer._validate_replay_source_commit(tested, local_bindings, source)
+
+    changed_bindings = dict(local_bindings)
+    changed_bindings["held_v8_protocol_source"] = "0" * 64
+    with pytest.raises(ValueError, match="replayed clean-source commit"):
+        preparer._validate_replay_source_commit(tested, changed_bindings, source)
+    (source / "ignored.tmp").write_text("hidden\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="current clean source"):
+        preparer._validate_replay_source_commit(tested, local_bindings, source)
+    (source / "ignored.tmp").unlink()
+    (source / "unrelated.txt").write_text("not a digest pin\n", encoding="utf-8")
+    _git(source, "add", "unrelated.txt")
+    _git(source, "commit", "-m", "unrelated post-replay change")
+    with pytest.raises(ValueError, match="confined to preparer digest pins"):
+        preparer._validate_replay_source_commit(tested, local_bindings, source)
+
+
+def test_admission_replay_semantics_and_cross_bindings_validate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    binding = tmp_path / "admission-code-binding.json"
-    binding.write_text(
-        '{"local_worktree_at_replay":{'
-        '"adapter_source_sha256":"'
-        + "a" * 64
-        + '","protocol_source_sha256":"'
-        + "b" * 64
-        + '","replay_operator_source_sha256":"'
-        + "c" * 64
-        + '"}}\n',
-        encoding="utf-8",
+    bindings, builders = _write_admission_replay_fixture(
+        tmp_path / "replay", monkeypatch
     )
-    os.chmod(binding, 0o400)
-    monkeypatch.setattr(preparer, "_V8_ADMISSION_REPLAY_CODE_BINDING", binding)
-    bindings = {
-        "held_v8_builder_adapter_source": "a" * 64,
-        "held_v8_protocol_source": "b" * 64,
-        "held_v81_external_admission_replay_operator_source": "c" * 64,
-    }
-    preparer._validate_admission_replay_source_lineage(bindings)
-    bindings["held_v8_protocol_source"] = "c" * 64
-    with pytest.raises(ValueError, match="real pinned-upstream replay"):
-        preparer._validate_admission_replay_source_lineage(bindings)
+
+    preparer._validate_admission_replay_source_lineage(
+        bindings, builders, tmp_path
+    )
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("report_kind", "report identity"),
+        ("code_kind", "code-binding identity"),
+        ("case_role", "report identity"),
+        ("contract", "current exact-case contract"),
+        ("formal_evidence", "evidence boundary"),
+        ("binding_boundary", "code-binding identity or boundary"),
+        ("report_cross_binding", "report-to-code-binding lineage"),
+        ("bootstrap", "bootstrap or committed-source boundary"),
+        ("uncommitted", "bootstrap or committed-source boundary"),
+        ("source_sha", "real pinned-upstream replay"),
+        ("top_boundary", "target/query/score/outcome boundary"),
+        ("metrics", "finite passing metrics"),
+        ("successful_boundary", "information boundary"),
+        ("summary_output", "diagnostics or output hashes"),
+        ("copied_graph", "diagnostics or output hashes"),
+        ("validator_result", "bound twin summary"),
+        ("cross_output", "cross-authorization"),
+        ("cross_exit", "cross-authorization"),
+        ("cross_marker_field", "cross-authorization"),
+        ("cross_marker_flag", "cross-authorization"),
+        ("cross_log_marker", "lacks the exact admission-rejection marker"),
+        ("cross_file", "cross-authorization"),
+        ("output_record", "differs from its replay binding"),
+        ("extra_root", "root allowlist"),
+        ("hardlink_output", "not a regular file"),
+        ("symlink_output", "not a regular file"),
+        ("special_output", "not a regular file"),
+        ("cross_mode", "entry is not a directory"),
+    ],
+)
+def test_admission_replay_semantic_tampering_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    message: str,
+) -> None:
+    bindings, builders = _write_admission_replay_fixture(
+        tmp_path / "replay",
+        monkeypatch,
+        mutation=mutation,
+    )
+
+    with pytest.raises(ValueError, match=message):
+        preparer._validate_admission_replay_source_lineage(
+            bindings, builders, tmp_path
+        )

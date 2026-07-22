@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import pickle
+import subprocess
 from typing import Any
 
 import pytest
@@ -37,20 +39,85 @@ def _artifact(path: Path, value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
+def _git(code: Path, *arguments: str) -> bytes:
+    return subprocess.run(
+        ["git", "-C", str(code), *arguments],
+        check=True,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
+
+
+def _seal_tree(root: Path) -> None:
+    paths: list[Path] = []
+    for current, directories, files in os.walk(root, topdown=False):
+        current_path = Path(current)
+        paths.extend(current_path / name for name in files)
+        paths.extend(current_path / name for name in directories)
+    paths.append(root)
+    for path in paths:
+        path.chmod(0o500 if path.is_dir() else 0o400)
+
+
+def _sealed_test_repository(root: Path) -> tuple[Path, dict[str, Any]]:
+    stage = root / "code-stage"
+    stage.mkdir()
+    _git(stage, "init", "--quiet")
+    _git(stage, "config", "user.email", "held-test@example.invalid")
+    _git(stage, "config", "user.name", "Held Test")
+    (stage / ".gitignore").write_text("ignored-runtime.py\n", encoding="utf-8")
+    (stage / "tracked.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _git(stage, "add", ".gitignore", "tracked.py")
+    _git(stage, "commit", "--quiet", "-m", "test fixture")
+    _git(stage, "checkout", "--quiet", "--detach", "HEAD")
+    head = _git(stage, "rev-parse", "HEAD").decode("ascii").strip()
+    deployed_code = root / f"code-{head}"
+    stage.rename(deployed_code)
+    _seal_tree(deployed_code)
+    return deployed_code, protocol._attempt3_repository_binding(deployed_code)
+
+
 def _attempt3_lineage_fixture(
     lineage: Path, monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, Any]:
     archive = lineage / "held-v8-attempt-3-withdrawn-postbarrier"
     archive.mkdir()
+    deployed_code, deployed = _sealed_test_repository(archive)
+    inventory_directory = archive / "sealed-evidence"
+    inventory_directory.mkdir()
+    inventory_file = inventory_directory / "payload.bin"
+    inventory_payload = b"attempt-3-sealed-payload\n"
+    inventory_file.write_bytes(inventory_payload)
+    inventory_file.chmod(0o400)
+    inventory_directory.chmod(0o500)
     report_path = archive / "execution-withdrawal-postbarrier-attempt3.json"
     pointer_path = lineage / "held-v8-attempt-3-withdrawal-pointer.json"
-    completion_path = (
-        lineage / "held-v8-attempt-3-withdrawal-integrity-completion.json"
-    )
-    inventory_sha256 = "d" * 64
-    inventory_count = 1
+    completion_path = lineage / "held-v8-attempt-3-withdrawal-integrity-completion.json"
+    inventory_rows = [
+        {
+            "path": "sealed-evidence",
+            "type": "directory",
+            "mode_octal": "0500",
+        },
+        {
+            "path": "sealed-evidence/payload.bin",
+            "type": "file",
+            "mode_octal": "0400",
+            "size_bytes": len(inventory_payload),
+            "sha256": hashlib.sha256(inventory_payload).hexdigest(),
+        },
+    ]
+    inventory_sha256 = hashlib.sha256(
+        json.dumps(
+            {"rows": inventory_rows},
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    inventory_count = len(inventory_rows)
     operator = {"path": "/tmp/attempt3-operator.py", "sha256": "b" * 64}
-    deployed = {"path": "code-test", "git_head": "c" * 40}
     report = _artifact(
         report_path,
         {
@@ -103,9 +170,7 @@ def _attempt3_lineage_fixture(
         completion_path,
         {
             "schema_version": 1,
-            "artifact_kind": (
-                "Deform360HeldV8Attempt3WithdrawalIntegrityCompletion"
-            ),
+            "artifact_kind": ("Deform360HeldV8Attempt3WithdrawalIntegrityCompletion"),
             "protocol_id": "deform360-held-online-belief-v8",
             "execution_attempt": 3,
             "status": "withdrawal-integrity-complete",
@@ -154,6 +219,10 @@ def _attempt3_lineage_fixture(
     )
     pointer_record = _bound_file(pointer_path)
     archive.chmod(0o500)
+    metadata_inventory = protocol._observed_attempt3_noncode_metadata_inventory(
+        archive,
+        deployed_code=deployed_code,
+    )
 
     replacements = {
         "ATTEMPT3_ARCHIVE_PATH": archive,
@@ -163,13 +232,14 @@ def _attempt3_lineage_fixture(
         "ATTEMPT3_WITHDRAWAL_REPORT_FILE_SHA256": report_record["sha256"],
         "ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256": report["artifact_sha256"],
         "ATTEMPT3_WITHDRAWAL_COMPLETION_FILE_SHA256": completion_record["sha256"],
-        "ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256": completion[
-            "artifact_sha256"
-        ],
+        "ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256": completion["artifact_sha256"],
         "ATTEMPT3_WITHDRAWAL_POINTER_FILE_SHA256": pointer_record["sha256"],
         "ATTEMPT3_WITHDRAWAL_POINTER_ARTIFACT_SHA256": pointer["artifact_sha256"],
         "ATTEMPT3_ARCHIVE_INVENTORY_SHA256": inventory_sha256,
         "ATTEMPT3_ARCHIVE_ENTRY_COUNT": inventory_count,
+        "ATTEMPT3_ARCHIVE_METADATA_INVENTORY_SHA256": metadata_inventory[
+            "metadata_inventory_sha256"
+        ],
     }
     for name, value in replacements.items():
         monkeypatch.setattr(protocol, name, value)
@@ -334,9 +404,7 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         development_decision_path=development,
         attempt3_withdrawal_report_path=attempt3["report_path"],
         attempt3_withdrawal_pointer_path=attempt3["pointer_path"],
-        attempt3_withdrawal_integrity_completion_path=attempt3[
-            "completion_path"
-        ],
+        attempt3_withdrawal_integrity_completion_path=attempt3["completion_path"],
     )
     return lock
 
@@ -355,11 +423,15 @@ def _first_barrier_artifacts(
     physical: dict[str, Path] = {}
     online: dict[str, Path] = {}
     fields: dict[str, Path] = {}
+    held_root = lock.parent
+    _ = tmp_path
     for case_name in cases:
-        case_root = tmp_path / role / case_name
-        physical_path = case_root / "physical.json"
-        online_path = case_root / "online.json"
-        field_path = case_root / "field.json"
+        case_root = held_root / role / "cases" / case_name
+        physical_path = case_root / "physical" / "physical-prior-seal.json"
+        online_path = case_root / "online" / "online-prediction-seal.json"
+        field_path = (
+            case_root / "frozen-field" / "preoutcome-frozen-field-manifest.json"
+        )
         physical_value = _artifact(
             physical_path,
             {
@@ -399,7 +471,9 @@ def _first_barrier_artifacts(
         fields[case_name] = field_path
     source_path: Path | None = None
     if role == "calibration":
-        source_path = tmp_path / role / "replacement-aligned-source.json"
+        source_path = (
+            held_root / "replacement-source" / "manifests" / "aligned-source.json"
+        )
         _artifact(
             source_path,
             {
@@ -425,10 +499,23 @@ def _second_barrier_artifacts(
     )
     queries: dict[str, Path] = {}
     queried: dict[str, Path] = {}
+    held_root = lock.parent
+    _ = tmp_path
     for case_name in cases:
-        case_root = tmp_path / role / case_name
-        query_path = case_root / "official-x0.json"
-        queried_path = case_root / "queried.json"
+        query_path = (
+            held_root
+            / role
+            / "query-inputs"
+            / case_name
+            / "official-frame-zero-query-manifest.json"
+        )
+        queried_path = (
+            held_root
+            / role
+            / "query-outputs"
+            / case_name
+            / "queried-prediction-seal.json"
+        )
         query_value = _artifact(
             query_path,
             {
@@ -553,15 +640,21 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     assert lock["protocol_id"] == "deform360-held-online-belief-v8.1"
     assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 4
     assert lock["freshness_and_reuse"] == protocol.FRESHNESS_AND_REUSE_CONTRACT
-    assert lock["freshness_and_reuse"][
-        "held_v8_root_absent_before_attempt4_lock"
-    ] is True
-    assert lock["freshness_and_reuse"][
-        "all_predictions_must_be_fresh_v8_1_attempt4_outputs"
-    ] is True
-    assert lock["freshness_and_reuse"][
-        "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt4_outputs"
-    ] is True
+    assert (
+        lock["freshness_and_reuse"]["held_v8_root_absent_before_attempt4_lock"] is True
+    )
+    assert (
+        lock["freshness_and_reuse"][
+            "all_predictions_must_be_fresh_v8_1_attempt4_outputs"
+        ]
+        is True
+    )
+    assert (
+        lock["freshness_and_reuse"][
+            "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt4_outputs"
+        ]
+        is True
+    )
     assert all(
         value is False
         for key, value in lock["freshness_and_reuse"].items()
@@ -631,6 +724,96 @@ def test_lock_rejects_writable_attempt3_archive(
 
     with pytest.raises(ValueError, match="archive root"):
         protocol.validate_protocol_lock(lock_path)
+
+
+def test_lock_rejects_attempt3_deployed_tracked_file_tamper(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock_path = _lock_fixture(tmp_path, monkeypatch)
+    archive = protocol.ATTEMPT3_ARCHIVE_PATH
+    deployed_code = next(
+        path for path in archive.iterdir() if path.name.startswith("code-")
+    )
+    tracked = deployed_code / "tracked.py"
+    tracked.chmod(0o600)
+    tracked.write_text("VALUE = 2\n", encoding="utf-8")
+    tracked.chmod(0o400)
+
+    with pytest.raises(
+        ValueError, match="worktree content changed|tracked file content"
+    ):
+        protocol.validate_protocol_lock(lock_path)
+
+
+@pytest.mark.parametrize("name", ("untracked-runtime.py", "ignored-runtime.py"))
+def test_lock_rejects_attempt3_deployed_untracked_or_ignored_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    name: str,
+) -> None:
+    lock_path = _lock_fixture(tmp_path, monkeypatch)
+    archive = protocol.ATTEMPT3_ARCHIVE_PATH
+    deployed_code = next(
+        path for path in archive.iterdir() if path.name.startswith("code-")
+    )
+    deployed_code.chmod(0o700)
+    injected = deployed_code / name
+    injected.write_text("raise RuntimeError('must not execute')\n", encoding="utf-8")
+    injected.chmod(0o400)
+    deployed_code.chmod(0o500)
+
+    with pytest.raises(
+        ValueError,
+        match="worktree content changed|untracked or ignored|worktree path set changed",
+    ):
+        protocol.validate_protocol_lock(lock_path)
+
+
+@pytest.mark.parametrize("mutation", ("added", "deleted", "modified"))
+def test_lock_rejects_changed_attempt3_noncode_inventory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    lock_path = _lock_fixture(tmp_path, monkeypatch)
+    archive = protocol.ATTEMPT3_ARCHIVE_PATH
+    payload = archive / "sealed-evidence" / "payload.bin"
+    if mutation == "added":
+        archive.chmod(0o700)
+        added = archive / "unexpected.bin"
+        added.write_bytes(b"unexpected\n")
+        added.chmod(0o400)
+        archive.chmod(0o500)
+    elif mutation == "deleted":
+        payload.parent.chmod(0o700)
+        payload.unlink()
+        payload.parent.chmod(0o500)
+    else:
+        payload.chmod(0o600)
+        payload.write_bytes(b"changed-with-the-same-sealed-mode\n")
+        payload.chmod(0o400)
+
+    with pytest.raises(ValueError, match="archive .*inventory changed"):
+        protocol.validate_protocol_lock(lock_path)
+
+
+def test_routine_lock_validation_does_not_reread_attempt3_content(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock_path = _lock_fixture(tmp_path, monkeypatch)
+
+    def _unexpected_content_read(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("routine lock validation reread the full archive")
+
+    monkeypatch.setattr(
+        protocol,
+        "_observed_attempt3_noncode_inventory",
+        _unexpected_content_read,
+    )
+
+    protocol.validate_protocol_lock(lock_path)
 
 
 def test_barrier_one_is_complete_cohort_case_specific_and_single_use(
@@ -856,7 +1039,7 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
             frozen_field_validator=_field_validator,
         )
 
-    no_go = tmp_path / "held-v8" / "calibration-no-go.json"
+    no_go = tmp_path / "held-v8" / "calibration" / "calibration-no-go.json"
     _gate_decision(no_go, calibration_lock, passed=False)
     with pytest.raises(ValueError, match="after calibration NO-GO"):
         protocol.create_confirmation_protocol_lock(
@@ -865,7 +1048,7 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
             no_go,
         )
 
-    go = tmp_path / "held-v8" / "calibration-go.json"
+    go = tmp_path / "held-v8" / "calibration" / "calibration-go.json"
     _gate_decision(go, calibration_lock, passed=True)
     confirmation_lock = tmp_path / "held-v8" / "confirmation-lock.json"
     protocol.create_confirmation_protocol_lock(
@@ -895,21 +1078,23 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
     assert evidence.ordered_case_names == protocol.CONFIRMATION_CASE_NAMES
 
 
-def test_v7_execution_paths_are_never_admitted_to_a_v8_barrier(
+@pytest.mark.parametrize("outside_tree", ("held-v7", "held-v8-attempt-3"))
+def test_prior_execution_paths_are_never_admitted_to_a_v8_barrier(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    outside_tree: str,
 ) -> None:
     lock = _lock_fixture(tmp_path, monkeypatch)
     physical, online, fields, source = _first_barrier_artifacts(tmp_path, lock)
     case_name = protocol.CALIBRATION_CASE_NAMES[0]
-    v7_root = tmp_path / "held-v7" / case_name
-    v7_physical = v7_root / "physical.json"
-    v7_physical.parent.mkdir(parents=True)
-    v7_physical.write_bytes(physical[case_name].read_bytes())
-    v7_physical.chmod(0o400)
-    physical[case_name] = v7_physical
+    prior_root = tmp_path / outside_tree / case_name
+    prior_physical = prior_root / "physical.json"
+    prior_physical.parent.mkdir(parents=True)
+    prior_physical.write_bytes(physical[case_name].read_bytes())
+    prior_physical.chmod(0o400)
+    physical[case_name] = prior_physical
 
-    with pytest.raises(ValueError, match="held-v7 execution artifact"):
+    with pytest.raises(ValueError, match="exact current held-v8 subtree"):
         protocol.validate_first_cohort_barrier(
             lock,
             physical_seal_paths=physical,
@@ -924,14 +1109,144 @@ def test_v7_execution_paths_are_never_admitted_to_a_v8_barrier(
         )
 
 
+def test_attempt3_hardlink_is_never_admitted_as_a_fresh_v8_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = _lock_fixture(tmp_path, monkeypatch)
+    physical, online, fields, source = _first_barrier_artifacts(tmp_path, lock)
+    case_name = protocol.CALIBRATION_CASE_NAMES[0]
+    current_physical = physical[case_name]
+    current_physical.unlink()
+    retired_attempt3_code = next(
+        path
+        for path in protocol.ATTEMPT3_ARCHIVE_PATH.iterdir()
+        if path.name.startswith("code-")
+    )
+    retired_attempt3_file = retired_attempt3_code / "tracked.py"
+    os.link(retired_attempt3_file, current_physical)
+    assert current_physical.stat().st_ino == retired_attempt3_file.stat().st_ino
+    assert current_physical.stat().st_nlink == 2
+
+    def should_not_run(*_args: object, **_kwargs: object) -> dict[str, Any]:
+        raise AssertionError("artifact validator ran before hardlink rejection")
+
+    with pytest.raises(ValueError, match="single-link fresh current-execution"):
+        protocol.validate_first_cohort_barrier(
+            lock,
+            physical_seal_paths=physical,
+            online_seal_paths=online,
+            frozen_field_manifest_paths=fields,
+            replacement_aligned_source_manifest_path=source,
+            role="calibration",
+            physical_validator=should_not_run,
+            online_validator=should_not_run,
+            frozen_field_validator=should_not_run,
+            replacement_source_validator=should_not_run,
+        )
+
+
+def test_barrier_rejects_cross_case_and_cross_role_artifacts_before_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = _lock_fixture(tmp_path, monkeypatch)
+    physical, online, fields, source = _first_barrier_artifacts(tmp_path, lock)
+    first_case, second_case = protocol.CALIBRATION_CASE_NAMES[-2:]
+    physical[first_case], physical[second_case] = (
+        physical[second_case],
+        physical[first_case],
+    )
+
+    def should_not_run(*args: object, **kwargs: object) -> dict[str, Any]:
+        raise AssertionError("artifact validator ran before path containment")
+
+    with pytest.raises(ValueError, match="exact current held-v8 subtree"):
+        protocol.validate_first_cohort_barrier(
+            lock,
+            physical_seal_paths=physical,
+            online_seal_paths=online,
+            frozen_field_manifest_paths=fields,
+            replacement_aligned_source_manifest_path=source,
+            role="calibration",
+            physical_validator=should_not_run,
+            online_validator=should_not_run,
+            frozen_field_validator=should_not_run,
+            replacement_source_validator=should_not_run,
+        )
+
+    physical[first_case], physical[second_case] = (
+        physical[second_case],
+        physical[first_case],
+    )
+    cross_role = (
+        lock.parent
+        / "confirmation"
+        / "cases"
+        / first_case
+        / "physical"
+        / "physical-prior-seal.json"
+    )
+    cross_role.parent.mkdir(parents=True)
+    cross_role.write_bytes(physical[first_case].read_bytes())
+    cross_role.chmod(0o400)
+    physical[first_case] = cross_role
+    with pytest.raises(ValueError, match="exact current held-v8 subtree"):
+        protocol.validate_first_cohort_barrier(
+            lock,
+            physical_seal_paths=physical,
+            online_seal_paths=online,
+            frozen_field_manifest_paths=fields,
+            replacement_aligned_source_manifest_path=source,
+            role="calibration",
+            physical_validator=should_not_run,
+            online_validator=should_not_run,
+            frozen_field_validator=should_not_run,
+            replacement_source_validator=should_not_run,
+        )
+
+
+def test_second_barrier_preflights_all_paths_before_injected_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock = _lock_fixture(tmp_path, monkeypatch)
+    queries, queried = _second_barrier_artifacts(tmp_path, lock)
+    case_name = protocol.CALIBRATION_CASE_NAMES[-1]
+    cross_role = (
+        lock.parent
+        / "confirmation"
+        / "query-outputs"
+        / case_name
+        / "queried-prediction-seal.json"
+    )
+    cross_role.parent.mkdir(parents=True)
+    cross_role.write_bytes(queried[case_name].read_bytes())
+    cross_role.chmod(0o400)
+    queried[case_name] = cross_role
+
+    def should_not_run(*args: object, **kwargs: object) -> dict[str, Any]:
+        raise AssertionError("artifact validator ran before path containment")
+
+    with pytest.raises(ValueError, match="exact current held-v8 subtree"):
+        protocol.validate_second_cohort_barrier(
+            lock,
+            official_query_manifest_paths=queries,
+            queried_prediction_seal_paths=queried,
+            role="calibration",
+            official_query_validator=should_not_run,
+            queried_prediction_validator=should_not_run,
+        )
+
+
 def test_v8_seal_creators_freeze_fresh_builder_outputs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     lock = _lock_fixture(tmp_path, monkeypatch)
     case_name = protocol.CALIBRATION_CASE_NAMES[1]
-    case_root = tmp_path / "held-v8" / "calibration" / case_name
-    frame_zero = case_root / "frame-zero.json"
+    case_root = lock.parent / "calibration" / "cases" / case_name
+    frame_zero = case_root / "frame-zero" / "frame-zero-bundle.manifest.json"
     frame_zero_value = _artifact(
         frame_zero,
         {
@@ -967,7 +1282,7 @@ def test_v8_seal_creators_freeze_fresh_builder_outputs(
         path.write_bytes(role.encode("ascii"))
         path.chmod(0o600)
         physical_artifacts[role] = path
-    physical_seal = case_root / "physical" / "seal.json"
+    physical_seal = case_root / "physical" / "physical-prior-seal.json"
     protocol.create_physical_prior_seal(
         physical_seal,
         lock,
@@ -980,16 +1295,17 @@ def test_v8_seal_creators_freeze_fresh_builder_outputs(
         path.stat().st_mode & 0o777 == 0o400 for path in physical_artifacts.values()
     )
 
-    prefix = case_root / "online" / "prefix.json"
-    prefix.parent.mkdir(parents=True)
+    prefix = case_root / "prefix-authorization.json"
+    prefix.parent.mkdir(parents=True, exist_ok=True)
     protocol.create_prefix_stage_authorization(prefix, lock, physical_seal)
     online_artifacts: dict[str, Path] = {}
     for role in protocol.ONLINE_ARTIFACT_ROLES:
         path = case_root / "online" / f"{role}.bin"
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(role.encode("ascii"))
         path.chmod(0o600)
         online_artifacts[role] = path
-    online_seal = case_root / "online" / "seal.json"
+    online_seal = case_root / "online" / "online-prediction-seal.json"
     protocol.create_online_prediction_seal(
         online_seal,
         lock,
@@ -999,3 +1315,18 @@ def test_v8_seal_creators_freeze_fresh_builder_outputs(
     assert all(
         path.stat().st_mode & 0o777 == 0o400 for path in online_artifacts.values()
     )
+
+    physical_value = json.loads(physical_seal.read_text(encoding="utf-8"))
+    physical_value["physical_artifacts"]["prediction_only_input"] = _bound_file(
+        protocol.ATTEMPT3_WITHDRAWAL_REPORT_PATH
+    )
+    physical_value["artifact_sha256"] = protocol.held_artifact_sha256(physical_value)
+    physical_seal.chmod(0o600)
+    _write_json(physical_seal, physical_value)
+    with pytest.raises(ValueError, match="exact current held-v8 subtree"):
+        protocol.validate_physical_prior_seal(
+            physical_seal,
+            lock,
+            expected_case_name=case_name,
+            expected_role="calibration",
+        )

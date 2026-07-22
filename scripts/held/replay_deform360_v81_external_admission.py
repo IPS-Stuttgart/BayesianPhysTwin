@@ -38,26 +38,75 @@ SOURCE_INPUT = Path(
     "held-v8-attempt-2-withdrawn-preoutcome/calibration/cases/"
     "072-cotton-clohesline-ep0003/physical/prediction_only_input.pkl"
 )
-SOURCE_INPUT_SHA256 = (
-    "2f783d15426759a0928fcb6cb8a98fa61b38d582a46ec006d296d53b439ae015"
-)
+SOURCE_INPUT_SHA256 = "2f783d15426759a0928fcb6cb8a98fa61b38d582a46ec006d296d53b439ae015"
 SOURCE_INPUT_SIZE_BYTES = 19_261_048
 PINNED_PYTHON = Path(
     "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
     "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/"
     "bin/python"
 )
+PINNED_PYTHON_TARGET = Path("/usr/bin/python3.12")
+PINNED_PYTHON_TARGET_SHA256 = (
+    "e1efa562c2cc2e35521a5c9c9b9939921001ff8ca9708a13ef15ace68cc2ccd7"
+)
+PYTHON_RUNTIME_FREEZE = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
+    "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004"
+    ".freeze.sorted.txt"
+)
+PYTHON_RUNTIME_TREE_MANIFEST = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
+    "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004"
+    ".tree-manifest.json"
+)
 UPSTREAM = Path(
     "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
     "Bayesian-PhysTwin-upstream-58ab4808e59d"
 )
-DEFORM360 = Path("/mnt/lexar4tb/datasets/deform360/code")
+UPSTREAM_HEAD = "58ab4808e59da811dd1a2c66ac628fe4ea2faeab"
+UPSTREAM_TREE = "2b35d539be7a17b2de2c644b46c267b16ce26bf0"
+UPSTREAM_AUTOMATIC_TWIN_BUILDER = (
+    UPSTREAM / "scripts/remote/build_deform360_automatic_episode_twin.py"
+)
+UPSTREAM_DENSE_PANEL_AUTHORIZER = (
+    UPSTREAM / "src/causal4d_public/deform360_dense_reusable_panel.py"
+)
+DEFORM360_HEAD = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+DEFORM360_TREE = "c566ed29db7e0fd6a4cb768d840a4aa662864680"
+DEFORM360 = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-runtimes/"
+    f"Deform360-processing-{DEFORM360_HEAD}"
+)
 CASE_NAME = "072-cotton-clohesline-ep0003"
 OBJECT_ID = "072-cotton-clohesline"
 EPISODE_ID = 3
 WRONG_EPISODE_ID = 4
 REPORT_NAME = "metadata-only-replay-report.json"
 CODE_BINDING_NAME = "metadata-only-replay-code-binding.json"
+CROSS_AUTHORIZATION_REJECTION_MARKER = (
+    "outside the exact v8 external calibration admission"
+)
+CHILD_CWD = Path("/home/florianpfaff")
+CHILD_TIMEOUT_SECONDS = 1_800
+SUCCESS_OUTPUT_NAMES = frozenset(
+    {
+        "episode_graph.npz",
+        "simulator_final_data.pkl",
+        "state_artifact.npz",
+        "twin_summary.json",
+    }
+)
+SUCCESS_INFORMATION_BOUNDARY = {
+    "contact_conditioned_action_result_sha256": None,
+    "contact_conditioned_action_used": False,
+    "future_object_tracks_present": False,
+    "future_robot_action_available": True,
+    "object_observation_frames_used": [0],
+    "post_initial_object_observation_used": False,
+    "prediction_only_input_required": True,
+    "simulator_residual_used": False,
+    "target_access": False,
+}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -144,14 +193,18 @@ def _write_new(path: Path, payload: bytes) -> None:
         0o600,
     )
     try:
-        view = memoryview(payload)
-        while view:
-            written = os.write(descriptor, view)
-            _require(written > 0, "short write")
-            view = view[written:]
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
+        try:
+            view = memoryview(payload)
+            while view:
+                written = os.write(descriptor, view)
+                _require(written > 0, "short write")
+                view = view[written:]
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
 
 
 def _run_git(root: Path, arguments: Sequence[str]) -> str:
@@ -178,10 +231,143 @@ def _run_git(root: Path, arguments: Sequence[str]) -> str:
     return result.stdout.strip()
 
 
+def _repository_binding(
+    root: Path, *, expected_head: str, expected_tree: str, role: str
+) -> dict[str, Any]:
+    observed = os.lstat(root)
+    _require(
+        stat.S_ISDIR(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and root.resolve() == root
+        and observed.st_mode & 0o222 == 0,
+        f"{role} is not a canonical directory",
+    )
+    for current, directories, files in os.walk(root, followlinks=False):
+        for name in directories:
+            entry = os.lstat(Path(current) / name)
+            _require(
+                stat.S_ISDIR(entry.st_mode)
+                and not stat.S_ISLNK(entry.st_mode)
+                and entry.st_mode & 0o222 == 0,
+                f"{role} contains an unsafe directory",
+            )
+        for name in files:
+            entry = os.lstat(Path(current) / name)
+            _require(
+                stat.S_ISREG(entry.st_mode)
+                and not stat.S_ISLNK(entry.st_mode)
+                and entry.st_mode & 0o222 == 0,
+                f"{role} contains an unsafe file",
+            )
+    prefix = ["-c", "core.fileMode=false"]
+    head = _run_git(root, [*prefix, "rev-parse", "HEAD"]).lower()
+    tree = _run_git(root, [*prefix, "rev-parse", "HEAD^{tree}"]).lower()
+    _require(
+        head == expected_head
+        and tree == expected_tree
+        and _run_git(
+            root,
+            [*prefix, "status", "--porcelain=v1", "--untracked-files=all"],
+        )
+        == ""
+        and _run_git(
+            root,
+            [
+                *prefix,
+                "ls-files",
+                "--others",
+                "--ignored",
+                "--exclude-standard",
+            ],
+        )
+        == ""
+        and _run_git(root, [*prefix, "rev-parse", "--is-shallow-repository"])
+        == "false",
+        f"{role} repository identity changed",
+    )
+    _run_git(root, [*prefix, "fsck", "--full", "--no-dangling"])
+    return {
+        "repository_root": str(root),
+        "git_head": head,
+        "git_tree": tree,
+        "clean_tracked_and_untracked": True,
+        "ignored_files_absent": True,
+        "fully_nonwritable": True,
+    }
+
+
+def _runtime_binding() -> dict[str, Any]:
+    launcher = os.lstat(PINNED_PYTHON)
+    _require(
+        stat.S_ISLNK(launcher.st_mode)
+        and os.readlink(PINNED_PYTHON) == "/usr/bin/python3"
+        and PINNED_PYTHON.resolve(strict=True) == PINNED_PYTHON_TARGET,
+        "pinned Python launcher identity changed",
+    )
+    target = _file_record(PINNED_PYTHON_TARGET, role="pinned Python target")
+    freeze = _file_record(PYTHON_RUNTIME_FREEZE, role="pinned Python freeze")
+    tree = _file_record(
+        PYTHON_RUNTIME_TREE_MANIFEST,
+        role="pinned Python tree manifest",
+    )
+    _require(
+        target["sha256"] == PINNED_PYTHON_TARGET_SHA256
+        and freeze["sha256"]
+        == "4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004"
+        and tree["sha256"]
+        == "8147db39bc3ab30943951ae5f304de48ffc819625d30a382d5305528b6601b61",
+        "pinned Python runtime identity changed",
+    )
+    upstream = _repository_binding(
+        UPSTREAM,
+        expected_head=UPSTREAM_HEAD,
+        expected_tree=UPSTREAM_TREE,
+        role="pinned upstream",
+    )
+    builder = _file_record(
+        UPSTREAM_AUTOMATIC_TWIN_BUILDER,
+        role="pinned upstream automatic-twin builder",
+    )
+    authorizer = _file_record(
+        UPSTREAM_DENSE_PANEL_AUTHORIZER,
+        role="pinned upstream dense-panel authorizer",
+    )
+    _require(
+        builder["sha256"]
+        == "dd43bfeaa0ddb53252e3b2d9c907c147379b2cce6b4c5d5dfa14f310fdacfa9a"
+        and authorizer["sha256"]
+        == "0861831b9ab3cf6d64833efe533073f4f444f2315c04057377f243efffd8b17e",
+        "pinned upstream numerical source changed",
+    )
+    return {
+        "python": {
+            "launcher_path": str(PINNED_PYTHON),
+            "launcher_target": "/usr/bin/python3",
+            "executable_target": target,
+            "environment_freeze": freeze,
+            "tree_manifest": tree,
+        },
+        "upstream": {
+            **upstream,
+            "automatic_twin_builder": builder,
+            "dense_panel_authorizer": authorizer,
+        },
+        "deform360": _repository_binding(
+            DEFORM360,
+            expected_head=DEFORM360_HEAD,
+            expected_tree=DEFORM360_TREE,
+            role="pinned Deform360 processing snapshot",
+        ),
+    }
+
+
 def _source_binding() -> dict[str, Any]:
     code = Path(__file__).resolve().parents[2]
     _require(Path(__file__).resolve().is_relative_to(code), "operator is outside code")
-    _require(_run_git(code, ["status", "--porcelain=v1", "--untracked-files=all"]) == "", "source checkout is dirty")
+    _require(
+        _run_git(code, ["status", "--porcelain=v1", "--untracked-files=all"]) == "",
+        "source checkout is dirty",
+    )
     head = _run_git(code, ["rev-parse", "HEAD"])
     protocol_path = code / "src/bayesian_phystwin/deform360_held_v8_protocol.py"
     adapter_path = code / "src/bayesian_phystwin/deform360_held_v8_builders.py"
@@ -201,6 +387,7 @@ def _source_binding() -> dict[str, Any]:
             builders._V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP.encode("utf-8")
         ).hexdigest(),
         "uncommitted_correction_present": False,
+        "external_runtime": _runtime_binding(),
     }
     _require(
         Path(protocol.__file__).resolve() == protocol_path
@@ -254,27 +441,19 @@ def _command(root: Path, *, episode_id: int) -> list[str]:
 
 
 def _environment() -> dict[str, str]:
-    result = dict(os.environ)
-    for name in (
-        "PYTHONHOME",
-        "PYTHONPATH",
-        "PYTHONPYCACHEPREFIX",
-        "PYTHONSAFEPATH",
-        "PYTHONSTARTUP",
-    ):
-        result.pop(name, None)
-    result.update(
-        {
-            "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
-            "CUDA_VISIBLE_DEVICES": "0",
-            "HF_HUB_OFFLINE": "1",
-            "PYNPUT_BACKEND": "dummy",
-            "PYOPENGL_PLATFORM": "egl",
-            "TRANSFORMERS_OFFLINE": "1",
-            "WANDB_MODE": "disabled",
-        }
-    )
-    return result
+    # Match the original successful admission replay's ``env -i`` boundary.
+    # In particular, do not inherit Python, CUDA, model-cache, or scheduler
+    # variables from the SSH session that launches this operator.
+    return {
+        "HOME": "/home/florianpfaff",
+        "USER": "florianpfaff",
+        "LOGNAME": "florianpfaff",
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "TMPDIR": "/tmp",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PYTHONHASHSEED": "0",
+    }
 
 
 def _run_child(root: Path, *, episode_id: int) -> subprocess.CompletedProcess[bytes]:
@@ -284,7 +463,60 @@ def _run_child(root: Path, *, episode_id: int) -> subprocess.CompletedProcess[by
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        cwd=CHILD_CWD,
         env=_environment(),
+        timeout=CHILD_TIMEOUT_SECONDS,
+    )
+
+
+def _require_exact_replay_tree(root: Path, *, reports_written: bool) -> None:
+    root_files = set(SUCCESS_OUTPUT_NAMES) | {"stdout.log", "stderr.log"}
+    if reports_written:
+        root_files |= {REPORT_NAME, CODE_BINDING_NAME}
+    expected_root = root_files | {"cross-auth"}
+    observed_root = {entry.name for entry in os.scandir(root)}
+    _require(observed_root == expected_root, "admission replay root entries changed")
+    for name in sorted(root_files):
+        observed = os.lstat(root / name)
+        _require(
+            stat.S_ISREG(observed.st_mode)
+            and not stat.S_ISLNK(observed.st_mode)
+            and observed.st_nlink == 1,
+            f"admission replay root entry is not a regular file: {name}",
+        )
+    cross = root / "cross-auth"
+    cross_state = os.lstat(cross)
+    _require(
+        stat.S_ISDIR(cross_state.st_mode) and not stat.S_ISLNK(cross_state.st_mode),
+        "cross-authorization replay entry is not a directory",
+    )
+    expected_cross = {"stdout.log", "stderr.log"}
+    observed_cross = {entry.name for entry in os.scandir(cross)}
+    _require(
+        observed_cross == expected_cross,
+        "cross-authorization replay entries changed",
+    )
+    for name in sorted(expected_cross):
+        observed = os.lstat(cross / name)
+        _require(
+            stat.S_ISREG(observed.st_mode)
+            and not stat.S_ISLNK(observed.st_mode)
+            and observed.st_nlink == 1,
+            f"cross-authorization entry is not a regular file: {name}",
+        )
+
+
+def _validate_cross_authorization_rejection(
+    result: subprocess.CompletedProcess[bytes],
+    root: Path,
+    numerical_names: Sequence[str],
+) -> None:
+    numerical_outputs = [name for name in numerical_names if (root / name).exists()]
+    _require(
+        result.returncode == 1
+        and CROSS_AUTHORIZATION_REJECTION_MARKER.encode("utf-8") in result.stderr
+        and not numerical_outputs,
+        "wrong-case admission was not rejected by the exact authorization gate",
     )
 
 
@@ -295,8 +527,7 @@ def _validate_successful_replay(outputs: Mapping[str, Path]) -> dict[str, Any]:
     _require(
         summary.get("schema_version") == 1
         and summary.get("artifact_kind") == "Deform360AutomaticEpisodeTwin"
-        and summary.get("protocol_id")
-        == builders.V8_EXTERNAL_ADMISSION_PROTOCOL_ID
+        and summary.get("protocol_id") == builders.V8_EXTERNAL_ADMISSION_PROTOCOL_ID
         and summary.get("protocol_config_sha256")
         == builders.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
         and summary.get("object_id") == OBJECT_ID
@@ -308,12 +539,7 @@ def _validate_successful_replay(outputs: Mapping[str, Path]) -> dict[str, Any]:
         "successful replay summary identity changed",
     )
     _require(
-        isinstance(boundary, Mapping)
-        and boundary.get("object_observation_frames_used") == [0]
-        and boundary.get("post_initial_object_observation_used") is False
-        and boundary.get("target_access") is False
-        and boundary.get("prediction_only_input_required") is True
-        and boundary.get("future_object_tracks_present") is False,
+        boundary == SUCCESS_INFORMATION_BOUNDARY,
         "successful replay crossed its observation boundary",
     )
     _require(
@@ -321,6 +547,12 @@ def _validate_successful_replay(outputs: Mapping[str, Path]) -> dict[str, Any]:
         and metrics.get("passed") is True
         and metrics.get("finite") is True,
         "successful replay did not pass state admission",
+    )
+    _require(
+        isinstance(summary.get("graph"), Mapping)
+        and isinstance(summary.get("capacity_diagnostic"), Mapping)
+        and isinstance(summary.get("prediction_input_validation"), Mapping),
+        "successful replay diagnostics are incomplete",
     )
     expected_outputs = {
         "episode_graph": builders.physical.sha256_file(outputs["episode_graph.npz"]),
@@ -330,32 +562,37 @@ def _validate_successful_replay(outputs: Mapping[str, Path]) -> dict[str, Any]:
         "state_artifact": builders.physical.sha256_file(outputs["state_artifact.npz"]),
     }
     _require(
-        summary.get("input_sha256", {}).get("episode_final_data")
-        == SOURCE_INPUT_SHA256
+        summary.get("input_sha256", {}).get("episode_final_data") == SOURCE_INPUT_SHA256
         and summary.get("output_sha256") == expected_outputs,
         "successful replay input/output binding changed",
     )
     return summary
 
 
-def _seal_tree(root: Path) -> None:
+def _seal_tree(root: Path, *, seal_root: bool) -> None:
     for current, directories, files in os.walk(root, topdown=False):
         current_path = Path(current)
         for name in files:
             os.chmod(current_path / name, 0o400, follow_symlinks=False)
         for name in directories:
             os.chmod(current_path / name, 0o500, follow_symlinks=False)
-    os.chmod(root, 0o500, follow_symlinks=False)
+    if seal_root:
+        os.chmod(root, 0o500, follow_symlinks=False)
 
 
 def main() -> int:
     _require(socket.gethostname() == "workstation2", "replay must run on workstation2")
-    _require(protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.1", "protocol identity changed")
+    _require(
+        protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.1",
+        "protocol identity changed",
+    )
     _require(protocol.EXECUTION_ATTEMPT == 4, "execution attempt changed")
     _require(not os.path.lexists(ROOT), "admission replay root already exists")
     stage = ROOT.parent / f".{ROOT.name}.stage-{os.getpid()}"
     _require(not os.path.lexists(stage), "admission replay stage already exists")
-    source_payload = _read_regular(SOURCE_INPUT, role="prediction-only input", mode=0o400)
+    source_payload = _read_regular(
+        SOURCE_INPUT, role="prediction-only input", mode=0o400
+    )
     _require(
         len(source_payload) == SOURCE_INPUT_SIZE_BYTES
         and hashlib.sha256(source_payload).hexdigest() == SOURCE_INPUT_SHA256,
@@ -370,24 +607,19 @@ def main() -> int:
         _write_new(stage / "stdout.log", success.stdout)
         _write_new(stage / "stderr.log", success.stderr)
         _require(success.returncode == 0, "exact-case admission replay failed")
-        output_paths = {
-            name: stage / name
-            for name in (
-                "episode_graph.npz",
-                "simulator_final_data.pkl",
-                "state_artifact.npz",
-                "twin_summary.json",
-            )
-        }
-        _require(all(path.is_file() for path in output_paths.values()), "replay output is absent")
+        output_paths = {name: stage / name for name in sorted(SUCCESS_OUTPUT_NAMES)}
+        _require(
+            all(path.is_file() for path in output_paths.values()),
+            "replay output is absent",
+        )
         validated = _validate_successful_replay(output_paths)
 
         rejected = _run_child(cross, episode_id=WRONG_EPISODE_ID)
         _write_new(cross / "stdout.log", rejected.stdout)
         _write_new(cross / "stderr.log", rejected.stderr)
         numerical_names = tuple(output_paths)
-        cross_outputs = [name for name in numerical_names if (cross / name).exists()]
-        _require(rejected.returncode != 0 and not cross_outputs, "wrong-case admission was not rejected cleanly")
+        _validate_cross_authorization_rejection(rejected, cross, numerical_names)
+        _require_exact_replay_tree(stage, reports_written=False)
 
         final_outputs = {
             name: _file_record(
@@ -426,7 +658,15 @@ def main() -> int:
                 "successful_replay": {
                     "exit_code": success.returncode,
                     "hook_restoration_guard_completed": True,
+                    "summary_result_sha256": validated["result_sha256"],
                     "validator_result_sha256": validated["result_sha256"],
+                    "graph": validated["graph"],
+                    "capacity_diagnostic": validated["capacity_diagnostic"],
+                    "prediction_input_validation": validated[
+                        "prediction_input_validation"
+                    ],
+                    "state_metrics": validated["state_metrics"],
+                    "information_boundary": validated["information_boundary"],
                     "outputs": final_outputs,
                     "stdout_log": _file_record(
                         stage / "stdout.log",
@@ -444,6 +684,8 @@ def main() -> int:
                     "exit_code": rejected.returncode,
                     "rejected": True,
                     "numerical_output_count": 0,
+                    "stderr_marker": CROSS_AUTHORIZATION_REJECTION_MARKER,
+                    "stderr_marker_present": True,
                     "stdout_log": _file_record(
                         cross / "stdout.log",
                         role="cross-authorization stdout",
@@ -499,8 +741,10 @@ def main() -> int:
             role="admission replay code binding",
             reported_path=ROOT / CODE_BINDING_NAME,
         )
+        _require_exact_replay_tree(stage, reports_written=True)
+        _seal_tree(stage, seal_root=False)
         os.rename(stage, ROOT)
-        _seal_tree(ROOT)
+        os.chmod(ROOT, 0o500, follow_symlinks=False)
         result = {
             "root": str(ROOT),
             "report_file_sha256": report_record["sha256"],

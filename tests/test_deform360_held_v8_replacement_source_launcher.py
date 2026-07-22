@@ -51,8 +51,12 @@ def test_formal_paths_and_environment_are_exact() -> None:
         paths.aligned_source_manifest
         == paths.source_root / "manifests/aligned-source.json"
     )
-    assert launcher.PROCESSING_CODE == Path("/mnt/lexar4tb/datasets/deform360/code")
+    assert launcher.PROCESSING_CODE == Path(
+        "/mnt/corsair/florianpfaff/bpt-held-v81-runtimes/"
+        "Deform360-processing-0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+    )
     assert launcher.PROCESSING_REVISION == "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+    assert launcher.PROCESSING_TREE == "c566ed29db7e0fd6a4cb768d840a4aa662864680"
     assert launcher.EXPECTED_HOST == "workstation2"
 
     code = held / ("code-" + "1" * 40)

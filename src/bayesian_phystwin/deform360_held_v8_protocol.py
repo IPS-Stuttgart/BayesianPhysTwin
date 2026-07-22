@@ -28,6 +28,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 from typing import Any, Literal, Protocol
 
 from . import deform360_frame_zero_assets as frame_zero_assets
@@ -123,6 +124,9 @@ ATTEMPT3_ARCHIVE_INVENTORY_SHA256 = (
     "5d398e998e2b738db545ffefd254712c6822017cfc5be6e7de435d5883c8c4c8"
 )
 ATTEMPT3_ARCHIVE_ENTRY_COUNT = 1466
+ATTEMPT3_ARCHIVE_METADATA_INVENTORY_SHA256 = (
+    "f5c35890f2c41b3258ba75ddd66352546d6ac8fb3470704c7369f0cc7970c4ab"
+)
 _ATTEMPT3_PROTOCOL_ID = "deform360-held-online-belief-v8"
 _ATTEMPT3_EXECUTION_ATTEMPT = 3
 _ATTEMPT3_STATUS = "withdrawn-postbarrier-before-queried-prediction-or-score"
@@ -436,13 +440,63 @@ def _canonical_path(path: str | Path) -> Path:
     return Path(os.path.abspath(os.fspath(path)))
 
 
-def _require_not_v7_execution_path(path: str | Path, *, role: str) -> Path:
+def _held_root(lock: Mapping[str, Any]) -> Path:
+    value = lock.get("held_root")
+    _require(isinstance(value, str) and value, "held-v8 lock root is missing")
+    return _canonical_path(value)
+
+
+def _require_current_execution_path(
+    path: str | Path,
+    *,
+    lock: Mapping[str, Any],
+    role: str,
+    required_parent: str | Path | None = None,
+) -> Path:
+    """Require a fresh execution path below this lock's positive allowlist."""
+
     source = _canonical_path(path)
+    held_root = _held_root(lock)
+    parent = held_root if required_parent is None else _canonical_path(required_parent)
     _require(
-        "held-v7" not in source.parts,
-        f"{role} may not reuse a held-v7 execution artifact",
+        source.resolve() == source,
+        f"{role} is not a canonical path in its current held-v8 subtree",
     )
+    try:
+        parent.relative_to(held_root)
+        relative = source.relative_to(parent)
+    except ValueError as error:
+        raise ValueError(
+            f"{role} is outside its exact current held-v8 subtree"
+        ) from error
+    _require(
+        bool(relative.parts),
+        f"{role} must be a file below its exact current held-v8 subtree",
+    )
+    if os.path.lexists(source):
+        observed = os.lstat(source)
+        if stat.S_ISREG(observed.st_mode):
+            _require(
+                observed.st_nlink == 1,
+                f"{role} must be a single-link fresh current-execution file",
+            )
     return source
+
+
+def _case_root(lock: Mapping[str, Any], *, role: str, case_name: str) -> Path:
+    _authorize_case(lock, case_name, role)
+    return _held_root(lock) / role / "cases" / case_name
+
+
+def _case_stage_root(
+    lock: Mapping[str, Any],
+    *,
+    role: str,
+    case_name: str,
+    stage: str,
+) -> Path:
+    _require(stage and Path(stage).name == stage, "invalid held-v8 case stage")
+    return _case_root(lock, role=role, case_name=case_name) / stage
 
 
 def _read_regular_file(path: str | Path) -> tuple[Path, bytes, os.stat_result]:
@@ -501,10 +555,21 @@ def _require_mode(path: str | Path, mode: int, *, role: str) -> None:
     )
 
 
-def _seal_existing_regular_file(path: str | Path, *, role: str) -> dict[str, Any]:
+def _seal_existing_regular_file(
+    path: str | Path,
+    *,
+    role: str,
+    lock: Mapping[str, Any],
+    required_parent: str | Path,
+) -> dict[str, Any]:
     """Freeze one fresh builder output before it enters a v8 seal."""
 
-    source = _require_not_v7_execution_path(path, role=role)
+    source = _require_current_execution_path(
+        path,
+        lock=lock,
+        role=role,
+        required_parent=required_parent,
+    )
     before = os.lstat(source)
     _require(
         stat.S_ISREG(before.st_mode)
@@ -522,7 +587,8 @@ def _validate_bound_file(
     *,
     role: str,
     required_mode: int | None = None,
-    reject_v7_execution_path: bool = False,
+    current_lock: Mapping[str, Any] | None = None,
+    required_parent: str | Path | None = None,
 ) -> Path:
     _require(
         isinstance(record, Mapping) and set(record) == _FILE_RECORD_FIELDS,
@@ -530,8 +596,18 @@ def _validate_bound_file(
     )
     path = record.get("path")
     _require(isinstance(path, str) and path, f"{role} path is missing")
-    if reject_v7_execution_path:
-        _require_not_v7_execution_path(path, role=role)
+    if current_lock is not None:
+        _require_current_execution_path(
+            path,
+            lock=current_lock,
+            role=role,
+            required_parent=required_parent,
+        )
+    else:
+        _require(
+            required_parent is None,
+            f"{role} containment requires a current held-v8 lock",
+        )
     observed = _bound_file(path)
     _require(observed == dict(record), f"{role} file binding changed")
     if required_mode is not None:
@@ -654,18 +730,481 @@ def _validate_attempt3_archive(path: str | Path) -> Path:
         and archive.resolve() == archive,
         "attempt-3 archive root is not canonical mode 0500",
     )
-    for current, directories, files in os.walk(archive, followlinks=False):
+    return archive
+
+
+def _stable_inventory_state(observed: os.stat_result) -> tuple[int, ...]:
+    return (
+        observed.st_dev,
+        observed.st_ino,
+        observed.st_mode,
+        observed.st_nlink,
+        observed.st_uid,
+        observed.st_gid,
+        observed.st_size,
+        observed.st_mtime_ns,
+        observed.st_ctime_ns,
+    )
+
+
+def _attempt3_inventory_file_row(path: Path, *, relative: Path) -> dict[str, Any]:
+    before = os.lstat(path)
+    _require(
+        stat.S_ISREG(before.st_mode)
+        and not stat.S_ISLNK(before.st_mode)
+        and stat.S_IMODE(before.st_mode) == 0o400,
+        f"attempt-3 archive file is not a sealed mode-0400 file: {path}",
+    )
+    descriptor = os.open(
+        path,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        opened = os.fstat(descriptor)
+        _require(
+            stat.S_ISREG(opened.st_mode)
+            and _stable_inventory_state(opened) == _stable_inventory_state(before),
+            f"attempt-3 archive file changed while opening: {path}",
+        )
+        digest = hashlib.sha256()
+        while block := os.read(descriptor, 1024 * 1024):
+            digest.update(block)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    current = os.lstat(path)
+    _require(
+        _stable_inventory_state(before)
+        == _stable_inventory_state(after)
+        == _stable_inventory_state(current),
+        f"attempt-3 archive file changed while hashing: {path}",
+    )
+    return {
+        "path": relative.as_posix(),
+        "type": "file",
+        "mode_octal": "0400",
+        "size_bytes": before.st_size,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _run_attempt3_git(code: Path, arguments: list[str]) -> bytes:
+    environment = {
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_OPTIONAL_LOCKS": "0",
+        "HOME": "/home/florianpfaff",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+    }
+    completed = subprocess.run(
+        [
+            "git",
+            "-c",
+            "core.fileMode=false",
+            "-c",
+            "core.hooksPath=/dev/null",
+            "-C",
+            str(code),
+            *arguments,
+        ],
+        check=False,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=environment,
+    )
+    _require(
+        completed.returncode == 0,
+        "attempt-3 deployed-code git "
+        + " ".join(arguments)
+        + " failed: "
+        + completed.stderr.decode("utf-8", errors="replace").strip(),
+    )
+    return completed.stdout
+
+
+def _parse_attempt3_git_tree(raw: bytes) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for encoded in raw.split(b"\0"):
+        if not encoded:
+            continue
+        header, separator, path_bytes = encoded.partition(b"\t")
+        _require(bool(separator) and bool(path_bytes), "malformed deployed Git tree")
+        fields = header.split(b" ")
+        _require(len(fields) == 3, "malformed deployed Git tree header")
+        try:
+            mode, kind, object_id = (field.decode("ascii") for field in fields)
+            path = path_bytes.decode("utf-8")
+        except (UnicodeDecodeError, ValueError) as error:
+            raise ValueError("deployed Git tree is not canonical text") from error
+        _require(
+            mode in {"100644", "100755"}
+            and kind == "blob"
+            and len(object_id) in {40, 64}
+            and all(character in "0123456789abcdef" for character in object_id),
+            f"unsupported attempt-3 deployed-code entry: {path}",
+        )
+        _require(
+            path and not path.startswith("/") and ".." not in Path(path).parts,
+            "unsafe attempt-3 deployed-code path",
+        )
+        rows.append({"mode": mode, "type": kind, "object_id": object_id, "path": path})
+    _require(bool(rows), "attempt-3 deployed Git tree is empty")
+    _require(
+        [row["path"] for row in rows] == sorted(row["path"] for row in rows),
+        "attempt-3 deployed Git tree is not sorted",
+    )
+    return rows
+
+
+def _attempt3_worktree_blob_oid(path: Path, *, object_id: str) -> str:
+    before = os.lstat(path)
+    _require(
+        stat.S_ISREG(before.st_mode)
+        and not stat.S_ISLNK(before.st_mode)
+        and stat.S_IMODE(before.st_mode) == 0o400,
+        f"attempt-3 tracked file is not sealed mode 0400: {path}",
+    )
+    descriptor = os.open(
+        path,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        opened = os.fstat(descriptor)
+        _require(
+            _stable_inventory_state(opened) == _stable_inventory_state(before),
+            f"attempt-3 tracked file changed while opening: {path}",
+        )
+        algorithm = "sha1" if len(object_id) == 40 else "sha256"
+        digest = hashlib.new(algorithm)
+        digest.update(f"blob {before.st_size}\0".encode("ascii"))
+        while block := os.read(descriptor, 1024 * 1024):
+            digest.update(block)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    current = os.lstat(path)
+    _require(
+        _stable_inventory_state(before)
+        == _stable_inventory_state(after)
+        == _stable_inventory_state(current),
+        f"attempt-3 tracked file changed while hashing: {path}",
+    )
+    return digest.hexdigest()
+
+
+def _attempt3_repository_binding(code: Path) -> dict[str, Any]:
+    git_directory = code / ".git"
+    git_state = os.lstat(git_directory)
+    _require(
+        stat.S_ISDIR(git_state.st_mode)
+        and not stat.S_ISLNK(git_state.st_mode)
+        and stat.S_IMODE(git_state.st_mode) == 0o500,
+        "attempt-3 deployed-code Git directory changed",
+    )
+    top = _run_attempt3_git(code, ["rev-parse", "--show-toplevel"])
+    _require(
+        top.decode("utf-8").strip() == str(code),
+        "attempt-3 deployed Git top level changed",
+    )
+    head = _run_attempt3_git(code, ["rev-parse", "HEAD"]).decode("ascii").strip()
+    _require(
+        len(head) in {40, 64}
+        and all(character in "0123456789abcdef" for character in head),
+        "attempt-3 deployed HEAD is invalid",
+    )
+    _require(
+        _run_attempt3_git(code, ["status", "--porcelain=v1", "--untracked-files=all"])
+        == b"",
+        "attempt-3 deployed worktree content changed",
+    )
+    # Deliberately omit every exclude option. Unlike `git status`, this also
+    # exposes files matched by .gitignore and repository-local exclude rules.
+    _require(
+        _run_attempt3_git(code, ["ls-files", "--others", "-z"]) == b"",
+        "attempt-3 deployed worktree has untracked or ignored files",
+    )
+    _require(
+        _run_attempt3_git(code, ["rev-parse", "--is-shallow-repository"])
+        .decode("ascii")
+        .strip()
+        == "false",
+        "attempt-3 deployed repository is shallow",
+    )
+    _run_attempt3_git(code, ["fsck", "--full", "--no-dangling"])
+    rows = _parse_attempt3_git_tree(
+        _run_attempt3_git(code, ["ls-tree", "-r", "-z", "HEAD"])
+    )
+    tracked_paths = {str(row["path"]) for row in rows}
+    tracked_directories = {
+        parent.as_posix()
+        for path in (Path(relative) for relative in tracked_paths)
+        for parent in path.parents
+        if parent != Path(".")
+    }
+    for row in rows:
+        path = code / row["path"]
+        _require(
+            _attempt3_worktree_blob_oid(path, object_id=row["object_id"])
+            == row["object_id"],
+            f"attempt-3 tracked file content changed: {path}",
+        )
+    actual_paths: set[str] = set()
+    actual_directories: set[str] = set()
+    for current, directories, files in os.walk(code, topdown=True, followlinks=False):
         current_path = Path(current)
-        for name in (*directories, *files):
+        relative_parent = current_path.relative_to(code)
+        if relative_parent == Path("."):
+            directories[:] = sorted(name for name in directories if name != ".git")
+        else:
+            directories[:] = sorted(directories)
+        for name in directories:
+            path = current_path / name
+            observed = os.lstat(path)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"attempt-3 deployed worktree directory changed: {path}",
+            )
+            actual_directories.add(path.relative_to(code).as_posix())
+        for name in sorted(files):
+            path = current_path / name
+            observed = os.lstat(path)
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400,
+                f"attempt-3 deployed worktree file changed: {path}",
+            )
+            actual_paths.add(path.relative_to(code).as_posix())
+    _require(
+        actual_paths == tracked_paths and actual_directories == tracked_directories,
+        "attempt-3 deployed worktree path set changed",
+    )
+    return {
+        "path": code.name,
+        "git_head": head,
+        "head_text_sha256": hashlib.sha256(head.encode("ascii")).hexdigest(),
+        "git_tree_record_count": len(rows),
+        "git_tree_manifest_sha256": hashlib.sha256(_canonical_bytes(rows)).hexdigest(),
+    }
+
+
+def _attempt3_deployed_code_directory(archive: Path, report: Mapping[str, Any]) -> Path:
+    deployed = report.get("deployed_code")
+    _require(isinstance(deployed, Mapping), "attempt-3 deployed-code binding is absent")
+    name = deployed.get("path")
+    head = deployed.get("git_head")
+    _require(
+        isinstance(name, str)
+        and isinstance(head, str)
+        and len(head) in {40, 64}
+        and all(character in "0123456789abcdef" for character in head)
+        and name == f"code-{head}"
+        and Path(name).name == name,
+        "attempt-3 deployed-code identity changed",
+    )
+    code = archive / name
+    observed = os.lstat(code)
+    _require(
+        stat.S_ISDIR(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and stat.S_IMODE(observed.st_mode) == 0o500
+        and code.resolve() == code,
+        "attempt-3 deployed-code directory changed",
+    )
+    candidates = []
+    for child in archive.iterdir():
+        if not child.name.startswith("code-"):
+            continue
+        suffix = child.name.removeprefix("code-")
+        if len(suffix) in {40, 64} and all(
+            character in "0123456789abcdef" for character in suffix
+        ):
+            candidates.append(child)
+    _require(candidates == [code], "attempt-3 deployed-code directory is not unique")
+    _require(
+        deployed.get("head_text_sha256")
+        == hashlib.sha256(head.encode("ascii")).hexdigest(),
+        "attempt-3 deployed-code HEAD binding changed",
+    )
+    git_directory = code / ".git"
+    git_state = os.lstat(git_directory)
+    _require(
+        stat.S_ISDIR(git_state.st_mode)
+        and not stat.S_ISLNK(git_state.st_mode)
+        and stat.S_IMODE(git_state.st_mode) == 0o500,
+        "attempt-3 deployed-code Git directory changed",
+    )
+    head_path = git_directory / "HEAD"
+    _require_mode(head_path, 0o400, role="attempt-3 deployed-code HEAD")
+    _, head_payload, _ = _read_regular_file(head_path)
+    try:
+        observed_head = head_payload.decode("ascii").strip()
+    except UnicodeDecodeError as error:
+        raise ValueError("attempt-3 deployed-code HEAD is not ASCII") from error
+    _require(observed_head == head, "attempt-3 deployed-code checkout changed")
+    _require(
+        dict(deployed) == _attempt3_repository_binding(code),
+        "attempt-3 deployed-code repository binding changed",
+    )
+    return code
+
+
+def _observed_attempt3_noncode_inventory(
+    archive: Path, *, deployed_code: Path
+) -> dict[str, Any]:
+    directory_states: dict[Path, tuple[int, ...]] = {}
+    rows: list[dict[str, Any]] = []
+    report_relative = Path(ATTEMPT3_WITHDRAWAL_REPORT_PATH.name)
+    for current, directories, files in os.walk(
+        archive, topdown=True, followlinks=False
+    ):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"attempt-3 archive directory is not sealed mode 0500: {current_path}",
+        )
+        directory_states[current_path] = _stable_inventory_state(current_state)
+        relative_parent = current_path.relative_to(archive)
+        directories[:] = sorted(
+            name
+            for name in directories
+            if not (
+                relative_parent == Path(".") and current_path / name == deployed_code
+            )
+        )
+        for name in directories:
             child = current_path / name
             observed = os.lstat(child)
             _require(
-                not stat.S_ISLNK(observed.st_mode)
-                and (stat.S_ISDIR(observed.st_mode) or stat.S_ISREG(observed.st_mode))
-                and observed.st_mode & 0o222 == 0,
-                f"attempt-3 archive entry is writable or unsafe: {child}",
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"attempt-3 archive directory is not sealed mode 0500: {child}",
             )
-    return archive
+            directory_states[child] = _stable_inventory_state(observed)
+            rows.append(
+                {
+                    "path": child.relative_to(archive).as_posix(),
+                    "type": "directory",
+                    "mode_octal": "0500",
+                }
+            )
+        for name in sorted(files):
+            child = current_path / name
+            relative = child.relative_to(archive)
+            if relative == report_relative:
+                continue
+            rows.append(_attempt3_inventory_file_row(child, relative=relative))
+    for path, expected in directory_states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == expected,
+            f"attempt-3 archive directory changed while hashing: {path}",
+        )
+    rows.sort(key=lambda row: str(row["path"]))
+    _require(
+        len({str(row["path"]) for row in rows}) == len(rows),
+        "attempt-3 archive inventory has a duplicate path",
+    )
+    return {
+        "entry_count": len(rows),
+        "inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest(),
+    }
+
+
+def _observed_attempt3_noncode_metadata_inventory(
+    archive: Path, *, deployed_code: Path
+) -> dict[str, Any]:
+    states: dict[Path, tuple[int, ...]] = {}
+    rows: list[dict[str, Any]] = []
+    report_relative = Path(ATTEMPT3_WITHDRAWAL_REPORT_PATH.name)
+    for current, directories, files in os.walk(
+        archive, topdown=True, followlinks=False
+    ):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"attempt-3 archive directory is not sealed mode 0500: {current_path}",
+        )
+        states[current_path] = _stable_inventory_state(current_state)
+        relative_parent = current_path.relative_to(archive)
+        directories[:] = sorted(
+            name
+            for name in directories
+            if not (
+                relative_parent == Path(".") and current_path / name == deployed_code
+            )
+        )
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"attempt-3 archive directory is not sealed mode 0500: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            rows.append(
+                {
+                    "path": child.relative_to(archive).as_posix(),
+                    "type": "directory",
+                    "mode_octal": "0500",
+                    "mtime_ns": observed.st_mtime_ns,
+                    "ctime_ns": observed.st_ctime_ns,
+                }
+            )
+        for name in sorted(files):
+            child = current_path / name
+            relative = child.relative_to(archive)
+            if relative == report_relative:
+                continue
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400,
+                f"attempt-3 archive file is not a sealed mode-0400 file: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            rows.append(
+                {
+                    "path": relative.as_posix(),
+                    "type": "file",
+                    "mode_octal": "0400",
+                    "size_bytes": observed.st_size,
+                    "mtime_ns": observed.st_mtime_ns,
+                    "ctime_ns": observed.st_ctime_ns,
+                }
+            )
+    for path, expected in states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == expected,
+            f"attempt-3 archive entry changed while scanning metadata: {path}",
+        )
+    rows.sort(key=lambda row: str(row["path"]))
+    _require(
+        len({str(row["path"]) for row in rows}) == len(rows),
+        "attempt-3 archive metadata inventory has a duplicate path",
+    )
+    return {
+        "entry_count": len(rows),
+        "metadata_inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest(),
+    }
 
 
 def validate_attempt3_withdrawal_lineage(
@@ -674,6 +1213,7 @@ def validate_attempt3_withdrawal_lineage(
     report_path: str | Path,
     pointer_path: str | Path,
     completion_path: str | Path,
+    verify_content_inventory: bool = False,
 ) -> dict[str, Any]:
     """Validate the exact immutable attempt-3 post-barrier withdrawal chain."""
 
@@ -687,6 +1227,32 @@ def validate_attempt3_withdrawal_lineage(
         expected_status=_ATTEMPT3_STATUS,
         role="attempt-3 withdrawal report",
     )
+    deployed_code = _attempt3_deployed_code_directory(archive, report)
+    observed_metadata = _observed_attempt3_noncode_metadata_inventory(
+        archive, deployed_code=deployed_code
+    )
+    _require(
+        observed_metadata
+        == {
+            "entry_count": ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+            "metadata_inventory_sha256": (ATTEMPT3_ARCHIVE_METADATA_INVENTORY_SHA256),
+        },
+        "attempt-3 archive metadata inventory changed",
+    )
+    expected_inventory = {
+        "entry_count": ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+        "inventory_sha256": ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
+    }
+    if verify_content_inventory:
+        observed_inventory = _observed_attempt3_noncode_inventory(
+            archive, deployed_code=deployed_code
+        )
+        _require(
+            observed_inventory == expected_inventory,
+            "attempt-3 archive content inventory changed",
+        )
+    else:
+        observed_inventory = expected_inventory
     completion_record, completion = _load_exact_attempt3_artifact(
         completion_path,
         expected_path=ATTEMPT3_WITHDRAWAL_INTEGRITY_COMPLETION_PATH,
@@ -804,8 +1370,8 @@ def validate_attempt3_withdrawal_lineage(
         "path": str(archive),
         "root_mode_octal": "0500",
         "fully_nonwritable": True,
-        "postseal_noncode_inventory_sha256": ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
-        "postseal_noncode_entry_count": ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+        "postseal_noncode_inventory_sha256": observed_inventory["inventory_sha256"],
+        "postseal_noncode_entry_count": observed_inventory["entry_count"],
     }
     return {
         "v8_attempt3_withdrawal_report": report_record,
@@ -895,9 +1461,10 @@ def validate_post_withdrawal_development_use_disclosure(
         and set(attempt3_disclosed) == set(expected_attempt3),
         "disclosed attempt-3 file set changed",
     )
-    for name, (expected_file_sha256, _expected_artifact_sha256) in (
-        expected_attempt3.items()
-    ):
+    for name, (
+        expected_file_sha256,
+        _expected_artifact_sha256,
+    ) in expected_attempt3.items():
         record = attempt3_disclosed[name]
         _require(
             isinstance(record, Mapping)
@@ -1132,6 +1699,7 @@ def create_calibration_protocol_lock(
             report_path=attempt3_withdrawal_report_path,
             pointer_path=attempt3_withdrawal_pointer_path,
             completion_path=attempt3_withdrawal_integrity_completion_path,
+            verify_content_inventory=True,
         )
         disclosed_attempt3 = disclosure["disclosed_v8_attempt3_files"]
         for name in (
@@ -1141,10 +1709,7 @@ def create_calibration_protocol_lock(
         ):
             disclosed = disclosed_attempt3[name]
             _require(
-                {
-                    key: disclosed[key]
-                    for key in ("path", "sha256", "size_bytes")
-                }
+                {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
                 == attempt3_lineage[name],
                 f"disclosure binds another {name}",
             )
@@ -1315,9 +1880,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         archive_path=lineage["v8_attempt3_archive_integrity"]["path"],
         report_path=lineage["v8_attempt3_withdrawal_report"]["path"],
         pointer_path=lineage["v8_attempt3_withdrawal_pointer"]["path"],
-        completion_path=lineage[
-            "v8_attempt3_withdrawal_integrity_completion"
-        ]["path"],
+        completion_path=lineage["v8_attempt3_withdrawal_integrity_completion"]["path"],
     )
     _require(
         all(lineage[name] == value for name, value in attempt3_lineage.items()),
@@ -1331,9 +1894,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
     ):
         disclosed = disclosed_attempt3[name]
         _require(
-            {
-                key: disclosed[key] for key in ("path", "sha256", "size_bytes")
-            }
+            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
             == lineage[name],
             f"post-withdrawal disclosure {name} lineage changed",
         )
@@ -1377,7 +1938,8 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             artifact.get("parent_calibration_lock"),
             role="parent calibration lock",
             required_mode=_SEALED_FILE_MODE,
-            reject_v7_execution_path=True,
+            current_lock=artifact,
+            required_parent=root,
         )
         parent = validate_protocol_lock(parent_path)
         _require(parent.get("stage") == "calibration", "confirmation parent changed")
@@ -1385,7 +1947,8 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             artifact.get("calibration_gate_evidence"),
             role="calibration GO decision",
             required_mode=_SEALED_FILE_MODE,
-            reject_v7_execution_path=True,
+            current_lock=artifact,
+            required_parent=root / "calibration",
         )
         validate_calibration_gate_decision(decision_path, parent_path)
         for key in (
@@ -1551,9 +2114,13 @@ def validate_frame_zero_bundle_manifest(
 ) -> dict[str, Any]:
     """Validate a fresh v8 frame-zero manifest and its complete source audit."""
 
-    _require_not_v7_execution_path(manifest_path, role="frame-zero manifest")
     _require_mode(manifest_path, _SEALED_FILE_MODE, role="frame-zero manifest")
     lock = validate_protocol_lock(lock_path)
+    _require_current_execution_path(
+        manifest_path,
+        lock=lock,
+        role="frame-zero manifest",
+    )
     manifest = _load_json(manifest_path)
     _require(
         manifest.get("schema_version") == SCHEMA_VERSION
@@ -1564,6 +2131,18 @@ def validate_frame_zero_bundle_manifest(
     case_name = str(manifest.get("case_name"))
     role = str(manifest.get("role"))
     identity = _authorize_case(lock, case_name, role)
+    frame_zero_root = _case_stage_root(
+        lock,
+        role=role,
+        case_name=case_name,
+        stage="frame-zero",
+    )
+    _require_current_execution_path(
+        manifest_path,
+        lock=lock,
+        role="frame-zero manifest",
+        required_parent=frame_zero_root,
+    )
     if expected_case_name is not None:
         _require(case_name == expected_case_name, "frame-zero binds another case")
     if expected_role is not None:
@@ -1585,6 +2164,25 @@ def validate_frame_zero_bundle_manifest(
     _require(
         manifest.get("artifact_sha256") == held_artifact_sha256(manifest),
         "frame-zero checksum changed",
+    )
+    _validate_bound_file(
+        manifest.get("bundle"),
+        role="frame-zero bundle",
+        required_mode=_SEALED_FILE_MODE,
+        current_lock=lock,
+        required_parent=frame_zero_root,
+    )
+    action_alignment = manifest.get("action_alignment")
+    _require(
+        isinstance(action_alignment, Mapping),
+        "frame-zero action alignment is missing",
+    )
+    _validate_bound_file(
+        action_alignment.get("selected_action_bundle"),
+        role="selected action bundle",
+        required_mode=_SEALED_FILE_MODE,
+        current_lock=lock,
+        required_parent=frame_zero_root,
     )
 
     # Reuse the source-file, robot-window, camera, mask, and geometry validator,
@@ -1611,6 +2209,18 @@ def create_physical_prior_seal(
 ) -> dict[str, Any]:
     lock = validate_protocol_lock(lock_path)
     identity = _authorize_case(lock, case_name, role)
+    physical_root = _case_stage_root(
+        lock,
+        role=role,
+        case_name=case_name,
+        stage="physical",
+    )
+    _require_current_execution_path(
+        output_path,
+        lock=lock,
+        role="physical seal output",
+        required_parent=physical_root,
+    )
     frame_zero = validate_frame_zero_bundle_manifest(
         frame_zero_manifest_path,
         lock_path,
@@ -1622,7 +2232,12 @@ def create_physical_prior_seal(
         "physical artifact roles changed",
     )
     artifacts = {
-        name: _seal_existing_regular_file(path, role=name)
+        name: _seal_existing_regular_file(
+            path,
+            role=name,
+            lock=lock,
+            required_parent=physical_root,
+        )
         for name, path in physical_artifacts.items()
     }
     value: dict[str, Any] = {
@@ -1666,9 +2281,13 @@ def validate_physical_prior_seal(
     expected_case_name: str | None = None,
     expected_role: str | None = None,
 ) -> dict[str, Any]:
-    _require_not_v7_execution_path(seal_path, role="physical seal")
     _require_mode(seal_path, _SEALED_FILE_MODE, role="physical seal")
     lock = validate_protocol_lock(lock_path)
+    _require_current_execution_path(
+        seal_path,
+        lock=lock,
+        role="physical seal",
+    )
     seal = _load_json(seal_path)
     _require(
         seal.get("schema_version") == SCHEMA_VERSION
@@ -1679,6 +2298,18 @@ def validate_physical_prior_seal(
     case_name = str(seal.get("case_name"))
     role = str(seal.get("role"))
     identity = _authorize_case(lock, case_name, role)
+    physical_root = _case_stage_root(
+        lock,
+        role=role,
+        case_name=case_name,
+        stage="physical",
+    )
+    _require_current_execution_path(
+        seal_path,
+        lock=lock,
+        role="physical seal",
+        required_parent=physical_root,
+    )
     for key, expected in identity.items():
         _require(seal.get(key) == expected, f"physical seal {key} changed")
     if expected_case_name is not None:
@@ -1693,7 +2324,13 @@ def validate_physical_prior_seal(
         seal.get("frame_zero_manifest"),
         role="frame-zero manifest",
         required_mode=_SEALED_FILE_MODE,
-        reject_v7_execution_path=True,
+        current_lock=lock,
+        required_parent=_case_stage_root(
+            lock,
+            role=role,
+            case_name=case_name,
+            stage="frame-zero",
+        ),
     )
     frame_zero = validate_frame_zero_bundle_manifest(
         frame_zero_path,
@@ -1717,7 +2354,8 @@ def validate_physical_prior_seal(
             record,
             role=name,
             required_mode=_SEALED_FILE_MODE,
-            reject_v7_execution_path=True,
+            current_lock=lock,
+            required_parent=physical_root,
         )
     _require(
         seal.get("freshness")
@@ -1751,6 +2389,18 @@ def create_prefix_stage_authorization(
     physical_seal_path: str | Path,
 ) -> dict[str, Any]:
     physical = validate_physical_prior_seal(physical_seal_path, lock_path)
+    lock = validate_protocol_lock(lock_path)
+    case_root = _case_root(
+        lock,
+        role=str(physical["role"]),
+        case_name=str(physical["case_name"]),
+    )
+    _require_current_execution_path(
+        output_path,
+        lock=lock,
+        role="prefix authorization output",
+        required_parent=case_root,
+    )
     value: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "artifact_kind": PREFIX_AUTHORIZATION_KIND,
@@ -1781,14 +2431,28 @@ def validate_prefix_stage_authorization(
     authorization_path: str | Path,
     lock_path: str | Path,
 ) -> dict[str, Any]:
-    _require_not_v7_execution_path(authorization_path, role="prefix authorization")
     _require_mode(authorization_path, _SEALED_FILE_MODE, role="prefix authorization")
+    lock = validate_protocol_lock(lock_path)
+    _require_current_execution_path(
+        authorization_path,
+        lock=lock,
+        role="prefix authorization",
+    )
     authorization = _load_json(authorization_path)
     _require(
         authorization.get("schema_version") == SCHEMA_VERSION
         and authorization.get("artifact_kind") == PREFIX_AUTHORIZATION_KIND
         and authorization.get("protocol_id") == PROTOCOL_ID,
         "unsupported held-v8 prefix authorization",
+    )
+    case_name = str(authorization.get("case_name"))
+    role = str(authorization.get("role"))
+    case_root = _case_root(lock, role=role, case_name=case_name)
+    _require_current_execution_path(
+        authorization_path,
+        lock=lock,
+        role="prefix authorization",
+        required_parent=case_root,
     )
     _require(
         authorization.get("lock") == _bound_file(lock_path),
@@ -1798,13 +2462,19 @@ def validate_prefix_stage_authorization(
         authorization.get("physical_prior_seal"),
         role="physical seal",
         required_mode=_SEALED_FILE_MODE,
-        reject_v7_execution_path=True,
+        current_lock=lock,
+        required_parent=_case_stage_root(
+            lock,
+            role=role,
+            case_name=case_name,
+            stage="physical",
+        ),
     )
     physical = validate_physical_prior_seal(
         physical_path,
         lock_path,
-        expected_case_name=str(authorization.get("case_name")),
-        expected_role=str(authorization.get("role")),
+        expected_case_name=case_name,
+        expected_role=role,
     )
     for key in ("case_name", "object_id", "episode_id", "role"):
         _require(authorization.get(key) == physical[key], f"prefix {key} changed")
@@ -1846,12 +2516,30 @@ def create_online_prediction_seal(
     authorization = validate_prefix_stage_authorization(
         prefix_authorization_path, lock_path
     )
+    lock = validate_protocol_lock(lock_path)
+    online_root = _case_stage_root(
+        lock,
+        role=str(authorization["role"]),
+        case_name=str(authorization["case_name"]),
+        stage="online",
+    )
+    _require_current_execution_path(
+        output_path,
+        lock=lock,
+        role="online seal output",
+        required_parent=online_root,
+    )
     _require(
         set(online_artifacts) == set(ONLINE_ARTIFACT_ROLES),
         "online artifact roles changed",
     )
     artifacts = {
-        name: _seal_existing_regular_file(path, role=name)
+        name: _seal_existing_regular_file(
+            path,
+            role=name,
+            lock=lock,
+            required_parent=online_root,
+        )
         for name, path in online_artifacts.items()
     }
     value: dict[str, Any] = {
@@ -1892,8 +2580,13 @@ def validate_online_prediction_seal(
     expected_case_name: str | None = None,
     expected_role: str | None = None,
 ) -> dict[str, Any]:
-    _require_not_v7_execution_path(seal_path, role="online seal")
     _require_mode(seal_path, _SEALED_FILE_MODE, role="online seal")
+    lock = validate_protocol_lock(lock_path)
+    _require_current_execution_path(
+        seal_path,
+        lock=lock,
+        role="online seal",
+    )
     seal = _load_json(seal_path)
     _require(
         seal.get("schema_version") == SCHEMA_VERSION
@@ -1901,12 +2594,27 @@ def validate_online_prediction_seal(
         and seal.get("protocol_id") == PROTOCOL_ID,
         "unsupported held-v8 online seal",
     )
+    case_name = str(seal.get("case_name"))
+    role = str(seal.get("role"))
+    online_root = _case_stage_root(
+        lock,
+        role=role,
+        case_name=case_name,
+        stage="online",
+    )
+    _require_current_execution_path(
+        seal_path,
+        lock=lock,
+        role="online seal",
+        required_parent=online_root,
+    )
     _require(seal.get("lock") == _bound_file(lock_path), "online seal changed lock")
     authorization_path = _validate_bound_file(
         seal.get("prefix_authorization"),
         role="prefix authorization",
         required_mode=_SEALED_FILE_MODE,
-        reject_v7_execution_path=True,
+        current_lock=lock,
+        required_parent=_case_root(lock, role=role, case_name=case_name),
     )
     authorization = validate_prefix_stage_authorization(authorization_path, lock_path)
     for key in ("case_name", "object_id", "episode_id", "role"):
@@ -1932,7 +2640,8 @@ def validate_online_prediction_seal(
             record,
             role=name,
             required_mode=_SEALED_FILE_MODE,
-            reject_v7_execution_path=True,
+            current_lock=lock,
+            required_parent=online_root,
         )
     _require(seal.get("primary_method") == PRIMARY_METHOD, "online method changed")
     _require(
@@ -2027,16 +2736,62 @@ def validate_first_cohort_barrier(
     _validate_mapping_keys(
         frozen_field_manifest_paths, expected, label="frozen-field cohort"
     )
-    source_binding: tuple[tuple[str, str], ...] = ()
+    source_path: Path | None = None
     if role == "calibration":
         _require(
             replacement_aligned_source_manifest_path is not None,
             "barrier one requires the exact 072 aligned-source manifest",
         )
-        source_path = _require_not_v7_execution_path(
+        source_path = _require_current_execution_path(
             replacement_aligned_source_manifest_path,
+            lock=lock,
             role="replacement aligned-source manifest",
+            required_parent=_held_root(lock) / "replacement-source" / "manifests",
         )
+    else:
+        _require(
+            replacement_aligned_source_manifest_path is None,
+            "confirmation barrier may not substitute a replacement source",
+        )
+    cohort_paths: dict[str, tuple[Path, Path, Path]] = {}
+    for case_name in expected:
+        physical_path = _require_current_execution_path(
+            physical_seal_paths[case_name],
+            lock=lock,
+            role="physical seal",
+            required_parent=_case_stage_root(
+                lock,
+                role=role,
+                case_name=case_name,
+                stage="physical",
+            ),
+        )
+        online_path = _require_current_execution_path(
+            online_seal_paths[case_name],
+            lock=lock,
+            role="online seal",
+            required_parent=_case_stage_root(
+                lock,
+                role=role,
+                case_name=case_name,
+                stage="online",
+            ),
+        )
+        field_path = _require_current_execution_path(
+            frozen_field_manifest_paths[case_name],
+            lock=lock,
+            role="frozen field",
+            required_parent=_case_stage_root(
+                lock,
+                role=role,
+                case_name=case_name,
+                stage="frozen-field",
+            ),
+        )
+        cohort_paths[case_name] = (physical_path, online_path, field_path)
+
+    source_binding: tuple[tuple[str, str], ...] = ()
+    if source_path is not None:
         expected_permit = replacement_source_permit_evidence(lock_path)
         source_manifest = replacement_source_validator(
             source_path,
@@ -2056,22 +2811,10 @@ def validate_first_cohort_barrier(
                 str(source_manifest["artifact_sha256"]),
             ),
         )
-    else:
-        _require(
-            replacement_aligned_source_manifest_path is None,
-            "confirmation barrier may not substitute a replacement source",
-        )
+
     ordered: list[tuple[str, tuple[tuple[str, str], ...]]] = []
     for case_name in expected:
-        physical_path = _require_not_v7_execution_path(
-            physical_seal_paths[case_name], role="physical seal"
-        )
-        online_path = _require_not_v7_execution_path(
-            online_seal_paths[case_name], role="online seal"
-        )
-        field_path = _require_not_v7_execution_path(
-            frozen_field_manifest_paths[case_name], role="frozen field"
-        )
+        physical_path, online_path, field_path = cohort_paths[case_name]
         physical = _call_artifact_validator(
             physical_validator,
             physical_path,
@@ -2195,14 +2938,25 @@ def validate_second_cohort_barrier(
     _validate_mapping_keys(
         queried_prediction_seal_paths, expected, label="queried prediction cohort"
     )
+    cohort_paths: dict[str, tuple[Path, Path]] = {}
+    for case_name in expected:
+        query_path = _require_current_execution_path(
+            official_query_manifest_paths[case_name],
+            lock=lock,
+            role="official x0 query",
+            required_parent=(_held_root(lock) / role / "query-inputs" / case_name),
+        )
+        queried_path = _require_current_execution_path(
+            queried_prediction_seal_paths[case_name],
+            lock=lock,
+            role="queried prediction",
+            required_parent=(_held_root(lock) / role / "query-outputs" / case_name),
+        )
+        cohort_paths[case_name] = (query_path, queried_path)
+
     ordered: list[tuple[str, tuple[tuple[str, str], ...]]] = []
     for case_name in expected:
-        query_path = _require_not_v7_execution_path(
-            official_query_manifest_paths[case_name], role="official x0 query"
-        )
-        queried_path = _require_not_v7_execution_path(
-            queried_prediction_seal_paths[case_name], role="queried prediction"
-        )
+        query_path, queried_path = cohort_paths[case_name]
         query = _call_artifact_validator(
             official_query_validator,
             query_path,
@@ -2457,6 +3211,13 @@ def validate_calibration_gate_decision(
     _require_mode(decision_path, _SEALED_FILE_MODE, role="calibration gate decision")
     lock = validate_protocol_lock(calibration_lock_path)
     _require(lock.get("stage") == "calibration", "gate parent is not calibration")
+    calibration_root = _held_root(lock) / "calibration"
+    _require_current_execution_path(
+        decision_path,
+        lock=lock,
+        role="calibration gate decision",
+        required_parent=calibration_root,
+    )
     decision = _load_json(decision_path)
     _require(
         decision.get("schema_version") == SCHEMA_VERSION
@@ -2478,7 +3239,8 @@ def validate_calibration_gate_decision(
         decision.get("score_evidence"),
         role="calibration score evidence",
         required_mode=_SEALED_FILE_MODE,
-        reject_v7_execution_path=True,
+        current_lock=lock,
+        required_parent=calibration_root,
     )
     gate_result = decision.get("gate_result")
     _require(
@@ -2528,6 +3290,7 @@ def create_confirmation_protocol_lock(
 __all__ = [
     "ATTEMPT3_ARCHIVE_ENTRY_COUNT",
     "ATTEMPT3_ARCHIVE_INVENTORY_SHA256",
+    "ATTEMPT3_ARCHIVE_METADATA_INVENTORY_SHA256",
     "ATTEMPT3_ARCHIVE_PATH",
     "ATTEMPT3_WITHDRAWAL_INTEGRITY_COMPLETION_PATH",
     "ATTEMPT3_WITHDRAWAL_POINTER_PATH",

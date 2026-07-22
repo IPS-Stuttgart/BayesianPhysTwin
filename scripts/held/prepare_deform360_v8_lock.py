@@ -18,6 +18,7 @@ import argparse
 from collections.abc import Mapping, Sequence
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -97,6 +98,17 @@ _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256 = (
     "5d398e998e2b738db545ffefd254712c6822017cfc5be6e7de435d5883c8c4c8"
 )
 _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT = 1466
+_V8_ATTEMPT3_DEPLOYED_CODE_NAME = (
+    "code-9ad7ad2b385f7abc5e8c42081a41018980dd3827"
+)
+_V8_ATTEMPT3_DEPLOYED_HEAD = "9ad7ad2b385f7abc5e8c42081a41018980dd3827"
+_V8_ATTEMPT3_DEPLOYED_HEAD_TEXT_SHA256 = (
+    "b5e33f85b96a0026147040044c288ef5c6ff3e60ca9b74743f904b49f78b79f1"
+)
+_V8_ATTEMPT3_DEPLOYED_TREE_MANIFEST_SHA256 = (
+    "445f325dca5710c9873951445cb26107966e5344333edd8a69ac380e50e09546"
+)
+_V8_ATTEMPT3_DEPLOYED_TREE_RECORD_COUNT = 950
 _V8_ATTEMPT3_OPERATOR_SOURCE_SHA256 = (
     "bc6efe5660c90828be13fb9221472c5e37261e5041509ff61403ea89ef3e9648"
 )
@@ -127,6 +139,78 @@ _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256: str | None = None
 _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256: str | None = None
 _V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256: str | None = None
 _V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256: str | None = None
+_V81_ADMISSION_REPLAY_REPORT_KIND = (
+    "Deform360HeldV81ExternalAdmissionMetadataOnlyReplay"
+)
+_V81_ADMISSION_REPLAY_CODE_BINDING_KIND = (
+    "Deform360HeldV81ExternalAdmissionReplayCodeBinding"
+)
+_V81_PROTOCOL_ID = "deform360-held-online-belief-v8.1"
+_V81_EXECUTION_ATTEMPT = 4
+_V81_CROSS_AUTHORIZATION_CASE_NAME = "072-cotton-clohesline-ep0004"
+_V81_CROSS_AUTHORIZATION_STDERR_MARKER = (
+    "outside the exact v8 external calibration admission"
+)
+_V81_REPLAY_OUTPUT_NAMES = frozenset(
+    {
+        "episode_graph.npz",
+        "simulator_final_data.pkl",
+        "state_artifact.npz",
+        "twin_summary.json",
+    }
+)
+_V81_REPLAY_ROOT_FILE_NAMES = _V81_REPLAY_OUTPUT_NAMES | frozenset(
+    {
+        "stdout.log",
+        "stderr.log",
+        "metadata-only-replay-report.json",
+        "metadata-only-replay-code-binding.json",
+    }
+)
+_V81_REPLAY_CROSS_AUTHORIZATION_FILE_NAMES = frozenset(
+    {"stdout.log", "stderr.log"}
+)
+_V81_PINNED_PYTHON_LAUNCHER_TARGET = "/usr/bin/python3"
+_V81_PINNED_PYTHON_TARGET = Path("/usr/bin/python3.12")
+_V81_PINNED_PYTHON_TARGET_SHA256 = (
+    "e1efa562c2cc2e35521a5c9c9b9939921001ff8ca9708a13ef15ace68cc2ccd7"
+)
+_V81_PYTHON_FREEZE_SHA256 = (
+    "4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004"
+)
+_V81_PYTHON_TREE_MANIFEST_SHA256 = (
+    "8147db39bc3ab30943951ae5f304de48ffc819625d30a382d5305528b6601b61"
+)
+_V81_UPSTREAM_ROOT = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
+    "Bayesian-PhysTwin-upstream-58ab4808e59d"
+)
+_V81_UPSTREAM_HEAD = "58ab4808e59da811dd1a2c66ac628fe4ea2faeab"
+_V81_UPSTREAM_TREE = "2b35d539be7a17b2de2c644b46c267b16ce26bf0"
+_V81_UPSTREAM_BUILDER = (
+    _V81_UPSTREAM_ROOT
+    / "scripts"
+    / "remote"
+    / "build_deform360_automatic_episode_twin.py"
+)
+_V81_UPSTREAM_BUILDER_SHA256 = (
+    "dd43bfeaa0ddb53252e3b2d9c907c147379b2cce6b4c5d5dfa14f310fdacfa9a"
+)
+_V81_UPSTREAM_AUTHORIZER = (
+    _V81_UPSTREAM_ROOT
+    / "src"
+    / "causal4d_public"
+    / "deform360_dense_reusable_panel.py"
+)
+_V81_UPSTREAM_AUTHORIZER_SHA256 = (
+    "0861831b9ab3cf6d64833efe533073f4f444f2315c04057377f243efffd8b17e"
+)
+_V81_DEFORM360_HEAD = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+_V81_DEFORM360_TREE = "c566ed29db7e0fd6a4cb768d840a4aa662864680"
+_V81_DEFORM360_ROOT = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-runtimes/"
+    f"Deform360-processing-{_V81_DEFORM360_HEAD}"
+)
 _OPEN27_DECISION = (
     _HELD_BASE
     / "runs"
@@ -160,7 +244,10 @@ _ALLTRACKER_CHECKPOINT = Path("/mnt/corsair/florianpfaff/model-cache/alltracker.
 _SAM2_CHECKPOINT = Path(
     "/mnt/lexar4tb/datasets/deform360/sam2-2b90b9f5/checkpoints/sam2.1_hiera_small.pt"
 )
-_DEFORM360_CODE = Path("/mnt/lexar4tb/datasets/deform360/code")
+_DEFORM360_CODE = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-runtimes/"
+    "Deform360-processing-0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+)
 
 _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str | None, int | None]] = {
     "v7_calibration_lock_file": (
@@ -837,6 +924,119 @@ def _load_attempt3_lineage_artifact(path: Path, *, role: str) -> dict[str, Any]:
     return artifact
 
 
+def _run_isolated_filemode_git(
+    root: Path,
+    arguments: Sequence[str],
+) -> subprocess.CompletedProcess[bytes]:
+    return _run_git(root, ["-c", "core.fileMode=false", *arguments])
+
+
+def _git_blob_object_id(payload: bytes, *, hexadecimal_length: int) -> str:
+    framed = b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload
+    if hexadecimal_length == 40:
+        return hashlib.sha1(framed).hexdigest()
+    _require(hexadecimal_length == 64, "unsupported Git object hash length")
+    return hashlib.sha256(framed).hexdigest()
+
+
+def _validate_attempt3_excluded_deployed_code(
+    report: Mapping[str, Any],
+) -> None:
+    expected_binding = {
+        "path": _V8_ATTEMPT3_DEPLOYED_CODE_NAME,
+        "git_head": _V8_ATTEMPT3_DEPLOYED_HEAD,
+        "head_text_sha256": _V8_ATTEMPT3_DEPLOYED_HEAD_TEXT_SHA256,
+        "git_tree_record_count": _V8_ATTEMPT3_DEPLOYED_TREE_RECORD_COUNT,
+        "git_tree_manifest_sha256": _V8_ATTEMPT3_DEPLOYED_TREE_MANIFEST_SHA256,
+    }
+    inventory = report.get("expected_postseal_inventory")
+    _require(
+        report.get("deployed_code") == expected_binding
+        and isinstance(inventory, Mapping)
+        and inventory.get("excluded_deployed_code_directory")
+        == _V8_ATTEMPT3_DEPLOYED_CODE_NAME,
+        "attempt-3 excluded deployed-code report binding changed",
+    )
+    code = _V8_ATTEMPT3_ARCHIVE / _V8_ATTEMPT3_DEPLOYED_CODE_NAME
+    observed = os.lstat(code)
+    _require(
+        stat.S_ISDIR(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and code.resolve() == code
+        and (code / ".git").is_dir(),
+        "attempt-3 excluded deployed code is not a canonical Git repository",
+    )
+    top = (
+        _run_isolated_filemode_git(code, ["rev-parse", "--show-toplevel"])
+        .stdout.decode("utf-8")
+        .strip()
+    )
+    head = (
+        _run_isolated_filemode_git(code, ["rev-parse", "HEAD"])
+        .stdout.decode("ascii")
+        .strip()
+        .lower()
+    )
+    _require(
+        top == str(code)
+        and head == _V8_ATTEMPT3_DEPLOYED_HEAD
+        and _sha256_text(head) == _V8_ATTEMPT3_DEPLOYED_HEAD_TEXT_SHA256,
+        "attempt-3 excluded deployed-code top level or HEAD changed",
+    )
+    _require(
+        _run_isolated_filemode_git(
+            code,
+            ["status", "--porcelain=v1", "--untracked-files=no"],
+        ).stdout
+        == b""
+        and _run_isolated_filemode_git(
+            code,
+            ["ls-files", "--others", "--exclude-standard"],
+        ).stdout
+        == b""
+        and _run_isolated_filemode_git(
+            code,
+            ["ls-files", "--others", "--ignored", "--exclude-standard"],
+        ).stdout
+        == b"",
+        "attempt-3 excluded deployed code is dirty or has untracked content",
+    )
+    _require(
+        _run_isolated_filemode_git(
+            code, ["rev-parse", "--is-shallow-repository"]
+        )
+        .stdout.decode("ascii")
+        .strip()
+        == "false",
+        "attempt-3 excluded deployed-code repository is shallow",
+    )
+    _run_isolated_filemode_git(code, ["fsck", "--full", "--no-dangling"])
+    records = _parse_git_tree(
+        _run_isolated_filemode_git(code, ["ls-tree", "-r", "-z", "HEAD"]).stdout
+    )
+    _require(
+        len(records) == _V8_ATTEMPT3_DEPLOYED_TREE_RECORD_COUNT
+        and hashlib.sha256(_canonical_bytes(records)).hexdigest()
+        == _V8_ATTEMPT3_DEPLOYED_TREE_MANIFEST_SHA256,
+        "attempt-3 excluded deployed-code Git tree manifest changed",
+    )
+    for record in records:
+        tracked = code / record["path"]
+        _, payload, tracked_stat = _read_file(
+            tracked,
+            role=f"attempt-3 deployed tracked blob {record['path']}",
+        )
+        _require(
+            bool(tracked_stat.st_mode & 0o111) == (record["mode"] == "100755")
+            and _git_blob_object_id(
+                payload,
+                hexadecimal_length=len(record["object_id"]),
+            )
+            == record["object_id"],
+            f"attempt-3 deployed tracked blob changed: {record['path']}",
+        )
+
+
 def _validate_attempt3_archive_lineage(
     local_bindings: Mapping[str, str],
 ) -> None:
@@ -859,6 +1059,7 @@ def _validate_attempt3_archive_lineage(
         _V8_ATTEMPT3_WITHDRAWAL_REPORT,
         role="attempt-3 post-barrier withdrawal report",
     )
+    _validate_attempt3_excluded_deployed_code(report)
     pointer = _load_attempt3_lineage_artifact(
         _V8_ATTEMPT3_WITHDRAWAL_POINTER,
         role="attempt-3 post-barrier withdrawal pointer",
@@ -920,20 +1121,503 @@ def _validate_attempt3_archive_lineage(
     )
 
 
-def _validate_admission_replay_source_lineage(
-    local_bindings: Mapping[str, str],
+def _load_admission_replay_json(
+    path: Path,
+    *,
+    role: str,
+) -> tuple[dict[str, Any], bytes, os.stat_result]:
+    _, payload, observed = _read_file(path, role=role, required_mode=0o400)
+    try:
+        artifact = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"{role} is not JSON") from error
+    _require(isinstance(artifact, dict), f"{role} is not a JSON object")
+    return artifact, payload, observed
+
+
+def _validate_replay_artifact_sha256(
+    artifact: Mapping[str, Any],
+    expected_sha256: object,
+    *,
+    role: str,
 ) -> None:
+    _require(_valid_sha256(expected_sha256), f"{role} digest pin is not populated")
+    unsigned = dict(artifact)
+    observed = unsigned.pop("artifact_sha256", None)
+    _require(
+        observed == expected_sha256
+        and hashlib.sha256(_canonical_bytes(unsigned)).hexdigest() == expected_sha256,
+        f"{role} artifact SHA-256 changed",
+    )
+
+
+def _validate_replay_bound_file(
+    record: object,
+    expected_path: Path,
+    *,
+    role: str,
+) -> bytes:
+    _require(
+        isinstance(record, Mapping)
+        and set(record) == {"path", "sha256", "size_bytes"}
+        and record.get("path") == str(expected_path)
+        and _valid_sha256(record.get("sha256"))
+        and isinstance(record.get("size_bytes"), int)
+        and not isinstance(record.get("size_bytes"), bool)
+        and int(record["size_bytes"]) >= 0,
+        f"{role} record changed",
+    )
+    _, payload, _ = _read_file(expected_path, role=role, required_mode=0o400)
+    _require(
+        len(payload) == record["size_bytes"]
+        and hashlib.sha256(payload).hexdigest() == record["sha256"],
+        f"{role} differs from its replay binding",
+    )
+    return payload
+
+
+def _validate_exact_replay_root_allowlist() -> None:
+    expected_root = _V81_REPLAY_ROOT_FILE_NAMES | {"cross-auth"}
+    observed_root = {entry.name for entry in os.scandir(_V8_ADMISSION_REPLAY_ROOT)}
+    _require(
+        observed_root == expected_root,
+        "v8.1 admission replay root allowlist changed",
+    )
+    for name in sorted(_V81_REPLAY_ROOT_FILE_NAMES):
+        observed = os.lstat(_V8_ADMISSION_REPLAY_ROOT / name)
+        _require(
+            stat.S_ISREG(observed.st_mode)
+            and not stat.S_ISLNK(observed.st_mode)
+            and observed.st_nlink == 1,
+            f"v8.1 replay root entry is not a regular file: {name}",
+        )
+    cross = _V8_ADMISSION_REPLAY_ROOT / "cross-auth"
+    cross_stat = os.lstat(cross)
+    _require(
+        stat.S_ISDIR(cross_stat.st_mode)
+        and not stat.S_ISLNK(cross_stat.st_mode)
+        and stat.S_IMODE(cross_stat.st_mode) == 0o500,
+        "v8.1 cross-authorization entry is not a directory",
+    )
+    observed_cross = {entry.name for entry in os.scandir(cross)}
+    _require(
+        observed_cross == _V81_REPLAY_CROSS_AUTHORIZATION_FILE_NAMES,
+        "v8.1 cross-authorization allowlist changed",
+    )
+    for name in sorted(_V81_REPLAY_CROSS_AUTHORIZATION_FILE_NAMES):
+        observed = os.lstat(cross / name)
+        _require(
+            stat.S_ISREG(observed.st_mode)
+            and not stat.S_ISLNK(observed.st_mode)
+            and observed.st_nlink == 1,
+            f"v8.1 cross-authorization entry is not a regular file: {name}",
+        )
+
+
+def _validate_external_file_record(
+    record: object,
+    expected_path: Path,
+    expected_sha256: str,
+    *,
+    role: str,
+    required_mode: int | None = None,
+) -> None:
+    _require(
+        isinstance(record, Mapping)
+        and set(record) == {"path", "sha256", "size_bytes"}
+        and record.get("path") == str(expected_path)
+        and record.get("sha256") == expected_sha256
+        and isinstance(record.get("size_bytes"), int)
+        and not isinstance(record.get("size_bytes"), bool)
+        and int(record["size_bytes"]) >= 0,
+        f"{role} record changed",
+    )
     _, payload, _ = _read_file(
-        _V8_ADMISSION_REPLAY_CODE_BINDING,
-        role="v8 admission replay code binding",
+        expected_path,
+        role=role,
+        required_mode=required_mode,
+    )
+    _require(
+        len(payload) == record["size_bytes"]
+        and hashlib.sha256(payload).hexdigest() == expected_sha256,
+        f"{role} differs from its runtime binding",
+    )
+
+
+def _require_immutable_repository_tree(root: Path, *, role: str) -> None:
+    for current, directories, files in os.walk(root, followlinks=False):
+        current_path = Path(current)
+        for name in [*directories, *files]:
+            path = current_path / name
+            observed = os.lstat(path)
+            _require(
+                not stat.S_ISLNK(observed.st_mode)
+                and (stat.S_ISDIR(observed.st_mode) or stat.S_ISREG(observed.st_mode))
+                and observed.st_mode & 0o222 == 0,
+                f"{role} contains a writable, symlinked, or special entry",
+            )
+
+
+def _validate_immutable_runtime_repository(
+    record: object,
+    *,
+    expected_root: Path,
+    expected_head: str,
+    expected_tree: str,
+    role: str,
+) -> None:
+    _require(
+        isinstance(record, Mapping)
+        and record.get("repository_root") == str(expected_root)
+        and record.get("git_head") == expected_head
+        and record.get("git_tree") == expected_tree
+        and record.get("clean_tracked_and_untracked") is True
+        and record.get("ignored_files_absent") is True
+        and record.get("fully_nonwritable") is True,
+        f"{role} identity record changed",
+    )
+    observed = os.lstat(expected_root)
+    _require(
+        stat.S_ISDIR(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and expected_root.resolve() == expected_root
+        and observed.st_mode & 0o222 == 0
+        and (expected_root / ".git").is_dir(),
+        f"{role} is not an immutable canonical Git repository",
+    )
+    top = (
+        _run_isolated_filemode_git(
+            expected_root, ["rev-parse", "--show-toplevel"]
+        )
+        .stdout.decode("utf-8")
+        .strip()
+    )
+    head = (
+        _run_isolated_filemode_git(expected_root, ["rev-parse", "HEAD"])
+        .stdout.decode("ascii")
+        .strip()
+        .lower()
+    )
+    tree = (
+        _run_isolated_filemode_git(expected_root, ["rev-parse", "HEAD^{tree}"])
+        .stdout.decode("ascii")
+        .strip()
+        .lower()
+    )
+    _require(
+        top == str(expected_root)
+        and head == expected_head
+        and tree == expected_tree,
+        f"{role} Git top, HEAD, or tree changed",
+    )
+    _require(
+        _run_isolated_filemode_git(
+            expected_root,
+            ["status", "--porcelain=v1", "--untracked-files=no"],
+        ).stdout
+        == b""
+        and _run_isolated_filemode_git(
+            expected_root,
+            ["ls-files", "--others", "--exclude-standard"],
+        ).stdout
+        == b""
+        and _run_isolated_filemode_git(
+            expected_root,
+            ["ls-files", "--others", "--ignored", "--exclude-standard"],
+        ).stdout
+        == b"",
+        f"{role} is dirty or contains ignored/untracked files",
+    )
+    _require(
+        _run_isolated_filemode_git(
+            expected_root, ["rev-parse", "--is-shallow-repository"]
+        )
+        .stdout.decode("ascii")
+        .strip()
+        == "false",
+        f"{role} is shallow",
+    )
+    _run_isolated_filemode_git(
+        expected_root, ["fsck", "--full", "--no-dangling"]
+    )
+    _require_immutable_repository_tree(expected_root, role=role)
+
+
+def _validate_replay_external_runtime(record: object) -> None:
+    _require(
+        isinstance(record, Mapping)
+        and set(record) == {"python", "upstream", "deform360"},
+        "v8.1 replay external-runtime record changed",
+    )
+    python = record.get("python")
+    _require(
+        isinstance(python, Mapping)
+        and set(python)
+        == {
+            "launcher_path",
+            "launcher_target",
+            "executable_target",
+            "environment_freeze",
+            "tree_manifest",
+        }
+        and python.get("launcher_path") == str(_PINNED_PYTHON)
+        and python.get("launcher_target") == _V81_PINNED_PYTHON_LAUNCHER_TARGET,
+        "v8.1 replay pinned-Python identity changed",
+    )
+    launcher = os.lstat(_PINNED_PYTHON)
+    _require(
+        stat.S_ISLNK(launcher.st_mode)
+        and os.readlink(_PINNED_PYTHON) == _V81_PINNED_PYTHON_LAUNCHER_TARGET
+        and _PINNED_PYTHON.resolve(strict=True) == _V81_PINNED_PYTHON_TARGET,
+        "v8.1 replay pinned-Python launcher changed",
+    )
+    _validate_external_file_record(
+        python.get("executable_target"),
+        _V81_PINNED_PYTHON_TARGET,
+        _V81_PINNED_PYTHON_TARGET_SHA256,
+        role="v8.1 replay pinned-Python executable",
+    )
+    _validate_external_file_record(
+        python.get("environment_freeze"),
+        _PYTHON_FREEZE,
+        _V81_PYTHON_FREEZE_SHA256,
+        role="v8.1 replay Python environment freeze",
         required_mode=0o400,
     )
-    try:
-        replay = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError("v8 admission replay code binding is not JSON") from error
+    _validate_external_file_record(
+        python.get("tree_manifest"),
+        _PYTHON_TREE_MANIFEST,
+        _V81_PYTHON_TREE_MANIFEST_SHA256,
+        role="v8.1 replay Python tree manifest",
+        required_mode=0o400,
+    )
+
+    upstream = record.get("upstream")
+    _require(
+        isinstance(upstream, Mapping)
+        and set(upstream)
+        == {
+            "repository_root",
+            "git_head",
+            "git_tree",
+            "clean_tracked_and_untracked",
+            "ignored_files_absent",
+            "fully_nonwritable",
+            "automatic_twin_builder",
+            "dense_panel_authorizer",
+        },
+        "v8.1 replay upstream runtime record changed",
+    )
+    _validate_immutable_runtime_repository(
+        upstream,
+        expected_root=_V81_UPSTREAM_ROOT,
+        expected_head=_V81_UPSTREAM_HEAD,
+        expected_tree=_V81_UPSTREAM_TREE,
+        role="v8.1 replay immutable upstream",
+    )
+    _validate_external_file_record(
+        upstream.get("automatic_twin_builder"),
+        _V81_UPSTREAM_BUILDER,
+        _V81_UPSTREAM_BUILDER_SHA256,
+        role="v8.1 replay upstream automatic-twin builder",
+    )
+    _validate_external_file_record(
+        upstream.get("dense_panel_authorizer"),
+        _V81_UPSTREAM_AUTHORIZER,
+        _V81_UPSTREAM_AUTHORIZER_SHA256,
+        role="v8.1 replay upstream dense-panel authorizer",
+    )
+
+    deform360 = record.get("deform360")
+    _require(
+        isinstance(deform360, Mapping)
+        and set(deform360)
+        == {
+            "repository_root",
+            "git_head",
+            "git_tree",
+            "clean_tracked_and_untracked",
+            "ignored_files_absent",
+            "fully_nonwritable",
+        },
+        "v8.1 replay Deform360 runtime record changed",
+    )
+    _validate_immutable_runtime_repository(
+        deform360,
+        expected_root=_V81_DEFORM360_ROOT,
+        expected_head=_V81_DEFORM360_HEAD,
+        expected_tree=_V81_DEFORM360_TREE,
+        role="v8.1 replay immutable Deform360 processing snapshot",
+    )
+
+
+def _validate_replay_source_commit(
+    tested: Mapping[str, Any],
+    local_bindings: Mapping[str, str],
+    source_code: Path,
+) -> None:
+    head = tested.get("git_head")
+    _require(
+        isinstance(head, str)
+        and len(head) in {40, 64}
+        and all(character in "0123456789abcdef" for character in head),
+        "v8.1 replay source commit is invalid",
+    )
+    top = _run_git(source_code, ["rev-parse", "--show-toplevel"]).stdout.decode().strip()
+    current_head = _run_git(source_code, ["rev-parse", "HEAD"]).stdout.decode().strip()
+    _run_git(source_code, ["cat-file", "-e", f"{head}^{{commit}}"])
+    ancestor = _run_git(
+        source_code,
+        ["merge-base", "--is-ancestor", str(head), current_head],
+        check=False,
+    )
+    _require(
+        top == str(source_code)
+        and ancestor.returncode == 0
+        and _run_git(
+            source_code,
+            ["status", "--porcelain=v1", "--untracked-files=all"],
+        ).stdout
+        == b""
+        and _run_git(
+            source_code,
+            ["ls-files", "--others", "--ignored", "--exclude-standard"],
+        ).stdout
+        == b"",
+        "v8.1 replay source commit is not the current clean source",
+    )
+    changed_paths = set(
+        _run_git(
+            source_code,
+            ["diff", "--name-only", "-z", f"{head}..{current_head}"],
+        ).stdout.rstrip(b"\0").split(b"\0")
+    ) - {b""}
+    _require(
+        changed_paths
+        <= {b"scripts/held/prepare_deform360_v8_lock.py"},
+        "post-replay source changes are not confined to preparer digest pins",
+    )
+    for local_name, replay_name in (
+        ("held_v8_builder_adapter_source", "adapter_source_sha256"),
+        ("held_v8_protocol_source", "protocol_source_sha256"),
+        (
+            "held_v81_external_admission_replay_operator_source",
+            "replay_operator_source_sha256",
+        ),
+    ):
+        relative = _LOCAL_BINDING_FILES[local_name]
+        committed = _run_git(source_code, ["show", f"{head}:{relative}"]).stdout
+        digest = hashlib.sha256(committed).hexdigest()
+        _require(
+            digest == tested.get(replay_name) == local_bindings.get(local_name),
+            f"{local_name} differs from the replayed clean-source commit",
+        )
+
+
+def _validate_admission_replay_source_lineage(
+    local_bindings: Mapping[str, str],
+    builders: Any,
+    source_code: Path,
+) -> None:
+    root_stat = os.lstat(_V8_ADMISSION_REPLAY_ROOT)
+    _require(
+        stat.S_ISDIR(root_stat.st_mode)
+        and not stat.S_ISLNK(root_stat.st_mode)
+        and _V8_ADMISSION_REPLAY_ROOT.resolve() == _V8_ADMISSION_REPLAY_ROOT
+        and stat.S_IMODE(root_stat.st_mode) == 0o500,
+        "v8.1 admission replay root is not the exact sealed directory",
+    )
+    _validate_exact_replay_root_allowlist()
+    report, report_payload, report_stat = _load_admission_replay_json(
+        _V8_ADMISSION_REPLAY_REPORT,
+        role="v8.1 admission replay report",
+    )
+    replay, replay_payload, _ = _load_admission_replay_json(
+        _V8_ADMISSION_REPLAY_CODE_BINDING,
+        role="v8.1 admission replay code binding",
+    )
+    _require(
+        _valid_sha256(_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256)
+        and hashlib.sha256(report_payload).hexdigest()
+        == _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256,
+        "v8.1 admission replay report file SHA-256 changed",
+    )
+    _require(
+        _valid_sha256(_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256)
+        and hashlib.sha256(replay_payload).hexdigest()
+        == _V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256,
+        "v8.1 admission replay code-binding file SHA-256 changed",
+    )
+    _validate_replay_artifact_sha256(
+        report,
+        _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256,
+        role="v8.1 admission replay report",
+    )
+    _validate_replay_artifact_sha256(
+        replay,
+        _V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256,
+        role="v8.1 admission replay code binding",
+    )
+
+    _require(
+        report.get("schema_version") == 1
+        and report.get("artifact_kind") == _V81_ADMISSION_REPLAY_REPORT_KIND
+        and report.get("protocol_id") == _V81_PROTOCOL_ID
+        and report.get("execution_attempt") == _V81_EXECUTION_ATTEMPT
+        and report.get("case_name") == builders.V8_EXTERNAL_CALIBRATION_CASE_NAME
+        and report.get("role") == "calibration"
+        and report.get("development_replay_only") is True
+        and report.get("formal_outcome_evidence") is False,
+        "v8.1 admission replay report identity or evidence boundary changed",
+    )
+    _require(
+        replay.get("schema_version") == 1
+        and replay.get("artifact_kind") == _V81_ADMISSION_REPLAY_CODE_BINDING_KIND
+        and replay.get("protocol_id") == _V81_PROTOCOL_ID
+        and replay.get("execution_attempt") == _V81_EXECUTION_ATTEMPT
+        and replay.get("formal_outcome_evidence") is False
+        and replay.get("target_query_score_or_outcome_accessed") is False,
+        "v8.1 admission replay code-binding identity or boundary changed",
+    )
+
+    current_contract = builders.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
+    _require(_valid_sha256(current_contract), "current admission contract is invalid")
+    admission = report.get("admission")
+    _require(
+        isinstance(admission, Mapping)
+        and admission.get("protocol_id") == builders.V8_EXTERNAL_ADMISSION_PROTOCOL_ID
+        and admission.get("contract_sha256") == current_contract
+        and admission.get("exact_case_only") is True
+        and admission.get("target_access") is False
+        and replay.get("admission_contract_sha256") == current_contract,
+        "v8.1 admission replay does not bind the current exact-case contract",
+    )
+
+    replay_report = replay.get("replay_report")
+    _require(
+        isinstance(replay_report, Mapping)
+        and set(replay_report) == {
+            "path",
+            "sha256",
+            "size_bytes",
+            "artifact_sha256",
+        }
+        and replay_report.get("path") == str(_V8_ADMISSION_REPLAY_REPORT)
+        and replay_report.get("sha256")
+        == _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256
+        and replay_report.get("size_bytes") == report_stat.st_size
+        and replay_report.get("artifact_sha256")
+        == _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256
+        == report.get("artifact_sha256"),
+        "v8.1 admission report-to-code-binding lineage changed",
+    )
+
     tested = replay.get("local_worktree_at_replay")
-    _require(isinstance(tested, Mapping), "replay-tested source binding is absent")
+    _require(
+        isinstance(tested, Mapping)
+        and report.get("local_source_at_replay") == tested,
+        "replay-tested source binding is absent or differs across artifacts",
+    )
     for local_name, replay_name in (
         ("held_v8_builder_adapter_source", "adapter_source_sha256"),
         ("held_v8_protocol_source", "protocol_source_sha256"),
@@ -946,32 +1630,217 @@ def _validate_admission_replay_source_lineage(
             tested.get(replay_name) == local_bindings.get(local_name),
             f"{local_name} differs from the real pinned-upstream replay",
         )
+    bootstrap_sha256 = hashlib.sha256(
+        builders._V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP.encode("utf-8")
+    ).hexdigest()
+    _require(
+        tested.get("exact_child_bootstrap_sha256") == bootstrap_sha256
+        and tested.get("uncommitted_correction_present") is False,
+        "replay bootstrap or committed-source boundary changed",
+    )
+    _validate_replay_source_commit(tested, local_bindings, source_code)
+    _validate_replay_external_runtime(tested.get("external_runtime"))
+
+    source_evidence = report.get("source_evidence")
+    _require(
+        isinstance(source_evidence, Mapping)
+        and source_evidence.get("future_object_observation_used") is False
+        and source_evidence.get("source_used_for_numerical_replay")
+        == "prediction_only_input_only",
+        "v8.1 admission replay source crossed its development-only boundary",
+    )
+    _require(
+        report.get("information_boundary")
+        == {
+            "official_target_created": False,
+            "official_target_read": False,
+            "query_created": False,
+            "query_read": False,
+            "score_created": False,
+            "score_read": False,
+            "outcome_created": False,
+            "outcome_read": False,
+            "confirmation_accessed": False,
+        },
+        "v8.1 replay target/query/score/outcome boundary changed",
+    )
+
+    successful = report.get("successful_replay")
+    _require(isinstance(successful, Mapping), "successful replay evidence is absent")
+    state_metrics = successful.get("state_metrics")
+    _require(
+        successful.get("exit_code") == 0
+        and successful.get("hook_restoration_guard_completed") is True
+        and _valid_sha256(successful.get("summary_result_sha256"))
+        and isinstance(state_metrics, Mapping)
+        and state_metrics.get("passed") is True
+        and state_metrics.get("finite") is True
+        and all(
+            math.isfinite(float(value))
+            for value in state_metrics.values()
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+        ),
+        "v8.1 admission replay did not complete with finite passing metrics",
+    )
+    successful_boundary = {
+        "contact_conditioned_action_result_sha256": None,
+        "contact_conditioned_action_used": False,
+        "future_object_tracks_present": False,
+        "future_robot_action_available": True,
+        "object_observation_frames_used": [0],
+        "post_initial_object_observation_used": False,
+        "prediction_only_input_required": True,
+        "simulator_residual_used": False,
+        "target_access": False,
+    }
+    _require(
+        successful.get("information_boundary") == successful_boundary,
+        "successful v8.1 replay information boundary changed",
+    )
+    outputs = successful.get("outputs")
+    _require(
+        isinstance(outputs, Mapping) and set(outputs) == _V81_REPLAY_OUTPUT_NAMES,
+        "successful v8.1 replay output set changed",
+    )
+    output_payloads = {
+        name: _validate_replay_bound_file(
+            outputs[name],
+            _V8_ADMISSION_REPLAY_ROOT / name,
+            role=f"v8.1 admission replay output {name}",
+        )
+        for name in sorted(_V81_REPLAY_OUTPUT_NAMES)
+    }
+    _validate_replay_bound_file(
+        successful.get("stdout_log"),
+        _V8_ADMISSION_REPLAY_ROOT / "stdout.log",
+        role="successful v8.1 admission replay stdout",
+    )
+    _validate_replay_bound_file(
+        successful.get("stderr_log"),
+        _V8_ADMISSION_REPLAY_ROOT / "stderr.log",
+        role="successful v8.1 admission replay stderr",
+    )
+    try:
+        summary = json.loads(output_payloads["twin_summary.json"].decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("v8.1 replay twin summary is not JSON") from error
+    expected_summary_outputs = {
+        "episode_graph": outputs["episode_graph.npz"]["sha256"],
+        "simulator_final_data": outputs["simulator_final_data.pkl"]["sha256"],
+        "state_artifact": outputs["state_artifact.npz"]["sha256"],
+    }
+    _require(
+        isinstance(summary, Mapping)
+        and summary.get("passed") is True
+        and summary.get("result_sha256") == successful.get("summary_result_sha256")
+        == successful.get("validator_result_sha256")
+        and summary.get("state_metrics") == state_metrics
+        and summary.get("information_boundary") == successful_boundary,
+        "v8.1 replay report differs from its bound twin summary",
+    )
+    _require(
+        summary.get("output_sha256") == expected_summary_outputs
+        and successful.get("graph") == summary.get("graph")
+        and successful.get("capacity_diagnostic")
+        == summary.get("capacity_diagnostic")
+        and successful.get("prediction_input_validation")
+        == summary.get("prediction_input_validation"),
+        "v8.1 replay diagnostics or output hashes differ from the sealed summary",
+    )
+
+    rejection = report.get("cross_authorization_rejection")
+    _require(
+        isinstance(rejection, Mapping)
+        and rejection.get("attempted_case_name")
+        == _V81_CROSS_AUTHORIZATION_CASE_NAME
+        and isinstance(rejection.get("exit_code"), int)
+        and not isinstance(rejection.get("exit_code"), bool)
+        and rejection.get("exit_code") == 1
+        and rejection.get("rejected") is True
+        and isinstance(rejection.get("numerical_output_count"), int)
+        and not isinstance(rejection.get("numerical_output_count"), bool)
+        and rejection.get("numerical_output_count") == 0
+        and rejection.get("stderr_marker")
+        == _V81_CROSS_AUTHORIZATION_STDERR_MARKER
+        and rejection.get("stderr_marker_present") is True
+        and all(
+            not os.path.lexists(
+                _V8_ADMISSION_REPLAY_ROOT / "cross-auth" / output_name
+            )
+            for output_name in _V81_REPLAY_OUTPUT_NAMES
+        ),
+        "v8.1 replay cross-authorization was not rejected before numerical output",
+    )
+    _validate_replay_bound_file(
+        rejection.get("stdout_log"),
+        _V8_ADMISSION_REPLAY_ROOT / "cross-auth" / "stdout.log",
+        role="v8.1 cross-authorization stdout",
+    )
+    rejection_stderr = _validate_replay_bound_file(
+        rejection.get("stderr_log"),
+        _V8_ADMISSION_REPLAY_ROOT / "cross-auth" / "stderr.log",
+        role="v8.1 cross-authorization stderr",
+    )
+    _require(
+        _V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8")
+        in rejection_stderr,
+        "cross-authorization stderr lacks the exact admission-rejection marker",
+    )
 
 
-def _import_v8_modules(code: Path) -> tuple[Any, Any]:
+def _import_v8_modules(code: Path) -> tuple[Any, Any, Any]:
     source_root = code / "src"
     sys.path.insert(0, str(source_root))
     try:
+        from bayesian_phystwin import deform360_held_v8_builders as builders
         from bayesian_phystwin import deform360_held_v8_protocol as protocol
         from bayesian_phystwin import (
             deform360_held_v8_replacement_source as replacement,
         )
     finally:
         sys.path.pop(0)
-    for module, label in ((protocol, "protocol"), (replacement, "replacement")):
+    for module, label in (
+        (protocol, "protocol"),
+        (replacement, "replacement"),
+        (builders, "builders"),
+    ):
         module_path = Path(module.__file__).resolve()
         _require(
             module_path.is_relative_to(source_root),
             f"{label} module imported outside the clean source tree",
         )
-    return protocol, replacement
+    return protocol, replacement, builders
 
 
-def _processing_revision() -> str:
+def _processing_revision() -> tuple[str, str]:
     code = _absolute(_DEFORM360_CODE)
     _require(code.is_dir() and code.resolve() == code, "Deform360 code is absent")
-    revision = _run_git(code, ["rev-parse", "HEAD"]).stdout.decode().strip().lower()
-    return revision
+    _require_deployed_read_only(code)
+    _require(
+        os.lstat(code).st_mode & 0o222 == 0,
+        "Deform360 processing snapshot root is writable",
+    )
+    provenance = _validate_repository(code)
+    _require(
+        _run_git(
+            code,
+            ["ls-files", "--others", "--ignored", "--exclude-standard"],
+        ).stdout
+        == b"",
+        "Deform360 processing snapshot contains ignored files",
+    )
+    tree = (
+        _run_isolated_filemode_git(code, ["rev-parse", "HEAD^{tree}"])
+        .stdout.decode("ascii")
+        .strip()
+        .lower()
+    )
+    _require(
+        provenance["head"] == _V81_DEFORM360_HEAD
+        and tree == _V81_DEFORM360_TREE,
+        "Deform360 processing snapshot HEAD or tree changed",
+    )
+    return str(provenance["head"]), tree
 
 
 def prospective_bindings(
@@ -994,7 +1863,6 @@ def prospective_bindings(
     local_bindings = _local_file_bindings(code)
     _validate_attempt2_operator_source_lineage(local_bindings)
     _validate_attempt3_archive_lineage(local_bindings)
-    _validate_admission_replay_source_lineage(local_bindings)
     bindings.update(local_bindings)
     bindings["v8_attempt3_postseal_noncode_inventory"] = (
         _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
@@ -1002,8 +1870,9 @@ def prospective_bindings(
     bindings["v8_attempt3_postseal_noncode_inventory_contract"] = hashlib.sha256(
         _canonical_bytes(_attempt3_archive_inventory_contract())
     ).hexdigest()
-    protocol, replacement = _import_v8_modules(code)
-    processing_revision = _processing_revision()
+    protocol, replacement, builders = _import_v8_modules(code)
+    _validate_admission_replay_source_lineage(local_bindings, builders, code)
+    processing_revision, processing_tree = _processing_revision()
     _require(
         processing_revision == replacement.PROCESSING_CODE_REVISION,
         "Deform360 processing revision changed",
@@ -1031,6 +1900,7 @@ def prospective_bindings(
                 protocol.PRIMARY_METHOD
             ),
             "deform360_processing_head_text_sha256": _sha256_text(processing_revision),
+            "deform360_processing_tree_text_sha256": _sha256_text(processing_tree),
             "hf_dataset_revision_text_sha256": _sha256_text(
                 replacement.HF_DATASET_REVISION
             ),
@@ -1100,7 +1970,7 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
         staged["tree_sha256"] == provenance["tree_sha256"],
         "staged deployment tree differs from source",
     )
-    protocol, _replacement = _import_v8_modules(source)
+    protocol, _replacement, _builders = _import_v8_modules(source)
     capability = protocol.prepare_fresh_held_root(_HELD_ROOT)
     deployment_moved = False
     try:
