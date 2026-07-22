@@ -718,13 +718,14 @@ def validate_attempt3_withdrawal_lineage(
         "file_sha256": report_record["sha256"],
         "artifact_sha256": ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
     }
+    report_cross_link = {
+        "withdrawal_report_size_bytes": report_link["size_bytes"],
+        "withdrawal_report_file_sha256": report_link["file_sha256"],
+        "withdrawal_report_artifact_sha256": report_link["artifact_sha256"],
+    }
     for artifact, role in ((completion, "completion"), (pointer, "pointer")):
         _require(
-            all(
-                artifact.get(key) == value
-                for key, value in report_link.items()
-                if key != "path"
-            )
+            all(artifact.get(key) == value for key, value in report_cross_link.items())
             and _canonical_path(artifact.get("withdrawal_report_path"))
             == _canonical_path(report_link["path"]),
             f"attempt-3 {role} report cross-link changed",
