@@ -1187,16 +1187,15 @@ def _validate_live_torch_device(torch: Any) -> dict[str, Any]:
     }
 
 
-def _validate_process_flags(flags: Any = sys.flags) -> dict[str, int]:
-    required = {
+def _validate_process_flags(flags: Any = sys.flags) -> dict[str, int | bool]:
+    required_integer_flags = {
         "isolated": 1,
         "no_user_site": 1,
         "dont_write_bytecode": 1,
-        "safe_path": 1,
         "ignore_environment": 1,
     }
-    observed: dict[str, int] = {}
-    for name, expected in required.items():
+    observed: dict[str, int | bool] = {}
+    for name, expected in required_integer_flags.items():
         value = getattr(flags, name, None)
         _require(
             isinstance(value, int)
@@ -1205,6 +1204,12 @@ def _validate_process_flags(flags: Any = sys.flags) -> dict[str, int]:
             f"analyzer Python flag changed: {name}",
         )
         observed[name] = value
+    safe_path = getattr(flags, "safe_path", None)
+    _require(
+        safe_path is True,
+        "analyzer Python flag changed: safe_path",
+    )
+    observed["safe_path"] = safe_path
     return observed
 
 

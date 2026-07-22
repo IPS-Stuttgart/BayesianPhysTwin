@@ -896,11 +896,12 @@ def test_python_flags_environment_and_import_paths_are_fail_closed(
         isolated=1,
         no_user_site=1,
         dont_write_bytecode=1,
-        safe_path=1,
+        safe_path=True,
         ignore_environment=1,
     )
     assert equivalence._validate_process_flags(flags)["isolated"] == 1
-    flags.safe_path = True
+    assert equivalence._validate_process_flags(flags)["safe_path"] is True
+    flags.safe_path = 1
     with pytest.raises(ValueError, match="safe_path"):
         equivalence._validate_process_flags(flags)
 
