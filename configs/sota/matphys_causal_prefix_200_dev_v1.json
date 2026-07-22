@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-causal-prefix-200-dev-v1",
+  "status": "development-only",
+  "case_name": "double_lift_zebra",
+  "question": "Does the pinned public MatPhys architecture improve causal held-future prediction when every RGB frame and physical objective is restricted to the released prefix?",
+  "information_boundary": {
+    "future_object_observations_used": false,
+    "future_manual_tracks_used": false,
+    "known_future_controller_trajectory_used": true,
+    "comparison_task": "released PhysTwin held-future prediction"
+  },
+  "training": {
+    "source_commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "wrapper": "scripts/remote/run_matphys_causal.py",
+    "wrapper_sha256": "4bcadd5b5613a8c66c5896cde7db82f1d40c816f9b4774e81e1e6d88eee754a8",
+    "training_contract": "causal-prefix-only",
+    "parameterization": "global-material absolute spring field",
+    "epochs": 200,
+    "eval_every": 10,
+    "fit_fraction": 1.0,
+    "learning_rate": 0.0003,
+    "seed": 42,
+    "checkpoint_selection": "fixed terminal checkpoint",
+    "finite_optimizer_guard": true
+  },
+  "released_baseline": {
+    "chamfer_distance_m": 0.0142304847,
+    "track_error_m": 0.0258773045
+  },
+  "progression_gate": {
+    "minimum_relative_improvement": 0.05,
+    "required_metrics": [
+      "chamfer_distance_m",
+      "track_error_m"
+    ],
+    "pass_rule": "candidate <= (1 - minimum_relative_improvement) * released baseline for every required metric",
+    "pass_action": "permit a separate multi-case causal development protocol",
+    "fail_action": "stop this per-case model family"
+  },
+  "claim_boundary": "Exploratory development case from an already examined benchmark; cannot establish independent confirmation or reproduce MatPhys's feed-forward cross-scene claim."
+}
