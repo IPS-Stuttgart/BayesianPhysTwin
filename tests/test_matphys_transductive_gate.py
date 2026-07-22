@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 
@@ -29,6 +30,15 @@ def _load_gate():
 
 
 def _write_result(path: Path, case: str, cd_m: float, track_m: float) -> None:
+    provenance = {}
+    for key in ("checkpoint", "trajectory", "training_audit"):
+        bound_path = path.parent / f"{case}-{key}.bin"
+        bound_path.write_bytes(f"{case}-{key}".encode())
+        provenance[key] = {
+            "path": str(bound_path.resolve()),
+            "sha256": hashlib.sha256(bound_path.read_bytes()).hexdigest(),
+            "size_bytes": bound_path.stat().st_size,
+        }
     path.write_text(
         json.dumps(
             {
@@ -37,6 +47,7 @@ def _write_result(path: Path, case: str, cd_m: float, track_m: float) -> None:
                 "future_observations_used": True,
                 "released_test_outcomes_used_in_objective": True,
                 "case_name": case,
+                **provenance,
                 "official_evaluation": {
                     "evaluation": {
                         "test": {
@@ -130,3 +141,22 @@ def test_gate_rejects_incomplete_cohort(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="gate cohort mismatch"):
         gate.evaluate_gate([path])
+
+
+def test_gate_rejects_changed_bound_file(tmp_path: Path) -> None:
+    gate = _load_gate()
+    paths = []
+    for case, baseline in gate.GATE_BASELINES.items():
+        path = tmp_path / f"{case}.json"
+        _write_result(
+            path,
+            case,
+            baseline["chamfer_distance_m"],
+            baseline["track_error_m"],
+        )
+        paths.append(path)
+    payload = json.loads(paths[0].read_text(encoding="utf-8"))
+    Path(payload["trajectory"]["path"]).write_bytes(b"mutated")
+
+    with pytest.raises(ValueError, match="trajectory provenance hash changed"):
+        gate.evaluate_gate(paths)

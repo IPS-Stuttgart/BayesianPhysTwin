@@ -26,6 +26,26 @@ GATE_BASELINES = {
 }
 
 
+def _validate_bound_file(result: Mapping[str, object], key: str) -> dict[str, object]:
+    record = result.get(key)
+    if not isinstance(record, Mapping):
+        raise ValueError(f"{key} provenance is missing")
+    path = Path(str(record.get("path", ""))).resolve()
+    expected_sha256 = str(record.get("sha256", ""))
+    expected_size = record.get("size_bytes")
+    if not path.is_file():
+        raise ValueError(f"{key} provenance path is missing: {path}")
+    if sha256_file(path) != expected_sha256:
+        raise ValueError(f"{key} provenance hash changed: {path}")
+    if expected_size is None or path.stat().st_size != int(expected_size):
+        raise ValueError(f"{key} provenance size changed: {path}")
+    return {
+        "path": str(path),
+        "sha256": expected_sha256,
+        "size_bytes": int(expected_size),
+    }
+
+
 def evaluate_gate(
     result_paths: Iterable[Path],
     *,
@@ -51,6 +71,9 @@ def evaluate_gate(
         records[case_name] = {
             "metrics": values,
             "result": {"path": str(path), "sha256": sha256_file(path)},
+            "checkpoint": _validate_bound_file(result, "checkpoint"),
+            "trajectory": _validate_bound_file(result, "trajectory"),
+            "training_audit": _validate_bound_file(result, "training_audit"),
         }
 
     expected = set(baselines)
