@@ -68,6 +68,10 @@ selected path and hash rather than silently correcting it.
 5. Aggregate official train/test metrics while labeling both intervals as
    fitted reconstruction data.
 
+The aggregate report includes both a case-balanced mean and a frame-weighted
+mean. The case-balanced value is primary; reporting both prevents the result
+from depending silently on how long interactions are weighted.
+
 Only after an upstream reproduction succeeds is it meaningful to test a
 Bayesian all-frame smoother. The causal held-future table remains the primary
 Bayesian-PhysTwin result and is reported separately.
