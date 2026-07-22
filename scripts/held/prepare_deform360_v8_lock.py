@@ -98,9 +98,7 @@ _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256 = (
     "5d398e998e2b738db545ffefd254712c6822017cfc5be6e7de435d5883c8c4c8"
 )
 _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT = 1466
-_V8_ATTEMPT3_DEPLOYED_CODE_NAME = (
-    "code-9ad7ad2b385f7abc5e8c42081a41018980dd3827"
-)
+_V8_ATTEMPT3_DEPLOYED_CODE_NAME = "code-9ad7ad2b385f7abc5e8c42081a41018980dd3827"
 _V8_ATTEMPT3_DEPLOYED_HEAD = "9ad7ad2b385f7abc5e8c42081a41018980dd3827"
 _V8_ATTEMPT3_DEPLOYED_HEAD_TEXT_SHA256 = (
     "b5e33f85b96a0026147040044c288ef5c6ff3e60ca9b74743f904b49f78b79f1"
@@ -135,10 +133,18 @@ _V8_ADMISSION_REPLAY_REPORT = (
 _V8_ADMISSION_REPLAY_CODE_BINDING = (
     _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-code-binding.json"
 )
-_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256: str | None = None
-_V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256: str | None = None
-_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256: str | None = None
-_V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256: str | None = (
+    "bdb9d2d577e2eed87531c29f7bba83cfbe0a7fc42ee7f0b3d203e6af038152a7"
+)
+_V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256: str | None = (
+    "79824d3c7884fdb968fee4dd6573b12fc6ebbead59f5f5e8bb94181fa2788eb5"
+)
+_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256: str | None = (
+    "81d9a2ec3154082ffa2853a4ae5357bc4609e5a83f1358d19c2a4b89b33e6981"
+)
+_V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256: str | None = (
+    "badfc0ba1317c54878d0a172701c86cbf91a67294b04befcc1f31d5c7aa3c31a"
+)
 _V81_ADMISSION_REPLAY_REPORT_KIND = (
     "Deform360HeldV81ExternalAdmissionMetadataOnlyReplay"
 )
@@ -167,9 +173,7 @@ _V81_REPLAY_ROOT_FILE_NAMES = _V81_REPLAY_OUTPUT_NAMES | frozenset(
         "metadata-only-replay-code-binding.json",
     }
 )
-_V81_REPLAY_CROSS_AUTHORIZATION_FILE_NAMES = frozenset(
-    {"stdout.log", "stderr.log"}
-)
+_V81_REPLAY_CROSS_AUTHORIZATION_FILE_NAMES = frozenset({"stdout.log", "stderr.log"})
 _V81_PINNED_PYTHON_LAUNCHER_TARGET = "/usr/bin/python3"
 _V81_PINNED_PYTHON_TARGET = Path("/usr/bin/python3.12")
 _V81_PINNED_PYTHON_TARGET_SHA256 = (
@@ -197,10 +201,7 @@ _V81_UPSTREAM_BUILDER_SHA256 = (
     "dd43bfeaa0ddb53252e3b2d9c907c147379b2cce6b4c5d5dfa14f310fdacfa9a"
 )
 _V81_UPSTREAM_AUTHORIZER = (
-    _V81_UPSTREAM_ROOT
-    / "src"
-    / "causal4d_public"
-    / "deform360_dense_reusable_panel.py"
+    _V81_UPSTREAM_ROOT / "src" / "causal4d_public" / "deform360_dense_reusable_panel.py"
 )
 _V81_UPSTREAM_AUTHORIZER_SHA256 = (
     "0861831b9ab3cf6d64833efe533073f4f444f2315c04057377f243efffd8b17e"
@@ -1002,9 +1003,7 @@ def _validate_attempt3_excluded_deployed_code(
         "attempt-3 excluded deployed code is dirty or has untracked content",
     )
     _require(
-        _run_isolated_filemode_git(
-            code, ["rev-parse", "--is-shallow-repository"]
-        )
+        _run_isolated_filemode_git(code, ["rev-parse", "--is-shallow-repository"])
         .stdout.decode("ascii")
         .strip()
         == "false",
@@ -1286,9 +1285,7 @@ def _validate_immutable_runtime_repository(
         f"{role} is not an immutable canonical Git repository",
     )
     top = (
-        _run_isolated_filemode_git(
-            expected_root, ["rev-parse", "--show-toplevel"]
-        )
+        _run_isolated_filemode_git(expected_root, ["rev-parse", "--show-toplevel"])
         .stdout.decode("utf-8")
         .strip()
     )
@@ -1305,9 +1302,7 @@ def _validate_immutable_runtime_repository(
         .lower()
     )
     _require(
-        top == str(expected_root)
-        and head == expected_head
-        and tree == expected_tree,
+        top == str(expected_root) and head == expected_head and tree == expected_tree,
         f"{role} Git top, HEAD, or tree changed",
     )
     _require(
@@ -1337,9 +1332,7 @@ def _validate_immutable_runtime_repository(
         == "false",
         f"{role} is shallow",
     )
-    _run_isolated_filemode_git(
-        expected_root, ["fsck", "--full", "--no-dangling"]
-    )
+    _run_isolated_filemode_git(expected_root, ["fsck", "--full", "--no-dangling"])
     _require_immutable_repository_tree(expected_root, role=role)
 
 
@@ -1463,7 +1456,9 @@ def _validate_replay_source_commit(
         and all(character in "0123456789abcdef" for character in head),
         "v8.1 replay source commit is invalid",
     )
-    top = _run_git(source_code, ["rev-parse", "--show-toplevel"]).stdout.decode().strip()
+    top = (
+        _run_git(source_code, ["rev-parse", "--show-toplevel"]).stdout.decode().strip()
+    )
     current_head = _run_git(source_code, ["rev-parse", "HEAD"]).stdout.decode().strip()
     _run_git(source_code, ["cat-file", "-e", f"{head}^{{commit}}"])
     ancestor = _run_git(
@@ -1490,11 +1485,12 @@ def _validate_replay_source_commit(
         _run_git(
             source_code,
             ["diff", "--name-only", "-z", f"{head}..{current_head}"],
-        ).stdout.rstrip(b"\0").split(b"\0")
+        )
+        .stdout.rstrip(b"\0")
+        .split(b"\0")
     ) - {b""}
     _require(
-        changed_paths
-        <= {b"scripts/held/prepare_deform360_v8_lock.py"},
+        changed_paths <= {b"scripts/held/prepare_deform360_v8_lock.py"},
         "post-replay source changes are not confined to preparer digest pins",
     )
     for local_name, replay_name in (
@@ -1596,15 +1592,15 @@ def _validate_admission_replay_source_lineage(
     replay_report = replay.get("replay_report")
     _require(
         isinstance(replay_report, Mapping)
-        and set(replay_report) == {
+        and set(replay_report)
+        == {
             "path",
             "sha256",
             "size_bytes",
             "artifact_sha256",
         }
         and replay_report.get("path") == str(_V8_ADMISSION_REPLAY_REPORT)
-        and replay_report.get("sha256")
-        == _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256
+        and replay_report.get("sha256") == _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256
         and replay_report.get("size_bytes") == report_stat.st_size
         and replay_report.get("artifact_sha256")
         == _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256
@@ -1614,8 +1610,7 @@ def _validate_admission_replay_source_lineage(
 
     tested = replay.get("local_worktree_at_replay")
     _require(
-        isinstance(tested, Mapping)
-        and report.get("local_source_at_replay") == tested,
+        isinstance(tested, Mapping) and report.get("local_source_at_replay") == tested,
         "replay-tested source binding is absent or differs across artifacts",
     )
     for local_name, replay_name in (
@@ -1732,7 +1727,8 @@ def _validate_admission_replay_source_lineage(
     _require(
         isinstance(summary, Mapping)
         and summary.get("passed") is True
-        and summary.get("result_sha256") == successful.get("summary_result_sha256")
+        and summary.get("result_sha256")
+        == successful.get("summary_result_sha256")
         == successful.get("validator_result_sha256")
         and summary.get("state_metrics") == state_metrics
         and summary.get("information_boundary") == successful_boundary,
@@ -1741,8 +1737,7 @@ def _validate_admission_replay_source_lineage(
     _require(
         summary.get("output_sha256") == expected_summary_outputs
         and successful.get("graph") == summary.get("graph")
-        and successful.get("capacity_diagnostic")
-        == summary.get("capacity_diagnostic")
+        and successful.get("capacity_diagnostic") == summary.get("capacity_diagnostic")
         and successful.get("prediction_input_validation")
         == summary.get("prediction_input_validation"),
         "v8.1 replay diagnostics or output hashes differ from the sealed summary",
@@ -1751,8 +1746,7 @@ def _validate_admission_replay_source_lineage(
     rejection = report.get("cross_authorization_rejection")
     _require(
         isinstance(rejection, Mapping)
-        and rejection.get("attempted_case_name")
-        == _V81_CROSS_AUTHORIZATION_CASE_NAME
+        and rejection.get("attempted_case_name") == _V81_CROSS_AUTHORIZATION_CASE_NAME
         and isinstance(rejection.get("exit_code"), int)
         and not isinstance(rejection.get("exit_code"), bool)
         and rejection.get("exit_code") == 1
@@ -1760,13 +1754,10 @@ def _validate_admission_replay_source_lineage(
         and isinstance(rejection.get("numerical_output_count"), int)
         and not isinstance(rejection.get("numerical_output_count"), bool)
         and rejection.get("numerical_output_count") == 0
-        and rejection.get("stderr_marker")
-        == _V81_CROSS_AUTHORIZATION_STDERR_MARKER
+        and rejection.get("stderr_marker") == _V81_CROSS_AUTHORIZATION_STDERR_MARKER
         and rejection.get("stderr_marker_present") is True
         and all(
-            not os.path.lexists(
-                _V8_ADMISSION_REPLAY_ROOT / "cross-auth" / output_name
-            )
+            not os.path.lexists(_V8_ADMISSION_REPLAY_ROOT / "cross-auth" / output_name)
             for output_name in _V81_REPLAY_OUTPUT_NAMES
         ),
         "v8.1 replay cross-authorization was not rejected before numerical output",
@@ -1782,8 +1773,7 @@ def _validate_admission_replay_source_lineage(
         role="v8.1 cross-authorization stderr",
     )
     _require(
-        _V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8")
-        in rejection_stderr,
+        _V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8") in rejection_stderr,
         "cross-authorization stderr lacks the exact admission-rejection marker",
     )
 
@@ -1836,8 +1826,7 @@ def _processing_revision() -> tuple[str, str]:
         .lower()
     )
     _require(
-        provenance["head"] == _V81_DEFORM360_HEAD
-        and tree == _V81_DEFORM360_TREE,
+        provenance["head"] == _V81_DEFORM360_HEAD and tree == _V81_DEFORM360_TREE,
         "Deform360 processing snapshot HEAD or tree changed",
     )
     return str(provenance["head"]), tree

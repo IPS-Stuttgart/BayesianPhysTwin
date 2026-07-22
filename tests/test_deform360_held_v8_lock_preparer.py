@@ -116,15 +116,11 @@ def _write_admission_replay_fixture(
     capacity_diagnostic = {"capacity_is_a_maximum": True}
     prediction_input_validation = {"frame_count": 76}
     outputs = {
-        "episode_graph.npz": _write_replay_file(
-            root / "episode_graph.npz", b"graph"
-        ),
+        "episode_graph.npz": _write_replay_file(root / "episode_graph.npz", b"graph"),
         "simulator_final_data.pkl": _write_replay_file(
             root / "simulator_final_data.pkl", b"simulator"
         ),
-        "state_artifact.npz": _write_replay_file(
-            root / "state_artifact.npz", b"state"
-        ),
+        "state_artifact.npz": _write_replay_file(root / "state_artifact.npz", b"state"),
     }
     summary_output_sha256 = {
         "episode_graph": outputs["episode_graph.npz"]["sha256"],
@@ -153,10 +149,7 @@ def _write_admission_replay_fixture(
     cross_stderr_payload = (
         b"different rejection\n"
         if mutation == "cross_log_marker"
-        else (
-            preparer._V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8")
-            + b"\n"
-        )
+        else (preparer._V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8") + b"\n")
     )
     cross_stderr = _write_replay_file(
         root / "cross-auth/stderr.log", cross_stderr_payload
@@ -622,16 +615,24 @@ def test_attempt_four_binds_exact_attempt_three_lineage() -> None:
     )
 
 
-def test_attempt_four_replay_uses_new_fail_closed_placeholder(
+def test_attempt_four_replay_hashes_are_pinned_and_placeholders_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     assert str(preparer._V8_ADMISSION_REPLAY_ROOT).endswith(
         "bpt-held-v8.1-attempt-4-admission-wrapper-scratch-20260722"
     )
-    assert preparer._V8_ADMISSION_REPLAY_REPORT_FILE_SHA256 is None
-    assert preparer._V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256 is None
-    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256 is None
-    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_REPORT_FILE_SHA256 == (
+        "bdb9d2d577e2eed87531c29f7bba83cfbe0a7fc42ee7f0b3d203e6af038152a7"
+    )
+    assert preparer._V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256 == (
+        "79824d3c7884fdb968fee4dd6573b12fc6ebbead59f5f5e8bb94181fa2788eb5"
+    )
+    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256 == (
+        "81d9a2ec3154082ffa2853a4ae5357bc4609e5a83f1358d19c2a4b89b33e6981"
+    )
+    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256 == (
+        "badfc0ba1317c54878d0a172701c86cbf91a67294b04befcc1f31d5c7aa3c31a"
+    )
     monkeypatch.setattr(
         preparer,
         "_EXPECTED_EXTERNAL_FILES",
@@ -757,9 +758,7 @@ def test_attempt_three_excluded_deployment_is_exact_clean_git_tree(
             code, ["ls-tree", "-r", "-z", "HEAD"]
         ).stdout
     )
-    manifest_sha256 = hashlib.sha256(
-        preparer._canonical_bytes(records)
-    ).hexdigest()
+    manifest_sha256 = hashlib.sha256(preparer._canonical_bytes(records)).hexdigest()
     binding = {
         "path": deployed_name,
         "git_head": head,
@@ -879,9 +878,7 @@ def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
     }
     tested = {
         "git_head": replay_head,
-        "adapter_source_sha256": local_bindings[
-            "held_v8_builder_adapter_source"
-        ],
+        "adapter_source_sha256": local_bindings["held_v8_builder_adapter_source"],
         "protocol_source_sha256": local_bindings["held_v8_protocol_source"],
         "replay_operator_source_sha256": local_bindings[
             "held_v81_external_admission_replay_operator_source"
@@ -908,6 +905,138 @@ def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
         preparer._validate_replay_source_commit(tested, local_bindings, source)
 
 
+def test_replay_external_runtime_is_exact_immutable_and_clean(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "python3.12"
+    target.write_bytes(b"pinned Python\n")
+    os.chmod(target, 0o500)
+    launcher = tmp_path / "runtime" / "bin" / "python"
+    launcher.parent.mkdir(parents=True)
+    launcher.symlink_to(target)
+    freeze = tmp_path / "runtime.freeze.sorted.txt"
+    freeze.write_bytes(b"package==1\n")
+    os.chmod(freeze, 0o400)
+    tree_manifest = tmp_path / "runtime.tree-manifest.json"
+    tree_manifest.write_bytes(b'{"files":1}\n')
+    os.chmod(tree_manifest, 0o400)
+
+    upstream = tmp_path / "upstream"
+    upstream.mkdir()
+    _git(upstream, "init", "--initial-branch=main")
+    builder = upstream / "scripts/remote/build.py"
+    authorizer = upstream / "src/panel.py"
+    builder.parent.mkdir(parents=True)
+    authorizer.parent.mkdir(parents=True)
+    builder.write_bytes(b"# immutable builder\n")
+    authorizer.write_bytes(b"# immutable authorizer\n")
+    (upstream / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8")
+    _git(upstream, "add", ".")
+    _git(upstream, "commit", "-m", "immutable upstream")
+    upstream_head = _git(upstream, "rev-parse", "HEAD")
+    upstream_tree = _git(upstream, "rev-parse", "HEAD^{tree}")
+
+    deform360 = tmp_path / "deform360"
+    deform360.mkdir()
+    _git(deform360, "init", "--initial-branch=main")
+    (deform360 / "process.py").write_bytes(b"# immutable processing snapshot\n")
+    (deform360 / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8")
+    _git(deform360, "add", ".")
+    _git(deform360, "commit", "-m", "immutable Deform360")
+    deform360_head = _git(deform360, "rev-parse", "HEAD")
+    deform360_tree = _git(deform360, "rev-parse", "HEAD^{tree}")
+
+    target_sha256 = hashlib.sha256(target.read_bytes()).hexdigest()
+    freeze_sha256 = hashlib.sha256(freeze.read_bytes()).hexdigest()
+    tree_manifest_sha256 = hashlib.sha256(tree_manifest.read_bytes()).hexdigest()
+    builder_sha256 = hashlib.sha256(builder.read_bytes()).hexdigest()
+    authorizer_sha256 = hashlib.sha256(authorizer.read_bytes()).hexdigest()
+    monkeypatch.setattr(preparer, "_PINNED_PYTHON", launcher)
+    monkeypatch.setattr(preparer, "_V81_PINNED_PYTHON_LAUNCHER_TARGET", str(target))
+    monkeypatch.setattr(preparer, "_V81_PINNED_PYTHON_TARGET", target)
+    monkeypatch.setattr(preparer, "_V81_PINNED_PYTHON_TARGET_SHA256", target_sha256)
+    monkeypatch.setattr(preparer, "_PYTHON_FREEZE", freeze)
+    monkeypatch.setattr(preparer, "_V81_PYTHON_FREEZE_SHA256", freeze_sha256)
+    monkeypatch.setattr(preparer, "_PYTHON_TREE_MANIFEST", tree_manifest)
+    monkeypatch.setattr(
+        preparer, "_V81_PYTHON_TREE_MANIFEST_SHA256", tree_manifest_sha256
+    )
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_ROOT", upstream)
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_HEAD", upstream_head)
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_TREE", upstream_tree)
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_BUILDER", builder)
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_BUILDER_SHA256", builder_sha256)
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_AUTHORIZER", authorizer)
+    monkeypatch.setattr(preparer, "_V81_UPSTREAM_AUTHORIZER_SHA256", authorizer_sha256)
+    monkeypatch.setattr(preparer, "_V81_DEFORM360_ROOT", deform360)
+    monkeypatch.setattr(preparer, "_V81_DEFORM360_HEAD", deform360_head)
+    monkeypatch.setattr(preparer, "_V81_DEFORM360_TREE", deform360_tree)
+    record = {
+        "python": {
+            "launcher_path": str(launcher),
+            "launcher_target": str(target),
+            "executable_target": {
+                "path": str(target),
+                "sha256": target_sha256,
+                "size_bytes": target.stat().st_size,
+            },
+            "environment_freeze": {
+                "path": str(freeze),
+                "sha256": freeze_sha256,
+                "size_bytes": freeze.stat().st_size,
+            },
+            "tree_manifest": {
+                "path": str(tree_manifest),
+                "sha256": tree_manifest_sha256,
+                "size_bytes": tree_manifest.stat().st_size,
+            },
+        },
+        "upstream": {
+            "repository_root": str(upstream),
+            "git_head": upstream_head,
+            "git_tree": upstream_tree,
+            "clean_tracked_and_untracked": True,
+            "ignored_files_absent": True,
+            "fully_nonwritable": True,
+            "automatic_twin_builder": {
+                "path": str(builder),
+                "sha256": builder_sha256,
+                "size_bytes": builder.stat().st_size,
+            },
+            "dense_panel_authorizer": {
+                "path": str(authorizer),
+                "sha256": authorizer_sha256,
+                "size_bytes": authorizer.stat().st_size,
+            },
+        },
+        "deform360": {
+            "repository_root": str(deform360),
+            "git_head": deform360_head,
+            "git_tree": deform360_tree,
+            "clean_tracked_and_untracked": True,
+            "ignored_files_absent": True,
+            "fully_nonwritable": True,
+        },
+    }
+    _make_tree_read_only(upstream)
+    _make_tree_read_only(deform360)
+
+    preparer._validate_replay_external_runtime(record)
+
+    changed = {
+        **record,
+        "deform360": {**record["deform360"], "git_tree": "0" * 40},
+    }
+    with pytest.raises(ValueError, match="identity record changed"):
+        preparer._validate_replay_external_runtime(changed)
+    _make_tree_writable(deform360)
+    (deform360 / "ignored.tmp").write_text("hidden\n", encoding="utf-8")
+    _make_tree_read_only(deform360)
+    with pytest.raises(ValueError, match="dirty or contains ignored"):
+        preparer._validate_replay_external_runtime(record)
+
+
 def test_admission_replay_semantics_and_cross_bindings_validate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -915,9 +1044,7 @@ def test_admission_replay_semantics_and_cross_bindings_validate(
         tmp_path / "replay", monkeypatch
     )
 
-    preparer._validate_admission_replay_source_lineage(
-        bindings, builders, tmp_path
-    )
+    preparer._validate_admission_replay_source_lineage(bindings, builders, tmp_path)
 
 
 @pytest.mark.parametrize(
@@ -966,6 +1093,4 @@ def test_admission_replay_semantic_tampering_fails_closed(
     )
 
     with pytest.raises(ValueError, match=message):
-        preparer._validate_admission_replay_source_lineage(
-            bindings, builders, tmp_path
-        )
+        preparer._validate_admission_replay_source_lineage(bindings, builders, tmp_path)
