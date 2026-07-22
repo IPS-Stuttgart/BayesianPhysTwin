@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import replace
 import hashlib
+import itertools
 import json
 from pathlib import Path
 import subprocess
@@ -843,6 +844,80 @@ def test_local_refinement_bounds_are_clipped_and_margin_is_source_fixed() -> Non
     assert diagnostics["margin_m"] == pytest.approx([0.03, 0.06, 0.09])
 
 
+def test_bounded_exact_eight_subset_audit_matches_legacy_canonical_stream() -> None:
+    cameras = [f"camera-{index:02d}" for index in range(9)]
+    records = []
+    for index, subset in enumerate(itertools.combinations(cameras, 8)):
+        records.append(
+            {
+                "cameras": list(subset),
+                "largest_exact_component_voxel_count": index + 1,
+                "exact_common_voxel_count": index + 2,
+                "exact_component_count": index % 3,
+                "raw_component_coverage_sum": float(index) / 10.0,
+                "semantic_score_sum": float(index) / 20.0,
+                "exact_common_mask_sha256": f"{index + 1:064x}",
+            }
+        )
+
+    legacy = frame_zero_assets._ExactEightSubsetAuditAccumulator(bounded=False)
+    bounded = frame_zero_assets._ExactEightSubsetAuditAccumulator(bounded=True)
+    for record in records:
+        legacy.add(record)
+        bounded.add(record)
+    legacy_value = legacy.materialize(selected_record=records[-1])
+    bounded_value = bounded.materialize(selected_record=records[-1])
+
+    assert legacy_value == records
+    assert bounded_value["record_count"] == len(records)
+    assert (
+        bounded_value["contract_sha256"]
+        == hashlib.sha256(
+            json.dumps(
+                frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+    )
+    assert (
+        bounded_value["canonical_json_array_sha256"]
+        == hashlib.sha256(
+            json.dumps(
+                records,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+    )
+    assert bounded_value["selected_record"] == records[-1]
+    assert len(json.dumps(bounded_value)) < len(json.dumps(records))
+    frame_zero_assets._validate_bounded_exact_eight_subset_audit(
+        bounded_value,
+        expected_record_count=len(records),
+        expected_first_cameras=records[0]["cameras"],
+        expected_last_cameras=records[-1]["cameras"],
+        selected_cameras=sorted(records[-1]["cameras"]),
+        candidate_cameras=cameras,
+        fixed_first_camera=None,
+    )
+
+    tampered = deepcopy(bounded_value)
+    tampered["metric_extrema"]["largest_exact_component_voxel_count"]["maximum"] += 1
+    with pytest.raises(ValueError, match="winner/extrema"):
+        frame_zero_assets._validate_bounded_exact_eight_subset_audit(
+            tampered,
+            expected_record_count=len(records),
+            expected_first_cameras=records[0]["cameras"],
+            expected_last_cameras=records[-1]["cameras"],
+            selected_cameras=sorted(records[-1]["cameras"]),
+            candidate_cameras=cameras,
+            fixed_first_camera=None,
+        )
+
+
 def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -933,6 +1008,11 @@ def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
             config=FrameZeroAssetConfig(),
         )
     )
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "HELD_PROTOCOL_ID",
+        "deform360-held-online-belief-v8",
+    )
     second_masks, second_diagnostics, second_audit = (
         frame_zero_assets._common_voxel_mask_assignment(
             rgb_by_camera,
@@ -942,6 +1022,11 @@ def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
             reference_camera=reference_camera,
             config=FrameZeroAssetConfig(),
         )
+    )
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "HELD_PROTOCOL_ID",
+        "deform360-held-online-belief-v7",
     )
 
     assert first_audit["selected_reference_candidate_index"] == 7
@@ -953,6 +1038,31 @@ def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
     )
     assert first_audit["selected_common_voxel_support_count"] == 8
     assert first_audit["strict_consensus_vote_count"] == 8
+    assert isinstance(first_audit["exact_eight_subset_evaluations"], list)
+    bounded_subset_audit = second_audit["exact_eight_subset_evaluations"]
+    assert isinstance(bounded_subset_audit, dict)
+    assert (
+        bounded_subset_audit["canonical_json_array_sha256"]
+        == hashlib.sha256(
+            json.dumps(
+                first_audit["exact_eight_subset_evaluations"],
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+    )
+    first_without_representation = deepcopy(first_audit)
+    second_without_representation = deepcopy(second_audit)
+    first_without_representation.pop("exact_eight_subset_evaluations")
+    second_without_representation.pop("exact_eight_subset_evaluations")
+    first_without_representation.pop("artifact_sha256")
+    second_without_representation.pop("artifact_sha256")
+    assert first_without_representation == second_without_representation
+    assert (
+        sorted(bounded_subset_audit["selected_record"]["cameras"])
+        == (second_audit["selected_exact_eight_cameras"])
+    )
     assert len(first_masks) == 8
     assert reference_camera in first_masks
     assert outlier_camera not in first_masks
@@ -965,7 +1075,6 @@ def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
     assert outlier_diagnostic["eligible_candidate_count"] == 1
     assert outlier_diagnostic["geometry_inlier_selection"]["retained"] is False
     assert first_audit["grid"]["grid_shape"] == [64, 64, 64]
-    assert first_audit["artifact_sha256"] == second_audit["artifact_sha256"]
     assert first_diagnostics == second_diagnostics
     assert all(
         np.array_equal(first_masks[camera], second_masks[camera])
@@ -976,6 +1085,21 @@ def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
         tmp_path, first_masks, first_diagnostics, first_audit
     )
     assert validate_frame_zero_bundle_manifest(payload)["passed"] is True
+    bounded_payload = _manifest_with_common_fallback(
+        tmp_path / "bounded",
+        second_masks,
+        second_diagnostics,
+        second_audit,
+    )
+    assert (
+        validate_frame_zero_bundle_manifest(
+            bounded_payload,
+            require_bounded_subset_audit=True,
+        )["passed"]
+        is True
+    )
+    with pytest.raises(ValueError, match="common-voxel assignment audit"):
+        validate_frame_zero_bundle_manifest(bounded_payload)
 
     seed_tamper = deepcopy(payload)
     common_tamper = seed_tamper["geometry_fallback"]["common_assignment"]

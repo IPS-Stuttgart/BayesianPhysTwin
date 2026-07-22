@@ -40,7 +40,7 @@ EXPECTED = {
     "admission_artifact_sha256": "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80",
     "admission_file_sha256": "ba45b56d1e127099d7ef1a910d199cc0f6c9dd698b7f785828163bc28904e2fb",
     "failure_log_sha256": "e296021c5b647d5e26cbf8cecd2e3fc46ebed97026a2564224a54f0fcd156b1c",
-    "code_tree_sha256": "8b6bad43b88f7a5dd8f40df44f9ba851f76a5c4c22ff9de928aa67330cedf2a6",
+    "code_tree_sha256": "8b6bad43d33f4fd63257fc4c0a73965c07391b6a459623017fa022852829d906",
     "deployed_head": "90c5013e592a5808d73301e9451c896824a55974",
     "attempt1_pointer_file_sha256": "f7af6d1adf8541fd015cbe5336da97e013777c1bb711deaa01d9a84a49c81daa",
     "attempt1_report_file_sha256": "c04a6e7a95d958950ea7e7c05e7e2b98ee4516c01f03e9284f85ccccf0f6873b",

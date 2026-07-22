@@ -122,6 +122,10 @@ def test_prospective_bindings_include_named_deployment_contracts(
     fake_protocol = SimpleNamespace(
         FROZEN_FIELD_CONTRACT={"field": "frozen"},
         PRIMARY_METHOD={"method": "frozen"},
+        REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256="7" * 64,
+        frame_zero_assets=SimpleNamespace(
+            EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256="6" * 64
+        ),
         held_contract_sha256=lambda value: preparer.hashlib.sha256(
             preparer._canonical_bytes(value)
         ).hexdigest(),
@@ -141,6 +145,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
         preparer,
         "_LOCAL_BINDING_FILES",
         {"held_v8_lock_preparer_source": "scripts/held/prepare_deform360_v8_lock.py"},
+    )
+    monkeypatch.setattr(
+        preparer, "_validate_attempt2_operator_source_lineage", lambda _bindings: None
     )
     monkeypatch.setattr(preparer, "_validate_pinned_python", lambda: "9" * 64)
     monkeypatch.setattr(
@@ -162,4 +169,76 @@ def test_prospective_bindings_include_named_deployment_contracts(
     assert bindings["method_deployed_snapshot_tree"] == provenance["tree_sha256"]
     assert bindings["method_head_text_sha256"] == provenance["head_text_sha256"]
     assert "replacement_source_inventory_contract" in bindings
+    assert bindings["replacement_automatic_twin_admission_contract"] == "7" * 64
+    assert (
+        bindings["frame_zero_exact_eight_subset_bounded_audit_contract"]
+        == "6" * 64
+    )
     assert all(len(value) == 64 for value in bindings.values())
+
+
+def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
+    expected = preparer._EXPECTED_EXTERNAL_FILES
+    assert expected["v8_attempt2_preoutcome_withdrawal_pointer"] == (
+        preparer._V8_ATTEMPT2_WITHDRAWAL_POINTER,
+        "007d3fbde0dc93dc350661aafdd5d08d1398aa8d1f164e17bf295521fc40463a",
+        0o400,
+    )
+    assert expected["v8_attempt2_preoutcome_withdrawal_report"] == (
+        preparer._V8_ATTEMPT2_WITHDRAWAL_REPORT,
+        "5830f9bfe8d29d5a09f64afbcaeabadc3acb7c8fdf820c1aeb68a6601055a895",
+        0o400,
+    )
+    assert expected["v8_attempt2_withdrawal_integrity_completion"] == (
+        preparer._V8_ATTEMPT2_INTEGRITY_COMPLETION,
+        "21e7695af5f610193502ecb6e7e6c647d853bde34daa1c5f362e990dffdf56a7",
+        0o400,
+    )
+    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256 == {
+        "v8_attempt2_preoutcome_withdrawal_pointer": (
+            "9063011657b955902d1cf7d85a4253eee65caa430a41edae2709a18032baf99c"
+        ),
+        "v8_attempt2_preoutcome_withdrawal_report": (
+            "457c6a64c0208b91ee5eb0f8038d22ae7eda743e29fb60a4bcb4ef1a2861b147"
+        ),
+        "v8_attempt2_withdrawal_integrity_completion": (
+            "eb3a6c092a84dd95f516770d9837711a4f5b1eb58a28fee84c6df0bddb4999b0"
+        ),
+        "v8_attempt2_manifest_scale_diagnostic": (
+            "96f7edc666cda3cf84c6121623028c290b577ceec62cc104a41780b7bb6560ce"
+        ),
+        "v8_attempt2_admission_compatibility_diagnostic": (
+            "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
+        ),
+    }
+    assert preparer._LOCAL_BINDING_FILES["frame_zero_builder_source"] == (
+        "src/bayesian_phystwin/deform360_frame_zero_assets.py"
+    )
+    assert "held_v8_attempt2_withdrawal_operator_source" in (
+        preparer._LOCAL_BINDING_FILES
+    )
+    assert "held_v8_attempt2_withdrawal_integrity_completion_operator_source" in (
+        preparer._LOCAL_BINDING_FILES
+    )
+
+
+def test_attempt_two_completion_binds_the_exact_local_operator_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    completion = tmp_path / "completion.json"
+    completion.write_text(
+        '{"operator_source_bindings":{'
+        '"attempt2_integrity_completion_operator":{"sha256":"' + "b" * 64 + '"},'
+        '"attempt2_withdrawal_operator":{"sha256":"' + "a" * 64 + '"}}}\n',
+        encoding="utf-8",
+    )
+    os.chmod(completion, 0o400)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT2_INTEGRITY_COMPLETION", completion)
+    bindings = {
+        "held_v8_attempt2_withdrawal_operator_source": "a" * 64,
+        "held_v8_attempt2_withdrawal_integrity_completion_operator_source": "b" * 64,
+    }
+    preparer._validate_attempt2_operator_source_lineage(bindings)
+    bindings["held_v8_attempt2_withdrawal_operator_source"] = "c" * 64
+    with pytest.raises(ValueError, match="executed operator source"):
+        preparer._validate_attempt2_operator_source_lineage(bindings)

@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+import bayesian_phystwin.deform360_frame_zero_assets as frame_zero_assets
 import bayesian_phystwin.deform360_held_v8_protocol as protocol
 
 
@@ -130,6 +131,12 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         fresh_root_capability=fresh_root_capability,
         immutable_bindings={
             "frame_zero_default_config": protocol.held_contract_sha256(config),
+            "frame_zero_exact_eight_subset_bounded_audit_contract": (
+                frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256
+            ),
+            "replacement_automatic_twin_admission_contract": (
+                protocol.REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256
+            ),
             "test_operator_source": "a" * 64,
         },
         v7_withdrawal_report_path=withdrawal,
@@ -322,7 +329,17 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     assert lock["frozen_field_contract"]["length_scale_fraction"] == 0.05
     assert lock["frozen_field_contract"]["support_radius_fraction"] == 0.5
     assert lock["frozen_field_contract"]["frame_indices"] == list(range(76))
+    assert lock["execution_attempt"] == 3
     assert lock["freshness_and_reuse"]["v7_execution_artifacts_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt1_predictions_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt2_predictions_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt1_source_manifests_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt2_source_manifests_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt1_frozen_fields_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt2_frozen_fields_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt1_partial_artifacts_reused"] is False
+    assert lock["freshness_and_reuse"]["v8_attempt2_partial_artifacts_reused"] is False
+    assert lock["freshness_and_reuse"]["full_15_case_fresh_rerun_required"] is True
 
     source_permit = protocol.authorize_replacement_source_acquisition(lock_path)
     source_evidence = protocol.consume_replacement_source_acquisition_capability(

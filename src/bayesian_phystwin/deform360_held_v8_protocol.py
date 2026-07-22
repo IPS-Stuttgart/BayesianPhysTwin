@@ -88,6 +88,31 @@ OPEN27_DEVELOPMENT_DECISION_FILE_SHA256 = (
 RETIRED_V7_CASE_NAME = "002-rope-silk-ep0003"
 FRESH_REPLACEMENT_CASE_NAME = "072-cotton-clohesline-ep0003"
 
+# Object 072 is deliberately outside the five-object dense-v1 panel.  The
+# automatic-twin numerics remain those of that frozen panel, but admitting the
+# exact replacement calibration case is a new protocol decision and must not
+# be mislabeled as a dense-v1 authorization.
+REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT = {
+    "schema_version": 1,
+    "artifact_kind": "Deform360HeldV8ReplacementAutomaticTwinAdmissionContract",
+    "protocol_id": "deform360-held-v8-replacement-automatic-twin-admission-v1",
+    "held_protocol_id": PROTOCOL_ID,
+    "case_name": FRESH_REPLACEMENT_CASE_NAME,
+    "object_id": "072-cotton-clohesline",
+    "episode_id": 3,
+    "role": "calibration",
+    "phase": "calibration",
+    "source_admission_required": True,
+    "prediction_only_input_required": True,
+    "target_access": False,
+    "inherited_numerical_protocol_id": "deform360-dense-reusable-panel-v1",
+    "inherited_numerical_config_sha256": (
+        "1a78b8d74679ebf65768cc5078b34d034a2fcac55f7e0c0a00e50e1967a1c9bd"
+    ),
+    "numerical_method_changed": False,
+    "admission_scope": "exact-case-only",
+}
+
 FROZEN_FIELD_CONTRACT = {
     "operator_id": "gaussian-knn-normalized-v1",
     "field_semantics": "total-displacement-from-frame-zero-v1",
@@ -317,6 +342,11 @@ def held_artifact_sha256(value: Mapping[str, Any]) -> str:
 
 def held_contract_sha256(value: Mapping[str, Any]) -> str:
     return hashlib.sha256(_canonical_bytes(dict(value))).hexdigest()
+
+
+REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256 = held_contract_sha256(
+    REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT
+)
 
 
 def _valid_sha256(value: object) -> bool:
@@ -686,6 +716,16 @@ def create_calibration_protocol_lock(
             and all(key and _valid_sha256(value) for key, value in bindings.items()),
             "immutable bindings must be named SHA-256 values",
         )
+        _require(
+            bindings.get("replacement_automatic_twin_admission_contract")
+            == REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256,
+            "replacement automatic-twin admission contract is not locked",
+        )
+        _require(
+            bindings.get("frame_zero_exact_eight_subset_bounded_audit_contract")
+            == frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256,
+            "frame-zero bounded subset-audit contract is not locked",
+        )
         _require_mode(
             v7_withdrawal_report_path,
             _SEALED_FILE_MODE,
@@ -721,6 +761,7 @@ def create_calibration_protocol_lock(
             "schema_version": SCHEMA_VERSION,
             "artifact_kind": LOCK_KIND,
             "protocol_id": PROTOCOL_ID,
+            "execution_attempt": 3,
             "held_root": str(root),
             "cohort": _expected_confirmation_payload(),
             "case_whitelist": list(CONFIRMATION_CASE_NAMES),
@@ -751,6 +792,15 @@ def create_calibration_protocol_lock(
                 "v7_execution_artifacts_reused": False,
                 "v7_prediction_artifacts_reused": False,
                 "v7_target_or_query_artifacts_reused": False,
+                "v8_attempt1_predictions_reused": False,
+                "v8_attempt2_predictions_reused": False,
+                "v8_attempt1_source_manifests_reused": False,
+                "v8_attempt2_source_manifests_reused": False,
+                "v8_attempt1_frozen_fields_reused": False,
+                "v8_attempt2_frozen_fields_reused": False,
+                "v8_attempt1_partial_artifacts_reused": False,
+                "v8_attempt2_partial_artifacts_reused": False,
+                "full_15_case_fresh_rerun_required": True,
             },
             "information_boundary": {
                 "filesystem_case_discovery_permitted": False,
@@ -776,7 +826,8 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
     _require(
         artifact.get("schema_version") == SCHEMA_VERSION
         and artifact.get("artifact_kind") == LOCK_KIND
-        and artifact.get("protocol_id") == PROTOCOL_ID,
+        and artifact.get("protocol_id") == PROTOCOL_ID
+        and artifact.get("execution_attempt") == 3,
         "unsupported held-v8 lock",
     )
     root = _canonical_path(str(artifact.get("held_root")))
@@ -816,6 +867,16 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             for key, value in bindings.items()
         ),
         "held-v8 immutable bindings changed",
+    )
+    _require(
+        bindings.get("replacement_automatic_twin_admission_contract")
+        == REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256,
+        "replacement automatic-twin admission contract changed",
+    )
+    _require(
+        bindings.get("frame_zero_exact_eight_subset_bounded_audit_contract")
+        == frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256,
+        "frame-zero bounded subset-audit contract changed",
     )
     lineage = artifact.get("lineage")
     _require(
@@ -869,6 +930,15 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "v7_execution_artifacts_reused": False,
             "v7_prediction_artifacts_reused": False,
             "v7_target_or_query_artifacts_reused": False,
+            "v8_attempt1_predictions_reused": False,
+            "v8_attempt2_predictions_reused": False,
+            "v8_attempt1_source_manifests_reused": False,
+            "v8_attempt2_source_manifests_reused": False,
+            "v8_attempt1_frozen_fields_reused": False,
+            "v8_attempt2_frozen_fields_reused": False,
+            "v8_attempt1_partial_artifacts_reused": False,
+            "v8_attempt2_partial_artifacts_reused": False,
+            "full_15_case_fresh_rerun_required": True,
         },
         "held-v8 freshness or reuse contract changed",
     )
@@ -915,6 +985,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         )
         validate_calibration_gate_decision(decision_path, parent_path)
         for key in (
+            "execution_attempt",
             "held_root",
             "cohort",
             "case_whitelist",
@@ -1118,7 +1189,10 @@ def validate_frame_zero_bundle_manifest(
     legacy_view = deepcopy(manifest)
     legacy_view["protocol_id"] = _LEGACY_PROTOCOL_ID
     legacy_view["artifact_sha256"] = frame_zero_assets.artifact_sha256(legacy_view)
-    frame_zero_assets.validate_frame_zero_bundle_manifest(legacy_view)
+    frame_zero_assets.validate_frame_zero_bundle_manifest(
+        legacy_view,
+        require_bounded_subset_audit=True,
+    )
     return manifest
 
 
@@ -2066,6 +2140,8 @@ __all__ = [
     "PREFIX_AUTHORIZATION_KIND",
     "PRIMARY_METHOD",
     "PROTOCOL_ID",
+    "REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT",
+    "REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256",
     "RETIRED_V7_CASE_NAME",
     "REPLACEMENT_SOURCE_OPERATION",
     "TARGET_RECONSTRUCTION_OPERATION",

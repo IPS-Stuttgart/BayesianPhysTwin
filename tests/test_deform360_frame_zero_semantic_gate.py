@@ -338,6 +338,11 @@ def test_reference_optional_selector_abstains_reference_only_in_fourth_mode(
             config=FrameZeroAssetConfig(),
         )
 
+    monkeypatch.setattr(
+        frame_zero_assets,
+        "HELD_PROTOCOL_ID",
+        "deform360-held-online-belief-v8",
+    )
     masks, diagnostics, audit = frame_zero_assets._common_voxel_mask_assignment(
         rgb,
         proposals,
@@ -355,6 +360,12 @@ def test_reference_optional_selector_abstains_reference_only_in_fourth_mode(
     )
     assert audit["evaluated_exact_eight_subset_count"] == 9
     assert audit["selected_exact_eight_cameras"] == nonreference
+    bounded = audit["exact_eight_subset_evaluations"]
+    assert bounded["schema_id"] == (
+        frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_SCHEMA_ID
+    )
+    assert bounded["record_count"] == 9
+    assert bounded["selected_record"]["cameras"] == nonreference
     reference_diagnostic = next(
         record for record in diagnostics if record["camera"] == reference
     )

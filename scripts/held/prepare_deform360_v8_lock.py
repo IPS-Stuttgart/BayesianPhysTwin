@@ -43,6 +43,29 @@ _V8_ATTEMPT1_WITHDRAWAL_REPORT = (
     / "held-v8-attempt-1-withdrawn-preoutcome"
     / "execution-withdrawal-preoutcome.json"
 )
+_V8_ATTEMPT2_ARCHIVE = _HELD_BASE / "held-v8-attempt-2-withdrawn-preoutcome"
+_V8_ATTEMPT2_WITHDRAWAL_POINTER = (
+    _HELD_BASE / "held-v8-attempt-2-withdrawal-pointer.json"
+)
+_V8_ATTEMPT2_WITHDRAWAL_REPORT = (
+    _V8_ATTEMPT2_ARCHIVE / "execution-withdrawal-preoutcome-attempt2.json"
+)
+_V8_ATTEMPT2_INTEGRITY_COMPLETION = (
+    _HELD_BASE / "held-v8-attempt-2-withdrawal-integrity-completion.json"
+)
+_V8_ATTEMPT2_MANIFEST_SCALE_DIAGNOSTIC = (
+    _V8_ATTEMPT2_ARCHIVE / "prewithdrawal-072-manifest-scale-diagnostic.json"
+)
+_V8_ATTEMPT2_ADMISSION_DIAGNOSTIC = (
+    _V8_ATTEMPT2_ARCHIVE
+    / "prewithdrawal-072-admission-compatibility-diagnostic.json"
+)
+_V8_ATTEMPT2_FAILURE_LOG = (
+    _V8_ATTEMPT2_ARCHIVE
+    / "calibration"
+    / "logs"
+    / "072-cotton-clohesline-ep0003.physical.failed.log"
+)
 _OPEN27_DECISION = (
     _HELD_BASE
     / "runs"
@@ -104,6 +127,36 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
         "c04a6e7a95d958950ea7e7c05e7e2b98ee4516c01f03e9284f85ccccf0f6873b",
         0o400,
     ),
+    "v8_attempt2_preoutcome_withdrawal_pointer": (
+        _V8_ATTEMPT2_WITHDRAWAL_POINTER,
+        "007d3fbde0dc93dc350661aafdd5d08d1398aa8d1f164e17bf295521fc40463a",
+        0o400,
+    ),
+    "v8_attempt2_preoutcome_withdrawal_report": (
+        _V8_ATTEMPT2_WITHDRAWAL_REPORT,
+        "5830f9bfe8d29d5a09f64afbcaeabadc3acb7c8fdf820c1aeb68a6601055a895",
+        0o400,
+    ),
+    "v8_attempt2_withdrawal_integrity_completion": (
+        _V8_ATTEMPT2_INTEGRITY_COMPLETION,
+        "21e7695af5f610193502ecb6e7e6c647d853bde34daa1c5f362e990dffdf56a7",
+        0o400,
+    ),
+    "v8_attempt2_manifest_scale_diagnostic": (
+        _V8_ATTEMPT2_MANIFEST_SCALE_DIAGNOSTIC,
+        "3166d488258f1f62535c87813bbd895c9e4ba9855d43fa4393b8795f85c78973",
+        0o400,
+    ),
+    "v8_attempt2_admission_compatibility_diagnostic": (
+        _V8_ATTEMPT2_ADMISSION_DIAGNOSTIC,
+        "ba45b56d1e127099d7ef1a910d199cc0f6c9dd698b7f785828163bc28904e2fb",
+        0o400,
+    ),
+    "v8_attempt2_failure_log": (
+        _V8_ATTEMPT2_FAILURE_LOG,
+        "e296021c5b647d5e26cbf8cecd2e3fc46ebed97026a2564224a54f0fcd156b1c",
+        0o400,
+    ),
     "gsplat_runtime_supplement_manifest": (
         _GSPLAT_SUPPLEMENT,
         "87532ef68494442e2ab54885abbd760b7331ea8a83fa72110ea93589a60b1eee",
@@ -146,8 +199,32 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
     ),
 }
 
+_EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str] = {
+    "v8_attempt2_preoutcome_withdrawal_pointer": (
+        "9063011657b955902d1cf7d85a4253eee65caa430a41edae2709a18032baf99c"
+    ),
+    "v8_attempt2_preoutcome_withdrawal_report": (
+        "457c6a64c0208b91ee5eb0f8038d22ae7eda743e29fb60a4bcb4ef1a2861b147"
+    ),
+    "v8_attempt2_withdrawal_integrity_completion": (
+        "eb3a6c092a84dd95f516770d9837711a4f5b1eb58a28fee84c6df0bddb4999b0"
+    ),
+    "v8_attempt2_manifest_scale_diagnostic": (
+        "96f7edc666cda3cf84c6121623028c290b577ceec62cc104a41780b7bb6560ce"
+    ),
+    "v8_attempt2_admission_compatibility_diagnostic": (
+        "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
+    ),
+}
+
 _LOCAL_BINDING_FILES: Mapping[str, str] = {
     "held_v8_lock_preparer_source": "scripts/held/prepare_deform360_v8_lock.py",
+    "held_v8_attempt2_withdrawal_operator_source": (
+        "scripts/held/seal_deform360_v8_attempt2_withdrawal.py"
+    ),
+    "held_v8_attempt2_withdrawal_integrity_completion_operator_source": (
+        "scripts/held/seal_deform360_v8_attempt2_withdrawal_completion.py"
+    ),
     "held_v8_disclosure_sealer_source": (
         "scripts/held/seal_deform360_v8_post_withdrawal_disclosure.py"
     ),
@@ -204,6 +281,11 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
     ),
     "held_v8_frozen_query_field_source": (
         "src/bayesian_phystwin/deform360_frozen_query_field.py"
+    ),
+    # This intentionally overrides the inherited v7 identity: v8 keeps the
+    # exhaustive optimizer and changes only its audit serialization schema.
+    "frame_zero_builder_source": (
+        "src/bayesian_phystwin/deform360_frame_zero_assets.py"
     ),
     "held_official_reconstruction_numerical_source": (
         "src/bayesian_phystwin/deform360_held_outcome_reconstruction.py"
@@ -487,6 +569,30 @@ def _external_bindings() -> dict[str, str]:
         )
         _require(observed == expected_sha256, f"{name} SHA-256 changed")
         result[name] = observed
+        expected_artifact = _EXPECTED_EXTERNAL_ARTIFACT_SHA256.get(name)
+        if expected_artifact is not None:
+            _, payload, _ = _read_file(
+                path,
+                role=f"{name.replace('_', ' ')} artifact",
+                required_mode=required_mode,
+            )
+            try:
+                artifact = json.loads(payload.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as error:
+                raise ValueError(f"{name} is not canonical JSON") from error
+            _require(
+                isinstance(artifact, dict)
+                and artifact.get("artifact_sha256") == expected_artifact,
+                f"{name} artifact SHA-256 field changed",
+            )
+            unsigned = dict(artifact)
+            unsigned.pop("artifact_sha256")
+            _require(
+                hashlib.sha256(_canonical_bytes(unsigned)).hexdigest()
+                == expected_artifact,
+                f"{name} canonical artifact SHA-256 changed",
+            )
+            result[f"{name}_artifact"] = expected_artifact
     result["pinned_python_executable_target"] = _validate_pinned_python()
     return result
 
@@ -562,6 +668,37 @@ def _local_file_bindings(code: Path) -> dict[str, str]:
     return result
 
 
+def _validate_attempt2_operator_source_lineage(
+    local_bindings: Mapping[str, str],
+) -> None:
+    _, payload, _ = _read_file(
+        _V8_ATTEMPT2_INTEGRITY_COMPLETION,
+        role="attempt-2 withdrawal integrity completion",
+        required_mode=0o400,
+    )
+    try:
+        completion = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("attempt-2 integrity completion is not JSON") from error
+    records = completion.get("operator_source_bindings")
+    _require(isinstance(records, Mapping), "attempt-2 operator bindings are absent")
+    expected = {
+        "held_v8_attempt2_withdrawal_operator_source": (
+            "attempt2_withdrawal_operator"
+        ),
+        "held_v8_attempt2_withdrawal_integrity_completion_operator_source": (
+            "attempt2_integrity_completion_operator"
+        ),
+    }
+    for local_name, completion_name in expected.items():
+        record = records.get(completion_name)
+        _require(
+            isinstance(record, Mapping)
+            and record.get("sha256") == local_bindings.get(local_name),
+            f"{local_name} differs from the executed operator source",
+        )
+
+
 def _import_v8_modules(code: Path) -> tuple[Any, Any]:
     source_root = code / "src"
     sys.path.insert(0, str(source_root))
@@ -605,7 +742,9 @@ def prospective_bindings(
         _canonical_bytes(inherited)
     ).hexdigest()
     bindings.update(external)
-    bindings.update(_local_file_bindings(code))
+    local_bindings = _local_file_bindings(code)
+    _validate_attempt2_operator_source_lineage(local_bindings)
+    bindings.update(local_bindings)
     protocol, replacement = _import_v8_modules(code)
     processing_revision = _processing_revision()
     _require(
@@ -618,6 +757,12 @@ def prospective_bindings(
             "method_head_text_sha256": provenance["head_text_sha256"],
             "replacement_source_inventory_contract": protocol.held_contract_sha256(
                 replacement.REPLACEMENT_SOURCE_INVENTORY_CONTRACT
+            ),
+            "replacement_automatic_twin_admission_contract": (
+                protocol.REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256
+            ),
+            "frame_zero_exact_eight_subset_bounded_audit_contract": (
+                protocol.frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256
             ),
             "frozen_query_field_contract": protocol.held_contract_sha256(
                 protocol.FROZEN_FIELD_CONTRACT

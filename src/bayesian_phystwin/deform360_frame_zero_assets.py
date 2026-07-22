@@ -13,6 +13,7 @@ paths remain robot-independent.
 from __future__ import annotations
 
 from collections import deque
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 import hashlib
 import importlib
@@ -73,6 +74,7 @@ from .deform360_frame_zero_semantic_gate import (
 
 FRAME_ZERO_BUNDLE_SCHEMA_VERSION = 1
 HELD_PROTOCOL_ID = "deform360-held-online-belief-v7"
+_HELD_V8_PROTOCOL_ID = "deform360-held-online-belief-v8"
 HELD_LOCK_ARTIFACT_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_BUNDLE_ARTIFACT_KIND = "Deform360HeldFrameZeroBundle"
 FRAME_ZERO_CAMERA_SELECTION_POLICY_ID = (
@@ -144,6 +146,27 @@ _COMMON_INLIER_SELECTION_RULE = (
 )
 _REFERENCE_OPTIONAL_INLIER_SELECTION_RULE = (
     "reference-conditioned-candidates-exhaustive-reference-optional-exact8"
+)
+EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_SCHEMA_ID = (
+    "deform360-exhaustive-exact-eight-canonical-json-array-sha256-v1"
+)
+_EXACT_EIGHT_SUBSET_RECORD_FIELDS = (
+    "cameras",
+    "largest_exact_component_voxel_count",
+    "exact_common_voxel_count",
+    "exact_component_count",
+    "raw_component_coverage_sum",
+    "semantic_score_sum",
+    "exact_common_mask_sha256",
+)
+_EXACT_EIGHT_SUBSET_INTEGER_METRICS = (
+    "largest_exact_component_voxel_count",
+    "exact_common_voxel_count",
+    "exact_component_count",
+)
+_EXACT_EIGHT_SUBSET_FLOAT_METRICS = (
+    "raw_component_coverage_sum",
+    "semantic_score_sum",
 )
 
 HELD_TARGET_CASES_V1 = (
@@ -264,6 +287,297 @@ def artifact_sha256(payload: Mapping[str, Any]) -> str:
     canonical = dict(payload)
     canonical.pop("artifact_sha256", None)
     return hashlib.sha256(_canonical_bytes(canonical)).hexdigest()
+
+
+EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT: Mapping[str, Any] = {
+    "contract_id": EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_SCHEMA_ID,
+    "held_protocol_id": _HELD_V8_PROTOCOL_ID,
+    "enumeration_and_selection": (
+        "unchanged exhaustive itertools.combinations order and unchanged "
+        "five-term lexicographic winner"
+    ),
+    "record_fields": list(_EXACT_EIGHT_SUBSET_RECORD_FIELDS),
+    "canonical_stream": (
+        "sha256 of the compact sorted-key allow_nan=false JSON array of every "
+        "record in enumeration order"
+    ),
+    "retained_records": ["first_record", "last_record", "selected_record"],
+    "retained_summaries": ["record_count", "feasibility_counts", "metric_extrema"],
+    "sidecar": None,
+    "legacy_v7_representation": "full record list unchanged",
+}
+EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256 = hashlib.sha256(
+    _canonical_bytes(EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT)
+).hexdigest()
+
+
+class _ExactEightSubsetAuditAccumulator:
+    """Accumulate the exhaustive audit without retaining it under held v8.
+
+    The streaming digest is exactly the SHA-256 of the compact, sorted-key JSON
+    array that the legacy path materializes.  Thus a small fixture can compare
+    the two representations byte-for-byte while a large v8 run keeps only a
+    constant-size commitment and summary.
+    """
+
+    def __init__(self, *, bounded: bool) -> None:
+        self._records: list[dict[str, Any]] | None = [] if not bounded else None
+        self._digest = hashlib.sha256()
+        if bounded:
+            self._digest.update(b"[")
+        self._record_count = 0
+        self._first_record: dict[str, Any] | None = None
+        self._last_record: dict[str, Any] | None = None
+        self._positive_exact_common_count = 0
+        self._positive_largest_component_count = 0
+        self._minimum: dict[str, int | float] = {}
+        self._maximum: dict[str, int | float] = {}
+
+    @property
+    def record_count(self) -> int:
+        return self._record_count
+
+    def add(self, record: dict[str, Any]) -> None:
+        if self._records is not None:
+            self._records.append(record)
+        else:
+            if self._record_count:
+                self._digest.update(b",")
+            self._digest.update(_canonical_bytes(record))
+            if self._first_record is None:
+                self._first_record = deepcopy(record)
+            # Every enumeration iteration creates a new immutable audit record,
+            # so retaining only the current tail avoids millions of deep copies.
+            self._last_record = record
+            if int(record["exact_common_voxel_count"]) > 0:
+                self._positive_exact_common_count += 1
+            if int(record["largest_exact_component_voxel_count"]) > 0:
+                self._positive_largest_component_count += 1
+            for key in (
+                *_EXACT_EIGHT_SUBSET_INTEGER_METRICS,
+                *_EXACT_EIGHT_SUBSET_FLOAT_METRICS,
+            ):
+                value = record[key]
+                if key not in self._minimum:
+                    self._minimum[key] = value
+                    self._maximum[key] = value
+                else:
+                    self._minimum[key] = min(self._minimum[key], value)
+                    self._maximum[key] = max(self._maximum[key], value)
+        self._record_count += 1
+
+    def materialize(self, *, selected_record: Mapping[str, Any]) -> object:
+        if self._records is not None:
+            return self._records
+        _require_geometry(
+            self._record_count > 0
+            and self._first_record is not None
+            and self._last_record is not None,
+            "exact-eight subset audit is empty",
+        )
+        digest = self._digest.copy()
+        digest.update(b"]")
+        selected = {
+            key: deepcopy(selected_record[key])
+            for key in _EXACT_EIGHT_SUBSET_RECORD_FIELDS
+        }
+        return {
+            "schema_id": EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_SCHEMA_ID,
+            "contract_sha256": EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256,
+            "record_count": self._record_count,
+            "canonical_json_array_sha256": digest.hexdigest(),
+            "first_record": self._first_record,
+            "last_record": self._last_record,
+            "selected_record": selected,
+            "feasibility_counts": {
+                "positive_exact_common_voxel_record_count": (
+                    self._positive_exact_common_count
+                ),
+                "zero_exact_common_voxel_record_count": (
+                    self._record_count - self._positive_exact_common_count
+                ),
+                "positive_largest_exact_component_record_count": (
+                    self._positive_largest_component_count
+                ),
+                "zero_largest_exact_component_record_count": (
+                    self._record_count - self._positive_largest_component_count
+                ),
+            },
+            "metric_extrema": {
+                key: {
+                    "minimum": self._minimum[key],
+                    "maximum": self._maximum[key],
+                }
+                for key in (
+                    *_EXACT_EIGHT_SUBSET_INTEGER_METRICS,
+                    *_EXACT_EIGHT_SUBSET_FLOAT_METRICS,
+                )
+            },
+        }
+
+
+def _valid_exact_eight_subset_record(
+    record: object,
+    *,
+    candidate_cameras: Sequence[str],
+    fixed_first_camera: str | None,
+) -> bool:
+    if not isinstance(record, Mapping) or set(record) != set(
+        _EXACT_EIGHT_SUBSET_RECORD_FIELDS
+    ):
+        return False
+    cameras = record.get("cameras")
+    return bool(
+        isinstance(cameras, list)
+        and len(cameras) == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and len(set(cameras)) == _FALLBACK_STRICT_CONSENSUS_VOTES
+        and all(
+            isinstance(camera, str) and camera in candidate_cameras
+            for camera in cameras
+        )
+        and (fixed_first_camera is None or cameras[0] == fixed_first_camera)
+        and _valid_sha256(record.get("exact_common_mask_sha256"))
+        and all(
+            isinstance(record.get(key), int)
+            and not isinstance(record.get(key), bool)
+            and int(record[key]) >= 0
+            for key in _EXACT_EIGHT_SUBSET_INTEGER_METRICS
+        )
+        and all(
+            isinstance(record.get(key), (int, float))
+            and not isinstance(record.get(key), bool)
+            and math.isfinite(float(record[key]))
+            for key in _EXACT_EIGHT_SUBSET_FLOAT_METRICS
+        )
+    )
+
+
+def _validate_bounded_exact_eight_subset_audit(
+    value: object,
+    *,
+    expected_record_count: int,
+    expected_first_cameras: Sequence[str],
+    expected_last_cameras: Sequence[str],
+    selected_cameras: Sequence[str],
+    candidate_cameras: Sequence[str],
+    fixed_first_camera: str | None,
+) -> Mapping[str, Any]:
+    """Validate the constant-size v8 commitment to exhaustive enumeration."""
+
+    keys = {
+        "schema_id",
+        "contract_sha256",
+        "record_count",
+        "canonical_json_array_sha256",
+        "first_record",
+        "last_record",
+        "selected_record",
+        "feasibility_counts",
+        "metric_extrema",
+    }
+    _require(
+        isinstance(value, Mapping)
+        and set(value) == keys
+        and value.get("schema_id") == EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_SCHEMA_ID
+        and value.get("contract_sha256")
+        == EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256
+        and value.get("record_count") == expected_record_count > 0
+        and _valid_sha256(value.get("canonical_json_array_sha256")),
+        "invalid bounded exact-eight subset audit header",
+    )
+    first = value["first_record"]
+    last = value["last_record"]
+    selected = value["selected_record"]
+    _require(
+        all(
+            _valid_exact_eight_subset_record(
+                record,
+                candidate_cameras=candidate_cameras,
+                fixed_first_camera=fixed_first_camera,
+            )
+            for record in (first, last, selected)
+        )
+        and first["cameras"] == list(expected_first_cameras)
+        and last["cameras"] == list(expected_last_cameras)
+        and sorted(selected["cameras"]) == list(selected_cameras)
+        and (
+            expected_record_count != 1
+            or (
+                first == last == selected
+                and value["canonical_json_array_sha256"]
+                == hashlib.sha256(_canonical_bytes([first])).hexdigest()
+            )
+        ),
+        "invalid bounded exact-eight subset endpoint/selection audit",
+    )
+    feasibility = value["feasibility_counts"]
+    feasibility_keys = {
+        "positive_exact_common_voxel_record_count",
+        "zero_exact_common_voxel_record_count",
+        "positive_largest_exact_component_record_count",
+        "zero_largest_exact_component_record_count",
+    }
+    _require(
+        isinstance(feasibility, Mapping)
+        and set(feasibility) == feasibility_keys
+        and all(
+            isinstance(feasibility.get(key), int)
+            and not isinstance(feasibility.get(key), bool)
+            and 0 <= feasibility[key] <= expected_record_count
+            for key in feasibility_keys
+        )
+        and feasibility["positive_exact_common_voxel_record_count"]
+        + feasibility["zero_exact_common_voxel_record_count"]
+        == expected_record_count
+        and feasibility["positive_largest_exact_component_record_count"]
+        + feasibility["zero_largest_exact_component_record_count"]
+        == expected_record_count
+        and feasibility["positive_largest_exact_component_record_count"]
+        <= feasibility["positive_exact_common_voxel_record_count"],
+        "invalid bounded exact-eight subset feasibility summary",
+    )
+    extrema = value["metric_extrema"]
+    metric_keys = {
+        *_EXACT_EIGHT_SUBSET_INTEGER_METRICS,
+        *_EXACT_EIGHT_SUBSET_FLOAT_METRICS,
+    }
+    _require(
+        isinstance(extrema, Mapping) and set(extrema) == metric_keys,
+        "invalid bounded exact-eight subset extrema",
+    )
+    for key in metric_keys:
+        bounds = extrema[key]
+        integer_metric = key in _EXACT_EIGHT_SUBSET_INTEGER_METRICS
+        _require(
+            isinstance(bounds, Mapping)
+            and set(bounds) == {"minimum", "maximum"}
+            and all(
+                (isinstance(bound, int) and not isinstance(bound, bool) and bound >= 0)
+                if integer_metric
+                else (
+                    isinstance(bound, (int, float))
+                    and not isinstance(bound, bool)
+                    and math.isfinite(float(bound))
+                )
+                for bound in bounds.values()
+            )
+            and bounds["minimum"] <= bounds["maximum"]
+            and all(
+                bounds["minimum"] <= record[key] <= bounds["maximum"]
+                for record in (first, last, selected)
+            ),
+            "invalid bounded exact-eight subset metric extrema",
+        )
+    _require(
+        selected["largest_exact_component_voxel_count"]
+        == extrema["largest_exact_component_voxel_count"]["maximum"]
+        and (feasibility["positive_exact_common_voxel_record_count"] > 0)
+        is (extrema["exact_common_voxel_count"]["maximum"] > 0)
+        and (feasibility["positive_largest_exact_component_record_count"] > 0)
+        is (extrema["largest_exact_component_voxel_count"]["maximum"] > 0),
+        "bounded exact-eight subset winner/extrema changed",
+    )
+    return value
 
 
 def frame_zero_view_diagnostics_sha256(
@@ -1593,7 +1907,9 @@ def _common_voxel_mask_assignment(
         for camera in cameras
         if camera in selected_candidate_by_camera and camera != reference_camera
     )
-    subset_audit: list[dict[str, Any]] = []
+    subset_audit = _ExactEightSubsetAuditAccumulator(
+        bounded=HELD_PROTOCOL_ID == _HELD_V8_PROTOCOL_ID
+    )
     best_subset: dict[str, Any] | None = None
     best_subset_key: tuple[Any, ...] | None = None
     subset_candidates = (
@@ -1658,7 +1974,7 @@ def _common_voxel_mask_assignment(
             "semantic_score_sum": semantic_score_sum,
             "exact_common_mask_sha256": _sha256_array(exact_mask),
         }
-        subset_audit.append(subset_record)
+        subset_audit.add(subset_record)
         subset_key = (
             -exact_largest_count,
             -len(exact_ids),
@@ -1886,7 +2202,7 @@ def _common_voxel_mask_assignment(
             "candidate_index_asc",
         ],
         "camera_inlier_ranking": camera_inlier_records,
-        "evaluated_exact_eight_subset_count": len(subset_audit),
+        "evaluated_exact_eight_subset_count": subset_audit.record_count,
         "exact_eight_subset_objective_order": [
             "largest_exact_component_voxel_count_desc",
             "exact_common_voxel_count_desc",
@@ -1894,7 +2210,9 @@ def _common_voxel_mask_assignment(
             "semantic_score_sum_desc",
             "camera_tuple_asc",
         ],
-        "exact_eight_subset_evaluations": subset_audit,
+        "exact_eight_subset_evaluations": subset_audit.materialize(
+            selected_record=best_subset
+        ),
         "selected_exact_eight_cameras": list(selected_cameras),
         "selected_common_voxel_flat_index": selected_exact_seed_id,
         "selected_common_voxel_world_m": local_grid[selected_exact_seed_id].tolist(),
@@ -3690,6 +4008,7 @@ def _validate_reference_optional_assignment_audit(
     *,
     payload: Mapping[str, Any],
     semantic_proposals: Sequence[Mapping[str, Any]],
+    require_bounded_subset_audit: bool,
 ) -> None:
     """Validate exhaustive all-camera exact-eight selection and its cross-links."""
 
@@ -3897,26 +4216,68 @@ def _validate_reference_optional_assignment_audit(
         "reference-optional selected mask-set checksum changed",
     )
     subsets = assignment.get("exact_eight_subset_evaluations")
-    subset_keys = {
-        "cameras",
-        "largest_exact_component_voxel_count",
-        "exact_common_voxel_count",
-        "exact_component_count",
-        "raw_component_coverage_sum",
-        "semantic_score_sum",
-        "exact_common_mask_sha256",
-    }
     eligible_cameras = [str(record["camera"]) for record in eligible]
-    expected_subsets = [
-        list(combination)
-        for combination in itertools.combinations(
-            eligible_cameras, _FALLBACK_STRICT_CONSENSUS_VOTES
+    expected_subset_count = math.comb(
+        len(eligible_cameras), _FALLBACK_STRICT_CONSENSUS_VOTES
+    )
+    if require_bounded_subset_audit:
+        _require(
+            expected_subset_count > 0,
+            "reference-optional exhaustive subset audit is empty",
         )
-    ]
+        bounded_subsets = _validate_bounded_exact_eight_subset_audit(
+            subsets,
+            expected_record_count=expected_subset_count,
+            expected_first_cameras=(
+                eligible_cameras[:_FALLBACK_STRICT_CONSENSUS_VOTES]
+            ),
+            expected_last_cameras=(
+                eligible_cameras[-_FALLBACK_STRICT_CONSENSUS_VOTES:]
+            ),
+            selected_cameras=selected_cameras,
+            candidate_cameras=eligible_cameras,
+            fixed_first_camera=None,
+        )
+        winner = bounded_subsets["selected_record"]
+        valid_subsets = True
+    else:
+        expected_subsets = [
+            list(combination)
+            for combination in itertools.combinations(
+                eligible_cameras, _FALLBACK_STRICT_CONSENSUS_VOTES
+            )
+        ]
+        valid_subsets = bool(
+            isinstance(subsets, list)
+            and len(subsets) == len(expected_subsets)
+            and [record.get("cameras") for record in subsets] == expected_subsets
+            and all(
+                _valid_exact_eight_subset_record(
+                    record,
+                    candidate_cameras=eligible_cameras,
+                    fixed_first_camera=None,
+                )
+                for record in subsets
+            )
+        )
+        winner = (
+            min(
+                subsets,
+                key=lambda record: (
+                    -record["largest_exact_component_voxel_count"],
+                    -record["exact_common_voxel_count"],
+                    -record["raw_component_coverage_sum"],
+                    -record["semantic_score_sum"],
+                    tuple(record["cameras"]),
+                ),
+            )
+            if valid_subsets
+            else None
+        )
     _require(
-        isinstance(subsets, list)
-        and len(subsets) == len(expected_subsets)
-        and assignment.get("evaluated_exact_eight_subset_count") == len(subsets)
+        valid_subsets
+        and assignment.get("evaluated_exact_eight_subset_count")
+        == expected_subset_count
         and assignment.get("exact_eight_subset_objective_order")
         == [
             "largest_exact_component_voxel_count_desc",
@@ -3925,40 +4286,8 @@ def _validate_reference_optional_assignment_audit(
             "semantic_score_sum_desc",
             "camera_tuple_asc",
         ]
-        and [record.get("cameras") for record in subsets] == expected_subsets
-        and all(
-            isinstance(record, Mapping)
-            and set(record) == subset_keys
-            and _valid_sha256(record.get("exact_common_mask_sha256"))
-            and all(
-                isinstance(record.get(key), int)
-                and not isinstance(record.get(key), bool)
-                and record[key] >= 0
-                for key in (
-                    "largest_exact_component_voxel_count",
-                    "exact_common_voxel_count",
-                    "exact_component_count",
-                )
-            )
-            and all(
-                isinstance(record.get(key), (int, float))
-                and not isinstance(record.get(key), bool)
-                and math.isfinite(float(record[key]))
-                for key in ("raw_component_coverage_sum", "semantic_score_sum")
-            )
-            for record in subsets
-        ),
+        and winner is not None,
         "reference-optional exhaustive subset audit changed",
-    )
-    winner = min(
-        subsets,
-        key=lambda record: (
-            -record["largest_exact_component_voxel_count"],
-            -record["exact_common_voxel_count"],
-            -record["raw_component_coverage_sum"],
-            -record["semantic_score_sum"],
-            tuple(record["cameras"]),
-        ),
     )
     _require(
         winner["cameras"] == selected_cameras
@@ -3996,7 +4325,10 @@ def _validate_reference_optional_assignment_audit(
 
 
 def _validate_reference_optional_fallback_contract(
-    payload: Mapping[str, Any], fallback: Mapping[str, Any]
+    payload: Mapping[str, Any],
+    fallback: Mapping[str, Any],
+    *,
+    require_bounded_subset_audit: bool,
 ) -> None:
     keys = {
         "policy_id",
@@ -4179,6 +4511,7 @@ def _validate_reference_optional_fallback_contract(
         assignment,
         payload=payload,
         semantic_proposals=semantic_proposals,
+        require_bounded_subset_audit=require_bounded_subset_audit,
     )
     official = safeguard["official_urdf"]
     _require(
@@ -4362,13 +4695,21 @@ def _validate_reference_optional_fallback_contract(
     )
 
 
-def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
+def _validate_geometry_fallback_contract(
+    payload: Mapping[str, Any],
+    *,
+    require_bounded_subset_audit: bool,
+) -> None:
     fallback = payload.get("geometry_fallback")
     if fallback is None:
         return
     _require(isinstance(fallback, Mapping), "invalid geometry fallback record")
     if fallback.get("policy_id") == FRAME_ZERO_REFERENCE_OPTIONAL_FALLBACK_POLICY_ID:
-        _validate_reference_optional_fallback_contract(payload, fallback)
+        _validate_reference_optional_fallback_contract(
+            payload,
+            fallback,
+            require_bounded_subset_audit=require_bounded_subset_audit,
+        )
         return
     keys = {
         "policy_id",
@@ -5039,54 +5380,14 @@ def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
         if isinstance(common, Mapping)
         else None
     )
-    subset_keys = {
-        "cameras",
-        "largest_exact_component_voxel_count",
-        "exact_common_voxel_count",
-        "exact_component_count",
-        "raw_component_coverage_sum",
-        "semantic_score_sum",
-        "exact_common_mask_sha256",
-    }
-    valid_subsets = isinstance(subset_evaluations, list) and all(
-        isinstance(record, Mapping)
-        and set(record) == subset_keys
-        and isinstance(record.get("cameras"), list)
-        and len(record["cameras"]) == _FALLBACK_STRICT_CONSENSUS_VOTES
-        and record["cameras"][0] == reference_camera
-        and len(set(record["cameras"])) == _FALLBACK_STRICT_CONSENSUS_VOTES
-        and all(camera in candidate_cameras for camera in record["cameras"])
-        and _valid_sha256(record.get("exact_common_mask_sha256"))
-        and all(
-            isinstance(record.get(key), int)
-            and not isinstance(record.get(key), bool)
-            and int(record[key]) >= 0
-            for key in (
-                "largest_exact_component_voxel_count",
-                "exact_common_voxel_count",
-                "exact_component_count",
-            )
-        )
-        and all(
-            isinstance(record.get(key), (int, float))
-            and not isinstance(record.get(key), bool)
-            and math.isfinite(float(record[key]))
-            for key in ("raw_component_coverage_sum", "semantic_score_sum")
-        )
-        for record in (subset_evaluations or [])
-    )
+    chosen_nonreference_cameras = [
+        str(record["camera"]) for record in chosen_nonreference
+    ]
     expected_subset_count = (
         math.comb(len(chosen_nonreference), _FALLBACK_STRICT_CONSENSUS_VOTES - 1)
         if len(chosen_nonreference) >= _FALLBACK_STRICT_CONSENSUS_VOTES - 1
         else 0
     )
-    expected_subset_cameras = [
-        [reference_camera, *combination]
-        for combination in itertools.combinations(
-            [record["camera"] for record in chosen_nonreference],
-            _FALLBACK_STRICT_CONSENSUS_VOTES - 1,
-        )
-    ]
     subset_objective_order = [
         "largest_exact_component_voxel_count_desc",
         "exact_common_voxel_count_desc",
@@ -5094,27 +5395,72 @@ def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
         "semantic_score_sum_desc",
         "camera_tuple_asc",
     ]
+    if require_bounded_subset_audit:
+        _require(
+            expected_subset_count > 0,
+            "fixed-reference exhaustive subset audit is empty",
+        )
+        bounded_subsets = _validate_bounded_exact_eight_subset_audit(
+            subset_evaluations,
+            expected_record_count=expected_subset_count,
+            expected_first_cameras=[
+                reference_camera,
+                *chosen_nonreference_cameras[: _FALLBACK_STRICT_CONSENSUS_VOTES - 1],
+            ],
+            expected_last_cameras=[
+                reference_camera,
+                *chosen_nonreference_cameras[-(_FALLBACK_STRICT_CONSENSUS_VOTES - 1) :],
+            ],
+            selected_cameras=final_cameras,
+            candidate_cameras=candidate_cameras,
+            fixed_first_camera=reference_camera,
+        )
+        valid_subsets = True
+        observed_subset_count = int(bounded_subsets["record_count"])
+        selected_subset = bounded_subsets["selected_record"]
+    else:
+        expected_subset_cameras = [
+            [reference_camera, *combination]
+            for combination in itertools.combinations(
+                chosen_nonreference_cameras,
+                _FALLBACK_STRICT_CONSENSUS_VOTES - 1,
+            )
+        ]
+        valid_subsets = bool(
+            isinstance(subset_evaluations, list)
+            and all(
+                _valid_exact_eight_subset_record(
+                    record,
+                    candidate_cameras=candidate_cameras,
+                    fixed_first_camera=reference_camera,
+                )
+                for record in subset_evaluations
+            )
+            and [record["cameras"] for record in subset_evaluations]
+            == expected_subset_cameras
+            and len({tuple(record["cameras"]) for record in subset_evaluations})
+            == len(subset_evaluations)
+        )
+        observed_subset_count = (
+            len(subset_evaluations) if isinstance(subset_evaluations, list) else -1
+        )
+        selected_subset = (
+            min(
+                subset_evaluations,
+                key=lambda record: (
+                    -int(record["largest_exact_component_voxel_count"]),
+                    -int(record["exact_common_voxel_count"]),
+                    -float(record["raw_component_coverage_sum"]),
+                    -float(record["semantic_score_sum"]),
+                    tuple(record["cameras"]),
+                ),
+            )
+            if valid_subsets and subset_evaluations
+            else None
+        )
     valid_subsets = (
         valid_subsets
-        and [record["cameras"] for record in subset_evaluations]
-        == expected_subset_cameras
-        and len({tuple(record["cameras"]) for record in subset_evaluations})
-        == len(subset_evaluations)
         and common.get("exact_eight_subset_objective_order") == subset_objective_order
-    )
-    selected_subset = (
-        min(
-            subset_evaluations,
-            key=lambda record: (
-                -int(record["largest_exact_component_voxel_count"]),
-                -int(record["exact_common_voxel_count"]),
-                -float(record["raw_component_coverage_sum"]),
-                -float(record["semantic_score_sum"]),
-                tuple(record["cameras"]),
-            ),
-        )
-        if valid_subsets and subset_evaluations
-        else None
     )
     diagnostic_inliers = [
         record.get("geometry_inlier_selection")
@@ -5227,7 +5573,7 @@ def _validate_geometry_fallback_contract(payload: Mapping[str, Any]) -> None:
         and seed_evaluations[selected_seed_rank].get("local_grid_coarsened_for_cap")
         is False
         and valid_subsets
-        and len(subset_evaluations) == expected_subset_count
+        and observed_subset_count == expected_subset_count
         and common.get("evaluated_exact_eight_subset_count") == expected_subset_count
         and selected_subset is not None
         and sorted(selected_subset["cameras"])
@@ -5263,7 +5609,11 @@ def _validate_local_bound_file_record(
     return resolved
 
 
-def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str, Any]:
+def validate_frame_zero_bundle_manifest(
+    payload: Mapping[str, Any],
+    *,
+    require_bounded_subset_audit: bool = False,
+) -> dict[str, Any]:
     _require(
         payload.get("schema_version") == 1, "unsupported frame-zero manifest schema"
     )
@@ -5450,7 +5800,16 @@ def validate_frame_zero_bundle_manifest(payload: Mapping[str, Any]) -> dict[str,
             label=f"camera video {camera}",
         )
     _validate_camera_selection_contract(payload)
-    _validate_geometry_fallback_contract(payload)
+    _validate_geometry_fallback_contract(
+        payload,
+        require_bounded_subset_audit=(
+            require_bounded_subset_audit
+            or (
+                HELD_PROTOCOL_ID == _HELD_V8_PROTOCOL_ID
+                and payload.get("protocol_id") == _HELD_V8_PROTOCOL_ID
+            )
+        ),
+    )
     _require(
         payload.get("artifact_sha256") == artifact_sha256(payload),
         "frame-zero manifest checksum mismatch",
@@ -5917,6 +6276,9 @@ def run_frame_zero_asset_builder(
 __all__ = [
     "ABSOLUTELY_FORBIDDEN_OBJECT_PREFIXES",
     "APPROVED_CALIBRATION_SMOKE_CASE",
+    "EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT",
+    "EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256",
+    "EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_SCHEMA_ID",
     "FRAME_ZERO_CAMERA_SELECTION_POLICY_ID",
     "FRAME_ZERO_CAMERA_SELECTION_RULE",
     "FRAME_ZERO_INFORMATION_BOUNDARY",
