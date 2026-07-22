@@ -63,9 +63,19 @@ selected path and hash rather than silently correcting it.
 2. Verify finite checkpoints, recorded all-frame access, trajectory export, and
    official metric evaluation.
 3. Estimate the 22-case runtime from the measured epoch time.
-4. Run the full control only if the smoke is stable and computationally
-   reasonable.
-5. Aggregate official train/test metrics while labeling both intervals as
+4. Run two 200-epoch gate cases before spending the full sweep: the shorter
+   `double_lift_zebra` case and the longer `double_lift_cloth_1` case.
+5. Continue to the remaining 20 cases only when both gate artifacts pass every
+   provenance and finite-value check, their case-balanced test mean improves
+   on released PhysTwin in both official metrics, and neither case regresses
+   by more than 10% in either metric. The frozen released baselines are:
+
+   | Case | CD (m) | Track error (m) |
+   |---|---:|---:|
+   | `double_lift_zebra` | 0.0142304847 | 0.0258773045 |
+   | `double_lift_cloth_1` | 0.0132650528 | 0.0232141205 |
+
+6. Aggregate official train/test metrics while labeling both intervals as
    fitted reconstruction data.
 
 The aggregate report includes both a case-balanced mean and a frame-weighted
