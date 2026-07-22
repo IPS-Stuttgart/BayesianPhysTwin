@@ -1754,6 +1754,93 @@ def _strict_dataset_input(root: Path, value: str, *, label: str) -> tuple[Path, 
     return relative, resolved
 
 
+def _strict_materialized_seed_input(
+    root: Path,
+    value: str,
+    *,
+    label: str,
+) -> tuple[Path, Path, dict[str, Any]]:
+    """Resolve a seed, permitting only an exact materialized canonical alias."""
+    raw = Path(value)
+    if not raw.is_absolute():
+        relative, resolved = _strict_dataset_input(root, value, label=label)
+        return (
+            relative,
+            resolved,
+            {
+                "declared_path": value,
+                "canonical_absolute_alias_used": False,
+            },
+        )
+
+    declared = _absolute(raw)
+    try:
+        declared.relative_to(root)
+    except ValueError:
+        canonical_root = _assert_nonheld_path(
+            CANONICAL_PUBLIC_SOURCE_DATASET,
+            label="canonical public source dataset",
+            must_exist=True,
+        )
+        _require(
+            root != canonical_root,
+            f"{label} escapes the canonical dataset",
+        )
+        try:
+            relative = declared.relative_to(canonical_root)
+        except ValueError as error:
+            raise ValueError(f"{label} escapes the dataset") from error
+        canonical_relative, canonical_path = _strict_dataset_input(
+            canonical_root,
+            os.fspath(declared),
+            label=f"{label} canonical target",
+        )
+        _require(
+            canonical_relative == relative,
+            f"{label} canonical target changed",
+        )
+        materialized_relative, materialized_path = _strict_dataset_input(
+            root,
+            relative.as_posix(),
+            label=f"{label} materialized copy",
+        )
+        canonical_binding = _bound_file(
+            canonical_path,
+            label=f"{label} canonical target",
+        )
+        materialized_binding = _bound_file(
+            materialized_path,
+            label=f"{label} materialized copy",
+        )
+        _require(
+            all(
+                canonical_binding[key] == materialized_binding[key]
+                for key in ("size_bytes", "sha256")
+            ),
+            f"{label} materialized copy differs from canonical target",
+        )
+        return (
+            materialized_relative,
+            materialized_path,
+            {
+                "declared_path": os.fspath(declared),
+                "canonical_absolute_alias_used": True,
+                "canonical_target": canonical_binding,
+                "materialized_copy": materialized_binding,
+            },
+        )
+
+    relative, resolved = _strict_dataset_input(root, value, label=label)
+    return (
+        relative,
+        resolved,
+        {
+            "declared_path": os.fspath(declared),
+            "canonical_absolute_alias_used": False,
+        },
+    )
+
+
 def _normalized_transforms_descriptor(payload: bytes) -> dict[str, Any]:
     try:
         transforms = json.loads(payload.decode("utf-8"))
@@ -1788,7 +1875,7 @@ def _dataset_input_inventory(dataset: str | Path) -> dict[str, Any]:
     frames = transforms.get("frames")
     _require(isinstance(frames, list) and frames, "dataset frames are absent")
     references: list[tuple[str, Path, Path]] = []
-    seed_relative, seed_path = _strict_dataset_input(
+    seed_relative, seed_path, seed_reference = _strict_materialized_seed_input(
         root, seed_value, label="dataset seed PLY"
     )
     references.append(("seed_ply", seed_relative, seed_path))
@@ -1845,6 +1932,7 @@ def _dataset_input_inventory(dataset: str | Path) -> dict[str, Any]:
         "raw_transforms": _bound_file(transforms_path, label="raw dataset transforms"),
         "transforms_relative_path": transforms_relative.as_posix(),
         "seed_relative_path": seed_relative.as_posix(),
+        "seed_reference": seed_reference,
         "frame_count": len(frames),
         "regular_input_file_count": len(rows) + 1,
         "referenced_input_bindings": input_bindings,

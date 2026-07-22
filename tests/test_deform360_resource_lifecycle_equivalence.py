@@ -665,6 +665,48 @@ def test_signed_manifest_binds_source_files_gpu_and_matching_repeat_ids(
         equivalence._validate_manifest(invalid_canonical)
 
 
+def test_dataset_inventory_accepts_only_exact_materialized_canonical_seed_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    canonical = tmp_path / "canonical"
+    repeated = tmp_path / "repeated"
+    _write_dataset(canonical)
+    _write_dataset(repeated)
+    canonical_transforms = (canonical / "transforms.json").read_bytes()
+    (repeated / "transforms.json").write_bytes(canonical_transforms)
+    monkeypatch.setattr(
+        equivalence,
+        "CANONICAL_PUBLIC_SOURCE_DATASET",
+        canonical.resolve(),
+    )
+
+    canonical_inventory = equivalence._dataset_input_inventory(canonical)
+    repeated_inventory = equivalence._dataset_input_inventory(repeated)
+    assert repeated_inventory["seed_reference"]["canonical_absolute_alias_used"] is True
+    assert (
+        repeated_inventory["content_artifact_sha256"]
+        == canonical_inventory["content_artifact_sha256"]
+    )
+    assert (
+        repeated_inventory["seed_reference"]["canonical_target"]["sha256"]
+        == repeated_inventory["seed_reference"]["materialized_copy"]["sha256"]
+    )
+
+    repeated_seed = repeated / "seed.ply"
+    repeated_seed.write_bytes(b"different materialized seed")
+    with pytest.raises(ValueError, match="materialized copy differs"):
+        equivalence._dataset_input_inventory(repeated)
+    repeated_seed.write_bytes((canonical / "seed.ply").read_bytes())
+
+    outside_seed = tmp_path / "outside-seed.ply"
+    outside_seed.write_bytes((canonical / "seed.ply").read_bytes())
+    transforms = json.loads(canonical_transforms.decode("utf-8"))
+    transforms["ply_file_path"] = str(outside_seed.resolve())
+    (repeated / "transforms.json").write_text(json.dumps(transforms), encoding="utf-8")
+    with pytest.raises(ValueError, match="escapes the dataset"):
+        equivalence._dataset_input_inventory(repeated)
+
+
 def test_fit_evidence_rejects_wrong_generator_adapter_path(tmp_path: Path) -> None:
     ply = tmp_path / "fit.ply"
     ply.write_bytes(_ply_bytes(_structured_vertices()))
