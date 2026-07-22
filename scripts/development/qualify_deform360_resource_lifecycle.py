@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import hashlib
+import importlib
 import json
 import os
 from pathlib import Path
@@ -77,6 +78,7 @@ AB_ITERATIONS = 250
 SOAK_FIT_COUNT = 243
 SOAK_ITERATIONS = 1
 SOAK_TRAINER_REINITIALIZATION_INTERVAL = 81
+V8_PYCACHE_PREFIX = "/nonexistent/bpt-held-v8-pycache"
 FIRST_FIT_FD_GROWTH_LIMIT = 32
 STEADY_FD_GROWTH_LIMIT = 4
 STEADY_TASK_GROWTH_LIMIT = 4
@@ -845,6 +847,66 @@ def _import_trainers(
     )
 
 
+def _gsplat_smoke_artifact_sha256(value: Mapping[str, Any]) -> str:
+    unsigned = dict(value)
+    unsigned.pop("artifact_sha256", None)
+    return hashlib.sha256(
+        json.dumps(
+            unsigned,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _load_and_smoke_gsplat_runtime(code_root: Path) -> dict[str, Any]:
+    code_source = code_root / "src"
+    source_value = os.fspath(code_source)
+    if source_value not in sys.path:
+        sys.path.insert(0, source_value)
+    runtime = importlib.import_module(
+        "bayesian_phystwin.deform360_held_v8_gsplat_runtime"
+    )
+    expected = (
+        code_source / "bayesian_phystwin" / "deform360_held_v8_gsplat_runtime.py"
+    ).resolve(strict=True)
+    runtime_file = Path(runtime.__file__).resolve(strict=True)
+    _require(runtime_file == expected, "gsplat runtime smoke escaped the code root")
+    smoke_function = getattr(runtime, "load_and_smoke_gsplat_runtime", None)
+    _require(callable(smoke_function), "gsplat runtime smoke entry point is absent")
+    smoke = smoke_function()
+    _require(isinstance(smoke, Mapping), "gsplat runtime smoke evidence is not a map")
+    evidence = dict(smoke)
+    artifact_sha256 = evidence.get("artifact_sha256")
+    _require(
+        isinstance(artifact_sha256, str)
+        and len(artifact_sha256) == 64
+        and artifact_sha256 == _gsplat_smoke_artifact_sha256(evidence),
+        "gsplat runtime smoke evidence signature is invalid",
+    )
+    _require(
+        evidence.get("artifact_kind") == "Deform360HeldGsplatRuntimeSmokeV1",
+        "gsplat runtime smoke evidence kind changed",
+    )
+    _require(
+        evidence.get("extension_loaded_and_retained") is True,
+        "gsplat runtime supplement was not retained",
+    )
+    _require(
+        evidence.get("target_or_outcome_path_accessed") is False,
+        "gsplat runtime smoke crossed the information boundary",
+    )
+    return {
+        "adapter_source": _bound_file(
+            expected, label="held-v8 gsplat runtime adapter source"
+        ),
+        "evidence": evidence,
+        "evidence_artifact_sha256": artifact_sha256,
+    }
+
+
 def _child_fit(arguments: argparse.Namespace) -> int:
     result_path = _assert_nonheld_path(
         arguments.result, label="fit child result", must_exist=False
@@ -863,6 +925,7 @@ def _child_fit(arguments: argparse.Namespace) -> int:
             arguments.output_dir, label="fit output", must_exist=True
         )
         _require(arguments.variant in ("original", "wrapped"), "bad fit variant")
+        gsplat_runtime_smoke = _load_and_smoke_gsplat_runtime(code)
         runtime = _seed_runtime(arguments.seed)
         trainer_type, wrapper_type, writer, profiler = _import_trainers(code, deform360)
         delegate = trainer_type()
@@ -887,6 +950,7 @@ def _child_fit(arguments: argparse.Namespace) -> int:
                 after["rlimit_nofile_soft"] == before["rlimit_nofile_soft"]
                 and after["rlimit_nofile_hard"] == before["rlimit_nofile_hard"]
             ),
+            "gsplat_runtime_smoke_validated_and_retained": True,
         }
         passed = all(predicates.values())
         result = _signed(
@@ -901,6 +965,7 @@ def _child_fit(arguments: argparse.Namespace) -> int:
                     "seed": arguments.seed,
                 },
                 "runtime": runtime,
+                "gsplat_runtime_smoke": gsplat_runtime_smoke,
                 "dataset": os.fspath(dataset),
                 "output": _bound_file(produced, label="fit output Ply"),
                 "resource_boundary": {"before": before, "after": after},
@@ -1065,6 +1130,7 @@ def _child_soak(arguments: argparse.Namespace) -> int:
         output = _assert_nonheld_path(
             arguments.output_dir, label="soak output", must_exist=True
         )
+        gsplat_runtime_smoke = _load_and_smoke_gsplat_runtime(code)
         runtime = _seed_runtime(arguments.seed)
         trainer_type, wrapper_type, writer, profiler = _import_trainers(code, deform360)
         initial_globals = _global_state_snapshot(writer, profiler)
@@ -1154,6 +1220,7 @@ def _child_soak(arguments: argparse.Namespace) -> int:
                     ),
                 },
                 "runtime": runtime,
+                "gsplat_runtime_smoke": gsplat_runtime_smoke,
                 "dataset": os.fspath(dataset),
                 "initial_global_state": initial_globals.record(),
                 "fits": fits,
@@ -1293,12 +1360,24 @@ def _child_environment(cuda_device: int, temporary: Path) -> dict[str, str]:
         "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONHASHSEED": "0",
         "PYTHONNOUSERSITE": "1",
+        "PYTHONPYCACHEPREFIX": V8_PYCACHE_PREFIX,
         "PYTHONSAFEPATH": "1",
         "TMPDIR": os.fspath(temporary),
         "TRANSFORMERS_OFFLINE": "1",
         "USER": "florianpfaff",
         "WANDB_MODE": "disabled",
     }
+
+
+def _child_python_argv_prefix(python: Path, script: Path) -> list[str]:
+    return [
+        os.fspath(python),
+        "-I",
+        "-B",
+        "-X",
+        f"pycache_prefix={V8_PYCACHE_PREFIX}",
+        os.fspath(script),
+    ]
 
 
 def _invoke_child(
@@ -1546,10 +1625,7 @@ def _run(arguments: argparse.Namespace) -> int:
             datasets[f"ab_{variant}"] = _materialize_dataset(dataset, materialized)
             result_path = root / "fit-evidence.json"
             command = [
-                os.fspath(python),
-                "-I",
-                "-B",
-                os.fspath(script),
+                *_child_python_argv_prefix(python, script),
                 "_fit-child",
                 "--code-root",
                 os.fspath(code),
@@ -1623,10 +1699,7 @@ def _run(arguments: argparse.Namespace) -> int:
         datasets["soak"] = _materialize_dataset(dataset, materialized)
         result_path = root / "soak-evidence.json"
         command = [
-            os.fspath(python),
-            "-I",
-            "-B",
-            os.fspath(script),
+            *_child_python_argv_prefix(python, script),
             "_soak-child",
             "--code-root",
             os.fspath(code),

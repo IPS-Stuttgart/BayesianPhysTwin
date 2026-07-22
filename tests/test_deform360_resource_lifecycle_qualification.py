@@ -660,8 +660,60 @@ def test_child_environment_is_normalized_and_does_not_inherit_pythonpath(
     assert environment["CUDA_VISIBLE_DEVICES"] == "1"
     assert environment["CUBLAS_WORKSPACE_CONFIG"] == ":4096:8"
     assert environment["PYTHONNOUSERSITE"] == "1"
+    assert environment["PYTHONPYCACHEPREFIX"] == ("/nonexistent/bpt-held-v8-pycache")
     assert "PYTHONPATH" not in environment
     assert environment["TMPDIR"] == str(tmp_path)
+    assert qualification._child_python_argv_prefix(
+        Path("/runtime/bin/python"), Path("/code/qualify.py")
+    ) == [
+        "/runtime/bin/python",
+        "-I",
+        "-B",
+        "-X",
+        "pycache_prefix=/nonexistent/bpt-held-v8-pycache",
+        "/code/qualify.py",
+    ]
+
+
+def test_gsplat_smoke_loads_exact_adapter_and_validates_signed_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    code = tmp_path / "code"
+    adapter = code / "src/bayesian_phystwin/deform360_held_v8_gsplat_runtime.py"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text("# exact adapter\n", encoding="utf-8")
+    unsigned = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360HeldGsplatRuntimeSmokeV1",
+        "extension_loaded_and_retained": True,
+        "target_or_outcome_path_accessed": False,
+        "physical_gpu_index": 1,
+    }
+    smoke = {
+        **unsigned,
+        "artifact_sha256": qualification._gsplat_smoke_artifact_sha256(unsigned),
+    }
+    calls = 0
+
+    def load_and_smoke() -> dict[str, object]:
+        nonlocal calls
+        calls += 1
+        return smoke
+
+    runtime = SimpleNamespace(
+        __file__=str(adapter), load_and_smoke_gsplat_runtime=load_and_smoke
+    )
+    monkeypatch.setattr(qualification.importlib, "import_module", lambda _name: runtime)
+
+    binding = qualification._load_and_smoke_gsplat_runtime(code)
+
+    assert calls == 1
+    assert binding["adapter_source"]["path"] == str(adapter)
+    assert binding["evidence"] == smoke
+    assert binding["evidence_artifact_sha256"] == smoke["artifact_sha256"]
+    smoke["artifact_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="signature is invalid"):
+        qualification._load_and_smoke_gsplat_runtime(code)
 
 
 class _FakeDelegate:
@@ -723,6 +775,18 @@ def _fake_runtime_modules() -> tuple[SimpleNamespace, SimpleNamespace]:
     )
 
 
+def _fake_gsplat_smoke_binding() -> dict[str, object]:
+    return {
+        "adapter_source": {"path": "/code/adapter.py", "sha256": "a" * 64},
+        "evidence": {
+            "artifact_kind": "Deform360HeldGsplatRuntimeSmokeV1",
+            "artifact_sha256": "b" * 64,
+            "extension_loaded_and_retained": True,
+        },
+        "evidence_artifact_sha256": "b" * 64,
+    }
+
+
 @pytest.mark.parametrize(
     ("variant", "restored"), (("original", False), ("wrapped", True))
 )
@@ -739,16 +803,29 @@ def test_fit_child_treats_original_leak_as_observation_and_wrapped_as_gate(
     for path in (code, deform360, dataset, output):
         path.mkdir()
     writer, profiler = _fake_runtime_modules()
-    monkeypatch.setattr(
-        qualification,
-        "_import_trainers",
-        lambda *_args: (
+    smoke_calls: list[Path] = []
+    events: list[str] = []
+
+    def smoke_runtime(root: Path) -> dict[str, object]:
+        events.append("smoke")
+        smoke_calls.append(root)
+        return _fake_gsplat_smoke_binding()
+
+    def import_trainers(*_args: object) -> tuple[object, ...]:
+        events.append("trainers")
+        return (
             lambda: _FakeDelegate(writer, profiler),
             _FakeWrapper,
             writer,
             profiler,
-        ),
+        )
+
+    monkeypatch.setattr(
+        qualification,
+        "_load_and_smoke_gsplat_runtime",
+        smoke_runtime,
     )
+    monkeypatch.setattr(qualification, "_import_trainers", import_trainers)
     monkeypatch.setattr(qualification, "_seed_runtime", lambda _seed: {"seed": 0})
     monkeypatch.setattr(
         qualification,
@@ -776,6 +853,10 @@ def test_fit_child_treats_original_leak_as_observation_and_wrapped_as_gate(
     assert qualification._child_fit(arguments) == 0
     result = qualification._load_signed_json(result_path, label="fit result")
     assert result["passed"] is True
+    assert smoke_calls == [code]
+    assert events == ["smoke", "trainers"]
+    assert result["gsplat_runtime_smoke"] == _fake_gsplat_smoke_binding()
+    assert result["predicates"]["gsplat_runtime_smoke_validated_and_retained"] is True
     assert result["global_state"]["restored"] is restored
     assert result["predicates"]["wrapped_fit_requires_global_restoration"] is True
 
@@ -791,16 +872,29 @@ def test_soak_child_runs_repeated_fits_in_one_wrapped_process(
     for path in (code, deform360, dataset, output):
         path.mkdir()
     writer, profiler = _fake_runtime_modules()
-    monkeypatch.setattr(
-        qualification,
-        "_import_trainers",
-        lambda *_args: (
+    smoke_calls: list[Path] = []
+    events: list[str] = []
+
+    def smoke_runtime(root: Path) -> dict[str, object]:
+        events.append("smoke")
+        smoke_calls.append(root)
+        return _fake_gsplat_smoke_binding()
+
+    def import_trainers(*_args: object) -> tuple[object, ...]:
+        events.append("trainers")
+        return (
             lambda: _FakeDelegate(writer, profiler),
             _FakeWrapper,
             writer,
             profiler,
-        ),
+        )
+
+    monkeypatch.setattr(
+        qualification,
+        "_load_and_smoke_gsplat_runtime",
+        smoke_runtime,
     )
+    monkeypatch.setattr(qualification, "_import_trainers", import_trainers)
     monkeypatch.setattr(qualification, "_seed_runtime", lambda _seed: {"seed": 0})
     boundaries = iter(
         [
@@ -853,6 +947,9 @@ def test_soak_child_runs_repeated_fits_in_one_wrapped_process(
     assert qualification._child_soak(arguments) == 0
     result = qualification._load_signed_json(result_path, label="soak result")
     assert result["passed"] is True
+    assert smoke_calls == [code]
+    assert events == ["smoke", "trainers"]
+    assert result["gsplat_runtime_smoke"] == _fake_gsplat_smoke_binding()
     assert len(result["fits"]) == 3
     assert all(value["globals_restored"] for value in result["fits"])
     assert all(value["cleanup_completed"] for value in result["fits"])
@@ -872,6 +969,12 @@ def test_soak_cleanup_failure_is_signed_and_cannot_pass(
     for path in (code, deform360, dataset, output):
         path.mkdir()
     writer, profiler = _fake_runtime_modules()
+    smoke_calls: list[Path] = []
+    monkeypatch.setattr(
+        qualification,
+        "_load_and_smoke_gsplat_runtime",
+        lambda root: smoke_calls.append(root) or _fake_gsplat_smoke_binding(),
+    )
     monkeypatch.setattr(
         qualification,
         "_import_trainers",
@@ -920,6 +1023,7 @@ def test_soak_cleanup_failure_is_signed_and_cannot_pass(
     assert qualification._child_soak(arguments) == 2
     result = qualification._load_signed_json(result_path, label="failed soak")
     assert result["passed"] is False
+    assert smoke_calls == [code]
     assert result["error"]["type"] == "OSError"
     assert "injected cleanup failure" in result["error"]["message"]
     assert boundary_calls == 1
