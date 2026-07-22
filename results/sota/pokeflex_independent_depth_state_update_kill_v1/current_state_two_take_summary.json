@@ -1,0 +1,108 @@
+{
+  "artifact_kind": "PokeFlexIndependentDepthCurrentStateEvaluation",
+  "claim_status": "post-open source-only mechanism diagnostic",
+  "competence": {
+    "acceptance_rate": 0.3184865900383142,
+    "candidate_frame_pair_count": 2088,
+    "false_safe_rate_among_accepted": 0.14135338345864662,
+    "pearson": 0.5780389674754834,
+    "sign_agreement": 0.6091954022988506,
+    "spearman": 0.34358517650735737
+  },
+  "object_balanced_selector": {
+    "baseline_mean_CD_UL1_mm": 4.07630962254751,
+    "object_losses": 1,
+    "object_ties": 0,
+    "object_wins": 1,
+    "relative_improvement": -0.009624310847893955,
+    "selected_mean_CD_UL1_mm": 4.115541293467168
+  },
+  "object_count": 2,
+  "objects": [
+    {
+      "baseline_mean_CD_UL1_mm": 3.1748560186642956,
+      "object": "3dPrintedHeart",
+      "relative_improvement": -0.07820305928050075,
+      "selected_mean_CD_UL1_mm": 3.423139472098954,
+      "take_count": 1
+    },
+    {
+      "baseline_mean_CD_UL1_mm": 4.977763226430724,
+      "object": "FoamDice",
+      "relative_improvement": 0.034115747147963484,
+      "selected_mean_CD_UL1_mm": 4.807943114835383,
+      "take_count": 1
+    }
+  ],
+  "schema_version": 1,
+  "sources": [
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T1_current_state_v1.json",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T1_current_state_v1.json"
+  ],
+  "take_count": 2,
+  "takes": [
+    {
+      "competence": {
+        "acceptance_rate": 0.48063973063973064,
+        "candidate_frame_pair_count": 1188,
+        "false_safe_rate_among_accepted": 0.06830122591943957,
+        "pearson": 0.4400835539694541,
+        "sign_agreement": 0.6127946127946128,
+        "spearman": 0.16365529049403849
+      },
+      "object": "FoamDice",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 4.977763226430724,
+        "fallback_ties": 31,
+        "losses": 6,
+        "relative_improvement": 0.034115747147963484,
+        "selected_mean_CD_UL1_mm": 4.807943114835383,
+        "target_frame_count": 99,
+        "wins": 62
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          2.3912819735701345,
+          2.199162067468259
+        ],
+        "eligible_sensor_indices": [
+          0,
+          1
+        ]
+      },
+      "take": "T1",
+      "take_id": "FoamDice_T1"
+    },
+    {
+      "competence": {
+        "acceptance_rate": 0.10444444444444445,
+        "candidate_frame_pair_count": 900,
+        "false_safe_rate_among_accepted": 0.5851063829787234,
+        "pearson": 0.5289271253392447,
+        "sign_agreement": 0.6044444444444445,
+        "spearman": 0.2955499355940113
+      },
+      "object": "3dPrintedHeart",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 3.1748560186642956,
+        "fallback_ties": 63,
+        "losses": 12,
+        "relative_improvement": -0.07820305928050075,
+        "selected_mean_CD_UL1_mm": 3.423139472098954,
+        "target_frame_count": 75,
+        "wins": 0
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          9.185293394975742,
+          10.378488999280647
+        ],
+        "eligible_sensor_indices": [
+          0
+        ]
+      },
+      "take": "T1",
+      "take_id": "3dPrintedHeart_T1"
+    }
+  ]
+}

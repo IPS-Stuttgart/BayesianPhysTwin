@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexIndependentDepthRegretGuardProspectiveProtocol",
+  "protocol_id": "pokeflex-independent-depth-regret-guard-prospective-v1",
+  "locked_at_utc": "2026-07-22T07:36:15Z",
+  "status": "locked after source-only leave-one-object-out development and before reading any T7/T8 archive member or outcome",
+  "claim_boundary": "This is a prospective same-object/new-take replication on three available development archives. It is not independent-object confirmation, a PokeFlex target result, or a state-of-the-art claim.",
+  "parent_method": {
+    "protocol_id": "pokeflex-independent-depth-source-validation-v2",
+    "protocol_sha256": "04ecf64f4b15e543825732b4f9296119ebd5fe47d99dcfc8230cfb70f0c86051",
+    "candidate_runner_sha256": "7927deb862dac8783b5415197ff65854ec3c0235a01db88689997c9b97f22e25"
+  },
+  "source_evidence": {
+    "result_path": "results/sota/pokeflex_independent_depth_regret_guard_source_v1/source_cross_object_evaluation.json",
+    "result_sha256": "6065d1178796eba949b0411fbd57b53184e39d38f6559357c740d63b8b47398b",
+    "source_objects": [
+      "FoamDice",
+      "MemoryFoam",
+      "PlushOctopus",
+      "3dPrintedHeart",
+      "ToiletPaperRoll"
+    ],
+    "source_takes": ["T1", "T3", "T4", "T5", "T6"],
+    "cross_object_gate_passed": true,
+    "object_balanced_relative_improvement": 0.01601047561640224,
+    "object_wins": 4,
+    "object_ties": 1,
+    "false_safe_rate": 0.08050847457627118
+  },
+  "prospective_cohort": {
+    "take_ids": [
+      "FoamDice_T7",
+      "FoamDice_T8",
+      "PlushOctopus_T7"
+    ],
+    "archive_existence_and_size_checked_before_lock": true,
+    "archive_members_or_outcomes_read_before_lock": false,
+    "replacement_allowed": false,
+    "unavailable_development_takes_are_not_replaced": true,
+    "calibration_objects_remain_sealed": true,
+    "target_objects_remain_sealed": true
+  },
+  "causal_input_contract": {
+    "target_frame": "f",
+    "kinect_history": "f-5 through f-1 only",
+    "realsense_evidence_frame": "f-1",
+    "robot_history": "through f-1 only",
+    "frame_f_kinect_or_realsense_allowed_before_prediction": false,
+    "frame_f_mesh_allowed_before_scoring": false,
+    "template_mesh_allowed_for_static_sensor_calibration": true,
+    "target_mesh_role": "scoring only after the candidate bank and frozen selection rule are fixed"
+  },
+  "method_lock": {
+    "feature_names": [
+      "d405_upper_regret_mm",
+      "d405_mean_regret_mm",
+      "d405_sensor_disagreement_mm",
+      "candidate_scale",
+      "candidate_radius_fraction",
+      "kinect_update_rms_mm",
+      "log1p_correction_to_prior_motion_ratio",
+      "prior_motion_rms_mm",
+      "correction_prior_motion_cosine",
+      "previous_correction_cosine",
+      "force_y_over_50n",
+      "force_y_delta_over_20n",
+      "median_robust_weight",
+      "downweighted_fraction",
+      "assignment_std_mm",
+      "maximum_d405_calibration_residual_over_10mm"
+    ],
+    "candidate_nominal_coverage": 0.9,
+    "candidate_within_take_coverage": 0.8,
+    "selector_nominal_coverage": 0.9,
+    "selector_within_take_coverage": 0.8,
+    "ridge_penalty": 10.0,
+    "support_margin_std": 0.25,
+    "minimum_improvement_mm": 0.0,
+    "candidate_selection": "minimum in-support source-calibrated candidate regret UCB",
+    "selector_correction": "add the frozen selector-aware source group regret bound before acceptance",
+    "acceptance": "selector-adjusted upper regret must be strictly below zero",
+    "exact_fallback": "released Kinect checkpoint vertices byte-for-byte",
+    "no_refit_on_prospective_takes": true
+  },
+  "evaluation": {
+    "aggregation": "equal frames within take, equal takes within object, equal objects",
+    "metric": "unidirectional L1 Chamfer in mm",
+    "surface_points": 10000,
+    "sampling_seed": 20260720,
+    "minimum_object_balanced_relative_improvement": 0.01,
+    "minimum_object_wins": 2,
+    "maximum_object_regression": 0.0,
+    "report_frame_wins_losses_and_exact_fallbacks": true,
+    "all_required_for_replication_success": true
+  },
+  "code_lock": {
+    "regret_guard_module_sha256": "485091f5b310eac330dc3f20fb0853ed831b06aafae01c0b2bb42eaf0fcef840",
+    "source_evaluator_sha256": "567241adc83681f0a3df7f046d1c30755ad67d1e1f6f921fae6ca6534d7bd11e",
+    "prospective_runner_sha256": "4942760e7ddca8a4bf1dff0efa543588fd50fd65289d1ba51f1eeddec1326b11",
+    "prospective_evaluator_sha256": "97e781c176cc428f4a043762688867e93cf5b12d34ecd2a48fa9c3a10d9336a1"
+  },
+  "forbidden": [
+    "reading any T7/T8 archive member before this protocol is committed and pushed",
+    "changing features, source certificate, selector correction, candidate bank, or scoring after opening an outcome",
+    "using frame-f Kinect or D405 data to select a prediction for frame f",
+    "using target error as a feature or reliability cue",
+    "replacing an unavailable, failed, or unfavorable take",
+    "opening T2, calibration objects, or target objects",
+    "calling this same-object replication independent-object confirmation or state of the art"
+  ],
+  "protocol_sha256": "be2bbf6f2e1ac1ce0a536bd02a09633d5607677fe3f7ce8d51cfd8e7d533c447"
+}

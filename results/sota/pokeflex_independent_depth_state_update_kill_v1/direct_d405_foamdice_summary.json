@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexDirectD405StateDiagnosticSummary",
+  "claim_status": "post-open source-only mechanism diagnostic",
+  "take_id": "FoamDice_T1",
+  "protocol_sha256": "04ecf64f4b15e543825732b4f9296119ebd5fe47d99dcfc8230cfb70f0c86051",
+  "raw_artifact": {
+    "path": "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T1_direct_d405_state_v1.json",
+    "sha256": "0c8727a88cf44a0c3b7238d47af9c937b7598e4bcc8cdfc60988367898d37dbe"
+  },
+  "method": {
+    "candidate_count": 1,
+    "correction_scale": 1.0,
+    "action_support_required": true,
+    "both_calibration_qualified_d405s_required": true,
+    "both_source_fit_regrets_must_be_negative": true,
+    "per_sensor_bias_variance_m2": 0.0001,
+    "observation_variance_m2": 0.000016,
+    "exact_fallback": "released Kinect checkpoint vertices byte-for-byte"
+  },
+  "result": {
+    "released_checkpoint_mean_CD_UL1_mm": 4.977763226430724,
+    "direct_d405_state_mean_CD_UL1_mm": 5.234352896734745,
+    "relative_improvement": -0.05154718266662241,
+    "accepted_target_count": 92,
+    "wins": 24,
+    "losses": 68,
+    "fallback_ties": 7
+  },
+  "decision": "stop the direct D405 graph-state branch without a scale sweep"
+}
