@@ -94,3 +94,27 @@ The adapter installs no outcome loader and authorizes only target-free
 prediction construction for the three fresh calibration objects. Each stage
 is launched through `run_deform360_bias_aware_v2_stage.py` from a clean Git
 checkout; process exit restores the original v1 bindings.
+
+## Exact camera-search acceleration
+
+The first fresh prediction attempt exposed a target-free runtime problem before
+any final prediction or outcome was opened: the frozen selector enumerates every
+8-camera subset, which means 10,518,300 subsets for 32 cameras and 30,260,340
+subsets for 36 cameras. The attempt completed and sealed the fishing-line
+measurement and uncertainty intermediates, but was stopped during cycle replay;
+no candidate prediction was produced.
+
+The replacement changes only how the same lexicographic camera objective is
+searched. A checksum-addressed native depth-first solver returns the exact optimum
+and preserves the exhaustive selector's first-in-order tie rule. Before reuse, it
+must:
+
+- match the frozen selector on randomized and tied synthetic inputs;
+- reproduce the selected cameras, centers, and score already sealed by the
+  original fishing-line measurement;
+- run behind a new target-free execution lock committed before restart;
+- leave the observation model, tracker, candidate, thresholds, and cohort intact.
+
+The interrupted intermediates are retained as an aborted execution record and are
+not mixed with the restarted prediction cohort. This is an execution-equivalence
+amendment, not a method or gate change.
