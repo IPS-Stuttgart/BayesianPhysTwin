@@ -1,0 +1,104 @@
+{
+  "claim_boundary": "offline per-case reconstruction control only; future observations and released test outcomes are used during fitting; not causal future prediction",
+  "contract": "matphys-offline-all-frame-reconstruction-gate-v1",
+  "decision": "continue_full_22",
+  "future_observations_used": true,
+  "inputs": {
+    "double_lift_cloth_1": {
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/training/best_checkpoint.pth",
+        "sha256": "a3bd7c6da717756d77decf20097298124a13a9241250c58e9180414fb25ef04e",
+        "size_bytes": 350651831
+      },
+      "metrics": {
+        "chamfer_distance_m": 0.006545563827512411,
+        "track_error_m": 0.011943278595144944
+      },
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/export/transductive_reconstruction_result.json",
+        "sha256": "2a5eab99eaf2e28ab67b1e0b26ae95d3db3d68f5f5f6febefbe3cc77429781a9"
+      },
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/training/transductive_training_audit.json",
+        "sha256": "769461767b162fc62a2194301b128682f2a594272f530d42aafb063137da6e81",
+        "size_bytes": 14701
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/export/trajectory.pkl",
+        "sha256": "1ea0239e1b6a034de7e8d5b72c98e44db474bf506dad171ec4e54601ce44c359",
+        "size_bytes": 6601005
+      }
+    },
+    "double_lift_zebra": {
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/training/best_checkpoint.pth",
+        "sha256": "eb1b31e15fc9017c5232a4514102cf19c5bf9ec00b9eca41b93334458ea9a451",
+        "size_bytes": 350651831
+      },
+      "metrics": {
+        "chamfer_distance_m": 0.009215024296809503,
+        "track_error_m": 0.016789931980255766
+      },
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/export/transductive_reconstruction_result.json",
+        "sha256": "6a4b2b4eb803ebe9fbfb6a098d72091465df8b32c875c42a37292025c8da44a4"
+      },
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/training/transductive_training_audit.json",
+        "sha256": "3465387e61ea1fbf08d7c957a1768ab0ff16046a379ba1c24a326fcc5477eb26",
+        "size_bytes": 14624
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/export/trajectory.pkl",
+        "sha256": "5ae3d07434610b8fc36b1b2fbd57b8747a6587c45b464cd26eda474d4a28f235",
+        "size_bytes": 3206613
+      }
+    }
+  },
+  "max_regression_fraction": 0.1,
+  "mean_checks": {
+    "chamfer_distance_m": {
+      "candidate_case_balanced_mean_m": 0.007880294062160956,
+      "improves": true,
+      "released_case_balanced_mean_m": 0.01374776875
+    },
+    "track_error_m": {
+      "candidate_case_balanced_mean_m": 0.014366605287700354,
+      "improves": true,
+      "released_case_balanced_mean_m": 0.0245457125
+    }
+  },
+  "passed": true,
+  "per_case_checks": {
+    "double_lift_cloth_1": {
+      "chamfer_distance_m": {
+        "candidate_m": 0.006545563827512411,
+        "relative_change": -0.5065557652727616,
+        "released_m": 0.0132650528,
+        "within_regression_cap": true
+      },
+      "track_error_m": {
+        "candidate_m": 0.011943278595144944,
+        "relative_change": -0.48551664513221837,
+        "released_m": 0.0232141205,
+        "within_regression_cap": true
+      }
+    },
+    "double_lift_zebra": {
+      "chamfer_distance_m": {
+        "candidate_m": 0.009215024296809503,
+        "relative_change": -0.3524448048625145,
+        "released_m": 0.0142304847,
+        "within_regression_cap": true
+      },
+      "track_error_m": {
+        "candidate_m": 0.016789931980255766,
+        "relative_change": -0.35117152637533144,
+        "released_m": 0.0258773045,
+        "within_regression_cap": true
+      }
+    }
+  },
+  "released_test_outcomes_used_in_objective": true,
+  "schema_version": 1
+}
