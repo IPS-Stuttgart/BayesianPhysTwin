@@ -1,0 +1,36 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveV2ExecutionLock",
+  "schema_version": 1,
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "adapter_lock_commit": "a9eee50370a77cf42c58b9f46e277a4cca26af3c",
+  "locked_after_support_pass_and_before_calibration_future_read": true,
+  "files_sha256": {
+    "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01",
+    "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json": "57b4a8c7c9715e722d758ac145d26f543a2123cc65cdb8890de20b457a9d3755",
+    "scripts/remote/build_deform360_bias_aware_authorized_outcome.py": "dde40607c4006cba8e21bc0b85ac11b06f4278863eb83a3023e3761584a1ec87",
+    "scripts/remote/fit_deform360_bias_aware_v2_calibration_gate.py": "0066b299e94fc45307ec70d2d4e7ab64e38b6fd43ab2eb46375b49220f97b199",
+    "scripts/remote/run_deform360_bias_aware_v2_calibration_stage.py": "374e22de824c5fbe3d8e3e53b801232669b53d46a2cc62c89d5b17b04f3b7f29",
+    "scripts/remote/stage_deform360_bias_aware_authorized_future.py": "e5c09b1594fe45e2dc764d03cddae715c2c64149cffba002d1d5881cd0ce0480",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_artifacts.py": "15ff825257780c13ad0bbb218b894a5b50086be19e3f0914440cc609afef2941",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_evaluation.py": "d658e52845eb60b38de3a75cc972f00fd41f41ee9002bda3bd970445222ffe8a",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_protocol.py": "096e645e498c1a5595555f4f3db84c32916a59470fb451532cfc4e6bdc4f77b0",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_calibration.py": "e64904368b238be6aa48baab23b14bf26e73515890e20a45e53a8c5cae71d68a",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_protocol.py": "bd089b8e7b368c4124ef377b9645daa0338dbf094c610b90c674e00d3bba98fb",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_runtime.py": "3590e5691db0eb868b7bd66b0ce20a6f701ea9aa3fb0d0a03c70ed1a92380cb2",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_support.py": "81561cabc844f377259ee3a296e42b6109d1341a4d9ebecf4cefc3b2f501ca53"
+  },
+  "information_boundary": {
+    "authorized_roles": [
+      "automatic-twin-calibration-outcomes"
+    ],
+    "outcome_loader_installed": true,
+    "calibration_future_access_authorized": true,
+    "target_access_authorized": false,
+    "support_gate_must_validate_before_each_stage": true,
+    "inherited_v1_artifacts_remain_v1": true,
+    "fresh_artifacts_remain_v2": true
+  },
+  "claim_boundary": "Calibration-only outcome execution after the target-free v2 support gate passed. It cannot authorize any reserved target and changes no estimator, threshold, observation model, or source regret score.",
+  "config_sha256": "aae3cd1f7f5456c115751e3e0b32aff5a3c53a3b9665b66681262e520b89f42c"
+}
