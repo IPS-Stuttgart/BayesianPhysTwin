@@ -916,6 +916,10 @@ def test_python_flags_environment_and_import_paths_are_fail_closed(
         ]
         == "1"
     )
+    assert environment["CUDA_MODULE_LOADING"] == "LAZY"
+    eager_environment = {**environment, "CUDA_MODULE_LOADING": "EAGER"}
+    with pytest.raises(ValueError, match="CUDA_MODULE_LOADING"):
+        equivalence._validate_execution_environment(1, eager_environment)
     with pytest.raises(ValueError, match="manifest physical GPU"):
         equivalence._validate_execution_environment(0, environment)
     with pytest.raises(ValueError, match="forbidden"):
