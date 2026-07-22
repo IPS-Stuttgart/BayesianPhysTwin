@@ -1,0 +1,42 @@
+{
+  "artifact_kind": "Deform360CrossViewGuardPostOpenResultIndex",
+  "claim_boundary": "Post-open mechanism evidence on exhausted source and calibration cases; not prospective confirmation.",
+  "code_commits": {
+    "direct_2d_crossview": "a1c39f2f0ac77144860633cc2f15fa2217900433",
+    "split_triangulation": "1a55ec8dabddc038433f6424a5b5f0b36991230b"
+  },
+  "direct_2d": {
+    "accepted_calibration_intervals": 5,
+    "accepted_source_intervals": 1,
+    "calibration_object_balanced_difference_mm": {
+      "hidden_chamfer": 2.0706847448258136,
+      "hidden_identity_rmse": 3.1068452222121146
+    },
+    "harmful_accepted_intervals": 6,
+    "result_sha256": "6769230ad35dba55b66c3952c376ebb6e528260b2fb5fad4e0cf23fc85bc2d58",
+    "source_object_balanced_difference_mm": {
+      "hidden_chamfer": 0.09996960211361948,
+      "hidden_identity_rmse": 0.15929947491099454
+    },
+    "summary_file_sha256": "c6032b3aaded67d8972c0bf20b0b3423617c2a719aa74436db4fac5e5c002354"
+  },
+  "fresh_preregistered_camera_only_evaluation_justified": false,
+  "information_boundary": {
+    "all_predictions_hashed_before_outcome_join": true,
+    "opened_source_and_calibration_outcomes_only": true,
+    "sealed_prospective_target_accessed": false
+  },
+  "schema_version": 1,
+  "split_triangulation": {
+    "accepted_intervals": 0,
+    "half_update_center_support_histogram": {
+      "0": 43,
+      "1": 9,
+      "2": 10,
+      "3": 3,
+      "4": 1
+    },
+    "result_sha256": "dd65982b4804f52c5359e1b2d32dfeffd2110ccf5e7b60c3682fc81ca5fb259d",
+    "summary_file_sha256": "266533c5e9cb1036c0ddb834682304c0d9ad8f9b4554ca5ec7512a23b6f3c689"
+  }
+}
