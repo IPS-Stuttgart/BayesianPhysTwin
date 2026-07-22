@@ -441,8 +441,10 @@ def test_acquire_align_and_revalidate_exact_source(
         "revision",
         "local_dir",
         "allow_patterns",
+        "local_dir_use_symlinks",
     }
     assert download_calls[0]["allow_patterns"] == list(selected.allow_patterns)
+    assert download_calls[0]["local_dir_use_symlinks"] is False
     assert "ignore_patterns" not in download_calls[0]
     assert len(commands) == 2
     assert json.loads(commands[0][5]) == list(CAMERAS)

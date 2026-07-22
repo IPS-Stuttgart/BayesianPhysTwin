@@ -1016,6 +1016,7 @@ def acquire_and_align_replacement_source(
             revision=HF_DATASET_REVISION,
             local_dir=str(download_root),
             allow_patterns=list(selected.allow_patterns),
+            local_dir_use_symlinks=False,
         )
     )
     _require(
