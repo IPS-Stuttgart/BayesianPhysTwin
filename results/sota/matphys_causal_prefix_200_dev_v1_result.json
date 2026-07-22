@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "protocol_id": "matphys-causal-prefix-200-dev-v1",
+  "status": "gate-failed-stop",
+  "case_name": "double_lift_zebra",
+  "information_boundary": {
+    "future_object_observations_used": false,
+    "future_manual_tracks_used": false,
+    "known_future_controller_trajectory_used": true,
+    "maximum_accessed_frame": 39,
+    "test_frame_start": 40
+  },
+  "metrics": {
+    "chamfer_distance_m": {
+      "released_baseline": 0.0142304847,
+      "candidate": 0.013497974378149459,
+      "relative_improvement": 0.051474727481,
+      "required_improvement": 0.05,
+      "maximum_passing_value": 0.013518960465,
+      "passed": true
+    },
+    "track_error_m": {
+      "released_baseline": 0.0258773045,
+      "candidate": 0.02701393783295095,
+      "relative_improvement": -0.043923946289,
+      "required_improvement": 0.05,
+      "maximum_passing_value": 0.024583439275,
+      "passed": false
+    }
+  },
+  "progression_gate": {
+    "rule": "Both official held-future metrics must improve by at least 5 percent.",
+    "passed": false,
+    "registered_action": "Stop this per-case causal model family; do not run a multi-case continuation."
+  },
+  "training": {
+    "source_repository": "https://github.com/Yrainy0615/MatPhys",
+    "source_commit": "c16b858dfb79bf21024ead24b45a710600de7b4f",
+    "checkpoint_policy": "fixed-terminal-epoch-v1",
+    "checkpoint_sha256": "192307f71d39b2160b8066f3fda0359a5eb68616a3ca51d9f8992428eaeef3be",
+    "finite": true,
+    "model_nonfinite_count": 0,
+    "optimizer_nonfinite_count": 0
+  },
+  "artifact_hashes": {
+    "protocol_json": "cdb95bbb63346f3ed5cd8ca6a4b7b77c517088409363fafb9e1dcdfa3e3dd471",
+    "causal_training_audit_json": "e6a18f2dc919db09e8003e9567bd9ce27bbf772908203a8d1639f16b81f578d9",
+    "checkpoint_finiteness_json": "57515a9e82b51142f3af33160f63a88d349cd50ea020457ea586172802a44bf6",
+    "external_backbone_manifest_json": "95fbc0ae92750c1dfcbd65fdf561694460d670a472671a1810394eab86b62c5b",
+    "official_evaluation_json": "aa51af379d2b1596ed7712b89c4f97301ffc5e450fbbcfe4dd0bbb3e39999efc",
+    "trajectory_pkl": "008fd27eb7aeb7200a02932f192bbe32da945410feae0915bd009056ca52eff7"
+  },
+  "claim_boundary": "Exploratory result on an already examined development case. The one-part global proxy is not a reproduction of MatPhys part-level feed-forward generalization, and the failed gate cannot support a state-of-the-art causal prediction claim."
+}
