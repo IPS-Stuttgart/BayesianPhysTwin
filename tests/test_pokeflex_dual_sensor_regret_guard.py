@@ -1,4 +1,7 @@
 import copy
+import hashlib
+import json
+from pathlib import Path
 
 import pytest
 
@@ -8,6 +11,14 @@ from bayesian_phystwin.pokeflex_dual_sensor_regret_guard import (
 
 
 CANDIDATE = "checkpoint_action_local_state_relative_0.55_residual_scale_0.5"
+RESULT_PATH = (
+    Path(__file__).parents[1]
+    / "results"
+    / "sota"
+    / "pokeflex_dual_sensor_regret_kill_v1"
+    / "calibration_consensus.json"
+)
+MANIFEST_PATH = RESULT_PATH.with_name("execution_manifest.json")
 
 
 def _payload(
@@ -103,3 +114,21 @@ def test_rejects_future_observation_or_wrong_take_inventory() -> None:
         evaluate_pokeflex_dual_sensor_consensus(
             [payload], expected_take_ids=["FoamDice_T2"]
         )
+
+
+def test_open_calibration_kill_result_is_frozen() -> None:
+    result = json.loads(RESULT_PATH.read_text(encoding="utf-8"))
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+
+    assert result["object_balanced_relative_improvement"] < -0.03
+    assert result["object_wins"] == 2
+    assert result["object_losses"] == 2
+    assert result["accepted_frame_losses"] == 56
+    pyramid = next(
+        value for value in result["objects"] if value["object"] == "3dPrintedPyramid"
+    )
+    assert pyramid["relative_improvement"] < -0.44
+    assert manifest["target_objects_opened"] is False
+    assert manifest["evaluation"]["sha256"] == hashlib.sha256(
+        RESULT_PATH.read_bytes()
+    ).hexdigest()
