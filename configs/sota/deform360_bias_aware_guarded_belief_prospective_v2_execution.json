@@ -1,0 +1,31 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveV2ExecutionLock",
+  "schema_version": 1,
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "adapter_lock_commit": "bc8e9ed11b8c6ca8ba5b5b83d64d52776f19b2f2",
+  "locked_before_fresh_prefix_media_read": true,
+  "files_sha256": {
+    "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json": "57b4a8c7c9715e722d758ac145d26f543a2123cc65cdb8890de20b457a9d3755",
+    "scripts/remote/build_deform360_bias_aware_automatic_twin.py": "27db1f8cf3e35e603e33117d01f0f8c35abb304a064a44e88bf41de8e7eac017",
+    "scripts/remote/prepare_deform360_bias_aware_source.py": "fddb5a24ab90bbe292f4544d93ed73b5e1a4b7d12283f3e4ddf1c1029ec84046",
+    "scripts/remote/run_deform360_bias_aware_frame_zero.py": "d51410521cd8a894a653d930c2e80257b27099f033fe45951a2d091ec142fdec",
+    "scripts/remote/run_deform360_bias_aware_physical_prior.py": "e5d81207e89ccaa170a3711708d8ee5ba6b4b181fb08ab17819a35e8c0a9a4ff",
+    "scripts/remote/run_deform360_bias_aware_prediction.py": "93efacdd665bcc80eb87248fb580108e8f0e78bc9fcec289149865dcf21ccb1a",
+    "scripts/remote/run_deform360_bias_aware_v2_stage.py": "cbf4139a295ccbed8ba59572d910fb228e374b4668aa2e4ae201375132bdf9d7",
+    "scripts/remote/stage_deform360_bias_aware_prediction_prefix.py": "a90578e8a83e5a72388b86f25c6b7b9dee872b75e2919c352e3a3a3ea431e5d6",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_runtime.py": "3590e5691db0eb868b7bd66b0ce20a6f701ea9aa3fb0d0a03c70ed1a92380cb2"
+  },
+  "information_boundary": {
+    "authorized_roles": [
+      "fresh-calibration-prefix"
+    ],
+    "outcome_loader_installed": false,
+    "calibration_future_access_authorized": false,
+    "target_access_authorized": false,
+    "downloaded_raw_media_may_be_read_only_by_source_custodian": true,
+    "prediction_process_receives_only_staged_prefix": true
+  },
+  "claim_boundary": "Additive protocol-identity adapter around the checksum-frozen source-v4 estimator and v1 prediction stages. It authorizes only target-free prediction construction for the three fresh v2 calibration objects.",
+  "config_sha256": "04121478613e2ff515bfe8791be05dae931d939ba8b5765eb47488125aa4561c"
+}

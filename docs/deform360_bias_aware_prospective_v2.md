@@ -83,3 +83,14 @@ The intended positive claim, if every gate passes, is limited to prospective
 improvement over the strong selected Bayesian/physical backbone across fresh
 public deformable objects. No state-of-the-art claim is licensed by the protocol
 alone.
+
+## Additive execution lock
+
+The v1 prediction implementation remains checksum-frozen. Before any fresh
+RGB prefix is decoded, the additive v2 protocol-identity adapter and the exact
+reused remote stages are bound by
+`configs/sota/deform360_bias_aware_guarded_belief_prospective_v2_execution.json`.
+The adapter installs no outcome loader and authorizes only target-free
+prediction construction for the three fresh calibration objects. Each stage
+is launched through `run_deform360_bias_aware_v2_stage.py` from a clean Git
+checkout; process exit restores the original v1 bindings.
