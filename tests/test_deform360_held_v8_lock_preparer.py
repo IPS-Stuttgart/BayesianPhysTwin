@@ -125,9 +125,7 @@ def test_prospective_bindings_include_named_deployment_contracts(
         FROZEN_FIELD_CONTRACT={"field": "frozen"},
         PRIMARY_METHOD={"method": "frozen"},
         REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256="7" * 64,
-        query_artifacts=SimpleNamespace(
-            CENTER_EXCLUSION_CONTRACT_SHA256="5" * 64
-        ),
+        query_artifacts=SimpleNamespace(CENTER_EXCLUSION_CONTRACT_SHA256="5" * 64),
         frame_zero_assets=SimpleNamespace(
             EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256="6" * 64
         ),
@@ -188,9 +186,7 @@ def test_prospective_bindings_include_named_deployment_contracts(
     )
     assert bindings["v8_attempt3_postseal_noncode_inventory_contract"] == (
         preparer.hashlib.sha256(
-            preparer._canonical_bytes(
-                preparer._attempt3_archive_inventory_contract()
-            )
+            preparer._canonical_bytes(preparer._attempt3_archive_inventory_contract())
         ).hexdigest()
     )
     assert all(len(value) == 64 for value in bindings.values())
@@ -262,15 +258,24 @@ def test_attempt_four_binds_exact_attempt_three_lineage() -> None:
         "f3d1e8a6670484c81ac04743bcdb020cdee3fba02229a64844a8a9c9f4b8b989",
         0o400,
     )
-    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
-        "v8_attempt3_postbarrier_withdrawal_report"
-    ] == "4b7404961fa13b418265f76827dda356fb6ad019db764c6302f49e8149d05de2"
-    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
-        "v8_attempt3_postbarrier_withdrawal_pointer"
-    ] == "6ef596a63029d7fa8346141bb52c72d99062e201a12b7c9baf4fca7330baca64"
-    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
-        "v8_attempt3_withdrawal_integrity_completion"
-    ] == "9ec2989e3000464a0f72b038e26fe407403e02721e21c19ae4fb9123c6a7cf8c"
+    assert (
+        preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
+            "v8_attempt3_postbarrier_withdrawal_report"
+        ]
+        == "4b7404961fa13b418265f76827dda356fb6ad019db764c6302f49e8149d05de2"
+    )
+    assert (
+        preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
+            "v8_attempt3_postbarrier_withdrawal_pointer"
+        ]
+        == "6ef596a63029d7fa8346141bb52c72d99062e201a12b7c9baf4fca7330baca64"
+    )
+    assert (
+        preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
+            "v8_attempt3_withdrawal_integrity_completion"
+        ]
+        == "9ec2989e3000464a0f72b038e26fe407403e02721e21c19ae4fb9123c6a7cf8c"
+    )
     assert preparer._attempt3_archive_inventory_contract() == {
         "archive_path": str(preparer._V8_ATTEMPT3_ARCHIVE),
         "postseal_noncode_entry_count": 1466,
@@ -284,10 +289,13 @@ def test_attempt_four_binds_exact_attempt_three_lineage() -> None:
     assert relative_operator == (
         "scripts/held/seal_deform360_v8_attempt3_outcome_failure.py"
     )
-    assert preparer._sha256_file(
-        Path(__file__).parents[1] / relative_operator,
-        role="attempt-3 withdrawal operator source",
-    ) == "bc6efe5660c90828be13fb9221472c5e37261e5041509ff61403ea89ef3e9648"
+    assert (
+        preparer._sha256_file(
+            Path(__file__).parents[1] / relative_operator,
+            role="attempt-3 withdrawal operator source",
+        )
+        == "bc6efe5660c90828be13fb9221472c5e37261e5041509ff61403ea89ef3e9648"
+    )
 
 
 def test_attempt_four_replay_uses_new_fail_closed_placeholder(
@@ -451,6 +459,8 @@ def test_admission_replay_binds_the_exact_adapter_and_protocol_sources(
         + "a" * 64
         + '","protocol_source_sha256":"'
         + "b" * 64
+        + '","replay_operator_source_sha256":"'
+        + "c" * 64
         + '"}}\n',
         encoding="utf-8",
     )
@@ -459,6 +469,7 @@ def test_admission_replay_binds_the_exact_adapter_and_protocol_sources(
     bindings = {
         "held_v8_builder_adapter_source": "a" * 64,
         "held_v8_protocol_source": "b" * 64,
+        "held_v81_external_admission_replay_operator_source": "c" * 64,
     }
     preparer._validate_admission_replay_source_lineage(bindings)
     bindings["held_v8_protocol_source"] = "c" * 64

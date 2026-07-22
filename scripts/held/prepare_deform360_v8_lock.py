@@ -162,9 +162,7 @@ _SAM2_CHECKPOINT = Path(
 )
 _DEFORM360_CODE = Path("/mnt/lexar4tb/datasets/deform360/code")
 
-_EXPECTED_EXTERNAL_FILES: Mapping[
-    str, tuple[Path, str | None, int | None]
-] = {
+_EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str | None, int | None]] = {
     "v7_calibration_lock_file": (
         _V7_LOCK,
         "b464d7cfda3b4ad94f57ffd46267b3b50d8dc65e2ff8dfec2befc7953718aca7",
@@ -303,9 +301,7 @@ _EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str | None] = {
     "v8_attempt2_admission_compatibility_diagnostic": (
         "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
     ),
-    "v8_attempt3_postbarrier_withdrawal_report": (
-        _V8_ATTEMPT3_REPORT_ARTIFACT_SHA256
-    ),
+    "v8_attempt3_postbarrier_withdrawal_report": (_V8_ATTEMPT3_REPORT_ARTIFACT_SHA256),
     "v8_attempt3_postbarrier_withdrawal_pointer": (
         _V8_ATTEMPT3_POINTER_ARTIFACT_SHA256
     ),
@@ -330,6 +326,9 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
     ),
     "held_v8_attempt3_withdrawal_operator_source": (
         "scripts/held/seal_deform360_v8_attempt3_outcome_failure.py"
+    ),
+    "held_v81_external_admission_replay_operator_source": (
+        "scripts/held/replay_deform360_v81_external_admission.py"
     ),
     "held_v8_disclosure_sealer_source": (
         "scripts/held/seal_deform360_v8_post_withdrawal_disclosure.py"
@@ -824,9 +823,7 @@ def _attempt3_archive_inventory_contract() -> dict[str, object]:
     return {
         "archive_path": str(_V8_ATTEMPT3_ARCHIVE),
         "postseal_noncode_entry_count": _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT,
-        "postseal_noncode_inventory_sha256": (
-            _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
-        ),
+        "postseal_noncode_inventory_sha256": (_V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256),
     }
 
 
@@ -843,9 +840,7 @@ def _load_attempt3_lineage_artifact(path: Path, *, role: str) -> dict[str, Any]:
 def _validate_attempt3_archive_lineage(
     local_bindings: Mapping[str, str],
 ) -> None:
-    local_operator = local_bindings.get(
-        "held_v8_attempt3_withdrawal_operator_source"
-    )
+    local_operator = local_bindings.get("held_v8_attempt3_withdrawal_operator_source")
     _require(
         local_operator == _V8_ATTEMPT3_OPERATOR_SOURCE_SHA256,
         "attempt-3 withdrawal operator differs from the observed executed source",
@@ -887,8 +882,7 @@ def _validate_attempt3_archive_lineage(
         )
         operator = artifact.get("executed_withdrawal_operator_source")
         _require(
-            isinstance(operator, Mapping)
-            and operator.get("sha256") == local_operator,
+            isinstance(operator, Mapping) and operator.get("sha256") == local_operator,
             f"attempt-3 {label} differs from the local executed operator source",
         )
 
@@ -897,8 +891,7 @@ def _validate_attempt3_archive_lineage(
         isinstance(inventory, Mapping)
         and report.get("immutable_archive_path") == str(_V8_ATTEMPT3_ARCHIVE)
         and inventory.get("entry_count") == _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT
-        and inventory.get("inventory_sha256")
-        == _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
+        and inventory.get("inventory_sha256") == _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
         "attempt-3 report archive inventory changed",
     )
     for label, artifact in (("pointer", pointer), ("completion", completion)):
@@ -919,10 +912,8 @@ def _validate_attempt3_archive_lineage(
     completion_binding = pointer.get("withdrawal_integrity_completion")
     _require(
         isinstance(completion_binding, Mapping)
-        and completion_binding.get("path")
-        == str(_V8_ATTEMPT3_INTEGRITY_COMPLETION)
-        and completion_binding.get("file_sha256")
-        == _V8_ATTEMPT3_COMPLETION_FILE_SHA256
+        and completion_binding.get("path") == str(_V8_ATTEMPT3_INTEGRITY_COMPLETION)
+        and completion_binding.get("file_sha256") == _V8_ATTEMPT3_COMPLETION_FILE_SHA256
         and completion_binding.get("artifact_sha256")
         == _V8_ATTEMPT3_COMPLETION_ARTIFACT_SHA256,
         "attempt-3 pointer integrity-completion binding changed",
@@ -946,6 +937,10 @@ def _validate_admission_replay_source_lineage(
     for local_name, replay_name in (
         ("held_v8_builder_adapter_source", "adapter_source_sha256"),
         ("held_v8_protocol_source", "protocol_source_sha256"),
+        (
+            "held_v81_external_admission_replay_operator_source",
+            "replay_operator_source_sha256",
+        ),
     ):
         _require(
             tested.get(replay_name) == local_bindings.get(local_name),
