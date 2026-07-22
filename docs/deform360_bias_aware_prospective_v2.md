@@ -2,10 +2,15 @@
 
 ## Status
 
-V2 is locked before download or media access for its three additional
-calibration objects. It repairs only the target-free support failure of V1. The
-source-v4 estimator, all candidate thresholds, calibration requirements, and the
-12-object reserved target cohort are unchanged.
+V2 completed its calibration phase. The target-free support gate passed, but the
+fresh accuracy gate failed: four objects received candidate updates and all four
+were harmful on at least one co-primary metric. Target access remains forbidden,
+and no reserved target object, media, or future was opened. See
+`docs/deform360_bias_aware_prospective_v2_result.md` for the frozen result.
+
+V2 repaired only the target-free support failure of V1. The source-v4 estimator,
+all candidate thresholds, calibration requirements, and the 12-object reserved
+target cohort remained unchanged throughout execution.
 
 The canonical protocol is
 `configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json` with
