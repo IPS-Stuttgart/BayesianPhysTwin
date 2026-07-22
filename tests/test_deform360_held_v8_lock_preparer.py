@@ -149,6 +149,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
     monkeypatch.setattr(
         preparer, "_validate_attempt2_operator_source_lineage", lambda _bindings: None
     )
+    monkeypatch.setattr(
+        preparer, "_validate_admission_replay_source_lineage", lambda _bindings: None
+    )
     monkeypatch.setattr(preparer, "_validate_pinned_python", lambda: "9" * 64)
     monkeypatch.setattr(
         preparer,
@@ -170,10 +173,7 @@ def test_prospective_bindings_include_named_deployment_contracts(
     assert bindings["method_head_text_sha256"] == provenance["head_text_sha256"]
     assert "replacement_source_inventory_contract" in bindings
     assert bindings["replacement_automatic_twin_admission_contract"] == "7" * 64
-    assert (
-        bindings["frame_zero_exact_eight_subset_bounded_audit_contract"]
-        == "6" * 64
-    )
+    assert bindings["frame_zero_exact_eight_subset_bounded_audit_contract"] == "6" * 64
     assert all(len(value) == 64 for value in bindings.values())
 
 
@@ -210,6 +210,12 @@ def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
         "v8_attempt2_admission_compatibility_diagnostic": (
             "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
         ),
+        "v8_external_admission_metadata_only_replay": (
+            "1788c212d91d97accb7a6ae2996888ccd879281587f774196e244e66c7c2e8f1"
+        ),
+        "v8_external_admission_replay_code_binding": (
+            "8b27e19b2535ce079a5b38cc1ddd6a693d06bb47ef30eefa8d02ced36e2046d6"
+        ),
     }
     assert preparer._LOCAL_BINDING_FILES["frame_zero_builder_source"] == (
         "src/bayesian_phystwin/deform360_frame_zero_assets.py"
@@ -242,3 +248,28 @@ def test_attempt_two_completion_binds_the_exact_local_operator_sources(
     bindings["held_v8_attempt2_withdrawal_operator_source"] = "c" * 64
     with pytest.raises(ValueError, match="executed operator source"):
         preparer._validate_attempt2_operator_source_lineage(bindings)
+
+
+def test_admission_replay_binds_the_exact_adapter_and_protocol_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    binding = tmp_path / "admission-code-binding.json"
+    binding.write_text(
+        '{"local_worktree_at_replay":{'
+        '"adapter_source_sha256":"'
+        + "a" * 64
+        + '","protocol_source_sha256":"'
+        + "b" * 64
+        + '"}}\n',
+        encoding="utf-8",
+    )
+    os.chmod(binding, 0o400)
+    monkeypatch.setattr(preparer, "_V8_ADMISSION_REPLAY_CODE_BINDING", binding)
+    bindings = {
+        "held_v8_builder_adapter_source": "a" * 64,
+        "held_v8_protocol_source": "b" * 64,
+    }
+    preparer._validate_admission_replay_source_lineage(bindings)
+    bindings["held_v8_protocol_source"] = "c" * 64
+    with pytest.raises(ValueError, match="real pinned-upstream replay"):
+        preparer._validate_admission_replay_source_lineage(bindings)

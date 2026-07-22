@@ -57,14 +57,22 @@ _V8_ATTEMPT2_MANIFEST_SCALE_DIAGNOSTIC = (
     _V8_ATTEMPT2_ARCHIVE / "prewithdrawal-072-manifest-scale-diagnostic.json"
 )
 _V8_ATTEMPT2_ADMISSION_DIAGNOSTIC = (
-    _V8_ATTEMPT2_ARCHIVE
-    / "prewithdrawal-072-admission-compatibility-diagnostic.json"
+    _V8_ATTEMPT2_ARCHIVE / "prewithdrawal-072-admission-compatibility-diagnostic.json"
 )
 _V8_ATTEMPT2_FAILURE_LOG = (
     _V8_ATTEMPT2_ARCHIVE
     / "calibration"
     / "logs"
     / "072-cotton-clohesline-ep0003.physical.failed.log"
+)
+_V8_ADMISSION_REPLAY_ROOT = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v8-admission-wrapper-scratch-20260722"
+)
+_V8_ADMISSION_REPLAY_REPORT = (
+    _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-report.json"
+)
+_V8_ADMISSION_REPLAY_CODE_BINDING = (
+    _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-code-binding.json"
 )
 _OPEN27_DECISION = (
     _HELD_BASE
@@ -157,6 +165,16 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
         "e296021c5b647d5e26cbf8cecd2e3fc46ebed97026a2564224a54f0fcd156b1c",
         0o400,
     ),
+    "v8_external_admission_metadata_only_replay": (
+        _V8_ADMISSION_REPLAY_REPORT,
+        "dc4ec1d5f913bd0dd6d10116783d98a7d9ef88ac9a7c74d778329687f6ff052b",
+        0o400,
+    ),
+    "v8_external_admission_replay_code_binding": (
+        _V8_ADMISSION_REPLAY_CODE_BINDING,
+        "0015a7e9b7f2b7a7241dc405e27d96d31911980fb781cd569d227e066f595209",
+        0o400,
+    ),
     "gsplat_runtime_supplement_manifest": (
         _GSPLAT_SUPPLEMENT,
         "87532ef68494442e2ab54885abbd760b7331ea8a83fa72110ea93589a60b1eee",
@@ -214,6 +232,12 @@ _EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str] = {
     ),
     "v8_attempt2_admission_compatibility_diagnostic": (
         "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
+    ),
+    "v8_external_admission_metadata_only_replay": (
+        "1788c212d91d97accb7a6ae2996888ccd879281587f774196e244e66c7c2e8f1"
+    ),
+    "v8_external_admission_replay_code_binding": (
+        "8b27e19b2535ce079a5b38cc1ddd6a693d06bb47ef30eefa8d02ced36e2046d6"
     ),
 }
 
@@ -683,9 +707,7 @@ def _validate_attempt2_operator_source_lineage(
     records = completion.get("operator_source_bindings")
     _require(isinstance(records, Mapping), "attempt-2 operator bindings are absent")
     expected = {
-        "held_v8_attempt2_withdrawal_operator_source": (
-            "attempt2_withdrawal_operator"
-        ),
+        "held_v8_attempt2_withdrawal_operator_source": ("attempt2_withdrawal_operator"),
         "held_v8_attempt2_withdrawal_integrity_completion_operator_source": (
             "attempt2_integrity_completion_operator"
         ),
@@ -696,6 +718,30 @@ def _validate_attempt2_operator_source_lineage(
             isinstance(record, Mapping)
             and record.get("sha256") == local_bindings.get(local_name),
             f"{local_name} differs from the executed operator source",
+        )
+
+
+def _validate_admission_replay_source_lineage(
+    local_bindings: Mapping[str, str],
+) -> None:
+    _, payload, _ = _read_file(
+        _V8_ADMISSION_REPLAY_CODE_BINDING,
+        role="v8 admission replay code binding",
+        required_mode=0o400,
+    )
+    try:
+        replay = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("v8 admission replay code binding is not JSON") from error
+    tested = replay.get("local_worktree_at_replay")
+    _require(isinstance(tested, Mapping), "replay-tested source binding is absent")
+    for local_name, replay_name in (
+        ("held_v8_builder_adapter_source", "adapter_source_sha256"),
+        ("held_v8_protocol_source", "protocol_source_sha256"),
+    ):
+        _require(
+            tested.get(replay_name) == local_bindings.get(local_name),
+            f"{local_name} differs from the real pinned-upstream replay",
         )
 
 
@@ -744,6 +790,7 @@ def prospective_bindings(
     bindings.update(external)
     local_bindings = _local_file_bindings(code)
     _validate_attempt2_operator_source_lineage(local_bindings)
+    _validate_admission_replay_source_lineage(local_bindings)
     bindings.update(local_bindings)
     protocol, replacement = _import_v8_modules(code)
     processing_revision = _processing_revision()
