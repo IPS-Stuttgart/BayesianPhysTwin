@@ -23,13 +23,13 @@ from bayesian_phystwin.deform360_bias_aware_prospective_v2_calibration import (
     build_v2_calibration_authorization_sidecar,
     patch_fresh_v2_calibration_stage,
     validate_v2_calibration_access,
+    validate_v2_calibration_execution_lock,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_v2_protocol import (
     load_bias_aware_prospective_v2_protocol,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_v2_runtime import (
     activate_v2_prediction_runtime,
-    validate_v2_execution_lock,
 )
 
 
@@ -141,7 +141,7 @@ def _evaluate(
 def main() -> int:
     args, stage_arguments = _parse_args()
     repository = args.execution_repo.resolve()
-    validate_v2_execution_lock(
+    validate_v2_calibration_execution_lock(
         args.execution_lock.resolve(),
         repository=repository,
     )

@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 import json
 from pathlib import Path
+import subprocess
 from types import ModuleType
 from typing import Any, Iterator
 
@@ -44,6 +45,9 @@ AUTHORIZATION_ARTIFACT_KIND = (
 CALIBRATION_GATE_ARTIFACT_KIND = (
     "Deform360BiasAwareProspectiveV2CalibrationAccuracyGate"
 )
+CALIBRATION_EXECUTION_LOCK_ARTIFACT_KIND = (
+    "Deform360BiasAwareProspectiveV2ExecutionLock"
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -54,6 +58,73 @@ def _require(condition: bool, message: str) -> None:
 def _load_json(path: str | Path) -> dict[str, Any]:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     _require(isinstance(payload, dict), f"JSON object expected: {path}")
+    return payload
+
+
+def validate_v2_calibration_execution_lock(
+    path: str | Path,
+    *,
+    repository: str | Path,
+    require_clean_repository: bool = True,
+) -> dict[str, Any]:
+    """Validate the only v2 lock allowed to open calibration futures."""
+
+    lock_path = Path(path).resolve()
+    repo = Path(repository).resolve()
+    payload = _load_json(lock_path)
+    _require(
+        payload.get("artifact_kind") == CALIBRATION_EXECUTION_LOCK_ARTIFACT_KIND
+        and payload.get("protocol_id") == PROTOCOL_ID
+        and payload.get("config_sha256")
+        == artifacts.canonical_sha256(payload, digest_key="config_sha256"),
+        "calibration execution lock changed",
+    )
+    files = payload.get("files_sha256")
+    _require(isinstance(files, Mapping) and files, "execution files are missing")
+    for relative, expected in files.items():
+        source = repo / str(relative)
+        _require(
+            source.is_file() and artifacts.file_sha256(source) == expected,
+            f"calibration execution file changed: {relative}",
+        )
+    boundary = payload.get("information_boundary", {})
+    _require(
+        boundary.get("outcome_loader_installed") is True
+        and boundary.get("calibration_future_access_authorized") is True
+        and boundary.get("target_access_authorized") is False
+        and boundary.get("support_gate_must_validate_before_each_stage") is True,
+        "calibration execution boundary changed",
+    )
+    if require_clean_repository:
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        _require(not status.strip(), "calibration execution repository is dirty")
+        commit = str(payload.get("adapter_lock_commit", ""))
+        _require(bool(commit), "calibration lock commit is missing")
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", commit, "HEAD"],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "ls-files",
+                "--error-unmatch",
+                str(lock_path.relative_to(repo)),
+            ],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
     return payload
 
 
@@ -486,5 +557,6 @@ __all__ = [
     "fit_v2_calibration_accuracy_gate",
     "fresh_v2_prediction_authorizer",
     "patch_fresh_v2_calibration_stage",
+    "validate_v2_calibration_execution_lock",
     "validate_v2_calibration_access",
 ]

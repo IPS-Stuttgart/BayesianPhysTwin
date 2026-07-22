@@ -18,12 +18,10 @@ from bayesian_phystwin.deform360_bias_aware_prospective_protocol import (
 from bayesian_phystwin.deform360_bias_aware_prospective_v2_calibration import (
     AUTHORIZATION_ARTIFACT_KIND,
     fit_v2_calibration_accuracy_gate,
+    validate_v2_calibration_execution_lock,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_v2_protocol import (
     load_bias_aware_prospective_v2_protocol,
-)
-from bayesian_phystwin.deform360_bias_aware_prospective_v2_runtime import (
-    validate_v2_execution_lock,
 )
 from bayesian_phystwin.deform360_bias_aware_prospective_v2_support import (
     validate_v2_calibration_cohort_seal,
@@ -58,7 +56,7 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     args = _parse_args()
     repository = args.repo.resolve()
-    validate_v2_execution_lock(
+    validate_v2_calibration_execution_lock(
         args.execution_lock.resolve(),
         repository=repository,
     )
