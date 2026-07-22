@@ -37,7 +37,7 @@ from .deform360_frozen_query_field import (
 )
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8"
+PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 SCHEMA_VERSION = 1
 FRAME_COUNT = 76
 CENTER_COUNT = 16

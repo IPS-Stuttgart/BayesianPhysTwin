@@ -42,7 +42,7 @@ from .deform360_robot_kinematics import (
 )
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8"
+PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 SCHEMA_VERSION = 1
 
 HF_REPO_ID = "brownu/deform360"

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
@@ -123,6 +125,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
         FROZEN_FIELD_CONTRACT={"field": "frozen"},
         PRIMARY_METHOD={"method": "frozen"},
         REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256="7" * 64,
+        query_artifacts=SimpleNamespace(
+            CENTER_EXCLUSION_CONTRACT_SHA256="5" * 64
+        ),
         frame_zero_assets=SimpleNamespace(
             EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256="6" * 64
         ),
@@ -150,6 +155,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
         preparer, "_validate_attempt2_operator_source_lineage", lambda _bindings: None
     )
     monkeypatch.setattr(
+        preparer, "_validate_attempt3_archive_lineage", lambda _bindings: None
+    )
+    monkeypatch.setattr(
         preparer, "_validate_admission_replay_source_lineage", lambda _bindings: None
     )
     monkeypatch.setattr(preparer, "_validate_pinned_python", lambda: "9" * 64)
@@ -174,6 +182,17 @@ def test_prospective_bindings_include_named_deployment_contracts(
     assert "replacement_source_inventory_contract" in bindings
     assert bindings["replacement_automatic_twin_admission_contract"] == "7" * 64
     assert bindings["frame_zero_exact_eight_subset_bounded_audit_contract"] == "6" * 64
+    assert bindings["center_exclusion_contract"] == "5" * 64
+    assert bindings["v8_attempt3_postseal_noncode_inventory"] == (
+        preparer._V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
+    )
+    assert bindings["v8_attempt3_postseal_noncode_inventory_contract"] == (
+        preparer.hashlib.sha256(
+            preparer._canonical_bytes(
+                preparer._attempt3_archive_inventory_contract()
+            )
+        ).hexdigest()
+    )
     assert all(len(value) == 64 for value in bindings.values())
 
 
@@ -194,7 +213,7 @@ def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
         "21e7695af5f610193502ecb6e7e6c647d853bde34daa1c5f362e990dffdf56a7",
         0o400,
     )
-    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256 == {
+    expected_attempt2_artifacts = {
         "v8_attempt2_preoutcome_withdrawal_pointer": (
             "9063011657b955902d1cf7d85a4253eee65caa430a41edae2709a18032baf99c"
         ),
@@ -210,13 +229,11 @@ def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
         "v8_attempt2_admission_compatibility_diagnostic": (
             "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
         ),
-        "v8_external_admission_metadata_only_replay": (
-            "1788c212d91d97accb7a6ae2996888ccd879281587f774196e244e66c7c2e8f1"
-        ),
-        "v8_external_admission_replay_code_binding": (
-            "8b27e19b2535ce079a5b38cc1ddd6a693d06bb47ef30eefa8d02ced36e2046d6"
-        ),
     }
+    assert {
+        name: preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[name]
+        for name in expected_attempt2_artifacts
+    } == expected_attempt2_artifacts
     assert preparer._LOCAL_BINDING_FILES["frame_zero_builder_source"] == (
         "src/bayesian_phystwin/deform360_frame_zero_assets.py"
     )
@@ -226,6 +243,180 @@ def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
     assert "held_v8_attempt2_withdrawal_integrity_completion_operator_source" in (
         preparer._LOCAL_BINDING_FILES
     )
+
+
+def test_attempt_four_binds_exact_attempt_three_lineage() -> None:
+    expected = preparer._EXPECTED_EXTERNAL_FILES
+    assert expected["v8_attempt3_postbarrier_withdrawal_report"] == (
+        preparer._V8_ATTEMPT3_WITHDRAWAL_REPORT,
+        "6d9c62606d18744d275df51fd08e041205bf15b38175d74c69690eafd511054b",
+        0o400,
+    )
+    assert expected["v8_attempt3_postbarrier_withdrawal_pointer"] == (
+        preparer._V8_ATTEMPT3_WITHDRAWAL_POINTER,
+        "75acc7e9535f41528d22739ae8eeb5a0a2247c0fe63c097ad1da2859d7b33246",
+        0o400,
+    )
+    assert expected["v8_attempt3_withdrawal_integrity_completion"] == (
+        preparer._V8_ATTEMPT3_INTEGRITY_COMPLETION,
+        "f3d1e8a6670484c81ac04743bcdb020cdee3fba02229a64844a8a9c9f4b8b989",
+        0o400,
+    )
+    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
+        "v8_attempt3_postbarrier_withdrawal_report"
+    ] == "4b7404961fa13b418265f76827dda356fb6ad019db764c6302f49e8149d05de2"
+    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
+        "v8_attempt3_postbarrier_withdrawal_pointer"
+    ] == "6ef596a63029d7fa8346141bb52c72d99062e201a12b7c9baf4fca7330baca64"
+    assert preparer._EXPECTED_EXTERNAL_ARTIFACT_SHA256[
+        "v8_attempt3_withdrawal_integrity_completion"
+    ] == "9ec2989e3000464a0f72b038e26fe407403e02721e21c19ae4fb9123c6a7cf8c"
+    assert preparer._attempt3_archive_inventory_contract() == {
+        "archive_path": str(preparer._V8_ATTEMPT3_ARCHIVE),
+        "postseal_noncode_entry_count": 1466,
+        "postseal_noncode_inventory_sha256": (
+            "5d398e998e2b738db545ffefd254712c6822017cfc5be6e7de435d5883c8c4c8"
+        ),
+    }
+    relative_operator = preparer._LOCAL_BINDING_FILES[
+        "held_v8_attempt3_withdrawal_operator_source"
+    ]
+    assert relative_operator == (
+        "scripts/held/seal_deform360_v8_attempt3_outcome_failure.py"
+    )
+    assert preparer._sha256_file(
+        Path(__file__).parents[1] / relative_operator,
+        role="attempt-3 withdrawal operator source",
+    ) == "bc6efe5660c90828be13fb9221472c5e37261e5041509ff61403ea89ef3e9648"
+
+
+def test_attempt_four_replay_uses_new_fail_closed_placeholder(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert str(preparer._V8_ADMISSION_REPLAY_ROOT).endswith(
+        "bpt-held-v8.1-attempt-4-admission-wrapper-scratch-20260722"
+    )
+    assert preparer._V8_ADMISSION_REPLAY_REPORT_FILE_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256 is None
+    monkeypatch.setattr(
+        preparer,
+        "_EXPECTED_EXTERNAL_FILES",
+        {
+            "v8_external_admission_metadata_only_replay": (
+                preparer._V8_ADMISSION_REPLAY_REPORT,
+                None,
+                0o400,
+            )
+        },
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_EXPECTED_EXTERNAL_ARTIFACT_SHA256",
+        {"v8_external_admission_metadata_only_replay": None},
+    )
+    with pytest.raises(ValueError, match="placeholder is not populated"):
+        preparer._external_bindings()
+
+
+def test_attempt_three_archive_lineage_matches_local_operator_and_inventory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    archive = tmp_path / "held-v8-attempt-3-withdrawn-postbarrier"
+    archive.mkdir()
+    report = archive / "execution-withdrawal-postbarrier-attempt3.json"
+    pointer = tmp_path / "held-v8-attempt-3-withdrawal-pointer.json"
+    completion = tmp_path / "held-v8-attempt-3-withdrawal-completion.json"
+    operator = {"sha256": preparer._V8_ATTEMPT3_OPERATOR_SOURCE_SHA256}
+    common = {
+        "protocol_id": preparer._V8_ATTEMPT3_PROTOCOL_ID,
+        "execution_attempt": preparer._V8_ATTEMPT3_EXECUTION_ATTEMPT,
+        "disposition": preparer._V8_ATTEMPT3_DISPOSITION,
+        "executed_withdrawal_operator_source": operator,
+    }
+    report_value = {
+        **common,
+        "status": preparer._V8_ATTEMPT3_WITHDRAWAL_STATUS,
+        "immutable_archive_path": str(archive),
+        "expected_postseal_inventory": {
+            "entry_count": preparer._V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+            "inventory_sha256": preparer._V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
+        },
+    }
+    completion_value = {
+        **common,
+        "status": preparer._V8_ATTEMPT3_COMPLETION_STATUS,
+        "archive_path": str(archive),
+        "archive_fully_nonwritable": True,
+        "archive_root_mode_octal": "0500",
+        "postseal_noncode_entry_count": preparer._V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+        "postseal_noncode_inventory_sha256": (
+            preparer._V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
+        ),
+        "withdrawal_report_file_sha256": preparer._V8_ATTEMPT3_REPORT_FILE_SHA256,
+        "withdrawal_report_artifact_sha256": (
+            preparer._V8_ATTEMPT3_REPORT_ARTIFACT_SHA256
+        ),
+    }
+    pointer_value = {
+        **completion_value,
+        "status": preparer._V8_ATTEMPT3_WITHDRAWAL_STATUS,
+        "withdrawal_integrity_completion": {
+            "path": str(completion),
+            "file_sha256": preparer._V8_ATTEMPT3_COMPLETION_FILE_SHA256,
+            "artifact_sha256": preparer._V8_ATTEMPT3_COMPLETION_ARTIFACT_SHA256,
+        },
+    }
+    for path, value in (
+        (report, report_value),
+        (pointer, pointer_value),
+        (completion, completion_value),
+    ):
+        path.write_text(json.dumps(value) + "\n", encoding="utf-8")
+        os.chmod(path, 0o400)
+    os.chmod(archive, 0o500)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_ARCHIVE", archive)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_WITHDRAWAL_REPORT", report)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_WITHDRAWAL_POINTER", pointer)
+    monkeypatch.setattr(preparer, "_V8_ATTEMPT3_INTEGRITY_COMPLETION", completion)
+    bindings = {
+        "held_v8_attempt3_withdrawal_operator_source": (
+            preparer._V8_ATTEMPT3_OPERATOR_SOURCE_SHA256
+        )
+    }
+
+    preparer._validate_attempt3_archive_lineage(bindings)
+
+    os.chmod(pointer, 0o600)
+    pointer_value["postseal_noncode_entry_count"] = 1465
+    pointer.write_text(json.dumps(pointer_value) + "\n", encoding="utf-8")
+    os.chmod(pointer, 0o400)
+    with pytest.raises(ValueError, match="pointer archive or report lineage"):
+        preparer._validate_attempt3_archive_lineage(bindings)
+    with pytest.raises(ValueError, match="observed executed source"):
+        preparer._validate_attempt3_archive_lineage(
+            {"held_v8_attempt3_withdrawal_operator_source": "0" * 64}
+        )
+
+
+def test_lock_creation_passes_all_attempt_three_lineage_paths() -> None:
+    tree = ast.parse(_SCRIPT.read_text(encoding="utf-8"))
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "create_calibration_protocol_lock"
+    ]
+    assert len(calls) == 1
+    keyword_names = {keyword.arg for keyword in calls[0].keywords}
+    assert {
+        "attempt3_withdrawal_report_path",
+        "attempt3_withdrawal_pointer_path",
+        "attempt3_withdrawal_integrity_completion_path",
+    } <= keyword_names
 
 
 def test_attempt_two_completion_binds_the_exact_local_operator_sources(

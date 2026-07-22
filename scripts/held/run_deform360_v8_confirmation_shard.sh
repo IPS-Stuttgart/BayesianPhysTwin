@@ -128,7 +128,7 @@ from bayesian_phystwin.deform360_held_v8_protocol import (
     validate_protocol_lock,
 )
 lock = validate_protocol_lock(sys.argv[1])
-if lock["protocol_id"] != "deform360-held-online-belief-v8":
+if lock["protocol_id"] != "deform360-held-online-belief-v8.1":
     raise RuntimeError("not a v8 confirmation lock")
 if tuple(locked_case_names(sys.argv[1], role="confirmation")) != tuple(CONFIRMATION_CASE_NAMES):
     raise RuntimeError("locked confirmation cohort changed")

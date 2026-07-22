@@ -37,6 +37,161 @@ def _artifact(path: Path, value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
+def _attempt3_lineage_fixture(
+    lineage: Path, monkeypatch: pytest.MonkeyPatch
+) -> dict[str, Any]:
+    archive = lineage / "held-v8-attempt-3-withdrawn-postbarrier"
+    archive.mkdir()
+    report_path = archive / "execution-withdrawal-postbarrier-attempt3.json"
+    pointer_path = lineage / "held-v8-attempt-3-withdrawal-pointer.json"
+    completion_path = (
+        lineage / "held-v8-attempt-3-withdrawal-integrity-completion.json"
+    )
+    inventory_sha256 = "d" * 64
+    inventory_count = 1
+    operator = {"path": "/tmp/attempt3-operator.py", "sha256": "b" * 64}
+    deployed = {"path": "code-test", "git_head": "c" * 40}
+    report = _artifact(
+        report_path,
+        {
+            "schema_version": 1,
+            "artifact_kind": "Deform360HeldV8Attempt3PostBarrierWithdrawalReport",
+            "protocol_id": "deform360-held-online-belief-v8",
+            "execution_attempt": 3,
+            "status": "withdrawn-postbarrier-before-queried-prediction-or-score",
+            "disposition": (
+                "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_"
+                "SEAL_OR_SCORE"
+            ),
+            "immutable_archive_path": str(archive),
+            "executed_withdrawal_operator_source": operator,
+            "deployed_code": deployed,
+            "execution_boundary": {
+                "online_prediction_seal_count": 15,
+                "frozen_field_manifest_count": 15,
+                "official_target_archive_count": 1,
+                "official_x0_archive_count": 1,
+                "queried_prediction_seal_count": 0,
+                "score_evidence_count": 0,
+                "gate_decision_count": 0,
+                "confirmation_lock_count": 0,
+            },
+            "information_boundary": {
+                "first_complete_cohort_barrier_crossed": True,
+                "queried_prediction_created_or_read": False,
+                "score_created_or_read": False,
+                "gate_decision_created_or_read": False,
+                "confirmation_created_or_read": False,
+            },
+        },
+    )
+    report_record = _bound_file(report_path)
+    shared = {
+        "archive_path": str(archive),
+        "archive_root_mode_octal": "0500",
+        "archive_fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": inventory_sha256,
+        "postseal_noncode_entry_count": inventory_count,
+        "withdrawal_report_path": str(report_path),
+        "withdrawal_report_size_bytes": report_record["size_bytes"],
+        "withdrawal_report_file_sha256": report_record["sha256"],
+        "withdrawal_report_artifact_sha256": report["artifact_sha256"],
+        "deployed_code": deployed,
+        "independent_post_rename_integrity_verified": True,
+    }
+    completion = _artifact(
+        completion_path,
+        {
+            "schema_version": 1,
+            "artifact_kind": (
+                "Deform360HeldV8Attempt3WithdrawalIntegrityCompletion"
+            ),
+            "protocol_id": "deform360-held-online-belief-v8",
+            "execution_attempt": 3,
+            "status": "withdrawal-integrity-complete",
+            "disposition": (
+                "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_"
+                "SEAL_OR_SCORE"
+            ),
+            **shared,
+            "executed_withdrawal_operator_source": operator,
+            "pointer_contract": {
+                "path": str(pointer_path),
+                "artifact_kind": "Deform360HeldV8Attempt3WithdrawalPointer",
+                "pointer_must_bind_this_completion": True,
+                "completion_does_not_predict_pointer_hash_to_avoid_circularity": True,
+            },
+        },
+    )
+    completion_record = _bound_file(completion_path)
+    pointer = _artifact(
+        pointer_path,
+        {
+            "schema_version": 1,
+            "artifact_kind": "Deform360HeldV8Attempt3WithdrawalPointer",
+            "protocol_id": "deform360-held-online-belief-v8",
+            "execution_attempt": 3,
+            "status": "withdrawn-postbarrier-before-queried-prediction-or-score",
+            "disposition": (
+                "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_"
+                "SEAL_OR_SCORE"
+            ),
+            **shared,
+            "executed_withdrawal_operator_source": operator,
+            "withdrawal_integrity_completion": {
+                "path": str(completion_path),
+                "mode_octal": "0400",
+                "size_bytes": completion_record["size_bytes"],
+                "file_sha256": completion_record["sha256"],
+                "artifact_sha256": completion["artifact_sha256"],
+            },
+            "active_held_v8_root_absent_after_archive": True,
+            "queried_prediction_seal_count": 0,
+            "score_evidence_count": 0,
+            "gate_decision_count": 0,
+            "confirmation_accessed": False,
+        },
+    )
+    pointer_record = _bound_file(pointer_path)
+    archive.chmod(0o500)
+
+    replacements = {
+        "ATTEMPT3_ARCHIVE_PATH": archive,
+        "ATTEMPT3_WITHDRAWAL_REPORT_PATH": report_path,
+        "ATTEMPT3_WITHDRAWAL_POINTER_PATH": pointer_path,
+        "ATTEMPT3_WITHDRAWAL_INTEGRITY_COMPLETION_PATH": completion_path,
+        "ATTEMPT3_WITHDRAWAL_REPORT_FILE_SHA256": report_record["sha256"],
+        "ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256": report["artifact_sha256"],
+        "ATTEMPT3_WITHDRAWAL_COMPLETION_FILE_SHA256": completion_record["sha256"],
+        "ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256": completion[
+            "artifact_sha256"
+        ],
+        "ATTEMPT3_WITHDRAWAL_POINTER_FILE_SHA256": pointer_record["sha256"],
+        "ATTEMPT3_WITHDRAWAL_POINTER_ARTIFACT_SHA256": pointer["artifact_sha256"],
+        "ATTEMPT3_ARCHIVE_INVENTORY_SHA256": inventory_sha256,
+        "ATTEMPT3_ARCHIVE_ENTRY_COUNT": inventory_count,
+    }
+    for name, value in replacements.items():
+        monkeypatch.setattr(protocol, name, value)
+    archive_integrity = {
+        "path": str(archive),
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": inventory_sha256,
+        "postseal_noncode_entry_count": inventory_count,
+    }
+    return {
+        "archive": archive,
+        "report_path": report_path,
+        "pointer_path": pointer_path,
+        "completion_path": completion_path,
+        "report_record": report_record,
+        "pointer_record": pointer_record,
+        "completion_record": completion_record,
+        "archive_integrity": archive_integrity,
+    }
+
+
 def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     lineage = tmp_path / "lineage"
     lineage.mkdir()
@@ -76,6 +231,7 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "open27_development_decision_file_sha256",
         development_sha,
     )
+    attempt3 = _attempt3_lineage_fixture(lineage, monkeypatch)
 
     config = {"prediction_frame_count": 76, "test_fixture": True}
     root = tmp_path / "held-v8"
@@ -91,6 +247,27 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
                 "mode_octal": "0400",
             }
             for name in sorted(disclosed_paths)
+        },
+        "disclosed_v8_attempt3_files": {
+            name: {**attempt3[f"{short}_record"], "mode_octal": "0400"}
+            for name, short in (
+                ("v8_attempt3_withdrawal_report", "report"),
+                ("v8_attempt3_withdrawal_pointer", "pointer"),
+                (
+                    "v8_attempt3_withdrawal_integrity_completion",
+                    "completion",
+                ),
+            )
+        },
+        "v8_attempt3_archive_integrity": attempt3["archive_integrity"],
+        "v8_attempt3_revision_basis": {
+            "official_x0_geometry_used_to_diagnose_exclusion_liveness": True,
+            "future_target_coordinates_masks_or_scores_used_for_revision": False,
+            "queried_prediction_score_or_gate_existed": False,
+            "revision": (
+                "replace exact-one-per-center matching with the inclusive 15 mm "
+                "x0-only radius union"
+            ),
         },
         "post_withdrawal_development": {
             **protocol.POST_WITHDRAWAL_DEVELOPMENT_HASHES,
@@ -109,18 +286,27 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
                 "the replacement was selected outside that object's episodes"
             ),
         },
-        "v8_reuse_boundary": {
+        "v8_1_reuse_boundary": {
             "v7_target_or_staging_reused": False,
             "v7_physical_prediction_reused": False,
             "v7_online_prediction_reused": False,
             "v7_query_or_score_reused": False,
             "v7_execution_artifact_reused": False,
             "v7_withdrawal_report_used_only_as_immutable_lineage": True,
-            "all_v8_predictions_targets_queries_and_scores_must_be_fresh": True,
+            "v8_attempt3_predictions_reused": False,
+            "v8_attempt3_source_manifests_reused": False,
+            "v8_attempt3_frozen_fields_reused": False,
+            "v8_attempt3_target_artifacts_reused": False,
+            "v8_attempt3_official_x0_query_artifacts_reused": False,
+            "v8_attempt3_queried_prediction_artifacts_reused": False,
+            "v8_attempt3_score_or_gate_artifacts_reused": False,
+            "v8_attempt3_partial_artifacts_reused": False,
+            "all_v8_1_attempt4_predictions_targets_queries_and_scores_fresh": True,
+            "full_15_case_fresh_rerun_required": True,
         },
         "claim_boundary": (
             "This disclosure preserves prospective episode-level evaluation; it "
-            "does not turn open development or v8 into an official Deform360 "
+            "does not turn open development or v8.1 into an official Deform360 "
             "state-of-the-art comparison."
         ),
     }
@@ -138,11 +324,19 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "replacement_automatic_twin_admission_contract": (
                 protocol.REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256
             ),
+            "center_exclusion_contract": (
+                query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
+            ),
             "test_operator_source": "a" * 64,
         },
         v7_withdrawal_report_path=withdrawal,
         post_withdrawal_disclosure_path=disclosure,
         development_decision_path=development,
+        attempt3_withdrawal_report_path=attempt3["report_path"],
+        attempt3_withdrawal_pointer_path=attempt3["pointer_path"],
+        attempt3_withdrawal_integrity_completion_path=attempt3[
+            "completion_path"
+        ],
     )
     return lock
 
@@ -356,17 +550,44 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     assert lock["primary_method"]["center_exclusion_contract_sha256"] == (
         query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
     )
-    assert lock["execution_attempt"] == 3
-    assert lock["freshness_and_reuse"]["v7_execution_artifacts_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt1_predictions_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt2_predictions_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt1_source_manifests_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt2_source_manifests_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt1_frozen_fields_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt2_frozen_fields_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt1_partial_artifacts_reused"] is False
-    assert lock["freshness_and_reuse"]["v8_attempt2_partial_artifacts_reused"] is False
+    assert lock["protocol_id"] == "deform360-held-online-belief-v8.1"
+    assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 4
+    assert lock["freshness_and_reuse"] == protocol.FRESHNESS_AND_REUSE_CONTRACT
+    assert lock["freshness_and_reuse"][
+        "held_v8_root_absent_before_attempt4_lock"
+    ] is True
+    assert lock["freshness_and_reuse"][
+        "all_predictions_must_be_fresh_v8_1_attempt4_outputs"
+    ] is True
+    assert lock["freshness_and_reuse"][
+        "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt4_outputs"
+    ] is True
+    assert all(
+        value is False
+        for key, value in lock["freshness_and_reuse"].items()
+        if key.endswith("_reused")
+    )
     assert lock["freshness_and_reuse"]["full_15_case_fresh_rerun_required"] is True
+
+    lineage = lock["lineage"]
+    assert lineage["v8_attempt3_withdrawal_report"]["sha256"] == (
+        protocol.ATTEMPT3_WITHDRAWAL_REPORT_FILE_SHA256
+    )
+    assert lineage["v8_attempt3_withdrawal_pointer"]["sha256"] == (
+        protocol.ATTEMPT3_WITHDRAWAL_POINTER_FILE_SHA256
+    )
+    assert lineage["v8_attempt3_withdrawal_integrity_completion"]["sha256"] == (
+        protocol.ATTEMPT3_WITHDRAWAL_COMPLETION_FILE_SHA256
+    )
+    assert lineage["v8_attempt3_archive_integrity"] == {
+        "path": str(protocol.ATTEMPT3_ARCHIVE_PATH),
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": (
+            protocol.ATTEMPT3_ARCHIVE_INVENTORY_SHA256
+        ),
+        "postseal_noncode_entry_count": protocol.ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+    }
 
     source_permit = protocol.authorize_replacement_source_acquisition(lock_path)
     source_evidence = protocol.consume_replacement_source_acquisition_capability(
@@ -384,6 +605,32 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
 
     with pytest.raises(ValueError, match="must be absent"):
         protocol.prepare_fresh_held_root(tmp_path / "held-v8")
+
+
+def test_lock_rejects_attempt3_pointer_byte_tamper(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock_path = _lock_fixture(tmp_path, monkeypatch)
+    pointer = protocol.ATTEMPT3_WITHDRAWAL_POINTER_PATH
+    original = pointer.read_bytes()
+    pointer.chmod(0o600)
+    pointer.write_bytes(original + b" ")
+    pointer.chmod(0o400)
+
+    with pytest.raises(ValueError, match="binding changed|file hash changed"):
+        protocol.validate_protocol_lock(lock_path)
+
+
+def test_lock_rejects_writable_attempt3_archive(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    lock_path = _lock_fixture(tmp_path, monkeypatch)
+    protocol.ATTEMPT3_ARCHIVE_PATH.chmod(0o700)
+
+    with pytest.raises(ValueError, match="archive root"):
+        protocol.validate_protocol_lock(lock_path)
 
 
 def test_barrier_one_is_complete_cohort_case_specific_and_single_use(

@@ -20,7 +20,7 @@ from typing import Any, Mapping
 import numpy as np
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8"
+PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 SCORER_ID = "deform360-held-v8-direct-official-identity-v1"
 FRAME_COUNT = 76
 CENTER_COUNT = 16

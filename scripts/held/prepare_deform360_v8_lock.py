@@ -65,8 +65,57 @@ _V8_ATTEMPT2_FAILURE_LOG = (
     / "logs"
     / "072-cotton-clohesline-ep0003.physical.failed.log"
 )
+_V8_ATTEMPT3_ARCHIVE = _HELD_BASE / "held-v8-attempt-3-withdrawn-postbarrier"
+_V8_ATTEMPT3_WITHDRAWAL_REPORT = (
+    _V8_ATTEMPT3_ARCHIVE / "execution-withdrawal-postbarrier-attempt3.json"
+)
+_V8_ATTEMPT3_WITHDRAWAL_POINTER = (
+    _HELD_BASE / "held-v8-attempt-3-withdrawal-pointer.json"
+)
+_V8_ATTEMPT3_INTEGRITY_COMPLETION = (
+    _HELD_BASE / "held-v8-attempt-3-withdrawal-integrity-completion.json"
+)
+_V8_ATTEMPT3_REPORT_FILE_SHA256 = (
+    "6d9c62606d18744d275df51fd08e041205bf15b38175d74c69690eafd511054b"
+)
+_V8_ATTEMPT3_REPORT_ARTIFACT_SHA256 = (
+    "4b7404961fa13b418265f76827dda356fb6ad019db764c6302f49e8149d05de2"
+)
+_V8_ATTEMPT3_COMPLETION_FILE_SHA256 = (
+    "f3d1e8a6670484c81ac04743bcdb020cdee3fba02229a64844a8a9c9f4b8b989"
+)
+_V8_ATTEMPT3_COMPLETION_ARTIFACT_SHA256 = (
+    "9ec2989e3000464a0f72b038e26fe407403e02721e21c19ae4fb9123c6a7cf8c"
+)
+_V8_ATTEMPT3_POINTER_FILE_SHA256 = (
+    "75acc7e9535f41528d22739ae8eeb5a0a2247c0fe63c097ad1da2859d7b33246"
+)
+_V8_ATTEMPT3_POINTER_ARTIFACT_SHA256 = (
+    "6ef596a63029d7fa8346141bb52c72d99062e201a12b7c9baf4fca7330baca64"
+)
+_V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256 = (
+    "5d398e998e2b738db545ffefd254712c6822017cfc5be6e7de435d5883c8c4c8"
+)
+_V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT = 1466
+_V8_ATTEMPT3_OPERATOR_SOURCE_SHA256 = (
+    "bc6efe5660c90828be13fb9221472c5e37261e5041509ff61403ea89ef3e9648"
+)
+_V8_ATTEMPT3_PROTOCOL_ID = "deform360-held-online-belief-v8"
+_V8_ATTEMPT3_EXECUTION_ATTEMPT = 3
+_V8_ATTEMPT3_WITHDRAWAL_STATUS = (
+    "withdrawn-postbarrier-before-queried-prediction-or-score"
+)
+_V8_ATTEMPT3_COMPLETION_STATUS = "withdrawal-integrity-complete"
+_V8_ATTEMPT3_DISPOSITION = (
+    "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_SEAL_OR_SCORE"
+)
+
+# Attempt 4 requires a fresh replay against its exact adapter and protocol
+# sources.  These deliberately empty digest pins make preflight fail closed
+# until that replay has been executed and sealed at the new versioned root.
 _V8_ADMISSION_REPLAY_ROOT = Path(
-    "/mnt/corsair/florianpfaff/bpt-held-v8-admission-wrapper-scratch-20260722"
+    "/mnt/corsair/florianpfaff/"
+    "bpt-held-v8.1-attempt-4-admission-wrapper-scratch-20260722"
 )
 _V8_ADMISSION_REPLAY_REPORT = (
     _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-report.json"
@@ -74,6 +123,10 @@ _V8_ADMISSION_REPLAY_REPORT = (
 _V8_ADMISSION_REPLAY_CODE_BINDING = (
     _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-code-binding.json"
 )
+_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256: str | None = None
 _OPEN27_DECISION = (
     _HELD_BASE
     / "runs"
@@ -109,7 +162,9 @@ _SAM2_CHECKPOINT = Path(
 )
 _DEFORM360_CODE = Path("/mnt/lexar4tb/datasets/deform360/code")
 
-_EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
+_EXPECTED_EXTERNAL_FILES: Mapping[
+    str, tuple[Path, str | None, int | None]
+] = {
     "v7_calibration_lock_file": (
         _V7_LOCK,
         "b464d7cfda3b4ad94f57ffd46267b3b50d8dc65e2ff8dfec2befc7953718aca7",
@@ -165,14 +220,29 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
         "e296021c5b647d5e26cbf8cecd2e3fc46ebed97026a2564224a54f0fcd156b1c",
         0o400,
     ),
+    "v8_attempt3_postbarrier_withdrawal_report": (
+        _V8_ATTEMPT3_WITHDRAWAL_REPORT,
+        _V8_ATTEMPT3_REPORT_FILE_SHA256,
+        0o400,
+    ),
+    "v8_attempt3_postbarrier_withdrawal_pointer": (
+        _V8_ATTEMPT3_WITHDRAWAL_POINTER,
+        _V8_ATTEMPT3_POINTER_FILE_SHA256,
+        0o400,
+    ),
+    "v8_attempt3_withdrawal_integrity_completion": (
+        _V8_ATTEMPT3_INTEGRITY_COMPLETION,
+        _V8_ATTEMPT3_COMPLETION_FILE_SHA256,
+        0o400,
+    ),
     "v8_external_admission_metadata_only_replay": (
         _V8_ADMISSION_REPLAY_REPORT,
-        "dc4ec1d5f913bd0dd6d10116783d98a7d9ef88ac9a7c74d778329687f6ff052b",
+        _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256,
         0o400,
     ),
     "v8_external_admission_replay_code_binding": (
         _V8_ADMISSION_REPLAY_CODE_BINDING,
-        "0015a7e9b7f2b7a7241dc405e27d96d31911980fb781cd569d227e066f595209",
+        _V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256,
         0o400,
     ),
     "gsplat_runtime_supplement_manifest": (
@@ -217,7 +287,7 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
     ),
 }
 
-_EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str] = {
+_EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str | None] = {
     "v8_attempt2_preoutcome_withdrawal_pointer": (
         "9063011657b955902d1cf7d85a4253eee65caa430a41edae2709a18032baf99c"
     ),
@@ -233,11 +303,20 @@ _EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str] = {
     "v8_attempt2_admission_compatibility_diagnostic": (
         "e659ceb9b4120c9a2e0c2bf33cbc8478bfc0157ed9b4f9415c3ebef194ea3f80"
     ),
+    "v8_attempt3_postbarrier_withdrawal_report": (
+        _V8_ATTEMPT3_REPORT_ARTIFACT_SHA256
+    ),
+    "v8_attempt3_postbarrier_withdrawal_pointer": (
+        _V8_ATTEMPT3_POINTER_ARTIFACT_SHA256
+    ),
+    "v8_attempt3_withdrawal_integrity_completion": (
+        _V8_ATTEMPT3_COMPLETION_ARTIFACT_SHA256
+    ),
     "v8_external_admission_metadata_only_replay": (
-        "1788c212d91d97accb7a6ae2996888ccd879281587f774196e244e66c7c2e8f1"
+        _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256
     ),
     "v8_external_admission_replay_code_binding": (
-        "8b27e19b2535ce079a5b38cc1ddd6a693d06bb47ef30eefa8d02ced36e2046d6"
+        _V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256
     ),
 }
 
@@ -248,6 +327,9 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
     ),
     "held_v8_attempt2_withdrawal_integrity_completion_operator_source": (
         "scripts/held/seal_deform360_v8_attempt2_withdrawal_completion.py"
+    ),
+    "held_v8_attempt3_withdrawal_operator_source": (
+        "scripts/held/seal_deform360_v8_attempt3_outcome_failure.py"
     ),
     "held_v8_disclosure_sealer_source": (
         "scripts/held/seal_deform360_v8_post_withdrawal_disclosure.py"
@@ -337,6 +419,14 @@ def _canonical_bytes(value: Any) -> bytes:
 
 def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+def _valid_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def _absolute(path: str | Path) -> Path:
@@ -588,12 +678,21 @@ def _external_bindings() -> dict[str, str]:
         expected_sha256,
         required_mode,
     ) in _EXPECTED_EXTERNAL_FILES.items():
+        _require(
+            _valid_sha256(expected_sha256),
+            f"{name} expected SHA-256 placeholder is not populated",
+        )
+        expected_artifact = _EXPECTED_EXTERNAL_ARTIFACT_SHA256.get(name)
+        if name in _EXPECTED_EXTERNAL_ARTIFACT_SHA256:
+            _require(
+                _valid_sha256(expected_artifact),
+                f"{name} expected artifact SHA-256 placeholder is not populated",
+            )
         observed = _sha256_file(
             path, role=name.replace("_", " "), required_mode=required_mode
         )
         _require(observed == expected_sha256, f"{name} SHA-256 changed")
         result[name] = observed
-        expected_artifact = _EXPECTED_EXTERNAL_ARTIFACT_SHA256.get(name)
         if expected_artifact is not None:
             _, payload, _ = _read_file(
                 path,
@@ -721,6 +820,115 @@ def _validate_attempt2_operator_source_lineage(
         )
 
 
+def _attempt3_archive_inventory_contract() -> dict[str, object]:
+    return {
+        "archive_path": str(_V8_ATTEMPT3_ARCHIVE),
+        "postseal_noncode_entry_count": _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+        "postseal_noncode_inventory_sha256": (
+            _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
+        ),
+    }
+
+
+def _load_attempt3_lineage_artifact(path: Path, *, role: str) -> dict[str, Any]:
+    _, payload, _ = _read_file(path, role=role, required_mode=0o400)
+    try:
+        artifact = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"{role} is not JSON") from error
+    _require(isinstance(artifact, dict), f"{role} is not a JSON object")
+    return artifact
+
+
+def _validate_attempt3_archive_lineage(
+    local_bindings: Mapping[str, str],
+) -> None:
+    local_operator = local_bindings.get(
+        "held_v8_attempt3_withdrawal_operator_source"
+    )
+    _require(
+        local_operator == _V8_ATTEMPT3_OPERATOR_SOURCE_SHA256,
+        "attempt-3 withdrawal operator differs from the observed executed source",
+    )
+
+    observed_archive = os.lstat(_V8_ATTEMPT3_ARCHIVE)
+    _require(
+        stat.S_ISDIR(observed_archive.st_mode)
+        and not stat.S_ISLNK(observed_archive.st_mode)
+        and _V8_ATTEMPT3_ARCHIVE.resolve() == _V8_ATTEMPT3_ARCHIVE
+        and stat.S_IMODE(observed_archive.st_mode) == 0o500,
+        "attempt-3 archive is not the exact sealed directory",
+    )
+
+    report = _load_attempt3_lineage_artifact(
+        _V8_ATTEMPT3_WITHDRAWAL_REPORT,
+        role="attempt-3 post-barrier withdrawal report",
+    )
+    pointer = _load_attempt3_lineage_artifact(
+        _V8_ATTEMPT3_WITHDRAWAL_POINTER,
+        role="attempt-3 post-barrier withdrawal pointer",
+    )
+    completion = _load_attempt3_lineage_artifact(
+        _V8_ATTEMPT3_INTEGRITY_COMPLETION,
+        role="attempt-3 withdrawal integrity completion",
+    )
+
+    for label, artifact, expected_status in (
+        ("report", report, _V8_ATTEMPT3_WITHDRAWAL_STATUS),
+        ("pointer", pointer, _V8_ATTEMPT3_WITHDRAWAL_STATUS),
+        ("completion", completion, _V8_ATTEMPT3_COMPLETION_STATUS),
+    ):
+        _require(
+            artifact.get("protocol_id") == _V8_ATTEMPT3_PROTOCOL_ID
+            and artifact.get("execution_attempt") == _V8_ATTEMPT3_EXECUTION_ATTEMPT
+            and artifact.get("status") == expected_status
+            and artifact.get("disposition") == _V8_ATTEMPT3_DISPOSITION,
+            f"attempt-3 {label} identity or disposition changed",
+        )
+        operator = artifact.get("executed_withdrawal_operator_source")
+        _require(
+            isinstance(operator, Mapping)
+            and operator.get("sha256") == local_operator,
+            f"attempt-3 {label} differs from the local executed operator source",
+        )
+
+    inventory = report.get("expected_postseal_inventory")
+    _require(
+        isinstance(inventory, Mapping)
+        and report.get("immutable_archive_path") == str(_V8_ATTEMPT3_ARCHIVE)
+        and inventory.get("entry_count") == _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT
+        and inventory.get("inventory_sha256")
+        == _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
+        "attempt-3 report archive inventory changed",
+    )
+    for label, artifact in (("pointer", pointer), ("completion", completion)):
+        _require(
+            artifact.get("archive_path") == str(_V8_ATTEMPT3_ARCHIVE)
+            and artifact.get("archive_fully_nonwritable") is True
+            and artifact.get("archive_root_mode_octal") == "0500"
+            and artifact.get("postseal_noncode_entry_count")
+            == _V8_ATTEMPT3_ARCHIVE_ENTRY_COUNT
+            and artifact.get("postseal_noncode_inventory_sha256")
+            == _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
+            and artifact.get("withdrawal_report_file_sha256")
+            == _V8_ATTEMPT3_REPORT_FILE_SHA256
+            and artifact.get("withdrawal_report_artifact_sha256")
+            == _V8_ATTEMPT3_REPORT_ARTIFACT_SHA256,
+            f"attempt-3 {label} archive or report lineage changed",
+        )
+    completion_binding = pointer.get("withdrawal_integrity_completion")
+    _require(
+        isinstance(completion_binding, Mapping)
+        and completion_binding.get("path")
+        == str(_V8_ATTEMPT3_INTEGRITY_COMPLETION)
+        and completion_binding.get("file_sha256")
+        == _V8_ATTEMPT3_COMPLETION_FILE_SHA256
+        and completion_binding.get("artifact_sha256")
+        == _V8_ATTEMPT3_COMPLETION_ARTIFACT_SHA256,
+        "attempt-3 pointer integrity-completion binding changed",
+    )
+
+
 def _validate_admission_replay_source_lineage(
     local_bindings: Mapping[str, str],
 ) -> None:
@@ -790,8 +998,15 @@ def prospective_bindings(
     bindings.update(external)
     local_bindings = _local_file_bindings(code)
     _validate_attempt2_operator_source_lineage(local_bindings)
+    _validate_attempt3_archive_lineage(local_bindings)
     _validate_admission_replay_source_lineage(local_bindings)
     bindings.update(local_bindings)
+    bindings["v8_attempt3_postseal_noncode_inventory"] = (
+        _V8_ATTEMPT3_ARCHIVE_INVENTORY_SHA256
+    )
+    bindings["v8_attempt3_postseal_noncode_inventory_contract"] = hashlib.sha256(
+        _canonical_bytes(_attempt3_archive_inventory_contract())
+    ).hexdigest()
     protocol, replacement = _import_v8_modules(code)
     processing_revision = _processing_revision()
     _require(
@@ -813,6 +1028,9 @@ def prospective_bindings(
             ),
             "frozen_query_field_contract": protocol.held_contract_sha256(
                 protocol.FROZEN_FIELD_CONTRACT
+            ),
+            "center_exclusion_contract": (
+                protocol.query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
             ),
             "primary_method_contract": protocol.held_contract_sha256(
                 protocol.PRIMARY_METHOD
@@ -909,6 +1127,11 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
             fresh_root_capability=capability,
             immutable_bindings=bindings,
             v7_withdrawal_report_path=_V7_WITHDRAWAL,
+            attempt3_withdrawal_report_path=_V8_ATTEMPT3_WITHDRAWAL_REPORT,
+            attempt3_withdrawal_pointer_path=_V8_ATTEMPT3_WITHDRAWAL_POINTER,
+            attempt3_withdrawal_integrity_completion_path=(
+                _V8_ATTEMPT3_INTEGRITY_COMPLETION
+            ),
             post_withdrawal_disclosure_path=_DISCLOSURE_PATH,
             development_decision_path=_OPEN27_DECISION,
         )

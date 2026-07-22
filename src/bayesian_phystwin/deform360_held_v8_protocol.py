@@ -35,7 +35,8 @@ from . import deform360_held_v8_replacement_source as replacement_source
 from . import deform360_held_v8_query_artifacts as query_artifacts
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8"
+PROTOCOL_ID = "deform360-held-online-belief-v8.1"
+EXECUTION_ATTEMPT = 4
 SCHEMA_VERSION = 1
 LOCK_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_KIND = "Deform360HeldFrameZeroBundle"
@@ -44,7 +45,7 @@ PREFIX_AUTHORIZATION_KIND = "Deform360HeldCausalPrefixAuthorization"
 ONLINE_SEAL_KIND = "Deform360HeldOnlinePredictionSeal"
 CALIBRATION_DECISION_KIND = "Deform360HeldV8CalibrationGateDecision"
 POST_WITHDRAWAL_DISCLOSURE_KIND = (
-    "Deform360HeldV8PostWithdrawalDevelopmentUseDisclosure"
+    "Deform360HeldV81PostWithdrawalDevelopmentUseDisclosure"
 )
 
 FRAME_COUNT = 76
@@ -84,6 +85,49 @@ POST_WITHDRAWAL_DEVELOPMENT_HASHES = {
 }
 OPEN27_DEVELOPMENT_DECISION_FILE_SHA256 = (
     "110b3c1831898ff6b333f35236401761222f85eafac1dcbcea7b7183d5b434bd"
+)
+ATTEMPT3_ARCHIVE_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v8-attempt-3-withdrawn-postbarrier"
+)
+ATTEMPT3_WITHDRAWAL_REPORT_PATH = (
+    ATTEMPT3_ARCHIVE_PATH / "execution-withdrawal-postbarrier-attempt3.json"
+)
+ATTEMPT3_WITHDRAWAL_POINTER_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v8-attempt-3-withdrawal-pointer.json"
+)
+ATTEMPT3_WITHDRAWAL_INTEGRITY_COMPLETION_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v8-attempt-3-withdrawal-integrity-completion.json"
+)
+ATTEMPT3_WITHDRAWAL_REPORT_FILE_SHA256 = (
+    "6d9c62606d18744d275df51fd08e041205bf15b38175d74c69690eafd511054b"
+)
+ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256 = (
+    "4b7404961fa13b418265f76827dda356fb6ad019db764c6302f49e8149d05de2"
+)
+ATTEMPT3_WITHDRAWAL_COMPLETION_FILE_SHA256 = (
+    "f3d1e8a6670484c81ac04743bcdb020cdee3fba02229a64844a8a9c9f4b8b989"
+)
+ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256 = (
+    "9ec2989e3000464a0f72b038e26fe407403e02721e21c19ae4fb9123c6a7cf8c"
+)
+ATTEMPT3_WITHDRAWAL_POINTER_FILE_SHA256 = (
+    "75acc7e9535f41528d22739ae8eeb5a0a2247c0fe63c097ad1da2859d7b33246"
+)
+ATTEMPT3_WITHDRAWAL_POINTER_ARTIFACT_SHA256 = (
+    "6ef596a63029d7fa8346141bb52c72d99062e201a12b7c9baf4fca7330baca64"
+)
+ATTEMPT3_ARCHIVE_INVENTORY_SHA256 = (
+    "5d398e998e2b738db545ffefd254712c6822017cfc5be6e7de435d5883c8c4c8"
+)
+ATTEMPT3_ARCHIVE_ENTRY_COUNT = 1466
+_ATTEMPT3_PROTOCOL_ID = "deform360-held-online-belief-v8"
+_ATTEMPT3_EXECUTION_ATTEMPT = 3
+_ATTEMPT3_STATUS = "withdrawn-postbarrier-before-queried-prediction-or-score"
+_ATTEMPT3_DISPOSITION = (
+    "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_SEAL_OR_SCORE"
 )
 RETIRED_V7_CASE_NAME = "002-rope-silk-ep0003"
 FRESH_REPLACEMENT_CASE_NAME = "072-cotton-clohesline-ep0003"
@@ -139,6 +183,32 @@ PRIMARY_METHOD = {
     "support_radius_fraction": FROZEN_FIELD_CONTRACT["support_radius_fraction"],
     "center_exclusion_contract_sha256": query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
     "calibration_selects_method": False,
+}
+
+FRESHNESS_AND_REUSE_CONTRACT = {
+    "held_v8_root_absent_before_attempt4_lock": True,
+    "all_predictions_must_be_fresh_v8_1_attempt4_outputs": True,
+    "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt4_outputs": True,
+    "v7_execution_artifacts_reused": False,
+    "v7_prediction_artifacts_reused": False,
+    "v7_target_or_query_artifacts_reused": False,
+    "v8_attempt1_predictions_reused": False,
+    "v8_attempt2_predictions_reused": False,
+    "v8_attempt1_source_manifests_reused": False,
+    "v8_attempt2_source_manifests_reused": False,
+    "v8_attempt1_frozen_fields_reused": False,
+    "v8_attempt2_frozen_fields_reused": False,
+    "v8_attempt1_partial_artifacts_reused": False,
+    "v8_attempt2_partial_artifacts_reused": False,
+    "v8_attempt3_predictions_reused": False,
+    "v8_attempt3_source_manifests_reused": False,
+    "v8_attempt3_frozen_fields_reused": False,
+    "v8_attempt3_target_artifacts_reused": False,
+    "v8_attempt3_official_x0_query_artifacts_reused": False,
+    "v8_attempt3_queried_prediction_artifacts_reused": False,
+    "v8_attempt3_score_or_gate_artifacts_reused": False,
+    "v8_attempt3_partial_artifacts_reused": False,
+    "full_15_case_fresh_rerun_required": True,
 }
 
 PHYSICAL_ARTIFACT_ROLES = (
@@ -540,6 +610,210 @@ def _expected_confirmation_payload() -> list[dict[str, Any]]:
     return [asdict(case) for case in CONFIRMATION_CASES]
 
 
+def _load_exact_attempt3_artifact(
+    path: str | Path,
+    *,
+    expected_path: Path,
+    expected_file_sha256: str,
+    expected_artifact_sha256: str,
+    expected_kind: str,
+    expected_status: str,
+    role: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    source = _canonical_path(path)
+    _require(source == _canonical_path(expected_path), f"{role} path changed")
+    _require_mode(source, _SEALED_FILE_MODE, role=role)
+    record = _bound_file(source)
+    _require(record["sha256"] == expected_file_sha256, f"{role} file hash changed")
+    artifact = _load_json(source)
+    _require(
+        artifact.get("schema_version") == 1
+        and artifact.get("artifact_kind") == expected_kind
+        and artifact.get("protocol_id") == _ATTEMPT3_PROTOCOL_ID
+        and artifact.get("execution_attempt") == _ATTEMPT3_EXECUTION_ATTEMPT
+        and artifact.get("status") == expected_status
+        and artifact.get("disposition") == _ATTEMPT3_DISPOSITION
+        and artifact.get("artifact_sha256") == expected_artifact_sha256
+        and held_artifact_sha256(artifact) == expected_artifact_sha256,
+        f"{role} artifact identity changed",
+    )
+    return record, artifact
+
+
+def _validate_attempt3_archive(path: str | Path) -> Path:
+    archive = _canonical_path(path)
+    _require(
+        archive == _canonical_path(ATTEMPT3_ARCHIVE_PATH),
+        "attempt-3 archive path changed",
+    )
+    root_state = os.lstat(archive)
+    _require(
+        stat.S_ISDIR(root_state.st_mode)
+        and not stat.S_ISLNK(root_state.st_mode)
+        and stat.S_IMODE(root_state.st_mode) == 0o500
+        and archive.resolve() == archive,
+        "attempt-3 archive root is not canonical mode 0500",
+    )
+    for current, directories, files in os.walk(archive, followlinks=False):
+        current_path = Path(current)
+        for name in (*directories, *files):
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                not stat.S_ISLNK(observed.st_mode)
+                and (stat.S_ISDIR(observed.st_mode) or stat.S_ISREG(observed.st_mode))
+                and observed.st_mode & 0o222 == 0,
+                f"attempt-3 archive entry is writable or unsafe: {child}",
+            )
+    return archive
+
+
+def validate_attempt3_withdrawal_lineage(
+    *,
+    archive_path: str | Path,
+    report_path: str | Path,
+    pointer_path: str | Path,
+    completion_path: str | Path,
+) -> dict[str, Any]:
+    """Validate the exact immutable attempt-3 post-barrier withdrawal chain."""
+
+    archive = _validate_attempt3_archive(archive_path)
+    report_record, report = _load_exact_attempt3_artifact(
+        report_path,
+        expected_path=ATTEMPT3_WITHDRAWAL_REPORT_PATH,
+        expected_file_sha256=ATTEMPT3_WITHDRAWAL_REPORT_FILE_SHA256,
+        expected_artifact_sha256=ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+        expected_kind="Deform360HeldV8Attempt3PostBarrierWithdrawalReport",
+        expected_status=_ATTEMPT3_STATUS,
+        role="attempt-3 withdrawal report",
+    )
+    completion_record, completion = _load_exact_attempt3_artifact(
+        completion_path,
+        expected_path=ATTEMPT3_WITHDRAWAL_INTEGRITY_COMPLETION_PATH,
+        expected_file_sha256=ATTEMPT3_WITHDRAWAL_COMPLETION_FILE_SHA256,
+        expected_artifact_sha256=ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256,
+        expected_kind="Deform360HeldV8Attempt3WithdrawalIntegrityCompletion",
+        expected_status="withdrawal-integrity-complete",
+        role="attempt-3 withdrawal integrity completion",
+    )
+    pointer_record, pointer = _load_exact_attempt3_artifact(
+        pointer_path,
+        expected_path=ATTEMPT3_WITHDRAWAL_POINTER_PATH,
+        expected_file_sha256=ATTEMPT3_WITHDRAWAL_POINTER_FILE_SHA256,
+        expected_artifact_sha256=ATTEMPT3_WITHDRAWAL_POINTER_ARTIFACT_SHA256,
+        expected_kind="Deform360HeldV8Attempt3WithdrawalPointer",
+        expected_status=_ATTEMPT3_STATUS,
+        role="attempt-3 withdrawal pointer",
+    )
+
+    _require(
+        _canonical_path(report["immutable_archive_path"]) == archive
+        and _canonical_path(completion["archive_path"]) == archive
+        and _canonical_path(pointer["archive_path"]) == archive,
+        "attempt-3 archive cross-link changed",
+    )
+    report_link = {
+        "path": str(_canonical_path(report_path)),
+        "size_bytes": report_record["size_bytes"],
+        "file_sha256": report_record["sha256"],
+        "artifact_sha256": ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+    }
+    for artifact, role in ((completion, "completion"), (pointer, "pointer")):
+        _require(
+            all(
+                artifact.get(key) == value
+                for key, value in report_link.items()
+                if key != "path"
+            )
+            and _canonical_path(artifact.get("withdrawal_report_path"))
+            == _canonical_path(report_link["path"]),
+            f"attempt-3 {role} report cross-link changed",
+        )
+    expected_completion_link = {
+        "path": str(_canonical_path(completion_path)),
+        "mode_octal": "0400",
+        "size_bytes": completion_record["size_bytes"],
+        "file_sha256": completion_record["sha256"],
+        "artifact_sha256": ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256,
+    }
+    _require(
+        pointer.get("withdrawal_integrity_completion") == expected_completion_link,
+        "attempt-3 pointer completion cross-link changed",
+    )
+    _require(
+        completion.get("pointer_contract")
+        == {
+            "path": str(_canonical_path(pointer_path)),
+            "artifact_kind": "Deform360HeldV8Attempt3WithdrawalPointer",
+            "pointer_must_bind_this_completion": True,
+            "completion_does_not_predict_pointer_hash_to_avoid_circularity": True,
+        },
+        "attempt-3 completion pointer contract changed",
+    )
+    shared = {
+        "archive_root_mode_octal": "0500",
+        "archive_fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
+        "postseal_noncode_entry_count": ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+        "independent_post_rename_integrity_verified": True,
+    }
+    _require(
+        all(completion.get(key) == value for key, value in shared.items())
+        and all(pointer.get(key) == value for key, value in shared.items()),
+        "attempt-3 archive integrity evidence changed",
+    )
+    _require(
+        report.get("executed_withdrawal_operator_source")
+        == completion.get("executed_withdrawal_operator_source")
+        == pointer.get("executed_withdrawal_operator_source")
+        and report.get("deployed_code")
+        == completion.get("deployed_code")
+        == pointer.get("deployed_code"),
+        "attempt-3 operator or deployed-code lineage changed",
+    )
+    execution = report.get("execution_boundary")
+    information = report.get("information_boundary")
+    _require(
+        isinstance(execution, Mapping)
+        and execution.get("online_prediction_seal_count") == 15
+        and execution.get("frozen_field_manifest_count") == 15
+        and execution.get("official_target_archive_count") == 1
+        and execution.get("official_x0_archive_count") == 1
+        and execution.get("queried_prediction_seal_count") == 0
+        and execution.get("score_evidence_count") == 0
+        and execution.get("gate_decision_count") == 0
+        and execution.get("confirmation_lock_count") == 0
+        and isinstance(information, Mapping)
+        and information.get("first_complete_cohort_barrier_crossed") is True
+        and information.get("queried_prediction_created_or_read") is False
+        and information.get("score_created_or_read") is False
+        and information.get("gate_decision_created_or_read") is False
+        and information.get("confirmation_created_or_read") is False,
+        "attempt-3 execution or information boundary changed",
+    )
+    _require(
+        pointer.get("active_held_v8_root_absent_after_archive") is True
+        and pointer.get("queried_prediction_seal_count") == 0
+        and pointer.get("score_evidence_count") == 0
+        and pointer.get("gate_decision_count") == 0
+        and pointer.get("confirmation_accessed") is False,
+        "attempt-3 pointer outcome boundary changed",
+    )
+    archive_integrity = {
+        "path": str(archive),
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": ATTEMPT3_ARCHIVE_INVENTORY_SHA256,
+        "postseal_noncode_entry_count": ATTEMPT3_ARCHIVE_ENTRY_COUNT,
+    }
+    return {
+        "v8_attempt3_withdrawal_report": report_record,
+        "v8_attempt3_withdrawal_pointer": pointer_record,
+        "v8_attempt3_withdrawal_integrity_completion": completion_record,
+        "v8_attempt3_archive_integrity": archive_integrity,
+    }
+
+
 def validate_post_withdrawal_development_use_disclosure(
     path: str | Path,
 ) -> dict[str, Any]:
@@ -554,9 +828,12 @@ def validate_post_withdrawal_development_use_disclosure(
             "artifact_kind",
             "protocol_id",
             "disclosed_v7_files",
+            "disclosed_v8_attempt3_files",
+            "v8_attempt3_archive_integrity",
+            "v8_attempt3_revision_basis",
             "post_withdrawal_development",
             "retirement",
-            "v8_reuse_boundary",
+            "v8_1_reuse_boundary",
             "claim_boundary",
             "artifact_sha256",
         },
@@ -597,6 +874,76 @@ def validate_post_withdrawal_development_use_disclosure(
             and record["size_bytes"] == expected_size,
             f"{name} binding changed",
         )
+    attempt3_disclosed = artifact.get("disclosed_v8_attempt3_files")
+    expected_attempt3 = {
+        "v8_attempt3_withdrawal_report": (
+            ATTEMPT3_WITHDRAWAL_REPORT_FILE_SHA256,
+            ATTEMPT3_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+        ),
+        "v8_attempt3_withdrawal_pointer": (
+            ATTEMPT3_WITHDRAWAL_POINTER_FILE_SHA256,
+            ATTEMPT3_WITHDRAWAL_POINTER_ARTIFACT_SHA256,
+        ),
+        "v8_attempt3_withdrawal_integrity_completion": (
+            ATTEMPT3_WITHDRAWAL_COMPLETION_FILE_SHA256,
+            ATTEMPT3_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256,
+        ),
+    }
+    _require(
+        isinstance(attempt3_disclosed, Mapping)
+        and set(attempt3_disclosed) == set(expected_attempt3),
+        "disclosed attempt-3 file set changed",
+    )
+    for name, (expected_file_sha256, _expected_artifact_sha256) in (
+        expected_attempt3.items()
+    ):
+        record = attempt3_disclosed[name]
+        _require(
+            isinstance(record, Mapping)
+            and set(record) == _DISCLOSED_FILE_RECORD_FIELDS
+            and record.get("mode_octal") == "0400",
+            f"{name} disclosure record changed",
+        )
+        path_value = record.get("path")
+        _require(isinstance(path_value, str) and path_value, f"{name} path is missing")
+        _require_mode(path_value, _SEALED_FILE_MODE, role=name)
+        observed = _bound_file(path_value)
+        _require(
+            observed
+            == {
+                "path": record["path"],
+                "sha256": record["sha256"],
+                "size_bytes": record["size_bytes"],
+            }
+            and record["sha256"] == expected_file_sha256,
+            f"{name} binding changed",
+        )
+    attempt3_lineage = validate_attempt3_withdrawal_lineage(
+        archive_path=ATTEMPT3_ARCHIVE_PATH,
+        report_path=attempt3_disclosed["v8_attempt3_withdrawal_report"]["path"],
+        pointer_path=attempt3_disclosed["v8_attempt3_withdrawal_pointer"]["path"],
+        completion_path=attempt3_disclosed[
+            "v8_attempt3_withdrawal_integrity_completion"
+        ]["path"],
+    )
+    _require(
+        artifact.get("v8_attempt3_archive_integrity")
+        == attempt3_lineage["v8_attempt3_archive_integrity"],
+        "disclosed attempt-3 archive integrity changed",
+    )
+    _require(
+        artifact.get("v8_attempt3_revision_basis")
+        == {
+            "official_x0_geometry_used_to_diagnose_exclusion_liveness": True,
+            "future_target_coordinates_masks_or_scores_used_for_revision": False,
+            "queried_prediction_score_or_gate_existed": False,
+            "revision": (
+                "replace exact-one-per-center matching with the inclusive 15 mm "
+                "x0-only radius union"
+            ),
+        },
+        "attempt-3 revision basis disclosure changed",
+    )
     _require(
         artifact.get("post_withdrawal_development")
         == {
@@ -623,7 +970,7 @@ def validate_post_withdrawal_development_use_disclosure(
         "post-withdrawal retirement changed",
     )
     _require(
-        artifact.get("v8_reuse_boundary")
+        artifact.get("v8_1_reuse_boundary")
         == {
             "v7_target_or_staging_reused": False,
             "v7_physical_prediction_reused": False,
@@ -631,15 +978,24 @@ def validate_post_withdrawal_development_use_disclosure(
             "v7_query_or_score_reused": False,
             "v7_execution_artifact_reused": False,
             "v7_withdrawal_report_used_only_as_immutable_lineage": True,
-            "all_v8_predictions_targets_queries_and_scores_must_be_fresh": True,
+            "v8_attempt3_predictions_reused": False,
+            "v8_attempt3_source_manifests_reused": False,
+            "v8_attempt3_frozen_fields_reused": False,
+            "v8_attempt3_target_artifacts_reused": False,
+            "v8_attempt3_official_x0_query_artifacts_reused": False,
+            "v8_attempt3_queried_prediction_artifacts_reused": False,
+            "v8_attempt3_score_or_gate_artifacts_reused": False,
+            "v8_attempt3_partial_artifacts_reused": False,
+            "all_v8_1_attempt4_predictions_targets_queries_and_scores_fresh": True,
+            "full_15_case_fresh_rerun_required": True,
         },
-        "v8 reuse boundary changed",
+        "v8.1 reuse boundary changed",
     )
     _require(
         artifact.get("claim_boundary")
         == (
             "This disclosure preserves prospective episode-level evaluation; it "
-            "does not turn open development or v8 into an official Deform360 "
+            "does not turn open development or v8.1 into an official Deform360 "
             "state-of-the-art comparison."
         ),
         "disclosure claim boundary changed",
@@ -697,8 +1053,11 @@ def create_calibration_protocol_lock(
     v7_withdrawal_report_path: str | Path,
     post_withdrawal_disclosure_path: str | Path,
     development_decision_path: str | Path,
+    attempt3_withdrawal_report_path: str | Path,
+    attempt3_withdrawal_pointer_path: str | Path,
+    attempt3_withdrawal_integrity_completion_path: str | Path,
 ) -> dict[str, Any]:
-    """Create v8 only after proving that its formal root does not exist."""
+    """Create v8.1 attempt 4 only after proving its formal root was absent."""
 
     root = _canonical_path(held_root)
     output = _canonical_path(output_path)
@@ -731,6 +1090,11 @@ def create_calibration_protocol_lock(
             == frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256,
             "frame-zero bounded subset-audit contract is not locked",
         )
+        _require(
+            bindings.get("center_exclusion_contract")
+            == query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
+            "center-exclusion contract is not independently locked",
+        )
         _require_mode(
             v7_withdrawal_report_path,
             _SEALED_FILE_MODE,
@@ -762,11 +1126,37 @@ def create_calibration_protocol_lock(
             development["sha256"] == OPEN27_DEVELOPMENT_DECISION_FILE_SHA256,
             "open27 development decision SHA-256 changed",
         )
+        attempt3_lineage = validate_attempt3_withdrawal_lineage(
+            archive_path=ATTEMPT3_ARCHIVE_PATH,
+            report_path=attempt3_withdrawal_report_path,
+            pointer_path=attempt3_withdrawal_pointer_path,
+            completion_path=attempt3_withdrawal_integrity_completion_path,
+        )
+        disclosed_attempt3 = disclosure["disclosed_v8_attempt3_files"]
+        for name in (
+            "v8_attempt3_withdrawal_report",
+            "v8_attempt3_withdrawal_pointer",
+            "v8_attempt3_withdrawal_integrity_completion",
+        ):
+            disclosed = disclosed_attempt3[name]
+            _require(
+                {
+                    key: disclosed[key]
+                    for key in ("path", "sha256", "size_bytes")
+                }
+                == attempt3_lineage[name],
+                f"disclosure binds another {name}",
+            )
+        _require(
+            disclosure["v8_attempt3_archive_integrity"]
+            == attempt3_lineage["v8_attempt3_archive_integrity"],
+            "disclosure binds another attempt-3 archive",
+        )
         artifact: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION,
             "artifact_kind": LOCK_KIND,
             "protocol_id": PROTOCOL_ID,
-            "execution_attempt": 3,
+            "execution_attempt": EXECUTION_ATTEMPT,
             "held_root": str(root),
             "cohort": _expected_confirmation_payload(),
             "case_whitelist": list(CONFIRMATION_CASE_NAMES),
@@ -780,6 +1170,7 @@ def create_calibration_protocol_lock(
                     post_withdrawal_disclosure_path
                 ),
                 "open27_development_decision": development,
+                **attempt3_lineage,
             },
             "frozen_field_contract": deepcopy(FROZEN_FIELD_CONTRACT),
             "replacement_source_inventory_contract": deepcopy(
@@ -790,23 +1181,7 @@ def create_calibration_protocol_lock(
             "confirmation_access_authorized": False,
             "parent_calibration_lock": None,
             "calibration_gate_evidence": None,
-            "freshness_and_reuse": {
-                "held_v8_root_absent_before_lock": True,
-                "all_predictions_must_be_fresh_v8_outputs": True,
-                "all_targets_queries_and_scores_must_be_fresh_v8_outputs": True,
-                "v7_execution_artifacts_reused": False,
-                "v7_prediction_artifacts_reused": False,
-                "v7_target_or_query_artifacts_reused": False,
-                "v8_attempt1_predictions_reused": False,
-                "v8_attempt2_predictions_reused": False,
-                "v8_attempt1_source_manifests_reused": False,
-                "v8_attempt2_source_manifests_reused": False,
-                "v8_attempt1_frozen_fields_reused": False,
-                "v8_attempt2_frozen_fields_reused": False,
-                "v8_attempt1_partial_artifacts_reused": False,
-                "v8_attempt2_partial_artifacts_reused": False,
-                "full_15_case_fresh_rerun_required": True,
-            },
+            "freshness_and_reuse": deepcopy(FRESHNESS_AND_REUSE_CONTRACT),
             "information_boundary": {
                 "filesystem_case_discovery_permitted": False,
                 "barrier_one_requires_physical_online_and_field_for_every_case": True,
@@ -832,7 +1207,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         artifact.get("schema_version") == SCHEMA_VERSION
         and artifact.get("artifact_kind") == LOCK_KIND
         and artifact.get("protocol_id") == PROTOCOL_ID
-        and artifact.get("execution_attempt") == 3,
+        and artifact.get("execution_attempt") == EXECUTION_ATTEMPT,
         "unsupported held-v8 lock",
     )
     root = _canonical_path(str(artifact.get("held_root")))
@@ -883,6 +1258,11 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         == frame_zero_assets.EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256,
         "frame-zero bounded subset-audit contract changed",
     )
+    _require(
+        bindings.get("center_exclusion_contract")
+        == query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
+        "center-exclusion contract changed",
+    )
     lineage = artifact.get("lineage")
     _require(
         isinstance(lineage, Mapping)
@@ -891,6 +1271,10 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "v7_withdrawal_report",
             "post_withdrawal_development_use_disclosure",
             "open27_development_decision",
+            "v8_attempt3_withdrawal_report",
+            "v8_attempt3_withdrawal_pointer",
+            "v8_attempt3_withdrawal_integrity_completion",
+            "v8_attempt3_archive_integrity",
         },
         "held-v8 lineage fields changed",
     )
@@ -926,25 +1310,39 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         _sha256_file(development) == OPEN27_DEVELOPMENT_DECISION_FILE_SHA256,
         "open27 development decision lineage changed",
     )
+    attempt3_lineage = validate_attempt3_withdrawal_lineage(
+        archive_path=lineage["v8_attempt3_archive_integrity"]["path"],
+        report_path=lineage["v8_attempt3_withdrawal_report"]["path"],
+        pointer_path=lineage["v8_attempt3_withdrawal_pointer"]["path"],
+        completion_path=lineage[
+            "v8_attempt3_withdrawal_integrity_completion"
+        ]["path"],
+    )
     _require(
-        artifact.get("freshness_and_reuse")
-        == {
-            "held_v8_root_absent_before_lock": True,
-            "all_predictions_must_be_fresh_v8_outputs": True,
-            "all_targets_queries_and_scores_must_be_fresh_v8_outputs": True,
-            "v7_execution_artifacts_reused": False,
-            "v7_prediction_artifacts_reused": False,
-            "v7_target_or_query_artifacts_reused": False,
-            "v8_attempt1_predictions_reused": False,
-            "v8_attempt2_predictions_reused": False,
-            "v8_attempt1_source_manifests_reused": False,
-            "v8_attempt2_source_manifests_reused": False,
-            "v8_attempt1_frozen_fields_reused": False,
-            "v8_attempt2_frozen_fields_reused": False,
-            "v8_attempt1_partial_artifacts_reused": False,
-            "v8_attempt2_partial_artifacts_reused": False,
-            "full_15_case_fresh_rerun_required": True,
-        },
+        all(lineage[name] == value for name, value in attempt3_lineage.items()),
+        "attempt-3 withdrawal lineage changed",
+    )
+    disclosed_attempt3 = disclosure["disclosed_v8_attempt3_files"]
+    for name in (
+        "v8_attempt3_withdrawal_report",
+        "v8_attempt3_withdrawal_pointer",
+        "v8_attempt3_withdrawal_integrity_completion",
+    ):
+        disclosed = disclosed_attempt3[name]
+        _require(
+            {
+                key: disclosed[key] for key in ("path", "sha256", "size_bytes")
+            }
+            == lineage[name],
+            f"post-withdrawal disclosure {name} lineage changed",
+        )
+    _require(
+        disclosure["v8_attempt3_archive_integrity"]
+        == lineage["v8_attempt3_archive_integrity"],
+        "post-withdrawal disclosure archive lineage changed",
+    )
+    _require(
+        artifact.get("freshness_and_reuse") == FRESHNESS_AND_REUSE_CONTRACT,
         "held-v8 freshness or reuse contract changed",
     )
     _require(
@@ -2127,12 +2525,20 @@ def create_confirmation_protocol_lock(
 
 
 __all__ = [
+    "ATTEMPT3_ARCHIVE_ENTRY_COUNT",
+    "ATTEMPT3_ARCHIVE_INVENTORY_SHA256",
+    "ATTEMPT3_ARCHIVE_PATH",
+    "ATTEMPT3_WITHDRAWAL_INTEGRITY_COMPLETION_PATH",
+    "ATTEMPT3_WITHDRAWAL_POINTER_PATH",
+    "ATTEMPT3_WITHDRAWAL_REPORT_PATH",
     "CALIBRATION_CASE_NAMES",
     "CALIBRATION_DECISION_KIND",
     "CONFIRMATION_CASES",
     "CONFIRMATION_CASE_NAMES",
     "CohortBarrierEvidence",
+    "EXECUTION_ATTEMPT",
     "FRAME_COUNT",
+    "FRESHNESS_AND_REUSE_CONTRACT",
     "FRESH_REPLACEMENT_CASE_NAME",
     "FROZEN_FIELD_CONTRACT",
     "FUTURE_SCORE_OPERATION",
@@ -2176,5 +2582,6 @@ __all__ = [
     "validate_post_withdrawal_development_use_disclosure",
     "validate_prefix_stage_authorization",
     "validate_protocol_lock",
+    "validate_attempt3_withdrawal_lineage",
     "validate_second_cohort_barrier",
 ]

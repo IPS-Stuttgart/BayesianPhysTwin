@@ -37,7 +37,7 @@ import numpy as np
 from . import deform360_held_v8_query_artifacts as query_artifacts
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8"
+PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 SCHEMA_VERSION = 1
 FRAME_COUNT = 76
 CENTER_COUNT = 16

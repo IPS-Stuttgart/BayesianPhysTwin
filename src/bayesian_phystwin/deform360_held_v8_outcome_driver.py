@@ -22,7 +22,7 @@ import sys
 from typing import Any, Callable, Literal, Mapping, Sequence
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8"
+PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 NO_GO_EXIT_CODE = 3
 NOT_CONFIRMED_EXIT_CODE = 4
 CANONICAL_HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8")
