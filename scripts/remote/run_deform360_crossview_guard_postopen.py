@@ -27,6 +27,12 @@ from bayesian_phystwin.deform360_crossview_guard_artifact import (
     build_crossview_guard_prediction,
     load_crossview_guard_prediction,
 )
+from bayesian_phystwin.deform360_crossview_2d_guard_artifact import (
+    ARCHIVE_FILENAME as DIRECT_ARCHIVE_FILENAME,
+    REPORT_FILENAME as DIRECT_REPORT_FILENAME,
+    build_direct_crossview_guard_prediction,
+    load_direct_crossview_guard_prediction,
+)
 from bayesian_phystwin.deform360_crossview_observation import (
     build_crossview_track_supplement,
     load_crossview_track_supplement,
@@ -136,7 +142,11 @@ def _parser() -> argparse.ArgumentParser:
     predict = subparsers.add_parser("predict")
     predict.add_argument("--shard-index", type=int, default=0)
     predict.add_argument("--shard-count", type=int, default=1)
+    predict_direct = subparsers.add_parser("predict-direct-2d")
+    predict_direct.add_argument("--shard-index", type=int, default=0)
+    predict_direct.add_argument("--shard-count", type=int, default=1)
     subparsers.add_parser("evaluate")
+    subparsers.add_parser("evaluate-direct-2d")
     return parser
 
 
@@ -298,6 +308,43 @@ def _build_predictions(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _build_direct_predictions(args: argparse.Namespace) -> dict[str, Any]:
+    selected = _selected_records(
+        _records(args), args.shard_index, args.shard_count
+    )
+    completed: list[dict[str, Any]] = []
+    for record in selected:
+        output = args.output_root / "predictions-direct-2d" / record.case
+        if output.exists():
+            report, _ = load_direct_crossview_guard_prediction(output)
+            status = "preexisting-validated"
+        else:
+            report = build_direct_crossview_guard_prediction(
+                record.measurement_dir,
+                args.output_root / "supplements" / record.case,
+                record.baseline_archive,
+                record.baseline_key,
+                output,
+            )
+            status = "built"
+        completed.append(
+            {
+                "case": record.case,
+                "status": status,
+                "result_sha256": report["result_sha256"],
+                "accepted_update_count": report["output"][
+                    "accepted_update_count"
+                ],
+            }
+        )
+    return {
+        "command": "predict-direct-2d",
+        "shard_index": args.shard_index,
+        "shard_count": args.shard_count,
+        "cases": completed,
+    }
+
+
 def _target_arrays(record: CaseRecord) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     if record.cohort == "opened_source":
         target = _load_source_target_pickle(record.target_path)
@@ -332,12 +379,24 @@ def _score(
     )
 
 
-def _evaluate_case(record: CaseRecord, output_root: Path) -> dict[str, Any]:
-    prediction_dir = output_root / "predictions" / record.case
-    report, arrays = load_crossview_guard_prediction(prediction_dir)
+def _evaluate_case(
+    record: CaseRecord, output_root: Path, *, direct_2d: bool
+) -> dict[str, Any]:
+    prediction_subdir = "predictions-direct-2d" if direct_2d else "predictions"
+    prediction_dir = output_root / prediction_subdir / record.case
+    if direct_2d:
+        report, arrays = load_direct_crossview_guard_prediction(prediction_dir)
+        guarded_key = "direct_2d_crossview_guarded_m"
+        report_filename = DIRECT_REPORT_FILENAME
+        archive_filename = DIRECT_ARCHIVE_FILENAME
+    else:
+        report, arrays = load_crossview_guard_prediction(prediction_dir)
+        guarded_key = "crossview_guarded_m"
+        report_filename = "crossview_guarded_prediction.json"
+        archive_filename = "crossview_guarded_prediction.npz"
     target, visibility, validity = _target_arrays(record)
     baseline = arrays["baseline_m"]
-    guarded = arrays["crossview_guarded_m"]
+    guarded = arrays[guarded_key]
     centers = np.asarray(arrays["center_ids"], dtype=np.int64)
     if target.shape != baseline.shape:
         raise ValueError(f"target shape changed: {record.case}")
@@ -390,7 +449,11 @@ def _evaluate_case(record: CaseRecord, output_root: Path) -> dict[str, Any]:
             }
         )
     payload: dict[str, Any] = {
-        "artifact_kind": "Deform360CrossViewGuardPostOpenEvaluation",
+        "artifact_kind": (
+            "Deform360Direct2DCrossViewGuardPostOpenEvaluation"
+            if direct_2d
+            else "Deform360CrossViewGuardPostOpenEvaluation"
+        ),
         "schema_version": 1,
         "case": record.case,
         "object_id": record.object_id,
@@ -401,10 +464,10 @@ def _evaluate_case(record: CaseRecord, output_root: Path) -> dict[str, Any]:
         "intervals": intervals,
         "inputs_sha256": {
             "prediction_report": file_sha256(
-                prediction_dir / "crossview_guarded_prediction.json"
+                prediction_dir / report_filename
             ),
             "prediction_archive": file_sha256(
-                prediction_dir / "crossview_guarded_prediction.npz"
+                prediction_dir / archive_filename
             ),
             "opened_target": file_sha256(record.target_path),
         },
@@ -417,7 +480,8 @@ def _evaluate_case(record: CaseRecord, output_root: Path) -> dict[str, Any]:
     payload["result_sha256"] = canonical_sha256(
         payload, digest_key="result_sha256"
     )
-    evaluation_path = output_root / "evaluations" / f"{record.case}.json"
+    evaluation_subdir = "evaluations-direct-2d" if direct_2d else "evaluations"
+    evaluation_path = output_root / evaluation_subdir / f"{record.case}.json"
     evaluation_path.parent.mkdir(parents=True, exist_ok=True)
     evaluation_path.write_text(
         json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
@@ -496,8 +560,11 @@ def _aggregate_cohort(cases: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _evaluate(args: argparse.Namespace) -> dict[str, Any]:
-    cases = [_evaluate_case(record, args.output_root) for record in _records(args)]
+def _evaluate(args: argparse.Namespace, *, direct_2d: bool = False) -> dict[str, Any]:
+    cases = [
+        _evaluate_case(record, args.output_root, direct_2d=direct_2d)
+        for record in _records(args)
+    ]
     source = [case for case in cases if case["cohort"] == "opened_source"]
     calibration = [
         case for case in cases if case["cohort"] == "opened_calibration"
@@ -519,10 +586,16 @@ def _evaluate(args: argparse.Namespace) -> dict[str, Any]:
         ),
     }
     payload: dict[str, Any] = {
-        "artifact_kind": "Deform360CrossViewGuardPostOpenResult",
+        "artifact_kind": (
+            "Deform360Direct2DCrossViewGuardPostOpenResult"
+            if direct_2d
+            else "Deform360CrossViewGuardPostOpenResult"
+        ),
         "schema_version": 1,
         "protocol_id": (
-            "deform360-disjoint-crossview-guard-v1-postopen-development"
+            "deform360-direct-2d-crossview-guard-v1-postopen-development"
+            if direct_2d
+            else "deform360-disjoint-crossview-guard-v1-postopen-development"
         ),
         "source": source_summary,
         "calibration": calibration_summary,
@@ -544,7 +617,8 @@ def _evaluate(args: argparse.Namespace) -> dict[str, Any]:
         payload, digest_key="result_sha256"
     )
     args.output_root.mkdir(parents=True, exist_ok=True)
-    (args.output_root / "summary.json").write_text(
+    summary_name = "summary-direct-2d.json" if direct_2d else "summary.json"
+    (args.output_root / summary_name).write_text(
         json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
@@ -557,6 +631,10 @@ def main() -> None:
         result = _build_supplements(args)
     elif args.command == "predict":
         result = _build_predictions(args)
+    elif args.command == "predict-direct-2d":
+        result = _build_direct_predictions(args)
+    elif args.command == "evaluate-direct-2d":
+        result = _evaluate(args, direct_2d=True)
     else:
         result = _evaluate(args)
     print(json.dumps(result, indent=2, sort_keys=True))
