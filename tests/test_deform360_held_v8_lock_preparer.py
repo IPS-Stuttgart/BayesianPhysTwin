@@ -750,7 +750,10 @@ def test_attempt_three_excluded_deployment_is_exact_clean_git_tree(
     code.rename(archive / deployed_name)
     code = archive / deployed_name
     (code / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8")
-    _git(code, "add", ".gitignore")
+    executable = code / "run-held.sh"
+    executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    executable.chmod(0o755)
+    _git(code, "add", ".gitignore", "run-held.sh")
     _git(code, "commit", "-m", "bind ignored-file policy")
     head = _git(code, "rev-parse", "HEAD")
     records = preparer._parse_git_tree(
@@ -788,6 +791,9 @@ def test_attempt_three_excluded_deployment_is_exact_clean_git_tree(
     monkeypatch.setattr(
         preparer, "_V8_ATTEMPT3_DEPLOYED_TREE_RECORD_COUNT", len(records)
     )
+    for tracked in (code / ".gitignore", code / "method.py", executable):
+        tracked.chmod(0o400)
+    (code / "scripts" / "held" / "prepare_deform360_v8_lock.py").chmod(0o400)
 
     preparer._validate_attempt3_excluded_deployed_code(report)
 
@@ -800,10 +806,10 @@ def test_attempt_three_excluded_deployment_is_exact_clean_git_tree(
         preparer._validate_attempt3_excluded_deployed_code(report)
     (code / "untracked.tmp").unlink()
 
-    os.chmod(code / "method.py", 0o700)
+    os.chmod(code / "method.py", 0o600)
     with pytest.raises(ValueError, match="tracked blob changed"):
         preparer._validate_attempt3_excluded_deployed_code(report)
-    os.chmod(code / "method.py", 0o600)
+    os.chmod(code / "method.py", 0o400)
     changed_report = {**report, "deployed_code": {**binding, "git_head": "0" * 40}}
     with pytest.raises(ValueError, match="report binding changed"):
         preparer._validate_attempt3_excluded_deployed_code(changed_report)
@@ -868,6 +874,9 @@ def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
         path.write_bytes(payload)
     preparer_path = source / "scripts/held/prepare_deform360_v8_lock.py"
     preparer_path.write_text("# digest pins pending\n", encoding="utf-8")
+    preparer_test_path = source / "tests/test_deform360_held_v8_lock_preparer.py"
+    preparer_test_path.parent.mkdir(parents=True, exist_ok=True)
+    preparer_test_path.write_text("# pending-pin tests\n", encoding="utf-8")
     (source / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8")
     _git(source, "add", ".")
     _git(source, "commit", "-m", "replayed source")
@@ -885,7 +894,13 @@ def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
         ],
     }
     preparer_path.write_text("# digest pins populated\n", encoding="utf-8")
-    _git(source, "add", str(preparer_path.relative_to(source)))
+    preparer_test_path.write_text("# populated-pin tests\n", encoding="utf-8")
+    _git(
+        source,
+        "add",
+        str(preparer_path.relative_to(source)),
+        str(preparer_test_path.relative_to(source)),
+    )
     _git(source, "commit", "-m", "populate replay digest pins")
 
     preparer._validate_replay_source_commit(tested, local_bindings, source)
@@ -901,7 +916,7 @@ def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
     (source / "unrelated.txt").write_text("not a digest pin\n", encoding="utf-8")
     _git(source, "add", "unrelated.txt")
     _git(source, "commit", "-m", "unrelated post-replay change")
-    with pytest.raises(ValueError, match="confined to preparer digest pins"):
+    with pytest.raises(ValueError, match="escaped replay-independent"):
         preparer._validate_replay_source_commit(tested, local_bindings, source)
 
 

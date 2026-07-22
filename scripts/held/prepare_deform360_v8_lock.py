@@ -174,6 +174,12 @@ _V81_REPLAY_ROOT_FILE_NAMES = _V81_REPLAY_OUTPUT_NAMES | frozenset(
     }
 )
 _V81_REPLAY_CROSS_AUTHORIZATION_FILE_NAMES = frozenset({"stdout.log", "stderr.log"})
+_V81_ALLOWED_POST_REPLAY_VALIDATION_PATHS = frozenset(
+    {
+        "scripts/held/prepare_deform360_v8_lock.py",
+        "tests/test_deform360_held_v8_lock_preparer.py",
+    }
+)
 _V81_PINNED_PYTHON_LAUNCHER_TARGET = "/usr/bin/python3"
 _V81_PINNED_PYTHON_TARGET = Path("/usr/bin/python3.12")
 _V81_PINNED_PYTHON_TARGET_SHA256 = (
@@ -1026,7 +1032,7 @@ def _validate_attempt3_excluded_deployed_code(
             role=f"attempt-3 deployed tracked blob {record['path']}",
         )
         _require(
-            bool(tracked_stat.st_mode & 0o111) == (record["mode"] == "100755")
+            stat.S_IMODE(tracked_stat.st_mode) == 0o400
             and _git_blob_object_id(
                 payload,
                 hexadecimal_length=len(record["object_id"]),
@@ -1490,8 +1496,9 @@ def _validate_replay_source_commit(
         .split(b"\0")
     ) - {b""}
     _require(
-        changed_paths <= {b"scripts/held/prepare_deform360_v8_lock.py"},
-        "post-replay source changes are not confined to preparer digest pins",
+        changed_paths
+        <= {path.encode("utf-8") for path in _V81_ALLOWED_POST_REPLAY_VALIDATION_PATHS},
+        "post-replay source changes escaped replay-independent validation files",
     )
     for local_name, replay_name in (
         ("held_v8_builder_adapter_source", "adapter_source_sha256"),
