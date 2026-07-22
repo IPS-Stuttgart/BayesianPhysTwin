@@ -90,6 +90,24 @@ distance: `0.02781774153611858 m` against the within-mode maximum limit
 fresh qualification, but its narrow margin is also a reason not to treat it as
 formal admission evidence.
 
+### Post-acceptance label-sensitivity diagnostic
+
+After the signed decision was published and read, an exact diagnostic
+enumerated all 126 unique partitions of the ten fits into two unlabeled groups
+of five. For each partition it reconstructed the same 10/10/25 pair groups and
+applied the unchanged 14-metric gate. Only 5 of 126 partitions (`3.97%`)
+passed. The actual original/wrapped partition had a worst relative slack of
+`0.00012044366046426057` and ranked fourth-highest of 126 (`97.6`th empirical
+percentile).
+
+This is a post-hoc calibration diagnostic, not a new acceptance rule. It shows
+that the engineering envelope is highly conservative and label-sensitive at
+five repeats per mode. Under an exchangeability interpretation, a fresh
+failure could therefore be a false rejection of an equivalent wrapper. The
+v2 protocol retains the frozen rule, but such a failure must be described as
+an inconclusive admission failure rather than evidence of scientific model
+failure or wrapper inequivalence.
+
 ## Next admissible step
 
 The v2 qualification must generate a fresh 5+5 cohort on physical GPU 1 from
