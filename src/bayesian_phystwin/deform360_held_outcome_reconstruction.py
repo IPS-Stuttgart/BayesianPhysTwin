@@ -16,6 +16,7 @@ propagation, strict-hull reconstruction, depth, CoTracker3, and ``pcd_clean``.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 import hashlib
 import importlib
@@ -25,7 +26,9 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import threading
 import time
+from types import MappingProxyType
 from typing import Any, Literal, Mapping, Protocol, Sequence
 
 import numpy as np
@@ -102,6 +105,22 @@ COTRACKER_CHECKPOINT_SHA256 = (
 )
 COTRACKER_COMMIT = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
 DEFORM360_PROCESSING_REVISION = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
+
+RESOURCE_LIFECYCLE_POLICY = MappingProxyType(
+    {
+        "policy_id": "deform360-per-fit-nerfstudio-resource-lifecycle-v1",
+        "viewer_enabled": False,
+        "viewer_free_visualizer": "tensorboard",
+        "local_writer_enabled": False,
+        "profiler": "none",
+        "writer_globals_restored_after_each_fit": True,
+        "profiler_globals_restored_after_each_fit": True,
+        "process_global_nonreentrant_guard": True,
+        "rlimit_nofile_changed": False,
+    }
+)
+
+_NERFSTUDIO_FIT_LIFECYCLE_LOCK = threading.Lock()
 
 STRICT_HULL_PARAMETERS = {
     "minimum_visual_hull_points": 512,
@@ -678,6 +697,173 @@ class PinnedOfficialPipelineBackend:
 
     def build(self, request: ReconstructionRequest) -> ReconstructionBackendResult:
         return _run_pinned_official_pipeline(request, self)
+
+
+@dataclass
+class _ResourceBoundedSplatTrainer:
+    """Isolate nerfstudio's process-global instrumentation for every fit.
+
+    The pinned Splatfacto configuration enables the interactive viewer.  That
+    is harmless for the usual one-training-run-per-process CLI, but the
+    Deform360 reconstruction stage performs one fit per frame in a single
+    process.  Pinned viser leaves the viewer event loop alive after ``stop``;
+    nerfstudio also appends local writers and profilers to process-global
+    lists without removing them.  Repeating that lifecycle therefore leaks
+    descriptors and makes console output grow quadratically.
+
+    This proxy changes instrumentation only.  It gives the pinned trainer a
+    private copy of the same method configuration with the valid, non-viewer
+    TensorBoard mode, disables the redundant local writer and profiler, and
+    restores every touched global in ``finally``.  Model, data, optimizer,
+    iteration, seed, checkpoint, and export settings remain those of the
+    pinned delegate.
+    """
+
+    delegate: Any
+    writer_module: Any | None = None
+    profiler_module: Any | None = None
+
+    def _runtime_modules(self) -> tuple[Any, Any]:
+        writer = self.writer_module or importlib.import_module(
+            "nerfstudio.utils.writer"
+        )
+        profiler = self.profiler_module or importlib.import_module(
+            "nerfstudio.utils.profiler"
+        )
+        for module, fields, label in (
+            (
+                writer,
+                ("EVENT_WRITERS", "EVENT_STORAGE", "GLOBAL_BUFFER"),
+                "nerfstudio writer",
+            ),
+            (profiler, ("PROFILER", "PYTORCH_PROFILER"), "nerfstudio profiler"),
+        ):
+            _require(
+                all(hasattr(module, field) for field in fields),
+                f"pinned {label} lifecycle globals changed",
+            )
+        return writer, profiler
+
+    @staticmethod
+    def _close_event_writer(event_writer: Any) -> None:
+        tensorboard = getattr(event_writer, "tb_writer", None)
+        _require(
+            tensorboard is not None,
+            "viewer-free Splatfacto created a non-TensorBoard event writer",
+        )
+        try:
+            tensorboard.flush()
+        finally:
+            tensorboard.close()
+
+    def train(
+        self,
+        dataset_dir: Path,
+        output_dir: Path,
+        output_filename: str,
+        iterations: int,
+    ) -> Path:
+        _require(
+            _NERFSTUDIO_FIT_LIFECYCLE_LOCK.acquire(blocking=False),
+            "concurrent Nerfstudio fits cannot share process-global instrumentation",
+        )
+        try:
+            return self._train_exclusive(
+                dataset_dir, output_dir, output_filename, iterations
+            )
+        finally:
+            _NERFSTUDIO_FIT_LIFECYCLE_LOCK.release()
+
+    def _train_exclusive(
+        self,
+        dataset_dir: Path,
+        output_dir: Path,
+        output_filename: str,
+        iterations: int,
+    ) -> Path:
+        method_configs = getattr(self.delegate, "_method_configs", None)
+        _require(
+            isinstance(method_configs, Mapping) and "splatfacto" in method_configs,
+            "pinned Deform360 trainer no longer exposes Splatfacto configuration",
+        )
+        config = copy.deepcopy(method_configs["splatfacto"])
+        _require(
+            hasattr(config, "logging")
+            and hasattr(config.logging, "local_writer")
+            and hasattr(config.logging, "profiler"),
+            "pinned Splatfacto instrumentation configuration changed",
+        )
+        config.vis = "tensorboard"
+        config.logging.local_writer.enable = False
+        config.logging.profiler = "none"
+        _require(
+            config.is_viewer_enabled() is False
+            and config.is_tensorboard_enabled() is True,
+            "pinned TensorBoard mode unexpectedly enables the viewer",
+        )
+
+        private_method_configs = dict(method_configs)
+        private_method_configs["splatfacto"] = config
+        writer, profiler = self._runtime_modules()
+        prior_event_writers = list(writer.EVENT_WRITERS)
+        prior_event_storage = list(writer.EVENT_STORAGE)
+        # Buffer values may be tensors; preserve their identities while
+        # isolating mutations to the process-global mapping itself.
+        prior_global_buffer = dict(writer.GLOBAL_BUFFER)
+        prior_profilers = list(profiler.PROFILER)
+        prior_pytorch_profiler = profiler.PYTORCH_PROFILER
+        writer.EVENT_WRITERS.clear()
+        writer.EVENT_STORAGE.clear()
+        writer.GLOBAL_BUFFER.clear()
+        profiler.PROFILER.clear()
+        profiler.PYTORCH_PROFILER = None
+        self.delegate._method_configs = private_method_configs
+
+        completed = False
+        cleanup_errors: list[BaseException] = []
+        try:
+            produced = self.delegate.train(
+                dataset_dir, output_dir, output_filename, iterations
+            )
+            completed = True
+            return Path(produced)
+        finally:
+            self.delegate._method_configs = method_configs
+            created_writers = list(writer.EVENT_WRITERS)
+            created_profilers = list(profiler.PROFILER)
+            for event_writer in created_writers:
+                try:
+                    self._close_event_writer(event_writer)
+                except BaseException as error:  # pragma: no cover - defensive API drift
+                    cleanup_errors.append(error)
+            writer.EVENT_WRITERS.clear()
+            writer.EVENT_WRITERS.extend(prior_event_writers)
+            writer.EVENT_STORAGE.clear()
+            writer.EVENT_STORAGE.extend(prior_event_storage)
+            writer.GLOBAL_BUFFER.clear()
+            writer.GLOBAL_BUFFER.update(prior_global_buffer)
+            profiler.PROFILER.clear()
+            profiler.PROFILER.extend(prior_profilers)
+            profiler.PYTORCH_PROFILER = prior_pytorch_profiler
+
+            expected_counts = len(created_writers) == 1 and len(created_profilers) == 1
+            if completed and not expected_counts:
+                cleanup_errors.append(
+                    RuntimeError(
+                        "viewer-free Splatfacto lifecycle did not create exactly "
+                        "one TensorBoard writer and one disabled profiler"
+                    )
+                )
+            if cleanup_errors:
+                active_error = sys.exception()
+                if active_error is not None:
+                    for cleanup_error in cleanup_errors:
+                        active_error.add_note(
+                            "Splatfacto resource cleanup also failed: "
+                            f"{type(cleanup_error).__name__}: {cleanup_error}"
+                        )
+                else:
+                    raise cleanup_errors[0]
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -1454,10 +1640,14 @@ def _run_deform360_stages(
 
     reconstruct_stage.visual_hull_points = strict_hull
     try:
+        splat_trainer = _ResourceBoundedSplatTrainer(
+            reconstruct_stage.NerfstudioSplatTrainer()
+        )
         reconstruction = reconstruct_stage.process_reconstruction_episode(
             staged_root,
             STAGED_EPISODE_ID,
             cameras=list(request.camera_names),
+            trainer=splat_trainer,
             first_frame_iterations=STRICT_HULL_PARAMETERS["first_frame_iterations"],
             warm_start_iterations=STRICT_HULL_PARAMETERS["warm_start_iterations"],
             cube_half_extent_m=STRICT_HULL_PARAMETERS["cube_half_extent_m"],
@@ -1549,6 +1739,7 @@ def _run_deform360_stages(
     stage_audit = {
         "runtime": runtime,
         "cotracker_runtime": cotracker_runtime,
+        "resource_lifecycle_policy": dict(RESOURCE_LIFECYCLE_POLICY),
         "strict_hull_parameters": dict(STRICT_HULL_PARAMETERS),
         "depth_parameters": dict(DEPTH_PARAMETERS),
         "tracking_parameters": dict(TRACKING_PARAMETERS),
@@ -1937,6 +2128,7 @@ def _validate_backend_result(
         == {
             "runtime",
             "cotracker_runtime",
+            "resource_lifecycle_policy",
             "strict_hull_parameters",
             "depth_parameters",
             "tracking_parameters",
@@ -1944,6 +2136,7 @@ def _validate_backend_result(
             "output_bindings",
             "staged_episode_tree",
         }
+        and official.get("resource_lifecycle_policy") == dict(RESOURCE_LIFECYCLE_POLICY)
         and official.get("strict_hull_parameters") == STRICT_HULL_PARAMETERS
         and official.get("depth_parameters") == DEPTH_PARAMETERS
         and official.get("tracking_parameters") == TRACKING_PARAMETERS

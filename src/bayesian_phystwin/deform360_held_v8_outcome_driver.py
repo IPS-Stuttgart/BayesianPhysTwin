@@ -25,6 +25,7 @@ from typing import Any, Callable, Literal, Mapping, Sequence
 PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 NO_GO_EXIT_CODE = 3
 NOT_CONFIRMED_EXIT_CODE = 4
+POST_CASE_FD_GROWTH_LIMIT = 32
 CANONICAL_HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8")
 CANONICAL_ALIGNED_ROOT = Path(
     "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned"
@@ -108,6 +109,19 @@ def _valid_sha256(value: object) -> bool:
         and len(value) == 64
         and all(character in "0123456789abcdef" for character in value)
     )
+
+
+def _open_file_descriptor_count() -> int:
+    """Count process descriptors through procfs without opening a payload."""
+
+    root = Path("/proc/self/fd")
+    _require(
+        root.is_dir() and not root.is_symlink(),
+        "procfs file-descriptor census is unavailable",
+    )
+    count = len(os.listdir(root))
+    _require(count > 0, "procfs file-descriptor census is empty")
+    return count
 
 
 def _sha256_file(path: str | Path) -> str:
@@ -706,6 +720,7 @@ def execute_outcomes(
     load_post_barrier_api: Callable[[], PostBarrierApi],
     query_runner: Callable[..., None] = run_query_subprocess,
     validate_runtime: Callable[[DriverArguments], None] = _validate_runtime,
+    fd_counter: Callable[[], int] = _open_file_descriptor_count,
     formal_paths: bool = True,
 ) -> int:
     """Execute the fresh two-barrier outcome flow with injectable operators."""
@@ -792,7 +807,17 @@ def execute_outcomes(
     )
     lock_sha256 = _sha256_file(arguments.lock_path)
     consumed_target_evidence: dict[str, Mapping[str, Any]] = {}
-    for case_name in expected:
+    post_case_fd_reference = fd_counter()
+    _require(
+        type(post_case_fd_reference) is int and post_case_fd_reference > 0,
+        "pre-outcome file-descriptor census is invalid",
+    )
+    _emit(
+        "PRE_OUTCOME_RESOURCE_BOUNDARY_CAPTURED",
+        file_descriptor_count=post_case_fd_reference,
+        maximum_growth=POST_CASE_FD_GROWTH_LIMIT,
+    )
+    for case_index, case_name in enumerate(expected):
         paths = layout.cases[case_name]
         aligned = _aligned_episode_path(arguments, protocol, post, case_name)
 
@@ -863,6 +888,23 @@ def execute_outcomes(
             expected_case_name=case_name,
         )
         _emit("ISOLATED_X0_QUERY_SEALED", case_name=case_name)
+        observed_fd_count = fd_counter()
+        _require(
+            type(observed_fd_count) is int and observed_fd_count > 0,
+            "post-case file-descriptor census is invalid",
+        )
+        _require(
+            observed_fd_count <= post_case_fd_reference + POST_CASE_FD_GROWTH_LIMIT,
+            "post-case file-descriptor growth exceeded the frozen safety limit",
+        )
+        _emit(
+            "POST_CASE_RESOURCE_BOUNDARY_VALIDATED",
+            case_name=case_name,
+            case_index=case_index,
+            file_descriptor_count=observed_fd_count,
+            reference_file_descriptor_count=post_case_fd_reference,
+            maximum_growth=POST_CASE_FD_GROWTH_LIMIT,
+        )
     _require(
         tuple(consumed_target_evidence) == expected
         and all(

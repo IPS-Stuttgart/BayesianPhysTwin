@@ -373,6 +373,66 @@ def test_two_barrier_order_and_no_go_never_promotes_confirmation(
             assert directory.stat().st_mode & 0o777 == 0o700
 
 
+def test_fd_growth_guard_stops_before_the_next_target_and_second_barrier(
+    tmp_path: Path,
+) -> None:
+    events: list[str] = []
+    cases = tuple(f"{index:03d}-object-ep{index:04d}" for index in range(15))
+    lock = tmp_path / "calibration-lock.json"
+    lock.write_text("lock", encoding="utf-8")
+    (tmp_path / "calibration").mkdir()
+    replacement = tmp_path / "replacement-source.json"
+    replacement.write_text("source", encoding="utf-8")
+    fake_protocol = _FakeProtocol(cases, events)
+    post = _fake_post(tmp_path, events, decision_label="GO")
+    arguments = driver.DriverArguments(
+        role="calibration",
+        deployed_code=str(tmp_path / ("code-" + "a" * 40)),
+        lock_path=str(lock),
+        replacement_source_manifest_path=str(replacement),
+        dry_run_barrier_only=False,
+        aligned_root=str(tmp_path / "aligned"),
+        deform360_repo="d",
+        sam2_repository="s",
+        sam2_checkpoint="sc",
+        cotracker_repo="c",
+        cotracker_checkpoint="cc",
+    )
+
+    def query_runner(**kwargs: Any) -> None:
+        case = Path(kwargs["official_query_manifest_path"]).parent.name
+        Path(kwargs["output_archive_path"]).parent.mkdir(parents=True, exist_ok=True)
+        Path(kwargs["output_archive_path"]).write_text(case, encoding="utf-8")
+        Path(kwargs["output_seal_path"]).write_text(case, encoding="utf-8")
+        events.append(f"query:{case}")
+
+    counts = iter((100, 100, 100 + driver.POST_CASE_FD_GROWTH_LIMIT + 1))
+    with pytest.raises(
+        ValueError,
+        match="post-case file-descriptor growth exceeded the frozen safety limit",
+    ):
+        driver.execute_outcomes(
+            arguments,
+            protocol=fake_protocol,
+            deployment_verifier=lambda _arguments: events.append("verify"),
+            smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+            load_post_barrier_api=lambda: post,
+            query_runner=query_runner,
+            validate_runtime=lambda _arguments: None,
+            fd_counter=lambda: next(counts),
+            formal_paths=False,
+        )
+
+    assert f"reconstruct:{cases[0]}" in events
+    assert f"query:{cases[0]}" in events
+    assert f"reconstruct:{cases[1]}" in events
+    assert f"query:{cases[1]}" in events
+    assert f"reconstruct:{cases[2]}" not in events
+    assert "barrier2" not in events
+    assert "score-caps" not in events
+    assert "decision" not in events
+
+
 def test_confirmation_source_verifier_stops_before_smoke_without_go_lock(
     tmp_path: Path,
 ) -> None:

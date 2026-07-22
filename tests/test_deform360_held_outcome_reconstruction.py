@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import os
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
@@ -23,6 +24,276 @@ from bayesian_phystwin import deform360_held_outcome_reconstruction as reconstru
 
 CASE_NAME = "083-blanket-cloth-ep0000"
 CAMERAS = ("camera_0", "camera_1")
+
+
+class _FakeSplatConfig:
+    def __init__(self) -> None:
+        self.vis = "viewer"
+        self.logging = SimpleNamespace(
+            local_writer=SimpleNamespace(enable=True), profiler="basic"
+        )
+        self.scientific = {
+            "model": "splatfacto",
+            "iterations": 250,
+            "optimizer": {"means_lr": 1.6e-4},
+        }
+
+    def is_viewer_enabled(self) -> bool:
+        return self.vis == "viewer"
+
+    def is_tensorboard_enabled(self) -> bool:
+        return self.vis == "tensorboard"
+
+
+class _FakeTensorboardWriter:
+    def __init__(self, *, open_pipe: bool = False, fail_flush: bool = False) -> None:
+        self.flush_count = 0
+        self.close_count = 0
+        self.fail_flush = fail_flush
+        self._descriptors = os.pipe() if open_pipe else ()
+
+    def flush(self) -> None:
+        self.flush_count += 1
+        if self.fail_flush:
+            raise RuntimeError("synthetic TensorBoard flush failure")
+
+    def close(self) -> None:
+        self.close_count += 1
+        for descriptor in self._descriptors:
+            os.close(descriptor)
+        self._descriptors = ()
+
+
+class _FakeEventWriter:
+    def __init__(self, *, open_pipe: bool = False, fail_flush: bool = False) -> None:
+        self.tb_writer = _FakeTensorboardWriter(
+            open_pipe=open_pipe, fail_flush=fail_flush
+        )
+
+
+class _FakeNerfstudioDelegate:
+    def __init__(
+        self,
+        writer: SimpleNamespace,
+        profiler: SimpleNamespace,
+        *,
+        fail: bool = False,
+        open_pipe: bool = False,
+        fail_flush: bool = False,
+        create_profiler: bool = True,
+    ) -> None:
+        self.writer = writer
+        self.profiler = profiler
+        self.fail = fail
+        self.open_pipe = open_pipe
+        self.fail_flush = fail_flush
+        self.create_profiler = create_profiler
+        self._method_configs = {
+            "splatfacto": _FakeSplatConfig(),
+            "other": SimpleNamespace(value="preserved"),
+        }
+        self.created_writers: list[_FakeEventWriter] = []
+        self.observed_configs: list[_FakeSplatConfig] = []
+
+    def train(
+        self,
+        _dataset_dir: Path,
+        output_dir: Path,
+        output_filename: str,
+        _iterations: int,
+    ) -> Path:
+        config = self._method_configs["splatfacto"]
+        self.observed_configs.append(copy.deepcopy(config))
+        event_writer = _FakeEventWriter(
+            open_pipe=self.open_pipe, fail_flush=self.fail_flush
+        )
+        self.created_writers.append(event_writer)
+        self.writer.EVENT_WRITERS.append(event_writer)
+        self.writer.EVENT_STORAGE.append({"transient": True})
+        self.writer.GLOBAL_BUFFER["transient"] = True
+        if self.create_profiler:
+            self.profiler.PROFILER.append(SimpleNamespace(config=config.logging))
+        self.profiler.PYTORCH_PROFILER = "transient"
+        if self.fail:
+            raise RuntimeError("synthetic trainer failure")
+        return output_dir / output_filename
+
+
+def _fake_nerfstudio_globals() -> tuple[SimpleNamespace, SimpleNamespace]:
+    writer = SimpleNamespace(
+        EVENT_WRITERS=["prior-writer"],
+        EVENT_STORAGE=[{"prior": True}],
+        GLOBAL_BUFFER={"prior": {"value": 1}},
+    )
+    profiler = SimpleNamespace(
+        PROFILER=["prior-profiler"], PYTORCH_PROFILER="prior-pytorch-profiler"
+    )
+    return writer, profiler
+
+
+def test_resource_lifecycle_policy_is_immutable_and_non_escalating() -> None:
+    assert dict(reconstruction.RESOURCE_LIFECYCLE_POLICY) == {
+        "policy_id": "deform360-per-fit-nerfstudio-resource-lifecycle-v1",
+        "viewer_enabled": False,
+        "viewer_free_visualizer": "tensorboard",
+        "local_writer_enabled": False,
+        "profiler": "none",
+        "writer_globals_restored_after_each_fit": True,
+        "profiler_globals_restored_after_each_fit": True,
+        "process_global_nonreentrant_guard": True,
+        "rlimit_nofile_changed": False,
+    }
+    with pytest.raises(TypeError):
+        reconstruction.RESOURCE_LIFECYCLE_POLICY["viewer_enabled"] = True
+
+
+def test_resource_bounded_splat_trainer_rejects_reentrant_process_global_use(
+    tmp_path: Path,
+) -> None:
+    writer, profiler = _fake_nerfstudio_globals()
+    trainer = reconstruction._ResourceBoundedSplatTrainer(
+        _FakeNerfstudioDelegate(writer, profiler),
+        writer_module=writer,
+        profiler_module=profiler,
+    )
+    assert reconstruction._NERFSTUDIO_FIT_LIFECYCLE_LOCK.acquire(blocking=False)
+    try:
+        with pytest.raises(
+            ValueError,
+            match="concurrent Nerfstudio fits cannot share process-global instrumentation",
+        ):
+            trainer.train(tmp_path, tmp_path, "splat.ply", 1)
+    finally:
+        reconstruction._NERFSTUDIO_FIT_LIFECYCLE_LOCK.release()
+
+
+def test_resource_bounded_splat_trainer_is_viewer_free_and_restores_globals(
+    tmp_path: Path,
+) -> None:
+    writer, profiler = _fake_nerfstudio_globals()
+    delegate = _FakeNerfstudioDelegate(writer, profiler)
+    original_method_configs = delegate._method_configs
+    original_scientific = copy.deepcopy(
+        original_method_configs["splatfacto"].scientific
+    )
+    trainer = reconstruction._ResourceBoundedSplatTrainer(
+        delegate, writer_module=writer, profiler_module=profiler
+    )
+
+    produced = trainer.train(tmp_path, tmp_path, "splat.ply", 250)
+
+    assert produced == tmp_path / "splat.ply"
+    assert delegate._method_configs is original_method_configs
+    assert original_method_configs["splatfacto"].vis == "viewer"
+    assert original_method_configs["splatfacto"].logging.local_writer.enable is True
+    assert original_method_configs["splatfacto"].logging.profiler == "basic"
+    observed = delegate.observed_configs[0]
+    assert observed.vis == "tensorboard"
+    assert observed.is_viewer_enabled() is False
+    assert observed.is_tensorboard_enabled() is True
+    assert observed.logging.local_writer.enable is False
+    assert observed.logging.profiler == "none"
+    assert observed.scientific == original_scientific
+    assert original_method_configs["splatfacto"].scientific == original_scientific
+    assert writer.EVENT_WRITERS == ["prior-writer"]
+    assert writer.EVENT_STORAGE == [{"prior": True}]
+    assert writer.GLOBAL_BUFFER == {"prior": {"value": 1}}
+    assert profiler.PROFILER == ["prior-profiler"]
+    assert profiler.PYTORCH_PROFILER == "prior-pytorch-profiler"
+    assert delegate.created_writers[0].tb_writer.flush_count == 1
+    assert delegate.created_writers[0].tb_writer.close_count == 1
+
+
+def test_resource_bounded_splat_trainer_restores_globals_after_failure(
+    tmp_path: Path,
+) -> None:
+    writer, profiler = _fake_nerfstudio_globals()
+    delegate = _FakeNerfstudioDelegate(writer, profiler, fail=True)
+    original_method_configs = delegate._method_configs
+    trainer = reconstruction._ResourceBoundedSplatTrainer(
+        delegate, writer_module=writer, profiler_module=profiler
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic trainer failure"):
+        trainer.train(tmp_path, tmp_path, "splat.ply", 250)
+
+    assert delegate._method_configs is original_method_configs
+    assert writer.EVENT_WRITERS == ["prior-writer"]
+    assert writer.EVENT_STORAGE == [{"prior": True}]
+    assert writer.GLOBAL_BUFFER == {"prior": {"value": 1}}
+    assert profiler.PROFILER == ["prior-profiler"]
+    assert profiler.PYTORCH_PROFILER == "prior-pytorch-profiler"
+    assert delegate.created_writers[0].tb_writer.flush_count == 1
+    assert delegate.created_writers[0].tb_writer.close_count == 1
+
+
+def test_resource_bounded_splat_trainer_preserves_primary_error_and_notes_cleanup(
+    tmp_path: Path,
+) -> None:
+    writer, profiler = _fake_nerfstudio_globals()
+    delegate = _FakeNerfstudioDelegate(writer, profiler, fail=True, fail_flush=True)
+    trainer = reconstruction._ResourceBoundedSplatTrainer(
+        delegate, writer_module=writer, profiler_module=profiler
+    )
+
+    with pytest.raises(RuntimeError, match="synthetic trainer failure") as caught:
+        trainer.train(tmp_path, tmp_path, "splat.ply", 1)
+
+    assert any(
+        "Splatfacto resource cleanup also failed" in note
+        and "synthetic TensorBoard flush failure" in note
+        for note in (caught.value.__notes__ or ())
+    )
+    assert delegate.created_writers[0].tb_writer.close_count == 1
+    assert writer.EVENT_WRITERS == ["prior-writer"]
+    assert profiler.PROFILER == ["prior-profiler"]
+    assert reconstruction._NERFSTUDIO_FIT_LIFECYCLE_LOCK.acquire(blocking=False)
+    reconstruction._NERFSTUDIO_FIT_LIFECYCLE_LOCK.release()
+
+
+def test_resource_bounded_splat_trainer_rejects_incomplete_runtime_setup(
+    tmp_path: Path,
+) -> None:
+    writer, profiler = _fake_nerfstudio_globals()
+    delegate = _FakeNerfstudioDelegate(writer, profiler, create_profiler=False)
+    trainer = reconstruction._ResourceBoundedSplatTrainer(
+        delegate, writer_module=writer, profiler_module=profiler
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="viewer-free Splatfacto lifecycle did not create exactly one",
+    ):
+        trainer.train(tmp_path, tmp_path, "splat.ply", 1)
+
+    assert delegate.created_writers[0].tb_writer.close_count == 1
+    assert writer.EVENT_WRITERS == ["prior-writer"]
+    assert profiler.PROFILER == ["prior-profiler"]
+
+
+def test_resource_bounded_splat_trainer_keeps_descriptors_bounded(
+    tmp_path: Path,
+) -> None:
+    descriptor_root = Path("/proc/self/fd")
+    if not descriptor_root.is_dir():
+        pytest.skip("descriptor census requires procfs")
+    writer, profiler = _fake_nerfstudio_globals()
+    delegate = _FakeNerfstudioDelegate(writer, profiler, open_pipe=True)
+    trainer = reconstruction._ResourceBoundedSplatTrainer(
+        delegate, writer_module=writer, profiler_module=profiler
+    )
+    baseline = len(tuple(descriptor_root.iterdir()))
+
+    for index in range(96):
+        assert trainer.train(tmp_path, tmp_path, f"splat-{index}.ply", 1) == (
+            tmp_path / f"splat-{index}.ply"
+        )
+        assert len(tuple(descriptor_root.iterdir())) == baseline
+
+    assert len(delegate.created_writers) == 96
+    assert all(value.tb_writer.close_count == 1 for value in delegate.created_writers)
+    assert writer.EVENT_WRITERS == ["prior-writer"]
+    assert profiler.PROFILER == ["prior-profiler"]
 
 
 def _write(path: Path, payload: bytes = b"fixture") -> Path:
@@ -256,6 +527,9 @@ class _SyntheticOfficialBackend:
             "official_stages": {
                 "runtime": {},
                 "cotracker_runtime": {},
+                "resource_lifecycle_policy": dict(
+                    reconstruction.RESOURCE_LIFECYCLE_POLICY
+                ),
                 "strict_hull_parameters": dict(reconstruction.STRICT_HULL_PARAMETERS),
                 "depth_parameters": dict(reconstruction.DEPTH_PARAMETERS),
                 "tracking_parameters": dict(reconstruction.TRACKING_PARAMETERS),
