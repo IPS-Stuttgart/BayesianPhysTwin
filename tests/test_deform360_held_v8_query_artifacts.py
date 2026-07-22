@@ -396,6 +396,46 @@ def test_queried_archive_tampering_and_extra_arm_mask_fail_closed(
         artifacts.validate_queried_prediction_artifact(seal, lock_path=lock)
 
 
+@pytest.mark.parametrize(
+    "field_name",
+    [
+        "center_nearest_query_identity_ids",
+        "center_nearest_query_indices",
+        "center_nearest_query_distance_m",
+        "center_within_radius_mask",
+        "center_exclusion_mask",
+    ],
+)
+def test_center_exclusion_audit_tampering_fails_closed(
+    tmp_path: Path,
+    field_name: str,
+) -> None:
+    lock, _, _, _, archive, seal = _write_query_and_prediction(tmp_path)
+    os.chmod(archive, 0o600)
+    with np.load(archive, allow_pickle=False) as stored:
+        arrays = {name: stored[name].copy() for name in stored.files}
+
+    if field_name == "center_nearest_query_distance_m":
+        arrays[field_name][0] = np.nextafter(arrays[field_name][0], np.float64(np.inf))
+    elif field_name in {"center_within_radius_mask", "center_exclusion_mask"}:
+        arrays[field_name][0] = ~arrays[field_name][0]
+    else:
+        arrays[field_name][0] += 1
+
+    np.savez_compressed(archive, **arrays)
+    seal_value = json.loads(seal.read_text(encoding="utf-8"))
+    seal_value["archive"] = _bound_file(archive)
+    seal_value["array_records"] = artifacts._array_records(arrays)
+    seal_value["artifact_sha256"] = artifacts._artifact_sha256(seal_value)
+    os.chmod(seal, 0o600)
+    _write_json(seal, seal_value)
+    archive.chmod(0o400)
+    seal.chmod(0o400)
+
+    with pytest.raises(ValueError, match="center exclusion"):
+        artifacts.validate_queried_prediction_artifact(seal, lock_path=lock)
+
+
 def test_exclusive_writes_and_symlinked_inputs_are_rejected(tmp_path: Path) -> None:
     lock = tmp_path / "lock.json"
     _write_lock(lock)
