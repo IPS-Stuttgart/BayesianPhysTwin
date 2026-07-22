@@ -1,0 +1,34 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveV2ExecutionLock",
+  "schema_version": 1,
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "adapter_lock_commit": "5a2b7cc97190651d6f1feabd61b213f178ebeffe",
+  "locked_before_restarted_prediction_or_any_outcome_read": true,
+  "files_sha256": {
+    "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json": "57b4a8c7c9715e722d758ac145d26f543a2123cc65cdb8890de20b457a9d3755",
+    "scripts/remote/run_deform360_bias_aware_prediction.py": "93efacdd665bcc80eb87248fb580108e8f0e78bc9fcec289149865dcf21ccb1a",
+    "scripts/remote/run_deform360_bias_aware_v2_fast_prediction.py": "e5a25985905ce7026fec182d7c24ff0befbda329add33be354a125145497aa90",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_artifacts.py": "15ff825257780c13ad0bbb218b894a5b50086be19e3f0914440cc609afef2941",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_protocol.py": "bd089b8e7b368c4124ef377b9645daa0338dbf094c610b90c674e00d3bba98fb",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_runtime.py": "3590e5691db0eb868b7bd66b0ce20a6f701ea9aa3fb0d0a03c70ed1a92380cb2",
+    "src/bayesian_phystwin/deform360_exact_camera_selector.py": "2366788e3dcea0af11d5abe9fa0481485d6bc064fee77c4ef09bb98620f9066f",
+    "src/bayesian_phystwin/deform360_raw_camera_observation.py": "2c24e587e9acd1dda589363240a81b268863fbe808ce05c58f8a5b70f12f76c3",
+    "src/bayesian_phystwin/native/deform360_exact_camera_subset.cpp": "8d359bcbc400c53ed84d0dab89f2312ddba199fd3289861070e79e1d4a485d3d"
+  },
+  "information_boundary": {
+    "authorized_roles": [
+      "fresh-calibration-prefix-restart"
+    ],
+    "outcome_loader_installed": false,
+    "calibration_future_access_authorized": false,
+    "target_access_authorized": false,
+    "fresh_prefix_media_previously_read": true,
+    "original_fishing_intermediates_are_target_free_and_aborted": true,
+    "final_candidate_prediction_previously_written": false,
+    "selector_objective_changed": false,
+    "selector_tie_order_changed": false
+  },
+  "claim_boundary": "Outcome-blind execution-equivalence amendment. It replaces exhaustive camera-subset enumeration with an exact checksum-addressed solver, after synthetic equivalence tests and before any final fresh prediction or outcome read.",
+  "config_sha256": "ac86d09bc4fec20b08b92d5cc4a855c43a43ccb3d000a6c0389202882a262d55"
+}
