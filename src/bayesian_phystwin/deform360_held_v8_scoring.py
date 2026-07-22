@@ -272,10 +272,7 @@ def score_direct_official_identity_case(
         and support.shape == excluded.shape == (identity_count,),
         "shared support and center-exclusion masks must have bool shape (M,)",
     )
-    _require(
-        int(np.sum(excluded)) == CENTER_COUNT,
-        "center_exclusion_mask must exclude exactly 16 official identities",
-    )
+    excluded_count = int(np.sum(excluded))
     _require(
         frames.dtype == np.dtype(np.int64)
         and frames.shape == (FRAME_COUNT,)
@@ -352,7 +349,8 @@ def score_direct_official_identity_case(
             "official_identity_count": identity_count,
             "supported_identity_count": supported_count,
             "support_coverage_fraction": support_coverage,
-            "center_excluded_identity_count": int(np.sum(excluded)),
+            "assimilation_center_count": CENTER_COUNT,
+            "center_excluded_identity_count": excluded_count,
             "hidden_supported_identity_count": hidden_supported_count,
             "scored_identity_count_per_frame": scored_counts,
             "minimum_scored_identity_count": min(scored_counts),
@@ -474,6 +472,7 @@ def _normalize_case_records(
             "official_identity_count",
             "supported_identity_count",
             "support_coverage_fraction",
+            "assimilation_center_count",
             "center_excluded_identity_count",
             "hidden_supported_identity_count",
         }
@@ -484,6 +483,7 @@ def _normalize_case_records(
         integer_keys = (
             "official_identity_count",
             "supported_identity_count",
+            "assimilation_center_count",
             "center_excluded_identity_count",
             "hidden_supported_identity_count",
         )
@@ -497,14 +497,16 @@ def _normalize_case_records(
         )
         official_count = int(masks["official_identity_count"])
         supported_count = int(masks["supported_identity_count"])
-        center_count = int(masks["center_excluded_identity_count"])
+        assimilation_center_count = int(masks["assimilation_center_count"])
+        excluded_count = int(masks["center_excluded_identity_count"])
         hidden_count = int(masks["hidden_supported_identity_count"])
         coverage = float(masks["support_coverage_fraction"])
         _require(
             official_count > CENTER_COUNT
             and 0 <= hidden_count <= supported_count <= official_count
-            and center_count == CENTER_COUNT
-            and 0 <= supported_count - hidden_count <= CENTER_COUNT
+            and assimilation_center_count == CENTER_COUNT
+            and 0 <= excluded_count <= official_count
+            and 0 <= supported_count - hidden_count <= excluded_count
             and math.isfinite(coverage)
             and math.isclose(
                 coverage,

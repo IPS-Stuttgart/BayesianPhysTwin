@@ -8,7 +8,9 @@ from bayesian_phystwin.deform360_frozen_query_field import (
     FrameZeroQuerySet,
     FrozenFieldConfig,
     FrozenFieldGeometry,
+    RadiusUnionCenterExclusion,
     build_frozen_nodal_field,
+    build_radius_union_center_exclusion,
     map_assimilation_centers_to_queries,
     query_frozen_nodal_field,
 )
@@ -537,6 +539,165 @@ def test_center_exclusion_fails_closed_without_a_full_radius_assignment() -> Non
                 positions_m=queries.positions_m[:1],
             ),
             maximum_distance_m=0.015,
+        )
+
+
+def test_radius_union_exclusion_records_unmatched_and_all_unmatched_centers() -> None:
+    geometry = FrozenFieldGeometry(
+        anchor_ids=np.asarray([0, 1], dtype=np.int64),
+        anchor_positions_m=np.asarray(
+            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]], dtype=np.float32
+        ),
+        assimilation_anchor_ids=np.asarray([0, 1], dtype=np.int64),
+    )
+    partially_matched = FrameZeroQuerySet(
+        identity_ids=np.asarray([20, 10], dtype=np.int64),
+        positions_m=np.asarray(
+            [[2.0, 0.0, 0.0], [0.01, 0.0, 0.0]], dtype=np.float32
+        ),
+    )
+
+    partial = build_radius_union_center_exclusion(
+        geometry, partially_matched, maximum_distance_m=0.05
+    )
+
+    np.testing.assert_array_equal(partial.assimilation_anchor_ids, [0, 1])
+    np.testing.assert_array_equal(partial.nearest_query_identity_ids, [10, 10])
+    np.testing.assert_array_equal(partial.nearest_query_indices, [1, 1])
+    np.testing.assert_allclose(partial.nearest_query_distance_m, [0.01, 0.99])
+    np.testing.assert_array_equal(partial.center_within_radius_mask, [True, False])
+    np.testing.assert_array_equal(partial.excluded_query_mask, [False, True])
+
+    all_unmatched = build_radius_union_center_exclusion(
+        geometry,
+        FrameZeroQuerySet(
+            identity_ids=np.asarray([30, 40], dtype=np.int64),
+            positions_m=np.asarray(
+                [[3.0, 0.0, 0.0], [4.0, 0.0, 0.0]], dtype=np.float32
+            ),
+        ),
+        maximum_distance_m=0.05,
+    )
+    np.testing.assert_array_equal(
+        all_unmatched.center_within_radius_mask, [False, False]
+    )
+    np.testing.assert_array_equal(all_unmatched.excluded_query_mask, [False, False])
+
+
+def test_radius_union_excludes_all_nearby_queries_without_changing_legacy() -> None:
+    geometry = FrozenFieldGeometry(
+        anchor_ids=np.asarray([0], dtype=np.int64),
+        anchor_positions_m=np.asarray([[0.0, 0.0, 0.0]], dtype=np.float32),
+        assimilation_anchor_ids=np.asarray([0], dtype=np.int64),
+    )
+    queries = FrameZeroQuerySet(
+        identity_ids=np.asarray([30, 10, 20, 40], dtype=np.int64),
+        positions_m=np.asarray(
+            [
+                [0.010, 0.0, 0.0],
+                [0.000, 0.0, 0.0],
+                [0.005, 0.0, 0.0],
+                [0.100, 0.0, 0.0],
+            ],
+            dtype=np.float32,
+        ),
+    )
+
+    radius_union = build_radius_union_center_exclusion(
+        geometry, queries, maximum_distance_m=0.01
+    )
+    legacy = map_assimilation_centers_to_queries(
+        geometry, queries, maximum_distance_m=0.01
+    )
+
+    np.testing.assert_array_equal(
+        radius_union.excluded_query_mask, [True, True, True, False]
+    )
+    np.testing.assert_array_equal(radius_union.nearest_query_identity_ids, [10])
+    np.testing.assert_array_equal(radius_union.nearest_query_indices, [1])
+    np.testing.assert_allclose(radius_union.nearest_query_distance_m, [0.0])
+    np.testing.assert_array_equal(radius_union.center_within_radius_mask, [True])
+    np.testing.assert_array_equal(legacy.mapped_query_identity_ids, [10])
+    np.testing.assert_array_equal(legacy.mapped_query_indices, [1])
+    np.testing.assert_array_equal(legacy.excluded_query_mask, [False, True, False, False])
+
+
+def test_radius_union_allows_center_collisions_and_excludes_query_once() -> None:
+    geometry = FrozenFieldGeometry(
+        anchor_ids=np.asarray([0, 1], dtype=np.int64),
+        anchor_positions_m=np.asarray(
+            [[0.000, 0.0, 0.0], [0.010, 0.0, 0.0]], dtype=np.float32
+        ),
+        assimilation_anchor_ids=np.asarray([0, 1], dtype=np.int64),
+    )
+    queries = FrameZeroQuerySet(
+        identity_ids=np.asarray([7, 9], dtype=np.int64),
+        positions_m=np.asarray(
+            [[0.005, 0.0, 0.0], [1.000, 0.0, 0.0]], dtype=np.float32
+        ),
+    )
+
+    exclusion = build_radius_union_center_exclusion(
+        geometry, queries, maximum_distance_m=0.006
+    )
+
+    np.testing.assert_array_equal(exclusion.nearest_query_identity_ids, [7, 7])
+    np.testing.assert_array_equal(exclusion.nearest_query_indices, [0, 0])
+    np.testing.assert_allclose(exclusion.nearest_query_distance_m, [0.005, 0.005])
+    np.testing.assert_array_equal(exclusion.center_within_radius_mask, [True, True])
+    np.testing.assert_array_equal(exclusion.excluded_query_mask, [True, False])
+
+
+def test_radius_union_is_query_order_invariant_and_uses_identity_ties() -> None:
+    geometry = FrozenFieldGeometry(
+        anchor_ids=np.asarray([0], dtype=np.int64),
+        anchor_positions_m=np.asarray([[0.0, 0.0, 0.0]], dtype=np.float32),
+        assimilation_anchor_ids=np.asarray([0], dtype=np.int64),
+    )
+    queries = FrameZeroQuerySet(
+        identity_ids=np.asarray([9, 3, 12], dtype=np.int64),
+        positions_m=np.asarray(
+            [[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [4.0, 0.0, 0.0]],
+            dtype=np.float32,
+        ),
+    )
+    permutation = np.asarray([2, 0, 1], dtype=np.int64)
+    permuted = FrameZeroQuerySet(
+        identity_ids=queries.identity_ids[permutation],
+        positions_m=queries.positions_m[permutation],
+    )
+
+    first = build_radius_union_center_exclusion(
+        geometry, queries, maximum_distance_m=2.0
+    )
+    second = build_radius_union_center_exclusion(
+        geometry, permuted, maximum_distance_m=2.0
+    )
+
+    np.testing.assert_array_equal(first.nearest_query_identity_ids, [3])
+    np.testing.assert_array_equal(second.nearest_query_identity_ids, [3])
+    assert queries.identity_ids[first.nearest_query_indices[0]] == 3
+    assert permuted.identity_ids[second.nearest_query_indices[0]] == 3
+    np.testing.assert_allclose(
+        first.nearest_query_distance_m, second.nearest_query_distance_m
+    )
+    np.testing.assert_array_equal(
+        first.center_within_radius_mask, second.center_within_radius_mask
+    )
+    assert set(queries.identity_ids[first.excluded_query_mask]) == {3, 9}
+    assert set(permuted.identity_ids[second.excluded_query_mask]) == {3, 9}
+
+
+def test_radius_union_result_rejects_nonfinite_nearest_distance() -> None:
+    with pytest.raises(ValueError, match="finite and nonnegative"):
+        RadiusUnionCenterExclusion(
+            assimilation_anchor_ids=np.asarray([0], dtype=np.int64),
+            nearest_query_identity_ids=np.asarray([10], dtype=np.int64),
+            nearest_query_indices=np.asarray([0], dtype=np.int64),
+            nearest_query_distance_m=np.asarray([np.nan], dtype=np.float64),
+            center_within_radius_mask=np.asarray([False], dtype=bool),
+            excluded_query_mask=np.asarray([False], dtype=bool),
+            maximum_distance_m=0.01,
         )
 
 

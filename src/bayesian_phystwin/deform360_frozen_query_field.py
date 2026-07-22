@@ -416,6 +416,94 @@ class CenterExclusion:
             object.__setattr__(self, name, value)
 
 
+@dataclass(frozen=True)
+class RadiusUnionCenterExclusion:
+    """An x0-only radius union plus deterministic per-center nearest audits."""
+
+    assimilation_anchor_ids: np.ndarray
+    nearest_query_identity_ids: np.ndarray
+    nearest_query_indices: np.ndarray
+    nearest_query_distance_m: np.ndarray
+    center_within_radius_mask: np.ndarray
+    excluded_query_mask: np.ndarray
+    maximum_distance_m: float
+
+    def __post_init__(self) -> None:
+        arrays = {
+            "assimilation_anchor_ids": (
+                self.assimilation_anchor_ids,
+                np.dtype(np.int64),
+            ),
+            "nearest_query_identity_ids": (
+                self.nearest_query_identity_ids,
+                np.dtype(np.int64),
+            ),
+            "nearest_query_indices": (
+                self.nearest_query_indices,
+                np.dtype(np.int64),
+            ),
+            "nearest_query_distance_m": (
+                self.nearest_query_distance_m,
+                np.dtype(np.float64),
+            ),
+            "center_within_radius_mask": (
+                self.center_within_radius_mask,
+                np.dtype(bool),
+            ),
+            "excluded_query_mask": (self.excluded_query_mask, np.dtype(bool)),
+        }
+        copied: dict[str, np.ndarray] = {}
+        for name, (value, dtype) in arrays.items():
+            copied[name] = _readonly_array(value, dtype=dtype, name=name, ndim=1)
+        center_count = len(copied["assimilation_anchor_ids"])
+        query_count = len(copied["excluded_query_mask"])
+        _require(center_count > 0, "radius-union exclusion requires a center")
+        _require(query_count > 0, "radius-union exclusion requires a query")
+        _require(
+            all(
+                len(copied[name]) == center_count
+                for name in (
+                    "nearest_query_identity_ids",
+                    "nearest_query_indices",
+                    "nearest_query_distance_m",
+                    "center_within_radius_mask",
+                )
+            ),
+            "radius-union per-center arrays differ in length",
+        )
+        _require(
+            np.all(np.diff(copied["assimilation_anchor_ids"]) > 0),
+            "radius-union assimilation anchor IDs must be strictly increasing",
+        )
+        _require(
+            np.all(
+                (0 <= copied["nearest_query_indices"])
+                & (copied["nearest_query_indices"] < query_count)
+            ),
+            "radius-union nearest query index is invalid",
+        )
+        _require(
+            np.isfinite(self.maximum_distance_m) and self.maximum_distance_m > 0.0,
+            "radius-union exclusion radius must be positive",
+        )
+        distance = copied["nearest_query_distance_m"]
+        _require(
+            np.all(np.isfinite(distance)) and np.all(distance >= 0.0),
+            "radius-union nearest query distances must be finite and nonnegative",
+        )
+        within = copied["center_within_radius_mask"]
+        _require(
+            np.array_equal(within, distance <= self.maximum_distance_m),
+            "radius-union center-within-radius mask changed",
+        )
+        _require(
+            bool(np.any(within)) == bool(np.any(copied["excluded_query_mask"])),
+            "radius-union center and query coverage disagree",
+        )
+        for name, value in copied.items():
+            object.__setattr__(self, name, value)
+
+
 def build_frozen_nodal_field(
     frame_zero_points_m: np.ndarray,
     primary_prediction_m: np.ndarray,
@@ -698,6 +786,56 @@ def map_assimilation_centers_to_queries(
     )
 
 
+def build_radius_union_center_exclusion(
+    geometry: FrozenFieldGeometry,
+    queries: FrameZeroQuerySet,
+    *,
+    maximum_distance_m: float,
+) -> RadiusUnionCenterExclusion:
+    """Exclude every x0 query within radius of any assimilation center.
+
+    The per-center nearest-query records are audit metadata only.  Queries are
+    sorted by identity before nearest-neighbor selection, so exact distance ties
+    select the smaller identity independently of input order.  A center whose
+    nearest query lies outside the radius excludes no query by itself.
+    """
+
+    _require(
+        np.isfinite(maximum_distance_m) and maximum_distance_m > 0.0,
+        "radius-union exclusion radius must be positive",
+    )
+    centers = geometry.assimilation_positions_m.astype(np.float64)
+    _require(
+        len(centers) > 0,
+        "radius-union exclusion requires at least one assimilation center",
+    )
+    query_order = np.argsort(queries.identity_ids, kind="stable")
+    ordered_queries = queries.positions_m[query_order].astype(np.float64)
+    distance = np.linalg.norm(centers[:, None, :] - ordered_queries[None, :, :], axis=2)
+    _require(
+        np.all(np.isfinite(distance)),
+        "radius-union center-to-query distances must be finite",
+    )
+
+    nearest_ordered_indices = np.argmin(distance, axis=1)
+    nearest_distance = distance[np.arange(len(centers)), nearest_ordered_indices]
+    nearest_indices = query_order[nearest_ordered_indices]
+    nearest_identities = queries.identity_ids[nearest_indices]
+    center_within_radius = nearest_distance <= maximum_distance_m
+
+    excluded = np.zeros(len(queries.identity_ids), dtype=bool)
+    excluded[query_order] = np.any(distance <= maximum_distance_m, axis=0)
+    return RadiusUnionCenterExclusion(
+        assimilation_anchor_ids=geometry.assimilation_anchor_ids,
+        nearest_query_identity_ids=nearest_identities,
+        nearest_query_indices=nearest_indices.astype(np.int64, copy=False),
+        nearest_query_distance_m=nearest_distance,
+        center_within_radius_mask=center_within_radius,
+        excluded_query_mask=excluded,
+        maximum_distance_m=float(maximum_distance_m),
+    )
+
+
 __all__ = [
     "CenterExclusion",
     "FieldQueryResult",
@@ -705,8 +843,10 @@ __all__ = [
     "FrozenFieldConfig",
     "FrozenFieldGeometry",
     "FrozenNodalDisplacementField",
+    "RadiusUnionCenterExclusion",
     "UnsupportedQueryPolicy",
     "build_frozen_nodal_field",
+    "build_radius_union_center_exclusion",
     "map_assimilation_centers_to_queries",
     "query_frozen_nodal_field",
 ]

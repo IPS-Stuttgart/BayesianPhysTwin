@@ -71,6 +71,7 @@ def _minimal_record(
     comparator_identity: float = 1.0,
     supported_count: int = 45,
     hidden_count: int = 32,
+    excluded_count: int = scoring.CENTER_COUNT,
 ) -> dict[str, object]:
     official_count = 50
     return {
@@ -86,7 +87,8 @@ def _minimal_record(
             "official_identity_count": official_count,
             "supported_identity_count": supported_count,
             "support_coverage_fraction": supported_count / official_count,
-            "center_excluded_identity_count": scoring.CENTER_COUNT,
+            "assimilation_center_count": scoring.CENTER_COUNT,
+            "center_excluded_identity_count": excluded_count,
             "hidden_supported_identity_count": hidden_count,
         },
     }
@@ -163,6 +165,7 @@ def test_one_shared_mask_excludes_unsupported_and_centers_from_both_arms() -> No
     assert all(value == 0.0 for value in record["gate_score"].values())
     masks = record["mask_evidence"]
     assert masks["supported_identity_count"] == 49
+    assert masks["assimilation_center_count"] == 16
     assert masks["center_excluded_identity_count"] == 16
     assert masks["hidden_supported_identity_count"] == 33
     assert masks["minimum_scored_identity_count"] == 33
@@ -224,15 +227,31 @@ def test_identity_order_and_all_three_frame_zero_arrays_must_match_exactly() -> 
     with pytest.raises(ValueError, match="target frame zero.*bit-equal"):
         _score(target_x0_mismatch)
 
-    center_count_mismatch = _arrays()
-    center_count_mismatch["center_exclusion_mask"][0] = False
-    with pytest.raises(ValueError, match="exactly 16"):
-        _score(center_count_mismatch)
+    all_excluded = _arrays()
+    all_excluded["center_exclusion_mask"][:] = True
+    with pytest.raises(ValueError, match="no hidden supported identity"):
+        _score(all_excluded)
 
     frame_index_mismatch = _arrays()
     frame_index_mismatch["frame_indices"][-1] = 74
     with pytest.raises(ValueError, match=r"arange\(76\)"):
         _score(frame_index_mismatch)
+
+
+@pytest.mark.parametrize("excluded_count", [0, 1, 15, 16, 18])
+def test_direct_score_accepts_variable_radius_union_exclusion_counts(
+    excluded_count: int,
+) -> None:
+    arrays = _arrays()
+    arrays["center_exclusion_mask"][:] = False
+    arrays["center_exclusion_mask"][:excluded_count] = True
+
+    record = _score(arrays)
+
+    masks = record["mask_evidence"]
+    assert masks["assimilation_center_count"] == scoring.CENTER_COUNT
+    assert masks["center_excluded_identity_count"] == excluded_count
+    assert masks["hidden_supported_identity_count"] == 50 - excluded_count
 
 
 def test_source_cardinality_is_metadata_only_for_m_less_or_greater_than_n() -> None:

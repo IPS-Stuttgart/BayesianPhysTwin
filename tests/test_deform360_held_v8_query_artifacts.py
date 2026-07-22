@@ -222,10 +222,14 @@ def test_round_trip_freezes_field_then_queries_only_x0(tmp_path: Path) -> None:
     assert contract["gaussian_length_scale_fraction"] == 0.05
     assert contract["support_radius_fraction"] == 0.5
     assert contract["center_exclusion"] == {
-        "method": "geometry-only-deterministic-one-to-one-assignment-v1",
+        "method": "geometry-only-radius-union-v2",
         "maximum_distance_m": 0.015,
+        "exclude_every_query_within_radius": True,
+        "centers_without_a_query_in_radius_are_allowed": True,
+        "per_center_nearest_query_is_audit_only": True,
         "future_coordinates_or_masks_used": False,
         "cohort_coverage_gate_imposed_here": False,
+        "contract_sha256": artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
     }
     for sealed_path in (
         field_manifest_path,
@@ -253,8 +257,57 @@ def test_round_trip_freezes_field_then_queries_only_x0(tmp_path: Path) -> None:
         assert stored["shared_support_mask"].dtype == np.dtype(bool)
         assert not bool(stored["shared_support_mask"][-1])
         assert np.all(np.isfinite(stored["primary_prediction_m"][:, -1]))
-        assert int(np.sum(stored["center_exclusion_mask"])) == 16
-        assert np.max(stored["center_assignment_distance_m"]) == 0.0
+        # The radius union is deliberately not capped at one query per center:
+        # the extra synthetic query lies inside an already covered neighborhood.
+        assert int(np.sum(stored["center_exclusion_mask"])) == 17
+        assert np.max(stored["center_nearest_query_distance_m"]) == 0.0
+        np.testing.assert_array_equal(stored["center_within_radius_mask"], True)
+
+
+def test_query_artifact_allows_no_official_identity_near_a_center(
+    tmp_path: Path,
+) -> None:
+    lock, _, _, _, field_manifest = _write_field_fixture(tmp_path)
+    count = artifacts.CENTER_COUNT + 2
+    query_archive = tmp_path / "official_x0.npz"
+    query_manifest = tmp_path / "official_x0.json"
+    artifacts.write_official_query_artifact(
+        query_archive,
+        query_manifest,
+        lock,
+        lock_sha256=_bound_file(lock)["sha256"],
+        case_name=CASE_NAME,
+        query_arrays={
+            "identity_ids": np.arange(2000, 2000 + count, dtype=np.int64),
+            "positions_m": np.column_stack(
+                (
+                    np.linspace(1.0, 2.0, count, dtype=np.float32),
+                    np.zeros(count, dtype=np.float32),
+                    np.zeros(count, dtype=np.float32),
+                )
+            ),
+        },
+    )
+    prediction_archive = tmp_path / "queried_prediction.npz"
+    prediction_seal = tmp_path / "queried_prediction.json"
+
+    artifacts.write_queried_prediction_artifact(
+        prediction_archive,
+        prediction_seal,
+        lock_path=lock,
+        lock_sha256=_bound_file(lock)["sha256"],
+        frozen_field_manifest_path=field_manifest,
+        official_query_manifest_path=query_manifest,
+    )
+
+    artifacts.validate_queried_prediction_artifact(
+        prediction_seal,
+        lock_path=lock,
+        expected_case_name=CASE_NAME,
+    )
+    with np.load(prediction_archive, allow_pickle=False) as stored:
+        np.testing.assert_array_equal(stored["center_within_radius_mask"], False)
+        np.testing.assert_array_equal(stored["center_exclusion_mask"], False)
 
 
 @pytest.mark.parametrize(

@@ -121,6 +121,10 @@ FROZEN_FIELD_CONTRACT = {
     "support_radius_fraction": 0.50,
     "frame_index_rule": "numpy.arange(76,dtype=int64)",
     "frame_indices": list(range(FRAME_COUNT)),
+    "center_exclusion": {
+        **deepcopy(query_artifacts.CENTER_EXCLUSION_CONTRACT),
+        "contract_sha256": query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
+    },
     "open27_development_decision_file_sha256": (
         OPEN27_DEVELOPMENT_DECISION_FILE_SHA256
     ),
@@ -133,6 +137,7 @@ PRIMARY_METHOD = {
     "neighbor_count": FROZEN_FIELD_CONTRACT["neighbor_count"],
     "length_scale_fraction": FROZEN_FIELD_CONTRACT["length_scale_fraction"],
     "support_radius_fraction": FROZEN_FIELD_CONTRACT["support_radius_fraction"],
+    "center_exclusion_contract_sha256": query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
     "calibration_selects_method": False,
 }
 

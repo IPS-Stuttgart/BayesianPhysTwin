@@ -31,8 +31,8 @@ from . import deform360_frozen_query_field as frozen_query_field
 from .deform360_frozen_query_field import (
     FrameZeroQuerySet,
     FrozenFieldConfig,
+    build_radius_union_center_exclusion,
     build_frozen_nodal_field,
-    map_assimilation_centers_to_queries,
     query_frozen_nodal_field,
 )
 
@@ -68,9 +68,10 @@ QUERIED_PREDICTION_ARRAY_NAMES = frozenset(
         "nearest_anchor_distance_m",
         "kth_anchor_distance_m",
         "center_ids",
-        "center_query_identity_ids",
-        "center_query_indices",
-        "center_assignment_distance_m",
+        "center_nearest_query_identity_ids",
+        "center_nearest_query_indices",
+        "center_nearest_query_distance_m",
+        "center_within_radius_mask",
         "center_exclusion_mask",
     }
 )
@@ -84,6 +85,23 @@ ROBUST_SCALE_QUANTILES = (0.05, 0.95)
 ROBUST_SCALE_QUANTILE_METHOD = "linear"
 MINIMUM_METRIC_SCALE_M = 1e-12
 CENTER_EXCLUSION_MAXIMUM_DISTANCE_M = 0.015
+CENTER_EXCLUSION_CONTRACT = {
+    "method": "geometry-only-radius-union-v2",
+    "maximum_distance_m": CENTER_EXCLUSION_MAXIMUM_DISTANCE_M,
+    "exclude_every_query_within_radius": True,
+    "centers_without_a_query_in_radius_are_allowed": True,
+    "per_center_nearest_query_is_audit_only": True,
+    "future_coordinates_or_masks_used": False,
+    "cohort_coverage_gate_imposed_here": False,
+}
+CENTER_EXCLUSION_CONTRACT_SHA256 = hashlib.sha256(
+    json.dumps(
+        CENTER_EXCLUSION_CONTRACT,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+).hexdigest()
 UNSUPPORTED_QUERY_POLICY = "emit-prediction-and-mask-v1"
 EXACT_ANCHOR_RULE = "bit-exact-nodal-value"
 TIE_BREAK_RULE = "distance-then-anchor-id"
@@ -727,10 +745,8 @@ def _field_contract(
         "frame_indices": list(range(FRAME_COUNT)),
         "center_count": CENTER_COUNT,
         "center_exclusion": {
-            "method": "geometry-only-deterministic-one-to-one-assignment-v1",
-            "maximum_distance_m": CENTER_EXCLUSION_MAXIMUM_DISTANCE_M,
-            "future_coordinates_or_masks_used": False,
-            "cohort_coverage_gate_imposed_here": False,
+            **deepcopy(CENTER_EXCLUSION_CONTRACT),
+            "contract_sha256": CENTER_EXCLUSION_CONTRACT_SHA256,
         },
     }
 
@@ -1012,7 +1028,7 @@ def _load_validated_frozen_field(
 
 def _queried_arrays(field, queries: FrameZeroQuerySet) -> dict[str, np.ndarray]:
     result = query_frozen_nodal_field(field, queries)
-    exclusion = map_assimilation_centers_to_queries(
+    exclusion = build_radius_union_center_exclusion(
         field.geometry,
         queries,
         maximum_distance_m=CENTER_EXCLUSION_MAXIMUM_DISTANCE_M,
@@ -1038,9 +1054,10 @@ def _queried_arrays(field, queries: FrameZeroQuerySet) -> dict[str, np.ndarray]:
         "nearest_anchor_distance_m": result.nearest_anchor_distance_m,
         "kth_anchor_distance_m": result.kth_anchor_distance_m,
         "center_ids": exclusion.assimilation_anchor_ids,
-        "center_query_identity_ids": exclusion.mapped_query_identity_ids,
-        "center_query_indices": exclusion.mapped_query_indices,
-        "center_assignment_distance_m": exclusion.assignment_distance_m,
+        "center_nearest_query_identity_ids": exclusion.nearest_query_identity_ids,
+        "center_nearest_query_indices": exclusion.nearest_query_indices,
+        "center_nearest_query_distance_m": exclusion.nearest_query_distance_m,
+        "center_within_radius_mask": exclusion.center_within_radius_mask,
         "center_exclusion_mask": exclusion.excluded_query_mask,
     }
     _validate_queried_arrays(arrays, field=field, queries=queries)
@@ -1112,24 +1129,49 @@ def _validate_queried_arrays(
     _require(
         np.asarray(arrays["center_ids"]).dtype == np.dtype(np.int64)
         and np.asarray(arrays["center_ids"]).shape == (CENTER_COUNT,)
-        and np.asarray(arrays["center_query_identity_ids"]).dtype == np.dtype(np.int64)
-        and np.asarray(arrays["center_query_identity_ids"]).shape == (CENTER_COUNT,)
-        and np.asarray(arrays["center_query_indices"]).dtype == np.dtype(np.int64)
-        and np.asarray(arrays["center_query_indices"]).shape == (CENTER_COUNT,)
-        and np.asarray(arrays["center_assignment_distance_m"]).dtype
+        and np.asarray(arrays["center_nearest_query_identity_ids"]).dtype
+        == np.dtype(np.int64)
+        and np.asarray(arrays["center_nearest_query_identity_ids"]).shape
+        == (CENTER_COUNT,)
+        and np.asarray(arrays["center_nearest_query_indices"]).dtype
+        == np.dtype(np.int64)
+        and np.asarray(arrays["center_nearest_query_indices"]).shape
+        == (CENTER_COUNT,)
+        and np.asarray(arrays["center_nearest_query_distance_m"]).dtype
         == np.dtype(np.float64)
-        and np.asarray(arrays["center_assignment_distance_m"]).shape == (CENTER_COUNT,)
+        and np.asarray(arrays["center_nearest_query_distance_m"]).shape
+        == (CENTER_COUNT,)
+        and np.asarray(arrays["center_within_radius_mask"]).dtype == np.dtype(bool)
+        and np.asarray(arrays["center_within_radius_mask"]).shape == (CENTER_COUNT,)
         and np.asarray(arrays["center_exclusion_mask"]).dtype == np.dtype(bool)
-        and np.asarray(arrays["center_exclusion_mask"]).shape == (count,)
-        and int(np.sum(arrays["center_exclusion_mask"])) == CENTER_COUNT,
-        "center exclusion mapping or mask changed",
+        and np.asarray(arrays["center_exclusion_mask"]).shape == (count,),
+        "center exclusion audit or mask shape changed",
+    )
+    exclusion = build_radius_union_center_exclusion(
+        field.geometry,
+        queries,
+        maximum_distance_m=CENTER_EXCLUSION_MAXIMUM_DISTANCE_M,
     )
     _require(
-        np.all(
-            np.asarray(arrays["center_assignment_distance_m"])
-            <= CENTER_EXCLUSION_MAXIMUM_DISTANCE_M
+        np.array_equal(
+            arrays["center_nearest_query_identity_ids"],
+            exclusion.nearest_query_identity_ids,
+        )
+        and np.array_equal(
+            arrays["center_nearest_query_indices"], exclusion.nearest_query_indices
+        )
+        and np.array_equal(
+            arrays["center_nearest_query_distance_m"],
+            exclusion.nearest_query_distance_m,
+        )
+        and np.array_equal(
+            arrays["center_within_radius_mask"],
+            exclusion.center_within_radius_mask,
+        )
+        and np.array_equal(
+            arrays["center_exclusion_mask"], exclusion.excluded_query_mask
         ),
-        "center exclusion assignment exceeds 0.015 m",
+        "center exclusion differs from the x0-only radius union",
     )
     _require(
         np.all(np.isfinite(arrays["primary_prediction_m"]))
@@ -1188,6 +1230,11 @@ def write_queried_prediction_artifact(
             "unsupported_predictions_emitted": True,
             "unsupported_queries_permanently_masked_false": True,
             "center_exclusion_mask_geometry_only": True,
+            "center_exclusion_rule": "exclude-all-x0-queries-within-radius-v2",
+            "center_exclusion_contract_sha256": (
+                CENTER_EXCLUSION_CONTRACT_SHA256
+            ),
+            "unmatched_assimilation_centers_allowed": True,
             "cohort_coverage_gate_imposed_here": False,
         },
         "information_boundary": {
@@ -1323,6 +1370,11 @@ def validate_queried_prediction_artifact(
             "unsupported_predictions_emitted": True,
             "unsupported_queries_permanently_masked_false": True,
             "center_exclusion_mask_geometry_only": True,
+            "center_exclusion_rule": "exclude-all-x0-queries-within-radius-v2",
+            "center_exclusion_contract_sha256": (
+                CENTER_EXCLUSION_CONTRACT_SHA256
+            ),
+            "unmatched_assimilation_centers_allowed": True,
             "cohort_coverage_gate_imposed_here": False,
         },
         "queried mask contract changed",
@@ -1356,6 +1408,8 @@ validate_official_frame_zero_query_artifact = validate_official_query_artifact
 
 __all__ = [
     "CENTER_COUNT",
+    "CENTER_EXCLUSION_CONTRACT",
+    "CENTER_EXCLUSION_CONTRACT_SHA256",
     "CENTER_EXCLUSION_MAXIMUM_DISTANCE_M",
     "FIELD_OPERATOR_ID",
     "FRAME_COUNT",
