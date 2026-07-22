@@ -3143,6 +3143,98 @@ def _capture_run_state(
     return state, inputs, transforms_path, expected, manifest
 
 
+def _restore_renderer_sys_path(
+    baseline: Sequence[str],
+    *,
+    require_pinned_mutation: bool,
+) -> dict[str, Any]:
+    """Validate and undo the pinned loader's two transient import paths."""
+    before = list(baseline)
+    _require(
+        before and all(isinstance(value, str) and value for value in before),
+        "renderer sys.path baseline is invalid",
+    )
+    current = list(sys.path)
+    if current == before:
+        _require(
+            not require_pinned_mutation,
+            "pinned renderer omitted its expected transient sys.path entries",
+        )
+        return {
+            "pinned_renderer_mutation_required": False,
+            "transient_entries": [],
+            "restored_exactly": True,
+        }
+
+    _require(
+        require_pinned_mutation,
+        "an injected renderer mutated sys.path",
+    )
+    _require(
+        current[: len(before)] == before,
+        "renderer changed the validated sys.path prefix",
+    )
+    additions = current[len(before) :]
+    _require(
+        len(additions) == 2,
+        "renderer transient sys.path entry count changed",
+    )
+    temporary_root_value = os.environ.get("TMPDIR")
+    _require(
+        isinstance(temporary_root_value, str) and temporary_root_value,
+        "renderer TMPDIR is absent",
+    )
+    temporary_root = _assert_nonheld_path(
+        temporary_root_value,
+        label="renderer TMPDIR",
+        must_exist=True,
+    )
+    temporary_entry = _assert_nonheld_path(
+        additions[0],
+        label="renderer temporary import path",
+        must_exist=True,
+    )
+    _require(
+        temporary_entry.is_dir()
+        and temporary_entry.parent == temporary_root
+        and temporary_entry.name.startswith("tmp"),
+        "renderer temporary import path changed",
+    )
+    expected_vendor = (
+        PINNED_PYTHON_RUNTIME / "lib/python3.12/site-packages/setuptools/_vendor"
+    ).resolve(strict=True)
+    vendor_entry = _assert_nonheld_path(
+        additions[1],
+        label="renderer setuptools vendor import path",
+        must_exist=True,
+    )
+    _require(
+        vendor_entry.is_dir() and vendor_entry == expected_vendor,
+        "renderer setuptools vendor import path changed",
+    )
+    evidence = {
+        "pinned_renderer_mutation_required": True,
+        "transient_entries": [
+            {
+                "role": "isolated_temporary_import_path",
+                "path": os.fspath(temporary_entry),
+                "parent": os.fspath(temporary_root),
+                "mode_octal": f"{stat.S_IMODE(os.lstat(temporary_entry).st_mode):04o}",
+            },
+            {
+                "role": "pinned_setuptools_vendor_import_path",
+                "path": os.fspath(vendor_entry),
+                "runtime_root": os.fspath(PINNED_PYTHON_RUNTIME),
+                "mode_octal": f"{stat.S_IMODE(os.lstat(vendor_entry).st_mode):04o}",
+            },
+        ],
+        "restored_exactly": True,
+    }
+    sys.path[:] = before
+    _require(list(sys.path) == before, "renderer sys.path restoration failed")
+    return evidence
+
+
 def analyze(
     manifest_path: str | Path,
     output_path: str | Path,
@@ -3212,31 +3304,40 @@ def analyze(
     )
     cameras = _load_canonical_cameras(transform_bytes)
     clouds = _load_clouds(inputs)
-    renderer, gsplat_binding = renderer_factory(code, physical_gpu_index)
-    _require(
-        isinstance(gsplat_binding, Mapping)
-        and set(gsplat_binding)
-        == {
-            "host",
-            "physical_gpu_index",
-            "adapter_source",
-            "smoke_evidence",
-            "live_device",
-        }
-        and gsplat_binding.get("host") == before_state["execution"]["host"]
-        and gsplat_binding.get("physical_gpu_index") == physical_gpu_index
-        and gsplat_binding.get("adapter_source")
-        == before_state["source"]["analyzer_gsplat_adapter"]
-        and gsplat_binding.get("live_device")
-        == before_state["execution"]["live_device"],
-        "analyzer gsplat binding differs from the validated run state",
-    )
-    _validate_gsplat_smoke(
-        gsplat_binding.get("smoke_evidence"),
-        label="analyzer gsplat smoke",
-        expected_physical_gpu_index=physical_gpu_index,
-    )
-    analysis = _analyze_clouds(clouds, cameras, renderer)
+    renderer_sys_path_baseline = tuple(sys.path)
+    try:
+        renderer, gsplat_binding = renderer_factory(code, physical_gpu_index)
+        _require(
+            isinstance(gsplat_binding, Mapping)
+            and set(gsplat_binding)
+            == {
+                "host",
+                "physical_gpu_index",
+                "adapter_source",
+                "smoke_evidence",
+                "live_device",
+            }
+            and gsplat_binding.get("host") == before_state["execution"]["host"]
+            and gsplat_binding.get("physical_gpu_index") == physical_gpu_index
+            and gsplat_binding.get("adapter_source")
+            == before_state["source"]["analyzer_gsplat_adapter"]
+            and gsplat_binding.get("live_device")
+            == before_state["execution"]["live_device"],
+            "analyzer gsplat binding differs from the validated run state",
+        )
+        _validate_gsplat_smoke(
+            gsplat_binding.get("smoke_evidence"),
+            label="analyzer gsplat smoke",
+            expected_physical_gpu_index=physical_gpu_index,
+        )
+        analysis = _analyze_clouds(clouds, cameras, renderer)
+        renderer_sys_path_restoration = _restore_renderer_sys_path(
+            renderer_sys_path_baseline,
+            require_pinned_mutation=renderer_factory is _fixed_gsplat_renderer,
+        )
+    except BaseException:
+        sys.path[:] = list(renderer_sys_path_baseline)
+        raise
     after_state, _, _, after_expected, after_manifest = _capture_run_state(
         manifest_file=manifest_file,
         code=code,
@@ -3262,6 +3363,7 @@ def analyze(
             "runtime_binding": before_state["runtime"],
             "execution_binding": before_state["execution"],
             "gsplat_runtime": dict(gsplat_binding),
+            "renderer_sys_path_restoration": renderer_sys_path_restoration,
             "canonical_source_dataset": before_state["canonical_source_dataset"],
             "canonical_transforms": before_state["canonical_transforms"],
             "inputs": before_state["transitive_inputs"],

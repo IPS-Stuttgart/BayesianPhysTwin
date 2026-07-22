@@ -932,6 +932,45 @@ def test_python_flags_environment_and_import_paths_are_fail_closed(
         equivalence._import_path_binding(Path(__file__).parents[1].resolve())
 
 
+def test_renderer_sys_path_restoration_accepts_only_pinned_transients(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runtime = tmp_path / "runtime"
+    vendor = runtime / "lib/python3.12/site-packages/setuptools/_vendor"
+    vendor.mkdir(parents=True)
+    temporary_root = tmp_path / "isolated-tmp"
+    temporary_root.mkdir()
+    temporary_entry = temporary_root / "tmpfixed123"
+    temporary_entry.mkdir()
+    baseline = ["/validated/source", "/validated/runtime"]
+    monkeypatch.setattr(equivalence, "PINNED_PYTHON_RUNTIME", runtime.resolve())
+    monkeypatch.setenv("TMPDIR", str(temporary_root.resolve()))
+    monkeypatch.setattr(
+        equivalence.sys,
+        "path",
+        [*baseline, str(temporary_entry.resolve()), str(vendor.resolve())],
+    )
+
+    evidence = equivalence._restore_renderer_sys_path(
+        baseline, require_pinned_mutation=True
+    )
+    assert evidence["restored_exactly"] is True
+    assert [entry["role"] for entry in evidence["transient_entries"]] == [
+        "isolated_temporary_import_path",
+        "pinned_setuptools_vendor_import_path",
+    ]
+    assert equivalence.sys.path == baseline
+
+    equivalence.sys.path[:] = [*baseline, str(tmp_path / "unexpected")]
+    with pytest.raises(ValueError, match="entry count changed"):
+        equivalence._restore_renderer_sys_path(baseline, require_pinned_mutation=True)
+    equivalence.sys.path[:] = baseline
+    no_mutation = equivalence._restore_renderer_sys_path(
+        baseline, require_pinned_mutation=False
+    )
+    assert no_mutation["transient_entries"] == []
+
+
 def test_live_pip_freeze_is_canonical_sorted_and_must_match(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
