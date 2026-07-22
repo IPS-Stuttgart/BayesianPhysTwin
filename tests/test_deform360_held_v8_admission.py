@@ -428,11 +428,82 @@ def test_fallback_protocol_identity_is_exact_and_always_restored(
     )
 
 
+def test_successful_archive_requires_truthful_exact_admission(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    delegated: list[str] = []
+
+    def build_archive(*_args: object, **kwargs: object) -> dict[str, bool]:
+        delegated.append(str(kwargs["case_name"]))
+        return {"delegated": True}
+
+    monkeypatch.setattr(
+        builders,
+        "_V7_PHYSICAL_PREDICTION_ARCHIVE_BUILDER",
+        build_archive,
+    )
+    summary = tmp_path / "summary.json"
+    twin = {
+        "protocol_id": builders.V8_EXTERNAL_ADMISSION_PROTOCOL_ID,
+        "protocol_config_sha256": builders.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256,
+        "object_id": builders.V8_EXTERNAL_CALIBRATION_OBJECT_ID,
+        "episode_id": builders.V8_EXTERNAL_CALIBRATION_EPISODE_ID,
+        "phase": "calibration",
+        "passed": True,
+    }
+    twin["result_sha256"] = physical._upstream_result_sha256(twin)
+    summary.write_text(json.dumps(twin))
+    positional = (
+        "prediction",
+        "simulator",
+        "graph",
+        "readout",
+        summary,
+        "driven",
+        "zero",
+        "archive",
+        "manifest",
+    )
+    keywords = {
+        "frame_zero_manifest_path": "frame-zero",
+        "lock_path": "lock",
+        "case_name": builders.V8_EXTERNAL_CALIBRATION_CASE_NAME,
+        "role": "calibration",
+        "runtime_provenance": {},
+        "stage_runtime_seconds": {},
+    }
+    assert builders._v8_build_physical_prediction_archive(*positional, **keywords) == {
+        "delegated": True
+    }
+    assert delegated == [builders.V8_EXTERNAL_CALIBRATION_CASE_NAME]
+
+    twin["protocol_id"] = physical.AUTOMATIC_TWIN_PROTOCOL_ID
+    twin["result_sha256"] = physical._upstream_result_sha256(twin)
+    summary.write_text(json.dumps(twin))
+    with pytest.raises(ValueError, match="lacks exact v8 admission"):
+        builders._v8_build_physical_prediction_archive(*positional, **keywords)
+    assert delegated == [builders.V8_EXTERNAL_CALIBRATION_CASE_NAME]
+
+    # Legacy cases remain a direct delegation, including when no summary exists.
+    keywords["case_name"] = "083-blanket-cloth-ep0003"
+    assert builders._v8_build_physical_prediction_archive(
+        *(*positional[:4], tmp_path / "absent.json", *positional[5:]),
+        **keywords,
+    ) == {"delegated": True}
+
+
 def test_physical_context_installs_and_restores_only_v8_fallback_adapter() -> None:
     original = physical._validate_inadmissible_automatic_twin
+    original_archive = physical.build_physical_prediction_archive
     with builders.explicit_v8_builder_context("physical"):
         assert (
             physical._validate_inadmissible_automatic_twin
             is builders._v8_validate_inadmissible_automatic_twin
         )
+        assert (
+            physical.build_physical_prediction_archive
+            is builders._v8_build_physical_prediction_archive
+        )
     assert physical._validate_inadmissible_automatic_twin is original
+    assert physical.build_physical_prediction_archive is original_archive

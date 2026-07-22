@@ -62,6 +62,7 @@ _V7_PHYSICAL_ISOLATED_RUNPY_COMMAND = physical._isolated_runpy_command
 _V7_PHYSICAL_INADMISSIBLE_TWIN_VALIDATOR = (
     physical._validate_inadmissible_automatic_twin
 )
+_V7_PHYSICAL_PREDICTION_ARCHIVE_BUILDER = physical.build_physical_prediction_archive
 _V7_AUTOMATIC_TWIN_PROTOCOL_ID = physical.AUTOMATIC_TWIN_PROTOCOL_ID
 _V7_AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256 = (
     physical.AUTOMATIC_TWIN_PROTOCOL_CONFIG_SHA256
@@ -255,6 +256,11 @@ def _require_v7_baseline() -> None:
         physical._validate_inadmissible_automatic_twin,
         _V7_PHYSICAL_INADMISSIBLE_TWIN_VALIDATOR,
         "physical._validate_inadmissible_automatic_twin",
+    )
+    _require_same(
+        physical.build_physical_prediction_archive,
+        _V7_PHYSICAL_PREDICTION_ARCHIVE_BUILDER,
+        "physical.build_physical_prediction_archive",
     )
     if (
         physical.AUTOMATIC_TWIN_PROTOCOL_ID != _V7_AUTOMATIC_TWIN_PROTOCOL_ID
@@ -511,6 +517,62 @@ def _v8_validate_inadmissible_automatic_twin(
             )
 
 
+def _v8_build_physical_prediction_archive(
+    prediction_data_path: str | Path,
+    simulator_data_path: str | Path,
+    graph_path: str | Path,
+    readout_path: str | Path,
+    twin_summary_path: str | Path,
+    driven_result_path: str | Path,
+    zero_result_path: str | Path,
+    archive_path: str | Path,
+    manifest_path: str | Path,
+    *,
+    frame_zero_manifest_path: str | Path,
+    lock_path: str | Path,
+    case_name: str,
+    role: str,
+    runtime_provenance: Mapping[str, Any],
+    stage_runtime_seconds: Mapping[str, float],
+) -> dict[str, Any]:
+    """Require truthful v8 admission identity on exact-case successful twins."""
+
+    if case_name == V8_EXTERNAL_CALIBRATION_CASE_NAME:
+        if role != "calibration":
+            raise ValueError("external admission archive changed role")
+        twin = physical._load_json(twin_summary_path)
+        if not (
+            twin.get("protocol_id") == V8_EXTERNAL_ADMISSION_PROTOCOL_ID
+            and twin.get("protocol_config_sha256")
+            == V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
+            and twin.get("object_id") == V8_EXTERNAL_CALIBRATION_OBJECT_ID
+            and int(twin.get("episode_id", -1)) == V8_EXTERNAL_CALIBRATION_EPISODE_ID
+            and twin.get("phase") == "calibration"
+            and twin.get("passed") is True
+            and twin.get("result_sha256") == physical._upstream_result_sha256(twin)
+        ):
+            raise ValueError(
+                "successful external automatic twin lacks exact v8 admission"
+            )
+    return _V7_PHYSICAL_PREDICTION_ARCHIVE_BUILDER(
+        prediction_data_path,
+        simulator_data_path,
+        graph_path,
+        readout_path,
+        twin_summary_path,
+        driven_result_path,
+        zero_result_path,
+        archive_path,
+        manifest_path,
+        frame_zero_manifest_path=frame_zero_manifest_path,
+        lock_path=lock_path,
+        case_name=case_name,
+        role=role,
+        runtime_provenance=runtime_provenance,
+        stage_runtime_seconds=stage_runtime_seconds,
+    )
+
+
 @contextmanager
 def explicit_v8_builder_context(
     stage: Literal["frame-zero", "physical", "online"],
@@ -586,6 +648,12 @@ def explicit_v8_builder_context(
                 physical,
                 "_validate_inadmissible_automatic_twin",
                 _v8_validate_inadmissible_automatic_twin,
+                saved,
+            )
+            _patch(
+                physical,
+                "build_physical_prediction_archive",
+                _v8_build_physical_prediction_archive,
                 saved,
             )
 
