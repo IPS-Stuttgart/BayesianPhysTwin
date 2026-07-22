@@ -116,6 +116,8 @@ def test_nested_cross_object_guard_selects_beneficial_force_arm() -> None:
         result["candidate_bank_oracle"]["object_balanced_relative_improvement"] > 0.09
     )
     assert result["cross_fitting"].startswith("outer leave-one-object-out")
+    assert result["fixed_arm_controls"]["maximin"]["gate_passed"]
+    assert result["fixed_arm_controls"]["maximin"]["object_wins"] == 5
 
 
 def test_outer_held_object_cannot_change_its_fold_calibration() -> None:

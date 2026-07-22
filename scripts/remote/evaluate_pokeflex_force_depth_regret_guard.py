@@ -52,6 +52,7 @@ def main() -> None:
                 "output": str(output),
                 "cross_object": result["cross_object"],
                 "candidate_bank_oracle": result["candidate_bank_oracle"],
+                "fixed_arm_controls": result["fixed_arm_controls"],
             },
             indent=2,
             sort_keys=True,

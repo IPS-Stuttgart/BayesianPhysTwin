@@ -480,6 +480,135 @@ def _oracle_summary(
     }
 
 
+def _fixed_arm_decisions(
+    arm: str,
+    frames: Sequence[Mapping[str, Any]],
+    candidate_error: Mapping[tuple[str, str], float],
+    objects: set[str],
+) -> list[dict[str, Any]]:
+    decisions = []
+    for frame in frames:
+        if frame["object"] not in objects:
+            continue
+        frame_id = str(frame["frame_id"])
+        baseline = float(frame["baseline_error_mm"])
+        selected = float(candidate_error.get((frame_id, arm), baseline))
+        decisions.append(
+            {
+                **frame,
+                "selected_arm": (
+                    arm if (frame_id, arm) in candidate_error else "released_checkpoint"
+                ),
+                "selected_error_mm": selected,
+            }
+        )
+    return decisions
+
+
+def _fixed_arm_improvement_by_object(
+    arm: str,
+    frames: Sequence[Mapping[str, Any]],
+    candidate_error: Mapping[tuple[str, str], float],
+    objects: Sequence[str],
+) -> dict[str, float]:
+    decisions = _fixed_arm_decisions(arm, frames, candidate_error, set(objects))
+    _, object_rows = _summarize_decisions(decisions, objects)
+    return {
+        str(row["object"]): float(row["relative_improvement"]) for row in object_rows
+    }
+
+
+def _fixed_arm_cross_object_control(
+    rows: Sequence[Mapping[str, Any]],
+    frames: Sequence[Mapping[str, Any]],
+    objects: Sequence[str],
+    config: PokeFlexForceDepthGuardConfig,
+    *,
+    criterion: str,
+) -> dict[str, Any]:
+    """Select one global arm on training objects and evaluate the held object."""
+
+    _require(criterion in {"mean", "maximin"}, "fixed-arm criterion is invalid")
+    arms = sorted({str(row["candidate"]) for row in rows})
+    candidate_error = {
+        (str(row["frame_id"]), str(row["candidate"])): float(row["candidate_error_mm"])
+        for row in rows
+    }
+    improvement = {
+        arm: _fixed_arm_improvement_by_object(
+            arm,
+            frames,
+            candidate_error,
+            objects,
+        )
+        for arm in arms
+    }
+
+    def selection_key(arm: str, training: Sequence[str]) -> tuple[float, float, str]:
+        values = [improvement[arm][object_name] for object_name in training]
+        mean_value = float(np.mean(values))
+        minimum_value = min(values)
+        if criterion == "maximin":
+            return minimum_value, mean_value, arm
+        return mean_value, minimum_value, arm
+
+    decisions: list[dict[str, Any]] = []
+    selected_by_object = {}
+    for held_object in objects:
+        training = [value for value in objects if value != held_object]
+        selected_arm = max(arms, key=lambda arm: selection_key(arm, training))
+        selected_by_object[held_object] = selected_arm
+        decisions.extend(
+            _fixed_arm_decisions(
+                selected_arm,
+                frames,
+                candidate_error,
+                {held_object},
+            )
+        )
+    take_rows, object_rows = _summarize_decisions(decisions, objects)
+    baseline = float(np.mean([row["baseline_mean_CD_UL1_mm"] for row in object_rows]))
+    selected = float(np.mean([row["selected_mean_CD_UL1_mm"] for row in object_rows]))
+    relative_improvement = (baseline - selected) / baseline
+    object_wins = sum(row["relative_improvement"] > 1e-12 for row in object_rows)
+    maximum_regression = max(
+        0.0, max(-float(row["relative_improvement"]) for row in object_rows)
+    )
+    required_object_wins = math.ceil(config.minimum_object_win_fraction * len(objects))
+    deployment_arm = max(arms, key=lambda arm: selection_key(arm, objects))
+    deployment_improvement = improvement[deployment_arm]
+    gate_checks = {
+        "object_balanced_improvement": (
+            relative_improvement >= config.minimum_object_balanced_improvement
+        ),
+        "object_wins": object_wins >= required_object_wins,
+        "maximum_object_regression": (
+            maximum_regression <= config.maximum_object_regression
+        ),
+    }
+    return {
+        "selection_rule": (
+            "maximize the worst training-object relative improvement, then the "
+            "training-object mean"
+            if criterion == "maximin"
+            else "maximize training-object mean, then worst-object improvement"
+        ),
+        "baseline_object_mean_CD_UL1_mm": baseline,
+        "selected_object_mean_CD_UL1_mm": selected,
+        "object_balanced_relative_improvement": relative_improvement,
+        "required_object_wins": required_object_wins,
+        "object_wins": object_wins,
+        "maximum_object_regression": maximum_regression,
+        "gate_checks": gate_checks,
+        "gate_passed": all(gate_checks.values()),
+        "selected_arm_by_held_object": selected_by_object,
+        "deployment_arm": deployment_arm,
+        "deployment_opened_object_relative_improvement": deployment_improvement,
+        "objects": object_rows,
+        "takes": take_rows,
+    }
+
+
 def evaluate_pokeflex_force_depth_cross_object(
     payloads: Sequence[Mapping[str, Any]],
     *,
@@ -610,6 +739,16 @@ def evaluate_pokeflex_force_depth_cross_object(
             "gate_passed": all(gate_checks.values()),
         },
         "candidate_bank_oracle": _oracle_summary(rows, frames),
+        "fixed_arm_controls": {
+            criterion: _fixed_arm_cross_object_control(
+                rows,
+                frames,
+                objects,
+                cfg,
+                criterion=criterion,
+            )
+            for criterion in ("mean", "maximin")
+        },
         "objects": object_rows,
         "takes": take_rows,
         "decisions": decisions,
