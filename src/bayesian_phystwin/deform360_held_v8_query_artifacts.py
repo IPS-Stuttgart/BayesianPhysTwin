@@ -86,11 +86,24 @@ ROBUST_SCALE_QUANTILE_METHOD = "linear"
 MINIMUM_METRIC_SCALE_M = 1e-12
 CENTER_EXCLUSION_MAXIMUM_DISTANCE_M = 0.015
 CENTER_EXCLUSION_CONTRACT = {
-    "method": "geometry-only-radius-union-v2",
+    "operator_id": frozen_query_field.RADIUS_UNION_CENTER_EXCLUSION_OPERATOR_ID,
+    "coordinate_source": "frozen-assimilation-and-official-query-x0-only",
+    "coordinate_input_dtype": "<f4",
+    "distance_compute_dtype": "<f8",
+    "distance_metric": "euclidean",
+    "distance_computation": (
+        "cast-float32-x0-coordinates-to-float64-before-euclidean-norm"
+    ),
     "maximum_distance_m": CENTER_EXCLUSION_MAXIMUM_DISTANCE_M,
-    "exclude_every_query_within_radius": True,
-    "centers_without_a_query_in_radius_are_allowed": True,
+    "inclusion_predicate": "distance_m <= maximum_distance_m",
+    "union_semantics": "set-union-over-all-assimilation-centers",
+    "excluded_query_cardinality": "variable-zero-to-official-query-count",
+    "unmatched_center_policy": "exclude-no-query",
     "per_center_nearest_query_is_audit_only": True,
+    "per_center_nearest_query_tie_break": (
+        frozen_query_field.RADIUS_UNION_NEAREST_QUERY_TIE_BREAK_RULE
+    ),
+    "query_batch_order_invariant": True,
     "future_coordinates_or_masks_used": False,
     "cohort_coverage_gate_imposed_here": False,
 }

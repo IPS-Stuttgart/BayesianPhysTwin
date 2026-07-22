@@ -688,6 +688,33 @@ def test_radius_union_is_query_order_invariant_and_uses_identity_ties() -> None:
     assert set(permuted.identity_ids[second.excluded_query_mask]) == {3, 9}
 
 
+def test_radius_union_uses_inclusive_float64_distance_boundary() -> None:
+    geometry = FrozenFieldGeometry(
+        anchor_ids=np.asarray([0], dtype=np.int64),
+        anchor_positions_m=np.asarray([[0.0, 0.0, 0.0]], dtype=np.float32),
+        assimilation_anchor_ids=np.asarray([0], dtype=np.int64),
+    )
+    boundary = np.float32(0.5)
+    just_outside = np.nextafter(boundary, np.float32(np.inf), dtype=np.float32)
+    queries = FrameZeroQuerySet(
+        identity_ids=np.asarray([10, 20], dtype=np.int64),
+        positions_m=np.asarray(
+            [[boundary, 0.0, 0.0], [just_outside, 0.0, 0.0]], dtype=np.float32
+        ),
+    )
+
+    exclusion = build_radius_union_center_exclusion(
+        geometry, queries, maximum_distance_m=0.5
+    )
+
+    assert exclusion.maximum_distance_m == 0.5
+    assert exclusion.nearest_query_distance_m.dtype == np.dtype(np.float64)
+    assert exclusion.nearest_query_distance_m[0] == 0.5
+    assert float(np.float64(just_outside)) > exclusion.maximum_distance_m
+    np.testing.assert_array_equal(exclusion.center_within_radius_mask, [True])
+    np.testing.assert_array_equal(exclusion.excluded_query_mask, [True, False])
+
+
 def test_radius_union_result_rejects_nonfinite_nearest_distance() -> None:
     with pytest.raises(ValueError, match="finite and nonnegative"):
         RadiusUnionCenterExclusion(

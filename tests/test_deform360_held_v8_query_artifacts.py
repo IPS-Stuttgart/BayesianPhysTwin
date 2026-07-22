@@ -222,11 +222,22 @@ def test_round_trip_freezes_field_then_queries_only_x0(tmp_path: Path) -> None:
     assert contract["gaussian_length_scale_fraction"] == 0.05
     assert contract["support_radius_fraction"] == 0.5
     assert contract["center_exclusion"] == {
-        "method": "geometry-only-radius-union-v2",
+        "operator_id": "x0-euclidean-radius-union-v1",
+        "coordinate_source": "frozen-assimilation-and-official-query-x0-only",
+        "coordinate_input_dtype": "<f4",
+        "distance_compute_dtype": "<f8",
+        "distance_metric": "euclidean",
+        "distance_computation": (
+            "cast-float32-x0-coordinates-to-float64-before-euclidean-norm"
+        ),
         "maximum_distance_m": 0.015,
-        "exclude_every_query_within_radius": True,
-        "centers_without_a_query_in_radius_are_allowed": True,
+        "inclusion_predicate": "distance_m <= maximum_distance_m",
+        "union_semantics": "set-union-over-all-assimilation-centers",
+        "excluded_query_cardinality": "variable-zero-to-official-query-count",
+        "unmatched_center_policy": "exclude-no-query",
         "per_center_nearest_query_is_audit_only": True,
+        "per_center_nearest_query_tie_break": "distance-then-query-identity-id",
+        "query_batch_order_invariant": True,
         "future_coordinates_or_masks_used": False,
         "cohort_coverage_gate_imposed_here": False,
         "contract_sha256": artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,

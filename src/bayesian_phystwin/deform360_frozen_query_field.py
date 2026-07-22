@@ -23,6 +23,8 @@ _TIE_BREAK = "distance-then-anchor-id"
 _EXACT_ANCHOR_RULE = "bit-exact-nodal-value"
 _UNSUPPORTED_QUERY_POLICY = "emit-prediction-and-mask-v1"
 _MINIMUM_METRIC_SCALE_M = 1e-12
+RADIUS_UNION_CENTER_EXCLUSION_OPERATOR_ID = "x0-euclidean-radius-union-v1"
+RADIUS_UNION_NEAREST_QUERY_TIE_BREAK_RULE = "distance-then-query-identity-id"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -796,8 +798,11 @@ def build_radius_union_center_exclusion(
 
     The per-center nearest-query records are audit metadata only.  Queries are
     sorted by identity before nearest-neighbor selection, so exact distance ties
-    select the smaller identity independently of input order.  A center whose
-    nearest query lies outside the radius excludes no query by itself.
+    select the smaller identity independently of input order.  Both float32 x0
+    coordinate sets are cast to float64 before Euclidean distances are computed.
+    The exclusion mask is the set union over all center/query pairs satisfying
+    ``distance_m <= maximum_distance_m``.  A center whose nearest query lies
+    outside the radius excludes no query by itself.
     """
 
     _require(
@@ -843,6 +848,8 @@ __all__ = [
     "FrozenFieldConfig",
     "FrozenFieldGeometry",
     "FrozenNodalDisplacementField",
+    "RADIUS_UNION_CENTER_EXCLUSION_OPERATOR_ID",
+    "RADIUS_UNION_NEAREST_QUERY_TIE_BREAK_RULE",
     "RadiusUnionCenterExclusion",
     "UnsupportedQueryPolicy",
     "build_frozen_nodal_field",

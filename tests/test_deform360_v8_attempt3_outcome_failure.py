@@ -14,12 +14,7 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OPERATOR = (
-    ROOT
-    / "scripts"
-    / "held"
-    / "seal_deform360_v8_attempt3_outcome_failure.py"
-)
+OPERATOR = ROOT / "scripts" / "held" / "seal_deform360_v8_attempt3_outcome_failure.py"
 
 
 def _module():
@@ -69,6 +64,7 @@ def _configure_fixture(module, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     active = base / "held-v8"
     archive = base / "held-v8-attempt-3-withdrawn-postbarrier"
     pointer = base / "held-v8-attempt-3-withdrawal-pointer.json"
+    completion = base / "held-v8-attempt-3-withdrawal-integrity-completion.json"
     active.mkdir(parents=True)
     active.chmod(0o700)
 
@@ -76,6 +72,7 @@ def _configure_fixture(module, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setattr(module, "ACTIVE", active)
     monkeypatch.setattr(module, "ARCHIVE", archive)
     monkeypatch.setattr(module, "POINTER", pointer)
+    monkeypatch.setattr(module, "COMPLETION", completion)
     monkeypatch.setattr(module.socket, "gethostname", lambda: "workstation2")
     monkeypatch.setattr(module, "_running_formal_processes", lambda: [])
     monkeypatch.setattr(module, "STAGED_CAMERAS", ("camera0",))
@@ -132,7 +129,9 @@ def _configure_fixture(module, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         path = active / relative
         path.mkdir(exist_ok=True)
     for relative in files:
-        _write(active / relative, b"opaque reconstruction payload\x00" + relative.encode())
+        _write(
+            active / relative, b"opaque reconstruction payload\x00" + relative.encode()
+        )
 
     formal_payloads = {
         (
@@ -188,9 +187,7 @@ def _configure_fixture(module, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
             "held_root": str(active),
             "calibration_case_whitelist": list(module.EXPECTED_CASES),
             "immutable_bindings": {
-                "method_deployed_snapshot_tree": binding[
-                    "git_tree_manifest_sha256"
-                ],
+                "method_deployed_snapshot_tree": binding["git_tree_manifest_sha256"],
                 "method_head_text_sha256": binding["head_text_sha256"],
             },
         }
@@ -245,6 +242,7 @@ def test_attempt3_operator_archives_without_deserializing_payloads_and_is_idempo
             "calibration-lock.json",
             module.REPORT_NAME,
             pointer.name,
+            module.COMPLETION.name,
         }
         return original_reader(path, role=role)
 
@@ -254,16 +252,22 @@ def test_attempt3_operator_archives_without_deserializing_payloads_and_is_idempo
     assert not active.exists()
     assert archive.is_dir()
     assert pointer.is_file()
+    assert module.COMPLETION.is_file()
     assert first_stdout["independent_post_rename_integrity_verified"] is True
 
     report_path = archive / module.REPORT_NAME
     report = json.loads(report_path.read_text(encoding="utf-8"))
     pointer_value = json.loads(pointer.read_text(encoding="utf-8"))
+    completion_value = json.loads(module.COMPLETION.read_text(encoding="utf-8"))
     assert report["artifact_sha256"] == module._artifact_sha256(report)
     assert pointer_value["artifact_sha256"] == module._artifact_sha256(pointer_value)
-    assert pointer_value["withdrawal_report_file_sha256"] == hashlib.sha256(
-        report_path.read_bytes()
-    ).hexdigest()
+    assert completion_value["artifact_sha256"] == module._artifact_sha256(
+        completion_value
+    )
+    assert (
+        pointer_value["withdrawal_report_file_sha256"]
+        == hashlib.sha256(report_path.read_bytes()).hexdigest()
+    )
     assert report["disposition"] == module.DISPOSITION
     assert report["terminal_failure"]["outer_outcome_driver_exit_code"] == 2
     assert report["terminal_failure"]["inner_x0_worker_exit_code"] == 1
@@ -272,10 +276,19 @@ def test_attempt3_operator_archives_without_deserializing_payloads_and_is_idempo
     )
     assert report["execution_boundary"]["queried_prediction_seal_count"] == 0
     assert report["execution_boundary"]["score_evidence_count"] == 0
-    assert report["stable_noncode_inventory"]["payload_deserialization_performed"] is False
+    assert (
+        report["stable_noncode_inventory"]["payload_deserialization_performed"] is False
+    )
     assert stat.S_IMODE(archive.stat().st_mode) == 0o500
     assert stat.S_IMODE(report_path.stat().st_mode) == 0o400
     assert stat.S_IMODE(pointer.stat().st_mode) == 0o400
+    assert stat.S_IMODE(module.COMPLETION.stat().st_mode) == 0o400
+    assert pointer_value["withdrawal_integrity_completion"]["file_sha256"] == (
+        hashlib.sha256(module.COMPLETION.read_bytes()).hexdigest()
+    )
+    source_binding = report["executed_withdrawal_operator_source"]
+    assert pointer_value["executed_withdrawal_operator_source"] == source_binding
+    assert completion_value["executed_withdrawal_operator_source"] == source_binding
     assert not any(path.stat().st_mode & 0o222 for path in archive.rglob("*"))
 
     assert module.main() == 0
@@ -323,6 +336,7 @@ def test_attempt3_operator_rejects_wrong_counts_or_paths_before_writing(
     assert active.is_dir()
     assert not archive.exists()
     assert not pointer.exists()
+    assert not module.COMPLETION.exists()
     assert not (active / module.REPORT_NAME).exists()
 
 
@@ -338,19 +352,30 @@ def test_attempt3_operator_recovers_after_atomic_rename_and_verifies_hashes(
 
     assert module.main() == 0
     report_path = archive / module.REPORT_NAME
-    observed_report = module._validate_signed_metadata(
-        report_path, role="test report"
-    )
+    observed_report = module._validate_signed_metadata(report_path, role="test report")
     observed_pointer = module._validate_signed_metadata(pointer, role="test pointer")
+    observed_completion = module._validate_signed_metadata(
+        module.COMPLETION, role="test completion"
+    )
     assert observed_report == report
-    assert observed_pointer["withdrawal_report_artifact_sha256"] == report[
-        "artifact_sha256"
-    ]
-    assert observed_pointer["withdrawal_report_file_sha256"] == hashlib.sha256(
-        report_path.read_bytes()
-    ).hexdigest()
+    assert (
+        observed_pointer["withdrawal_report_artifact_sha256"]
+        == report["artifact_sha256"]
+    )
+    assert (
+        observed_pointer["withdrawal_report_file_sha256"]
+        == hashlib.sha256(report_path.read_bytes()).hexdigest()
+    )
     assert observed_pointer["independent_post_rename_integrity_verified"] is True
     assert observed_pointer["archive_fully_nonwritable"] is True
+    assert (
+        observed_pointer["withdrawal_integrity_completion"]["artifact_sha256"]
+        == observed_completion["artifact_sha256"]
+    )
+    assert (
+        observed_completion["pointer_contract"]["pointer_must_bind_this_completion"]
+        is True
+    )
 
 
 def test_attempt3_source_has_no_payload_deserializer() -> None:

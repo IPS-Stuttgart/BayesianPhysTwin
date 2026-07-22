@@ -10,6 +10,7 @@ import pytest
 
 import bayesian_phystwin.deform360_frame_zero_assets as frame_zero_assets
 import bayesian_phystwin.deform360_held_v8_protocol as protocol
+import bayesian_phystwin.deform360_held_v8_query_artifacts as query_artifacts
 
 
 def _write_json(path: Path, value: dict[str, Any], *, seal: bool = True) -> None:
@@ -329,6 +330,32 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     assert lock["frozen_field_contract"]["length_scale_fraction"] == 0.05
     assert lock["frozen_field_contract"]["support_radius_fraction"] == 0.5
     assert lock["frozen_field_contract"]["frame_indices"] == list(range(76))
+    exclusion_contract = lock["frozen_field_contract"]["center_exclusion"]
+    assert exclusion_contract == {
+        **query_artifacts.CENTER_EXCLUSION_CONTRACT,
+        "contract_sha256": query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
+    }
+    assert query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256 == (
+        protocol.held_contract_sha256(query_artifacts.CENTER_EXCLUSION_CONTRACT)
+    )
+    assert exclusion_contract["operator_id"] == "x0-euclidean-radius-union-v1"
+    assert exclusion_contract["inclusion_predicate"] == (
+        "distance_m <= maximum_distance_m"
+    )
+    assert exclusion_contract["distance_compute_dtype"] == "<f8"
+    assert exclusion_contract["union_semantics"] == (
+        "set-union-over-all-assimilation-centers"
+    )
+    assert exclusion_contract["excluded_query_cardinality"] == (
+        "variable-zero-to-official-query-count"
+    )
+    assert exclusion_contract["unmatched_center_policy"] == "exclude-no-query"
+    assert exclusion_contract["per_center_nearest_query_tie_break"] == (
+        "distance-then-query-identity-id"
+    )
+    assert lock["primary_method"]["center_exclusion_contract_sha256"] == (
+        query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
+    )
     assert lock["execution_attempt"] == 3
     assert lock["freshness_and_reuse"]["v7_execution_artifacts_reused"] is False
     assert lock["freshness_and_reuse"]["v8_attempt1_predictions_reused"] is False

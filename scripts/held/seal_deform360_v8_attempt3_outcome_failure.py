@@ -32,6 +32,8 @@ ACTIVE = BASE / "held-v8"
 ARCHIVE = BASE / "held-v8-attempt-3-withdrawn-postbarrier"
 REPORT_NAME = "execution-withdrawal-postbarrier-attempt3.json"
 POINTER = BASE / "held-v8-attempt-3-withdrawal-pointer.json"
+COMPLETION = BASE / "held-v8-attempt-3-withdrawal-integrity-completion.json"
+OPERATOR_SOURCE = Path(__file__).resolve()
 
 PROTOCOL_ID = "deform360-held-online-belief-v8"
 STATUS = "withdrawn-postbarrier-before-queried-prediction-or-score"
@@ -107,8 +109,7 @@ EXPECTED_FORMAL_METADATA: Mapping[str, tuple[int, str]] = {
 }
 EXPECTED_FORMAL_ARRAY_SIZES: Mapping[str, int] = {
     (
-        "calibration/private-targets/072-cotton-clohesline-ep0003/"
-        "official-target.npz"
+        "calibration/private-targets/072-cotton-clohesline-ep0003/official-target.npz"
     ): 552054,
     (
         "calibration/query-inputs/072-cotton-clohesline-ep0003/"
@@ -158,6 +159,23 @@ def _signed(value: Mapping[str, Any]) -> dict[str, Any]:
     result = dict(value)
     result["artifact_sha256"] = _artifact_sha256(result)
     return result
+
+
+def _operator_source_binding() -> dict[str, Any]:
+    source = OPERATOR_SOURCE
+    _require(
+        source.is_absolute()
+        and source.resolve() == source
+        and source.name == "seal_deform360_v8_attempt3_outcome_failure.py",
+        "executed attempt-3 withdrawal operator path changed",
+    )
+    size, digest, mode = _sha256_regular_file(source)
+    return {
+        "path": os.fspath(source),
+        "mode_octal": f"{mode:04o}",
+        "size_bytes": size,
+        "sha256": digest,
+    }
 
 
 def _pretty_json_bytes(value: Mapping[str, Any]) -> bytes:
@@ -288,8 +306,7 @@ def _validate_signed_metadata(path: Path, *, role: str) -> dict[str, Any]:
     value = _read_metadata_json(path, role=role)
     observed = value.get("artifact_sha256")
     _require(
-        isinstance(observed, str)
-        and observed == _artifact_sha256(value),
+        isinstance(observed, str) and observed == _artifact_sha256(value),
         f"{role} artifact hash changed",
     )
     return value
@@ -610,8 +627,7 @@ def _expected_reconstruction_paths() -> tuple[set[str], set[str]]:
             }
         )
     files.update(
-        f"{episode}/pcd_clean/{frame:06d}.npz"
-        for frame in range(PCD_CLEAN_FRAME_COUNT)
+        f"{episode}/pcd_clean/{frame:06d}.npz" for frame in range(PCD_CLEAN_FRAME_COUNT)
     )
     files.update(
         f"{episode}/splatfacto/splat_{frame}.ply"
@@ -630,9 +646,13 @@ def _require_directory(path: Path, *, mode: int, role: str) -> None:
     )
 
 
-def _validate_execution_boundary(root: Path, inventory: Mapping[str, Any]) -> dict[str, Any]:
+def _validate_execution_boundary(
+    root: Path, inventory: Mapping[str, Any]
+) -> dict[str, Any]:
     calibration = root / "calibration"
-    _require_directory(calibration / ".v8-outcome-phase.claim", mode=0o500, role="outcome claim")
+    _require_directory(
+        calibration / ".v8-outcome-phase.claim", mode=0o500, role="outcome claim"
+    )
     _require(
         not any((calibration / ".v8-outcome-phase.claim").iterdir()),
         "outcome claim is not empty",
@@ -650,31 +670,53 @@ def _validate_execution_boundary(root: Path, inventory: Mapping[str, Any]) -> di
     stage_counts: dict[str, int] = {}
     for stage, relative in stage_paths.items():
         paths = [cases_root / case / relative for case in EXPECTED_CASES]
-        _require(all(path.is_file() and not path.is_symlink() for path in paths), f"{stage} is incomplete")
+        _require(
+            all(path.is_file() and not path.is_symlink() for path in paths),
+            f"{stage} is incomplete",
+        )
         _require(
             all(stat.S_IMODE(os.lstat(path).st_mode) == 0o400 for path in paths),
             f"{stage} is not fully sealed",
         )
         stage_counts[stage] = len(paths)
-    _require(all(count == 15 for count in stage_counts.values()), "pre-outcome seal count changed")
+    _require(
+        all(count == 15 for count in stage_counts.values()),
+        "pre-outcome seal count changed",
+    )
 
     private = calibration / "private-targets"
     query_inputs = calibration / "query-inputs"
     query_outputs = calibration / "query-outputs"
-    for path, role in ((private, "private target root"), (query_inputs, "query input root"), (query_outputs, "query output root")):
+    for path, role in (
+        (private, "private target root"),
+        (query_inputs, "query input root"),
+        (query_outputs, "query output root"),
+    ):
         _require_directory(path, mode=0o700, role=role)
         observed = sorted(child.name for child in path.iterdir() if child.is_dir())
         _require(observed == sorted(EXPECTED_CASES), f"{role} case inventory changed")
         _require(
-            all(stat.S_IMODE(os.lstat(path / case).st_mode) == 0o700 for case in EXPECTED_CASES),
+            all(
+                stat.S_IMODE(os.lstat(path / case).st_mode) == 0o700
+                for case in EXPECTED_CASES
+            ),
             f"{role} case-directory mode changed",
         )
 
     for case in EXPECTED_CASES:
         if case != FAILED_CASE:
-            _require(not any((private / case).iterdir()), f"later private target exists: {case}")
-            _require(not any((query_inputs / case).iterdir()), f"later x0 query exists: {case}")
-        _require(not any((query_outputs / case).iterdir()), f"queried prediction exists: {case}")
+            _require(
+                not any((private / case).iterdir()),
+                f"later private target exists: {case}",
+            )
+            _require(
+                not any((query_inputs / case).iterdir()),
+                f"later x0 query exists: {case}",
+            )
+        _require(
+            not any((query_outputs / case).iterdir()),
+            f"queried prediction exists: {case}",
+        )
 
     failed_private = private / FAILED_CASE
     failed_query = query_inputs / FAILED_CASE
@@ -723,7 +765,9 @@ def _validate_execution_boundary(root: Path, inventory: Mapping[str, Any]) -> di
         "reconstruction file inventory changed",
     )
     _require(
-        all(indexed[path]["mode_octal"] == "0500" for path in reconstruction_directories)
+        all(
+            indexed[path]["mode_octal"] == "0500" for path in reconstruction_directories
+        )
         and all(indexed[path]["mode_octal"] == "0400" for path in reconstruction_files),
         "reconstruction evidence is not sealed",
     )
@@ -775,7 +819,9 @@ def _validate_execution_boundary(root: Path, inventory: Mapping[str, Any]) -> di
         or "decision" in Path(str(row["path"])).name
         or str(row["path"]).startswith("confirmation")
     ]
-    _require(not forbidden_names, f"forbidden terminal evidence exists: {forbidden_names}")
+    _require(
+        not forbidden_names, f"forbidden terminal evidence exists: {forbidden_names}"
+    )
     return {
         "calibration_case_directory_count": 15,
         **{f"{stage}_count": count for stage, count in stage_counts.items()},
@@ -810,6 +856,7 @@ def _build_report(
     lock: Mapping[str, Any],
     boundary: Mapping[str, Any],
     inventory: Mapping[str, Any],
+    operator_source: Mapping[str, Any],
 ) -> dict[str, Any]:
     return _signed(
         {
@@ -822,6 +869,7 @@ def _build_report(
             "date": "2026-07-22",
             "formal_root_before_withdrawal": os.fspath(ACTIVE),
             "immutable_archive_path": os.fspath(ARCHIVE),
+            "executed_withdrawal_operator_source": dict(operator_source),
             "deployed_code": dict(code),
             "calibration_lock": dict(lock),
             "terminal_failure": {
@@ -935,9 +983,7 @@ def _verify_archive(report: Mapping[str, Any]) -> dict[str, Any]:
     _require(sealed == expected_sealed, "sealed archive inventory changed")
     _require(
         stat.S_IMODE(os.lstat(ARCHIVE).st_mode) == 0o500
-        and not any(
-            os.lstat(path).st_mode & 0o222 for path in ARCHIVE.rglob("*")
-        ),
+        and not any(os.lstat(path).st_mode & 0o222 for path in ARCHIVE.rglob("*")),
         "attempt-3 archive remains writable",
     )
     report_path = ARCHIVE / REPORT_NAME
@@ -958,7 +1004,50 @@ def _verify_archive(report: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_pointer(verification: Mapping[str, Any]) -> dict[str, Any]:
+def _build_completion(
+    verification: Mapping[str, Any],
+    *,
+    operator_source: Mapping[str, Any],
+) -> dict[str, Any]:
+    return _signed(
+        {
+            "schema_version": 1,
+            "artifact_kind": ("Deform360HeldV8Attempt3WithdrawalIntegrityCompletion"),
+            "protocol_id": PROTOCOL_ID,
+            "execution_attempt": 3,
+            "status": "withdrawal-integrity-complete",
+            "disposition": DISPOSITION,
+            "date": "2026-07-22",
+            **verification,
+            "executed_withdrawal_operator_source": dict(operator_source),
+            "pointer_contract": {
+                "path": os.fspath(POINTER),
+                "artifact_kind": "Deform360HeldV8Attempt3WithdrawalPointer",
+                "pointer_must_bind_this_completion": True,
+                "completion_does_not_predict_pointer_hash_to_avoid_circularity": True,
+            },
+        }
+    )
+
+
+def _completion_binding(completion: Mapping[str, Any]) -> dict[str, Any]:
+    size, digest, mode = _sha256_regular_file(COMPLETION)
+    _require(mode == 0o400, "attempt-3 integrity completion is not mode 0400")
+    return {
+        "path": os.fspath(COMPLETION),
+        "mode_octal": "0400",
+        "size_bytes": size,
+        "file_sha256": digest,
+        "artifact_sha256": completion["artifact_sha256"],
+    }
+
+
+def _build_pointer(
+    verification: Mapping[str, Any],
+    *,
+    operator_source: Mapping[str, Any],
+    completion_binding: Mapping[str, Any],
+) -> dict[str, Any]:
     return _signed(
         {
             "schema_version": 1,
@@ -969,6 +1058,8 @@ def _build_pointer(verification: Mapping[str, Any]) -> dict[str, Any]:
             "disposition": DISPOSITION,
             "date": "2026-07-22",
             **verification,
+            "executed_withdrawal_operator_source": dict(operator_source),
+            "withdrawal_integrity_completion": dict(completion_binding),
             "active_held_v8_root_absent_after_archive": not os.path.lexists(ACTIVE),
             "outer_outcome_driver_exit_code": 2,
             "failure_evidence_origin": "launcher-observed-not-filesystem-persisted",
@@ -995,10 +1086,19 @@ def _prepare_active_report() -> dict[str, Any]:
     second = _inventory(ACTIVE, code_name=code_path.name)
     _require(first == second, "attempt-3 evidence changed across hash passes")
     boundary = _validate_execution_boundary(ACTIVE, first)
-    expected = _build_report(code=code, lock=lock, boundary=boundary, inventory=first)
+    operator_source = _operator_source_binding()
+    expected = _build_report(
+        code=code,
+        lock=lock,
+        boundary=boundary,
+        inventory=first,
+        operator_source=operator_source,
+    )
     report_path = ACTIVE / REPORT_NAME
     if os.path.lexists(report_path):
-        existing = _validate_signed_metadata(report_path, role="attempt-3 withdrawal report")
+        existing = _validate_signed_metadata(
+            report_path, role="attempt-3 withdrawal report"
+        )
         _require(existing == expected, "existing active withdrawal report changed")
     else:
         _exclusive_json(report_path, expected)
@@ -1011,14 +1111,42 @@ def _finish_archive() -> dict[str, Any]:
     report_path = ARCHIVE / REPORT_NAME
     report = _validate_signed_metadata(report_path, role="attempt-3 withdrawal report")
     _validate_report_identity(report)
+    operator_source = _operator_source_binding()
+    _require(
+        report.get("executed_withdrawal_operator_source") == operator_source,
+        "executed withdrawal operator source changed",
+    )
     verification = _verify_archive(report)
-    expected_pointer = _build_pointer(verification)
+    expected_completion = _build_completion(
+        verification, operator_source=operator_source
+    )
+    if os.path.lexists(COMPLETION):
+        completion = _validate_signed_metadata(
+            COMPLETION, role="attempt-3 withdrawal integrity completion"
+        )
+        _require(completion == expected_completion, "existing completion changed")
+    else:
+        _exclusive_json(COMPLETION, expected_completion)
+        completion = _validate_signed_metadata(
+            COMPLETION, role="attempt-3 withdrawal integrity completion"
+        )
+        _require(completion == expected_completion, "written completion changed")
+    completion_binding = _completion_binding(completion)
+    expected_pointer = _build_pointer(
+        verification,
+        operator_source=operator_source,
+        completion_binding=completion_binding,
+    )
     if os.path.lexists(POINTER):
-        pointer = _validate_signed_metadata(POINTER, role="attempt-3 withdrawal pointer")
+        pointer = _validate_signed_metadata(
+            POINTER, role="attempt-3 withdrawal pointer"
+        )
         _require(pointer == expected_pointer, "existing attempt-3 pointer changed")
     else:
         _exclusive_json(POINTER, expected_pointer)
-        pointer = _validate_signed_metadata(POINTER, role="attempt-3 withdrawal pointer")
+        pointer = _validate_signed_metadata(
+            POINTER, role="attempt-3 withdrawal pointer"
+        )
         _require(pointer == expected_pointer, "written attempt-3 pointer changed")
     return {
         "archive": os.fspath(ARCHIVE),
@@ -1026,6 +1154,9 @@ def _finish_archive() -> dict[str, Any]:
         "report_artifact_sha256": report["artifact_sha256"],
         "pointer_file_sha256": _sha256_regular_file(POINTER)[1],
         "pointer_artifact_sha256": pointer["artifact_sha256"],
+        "completion_file_sha256": completion_binding["file_sha256"],
+        "completion_artifact_sha256": completion["artifact_sha256"],
+        "operator_source_sha256": operator_source["sha256"],
         "postseal_noncode_inventory_sha256": verification[
             "postseal_noncode_inventory_sha256"
         ],
@@ -1040,10 +1171,15 @@ def main() -> int:
     _require(not running, f"formal held-v8 processes remain: {running}")
     active_exists = os.path.lexists(ACTIVE)
     archive_exists = os.path.lexists(ARCHIVE)
-    _require(not (active_exists and archive_exists), "active and archived roots coexist")
+    _require(
+        not (active_exists and archive_exists), "active and archived roots coexist"
+    )
     _require(active_exists or archive_exists, "attempt-3 active/archive root is absent")
     if active_exists:
-        _require(not os.path.lexists(POINTER), "pointer exists before atomic archive")
+        _require(
+            not os.path.lexists(POINTER) and not os.path.lexists(COMPLETION),
+            "pointer/completion exists before atomic archive",
+        )
         report = _prepare_active_report()
         os.rename(ACTIVE, ARCHIVE)
         _require(not os.path.lexists(ACTIVE), "active root survived atomic rename")
