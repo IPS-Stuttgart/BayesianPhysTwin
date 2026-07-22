@@ -126,6 +126,18 @@ accepted frames, 77 improve and 10 regress. This replication supports the
 source-calibrated guard as a safer same-object temporal update, while leaving
 the independent-object and published-SOTA questions open.
 
+## Independent-object calibration result
+
+The exact source deployment was then evaluated without refitting on the four
+predeclared calibration objects. It failed the joint gate: object-balanced
+CD_UL1 changed from 4.817 to 4.872 mm (**+1.16%**), only two of four objects
+improved, `3dPrintedPyramid` regressed by 19.36%, and 28 of 71 accepted frames
+were harmful. The eight target objects remain sealed.
+
+The positive same-object result therefore does not establish independent-object
+transfer. This guard is closed as a target candidate; calibration outcomes may
+not be used to tune a successor claimed on this cohort.
+
 ## Evidence
 
 - Source evaluation:
@@ -134,3 +146,5 @@ the independent-object and published-SOTA questions open.
   `results/sota/pokeflex_independent_depth_regret_guard_prospective_v1/prospective_evaluation.json`
 - Prospective protocol SHA-256:
   `be2bbf6f2e1ac1ce0a536bd02a09633d5607677fe3f7ce8d51cfd8e7d533c447`
+- Independent-object calibration evaluation:
+  `results/sota/pokeflex_independent_depth_regret_guard_calibration_v1/calibration_evaluation.json`

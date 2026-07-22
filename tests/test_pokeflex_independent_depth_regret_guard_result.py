@@ -27,6 +27,14 @@ PROSPECTIVE = (
     / "prospective_evaluation.json"
 )
 EXECUTION_MANIFEST = PROSPECTIVE.with_name("execution_manifest.json")
+CALIBRATION = (
+    ROOT
+    / "results"
+    / "sota"
+    / "pokeflex_independent_depth_regret_guard_calibration_v1"
+    / "calibration_evaluation.json"
+)
+CALIBRATION_MANIFEST = CALIBRATION.with_name("execution_manifest.json")
 PROTOCOL = (
     ROOT
     / "configs"
@@ -74,4 +82,24 @@ def test_prospective_replication_passed_without_opening_target_objects() -> None
     assert manifest["target_objects_opened"] is False
     assert manifest["prospective_evaluation"]["sha256"] == hashlib.sha256(
         PROSPECTIVE.read_bytes()
+    ).hexdigest()
+
+
+def test_independent_object_calibration_failed_and_kept_target_sealed() -> None:
+    result = json.loads(CALIBRATION.read_text(encoding="utf-8"))
+    manifest = json.loads(CALIBRATION_MANIFEST.read_text(encoding="utf-8"))
+
+    assert result["gate_passed"] is False
+    assert result["object_balanced_relative_improvement"] < -0.01
+    assert result["object_wins"] == 2
+    assert result["object_losses"] == 1
+    assert result["false_safe_rate"] > 0.39
+    assert result["maximum_object_regression"] > 0.19
+    assert result["target_protocol_drafting_permitted"] is False
+    assert result["target_objects_opened"] is False
+    assert manifest["replacement_performed"] is False
+    assert manifest["target_protocol_drafted"] is False
+    assert manifest["target_objects_opened"] is False
+    assert manifest["calibration_evaluation"]["sha256"] == hashlib.sha256(
+        CALIBRATION.read_bytes()
     ).hexdigest()
