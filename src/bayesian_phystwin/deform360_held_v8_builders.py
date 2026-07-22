@@ -15,6 +15,8 @@ implementation.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from copy import deepcopy
+from pathlib import Path
 import runpy
 import sys
 from types import ModuleType
@@ -31,6 +33,39 @@ from . import deform360_held_v8_protocol as v8_protocol
 V7_PROTOCOL_ID = "deform360-held-online-belief-v7"
 V8_PROTOCOL_ID = "deform360-held-online-belief-v8"
 V8_PYCACHE_PREFIX = "/nonexistent/bpt-held-v8-pycache"
+V8_EXTERNAL_CALIBRATION_CASE_NAME = "072-cotton-clohesline-ep0003"
+V8_UPSTREAM_ROOT = (
+    "/mnt/corsair/florianpfaff/bpt-held-v8-runtimes/"
+    "Bayesian-PhysTwin-upstream-3b7aff11d4cc"
+)
+V8_UPSTREAM_FILE_SHA256 = {
+    **physical.UPSTREAM_FILE_SHA256,
+    "scripts/remote/build_deform360_automatic_episode_twin.py": (
+        "8b8763905bb92092066503ac54f0cadb457dc5a6c10484a4e520801fe7268fa5"
+    ),
+    "src/causal4d_public/deform360_external_calibration.py": (
+        "4dcbb6f663a6d6989ce25ab78a53e0d3a5b412cce990dcd7c904b450ab8dceae"
+    ),
+}
+V8_UPSTREAM_LOCK_BINDING_BY_PATH = {
+    **physical.UPSTREAM_LOCK_BINDING_BY_PATH,
+    "src/causal4d_public/deform360_external_calibration.py": (
+        "upstream_external_calibration_source"
+    ),
+}
+V8_UPSTREAM_RUNTIME_BUNDLE_CONTRACT = {
+    "artifact_kind": "Deform360HeldUpstreamRuntimeBundleV1",
+    "files": [
+        {"path": path, "sha256": V8_UPSTREAM_FILE_SHA256[path]}
+        for path in sorted(V8_UPSTREAM_FILE_SHA256)
+    ],
+}
+V8_HELD_PHYSICAL_NUMERIC_CONTRACT = deepcopy(
+    physical.HELD_PHYSICAL_NUMERIC_CONTRACT
+)
+V8_HELD_PHYSICAL_NUMERIC_CONTRACT["upstream_file_sha256"] = (
+    V8_UPSTREAM_FILE_SHA256
+)
 
 _V8_SEMANTIC_LABEL_BY_PREFIX = {
     "002": "rope",
@@ -46,6 +81,7 @@ _V7_FRAME_ZERO_LOCK_LOADER = frame_zero.load_generic_held_lock
 _V7_FRAME_ZERO_SEMANTIC_LABEL = frame_zero.semantic_label_for_object_id
 _V7_SEMANTIC_GATE_LABEL = semantic_gate.semantic_label_for_object_id
 _V7_ONLINE_FRAME_ZERO_ASSET_VALIDATOR = online.validate_frame_zero_asset_manifest
+_V7_PHYSICAL_ISOLATED_RUNPY_COMMAND = physical._isolated_runpy_command
 
 
 def semantic_label_for_v8_object_id(object_id: str) -> str:
@@ -130,6 +166,11 @@ def _require_v7_baseline() -> None:
         _V7_ONLINE_FRAME_ZERO_ASSET_VALIDATOR,
         "online.validate_frame_zero_asset_manifest",
     )
+    _require_same(
+        physical._isolated_runpy_command,
+        _V7_PHYSICAL_ISOLATED_RUNPY_COMMAND,
+        "physical._isolated_runpy_command",
+    )
 
 
 def _patch(
@@ -155,6 +196,50 @@ def _validate_already_protocol_validated_v8_frame_zero(
     if manifest.get("artifact_sha256") != v8_protocol.held_artifact_sha256(manifest):
         raise ValueError("online frame-zero manifest checksum changed")
     return dict(manifest)
+
+
+def _argument_value(arguments: list[str], name: str) -> str:
+    if arguments.count(name) != 1:
+        raise RuntimeError(f"v8 automatic-twin arguments contain {name} incorrectly")
+    index = arguments.index(name)
+    if index + 1 >= len(arguments):
+        raise RuntimeError(f"v8 automatic-twin argument {name} has no value")
+    return arguments[index + 1]
+
+
+def _v8_isolated_runpy_command(
+    python: str | Path,
+    script: str | Path,
+    *,
+    import_roots: list[str | Path] | tuple[str | Path, ...],
+    arguments: list[str] | tuple[str, ...],
+    provenance_root: str | Path | None = None,
+) -> list[str]:
+    """Attach the sealed v8 lock only to its external calibration case."""
+
+    adapted = list(arguments)
+    if Path(script).name == "build_deform360_automatic_episode_twin.py":
+        object_id = _argument_value(adapted, "--object-id")
+        episode_id = int(_argument_value(adapted, "--episode-id"))
+        case_name = f"{object_id}-ep{episode_id:04d}"
+        if case_name == V8_EXTERNAL_CALIBRATION_CASE_NAME:
+            if (
+                _argument_value(adapted, "--phase") != "calibration"
+                or "--source-admission-passed" not in adapted
+                or "--prediction-only-input" not in adapted
+            ):
+                raise RuntimeError(
+                    "v8 external calibration reached the builder without its guards"
+                )
+            lock_path = _argument_value(list(sys.argv), "--lock")
+            adapted.extend(["--held-calibration-lock", lock_path])
+    return _V7_PHYSICAL_ISOLATED_RUNPY_COMMAND(
+        python,
+        script,
+        import_roots=import_roots,
+        arguments=adapted,
+        provenance_root=provenance_root,
+    )
 
 
 @contextmanager
@@ -220,6 +305,36 @@ def explicit_v8_builder_context(
                 physical,
                 "held_contract_sha256",
                 v8_protocol.held_contract_sha256,
+                saved,
+            )
+            _patch(
+                physical,
+                "UPSTREAM_FILE_SHA256",
+                V8_UPSTREAM_FILE_SHA256,
+                saved,
+            )
+            _patch(
+                physical,
+                "UPSTREAM_LOCK_BINDING_BY_PATH",
+                V8_UPSTREAM_LOCK_BINDING_BY_PATH,
+                saved,
+            )
+            _patch(
+                physical,
+                "UPSTREAM_RUNTIME_BUNDLE_CONTRACT",
+                V8_UPSTREAM_RUNTIME_BUNDLE_CONTRACT,
+                saved,
+            )
+            _patch(
+                physical,
+                "HELD_PHYSICAL_NUMERIC_CONTRACT",
+                V8_HELD_PHYSICAL_NUMERIC_CONTRACT,
+                saved,
+            )
+            _patch(
+                physical,
+                "_isolated_runpy_command",
+                _v8_isolated_runpy_command,
                 saved,
             )
 
@@ -312,6 +427,12 @@ __all__ = [
     "V7_PROTOCOL_ID",
     "V8_PROTOCOL_ID",
     "V8_PYCACHE_PREFIX",
+    "V8_EXTERNAL_CALIBRATION_CASE_NAME",
+    "V8_HELD_PHYSICAL_NUMERIC_CONTRACT",
+    "V8_UPSTREAM_FILE_SHA256",
+    "V8_UPSTREAM_LOCK_BINDING_BY_PATH",
+    "V8_UPSTREAM_ROOT",
+    "V8_UPSTREAM_RUNTIME_BUNDLE_CONTRACT",
     "explicit_v8_builder_context",
     "main_for",
     "run_v8_adapted_cli",
