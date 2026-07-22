@@ -20,6 +20,10 @@ from causal4d_public.deform360_contact_conditioned_action import (
 from causal4d_public.deform360_dense_reusable_panel import (
     authorize_dense_panel_episode,
     load_dense_reusable_panel_config,
+    validate_dense_reusable_panel_config,
+)
+from causal4d_public.deform360_external_calibration import (
+    authorize_external_held_calibration,
 )
 from causal4d_public.deform360_independent_source import (
     sha256_array,
@@ -92,6 +96,7 @@ def _parse_args() -> argparse.Namespace:
         required=True,
     )
     parser.add_argument("--source-admission-passed", action="store_true")
+    parser.add_argument("--held-calibration-lock", type=Path)
     parser.add_argument("--fresh-parent-lock", type=Path)
     parser.add_argument("--physics-addendum", type=Path)
     parser.add_argument("--fresh-operation", choices=("fit", "held-prediction"))
@@ -156,9 +161,33 @@ def main() -> int:
         )
     if args.sota_protocol is not None and args.fresh_parent_lock is not None:
         raise ValueError("SOTA and fresh reusable-trust authorization cannot combine")
+    if args.held_calibration_lock is not None and (
+        args.sota_protocol is not None or args.fresh_parent_lock is not None
+    ):
+        raise ValueError(
+            "held calibration authorization cannot combine with another protocol"
+        )
     sota_input_validation = None
     sota_authorization = None
-    if args.sota_protocol is not None:
+    external_calibration_authorization = None
+    if args.held_calibration_lock is not None:
+        if (
+            args.phase != "calibration"
+            or not args.source_admission_passed
+            or not args.prediction_only_input
+        ):
+            raise ValueError(
+                "held calibration requires calibration phase, source admission, "
+                "and prediction-only input"
+            )
+        external_calibration_authorization = authorize_external_held_calibration(
+            args.held_calibration_lock,
+            object_id=args.object_id,
+            episode_id=args.episode_id,
+        )
+        authorization = validate_dense_reusable_panel_config(protocol)
+        authorization_config_sha256 = authorization["config_sha256"]
+    elif args.sota_protocol is not None:
         expected_phase = "held-development" if args.prediction_only_input else "source"
         if args.phase != expected_phase:
             raise ValueError(
@@ -529,6 +558,10 @@ def main() -> int:
             "config_sha256": protocol["config_sha256"],
             "role": "numeric development implementation dependency",
         }
+    if external_calibration_authorization is not None:
+        summary["external_calibration_authorization"] = (
+            external_calibration_authorization
+        )
     summary["result_sha256"] = _result_sha256(summary)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(
