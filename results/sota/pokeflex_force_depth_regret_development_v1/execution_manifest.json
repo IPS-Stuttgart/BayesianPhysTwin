@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexForceDepthRegretDevelopmentExecutionManifest",
+  "claim_status": "post-open source/calibration method development",
+  "candidate_generation_commit": "11fe30d",
+  "evaluation_commit": "78fd9ba",
+  "frozen_candidate_runner_sha256": "7927deb862dac8783b5415197ff65854ec3c0235a01db88689997c9b97f22e25",
+  "force_depth_runner_sha256": "2111302fc7f004b45a7b6a42ad0076dd8c231a18a398e23a0be4ad61d44e2b76",
+  "evaluator_sha256": "21ad57fa4fce95974a542f4679e37d8edba6ce379910aac4e52837b3ed02e98d",
+  "candidate_artifacts": {
+    "source_take_count": 25,
+    "calibration_take_count": 4,
+    "hash_inventory": "embedded in each evaluation under source_artifacts"
+  },
+  "evaluations": {
+    "source_only": {
+      "path": "results/sota/pokeflex_force_depth_regret_development_v1/source_only.json",
+      "sha256": "8a8a8373ad5155604b5973dc210397c354e019d4b3112eb8ab58a402486d3592"
+    },
+    "all_opened": {
+      "path": "results/sota/pokeflex_force_depth_regret_development_v1/all_opened.json",
+      "sha256": "c523d7d7731311ae1a7e92eb4c3e8be2467d53381f3783e8c3d07b6c1f9fa5fb"
+    }
+  },
+  "verification": {
+    "pytest": "990 passed, 26 skipped",
+    "ruff_changed_files": "passed"
+  },
+  "replacement_performed": false,
+  "target_protocol_authorized": false,
+  "target_objects_opened": false,
+  "decision": "stop this force-depth selector and preserve the target cohort"
+}
