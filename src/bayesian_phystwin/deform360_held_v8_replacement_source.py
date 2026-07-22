@@ -495,6 +495,17 @@ def _inventory_file_record(item: object) -> dict[str, Any] | None:
     size = _field(item, "size")
     blob_id = _field(item, "blob_id", "oid")
     lfs = _field(item, "lfs")
+    tree_id = _field(item, "tree_id")
+    # ``HfApi.list_repo_tree`` returns ``RepoFolder`` objects without a
+    # ``type`` field.  Their tree id is the discriminator absent from
+    # ``RepoFile``; reject mixed records instead of letting file data bypass
+    # the strict validation below.
+    if item_type is None and tree_id is not None:
+        _require(
+            size is None and blob_id is None and lfs is None,
+            "remote inventory entry mixes folder and file fields",
+        )
+        return None
     lfs_sha256: object = None
     if lfs is not None:
         lfs_sha256 = _field(lfs, "sha256", "oid")

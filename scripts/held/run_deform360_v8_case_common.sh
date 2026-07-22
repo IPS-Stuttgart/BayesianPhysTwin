@@ -262,6 +262,86 @@ run_logged "$LOG_DIR/$CASE_NAME.frame-zero.log" \
   --role "$V8_ROLE" \
   --device cuda
 
+CURRENT_PHASE="frame-zero-sealing"
+run_logged "$LOG_DIR/$CASE_NAME.frame-zero-seal.log" \
+  "${CLEAN_ENV[@]}" "$PY" -I -B -X "pycache_prefix=$PYCACHE_PREFIX" - \
+  "$FZ" <<'PY_FRAME_ZERO_SEAL'
+import os
+from pathlib import Path
+import stat
+import sys
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise RuntimeError(message)
+
+
+root = Path(os.path.abspath(sys.argv[1]))
+root_state = os.lstat(root)
+require(
+    stat.S_ISDIR(root_state.st_mode)
+    and not stat.S_ISLNK(root_state.st_mode)
+    and root.resolve(strict=True) == root,
+    "frame-zero output root is not a canonical regular directory",
+)
+
+# Payloads are frozen first and the manifest last.  The manifest therefore
+# remains an invalid commit marker if sealing either payload fails.
+artifact_names = (
+    "known_action_76.npz",
+    "frame_zero_bundle.npz",
+    "frame_zero_bundle.manifest.json",
+)
+observed_names = tuple(sorted(entry.name for entry in root.iterdir()))
+require(
+    observed_names == tuple(sorted(artifact_names)),
+    "frame-zero output differs from the exact three-artifact allowlist: "
+    f"{observed_names}",
+)
+
+artifacts = tuple(root / name for name in artifact_names)
+for path in artifacts:
+    observed = os.lstat(path)
+    require(
+        stat.S_ISREG(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and path.resolve(strict=True) == path,
+        f"frame-zero artifact is not a canonical regular file: {path}",
+    )
+
+for path in artifacts:
+    descriptor = os.open(
+        path,
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        opened = os.fstat(descriptor)
+        current = os.lstat(path)
+        identity = (opened.st_dev, opened.st_ino)
+        require(
+            stat.S_ISREG(opened.st_mode)
+            and (current.st_dev, current.st_ino) == identity,
+            f"frame-zero artifact changed before sealing: {path}",
+        )
+        os.fchmod(descriptor, 0o400)
+        sealed = os.fstat(descriptor)
+        current = os.lstat(path)
+        require(
+            (sealed.st_dev, sealed.st_ino) == identity
+            and (current.st_dev, current.st_ino) == identity
+            and stat.S_IMODE(sealed.st_mode) == 0o400
+            and stat.S_IMODE(current.st_mode) == 0o400,
+            f"frame-zero artifact was not sealed to exact mode 0400: {path}",
+        )
+    finally:
+        os.close(descriptor)
+
+print("FRAME_ZERO_ARTIFACTS_SEALED mode=0400 count=3 manifest_last=true")
+PY_FRAME_ZERO_SEAL
+
 CURRENT_PHASE="frame-zero-validation"
 run_logged "$LOG_DIR/$CASE_NAME.frame-zero-validate.log" \
   "${CLEAN_ENV[@]}" "$PY" -I -B -X "pycache_prefix=$PYCACHE_PREFIX" - \

@@ -90,6 +90,26 @@ def test_staged_clone_is_independent_clean_and_read_only(tmp_path: Path) -> None
         shutil.rmtree(stage)
 
 
+def test_successor_lock_binds_attempt_one_preoutcome_withdrawal() -> None:
+    pointer = preparer._EXPECTED_EXTERNAL_FILES[
+        "v8_attempt1_preoutcome_withdrawal_pointer"
+    ]
+    report = preparer._EXPECTED_EXTERNAL_FILES[
+        "v8_attempt1_preoutcome_withdrawal_report"
+    ]
+
+    assert pointer == (
+        preparer._V8_ATTEMPT1_WITHDRAWAL_POINTER,
+        "f7af6d1adf8541fd015cbe5336da97e013777c1bb711deaa01d9a84a49c81daa",
+        0o400,
+    )
+    assert report == (
+        preparer._V8_ATTEMPT1_WITHDRAWAL_REPORT,
+        "c04a6e7a95d958950ea7e7c05e7e2b98ee4516c01f03e9284f85ccccf0f6873b",
+        0o400,
+    )
+
+
 def test_prospective_bindings_include_named_deployment_contracts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

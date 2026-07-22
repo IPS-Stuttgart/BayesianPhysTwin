@@ -35,6 +35,14 @@ _DISCLOSURE_PATH = _HELD_ROOT / "post-withdrawal-development-use-disclosure.json
 _V7_LOCK = _HELD_BASE / "held-v7" / "calibration-lock.json"
 _V7_WITHDRAWAL = _HELD_BASE / "held-v7" / "v7-outcome-withdrawal-report.json"
 _V7_RUNTIME_SMOKE = _HELD_BASE / "held-v7" / "gsplat-runtime-smoke-evidence.json"
+_V8_ATTEMPT1_WITHDRAWAL_POINTER = (
+    _HELD_BASE / "held-v8-attempt-1-withdrawal-pointer.json"
+)
+_V8_ATTEMPT1_WITHDRAWAL_REPORT = (
+    _HELD_BASE
+    / "held-v8-attempt-1-withdrawn-preoutcome"
+    / "execution-withdrawal-preoutcome.json"
+)
 _OPEN27_DECISION = (
     _HELD_BASE
     / "runs"
@@ -84,6 +92,16 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str, int | None]] = {
     "v7_gsplat_runtime_smoke_evidence": (
         _V7_RUNTIME_SMOKE,
         "c5f0218962e1c18748f52d423c11804864e2695a719f00ff63452cebdbde029c",
+        0o400,
+    ),
+    "v8_attempt1_preoutcome_withdrawal_pointer": (
+        _V8_ATTEMPT1_WITHDRAWAL_POINTER,
+        "f7af6d1adf8541fd015cbe5336da97e013777c1bb711deaa01d9a84a49c81daa",
+        0o400,
+    ),
+    "v8_attempt1_preoutcome_withdrawal_report": (
+        _V8_ATTEMPT1_WITHDRAWAL_REPORT,
+        "c04a6e7a95d958950ea7e7c05e7e2b98ee4516c01f03e9284f85ccccf0f6873b",
         0o400,
     ),
     "gsplat_runtime_supplement_manifest": (
@@ -703,8 +721,15 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
             development_decision_path=_OPEN27_DECISION,
         )
         _require(not os.path.lexists(destination), "deployment destination exists")
+        # The Corsair filesystem refuses to rename a directory whose own
+        # owner-write bit is absent, even though POSIX rename ordinarily only
+        # requires write permission on the two parents.  Descendants remain
+        # immutable; expose the staging root bit only for the atomic move and
+        # remove it again before any deployed validation or execution.
+        os.chmod(stage, 0o755, follow_symlinks=False)
         os.rename(stage, destination)
         deployment_moved = True
+        os.chmod(destination, 0o555, follow_symlinks=False)
         _require_deployed_read_only(destination)
         deployed = _validate_repository(destination)
         _require(

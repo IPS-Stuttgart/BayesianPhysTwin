@@ -329,6 +329,38 @@ def test_frozen_public_inventory_constants_match_actual_preflight() -> None:
     )
 
 
+def test_inventory_parser_ignores_repo_folders_and_strictly_validates_files() -> None:
+    class FolderLike:
+        path = f"{source.REMOTE_OBJECT_ROOT}/brics-odroid-001_cam0"
+        tree_id = "a" * 40
+        last_commit = object()
+
+    class FileLike:
+        path = f"{FolderLike.path}/frame.mp4"
+        size = 123
+        blob_id = "b" * 40
+        lfs = {"sha256": "c" * 64}
+        last_commit = object()
+
+    assert source._inventory_file_record(FolderLike()) is None
+    assert source._inventory_file_record(FileLike()) == {
+        "path": FileLike.path,
+        "size_bytes": 123,
+        "blob_id": "b" * 40,
+        "lfs_sha256": "c" * 64,
+    }
+
+    malformed_file = FileLike()
+    malformed_file.size = None
+    with pytest.raises(ValueError, match="remote size is invalid"):
+        source._inventory_file_record(malformed_file)
+
+    mixed_entry = FileLike()
+    mixed_entry.tree_id = "d" * 40
+    with pytest.raises(ValueError, match="mixes folder and file fields"):
+        source._inventory_file_record(mixed_entry)
+
+
 def test_inventory_derivation_selects_only_pair_three(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 
 import pytest
 
@@ -131,6 +132,106 @@ def test_case_common_is_v8_only_and_freezes_field_before_any_barrier() -> None:
     assert "--tactile" not in source
     assert "authorize_target_reconstruction_capabilities" not in source
     assert "authorize_future_score_capabilities" not in source
+
+
+def _frame_zero_sealing_program() -> str:
+    source = COMMON.read_text(encoding="utf-8")
+    match = re.search(
+        r"<<'PY_FRAME_ZERO_SEAL'\n(?P<program>.*?)\nPY_FRAME_ZERO_SEAL",
+        source,
+        flags=re.DOTALL,
+    )
+    assert match is not None
+    return match.group("program")
+
+
+def test_frame_zero_sealing_is_after_build_before_validation_and_exact() -> None:
+    source = COMMON.read_text(encoding="utf-8")
+    build = source.index('CURRENT_PHASE="frame-zero-build"')
+    sealing = source.index('CURRENT_PHASE="frame-zero-sealing"')
+    validation = source.index('CURRENT_PHASE="frame-zero-validation"')
+    assert build < sealing < validation
+
+    program = _frame_zero_sealing_program()
+    assert "artifact_names = (" in program
+    assert (
+        program.index('"known_action_76.npz"')
+        < program.index('"frame_zero_bundle.npz"')
+        < program.index('"frame_zero_bundle.manifest.json"')
+    )
+    assert "observed_names == tuple(sorted(artifact_names))" in program
+    assert "os.fchmod(descriptor, 0o400)" in program
+
+
+def test_fresh_minimal_frame_zero_outputs_are_sealed_before_v8_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "fresh-frame-zero"
+    output.mkdir()
+    artifacts = tuple(
+        output / name
+        for name in (
+            "known_action_76.npz",
+            "frame_zero_bundle.npz",
+            "frame_zero_bundle.manifest.json",
+        )
+    )
+    for path in artifacts:
+        path.write_bytes(f"complete:{path.name}\n".encode())
+        path.chmod(0o600)
+
+    completed = subprocess.run(
+        [sys.executable, "-I", "-B", "-", str(output)],
+        input=_frame_zero_sealing_program(),
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "mode=0400 count=3 manifest_last=true" in completed.stdout
+    assert all(path.stat().st_mode & 0o777 == 0o400 for path in artifacts)
+
+    reached_lock_validation = False
+
+    def stop_after_manifest_mode(_path: str | Path) -> dict[str, object]:
+        nonlocal reached_lock_validation
+        reached_lock_validation = True
+        raise RuntimeError("v8 validator passed the frame-zero mode gate")
+
+    monkeypatch.setattr(v8_protocol, "validate_protocol_lock", stop_after_manifest_mode)
+    with pytest.raises(RuntimeError, match="passed the frame-zero mode gate"):
+        v8_protocol.validate_frame_zero_bundle_manifest(
+            artifacts[-1], tmp_path / "unused-lock.json"
+        )
+    assert reached_lock_validation is True
+
+
+def test_frame_zero_sealing_rejects_any_extra_output_before_chmod(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "fresh-frame-zero-with-extra"
+    output.mkdir()
+    expected = (
+        output / "known_action_76.npz",
+        output / "frame_zero_bundle.npz",
+        output / "frame_zero_bundle.manifest.json",
+    )
+    for path in expected:
+        path.write_bytes(b"complete\n")
+        path.chmod(0o600)
+    (output / "unexpected.bin").write_bytes(b"not allowlisted\n")
+
+    rejected = subprocess.run(
+        [sys.executable, "-I", "-B", "-", str(output)],
+        input=_frame_zero_sealing_program(),
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    assert rejected.returncode != 0
+    assert "exact three-artifact allowlist" in rejected.stderr
+    assert all(path.stat().st_mode & 0o777 == 0o600 for path in expected)
 
 
 def test_replacement_source_is_explicit_validated_and_semantically_frozen() -> None:
