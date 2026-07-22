@@ -1258,6 +1258,52 @@ def _validate_execution_environment(
     }
 
 
+def _restore_module_import_sys_path(baseline: Sequence[str]) -> dict[str, Any]:
+    """Undo the one isolated temp path created by the first gsplat import."""
+    before = list(baseline)
+    current = list(sys.path)
+    if current != before:
+        _require(
+            current[: len(before)] == before,
+            "module import changed the validated sys.path prefix",
+        )
+        additions = current[len(before) :]
+        _require(
+            len(additions) == 1,
+            "module import transient sys.path entry count changed",
+        )
+        temporary_root_value = os.environ.get("TMPDIR")
+        _require(
+            isinstance(temporary_root_value, str) and temporary_root_value,
+            "module import TMPDIR is absent",
+        )
+        temporary_root = _assert_nonheld_path(
+            temporary_root_value,
+            label="module import TMPDIR",
+            must_exist=True,
+        )
+        temporary_entry = _assert_nonheld_path(
+            additions[0],
+            label="module temporary import path",
+            must_exist=True,
+        )
+        _require(
+            temporary_entry.is_dir()
+            and temporary_entry.parent == temporary_root
+            and temporary_entry.name.startswith("tmp"),
+            "module temporary import path changed",
+        )
+    sys.path[:] = before
+    _require(list(sys.path) == before, "module import sys.path restoration failed")
+    return {
+        "allowed_initialization_transient": (
+            "one real immediate tmp* child of the exact analyzer TMPDIR"
+        ),
+        "validated_and_restored_if_present": True,
+        "baseline_restored_exactly": True,
+    }
+
+
 def _import_path_binding(code_root: Path) -> dict[str, Any]:
     entries: list[str] = []
     for index, value in enumerate(sys.path):
@@ -1285,20 +1331,30 @@ def _import_path_binding(code_root: Path) -> dict[str, Any]:
     site_packages = (PINNED_PYTHON_RUNTIME / "lib/python3.12/site-packages").resolve(
         strict=True
     )
-    modules: dict[str, Any] = {}
-    for name in ("numpy", "scipy", "torch", "gsplat"):
-        module = importlib.import_module(name)
-        file_value = getattr(module, "__file__", None)
-        _require(
-            isinstance(file_value, str) and file_value, f"{name} has no source path"
-        )
-        path = Path(file_value).resolve(strict=True)
-        _require(
-            path == site_packages or site_packages in path.parents,
-            f"{name} imported outside the pinned runtime",
-        )
-        modules[name] = _bound_file(path, label=f"{name} import source")
-    return {"sys_path": entries, "modules": modules}
+    try:
+        modules: dict[str, Any] = {}
+        for name in ("numpy", "scipy", "torch", "gsplat"):
+            module = importlib.import_module(name)
+            file_value = getattr(module, "__file__", None)
+            _require(
+                isinstance(file_value, str) and file_value,
+                f"{name} has no source path",
+            )
+            path = Path(file_value).resolve(strict=True)
+            _require(
+                path == site_packages or site_packages in path.parents,
+                f"{name} imported outside the pinned runtime",
+            )
+            modules[name] = _bound_file(path, label=f"{name} import source")
+        restoration = _restore_module_import_sys_path(entries)
+    except BaseException:
+        sys.path[:] = entries
+        raise
+    return {
+        "sys_path": entries,
+        "modules": modules,
+        "module_import_sys_path_policy": restoration,
+    }
 
 
 def _install_controlled_code_source(code_root: Path) -> None:
@@ -3148,7 +3204,7 @@ def _restore_renderer_sys_path(
     *,
     require_pinned_mutation: bool,
 ) -> dict[str, Any]:
-    """Validate and undo the pinned loader's two transient import paths."""
+    """Validate and undo the pinned loader's transient vendor import path."""
     before = list(baseline)
     _require(
         before and all(isinstance(value, str) and value for value in before),
@@ -3176,35 +3232,14 @@ def _restore_renderer_sys_path(
     )
     additions = current[len(before) :]
     _require(
-        len(additions) == 2,
+        len(additions) == 1,
         "renderer transient sys.path entry count changed",
-    )
-    temporary_root_value = os.environ.get("TMPDIR")
-    _require(
-        isinstance(temporary_root_value, str) and temporary_root_value,
-        "renderer TMPDIR is absent",
-    )
-    temporary_root = _assert_nonheld_path(
-        temporary_root_value,
-        label="renderer TMPDIR",
-        must_exist=True,
-    )
-    temporary_entry = _assert_nonheld_path(
-        additions[0],
-        label="renderer temporary import path",
-        must_exist=True,
-    )
-    _require(
-        temporary_entry.is_dir()
-        and temporary_entry.parent == temporary_root
-        and temporary_entry.name.startswith("tmp"),
-        "renderer temporary import path changed",
     )
     expected_vendor = (
         PINNED_PYTHON_RUNTIME / "lib/python3.12/site-packages/setuptools/_vendor"
     ).resolve(strict=True)
     vendor_entry = _assert_nonheld_path(
-        additions[1],
+        additions[0],
         label="renderer setuptools vendor import path",
         must_exist=True,
     )
@@ -3215,12 +3250,6 @@ def _restore_renderer_sys_path(
     evidence = {
         "pinned_renderer_mutation_required": True,
         "transient_entries": [
-            {
-                "role": "isolated_temporary_import_path",
-                "path": os.fspath(temporary_entry),
-                "parent": os.fspath(temporary_root),
-                "mode_octal": f"{stat.S_IMODE(os.lstat(temporary_entry).st_mode):04o}",
-            },
             {
                 "role": "pinned_setuptools_vendor_import_path",
                 "path": os.fspath(vendor_entry),

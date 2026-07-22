@@ -948,20 +948,28 @@ def test_renderer_sys_path_restoration_accepts_only_pinned_transients(
     monkeypatch.setattr(
         equivalence.sys,
         "path",
-        [*baseline, str(temporary_entry.resolve()), str(vendor.resolve())],
+        [*baseline, str(temporary_entry.resolve())],
     )
 
+    module_evidence = equivalence._restore_module_import_sys_path(baseline)
+    assert module_evidence["baseline_restored_exactly"] is True
+    assert equivalence.sys.path == baseline
+
+    equivalence.sys.path[:] = [*baseline, str(vendor.resolve())]
     evidence = equivalence._restore_renderer_sys_path(
         baseline, require_pinned_mutation=True
     )
     assert evidence["restored_exactly"] is True
     assert [entry["role"] for entry in evidence["transient_entries"]] == [
-        "isolated_temporary_import_path",
         "pinned_setuptools_vendor_import_path",
     ]
     assert equivalence.sys.path == baseline
 
-    equivalence.sys.path[:] = [*baseline, str(tmp_path / "unexpected")]
+    equivalence.sys.path[:] = [
+        *baseline,
+        str(vendor.resolve()),
+        str(tmp_path / "unexpected"),
+    ]
     with pytest.raises(ValueError, match="entry count changed"):
         equivalence._restore_renderer_sys_path(baseline, require_pinned_mutation=True)
     equivalence.sys.path[:] = baseline
