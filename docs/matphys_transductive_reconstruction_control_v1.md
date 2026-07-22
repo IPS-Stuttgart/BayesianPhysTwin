@@ -75,6 +75,10 @@ selected path and hash rather than silently correcting it.
    | `double_lift_zebra` | 0.0142304847 | 0.0258773045 |
    | `double_lift_cloth_1` | 0.0132650528 | 0.0232141205 |
 
+   The decision is written by
+   `scripts/evaluate_matphys_transductive_gate.py`; a failed gate stops the
+   full sweep rather than inviting a manual exception.
+
 6. Aggregate official train/test metrics while labeling both intervals as
    fitted reconstruction data.
 
