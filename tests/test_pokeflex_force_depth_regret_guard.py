@@ -113,6 +113,12 @@ def test_nested_cross_object_guard_selects_beneficial_force_arm() -> None:
     assert result["cross_object"]["accepted_frame_losses"] == 0
     assert result["cross_object"]["object_balanced_relative_improvement"] > 0.09
     assert (
+        result["selector_controls"]["predicted_mean"][
+            "object_balanced_relative_improvement"
+        ]
+        > 0.09
+    )
+    assert (
         result["candidate_bank_oracle"]["object_balanced_relative_improvement"] > 0.09
     )
     assert result["cross_fitting"].startswith("outer leave-one-object-out")

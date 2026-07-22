@@ -51,6 +51,7 @@ def main() -> None:
             {
                 "output": str(output),
                 "cross_object": result["cross_object"],
+                "selector_controls": result["selector_controls"],
                 "candidate_bank_oracle": result["candidate_bank_oracle"],
                 "fixed_arm_controls": result["fixed_arm_controls"],
             },

@@ -609,6 +609,60 @@ def _fixed_arm_cross_object_control(
     }
 
 
+def _selector_control_summary(
+    decisions: Sequence[Mapping[str, Any]],
+    objects: Sequence[str],
+    *,
+    mode: str,
+) -> dict[str, Any]:
+    _require(
+        mode in {"supported_argmin", "predicted_mean", "candidate_ucb"},
+        "selector control mode is invalid",
+    )
+    control = []
+    for decision in decisions:
+        candidate_error = decision["uncertified_candidate_error_mm"]
+        accept = candidate_error is not None
+        if mode == "predicted_mean":
+            predicted = decision["candidate_predicted_regret_mm"]
+            accept = predicted is not None and predicted < 0.0
+        elif mode == "candidate_ucb":
+            upper = decision["candidate_upper_regret_mm"]
+            accept = upper is not None and upper < 0.0
+        baseline = float(decision["baseline_error_mm"])
+        selected = float(candidate_error) if accept else baseline
+        control.append(
+            {
+                **decision,
+                "selected_error_mm": selected,
+                "accepted": accept,
+                "hidden_regret_mm": selected - baseline,
+            }
+        )
+    take_rows, object_rows = _summarize_decisions(control, objects)
+    baseline = float(np.mean([row["baseline_mean_CD_UL1_mm"] for row in object_rows]))
+    selected = float(np.mean([row["selected_mean_CD_UL1_mm"] for row in object_rows]))
+    accepted = [row for row in control if row["accepted"]]
+    return {
+        "baseline_object_mean_CD_UL1_mm": baseline,
+        "selected_object_mean_CD_UL1_mm": selected,
+        "object_balanced_relative_improvement": (baseline - selected) / baseline,
+        "object_wins": sum(row["relative_improvement"] > 1e-12 for row in object_rows),
+        "object_losses": sum(
+            row["relative_improvement"] < -1e-12 for row in object_rows
+        ),
+        "accepted_frame_count": len(accepted),
+        "accepted_frame_wins": sum(
+            row["hidden_regret_mm"] < -1e-12 for row in accepted
+        ),
+        "accepted_frame_losses": sum(
+            row["hidden_regret_mm"] > 1e-12 for row in accepted
+        ),
+        "objects": object_rows,
+        "takes": take_rows,
+    }
+
+
 def evaluate_pokeflex_force_depth_cross_object(
     payloads: Sequence[Mapping[str, Any]],
     *,
@@ -646,18 +700,29 @@ def evaluate_pokeflex_force_depth_cross_object(
             selected_arm = "released_checkpoint"
             candidate_upper = None
             corrected_upper = None
+            candidate_arm = None
+            candidate_error = None
+            candidate_predicted = None
             candidate = selected.get(str(frame["frame_id"]))
             if candidate is not None:
                 candidate_upper, row_index = candidate
+                candidate_predicted = (
+                    candidate_upper - certificate.upper_residual_quantile
+                )
                 corrected_upper = candidate_upper + selector_bound.upper_regret_m
                 row = held_rows[row_index]
+                candidate_arm = str(row["candidate"])
+                candidate_error = float(row["candidate_error_mm"])
                 if corrected_upper < -cfg.minimum_improvement_mm:
-                    selected_error = float(row["candidate_error_mm"])
-                    selected_arm = str(row["candidate"])
+                    selected_error = candidate_error
+                    selected_arm = candidate_arm
             decisions.append(
                 {
                     **frame,
                     "selected_arm": selected_arm,
+                    "uncertified_candidate_arm": candidate_arm,
+                    "uncertified_candidate_error_mm": candidate_error,
+                    "candidate_predicted_regret_mm": candidate_predicted,
                     "candidate_upper_regret_mm": candidate_upper,
                     "selector_adjusted_upper_regret_mm": corrected_upper,
                     "selected_error_mm": selected_error,
@@ -737,6 +802,10 @@ def evaluate_pokeflex_force_depth_cross_object(
             "candidate_upper_coverage": candidate_coverage,
             "gate_checks": gate_checks,
             "gate_passed": all(gate_checks.values()),
+        },
+        "selector_controls": {
+            mode: _selector_control_summary(decisions, objects, mode=mode)
+            for mode in ("supported_argmin", "predicted_mean", "candidate_ucb")
         },
         "candidate_bank_oracle": _oracle_summary(rows, frames),
         "fixed_arm_controls": {
