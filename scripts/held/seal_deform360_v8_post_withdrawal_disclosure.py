@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Seal the cumulative v8.1 disclosure before attempt 4.
+"""Seal the cumulative v8.1 recovery disclosure before attempt 5.
 
-This operator reads no array, image, mask, metric, or JSON payload.  It only
-checks already-sealed byte identities and archive metadata, then writes one
-fixed report for the prospective lock.  It bars reuse of every v7 execution
-artifact and every attempt-3 product.
+This operator reads no protected array, image, mask, metric, prediction, or
+score payload.  It parses only already-sealed metadata JSON, checks immutable
+byte identities and archive metadata, then writes one fixed report for the
+prospective lock.  It bars reuse of every v7, attempt-3, and attempt-4
+execution product.
 """
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import os
@@ -19,7 +21,15 @@ from typing import Any, Mapping
 
 
 PROTOCOL_ID = "deform360-held-online-belief-v8.1"
-ARTIFACT_KIND = "Deform360HeldV81PostWithdrawalDevelopmentUseDisclosure"
+ARTIFACT_KIND = "Deform360HeldV81Attempt5RecoveryDisclosure"
+_QUALIFICATION_KIND = "Deform360ResourceLifecycleQualificationEvidenceV2"
+_QUALIFICATION_COMPLETION_KIND = (
+    "Deform360ResourceLifecycleQualificationIntegrityCompletionV2"
+)
+_QUALIFICATION_ID = "deform360-nerfstudio-resource-lifecycle-qualification-v2"
+_QUALIFICATION_ANALYZER_SHA256 = (
+    "43056e39ff7ea5f760f18420784db0edbb75523031dba7f3a19eca0c6951c128"
+)
 
 _BASE = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1")
 _V7_ROOT = _BASE / "held-v7"
@@ -29,6 +39,14 @@ _ATTEMPT3_ARCHIVE = _BASE / "held-v8-attempt-3-withdrawn-postbarrier"
 _ATTEMPT3_REPORT = _ATTEMPT3_ARCHIVE / "execution-withdrawal-postbarrier-attempt3.json"
 _ATTEMPT3_POINTER = _BASE / "held-v8-attempt-3-withdrawal-pointer.json"
 _ATTEMPT3_COMPLETION = _BASE / "held-v8-attempt-3-withdrawal-integrity-completion.json"
+_ATTEMPT4_ARCHIVE = _BASE / "held-v8-attempt-4-withdrawn-postbarrier"
+_ATTEMPT4_REPORT = _ATTEMPT4_ARCHIVE / "execution-withdrawal-postbarrier-attempt4.json"
+_ATTEMPT4_POINTER = _BASE / "held-v8-attempt-4-withdrawal-pointer.json"
+_ATTEMPT4_COMPLETION = _BASE / "held-v8-attempt-4-withdrawal-integrity-completion.json"
+_ATTEMPT4_LAUNCHER = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-orchestration/"
+    "calibration-outcome-c88168c-20260722T1847"
+)
 
 _V7_FILE_NAMES = frozenset(
     {
@@ -43,6 +61,13 @@ _ATTEMPT3_FILE_NAMES = frozenset(
         "v8_attempt3_withdrawal_report",
         "v8_attempt3_withdrawal_pointer",
         "v8_attempt3_withdrawal_integrity_completion",
+    }
+)
+_ATTEMPT4_FILE_NAMES = frozenset(
+    {
+        "v8_attempt4_withdrawal_report",
+        "v8_attempt4_withdrawal_pointer",
+        "v8_attempt4_withdrawal_integrity_completion",
     }
 )
 _EXPECTED_FILES: Mapping[str, tuple[Path, int | None, str]] = {
@@ -83,7 +108,48 @@ _EXPECTED_FILES: Mapping[str, tuple[Path, int | None, str]] = {
         None,
         "f3d1e8a6670484c81ac04743bcdb020cdee3fba02229a64844a8a9c9f4b8b989",
     ),
+    "v8_attempt4_withdrawal_report": (
+        _ATTEMPT4_REPORT,
+        1_101_388,
+        "24c7c7f154c6985c5c5832222a0872d62798e282af3c0f7494e70b8dfc100b5a",
+    ),
+    "v8_attempt4_withdrawal_pointer": (
+        _ATTEMPT4_POINTER,
+        3_828,
+        "3de7c79bf4d4949100f6bd90b1bc6da306d4b57090b70ef7606accefc9901665",
+    ),
+    "v8_attempt4_withdrawal_integrity_completion": (
+        _ATTEMPT4_COMPLETION,
+        3_419,
+        "315c62fa0e4b621e07db053950e9d26ab1abcb6a2f71a9347ec8d1526d8ad984",
+    ),
 }
+
+_ATTEMPT4_ARCHIVE_INTEGRITY = {
+    "path": str(_ATTEMPT4_ARCHIVE),
+    "root_mode_octal": "0500",
+    "fully_nonwritable": True,
+    "postseal_noncode_inventory_sha256": (
+        "1ab11d7a3e841530e0d8c994327b9eca26a20a896f73cfa3d76e5c6935cdca5c"
+    ),
+    "postseal_noncode_entry_count": 1915,
+}
+_ATTEMPT4_STATUS = (
+    "withdrawn-postbarrier-during-third-target-reconstruction-before-barrier2-or-score"
+)
+_ATTEMPT4_DISPOSITION = (
+    "WITHDRAWN_AFTER_TWO_TARGET_X0_QUERY_PAIRS_DURING_THIRD_TARGET_"
+    "RECONSTRUCTION_BEFORE_SECOND_BARRIER_OR_SCORE"
+)
+_ATTEMPT4_REPORT_ARTIFACT_SHA256 = (
+    "3e2f7be514d0ab2776905f3bae7fe5e474b5fdc57a7c64e59de33adf97f79c5a"
+)
+_ATTEMPT4_POINTER_ARTIFACT_SHA256 = (
+    "3bd025ec4ac6fd9a7b57f7ccacf4f44cee3b6aa0c763dc081f54474b129af4b2"
+)
+_ATTEMPT4_COMPLETION_ARTIFACT_SHA256 = (
+    "62128be06dfb1e181c3d6cd849ccd34c5cd37e3769c6b917811676a05da37332"
+)
 
 _ATTEMPT3_ARCHIVE_INTEGRITY = {
     "path": str(_ATTEMPT3_ARCHIVE),
@@ -161,6 +227,7 @@ def _bind_expected_regular_file(
     before = os.lstat(absolute)
     _require(not stat.S_ISLNK(before.st_mode), f"{role} is a symlink")
     _require(stat.S_ISREG(before.st_mode), f"{role} is not a regular file")
+    _require(before.st_nlink == 1, f"{role} is hard-linked")
     _require(absolute.resolve() == absolute, f"{role} path is non-canonical")
     _require(
         stat.S_IMODE(before.st_mode) == 0o400,
@@ -215,6 +282,457 @@ def _bind_expected_regular_file(
         "sha256": observed_sha256,
         "size_bytes": before.st_size,
         "mode_octal": "0400",
+    }
+
+
+def _load_bound_json(
+    path: Path, record: Mapping[str, Any], *, role: str
+) -> dict[str, Any]:
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        payload = bytearray()
+        while block := os.read(descriptor, 1024 * 1024):
+            payload.extend(block)
+    finally:
+        os.close(descriptor)
+    _require(
+        len(payload) == record.get("size_bytes")
+        and hashlib.sha256(payload).hexdigest() == record.get("sha256"),
+        f"{role} changed while loading",
+    )
+    try:
+        artifact = json.loads(bytes(payload).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"{role} is not UTF-8 JSON") from error
+    _require(isinstance(artifact, dict), f"{role} is not a JSON object")
+    unsigned = dict(artifact)
+    claimed = unsigned.pop("artifact_sha256", None)
+    observed = hashlib.sha256(
+        json.dumps(
+            unsigned,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    _require(claimed == observed, f"{role} artifact signature changed")
+    return artifact
+
+
+def _bind_attempt4_lineage(
+    bindings: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    report = _load_bound_json(
+        _ATTEMPT4_REPORT,
+        bindings["v8_attempt4_withdrawal_report"],
+        role="attempt-4 withdrawal report",
+    )
+    pointer = _load_bound_json(
+        _ATTEMPT4_POINTER,
+        bindings["v8_attempt4_withdrawal_pointer"],
+        role="attempt-4 withdrawal pointer",
+    )
+    completion = _load_bound_json(
+        _ATTEMPT4_COMPLETION,
+        bindings["v8_attempt4_withdrawal_integrity_completion"],
+        role="attempt-4 withdrawal completion",
+    )
+    expected = (
+        (
+            report,
+            "Deform360HeldV81Attempt4PostBarrierWithdrawalReport",
+            _ATTEMPT4_STATUS,
+            _ATTEMPT4_REPORT_ARTIFACT_SHA256,
+        ),
+        (
+            pointer,
+            "Deform360HeldV81Attempt4WithdrawalPointer",
+            _ATTEMPT4_STATUS,
+            _ATTEMPT4_POINTER_ARTIFACT_SHA256,
+        ),
+        (
+            completion,
+            "Deform360HeldV81Attempt4WithdrawalIntegrityCompletion",
+            "withdrawal-integrity-complete",
+            _ATTEMPT4_COMPLETION_ARTIFACT_SHA256,
+        ),
+    )
+    for artifact, kind, status, digest in expected:
+        _require(
+            artifact.get("schema_version") == 1
+            and artifact.get("artifact_kind") == kind
+            and artifact.get("protocol_id") == PROTOCOL_ID
+            and artifact.get("execution_attempt") == 4
+            and artifact.get("status") == status
+            and artifact.get("disposition") == _ATTEMPT4_DISPOSITION
+            and artifact.get("artifact_sha256") == digest,
+            "attempt-4 withdrawal identity changed",
+        )
+    archive_state = os.lstat(_ATTEMPT4_ARCHIVE)
+    _require(
+        stat.S_ISDIR(archive_state.st_mode)
+        and not stat.S_ISLNK(archive_state.st_mode)
+        and stat.S_IMODE(archive_state.st_mode) == 0o500,
+        "attempt-4 archive is not immutable",
+    )
+    launcher = report.get("durable_launcher_evidence")
+    _require(
+        isinstance(launcher, Mapping)
+        and launcher.get("path") == str(_ATTEMPT4_LAUNCHER)
+        and launcher.get("exact_file_allowlist") == ["exit.code", "output.log"]
+        and launcher.get("output_log", {}).get("sha256")
+        == "9153b50771d8818384d96a77f3502dbbc9494136f679fd25aa6e8208f73bd3e8"
+        and launcher.get("exit_code", {}).get("sha256")
+        == "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3",
+        "attempt-4 launcher binding changed",
+    )
+    launcher_state = os.lstat(_ATTEMPT4_LAUNCHER)
+    _require(
+        stat.S_ISDIR(launcher_state.st_mode)
+        and not stat.S_ISLNK(launcher_state.st_mode)
+        and stat.S_IMODE(launcher_state.st_mode) == 0o500
+        and _ATTEMPT4_LAUNCHER.resolve() == _ATTEMPT4_LAUNCHER
+        and sorted(child.name for child in _ATTEMPT4_LAUNCHER.iterdir())
+        == ["exit.code", "output.log"],
+        "attempt-4 launcher is not an immutable allowlist",
+    )
+    for name, size in (("exit.code", 2), ("output.log", 1_168_519_909)):
+        source = _ATTEMPT4_LAUNCHER / name
+        observed = os.lstat(source)
+        _require(
+            stat.S_ISREG(observed.st_mode)
+            and not stat.S_ISLNK(observed.st_mode)
+            and stat.S_IMODE(observed.st_mode) == 0o400
+            and observed.st_nlink == 1
+            and observed.st_size == size,
+            f"attempt-4 launcher {name} metadata changed",
+        )
+    execution = report.get("execution_boundary")
+    information = report.get("information_boundary")
+    _require(
+        isinstance(execution, Mapping)
+        and execution.get("first_cohort_barrier_validated_count") == 1
+        and execution.get("official_target_archive_count") == 2
+        and execution.get("official_x0_archive_count") == 2
+        and execution.get("queried_prediction_seal_count") == 2
+        and execution.get("partial_reconstruction_count") == 1
+        and execution.get("second_cohort_barrier_validated_count") == 0
+        and execution.get("score_evidence_count") == 0
+        and execution.get("gate_decision_count") == 0
+        and execution.get("confirmation_lock_count") == 0
+        and isinstance(information, Mapping)
+        and information.get("first_complete_cohort_barrier_crossed") is True
+        and information.get("second_complete_cohort_barrier_crossed") is False
+        and information.get("score_created_or_read") is False
+        and information.get("gate_decision_created_or_read") is False
+        and information.get("confirmation_created_or_read") is False,
+        "attempt-4 outcome boundary changed",
+    )
+    return dict(launcher), dict(execution), dict(information)
+
+
+def _bind_resource_qualification(
+    evidence_path: Path,
+    completion_path: Path,
+    *,
+    evidence_sha256: str,
+    completion_sha256: str,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    evidence_record = _bind_expected_regular_file(
+        evidence_path,
+        expected_size=None,
+        expected_sha256=evidence_sha256,
+        role="resource lifecycle qualification",
+    )
+    completion_record = _bind_expected_regular_file(
+        completion_path,
+        expected_size=None,
+        expected_sha256=completion_sha256,
+        role="resource lifecycle qualification completion",
+    )
+    evidence = _load_bound_json(
+        evidence_path, evidence_record, role="resource qualification"
+    )
+    completion = _load_bound_json(
+        completion_path, completion_record, role="resource qualification completion"
+    )
+    _require(
+        evidence.get("schema_version") == 2
+        and evidence.get("artifact_kind") == _QUALIFICATION_KIND
+        and evidence.get("qualification_id") == _QUALIFICATION_ID
+        and evidence.get("status") == "qualified"
+        and evidence.get("passed") is True
+        and evidence.get("generator_profile") == "same-as-analyzer"
+        and evidence.get("physical_gpu_index") == 1
+        and evidence.get("host") == "workstation2"
+        and evidence.get("phase") == "all"
+        and evidence.get("information_boundary", {}).get("formal_held_path_accepted")
+        is False
+        and evidence.get("information_boundary", {}).get(
+            "formal_target_or_outcome_array_read"
+        )
+        is False,
+        "resource qualification identity changed",
+    )
+    admission = evidence.get("admission")
+    _require(
+        admission
+        == {
+            "decision": "admitted",
+            "terminal": True,
+            "analyzer_outcome": "accepted",
+            "analyzer_no_go_interpretation": None,
+            "wrapper_inequivalence_proven": False,
+            "retry_permitted": False,
+            "in_place_reuse_permitted": False,
+        },
+        "resource qualification is not admission eligible",
+    )
+    _require(
+        completion.get("schema_version") == 2
+        and completion.get("artifact_kind") == _QUALIFICATION_COMPLETION_KIND
+        and completion.get("qualification_id") == _QUALIFICATION_ID
+        and completion.get("status") == "qualification-integrity-complete"
+        and completion.get("passed") is True
+        and completion.get("terminal_outcome") == "qualified"
+        and completion.get("admission_eligible") is True,
+        "resource qualification completion changed",
+    )
+    root = evidence_path.parent
+    _require(
+        root.parent == Path("/mnt/corsair/florianpfaff")
+        and root.name.startswith("bpt-resource-lifecycle-qualification-")
+        and completion_path == Path(f"{root}-integrity-completion.json")
+        and completion.get("qualification_root") == str(root)
+        and completion.get("qualification_root_mode_octal") == "0500"
+        and completion.get("qualification_tree_fully_nonwritable") is True,
+        "resource qualification root binding changed",
+    )
+
+    def bind_signed_completion_input(
+        field: str, path: Path, *, role: str
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        declared = completion.get(field)
+        _require(isinstance(declared, Mapping), f"{role} completion binding is absent")
+        _require(
+            declared.get("path") == str(path)
+            and isinstance(declared.get("size_bytes"), int)
+            and not isinstance(declared.get("size_bytes"), bool)
+            and isinstance(declared.get("sha256"), str)
+            and len(str(declared["sha256"])) == 64
+            and isinstance(declared.get("artifact_sha256"), str)
+            and len(str(declared["artifact_sha256"])) == 64,
+            f"{role} completion binding changed",
+        )
+        observed = _bind_expected_regular_file(
+            path,
+            expected_size=int(declared["size_bytes"]),
+            expected_sha256=str(declared["sha256"]),
+            role=role,
+        )
+        artifact = _load_bound_json(path, observed, role=role)
+        _require(
+            artifact.get("artifact_sha256") == declared.get("artifact_sha256"),
+            f"{role} artifact cross-link changed",
+        )
+        return observed, artifact
+
+    attempt_path = root / "qualification-attempt.json"
+    manifest_path = root / "equivalence/repeat-manifest.json"
+    result_path = root / "equivalence/analysis-result.json"
+    attempt_record, attempt = bind_signed_completion_input(
+        "qualification_attempt", attempt_path, role="resource qualification attempt"
+    )
+    manifest_record, manifest = bind_signed_completion_input(
+        "repeat_manifest", manifest_path, role="resource qualification repeat manifest"
+    )
+    result_record, result = bind_signed_completion_input(
+        "equivalence_result", result_path, role="resource qualification result"
+    )
+    completion_evidence = completion.get("qualification_evidence")
+    _require(
+        isinstance(completion_evidence, Mapping)
+        and completion_evidence.get("path") == evidence_record["path"]
+        and completion_evidence.get("sha256") == evidence_record["sha256"]
+        and completion_evidence.get("size_bytes") == evidence_record["size_bytes"]
+        and completion_evidence.get("artifact_sha256") == evidence["artifact_sha256"],
+        "resource qualification evidence completion cross-link changed",
+    )
+    _require(
+        attempt.get("artifact_kind")
+        == "Deform360ResourceLifecycleQualificationAttemptV2"
+        and attempt.get("qualification_id") == _QUALIFICATION_ID
+        and attempt.get("state") == "canonical-root-consumed-at-creation"
+        and attempt.get("output_root") == str(root)
+        and attempt.get("code_revision")
+        == evidence.get("runtime_bindings", {}).get("code", {}).get("head")
+        and attempt.get("root_consumption_policy")
+        == evidence.get("root_consumption_policy"),
+        "resource qualification attempt marker changed",
+    )
+    _require(
+        manifest.get("artifact_kind") == "Deform360ResourceLifecycleRepeatManifestV1"
+        and manifest.get("analysis_id")
+        == "deform360-resource-lifecycle-distributional-equivalence-v1"
+        and manifest.get("expected_environment", {}).get("generator_profile")
+        == "same-as-analyzer"
+        and manifest.get("expected_environment", {}).get("physical_gpu_index") == 1,
+        "resource qualification analyzer manifest changed",
+    )
+    decision = result.get("decision")
+    _require(
+        result.get("artifact_kind")
+        == "Deform360ResourceLifecycleDistributionalEquivalenceV1"
+        and result.get("analysis_id")
+        == "deform360-resource-lifecycle-distributional-equivalence-v1"
+        and result.get("generator_profile") == "same-as-analyzer"
+        and result.get("physical_gpu_index") == 1
+        and isinstance(decision, Mapping)
+        and decision.get("accepted") is True
+        and decision.get("acceptance_basis")
+        in {
+            "exact-structured-array-equality",
+            "secondary-distributional-envelope",
+        }
+        and completion.get("equivalence_decision") == decision,
+        "resource qualification analyzer result changed",
+    )
+    analyzer_source = evidence.get("runtime_bindings", {}).get("analyzer_source")
+    _require(
+        isinstance(analyzer_source, Mapping)
+        and analyzer_source.get("sha256") == _QUALIFICATION_ANALYZER_SHA256
+        and completion.get("analyzer_source", {}).get("sha256")
+        == _QUALIFICATION_ANALYZER_SHA256,
+        "resource qualification frozen analyzer changed",
+    )
+    _require(
+        completion.get("information_boundary")
+        == {
+            "formal_held_path_accessed": False,
+            "formal_target_query_prediction_or_score_deserialized": False,
+            "public_development_dataset_only": True,
+            "scientific_method_selected_from_qualification": False,
+        },
+        "resource qualification completion boundary changed",
+    )
+    inventory = completion.get("sealed_content_inventory")
+    observed_metadata = _qualification_metadata_inventory(root)
+    _require(
+        isinstance(inventory, Mapping)
+        and isinstance(inventory.get("inventory_sha256"), str)
+        and len(inventory["inventory_sha256"]) == 64
+        and inventory.get("entry_count") == observed_metadata["entry_count"]
+        and inventory.get("metadata_inventory_sha256")
+        == observed_metadata["metadata_inventory_sha256"],
+        "resource qualification tree metadata changed",
+    )
+    return (
+        {
+            "resource_lifecycle_qualification_attempt": {
+                **attempt_record,
+                "artifact_sha256": attempt["artifact_sha256"],
+            },
+            "resource_lifecycle_qualification_evidence": {
+                **evidence_record,
+                "artifact_sha256": evidence["artifact_sha256"],
+            },
+            "resource_lifecycle_qualification_repeat_manifest": {
+                **manifest_record,
+                "artifact_sha256": manifest["artifact_sha256"],
+            },
+            "resource_lifecycle_qualification_equivalence_result": {
+                **result_record,
+                "artifact_sha256": result["artifact_sha256"],
+            },
+            "resource_lifecycle_qualification_integrity_completion": {
+                **completion_record,
+                "artifact_sha256": completion["artifact_sha256"],
+            },
+        },
+        {
+            "root": str(root),
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+            **completion["sealed_content_inventory"],
+            **completion["source_code"],
+            "terminal_outcome": completion["terminal_outcome"],
+            "admission_eligible": completion["admission_eligible"],
+            "generator_profile": evidence["generator_profile"],
+            "physical_gpu_index": evidence["physical_gpu_index"],
+            "equivalence_acceptance_basis": decision["acceptance_basis"],
+            "analyzer_source_sha256": _QUALIFICATION_ANALYZER_SHA256,
+        },
+    )
+
+
+def _qualification_metadata_inventory(root: Path) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    states: dict[Path, tuple[int, ...]] = {}
+    for current, directories, files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"resource qualification directory is not sealed: {current_path}",
+        )
+        states[current_path] = _stable_inventory_state(current_state)
+        directories[:] = sorted(directories)
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"resource qualification directory is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            rows.append(
+                {
+                    "path": child.relative_to(root).as_posix(),
+                    "type": "directory",
+                    "mode_octal": "0500",
+                }
+            )
+        for name in sorted(files):
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400
+                and observed.st_nlink == 1,
+                f"resource qualification file is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            rows.append(
+                {
+                    "path": child.relative_to(root).as_posix(),
+                    "type": "file",
+                    "mode_octal": "0400",
+                    "size_bytes": observed.st_size,
+                }
+            )
+    for path, before in states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == before,
+            f"resource qualification metadata changed while scanning: {path}",
+        )
+    rows.sort(key=lambda row: str(row["path"]))
+    return {
+        "entry_count": len(rows),
+        "metadata_inventory_sha256": hashlib.sha256(
+            json.dumps(
+                {"rows": rows},
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=True,
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest(),
     }
 
 
@@ -661,6 +1179,12 @@ def _observed_attempt3_noncode_inventory(
 def expected_unsigned_report(
     bindings: Mapping[str, Mapping[str, Any]],
     archive_integrity: Mapping[str, Any],
+    *,
+    attempt4_launcher: Mapping[str, Any],
+    attempt4_execution: Mapping[str, Any],
+    attempt4_information: Mapping[str, Any],
+    qualification_files: Mapping[str, Mapping[str, Any]],
+    qualification_integrity: Mapping[str, Any],
 ) -> dict[str, Any]:
     _require(
         set(bindings) == set(_EXPECTED_FILES),
@@ -676,7 +1200,32 @@ def expected_unsigned_report(
         "disclosed_v8_attempt3_files": {
             name: dict(bindings[name]) for name in sorted(_ATTEMPT3_FILE_NAMES)
         },
+        "disclosed_v8_attempt4_files": {
+            name: dict(bindings[name]) for name in sorted(_ATTEMPT4_FILE_NAMES)
+        },
         "v8_attempt3_archive_integrity": dict(archive_integrity),
+        "v8_attempt4_archive_integrity": dict(_ATTEMPT4_ARCHIVE_INTEGRITY),
+        "v8_attempt4_launcher_integrity": {
+            **dict(attempt4_launcher),
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+        },
+        "v8_attempt4_execution_boundary": {
+            "calibration_result": "NO_CALIBRATION_RESULT",
+            "first_complete_cohort_barrier_crossed": True,
+            "completed_target_x0_queried_pairs": 2,
+            "partial_third_target_reconstruction": True,
+            "second_complete_cohort_barrier_crossed": False,
+            "score_evidence_count": 0,
+            "gate_decision_count": 0,
+            "confirmation_accessed": False,
+            "report_execution_boundary": dict(attempt4_execution),
+            "report_information_boundary": dict(attempt4_information),
+        },
+        "resource_lifecycle_qualification_files": {
+            name: dict(value) for name, value in sorted(qualification_files.items())
+        },
+        "resource_lifecycle_qualification_integrity": dict(qualification_integrity),
         "v8_attempt3_revision_basis": {
             "official_x0_geometry_used_to_diagnose_exclusion_liveness": True,
             "future_target_coordinates_masks_or_scores_used_for_revision": False,
@@ -693,6 +1242,17 @@ def expected_unsigned_report(
             "future_coordinates_or_masks_may_have_been_read": True,
             "derived_metrics_may_have_been_computed": True,
             "field_hypothesis_was_subsequently_reselected_on_independent_open27": True,
+        },
+        "attempt4_technical_failure_development": {
+            "durable_launcher_log_used_for_fixed_marker_and_traceback_diagnosis": True,
+            "too_many_open_files_diagnosed": True,
+            "formal_target_query_prediction_or_score_array_deserialized": False,
+            "attempt4_score_gate_or_confirmation_existed": False,
+            "scientific_method_or_threshold_selected_from_attempt4_outcomes": False,
+            "repair_scope": (
+                "per-fit Nerfstudio resource lifecycle plus a post-case file-"
+                "descriptor growth guard"
+            ),
         },
         "retirement": {
             "exact_episode": "002-rope-silk-ep0003",
@@ -718,7 +1278,15 @@ def expected_unsigned_report(
             "v8_attempt3_queried_prediction_artifacts_reused": False,
             "v8_attempt3_score_or_gate_artifacts_reused": False,
             "v8_attempt3_partial_artifacts_reused": False,
-            "all_v8_1_attempt4_predictions_targets_queries_and_scores_fresh": True,
+            "v8_attempt4_predictions_reused": False,
+            "v8_attempt4_source_manifests_reused": False,
+            "v8_attempt4_frozen_fields_reused": False,
+            "v8_attempt4_target_artifacts_reused": False,
+            "v8_attempt4_official_x0_query_artifacts_reused": False,
+            "v8_attempt4_queried_prediction_artifacts_reused": False,
+            "v8_attempt4_score_or_gate_artifacts_reused": False,
+            "v8_attempt4_partial_artifacts_reused": False,
+            "all_v8_1_attempt5_predictions_targets_queries_and_scores_fresh": True,
             "full_15_case_fresh_rerun_required": True,
         },
         "claim_boundary": (
@@ -729,7 +1297,13 @@ def expected_unsigned_report(
     }
 
 
-def build_report() -> tuple[dict[str, Any], bytes]:
+def build_report(
+    *,
+    qualification_evidence: Path,
+    qualification_completion: Path,
+    qualification_evidence_sha256: str,
+    qualification_completion_sha256: str,
+) -> tuple[dict[str, Any], bytes]:
     bindings = {
         name: _bind_expected_regular_file(
             path,
@@ -739,8 +1313,23 @@ def build_report() -> tuple[dict[str, Any], bytes]:
         )
         for name, (path, size, sha256) in _EXPECTED_FILES.items()
     }
+    launcher, execution, information = _bind_attempt4_lineage(bindings)
+    qualification_files, qualification_integrity = _bind_resource_qualification(
+        qualification_evidence,
+        qualification_completion,
+        evidence_sha256=qualification_evidence_sha256,
+        completion_sha256=qualification_completion_sha256,
+    )
     return _artifact(
-        expected_unsigned_report(bindings, _bind_attempt3_archive_integrity())
+        expected_unsigned_report(
+            bindings,
+            _bind_attempt3_archive_integrity(),
+            attempt4_launcher=launcher,
+            attempt4_execution=execution,
+            attempt4_information=information,
+            qualification_files=qualification_files,
+            qualification_integrity=qualification_integrity,
+        )
     )
 
 
@@ -756,6 +1345,7 @@ def _write_once(path: Path, payload: bytes) -> None:
         _require(
             stat.S_ISREG(before.st_mode)
             and not stat.S_ISLNK(before.st_mode)
+            and before.st_nlink == 1
             and stat.S_IMODE(before.st_mode) == 0o400,
             "existing disclosure is not a sealed regular file",
         )
@@ -779,14 +1369,37 @@ def _write_once(path: Path, payload: bytes) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         os.chmod(absolute, 0o400, follow_symlinks=False)
+        directory = os.open(
+            absolute.parent,
+            os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
     except BaseException:
         absolute.unlink(missing_ok=True)
         raise
 
 
-def main() -> None:
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--qualification-evidence", type=Path, required=True)
+    parser.add_argument("--qualification-completion", type=Path, required=True)
+    parser.add_argument("--qualification-evidence-sha256", required=True)
+    parser.add_argument("--qualification-completion-sha256", required=True)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    arguments = _parser().parse_args(argv)
     _require(_V8_ROOT == _OUTPUT.parent, "disclosure output root changed")
-    _, payload = build_report()
+    _, payload = build_report(
+        qualification_evidence=arguments.qualification_evidence,
+        qualification_completion=arguments.qualification_completion,
+        qualification_evidence_sha256=arguments.qualification_evidence_sha256,
+        qualification_completion_sha256=arguments.qualification_completion_sha256,
+    )
     _write_once(_OUTPUT, payload)
     print(hashlib.sha256(payload).hexdigest())
 

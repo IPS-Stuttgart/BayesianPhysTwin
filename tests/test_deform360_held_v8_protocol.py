@@ -78,6 +78,21 @@ def _sealed_test_repository(root: Path) -> tuple[Path, dict[str, Any]]:
     return deployed_code, protocol._attempt3_repository_binding(deployed_code)
 
 
+def test_attempt4_routine_deployed_metadata_rejects_tracked_size_drift(
+    tmp_path: Path,
+) -> None:
+    deployed_code, expected = _sealed_test_repository(tmp_path)
+    protocol._validate_attempt4_deployed_metadata(deployed_code, expected)
+
+    tracked = deployed_code / "tracked.py"
+    tracked.chmod(0o600)
+    tracked.write_text("VALUE = 1000000\n", encoding="utf-8")
+    tracked.chmod(0o400)
+
+    with pytest.raises(ValueError, match="size differs from Git blob"):
+        protocol._validate_attempt4_deployed_metadata(deployed_code, expected)
+
+
 def _attempt3_lineage_fixture(
     lineage: Path, monkeypatch: pytest.MonkeyPatch
 ) -> dict[str, Any]:
@@ -302,6 +317,121 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         development_sha,
     )
     attempt3 = _attempt3_lineage_fixture(lineage, monkeypatch)
+    attempt4_records: dict[str, dict[str, Any]] = {}
+    attempt4_paths: dict[str, Path] = {}
+    for short in ("report", "pointer", "completion"):
+        path = lineage / f"attempt4-{short}.json"
+        path.write_text(f"attempt-4-{short}\n", encoding="utf-8")
+        path.chmod(0o400)
+        attempt4_paths[short] = path
+        attempt4_records[short] = _bound_file(path)
+    monkeypatch.setattr(
+        protocol,
+        "ATTEMPT4_WITHDRAWAL_REPORT_FILE_SHA256",
+        attempt4_records["report"]["sha256"],
+    )
+    monkeypatch.setattr(
+        protocol,
+        "ATTEMPT4_WITHDRAWAL_POINTER_FILE_SHA256",
+        attempt4_records["pointer"]["sha256"],
+    )
+    monkeypatch.setattr(
+        protocol,
+        "ATTEMPT4_WITHDRAWAL_COMPLETION_FILE_SHA256",
+        attempt4_records["completion"]["sha256"],
+    )
+    attempt4_archive_integrity = {
+        "path": str(lineage / "attempt4-archive"),
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": "4" * 64,
+        "postseal_noncode_entry_count": 1915,
+    }
+    attempt4_launcher_integrity = {
+        "path": str(lineage / "attempt4-launcher"),
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+    }
+    attempt4_lineage = {
+        "v8_attempt4_withdrawal_report": attempt4_records["report"],
+        "v8_attempt4_withdrawal_pointer": attempt4_records["pointer"],
+        "v8_attempt4_withdrawal_integrity_completion": attempt4_records["completion"],
+        "v8_attempt4_archive_integrity": attempt4_archive_integrity,
+        "v8_attempt4_launcher_integrity": attempt4_launcher_integrity,
+        "v8_attempt4_calibration_result": "NO_CALIBRATION_RESULT",
+    }
+    monkeypatch.setattr(
+        protocol,
+        "validate_attempt4_withdrawal_lineage",
+        lambda **_kwargs: attempt4_lineage,
+    )
+    qualification_root = lineage / f"bpt-resource-lifecycle-qualification-{'a' * 40}"
+    qualification_root.mkdir()
+    qualification_evidence = (
+        qualification_root / "resource-lifecycle-qualification.json"
+    )
+    qualification_evidence.write_text("qualification\n", encoding="utf-8")
+    qualification_evidence.chmod(0o400)
+    qualification_attempt = qualification_root / "qualification-attempt.json"
+    qualification_attempt.write_text("attempt\n", encoding="utf-8")
+    qualification_attempt.chmod(0o400)
+    equivalence = qualification_root / "equivalence"
+    equivalence.mkdir()
+    qualification_manifest = equivalence / "repeat-manifest.json"
+    qualification_manifest.write_text("manifest\n", encoding="utf-8")
+    qualification_manifest.chmod(0o400)
+    qualification_result = equivalence / "analysis-result.json"
+    qualification_result.write_text("result\n", encoding="utf-8")
+    qualification_result.chmod(0o400)
+    equivalence.chmod(0o500)
+    qualification_root.chmod(0o500)
+    qualification_completion = Path(f"{qualification_root}-integrity-completion.json")
+    qualification_completion.write_text("completion\n", encoding="utf-8")
+    qualification_completion.chmod(0o400)
+    qualification_lineage = {
+        "resource_lifecycle_qualification_attempt": {
+            **_bound_file(qualification_attempt),
+            "artifact_sha256": "0" * 64,
+        },
+        "resource_lifecycle_qualification_evidence": {
+            **_bound_file(qualification_evidence),
+            "artifact_sha256": "1" * 64,
+        },
+        "resource_lifecycle_qualification_repeat_manifest": {
+            **_bound_file(qualification_manifest),
+            "artifact_sha256": "2" * 64,
+        },
+        "resource_lifecycle_qualification_equivalence_result": {
+            **_bound_file(qualification_result),
+            "artifact_sha256": "3" * 64,
+        },
+        "resource_lifecycle_qualification_integrity_completion": {
+            **_bound_file(qualification_completion),
+            "artifact_sha256": "4" * 64,
+        },
+        "resource_lifecycle_qualification_integrity": {
+            "root": str(qualification_root),
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+            "entry_count": 5,
+            "inventory_sha256": "5" * 64,
+            "source_head": "a" * 40,
+            "source_tree": "b" * 40,
+            "terminal_outcome": "qualified",
+            "admission_eligible": True,
+            "generator_profile": "same-as-analyzer",
+            "physical_gpu_index": 1,
+            "equivalence_acceptance_basis": "secondary-distributional-envelope",
+            "analyzer_source_sha256": (
+                protocol.RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256
+            ),
+        },
+    }
+    monkeypatch.setattr(
+        protocol,
+        "validate_resource_lifecycle_qualification_lineage",
+        lambda **_kwargs: qualification_lineage,
+    )
 
     config = {"prediction_frame_count": 76, "test_fixture": True}
     root = tmp_path / "held-v8"
@@ -329,7 +459,39 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
                 ),
             )
         },
+        "disclosed_v8_attempt4_files": {
+            name: {**attempt4_records[short], "mode_octal": "0400"}
+            for name, short in (
+                ("v8_attempt4_withdrawal_report", "report"),
+                ("v8_attempt4_withdrawal_pointer", "pointer"),
+                (
+                    "v8_attempt4_withdrawal_integrity_completion",
+                    "completion",
+                ),
+            )
+        },
         "v8_attempt3_archive_integrity": attempt3["archive_integrity"],
+        "v8_attempt4_archive_integrity": attempt4_archive_integrity,
+        "v8_attempt4_launcher_integrity": attempt4_launcher_integrity,
+        "v8_attempt4_execution_boundary": {
+            "calibration_result": "NO_CALIBRATION_RESULT",
+            "first_complete_cohort_barrier_crossed": True,
+            "completed_target_x0_queried_pairs": 2,
+            "partial_third_target_reconstruction": True,
+            "second_complete_cohort_barrier_crossed": False,
+            "score_evidence_count": 0,
+            "gate_decision_count": 0,
+            "confirmation_accessed": False,
+            "report_execution_boundary": {},
+            "report_information_boundary": {},
+        },
+        "resource_lifecycle_qualification_files": {
+            name: {**qualification_lineage[name], "mode_octal": "0400"}
+            for name in protocol.RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES
+        },
+        "resource_lifecycle_qualification_integrity": qualification_lineage[
+            "resource_lifecycle_qualification_integrity"
+        ],
         "v8_attempt3_revision_basis": {
             "official_x0_geometry_used_to_diagnose_exclusion_liveness": True,
             "future_target_coordinates_masks_or_scores_used_for_revision": False,
@@ -346,6 +508,17 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "future_coordinates_or_masks_may_have_been_read": True,
             "derived_metrics_may_have_been_computed": True,
             "field_hypothesis_was_subsequently_reselected_on_independent_open27": True,
+        },
+        "attempt4_technical_failure_development": {
+            "durable_launcher_log_used_for_fixed_marker_and_traceback_diagnosis": True,
+            "too_many_open_files_diagnosed": True,
+            "formal_target_query_prediction_or_score_array_deserialized": False,
+            "attempt4_score_gate_or_confirmation_existed": False,
+            "scientific_method_or_threshold_selected_from_attempt4_outcomes": False,
+            "repair_scope": (
+                "per-fit Nerfstudio resource lifecycle plus a post-case file-"
+                "descriptor growth guard"
+            ),
         },
         "retirement": {
             "exact_episode": protocol.RETIRED_V7_CASE_NAME,
@@ -371,7 +544,15 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "v8_attempt3_queried_prediction_artifacts_reused": False,
             "v8_attempt3_score_or_gate_artifacts_reused": False,
             "v8_attempt3_partial_artifacts_reused": False,
-            "all_v8_1_attempt4_predictions_targets_queries_and_scores_fresh": True,
+            "v8_attempt4_predictions_reused": False,
+            "v8_attempt4_source_manifests_reused": False,
+            "v8_attempt4_frozen_fields_reused": False,
+            "v8_attempt4_target_artifacts_reused": False,
+            "v8_attempt4_official_x0_query_artifacts_reused": False,
+            "v8_attempt4_queried_prediction_artifacts_reused": False,
+            "v8_attempt4_score_or_gate_artifacts_reused": False,
+            "v8_attempt4_partial_artifacts_reused": False,
+            "all_v8_1_attempt5_predictions_targets_queries_and_scores_fresh": True,
             "full_15_case_fresh_rerun_required": True,
         },
         "claim_boundary": (
@@ -397,6 +578,42 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "center_exclusion_contract": (
                 query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
             ),
+            "resource_lifecycle_policy_contract": protocol.held_contract_sha256(
+                protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT
+            ),
+            "post_case_resource_boundary_contract": protocol.held_contract_sha256(
+                protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT
+            ),
+            "resource_lifecycle_qualification_evidence": qualification_lineage[
+                "resource_lifecycle_qualification_evidence"
+            ]["sha256"],
+            "resource_lifecycle_qualification_attempt": qualification_lineage[
+                "resource_lifecycle_qualification_attempt"
+            ]["sha256"],
+            "resource_lifecycle_qualification_repeat_manifest": (
+                qualification_lineage[
+                    "resource_lifecycle_qualification_repeat_manifest"
+                ]["sha256"]
+            ),
+            "resource_lifecycle_qualification_equivalence_result": (
+                qualification_lineage[
+                    "resource_lifecycle_qualification_equivalence_result"
+                ]["sha256"]
+            ),
+            "resource_lifecycle_qualification_integrity_completion": (
+                qualification_lineage[
+                    "resource_lifecycle_qualification_integrity_completion"
+                ]["sha256"]
+            ),
+            **{
+                binding_name: qualification_lineage[lineage_name]["artifact_sha256"]
+                for lineage_name, binding_name in (
+                    protocol.RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES.items()
+                )
+            },
+            "resource_lifecycle_qualification_analyzer_source": (
+                protocol.RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256
+            ),
             "test_operator_source": "a" * 64,
         },
         v7_withdrawal_report_path=withdrawal,
@@ -405,6 +622,11 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         attempt3_withdrawal_report_path=attempt3["report_path"],
         attempt3_withdrawal_pointer_path=attempt3["pointer_path"],
         attempt3_withdrawal_integrity_completion_path=attempt3["completion_path"],
+        attempt4_withdrawal_report_path=attempt4_paths["report"],
+        attempt4_withdrawal_pointer_path=attempt4_paths["pointer"],
+        attempt4_withdrawal_integrity_completion_path=attempt4_paths["completion"],
+        resource_lifecycle_qualification_path=qualification_evidence,
+        resource_lifecycle_qualification_completion_path=qualification_completion,
     )
     return lock
 
@@ -638,20 +860,20 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
         query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
     )
     assert lock["protocol_id"] == "deform360-held-online-belief-v8.1"
-    assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 4
+    assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 5
     assert lock["freshness_and_reuse"] == protocol.FRESHNESS_AND_REUSE_CONTRACT
     assert (
-        lock["freshness_and_reuse"]["held_v8_root_absent_before_attempt4_lock"] is True
+        lock["freshness_and_reuse"]["held_v8_root_absent_before_attempt5_lock"] is True
     )
     assert (
         lock["freshness_and_reuse"][
-            "all_predictions_must_be_fresh_v8_1_attempt4_outputs"
+            "all_predictions_must_be_fresh_v8_1_attempt5_outputs"
         ]
         is True
     )
     assert (
         lock["freshness_and_reuse"][
-            "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt4_outputs"
+            "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt5_outputs"
         ]
         is True
     )

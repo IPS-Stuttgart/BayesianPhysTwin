@@ -7,14 +7,26 @@ It never loads an official target, an x0 query, a queried prediction, a score,
 or a confirmation artifact.  A second invocation with the wrong episode must
 be rejected before producing numerical outputs.
 
-The resulting report and source binding are inputs to the attempt-4 lock
-preparer.  Run this operator from an exact clean Git checkout on workstation2.
+The resulting report and source binding are inputs to the attempt-5 lock
+preparer.  Run this operator from an exact clean Git checkout on workstation2
+with the pinned interpreter and no ``PYTHONPATH`` dependency::
+
+    /mnt/corsair/florianpfaff/bpt-held-v5-runtimes/\
+bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/\
+bin/python -I -B /absolute/checkout/scripts/held/\
+replay_deform360_v81_external_admission.py
+
+Only standard-library modules are imported until the checkout has passed its
+cleanliness and Git-rewrite preflight.  The exact checked ``src`` directory is
+then installed for the two deferred project imports.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+import ctypes
 import hashlib
+import importlib
 import json
 import os
 from pathlib import Path
@@ -25,14 +37,12 @@ import subprocess
 import sys
 from typing import Any
 
-from bayesian_phystwin import deform360_held_v8_builders as builders
-from bayesian_phystwin import deform360_held_v8_protocol as protocol
-
-
 ROOT = Path(
     "/mnt/corsair/florianpfaff/"
-    "bpt-held-v8.1-attempt-4-admission-wrapper-scratch-20260722"
+    "bpt-held-v8.1-attempt-5-admission-wrapper-scratch-20260722"
 )
+QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
+QUALIFICATION_ROOT_PREFIX = "bpt-resource-lifecycle-qualification-"
 SOURCE_INPUT = Path(
     "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
     "held-v8-attempt-2-withdrawn-preoutcome/calibration/cases/"
@@ -45,7 +55,9 @@ PINNED_PYTHON = Path(
     "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/"
     "bin/python"
 )
+PINNED_PYTHON_RUNTIME = PINNED_PYTHON.parent.parent
 PINNED_PYTHON_TARGET = Path("/usr/bin/python3.12")
+PINNED_PYTHON_BASE_PREFIX = Path("/usr")
 PINNED_PYTHON_TARGET_SHA256 = (
     "e1efa562c2cc2e35521a5c9c9b9939921001ff8ca9708a13ef15ace68cc2ccd7"
 )
@@ -107,11 +119,62 @@ SUCCESS_INFORMATION_BOUNDARY = {
     "simulator_residual_used": False,
     "target_access": False,
 }
+OPERATOR_RELATIVE = Path("scripts/held/replay_deform360_v81_external_admission.py")
+PROTOCOL_RELATIVE = Path("src/bayesian_phystwin/deform360_held_v8_protocol.py")
+ADAPTER_RELATIVE = Path("src/bayesian_phystwin/deform360_held_v8_builders.py")
+PROTOCOL_MODULE = "bayesian_phystwin.deform360_held_v8_protocol"
+ADAPTER_MODULE = "bayesian_phystwin.deform360_held_v8_builders"
+
+# These are populated only by ``_load_verified_source_modules`` after the
+# stdlib-only source preflight succeeds.  Keeping the names explicit preserves
+# narrow unit-test seams without permitting an import at operator load time.
+builders: Any | None = None
+protocol: Any | None = None
 
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def _require_isolated_launch() -> None:
+    _require(
+        sys.flags.isolated == 1
+        and sys.flags.ignore_environment == 1
+        and sys.flags.no_user_site == 1
+        and sys.flags.dont_write_bytecode == 1,
+        "replay must be launched with the pinned Python using -I -B",
+    )
+    executable = Path(os.path.abspath(sys.executable))
+    base_executable_value = getattr(sys, "_base_executable", None)
+    _require(
+        isinstance(base_executable_value, str) and base_executable_value,
+        "replay Python has no base executable",
+    )
+    base_executable = Path(os.path.abspath(base_executable_value))
+    prefix = Path(os.path.abspath(sys.prefix))
+    base_prefix = Path(os.path.abspath(sys.base_prefix))
+    _require(
+        executable == PINNED_PYTHON,
+        "replay is not executing through the pinned Python launcher",
+    )
+    _require(
+        base_executable == PINNED_PYTHON_TARGET,
+        "replay Python base executable changed",
+    )
+    _require(prefix == PINNED_PYTHON_RUNTIME, "replay Python prefix changed")
+    _require(
+        base_prefix == PINNED_PYTHON_BASE_PREFIX,
+        "replay Python base prefix changed",
+    )
+
+
+def _source_modules() -> tuple[Any, Any]:
+    _require(
+        builders is not None and protocol is not None,
+        "verified replay source modules have not been loaded",
+    )
+    return builders, protocol
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -209,7 +272,16 @@ def _write_new(path: Path, payload: bytes) -> None:
 
 def _run_git(root: Path, arguments: Sequence[str]) -> str:
     result = subprocess.run(
-        ["git", "-C", str(root), *arguments],
+        [
+            "git",
+            "-C",
+            str(root),
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            *arguments,
+        ],
         check=False,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
@@ -217,6 +289,8 @@ def _run_git(root: Path, arguments: Sequence[str]) -> str:
         text=True,
         env={
             "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_NO_REPLACE_OBJECTS": "1",
             "GIT_OPTIONAL_LOCKS": "0",
             "HOME": "/home/florianpfaff",
             "LANG": "C.UTF-8",
@@ -229,6 +303,40 @@ def _run_git(root: Path, arguments: Sequence[str]) -> str:
         f"git {' '.join(arguments)} failed: {result.stderr.strip()}",
     )
     return result.stdout.strip()
+
+
+def _require_ordinary_git_index(root: Path, *, role: str) -> None:
+    tracked = _run_git(root, ["ls-files", "-v"])
+    lines = tracked.splitlines()
+    _require(lines, f"{role} repository has no tracked files")
+    _require(
+        all(line.startswith("H ") and len(line) > 2 for line in lines),
+        f"{role} repository contains non-ordinary index flags",
+    )
+
+
+def _require_no_git_rewrite_state(root: Path, *, role: str) -> None:
+    replacement_refs = _run_git(
+        root,
+        ["for-each-ref", "--format=%(refname)", "refs/replace"],
+    )
+    _require(
+        replacement_refs == "",
+        f"{role} repository contains replacement refs",
+    )
+    git_directory = Path(_run_git(root, ["rev-parse", "--absolute-git-dir"]))
+    git_state = os.lstat(git_directory)
+    _require(
+        git_directory.is_absolute()
+        and stat.S_ISDIR(git_state.st_mode)
+        and not stat.S_ISLNK(git_state.st_mode)
+        and git_directory.resolve(strict=True) == git_directory,
+        f"{role} Git directory is not canonical",
+    )
+    _require(
+        not os.path.lexists(git_directory / "info/grafts"),
+        f"{role} repository contains a grafts file",
+    )
 
 
 def _repository_binding(
@@ -260,6 +368,8 @@ def _repository_binding(
                 f"{role} contains an unsafe file",
             )
     prefix = ["-c", "core.fileMode=false"]
+    _require_no_git_rewrite_state(root, role=role)
+    _require_ordinary_git_index(root, role=role)
     head = _run_git(root, [*prefix, "rev-parse", "HEAD"]).lower()
     tree = _run_git(root, [*prefix, "rev-parse", "HEAD^{tree}"]).lower()
     _require(
@@ -361,19 +471,88 @@ def _runtime_binding() -> dict[str, Any]:
     }
 
 
-def _source_binding() -> dict[str, Any]:
-    code = Path(__file__).resolve().parents[2]
-    _require(Path(__file__).resolve().is_relative_to(code), "operator is outside code")
+def _operator_source_layout(operator_path: Path | None = None) -> tuple[Path, Path]:
+    operator = Path(
+        os.path.abspath(os.fspath(__file__ if operator_path is None else operator_path))
+    )
+    operator_state = os.lstat(operator)
     _require(
-        _run_git(code, ["status", "--porcelain=v1", "--untracked-files=all"]) == "",
+        stat.S_ISREG(operator_state.st_mode)
+        and not stat.S_ISLNK(operator_state.st_mode)
+        and operator_state.st_nlink == 1
+        and operator.resolve(strict=True) == operator,
+        "admission replay operator is not a canonical single-link regular file",
+    )
+    _require(
+        len(operator.parents) >= 3,
+        "admission replay operator path is too shallow",
+    )
+    code = operator.parents[2]
+    code_state = os.lstat(code)
+    _require(
+        stat.S_ISDIR(code_state.st_mode)
+        and not stat.S_ISLNK(code_state.st_mode)
+        and code.resolve(strict=True) == code
+        and operator == code / OPERATOR_RELATIVE,
+        "operator is outside the exact code-root location",
+    )
+    return code, operator
+
+
+def _preflight_source_checkout(*, operator_path: Path | None = None) -> dict[str, Any]:
+    """Validate the source checkout without importing any project module."""
+
+    code, operator = _operator_source_layout(operator_path)
+    top_level = Path(_run_git(code, ["rev-parse", "--show-toplevel"]))
+    _require(
+        top_level.is_absolute() and top_level.resolve(strict=True) == code,
+        "operator code root is not the exact Git top level",
+    )
+    _require_no_git_rewrite_state(code, role="source checkout")
+    _require_ordinary_git_index(code, role="source checkout")
+    status = _run_git(code, ["status", "--porcelain=v1", "--untracked-files=all"])
+    ordinary_untracked = _run_git(code, ["ls-files", "--others", "--exclude-standard"])
+    ignored_untracked = _run_git(
+        code,
+        ["ls-files", "--others", "--ignored", "--exclude-standard"],
+    )
+    _require(
+        status == "" and ordinary_untracked == "",
         "source checkout is dirty",
     )
-    head = _run_git(code, ["rev-parse", "HEAD"])
-    protocol_path = code / "src/bayesian_phystwin/deform360_held_v8_protocol.py"
-    adapter_path = code / "src/bayesian_phystwin/deform360_held_v8_builders.py"
-    operator_path = Path(__file__).resolve()
-    bindings = {
+    _require(ignored_untracked == "", "source checkout contains ignored files")
+    _require(
+        _run_git(code, ["rev-parse", "--is-shallow-repository"]) == "false",
+        "source checkout is shallow",
+    )
+    _run_git(code, ["fsck", "--full", "--no-dangling"])
+    head = _run_git(code, ["rev-parse", "HEAD"]).lower()
+    tree = _run_git(code, ["rev-parse", "HEAD^{tree}"]).lower()
+    _require(
+        len(head) == 40
+        and all(character in "0123456789abcdef" for character in head)
+        and len(tree) == 40
+        and all(character in "0123456789abcdef" for character in tree),
+        "source checkout Git identity is invalid",
+    )
+    protocol_path = code / PROTOCOL_RELATIVE
+    adapter_path = code / ADAPTER_RELATIVE
+    source_root = code / "src"
+    source_root_state = os.lstat(source_root)
+    _require(
+        stat.S_ISDIR(source_root_state.st_mode)
+        and not stat.S_ISLNK(source_root_state.st_mode)
+        and source_root.resolve(strict=True) == source_root,
+        "source checkout src directory is not canonical",
+    )
+    return {
+        "code_root": code,
+        "source_root": source_root,
+        "operator_path": operator,
+        "protocol_path": protocol_path,
+        "adapter_path": adapter_path,
         "git_head": head,
+        "git_tree": tree,
         "protocol_source_sha256": hashlib.sha256(
             _read_regular(protocol_path, role="v8.1 protocol source")
         ).hexdigest(),
@@ -381,20 +560,125 @@ def _source_binding() -> dict[str, Any]:
             _read_regular(adapter_path, role="v8.1 adapter source")
         ).hexdigest(),
         "replay_operator_source_sha256": hashlib.sha256(
-            _read_regular(operator_path, role="admission replay operator")
+            _read_regular(operator, role="admission replay operator")
         ).hexdigest(),
+    }
+
+
+def _load_verified_source_modules(preflight: Mapping[str, Any]) -> None:
+    """Import exact project modules only after the stdlib preflight passes."""
+
+    global builders, protocol
+    _require(
+        builders is None and protocol is None,
+        "verified replay source modules were already loaded",
+    )
+    polluted = sorted(
+        name
+        for name in sys.modules
+        if name == "bayesian_phystwin" or name.startswith("bayesian_phystwin.")
+    )
+    _require(not polluted, "bayesian_phystwin was imported before source preflight")
+    source_root = preflight.get("source_root")
+    _require(isinstance(source_root, Path), "source preflight root is invalid")
+    source_entry = str(source_root)
+    _require(
+        source_entry not in sys.path and source_entry not in sys.path_importer_cache,
+        "verified source path was active before source preflight",
+    )
+    sys.path.insert(0, source_entry)
+    try:
+        imported_protocol = importlib.import_module(PROTOCOL_MODULE)
+        imported_builders = importlib.import_module(ADAPTER_MODULE)
+    finally:
+        _require(
+            sys.path and sys.path[0] == source_entry,
+            "project import changed the verified source-path position",
+        )
+        del sys.path[0]
+        sys.path_importer_cache.pop(source_entry, None)
+
+    protocol_path = preflight.get("protocol_path")
+    adapter_path = preflight.get("adapter_path")
+    _require(
+        isinstance(protocol_path, Path)
+        and isinstance(adapter_path, Path)
+        and Path(imported_protocol.__file__).resolve(strict=True) == protocol_path
+        and Path(imported_builders.__file__).resolve(strict=True) == adapter_path,
+        "imported v8.1 source is outside the exact checkout",
+    )
+    refreshed = _preflight_source_checkout(operator_path=preflight.get("operator_path"))
+    _require(refreshed == dict(preflight), "source checkout changed during import")
+    protocol = imported_protocol
+    builders = imported_builders
+
+
+def _bootstrap_source_modules(*, operator_path: Path | None = None) -> dict[str, Any]:
+    preflight = _preflight_source_checkout(operator_path=operator_path)
+    _load_verified_source_modules(preflight)
+    return preflight
+
+
+def _source_binding(preflight: Mapping[str, Any]) -> dict[str, Any]:
+    builders_module, protocol_module = _source_modules()
+    protocol_path = preflight.get("protocol_path")
+    adapter_path = preflight.get("adapter_path")
+    operator_path = preflight.get("operator_path")
+    _require(
+        isinstance(protocol_path, Path)
+        and isinstance(adapter_path, Path)
+        and isinstance(operator_path, Path)
+        and Path(protocol_module.__file__).resolve(strict=True) == protocol_path
+        and Path(builders_module.__file__).resolve(strict=True) == adapter_path,
+        "imported v8.1 source is outside the exact checkout",
+    )
+    return {
+        "git_head": preflight["git_head"],
+        "protocol_source_sha256": preflight["protocol_source_sha256"],
+        "adapter_source_sha256": preflight["adapter_source_sha256"],
+        "replay_operator_source_sha256": preflight["replay_operator_source_sha256"],
         "exact_child_bootstrap_sha256": hashlib.sha256(
-            builders._V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP.encode("utf-8")
+            builders_module._V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP.encode("utf-8")
         ).hexdigest(),
+        "clean_tracked_and_untracked": True,
+        "ordinary_untracked_file_count": 0,
+        "ignored_untracked_file_count": 0,
         "uncommitted_correction_present": False,
         "external_runtime": _runtime_binding(),
     }
+
+
+def _qualification_lineage(source_binding: Mapping[str, Any]) -> dict[str, Any]:
+    _, protocol_module = _source_modules()
+    head = source_binding.get("git_head")
     _require(
-        Path(protocol.__file__).resolve() == protocol_path
-        and Path(builders.__file__).resolve() == adapter_path,
-        "imported v8.1 source is outside the exact checkout",
+        isinstance(head, str)
+        and len(head) == 40
+        and all(character in "0123456789abcdef" for character in head),
+        "replay source HEAD is invalid",
     )
-    return bindings
+    root = QUALIFICATION_BASE / f"{QUALIFICATION_ROOT_PREFIX}{head}"
+    evidence = root / "resource-lifecycle-qualification.json"
+    completion = Path(f"{root}-integrity-completion.json")
+    lineage = protocol_module.validate_resource_lifecycle_qualification_lineage(
+        evidence_path=evidence,
+        completion_path=completion,
+        verify_content_inventory=True,
+        require_admission=True,
+    )
+    integrity = lineage.get("resource_lifecycle_qualification_integrity")
+    _require(
+        isinstance(integrity, Mapping)
+        and integrity.get("source_head") == head
+        and integrity.get("terminal_outcome") == "qualified"
+        and integrity.get("admission_eligible") is True
+        and integrity.get("generator_profile") == "same-as-analyzer"
+        and integrity.get("physical_gpu_index") == 1
+        and integrity.get("analyzer_source_sha256")
+        == protocol_module.RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
+        "replay qualification does not admit this exact H1 source",
+    )
+    return lineage
 
 
 def _arguments(root: Path, *, episode_id: int) -> list[str]:
@@ -425,17 +709,20 @@ def _arguments(root: Path, *, episode_id: int) -> list[str]:
 
 
 def _command(root: Path, *, episode_id: int) -> list[str]:
+    builders_module, _ = _source_modules()
     script = UPSTREAM / "scripts/remote/build_deform360_automatic_episode_twin.py"
-    baseline = builders._V7_PHYSICAL_ISOLATED_RUNPY_COMMAND(
+    baseline = builders_module._V7_PHYSICAL_ISOLATED_RUNPY_COMMAND(
         PINNED_PYTHON,
         script,
         import_roots=(UPSTREAM / "src", DEFORM360),
         arguments=_arguments(root, episode_id=episode_id),
     )
-    frozen = builders.physical._ISOLATED_RUNPY_BOOTSTRAP
+    frozen = builders_module.physical._ISOLATED_RUNPY_BOOTSTRAP
     _require(baseline.count(frozen) == 1, "frozen child bootstrap changed")
     return [
-        builders._V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP if value == frozen else value
+        builders_module._V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP
+        if value == frozen
+        else value
         for value in baseline
     ]
 
@@ -521,21 +808,23 @@ def _validate_cross_authorization_rejection(
 
 
 def _validate_successful_replay(outputs: Mapping[str, Path]) -> dict[str, Any]:
-    summary = builders.physical._load_json(outputs["twin_summary.json"])
+    builders_module, _ = _source_modules()
+    summary = builders_module.physical._load_json(outputs["twin_summary.json"])
     boundary = summary.get("information_boundary")
     metrics = summary.get("state_metrics")
     _require(
         summary.get("schema_version") == 1
         and summary.get("artifact_kind") == "Deform360AutomaticEpisodeTwin"
-        and summary.get("protocol_id") == builders.V8_EXTERNAL_ADMISSION_PROTOCOL_ID
+        and summary.get("protocol_id")
+        == builders_module.V8_EXTERNAL_ADMISSION_PROTOCOL_ID
         and summary.get("protocol_config_sha256")
-        == builders.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
+        == builders_module.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
         and summary.get("object_id") == OBJECT_ID
         and int(summary.get("episode_id", -1)) == EPISODE_ID
         and summary.get("phase") == "calibration"
         and summary.get("passed") is True
         and summary.get("result_sha256")
-        == builders.physical._upstream_result_sha256(summary),
+        == builders_module.physical._upstream_result_sha256(summary),
         "successful replay summary identity changed",
     )
     _require(
@@ -555,11 +844,15 @@ def _validate_successful_replay(outputs: Mapping[str, Path]) -> dict[str, Any]:
         "successful replay diagnostics are incomplete",
     )
     expected_outputs = {
-        "episode_graph": builders.physical.sha256_file(outputs["episode_graph.npz"]),
-        "simulator_final_data": builders.physical.sha256_file(
+        "episode_graph": builders_module.physical.sha256_file(
+            outputs["episode_graph.npz"]
+        ),
+        "simulator_final_data": builders_module.physical.sha256_file(
             outputs["simulator_final_data.pkl"]
         ),
-        "state_artifact": builders.physical.sha256_file(outputs["state_artifact.npz"]),
+        "state_artifact": builders_module.physical.sha256_file(
+            outputs["state_artifact.npz"]
+        ),
     }
     _require(
         summary.get("input_sha256", {}).get("episode_final_data") == SOURCE_INPUT_SHA256
@@ -580,16 +873,177 @@ def _seal_tree(root: Path, *, seal_root: bool) -> None:
         os.chmod(root, 0o500, follow_symlinks=False)
 
 
+def _rename_noreplace(source: Path, destination: Path) -> None:
+    libc = ctypes.CDLL(None, use_errno=True)
+    renameat2 = getattr(libc, "renameat2", None)
+    _require(renameat2 is not None, "renameat2 is unavailable")
+    renameat2.argtypes = [
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    ]
+    renameat2.restype = ctypes.c_int
+    result = renameat2(
+        -100,
+        os.fsencode(source),
+        -100,
+        os.fsencode(destination),
+        1,
+    )
+    if result != 0:
+        error_number = ctypes.get_errno()
+        raise OSError(
+            error_number,
+            os.strerror(error_number),
+            os.fspath(destination),
+        )
+
+
+def _fsync_directory(path: Path) -> None:
+    descriptor = os.open(
+        path,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_DIRECTORY", 0),
+    )
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _streaming_file_record(path: Path) -> dict[str, Any]:
+    before = os.lstat(path)
+    _require(
+        stat.S_ISREG(before.st_mode)
+        and not stat.S_ISLNK(before.st_mode)
+        and before.st_nlink == 1,
+        f"replay inventory file is invalid: {path}",
+    )
+    descriptor = os.open(
+        path,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        opened = os.fstat(descriptor)
+        _require(
+            (before.st_dev, before.st_ino, before.st_size)
+            == (opened.st_dev, opened.st_ino, opened.st_size),
+            f"replay inventory file changed while opening: {path}",
+        )
+        digest = hashlib.sha256()
+        while block := os.read(descriptor, 1024 * 1024):
+            digest.update(block)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    current = os.lstat(path)
+    identity = (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+    )
+    _require(
+        identity
+        == (
+            after.st_dev,
+            after.st_ino,
+            after.st_size,
+            after.st_mtime_ns,
+            after.st_ctime_ns,
+        )
+        == (
+            current.st_dev,
+            current.st_ino,
+            current.st_size,
+            current.st_mtime_ns,
+            current.st_ctime_ns,
+        ),
+        f"replay inventory file changed while hashing: {path}",
+    )
+    return {"size_bytes": before.st_size, "sha256": digest.hexdigest()}
+
+
+def _replay_content_inventory(root: Path) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    for current, directories, files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        directories[:] = sorted(directories)
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode) and not stat.S_ISLNK(observed.st_mode),
+                f"replay inventory directory is invalid: {child}",
+            )
+            rows.append(
+                {"path": child.relative_to(root).as_posix(), "type": "directory"}
+            )
+        for name in sorted(files):
+            child = current_path / name
+            rows.append(
+                {
+                    "path": child.relative_to(root).as_posix(),
+                    "type": "file",
+                    **_streaming_file_record(child),
+                }
+            )
+    rows.sort(key=lambda row: str(row["path"]))
+    return {
+        "entry_count": len(rows),
+        "inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest(),
+    }
+
+
+def _require_sealed_replay_tree(root: Path) -> None:
+    root_state = os.lstat(root)
+    _require(
+        stat.S_ISDIR(root_state.st_mode)
+        and not stat.S_ISLNK(root_state.st_mode)
+        and stat.S_IMODE(root_state.st_mode) == 0o500
+        and root.resolve() == root,
+        "published replay root is not sealed",
+    )
+    for current, directories, files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        for name in directories:
+            observed = os.lstat(current_path / name)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                "published replay directory is not sealed",
+            )
+        for name in files:
+            observed = os.lstat(current_path / name)
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400
+                and observed.st_nlink == 1,
+                "published replay file is not sealed",
+            )
+
+
 def main() -> int:
+    _require_isolated_launch()
+    preflight = _bootstrap_source_modules()
+    builders_module, protocol_module = _source_modules()
     _require(socket.gethostname() == "workstation2", "replay must run on workstation2")
     _require(
-        protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.1",
+        protocol_module.PROTOCOL_ID == "deform360-held-online-belief-v8.1",
         "protocol identity changed",
     )
-    _require(protocol.EXECUTION_ATTEMPT == 4, "execution attempt changed")
+    _require(protocol_module.EXECUTION_ATTEMPT == 5, "execution attempt changed")
     _require(not os.path.lexists(ROOT), "admission replay root already exists")
     stage = ROOT.parent / f".{ROOT.name}.stage-{os.getpid()}"
     _require(not os.path.lexists(stage), "admission replay stage already exists")
+    source_binding = _source_binding(preflight)
+    qualification_lineage = _qualification_lineage(source_binding)
     source_payload = _read_regular(
         SOURCE_INPUT, role="prediction-only input", mode=0o400
     )
@@ -598,7 +1052,6 @@ def main() -> int:
         and hashlib.sha256(source_payload).hexdigest() == SOURCE_INPUT_SHA256,
         "prediction-only input changed",
     )
-    source_binding = _source_binding()
     stage.mkdir(mode=0o700)
     cross = stage / "cross-auth"
     cross.mkdir(mode=0o700)
@@ -633,12 +1086,13 @@ def main() -> int:
             {
                 "schema_version": 1,
                 "artifact_kind": "Deform360HeldV81ExternalAdmissionMetadataOnlyReplay",
-                "protocol_id": protocol.PROTOCOL_ID,
-                "execution_attempt": protocol.EXECUTION_ATTEMPT,
+                "protocol_id": protocol_module.PROTOCOL_ID,
+                "execution_attempt": protocol_module.EXECUTION_ATTEMPT,
                 "case_name": CASE_NAME,
                 "role": "calibration",
                 "development_replay_only": True,
                 "formal_outcome_evidence": False,
+                "resource_lifecycle_qualification": qualification_lineage,
                 "source_evidence": {
                     "archived_attempt": 2,
                     "prediction_only_input": {
@@ -650,8 +1104,10 @@ def main() -> int:
                     "source_used_for_numerical_replay": "prediction_only_input_only",
                 },
                 "admission": {
-                    "protocol_id": builders.V8_EXTERNAL_ADMISSION_PROTOCOL_ID,
-                    "contract_sha256": builders.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256,
+                    "protocol_id": builders_module.V8_EXTERNAL_ADMISSION_PROTOCOL_ID,
+                    "contract_sha256": (
+                        builders_module.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
+                    ),
                     "exact_case_only": True,
                     "target_access": False,
                 },
@@ -722,9 +1178,11 @@ def main() -> int:
             {
                 "schema_version": 1,
                 "artifact_kind": "Deform360HeldV81ExternalAdmissionReplayCodeBinding",
-                "protocol_id": protocol.PROTOCOL_ID,
-                "execution_attempt": protocol.EXECUTION_ATTEMPT,
-                "admission_contract_sha256": builders.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256,
+                "protocol_id": protocol_module.PROTOCOL_ID,
+                "execution_attempt": protocol_module.EXECUTION_ATTEMPT,
+                "admission_contract_sha256": (
+                    builders_module.V8_EXTERNAL_ADMISSION_CONTRACT_SHA256
+                ),
                 "formal_outcome_evidence": False,
                 "target_query_score_or_outcome_accessed": False,
                 "local_worktree_at_replay": source_binding,
@@ -742,9 +1200,17 @@ def main() -> int:
             reported_path=ROOT / CODE_BINDING_NAME,
         )
         _require_exact_replay_tree(stage, reports_written=True)
+        expected_inventory = _replay_content_inventory(stage)
         _seal_tree(stage, seal_root=False)
-        os.rename(stage, ROOT)
+        _rename_noreplace(stage, ROOT)
         os.chmod(ROOT, 0o500, follow_symlinks=False)
+        _require_exact_replay_tree(ROOT, reports_written=True)
+        _require_sealed_replay_tree(ROOT)
+        _require(
+            _replay_content_inventory(ROOT) == expected_inventory,
+            "published replay content inventory changed",
+        )
+        _fsync_directory(ROOT.parent)
         result = {
             "root": str(ROOT),
             "report_file_sha256": report_record["sha256"],

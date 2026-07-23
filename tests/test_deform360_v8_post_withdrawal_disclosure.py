@@ -85,12 +85,81 @@ def test_disclosure_is_conservative_and_bars_all_v7_execution_reuse() -> None:
         for name, (path, size, sha256) in module._EXPECTED_FILES.items()
     }
     archive_integrity = dict(module._ATTEMPT3_ARCHIVE_INTEGRITY)
-    report = module.expected_unsigned_report(bindings, archive_integrity)
+    qualification_files = {
+        "resource_lifecycle_qualification_attempt": {
+            "path": "/qualification/qualification-attempt.json",
+            "sha256": "0" * 64,
+            "size_bytes": 1,
+            "mode_octal": "0400",
+            "artifact_sha256": "1" * 64,
+        },
+        "resource_lifecycle_qualification_evidence": {
+            "path": "/qualification/resource-lifecycle-qualification.json",
+            "sha256": "a" * 64,
+            "size_bytes": 1,
+            "mode_octal": "0400",
+            "artifact_sha256": "2" * 64,
+        },
+        "resource_lifecycle_qualification_repeat_manifest": {
+            "path": "/qualification/equivalence/repeat-manifest.json",
+            "sha256": "3" * 64,
+            "size_bytes": 1,
+            "mode_octal": "0400",
+            "artifact_sha256": "4" * 64,
+        },
+        "resource_lifecycle_qualification_equivalence_result": {
+            "path": "/qualification/equivalence/analysis-result.json",
+            "sha256": "5" * 64,
+            "size_bytes": 1,
+            "mode_octal": "0400",
+            "artifact_sha256": "6" * 64,
+        },
+        "resource_lifecycle_qualification_integrity_completion": {
+            "path": "/qualification-integrity-completion.json",
+            "sha256": "b" * 64,
+            "size_bytes": 2,
+            "mode_octal": "0400",
+            "artifact_sha256": "7" * 64,
+        },
+    }
+    qualification_integrity = {
+        "root": "/qualification",
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+        "entry_count": 5,
+        "inventory_sha256": "c" * 64,
+        "source_head": "d" * 40,
+        "source_tree": "e" * 40,
+        "terminal_outcome": "qualified",
+        "admission_eligible": True,
+        "generator_profile": "same-as-analyzer",
+        "physical_gpu_index": 1,
+        "equivalence_acceptance_basis": "secondary-distributional-envelope",
+        "analyzer_source_sha256": module._QUALIFICATION_ANALYZER_SHA256,
+    }
+    report = module.expected_unsigned_report(
+        bindings,
+        archive_integrity,
+        attempt4_launcher={"path": str(module._ATTEMPT4_LAUNCHER)},
+        attempt4_execution={"score_evidence_count": 0},
+        attempt4_information={"score_created_or_read": False},
+        qualification_files=qualification_files,
+        qualification_integrity=qualification_integrity,
+    )
 
     assert report["protocol_id"] == "deform360-held-online-belief-v8.1"
     assert set(report["disclosed_v7_files"]) == module._V7_FILE_NAMES
     assert set(report["disclosed_v8_attempt3_files"]) == (module._ATTEMPT3_FILE_NAMES)
+    assert set(report["disclosed_v8_attempt4_files"]) == (module._ATTEMPT4_FILE_NAMES)
     assert report["v8_attempt3_archive_integrity"] == archive_integrity
+    assert report["v8_attempt4_archive_integrity"] == module._ATTEMPT4_ARCHIVE_INTEGRITY
+    assert report["v8_attempt4_execution_boundary"]["calibration_result"] == (
+        "NO_CALIBRATION_RESULT"
+    )
+    assert report["resource_lifecycle_qualification_files"] == qualification_files
+    assert report["resource_lifecycle_qualification_integrity"] == (
+        qualification_integrity
+    )
     assert report["v8_attempt3_revision_basis"] == {
         "official_x0_geometry_used_to_diagnose_exclusion_liveness": True,
         "future_target_coordinates_masks_or_scores_used_for_revision": False,
@@ -121,7 +190,7 @@ def test_disclosure_is_conservative_and_bars_all_v7_execution_reuse() -> None:
     reuse = report["v8_1_reuse_boundary"]
     assert reuse["v7_withdrawal_report_used_only_as_immutable_lineage"] is True
     assert (
-        reuse["all_v8_1_attempt4_predictions_targets_queries_and_scores_fresh"] is True
+        reuse["all_v8_1_attempt5_predictions_targets_queries_and_scores_fresh"] is True
     )
     assert reuse["full_15_case_fresh_rerun_required"] is True
     assert all(
@@ -161,6 +230,15 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         "v8_attempt3_withdrawal_pointer": _sealed(root / "pointer.json", b"q\n"),
         "v8_attempt3_withdrawal_integrity_completion": _sealed(
             root / "completion.json", b"c\n"
+        ),
+        "v8_attempt4_withdrawal_report": _sealed(
+            root / "attempt4-report.json", b"r4\n"
+        ),
+        "v8_attempt4_withdrawal_pointer": _sealed(
+            root / "attempt4-pointer.json", b"p4\n"
+        ),
+        "v8_attempt4_withdrawal_integrity_completion": _sealed(
+            root / "attempt4-completion.json", b"c4\n"
         ),
     }
     attempt3_archive.chmod(0o500)
@@ -219,23 +297,134 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
             }
         ),
     )
+    monkeypatch.setattr(
+        module,
+        "_ATTEMPT4_FILE_NAMES",
+        frozenset(
+            {
+                "v8_attempt4_withdrawal_report",
+                "v8_attempt4_withdrawal_pointer",
+                "v8_attempt4_withdrawal_integrity_completion",
+            }
+        ),
+    )
     monkeypatch.setattr(module, "_ATTEMPT3_ARCHIVE", attempt3_archive)
     monkeypatch.setattr(module, "_ATTEMPT3_ARCHIVE_INTEGRITY", archive_integrity)
     monkeypatch.setattr(module, "_ATTEMPT3_DEPLOYED_CODE_BINDING", deployed_binding)
     monkeypatch.setattr(module, "_V8_ROOT", held_v8)
     monkeypatch.setattr(module, "_OUTPUT", output)
+    attempt4_launcher = {"path": "/attempt4-launcher"}
+    attempt4_execution = {"score_evidence_count": 0}
+    attempt4_information = {"score_created_or_read": False}
+    monkeypatch.setattr(
+        module,
+        "_bind_attempt4_lineage",
+        lambda _bindings: (
+            attempt4_launcher,
+            attempt4_execution,
+            attempt4_information,
+        ),
+    )
+    qualification_evidence = Path(
+        _sealed(root / "qualification/resource-lifecycle-qualification.json", b"qe\n")[
+            0
+        ]
+    )
+    qualification_completion = Path(
+        _sealed(root / "qualification-integrity-completion.json", b"qc\n")[0]
+    )
+    qualification_files = {
+        "resource_lifecycle_qualification_attempt": {
+            "path": str(qualification_evidence.parent / "qualification-attempt.json"),
+            "sha256": "0" * 64,
+            "size_bytes": 3,
+            "mode_octal": "0400",
+            "artifact_sha256": "1" * 64,
+        },
+        "resource_lifecycle_qualification_evidence": {
+            "path": str(qualification_evidence),
+            "sha256": hashlib.sha256(b"qe\n").hexdigest(),
+            "size_bytes": 3,
+            "mode_octal": "0400",
+            "artifact_sha256": "2" * 64,
+        },
+        "resource_lifecycle_qualification_repeat_manifest": {
+            "path": str(
+                qualification_evidence.parent / "equivalence/repeat-manifest.json"
+            ),
+            "sha256": "3" * 64,
+            "size_bytes": 3,
+            "mode_octal": "0400",
+            "artifact_sha256": "4" * 64,
+        },
+        "resource_lifecycle_qualification_equivalence_result": {
+            "path": str(
+                qualification_evidence.parent / "equivalence/analysis-result.json"
+            ),
+            "sha256": "5" * 64,
+            "size_bytes": 3,
+            "mode_octal": "0400",
+            "artifact_sha256": "6" * 64,
+        },
+        "resource_lifecycle_qualification_integrity_completion": {
+            "path": str(qualification_completion),
+            "sha256": hashlib.sha256(b"qc\n").hexdigest(),
+            "size_bytes": 3,
+            "mode_octal": "0400",
+            "artifact_sha256": "7" * 64,
+        },
+    }
+    qualification_integrity = {
+        "root": str(qualification_evidence.parent),
+        "root_mode_octal": "0500",
+        "fully_nonwritable": True,
+        "entry_count": 5,
+        "inventory_sha256": "f" * 64,
+        "source_head": "a" * 40,
+        "source_tree": "b" * 40,
+        "terminal_outcome": "qualified",
+        "admission_eligible": True,
+        "generator_profile": "same-as-analyzer",
+        "physical_gpu_index": 1,
+        "equivalence_acceptance_basis": "secondary-distributional-envelope",
+        "analyzer_source_sha256": module._QUALIFICATION_ANALYZER_SHA256,
+    }
+    monkeypatch.setattr(
+        module,
+        "_bind_resource_qualification",
+        lambda *_args, **_kwargs: (qualification_files, qualification_integrity),
+    )
+
+    def build():
+        return module.build_report(
+            qualification_evidence=qualification_evidence,
+            qualification_completion=qualification_completion,
+            qualification_evidence_sha256=qualification_files[
+                "resource_lifecycle_qualification_evidence"
+            ]["sha256"],
+            qualification_completion_sha256=qualification_files[
+                "resource_lifecycle_qualification_integrity_completion"
+            ]["sha256"],
+        )
 
     try:
-        signed, payload = module.build_report()
+        signed, payload = build()
         bindings = {
             **signed["disclosed_v7_files"],
             **signed["disclosed_v8_attempt3_files"],
+            **signed["disclosed_v8_attempt4_files"],
         }
         assert (
             signed["artifact_sha256"]
             == module._artifact(
                 module.expected_unsigned_report(
-                    bindings, signed["v8_attempt3_archive_integrity"]
+                    bindings,
+                    signed["v8_attempt3_archive_integrity"],
+                    attempt4_launcher=attempt4_launcher,
+                    attempt4_execution=attempt4_execution,
+                    attempt4_information=attempt4_information,
+                    qualification_files=qualification_files,
+                    qualification_integrity=qualification_integrity,
                 )
             )[0]["artifact_sha256"]
         )
@@ -244,7 +433,7 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         wrong_binding["git_tree_manifest_sha256"] = "0" * 64
         monkeypatch.setattr(module, "_ATTEMPT3_DEPLOYED_CODE_BINDING", wrong_binding)
         with pytest.raises(RuntimeError, match="repository binding changed"):
-            module.build_report()
+            build()
         monkeypatch.setattr(module, "_ATTEMPT3_DEPLOYED_CODE_BINDING", deployed_binding)
 
         tracked = deployed_code / "tracked.py"
@@ -252,7 +441,7 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         tracked.write_text("VALUE = 2\n", encoding="utf-8")
         tracked.chmod(0o400)
         with pytest.raises(RuntimeError, match="worktree content changed"):
-            module.build_report()
+            build()
         tracked.chmod(0o600)
         tracked.write_text("VALUE = 1\n", encoding="utf-8")
         tracked.chmod(0o400)
@@ -263,7 +452,7 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         ignored.chmod(0o400)
         deployed_code.chmod(0o500)
         with pytest.raises(RuntimeError, match="untracked or ignored"):
-            module.build_report()
+            build()
         deployed_code.chmod(0o700)
         ignored.unlink()
         deployed_code.chmod(0o500)
@@ -274,7 +463,7 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         unexpected.chmod(0o400)
         attempt3_archive.chmod(0o500)
         with pytest.raises(RuntimeError, match="archive inventory changed"):
-            module.build_report()
+            build()
         attempt3_archive.chmod(0o700)
         unexpected.unlink()
         attempt3_archive.chmod(0o500)
@@ -283,7 +472,7 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         evidence_file.unlink()
         evidence.chmod(0o500)
         with pytest.raises(RuntimeError, match="archive inventory changed"):
-            module.build_report()
+            build()
         evidence.chmod(0o700)
         evidence_file.write_bytes(evidence_payload)
         evidence_file.chmod(0o400)
@@ -293,7 +482,7 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         evidence_file.write_bytes(b"changed\n")
         evidence_file.chmod(0o400)
         with pytest.raises(RuntimeError, match="archive inventory changed"):
-            module.build_report()
+            build()
         evidence_file.chmod(0o600)
         evidence_file.write_bytes(evidence_payload)
         evidence_file.chmod(0o400)
@@ -302,6 +491,11 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
         assert stat.S_IMODE(output.stat().st_mode) == 0o400
         assert output.read_bytes() == payload
         module._write_once(output, payload)
+        alias = root / "disclosure-alias.json"
+        os.link(output, alias)
+        with pytest.raises(RuntimeError, match="sealed regular file"):
+            module._write_once(output, payload)
+        alias.unlink()
         output.chmod(0o600)
         output.write_bytes(payload + b"tamper")
         output.chmod(0o400)
@@ -323,12 +517,12 @@ def test_operator_hashes_only_exact_sealed_files_and_writes_once(
 def test_disclosure_source_cannot_deserialize_protected_payloads() -> None:
     source = OPERATOR.read_text(encoding="utf-8")
     for forbidden in (
-        "json.loads(",
         "np.load(",
-        "numpy",
+        "numpy.load",
+        "pickle.load",
+        "torch.load",
         "h5py",
         "cv2",
-        "read_text(",
-        "read_bytes(",
+        "PlyData.read",
     ):
         assert forbidden not in source

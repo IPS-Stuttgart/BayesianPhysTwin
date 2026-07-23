@@ -188,11 +188,15 @@ def test_canonical_run_parameters_reject_every_weakening(
         "cuda_device": 1,
         "seed": 0,
         "ab_iterations": 250,
+        "ab_repeat_count": 5,
         "soak_fit_count": 243,
         "soak_iterations": 1,
         "first_fit_fd_growth_limit": 32,
         "steady_fd_growth_limit": 4,
         "steady_task_growth_limit": 4,
+        "fit_timeout_seconds": 3_600,
+        "analyzer_timeout_seconds": 86_400,
+        "soak_timeout_seconds": 86_400,
     }
     arguments = argparse.Namespace(**canonical)
 
@@ -204,11 +208,15 @@ def test_canonical_run_parameters_reject_every_weakening(
         "cuda_device": 0,
         "seed": 1,
         "ab_iterations": 249,
+        "ab_repeat_count": 4,
         "soak_fit_count": 242,
         "soak_iterations": 2,
         "first_fit_fd_growth_limit": 33,
         "steady_fd_growth_limit": 5,
         "steady_task_growth_limit": 5,
+        "fit_timeout_seconds": 3_599,
+        "analyzer_timeout_seconds": 86_399,
+        "soak_timeout_seconds": 86_399,
     }
     for name, weak_value in weakenings.items():
         weak = argparse.Namespace(**{**canonical, name: weak_value})
@@ -354,6 +362,195 @@ def test_git_binding_rejects_ordinary_and_ignored_untracked_files(
     (repository / "cache.ignored").write_text("ignored\n", encoding="utf-8")
     with pytest.raises(ValueError, match="ignored untracked files"):
         qualification._git_binding(repository)
+
+
+def test_git_binding_rejects_replacement_refs_before_head_resolution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "code-repository"
+    repository.mkdir()
+
+    def git(*arguments: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", repository, *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "qualification@example.invalid")
+    git("config", "user.name", "Qualification Test")
+    (repository / "tracked.txt").write_text("tracked\n", encoding="utf-8")
+    git("add", "tracked.txt")
+    git("commit", "-q", "-m", "initial")
+    replacement = git("commit-tree", "HEAD^{tree}", "-m", "replacement")
+    git("replace", "HEAD", replacement)
+
+    real_run = subprocess.run
+    calls: list[tuple[str, ...]] = []
+
+    def record_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        command = args[0]
+        assert isinstance(command, list)
+        assert command[:7] == [
+            "/usr/bin/git",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-C",
+            repository,
+        ]
+        calls.append(tuple(command[7:]))
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        assert environment["GIT_CONFIG_GLOBAL"] == "/dev/null"
+        assert environment["GIT_NO_REPLACE_OBJECTS"] == "1"
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(qualification.subprocess, "run", record_run)
+
+    with pytest.raises(ValueError, match="replacement refs"):
+        qualification._git_binding(repository)
+
+    assert calls == [
+        ("for-each-ref", "--format=%(refname)", "refs/replace"),
+    ]
+    assert ("rev-parse", "HEAD") not in calls
+    assert ("rev-parse", "HEAD^{tree}") not in calls
+
+
+def test_pinned_git_binding_rejects_grafts_before_head_resolution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "pinned-deform360-repository"
+    repository.mkdir()
+
+    def git(*arguments: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", repository, *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "qualification@example.invalid")
+    git("config", "user.name", "Qualification Test")
+    (repository / "tracked.txt").write_text("tracked\n", encoding="utf-8")
+    git("add", "tracked.txt")
+    git("commit", "-q", "-m", "initial")
+    expected_head = git("rev-parse", "HEAD")
+    (repository / ".git/info/grafts").write_text(
+        f"{expected_head} {'0' * 40}\n",
+        encoding="ascii",
+    )
+
+    real_run = subprocess.run
+    calls: list[tuple[str, ...]] = []
+
+    def record_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        command = args[0]
+        assert isinstance(command, list)
+        assert command[:7] == [
+            "/usr/bin/git",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-C",
+            repository,
+        ]
+        calls.append(tuple(command[7:]))
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        assert environment["GIT_CONFIG_GLOBAL"] == "/dev/null"
+        assert environment["GIT_NO_REPLACE_OBJECTS"] == "1"
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(qualification.subprocess, "run", record_run)
+
+    with pytest.raises(ValueError, match="grafts file"):
+        qualification._git_binding(repository, expected_head=expected_head)
+
+    assert calls == [
+        ("for-each-ref", "--format=%(refname)", "refs/replace"),
+        ("rev-parse", "--absolute-git-dir"),
+    ]
+    assert ("rev-parse", "HEAD") not in calls
+    assert ("rev-parse", "HEAD^{tree}") not in calls
+
+
+@pytest.mark.parametrize(
+    ("index_flag", "expected_tag"),
+    (
+        ("--assume-unchanged", "h"),
+        ("--skip-worktree", "S"),
+    ),
+)
+def test_git_binding_rejects_hidden_tracked_drift_before_identity_resolution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    index_flag: str,
+    expected_tag: str,
+) -> None:
+    repository = tmp_path / "hidden-drift-repository"
+    repository.mkdir()
+
+    def git(*arguments: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", repository, *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "qualification@example.invalid")
+    git("config", "user.name", "Qualification Test")
+    tracked = repository / "tracked.txt"
+    tracked.write_text("tracked\n", encoding="utf-8")
+    git("add", "tracked.txt")
+    git("commit", "-q", "-m", "initial")
+    git("update-index", index_flag, "tracked.txt")
+    tracked.write_text("hidden drift\n", encoding="utf-8")
+    assert git("status", "--porcelain=v1", "--untracked-files=all") == ""
+    assert git("ls-files", "-v", "tracked.txt").startswith(f"{expected_tag} ")
+
+    real_run = subprocess.run
+    calls: list[tuple[str, ...]] = []
+
+    def record_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        command = args[0]
+        assert isinstance(command, list)
+        assert command[:7] == [
+            "/usr/bin/git",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-C",
+            repository,
+        ]
+        calls.append(tuple(command[7:]))
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        assert environment["GIT_CONFIG_GLOBAL"] == "/dev/null"
+        assert environment["GIT_NO_REPLACE_OBJECTS"] == "1"
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(qualification.subprocess, "run", record_run)
+
+    with pytest.raises(ValueError, match="non-ordinary tracked index entries"):
+        qualification._git_binding(repository)
+
+    assert calls[-1] == ("ls-files", "-v", "-z")
+    assert ("rev-parse", "HEAD") not in calls
+    assert ("rev-parse", "HEAD^{tree}") not in calls
 
 
 def test_structured_comparison_requires_exact_finite_fields() -> None:
@@ -649,6 +846,8 @@ def test_child_timeout_is_recorded_without_losing_log(tmp_path: Path) -> None:
     assert invocation["return_code"] is None
     assert invocation["timed_out"] is True
     assert invocation["timeout_error"]["type"] == "TimeoutExpired"
+    assert invocation["timeout_seconds"] == 0.01
+    assert invocation["environment"] == {"PATH": "/usr/bin:/bin"}
     assert invocation["log"]["size_bytes"] == 0
 
 
@@ -658,6 +857,7 @@ def test_child_environment_is_normalized_and_does_not_inherit_pythonpath(
     environment = qualification._child_environment(1, tmp_path)
 
     assert environment["CUDA_VISIBLE_DEVICES"] == "1"
+    assert environment["CUDA_MODULE_LOADING"] == "LAZY"
     assert environment["CUBLAS_WORKSPACE_CONFIG"] == ":4096:8"
     assert environment["PYTHONNOUSERSITE"] == "1"
     assert environment["PYTHONPYCACHEPREFIX"] == ("/nonexistent/bpt-held-v8-pycache")
@@ -673,6 +873,157 @@ def test_child_environment_is_normalized_and_does_not_inherit_pythonpath(
         "pycache_prefix=/nonexistent/bpt-held-v8-pycache",
         "/code/qualify.py",
     ]
+
+
+def test_owned_cleanup_records_bounded_no_follow_inventory(tmp_path: Path) -> None:
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    tree = parent / "outputs"
+    (tree / "nested").mkdir(parents=True)
+    (tree / "nested/artifact.bin").write_bytes(b"artifact")
+
+    cleanup = qualification._remove_owned_tree(
+        tree, parent=parent, label="generated outputs"
+    )
+
+    assert cleanup["bounded_parent"] == str(parent)
+    assert cleanup["pre_cleanup_inventory"]["entry_count"] == 2
+    assert cleanup["pre_cleanup_inventory"]["regular_file_bytes"] == len(b"artifact")
+    assert cleanup["post_cleanup_absent"] is True
+    assert not tree.exists()
+
+    generated = parent / "splat.ply"
+    generated.write_bytes(b"ply")
+    file_cleanup = qualification._remove_owned_file(
+        generated, parent=parent, label="generated Ply"
+    )
+    assert file_cleanup["pre_cleanup_link_count"] == 1
+    assert (
+        file_cleanup["pre_cleanup_binding"]["sha256"]
+        == hashlib.sha256(b"ply").hexdigest()
+    )
+    assert not generated.exists()
+
+
+def test_owned_cleanup_rejects_escape_symlink_and_hardlink(tmp_path: Path) -> None:
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "artifact.bin").write_bytes(b"outside")
+    with pytest.raises(ValueError, match="escaped its bounded parent"):
+        qualification._remove_owned_tree(
+            outside, parent=parent, label="escaped outputs"
+        )
+
+    linked_tree = parent / "linked-tree"
+    try:
+        linked_tree.symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("filesystem does not support symlinks")
+    with pytest.raises(ValueError, match="not a real directory"):
+        qualification._remove_owned_tree(
+            linked_tree, parent=parent, label="linked outputs"
+        )
+    linked_tree.unlink()
+
+    target = parent / "target.bin"
+    alias = parent / "alias.bin"
+    target.write_bytes(b"shared")
+    try:
+        alias.hardlink_to(target)
+    except OSError:
+        pytest.skip("filesystem does not support hardlinks")
+    with pytest.raises(ValueError, match="linked or not a regular file"):
+        qualification._remove_owned_file(
+            alias, parent=parent, label="hardlinked output"
+        )
+    assert target.read_bytes() == b"shared"
+    assert alias.read_bytes() == b"shared"
+
+
+def test_owned_file_cleanup_resists_ancestor_substitution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    anchor = tmp_path / "anchor"
+    parent = anchor / "parent"
+    parent.mkdir(parents=True)
+    generated = parent / "generated.ply"
+    generated.write_bytes(b"owned")
+    moved_anchor = tmp_path / "moved-anchor"
+    replacement = anchor / "parent/generated.ply"
+    real_unlink = qualification.os.unlink
+    substituted = False
+
+    def substitute_ancestor_before_unlink(
+        path: str | bytes,
+        *args: object,
+        dir_fd: int | None = None,
+        **kwargs: object,
+    ) -> None:
+        nonlocal substituted
+        if not substituted and path == "generated.ply" and dir_fd is not None:
+            substituted = True
+            anchor.rename(moved_anchor)
+            replacement.parent.mkdir(parents=True)
+            replacement.write_bytes(b"replacement")
+        real_unlink(path, *args, dir_fd=dir_fd, **kwargs)
+
+    monkeypatch.setattr(qualification.os, "unlink", substitute_ancestor_before_unlink)
+
+    with pytest.raises(ValueError, match="bounded parent changed during cleanup"):
+        qualification._remove_owned_file(
+            generated,
+            parent=parent,
+            label="generated Ply",
+        )
+
+    assert substituted is True
+    assert replacement.read_bytes() == b"replacement"
+    assert not (moved_anchor / "parent/generated.ply").exists()
+
+
+def test_owned_tree_cleanup_resists_ancestor_substitution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    anchor = tmp_path / "anchor"
+    parent = anchor / "parent"
+    original = parent / "outputs/nested/artifact.bin"
+    original.parent.mkdir(parents=True)
+    original.write_bytes(b"owned")
+    moved_anchor = tmp_path / "moved-anchor"
+    replacement = anchor / "parent/outputs/nested/artifact.bin"
+    real_unlink = qualification.os.unlink
+    substituted = False
+
+    def substitute_ancestor_before_unlink(
+        path: str | bytes,
+        *args: object,
+        dir_fd: int | None = None,
+        **kwargs: object,
+    ) -> None:
+        nonlocal substituted
+        if not substituted and path == "artifact.bin" and dir_fd is not None:
+            substituted = True
+            anchor.rename(moved_anchor)
+            replacement.parent.mkdir(parents=True)
+            replacement.write_bytes(b"replacement")
+        real_unlink(path, *args, dir_fd=dir_fd, **kwargs)
+
+    monkeypatch.setattr(qualification.os, "unlink", substitute_ancestor_before_unlink)
+
+    with pytest.raises(ValueError, match="bounded parent changed during cleanup"):
+        qualification._remove_owned_tree(
+            parent / "outputs",
+            parent=parent,
+            label="generated outputs",
+        )
+
+    assert substituted is True
+    assert replacement.read_bytes() == b"replacement"
+    assert not (moved_anchor / "parent/outputs").exists()
 
 
 def test_gsplat_smoke_loads_exact_adapter_and_validates_signed_evidence(
@@ -1001,10 +1352,12 @@ def test_soak_cleanup_failure_is_signed_and_cannot_pass(
 
     monkeypatch.setattr(qualification, "_process_boundary", process_boundary)
 
-    def fail_cleanup(_path: Path) -> None:
+    def fail_cleanup(_path: Path, *, parent: Path, label: str) -> None:
+        assert parent == dataset
+        assert "generated outputs" in label
         raise OSError("injected cleanup failure")
 
-    monkeypatch.setattr(qualification.shutil, "rmtree", fail_cleanup)
+    monkeypatch.setattr(qualification, "_remove_owned_tree", fail_cleanup)
     result_path = tmp_path / "soak-cleanup-failure.json"
     arguments = argparse.Namespace(
         code_root=code,
@@ -1029,3 +1382,403 @@ def test_soak_cleanup_failure_is_signed_and_cannot_pass(
     assert boundary_calls == 1
     assert (dataset / "outputs").is_dir()
     assert not tuple(output.iterdir())
+
+
+@pytest.mark.parametrize(
+    "analyzer_case",
+    (
+        "accepted",
+        "accepted-postcondition-failure",
+        "scientific-no-go",
+        "technical-exit",
+        "timeout",
+        "missing-result",
+    ),
+)
+def test_run_analyzer_failures_consume_root_and_only_no_go_is_signed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, analyzer_case: str
+) -> None:
+    code = SCRIPT.parents[2].resolve()
+    deform360 = tmp_path / "deform360"
+    dataset = tmp_path / "dataset"
+    deform360.mkdir()
+    dataset.mkdir()
+    (dataset / "transforms.json").write_text("{}\n", encoding="utf-8")
+    python = tmp_path / "runtime/bin/python"
+    python.parent.mkdir(parents=True)
+    python.write_bytes(b"synthetic-python")
+    base = tmp_path / "qualification-base"
+    base.mkdir()
+    head = "b" * 40
+    output = base / f"bpt-resource-lifecycle-qualification-{head}"
+    monkeypatch.setattr(qualification, "PINNED_PYTHON", python)
+    monkeypatch.setattr(qualification, "PINNED_DEFORM360", deform360)
+    monkeypatch.setattr(qualification, "DEFAULT_PUBLIC_DEV_DATASET", dataset)
+    monkeypatch.setattr(qualification, "QUALIFICATION_BASE", base)
+    monkeypatch.setattr(qualification.socket, "gethostname", lambda: "workstation2")
+    monkeypatch.setattr(
+        qualification,
+        "_current_python_process_binding",
+        lambda: {"pinned": True},
+    )
+    monkeypatch.setattr(
+        qualification,
+        "_python_runtime_binding",
+        lambda _python: {"runtime": "stable"},
+    )
+
+    def git_binding(
+        root: Path, *, expected_head: str | None = None
+    ) -> dict[str, object]:
+        observed_head = expected_head if expected_head is not None else head
+        return {
+            "path": str(root),
+            "head": observed_head,
+            "tree": "c" * 40,
+            "clean": True,
+            "ordinary_untracked_file_count": 0,
+            "ignored_untracked_file_count": 0,
+        }
+
+    monkeypatch.setattr(qualification, "_git_binding", git_binding)
+
+    def materialize(_source: Path, destination: Path) -> dict[str, object]:
+        destination.mkdir()
+        (destination / "transforms.json").write_text("{}\n", encoding="utf-8")
+        return {
+            "destination": str(destination),
+            "synthetic_content_identity": "same-public-input",
+            "referenced_source_materialized_content_equal": True,
+            "referenced_source_content": {"content": "same-public-input"},
+            "referenced_materialized_content": {"content": "same-public-input"},
+        }
+
+    monkeypatch.setattr(qualification, "_materialize_dataset", materialize)
+    monkeypatch.setattr(
+        qualification,
+        "_materialized_dataset_identity",
+        lambda _audit: {"content": "same-public-input"},
+    )
+    monkeypatch.setattr(
+        qualification,
+        "_materialized_inputs_stable",
+        lambda _audit: analyzer_case != "accepted-postcondition-failure",
+    )
+    monkeypatch.setattr(qualification, "_source_inputs_stable", lambda _audit: True)
+
+    calls: list[str] = []
+
+    def invoke(
+        command: list[str],
+        *,
+        environment: dict[str, str],
+        log_path: Path,
+        timeout_seconds: int,
+    ) -> dict[str, object]:
+        log_path.write_bytes(b"")
+        timed_out = False
+        timeout_error = None
+        if "_fit-child" in command:
+            calls.append("fit")
+            variant = command[command.index("--variant") + 1]
+            materialized = Path(command[command.index("--dataset") + 1])
+            export = Path(command[command.index("--output-dir") + 1])
+            result = Path(command[command.index("--result") + 1])
+            (materialized / "outputs").mkdir()
+            (materialized / "outputs/checkpoint.bin").write_bytes(b"checkpoint")
+            ply = export / "splat.ply"
+            ply.write_bytes(f"{variant}-ply".encode())
+            child = qualification._signed(
+                {
+                    "schema_version": 1,
+                    "artifact_kind": "Deform360ResourceLifecycleFitChildEvidence",
+                    "qualification_id": qualification.QUALIFICATION_ID,
+                    "variant": variant,
+                    "passed": True,
+                    "parameters": {"iterations": 250, "seed": 0},
+                    "runtime": {"synthetic": True},
+                    "gsplat_runtime_smoke": {
+                        "evidence": {
+                            "physical_gpu_index": 1,
+                            "logical_device": "cuda:0",
+                            "target_or_outcome_path_accessed": False,
+                        }
+                    },
+                    "dataset": str(materialized),
+                    "output": qualification._bound_file(ply),
+                    "resource_boundary": {"synthetic": True},
+                    "global_state": {"synthetic": True},
+                    "predicates": {"synthetic_pass": True},
+                    "formal_held_path_supplied": False,
+                }
+            )
+            qualification._write_new_json(result, child)
+            return_code = 0
+        elif "prepare-manifest" in command:
+            calls.append("prepare-manifest")
+            result = Path(command[command.index("--output") + 1])
+            manifest = qualification._signed(
+                {
+                    "schema_version": 1,
+                    "artifact_kind": qualification.ANALYSIS_MANIFEST_KIND,
+                    "analysis_id": qualification.ANALYSIS_ID,
+                    "expected_environment": {
+                        "generator_profile": qualification.GENERATOR_PROFILE,
+                        "physical_gpu_index": 1,
+                    },
+                }
+            )
+            qualification._write_new_json(result, manifest)
+            return_code = 0
+        elif "analyze" in command:
+            calls.append("analyze")
+            result = Path(command[command.index("--output") + 1])
+            manifest_path = Path(command[command.index("--manifest") + 1])
+            analyzer_accepts = analyzer_case in {
+                "accepted",
+                "accepted-postcondition-failure",
+            }
+            if analyzer_case in {
+                "accepted",
+                "accepted-postcondition-failure",
+                "scientific-no-go",
+                "technical-exit",
+            }:
+                manifest = qualification._load_signed_json(
+                    manifest_path, label="synthetic manifest"
+                )
+                analysis = qualification._signed(
+                    {
+                        "schema_version": 1,
+                        "artifact_kind": qualification.ANALYSIS_RESULT_KIND,
+                        "analysis_id": qualification.ANALYSIS_ID,
+                        "development_only": True,
+                        "formal_path_accessed": False,
+                        "generator_profile": qualification.GENERATOR_PROFILE,
+                        "physical_gpu_index": 1,
+                        "input_manifest": {
+                            **qualification._bound_file(manifest_path),
+                            "artifact_sha256": manifest["artifact_sha256"],
+                        },
+                        "decision": {
+                            "exact_matched_structured_array_equality_primary_passed": (
+                                False
+                            ),
+                            "exact_matched_file_bytes_equal": False,
+                            "secondary_distributional_equivalence_passed": (
+                                analyzer_accepts
+                            ),
+                            "accepted": analyzer_accepts,
+                            "acceptance_basis": (
+                                "secondary-distributional-envelope"
+                                if analyzer_accepts
+                                else "rejected"
+                            ),
+                        },
+                    }
+                )
+                qualification._write_new_json(result, analysis)
+            if analyzer_accepts:
+                return_code = 0
+            elif analyzer_case == "scientific-no-go":
+                return_code = 3
+            elif analyzer_case == "technical-exit":
+                return_code = 2
+            elif analyzer_case == "timeout":
+                return_code = None
+                timed_out = True
+                timeout_error = {
+                    "type": "TimeoutExpired",
+                    "message": "synthetic analyzer timeout",
+                    "timeout_seconds": timeout_seconds,
+                }
+            else:
+                return_code = 0
+        elif "_soak-child" in command:
+            calls.append("soak")
+            materialized = Path(command[command.index("--dataset") + 1])
+            export = Path(command[command.index("--output-dir") + 1])
+            result = Path(command[command.index("--result") + 1])
+            fits = []
+            for index in range(243):
+                fits.append(
+                    {
+                        "fit_index": index,
+                        "trainer_reinitialized": index % 81 == 0,
+                        "output_created": True,
+                        "dataset_outputs_created": True,
+                        "output_size_bytes": 1,
+                        "cleanup_completed": True,
+                        "cleanup": {
+                            "output_ply": {
+                                "bounded_parent": str(export),
+                                "pre_cleanup_binding": {
+                                    "path": str(export / f"splat-{index:04d}.ply"),
+                                    "size_bytes": 1,
+                                    "sha256": "0" * 64,
+                                    "mode_octal": "0644",
+                                },
+                                "pre_cleanup_link_count": 1,
+                                "removed": True,
+                                "post_cleanup_absent": True,
+                            },
+                            "dataset_outputs": {
+                                "bounded_parent": str(materialized),
+                                "pre_cleanup_inventory": {
+                                    "root": str(materialized / "outputs"),
+                                    "entry_count": 1,
+                                    "regular_file_bytes": 1,
+                                    "inventory_sha256": "1" * 64,
+                                },
+                                "removed": True,
+                                "post_cleanup_absent": True,
+                            },
+                        },
+                        "output_ply_absent_after_cleanup": True,
+                        "dataset_outputs_absent_after_cleanup": True,
+                        "resource_boundary_stage": "after_cleanup",
+                        "resource_boundary": {"synthetic": True},
+                        "globals_restored": True,
+                        "global_state": {"synthetic": True},
+                    }
+                )
+            soak = qualification._signed(
+                {
+                    "schema_version": 1,
+                    "artifact_kind": ("Deform360ResourceLifecycleSoakChildEvidence"),
+                    "qualification_id": qualification.QUALIFICATION_ID,
+                    "passed": True,
+                    "parameters": {
+                        "fit_count": 243,
+                        "iterations_per_fit": 1,
+                        "seed": 0,
+                        "trainer_reinitialization_interval": 81,
+                    },
+                    "runtime": {"seed": 0, "cuda_device_count": 1},
+                    "gsplat_runtime_smoke": {
+                        "evidence": {
+                            "physical_gpu_index": 1,
+                            "logical_device": "cuda:0",
+                            "target_or_outcome_path_accessed": False,
+                        }
+                    },
+                    "dataset": str(materialized),
+                    "initial_global_state": {"synthetic": True},
+                    "fits": fits,
+                    "evaluation": {
+                        "passed": True,
+                        "predicates": {"all_soak_gates": True},
+                    },
+                    "formal_held_path_supplied": False,
+                }
+            )
+            qualification._write_new_json(result, soak)
+            return_code = 0
+        else:  # pragma: no cover - documents the forbidden no-go branch
+            raise AssertionError(f"unexpected child invocation: {command}")
+        return {
+            "command": command,
+            "environment": environment,
+            "return_code": return_code,
+            "timed_out": timed_out,
+            "timeout_error": timeout_error,
+            "timeout_seconds": timeout_seconds,
+            "log": qualification._bound_file(log_path),
+        }
+
+    monkeypatch.setattr(qualification, "_invoke_child", invoke)
+    arguments = argparse.Namespace(
+        code_root=code,
+        python=python,
+        deform360_repo=deform360,
+        dataset=dataset,
+        output_dir=output,
+        phase="all",
+        cuda_device=1,
+        seed=0,
+        ab_iterations=250,
+        ab_repeat_count=5,
+        soak_fit_count=243,
+        soak_iterations=1,
+        first_fit_fd_growth_limit=32,
+        steady_fd_growth_limit=4,
+        steady_task_growth_limit=4,
+        fit_timeout_seconds=3_600,
+        analyzer_timeout_seconds=86_400,
+        soak_timeout_seconds=86_400,
+    )
+
+    if analyzer_case == "accepted":
+        assert qualification._run(arguments) == 0
+    elif analyzer_case == "accepted-postcondition-failure":
+        with pytest.raises(
+            ValueError,
+            match="qualification failed technically after canonical root creation",
+        ):
+            qualification._run(arguments)
+    elif analyzer_case == "scientific-no-go":
+        assert qualification._run(arguments) == 3
+    else:
+        with pytest.raises(ValueError, match="analyzer failed technically"):
+            qualification._run(arguments)
+    attempt = qualification._load_signed_json(
+        output / "qualification-attempt.json", label="qualification attempt"
+    )
+    expected_calls = [*(["fit"] * 10), "prepare-manifest", "analyze"]
+    if analyzer_case in {"accepted", "accepted-postcondition-failure"}:
+        expected_calls.append("soak")
+    assert calls == expected_calls
+    assert attempt["state"] == "canonical-root-consumed-at-creation"
+    assert (
+        attempt["root_consumption_policy"] == qualification._root_consumption_policy()
+    )
+    assert attempt["frozen_analyzer_source"]["sha256"] == (
+        qualification.FROZEN_ANALYZER_SOURCE_SHA256
+    )
+    evidence_path = output / "resource-lifecycle-qualification.json"
+    if analyzer_case == "accepted":
+        evidence = qualification._load_signed_json(
+            evidence_path, label="qualification accepted"
+        )
+        assert evidence["status"] == "qualified"
+        assert evidence["passed"] is True
+        assert evidence["admission"]["decision"] == "admitted"
+        assert evidence["ab"]["repeat_count_per_mode"] == 5
+        assert evidence["ab"]["equivalence"]["decision"]["accepted"] is True
+        assert len(evidence["soak"]["child_evidence"]["fits"]) == 243
+        assert evidence["soak"]["passed"] is True
+        assert not (output / "tmp").exists()
+    elif analyzer_case == "scientific-no-go":
+        evidence = qualification._load_signed_json(
+            evidence_path, label="qualification no-go"
+        )
+        assert evidence["schema_version"] == 2
+        assert evidence["status"] == "admission-inconclusive"
+        assert evidence["passed"] is False
+        assert evidence["admission"] == {
+            "decision": "inconclusive",
+            "terminal": True,
+            "analyzer_outcome": "scientific-no-go",
+            "analyzer_no_go_interpretation": (
+                qualification.ANALYZER_NO_GO_INTERPRETATION
+            ),
+            "wrapper_inequivalence_proven": False,
+            "retry_permitted": False,
+            "in_place_reuse_permitted": False,
+        }
+        assert evidence["root_consumption_policy"] == (
+            qualification._root_consumption_policy()
+        )
+        assert evidence["soak"] is None
+        assert not (output / "tmp").exists()
+    else:
+        assert not evidence_path.exists()
+    if analyzer_case not in {"accepted", "accepted-postcondition-failure"}:
+        assert not (output / "soak").exists()
+    assert all(
+        not (output / "ab" / mode / repeat / "dataset/outputs").exists()
+        for mode in ("original", "wrapped")
+        for repeat in [f"repeat-{index:03d}" for index in range(5)]
+    )
+    with pytest.raises(ValueError, match="output already exists"):
+        qualification._run(arguments)

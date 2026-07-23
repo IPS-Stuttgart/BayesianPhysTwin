@@ -45,6 +45,18 @@ _V8_ATTEMPT1_WITHDRAWAL_REPORT = (
     / "execution-withdrawal-preoutcome.json"
 )
 _V8_ATTEMPT2_ARCHIVE = _HELD_BASE / "held-v8-attempt-2-withdrawn-preoutcome"
+_V8_ATTEMPT2_REPLAY_SOURCE_INPUT = (
+    _V8_ATTEMPT2_ARCHIVE
+    / "calibration"
+    / "cases"
+    / "072-cotton-clohesline-ep0003"
+    / "physical"
+    / "prediction_only_input.pkl"
+)
+_V8_ATTEMPT2_REPLAY_SOURCE_INPUT_SHA256 = (
+    "2f783d15426759a0928fcb6cb8a98fa61b38d582a46ec006d296d53b439ae015"
+)
+_V8_ATTEMPT2_REPLAY_SOURCE_INPUT_SIZE_BYTES = 19_261_048
 _V8_ATTEMPT2_WITHDRAWAL_POINTER = (
     _HELD_BASE / "held-v8-attempt-2-withdrawal-pointer.json"
 )
@@ -120,12 +132,78 @@ _V8_ATTEMPT3_DISPOSITION = (
     "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_SEAL_OR_SCORE"
 )
 
-# Attempt 4 requires a fresh replay against its exact adapter and protocol
+_V8_ATTEMPT4_ARCHIVE = _HELD_BASE / "held-v8-attempt-4-withdrawn-postbarrier"
+_V8_ATTEMPT4_WITHDRAWAL_REPORT = (
+    _V8_ATTEMPT4_ARCHIVE / "execution-withdrawal-postbarrier-attempt4.json"
+)
+_V8_ATTEMPT4_WITHDRAWAL_POINTER = (
+    _HELD_BASE / "held-v8-attempt-4-withdrawal-pointer.json"
+)
+_V8_ATTEMPT4_INTEGRITY_COMPLETION = (
+    _HELD_BASE / "held-v8-attempt-4-withdrawal-integrity-completion.json"
+)
+_V8_ATTEMPT4_REPORT_FILE_SHA256 = (
+    "24c7c7f154c6985c5c5832222a0872d62798e282af3c0f7494e70b8dfc100b5a"
+)
+_V8_ATTEMPT4_REPORT_ARTIFACT_SHA256 = (
+    "3e2f7be514d0ab2776905f3bae7fe5e474b5fdc57a7c64e59de33adf97f79c5a"
+)
+_V8_ATTEMPT4_COMPLETION_FILE_SHA256 = (
+    "315c62fa0e4b621e07db053950e9d26ab1abcb6a2f71a9347ec8d1526d8ad984"
+)
+_V8_ATTEMPT4_COMPLETION_ARTIFACT_SHA256 = (
+    "62128be06dfb1e181c3d6cd849ccd34c5cd37e3769c6b917811676a05da37332"
+)
+_V8_ATTEMPT4_POINTER_FILE_SHA256 = (
+    "3de7c79bf4d4949100f6bd90b1bc6da306d4b57090b70ef7606accefc9901665"
+)
+_V8_ATTEMPT4_POINTER_ARTIFACT_SHA256 = (
+    "3bd025ec4ac6fd9a7b57f7ccacf4f44cee3b6aa0c763dc081f54474b129af4b2"
+)
+_V8_ATTEMPT4_ARCHIVE_INVENTORY_SHA256 = (
+    "1ab11d7a3e841530e0d8c994327b9eca26a20a896f73cfa3d76e5c6935cdca5c"
+)
+_V8_ATTEMPT4_ARCHIVE_ENTRY_COUNT = 1915
+_V8_ATTEMPT4_DEPLOYED_HEAD = "c88168cd88be37aa403929c5323da7a29eafa20a"
+_V8_ATTEMPT4_DEPLOYED_TREE_MANIFEST_SHA256 = (
+    "e1baaa61aca75f7e3a8d9f51d5fd47feca113a761071f86e3ec6c96d15243cc4"
+)
+_V8_ATTEMPT4_DEPLOYED_TREE_RECORD_COUNT = 954
+_V8_ATTEMPT4_STATUS = (
+    "withdrawn-postbarrier-during-third-target-reconstruction-before-barrier2-or-score"
+)
+_V8_ATTEMPT4_DISPOSITION = (
+    "WITHDRAWN_AFTER_TWO_TARGET_X0_QUERY_PAIRS_DURING_THIRD_TARGET_"
+    "RECONSTRUCTION_BEFORE_SECOND_BARRIER_OR_SCORE"
+)
+_V8_ATTEMPT4_LAUNCHER = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-orchestration/"
+    "calibration-outcome-c88168c-20260722T1847"
+)
+
+# H1 deliberately cannot know the immutable qualification/replay identities.
+# Execute both operators from the exact H1 commit, then change only this
+# preparer and its test in H2 to replace these fail-closed placeholders.
+_RESOURCE_LIFECYCLE_QUALIFICATION_ROOT: Path | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE: Path | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION: Path | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_FILE_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_ARTIFACT_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_FILE_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_ARTIFACT_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_FILE_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_ARTIFACT_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_FILE_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_ARTIFACT_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_FILE_SHA256: str | None = None
+_RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_ARTIFACT_SHA256: str | None = None
+
+# Attempt 5 requires a fresh replay against its exact adapter and protocol
 # sources.  These deliberately empty digest pins make preflight fail closed
 # until that replay has been executed and sealed at the new versioned root.
 _V8_ADMISSION_REPLAY_ROOT = Path(
     "/mnt/corsair/florianpfaff/"
-    "bpt-held-v8.1-attempt-4-admission-wrapper-scratch-20260722"
+    "bpt-held-v8.1-attempt-5-admission-wrapper-scratch-20260722"
 )
 _V8_ADMISSION_REPLAY_REPORT = (
     _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-report.json"
@@ -133,18 +211,10 @@ _V8_ADMISSION_REPLAY_REPORT = (
 _V8_ADMISSION_REPLAY_CODE_BINDING = (
     _V8_ADMISSION_REPLAY_ROOT / "metadata-only-replay-code-binding.json"
 )
-_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256: str | None = (
-    "bdb9d2d577e2eed87531c29f7bba83cfbe0a7fc42ee7f0b3d203e6af038152a7"
-)
-_V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256: str | None = (
-    "79824d3c7884fdb968fee4dd6573b12fc6ebbead59f5f5e8bb94181fa2788eb5"
-)
-_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256: str | None = (
-    "81d9a2ec3154082ffa2853a4ae5357bc4609e5a83f1358d19c2a4b89b33e6981"
-)
-_V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256: str | None = (
-    "badfc0ba1317c54878d0a172701c86cbf91a67294b04befcc1f31d5c7aa3c31a"
-)
+_V8_ADMISSION_REPLAY_REPORT_FILE_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256: str | None = None
+_V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256: str | None = None
 _V81_ADMISSION_REPLAY_REPORT_KIND = (
     "Deform360HeldV81ExternalAdmissionMetadataOnlyReplay"
 )
@@ -152,7 +222,7 @@ _V81_ADMISSION_REPLAY_CODE_BINDING_KIND = (
     "Deform360HeldV81ExternalAdmissionReplayCodeBinding"
 )
 _V81_PROTOCOL_ID = "deform360-held-online-belief-v8.1"
-_V81_EXECUTION_ATTEMPT = 4
+_V81_EXECUTION_ATTEMPT = 5
 _V81_CROSS_AUTHORIZATION_CASE_NAME = "072-cotton-clohesline-ep0004"
 _V81_CROSS_AUTHORIZATION_STDERR_MARKER = (
     "outside the exact v8 external calibration admission"
@@ -327,6 +397,21 @@ _EXPECTED_EXTERNAL_FILES: Mapping[str, tuple[Path, str | None, int | None]] = {
         _V8_ATTEMPT3_COMPLETION_FILE_SHA256,
         0o400,
     ),
+    "v8_attempt4_postbarrier_withdrawal_report": (
+        _V8_ATTEMPT4_WITHDRAWAL_REPORT,
+        _V8_ATTEMPT4_REPORT_FILE_SHA256,
+        0o400,
+    ),
+    "v8_attempt4_postbarrier_withdrawal_pointer": (
+        _V8_ATTEMPT4_WITHDRAWAL_POINTER,
+        _V8_ATTEMPT4_POINTER_FILE_SHA256,
+        0o400,
+    ),
+    "v8_attempt4_withdrawal_integrity_completion": (
+        _V8_ATTEMPT4_INTEGRITY_COMPLETION,
+        _V8_ATTEMPT4_COMPLETION_FILE_SHA256,
+        0o400,
+    ),
     "v8_external_admission_metadata_only_replay": (
         _V8_ADMISSION_REPLAY_REPORT,
         _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256,
@@ -402,6 +487,13 @@ _EXPECTED_EXTERNAL_ARTIFACT_SHA256: Mapping[str, str | None] = {
     "v8_attempt3_withdrawal_integrity_completion": (
         _V8_ATTEMPT3_COMPLETION_ARTIFACT_SHA256
     ),
+    "v8_attempt4_postbarrier_withdrawal_report": (_V8_ATTEMPT4_REPORT_ARTIFACT_SHA256),
+    "v8_attempt4_postbarrier_withdrawal_pointer": (
+        _V8_ATTEMPT4_POINTER_ARTIFACT_SHA256
+    ),
+    "v8_attempt4_withdrawal_integrity_completion": (
+        _V8_ATTEMPT4_COMPLETION_ARTIFACT_SHA256
+    ),
     "v8_external_admission_metadata_only_replay": (
         _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256
     ),
@@ -420,6 +512,18 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
     ),
     "held_v8_attempt3_withdrawal_operator_source": (
         "scripts/held/seal_deform360_v8_attempt3_outcome_failure.py"
+    ),
+    "held_v8_attempt4_withdrawal_operator_source": (
+        "scripts/held/seal_deform360_v8_attempt4_outcome_failure.py"
+    ),
+    "held_v81_resource_lifecycle_qualification_operator_source": (
+        "scripts/development/qualify_deform360_resource_lifecycle.py"
+    ),
+    "held_v81_resource_lifecycle_equivalence_analyzer_source": (
+        "scripts/development/analyze_deform360_resource_lifecycle_equivalence.py"
+    ),
+    "held_v81_resource_lifecycle_qualification_sealer_source": (
+        "scripts/held/seal_deform360_resource_lifecycle_qualification.py"
     ),
     "held_v81_external_admission_replay_operator_source": (
         "scripts/held/replay_deform360_v81_external_admission.py"
@@ -598,7 +702,9 @@ def _run_git(
     root: Path, arguments: Sequence[str], *, check: bool = True
 ) -> subprocess.CompletedProcess[bytes]:
     environment = {
+        "GIT_CONFIG_GLOBAL": "/dev/null",
         "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
         "GIT_OPTIONAL_LOCKS": "0",
         "HOME": "/home/florianpfaff",
         "LANG": "C.UTF-8",
@@ -606,7 +712,16 @@ def _run_git(
         "PATH": "/usr/local/bin:/usr/bin:/bin",
     }
     completed = subprocess.run(
-        ["git", "-C", str(root), *arguments],
+        [
+            "git",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-C",
+            str(root),
+            *arguments,
+        ],
         check=False,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
@@ -619,6 +734,31 @@ def _run_git(
             f"{completed.stderr.decode('utf-8', errors='replace').strip()}"
         )
     return completed
+
+
+def _require_no_git_rewrite_state(code: Path) -> None:
+    replacement_refs = _run_git(
+        code,
+        ["for-each-ref", "--format=%(refname)", "refs/replace"],
+    ).stdout
+    _require(not replacement_refs.strip(), "source repository has replacement refs")
+    git_directory_raw = (
+        _run_git(code, ["rev-parse", "--absolute-git-dir"])
+        .stdout.decode("utf-8")
+        .strip()
+    )
+    _require(bool(git_directory_raw), "source Git directory is absent")
+    git_directory = _absolute(git_directory_raw)
+    _require(
+        git_directory.is_dir()
+        and not git_directory.is_symlink()
+        and git_directory.resolve() == git_directory,
+        "source Git directory is aliased",
+    )
+    _require(
+        not os.path.lexists(git_directory / "info/grafts"),
+        "source repository has a grafts file",
+    )
 
 
 def _parse_git_tree(raw: bytes) -> list[dict[str, str]]:
@@ -664,8 +804,19 @@ def _validate_repository(root: str | Path) -> dict[str, Any]:
     )
     _require(code.resolve() == code, "source code has a symlinked ancestor")
     _require((code / ".git").is_dir(), "source code is not a non-bare Git repository")
+    _require_no_git_rewrite_state(code)
     top = _run_git(code, ["rev-parse", "--show-toplevel"]).stdout.decode().strip()
     _require(top == str(code), "source Git top level changed")
+    tracked_index_records = [
+        record
+        for record in _run_git(code, ["ls-files", "-v", "-z"]).stdout.split(b"\0")
+        if record
+    ]
+    _require(
+        bool(tracked_index_records)
+        and all(record.startswith(b"H ") for record in tracked_index_records),
+        "source repository has non-ordinary tracked index entries",
+    )
     head = _run_git(code, ["rev-parse", "HEAD"]).stdout.decode().strip().lower()
     _require(
         len(head) in {40, 64}
@@ -676,6 +827,14 @@ def _validate_repository(root: str | Path) -> dict[str, Any]:
         _run_git(code, ["status", "--porcelain=v1", "--untracked-files=all"]).stdout
         == b"",
         "source worktree is not completely clean",
+    )
+    _require(
+        _run_git(
+            code,
+            ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+        ).stdout
+        == b"",
+        "source worktree has ignored untracked files",
     )
     _require(
         _run_git(code, ["rev-parse", "--is-shallow-repository"]).stdout.decode().strip()
@@ -732,7 +891,9 @@ def _make_read_only(code: Path) -> None:
 def _clone_staged_deployment(source: Path, head: str, stage: Path) -> dict[str, Any]:
     _require(not os.path.lexists(stage), "deployment stage already exists")
     environment = {
+        "GIT_CONFIG_GLOBAL": "/dev/null",
         "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
         "GIT_OPTIONAL_LOCKS": "0",
         "HOME": "/home/florianpfaff",
         "LANG": "C.UTF-8",
@@ -740,7 +901,18 @@ def _clone_staged_deployment(source: Path, head: str, stage: Path) -> dict[str, 
         "PATH": "/usr/local/bin:/usr/bin:/bin",
     }
     completed = subprocess.run(
-        ["git", "clone", "--no-hardlinks", "--no-local", str(source), str(stage)],
+        [
+            "git",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.untrackedCache=false",
+            "clone",
+            "--no-hardlinks",
+            "--no-local",
+            str(source),
+            str(stage),
+        ],
         check=False,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
@@ -1126,6 +1298,386 @@ def _validate_attempt3_archive_lineage(
     )
 
 
+def _require_h2_execution_pins() -> tuple[Path, Path, Path]:
+    _require(
+        _RESOURCE_LIFECYCLE_QUALIFICATION_ROOT is not None
+        and _RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE is not None
+        and _RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION is not None,
+        "resource lifecycle qualification path placeholders are not populated",
+    )
+    for label, value in (
+        (
+            "resource qualification evidence",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_FILE_SHA256,
+        ),
+        (
+            "resource qualification evidence artifact",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_ARTIFACT_SHA256,
+        ),
+        (
+            "resource qualification completion",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_FILE_SHA256,
+        ),
+        (
+            "resource qualification completion artifact",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_ARTIFACT_SHA256,
+        ),
+        (
+            "resource qualification attempt marker",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_FILE_SHA256,
+        ),
+        (
+            "resource qualification attempt marker artifact",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_ARTIFACT_SHA256,
+        ),
+        (
+            "resource qualification analyzer manifest",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_FILE_SHA256,
+        ),
+        (
+            "resource qualification analyzer manifest artifact",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_ARTIFACT_SHA256,
+        ),
+        (
+            "resource qualification analyzer result",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_FILE_SHA256,
+        ),
+        (
+            "resource qualification analyzer result artifact",
+            _RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_ARTIFACT_SHA256,
+        ),
+        ("attempt-5 admission replay report", _V8_ADMISSION_REPLAY_REPORT_FILE_SHA256),
+        (
+            "attempt-5 admission replay report artifact",
+            _V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256,
+        ),
+        (
+            "attempt-5 admission replay code binding",
+            _V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256,
+        ),
+        (
+            "attempt-5 admission replay code-binding artifact",
+            _V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256,
+        ),
+    ):
+        _require(_valid_sha256(value), f"{label} SHA-256 placeholder is not populated")
+    root = _absolute(_RESOURCE_LIFECYCLE_QUALIFICATION_ROOT)
+    evidence = _absolute(_RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE)
+    completion = _absolute(_RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION)
+    _require(
+        evidence == root / "resource-lifecycle-qualification.json"
+        and completion == Path(f"{root}-integrity-completion.json")
+        and root.parent == Path("/mnt/corsair/florianpfaff")
+        and root.name.startswith("bpt-resource-lifecycle-qualification-"),
+        "resource qualification H2 paths are not canonical",
+    )
+    return root, evidence, completion
+
+
+def _validate_attempt4_archive_lineage(
+    local_bindings: Mapping[str, str], protocol: Any
+) -> dict[str, Any]:
+    lineage = protocol.validate_attempt4_withdrawal_lineage(
+        archive_path=_V8_ATTEMPT4_ARCHIVE,
+        report_path=_V8_ATTEMPT4_WITHDRAWAL_REPORT,
+        pointer_path=_V8_ATTEMPT4_WITHDRAWAL_POINTER,
+        completion_path=_V8_ATTEMPT4_INTEGRITY_COMPLETION,
+        verify_content_inventory=True,
+    )
+    _require(
+        lineage.get("v8_attempt4_calibration_result") == "NO_CALIBRATION_RESULT"
+        and lineage.get("v8_attempt4_archive_integrity")
+        == {
+            "path": str(_V8_ATTEMPT4_ARCHIVE),
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+            "postseal_noncode_inventory_sha256": (
+                _V8_ATTEMPT4_ARCHIVE_INVENTORY_SHA256
+            ),
+            "postseal_noncode_entry_count": _V8_ATTEMPT4_ARCHIVE_ENTRY_COUNT,
+        },
+        "attempt-4 withdrawal did not preserve the no-result boundary",
+    )
+    _, report_payload, _ = _read_file(
+        _V8_ATTEMPT4_WITHDRAWAL_REPORT,
+        role="attempt-4 withdrawal report",
+        required_mode=0o400,
+    )
+    report = json.loads(report_payload.decode("utf-8"))
+    operator = report.get("executed_withdrawal_operator_source")
+    _require(
+        isinstance(operator, Mapping)
+        and operator.get("sha256")
+        == local_bindings.get("held_v8_attempt4_withdrawal_operator_source"),
+        "attempt-4 withdrawal operator differs from the executed source",
+    )
+    return lineage
+
+
+def _qualification_inventory(root: Path) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    metadata_rows: list[dict[str, Any]] = []
+    directory_states: dict[Path, tuple[int, ...]] = {}
+    for current, directories, files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"resource qualification directory is not sealed: {current_path}",
+        )
+        directory_states[current_path] = (
+            current_state.st_dev,
+            current_state.st_ino,
+            current_state.st_mode,
+            current_state.st_nlink,
+            current_state.st_size,
+            current_state.st_mtime_ns,
+            current_state.st_ctime_ns,
+        )
+        directories[:] = sorted(directories)
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"resource qualification directory is not sealed: {child}",
+            )
+            directory_states[child] = (
+                observed.st_dev,
+                observed.st_ino,
+                observed.st_mode,
+                observed.st_nlink,
+                observed.st_size,
+                observed.st_mtime_ns,
+                observed.st_ctime_ns,
+            )
+            relative = child.relative_to(root).as_posix()
+            rows.append({"path": relative, "type": "directory"})
+            metadata_rows.append(
+                {"path": relative, "type": "directory", "mode_octal": "0500"}
+            )
+        for name in sorted(files):
+            child = current_path / name
+            _, payload, observed = _read_file(
+                child,
+                role="resource qualification inventory file",
+                required_mode=0o400,
+            )
+            _require(observed.st_nlink == 1, "resource qualification hardlink refused")
+            rows.append(
+                {
+                    "path": child.relative_to(root).as_posix(),
+                    "type": "file",
+                    "size_bytes": observed.st_size,
+                    "sha256": hashlib.sha256(payload).hexdigest(),
+                }
+            )
+            metadata_rows.append(
+                {
+                    "path": child.relative_to(root).as_posix(),
+                    "type": "file",
+                    "mode_octal": "0400",
+                    "size_bytes": observed.st_size,
+                }
+            )
+    rows.sort(key=lambda row: str(row["path"]))
+    metadata_rows.sort(key=lambda row: str(row["path"]))
+    for path, before in directory_states.items():
+        observed = os.lstat(path)
+        after = (
+            observed.st_dev,
+            observed.st_ino,
+            observed.st_mode,
+            observed.st_nlink,
+            observed.st_size,
+            observed.st_mtime_ns,
+            observed.st_ctime_ns,
+        )
+        _require(before == after, f"resource qualification directory changed: {path}")
+    return {
+        "entry_count": len(rows),
+        "inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest(),
+        "metadata_inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": metadata_rows})
+        ).hexdigest(),
+    }
+
+
+def _validate_resource_lifecycle_qualification(
+    local_bindings: Mapping[str, str], protocol: Any, source_code: Path
+) -> dict[str, Any]:
+    root, evidence_path, completion_path = _require_h2_execution_pins()
+    attempt_path = root / "qualification-attempt.json"
+    manifest_path = root / "equivalence/repeat-manifest.json"
+    analysis_path = root / "equivalence/analysis-result.json"
+    evidence_sha256 = _sha256_file(
+        evidence_path, role="resource lifecycle qualification", required_mode=0o400
+    )
+    completion_sha256 = _sha256_file(
+        completion_path,
+        role="resource lifecycle qualification completion",
+        required_mode=0o400,
+    )
+    attempt_sha256 = _sha256_file(
+        attempt_path,
+        role="resource lifecycle qualification attempt",
+        required_mode=0o400,
+    )
+    manifest_sha256 = _sha256_file(
+        manifest_path,
+        role="resource lifecycle analyzer manifest",
+        required_mode=0o400,
+    )
+    analysis_sha256 = _sha256_file(
+        analysis_path,
+        role="resource lifecycle analyzer result",
+        required_mode=0o400,
+    )
+    _require(
+        evidence_sha256 == _RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_FILE_SHA256
+        and completion_sha256
+        == _RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_FILE_SHA256
+        and attempt_sha256 == _RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_FILE_SHA256
+        and manifest_sha256 == _RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_FILE_SHA256
+        and analysis_sha256 == _RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_FILE_SHA256,
+        "resource qualification file identity changed",
+    )
+    lineage = protocol.validate_resource_lifecycle_qualification_lineage(
+        evidence_path=evidence_path,
+        completion_path=completion_path,
+    )
+    _, evidence_payload, _ = _read_file(
+        evidence_path, role="resource qualification evidence", required_mode=0o400
+    )
+    _, completion_payload, _ = _read_file(
+        completion_path, role="resource qualification completion", required_mode=0o400
+    )
+    _, attempt_payload, _ = _read_file(
+        attempt_path, role="resource qualification attempt", required_mode=0o400
+    )
+    _, manifest_payload, _ = _read_file(
+        manifest_path,
+        role="resource qualification analyzer manifest",
+        required_mode=0o400,
+    )
+    _, analysis_payload, _ = _read_file(
+        analysis_path,
+        role="resource qualification analyzer result",
+        required_mode=0o400,
+    )
+    evidence = json.loads(evidence_payload.decode("utf-8"))
+    completion = json.loads(completion_payload.decode("utf-8"))
+    attempt = json.loads(attempt_payload.decode("utf-8"))
+    manifest = json.loads(manifest_payload.decode("utf-8"))
+    analysis = json.loads(analysis_payload.decode("utf-8"))
+    _require(
+        evidence.get("artifact_sha256")
+        == _RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_ARTIFACT_SHA256
+        and completion.get("artifact_sha256")
+        == _RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_ARTIFACT_SHA256
+        and attempt.get("artifact_sha256")
+        == _RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_ARTIFACT_SHA256
+        and manifest.get("artifact_sha256")
+        == _RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_ARTIFACT_SHA256
+        and analysis.get("artifact_sha256")
+        == _RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_ARTIFACT_SHA256,
+        "resource qualification artifact identity changed",
+    )
+    _require(
+        _qualification_inventory(root) == completion.get("sealed_content_inventory"),
+        "resource qualification sealed inventory changed",
+    )
+    tested = evidence.get("runtime_bindings", {}).get("code")
+    _require(isinstance(tested, Mapping), "resource qualification source is absent")
+    tested_head = tested.get("head")
+    _require(
+        isinstance(tested_head, str)
+        and root.name == f"bpt-resource-lifecycle-qualification-{tested_head}",
+        "resource qualification root/source head changed",
+    )
+    current_head = _run_git(source_code, ["rev-parse", "HEAD"]).stdout.decode().strip()
+    changed = {
+        line
+        for line in _run_git(
+            source_code, ["diff", "--name-only", f"{tested_head}..{current_head}"]
+        )
+        .stdout.decode("utf-8")
+        .splitlines()
+        if line
+    }
+    _require(
+        changed <= _V81_ALLOWED_POST_REPLAY_VALIDATION_PATHS,
+        "post-qualification source changes escaped H2 validation files",
+    )
+    _require_direct_h2_parent(
+        source_code, tested_head, role="resource qualification H1"
+    )
+    source_records = {
+        "held_v81_resource_lifecycle_qualification_operator_source": evidence.get(
+            "runtime_bindings", {}
+        ).get("qualification_source"),
+        "held_v81_resource_lifecycle_equivalence_analyzer_source": evidence.get(
+            "runtime_bindings", {}
+        ).get("analyzer_source"),
+        "held_v8_outcome_reconstruction_adapter_source": evidence.get(
+            "runtime_bindings", {}
+        ).get("wrapper_source"),
+        "held_v81_resource_lifecycle_qualification_sealer_source": completion.get(
+            "executed_integrity_sealer_source"
+        ),
+    }
+    relative_names = {
+        "held_v81_resource_lifecycle_qualification_operator_source": (
+            "scripts/development/qualify_deform360_resource_lifecycle.py"
+        ),
+        "held_v81_resource_lifecycle_equivalence_analyzer_source": (
+            "scripts/development/analyze_deform360_resource_lifecycle_equivalence.py"
+        ),
+        "held_v8_outcome_reconstruction_adapter_source": (
+            "src/bayesian_phystwin/deform360_held_outcome_reconstruction.py"
+        ),
+        "held_v81_resource_lifecycle_qualification_sealer_source": (
+            "scripts/held/seal_deform360_resource_lifecycle_qualification.py"
+        ),
+    }
+    for name, record in source_records.items():
+        _require(isinstance(record, Mapping), f"{name} qualification binding is absent")
+        committed = _run_git(
+            source_code, ["show", f"{tested_head}:{relative_names[name]}"]
+        ).stdout
+        digest = hashlib.sha256(committed).hexdigest()
+        _require(
+            digest == record.get("sha256") == local_bindings.get(name),
+            f"{name} differs from the qualified H1 source",
+        )
+    _require(
+        local_bindings.get("held_v81_resource_lifecycle_equivalence_analyzer_source")
+        == protocol.RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
+        "frozen resource lifecycle analyzer source changed",
+    )
+    return lineage
+
+
+def _require_direct_h2_parent(source_code: Path, h1_head: str, *, role: str) -> None:
+    _require_no_git_rewrite_state(_absolute(source_code))
+    parents = (
+        _run_git(source_code, ["rev-list", "--parents", "-n", "1", "HEAD"])
+        .stdout.decode("ascii")
+        .strip()
+        .split()
+    )
+    _require(
+        len(parents) == 2 and parents[1] == h1_head and parents[0] != h1_head,
+        f"current source is not the single direct H2 child of {role}",
+    )
+
+
 def _load_admission_replay_json(
     path: Path,
     *,
@@ -1454,7 +2006,7 @@ def _validate_replay_source_commit(
     tested: Mapping[str, Any],
     local_bindings: Mapping[str, str],
     source_code: Path,
-) -> None:
+) -> str:
     head = tested.get("git_head")
     _require(
         isinstance(head, str)
@@ -1500,6 +2052,7 @@ def _validate_replay_source_commit(
         <= {path.encode("utf-8") for path in _V81_ALLOWED_POST_REPLAY_VALIDATION_PATHS},
         "post-replay source changes escaped replay-independent validation files",
     )
+    _require_direct_h2_parent(source_code, head, role="admission replay H1")
     for local_name, replay_name in (
         ("held_v8_builder_adapter_source", "adapter_source_sha256"),
         ("held_v8_protocol_source", "protocol_source_sha256"),
@@ -1515,13 +2068,15 @@ def _validate_replay_source_commit(
             digest == tested.get(replay_name) == local_bindings.get(local_name),
             f"{local_name} differs from the replayed clean-source commit",
         )
+    return head
 
 
 def _validate_admission_replay_source_lineage(
     local_bindings: Mapping[str, str],
     builders: Any,
     source_code: Path,
-) -> None:
+    qualification_lineage: Mapping[str, Any],
+) -> str:
     root_stat = os.lstat(_V8_ADMISSION_REPLAY_ROOT)
     _require(
         stat.S_ISDIR(root_stat.st_mode)
@@ -1574,6 +2129,10 @@ def _validate_admission_replay_source_lineage(
         "v8.1 admission replay report identity or evidence boundary changed",
     )
     _require(
+        report.get("resource_lifecycle_qualification") == qualification_lineage,
+        "v8.1 admission replay used another resource qualification",
+    )
+    _require(
         replay.get("schema_version") == 1
         and replay.get("artifact_kind") == _V81_ADMISSION_REPLAY_CODE_BINDING_KIND
         and replay.get("protocol_id") == _V81_PROTOCOL_ID
@@ -1617,7 +2176,21 @@ def _validate_admission_replay_source_lineage(
 
     tested = replay.get("local_worktree_at_replay")
     _require(
-        isinstance(tested, Mapping) and report.get("local_source_at_replay") == tested,
+        isinstance(tested, Mapping)
+        and set(tested)
+        == {
+            "git_head",
+            "protocol_source_sha256",
+            "adapter_source_sha256",
+            "replay_operator_source_sha256",
+            "exact_child_bootstrap_sha256",
+            "clean_tracked_and_untracked",
+            "ordinary_untracked_file_count",
+            "ignored_untracked_file_count",
+            "uncommitted_correction_present",
+            "external_runtime",
+        }
+        and report.get("local_source_at_replay") == tested,
         "replay-tested source binding is absent or differs across artifacts",
     )
     for local_name, replay_name in (
@@ -1637,18 +2210,28 @@ def _validate_admission_replay_source_lineage(
     ).hexdigest()
     _require(
         tested.get("exact_child_bootstrap_sha256") == bootstrap_sha256
+        and tested.get("clean_tracked_and_untracked") is True
+        and tested.get("ordinary_untracked_file_count") == 0
+        and tested.get("ignored_untracked_file_count") == 0
         and tested.get("uncommitted_correction_present") is False,
         "replay bootstrap or committed-source boundary changed",
     )
-    _validate_replay_source_commit(tested, local_bindings, source_code)
+    replay_head = _validate_replay_source_commit(tested, local_bindings, source_code)
     _validate_replay_external_runtime(tested.get("external_runtime"))
 
     source_evidence = report.get("source_evidence")
     _require(
-        isinstance(source_evidence, Mapping)
-        and source_evidence.get("future_object_observation_used") is False
-        and source_evidence.get("source_used_for_numerical_replay")
-        == "prediction_only_input_only",
+        source_evidence
+        == {
+            "archived_attempt": 2,
+            "prediction_only_input": {
+                "path": str(_V8_ATTEMPT2_REPLAY_SOURCE_INPUT),
+                "sha256": _V8_ATTEMPT2_REPLAY_SOURCE_INPUT_SHA256,
+                "size_bytes": _V8_ATTEMPT2_REPLAY_SOURCE_INPUT_SIZE_BYTES,
+            },
+            "future_object_observation_used": False,
+            "source_used_for_numerical_replay": "prediction_only_input_only",
+        },
         "v8.1 admission replay source crossed its development-only boundary",
     )
     _require(
@@ -1783,6 +2366,7 @@ def _validate_admission_replay_source_lineage(
         _V81_CROSS_AUTHORIZATION_STDERR_MARKER.encode("utf-8") in rejection_stderr,
         "cross-authorization stderr lacks the exact admission-rejection marker",
     )
+    return replay_head
 
 
 def _import_v8_modules(code: Path) -> tuple[Any, Any, Any]:
@@ -1842,6 +2426,7 @@ def _processing_revision() -> tuple[str, str]:
 def prospective_bindings(
     source_code: str | Path,
 ) -> tuple[dict[str, str], dict[str, Any]]:
+    _require_h2_execution_pins()
     provenance = _validate_repository(source_code)
     code = provenance["root"]
     _require(
@@ -1867,7 +2452,20 @@ def prospective_bindings(
         _canonical_bytes(_attempt3_archive_inventory_contract())
     ).hexdigest()
     protocol, replacement, builders = _import_v8_modules(code)
-    _validate_admission_replay_source_lineage(local_bindings, builders, code)
+    attempt4_lineage = _validate_attempt4_archive_lineage(local_bindings, protocol)
+    qualification_lineage = _validate_resource_lifecycle_qualification(
+        local_bindings, protocol, code
+    )
+    replay_h1_head = _validate_admission_replay_source_lineage(
+        local_bindings, builders, code, qualification_lineage
+    )
+    _require(
+        qualification_lineage["resource_lifecycle_qualification_integrity"][
+            "source_head"
+        ]
+        == replay_h1_head,
+        "resource qualification and admission replay used different H1 commits",
+    )
     processing_revision, processing_tree = _processing_revision()
     _require(
         processing_revision == replacement.PROCESSING_CODE_REVISION,
@@ -1894,6 +2492,73 @@ def prospective_bindings(
             ),
             "primary_method_contract": protocol.held_contract_sha256(
                 protocol.PRIMARY_METHOD
+            ),
+            "resource_lifecycle_policy_contract": protocol.held_contract_sha256(
+                protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT
+            ),
+            "post_case_resource_boundary_contract": protocol.held_contract_sha256(
+                protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT
+            ),
+            "v8_attempt4_postseal_noncode_inventory": (
+                _V8_ATTEMPT4_ARCHIVE_INVENTORY_SHA256
+            ),
+            "v8_attempt4_withdrawal_lineage_contract": hashlib.sha256(
+                _canonical_bytes(attempt4_lineage)
+            ).hexdigest(),
+            "resource_lifecycle_qualification_evidence": (
+                qualification_lineage["resource_lifecycle_qualification_evidence"][
+                    "sha256"
+                ]
+            ),
+            "resource_lifecycle_qualification_evidence_artifact": (
+                _RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_ARTIFACT_SHA256
+            ),
+            "resource_lifecycle_qualification_attempt": (
+                qualification_lineage["resource_lifecycle_qualification_attempt"][
+                    "sha256"
+                ]
+            ),
+            "resource_lifecycle_qualification_attempt_artifact": (
+                _RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_ARTIFACT_SHA256
+            ),
+            "resource_lifecycle_qualification_repeat_manifest": (
+                qualification_lineage[
+                    "resource_lifecycle_qualification_repeat_manifest"
+                ]["sha256"]
+            ),
+            "resource_lifecycle_qualification_repeat_manifest_artifact": (
+                _RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_ARTIFACT_SHA256
+            ),
+            "resource_lifecycle_qualification_equivalence_result": (
+                qualification_lineage[
+                    "resource_lifecycle_qualification_equivalence_result"
+                ]["sha256"]
+            ),
+            "resource_lifecycle_qualification_equivalence_result_artifact": (
+                _RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_ARTIFACT_SHA256
+            ),
+            "resource_lifecycle_qualification_integrity_completion": (
+                qualification_lineage[
+                    "resource_lifecycle_qualification_integrity_completion"
+                ]["sha256"]
+            ),
+            "resource_lifecycle_qualification_integrity_completion_artifact": (
+                _RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_ARTIFACT_SHA256
+            ),
+            "resource_lifecycle_qualification_inventory": (
+                qualification_lineage["resource_lifecycle_qualification_integrity"][
+                    "inventory_sha256"
+                ]
+            ),
+            "resource_lifecycle_qualification_metadata_inventory": (
+                qualification_lineage["resource_lifecycle_qualification_integrity"][
+                    "metadata_inventory_sha256"
+                ]
+            ),
+            "resource_lifecycle_qualification_analyzer_source": (
+                qualification_lineage["resource_lifecycle_qualification_integrity"][
+                    "analyzer_source_sha256"
+                ]
             ),
             "deform360_processing_head_text_sha256": _sha256_text(processing_revision),
             "deform360_processing_tree_text_sha256": _sha256_text(processing_tree),
@@ -1929,6 +2594,9 @@ def _disclosure_environment() -> dict[str, str]:
 
 
 def _seal_disclosure(source_code: Path) -> None:
+    _root, qualification_evidence, qualification_completion = (
+        _require_h2_execution_pins()
+    )
     operator = (
         source_code
         / "scripts"
@@ -1936,7 +2604,20 @@ def _seal_disclosure(source_code: Path) -> None:
         / "seal_deform360_v8_post_withdrawal_disclosure.py"
     )
     completed = subprocess.run(
-        [str(_PINNED_PYTHON), "-I", "-B", str(operator)],
+        [
+            str(_PINNED_PYTHON),
+            "-I",
+            "-B",
+            str(operator),
+            "--qualification-evidence",
+            str(qualification_evidence),
+            "--qualification-completion",
+            str(qualification_completion),
+            "--qualification-evidence-sha256",
+            str(_RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_FILE_SHA256),
+            "--qualification-completion-sha256",
+            str(_RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_FILE_SHA256),
+        ],
         check=False,
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
@@ -1956,6 +2637,9 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
         socket.gethostname() == "workstation2", "formal lock must run on workstation2"
     )
     _require(not os.path.lexists(_HELD_ROOT), "formal held-v8 root is not fresh")
+    qualification_root, qualification_evidence, qualification_completion = (
+        _require_h2_execution_pins()
+    )
     bindings, provenance = prospective_bindings(source_code)
     source = provenance["root"]
     head = provenance["head"]
@@ -1993,6 +2677,13 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
             attempt3_withdrawal_integrity_completion_path=(
                 _V8_ATTEMPT3_INTEGRITY_COMPLETION
             ),
+            attempt4_withdrawal_report_path=_V8_ATTEMPT4_WITHDRAWAL_REPORT,
+            attempt4_withdrawal_pointer_path=_V8_ATTEMPT4_WITHDRAWAL_POINTER,
+            attempt4_withdrawal_integrity_completion_path=(
+                _V8_ATTEMPT4_INTEGRITY_COMPLETION
+            ),
+            resource_lifecycle_qualification_path=qualification_evidence,
+            resource_lifecycle_qualification_completion_path=(qualification_completion),
             post_withdrawal_disclosure_path=_DISCLOSURE_PATH,
             development_decision_path=_OPEN27_DECISION,
         )
@@ -2026,6 +2717,7 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
             "deployed_code": str(destination),
             "deployed_head": head,
             "deployed_tree_sha256": deployed["tree_sha256"],
+            "resource_lifecycle_qualification_root": str(qualification_root),
             "binding_count": len(bindings),
             "formal_root_was_absent": True,
         }

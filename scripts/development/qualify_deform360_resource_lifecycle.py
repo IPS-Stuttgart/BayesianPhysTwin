@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Qualify bounded per-fit Nerfstudio resources on non-held data.
 
-This development operator has two independent gates:
+This development operator has three ordered gates:
 
-* an isolated-process A/B fit compares the released Deform360 trainer with
-  the resource-bounded wrapper, using the same copied dataset and seeds; and
+* five isolated original fits and five isolated wrapped fits produce a fresh
+  paired A/B cohort on physical GPU 1;
+* the frozen equivalence analyzer checks exact equality first and the
+  predeclared distributional envelope second; and
 * a same-process wrapped soak performs 243 short real fits by default, which
   crosses the three-case failure region that motivated the lifecycle fix.
 
@@ -27,7 +29,6 @@ import os
 from pathlib import Path
 import random
 import resource
-import shutil
 import socket
 import stat
 import subprocess
@@ -36,7 +37,26 @@ import traceback
 from typing import Any, Mapping, Sequence
 
 
-QUALIFICATION_ID = "deform360-nerfstudio-resource-lifecycle-qualification-v1"
+QUALIFICATION_ID = "deform360-nerfstudio-resource-lifecycle-qualification-v2"
+QUALIFICATION_KIND = "Deform360ResourceLifecycleQualificationEvidenceV2"
+QUALIFICATION_ATTEMPT_KIND = "Deform360ResourceLifecycleQualificationAttemptV2"
+GENERATOR_PROFILE = "same-as-analyzer"
+PHYSICAL_GPU_INDEX = 1
+AB_REPEAT_COUNT = 5
+QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
+FIT_TIMEOUT_SECONDS = 3_600
+ANALYZER_TIMEOUT_SECONDS = 86_400
+SOAK_TIMEOUT_SECONDS = 86_400
+ANALYSIS_ID = "deform360-resource-lifecycle-distributional-equivalence-v1"
+ANALYSIS_MANIFEST_KIND = "Deform360ResourceLifecycleRepeatManifestV1"
+ANALYSIS_RESULT_KIND = "Deform360ResourceLifecycleDistributionalEquivalenceV1"
+ANALYZER_NO_GO_INTERPRETATION = (
+    "admission-inconclusive; the frozen analyzer did not admit this single fresh "
+    "cohort, which is not proof of wrapper inequivalence"
+)
+FROZEN_ANALYZER_SOURCE_SHA256 = (
+    "43056e39ff7ea5f760f18420784db0edbb75523031dba7f3a19eca0c6951c128"
+)
 PINNED_PYTHON = Path(
     "/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/"
     "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/"
@@ -74,6 +94,9 @@ RELATIVE_WRAPPER_SOURCE = Path(
 RELATIVE_QUALIFICATION_SOURCE = Path(
     "scripts/development/qualify_deform360_resource_lifecycle.py"
 )
+RELATIVE_ANALYZER_SOURCE = Path(
+    "scripts/development/analyze_deform360_resource_lifecycle_equivalence.py"
+)
 AB_ITERATIONS = 250
 SOAK_FIT_COUNT = 243
 SOAK_ITERATIONS = 1
@@ -110,6 +133,19 @@ def _signed(value: Mapping[str, Any]) -> dict[str, Any]:
     result.pop("artifact_sha256", None)
     result["artifact_sha256"] = _artifact_sha256(result)
     return result
+
+
+def _root_consumption_policy() -> dict[str, Any]:
+    return {
+        "canonical_root_consumed_at_creation": True,
+        "same_root_retry_permitted": False,
+        "same_revision_retry_permitted": False,
+        "in_place_reuse_permitted": False,
+        "incomplete_root_sealable_or_replayable": False,
+        "technical_fix_in_later_disclosed_revision_may_use_new_root": True,
+        "replacement_requires_different_canonical_root": True,
+        "replacement_may_change_frozen_analyzer_or_numerical_gate": False,
+    }
 
 
 def _canonical_json(value: Mapping[str, Any]) -> bytes:
@@ -381,7 +417,12 @@ def _materialize_dataset(source: str | Path, destination: str | Path) -> dict[st
         destination_transforms = output / "transforms.json"
         _write_new_regular(destination_transforms, transformed)
     except BaseException:
-        shutil.rmtree(output, ignore_errors=True)
+        if os.path.lexists(output):
+            _remove_owned_tree(
+                output,
+                parent=output.parent,
+                label="failed materialized dataset",
+            )
         raise
 
     source_records = {
@@ -511,14 +552,18 @@ def _assert_canonical_run_parameters(
     )
     expected = {
         "phase": "all",
-        "cuda_device": 1,
+        "cuda_device": PHYSICAL_GPU_INDEX,
         "seed": 0,
         "ab_iterations": AB_ITERATIONS,
+        "ab_repeat_count": AB_REPEAT_COUNT,
         "soak_fit_count": SOAK_FIT_COUNT,
         "soak_iterations": SOAK_ITERATIONS,
         "first_fit_fd_growth_limit": FIRST_FIT_FD_GROWTH_LIMIT,
         "steady_fd_growth_limit": STEADY_FD_GROWTH_LIMIT,
         "steady_task_growth_limit": STEADY_TASK_GROWTH_LIMIT,
+        "fit_timeout_seconds": FIT_TIMEOUT_SECONDS,
+        "analyzer_timeout_seconds": ANALYZER_TIMEOUT_SECONDS,
+        "soak_timeout_seconds": SOAK_TIMEOUT_SECONDS,
     }
     for name, expected_value in expected.items():
         observed = getattr(arguments, name)
@@ -672,6 +717,9 @@ def _git_binding(root: Path, *, expected_head: str | None = None) -> dict[str, A
     repository = _assert_nonheld_path(root, label="Git repository", must_exist=True)
     _require(repository.is_dir() and not repository.is_symlink(), "bad Git root")
     environment = {
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
         "GIT_OPTIONAL_LOCKS": "0",
         "HOME": "/home/florianpfaff",
         "LANG": "C.UTF-8",
@@ -681,7 +729,16 @@ def _git_binding(root: Path, *, expected_head: str | None = None) -> dict[str, A
 
     def git(*arguments: str) -> str:
         result = subprocess.run(
-            ["/usr/bin/git", "-C", repository, *arguments],
+            [
+                "/usr/bin/git",
+                "-c",
+                "core.fsmonitor=false",
+                "-c",
+                "core.untrackedCache=false",
+                "-C",
+                repository,
+                *arguments,
+            ],
             check=False,
             capture_output=True,
             text=True,
@@ -690,6 +747,45 @@ def _git_binding(root: Path, *, expected_head: str | None = None) -> dict[str, A
         )
         _require(result.returncode == 0, f"Git command failed: {' '.join(arguments)}")
         return result.stdout.strip()
+
+    replacement_refs = git(
+        "for-each-ref",
+        "--format=%(refname)",
+        "refs/replace",
+    )
+    _require(
+        not replacement_refs,
+        f"qualification repository has replacement refs: {repository}",
+    )
+    git_directory_raw = git("rev-parse", "--absolute-git-dir")
+    _require(git_directory_raw, f"qualification Git directory is absent: {repository}")
+    git_directory = Path(git_directory_raw)
+    _require(
+        git_directory.is_absolute(),
+        f"qualification Git directory is not absolute: {repository}",
+    )
+    git_directory = _assert_nonheld_path(
+        git_directory,
+        label="qualification Git directory",
+        must_exist=True,
+    )
+    _require(
+        git_directory.is_dir() and not git_directory.is_symlink(),
+        f"qualification Git directory is not a real directory: {repository}",
+    )
+    _require(
+        not os.path.lexists(git_directory / "info/grafts"),
+        f"qualification repository has a grafts file: {repository}",
+    )
+    tracked_index_records = [
+        record for record in git("ls-files", "-v", "-z").split("\0") if record
+    ]
+    _require(
+        tracked_index_records
+        and all(record.startswith("H ") for record in tracked_index_records),
+        f"qualification repository has non-ordinary tracked index entries: "
+        f"{repository}",
+    )
 
     head = git("rev-parse", "HEAD")
     tree = git("rev-parse", "HEAD^{tree}")
@@ -933,15 +1029,23 @@ def _child_fit(arguments: argparse.Namespace) -> int:
         before_globals = _global_state_snapshot(writer, profiler)
         before = _process_boundary()
         output_filename = "splat.ply"
-        produced = Path(
-            trainer.train(dataset, output, output_filename, arguments.iterations)
-        ).resolve(strict=True)
-        _require(produced == (output / output_filename).resolve(), "fit output escaped")
+        produced = _absolute(
+            Path(trainer.train(dataset, output, output_filename, arguments.iterations))
+        )
+        expected_output = _absolute(output / output_filename)
+        _require(produced == expected_output, "fit output escaped")
+        produced_state = os.lstat(produced)
+        _require(
+            stat.S_ISREG(produced_state.st_mode)
+            and not stat.S_ISLNK(produced_state.st_mode)
+            and produced_state.st_nlink == 1,
+            "fit output is linked or not a regular file",
+        )
         after = _process_boundary()
         after_globals = _global_state_snapshot(writer, profiler)
         globals_restored = before_globals == after_globals
         predicates = {
-            "output_created": produced.is_file() and not produced.is_symlink(),
+            "output_created": True,
             "wrapped_fit_requires_global_restoration": (
                 arguments.variant != "wrapped" or globals_restored
             ),
@@ -1143,22 +1247,33 @@ def _child_soak(arguments: argparse.Namespace) -> int:
                 trainer = wrapper_type(trainer_type())
             _require(trainer is not None, "soak trainer was not initialized")
             output_filename = f"splat-{index:04d}.ply"
-            produced = Path(
-                trainer.train(
-                    dataset,
-                    output,
-                    output_filename,
-                    arguments.iterations,
+            produced = _absolute(
+                Path(
+                    trainer.train(
+                        dataset,
+                        output,
+                        output_filename,
+                        arguments.iterations,
+                    )
                 )
-            ).resolve(strict=True)
+            )
             _require(
-                produced == (output / output_filename).resolve(),
+                produced == _absolute(output / output_filename),
                 "soak output escaped",
             )
-            output_created = produced.is_file() and not produced.is_symlink()
+            produced_state = os.lstat(produced)
+            output_created = bool(
+                stat.S_ISREG(produced_state.st_mode)
+                and not stat.S_ISLNK(produced_state.st_mode)
+                and produced_state.st_nlink == 1
+            )
             _require(output_created, "soak output Ply is not a regular file")
-            output_size = produced.stat().st_size
-            produced.unlink()
+            output_size = produced_state.st_size
+            output_cleanup = _remove_owned_file(
+                produced,
+                parent=output,
+                label=f"soak fit {index} output Ply",
+            )
             dataset_outputs = dataset / "outputs"
             _require(
                 os.path.lexists(dataset_outputs),
@@ -1171,7 +1286,11 @@ def _child_soak(arguments: argparse.Namespace) -> int:
                 and not stat.S_ISLNK(dataset_outputs_stat.st_mode),
                 "soak dataset outputs are not a real directory",
             )
-            shutil.rmtree(dataset_outputs)
+            dataset_outputs_cleanup = _remove_owned_tree(
+                dataset_outputs,
+                parent=dataset,
+                label=f"soak fit {index} generated outputs",
+            )
             output_absent = not os.path.lexists(produced)
             dataset_outputs_absent = not os.path.lexists(dataset_outputs)
             _require(output_absent, "soak output Ply remains after cleanup")
@@ -1189,6 +1308,10 @@ def _child_soak(arguments: argparse.Namespace) -> int:
                     "dataset_outputs_created": dataset_outputs_created,
                     "output_size_bytes": output_size,
                     "cleanup_completed": True,
+                    "cleanup": {
+                        "output_ply": output_cleanup,
+                        "dataset_outputs": dataset_outputs_cleanup,
+                    },
                     "output_ply_absent_after_cleanup": output_absent,
                     "dataset_outputs_absent_after_cleanup": dataset_outputs_absent,
                     "resource_boundary_stage": "after_cleanup",
@@ -1348,6 +1471,7 @@ def _child_environment(cuda_device: int, temporary: Path) -> dict[str, str]:
     return {
         "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
         "CUDA_DEVICE_ORDER": "PCI_BUS_ID",
+        "CUDA_MODULE_LOADING": "LAZY",
         "CUDA_VISIBLE_DEVICES": str(cuda_device),
         "HF_HUB_OFFLINE": "1",
         "HOME": "/home/florianpfaff",
@@ -1413,11 +1537,912 @@ def _invoke_child(
         os.fsync(log.fileno())
     return {
         "command": list(command),
+        "environment": dict(environment),
         "return_code": return_code,
         "timed_out": timed_out,
         "timeout_error": timeout_error,
+        "timeout_seconds": timeout_seconds,
         "log": _bound_file(log_path, label="qualification child log"),
     }
+
+
+_DIRECTORY_OPEN_FLAGS = (
+    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+)
+_REGULAR_FILE_OPEN_FLAGS = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+
+
+def _object_identity(value: os.stat_result) -> tuple[int, int, int]:
+    """Return the fields that remain stable while an opened tree is emptied."""
+
+    return value.st_dev, value.st_ino, stat.S_IFMT(value.st_mode)
+
+
+def _open_verified_directory_path(path: Path, *, label: str) -> int:
+    """Open a directory and prove the descriptor names the lstat'ed object."""
+
+    try:
+        before = os.lstat(path)
+    except OSError as error:
+        raise ValueError(f"{label} is unavailable") from error
+    _require(
+        stat.S_ISDIR(before.st_mode) and not stat.S_ISLNK(before.st_mode),
+        f"{label} is not a real directory",
+    )
+    descriptor = os.open(path, _DIRECTORY_OPEN_FLAGS)
+    try:
+        opened = os.fstat(descriptor)
+        current = os.lstat(path)
+        _require(
+            _stable_identity(opened)
+            == _stable_identity(before)
+            == _stable_identity(current),
+            f"{label} changed while opening",
+        )
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor
+
+
+def _open_verified_directory_at(
+    parent_descriptor: int,
+    name: str,
+    expected: os.stat_result,
+    *,
+    label: str,
+) -> int:
+    """Open one child directory relative to an already verified parent."""
+
+    _require(
+        stat.S_ISDIR(expected.st_mode) and not stat.S_ISLNK(expected.st_mode),
+        f"{label} contains a linked directory",
+    )
+    descriptor = os.open(
+        name,
+        _DIRECTORY_OPEN_FLAGS,
+        dir_fd=parent_descriptor,
+    )
+    try:
+        opened = os.fstat(descriptor)
+        current = os.stat(
+            name,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+        _require(
+            _stable_identity(opened)
+            == _stable_identity(expected)
+            == _stable_identity(current),
+            f"{label} changed while opening a directory",
+        )
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor
+
+
+def _open_verified_regular_at(
+    parent_descriptor: int,
+    name: str,
+    expected: os.stat_result,
+    *,
+    label: str,
+) -> int:
+    """Open one single-link regular file relative to a verified directory."""
+
+    _require(
+        stat.S_ISREG(expected.st_mode)
+        and not stat.S_ISLNK(expected.st_mode)
+        and expected.st_nlink == 1,
+        f"{label} is linked or not a regular file",
+    )
+    descriptor = os.open(
+        name,
+        _REGULAR_FILE_OPEN_FLAGS,
+        dir_fd=parent_descriptor,
+    )
+    try:
+        opened = os.fstat(descriptor)
+        current = os.stat(
+            name,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+        _require(
+            _stable_identity(opened)
+            == _stable_identity(expected)
+            == _stable_identity(current),
+            f"{label} changed while opening",
+        )
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor
+
+
+def _bound_regular_descriptor(
+    descriptor: int,
+    *,
+    parent_descriptor: int,
+    name: str,
+    path: Path,
+    expected: os.stat_result,
+    label: str,
+) -> dict[str, Any]:
+    """Hash an opened file and retain its directory-entry identity proof."""
+
+    digest = hashlib.sha256()
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    while True:
+        block = os.read(descriptor, 1024 * 1024)
+        if not block:
+            break
+        digest.update(block)
+    opened = os.fstat(descriptor)
+    current = os.stat(
+        name,
+        dir_fd=parent_descriptor,
+        follow_symlinks=False,
+    )
+    _require(
+        _stable_identity(opened)
+        == _stable_identity(expected)
+        == _stable_identity(current),
+        f"{label} changed while reading",
+    )
+    return {
+        "path": os.fspath(path),
+        "sha256": digest.hexdigest(),
+        "size_bytes": opened.st_size,
+        "mode_octal": f"{stat.S_IMODE(opened.st_mode):04o}",
+    }
+
+
+def _require_directory_path_matches_descriptor(
+    path: Path,
+    descriptor: int,
+    *,
+    label: str,
+) -> None:
+    """Detect an ancestor/parent substitution without directing deletion by path."""
+
+    try:
+        current = os.lstat(path)
+    except OSError as error:
+        raise ValueError(f"{label} changed during cleanup") from error
+    opened = os.fstat(descriptor)
+    _require(
+        stat.S_ISDIR(current.st_mode)
+        and not stat.S_ISLNK(current.st_mode)
+        and _object_identity(current) == _object_identity(opened),
+        f"{label} changed during cleanup",
+    )
+
+
+def _entry_absent_at(parent_descriptor: int, name: str) -> bool:
+    try:
+        os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+    except FileNotFoundError:
+        return True
+    return False
+
+
+def _inventory_directory_descriptor(
+    descriptor: int,
+    *,
+    root: Path,
+    relative: tuple[str, ...],
+    expected: os.stat_result,
+    label: str,
+    rows: list[dict[str, Any]],
+) -> tuple[dict[str, Any], int]:
+    """Inventory a directory using only descendants of its opened descriptor."""
+
+    _require(
+        _stable_identity(os.fstat(descriptor)) == _stable_identity(expected),
+        f"{label} changed while inventorying",
+    )
+    entries: dict[str, Any] = {}
+    regular_file_bytes = 0
+    for name in sorted(os.listdir(descriptor)):
+        observed = os.stat(
+            name,
+            dir_fd=descriptor,
+            follow_symlinks=False,
+        )
+        child_relative = (*relative, name)
+        relative_path = Path(*child_relative).as_posix()
+        if stat.S_ISDIR(observed.st_mode) and not stat.S_ISLNK(observed.st_mode):
+            child_descriptor = _open_verified_directory_at(
+                descriptor,
+                name,
+                observed,
+                label=label,
+            )
+            try:
+                child_entries, child_bytes = _inventory_directory_descriptor(
+                    child_descriptor,
+                    root=root,
+                    relative=child_relative,
+                    expected=observed,
+                    label=label,
+                    rows=rows,
+                )
+            finally:
+                os.close(child_descriptor)
+            entries[name] = {
+                "type": "directory",
+                "identity": _stable_identity(observed),
+                "entries": child_entries,
+            }
+            regular_file_bytes += child_bytes
+            rows.append(
+                {
+                    "path": relative_path,
+                    "type": "directory",
+                    "mode_octal": f"{stat.S_IMODE(observed.st_mode):04o}",
+                }
+            )
+            continue
+        _require(
+            stat.S_ISREG(observed.st_mode)
+            and not stat.S_ISLNK(observed.st_mode)
+            and observed.st_nlink == 1,
+            f"{label} contains a linked or special file",
+        )
+        child_descriptor = _open_verified_regular_at(
+            descriptor,
+            name,
+            observed,
+            label=f"{label} file",
+        )
+        try:
+            binding = _bound_regular_descriptor(
+                child_descriptor,
+                parent_descriptor=descriptor,
+                name=name,
+                path=root.joinpath(*child_relative),
+                expected=observed,
+                label=f"{label} file",
+            )
+        finally:
+            os.close(child_descriptor)
+        entries[name] = {
+            "type": "file",
+            "identity": _stable_identity(observed),
+        }
+        regular_file_bytes += int(binding["size_bytes"])
+        rows.append(
+            {
+                "path": relative_path,
+                "type": "file",
+                "mode_octal": binding["mode_octal"],
+                "size_bytes": binding["size_bytes"],
+                "sha256": binding["sha256"],
+            }
+        )
+    _require(
+        _stable_identity(os.fstat(descriptor)) == _stable_identity(expected),
+        f"{label} changed while inventorying",
+    )
+    return entries, regular_file_bytes
+
+
+def _open_owned_tree(
+    root: Path,
+    *,
+    parent: Path,
+    label: str,
+) -> tuple[int, int, os.stat_result]:
+    _require(root.parent == parent, f"{label} escaped its bounded parent")
+    parent_descriptor = _open_verified_directory_path(
+        parent,
+        label=f"{label} bounded parent",
+    )
+    try:
+        root_state = os.stat(
+            root.name,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+        _require(
+            stat.S_ISDIR(root_state.st_mode) and not stat.S_ISLNK(root_state.st_mode),
+            f"{label} is not a real directory",
+        )
+        root_descriptor = _open_verified_directory_at(
+            parent_descriptor,
+            root.name,
+            root_state,
+            label=label,
+        )
+    except BaseException:
+        os.close(parent_descriptor)
+        raise
+    return parent_descriptor, root_descriptor, root_state
+
+
+def _owned_tree_snapshot(
+    root: Path,
+    *,
+    root_descriptor: int,
+    root_state: os.stat_result,
+    label: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    entries, regular_file_bytes = _inventory_directory_descriptor(
+        root_descriptor,
+        root=root,
+        relative=(),
+        expected=root_state,
+        label=label,
+        rows=rows,
+    )
+    rows.sort(key=lambda value: str(value["path"]))
+    inventory = {
+        "root": os.fspath(root),
+        "entry_count": len(rows),
+        "regular_file_bytes": regular_file_bytes,
+        "inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest(),
+    }
+    snapshot = {
+        "type": "directory",
+        "identity": _stable_identity(root_state),
+        "entries": entries,
+    }
+    return inventory, snapshot
+
+
+def _delete_inventory_descriptor(
+    descriptor: int,
+    snapshot: Mapping[str, Any],
+    *,
+    label: str,
+) -> None:
+    """Delete a frozen inventory relative to its still-open root descriptor."""
+
+    _require(
+        _stable_identity(os.fstat(descriptor)) == tuple(snapshot["identity"]),
+        f"{label} changed before cleanup",
+    )
+    entries = snapshot["entries"]
+    _require(isinstance(entries, Mapping), f"{label} inventory is invalid")
+    _require(
+        sorted(os.listdir(descriptor)) == sorted(entries),
+        f"{label} changed before cleanup",
+    )
+    for name in sorted(entries):
+        child = entries[name]
+        _require(isinstance(child, Mapping), f"{label} inventory is invalid")
+        expected_identity = tuple(child["identity"])
+        observed = os.stat(
+            name,
+            dir_fd=descriptor,
+            follow_symlinks=False,
+        )
+        _require(
+            _stable_identity(observed) == expected_identity,
+            f"{label} changed before cleanup",
+        )
+        if child.get("type") == "file":
+            child_descriptor = _open_verified_regular_at(
+                descriptor,
+                name,
+                observed,
+                label=f"{label} file",
+            )
+            try:
+                current = os.stat(
+                    name,
+                    dir_fd=descriptor,
+                    follow_symlinks=False,
+                )
+                _require(
+                    _stable_identity(current) == expected_identity,
+                    f"{label} changed before cleanup",
+                )
+                os.unlink(name, dir_fd=descriptor)
+                _require(
+                    _entry_absent_at(descriptor, name),
+                    f"{label} file remains after cleanup",
+                )
+                removed = os.fstat(child_descriptor)
+                _require(
+                    _object_identity(removed) == _object_identity(observed)
+                    and removed.st_nlink == 0,
+                    f"{label} changed during cleanup",
+                )
+            finally:
+                os.close(child_descriptor)
+            continue
+        _require(child.get("type") == "directory", f"{label} inventory is invalid")
+        child_descriptor = _open_verified_directory_at(
+            descriptor,
+            name,
+            observed,
+            label=label,
+        )
+        try:
+            _delete_inventory_descriptor(child_descriptor, child, label=label)
+            current = os.stat(
+                name,
+                dir_fd=descriptor,
+                follow_symlinks=False,
+            )
+            _require(
+                _object_identity(current)
+                == _object_identity(os.fstat(child_descriptor)),
+                f"{label} changed during cleanup",
+            )
+            _require(not os.listdir(child_descriptor), f"{label} is not empty")
+            os.rmdir(name, dir_fd=descriptor)
+            _require(
+                _entry_absent_at(descriptor, name),
+                f"{label} directory remains after cleanup",
+            )
+        finally:
+            os.close(child_descriptor)
+
+
+def _remove_owned_file(path: Path, *, parent: Path, label: str) -> dict[str, Any]:
+    """Remove one exact generated file through its verified parent descriptor."""
+
+    source = _absolute(path)
+    expected_parent = _absolute(parent)
+    _require(source.parent == expected_parent, f"{label} escaped its bounded parent")
+    parent_descriptor = _open_verified_directory_path(
+        expected_parent,
+        label=f"{label} bounded parent",
+    )
+    try:
+        observed = os.stat(
+            source.name,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+        child_descriptor = _open_verified_regular_at(
+            parent_descriptor,
+            source.name,
+            observed,
+            label=label,
+        )
+        try:
+            binding = _bound_regular_descriptor(
+                child_descriptor,
+                parent_descriptor=parent_descriptor,
+                name=source.name,
+                path=source,
+                expected=observed,
+                label=label,
+            )
+            _require_directory_path_matches_descriptor(
+                expected_parent,
+                parent_descriptor,
+                label=f"{label} bounded parent",
+            )
+            os.unlink(source.name, dir_fd=parent_descriptor)
+            _require(
+                _entry_absent_at(parent_descriptor, source.name),
+                f"{label} remains after cleanup",
+            )
+            removed = os.fstat(child_descriptor)
+            _require(
+                _object_identity(removed) == _object_identity(observed)
+                and removed.st_nlink == 0,
+                f"{label} changed during cleanup",
+            )
+        finally:
+            os.close(child_descriptor)
+        _require_directory_path_matches_descriptor(
+            expected_parent,
+            parent_descriptor,
+            label=f"{label} bounded parent",
+        )
+    finally:
+        os.close(parent_descriptor)
+    return {
+        "bounded_parent": os.fspath(expected_parent),
+        "pre_cleanup_binding": binding,
+        "pre_cleanup_link_count": 1,
+        "removed": True,
+        "post_cleanup_absent": True,
+    }
+
+
+def _owned_tree_inventory(path: Path, *, parent: Path, label: str) -> dict[str, Any]:
+    """Hash an owned tree through verified, no-follow directory descriptors."""
+
+    root = _absolute(path)
+    expected_parent = _absolute(parent)
+    parent_descriptor, root_descriptor, root_state = _open_owned_tree(
+        root,
+        parent=expected_parent,
+        label=label,
+    )
+    try:
+        inventory, _ = _owned_tree_snapshot(
+            root,
+            root_descriptor=root_descriptor,
+            root_state=root_state,
+            label=label,
+        )
+        _require_directory_path_matches_descriptor(
+            expected_parent,
+            parent_descriptor,
+            label=f"{label} bounded parent",
+        )
+    finally:
+        os.close(root_descriptor)
+        os.close(parent_descriptor)
+    return inventory
+
+
+def _remove_owned_tree(path: Path, *, parent: Path, label: str) -> dict[str, Any]:
+    """Remove an inventoried tree through verified, no-follow descriptors."""
+
+    root = _absolute(path)
+    expected_parent = _absolute(parent)
+    parent_descriptor, root_descriptor, root_state = _open_owned_tree(
+        root,
+        parent=expected_parent,
+        label=label,
+    )
+    try:
+        inventory, snapshot = _owned_tree_snapshot(
+            root,
+            root_descriptor=root_descriptor,
+            root_state=root_state,
+            label=label,
+        )
+        _require_directory_path_matches_descriptor(
+            expected_parent,
+            parent_descriptor,
+            label=f"{label} bounded parent",
+        )
+        _delete_inventory_descriptor(root_descriptor, snapshot, label=label)
+        current = os.stat(
+            root.name,
+            dir_fd=parent_descriptor,
+            follow_symlinks=False,
+        )
+        _require(
+            _object_identity(current) == _object_identity(os.fstat(root_descriptor)),
+            f"{label} changed during cleanup",
+        )
+        _require(not os.listdir(root_descriptor), f"{label} is not empty")
+        os.rmdir(root.name, dir_fd=parent_descriptor)
+        _require(
+            _entry_absent_at(parent_descriptor, root.name),
+            f"{label} remains after cleanup",
+        )
+        _require_directory_path_matches_descriptor(
+            expected_parent,
+            parent_descriptor,
+            label=f"{label} bounded parent",
+        )
+    finally:
+        os.close(root_descriptor)
+        os.close(parent_descriptor)
+    return {
+        "bounded_parent": os.fspath(expected_parent),
+        "pre_cleanup_inventory": inventory,
+        "removed": True,
+        "post_cleanup_absent": True,
+    }
+
+
+def _reset_owned_temporary(
+    temporary: Path, *, output: Path, label: str
+) -> dict[str, Any]:
+    cleanup = _remove_owned_tree(temporary, parent=output, label=label)
+    temporary.mkdir(mode=0o700)
+    _require(
+        temporary.parent == output and not any(temporary.iterdir()),
+        "qualification temporary directory was not reset",
+    )
+    return {**cleanup, "recreated_empty": True}
+
+
+def _validate_fit_child_before_cleanup(
+    evidence: Mapping[str, Any],
+    *,
+    variant: str,
+    dataset: Path,
+    output: Path,
+) -> dict[str, Any]:
+    expected_fields = {
+        "schema_version",
+        "artifact_kind",
+        "qualification_id",
+        "variant",
+        "passed",
+        "parameters",
+        "runtime",
+        "gsplat_runtime_smoke",
+        "dataset",
+        "output",
+        "resource_boundary",
+        "global_state",
+        "predicates",
+        "formal_held_path_supplied",
+        "artifact_sha256",
+    }
+    _require(set(evidence) == expected_fields, f"{variant} fit evidence fields changed")
+    _require(
+        evidence.get("schema_version") == 1
+        and evidence.get("artifact_kind")
+        == "Deform360ResourceLifecycleFitChildEvidence"
+        and evidence.get("qualification_id") == QUALIFICATION_ID
+        and evidence.get("variant") == variant
+        and evidence.get("passed") is True
+        and evidence.get("parameters") == {"iterations": AB_ITERATIONS, "seed": 0}
+        and evidence.get("dataset") == os.fspath(dataset)
+        and evidence.get("formal_held_path_supplied") is False,
+        f"{variant} fit evidence identity changed",
+    )
+    output_record = evidence.get("output")
+    _require(isinstance(output_record, Mapping), f"{variant} fit output is absent")
+    output_state = os.lstat(output)
+    _require(
+        output.parent.is_dir()
+        and stat.S_ISREG(output_state.st_mode)
+        and not stat.S_ISLNK(output_state.st_mode)
+        and output_state.st_nlink == 1,
+        f"{variant} retained fit output is linked or not regular",
+    )
+    observed_output = _bound_file(output, label=f"{variant} retained fit output")
+    _require(
+        dict(output_record) == observed_output,
+        f"{variant} retained fit output binding changed",
+    )
+    predicates = evidence.get("predicates")
+    _require(
+        isinstance(predicates, Mapping)
+        and predicates
+        and all(value is True for value in predicates.values()),
+        f"{variant} fit predicate failed",
+    )
+    smoke = evidence.get("gsplat_runtime_smoke")
+    _require(isinstance(smoke, Mapping), f"{variant} gsplat smoke is absent")
+    smoke_evidence = smoke.get("evidence")
+    _require(
+        isinstance(smoke_evidence, Mapping)
+        and smoke_evidence.get("physical_gpu_index") == PHYSICAL_GPU_INDEX
+        and smoke_evidence.get("logical_device") == "cuda:0"
+        and smoke_evidence.get("target_or_outcome_path_accessed") is False,
+        f"{variant} fit GPU or information boundary changed",
+    )
+    return {
+        "loaded_and_signature_valid": True,
+        "identity_and_output_binding_valid": True,
+        "artifact_sha256": evidence["artifact_sha256"],
+    }
+
+
+def _signed_file_record(path: Path, *, label: str) -> dict[str, Any]:
+    observed = os.lstat(path)
+    _require(
+        stat.S_ISREG(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and observed.st_nlink == 1,
+        f"{label} is linked or not a regular file",
+    )
+    artifact = _load_signed_json(path, label=label)
+    return {
+        **_bound_file(path, label=label),
+        "artifact_sha256": artifact["artifact_sha256"],
+    }
+
+
+def _validate_soak_child_before_cleanup(
+    evidence: Mapping[str, Any],
+    *,
+    dataset: Path,
+    output: Path,
+) -> dict[str, Any]:
+    _require(
+        set(evidence)
+        == {
+            "schema_version",
+            "artifact_kind",
+            "qualification_id",
+            "passed",
+            "parameters",
+            "runtime",
+            "gsplat_runtime_smoke",
+            "dataset",
+            "initial_global_state",
+            "fits",
+            "evaluation",
+            "formal_held_path_supplied",
+            "artifact_sha256",
+        },
+        "resource soak evidence fields changed",
+    )
+    fits = evidence.get("fits")
+    evaluation = evidence.get("evaluation")
+    runtime = evidence.get("runtime")
+    smoke = evidence.get("gsplat_runtime_smoke")
+    smoke_evidence = smoke.get("evidence") if isinstance(smoke, Mapping) else None
+    _require(
+        evidence.get("schema_version") == 1
+        and evidence.get("artifact_kind")
+        == "Deform360ResourceLifecycleSoakChildEvidence"
+        and evidence.get("qualification_id") == QUALIFICATION_ID
+        and evidence.get("passed") is True
+        and evidence.get("parameters")
+        == {
+            "fit_count": SOAK_FIT_COUNT,
+            "iterations_per_fit": SOAK_ITERATIONS,
+            "seed": 0,
+            "trainer_reinitialization_interval": (
+                SOAK_TRAINER_REINITIALIZATION_INTERVAL
+            ),
+        }
+        and evidence.get("dataset") == os.fspath(dataset)
+        and evidence.get("formal_held_path_supplied") is False
+        and isinstance(runtime, Mapping)
+        and runtime.get("seed") == 0
+        and runtime.get("cuda_device_count") == 1
+        and isinstance(smoke_evidence, Mapping)
+        and smoke_evidence.get("physical_gpu_index") == PHYSICAL_GPU_INDEX
+        and smoke_evidence.get("logical_device") == "cuda:0"
+        and smoke_evidence.get("target_or_outcome_path_accessed") is False
+        and isinstance(fits, list)
+        and len(fits) == SOAK_FIT_COUNT
+        and isinstance(evaluation, Mapping)
+        and evaluation.get("passed") is True,
+        "resource soak evidence identity or runtime changed",
+    )
+    expected_fit_fields = {
+        "fit_index",
+        "trainer_reinitialized",
+        "output_created",
+        "dataset_outputs_created",
+        "output_size_bytes",
+        "cleanup_completed",
+        "cleanup",
+        "output_ply_absent_after_cleanup",
+        "dataset_outputs_absent_after_cleanup",
+        "resource_boundary_stage",
+        "resource_boundary",
+        "globals_restored",
+        "global_state",
+    }
+    for index, fit in enumerate(fits):
+        _require(
+            isinstance(fit, Mapping)
+            and set(fit) == expected_fit_fields
+            and fit.get("fit_index") == index
+            and fit.get("trainer_reinitialized")
+            is (index % SOAK_TRAINER_REINITIALIZATION_INTERVAL == 0)
+            and fit.get("output_created") is True
+            and fit.get("dataset_outputs_created") is True
+            and isinstance(fit.get("output_size_bytes"), int)
+            and not isinstance(fit.get("output_size_bytes"), bool)
+            and int(fit["output_size_bytes"]) > 0
+            and fit.get("cleanup_completed") is True
+            and fit.get("output_ply_absent_after_cleanup") is True
+            and fit.get("dataset_outputs_absent_after_cleanup") is True
+            and fit.get("resource_boundary_stage") == "after_cleanup"
+            and fit.get("globals_restored") is True,
+            f"resource soak fit {index} changed or failed",
+        )
+        cleanup = fit.get("cleanup")
+        _require(
+            isinstance(cleanup, Mapping)
+            and set(cleanup) == {"output_ply", "dataset_outputs"},
+            f"resource soak fit {index} cleanup fields changed",
+        )
+        output_cleanup = cleanup["output_ply"]
+        dataset_cleanup = cleanup["dataset_outputs"]
+        _require(
+            isinstance(output_cleanup, Mapping)
+            and output_cleanup.get("bounded_parent") == os.fspath(output)
+            and output_cleanup.get("pre_cleanup_link_count") == 1
+            and output_cleanup.get("removed") is True
+            and output_cleanup.get("post_cleanup_absent") is True
+            and isinstance(output_cleanup.get("pre_cleanup_binding"), Mapping)
+            and output_cleanup["pre_cleanup_binding"].get("path")
+            == os.fspath(output / f"splat-{index:04d}.ply")
+            and output_cleanup["pre_cleanup_binding"].get("size_bytes")
+            == fit.get("output_size_bytes"),
+            f"resource soak fit {index} output cleanup changed",
+        )
+        _require(
+            isinstance(dataset_cleanup, Mapping)
+            and dataset_cleanup.get("bounded_parent") == os.fspath(dataset)
+            and dataset_cleanup.get("removed") is True
+            and dataset_cleanup.get("post_cleanup_absent") is True
+            and isinstance(dataset_cleanup.get("pre_cleanup_inventory"), Mapping)
+            and dataset_cleanup["pre_cleanup_inventory"].get("root")
+            == os.fspath(dataset / "outputs"),
+            f"resource soak fit {index} dataset cleanup changed",
+        )
+    _require(
+        evaluation.get("predicates")
+        and all(value is True for value in evaluation["predicates"].values()),
+        "resource soak evaluation predicate failed",
+    )
+    return {
+        "loaded_and_signature_valid": True,
+        "identity_sequence_resource_and_cleanup_valid": True,
+        "artifact_sha256": evidence["artifact_sha256"],
+    }
+
+
+def _validate_analysis_artifacts(
+    manifest_path: Path,
+    result_path: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    manifest = _load_signed_json(manifest_path, label="equivalence repeat manifest")
+    result = _load_signed_json(result_path, label="equivalence analysis result")
+    expected_environment = manifest.get("expected_environment")
+    _require(
+        manifest.get("schema_version") == 1
+        and manifest.get("artifact_kind") == ANALYSIS_MANIFEST_KIND
+        and manifest.get("analysis_id") == ANALYSIS_ID
+        and isinstance(expected_environment, Mapping)
+        and expected_environment.get("generator_profile") == GENERATOR_PROFILE
+        and expected_environment.get("physical_gpu_index") == PHYSICAL_GPU_INDEX,
+        "equivalence manifest identity changed",
+    )
+    decision = result.get("decision")
+    _require(
+        result.get("schema_version") == 1
+        and result.get("artifact_kind") == ANALYSIS_RESULT_KIND
+        and result.get("analysis_id") == ANALYSIS_ID
+        and result.get("generator_profile") == GENERATOR_PROFILE
+        and result.get("physical_gpu_index") == PHYSICAL_GPU_INDEX
+        and result.get("development_only") is True
+        and result.get("formal_path_accessed") is False
+        and isinstance(decision, Mapping),
+        "equivalence result identity changed",
+    )
+    _require(
+        set(decision)
+        == {
+            "exact_matched_structured_array_equality_primary_passed",
+            "exact_matched_file_bytes_equal",
+            "secondary_distributional_equivalence_passed",
+            "accepted",
+            "acceptance_basis",
+        }
+        and isinstance(decision.get("accepted"), bool)
+        and decision.get("acceptance_basis")
+        in {
+            "exact-structured-array-equality",
+            "secondary-distributional-envelope",
+            "rejected",
+        }
+        and (
+            decision.get("accepted") is True
+            and decision.get("acceptance_basis")
+            in {
+                "exact-structured-array-equality",
+                "secondary-distributional-envelope",
+            }
+            or decision.get("accepted") is False
+            and decision.get("acceptance_basis") == "rejected"
+        ),
+        "equivalence analysis decision changed",
+    )
+    manifest_binding = result.get("input_manifest")
+    observed_manifest = _bound_file(
+        manifest_path, label="result-bound equivalence manifest"
+    )
+    _require(
+        isinstance(manifest_binding, Mapping)
+        and all(
+            manifest_binding.get(key) == observed_manifest[key]
+            for key in ("path", "sha256", "size_bytes", "mode_octal")
+        )
+        and manifest_binding.get("artifact_sha256") == manifest["artifact_sha256"],
+        "equivalence result binds another manifest",
+    )
+    return manifest, result, dict(decision)
 
 
 def _load_optional_child_evidence(
@@ -1525,6 +2550,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--cuda-device", type=int, choices=(0, 1), default=1)
     run.add_argument("--seed", type=int, default=0)
     run.add_argument("--ab-iterations", type=int, default=AB_ITERATIONS)
+    run.add_argument("--ab-repeat-count", type=int, default=AB_REPEAT_COUNT)
     run.add_argument("--soak-fit-count", type=int, default=SOAK_FIT_COUNT)
     run.add_argument("--soak-iterations", type=int, default=SOAK_ITERATIONS)
     run.add_argument(
@@ -1536,8 +2562,11 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument(
         "--steady-task-growth-limit", type=int, default=STEADY_TASK_GROWTH_LIMIT
     )
-    run.add_argument("--fit-timeout-seconds", type=int, default=3600)
-    run.add_argument("--soak-timeout-seconds", type=int, default=86400)
+    run.add_argument("--fit-timeout-seconds", type=int, default=FIT_TIMEOUT_SECONDS)
+    run.add_argument(
+        "--analyzer-timeout-seconds", type=int, default=ANALYZER_TIMEOUT_SECONDS
+    )
+    run.add_argument("--soak-timeout-seconds", type=int, default=SOAK_TIMEOUT_SECONDS)
 
     fit = subparsers.add_parser("_fit-child")
     _add_common_child_arguments(fit)
@@ -1583,47 +2612,69 @@ def _run(arguments: argparse.Namespace) -> int:
             protected not in output.parents,
             f"qualification output is nested inside the {label}",
         )
-    _require(arguments.ab_iterations > 0, "A/B iterations must be positive")
-    _require(arguments.soak_fit_count > 0, "soak fit count must be positive")
-    _require(arguments.soak_iterations > 0, "soak iterations must be positive")
-    _require(
-        min(
-            arguments.first_fit_fd_growth_limit,
-            arguments.steady_fd_growth_limit,
-            arguments.steady_task_growth_limit,
-        )
-        >= 0,
-        "resource growth limits must be nonnegative",
-    )
     _require(not os.path.lexists(output), "qualification output already exists")
     script = (code / RELATIVE_QUALIFICATION_SOURCE).resolve(strict=True)
+    analyzer_script = (code / RELATIVE_ANALYZER_SOURCE).resolve(strict=True)
     _require(
         script == Path(__file__).resolve(strict=True),
         "qualification operator is outside the clean code root",
     )
+    _require(analyzer_script.is_file(), "equivalence analyzer source is absent")
+    analyzer_source_binding = _bound_file(
+        analyzer_script, label="frozen equivalence analyzer source"
+    )
+    _require(
+        analyzer_source_binding["sha256"] == FROZEN_ANALYZER_SOURCE_SHA256,
+        "frozen equivalence analyzer source digest changed",
+    )
     code_binding = _git_binding(code)
     deform360_binding = _git_binding(deform360, expected_head=PINNED_DEFORM360_REVISION)
+    expected_output = QUALIFICATION_BASE / (
+        f"bpt-resource-lifecycle-qualification-{code_binding['head']}"
+    )
+    _require(output == expected_output, "qualification output root is not canonical")
     output.mkdir(parents=True, exist_ok=False)
+    attempt_path = _write_new_json(
+        output / "qualification-attempt.json",
+        _signed(
+            {
+                "schema_version": 2,
+                "artifact_kind": QUALIFICATION_ATTEMPT_KIND,
+                "qualification_id": QUALIFICATION_ID,
+                "state": "canonical-root-consumed-at-creation",
+                "output_root": os.fspath(output),
+                "code_revision": code_binding["head"],
+                "generator_profile": GENERATOR_PROFILE,
+                "physical_gpu_index": PHYSICAL_GPU_INDEX,
+                "frozen_analyzer_source": analyzer_source_binding,
+                "root_consumption_policy": _root_consumption_policy(),
+                "formal_held_path_supplied": False,
+            }
+        ),
+    )
+    attempt_record_before = _signed_file_record(
+        attempt_path, label="qualification attempt marker before execution"
+    )
     temporary = output / "tmp"
-    temporary.mkdir()
+    temporary.mkdir(mode=0o700)
     environment = _child_environment(arguments.cuda_device, temporary)
     invocations: dict[str, Any] = {}
     datasets: dict[str, Any] = {}
-    ab: dict[str, Any] | None = None
-    soak: dict[str, Any] | None = None
-    soak_evidence_validation: dict[str, Any] | None = None
+    cleanup_events: list[dict[str, Any]] = []
+    pairing_ids = [f"repeat-{index:03d}" for index in range(AB_REPEAT_COUNT)]
+    repeats: dict[str, list[dict[str, Any]]] = {"original": [], "wrapped": []}
 
-    if arguments.phase in ("all", "ab"):
-        children: dict[str, dict[str, Any] | None] = {}
-        child_evidence_validation: dict[str, Any] = {}
-        for variant in ("original", "wrapped"):
-            root = output / "ab" / variant
-            root.mkdir(parents=True)
-            materialized = root / "dataset"
-            export = root / "export"
+    for variant in ("original", "wrapped"):
+        for pairing_id in pairing_ids:
+            repeat_root = output / "ab" / variant / pairing_id
+            repeat_root.mkdir(parents=True)
+            materialized = repeat_root / "dataset"
+            export = repeat_root / "export"
             export.mkdir()
-            datasets[f"ab_{variant}"] = _materialize_dataset(dataset, materialized)
-            result_path = root / "fit-evidence.json"
+            dataset_key = f"ab_{variant}_{pairing_id.replace('-', '_')}"
+            datasets[dataset_key] = _materialize_dataset(dataset, materialized)
+            result_path = repeat_root / "fit-evidence.json"
+            output_path = export / "splat.ply"
             command = [
                 *_child_python_argv_prefix(python, script),
                 "_fit-child",
@@ -1644,60 +2695,208 @@ def _run(arguments: argparse.Namespace) -> int:
                 "--variant",
                 variant,
             ]
-            invocations[f"ab_{variant}"] = _invoke_child(
+            invocation_key = f"ab_{variant}_{pairing_id.replace('-', '_')}"
+            invocation = _invoke_child(
                 command,
                 environment=environment,
-                log_path=root / "fit.log",
+                log_path=repeat_root / "fit.log",
                 timeout_seconds=arguments.fit_timeout_seconds,
             )
-            children[variant], child_evidence_validation[variant] = (
-                _load_optional_child_evidence(
-                    result_path, label=f"{variant} fit child evidence"
-                )
+            invocations[invocation_key] = invocation
+            _require(
+                invocation["return_code"] == 0
+                and invocation["timed_out"] is False
+                and invocation["timeout_error"] is None,
+                f"{variant} {pairing_id} fit child failed",
             )
-        comparison = _compare_optional_fit_outputs(
-            children["original"], children["wrapped"]
-        )
-        ab_predicates = {
-            "original_child_evidence_valid": child_evidence_validation["original"][
-                "loaded_and_signature_valid"
-            ],
-            "wrapped_child_evidence_valid": child_evidence_validation["wrapped"][
-                "loaded_and_signature_valid"
-            ],
-            "original_child_passed": children["original"] is not None
-            and children["original"].get("passed") is True,
-            "wrapped_child_passed": children["wrapped"] is not None
-            and children["wrapped"].get("passed") is True,
-            "isolated_child_processes": True,
-            "same_seed_and_iterations": (
-                children["original"] is not None
-                and children["wrapped"] is not None
-                and children["original"].get("parameters")
-                == children["wrapped"].get("parameters")
-            ),
-            "materialized_dataset_content_equal": (
-                _materialized_dataset_identity(datasets["ab_original"])
-                == _materialized_dataset_identity(datasets["ab_wrapped"])
-            ),
-            "structured_ply_fields_exact_and_finite": comparison["passed"],
-        }
-        ab = {
-            "passed": all(ab_predicates.values()),
-            "predicates": ab_predicates,
-            "children": children,
-            "child_evidence_validation": child_evidence_validation,
-            "ply_comparison": comparison,
-        }
+            child = _load_signed_json(
+                result_path, label=f"{variant} {pairing_id} fit evidence"
+            )
+            child_validation = _validate_fit_child_before_cleanup(
+                child,
+                variant=variant,
+                dataset=materialized,
+                output=output_path,
+            )
+            generated_outputs = materialized / "outputs"
+            _require(
+                os.path.lexists(generated_outputs),
+                f"{variant} {pairing_id} generated outputs are absent",
+            )
+            generated_cleanup = _remove_owned_tree(
+                generated_outputs,
+                parent=materialized,
+                label=f"{variant} {pairing_id} generated outputs",
+            )
+            temporary_cleanup = _reset_owned_temporary(
+                temporary,
+                output=output,
+                label=f"{variant} {pairing_id} temporary cache",
+            )
+            cleanup = {
+                "generated_dataset_outputs": generated_cleanup,
+                "qualification_temporary_cache": temporary_cleanup,
+            }
+            cleanup_events.extend((generated_cleanup, temporary_cleanup))
+            repeats[variant].append(
+                {
+                    "pairing_id": pairing_id,
+                    "dataset_key": dataset_key,
+                    "invocation_key": invocation_key,
+                    "invocation": invocation,
+                    "child_evidence": child,
+                    "child_evidence_record": _signed_file_record(
+                        result_path,
+                        label=f"{variant} {pairing_id} fit evidence",
+                    ),
+                    "child_evidence_validation": child_validation,
+                    "retained_output": _bound_file(
+                        output_path,
+                        label=f"{variant} {pairing_id} retained PLY",
+                    ),
+                    "cleanup": cleanup,
+                }
+            )
 
-    if arguments.phase in ("all", "soak"):
-        root = output / "soak"
-        root.mkdir(parents=True)
-        materialized = root / "dataset"
-        export = root / "export"
+    identities = [
+        _materialized_dataset_identity(datasets[record["dataset_key"]])
+        for variant in ("original", "wrapped")
+        for record in repeats[variant]
+    ]
+    _require(
+        len(identities) == 2 * AB_REPEAT_COUNT
+        and all(value == identities[0] for value in identities[1:]),
+        "A/B materialized dataset identities differ",
+    )
+
+    equivalence_root = output / "equivalence"
+    equivalence_root.mkdir()
+    manifest_path = equivalence_root / "repeat-manifest.json"
+    manifest_command = [
+        *_child_python_argv_prefix(python, analyzer_script),
+        "prepare-manifest",
+    ]
+    for variant in ("original", "wrapped"):
+        option = f"--{variant}"
+        for record in repeats[variant]:
+            manifest_command.extend(
+                [
+                    option,
+                    str(record["pairing_id"]),
+                    str(record["retained_output"]["path"]),
+                    str(record["child_evidence_record"]["path"]),
+                ]
+            )
+    manifest_command.extend(
+        [
+            "--canonical-transforms",
+            os.fspath(dataset / "transforms.json"),
+            "--code-root",
+            os.fspath(code),
+            "--generator-code-root",
+            os.fspath(code),
+            "--generator-profile",
+            GENERATOR_PROFILE,
+            "--deform360-root",
+            os.fspath(deform360),
+            "--output",
+            os.fspath(manifest_path),
+        ]
+    )
+    manifest_invocation = _invoke_child(
+        manifest_command,
+        environment=environment,
+        log_path=equivalence_root / "prepare-manifest.log",
+        timeout_seconds=arguments.analyzer_timeout_seconds,
+    )
+    invocations["equivalence_prepare_manifest"] = manifest_invocation
+    _require(
+        manifest_invocation["return_code"] == 0
+        and manifest_invocation["timed_out"] is False
+        and manifest_invocation["timeout_error"] is None,
+        "equivalence manifest preparation failed",
+    )
+    manifest = _load_signed_json(manifest_path, label="equivalence repeat manifest")
+    manifest_temp_cleanup = _reset_owned_temporary(
+        temporary,
+        output=output,
+        label="equivalence manifest temporary cache",
+    )
+    cleanup_events.append(manifest_temp_cleanup)
+
+    result_path = equivalence_root / "analysis-result.json"
+    analysis_command = [
+        *_child_python_argv_prefix(python, analyzer_script),
+        "analyze",
+        "--manifest",
+        os.fspath(manifest_path),
+        "--code-root",
+        os.fspath(code),
+        "--generator-code-root",
+        os.fspath(code),
+        "--deform360-root",
+        os.fspath(deform360),
+        "--output",
+        os.fspath(result_path),
+    ]
+    analysis_invocation = _invoke_child(
+        analysis_command,
+        environment=environment,
+        log_path=equivalence_root / "analyze.log",
+        timeout_seconds=arguments.analyzer_timeout_seconds,
+    )
+    invocations["equivalence_analyze"] = analysis_invocation
+    _require(
+        analysis_invocation["timed_out"] is False
+        and analysis_invocation["timeout_error"] is None
+        and analysis_invocation["return_code"] in (0, 3)
+        and result_path.is_file(),
+        "equivalence analyzer failed technically",
+    )
+    manifest_after, analysis_result, analysis_decision = _validate_analysis_artifacts(
+        manifest_path, result_path
+    )
+    _require(manifest_after == manifest, "equivalence manifest changed")
+    analysis_accepted = analysis_decision.get("accepted") is True
+    _require(
+        (analysis_invocation["return_code"] == 0 and analysis_accepted)
+        or (analysis_invocation["return_code"] == 3 and not analysis_accepted),
+        "equivalence analyzer exit code differs from its signed decision",
+    )
+    analysis_temp_cleanup = _reset_owned_temporary(
+        temporary,
+        output=output,
+        label="equivalence analysis temporary cache",
+    )
+    cleanup_events.append(analysis_temp_cleanup)
+    equivalence = {
+        "manifest": {
+            **_bound_file(manifest_path, label="equivalence repeat manifest"),
+            "artifact_sha256": manifest["artifact_sha256"],
+        },
+        "prepare_manifest_invocation": manifest_invocation,
+        "result": {
+            **_bound_file(result_path, label="equivalence analysis result"),
+            "artifact_sha256": analysis_result["artifact_sha256"],
+        },
+        "analysis_invocation": analysis_invocation,
+        "decision": analysis_decision,
+        "cleanup": {
+            "after_manifest": manifest_temp_cleanup,
+            "after_analysis": analysis_temp_cleanup,
+        },
+        "passed": analysis_accepted,
+    }
+
+    soak: dict[str, Any] | None = None
+    if analysis_accepted:
+        soak_root = output / "soak"
+        soak_root.mkdir(parents=True)
+        materialized = soak_root / "dataset"
+        export = soak_root / "export"
         export.mkdir()
         datasets["soak"] = _materialize_dataset(dataset, materialized)
-        result_path = root / "soak-evidence.json"
+        soak_result_path = soak_root / "soak-evidence.json"
         command = [
             *_child_python_argv_prefix(python, script),
             "_soak-child",
@@ -1710,7 +2909,7 @@ def _run(arguments: argparse.Namespace) -> int:
             "--output-dir",
             os.fspath(export),
             "--result",
-            os.fspath(result_path),
+            os.fspath(soak_result_path),
             "--iterations",
             str(arguments.soak_iterations),
             "--seed",
@@ -1724,15 +2923,57 @@ def _run(arguments: argparse.Namespace) -> int:
             "--steady-task-growth-limit",
             str(arguments.steady_task_growth_limit),
         ]
-        invocations["soak"] = _invoke_child(
+        soak_invocation = _invoke_child(
             command,
             environment=environment,
-            log_path=root / "soak.log",
+            log_path=soak_root / "soak.log",
             timeout_seconds=arguments.soak_timeout_seconds,
         )
-        soak, soak_evidence_validation = _load_optional_child_evidence(
-            result_path, label="soak child evidence"
+        invocations["soak"] = soak_invocation
+        _require(
+            soak_invocation["return_code"] == 0
+            and soak_invocation["timed_out"] is False
+            and soak_invocation["timeout_error"] is None,
+            "resource soak child failed",
         )
+        soak_child = _load_signed_json(soak_result_path, label="soak child evidence")
+        soak_child_validation = _validate_soak_child_before_cleanup(
+            soak_child,
+            dataset=materialized,
+            output=export,
+        )
+        _require(
+            not os.path.lexists(materialized / "outputs") and not any(export.iterdir()),
+            "resource soak left generated outputs",
+        )
+        export_cleanup = _remove_owned_tree(
+            export, parent=soak_root, label="resource soak empty export"
+        )
+        final_temp_cleanup = _remove_owned_tree(
+            temporary, parent=output, label="final qualification temporary cache"
+        )
+        cleanup_events.extend((export_cleanup, final_temp_cleanup))
+        soak = {
+            "passed": True,
+            "invocation": soak_invocation,
+            "child_evidence": soak_child,
+            "child_evidence_record": _signed_file_record(
+                soak_result_path, label="soak child evidence"
+            ),
+            "child_evidence_validation": soak_child_validation,
+            "cleanup": {
+                "generated_outputs_absent_after_every_fit": True,
+                "empty_export_removed": export_cleanup,
+                "final_temporary_cache_removed": final_temp_cleanup,
+            },
+        }
+    else:
+        final_temp_cleanup = _remove_owned_tree(
+            temporary,
+            parent=output,
+            label="scientific no-go temporary cache",
+        )
+        cleanup_events.append(final_temp_cleanup)
 
     code_binding_after = _git_binding(code)
     deform360_binding_after = _git_binding(
@@ -1751,6 +2992,56 @@ def _run(arguments: argparse.Namespace) -> int:
         == value.get("referenced_materialized_content")
         for value in datasets.values()
     )
+    attempt_record_after = _signed_file_record(
+        attempt_path, label="qualification attempt marker after execution"
+    )
+    ab_predicates = {
+        "repeat_count_exact": all(
+            len(repeats[variant]) == AB_REPEAT_COUNT
+            for variant in ("original", "wrapped")
+        ),
+        "pairing_ids_exact_and_shared": all(
+            [record["pairing_id"] for record in repeats[variant]] == pairing_ids
+            for variant in ("original", "wrapped")
+        ),
+        "all_fit_children_exited_zero": all(
+            record["invocation"]["return_code"] == 0
+            for variant in ("original", "wrapped")
+            for record in repeats[variant]
+        ),
+        "all_fit_evidence_and_outputs_valid": all(
+            record["child_evidence_validation"]["identity_and_output_binding_valid"]
+            is True
+            for variant in ("original", "wrapped")
+            for record in repeats[variant]
+        ),
+        "all_generated_outputs_and_caches_removed": all(
+            record["cleanup"]["generated_dataset_outputs"]["post_cleanup_absent"]
+            is True
+            and record["cleanup"]["qualification_temporary_cache"][
+                "post_cleanup_absent"
+            ]
+            is True
+            for variant in ("original", "wrapped")
+            for record in repeats[variant]
+        ),
+        "materialized_dataset_content_equal": bool(identities)
+        and all(value == identities[0] for value in identities),
+        "manifest_preparation_passed": manifest_invocation["return_code"] == 0,
+        "analyzer_exit_matches_signed_decision": (
+            (analysis_invocation["return_code"] == 0 and analysis_accepted)
+            or (analysis_invocation["return_code"] == 3 and not analysis_accepted)
+        ),
+        "equivalence_analysis_accepted": analysis_accepted,
+    }
+    ab = {
+        "passed": all(ab_predicates.values()),
+        "repeat_count_per_mode": AB_REPEAT_COUNT,
+        "pairing_ids": pairing_ids,
+        "repeats": repeats,
+        "equivalence": equivalence,
+        "predicates": ab_predicates,
+    }
     predicates = {
         "formal_held_paths_rejected": True,
         "code_checkout_clean": code_binding["clean"],
@@ -1773,38 +3064,95 @@ def _run(arguments: argparse.Namespace) -> int:
         "referenced_source_materialized_content_equal": (
             source_materialized_content_equal
         ),
-        "ab_passed_when_requested": arguments.phase not in ("all", "ab")
-        or (ab is not None and ab["passed"]),
-        "soak_passed_when_requested": arguments.phase not in ("all", "soak")
-        or (
-            soak is not None
-            and soak_evidence_validation is not None
-            and soak_evidence_validation["loaded_and_signature_valid"]
-            and soak.get("passed") is True
+        "fresh_ten_fit_ab_cohort_passed": ab["passed"],
+        "equivalence_analyzer_accepted": analysis_accepted,
+        "soak_started_only_after_analyzer_acceptance": (
+            (analysis_accepted and soak is not None)
+            or (not analysis_accepted and soak is None)
         ),
-        "all_children_exited_zero": all(
-            value["return_code"] == 0 for value in invocations.values()
+        "resource_soak_passed": soak is not None and soak["passed"] is True,
+        "qualification_temporary_root_absent": not os.path.lexists(temporary),
+        "fresh_output_root_was_required": True,
+        "analyzer_no_go_skips_soak_and_is_terminal": (
+            analysis_accepted or soak is None
         ),
+        "retry_or_in_place_reuse_forbidden": True,
+        "attempt_marker_stable_across_qualification": (
+            attempt_record_after == attempt_record_before
+        ),
+        "frozen_analyzer_source_digest_exact": (
+            analyzer_source_binding["sha256"] == FROZEN_ANALYZER_SOURCE_SHA256
+        ),
+    }
+    analyzer_outcome_predicates = {
+        "fresh_ten_fit_ab_cohort_passed",
+        "equivalence_analyzer_accepted",
+        "resource_soak_passed",
+    }
+    _require(
+        all(
+            value is True
+            for name, value in predicates.items()
+            if name not in analyzer_outcome_predicates
+        ),
+        "qualification failed technically after canonical root creation",
+    )
+    if analysis_accepted:
+        _require(
+            all(value is True for value in predicates.values()),
+            "accepted analyzer outcome did not complete every qualification gate",
+        )
+    else:
+        _require(
+            all(predicates[name] is False for name in analyzer_outcome_predicates),
+            "analyzer no-go is not the sole cause of non-admission",
+        )
+    passed = analysis_accepted
+    admission = {
+        "decision": "admitted" if passed else "inconclusive",
+        "terminal": True,
+        "analyzer_outcome": ("accepted" if analysis_accepted else "scientific-no-go"),
+        "analyzer_no_go_interpretation": (
+            None if analysis_accepted else ANALYZER_NO_GO_INTERPRETATION
+        ),
+        "wrapper_inequivalence_proven": False,
+        "retry_permitted": False,
+        "in_place_reuse_permitted": False,
     }
     evidence = _signed(
         {
-            "schema_version": 1,
-            "artifact_kind": "Deform360ResourceLifecycleQualificationEvidence",
+            "schema_version": 2,
+            "artifact_kind": QUALIFICATION_KIND,
             "qualification_id": QUALIFICATION_ID,
-            "passed": all(predicates.values()),
+            "status": "qualified" if passed else "admission-inconclusive",
+            "passed": passed,
+            "admission": admission,
+            "attempt": attempt_record_after,
+            "root_consumption_policy": _root_consumption_policy(),
             "host": socket.gethostname(),
             "phase": arguments.phase,
+            "generator_profile": GENERATOR_PROFILE,
+            "physical_gpu_index": PHYSICAL_GPU_INDEX,
             "canonical_run_parameters": canonical_run_parameters,
             "parameters": {
                 "cuda_device": arguments.cuda_device,
                 "seed": arguments.seed,
                 "ab_iterations": arguments.ab_iterations,
+                "ab_repeat_count": arguments.ab_repeat_count,
                 "soak_fit_count": arguments.soak_fit_count,
                 "soak_iterations": arguments.soak_iterations,
                 "first_fit_fd_growth_limit": arguments.first_fit_fd_growth_limit,
                 "steady_fd_growth_limit": arguments.steady_fd_growth_limit,
                 "steady_task_growth_limit": arguments.steady_task_growth_limit,
+                "fit_timeout_seconds": arguments.fit_timeout_seconds,
+                "analyzer_timeout_seconds": arguments.analyzer_timeout_seconds,
+                "soak_timeout_seconds": arguments.soak_timeout_seconds,
             },
+            "execution_order": [
+                "fresh-five-original-and-five-wrapped-fits",
+                "equivalence-analyzer",
+                "243-fit-soak-only-after-analyzer-acceptance",
+            ],
             "runtime_bindings": {
                 "python_path": os.fspath(python),
                 "python": python_binding,
@@ -1820,13 +3168,14 @@ def _run(arguments: argparse.Namespace) -> int:
                 "wrapper_source": _bound_file(
                     code / RELATIVE_WRAPPER_SOURCE, label="resource wrapper source"
                 ),
+                "analyzer_source": analyzer_source_binding,
             },
             "source_dataset": os.fspath(dataset),
             "materialized_datasets": datasets,
             "invocations": invocations,
             "ab": ab,
             "soak": soak,
-            "soak_evidence_validation": soak_evidence_validation,
+            "cleanup_events": cleanup_events,
             "predicates": predicates,
             "information_boundary": {
                 "formal_held_path_accepted": False,
@@ -1851,7 +3200,7 @@ def _run(arguments: argparse.Namespace) -> int:
         ),
         flush=True,
     )
-    return 0 if evidence["passed"] else 2
+    return 0 if evidence["passed"] else 3
 
 
 def main(argv: Sequence[str] | None = None) -> int:

@@ -539,12 +539,16 @@ def test_signed_manifest_binds_source_files_gpu_and_matching_repeat_ids(
     }
     representative_path = Path(representative["path"])
     repository = Path(__file__).parents[1].resolve()
+    historical_generator = equivalence._historical_generator_binding(repository)
     generator_sources = {
         path: {
-            **equivalence._bound_file(repository / path, label="generator source"),
-            "git_blob_oid": pinned["git_blob_oid"],
+            "path": str((repository / path).resolve()),
+            "mode_octal": equivalence._bound_file(
+                repository / path, label="generator source"
+            )["mode_octal"],
+            **historical_generator["sources"][path],
         }
-        for path, pinned in equivalence.GENERATOR_SOURCE_BINDINGS.items()
+        for path in equivalence.GENERATOR_SOURCE_BINDINGS
     }
     generator_git = {
         "path": str(repository),

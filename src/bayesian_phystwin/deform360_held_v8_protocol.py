@@ -37,7 +37,7 @@ from . import deform360_held_v8_query_artifacts as query_artifacts
 
 
 PROTOCOL_ID = "deform360-held-online-belief-v8.1"
-EXECUTION_ATTEMPT = 4
+EXECUTION_ATTEMPT = 5
 SCHEMA_VERSION = 1
 LOCK_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_KIND = "Deform360HeldFrameZeroBundle"
@@ -45,9 +45,73 @@ PHYSICAL_SEAL_KIND = "Deform360HeldPhysicalPriorSeal"
 PREFIX_AUTHORIZATION_KIND = "Deform360HeldCausalPrefixAuthorization"
 ONLINE_SEAL_KIND = "Deform360HeldOnlinePredictionSeal"
 CALIBRATION_DECISION_KIND = "Deform360HeldV8CalibrationGateDecision"
-POST_WITHDRAWAL_DISCLOSURE_KIND = (
-    "Deform360HeldV81PostWithdrawalDevelopmentUseDisclosure"
+POST_WITHDRAWAL_DISCLOSURE_KIND = "Deform360HeldV81Attempt5RecoveryDisclosure"
+RESOURCE_LIFECYCLE_QUALIFICATION_KIND = (
+    "Deform360ResourceLifecycleQualificationEvidenceV2"
 )
+RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_KIND = (
+    "Deform360ResourceLifecycleQualificationAttemptV2"
+)
+RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_KIND = (
+    "Deform360ResourceLifecycleQualificationIntegrityCompletionV2"
+)
+RESOURCE_LIFECYCLE_QUALIFICATION_ID = (
+    "deform360-nerfstudio-resource-lifecycle-qualification-v2"
+)
+RESOURCE_LIFECYCLE_GENERATOR_PROFILE = "same-as-analyzer"
+RESOURCE_LIFECYCLE_PHYSICAL_GPU_INDEX = 1
+RESOURCE_LIFECYCLE_ANALYSIS_ID = (
+    "deform360-resource-lifecycle-distributional-equivalence-v1"
+)
+RESOURCE_LIFECYCLE_ANALYSIS_MANIFEST_KIND = "Deform360ResourceLifecycleRepeatManifestV1"
+RESOURCE_LIFECYCLE_ANALYSIS_RESULT_KIND = (
+    "Deform360ResourceLifecycleDistributionalEquivalenceV1"
+)
+RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256 = (
+    "43056e39ff7ea5f760f18420784db0edbb75523031dba7f3a19eca0c6951c128"
+)
+RESOURCE_LIFECYCLE_PUBLIC_DATASET = Path(
+    "/mnt/corsair/florianpfaff/deform360-reusable-sota-v1/"
+    "processing-sam2-dev-smoke/004-rubber-band/episode_0001/"
+    "splatfacto/.scratch_000000"
+)
+RESOURCE_LIFECYCLE_QUALIFICATION_SEALER_RELATIVE = Path(
+    "scripts/held/seal_deform360_resource_lifecycle_qualification.py"
+)
+RESOURCE_LIFECYCLE_ROOT_CONSUMPTION_POLICY: Mapping[str, bool] = {
+    "canonical_root_consumed_at_creation": True,
+    "same_root_retry_permitted": False,
+    "same_revision_retry_permitted": False,
+    "in_place_reuse_permitted": False,
+    "incomplete_root_sealable_or_replayable": False,
+    "technical_fix_in_later_disclosed_revision_may_use_new_root": True,
+    "replacement_requires_different_canonical_root": True,
+    "replacement_may_change_frozen_analyzer_or_numerical_gate": False,
+}
+RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES = (
+    "resource_lifecycle_qualification_attempt",
+    "resource_lifecycle_qualification_evidence",
+    "resource_lifecycle_qualification_repeat_manifest",
+    "resource_lifecycle_qualification_equivalence_result",
+    "resource_lifecycle_qualification_integrity_completion",
+)
+RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES: Mapping[str, str] = {
+    "resource_lifecycle_qualification_attempt": (
+        "resource_lifecycle_qualification_attempt_artifact"
+    ),
+    "resource_lifecycle_qualification_evidence": (
+        "resource_lifecycle_qualification_evidence_artifact"
+    ),
+    "resource_lifecycle_qualification_repeat_manifest": (
+        "resource_lifecycle_qualification_repeat_manifest_artifact"
+    ),
+    "resource_lifecycle_qualification_equivalence_result": (
+        "resource_lifecycle_qualification_equivalence_result_artifact"
+    ),
+    "resource_lifecycle_qualification_integrity_completion": (
+        "resource_lifecycle_qualification_integrity_completion_artifact"
+    ),
+}
 
 FRAME_COUNT = 76
 UPDATE_FRAMES = (19, 38, 57)
@@ -133,6 +197,74 @@ _ATTEMPT3_STATUS = "withdrawn-postbarrier-before-queried-prediction-or-score"
 _ATTEMPT3_DISPOSITION = (
     "WITHDRAWN_AFTER_TARGET_AND_X0_BEFORE_ANY_QUERIED_PREDICTION_SEAL_OR_SCORE"
 )
+ATTEMPT4_ARCHIVE_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v8-attempt-4-withdrawn-postbarrier"
+)
+ATTEMPT4_WITHDRAWAL_REPORT_PATH = (
+    ATTEMPT4_ARCHIVE_PATH / "execution-withdrawal-postbarrier-attempt4.json"
+)
+ATTEMPT4_WITHDRAWAL_POINTER_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v8-attempt-4-withdrawal-pointer.json"
+)
+ATTEMPT4_WITHDRAWAL_INTEGRITY_COMPLETION_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v8-attempt-4-withdrawal-integrity-completion.json"
+)
+ATTEMPT4_WITHDRAWAL_REPORT_FILE_SHA256 = (
+    "24c7c7f154c6985c5c5832222a0872d62798e282af3c0f7494e70b8dfc100b5a"
+)
+ATTEMPT4_WITHDRAWAL_REPORT_ARTIFACT_SHA256 = (
+    "3e2f7be514d0ab2776905f3bae7fe5e474b5fdc57a7c64e59de33adf97f79c5a"
+)
+ATTEMPT4_WITHDRAWAL_COMPLETION_FILE_SHA256 = (
+    "315c62fa0e4b621e07db053950e9d26ab1abcb6a2f71a9347ec8d1526d8ad984"
+)
+ATTEMPT4_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256 = (
+    "62128be06dfb1e181c3d6cd849ccd34c5cd37e3769c6b917811676a05da37332"
+)
+ATTEMPT4_WITHDRAWAL_POINTER_FILE_SHA256 = (
+    "3de7c79bf4d4949100f6bd90b1bc6da306d4b57090b70ef7606accefc9901665"
+)
+ATTEMPT4_WITHDRAWAL_POINTER_ARTIFACT_SHA256 = (
+    "3bd025ec4ac6fd9a7b57f7ccacf4f44cee3b6aa0c763dc081f54474b129af4b2"
+)
+ATTEMPT4_ARCHIVE_INVENTORY_SHA256 = (
+    "1ab11d7a3e841530e0d8c994327b9eca26a20a896f73cfa3d76e5c6935cdca5c"
+)
+ATTEMPT4_ARCHIVE_ENTRY_COUNT = 1915
+ATTEMPT4_DEPLOYED_HEAD = "c88168cd88be37aa403929c5323da7a29eafa20a"
+ATTEMPT4_DEPLOYED_CODE_NAME = f"code-{ATTEMPT4_DEPLOYED_HEAD}"
+ATTEMPT4_DEPLOYED_HEAD_TEXT_SHA256 = (
+    "36bf1fc823e41e95febc02e724f48b8c15ab6b073ea92a5786665a4523cf728e"
+)
+ATTEMPT4_DEPLOYED_TREE_MANIFEST_SHA256 = (
+    "e1baaa61aca75f7e3a8d9f51d5fd47feca113a761071f86e3ec6c96d15243cc4"
+)
+ATTEMPT4_DEPLOYED_TREE_RECORD_COUNT = 954
+ATTEMPT4_LAUNCHER_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-held-v81-orchestration/"
+    "calibration-outcome-c88168c-20260722T1847"
+)
+ATTEMPT4_LAUNCHER_LOG_SHA256 = (
+    "9153b50771d8818384d96a77f3502dbbc9494136f679fd25aa6e8208f73bd3e8"
+)
+ATTEMPT4_LAUNCHER_LOG_SIZE_BYTES = 1_168_519_909
+ATTEMPT4_LAUNCHER_EXIT_SHA256 = (
+    "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+)
+ATTEMPT4_LAUNCHER_EXIT_SIZE_BYTES = 2
+RESOURCE_LIFECYCLE_QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
+_ATTEMPT4_PROTOCOL_ID = PROTOCOL_ID
+_ATTEMPT4_EXECUTION_ATTEMPT = 4
+_ATTEMPT4_STATUS = (
+    "withdrawn-postbarrier-during-third-target-reconstruction-before-barrier2-or-score"
+)
+_ATTEMPT4_DISPOSITION = (
+    "WITHDRAWN_AFTER_TWO_TARGET_X0_QUERY_PAIRS_DURING_THIRD_TARGET_"
+    "RECONSTRUCTION_BEFORE_SECOND_BARRIER_OR_SCORE"
+)
 RETIRED_V7_CASE_NAME = "002-rope-silk-ep0003"
 FRESH_REPLACEMENT_CASE_NAME = "072-cotton-clohesline-ep0003"
 
@@ -190,9 +322,9 @@ PRIMARY_METHOD = {
 }
 
 FRESHNESS_AND_REUSE_CONTRACT = {
-    "held_v8_root_absent_before_attempt4_lock": True,
-    "all_predictions_must_be_fresh_v8_1_attempt4_outputs": True,
-    "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt4_outputs": True,
+    "held_v8_root_absent_before_attempt5_lock": True,
+    "all_predictions_must_be_fresh_v8_1_attempt5_outputs": True,
+    "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt5_outputs": True,
     "v7_execution_artifacts_reused": False,
     "v7_prediction_artifacts_reused": False,
     "v7_target_or_query_artifacts_reused": False,
@@ -212,7 +344,43 @@ FRESHNESS_AND_REUSE_CONTRACT = {
     "v8_attempt3_queried_prediction_artifacts_reused": False,
     "v8_attempt3_score_or_gate_artifacts_reused": False,
     "v8_attempt3_partial_artifacts_reused": False,
+    "v8_attempt4_predictions_reused": False,
+    "v8_attempt4_source_manifests_reused": False,
+    "v8_attempt4_frozen_fields_reused": False,
+    "v8_attempt4_target_artifacts_reused": False,
+    "v8_attempt4_official_x0_query_artifacts_reused": False,
+    "v8_attempt4_queried_prediction_artifacts_reused": False,
+    "v8_attempt4_score_or_gate_artifacts_reused": False,
+    "v8_attempt4_partial_artifacts_reused": False,
     "full_15_case_fresh_rerun_required": True,
+}
+
+RESOURCE_LIFECYCLE_POLICY_CONTRACT = {
+    "policy_id": "deform360-per-fit-nerfstudio-resource-lifecycle-v1",
+    "viewer_enabled": False,
+    "viewer_free_visualizer": "tensorboard",
+    "local_writer_enabled": False,
+    "profiler": "none",
+    "writer_globals_restored_after_each_fit": True,
+    "profiler_globals_restored_after_each_fit": True,
+    "process_global_nonreentrant_guard": True,
+    "rlimit_nofile_changed": False,
+}
+
+POST_CASE_RESOURCE_BOUNDARY_CONTRACT = {
+    "policy_id": "deform360-post-case-fd-boundary-v1",
+    "counter": "/proc/self/fd",
+    "reference": "pre-outcome-before-first-target-reconstruction",
+    "reference_captured_once": True,
+    "reference_type": "builtins.int-not-bool",
+    "reference_must_be_positive": True,
+    "observed_type": "builtins.int-not-bool",
+    "observed_must_be_positive": True,
+    "maximum_growth": 32,
+    "predicate": "observed_fd_count <= reference_fd_count + 32",
+    "validated_after_every_completed_case": True,
+    "failure_before_next_target_and_second_barrier": True,
+    "rlimit_nofile_changed": False,
 }
 
 PHYSICAL_ARTIFACT_ROLES = (
@@ -510,20 +678,18 @@ def _read_regular_file(path: str | Path) -> tuple[Path, bytes, os.stat_result]:
         opened = os.fstat(descriptor)
         _require(
             stat.S_ISREG(opened.st_mode)
-            and (opened.st_dev, opened.st_ino) == (before.st_dev, before.st_ino),
+            and _stable_inventory_state(opened) == _stable_inventory_state(before),
             f"{source} changed while opening",
         )
         with os.fdopen(descriptor, "rb", closefd=False) as stream:
             payload = stream.read()
         after = os.fstat(descriptor)
         current = os.lstat(source)
-        identity = (opened.st_dev, opened.st_ino)
         _require(
-            (after.st_dev, after.st_ino) == identity
-            and (current.st_dev, current.st_ino) == identity
-            and after.st_size == opened.st_size
-            and after.st_mtime_ns == opened.st_mtime_ns
-            and after.st_ctime_ns == opened.st_ctime_ns,
+            _stable_inventory_state(before)
+            == _stable_inventory_state(opened)
+            == _stable_inventory_state(after)
+            == _stable_inventory_state(current),
             f"{source} changed while reading",
         )
     finally:
@@ -532,16 +698,62 @@ def _read_regular_file(path: str | Path) -> tuple[Path, bytes, os.stat_result]:
 
 
 def _bound_file(path: str | Path) -> dict[str, Any]:
+    record, _payload = _bound_file_and_payload(path)
+    return record
+
+
+def _bound_file_and_payload(
+    path: str | Path,
+) -> tuple[dict[str, Any], bytes]:
     source, payload, observed = _read_regular_file(path)
-    return {
-        "path": str(source),
-        "sha256": hashlib.sha256(payload).hexdigest(),
-        "size_bytes": observed.st_size,
-    }
+    return (
+        {
+            "path": str(source),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "size_bytes": observed.st_size,
+        },
+        payload,
+    )
 
 
 def _sha256_file(path: str | Path) -> str:
     return str(_bound_file(path)["sha256"])
+
+
+def _sha256_streaming_regular_file(path: str | Path, *, role: str) -> str:
+    source = _canonical_path(path)
+    before = os.lstat(source)
+    _require(
+        stat.S_ISREG(before.st_mode)
+        and not stat.S_ISLNK(before.st_mode)
+        and before.st_nlink == 1
+        and source.resolve() == source,
+        f"{role} is not a canonical single-link regular file",
+    )
+    descriptor = os.open(
+        source,
+        os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0),
+    )
+    try:
+        opened = os.fstat(descriptor)
+        _require(
+            _stable_inventory_state(opened) == _stable_inventory_state(before),
+            f"{role} changed while opening",
+        )
+        digest = hashlib.sha256()
+        while block := os.read(descriptor, 1024 * 1024):
+            digest.update(block)
+        after = os.fstat(descriptor)
+    finally:
+        os.close(descriptor)
+    current = os.lstat(source)
+    _require(
+        _stable_inventory_state(before)
+        == _stable_inventory_state(after)
+        == _stable_inventory_state(current),
+        f"{role} changed while hashing",
+    )
+    return digest.hexdigest()
 
 
 def _require_mode(path: str | Path, mode: int, *, role: str) -> None:
@@ -615,14 +827,18 @@ def _validate_bound_file(
     return Path(observed["path"])
 
 
-def _load_json(path: str | Path) -> dict[str, Any]:
-    source, payload, _ = _read_regular_file(path)
+def _json_from_payload(payload: bytes, *, role: str) -> dict[str, Any]:
     try:
         value = json.loads(payload.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise ValueError(f"{source} is not canonical JSON") from error
-    _require(isinstance(value, dict), f"{source} must contain a JSON object")
+        raise ValueError(f"{role} is not canonical JSON") from error
+    _require(isinstance(value, dict), f"{role} must contain a JSON object")
     return value
+
+
+def _load_json(path: str | Path) -> dict[str, Any]:
+    source, payload, _ = _read_regular_file(path)
+    return _json_from_payload(payload, role=str(source))
 
 
 def _prepare_parent(destination: Path) -> None:
@@ -699,9 +915,10 @@ def _load_exact_attempt3_artifact(
     source = _canonical_path(path)
     _require(source == _canonical_path(expected_path), f"{role} path changed")
     _require_mode(source, _SEALED_FILE_MODE, role=role)
-    record = _bound_file(source)
+    _require(os.lstat(source).st_nlink == 1, f"{role} is hard-linked")
+    record, payload = _bound_file_and_payload(source)
     _require(record["sha256"] == expected_file_sha256, f"{role} file hash changed")
-    artifact = _load_json(source)
+    artifact = _json_from_payload(payload, role=role)
     _require(
         artifact.get("schema_version") == 1
         and artifact.get("artifact_kind") == expected_kind
@@ -752,6 +969,7 @@ def _attempt3_inventory_file_row(path: Path, *, relative: Path) -> dict[str, Any
     _require(
         stat.S_ISREG(before.st_mode)
         and not stat.S_ISLNK(before.st_mode)
+        and before.st_nlink == 1
         and stat.S_IMODE(before.st_mode) == 0o400,
         f"attempt-3 archive file is not a sealed mode-0400 file: {path}",
     )
@@ -788,7 +1006,12 @@ def _attempt3_inventory_file_row(path: Path, *, relative: Path) -> dict[str, Any
     }
 
 
-def _run_attempt3_git(code: Path, arguments: list[str]) -> bytes:
+def _run_attempt3_git(
+    code: Path,
+    arguments: list[str],
+    *,
+    input_payload: bytes | None = None,
+) -> bytes:
     environment = {
         "GIT_CONFIG_NOSYSTEM": "1",
         "GIT_CONFIG_GLOBAL": "/dev/null",
@@ -798,6 +1021,11 @@ def _run_attempt3_git(code: Path, arguments: list[str]) -> bytes:
         "LC_ALL": "C.UTF-8",
         "PATH": "/usr/local/bin:/usr/bin:/bin",
     }
+    stdin_arguments: dict[str, Any]
+    if input_payload is None:
+        stdin_arguments = {"stdin": subprocess.DEVNULL}
+    else:
+        stdin_arguments = {"input": input_payload}
     completed = subprocess.run(
         [
             "git",
@@ -810,10 +1038,10 @@ def _run_attempt3_git(code: Path, arguments: list[str]) -> bytes:
             *arguments,
         ],
         check=False,
-        stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=environment,
+        **stdin_arguments,
     )
     _require(
         completed.returncode == 0,
@@ -1381,6 +1609,1294 @@ def validate_attempt3_withdrawal_lineage(
     }
 
 
+def _load_exact_attempt4_artifact(
+    path: str | Path,
+    *,
+    expected_path: Path,
+    expected_file_sha256: str,
+    expected_artifact_sha256: str,
+    expected_kind: str,
+    expected_status: str,
+    role: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    source = _canonical_path(path)
+    _require(source == _canonical_path(expected_path), f"{role} path changed")
+    _require_mode(source, _SEALED_FILE_MODE, role=role)
+    _require(os.lstat(source).st_nlink == 1, f"{role} is hard-linked")
+    record, payload = _bound_file_and_payload(source)
+    _require(record["sha256"] == expected_file_sha256, f"{role} file hash changed")
+    artifact = _json_from_payload(payload, role=role)
+    _require(
+        artifact.get("schema_version") == 1
+        and artifact.get("artifact_kind") == expected_kind
+        and artifact.get("protocol_id") == _ATTEMPT4_PROTOCOL_ID
+        and artifact.get("execution_attempt") == _ATTEMPT4_EXECUTION_ATTEMPT
+        and artifact.get("status") == expected_status
+        and artifact.get("disposition") == _ATTEMPT4_DISPOSITION
+        and artifact.get("artifact_sha256") == expected_artifact_sha256
+        and held_artifact_sha256(artifact) == expected_artifact_sha256,
+        f"{role} artifact identity changed",
+    )
+    return record, artifact
+
+
+def _validate_attempt4_archive_root(path: str | Path) -> Path:
+    archive = _canonical_path(path)
+    _require(archive == ATTEMPT4_ARCHIVE_PATH, "attempt-4 archive path changed")
+    observed = os.lstat(archive)
+    _require(
+        stat.S_ISDIR(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and stat.S_IMODE(observed.st_mode) == 0o500
+        and archive.resolve() == archive,
+        "attempt-4 archive root is not canonical mode 0500",
+    )
+    return archive
+
+
+def _attempt4_deployed_code(
+    archive: Path, report: Mapping[str, Any], *, verify_content: bool
+) -> dict[str, Any]:
+    expected = {
+        "path": ATTEMPT4_DEPLOYED_CODE_NAME,
+        "git_head": ATTEMPT4_DEPLOYED_HEAD,
+        "head_text_sha256": ATTEMPT4_DEPLOYED_HEAD_TEXT_SHA256,
+        "git_tree_record_count": ATTEMPT4_DEPLOYED_TREE_RECORD_COUNT,
+        "git_tree_manifest_sha256": ATTEMPT4_DEPLOYED_TREE_MANIFEST_SHA256,
+        "every_working_file_matches_bound_git_blob": True,
+        "no_ordinary_or_ignored_untracked_files": True,
+    }
+    _require(report.get("deployed_code") == expected, "attempt-4 deployed code changed")
+    code = archive / ATTEMPT4_DEPLOYED_CODE_NAME
+    observed = os.lstat(code)
+    _require(
+        stat.S_ISDIR(observed.st_mode)
+        and not stat.S_ISLNK(observed.st_mode)
+        and stat.S_IMODE(observed.st_mode) == 0o500,
+        "attempt-4 deployed code is not sealed",
+    )
+    _validate_attempt4_deployed_metadata(code, expected)
+    if verify_content:
+        repository = _attempt3_repository_binding(code)
+        _require(
+            repository
+            == {
+                key: expected[key]
+                for key in (
+                    "path",
+                    "git_head",
+                    "head_text_sha256",
+                    "git_tree_record_count",
+                    "git_tree_manifest_sha256",
+                )
+            },
+            "attempt-4 deployed repository content changed",
+        )
+    return expected
+
+
+def _validate_attempt4_deployed_metadata(
+    code: Path, expected: Mapping[str, Any]
+) -> None:
+    head = _run_attempt3_git(code, ["rev-parse", "HEAD"]).decode("ascii").strip()
+    rows = _parse_attempt3_git_tree(
+        _run_attempt3_git(code, ["ls-tree", "-r", "-z", "HEAD"])
+    )
+    _require(
+        head == expected.get("git_head")
+        and hashlib.sha256(head.encode("ascii")).hexdigest()
+        == expected.get("head_text_sha256")
+        and len(rows) == expected.get("git_tree_record_count")
+        and hashlib.sha256(_canonical_bytes(rows)).hexdigest()
+        == expected.get("git_tree_manifest_sha256"),
+        "attempt-4 deployed Git metadata changed",
+    )
+    batch_input = b"".join(
+        str(row["object_id"]).encode("ascii") + b"\n" for row in rows
+    )
+    batch_output = _run_attempt3_git(
+        code,
+        ["cat-file", "--batch-check=%(objectname) %(objecttype) %(objectsize)"],
+        input_payload=batch_input,
+    )
+    blob_sizes: dict[str, int] = {}
+    batch_lines = batch_output.splitlines()
+    _require(
+        len(batch_lines) == len(rows),
+        "attempt-4 deployed Git blob metadata count changed",
+    )
+    for row, line in zip(rows, batch_lines, strict=True):
+        fields = line.split(b" ")
+        _require(
+            len(fields) == 3,
+            "attempt-4 deployed Git blob metadata is malformed",
+        )
+        try:
+            object_id = fields[0].decode("ascii")
+            object_type = fields[1].decode("ascii")
+            object_size_text = fields[2].decode("ascii")
+        except UnicodeDecodeError as error:
+            raise ValueError(
+                "attempt-4 deployed Git blob metadata is not ASCII"
+            ) from error
+        _require(
+            object_id == row["object_id"]
+            and object_type == "blob"
+            and object_size_text.isdigit(),
+            "attempt-4 deployed Git blob metadata changed",
+        )
+        blob_sizes[str(row["path"])] = int(object_size_text)
+    _require(
+        len(blob_sizes) == len(rows),
+        "attempt-4 deployed Git tree contains duplicate paths",
+    )
+    tracked_files = set(blob_sizes)
+    tracked_directories = {
+        parent.as_posix()
+        for relative in tracked_files
+        for parent in Path(relative).parents
+        if parent != Path(".")
+    }
+    observed_files: set[str] = set()
+    observed_directories: set[str] = set()
+    states: dict[Path, tuple[int, ...]] = {}
+    for current, directories, files in os.walk(code, topdown=True, followlinks=False):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"attempt-4 deployed directory is not sealed: {current_path}",
+        )
+        states[current_path] = _stable_inventory_state(current_state)
+        directories[:] = sorted(directories)
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"attempt-4 deployed directory is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            relative = child.relative_to(code).as_posix()
+            if relative != ".git" and not relative.startswith(".git/"):
+                observed_directories.add(relative)
+        for name in sorted(files):
+            child = current_path / name
+            observed = os.lstat(child)
+            relative = child.relative_to(code).as_posix()
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400
+                and observed.st_nlink == 1,
+                f"attempt-4 deployed file is not sealed: {child}",
+            )
+            if not relative.startswith(".git/"):
+                _require(
+                    observed.st_size == blob_sizes.get(relative),
+                    f"attempt-4 tracked file size differs from Git blob: {child}",
+                )
+            states[child] = _stable_inventory_state(observed)
+            if not relative.startswith(".git/"):
+                observed_files.add(relative)
+    _require(
+        observed_files == tracked_files and observed_directories == tracked_directories,
+        "attempt-4 deployed worktree path set changed",
+    )
+    for path, expected_state in states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == expected_state,
+            f"attempt-4 deployed metadata changed while scanning: {path}",
+        )
+
+
+def _observed_attempt4_noncode_inventory(
+    archive: Path, *, deployed_code: Path
+) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    states: dict[Path, tuple[int, ...]] = {}
+    for current, directories, files in os.walk(
+        archive, topdown=True, followlinks=False
+    ):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"attempt-4 archive directory is not sealed: {current_path}",
+        )
+        states[current_path] = _stable_inventory_state(current_state)
+        relative_parent = current_path.relative_to(archive)
+        directories[:] = sorted(
+            name
+            for name in directories
+            if not (
+                relative_parent == Path(".") and current_path / name == deployed_code
+            )
+        )
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"attempt-4 archive directory is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            rows.append(
+                {
+                    "path": child.relative_to(archive).as_posix(),
+                    "type": "directory",
+                    "mode_octal": "0500",
+                }
+            )
+        for name in sorted(files):
+            child = current_path / name
+            relative = child.relative_to(archive)
+            if relative == Path(ATTEMPT4_WITHDRAWAL_REPORT_PATH.name):
+                continue
+            _require(
+                os.lstat(child).st_nlink == 1,
+                f"attempt-4 archive hardlink refused: {child}",
+            )
+            rows.append(_attempt3_inventory_file_row(child, relative=relative))
+    for path, expected in states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == expected,
+            f"attempt-4 archive changed while hashing: {path}",
+        )
+    rows.sort(key=lambda row: str(row["path"]))
+    return {
+        "rows": rows,
+        "entry_count": len(rows),
+        "directory_count": sum(row["type"] == "directory" for row in rows),
+        "regular_file_count": sum(row["type"] == "file" for row in rows),
+        "regular_file_bytes": sum(
+            int(row.get("size_bytes", 0)) for row in rows if row["type"] == "file"
+        ),
+        "inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest(),
+        "excluded_deployed_code_directory": ATTEMPT4_DEPLOYED_CODE_NAME,
+        "excluded_withdrawal_report": ATTEMPT4_WITHDRAWAL_REPORT_PATH.name,
+    }
+
+
+def _validate_attempt4_noncode_metadata(
+    archive: Path,
+    *,
+    deployed_code: Path,
+    expected_inventory: Mapping[str, Any],
+) -> None:
+    expected_rows = expected_inventory.get("rows")
+    _require(isinstance(expected_rows, list), "attempt-4 inventory rows are absent")
+    projected_expected: list[dict[str, Any]] = []
+    for row in expected_rows:
+        _require(isinstance(row, Mapping), "attempt-4 inventory row is invalid")
+        if row.get("type") == "directory":
+            projected_expected.append(
+                {
+                    "path": row.get("path"),
+                    "type": "directory",
+                    "mode_octal": row.get("mode_octal"),
+                }
+            )
+        else:
+            _require(
+                row.get("type") == "file"
+                and isinstance(row.get("size_bytes"), int)
+                and _valid_sha256(row.get("sha256")),
+                "attempt-4 inventory file row is invalid",
+            )
+            projected_expected.append(
+                {
+                    "path": row.get("path"),
+                    "type": "file",
+                    "mode_octal": row.get("mode_octal"),
+                    "size_bytes": row.get("size_bytes"),
+                }
+            )
+
+    observed_rows: list[dict[str, Any]] = []
+    states: dict[Path, tuple[int, ...]] = {}
+    for current, directories, files in os.walk(
+        archive, topdown=True, followlinks=False
+    ):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"attempt-4 archive directory is not sealed: {current_path}",
+        )
+        states[current_path] = _stable_inventory_state(current_state)
+        relative_parent = current_path.relative_to(archive)
+        directories[:] = sorted(
+            name
+            for name in directories
+            if not (
+                relative_parent == Path(".") and current_path / name == deployed_code
+            )
+        )
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"attempt-4 archive directory is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            observed_rows.append(
+                {
+                    "path": child.relative_to(archive).as_posix(),
+                    "type": "directory",
+                    "mode_octal": "0500",
+                }
+            )
+        for name in sorted(files):
+            child = current_path / name
+            relative = child.relative_to(archive)
+            if relative == Path(ATTEMPT4_WITHDRAWAL_REPORT_PATH.name):
+                continue
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400
+                and observed.st_nlink == 1,
+                f"attempt-4 archive file is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            observed_rows.append(
+                {
+                    "path": relative.as_posix(),
+                    "type": "file",
+                    "mode_octal": "0400",
+                    "size_bytes": observed.st_size,
+                }
+            )
+    for path, expected_state in states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == expected_state,
+            f"attempt-4 archive metadata changed while scanning: {path}",
+        )
+    observed_rows.sort(key=lambda row: str(row["path"]))
+    projected_expected.sort(key=lambda row: str(row["path"]))
+    _require(
+        observed_rows == projected_expected,
+        "attempt-4 archive metadata inventory changed",
+    )
+
+
+def _validate_attempt4_launcher(
+    launcher: Mapping[str, Any], *, verify_content: bool
+) -> dict[str, Any]:
+    expected_markers = {
+        "first_cohort_barrier_validated": 1,
+        "official_target_and_x0_sealed": 2,
+        "isolated_x0_query_sealed": 2,
+        "second_cohort_barrier_validated": 0,
+        "fail_closed": 1,
+        "terminal_error_type": 1,
+        "too_many_open_files": 1,
+    }
+    _require(
+        launcher.get("path") == str(ATTEMPT4_LAUNCHER_PATH)
+        and launcher.get("exact_file_allowlist") == ["exit.code", "output.log"]
+        and launcher.get("output_log")
+        == {
+            "mode_octal": "0400",
+            "sha256": ATTEMPT4_LAUNCHER_LOG_SHA256,
+            "size_bytes": ATTEMPT4_LAUNCHER_LOG_SIZE_BYTES,
+        }
+        and launcher.get("exit_code")
+        == {
+            "mode_octal": "0400",
+            "sha256": ATTEMPT4_LAUNCHER_EXIT_SHA256,
+            "size_bytes": ATTEMPT4_LAUNCHER_EXIT_SIZE_BYTES,
+        }
+        and launcher.get("terminal_marker_counts") == expected_markers
+        and launcher.get("log_scanned_for_fixed_markers_only") is True
+        and launcher.get("log_numerical_payload_parsed") is False,
+        "attempt-4 launcher evidence changed",
+    )
+    root = _canonical_path(ATTEMPT4_LAUNCHER_PATH)
+    observed_root = os.lstat(root)
+    _require(
+        stat.S_ISDIR(observed_root.st_mode)
+        and not stat.S_ISLNK(observed_root.st_mode)
+        and stat.S_IMODE(observed_root.st_mode) == 0o500
+        and root.resolve() == root
+        and sorted(child.name for child in root.iterdir())
+        == ["exit.code", "output.log"],
+        "attempt-4 launcher is not an immutable exact allowlist",
+    )
+    for name, expected_hash, expected_size in (
+        (
+            "output.log",
+            ATTEMPT4_LAUNCHER_LOG_SHA256,
+            ATTEMPT4_LAUNCHER_LOG_SIZE_BYTES,
+        ),
+        (
+            "exit.code",
+            ATTEMPT4_LAUNCHER_EXIT_SHA256,
+            ATTEMPT4_LAUNCHER_EXIT_SIZE_BYTES,
+        ),
+    ):
+        source = root / name
+        _require_mode(source, 0o400, role=f"attempt-4 launcher {name}")
+        observed = os.lstat(source)
+        _require(
+            observed.st_nlink == 1 and observed.st_size == expected_size,
+            f"attempt-4 launcher {name} metadata changed",
+        )
+        if verify_content:
+            _require(
+                _sha256_streaming_regular_file(
+                    source, role=f"attempt-4 launcher {name}"
+                )
+                == expected_hash,
+                f"attempt-4 launcher {name} content changed",
+            )
+    return dict(launcher)
+
+
+def validate_attempt4_withdrawal_lineage(
+    *,
+    archive_path: str | Path,
+    report_path: str | Path,
+    pointer_path: str | Path,
+    completion_path: str | Path,
+    verify_content_inventory: bool = False,
+) -> dict[str, Any]:
+    """Validate the technical attempt-4 withdrawal without yielding a result."""
+
+    archive = _validate_attempt4_archive_root(archive_path)
+    report_record, report = _load_exact_attempt4_artifact(
+        report_path,
+        expected_path=ATTEMPT4_WITHDRAWAL_REPORT_PATH,
+        expected_file_sha256=ATTEMPT4_WITHDRAWAL_REPORT_FILE_SHA256,
+        expected_artifact_sha256=ATTEMPT4_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+        expected_kind="Deform360HeldV81Attempt4PostBarrierWithdrawalReport",
+        expected_status=_ATTEMPT4_STATUS,
+        role="attempt-4 withdrawal report",
+    )
+    completion_record, completion = _load_exact_attempt4_artifact(
+        completion_path,
+        expected_path=ATTEMPT4_WITHDRAWAL_INTEGRITY_COMPLETION_PATH,
+        expected_file_sha256=ATTEMPT4_WITHDRAWAL_COMPLETION_FILE_SHA256,
+        expected_artifact_sha256=ATTEMPT4_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256,
+        expected_kind="Deform360HeldV81Attempt4WithdrawalIntegrityCompletion",
+        expected_status="withdrawal-integrity-complete",
+        role="attempt-4 withdrawal completion",
+    )
+    pointer_record, pointer = _load_exact_attempt4_artifact(
+        pointer_path,
+        expected_path=ATTEMPT4_WITHDRAWAL_POINTER_PATH,
+        expected_file_sha256=ATTEMPT4_WITHDRAWAL_POINTER_FILE_SHA256,
+        expected_artifact_sha256=ATTEMPT4_WITHDRAWAL_POINTER_ARTIFACT_SHA256,
+        expected_kind="Deform360HeldV81Attempt4WithdrawalPointer",
+        expected_status=_ATTEMPT4_STATUS,
+        role="attempt-4 withdrawal pointer",
+    )
+    deployed = _attempt4_deployed_code(
+        archive, report, verify_content=verify_content_inventory
+    )
+    _require(
+        completion.get("deployed_code") == deployed
+        and pointer.get("deployed_code") == deployed,
+        "attempt-4 deployed-code cross-link changed",
+    )
+    _require(
+        _canonical_path(report.get("immutable_archive_path")) == archive
+        and _canonical_path(completion.get("archive_path")) == archive
+        and _canonical_path(pointer.get("archive_path")) == archive,
+        "attempt-4 archive cross-link changed",
+    )
+    report_cross_link = {
+        "withdrawal_report_path": str(ATTEMPT4_WITHDRAWAL_REPORT_PATH),
+        "withdrawal_report_size_bytes": report_record["size_bytes"],
+        "withdrawal_report_file_sha256": ATTEMPT4_WITHDRAWAL_REPORT_FILE_SHA256,
+        "withdrawal_report_artifact_sha256": ATTEMPT4_WITHDRAWAL_REPORT_ARTIFACT_SHA256,
+    }
+    for artifact, role in ((completion, "completion"), (pointer, "pointer")):
+        _require(
+            all(artifact.get(key) == value for key, value in report_cross_link.items()),
+            f"attempt-4 {role} report cross-link changed",
+        )
+    _require(
+        pointer.get("withdrawal_integrity_completion")
+        == {
+            "path": str(ATTEMPT4_WITHDRAWAL_INTEGRITY_COMPLETION_PATH),
+            "mode_octal": "0400",
+            "size_bytes": completion_record["size_bytes"],
+            "sha256": ATTEMPT4_WITHDRAWAL_COMPLETION_FILE_SHA256,
+            "artifact_sha256": ATTEMPT4_WITHDRAWAL_COMPLETION_ARTIFACT_SHA256,
+        },
+        "attempt-4 pointer completion cross-link changed",
+    )
+    _require(
+        completion.get("pointer_contract")
+        == {
+            "path": str(ATTEMPT4_WITHDRAWAL_POINTER_PATH),
+            "artifact_kind": "Deform360HeldV81Attempt4WithdrawalPointer",
+            "pointer_must_bind_this_completion": True,
+            "completion_does_not_predict_pointer_hash_to_avoid_circularity": True,
+        },
+        "attempt-4 completion pointer contract changed",
+    )
+    shared = {
+        "archive_root_mode_octal": "0500",
+        "archive_fully_nonwritable": True,
+        "postseal_noncode_inventory_sha256": ATTEMPT4_ARCHIVE_INVENTORY_SHA256,
+        "postseal_noncode_entry_count": ATTEMPT4_ARCHIVE_ENTRY_COUNT,
+        "independent_post_rename_integrity_verified": True,
+    }
+    _require(
+        all(completion.get(key) == value for key, value in shared.items())
+        and all(pointer.get(key) == value for key, value in shared.items()),
+        "attempt-4 archive integrity cross-link changed",
+    )
+    expected_inventory = report.get("expected_postseal_inventory")
+    _require(
+        isinstance(expected_inventory, Mapping)
+        and expected_inventory.get("entry_count") == ATTEMPT4_ARCHIVE_ENTRY_COUNT
+        and expected_inventory.get("inventory_sha256")
+        == ATTEMPT4_ARCHIVE_INVENTORY_SHA256,
+        "attempt-4 report inventory commitment changed",
+    )
+    if verify_content_inventory:
+        _require(
+            _observed_attempt4_noncode_inventory(
+                archive, deployed_code=archive / ATTEMPT4_DEPLOYED_CODE_NAME
+            )
+            == expected_inventory,
+            "attempt-4 archive content inventory changed",
+        )
+    else:
+        _validate_attempt4_noncode_metadata(
+            archive,
+            deployed_code=archive / ATTEMPT4_DEPLOYED_CODE_NAME,
+            expected_inventory=expected_inventory,
+        )
+    report_launcher = report.get("durable_launcher_evidence")
+    completion_launcher = completion.get("durable_launcher_evidence")
+    pointer_launcher = pointer.get("durable_launcher_evidence")
+    _require(
+        isinstance(report_launcher, Mapping)
+        and isinstance(completion_launcher, Mapping)
+        and isinstance(pointer_launcher, Mapping),
+        "attempt-4 launcher evidence is absent",
+    )
+    normalized_report_launcher = dict(report_launcher)
+    normalized_completion_launcher = dict(completion_launcher)
+    normalized_pointer_launcher = dict(pointer_launcher)
+    normalized_completion_launcher.pop("fully_nonwritable", None)
+    normalized_completion_launcher.pop("root_mode_octal", None)
+    normalized_pointer_launcher.pop("fully_nonwritable", None)
+    normalized_pointer_launcher.pop("root_mode_octal", None)
+    _require(
+        normalized_report_launcher
+        == normalized_completion_launcher
+        == normalized_pointer_launcher,
+        "attempt-4 launcher cross-link changed",
+    )
+    launcher = _validate_attempt4_launcher(
+        report_launcher, verify_content=verify_content_inventory
+    )
+    execution = report.get("execution_boundary")
+    information = report.get("information_boundary")
+    terminal_failure = report.get("terminal_failure")
+    _require(
+        report.get("result_status") == "NO_CALIBRATION_RESULT"
+        and terminal_failure
+        == {
+            "evidence_origin": "durable-launcher-log-fixed-marker-scan",
+            "outer_outcome_driver_exit_code": 2,
+            "exception_type": "OSError",
+            "errno": 24,
+            "exception_message_class": "Too many open files",
+            "failed_case": "002-rope-silk-ep0008",
+            "failure_path": (
+                "/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8/"
+                "calibration/private-targets/002-rope-silk-ep0008/"
+                "fresh-official-reconstruction/staged-aligned/episode_0000/"
+                "splatfacto/.scratch_000080/outputs/splat_80/splatfacto/"
+                "2026-07-22_192624"
+            ),
+            "failure_phase": (
+                "third target reconstruction after final-frame training and "
+                "before reconstruction audit, target seal, second barrier, or score"
+            ),
+        }
+        and isinstance(execution, Mapping)
+        and execution.get("online_prediction_seal_count") == 15
+        and execution.get("frozen_field_manifest_count") == 15
+        and execution.get("first_cohort_barrier_validated_count") == 1
+        and execution.get("official_target_archive_count") == 2
+        and execution.get("official_x0_archive_count") == 2
+        and execution.get("queried_prediction_seal_count") == 2
+        and execution.get("partial_reconstruction_count") == 1
+        and execution.get("second_cohort_barrier_validated_count") == 0
+        and execution.get("score_evidence_count") == 0
+        and execution.get("gate_decision_count") == 0
+        and execution.get("confirmation_lock_count") == 0
+        and isinstance(information, Mapping)
+        and information.get("first_complete_cohort_barrier_crossed") is True
+        and information.get("second_complete_cohort_barrier_crossed") is False
+        and information.get("score_created_or_read") is False
+        and information.get("gate_decision_created_or_read") is False
+        and information.get("confirmation_created_or_read") is False,
+        "attempt-4 failure or execution boundary changed",
+    )
+    _require(
+        pointer.get("active_held_v8_root_absent_after_archive") is True
+        and pointer.get("completed_target_x0_queried_pairs") == 2
+        and pointer.get("first_cohort_barrier_crossed") is True
+        and pointer.get("second_cohort_barrier_crossed") is False
+        and pointer.get("score_evidence_count") == 0
+        and pointer.get("gate_decision_count") == 0
+        and pointer.get("confirmation_accessed") is False,
+        "attempt-4 pointer result boundary changed",
+    )
+    return {
+        "v8_attempt4_withdrawal_report": report_record,
+        "v8_attempt4_withdrawal_pointer": pointer_record,
+        "v8_attempt4_withdrawal_integrity_completion": completion_record,
+        "v8_attempt4_archive_integrity": {
+            "path": str(archive),
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+            "postseal_noncode_inventory_sha256": ATTEMPT4_ARCHIVE_INVENTORY_SHA256,
+            "postseal_noncode_entry_count": ATTEMPT4_ARCHIVE_ENTRY_COUNT,
+        },
+        "v8_attempt4_launcher_integrity": {
+            **launcher,
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+        },
+        "v8_attempt4_calibration_result": "NO_CALIBRATION_RESULT",
+    }
+
+
+def _resource_lifecycle_qualification_inventory(
+    root: Path, *, verify_content: bool
+) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    metadata_rows: list[dict[str, Any]] = []
+    states: dict[Path, tuple[int, ...]] = {}
+    for current, directories, files in os.walk(root, topdown=True, followlinks=False):
+        current_path = Path(current)
+        current_state = os.lstat(current_path)
+        _require(
+            stat.S_ISDIR(current_state.st_mode)
+            and not stat.S_ISLNK(current_state.st_mode)
+            and stat.S_IMODE(current_state.st_mode) == 0o500,
+            f"resource qualification directory is not sealed: {current_path}",
+        )
+        states[current_path] = _stable_inventory_state(current_state)
+        directories[:] = sorted(directories)
+        for name in directories:
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISDIR(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o500,
+                f"resource qualification directory is not sealed: {child}",
+            )
+            states[child] = _stable_inventory_state(observed)
+            relative = child.relative_to(root).as_posix()
+            rows.append({"path": relative, "type": "directory"})
+            metadata_rows.append(
+                {"path": relative, "type": "directory", "mode_octal": "0500"}
+            )
+        for name in sorted(files):
+            child = current_path / name
+            observed = os.lstat(child)
+            _require(
+                stat.S_ISREG(observed.st_mode)
+                and not stat.S_ISLNK(observed.st_mode)
+                and stat.S_IMODE(observed.st_mode) == 0o400
+                and observed.st_nlink == 1,
+                f"resource qualification file is not sealed: {child}",
+            )
+            if verify_content:
+                record = _bound_file(child)
+                rows.append(
+                    {
+                        "path": child.relative_to(root).as_posix(),
+                        "type": "file",
+                        "size_bytes": record["size_bytes"],
+                        "sha256": record["sha256"],
+                    }
+                )
+            else:
+                rows.append(
+                    {"path": child.relative_to(root).as_posix(), "type": "file"}
+                )
+            metadata_rows.append(
+                {
+                    "path": child.relative_to(root).as_posix(),
+                    "type": "file",
+                    "mode_octal": "0400",
+                    "size_bytes": observed.st_size,
+                }
+            )
+    for path, expected in states.items():
+        _require(
+            _stable_inventory_state(os.lstat(path)) == expected,
+            f"resource qualification directory changed while hashing: {path}",
+        )
+    rows.sort(key=lambda row: str(row["path"]))
+    metadata_rows.sort(key=lambda row: str(row["path"]))
+    _require(
+        len(rows) == len({str(row["path"]) for row in rows}),
+        "resource qualification inventory has duplicate paths",
+    )
+    result: dict[str, Any] = {
+        "entry_count": len(rows),
+        "metadata_inventory_sha256": hashlib.sha256(
+            _canonical_bytes({"rows": metadata_rows})
+        ).hexdigest(),
+    }
+    if verify_content:
+        result["inventory_sha256"] = hashlib.sha256(
+            _canonical_bytes({"rows": rows})
+        ).hexdigest()
+    return result
+
+
+def validate_resource_lifecycle_qualification_lineage(
+    *,
+    evidence_path: str | Path,
+    completion_path: str | Path,
+    verify_content_inventory: bool = False,
+    require_admission: bool = True,
+) -> dict[str, Any]:
+    """Validate one sealed terminal v2 qualification and its admission status."""
+
+    evidence_source = _canonical_path(evidence_path)
+    root = evidence_source.parent
+    _require(
+        evidence_source.name == "resource-lifecycle-qualification.json"
+        and root.parent == RESOURCE_LIFECYCLE_QUALIFICATION_BASE
+        and root.name.startswith("bpt-resource-lifecycle-qualification-"),
+        "resource qualification path changed",
+    )
+    root_state = os.lstat(root)
+    _require(
+        stat.S_ISDIR(root_state.st_mode)
+        and not stat.S_ISLNK(root_state.st_mode)
+        and stat.S_IMODE(root_state.st_mode) == 0o500,
+        "resource qualification root is not sealed",
+    )
+    _require_mode(evidence_source, 0o400, role="resource qualification evidence")
+    _require(
+        os.lstat(evidence_source).st_nlink == 1,
+        "resource qualification evidence is hard-linked",
+    )
+    evidence_record, evidence_payload = _bound_file_and_payload(evidence_source)
+    evidence = _json_from_payload(
+        evidence_payload, role="resource qualification evidence"
+    )
+    _require(
+        set(evidence)
+        == {
+            "schema_version",
+            "artifact_kind",
+            "qualification_id",
+            "status",
+            "passed",
+            "admission",
+            "attempt",
+            "root_consumption_policy",
+            "host",
+            "phase",
+            "generator_profile",
+            "physical_gpu_index",
+            "canonical_run_parameters",
+            "parameters",
+            "execution_order",
+            "runtime_bindings",
+            "source_dataset",
+            "materialized_datasets",
+            "invocations",
+            "ab",
+            "soak",
+            "cleanup_events",
+            "predicates",
+            "information_boundary",
+            "artifact_sha256",
+        }
+        and evidence.get("schema_version") == 2
+        and evidence.get("artifact_kind") == RESOURCE_LIFECYCLE_QUALIFICATION_KIND
+        and evidence.get("qualification_id") == RESOURCE_LIFECYCLE_QUALIFICATION_ID
+        and evidence.get("host") == "workstation2"
+        and evidence.get("phase") == "all"
+        and evidence.get("generator_profile") == RESOURCE_LIFECYCLE_GENERATOR_PROFILE
+        and evidence.get("physical_gpu_index") == RESOURCE_LIFECYCLE_PHYSICAL_GPU_INDEX
+        and evidence.get("artifact_sha256") == held_artifact_sha256(evidence),
+        "resource qualification identity changed",
+    )
+    parameters = evidence.get("parameters")
+    canonical = evidence.get("canonical_run_parameters")
+    expected_parameters = {
+        "cuda_device": 1,
+        "seed": 0,
+        "ab_iterations": 250,
+        "ab_repeat_count": 5,
+        "soak_fit_count": 243,
+        "soak_iterations": 1,
+        "first_fit_fd_growth_limit": 32,
+        "steady_fd_growth_limit": 4,
+        "steady_task_growth_limit": 4,
+        "fit_timeout_seconds": 3_600,
+        "analyzer_timeout_seconds": 86_400,
+        "soak_timeout_seconds": 86_400,
+    }
+    _require(
+        isinstance(parameters, Mapping)
+        and parameters == expected_parameters
+        and isinstance(canonical, Mapping)
+        and canonical.get("phase") == "all"
+        and set(canonical) == {"dataset", "phase", *expected_parameters}
+        and canonical.get("dataset") == str(RESOURCE_LIFECYCLE_PUBLIC_DATASET)
+        and evidence.get("source_dataset") == str(RESOURCE_LIFECYCLE_PUBLIC_DATASET)
+        and all(
+            canonical.get(key) == value for key, value in expected_parameters.items()
+        ),
+        "resource qualification parameters changed",
+    )
+    root_policy = dict(RESOURCE_LIFECYCLE_ROOT_CONSUMPTION_POLICY)
+    _require(
+        evidence.get("root_consumption_policy") == root_policy,
+        "resource qualification root-consumption policy changed",
+    )
+    attempt_source = root / "qualification-attempt.json"
+    _require_mode(attempt_source, 0o400, role="resource qualification attempt")
+    _require(
+        os.lstat(attempt_source).st_nlink == 1,
+        "resource qualification attempt is hard-linked",
+    )
+    attempt_record, attempt_payload = _bound_file_and_payload(attempt_source)
+    attempt = _json_from_payload(attempt_payload, role="resource qualification attempt")
+    _require(
+        set(attempt)
+        == {
+            "schema_version",
+            "artifact_kind",
+            "qualification_id",
+            "state",
+            "output_root",
+            "code_revision",
+            "generator_profile",
+            "physical_gpu_index",
+            "frozen_analyzer_source",
+            "root_consumption_policy",
+            "formal_held_path_supplied",
+            "artifact_sha256",
+        }
+        and attempt.get("schema_version") == 2
+        and attempt.get("artifact_kind")
+        == RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_KIND
+        and attempt.get("qualification_id") == RESOURCE_LIFECYCLE_QUALIFICATION_ID
+        and attempt.get("state") == "canonical-root-consumed-at-creation"
+        and attempt.get("output_root") == str(root)
+        and attempt.get("generator_profile") == RESOURCE_LIFECYCLE_GENERATOR_PROFILE
+        and attempt.get("physical_gpu_index") == RESOURCE_LIFECYCLE_PHYSICAL_GPU_INDEX
+        and attempt.get("root_consumption_policy") == root_policy
+        and attempt.get("formal_held_path_supplied") is False
+        and attempt.get("artifact_sha256") == held_artifact_sha256(attempt),
+        "resource qualification attempt marker changed",
+    )
+
+    def require_embedded_signed_record(
+        value: object,
+        observed: Mapping[str, Any],
+        artifact: Mapping[str, Any],
+        *,
+        role: str,
+    ) -> None:
+        _require(isinstance(value, Mapping), f"{role} record is absent")
+        _require(
+            value.get("path") == observed.get("path")
+            and value.get("size_bytes") == observed.get("size_bytes")
+            and value.get("sha256") == observed.get("sha256")
+            and value.get("artifact_sha256") == artifact.get("artifact_sha256"),
+            f"{role} record changed",
+        )
+
+    require_embedded_signed_record(
+        evidence.get("attempt"),
+        attempt_record,
+        attempt,
+        role="resource qualification attempt",
+    )
+    runtime = evidence.get("runtime_bindings")
+    _require(isinstance(runtime, Mapping), "resource qualification runtime is absent")
+    code = runtime.get("code")
+    analyzer_source = runtime.get("analyzer_source")
+    marker_analyzer_source = attempt.get("frozen_analyzer_source")
+    _require(
+        isinstance(code, Mapping)
+        and code == runtime.get("code_after")
+        and code.get("clean") is True
+        and code.get("head") == attempt.get("code_revision")
+        and root.name == f"bpt-resource-lifecycle-qualification-{code.get('head')}"
+        and isinstance(analyzer_source, Mapping)
+        and analyzer_source == marker_analyzer_source
+        and analyzer_source.get("sha256") == RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
+        "resource qualification source/root/analyzer binding changed",
+    )
+
+    manifest_source = root / "equivalence/repeat-manifest.json"
+    result_source = root / "equivalence/analysis-result.json"
+    for source, role in (
+        (manifest_source, "resource qualification repeat manifest"),
+        (result_source, "resource qualification equivalence result"),
+    ):
+        _require_mode(source, 0o400, role=role)
+        _require(os.lstat(source).st_nlink == 1, f"{role} is hard-linked")
+    manifest_record, manifest_payload = _bound_file_and_payload(manifest_source)
+    result_record, result_payload = _bound_file_and_payload(result_source)
+    manifest = _json_from_payload(
+        manifest_payload, role="resource qualification repeat manifest"
+    )
+    result = _json_from_payload(
+        result_payload, role="resource qualification equivalence result"
+    )
+    expected_environment = manifest.get("expected_environment")
+    _require(
+        manifest.get("schema_version") == 1
+        and manifest.get("artifact_kind") == RESOURCE_LIFECYCLE_ANALYSIS_MANIFEST_KIND
+        and manifest.get("analysis_id") == RESOURCE_LIFECYCLE_ANALYSIS_ID
+        and manifest.get("artifact_sha256") == held_artifact_sha256(manifest)
+        and isinstance(expected_environment, Mapping)
+        and expected_environment.get("generator_profile")
+        == RESOURCE_LIFECYCLE_GENERATOR_PROFILE
+        and expected_environment.get("physical_gpu_index")
+        == RESOURCE_LIFECYCLE_PHYSICAL_GPU_INDEX,
+        "resource qualification analyzer manifest changed",
+    )
+    decision = result.get("decision")
+    _require(
+        result.get("schema_version") == 1
+        and result.get("artifact_kind") == RESOURCE_LIFECYCLE_ANALYSIS_RESULT_KIND
+        and result.get("analysis_id") == RESOURCE_LIFECYCLE_ANALYSIS_ID
+        and result.get("development_only") is True
+        and result.get("formal_path_accessed") is False
+        and result.get("generator_profile") == RESOURCE_LIFECYCLE_GENERATOR_PROFILE
+        and result.get("physical_gpu_index") == RESOURCE_LIFECYCLE_PHYSICAL_GPU_INDEX
+        and result.get("artifact_sha256") == held_artifact_sha256(result)
+        and isinstance(decision, Mapping),
+        "resource qualification analyzer result changed",
+    )
+    require_embedded_signed_record(
+        result.get("input_manifest"),
+        manifest_record,
+        manifest,
+        role="analyzer result manifest",
+    )
+
+    ab = evidence.get("ab")
+    _require(isinstance(ab, Mapping), "resource qualification A/B evidence is absent")
+    equivalence = ab.get("equivalence")
+    _require(
+        isinstance(equivalence, Mapping),
+        "resource qualification equivalence evidence is absent",
+    )
+    require_embedded_signed_record(
+        equivalence.get("manifest"),
+        manifest_record,
+        manifest,
+        role="aggregate repeat manifest",
+    )
+    require_embedded_signed_record(
+        equivalence.get("result"),
+        result_record,
+        result,
+        role="aggregate equivalence result",
+    )
+    _require(
+        equivalence.get("decision") == decision,
+        "resource qualification decision differs across artifacts",
+    )
+
+    accepted = decision.get("accepted") is True
+    qualified = evidence.get("passed") is True
+    expected_admission = {
+        "decision": "admitted" if accepted else "inconclusive",
+        "terminal": True,
+        "analyzer_outcome": "accepted" if accepted else "scientific-no-go",
+        "analyzer_no_go_interpretation": (
+            None
+            if accepted
+            else (
+                "admission-inconclusive; the frozen analyzer did not admit this "
+                "single fresh cohort, which is not proof of wrapper inequivalence"
+            )
+        ),
+        "wrapper_inequivalence_proven": False,
+        "retry_permitted": False,
+        "in_place_reuse_permitted": False,
+    }
+    _require(
+        evidence.get("admission") == expected_admission
+        and evidence.get("status")
+        == ("qualified" if qualified else "admission-inconclusive")
+        and qualified is accepted,
+        "resource qualification terminal admission semantics changed",
+    )
+    predicates = evidence.get("predicates")
+    soak = evidence.get("soak")
+    pairing_ids = [f"repeat-{index:03d}" for index in range(5)]
+    repeats = ab.get("repeats")
+    _require(
+        ab.get("repeat_count_per_mode") == 5
+        and ab.get("pairing_ids") == pairing_ids
+        and isinstance(repeats, Mapping)
+        and set(repeats) == {"original", "wrapped"}
+        and all(
+            isinstance(repeats[mode], list)
+            and len(repeats[mode]) == 5
+            and [record.get("pairing_id") for record in repeats[mode]] == pairing_ids
+            for mode in ("original", "wrapped")
+        ),
+        "resource qualification fresh five-plus-five cohort changed",
+    )
+    if qualified:
+        _require(
+            isinstance(predicates, Mapping)
+            and predicates
+            and all(value is True for value in predicates.values())
+            and ab.get("passed") is True
+            and equivalence.get("passed") is True
+            and decision.get("acceptance_basis")
+            in {
+                "exact-structured-array-equality",
+                "secondary-distributional-envelope",
+            }
+            and isinstance(soak, Mapping)
+            and soak.get("passed") is True
+            and soak.get("child_evidence_validation", {}).get(
+                "identity_sequence_resource_and_cleanup_valid"
+            )
+            is True
+            and isinstance(soak.get("child_evidence"), Mapping)
+            and len(soak["child_evidence"].get("fits", [])) == 243
+            and soak["child_evidence"].get("evaluation", {}).get("passed") is True,
+            "resource qualification admission gate changed",
+        )
+    else:
+        _require(
+            isinstance(predicates, Mapping)
+            and ab.get("passed") is False
+            and equivalence.get("passed") is False
+            and decision.get("acceptance_basis") == "rejected"
+            and soak is None
+            and predicates.get("equivalence_analyzer_accepted") is False
+            and predicates.get("resource_soak_passed") is False
+            and predicates.get("soak_started_only_after_analyzer_acceptance") is True
+            and predicates.get("qualification_temporary_root_absent") is True,
+            "resource qualification complete analyzer no-go changed",
+        )
+    _require(
+        evidence.get("information_boundary")
+        == {
+            "formal_held_path_accepted": False,
+            "formal_target_or_outcome_array_read": False,
+            "development_dataset_only": True,
+            "unreferenced_source_outputs_copied": False,
+            "rlimit_nofile_changed": False,
+        },
+        "resource qualification information boundary changed",
+    )
+    completion_source = _canonical_path(completion_path)
+    _require(
+        completion_source == Path(f"{root}-integrity-completion.json"),
+        "resource qualification completion path changed",
+    )
+    _require_mode(completion_source, 0o400, role="resource qualification completion")
+    _require(
+        os.lstat(completion_source).st_nlink == 1,
+        "resource qualification completion is hard-linked",
+    )
+    completion_record, completion_payload = _bound_file_and_payload(completion_source)
+    completion = _json_from_payload(
+        completion_payload, role="resource qualification completion"
+    )
+    _require(
+        set(completion)
+        == {
+            "schema_version",
+            "artifact_kind",
+            "qualification_id",
+            "status",
+            "passed",
+            "terminal_outcome",
+            "admission_eligible",
+            "host",
+            "qualification_root",
+            "qualification_root_mode_octal",
+            "qualification_tree_fully_nonwritable",
+            "root_consumption_policy",
+            "qualification_attempt",
+            "qualification_evidence",
+            "repeat_manifest",
+            "equivalence_result",
+            "analyzer_source",
+            "equivalence_decision",
+            "sealed_content_inventory",
+            "source_code",
+            "executed_integrity_sealer_source",
+            "information_boundary",
+            "artifact_sha256",
+        }
+        and completion.get("schema_version") == 2
+        and completion.get("artifact_kind")
+        == RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_KIND
+        and completion.get("qualification_id") == evidence.get("qualification_id")
+        and completion.get("status") == "qualification-integrity-complete"
+        and completion.get("passed") is True
+        and completion.get("terminal_outcome") == evidence.get("status")
+        and completion.get("admission_eligible") is qualified
+        and completion.get("host") == "workstation2"
+        and completion.get("qualification_root") == str(root)
+        and completion.get("qualification_root_mode_octal") == "0500"
+        and completion.get("qualification_tree_fully_nonwritable") is True
+        and completion.get("root_consumption_policy") == root_policy
+        and completion.get("equivalence_decision") == decision
+        and completion.get("artifact_sha256") == held_artifact_sha256(completion),
+        "resource qualification completion identity changed",
+    )
+    for completion_value, observed, artifact, role in (
+        (completion.get("qualification_attempt"), attempt_record, attempt, "attempt"),
+        (
+            completion.get("qualification_evidence"),
+            evidence_record,
+            evidence,
+            "evidence",
+        ),
+        (completion.get("repeat_manifest"), manifest_record, manifest, "manifest"),
+        (completion.get("equivalence_result"), result_record, result, "result"),
+    ):
+        require_embedded_signed_record(
+            completion_value,
+            observed,
+            artifact,
+            role=f"completion {role}",
+        )
+    code_root_value = code.get("path")
+    _require(
+        isinstance(code_root_value, str) and code_root_value,
+        "resource qualification code root is absent",
+    )
+    sealer_source = _canonical_path(code_root_value) / (
+        RESOURCE_LIFECYCLE_QUALIFICATION_SEALER_RELATIVE
+    )
+    sealer_record = _bound_file(sealer_source)
+    sealer_state = os.lstat(sealer_source)
+    executed_sealer = completion.get("executed_integrity_sealer_source")
+    _require(
+        completion.get("source_code")
+        == {"source_head": code.get("head"), "source_tree": code.get("tree")}
+        and completion.get("analyzer_source") == analyzer_source
+        and analyzer_source.get("sha256") == RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256
+        and isinstance(executed_sealer, Mapping)
+        and set(executed_sealer) == {"path", "sha256", "size_bytes", "mode_octal"}
+        and executed_sealer.get("path") == str(sealer_source)
+        and executed_sealer.get("sha256") == sealer_record["sha256"]
+        and executed_sealer.get("size_bytes") == sealer_record["size_bytes"]
+        and executed_sealer.get("mode_octal")
+        == f"{stat.S_IMODE(sealer_state.st_mode):04o}"
+        and stat.S_ISREG(sealer_state.st_mode)
+        and not stat.S_ISLNK(sealer_state.st_mode)
+        and sealer_state.st_nlink == 1,
+        "resource qualification completion source cross-link changed",
+    )
+    _require(
+        completion.get("information_boundary")
+        == {
+            "formal_held_path_accessed": False,
+            "formal_target_query_prediction_or_score_deserialized": False,
+            "public_development_dataset_only": True,
+            "scientific_method_selected_from_qualification": False,
+        },
+        "resource qualification completion boundary changed",
+    )
+    inventory = completion.get("sealed_content_inventory")
+    observed_inventory = _resource_lifecycle_qualification_inventory(
+        root, verify_content=verify_content_inventory
+    )
+    _require(
+        isinstance(inventory, Mapping)
+        and isinstance(inventory.get("entry_count"), int)
+        and inventory.get("entry_count") == observed_inventory["entry_count"]
+        and _valid_sha256(inventory.get("inventory_sha256"))
+        and _valid_sha256(inventory.get("metadata_inventory_sha256"))
+        and inventory.get("metadata_inventory_sha256")
+        == observed_inventory.get("metadata_inventory_sha256")
+        and (
+            not verify_content_inventory
+            or inventory.get("inventory_sha256")
+            == observed_inventory.get("inventory_sha256")
+        ),
+        "resource qualification inventory binding changed",
+    )
+    _require(
+        not require_admission or completion.get("admission_eligible") is True,
+        "resource qualification is a sealed admission-inconclusive no-go",
+    )
+    return {
+        "resource_lifecycle_qualification_attempt": {
+            **attempt_record,
+            "artifact_sha256": attempt["artifact_sha256"],
+        },
+        "resource_lifecycle_qualification_evidence": {
+            **evidence_record,
+            "artifact_sha256": evidence["artifact_sha256"],
+        },
+        "resource_lifecycle_qualification_repeat_manifest": {
+            **manifest_record,
+            "artifact_sha256": manifest["artifact_sha256"],
+        },
+        "resource_lifecycle_qualification_equivalence_result": {
+            **result_record,
+            "artifact_sha256": result["artifact_sha256"],
+        },
+        "resource_lifecycle_qualification_integrity_completion": {
+            **completion_record,
+            "artifact_sha256": completion["artifact_sha256"],
+        },
+        "resource_lifecycle_qualification_integrity": {
+            "root": str(root),
+            "root_mode_octal": "0500",
+            "fully_nonwritable": True,
+            "entry_count": inventory["entry_count"],
+            "inventory_sha256": inventory["inventory_sha256"],
+            "metadata_inventory_sha256": inventory["metadata_inventory_sha256"],
+            "source_head": code.get("head"),
+            "source_tree": code.get("tree"),
+            "terminal_outcome": evidence.get("status"),
+            "admission_eligible": qualified,
+            "generator_profile": evidence.get("generator_profile"),
+            "physical_gpu_index": evidence.get("physical_gpu_index"),
+            "equivalence_acceptance_basis": decision.get("acceptance_basis"),
+            "analyzer_source_sha256": RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
+        },
+    }
+
+
 def validate_post_withdrawal_development_use_disclosure(
     path: str | Path,
 ) -> dict[str, Any]:
@@ -1396,9 +2912,16 @@ def validate_post_withdrawal_development_use_disclosure(
             "protocol_id",
             "disclosed_v7_files",
             "disclosed_v8_attempt3_files",
+            "disclosed_v8_attempt4_files",
             "v8_attempt3_archive_integrity",
+            "v8_attempt4_archive_integrity",
+            "v8_attempt4_launcher_integrity",
+            "v8_attempt4_execution_boundary",
+            "resource_lifecycle_qualification_files",
+            "resource_lifecycle_qualification_integrity",
             "v8_attempt3_revision_basis",
             "post_withdrawal_development",
+            "attempt4_technical_failure_development",
             "retirement",
             "v8_1_reuse_boundary",
             "claim_boundary",
@@ -1499,6 +3022,98 @@ def validate_post_withdrawal_development_use_disclosure(
         == attempt3_lineage["v8_attempt3_archive_integrity"],
         "disclosed attempt-3 archive integrity changed",
     )
+    attempt4_disclosed = artifact.get("disclosed_v8_attempt4_files")
+    expected_attempt4 = {
+        "v8_attempt4_withdrawal_report": ATTEMPT4_WITHDRAWAL_REPORT_FILE_SHA256,
+        "v8_attempt4_withdrawal_pointer": ATTEMPT4_WITHDRAWAL_POINTER_FILE_SHA256,
+        "v8_attempt4_withdrawal_integrity_completion": (
+            ATTEMPT4_WITHDRAWAL_COMPLETION_FILE_SHA256
+        ),
+    }
+    _require(
+        isinstance(attempt4_disclosed, Mapping)
+        and set(attempt4_disclosed) == set(expected_attempt4),
+        "disclosed attempt-4 file set changed",
+    )
+    for name, expected_sha256 in expected_attempt4.items():
+        record = attempt4_disclosed[name]
+        _require(
+            isinstance(record, Mapping)
+            and set(record) == _DISCLOSED_FILE_RECORD_FIELDS
+            and record.get("mode_octal") == "0400",
+            f"{name} disclosure record changed",
+        )
+        observed = _bound_file(record.get("path"))
+        _require(
+            observed
+            == {
+                "path": record["path"],
+                "sha256": record["sha256"],
+                "size_bytes": record["size_bytes"],
+            }
+            and record["sha256"] == expected_sha256,
+            f"{name} binding changed",
+        )
+    attempt4_lineage = validate_attempt4_withdrawal_lineage(
+        archive_path=ATTEMPT4_ARCHIVE_PATH,
+        report_path=attempt4_disclosed["v8_attempt4_withdrawal_report"]["path"],
+        pointer_path=attempt4_disclosed["v8_attempt4_withdrawal_pointer"]["path"],
+        completion_path=attempt4_disclosed[
+            "v8_attempt4_withdrawal_integrity_completion"
+        ]["path"],
+    )
+    _require(
+        artifact.get("v8_attempt4_archive_integrity")
+        == attempt4_lineage["v8_attempt4_archive_integrity"]
+        and artifact.get("v8_attempt4_launcher_integrity")
+        == attempt4_lineage["v8_attempt4_launcher_integrity"],
+        "disclosed attempt-4 archive or launcher integrity changed",
+    )
+    boundary = artifact.get("v8_attempt4_execution_boundary")
+    _require(
+        isinstance(boundary, Mapping)
+        and boundary.get("calibration_result") == "NO_CALIBRATION_RESULT"
+        and boundary.get("first_complete_cohort_barrier_crossed") is True
+        and boundary.get("completed_target_x0_queried_pairs") == 2
+        and boundary.get("partial_third_target_reconstruction") is True
+        and boundary.get("second_complete_cohort_barrier_crossed") is False
+        and boundary.get("score_evidence_count") == 0
+        and boundary.get("gate_decision_count") == 0
+        and boundary.get("confirmation_accessed") is False,
+        "disclosed attempt-4 execution boundary changed",
+    )
+    qualification_files = artifact.get("resource_lifecycle_qualification_files")
+    _require(
+        isinstance(qualification_files, Mapping)
+        and set(qualification_files) == set(RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES),
+        "resource qualification disclosure file set changed",
+    )
+    qualification_lineage = validate_resource_lifecycle_qualification_lineage(
+        evidence_path=qualification_files["resource_lifecycle_qualification_evidence"][
+            "path"
+        ],
+        completion_path=qualification_files[
+            "resource_lifecycle_qualification_integrity_completion"
+        ]["path"],
+    )
+    for name in RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES:
+        disclosed = qualification_files[name]
+        _require(
+            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
+            == {
+                key: qualification_lineage[name][key]
+                for key in ("path", "sha256", "size_bytes")
+            }
+            and disclosed.get("artifact_sha256")
+            == qualification_lineage[name]["artifact_sha256"]
+            and disclosed.get("mode_octal") == "0400",
+            f"disclosed {name} binding changed",
+        )
+    _require(
+        artifact.get("resource_lifecycle_qualification_integrity")
+        == qualification_lineage["resource_lifecycle_qualification_integrity"],
+        "resource qualification disclosure integrity changed",
+    )
     _require(
         artifact.get("v8_attempt3_revision_basis")
         == {
@@ -1523,6 +3138,21 @@ def validate_post_withdrawal_development_use_disclosure(
             "field_hypothesis_was_subsequently_reselected_on_independent_open27": True,
         },
         "post-withdrawal development disclosure changed",
+    )
+    _require(
+        artifact.get("attempt4_technical_failure_development")
+        == {
+            "durable_launcher_log_used_for_fixed_marker_and_traceback_diagnosis": True,
+            "too_many_open_files_diagnosed": True,
+            "formal_target_query_prediction_or_score_array_deserialized": False,
+            "attempt4_score_gate_or_confirmation_existed": False,
+            "scientific_method_or_threshold_selected_from_attempt4_outcomes": False,
+            "repair_scope": (
+                "per-fit Nerfstudio resource lifecycle plus a post-case file-"
+                "descriptor growth guard"
+            ),
+        },
+        "attempt-4 technical failure disclosure changed",
     )
     _require(
         artifact.get("retirement")
@@ -1554,7 +3184,15 @@ def validate_post_withdrawal_development_use_disclosure(
             "v8_attempt3_queried_prediction_artifacts_reused": False,
             "v8_attempt3_score_or_gate_artifacts_reused": False,
             "v8_attempt3_partial_artifacts_reused": False,
-            "all_v8_1_attempt4_predictions_targets_queries_and_scores_fresh": True,
+            "v8_attempt4_predictions_reused": False,
+            "v8_attempt4_source_manifests_reused": False,
+            "v8_attempt4_frozen_fields_reused": False,
+            "v8_attempt4_target_artifacts_reused": False,
+            "v8_attempt4_official_x0_query_artifacts_reused": False,
+            "v8_attempt4_queried_prediction_artifacts_reused": False,
+            "v8_attempt4_score_or_gate_artifacts_reused": False,
+            "v8_attempt4_partial_artifacts_reused": False,
+            "all_v8_1_attempt5_predictions_targets_queries_and_scores_fresh": True,
             "full_15_case_fresh_rerun_required": True,
         },
         "v8.1 reuse boundary changed",
@@ -1624,8 +3262,13 @@ def create_calibration_protocol_lock(
     attempt3_withdrawal_report_path: str | Path,
     attempt3_withdrawal_pointer_path: str | Path,
     attempt3_withdrawal_integrity_completion_path: str | Path,
+    attempt4_withdrawal_report_path: str | Path,
+    attempt4_withdrawal_pointer_path: str | Path,
+    attempt4_withdrawal_integrity_completion_path: str | Path,
+    resource_lifecycle_qualification_path: str | Path,
+    resource_lifecycle_qualification_completion_path: str | Path,
 ) -> dict[str, Any]:
-    """Create v8.1 attempt 4 only after proving its formal root was absent."""
+    """Create v8.1 attempt 5 only after proving its formal root was absent."""
 
     root = _canonical_path(held_root)
     output = _canonical_path(output_path)
@@ -1662,6 +3305,13 @@ def create_calibration_protocol_lock(
             bindings.get("center_exclusion_contract")
             == query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
             "center-exclusion contract is not independently locked",
+        )
+        _require(
+            bindings.get("resource_lifecycle_policy_contract")
+            == held_contract_sha256(RESOURCE_LIFECYCLE_POLICY_CONTRACT)
+            and bindings.get("post_case_resource_boundary_contract")
+            == held_contract_sha256(POST_CASE_RESOURCE_BOUNDARY_CONTRACT),
+            "attempt-5 resource lifecycle contracts are not independently locked",
         )
         _require_mode(
             v7_withdrawal_report_path,
@@ -1701,6 +3351,18 @@ def create_calibration_protocol_lock(
             completion_path=attempt3_withdrawal_integrity_completion_path,
             verify_content_inventory=True,
         )
+        attempt4_lineage = validate_attempt4_withdrawal_lineage(
+            archive_path=ATTEMPT4_ARCHIVE_PATH,
+            report_path=attempt4_withdrawal_report_path,
+            pointer_path=attempt4_withdrawal_pointer_path,
+            completion_path=attempt4_withdrawal_integrity_completion_path,
+            verify_content_inventory=True,
+        )
+        qualification_lineage = validate_resource_lifecycle_qualification_lineage(
+            evidence_path=resource_lifecycle_qualification_path,
+            completion_path=resource_lifecycle_qualification_completion_path,
+            verify_content_inventory=True,
+        )
         disclosed_attempt3 = disclosure["disclosed_v8_attempt3_files"]
         for name in (
             "v8_attempt3_withdrawal_report",
@@ -1717,6 +3379,78 @@ def create_calibration_protocol_lock(
             disclosure["v8_attempt3_archive_integrity"]
             == attempt3_lineage["v8_attempt3_archive_integrity"],
             "disclosure binds another attempt-3 archive",
+        )
+        for name in (
+            "v8_attempt4_withdrawal_report",
+            "v8_attempt4_withdrawal_pointer",
+            "v8_attempt4_withdrawal_integrity_completion",
+        ):
+            disclosed = disclosure["disclosed_v8_attempt4_files"][name]
+            _require(
+                {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
+                == attempt4_lineage[name],
+                f"disclosure binds another {name}",
+            )
+        _require(
+            disclosure["v8_attempt4_archive_integrity"]
+            == attempt4_lineage["v8_attempt4_archive_integrity"]
+            and disclosure["v8_attempt4_launcher_integrity"]
+            == attempt4_lineage["v8_attempt4_launcher_integrity"]
+            and attempt4_lineage["v8_attempt4_calibration_result"]
+            == "NO_CALIBRATION_RESULT",
+            "disclosure binds another attempt-4 failure boundary",
+        )
+        for name in RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES:
+            disclosed = disclosure["resource_lifecycle_qualification_files"][name]
+            _require(
+                {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
+                == {
+                    key: qualification_lineage[name][key]
+                    for key in ("path", "sha256", "size_bytes")
+                }
+                and disclosed.get("artifact_sha256")
+                == qualification_lineage[name]["artifact_sha256"],
+                f"disclosure binds another {name}",
+            )
+        _require(
+            disclosure["resource_lifecycle_qualification_integrity"]
+            == qualification_lineage["resource_lifecycle_qualification_integrity"],
+            "disclosure binds another resource qualification tree",
+        )
+        _require(
+            bindings.get("resource_lifecycle_qualification_evidence")
+            == qualification_lineage["resource_lifecycle_qualification_evidence"][
+                "sha256"
+            ]
+            and bindings.get("resource_lifecycle_qualification_integrity_completion")
+            == qualification_lineage[
+                "resource_lifecycle_qualification_integrity_completion"
+            ]["sha256"]
+            and bindings.get("resource_lifecycle_qualification_attempt")
+            == qualification_lineage["resource_lifecycle_qualification_attempt"][
+                "sha256"
+            ]
+            and bindings.get("resource_lifecycle_qualification_repeat_manifest")
+            == qualification_lineage[
+                "resource_lifecycle_qualification_repeat_manifest"
+            ]["sha256"]
+            and bindings.get("resource_lifecycle_qualification_equivalence_result")
+            == qualification_lineage[
+                "resource_lifecycle_qualification_equivalence_result"
+            ]["sha256"]
+            and bindings.get("resource_lifecycle_qualification_analyzer_source")
+            == RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
+            "resource qualification file hashes are not independently locked",
+        )
+        _require(
+            all(
+                bindings.get(binding_name)
+                == qualification_lineage[lineage_name]["artifact_sha256"]
+                for lineage_name, binding_name in (
+                    RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES.items()
+                )
+            ),
+            "resource qualification artifact hashes are not independently locked",
         )
         artifact: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION,
@@ -1737,12 +3471,18 @@ def create_calibration_protocol_lock(
                 ),
                 "open27_development_decision": development,
                 **attempt3_lineage,
+                **attempt4_lineage,
+                **qualification_lineage,
             },
             "frozen_field_contract": deepcopy(FROZEN_FIELD_CONTRACT),
             "replacement_source_inventory_contract": deepcopy(
                 replacement_source.REPLACEMENT_SOURCE_INVENTORY_CONTRACT
             ),
             "primary_method": deepcopy(PRIMARY_METHOD),
+            "resource_lifecycle_policy": deepcopy(RESOURCE_LIFECYCLE_POLICY_CONTRACT),
+            "post_case_resource_boundary": deepcopy(
+                POST_CASE_RESOURCE_BOUNDARY_CONTRACT
+            ),
             "stage": "calibration",
             "confirmation_access_authorized": False,
             "parent_calibration_lock": None,
@@ -1801,7 +3541,11 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         and artifact.get("frozen_field_contract") == FROZEN_FIELD_CONTRACT
         and artifact.get("replacement_source_inventory_contract")
         == replacement_source.REPLACEMENT_SOURCE_INVENTORY_CONTRACT
-        and artifact.get("primary_method") == PRIMARY_METHOD,
+        and artifact.get("primary_method") == PRIMARY_METHOD
+        and artifact.get("resource_lifecycle_policy")
+        == RESOURCE_LIFECYCLE_POLICY_CONTRACT
+        and artifact.get("post_case_resource_boundary")
+        == POST_CASE_RESOURCE_BOUNDARY_CONTRACT,
         "held-v8 method or temporal contract changed",
     )
     bindings = artifact.get("immutable_bindings")
@@ -1829,6 +3573,13 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         == query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256,
         "center-exclusion contract changed",
     )
+    _require(
+        bindings.get("resource_lifecycle_policy_contract")
+        == held_contract_sha256(RESOURCE_LIFECYCLE_POLICY_CONTRACT)
+        and bindings.get("post_case_resource_boundary_contract")
+        == held_contract_sha256(POST_CASE_RESOURCE_BOUNDARY_CONTRACT),
+        "held-v8 resource lifecycle contracts changed",
+    )
     lineage = artifact.get("lineage")
     _require(
         isinstance(lineage, Mapping)
@@ -1841,6 +3592,18 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "v8_attempt3_withdrawal_pointer",
             "v8_attempt3_withdrawal_integrity_completion",
             "v8_attempt3_archive_integrity",
+            "v8_attempt4_withdrawal_report",
+            "v8_attempt4_withdrawal_pointer",
+            "v8_attempt4_withdrawal_integrity_completion",
+            "v8_attempt4_archive_integrity",
+            "v8_attempt4_launcher_integrity",
+            "v8_attempt4_calibration_result",
+            "resource_lifecycle_qualification_attempt",
+            "resource_lifecycle_qualification_evidence",
+            "resource_lifecycle_qualification_repeat_manifest",
+            "resource_lifecycle_qualification_equivalence_result",
+            "resource_lifecycle_qualification_integrity_completion",
+            "resource_lifecycle_qualification_integrity",
         },
         "held-v8 lineage fields changed",
     )
@@ -1902,6 +3665,79 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         disclosure["v8_attempt3_archive_integrity"]
         == lineage["v8_attempt3_archive_integrity"],
         "post-withdrawal disclosure archive lineage changed",
+    )
+    attempt4_lineage = validate_attempt4_withdrawal_lineage(
+        archive_path=lineage["v8_attempt4_archive_integrity"]["path"],
+        report_path=lineage["v8_attempt4_withdrawal_report"]["path"],
+        pointer_path=lineage["v8_attempt4_withdrawal_pointer"]["path"],
+        completion_path=lineage["v8_attempt4_withdrawal_integrity_completion"]["path"],
+    )
+    _require(
+        all(lineage[name] == value for name, value in attempt4_lineage.items()),
+        "attempt-4 withdrawal lineage changed",
+    )
+    for name in (
+        "v8_attempt4_withdrawal_report",
+        "v8_attempt4_withdrawal_pointer",
+        "v8_attempt4_withdrawal_integrity_completion",
+    ):
+        disclosed = disclosure["disclosed_v8_attempt4_files"][name]
+        _require(
+            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
+            == lineage[name],
+            f"post-withdrawal disclosure {name} lineage changed",
+        )
+    _require(
+        disclosure["v8_attempt4_archive_integrity"]
+        == lineage["v8_attempt4_archive_integrity"]
+        and disclosure["v8_attempt4_launcher_integrity"]
+        == lineage["v8_attempt4_launcher_integrity"]
+        and lineage["v8_attempt4_calibration_result"] == "NO_CALIBRATION_RESULT",
+        "post-withdrawal disclosure attempt-4 boundary changed",
+    )
+    qualification_lineage = validate_resource_lifecycle_qualification_lineage(
+        evidence_path=lineage["resource_lifecycle_qualification_evidence"]["path"],
+        completion_path=lineage[
+            "resource_lifecycle_qualification_integrity_completion"
+        ]["path"],
+    )
+    _require(
+        all(lineage[name] == value for name, value in qualification_lineage.items()),
+        "resource lifecycle qualification lineage changed",
+    )
+    for name in RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES:
+        disclosed = disclosure["resource_lifecycle_qualification_files"][name]
+        _require(
+            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
+            == {key: lineage[name][key] for key in ("path", "sha256", "size_bytes")}
+            and disclosed.get("artifact_sha256") == lineage[name]["artifact_sha256"],
+            f"post-withdrawal disclosure {name} lineage changed",
+        )
+    _require(
+        disclosure["resource_lifecycle_qualification_integrity"]
+        == lineage["resource_lifecycle_qualification_integrity"]
+        and bindings.get("resource_lifecycle_qualification_attempt")
+        == lineage["resource_lifecycle_qualification_attempt"]["sha256"]
+        and bindings.get("resource_lifecycle_qualification_evidence")
+        == lineage["resource_lifecycle_qualification_evidence"]["sha256"]
+        and bindings.get("resource_lifecycle_qualification_repeat_manifest")
+        == lineage["resource_lifecycle_qualification_repeat_manifest"]["sha256"]
+        and bindings.get("resource_lifecycle_qualification_equivalence_result")
+        == lineage["resource_lifecycle_qualification_equivalence_result"]["sha256"]
+        and bindings.get("resource_lifecycle_qualification_integrity_completion")
+        == lineage["resource_lifecycle_qualification_integrity_completion"]["sha256"]
+        and bindings.get("resource_lifecycle_qualification_analyzer_source")
+        == RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
+        "post-withdrawal qualification binding changed",
+    )
+    _require(
+        all(
+            bindings.get(binding_name) == lineage[lineage_name]["artifact_sha256"]
+            for lineage_name, binding_name in (
+                RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES.items()
+            )
+        ),
+        "post-withdrawal qualification artifact binding changed",
     )
     _require(
         artifact.get("freshness_and_reuse") == FRESHNESS_AND_REUSE_CONTRACT,
@@ -3288,6 +5124,12 @@ def create_confirmation_protocol_lock(
 
 
 __all__ = [
+    "ATTEMPT4_ARCHIVE_ENTRY_COUNT",
+    "ATTEMPT4_ARCHIVE_INVENTORY_SHA256",
+    "ATTEMPT4_ARCHIVE_PATH",
+    "ATTEMPT4_WITHDRAWAL_INTEGRITY_COMPLETION_PATH",
+    "ATTEMPT4_WITHDRAWAL_POINTER_PATH",
+    "ATTEMPT4_WITHDRAWAL_REPORT_PATH",
     "ATTEMPT3_ARCHIVE_ENTRY_COUNT",
     "ATTEMPT3_ARCHIVE_INVENTORY_SHA256",
     "ATTEMPT3_ARCHIVE_METADATA_INVENTORY_SHA256",
@@ -3314,11 +5156,13 @@ __all__ = [
     "PHYSICAL_SEAL_KIND",
     "PREFIX_AUTHORIZATION_KIND",
     "PRIMARY_METHOD",
+    "POST_CASE_RESOURCE_BOUNDARY_CONTRACT",
     "PROTOCOL_ID",
     "REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT",
     "REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256",
     "RETIRED_V7_CASE_NAME",
     "REPLACEMENT_SOURCE_OPERATION",
+    "RESOURCE_LIFECYCLE_POLICY_CONTRACT",
     "TARGET_RECONSTRUCTION_OPERATION",
     "UPDATE_FRAMES",
     "V7_WITHDRAWAL_REPORT_FILE_SHA256",
@@ -3347,5 +5191,7 @@ __all__ = [
     "validate_prefix_stage_authorization",
     "validate_protocol_lock",
     "validate_attempt3_withdrawal_lineage",
+    "validate_attempt4_withdrawal_lineage",
+    "validate_resource_lifecycle_qualification_lineage",
     "validate_second_cohort_barrier",
 ]

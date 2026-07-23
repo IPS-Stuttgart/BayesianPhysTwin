@@ -97,7 +97,7 @@ def _write_admission_replay_fixture(
     monkeypatch: pytest.MonkeyPatch,
     *,
     mutation: str | None = None,
-) -> tuple[dict[str, str], SimpleNamespace]:
+) -> tuple[dict[str, str], SimpleNamespace, dict[str, object]]:
     root.mkdir()
     boundary = {
         "contact_conditioned_action_result_sha256": None,
@@ -165,6 +165,9 @@ def _write_admission_replay_fixture(
         "exact_child_bootstrap_sha256": hashlib.sha256(
             bootstrap.encode("utf-8")
         ).hexdigest(),
+        "clean_tracked_and_untracked": True,
+        "ordinary_untracked_file_count": 0,
+        "ignored_untracked_file_count": 0,
         "uncommitted_correction_present": False,
         "external_runtime": {
             "python": {},
@@ -176,9 +179,18 @@ def _write_admission_replay_fixture(
         source_binding["exact_child_bootstrap_sha256"] = "0" * 64
     elif mutation == "uncommitted":
         source_binding["uncommitted_correction_present"] = True
+    elif mutation == "ignored_source":
+        source_binding["ignored_untracked_file_count"] = 1
     elif mutation == "source_sha":
         source_binding["adapter_source_sha256"] = "0" * 64
     contract_sha256 = "e" * 64
+    qualification_lineage = {
+        "resource_lifecycle_qualification_integrity": {
+            "source_head": source_binding["git_head"],
+            "terminal_outcome": "qualified",
+            "admission_eligible": True,
+        }
+    }
     report_unsigned: dict[str, object] = {
         "schema_version": 1,
         "artifact_kind": preparer._V81_ADMISSION_REPLAY_REPORT_KIND,
@@ -188,7 +200,14 @@ def _write_admission_replay_fixture(
         "role": "calibration",
         "development_replay_only": True,
         "formal_outcome_evidence": False,
+        "resource_lifecycle_qualification": qualification_lineage,
         "source_evidence": {
+            "archived_attempt": 2,
+            "prediction_only_input": {
+                "path": str(preparer._V8_ATTEMPT2_REPLAY_SOURCE_INPUT),
+                "sha256": preparer._V8_ATTEMPT2_REPLAY_SOURCE_INPUT_SHA256,
+                "size_bytes": preparer._V8_ATTEMPT2_REPLAY_SOURCE_INPUT_SIZE_BYTES,
+            },
             "future_object_observation_used": False,
             "source_used_for_numerical_replay": "prediction_only_input_only",
         },
@@ -243,6 +262,10 @@ def _write_admission_replay_fixture(
         report_unsigned["admission"]["contract_sha256"] = "0" * 64  # type: ignore[index]
     elif mutation == "formal_evidence":
         report_unsigned["formal_outcome_evidence"] = True
+    elif mutation == "source_evidence":
+        report_unsigned["source_evidence"]["prediction_only_input"][  # type: ignore[index]
+            "sha256"
+        ] = "0" * 64
     elif mutation == "top_boundary":
         report_unsigned["information_boundary"]["query_read"] = True  # type: ignore[index]
     elif mutation == "metrics":
@@ -278,6 +301,14 @@ def _write_admission_replay_fixture(
         report_unsigned["successful_replay"]["outputs"]["episode_graph.npz"][  # type: ignore[index]
             "sha256"
         ] = "0" * 64
+    elif mutation == "qualification_lineage":
+        report_unsigned["resource_lifecycle_qualification"] = {
+            "resource_lifecycle_qualification_integrity": {
+                "source_head": "0" * 40,
+                "terminal_outcome": "admission-inconclusive",
+                "admission_eligible": False,
+            }
+        }
 
     report = _signed_artifact(report_unsigned)
     report_path = root / "metadata-only-replay-report.json"
@@ -364,7 +395,7 @@ def _write_admission_replay_fixture(
         V8_EXTERNAL_ADMISSION_CONTRACT_SHA256=contract_sha256,
         _V8_EXTERNAL_ADMISSION_RUNPY_BOOTSTRAP=bootstrap,
     )
-    return bindings, builders
+    return bindings, builders, qualification_lineage
 
 
 def test_repository_tree_binding_and_dirty_rejection(tmp_path: Path) -> None:
@@ -378,6 +409,111 @@ def test_repository_tree_binding_and_dirty_rejection(tmp_path: Path) -> None:
     (root / "method.py").write_text("VALUE = 2\n", encoding="utf-8")
     with pytest.raises(ValueError, match="worktree is not completely clean"):
         preparer._validate_repository(root)
+
+
+def test_git_calls_isolate_global_config_and_index_accelerators(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observed: dict[str, object] = {}
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        observed["command"] = command
+        observed["environment"] = kwargs["env"]
+        return subprocess.CompletedProcess(command, 0, stdout=b"", stderr=b"")
+
+    monkeypatch.setattr(preparer.subprocess, "run", fake_run)
+
+    preparer._run_git(tmp_path, ["status", "--porcelain=v1"])
+
+    assert observed["command"] == [
+        "git",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.untrackedCache=false",
+        "-C",
+        str(tmp_path),
+        "status",
+        "--porcelain=v1",
+    ]
+    environment = observed["environment"]
+    assert isinstance(environment, dict)
+    assert environment["GIT_CONFIG_GLOBAL"] == "/dev/null"
+    assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert environment["GIT_NO_REPLACE_OBJECTS"] == "1"
+
+
+def test_repository_preflight_rejects_ignored_bytecode(tmp_path: Path) -> None:
+    root = _repository(tmp_path)
+    (root / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
+    _git(root, "add", ".gitignore")
+    _git(root, "commit", "-m", "ignore bytecode")
+    bytecode = root / "__pycache__/method.cpython-312.pyc"
+    bytecode.parent.mkdir()
+    bytecode.write_bytes(b"malicious ignored bytecode")
+
+    with pytest.raises(ValueError, match="ignored untracked files"):
+        preparer._validate_repository(root)
+
+
+@pytest.mark.parametrize(
+    ("index_flag", "expected_tag"),
+    (
+        ("--assume-unchanged", "h"),
+        ("--skip-worktree", "S"),
+    ),
+)
+def test_repository_preflight_rejects_hidden_tracked_drift_before_head(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    index_flag: str,
+    expected_tag: str,
+) -> None:
+    root = _repository(tmp_path)
+    tracked = root / "method.py"
+    _git(root, "update-index", index_flag, "method.py")
+    tracked.write_text("VALUE = 'hidden drift'\n", encoding="utf-8")
+    assert _git(root, "status", "--porcelain=v1", "--untracked-files=all") == ""
+    assert _git(root, "ls-files", "-v", "method.py").startswith(f"{expected_tag} ")
+
+    real_run_git = preparer._run_git
+    calls: list[tuple[str, ...]] = []
+
+    def record_run_git(
+        repository: Path,
+        arguments: list[str],
+        *,
+        check: bool = True,
+    ) -> subprocess.CompletedProcess[bytes]:
+        calls.append(tuple(arguments))
+        return real_run_git(repository, arguments, check=check)
+
+    monkeypatch.setattr(preparer, "_run_git", record_run_git)
+
+    with pytest.raises(ValueError, match="non-ordinary tracked index entries"):
+        preparer._validate_repository(root)
+
+    assert calls[-1] == ("ls-files", "-v", "-z")
+    assert ("rev-parse", "HEAD") not in calls
+    assert not any(call[:1] == ("ls-tree",) for call in calls)
+
+
+def test_repository_and_parent_check_reject_git_replacement_refs(
+    tmp_path: Path,
+) -> None:
+    root = _repository(tmp_path)
+    h1 = _git(root, "rev-parse", "HEAD")
+    marker = root / "marker.txt"
+    marker.write_text("h2\n", encoding="utf-8")
+    _git(root, "add", "marker.txt")
+    _git(root, "commit", "-m", "h2")
+    h2 = _git(root, "rev-parse", "HEAD")
+    _git(root, "replace", h2, h1)
+
+    with pytest.raises(ValueError, match="replacement refs"):
+        preparer._validate_repository(root)
+    with pytest.raises(ValueError, match="replacement refs"):
+        preparer._require_direct_h2_parent(root, h1, role="test H1")
 
 
 def test_staged_clone_is_independent_clean_and_read_only(tmp_path: Path) -> None:
@@ -429,6 +565,8 @@ def test_prospective_bindings_include_named_deployment_contracts(
     fake_protocol = SimpleNamespace(
         FROZEN_FIELD_CONTRACT={"field": "frozen"},
         PRIMARY_METHOD={"method": "frozen"},
+        RESOURCE_LIFECYCLE_POLICY_CONTRACT={"resource": "bounded"},
+        POST_CASE_RESOURCE_BOUNDARY_CONTRACT={"maximum_growth": 32},
         REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256="7" * 64,
         query_artifacts=SimpleNamespace(CENTER_EXCLUSION_CONTRACT_SHA256="5" * 64),
         frame_zero_assets=SimpleNamespace(
@@ -463,8 +601,64 @@ def test_prospective_bindings_include_named_deployment_contracts(
     )
     monkeypatch.setattr(
         preparer,
+        "_require_h2_execution_pins",
+        lambda: (tmp_path / "qualification", sealed, sealed),
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_validate_attempt4_archive_lineage",
+        lambda _bindings, _protocol: {
+            "v8_attempt4_calibration_result": "NO_CALIBRATION_RESULT"
+        },
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_validate_resource_lifecycle_qualification",
+        lambda _bindings, _protocol, _code: {
+            "resource_lifecycle_qualification_attempt": {"sha256": "2" * 64},
+            "resource_lifecycle_qualification_evidence": {"sha256": "a" * 64},
+            "resource_lifecycle_qualification_repeat_manifest": {"sha256": "3" * 64},
+            "resource_lifecycle_qualification_equivalence_result": {"sha256": "4" * 64},
+            "resource_lifecycle_qualification_integrity_completion": {
+                "sha256": "b" * 64
+            },
+            "resource_lifecycle_qualification_integrity": {
+                "inventory_sha256": "c" * 64,
+                "metadata_inventory_sha256": "1" * 64,
+                "source_head": "f" * 40,
+                "analyzer_source_sha256": "5" * 64,
+            },
+        },
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_RESOURCE_LIFECYCLE_QUALIFICATION_EVIDENCE_ARTIFACT_SHA256",
+        "d" * 64,
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_RESOURCE_LIFECYCLE_QUALIFICATION_COMPLETION_ARTIFACT_SHA256",
+        "e" * 64,
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_ARTIFACT_SHA256",
+        "6" * 64,
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_ARTIFACT_SHA256",
+        "7" * 64,
+    )
+    monkeypatch.setattr(
+        preparer,
+        "_RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_ARTIFACT_SHA256",
+        "0" * 64,
+    )
+    monkeypatch.setattr(
+        preparer,
         "_validate_admission_replay_source_lineage",
-        lambda _bindings, _builders, _code: None,
+        lambda _bindings, _builders, _code, _qualification: "f" * 40,
     )
     monkeypatch.setattr(preparer, "_validate_pinned_python", lambda: "9" * 64)
     monkeypatch.setattr(
@@ -507,6 +701,14 @@ def test_prospective_bindings_include_named_deployment_contracts(
         ).hexdigest()
     )
     assert all(len(value) == 64 for value in bindings.values())
+
+    monkeypatch.setattr(
+        preparer,
+        "_validate_admission_replay_source_lineage",
+        lambda _bindings, _builders, _code, _qualification: "0" * 40,
+    )
+    with pytest.raises(ValueError, match="used different H1 commits"):
+        preparer.prospective_bindings(root)
 
 
 def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
@@ -615,24 +817,26 @@ def test_attempt_four_binds_exact_attempt_three_lineage() -> None:
     )
 
 
-def test_attempt_four_replay_hashes_are_pinned_and_placeholders_fail_closed(
+def test_attempt_five_execution_hash_placeholders_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     assert str(preparer._V8_ADMISSION_REPLAY_ROOT).endswith(
-        "bpt-held-v8.1-attempt-4-admission-wrapper-scratch-20260722"
+        "bpt-held-v8.1-attempt-5-admission-wrapper-scratch-20260722"
     )
-    assert preparer._V8_ADMISSION_REPLAY_REPORT_FILE_SHA256 == (
-        "bdb9d2d577e2eed87531c29f7bba83cfbe0a7fc42ee7f0b3d203e6af038152a7"
-    )
-    assert preparer._V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256 == (
-        "79824d3c7884fdb968fee4dd6573b12fc6ebbead59f5f5e8bb94181fa2788eb5"
-    )
-    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256 == (
-        "81d9a2ec3154082ffa2853a4ae5357bc4609e5a83f1358d19c2a4b89b33e6981"
-    )
-    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256 == (
-        "badfc0ba1317c54878d0a172701c86cbf91a67294b04befcc1f31d5c7aa3c31a"
-    )
+    assert preparer._V81_EXECUTION_ATTEMPT == 5
+    assert preparer._V8_ADMISSION_REPLAY_REPORT_FILE_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_REPORT_ARTIFACT_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_FILE_SHA256 is None
+    assert preparer._V8_ADMISSION_REPLAY_CODE_BINDING_ARTIFACT_SHA256 is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_ROOT is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_FILE_SHA256 is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_ATTEMPT_ARTIFACT_SHA256 is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_FILE_SHA256 is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_MANIFEST_ARTIFACT_SHA256 is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_FILE_SHA256 is None
+    assert preparer._RESOURCE_LIFECYCLE_QUALIFICATION_ANALYSIS_ARTIFACT_SHA256 is None
+    with pytest.raises(ValueError, match="qualification path placeholders"):
+        preparer._require_h2_execution_pins()
     monkeypatch.setattr(
         preparer,
         "_EXPECTED_EXTERNAL_FILES",
@@ -651,6 +855,30 @@ def test_attempt_four_replay_hashes_are_pinned_and_placeholders_fail_closed(
     )
     with pytest.raises(ValueError, match="placeholder is not populated"):
         preparer._external_bindings()
+
+
+def test_attempt_five_binds_exact_attempt_four_no_result_chain() -> None:
+    expected = preparer._EXPECTED_EXTERNAL_FILES
+    assert expected["v8_attempt4_postbarrier_withdrawal_report"] == (
+        preparer._V8_ATTEMPT4_WITHDRAWAL_REPORT,
+        "24c7c7f154c6985c5c5832222a0872d62798e282af3c0f7494e70b8dfc100b5a",
+        0o400,
+    )
+    assert expected["v8_attempt4_postbarrier_withdrawal_pointer"] == (
+        preparer._V8_ATTEMPT4_WITHDRAWAL_POINTER,
+        "3de7c79bf4d4949100f6bd90b1bc6da306d4b57090b70ef7606accefc9901665",
+        0o400,
+    )
+    assert expected["v8_attempt4_withdrawal_integrity_completion"] == (
+        preparer._V8_ATTEMPT4_INTEGRITY_COMPLETION,
+        "315c62fa0e4b621e07db053950e9d26ab1abcb6a2f71a9347ec8d1526d8ad984",
+        0o400,
+    )
+    assert preparer._V8_ATTEMPT4_ARCHIVE_INVENTORY_SHA256 == (
+        "1ab11d7a3e841530e0d8c994327b9eca26a20a896f73cfa3d76e5c6935cdca5c"
+    )
+    assert preparer._V8_ATTEMPT4_ARCHIVE_ENTRY_COUNT == 1915
+    assert preparer._V8_ATTEMPT4_STATUS.startswith("withdrawn-postbarrier")
 
 
 def test_attempt_three_archive_lineage_matches_local_operator_and_inventory(
@@ -920,6 +1148,21 @@ def test_replay_source_commit_is_clean_ancestor_with_exact_replayed_blobs(
         preparer._validate_replay_source_commit(tested, local_bindings, source)
 
 
+def test_h2_must_be_single_direct_child_of_h1(tmp_path: Path) -> None:
+    source = _repository(tmp_path)
+    h1 = _git(source, "rev-parse", "HEAD")
+    marker = source / "marker.txt"
+    marker.write_text("intermediate\n", encoding="utf-8")
+    _git(source, "add", "marker.txt")
+    _git(source, "commit", "-m", "intermediate")
+    marker.write_text("h2\n", encoding="utf-8")
+    _git(source, "add", "marker.txt")
+    _git(source, "commit", "-m", "h2")
+
+    with pytest.raises(ValueError, match="single direct H2 child"):
+        preparer._require_direct_h2_parent(source, h1, role="test H1")
+
+
 def test_replay_external_runtime_is_exact_immutable_and_clean(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1055,11 +1298,13 @@ def test_replay_external_runtime_is_exact_immutable_and_clean(
 def test_admission_replay_semantics_and_cross_bindings_validate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    bindings, builders = _write_admission_replay_fixture(
+    bindings, builders, qualification = _write_admission_replay_fixture(
         tmp_path / "replay", monkeypatch
     )
 
-    preparer._validate_admission_replay_source_lineage(bindings, builders, tmp_path)
+    preparer._validate_admission_replay_source_lineage(
+        bindings, builders, tmp_path, qualification
+    )
 
 
 @pytest.mark.parametrize(
@@ -1070,10 +1315,12 @@ def test_admission_replay_semantics_and_cross_bindings_validate(
         ("case_role", "report identity"),
         ("contract", "current exact-case contract"),
         ("formal_evidence", "evidence boundary"),
+        ("source_evidence", "development-only boundary"),
         ("binding_boundary", "code-binding identity or boundary"),
         ("report_cross_binding", "report-to-code-binding lineage"),
         ("bootstrap", "bootstrap or committed-source boundary"),
         ("uncommitted", "bootstrap or committed-source boundary"),
+        ("ignored_source", "bootstrap or committed-source boundary"),
         ("source_sha", "real pinned-upstream replay"),
         ("top_boundary", "target/query/score/outcome boundary"),
         ("metrics", "finite passing metrics"),
@@ -1088,6 +1335,7 @@ def test_admission_replay_semantics_and_cross_bindings_validate(
         ("cross_log_marker", "lacks the exact admission-rejection marker"),
         ("cross_file", "cross-authorization"),
         ("output_record", "differs from its replay binding"),
+        ("qualification_lineage", "used another resource qualification"),
         ("extra_root", "root allowlist"),
         ("hardlink_output", "not a regular file"),
         ("symlink_output", "not a regular file"),
@@ -1101,11 +1349,13 @@ def test_admission_replay_semantic_tampering_fails_closed(
     mutation: str,
     message: str,
 ) -> None:
-    bindings, builders = _write_admission_replay_fixture(
+    bindings, builders, qualification = _write_admission_replay_fixture(
         tmp_path / "replay",
         monkeypatch,
         mutation=mutation,
     )
 
     with pytest.raises(ValueError, match=message):
-        preparer._validate_admission_replay_source_lineage(bindings, builders, tmp_path)
+        preparer._validate_admission_replay_source_lineage(
+            bindings, builders, tmp_path, qualification
+        )
