@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-adaptive-covariance-confirmation-v1",
+    "status": "prospective-two-commit-outcome-sealed-confirmation",
+    "claim_boundary": "Fresh-object confirmation of a target-free adaptive four-to-eight-view recursive RBF routing policy against its frozen fixed-eight and fixed-four comparators. A pass supports noninferiority to fixed eight under the declared routed camera charge on this cohort; it is not official Deform360 open-loop parity, a realized hardware or wall-clock saving, or by itself a state-of-the-art claim.",
+    "development_evidence": {
+      "panel": "previously opened Deform360-27 development panel",
+      "posthoc_status": true,
+      "adaptive_threshold": 0.015,
+      "mean_identity_rmse_m": {
+        "fixed_four": 0.007722764,
+        "fixed_eight": 0.007495534,
+        "adaptive": 0.007588758
+      },
+      "mean_symmetric_chamfer_m": {
+        "fixed_four": 0.006792527,
+        "fixed_eight": 0.006560129,
+        "adaptive": 0.00646507
+      },
+      "adaptive_routes_over_81_updates": {
+        "4_view_rbf": 55,
+        "8_view_rbf": 15,
+        "physical_prior_fallback": 11
+      },
+      "mean_distinct_policy_selected_cameras": 5.308642,
+      "uncertainty_warning": "The covariance score showed only useful ranking and abstention behavior. Its nominal coverage was 0.0795 and it is not a calibrated probability."
+    },
+    "two_commit_freeze": {
+      "h1": "Commit the complete method, numerical/runtime adapters, target-free measurement and prediction builders, sealer, outcome adapter, target scorer, evaluator, configuration, tests, and runner before selected identities are known.",
+      "h2": "The direct single-parent child of H1 may add only configs/sota/deform360_adaptive_covariance_confirmation_cohort_lock_v1.json.",
+      "selection_seed": "SHA256(UTF8(protocol_id) || NUL || ASCII(H1) || NUL || ASCII(dataset_revision))",
+      "no_post_h2_method_or_selection_change": true
+    },
+    "dataset": {
+      "repository": "brownu/deform360",
+      "repo_type": "dataset",
+      "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+      "deform360_code_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "object_inventory_count": 190,
+      "object_inventory_sha256": "cf82fec6c715c3dafa2f3cadbeb6402f68443305fc40ff418075fe2cc22febb2",
+      "download_scope": "Only exact H2-selected object subtrees; audio excluded.",
+      "download_integrity": "Every downloaded non-audio file is bound to its pinned remote path and Git blob ID, its remote LFS SHA-256 when applicable, and its replayed local size and SHA-256. Missing, extra, audio, symbolic-link, special, and hard-linked files fail closed before source preparation."
+    },
+    "cohort": {
+      "freshness_scope": "Physical identities absent from the hash-bound union of open27, formal-held, and both bias-prospective cohorts.",
+      "excluded_identity_count": 31,
+      "excluded_identity_union_sha256": "1c937d23a37d9a330e157c0ad40a92131775c378a856364d5fa489a2b52c0bd1",
+      "taxonomy_source_commit": "d72ca1dee49841b7d3b020da4380d0ef0a3f7d7c",
+      "taxonomy_source_file_sha256": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01",
+      "object_quotas": {
+        "filament": 1,
+        "sheet": 8,
+        "volumetric": 8
+      },
+      "episodes_per_object": 2,
+      "object_count": 17,
+      "case_count": 34,
+      "episode_candidate_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "selection_inputs_are_metadata_only": true,
+      "replacement_allowed": false,
+      "imbalance_disclosure": "After exact exclusions, 181-belt is the sole eligible filament identity. Filament evidence is one object with two episodes and supports no filament population claim."
+    },
+    "physical_backbone": {
+      "execution_commit": "29091daa1a984ae97a1722011b2039fba708d8ed",
+      "mode": "Frame-zero-only automatic PhysTwin/Warp prior when admissible; otherwise exact persistence on the pinned official original-Splat identities.",
+      "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "official_real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+      "frame_zero_fallback_source_config": {
+        "path": "configs/sota/deform360_frame_zero_initializer_source_v1.json",
+        "file_sha256": "60e9887836ea0ba3410066dbb5668988e35763ea6161826752b24b257cf9fc66",
+        "config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759",
+        "fallback_policy": "The frozen strict multiview silhouette-hull stage remains the target-free fallback/admission diagnostic. Before any physical or measurement seal, the H1 adapter deterministically reruns the pinned official frame-zero Splat seeding and replaces the hull carrier with those native original-Splat identities; they are admitted only as persistence.",
+        "identity_adapter": {
+          "policy": "original-splat-identity-persistence",
+          "official_seed_source": "deform360.processing.pcd_stage.seed_points_from_splat at revision 0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "seed_parameters": {
+            "crop_half_extent_m": 0.5,
+            "seed_count": 10000,
+            "rng_seed": 0
+          },
+          "minimum_finite_native_identity_count_exclusive": 16,
+          "physical_twin_admitted": false,
+          "native_identity_failure_policy": "If the finite original-Splat identity count is at most 16, the prospective confirmation stops incomplete with no replacement or alternate identity construction."
+        }
+      },
+      "failure_policy": {
+        "technical_failures_retained": true,
+        "retention_boundary": "Retention begins only after a successful H2-bound frame-zero identity seal with more than 16 finite original-Splat identities. Earlier source, masking, reconstruction, or identity failures stop the prospective confirmation incomplete; post-barrier official-outcome failures also stop it incomplete.",
+        "allowed_failure_codes": [
+          "automatic_twin_backend_failure",
+          "prediction_runtime_failure",
+          "resource_exhaustion"
+        ],
+        "all_prediction_arms": "Bit-exact persistence trajectory.",
+        "measurement_materialization": "For a retained physical, tracker, prediction, or resource failure, freeze the exact nested camera plan but mark AllTracker as not executed, publish finite persistence carriers with every dynamic measurement/covariance validity false, and disclose that the fixed-eight shadow streams were not tracked.",
+        "adaptive_route_at_all_updates": "physical_prior_fallback",
+        "charged_cameras_per_update": 8
+      },
+      "information_boundary": {
+        "object_observation_frames_used": [
+          0
+        ],
+        "known_future_robot_action_is_conditioning_input": true,
+        "future_object_rgb_read": false,
+        "future_object_geometry_read": false,
+        "future_object_track_read": false,
+        "target_metric_read": false
+      }
+    },
+    "observation": {
+      "frame_count": 76,
+      "update_frames": [
+        19,
+        38,
+        57
+      ],
+      "center_count": 16,
+      "camera_budgets": [
+        4,
+        8
+      ],
+      "frame_zero_planner": {
+        "base": "Exact exhaustive legacy four-camera optimum with original input-order tie semantics.",
+        "augmentation": "Exact exhaustive four-camera augmentation conditional on the frozen four-camera prefix.",
+        "four_is_strict_ordered_prefix_of_eight": true,
+        "all_calibrated_frame_zero_cameras_may_be_used_for_planning": true
+      },
+      "triangulation": {
+        "minimum_initial_view_count": 2,
+        "minimum_triangulation_view_count": 2,
+        "minimum_ray_angle_degrees": 2.0,
+        "frame_zero_depth_tolerance_m": 0.015,
+        "reprojection_inlier_threshold_px": 3.0,
+        "maximum_reprojection_median_px": 3.0,
+        "maximum_displacement_from_initial_m": 0.5
+      },
+      "alltracker": {
+        "repository_revision": "61f5b21b694ad8f854ec7ecd2400005acc73f685",
+        "source_tree": "eab012351a01051fa31a348e5b1f21c0e1ed970d",
+        "runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+        "checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+        "maximum_side": 512,
+        "inference_iterations": 4,
+        "window_length": 16,
+        "visibility_threshold": 0.5
+      },
+      "uncertainty": {
+        "pixel_noise_floor_px": 0.5,
+        "maximum_information_condition_number": 100000000.0,
+        "replay_position_tolerance_m": 0.0005,
+        "construction": "Maximum of analytic projection-Jacobian and leave-one-inlier-camera-out covariance components.",
+        "probabilistic_calibration_claimed": false
+      },
+      "causal_shadow_order": [
+        "Track the nested four-camera prefix.",
+        "Materialize four-view measurements, covariance, reliability, and route decision.",
+        "Only then track the extra four streams when escalation is required or for the fixed-eight shadow comparator."
+      ],
+      "source_lineage": "The physical manifest, staged prefix and frame-zero manifests, source-preparation digest, complete camera-planning mask/depth panel, selected RGB prefixes, calibration files, and exact AllTracker source/checkpoint are content-bound and replayed before target-free publication. The same lineage is required again by post-barrier future construction.",
+      "calibration_lineage_limitation": "The staged calibration archives are content-bound downstream and their camera-key panel must equal the sealed planning panel, but the frozen upstream prefix producer hashes the original full calibration archives rather than the staged subset outputs. Exact byte-level staged-to-original calibration provenance is therefore not claimed."
+    },
+    "predictor": {
+      "recursive_rbf": {
+        "length_scale_fraction": 0.1,
+        "local_blend": 1.0,
+        "observation_std_m": 0.005,
+        "process_std_m_per_sqrt_frame": 0.003,
+        "global_prior_std_m": 0.1,
+        "local_prior_std_m": 0.02,
+        "degrees_of_freedom": 4.0,
+        "minimum_reliability": 0.02,
+        "maximum_correction_m": 0.1,
+        "minimum_length_scale_m": 0.0001
+      },
+      "routing": {
+        "covariance_quantile": 0.9,
+        "maximum_normalized_covariance_dispersion": 0.015,
+        "minimum_valid_covariance_centers": 8,
+        "normalizer": "Frame-zero object axis-aligned bounding-box diagonal.",
+        "route_order": [
+          "4_view_rbf",
+          "8_view_rbf",
+          "physical_prior_fallback"
+        ],
+        "rejected_eight_view_interval": "Bit-exact physical prior with neither RBF state updated."
+      },
+      "arms": {
+        "adaptive": "Frozen four-to-eight-to-physical covariance route.",
+        "fixed_eight": "Always attempt the nested eight-view RBF update; physical fallback under the same observation-validity rules.",
+        "fixed_four": "Always attempt the nested four-view RBF update; physical fallback under the same observation-validity rules."
+      }
+    },
+    "camera_accounting": {
+      "four_view_rbf_charge": 4,
+      "eight_view_rbf_charge": 8,
+      "physical_or_technical_fallback_charge": 8,
+      "estimand": "Counterfactual dynamic RGB camera-stream budget demanded by the frozen policy at each causal update. A retained technical failure is conservatively charged eight even though tracker inference is recorded as not executed.",
+      "offline_shadow_disclosure": "Both budgets are eventually precomputed to score fixed-eight. Routed camera count is a counterfactual policy charge, not realized acquisition, compute, memory, energy, or wall-clock saving.",
+      "frame_zero_planning_cameras_excluded_from_dynamic_charge": true
+    },
+    "sealing": {
+      "case_prediction_arrays": [
+        "physical_prior_m",
+        "persistence_m",
+        "adaptive_prediction_m",
+        "fixed_4_rbf_prediction_m",
+        "fixed_8_rbf_prediction_m",
+        "selected_raw_prediction_m"
+      ],
+      "required_case_count_before_target_open": 34,
+      "complete_prediction_barrier_required": true,
+      "target_or_outcome_argument_accepted_by_sealer": false,
+      "case_inputs_bound_to_h1_h2_lock_physical_seal_and_nested_measurement_manifest": true,
+      "exact_unique_sixteen_center_ids_sealed_in_target_free_diagnostic": true,
+      "same_shape_cross_case_swap_must_fail": true,
+      "no_replacement_or_posthoc_exclusion": true
+    },
+    "outcome": {
+      "construction_starts_only_after_complete_prediction_barrier": true,
+      "frozen_execution_commit": "29091daa1a984ae97a1722011b2039fba708d8ed",
+      "authorized_future_stage_sha256": "e5c09b1594fe45e2dc764d03cddae715c2c64149cffba002d1d5881cd0ce0480",
+      "authorized_outcome_stage_sha256": "dde40607c4006cba8e21bc0b85ac11b06f4278863eb83a3023e3761584a1ec87",
+      "target": "Official Deform360 strict multiview reconstruction and CoTracker3 point trajectories over 76 logical frames, with no tactile input.",
+      "native_target_metrics_computed_during_construction": false,
+      "frame_zero_identity_transport": {
+        "method": "Sparse minimum-cost one-to-one assignment from sealed frame-zero points to visible valid official identities.",
+        "maximum_assignment_distance_m": 0.015,
+        "required_coverage_fraction": 1.0,
+        "required_collision_count": 0,
+        "sealed_frame_zero_coordinates_replace_transported_frame_zero_after_raw_assignment_diagnostics": true
+      }
+    },
+    "evaluation": {
+      "unit_of_replication": "physical object",
+      "episodes_per_object": 2,
+      "episode_aggregation": "Arithmetic mean of exactly two episodes.",
+      "object_aggregation": "Equal arithmetic weight for all 17 physical objects.",
+      "scored_frame_intervals_half_open": [
+        [
+          20,
+          38
+        ],
+        [
+          39,
+          57
+        ],
+        [
+          58,
+          76
+        ]
+      ],
+      "metrics": [
+        "post_update_hidden_identity_rmse_m",
+        "post_update_hidden_symmetric_chamfer_m"
+      ],
+      "assimilation_centers_permanently_excluded_from_scores": true,
+      "primary_estimand": "Ratio of object-balanced adaptive mean to object-balanced fixed-eight mean.",
+      "bootstrap": {
+        "replicates": 200000,
+        "resampling_unit": "physical object",
+        "upper_quantile": 0.95,
+        "upper_order_statistic_zero_based_index": 189999,
+        "upper_quantile_rule": "ceil(0.95 * 200000) - 1 after ascending sort",
+        "seed": "SHA256 of protocol_id, H1, H2, lock artifact SHA256, and paired-object-bootstrap-v1-B200000 joined in that order by single NUL bytes",
+        "index_generator": "SHA256 rejection sampling with domain deform360-confirmation-object-bootstrap-index-v1"
+      },
+      "primary_pass_requires_all": {
+        "complete_panel": "17 objects, 34 cases, 102 updates, no replacement.",
+        "both_point_estimate_ratios_below": 1.05,
+        "both_one_sided_bootstrap_upper_bounds_below": 1.05,
+        "joint_object_noninferiority_successes_at_least": 13,
+        "joint_object_noninferiority_tie_convention": "A physical object is a joint success when both adaptive-to-fixed-eight object-mean metric ratios are less than or equal to 1.05.",
+        "exact_sign_test_null": 0.5,
+        "exact_sign_test_one_sided_p_at_13_of_17": 0.02452,
+        "object_balanced_mean_charged_cameras_at_most": 6.4,
+        "fallback_route_updates_including_retained_technical_failures_at_most": 25,
+        "retained_technical_failure_cases_at_most": 0,
+        "objects_harmful_over_1.10_on_either_metric_at_most": 1,
+        "cases_severe_over_1.25_on_either_metric_at_most": 0
+      },
+      "secondary_adaptive_superiority_over_fixed_four_requires_all": {
+        "primary_confirmation_passed": true,
+        "both_point_estimate_ratios_below": 1.0,
+        "both_one_sided_bootstrap_upper_bounds_below": 1.0,
+        "joint_object_strict_improvements_at_least": 13
+      },
+      "mean_paired_relative_change_is_diagnostic_only": true,
+      "entropy_or_covariance_is_not_scored_as_calibrated_probability": true,
+      "retained_failure_evidence_policy": "A retained technical-failure package documents panel completeness only. Its failure event is operator-declared rather than independently runtime-attested, so any retained technical-failure case blocks positive primary confirmation and the gate is fixed at zero.",
+      "production_target_scorer_attestation": "A production confirmation result requires the exact H1/H2/lock-bound scoring factory with the default native official-target validator. An arbitrary or injected callback can emit only an explicitly unattested development artifact with all production decisions withheld."
+    },
+    "execution": {
+      "servers": [
+        "gpuserver6000",
+        "gpuserver4090"
+      ],
+      "gpu_selection": "Use only an idle authorized GPU; never interrupt another process.",
+      "write_roots": "Dedicated confirmation roots only; prior chat outcome roots are read-protected and not reused.",
+      "runtime_and_cache_reuse_allowed": true,
+      "prior_object_selection_or_outcome_reuse_allowed": false,
+      "entrypoint_provenance": "Lock generation must execute from the exact clean H1 checkout. Every post-H2 command and wrapper must execute from the exact clean H2 checkout whose only change from H1 is the newly added canonical cohort lock."
+    },
+    "information_boundary": {
+      "h2_lock_generation_reads_only_names_integer_episode_ids_and_hashes": true,
+      "source_custodian_rgb_boundary": "The pinned source-preparation custodian may decode full RGB only for camera alignment and released robot-pose recovery; it creates no object mask, geometry, particle track, or metric and exposes only the separately staged prefix to prediction.",
+      "prediction_and_measurement_rgb_boundary": "Prediction-prefix construction reads only through the last causal update, and each recursive measurement reads only frames [0,u] at update u.",
+      "known_robot_action_is_conditioning_not_outcome": true,
+      "pre_barrier_source_custody": "A write-once H2/case/path-bound source-custodian seal hashes the complete aligned source and staged input inventories without exposing future RGB content to prediction. Its exact digest is carried through measurement, case seal, barrier, compatibility, and authorized-future validation; all source bytes are replayed immediately before future opening.",
+      "future_object_rgb_geometry_tracks_and_metrics_before_barrier": "Future RGB bytes are read only by the isolated source custodian for content hashing and the already-pinned alignment/robot recovery. Prediction receives no future RGB bytes, decoded frames, masks, geometry, tracks, or metrics before the complete barrier.",
+      "target_loader_invoked_only_after_barrier_revalidation": true,
+      "method_threshold_or_case_set_changed_after_outcome": false
+    }
+  },
+  "config_sha256": "250b55a3113a2ae248462f97e91eda95599377228eeb55200a24f09bf0f3d657"
+}

@@ -206,6 +206,8 @@ def _validate_budget_arrays(
             raise ValueError(f"{budget}-view covariance claims an invalid measurement")
         if np.any(center_ids >= reference_shape[1]):
             raise ValueError("center ID exceeds one or more budget arrays")
+    if tuple(selected_cameras_by_budget[8])[:4] != tuple(selected_cameras_by_budget[4]):
+        raise ValueError("four-view cameras are not the ordered eight-view prefix")
 
 
 def predict_adaptive_covariance_selected_backbone_rbf(
@@ -286,9 +288,9 @@ def predict_adaptive_covariance_selected_backbone_rbf(
         )
         budget_diagnostics: dict[str, dict[str, Any]] = {}
         selected_budget: int | None = None
-        activated_cameras: set[str] = set()
+        activated_cameras: list[str] = []
         for budget in routing.camera_budgets:
-            activated_cameras.update(selected_cameras_by_budget[budget])
+            activated_cameras = list(selected_cameras_by_budget[budget])
             reliability = normalized_covariance_dispersion(
                 measurement_covariance_m2_by_budget[budget],
                 measurement_covariance_valid_by_budget[budget],
@@ -327,7 +329,7 @@ def predict_adaptive_covariance_selected_backbone_rbf(
                     "route": "physical_prior_fallback",
                     "selected_camera_budget": None,
                     "tracked_camera_count": int(len(activated_cameras)),
-                    "tracked_cameras": sorted(activated_cameras),
+                    "tracked_cameras": list(activated_cameras),
                     "selected_backbone": "physical_prior",
                     "rbf_correction_applied": False,
                     "state_updated": False,
@@ -397,7 +399,7 @@ def predict_adaptive_covariance_selected_backbone_rbf(
                 "route": f"{selected_budget}_view_rbf",
                 "selected_camera_budget": int(selected_budget),
                 "tracked_camera_count": int(len(activated_cameras)),
-                "tracked_cameras": sorted(activated_cameras),
+                "tracked_cameras": list(activated_cameras),
                 "available_center_count": int(len(available_ids)),
                 "selected_backbone": selected_name,
                 "current_observation_chamfer_m": chamfer,

@@ -198,37 +198,37 @@ def test_accepted_fallback_accepted_sequence_has_exact_fallback_interval() -> No
     assert diagnostic["updates"][1]["state_updated"] is False
 
 
-@pytest.mark.parametrize("route_to_eight", [False, True])
-def test_distinct_tracked_camera_count_handles_nonnested_plans(
-    route_to_eight: bool,
-) -> None:
+def test_predictor_rejects_nonnested_camera_plans() -> None:
     inputs = _inputs()
     inputs["selected_cameras"] = {
         4: ("camera-00", "camera-01", "camera-02", "camera-extra"),
         8: tuple(f"camera-{index:02d}" for index in range(8)),
     }
+    with pytest.raises(ValueError, match="ordered eight-view prefix"):
+        _predict(inputs)
+
+
+def test_tracked_camera_order_preserves_nonsorted_nested_plan() -> None:
+    inputs = _inputs()
+    order = (
+        "camera-06",
+        "camera-02",
+        "camera-07",
+        "camera-00",
+        "camera-05",
+        "camera-01",
+        "camera-04",
+        "camera-03",
+    )
+    inputs["selected_cameras"] = {4: order[:4], 8: order}
     np.asarray(inputs["covariance_validity"][4])[:] = False
-    if not route_to_eight:
-        np.asarray(inputs["covariance_validity"][8])[:] = False
 
     _, _, diagnostic = _predict(inputs)
 
-    expected_route = "8_view_rbf" if route_to_eight else "physical_prior_fallback"
     assert all(
-        record["route"] == expected_route
-        and record["tracked_camera_count"] == 9
-        and record["tracked_cameras"]
-        == [
-            "camera-00",
-            "camera-01",
-            "camera-02",
-            "camera-03",
-            "camera-04",
-            "camera-05",
-            "camera-06",
-            "camera-07",
-            "camera-extra",
-        ]
+        record["route"] == "8_view_rbf"
+        and record["tracked_camera_count"] == 8
+        and record["tracked_cameras"] == list(order)
         for record in diagnostic["updates"]
     )
 
