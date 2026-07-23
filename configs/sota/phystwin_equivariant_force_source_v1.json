@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "contract": "phystwin-equivariant-generalized-force-source-v1",
+  "locked_at_utc": "2026-07-24T00:00:00Z",
+  "status": "Source-only two-stage model-family gate; no target artifact may be opened.",
+  "claim_boundary": "Inverse-dynamics competence is diagnostic only. Promotion requires cross-fitted official-Warp trajectory gains and discrepancy shrinkage. A later result on previously examined targets cannot establish an independent state-of-the-art claim.",
+  "hypothesis": "A bounded gravity-aware E(3)-equivariant graph model can transfer state-, action-, and regime-dependent generalized-force discrepancy across interactions when its global weights are source-trained and only a low-dimensional latent is adapted on each held-out prefix.",
+  "fit_fraction": 0.75,
+  "source_cases": [
+    "weird_package",
+    "double_stretch_zebra",
+    "double_lift_sloth",
+    "single_lift_sloth",
+    "single_lift_cloth",
+    "single_lift_cloth_4",
+    "single_lift_zebra",
+    "single_push_rope_4",
+    "rope_double_hand",
+    "single_lift_dinosor",
+    "single_push_rope_1",
+    "single_lift_rope",
+    "single_lift_cloth_1",
+    "double_lift_cloth_3",
+    "single_lift_cloth_3",
+    "double_stretch_sloth",
+    "single_push_rope"
+  ],
+  "target_cases": [
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "double_lift_cloth_1",
+    "double_lift_zebra",
+    "single_push_sloth"
+  ],
+  "source_folds": [
+    {
+      "name": "fold_0",
+      "held_out_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "single_lift_cloth",
+        "single_push_rope_4",
+        "single_lift_dinosor",
+        "double_lift_cloth_3"
+      ]
+    },
+    {
+      "name": "fold_1",
+      "held_out_cases": [
+        "double_lift_sloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "rope_double_hand",
+        "single_lift_rope",
+        "single_lift_cloth_3"
+      ]
+    },
+    {
+      "name": "fold_2",
+      "held_out_cases": [
+        "single_lift_sloth",
+        "single_push_rope_1",
+        "single_lift_cloth_1",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ]
+    }
+  ],
+  "force_target": {
+    "window_radius": 3,
+    "huber_delta_m": 0.003,
+    "robust_iterations": 4,
+    "variance_floor_m2ps4": 1e-06,
+    "graph_prior_strength": 0.5,
+    "graph_ridge": 1e-08,
+    "graph_covariance_probes": 8,
+    "maximum_force_n": 0.5,
+    "minimum_training_weight": 0.0001
+  },
+  "model": {
+    "hidden_dim": 64,
+    "hidden_layers": 2,
+    "latent_dim": 8,
+    "regime_dim": 5,
+    "maximum_force_per_node_n": 0.5,
+    "velocity_scale_mps": 0.1,
+    "displacement_scale_m": 0.05,
+    "minimum_length_m": 1e-06
+  },
+  "training": {
+    "training_steps": 2000,
+    "adaptation_steps": 250,
+    "learning_rate": 0.0003,
+    "adaptation_learning_rate": 0.01,
+    "weight_decay": 1e-05,
+    "latent_regularization": 0.001,
+    "adaptation_regularization": 0.01,
+    "gradient_clip": 1.0,
+    "huber_delta_n": 0.01,
+    "seeds": [17, 43, 101],
+    "minimum_force_target_improvement": 0.1,
+    "minimum_both_win_folds": 2,
+    "device": "cuda:0"
+  },
+  "official_warp": {
+    "dt": 5e-05,
+    "num_substeps": 667,
+    "deterministic_spring_forces": true,
+    "activity_speed_mps": 0.1,
+    "admission_weight": 1.0,
+    "required_zero_force_bitwise_parity": true,
+    "candidate": "prefix_state_update_plus_equivariant_force_plus_refit_graph_persistence",
+    "reference": "same_prefix_state_update_plus_graph_persistence_without_learned_force"
+  },
+  "source_gate": {
+    "stage_1_force_target_competence_required": true,
+    "minimum_balanced_official_warp_improvement": 0.03,
+    "both_cd_and_track_must_improve": true,
+    "minimum_fold_aggregate_both_win_count": 2,
+    "maximum_single_case_metric_ratio": 1.05,
+    "minimum_readout_correction_shrinkage": 0.1,
+    "minimum_shrinkage_case_count": 11,
+    "late_horizon_must_improve": true,
+    "target_access_on_failure": false
+  },
+  "information_boundary": {
+    "complete_source_training": "Complete registered outcomes may supervise shared weights only for non-held-out source interactions.",
+    "heldout_adaptation": "Only the held-out case latent may use frames [0, fit_end); global weights and all hyperparameters remain frozen.",
+    "heldout_scoring": "Official Warp is rerun from the permitted prefix state and scored only on [fit_end, train_end).",
+    "target_access": "No target file, trajectory, observation, metric, checkpoint, query, or future artifact may be read by either source stage.",
+    "reliability": "Prior reliability may use source confidence, validity, geometry, visibility, and graph support, but never the PhysTwin state residual.",
+    "innovation": "The state innovation enters once through robust inverse-dynamics target construction.",
+    "prob4d": "Prob4D remains a separate optional observation feeder and is not used in this source mechanism gate.",
+    "causal4d": "No Causal4D held-v8 artifact, operator, target, query, score, or outcome is accessed."
+  },
+  "required_controls": [
+    "explicit zero-force official-Warp rollout",
+    "constant low-rank generalized-force diagnostic",
+    "prefix state update without learned force",
+    "graph-persistence readout reference",
+    "learned force with graph-persistence refitted on top"
+  ],
+  "forbidden": [
+    "opening any target artifact when either source stage fails",
+    "selecting architecture, target construction, force cap, seeds, folds, or thresholds from held-out suffix metrics",
+    "using held-out suffix frames to adapt the case latent or initialize the held-out rollout",
+    "using a PhysTwin residual as both a prior reliability cue and a robust innovation",
+    "calling force-target RMSE a simulator or state-of-the-art result",
+    "claiming a physical mechanism unless the held-out readout correction shrinks",
+    "modifying frozen Causal4D or Prob4D protocol artifacts"
+  ]
+}
