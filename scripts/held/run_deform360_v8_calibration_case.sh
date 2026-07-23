@@ -28,6 +28,7 @@ done < <(env)
   die "usage: run_deform360_v8_calibration_case.sh CUDA_DEVICE CASE OBJECT EPISODE [REPLACEMENT_SOURCE_MANIFEST]"
 readonly CUDA_DEVICE="$1" CASE_NAME="$2" OBJECT="$3" EPISODE="$4"
 readonly REPLACEMENT_SOURCE_MANIFEST="${5:-}"
+readonly CONFIRMATION_SOURCE_MANIFEST=""
 
 case "$CASE_NAME:$OBJECT:$EPISODE" in
   072-cotton-clohesline-ep0003:072-cotton-clohesline:0003|\

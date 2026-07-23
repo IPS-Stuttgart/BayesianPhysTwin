@@ -528,11 +528,15 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
     "held_v81_external_admission_replay_operator_source": (
         "scripts/held/replay_deform360_v81_external_admission.py"
     ),
+    "held_v81_attempt5_launcher_source": ("scripts/held/run_deform360_v81_attempt5.py"),
     "held_v8_disclosure_sealer_source": (
         "scripts/held/seal_deform360_v8_post_withdrawal_disclosure.py"
     ),
     "held_v8_replacement_source_acquisition_launcher_source": (
         "scripts/held/run_deform360_v8_replacement_source.py"
+    ),
+    "held_v8_confirmation_source_materialization_launcher_source": (
+        "scripts/held/run_deform360_v8_confirmation_source.py"
     ),
     "held_v8_calibration_case_runner_source": (
         "scripts/held/run_deform360_v8_calibration_case.sh"
@@ -555,16 +559,32 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
     "held_v8_confirmation_outcome_driver_source": (
         "scripts/held/run_deform360_v8_confirmation_outcomes.py"
     ),
+    "held_v8_role_outcome_integrity_sealer_source": (
+        "scripts/held/seal_deform360_v8_role_outcome.py"
+    ),
     "held_v8_x0_query_worker_source": ("scripts/held/run_deform360_v8_x0_query.py"),
     "held_v8_protocol_source": ("src/bayesian_phystwin/deform360_held_v8_protocol.py"),
     "held_v8_replacement_source_operator_source": (
         "src/bayesian_phystwin/deform360_held_v8_replacement_source.py"
+    ),
+    "held_v8_confirmation_source_operator_source": (
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py"
+    ),
+    "held_v8_confirmation_camera_selection_lineage": (
+        "milestones/deform360-replication-source-qa-v1/artifacts/"
+        "source_geometry_qa.json"
+    ),
+    "held_v8_confirmation_preregistration_lineage": (
+        "configs/causal4d_public/deform360_replication_v1.json"
     ),
     "held_v8_builder_adapter_source": (
         "src/bayesian_phystwin/deform360_held_v8_builders.py"
     ),
     "held_v8_outcome_driver_source": (
         "src/bayesian_phystwin/deform360_held_v8_outcome_driver.py"
+    ),
+    "held_v8_outcome_integrity_source": (
+        "src/bayesian_phystwin/deform360_held_v8_outcome_integrity.py"
     ),
     "held_v8_outcome_reconstruction_adapter_source": (
         "src/bayesian_phystwin/deform360_held_v8_outcome_reconstruction.py"
@@ -2477,6 +2497,9 @@ def prospective_bindings(
             "method_head_text_sha256": provenance["head_text_sha256"],
             "replacement_source_inventory_contract": protocol.held_contract_sha256(
                 replacement.REPLACEMENT_SOURCE_INVENTORY_CONTRACT
+            ),
+            "held_v8_confirmation_source_contract": (
+                protocol.confirmation_source.confirmation_source_contract_sha256()
             ),
             "replacement_automatic_twin_admission_contract": (
                 protocol.REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256

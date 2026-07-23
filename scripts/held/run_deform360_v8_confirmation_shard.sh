@@ -23,8 +23,8 @@ while IFS='=' read -r name _value; do
   esac
 done < <(env)
 
-[[ "$#" -eq 2 ]] || die "usage: run_deform360_v8_confirmation_shard.sh SHARD_INDEX CUDA_DEVICE"
-readonly SHARD_INDEX="$1" CUDA_DEVICE="$2"
+[[ "$#" -eq 3 ]] || die "usage: run_deform360_v8_confirmation_shard.sh SHARD_INDEX CUDA_DEVICE CONFIRMATION_SOURCE_MANIFEST"
+readonly SHARD_INDEX="$1" CUDA_DEVICE="$2" CONFIRMATION_SOURCE_MANIFEST="$3"
 case "$SHARD_INDEX:$CUDA_DEVICE" in 0:0|1:1) ;; *) die "formal shards are fixed to 0:0 and 1:1" ;; esac
 [[ "$(hostname)" == "workstation2" ]] || \
   die "formal held-v8 shards must run together on gpuserver6000/workstation2"
@@ -70,6 +70,7 @@ fi
 
 readonly HELD="/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8"
 readonly LOCK="$HELD/confirmation-lock.json"
+readonly CANONICAL_CONFIRMATION_SOURCE_MANIFEST="$HELD/confirmation-source/manifests/aligned-source-cohort.json"
 readonly CODE="${BPT_HELD_V8_CODE:?set BPT_HELD_V8_CODE to immutable v8 deployment}"
 readonly PY="/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/bin/python"
 readonly PYCACHE_PREFIX="/nonexistent/bpt-held-v8-pycache"
@@ -93,9 +94,48 @@ done
 [[ -z "$(find "$CODE" -xdev -perm /222 -print -quit)" ]] || die "v8 deployment is writable"
 [[ -f "$LOCK" && ! -L "$LOCK" && "$(stat -c '%a' -- "$LOCK")" == "400" ]] || \
   die "confirmation lock is absent, linked, or not mode 0400"
+[[ "$CONFIRMATION_SOURCE_MANIFEST" == "$CANONICAL_CONFIRMATION_SOURCE_MANIFEST" ]] || \
+  die "confirmation source manifest path changed"
+[[ -f "$CONFIRMATION_SOURCE_MANIFEST" && ! -L "$CONFIRMATION_SOURCE_MANIFEST" && \
+  "$(stat -c '%a' -- "$CONFIRMATION_SOURCE_MANIFEST")" == "400" ]] || \
+  die "confirmation source manifest is absent, linked, or not mode 0400"
 [[ ! -e /nonexistent && ! -L /nonexistent && ! -e "$PYCACHE_PREFIX" ]] || \
   die "reserved v8 pycache prefix is available"
 cd -- "$CODE"
+
+# A shard creates no role output until the entire exact-six source cohort has
+# been recursively rehashed against the canonical confirmation lock.
+readonly SOURCE_VALIDATION="$(
+  env -i HOME=/home/florianpfaff USER=florianpfaff LOGNAME=florianpfaff \
+    PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=/tmp LANG=C.UTF-8 LC_ALL=C.UTF-8 \
+    PYTHONDONTWRITEBYTECODE=1 PYTHONNOUSERSITE=1 PYTHONHASHSEED=0 \
+    PYTHONPYCACHEPREFIX="$PYCACHE_PREFIX" \
+    "$PY" -I -B -X "pycache_prefix=$PYCACHE_PREFIX" - \
+    "$CODE/src" "$LOCK" "$CONFIRMATION_SOURCE_MANIFEST" <<'PY'
+import hashlib
+from pathlib import Path
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+from bayesian_phystwin.deform360_held_v8_protocol import (
+    confirmation_source_permit_evidence,
+    validate_protocol_lock,
+)
+from bayesian_phystwin.deform360_held_v8_confirmation_source import (
+    validate_confirmation_source_cohort_manifest,
+)
+lock = validate_protocol_lock(sys.argv[1])
+if lock.get("stage") != "confirmation":
+    raise RuntimeError("confirmation lock did not recursively validate GO")
+validate_confirmation_source_cohort_manifest(
+    sys.argv[2],
+    expected_source_permit=confirmation_source_permit_evidence(sys.argv[1]),
+    verify_content=True,
+)
+print(hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest())
+PY
+)"
+[[ "$SOURCE_VALIDATION" =~ ^[0-9a-f]{64}$ ]] || \
+  die "confirmation source validation did not return the lock digest"
 
 readonly VERIFY_PARTIAL="$RUN/shard-$SHARD_INDEX.lock-verify.partial.$$"
 readonly VERIFY_LOG="$RUN/shard-$SHARD_INDEX.lock-verify.log"
@@ -165,6 +205,7 @@ for spec in "${CASE_SPECS[@]}"; do
     PATH=/usr/local/bin:/usr/bin:/bin TMPDIR=/tmp LANG=C.UTF-8 LC_ALL=C.UTF-8 \
     BPT_HELD_V8_CODE="$CODE" \
     BPT_HELD_V8_LOCK_VERIFIED_SHA256="$BPT_HELD_V8_LOCK_VERIFIED_SHA256" \
-    /bin/bash "$CASE_RUNNER" "$CUDA_DEVICE" "$case_name" "$object_id" "$episode_id"
+    /bin/bash "$CASE_RUNNER" "$CUDA_DEVICE" "$case_name" "$object_id" "$episode_id" \
+      "$CONFIRMATION_SOURCE_MANIFEST"
 done
 echo "SHARD_COMPLETE role=confirmation shard=$SHARD_INDEX cuda_device=$CUDA_DEVICE case_count=${#CASE_SPECS[@]}"

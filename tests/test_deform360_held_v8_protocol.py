@@ -1273,11 +1273,83 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
     go = tmp_path / "held-v8" / "calibration" / "calibration-go.json"
     _gate_decision(go, calibration_lock, passed=True)
     confirmation_lock = tmp_path / "held-v8" / "confirmation-lock.json"
+    with pytest.raises(ValueError, match="outcome integrity completion is absent"):
+        protocol.create_confirmation_protocol_lock(
+            confirmation_lock,
+            calibration_lock,
+            go,
+        )
+    assert not confirmation_lock.exists()
+
+    completion_path = (
+        tmp_path
+        / "held-v8"
+        / "calibration"
+        / "calibration-outcome-integrity-completion.json"
+    )
+    _write_json(completion_path, {"sealed": True})
+    # The real validator must be importable and must reject this structurally
+    # sealed but content-free completion before the test installs its valid
+    # completion stub.  Missing bound dependencies may surface as FileNotFoundError.
+    with pytest.raises((ValueError, FileNotFoundError)):
+        protocol.create_confirmation_protocol_lock(
+            confirmation_lock,
+            calibration_lock,
+            go,
+        )
+    assert not confirmation_lock.exists()
+
+    decision = json.loads(go.read_text(encoding="utf-8"))
+    validator_calls: list[dict[str, Any]] = []
+
+    def validate_completion(
+        path: str | Path,
+        *,
+        lock_path: str | Path,
+        expected_role: str,
+        verify_content_inventory: bool,
+        recompute_scores: bool,
+    ) -> dict[str, Any]:
+        validator_calls.append(
+            {
+                "path": Path(path),
+                "lock_path": Path(lock_path),
+                "expected_role": expected_role,
+                "verify_content_inventory": verify_content_inventory,
+                "recompute_scores": recompute_scores,
+            }
+        )
+        return {
+            "status": "role-outcome-integrity-complete",
+            "terminal_outcome": "GO",
+            "role": "calibration",
+            "decision": {
+                **_bound_file(go),
+                "artifact_sha256": decision["artifact_sha256"],
+            },
+        }
+
+    monkeypatch.setattr(
+        protocol, "_validate_role_outcome_completion", validate_completion
+    )
     protocol.create_confirmation_protocol_lock(
         confirmation_lock,
         calibration_lock,
         go,
     )
+    assert len(validator_calls) == 2
+    expected_call = {
+        "path": completion_path,
+        "lock_path": calibration_lock,
+        "expected_role": "calibration",
+        "verify_content_inventory": True,
+    }
+    assert validator_calls == [
+        {**expected_call, "recompute_scores": True},
+        {**expected_call, "recompute_scores": False},
+    ]
+    created = protocol.validate_protocol_lock(confirmation_lock)
+    assert created["calibration_outcome_completion"] == _bound_file(completion_path)
     assert (
         protocol.locked_case_names(confirmation_lock, role="confirmation")
         == protocol.CONFIRMATION_CASE_NAMES
@@ -1286,15 +1358,41 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
         tmp_path / "post-go", confirmation_lock, role="confirmation"
     )
     assert source is None
+    confirmation_source = (
+        Path(created["held_root"])
+        / "confirmation-source"
+        / "manifests"
+        / "aligned-source-cohort.json"
+    )
+    confirmation_source.parent.mkdir(parents=True)
+    _write_json(confirmation_source, {"fixture": True})
+
+    def confirmation_source_validator(
+        _path: str | Path,
+        *,
+        expected_source_permit: dict[str, Any],
+        verify_content: bool,
+    ) -> dict[str, Any]:
+        assert verify_content is True
+        return {
+            "protocol_id": protocol.PROTOCOL_ID,
+            "role": "confirmation",
+            "ordered_case_names": list(protocol.CONFIRMATION_CASE_NAMES),
+            "confirmation_lock_and_capability": expected_source_permit,
+            "artifact_sha256": "f" * 64,
+        }
+
     evidence = protocol.validate_first_cohort_barrier(
         confirmation_lock,
         physical_seal_paths=physical,
         online_seal_paths=online,
         frozen_field_manifest_paths=fields,
+        confirmation_aligned_source_manifest_path=confirmation_source,
         role="confirmation",
         physical_validator=_validator,
         online_validator=_validator,
         frozen_field_validator=_field_validator,
+        confirmation_source_validator=confirmation_source_validator,
     )
     assert evidence.role == "confirmation"
     assert evidence.ordered_case_names == protocol.CONFIRMATION_CASE_NAMES

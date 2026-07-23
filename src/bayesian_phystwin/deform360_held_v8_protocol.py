@@ -32,6 +32,7 @@ import subprocess
 from typing import Any, Literal, Protocol
 
 from . import deform360_frame_zero_assets as frame_zero_assets
+from . import deform360_held_v8_confirmation_source as confirmation_source
 from . import deform360_held_v8_replacement_source as replacement_source
 from . import deform360_held_v8_query_artifacts as query_artifacts
 
@@ -118,6 +119,7 @@ UPDATE_FRAMES = (19, 38, 57)
 TARGET_RECONSTRUCTION_OPERATION = "create-official-target-v1"
 FUTURE_SCORE_OPERATION = "read-official-target-for-score-v1"
 REPLACEMENT_SOURCE_OPERATION = "acquire-aligned-replacement-source-v1"
+CONFIRMATION_SOURCE_OPERATION = confirmation_source.SOURCE_OPERATION
 
 V7_WITHDRAWAL_REPORT_FILE_SHA256 = (
     "7bcab7169fc2addad8e56b7bb5ca9086b5249e9a744e18b9d51a7f395098c1a3"
@@ -364,6 +366,7 @@ RESOURCE_LIFECYCLE_POLICY_CONTRACT = {
     "writer_globals_restored_after_each_fit": True,
     "profiler_globals_restored_after_each_fit": True,
     "process_global_nonreentrant_guard": True,
+    "rlimit_nofile_soft": 1024,
     "rlimit_nofile_changed": False,
 }
 
@@ -380,6 +383,11 @@ POST_CASE_RESOURCE_BOUNDARY_CONTRACT = {
     "predicate": "observed_fd_count <= reference_fd_count + 32",
     "validated_after_every_completed_case": True,
     "failure_before_next_target_and_second_barrier": True,
+    "rlimit_nofile_soft": 1024,
+    "rlimit_nofile_reference_captured_once": True,
+    "rlimit_nofile_soft_hard_pair_unchanged_after_every_case": True,
+    "rlimit_nofile_soft_hard_pair_unchanged_at_end_outcome": True,
+    "validated_at_end_outcome": True,
     "rlimit_nofile_changed": False,
 }
 
@@ -562,6 +570,31 @@ class _FreshRootCapability:
 class _FreshRootState:
     capability: _FreshRootCapability
     consumed: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class _ConfirmationSourceCapability:
+    lock_path: str
+    lock_file_sha256: str
+    lock_artifact_sha256: str
+    cohort_barrier_sha256: str
+    ordered_case_names: tuple[str, ...]
+    operation: str
+    _nonce: object = field(repr=False, compare=False)
+    _authority: object = field(repr=False, compare=False)
+
+    def __reduce__(self) -> Any:
+        raise TypeError("confirmation-source capabilities cannot be serialized")
+
+
+@dataclass
+class _ConfirmationSourceCapabilityState:
+    capability: _ConfirmationSourceCapability
+    consumed: bool = False
+
+
+_CONFIRMATION_SOURCE_CAPABILITIES: dict[int, _ConfirmationSourceCapabilityState] = {}
+_ISSUED_CONFIRMATION_SOURCE_LOCKS: set[tuple[str, str, str]] = set()
 
 
 def _require(condition: bool, message: str) -> None:
@@ -3487,6 +3520,7 @@ def create_calibration_protocol_lock(
             "confirmation_access_authorized": False,
             "parent_calibration_lock": None,
             "calibration_gate_evidence": None,
+            "calibration_outcome_completion": None,
             "freshness_and_reuse": deepcopy(FRESHNESS_AND_REUSE_CONTRACT),
             "information_boundary": {
                 "filesystem_case_discovery_permitted": False,
@@ -3761,6 +3795,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             artifact.get("confirmation_access_authorized") is False
             and artifact.get("parent_calibration_lock") is None
             and artifact.get("calibration_gate_evidence") is None
+            and artifact.get("calibration_outcome_completion") is None
             and _canonical_path(path) == root / "calibration-lock.json",
             "calibration lock prematurely authorizes confirmation",
         )
@@ -3779,6 +3814,27 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         )
         parent = validate_protocol_lock(parent_path)
         _require(parent.get("stage") == "calibration", "confirmation parent changed")
+        completion_record = artifact.get("calibration_outcome_completion")
+        completion_path = _validate_bound_file(
+            completion_record,
+            role="calibration outcome integrity completion",
+            required_mode=_SEALED_FILE_MODE,
+            current_lock=artifact,
+            required_parent=root / "calibration",
+        )
+        _require(
+            completion_path
+            == root / "calibration" / "calibration-outcome-integrity-completion.json",
+            "confirmation binds a non-canonical calibration outcome completion",
+        )
+        completion = _validate_role_outcome_completion(
+            completion_path,
+            lock_path=parent_path,
+            expected_role="calibration",
+            verify_content_inventory=True,
+            recompute_scores=False,
+        )
+        _require_successful_calibration_outcome_completion(completion)
         decision_path = _validate_bound_file(
             artifact.get("calibration_gate_evidence"),
             role="calibration GO decision",
@@ -3787,6 +3843,13 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             required_parent=root / "calibration",
         )
         validate_calibration_gate_decision(decision_path, parent_path)
+        completion_decision = completion.get("decision")
+        _require(
+            isinstance(completion_decision, Mapping)
+            and {key: completion_decision.get(key) for key in _FILE_RECORD_FIELDS}
+            == artifact.get("calibration_gate_evidence"),
+            "confirmation gate evidence differs from the completed calibration decision",
+        )
         for key in (
             "execution_attempt",
             "held_root",
@@ -3844,6 +3907,158 @@ def _authorize_case(
 ) -> dict[str, Any]:
     _authorize_role(lock, role)
     return _case_identity(case_name, role)
+
+
+def _confirmation_source_barrier_evidence(
+    lock_path: str | Path,
+) -> CohortBarrierEvidence:
+    """Recursively prove GO before any confirmation provider may be touched."""
+
+    lock = validate_protocol_lock(lock_path)
+    _authorize_role(lock, "confirmation")
+    _require(
+        tuple(CONFIRMATION_CASE_NAMES)
+        == tuple(confirmation_source.CONFIRMATION_SOURCE_CASE_NAMES),
+        "confirmation source cohort differs from the protocol lock",
+    )
+    source_specs = {
+        case.case_name: case for case in confirmation_source.CONFIRMATION_SOURCE_CASES
+    }
+    for case in CONFIRMATION_CASES:
+        source = source_specs.get(case.case_name)
+        _require(
+            source is not None
+            and source.object_id == case.object_id
+            and source.episode_id == case.episode_id
+            and source.remote_inventory_sha256 == case.remote_inventory_sha256
+            and source.remote_file_count == case.remote_file_count
+            and source.remote_total_bytes == case.remote_total_bytes,
+            f"confirmation source identity changed for {case.case_name}",
+        )
+    lock_file_sha256 = _sha256_file(lock_path)
+    contract_sha256 = confirmation_source.confirmation_source_contract_sha256()
+    ordered = tuple(
+        (
+            case.case_name,
+            (
+                ("remote_inventory_sha256", case.remote_inventory_sha256),
+                ("remote_file_count", str(case.remote_file_count)),
+                ("remote_total_bytes", str(case.remote_total_bytes)),
+                ("confirmation_source_contract_sha256", contract_sha256),
+            ),
+        )
+        for case in CONFIRMATION_CASES
+    )
+    payload = {
+        "protocol_id": PROTOCOL_ID,
+        "barrier_number": 0,
+        "role": "confirmation",
+        "operation": CONFIRMATION_SOURCE_OPERATION,
+        "lock_file_sha256": lock_file_sha256,
+        "lock_artifact_sha256": lock["artifact_sha256"],
+        "ordered_case_names": list(CONFIRMATION_CASE_NAMES),
+        "ordered_artifact_bindings": ordered,
+        "confirmation_source_contract_sha256": contract_sha256,
+        "calibration_go_recursively_validated": True,
+    }
+    return CohortBarrierEvidence(
+        protocol_id=PROTOCOL_ID,
+        barrier_number=0,
+        role="confirmation",
+        operation=CONFIRMATION_SOURCE_OPERATION,
+        lock_path=str(_canonical_path(lock_path)),
+        lock_file_sha256=lock_file_sha256,
+        lock_artifact_sha256=lock["artifact_sha256"],
+        ordered_case_names=CONFIRMATION_CASE_NAMES,
+        ordered_artifact_bindings=ordered,
+        barrier_sha256=_barrier_digest(payload),
+    )
+
+
+def confirmation_source_permit_evidence(lock_path: str | Path) -> dict[str, Any]:
+    evidence = _confirmation_source_barrier_evidence(lock_path)
+    return {
+        "protocol_id": PROTOCOL_ID,
+        "role": "confirmation",
+        "operation": CONFIRMATION_SOURCE_OPERATION,
+        "lock_path": evidence.lock_path,
+        "lock_file_sha256": evidence.lock_file_sha256,
+        "lock_artifact_sha256": evidence.lock_artifact_sha256,
+        "cohort_barrier_sha256": evidence.barrier_sha256,
+        "ordered_case_names": list(evidence.ordered_case_names),
+        "confirmation_source_contract_sha256": (
+            confirmation_source.confirmation_source_contract_sha256()
+        ),
+        "calibration_go_recursively_validated": True,
+        "single_use_consumed": True,
+        "process_local_capability": True,
+    }
+
+
+def authorize_confirmation_source_materialization(lock_path: str | Path) -> object:
+    evidence = _confirmation_source_barrier_evidence(lock_path)
+    issue_key = (
+        evidence.lock_path,
+        evidence.lock_file_sha256,
+        evidence.lock_artifact_sha256,
+    )
+    _require(
+        issue_key not in _ISSUED_CONFIRMATION_SOURCE_LOCKS,
+        "confirmation source capability was already issued for this lock",
+    )
+    capability = _ConfirmationSourceCapability(
+        lock_path=evidence.lock_path,
+        lock_file_sha256=evidence.lock_file_sha256,
+        lock_artifact_sha256=evidence.lock_artifact_sha256,
+        cohort_barrier_sha256=evidence.barrier_sha256,
+        ordered_case_names=evidence.ordered_case_names,
+        operation=CONFIRMATION_SOURCE_OPERATION,
+        _nonce=object(),
+        _authority=_CAPABILITY_AUTHORITY,
+    )
+    _CONFIRMATION_SOURCE_CAPABILITIES[id(capability)] = (
+        _ConfirmationSourceCapabilityState(capability=capability)
+    )
+    _ISSUED_CONFIRMATION_SOURCE_LOCKS.add(issue_key)
+    return capability
+
+
+def consume_confirmation_source_materialization_capability(
+    permit: object,
+    *,
+    operation: str,
+    ordered_case_names: list[str] | tuple[str, ...],
+) -> dict[str, Any]:
+    _require(
+        isinstance(permit, _ConfirmationSourceCapability),
+        "confirmation source operation lacks a process-local capability",
+    )
+    state = _CONFIRMATION_SOURCE_CAPABILITIES.get(id(permit))
+    _require(
+        state is not None
+        and state.capability is permit
+        and permit._authority is _CAPABILITY_AUTHORITY,
+        "confirmation source capability is not live in this process",
+    )
+    _require(not state.consumed, "confirmation source capability was already consumed")
+    # Consume before every argument and recursive-lock check.  A failed final
+    # validation can never be retried with the same authority.
+    state.consumed = True
+    _require(
+        operation == CONFIRMATION_SOURCE_OPERATION
+        and tuple(ordered_case_names) == CONFIRMATION_CASE_NAMES
+        and permit.operation == CONFIRMATION_SOURCE_OPERATION
+        and permit.ordered_case_names == CONFIRMATION_CASE_NAMES,
+        "confirmation source capability operation or cohort changed",
+    )
+    evidence = _confirmation_source_barrier_evidence(permit.lock_path)
+    _require(
+        evidence.lock_file_sha256 == permit.lock_file_sha256
+        and evidence.lock_artifact_sha256 == permit.lock_artifact_sha256
+        and evidence.barrier_sha256 == permit.cohort_barrier_sha256,
+        "confirmation source lock or cohort changed at consumption",
+    )
+    return confirmation_source_permit_evidence(permit.lock_path)
 
 
 def _replacement_source_barrier_evidence(
@@ -4553,6 +4768,7 @@ def validate_first_cohort_barrier(
     online_seal_paths: Mapping[str, str | Path],
     frozen_field_manifest_paths: Mapping[str, str | Path],
     replacement_aligned_source_manifest_path: str | Path | None = None,
+    confirmation_aligned_source_manifest_path: str | Path | None = None,
     role: Literal["calibration", "confirmation"],
     physical_validator: ArtifactValidator = validate_physical_prior_seal,
     online_validator: ArtifactValidator = validate_online_prediction_seal,
@@ -4561,6 +4777,9 @@ def validate_first_cohort_barrier(
     ),
     replacement_source_validator: Callable[..., Mapping[str, Any]] = (
         replacement_source.validate_aligned_source_manifest
+    ),
+    confirmation_source_validator: Callable[..., Mapping[str, Any]] = (
+        confirmation_source.validate_confirmation_source_cohort_manifest
     ),
 ) -> CohortBarrierEvidence:
     """Purely replay all fresh prediction and pre-outcome-field bindings."""
@@ -4584,10 +4803,24 @@ def validate_first_cohort_barrier(
             role="replacement aligned-source manifest",
             required_parent=_held_root(lock) / "replacement-source" / "manifests",
         )
+        _require(
+            confirmation_aligned_source_manifest_path is None,
+            "calibration barrier may not accept a confirmation source",
+        )
     else:
         _require(
             replacement_aligned_source_manifest_path is None,
             "confirmation barrier may not substitute a replacement source",
+        )
+        _require(
+            confirmation_aligned_source_manifest_path is not None,
+            "confirmation barrier requires the exact six-case source cohort",
+        )
+        confirmation_path = _require_current_execution_path(
+            confirmation_aligned_source_manifest_path,
+            lock=lock,
+            role="confirmation aligned-source cohort manifest",
+            required_parent=_held_root(lock) / "confirmation-source" / "manifests",
         )
     cohort_paths: dict[str, tuple[Path, Path, Path]] = {}
     for case_name in expected:
@@ -4647,6 +4880,34 @@ def validate_first_cohort_barrier(
                 str(source_manifest["artifact_sha256"]),
             ),
         )
+    confirmation_source_binding: tuple[tuple[str, str], ...] = ()
+    if role == "confirmation":
+        expected_source_permit = confirmation_source_permit_evidence(lock_path)
+        confirmation_manifest = confirmation_source_validator(
+            confirmation_path,
+            expected_source_permit=expected_source_permit,
+            verify_content=True,
+        )
+        _require(
+            isinstance(confirmation_manifest, Mapping)
+            and confirmation_manifest.get("protocol_id") == PROTOCOL_ID
+            and confirmation_manifest.get("role") == "confirmation"
+            and confirmation_manifest.get("ordered_case_names")
+            == list(CONFIRMATION_CASE_NAMES)
+            and confirmation_manifest.get("confirmation_lock_and_capability")
+            == expected_source_permit,
+            "confirmation aligned-source cohort changed lock or cases",
+        )
+        confirmation_source_binding = (
+            (
+                "confirmation_aligned_source_manifest_sha256",
+                _sha256_file(confirmation_path),
+            ),
+            (
+                "confirmation_aligned_source_artifact_sha256",
+                str(confirmation_manifest["artifact_sha256"]),
+            ),
+        )
 
     ordered: list[tuple[str, tuple[tuple[str, str], ...]]] = []
     for case_name in expected:
@@ -4695,6 +4956,8 @@ def validate_first_cohort_barrier(
         )
         if case_name == FRESH_REPLACEMENT_CASE_NAME:
             bindings = (*bindings, *source_binding)
+        if role == "confirmation":
+            bindings = (*bindings, *confirmation_source_binding)
         ordered.append(
             (
                 case_name,
@@ -4896,6 +5159,7 @@ def authorize_target_reconstruction_capabilities(
     online_seal_paths: Mapping[str, str | Path],
     frozen_field_manifest_paths: Mapping[str, str | Path],
     replacement_aligned_source_manifest_path: str | Path | None = None,
+    confirmation_aligned_source_manifest_path: str | Path | None = None,
     role: Literal["calibration", "confirmation"],
     physical_validator: ArtifactValidator = validate_physical_prior_seal,
     online_validator: ArtifactValidator = validate_online_prediction_seal,
@@ -4905,6 +5169,9 @@ def authorize_target_reconstruction_capabilities(
     replacement_source_validator: Callable[..., Mapping[str, Any]] = (
         replacement_source.validate_aligned_source_manifest
     ),
+    confirmation_source_validator: Callable[..., Mapping[str, Any]] = (
+        confirmation_source.validate_confirmation_source_cohort_manifest
+    ),
 ) -> dict[str, object]:
     kwargs = {
         "physical_seal_paths": dict(physical_seal_paths),
@@ -4913,11 +5180,15 @@ def authorize_target_reconstruction_capabilities(
         "replacement_aligned_source_manifest_path": (
             replacement_aligned_source_manifest_path
         ),
+        "confirmation_aligned_source_manifest_path": (
+            confirmation_aligned_source_manifest_path
+        ),
         "role": role,
         "physical_validator": physical_validator,
         "online_validator": online_validator,
         "frozen_field_validator": frozen_field_validator,
         "replacement_source_validator": replacement_source_validator,
+        "confirmation_source_validator": confirmation_source_validator,
     }
 
     def revalidate() -> CohortBarrierEvidence:
@@ -5093,6 +5364,44 @@ def validate_calibration_gate_decision(
     return decision
 
 
+def _validate_role_outcome_completion(
+    completion_path: str | Path,
+    *,
+    lock_path: str | Path,
+    expected_role: Literal["calibration", "confirmation"],
+    verify_content_inventory: bool,
+    recompute_scores: bool,
+) -> dict[str, Any]:
+    """Load the future-bearing integrity validator only at promotion boundaries."""
+
+    from . import deform360_held_v8_outcome_integrity as outcome_integrity
+
+    result = outcome_integrity.validate_role_outcome_completion(
+        completion_path,
+        lock_path=lock_path,
+        expected_role=expected_role,
+        verify_content_inventory=verify_content_inventory,
+        recompute_scores=recompute_scores,
+    )
+    _require(
+        isinstance(result, dict),
+        "outcome completion validator returned invalid data",
+    )
+    return result
+
+
+def _require_successful_calibration_outcome_completion(
+    completion: Mapping[str, Any],
+) -> None:
+    _require(
+        completion.get("status") == "role-outcome-integrity-complete"
+        and completion.get("terminal_outcome") == "GO"
+        and completion.get("role") == "calibration"
+        and isinstance(completion.get("decision"), Mapping),
+        "calibration outcome completion does not attest an integrity-complete GO",
+    )
+
+
 def create_confirmation_protocol_lock(
     output_path: str | Path,
     calibration_lock_path: str | Path,
@@ -5108,6 +5417,33 @@ def create_confirmation_protocol_lock(
         "confirmation remains inaccessible after calibration NO-GO",
     )
     root = _canonical_path(calibration["held_root"])
+    completion_path = (
+        root / "calibration" / "calibration-outcome-integrity-completion.json"
+    )
+    _require(
+        os.path.lexists(completion_path),
+        "canonical calibration outcome integrity completion is absent",
+    )
+    _require_mode(
+        completion_path,
+        _SEALED_FILE_MODE,
+        role="calibration outcome integrity completion",
+    )
+    completion = _validate_role_outcome_completion(
+        completion_path,
+        lock_path=calibration_lock_path,
+        expected_role="calibration",
+        verify_content_inventory=True,
+        recompute_scores=True,
+    )
+    _require_successful_calibration_outcome_completion(completion)
+    completion_decision = completion.get("decision")
+    _require(
+        isinstance(completion_decision, Mapping)
+        and {key: completion_decision.get(key) for key in _FILE_RECORD_FIELDS}
+        == _bound_file(calibration_decision_path),
+        "calibration GO differs from the integrity-complete decision",
+    )
     output = _canonical_path(output_path)
     _require(
         output == root / "confirmation-lock.json", "non-canonical confirmation lock"
@@ -5118,6 +5454,7 @@ def create_confirmation_protocol_lock(
     artifact["confirmation_access_authorized"] = True
     artifact["parent_calibration_lock"] = _bound_file(calibration_lock_path)
     artifact["calibration_gate_evidence"] = _bound_file(calibration_decision_path)
+    artifact["calibration_outcome_completion"] = _bound_file(completion_path)
     artifact["artifact_sha256"] = held_artifact_sha256(artifact)
     _write_new_json(output, artifact)
     return validate_protocol_lock(output)
@@ -5141,6 +5478,7 @@ __all__ = [
     "CALIBRATION_DECISION_KIND",
     "CONFIRMATION_CASES",
     "CONFIRMATION_CASE_NAMES",
+    "CONFIRMATION_SOURCE_OPERATION",
     "CohortBarrierEvidence",
     "EXECUTION_ATTEMPT",
     "FRAME_COUNT",
@@ -5167,9 +5505,11 @@ __all__ = [
     "UPDATE_FRAMES",
     "V7_WITHDRAWAL_REPORT_FILE_SHA256",
     "authorize_future_score_capabilities",
+    "authorize_confirmation_source_materialization",
     "authorize_replacement_source_acquisition",
     "authorize_target_reconstruction_capabilities",
     "consume_case_capability",
+    "consume_confirmation_source_materialization_capability",
     "consume_replacement_source_acquisition_capability",
     "create_calibration_protocol_lock",
     "create_confirmation_protocol_lock",
@@ -5178,6 +5518,7 @@ __all__ = [
     "create_prefix_stage_authorization",
     "held_artifact_sha256",
     "held_contract_sha256",
+    "confirmation_source_permit_evidence",
     "load_held_protocol_lock",
     "locked_case_names",
     "prepare_fresh_held_root",

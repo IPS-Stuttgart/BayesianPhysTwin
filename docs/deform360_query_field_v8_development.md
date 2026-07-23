@@ -135,6 +135,53 @@ from five objects with three cases each to `002=2`, `072=1`, and
 `083/085/092/170=3`. V8 therefore freezes and reports both equal-case and
 equal-object aggregation.
 
+## Attempt-5 pre-execution integrity amendment
+
+On 2026-07-23 the queued attempt-5 qualification watcher was stopped before
+it created its qualification root, and the formal held root remained absent.
+A freeze audit found that confirmation promotion structurally validated a
+sealed calibration decision but did not independently derive that decision
+from the canonical target and queried-prediction arrays. It also found that a
+successful outcome had no terminal inventory seal, leaving mode-`0400` files
+replaceable through writable parent directories. No score, gate, or scientific
+outcome was produced or inspected.
+
+Before attempt 5 can be re-authorized, the frozen implementation must:
+
+- reconstruct both cohort barriers and recompute every case score from the
+  sealed raw artifacts before accepting calibration promotion;
+- exact-compare the recomputed evidence and gate with the sealed decision;
+- inventory and freeze each completed role tree, and freeze the complete held
+  root at a terminal calibration NO-GO or confirmation outcome; and
+- require the qualified `RLIMIT_NOFILE` soft limit of `1024` to remain
+  unchanged throughout formal outcome execution.
+
+These are prospective integrity and resource-boundary repairs. They do not
+alter the selected query field, cohorts, metrics, thresholds, or claim
+boundary. They require a new clean freeze, qualification, and replay before a
+fresh formal root may be opened.
+
+### Post-GO confirmation-source materialization
+
+The repaired protocol also treats confirmation media as a new post-GO
+artifact. Only after the calibration integrity replay produces GO may a
+single-use capability materialize the exact six registered confirmation cases
+from `brownu/deform360` revision
+`7fea8e20231a47641d1d2bc8791920ec4e62ec5e`. The acquisition contract freezes
+the ordered QA-selected 12-camera list, target episode, and bimanual flag for
+each case; records tactile files only as remote metadata; and permits exactly
+168 non-tactile payloads (28 per case) to enter the processing stage.
+
+Processing is bound to Deform360 commit
+`0fe36f0b7a7a917ba62b5f8cee707299a9a4a317`. The complete six-case tree is
+validated before and after one atomic publication, then its manifest and every
+referenced payload are recursively rehashed at the cohort barriers, role
+outcome, and terminal integrity boundary. Provider scratch uses the single
+held-root `.confirmation-source-runtime` path; a stale or uncleanable path
+fails closed and cannot be bypassed by a later invocation. This is prospective
+source-integrity machinery, not a scientific result or a state-of-the-art
+claim.
+
 ## V8 information boundary
 
 V8 uses two cohort-wide barriers:

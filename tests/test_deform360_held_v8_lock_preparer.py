@@ -572,6 +572,9 @@ def test_prospective_bindings_include_named_deployment_contracts(
         frame_zero_assets=SimpleNamespace(
             EXACT_EIGHT_SUBSET_BOUNDED_AUDIT_CONTRACT_SHA256="6" * 64
         ),
+        confirmation_source=SimpleNamespace(
+            confirmation_source_contract_sha256=lambda: "4" * 64
+        ),
         held_contract_sha256=lambda value: preparer.hashlib.sha256(
             preparer._canonical_bytes(value)
         ).hexdigest(),
@@ -689,6 +692,7 @@ def test_prospective_bindings_include_named_deployment_contracts(
         "3" * 40
     )
     assert "replacement_source_inventory_contract" in bindings
+    assert bindings["held_v8_confirmation_source_contract"] == "4" * 64
     assert bindings["replacement_automatic_twin_admission_contract"] == "7" * 64
     assert bindings["frame_zero_exact_eight_subset_bounded_audit_contract"] == "6" * 64
     assert bindings["center_exclusion_contract"] == "5" * 64
@@ -757,6 +761,16 @@ def test_attempt_three_binds_attempt_two_lineage_and_operator_sources() -> None:
     )
     assert "held_v8_attempt2_withdrawal_integrity_completion_operator_source" in (
         preparer._LOCAL_BINDING_FILES
+    )
+    assert (
+        preparer._LOCAL_BINDING_FILES["held_v8_role_outcome_integrity_sealer_source"]
+        == "scripts/held/seal_deform360_v8_role_outcome.py"
+    )
+    assert preparer._LOCAL_BINDING_FILES["held_v8_outcome_integrity_source"] == (
+        "src/bayesian_phystwin/deform360_held_v8_outcome_integrity.py"
+    )
+    assert preparer._LOCAL_BINDING_FILES["held_v81_attempt5_launcher_source"] == (
+        "scripts/held/run_deform360_v81_attempt5.py"
     )
 
 

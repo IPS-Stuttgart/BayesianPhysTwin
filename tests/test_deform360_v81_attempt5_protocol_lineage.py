@@ -386,6 +386,24 @@ def test_attempt5_protocol_keeps_science_and_adds_only_resource_contracts() -> N
         "replacement_may_change_frozen_analyzer_or_numerical_gate": False,
     }
     assert protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT["maximum_growth"] == 32
+    assert protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT["rlimit_nofile_soft"] == 1024
+    assert (
+        protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT[
+            "rlimit_nofile_soft_hard_pair_unchanged_after_every_case"
+        ]
+        is True
+    )
+    assert (
+        protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT[
+            "rlimit_nofile_soft_hard_pair_unchanged_at_end_outcome"
+        ]
+        is True
+    )
+    assert (
+        protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT["validated_at_end_outcome"]
+        is True
+    )
+    assert protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT["rlimit_nofile_soft"] == 1024
     assert protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT["rlimit_nofile_changed"] is False
     assert (
         protocol.FRESHNESS_AND_REUSE_CONTRACT[

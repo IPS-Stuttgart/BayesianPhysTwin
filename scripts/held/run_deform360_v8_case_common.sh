@@ -177,7 +177,52 @@ if manifest["semantics"] != expected:
 print(manifest["aligned_episode_dir"])
 PY
   )"
+elif [[ "$V8_ROLE" == "confirmation" ]]; then
+  readonly CANONICAL_CONFIRMATION_SOURCE_MANIFEST="$HELD/confirmation-source/manifests/aligned-source-cohort.json"
+  [[ -z "$REPLACEMENT_SOURCE_MANIFEST" ]] || \
+    die "confirmation rejects a replacement source manifest"
+  [[ "$CONFIRMATION_SOURCE_MANIFEST" == "$CANONICAL_CONFIRMATION_SOURCE_MANIFEST" ]] || \
+    die "confirmation source manifest path changed"
+  [[ -f "$CONFIRMATION_SOURCE_MANIFEST" && ! -L "$CONFIRMATION_SOURCE_MANIFEST" ]] || \
+    die "confirmation source manifest is absent or linked"
+  [[ "$(stat -c '%a' -- "$CONFIRMATION_SOURCE_MANIFEST")" == "400" ]] || \
+    die "confirmation source manifest is not sealed mode 0400"
+  EPDIR="$("${CLEAN_ENV[@]}" "$PY" -I -B -X "pycache_prefix=$PYCACHE_PREFIX" - \
+    "$CODE/src" "$LOCK" "$CONFIRMATION_SOURCE_MANIFEST" \
+    "$CASE_NAME" "$OBJECT" "$EPISODE" <<'PY'
+import sys
+sys.path.insert(0, sys.argv.pop(1))
+from bayesian_phystwin.deform360_held_v8_protocol import (
+    confirmation_source_permit_evidence,
+)
+from bayesian_phystwin.deform360_held_v8_confirmation_source import (
+    validate_confirmation_source_cohort_manifest,
+)
+lock_path, manifest_path, case_name, object_id, episode = sys.argv[1:]
+manifest = validate_confirmation_source_cohort_manifest(
+    manifest_path,
+    expected_source_permit=confirmation_source_permit_evidence(lock_path),
+    verify_content=True,
+)
+matches = [
+    case for case in manifest["cases"]
+    if case["case_name"] == case_name
+]
+if len(matches) != 1:
+    raise RuntimeError("confirmation source lacks one exact case")
+case = matches[0]
+if case["object_id"] != object_id or case["episode_id"] != int(episode):
+    raise RuntimeError("confirmation source tuple changed")
+print(
+    manifest["source_root"]
+    + "/"
+    + case["aligned_episode_relative_path"]
+)
+PY
+  )"
 else
+  [[ -z "$CONFIRMATION_SOURCE_MANIFEST" ]] || \
+    die "calibration rejects a confirmation source manifest"
   [[ -z "$REPLACEMENT_SOURCE_MANIFEST" ]] || \
     die "replacement source manifest supplied for a non-replacement case"
   EPDIR="$ALIGNED/$OBJECT/episode_$EPISODE"

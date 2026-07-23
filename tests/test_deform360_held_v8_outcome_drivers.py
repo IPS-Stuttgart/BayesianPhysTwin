@@ -170,7 +170,9 @@ class _FakeProtocol:
         self.events = events
         self.role = role
         self.reject_lock = reject_lock
-        self.FRESH_REPLACEMENT_CASE_NAME = cases[0]
+        self.FRESH_REPLACEMENT_CASE_NAME = (
+            cases[0] if role == "calibration" else "not-in-confirmation-cohort"
+        )
 
     def validate_protocol_lock(self, _path: str) -> dict[str, Any]:
         self.events.append("lock")
@@ -205,6 +207,9 @@ class _FakeProtocol:
 
     def replacement_source_permit_evidence(self, _path: str) -> dict[str, Any]:
         return {"operation": "source"}
+
+    def confirmation_source_permit_evidence(self, _path: str) -> dict[str, Any]:
+        return {"operation": "confirmation-source"}
 
     def validate_second_cohort_barrier(self, _path: str, **_kwargs: Any) -> Any:
         self.events.append("barrier2")
@@ -254,6 +259,9 @@ def _fake_post(
         aligned.mkdir(exist_ok=True)
         return {"aligned_episode_dir": str(aligned)}
 
+    def validate_confirmation_source(path: str, **_kwargs: Any) -> dict[str, Any]:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+
     def validate_frozen_field(_path: Path, **_kwargs: Any) -> dict[str, Any]:
         return {"source_array_records": {"frame_zero_points_m": {"shape": [24, 3]}}}
 
@@ -272,13 +280,25 @@ def _fake_post(
         return {"case_name": case_name}
 
     def create_score(evidence_path: Path, decision_path: Path, **_kwargs: Any):
-        evidence_path.write_text("evidence", encoding="utf-8")
-        decision_path.write_text(decision_label, encoding="utf-8")
-        events.append("decision")
-        return (
-            {"artifact_sha256": "e" * 64},
-            {"artifact_sha256": "d" * 64, "decision": decision_label},
+        gate_result = {"passed": decision_label in {"GO", "CONFIRMED"}}
+        evidence = {"gate_result": gate_result}
+        evidence["artifact_sha256"] = driver._execution_completion_artifact_sha256(
+            evidence
         )
+        decision = {"decision": decision_label, "gate_result": gate_result}
+        decision["artifact_sha256"] = driver._execution_completion_artifact_sha256(
+            decision
+        )
+        evidence_path.write_text(
+            json.dumps(evidence, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        evidence_path.chmod(0o400)
+        decision_path.write_text(
+            json.dumps(decision, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        decision_path.chmod(0o400)
+        events.append("decision")
+        return evidence, decision
 
     return driver.PostBarrierApi(
         backend_type=lambda **kwargs: _FakeBackend(events=events, **kwargs),
@@ -291,19 +311,526 @@ def _fake_post(
         score_case=score_case,
         create_score_evidence_and_decision=create_score,
         validate_replacement_source=validate_replacement_source,
+        validate_confirmation_source=validate_confirmation_source,
     )
 
 
-def test_two_barrier_order_and_no_go_never_promotes_confirmation(
+def _fake_outcome_execution(
     tmp_path: Path,
+    *,
+    role: str,
+    decision_label: str,
+) -> tuple[
+    driver.DriverArguments,
+    _FakeProtocol,
+    driver.PostBarrierApi,
+    list[str],
+    tuple[str, ...],
+    Any,
+]:
+    events: list[str] = []
+    count = 15 if role == "calibration" else 6
+    cases = tuple(f"{index:03d}-object-ep{index:04d}" for index in range(count))
+    lock = tmp_path / f"{role}-lock.json"
+    lock.write_text("lock", encoding="utf-8")
+    lock.chmod(0o400)
+    (tmp_path / role).mkdir()
+    source_manifest = driver.canonical_role_source_manifest_path(tmp_path, role)
+    source_manifest.parent.mkdir(parents=True)
+    source_value: dict[str, Any] = {
+        "protocol_id": driver.PROTOCOL_ID,
+        "role": role,
+    }
+    if role == "confirmation":
+        source_value.update(
+            {
+                "source_root": str(source_manifest.parent.parent),
+                "cases": [
+                    {
+                        "case_name": case,
+                        "aligned_episode_relative_path": (
+                            f"aligned/{case.rpartition('-ep')[0]}/"
+                            f"episode_{case.rpartition('-ep')[2]}"
+                        ),
+                    }
+                    for case in cases
+                ],
+            }
+        )
+    source_value["artifact_sha256"] = driver._execution_completion_artifact_sha256(
+        source_value
+    )
+    source_manifest.write_text(
+        json.dumps(source_value, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    source_manifest.chmod(0o400)
+    replacement: Path | None = source_manifest if role == "calibration" else None
+    confirmation: Path | None = source_manifest if role == "confirmation" else None
+    arguments = driver.DriverArguments(
+        role=role,
+        deployed_code=str(tmp_path / ("code-" + "a" * 40)),
+        lock_path=str(lock),
+        replacement_source_manifest_path=(str(replacement) if replacement else None),
+        dry_run_barrier_only=False,
+        confirmation_source_manifest_path=(str(confirmation) if confirmation else None),
+        aligned_root=str(tmp_path / "aligned"),
+        deform360_repo="d",
+        sam2_repository="s",
+        sam2_checkpoint="sc",
+        cotracker_repo="c",
+        cotracker_checkpoint="cc",
+    )
+    fake_protocol = _FakeProtocol(cases, events, role=role)
+    post = _fake_post(tmp_path, events, decision_label=decision_label)
+
+    def query_runner(**kwargs: Any) -> None:
+        case = Path(kwargs["official_query_manifest_path"]).parent.name
+        Path(kwargs["output_archive_path"]).parent.mkdir(parents=True, exist_ok=True)
+        Path(kwargs["output_archive_path"]).write_text(case, encoding="utf-8")
+        Path(kwargs["output_seal_path"]).write_text(case, encoding="utf-8")
+        events.append(f"query:{case}")
+
+    return arguments, fake_protocol, post, events, cases, query_runner
+
+
+@pytest.mark.parametrize(
+    ("role", "decision_label", "expected_return_code"),
+    (
+        ("calibration", "GO", 0),
+        ("calibration", "NO-GO", driver.NO_GO_EXIT_CODE),
+        ("confirmation", "CONFIRMED", 0),
+        ("confirmation", "NOT-CONFIRMED", driver.NOT_CONFIRMED_EXIT_CODE),
+    ),
+)
+def test_every_semantic_outcome_publishes_then_seals_and_preserves_return_code(
+    tmp_path: Path,
+    role: str,
+    decision_label: str,
+    expected_return_code: int,
 ) -> None:
+    arguments, fake_protocol, post, events, cases, query_runner = (
+        _fake_outcome_execution(tmp_path, role=role, decision_label=decision_label)
+    )
+    result = driver.execute_outcomes(
+        arguments,
+        protocol=fake_protocol,
+        deployment_verifier=lambda _arguments: events.append("verify"),
+        smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+        load_post_barrier_api=lambda: post,
+        query_runner=query_runner,
+        validate_runtime=lambda _arguments: None,
+        rlimit_nofile_getter=lambda: (1024, 4096),
+        role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
+        formal_paths=False,
+    )
+    assert result == expected_return_code
+    assert events.count(f"seal:{role}") == 1
+    layout = driver.build_layout(root=tmp_path, role=role, cases=cases)
+    completion = driver.validate_role_execution_completion(
+        layout.execution_completion_path,
+        lock_path=arguments.lock_path,
+        expected_role=role,
+        expected_ordered_case_names=cases,
+    )
+    assert completion["semantic_decision"]["semantic_outcome"] == decision_label
+    assert (
+        completion["semantic_decision"]["semantic_return_code"] == expected_return_code
+    )
+    resource_boundary = completion["resource_boundary"]
+    assert len(resource_boundary["post_cases"]) == len(cases)
+    assert resource_boundary["publication"]["open_descriptor_delta_from_end"] == 2
+    assert resource_boundary["publication"]["file_descriptor_count"] == (
+        resource_boundary["end_outcome"]["file_descriptor_count"] + 2
+    )
+    assert resource_boundary["publication"]["marker_fd_open"] is True
+    assert resource_boundary["publication"]["parent_directory_fd_open"] is True
+
+
+@pytest.mark.parametrize("drift_call", (9, 10))
+def test_final_or_open_descriptor_boundary_drift_leaves_no_marker_or_seal(
+    tmp_path: Path,
+    drift_call: int,
+) -> None:
+    arguments, fake_protocol, post, events, cases, query_runner = (
+        _fake_outcome_execution(
+            tmp_path, role="confirmation", decision_label="CONFIRMED"
+        )
+    )
+    calls = 0
+
+    def limits() -> tuple[int, int]:
+        nonlocal calls
+        calls += 1
+        return (1024, 8192) if calls == drift_call else (1024, 4096)
+
+    with pytest.raises(ValueError, match="RLIMIT_NOFILE soft/hard pair changed"):
+        driver.execute_outcomes(
+            arguments,
+            protocol=fake_protocol,
+            deployment_verifier=lambda _arguments: events.append("verify"),
+            smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+            load_post_barrier_api=lambda: post,
+            query_runner=query_runner,
+            validate_runtime=lambda _arguments: None,
+            rlimit_nofile_getter=limits,
+            role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
+            formal_paths=False,
+        )
+    layout = driver.build_layout(root=tmp_path, role="confirmation", cases=cases)
+    assert not layout.execution_completion_path.exists()
+    assert not any(event.startswith("seal:") for event in events)
+
+
+@pytest.mark.parametrize("publication_count", (101, 103))
+def test_publication_fd_delta_must_be_exactly_two(
+    tmp_path: Path,
+    publication_count: int,
+) -> None:
+    arguments, fake_protocol, post, events, cases, query_runner = (
+        _fake_outcome_execution(
+            tmp_path, role="confirmation", decision_label="CONFIRMED"
+        )
+    )
+    fd_counts = iter([100] * 8 + [publication_count])
+
+    with pytest.raises(
+        ValueError,
+        match="execution completion descriptors violate the final FD boundary",
+    ):
+        driver.execute_outcomes(
+            arguments,
+            protocol=fake_protocol,
+            deployment_verifier=lambda _arguments: events.append("verify"),
+            smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+            load_post_barrier_api=lambda: post,
+            query_runner=query_runner,
+            validate_runtime=lambda _arguments: None,
+            fd_counter=lambda: next(fd_counts),
+            rlimit_nofile_getter=lambda: (1024, 4096),
+            role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
+            formal_paths=False,
+        )
+
+    layout = driver.build_layout(root=tmp_path, role="confirmation", cases=cases)
+    assert not layout.execution_completion_path.exists()
+    assert not any(event.startswith("seal:") for event in events)
+
+
+def test_sealer_failure_does_not_return_the_semantic_result(tmp_path: Path) -> None:
+    arguments, fake_protocol, post, events, cases, query_runner = (
+        _fake_outcome_execution(
+            tmp_path, role="confirmation", decision_label="NOT-CONFIRMED"
+        )
+    )
+
+    def fail_sealer(_arguments: driver.DriverArguments) -> None:
+        events.append("seal-attempt")
+        raise RuntimeError("integrity sealer failed")
+
+    with pytest.raises(RuntimeError, match="integrity sealer failed"):
+        driver.execute_outcomes(
+            arguments,
+            protocol=fake_protocol,
+            deployment_verifier=lambda _arguments: events.append("verify"),
+            smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+            load_post_barrier_api=lambda: post,
+            query_runner=query_runner,
+            validate_runtime=lambda _arguments: None,
+            rlimit_nofile_getter=lambda: (1024, 4096),
+            role_sealer=fail_sealer,
+            formal_paths=False,
+        )
+    layout = driver.build_layout(root=tmp_path, role="confirmation", cases=cases)
+    assert layout.execution_completion_path.is_file()
+    assert "seal-attempt" in events
+    assert not (
+        tmp_path / "confirmation" / "confirmation-outcome-integrity-completion.json"
+    ).exists()
+
+
+def test_open_writable_role_log_blocks_marker_and_sealer(tmp_path: Path) -> None:
+    arguments, fake_protocol, post, events, cases, query_runner = (
+        _fake_outcome_execution(
+            tmp_path, role="confirmation", decision_label="CONFIRMED"
+        )
+    )
+    log_path = tmp_path / "confirmation" / "driver.log"
+    with log_path.open("w", encoding="utf-8") as log_stream:
+        log_stream.write("open during outcome\n")
+        log_stream.flush()
+        with pytest.raises(ValueError, match="writable descriptor into the held root"):
+            driver.execute_outcomes(
+                arguments,
+                protocol=fake_protocol,
+                deployment_verifier=lambda _arguments: events.append("verify"),
+                smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+                load_post_barrier_api=lambda: post,
+                query_runner=query_runner,
+                validate_runtime=lambda _arguments: None,
+                rlimit_nofile_getter=lambda: (1024, 4096),
+                role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
+                formal_paths=False,
+            )
+    layout = driver.build_layout(root=tmp_path, role="confirmation", cases=cases)
+    assert not layout.execution_completion_path.exists()
+    assert not any(event.startswith("seal:") for event in events)
+
+
+def test_dry_run_never_publishes_or_invokes_the_role_sealer(tmp_path: Path) -> None:
     events: list[str] = []
     cases = tuple(f"{index:03d}-object-ep{index:04d}" for index in range(15))
     lock = tmp_path / "calibration-lock.json"
     lock.write_text("lock", encoding="utf-8")
     (tmp_path / "calibration").mkdir()
-    replacement = tmp_path / "replacement-source.json"
-    replacement.write_text("source", encoding="utf-8")
+    replacement = driver.canonical_role_source_manifest_path(tmp_path, "calibration")
+    replacement.parent.mkdir(parents=True)
+    replacement_value = {
+        "protocol_id": driver.PROTOCOL_ID,
+        "role": "calibration",
+    }
+    replacement_value["artifact_sha256"] = driver._execution_completion_artifact_sha256(
+        replacement_value
+    )
+    replacement.write_text(
+        json.dumps(replacement_value, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    replacement.chmod(0o400)
+    arguments = driver.DriverArguments(
+        role="calibration",
+        deployed_code=str(tmp_path / ("code-" + "a" * 40)),
+        lock_path=str(lock),
+        replacement_source_manifest_path=str(replacement),
+        dry_run_barrier_only=True,
+    )
+    result = driver.execute_outcomes(
+        arguments,
+        protocol=_FakeProtocol(cases, events),
+        deployment_verifier=lambda _arguments: events.append("verify"),
+        smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+        load_post_barrier_api=lambda: pytest.fail("post-barrier API loaded"),
+        rlimit_nofile_getter=lambda: pytest.fail("NOFILE inspected in dry-run"),
+        role_sealer=lambda _arguments: pytest.fail("dry-run invoked sealer"),
+        formal_paths=False,
+    )
+    assert result == 0
+    layout = driver.build_layout(root=tmp_path, role="calibration", cases=cases)
+    assert not layout.execution_completion_path.exists()
+    assert "barrier1" in events
+    assert "target-caps" in events
+
+
+def test_fresh_output_preflight_rejects_a_preexisting_execution_completion(
+    tmp_path: Path,
+) -> None:
+    role_root = tmp_path / "calibration"
+    role_root.mkdir()
+    layout = driver.build_layout(
+        root=tmp_path, role="calibration", cases=("001-object-ep0001",)
+    )
+    layout.execution_completion_path.write_text("stale\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="fresh role execution completion"):
+        driver._prepare_fresh_outputs(layout)
+    assert not (role_root / ".v8-outcome-phase.claim").exists()
+
+
+def test_role_sealer_subprocess_is_exact_pinned_and_isolated(tmp_path: Path) -> None:
+    code = tmp_path / ("code-" + "a" * 40)
+    lock = tmp_path / "confirmation-lock.json"
+    arguments = driver.DriverArguments(
+        role="confirmation",
+        deployed_code=str(code),
+        lock_path=str(lock),
+        replacement_source_manifest_path=None,
+        dry_run_barrier_only=False,
+    )
+    argv, environment, cwd = driver.build_role_outcome_sealer_subprocess(arguments)
+    assert argv == (
+        str(driver.PINNED_PYTHON),
+        "-I",
+        "-B",
+        "-X",
+        f"pycache_prefix={driver.PYCACHE_PREFIX}",
+        str(code / "scripts" / "held" / "seal_deform360_v8_role_outcome.py"),
+        "--role",
+        "confirmation",
+        "--lock",
+        str(lock),
+        "--deployed-code",
+        str(code),
+    )
+    assert environment == driver._normalized_environment()
+    assert cwd == str(code)
+
+
+def test_role_sealer_runner_checks_live_limit_and_captures_terminal_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "held-v8"
+    code = root / ("code-" + "a" * 40)
+    lock = root / "confirmation-lock.json"
+    arguments = driver.DriverArguments(
+        role="confirmation",
+        deployed_code=str(code),
+        lock_path=str(lock),
+        replacement_source_manifest_path=None,
+        dry_run_barrier_only=False,
+    )
+    marker = driver.canonical_role_execution_completion_path(root, "confirmation")
+    completion = {
+        "resource_boundary": {
+            "initial_nofile": {
+                "rlimit_nofile_soft": 1024,
+                "rlimit_nofile_hard": 4096,
+            }
+        },
+        "semantic_decision": {"semantic_outcome": "NOT-CONFIRMED"},
+    }
+    monkeypatch.setattr(
+        driver,
+        "validate_role_execution_completion",
+        lambda path, **_kwargs: completion if Path(path) == marker else pytest.fail(),
+    )
+    monkeypatch.setattr(driver, "_rlimit_nofile_pair", lambda: (1024, 4096))
+    monkeypatch.setattr(
+        driver,
+        "_validate_no_writable_held_descriptors",
+        lambda held_root: {"held_root": str(held_root)},
+    )
+    monkeypatch.setattr(
+        driver,
+        "build_role_outcome_sealer_subprocess",
+        lambda _arguments: (("sealed-python",), {"SEALED": "1"}, "/sealed"),
+    )
+    observed: dict[str, Any] = {}
+
+    def run(argv: tuple[str, ...], **kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        observed.update({"argv": argv, **kwargs})
+        payload = {
+            "event": "DEFORM360_V8_ROLE_OUTCOME_INTEGRITY_COMPLETE",
+            "role": "confirmation",
+            "terminal_outcome": "NOT-CONFIRMED",
+            "role_completion_path": str(
+                root / "confirmation" / "confirmation-outcome-integrity-completion.json"
+            ),
+            "role_completion_artifact_sha256": "a" * 64,
+            "terminal_root_finalized": True,
+        }
+        return subprocess.CompletedProcess(
+            argv,
+            0,
+            stdout=(json.dumps(payload) + "\n").encode("utf-8"),
+            stderr=b"",
+        )
+
+    monkeypatch.setattr(driver.subprocess, "run", run)
+    driver.run_role_outcome_sealer(arguments)
+    assert observed["argv"] == ("sealed-python",)
+    assert observed["stdout"] is subprocess.PIPE
+    assert observed["stderr"] is subprocess.PIPE
+    assert observed["close_fds"] is True
+
+    monkeypatch.setattr(driver, "_rlimit_nofile_pair", lambda: (1024, 8192))
+    with pytest.raises(ValueError, match="soft/hard pair changed"):
+        driver.run_role_outcome_sealer(arguments)
+
+
+def test_source_only_main_path_never_reaches_normalization_or_sealing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[str] = []
+    namespace = SimpleNamespace(
+        source_only_verifier=True,
+        promote_only=False,
+        deployed_code="/sealed/code",
+        lock="/sealed/calibration-lock.json",
+    )
+    protocol_stub = object()
+    monkeypatch.setattr(driver, "_parse_args", lambda _role: namespace)
+    monkeypatch.setattr(
+        driver,
+        "_load_protocol",
+        lambda _code: (protocol_stub, Path("/sealed/code/src")),
+    )
+    monkeypatch.setattr(
+        driver,
+        "verify_source_only_deployment",
+        lambda **_kwargs: events.append("source-only"),
+    )
+    monkeypatch.setattr(
+        driver,
+        "_normalize_or_reexec",
+        lambda: pytest.fail("source-only normalized"),
+    )
+    monkeypatch.setattr(
+        driver,
+        "run_role_outcome_sealer",
+        lambda _arguments: pytest.fail("source-only sealed"),
+    )
+    assert driver.main_for_role("calibration") == 0
+    assert events == ["source-only"]
+
+
+def test_promote_only_main_path_never_invokes_the_role_sealer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list[str] = []
+    namespace = SimpleNamespace(
+        source_only_verifier=False,
+        promote_only=True,
+        deployed_code="/sealed/code",
+    )
+
+    class _PromotionProtocol:
+        @staticmethod
+        def create_confirmation_protocol_lock(*_args: object) -> None:
+            events.append("promote")
+
+    monkeypatch.setattr(driver, "_parse_args", lambda _role: namespace)
+    monkeypatch.setattr(
+        driver,
+        "_load_protocol",
+        lambda _code: (_PromotionProtocol(), Path("/sealed/code/src")),
+    )
+    monkeypatch.setattr(driver, "_normalize_or_reexec", lambda: None)
+    monkeypatch.setattr(
+        driver,
+        "run_source_only_deployment_verifier",
+        lambda _arguments: events.append("verify"),
+    )
+    monkeypatch.setattr(
+        driver,
+        "run_role_outcome_sealer",
+        lambda _arguments: pytest.fail("promotion invoked outcome sealer"),
+    )
+    assert driver.main_for_role("confirmation") == 0
+    assert events == ["verify", "promote"]
+
+
+def test_two_barrier_order_and_no_go_never_promotes_confirmation(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    events: list[str] = []
+    cases = tuple(f"{index:03d}-object-ep{index:04d}" for index in range(15))
+    lock = tmp_path / "calibration-lock.json"
+    lock.write_text("lock", encoding="utf-8")
+    lock.chmod(0o400)
+    (tmp_path / "calibration").mkdir()
+    replacement = driver.canonical_role_source_manifest_path(tmp_path, "calibration")
+    replacement.parent.mkdir(parents=True)
+    replacement_value = {
+        "protocol_id": driver.PROTOCOL_ID,
+        "role": "calibration",
+    }
+    replacement_value["artifact_sha256"] = driver._execution_completion_artifact_sha256(
+        replacement_value
+    )
+    replacement.write_text(
+        json.dumps(replacement_value, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    replacement.chmod(0o400)
     fake_protocol = _FakeProtocol(cases, events)
     post = _fake_post(tmp_path, events, decision_label="NO-GO")
     arguments = driver.DriverArguments(
@@ -343,6 +870,8 @@ def test_two_barrier_order_and_no_go_never_promotes_confirmation(
         load_post_barrier_api=lambda: events.append("post-load") or post,
         query_runner=query_runner,
         validate_runtime=lambda _arguments: events.append("runtime"),
+        rlimit_nofile_getter=lambda: (1024, 4096),
+        role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
         formal_paths=False,
     )
     assert result == driver.NO_GO_EXIT_CODE
@@ -362,8 +891,48 @@ def test_two_barrier_order_and_no_go_never_promotes_confirmation(
     )
     assert first_query < last_reconstruction < last_query < events.index("barrier2")
     assert events.index("barrier2") < events.index("score-caps")
+    assert events[-1] == "seal:calibration"
     assert not (tmp_path / "confirmation-lock.json").exists()
+    emitted = [
+        json.loads(line)
+        for line in capsys.readouterr().out.splitlines()
+        if line.strip()
+    ]
+    initial_limit = next(
+        row for row in emitted if row["event"] == "QUALIFIED_RLIMIT_NOFILE_CAPTURED"
+    )
+    assert initial_limit == {
+        "event": "QUALIFIED_RLIMIT_NOFILE_CAPTURED",
+        "soft_limit": 1024,
+        "hard_limit": 4096,
+        "qualified_soft_limit": 1024,
+    }
+    post_case_limits = [
+        row
+        for row in emitted
+        if row["event"] == "POST_CASE_RESOURCE_BOUNDARY_VALIDATED"
+    ]
+    assert len(post_case_limits) == len(cases)
+    assert all(
+        row["rlimit_nofile_soft"] == 1024 and row["rlimit_nofile_hard"] == 4096
+        for row in post_case_limits
+    )
+    end_limit = next(
+        row
+        for row in emitted
+        if row["event"] == "END_OUTCOME_RESOURCE_BOUNDARY_VALIDATED"
+    )
+    assert end_limit["rlimit_nofile_soft"] == 1024
+    assert end_limit["rlimit_nofile_hard"] == 4096
     layout = driver.build_layout(root=tmp_path, role="calibration", cases=cases)
+    completion = driver.validate_role_execution_completion(
+        layout.execution_completion_path,
+        lock_path=lock,
+        expected_role="calibration",
+        expected_ordered_case_names=cases,
+    )
+    assert completion["semantic_decision"]["semantic_outcome"] == "NO-GO"
+    assert completion["semantic_decision"]["semantic_return_code"] == 3
     for paths in layout.cases.values():
         for directory in (
             paths.target_manifest.parent,
@@ -373,6 +942,19 @@ def test_two_barrier_order_and_no_go_never_promotes_confirmation(
             assert directory.stat().st_mode & 0o777 == 0o700
 
 
+def test_qualified_rlimit_nofile_rejects_wrong_soft_and_pair_drift() -> None:
+    reference = driver._validate_qualified_rlimit_nofile(
+        (1024, 4096), phase="test baseline"
+    )
+    assert reference == (1024, 4096)
+    with pytest.raises(ValueError, match="soft limit differs from qualified value"):
+        driver._validate_qualified_rlimit_nofile((2048, 4096), phase="test baseline")
+    with pytest.raises(ValueError, match="soft/hard pair changed"):
+        driver._validate_qualified_rlimit_nofile(
+            (1024, 8192), reference=reference, phase="test post-case boundary"
+        )
+
+
 def test_fd_growth_guard_stops_before_the_next_target_and_second_barrier(
     tmp_path: Path,
 ) -> None:
@@ -380,6 +962,7 @@ def test_fd_growth_guard_stops_before_the_next_target_and_second_barrier(
     cases = tuple(f"{index:03d}-object-ep{index:04d}" for index in range(15))
     lock = tmp_path / "calibration-lock.json"
     lock.write_text("lock", encoding="utf-8")
+    lock.chmod(0o400)
     (tmp_path / "calibration").mkdir()
     replacement = tmp_path / "replacement-source.json"
     replacement.write_text("source", encoding="utf-8")
@@ -420,6 +1003,7 @@ def test_fd_growth_guard_stops_before_the_next_target_and_second_barrier(
             query_runner=query_runner,
             validate_runtime=lambda _arguments: None,
             fd_counter=lambda: next(counts),
+            rlimit_nofile_getter=lambda: (1024, 4096),
             formal_paths=False,
         )
 

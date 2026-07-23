@@ -114,3 +114,23 @@ The v2 qualification must generate a fresh 5+5 cohort on physical GPU 1 from
 one clean H1 tree, apply this unchanged analyzer in `same-as-analyzer` mode,
 and then pass the 243-fit resource soak. Only a sealed, self-contained v2
 qualification may admit a fresh held attempt.
+
+The watcher for H1 commit `756a57733d3710f7cf211231947d56dec1832859`
+was stopped before GPU 1 became available and before the qualification root
+was created. A subsequent freeze audit found a separate held-outcome promotion
+and terminal-sealing gap. That H1 is therefore retired without a qualification
+result. The analyzer and numerical equivalence rule above remain frozen, but a
+new H1 must bind the repaired promotion, raw-score recomputation, terminal
+inventory sealer, and exact `RLIMIT_NOFILE=1024` boundary before the one-shot
+qualification is queued again.
+
+The new H1 must additionally bind the post-GO confirmation-source operator.
+That operator may publish only the exact six preregistered cases from
+`brownu/deform360@7fea8e20231a47641d1d2bc8791920ec4e62ec5e`: tactile files
+remain metadata-only, while exactly 168 camera/shared payloads are processed
+under Deform360 commit `0fe36f0b7a7a917ba62b5f8cee707299a9a4a317`.
+Publication is cohort-atomic and the source manifest is recursively revalidated
+through role and terminal sealing. Its single held-root runtime path must be
+fresh and empty after success; cleanup failure is a fail-closed integrity
+failure. These requirements are prospective and produced no score or gate
+result.

@@ -24,10 +24,11 @@ while IFS='=' read -r name _value; do
   esac
 done < <(env)
 
-[[ "$#" -eq 4 ]] || \
-  die "usage: run_deform360_v8_confirmation_case.sh CUDA_DEVICE CASE OBJECT EPISODE"
+[[ "$#" -eq 5 ]] || \
+  die "usage: run_deform360_v8_confirmation_case.sh CUDA_DEVICE CASE OBJECT EPISODE CONFIRMATION_SOURCE_MANIFEST"
 readonly CUDA_DEVICE="$1" CASE_NAME="$2" OBJECT="$3" EPISODE="$4"
 readonly REPLACEMENT_SOURCE_MANIFEST=""
+readonly CONFIRMATION_SOURCE_MANIFEST="$5"
 
 case "$CASE_NAME:$OBJECT:$EPISODE" in
   002-rope-silk-ep0001:002-rope-silk:0001|\
