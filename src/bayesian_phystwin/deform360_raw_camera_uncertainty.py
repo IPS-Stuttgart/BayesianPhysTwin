@@ -159,6 +159,94 @@ def leave_one_camera_out_covariance(
     return 0.5 * (covariance + covariance.T), samples
 
 
+def normalized_leave_one_camera_out_triangulation_dispersion(
+    observations_by_update_center: Sequence[Sequence[Mapping[str, np.ndarray] | None]],
+    projection_matrices: Mapping[str, np.ndarray],
+    frame_zero_points_m: np.ndarray,
+) -> dict[str, Any]:
+    """Summarize target-free triangulation dispersion by update and center.
+
+    Each nonempty entry of ``observations_by_update_center`` contains only the
+    simultaneous camera pixels for one update/center.  Its dispersion is
+    ``sqrt(trace(leave-one-camera-out covariance))`` divided by the exact
+    frame-zero object diameter.  Per-update summaries are causal at their
+    corresponding update.  The pooled 90th percentile across all updates is
+    descriptive only and must not route an earlier update.
+    """
+
+    points = np.asarray(frame_zero_points_m, dtype=float)
+    if points.ndim != 2 or points.shape[1] != 3 or len(points) < 2:
+        raise ValueError("frame_zero_points_m must have shape (N, 3), N >= 2")
+    if not np.all(np.isfinite(points)):
+        raise ValueError("frame-zero object points must be finite")
+    object_diameter_m = 0.0
+    for point_index in range(len(points) - 1):
+        distances = np.linalg.norm(
+            points[point_index + 1 :] - points[point_index],
+            axis=1,
+        )
+        if len(distances):
+            object_diameter_m = max(
+                object_diameter_m,
+                float(np.max(distances)),
+            )
+    if object_diameter_m <= 1e-12:
+        raise ValueError("frame-zero object diameter must be positive")
+
+    updates = tuple(tuple(centers) for centers in observations_by_update_center)
+    if not updates or not updates[0]:
+        raise ValueError("observations_by_update_center must be nonempty")
+    center_count = len(updates[0])
+    if any(len(centers) != center_count for centers in updates):
+        raise ValueError("observations_by_update_center must be rectangular")
+
+    dispersion_m = np.full((len(updates), center_count), np.nan, dtype=float)
+    normalized = np.full_like(dispersion_m, np.nan)
+    sample_count = np.zeros((len(updates), center_count), dtype=np.int64)
+    for update_index, center_observations in enumerate(updates):
+        for center_index, observations in enumerate(center_observations):
+            if observations is None:
+                continue
+            covariance, samples = leave_one_camera_out_covariance(
+                observations,
+                projection_matrices,
+            )
+            sample_count[update_index, center_index] = len(samples)
+            if len(samples) < 2:
+                continue
+            trace = float(np.trace(covariance))
+            if not np.isfinite(trace) or trace < -1e-15:
+                continue
+            dispersion = float(np.sqrt(max(trace, 0.0)))
+            dispersion_m[update_index, center_index] = dispersion
+            normalized[update_index, center_index] = dispersion / object_diameter_m
+
+    valid = normalized[np.isfinite(normalized)]
+    pooled_q90 = None if not len(valid) else float(np.quantile(valid, 0.90))
+    q90_by_update = tuple(
+        (
+            None
+            if not np.any(np.isfinite(row))
+            else float(np.quantile(row[np.isfinite(row)], 0.90))
+        )
+        for row in normalized
+    )
+    dispersion_m.setflags(write=False)
+    normalized.setflags(write=False)
+    sample_count.setflags(write=False)
+    return {
+        "object_diameter_m": object_diameter_m,
+        "dispersion_m_by_update_center": dispersion_m,
+        "normalized_dispersion_by_update_center": normalized,
+        "leave_one_camera_out_sample_count_by_update_center": sample_count,
+        "valid_update_center_count": int(len(valid)),
+        "summary_quantile": 0.90,
+        "q90_normalized_dispersion_by_update": q90_by_update,
+        "pooled_q90_normalized_dispersion": pooled_q90,
+        "pooled_summary_causal_for_online_routing": False,
+    }
+
+
 def _pixel_sigma_from_median_reprojection(
     median_reprojection_px: float,
     floor_px: float,
@@ -552,5 +640,6 @@ __all__ = [
     "build_raw_camera_uncertainty_cohort",
     "jacobian_measurement_covariance",
     "leave_one_camera_out_covariance",
+    "normalized_leave_one_camera_out_triangulation_dispersion",
     "projection_jacobian",
 ]

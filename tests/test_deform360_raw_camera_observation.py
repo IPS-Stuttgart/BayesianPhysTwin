@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import itertools
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +17,7 @@ from bayesian_phystwin.deform360_raw_camera_observation import (
     build_raw_camera_measurement_case,
     project_world_points,
     select_frame_zero_observation_plan,
+    select_nested_frame_zero_observation_plans,
     triangulate_observation_ransac,
 )
 
@@ -84,6 +86,269 @@ def test_frame_zero_plan_is_deterministic_and_multiview_supported() -> None:
         np.sum(support[point_id]) >= config.minimum_initial_view_count
         for point_id in first["center_ids"]
     )
+
+
+def test_nested_frame_zero_plans_are_deterministic_and_strictly_nested() -> None:
+    point_count = 24
+    angle = np.linspace(0.0, 2.0 * np.pi, point_count, endpoint=False)
+    points = np.stack(
+        (0.2 * np.cos(angle), 0.15 * np.sin(angle), np.full(point_count, 2.0)),
+        axis=1,
+    )
+    cameras = tuple(f"camera-{index:02d}" for index in range(10))
+    extrinsics = {
+        camera: _camera_to_world(
+            0.4 * np.cos(2.0 * np.pi * index / len(cameras)),
+            0.4 * np.sin(2.0 * np.pi * index / len(cameras)),
+        )
+        for index, camera in enumerate(cameras)
+    }
+    support = np.ones((point_count, len(cameras)), dtype=bool)
+    # Break some support ties without making any center ineligible.
+    support[::3, 1] = False
+    support[1::4, 7] = False
+    projected = {
+        camera: np.column_stack(
+            (
+                np.arange(point_count, dtype=float) + index,
+                np.full(point_count, index, dtype=float),
+            )
+        )
+        for index, camera in enumerate(cameras)
+    }
+    config = RawCameraObservationConfig(selected_camera_count=8)
+
+    first = select_nested_frame_zero_observation_plans(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=config,
+    )
+    second = select_nested_frame_zero_observation_plans(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=config,
+    )
+
+    plan4 = first["prefix_plans"][4]
+    plan8 = first["prefix_plans"][8]
+    assert first["camera_activation_order"] == (
+        "camera-00",
+        "camera-04",
+        "camera-05",
+        "camera-09",
+        "camera-02",
+        "camera-03",
+        "camera-06",
+        "camera-08",
+    )
+    assert plan4["selection_score"][:3] == (16, 16, 64)
+    assert plan4["selection_score"][3] == pytest.approx(22.53679749174791)
+    assert plan8["selection_score"][:3] == (16, 16, 128)
+    assert plan8["selection_score"][3] == pytest.approx(22.53679749174791)
+    legacy4 = select_frame_zero_observation_plan(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=RawCameraObservationConfig(selected_camera_count=4),
+    )
+    assert plan8["selected_cameras"][:4] == plan4["selected_cameras"]
+    assert plan4["selected_cameras"] == legacy4["selected_cameras"]
+    np.testing.assert_array_equal(
+        plan4["selected_camera_indices"],
+        legacy4["selected_camera_indices"],
+    )
+    assert plan4["selection_score"] == legacy4["selection_score"]
+    np.testing.assert_array_equal(plan4["center_ids"], plan8["center_ids"])
+    assert first["camera_activation_order"][:4] == plan4["selected_cameras"]
+    assert first["camera_activation_order"][:8] == plan8["selected_cameras"]
+    assert first["camera_activation_order"] == second["camera_activation_order"]
+    assert first["activation_stages"] == second["activation_stages"]
+    np.testing.assert_array_equal(
+        first["camera_activation_indices"],
+        second["camera_activation_indices"],
+    )
+    selected_four = tuple(plan4["selected_camera_indices"].tolist())
+    remaining = tuple(
+        index for index in range(len(cameras)) if index not in set(selected_four)
+    )
+    origins = np.stack([extrinsics[camera][:3, 3] for camera in cameras])
+    additions = max(
+        itertools.combinations(remaining, 4),
+        key=lambda candidate: raw_camera._camera_subset_score(
+            points,
+            plan4["center_ids"],
+            support,
+            selected_four + candidate,
+            origins,
+            minimum_initial_view_count=config.minimum_initial_view_count,
+        ),
+    )
+    assert tuple(plan8["selected_camera_indices"]) == selected_four + additions
+
+
+def test_nested_frame_zero_planner_is_deterministic_and_mutates_no_input() -> None:
+    point_count = 20
+    points = np.column_stack(
+        (
+            np.linspace(-0.2, 0.2, point_count),
+            np.linspace(-0.1, 0.1, point_count),
+            np.full(point_count, 2.0),
+        )
+    )
+    cameras = tuple(f"camera-{index:02d}" for index in range(8))
+    extrinsics = {
+        camera: _camera_to_world(
+            0.4 * np.cos(2.0 * np.pi * index / len(cameras)),
+            0.4 * np.sin(2.0 * np.pi * index / len(cameras)),
+        )
+        for index, camera in enumerate(cameras)
+    }
+    support = np.ones((point_count, len(cameras)), dtype=bool)
+    projected = {
+        camera: np.full((point_count, 2), index, dtype=float)
+        for index, camera in enumerate(cameras)
+    }
+    points_before = points.copy()
+    support_before = support.copy()
+    projected_before = {camera: pixels.copy() for camera, pixels in projected.items()}
+    extrinsics_before = {
+        camera: transform.copy() for camera, transform in extrinsics.items()
+    }
+    config = RawCameraObservationConfig(selected_camera_count=8)
+
+    forward = select_nested_frame_zero_observation_plans(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=config,
+    )
+    repeated = select_nested_frame_zero_observation_plans(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=config,
+    )
+
+    assert forward["camera_activation_order"] == repeated["camera_activation_order"]
+    assert forward["activation_stages"] == repeated["activation_stages"]
+    assert not forward["candidate_ids"].flags.writeable
+    assert not forward["center_ids"].flags.writeable
+    assert (
+        forward["prefix_plans"][4]["candidate_ids"]
+        is forward["prefix_plans"][8]["candidate_ids"]
+    )
+    assert (
+        forward["prefix_plans"][4]["center_ids"]
+        is forward["prefix_plans"][8]["center_ids"]
+    )
+    with pytest.raises(ValueError, match="read-only"):
+        forward["prefix_plans"][4]["candidate_ids"][0] = -1
+    with pytest.raises(ValueError, match="read-only"):
+        forward["prefix_plans"][4]["center_ids"][0] = -1
+    np.testing.assert_array_equal(points, points_before)
+    np.testing.assert_array_equal(support, support_before)
+    for camera in cameras:
+        np.testing.assert_array_equal(projected[camera], projected_before[camera])
+        np.testing.assert_array_equal(extrinsics[camera], extrinsics_before[camera])
+
+
+def test_nested_eight_camera_prefix_preserves_legacy_plan_contract() -> None:
+    point_count = 24
+    angle = np.linspace(0.0, 2.0 * np.pi, point_count, endpoint=False)
+    points = np.stack(
+        (0.2 * np.cos(angle), 0.15 * np.sin(angle), np.full(point_count, 2.0)),
+        axis=1,
+    )
+    cameras = tuple(f"camera-{index:02d}" for index in range(8))
+    extrinsics = {
+        camera: _camera_to_world(
+            0.4 * np.cos(2.0 * np.pi * index / len(cameras)),
+            0.4 * np.sin(2.0 * np.pi * index / len(cameras)),
+        )
+        for index, camera in enumerate(cameras)
+    }
+    support = np.ones((point_count, len(cameras)), dtype=bool)
+    projected = {
+        camera: np.full((point_count, 2), index, dtype=float)
+        for index, camera in enumerate(cameras)
+    }
+    config = RawCameraObservationConfig(selected_camera_count=8)
+
+    legacy = select_frame_zero_observation_plan(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=config,
+    )
+    nested = select_nested_frame_zero_observation_plans(
+        points,
+        cameras,
+        support,
+        projected,
+        extrinsics,
+        config=config,
+    )["prefix_plans"][8]
+
+    assert set(nested) == set(legacy)
+    assert set(nested["selected_cameras"]) == set(legacy["selected_cameras"])
+    np.testing.assert_array_equal(nested["candidate_ids"], legacy["candidate_ids"])
+    np.testing.assert_array_equal(nested["center_ids"], legacy["center_ids"])
+    assert nested["selection_score"] == legacy["selection_score"]
+    assert nested["camera_names"] == legacy["camera_names"]
+    for camera in cameras:
+        np.testing.assert_array_equal(
+            nested["query_ids"][camera],
+            legacy["query_ids"][camera],
+        )
+        np.testing.assert_array_equal(
+            nested["query_pixels"][camera],
+            legacy["query_pixels"][camera],
+        )
+
+
+def test_nested_frame_zero_planner_rejects_noninteger_prefix_counts() -> None:
+    points = np.column_stack(
+        (
+            np.linspace(-0.2, 0.2, 16),
+            np.linspace(-0.1, 0.1, 16),
+            np.full(16, 2.0),
+        )
+    )
+    cameras = tuple(f"camera-{index:02d}" for index in range(8))
+    support = np.ones((16, 8), dtype=bool)
+    projected = {camera: np.zeros((16, 2)) for camera in cameras}
+    extrinsics = {
+        camera: _camera_to_world(
+            0.4 * np.cos(2.0 * np.pi * index / len(cameras)),
+            0.4 * np.sin(2.0 * np.pi * index / len(cameras)),
+        )
+        for index, camera in enumerate(cameras)
+    }
+
+    with pytest.raises(ValueError, match="exact integers"):
+        select_nested_frame_zero_observation_plans(
+            points,
+            cameras,
+            support,
+            projected,
+            extrinsics,
+            config=RawCameraObservationConfig(selected_camera_count=8),
+            prefix_camera_counts=(4.9, 8),
+        )
 
 
 def test_dlt_ransac_rejects_one_bad_view() -> None:

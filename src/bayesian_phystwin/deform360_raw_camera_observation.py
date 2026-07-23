@@ -291,24 +291,28 @@ def _maximum_ray_angle_degrees(
     return maximum
 
 
-def select_frame_zero_observation_plan(
+def _frame_zero_candidates_and_centers(
     frame_zero_points_m: np.ndarray,
     cameras: Sequence[str],
     support: np.ndarray,
-    projected_pixels: Mapping[str, np.ndarray],
     extrinsics: Mapping[str, Any],
     *,
     config: RawCameraObservationConfig,
-) -> dict[str, Any]:
-    """Select geometry-spanning centers and a deterministic camera subset."""
+) -> tuple[
+    np.ndarray,
+    tuple[str, ...],
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+]:
+    """Return the outcome-free frame-zero state shared by camera planners."""
 
     points = np.asarray(frame_zero_points_m, dtype=float)
     camera_names = tuple(cameras)
     supported = np.asarray(support, dtype=bool)
     if supported.shape != (len(points), len(camera_names)):
         raise ValueError("support shape differs from points/cameras")
-    if len(camera_names) < config.selected_camera_count:
-        raise ValueError("fewer cameras than the fixed selected-camera count")
     origins = np.stack(
         [np.asarray(extrinsics[camera], dtype=float)[:3, 3] for camera in camera_names]
     )
@@ -331,34 +335,206 @@ def select_frame_zero_observation_plan(
         candidates,
         config.center_count,
     )
+    return points, camera_names, supported, origins, candidates, centers
 
+
+def _camera_subset_score(
+    points: np.ndarray,
+    centers: np.ndarray,
+    supported: np.ndarray,
+    camera_indices: Sequence[int],
+    camera_origins_m: np.ndarray,
+    *,
+    minimum_initial_view_count: int,
+) -> tuple[int, int, int, float]:
+    """Return the legacy lexicographic support and geometry score."""
+
+    subset = tuple(int(index) for index in camera_indices)
+    if subset:
+        counts = np.sum(supported[centers][:, subset], axis=1)
+    else:
+        counts = np.zeros(len(centers), dtype=np.int64)
+    angles = [
+        _maximum_ray_angle_degrees(
+            points[point_id],
+            [index for index in subset if supported[point_id, index]],
+            camera_origins_m,
+        )
+        for center_index, point_id in enumerate(centers)
+        if counts[center_index] >= 2
+    ]
+    return (
+        int(np.sum(counts >= minimum_initial_view_count)),
+        int(np.sum(counts >= 3)),
+        int(np.sum(counts)),
+        0.0 if not angles else float(np.median(angles)),
+    )
+
+
+def _camera_pair_angle_table(
+    points: np.ndarray,
+    centers: np.ndarray,
+    camera_origins_m: np.ndarray,
+) -> np.ndarray:
+    """Precompute the exact acute ray angle for every center/camera pair."""
+
+    camera_count = len(camera_origins_m)
+    result = np.zeros(
+        (len(centers), camera_count, camera_count),
+        dtype=np.float64,
+    )
+    for center_index, point_id in enumerate(centers):
+        for first, second in itertools.combinations(range(camera_count), 2):
+            angle = _maximum_ray_angle_degrees(
+                points[point_id],
+                (first, second),
+                camera_origins_m,
+            )
+            result[center_index, first, second] = angle
+            result[center_index, second, first] = angle
+    return result
+
+
+def _batched_camera_angle_scores(
+    subsets: np.ndarray,
+    counts: np.ndarray,
+    center_support: np.ndarray,
+    pair_angles: np.ndarray,
+) -> np.ndarray:
+    """Vectorize the fourth legacy score component for tied subsets."""
+
+    if not len(subsets):
+        return np.empty(0, dtype=np.float64)
+    position_pairs = np.asarray(
+        tuple(itertools.combinations(range(subsets.shape[1]), 2)),
+        dtype=np.int64,
+    )
+    left = subsets[:, position_pairs[:, 0]]
+    right = subsets[:, position_pairs[:, 1]]
+    center_angles = np.zeros(
+        (len(subsets), len(center_support)),
+        dtype=np.float64,
+    )
+    for center_index, support in enumerate(center_support):
+        valid_pairs = support[left] & support[right]
+        values = pair_angles[center_index, left, right]
+        center_angles[:, center_index] = np.max(
+            np.where(valid_pairs, values, 0.0),
+            axis=1,
+        )
+    included = counts >= 2
+    result = np.zeros(len(subsets), dtype=np.float64)
+    has_angle = np.any(included, axis=1)
+    if np.any(has_angle):
+        masked = np.where(included[has_angle], center_angles[has_angle], np.nan)
+        result[has_angle] = np.nanmedian(masked, axis=1)
+    return result
+
+
+def _select_exact_camera_subset_batched(
+    points: np.ndarray,
+    centers: np.ndarray,
+    supported: np.ndarray,
+    camera_origins_m: np.ndarray,
+    *,
+    selected_camera_count: int,
+    minimum_initial_view_count: int,
+    required_prefix: Sequence[int] = (),
+    batch_size: int = 65_536,
+) -> tuple[tuple[int, ...], tuple[int, int, int, float]]:
+    """Accelerate the exact legacy selector, optionally under a fixed prefix."""
+
+    prefix = tuple(int(index) for index in required_prefix)
+    camera_count = supported.shape[1]
+    if (
+        batch_size < 1
+        or len(set(prefix)) != len(prefix)
+        or any(index < 0 or index >= camera_count for index in prefix)
+        or not len(prefix) <= selected_camera_count <= camera_count
+    ):
+        raise ValueError("invalid exact camera subset request")
+    addition_count = selected_camera_count - len(prefix)
+    remaining = tuple(
+        index for index in range(camera_count) if index not in set(prefix)
+    )
+    center_support = supported[centers]
+    pair_angles = _camera_pair_angle_table(points, centers, camera_origins_m)
+    combinations = itertools.combinations(remaining, addition_count)
+    best_primary = -1
+    best_angle = -np.inf
     best_subset: tuple[int, ...] | None = None
     best_score: tuple[int, int, int, float] | None = None
-    for subset in itertools.combinations(
-        range(len(camera_names)), config.selected_camera_count
-    ):
-        counts = np.sum(supported[centers][:, subset], axis=1)
-        angles = [
-            _maximum_ray_angle_degrees(
-                points[point_id],
-                [index for index in subset if supported[point_id, index]],
-                origins,
-            )
-            for point_id in centers
-            if counts[np.flatnonzero(centers == point_id)[0]] >= 2
-        ]
-        score = (
-            int(np.sum(counts >= config.minimum_initial_view_count)),
-            int(np.sum(counts >= 3)),
-            int(np.sum(counts)),
-            0.0 if not angles else float(np.median(angles)),
+    while True:
+        rows = tuple(itertools.islice(combinations, batch_size))
+        if not rows:
+            break
+        additions = np.asarray(rows, dtype=np.int64)
+        subsets = np.concatenate(
+            (
+                np.tile(np.asarray(prefix, dtype=np.int64), (len(additions), 1)),
+                additions,
+            ),
+            axis=1,
         )
-        if best_score is None or score > best_score:
-            best_score = score
-            best_subset = subset
+        counts = np.sum(center_support[:, subsets], axis=2).T
+        first = np.count_nonzero(
+            counts >= minimum_initial_view_count,
+            axis=1,
+        )
+        second = np.count_nonzero(counts >= 3, axis=1)
+        total = np.sum(counts, axis=1)
+        packed = (first * (len(centers) + 1) + second) * (
+            len(centers) * selected_camera_count + 1
+        ) + total
+        batch_primary = int(np.max(packed))
+        if batch_primary < best_primary:
+            continue
+        if batch_primary > best_primary:
+            best_primary = batch_primary
+            best_angle = -np.inf
+            best_subset = None
+            best_score = None
+        candidate_indices = np.flatnonzero(packed == best_primary)
+        angle_scores = _batched_camera_angle_scores(
+            subsets[candidate_indices],
+            counts[candidate_indices],
+            center_support,
+            pair_angles,
+        )
+        local_index = int(np.argmax(angle_scores))
+        local_angle = float(angle_scores[local_index])
+        if best_subset is not None and local_angle <= best_angle:
+            continue
+        source_index = int(candidate_indices[local_index])
+        best_angle = local_angle
+        best_subset = tuple(int(index) for index in subsets[source_index])
+        best_score = (
+            int(first[source_index]),
+            int(second[source_index]),
+            int(total[source_index]),
+            local_angle,
+        )
     if best_subset is None or best_score is None:
-        raise AssertionError("camera selection produced no subset")
-    selected_cameras = tuple(camera_names[index] for index in best_subset)
+        raise AssertionError("exact camera selection produced no subset")
+    return best_subset, best_score
+
+
+def _frame_zero_plan_for_camera_indices(
+    *,
+    points: np.ndarray,
+    camera_names: tuple[str, ...],
+    supported: np.ndarray,
+    projected_pixels: Mapping[str, np.ndarray],
+    camera_origins_m: np.ndarray,
+    candidates: np.ndarray,
+    centers: np.ndarray,
+    selected_camera_indices: Sequence[int],
+    minimum_initial_view_count: int,
+) -> dict[str, Any]:
+    """Materialize one plan with the legacy observation-plan field contract."""
+
+    selected_indices = tuple(int(index) for index in selected_camera_indices)
+    selected_cameras = tuple(camera_names[index] for index in selected_indices)
     query_ids = {
         camera: centers[supported[centers, camera_names.index(camera)]].astype(np.int64)
         for camera in selected_cameras
@@ -371,12 +547,195 @@ def select_frame_zero_observation_plan(
         "candidate_ids": candidates,
         "center_ids": centers,
         "selected_cameras": selected_cameras,
-        "selected_camera_indices": np.asarray(best_subset, dtype=np.int64),
-        "selection_score": best_score,
+        "selected_camera_indices": np.asarray(selected_indices, dtype=np.int64),
+        "selection_score": _camera_subset_score(
+            points,
+            centers,
+            supported,
+            selected_indices,
+            camera_origins_m,
+            minimum_initial_view_count=minimum_initial_view_count,
+        ),
         "query_ids": query_ids,
         "query_pixels": query_pixels,
         "support": supported,
         "camera_names": camera_names,
+    }
+
+
+def select_frame_zero_observation_plan(
+    frame_zero_points_m: np.ndarray,
+    cameras: Sequence[str],
+    support: np.ndarray,
+    projected_pixels: Mapping[str, np.ndarray],
+    extrinsics: Mapping[str, Any],
+    *,
+    config: RawCameraObservationConfig,
+) -> dict[str, Any]:
+    """Select geometry-spanning centers and a deterministic camera subset."""
+
+    (
+        points,
+        camera_names,
+        supported,
+        origins,
+        candidates,
+        centers,
+    ) = _frame_zero_candidates_and_centers(
+        frame_zero_points_m,
+        cameras,
+        support,
+        extrinsics,
+        config=config,
+    )
+    if len(camera_names) < config.selected_camera_count:
+        raise ValueError("fewer cameras than the fixed selected-camera count")
+
+    best_subset: tuple[int, ...] | None = None
+    best_score: tuple[int, int, int, float] | None = None
+    for subset in itertools.combinations(
+        range(len(camera_names)), config.selected_camera_count
+    ):
+        score = _camera_subset_score(
+            points,
+            centers,
+            supported,
+            subset,
+            origins,
+            minimum_initial_view_count=config.minimum_initial_view_count,
+        )
+        if best_score is None or score > best_score:
+            best_score = score
+            best_subset = subset
+    if best_subset is None or best_score is None:
+        raise AssertionError("camera selection produced no subset")
+    return _frame_zero_plan_for_camera_indices(
+        points=points,
+        camera_names=camera_names,
+        supported=supported,
+        projected_pixels=projected_pixels,
+        camera_origins_m=origins,
+        candidates=candidates,
+        centers=centers,
+        selected_camera_indices=best_subset,
+        minimum_initial_view_count=config.minimum_initial_view_count,
+    )
+
+
+def select_nested_frame_zero_observation_plans(
+    frame_zero_points_m: np.ndarray,
+    cameras: Sequence[str],
+    support: np.ndarray,
+    projected_pixels: Mapping[str, np.ndarray],
+    extrinsics: Mapping[str, Any],
+    *,
+    config: RawCameraObservationConfig,
+    prefix_camera_counts: Sequence[int] = (4, 8),
+) -> dict[str, Any]:
+    """Select the frozen exhaustive four-view plan and its optimal augmentation.
+
+    The four-view prefix is the exact legacy exhaustive optimum, including its
+    input-order tie break.  Four additional cameras are then selected by a
+    second exhaustive search that maximizes the same total eight-view score
+    while preserving the four-view prefix.  Centers are selected once and
+    reused unchanged.  No target, future track, or post-frame-zero measurement
+    is an input.
+
+    ``prefix_plans[count]`` follows the exact field contract returned by
+    :func:`select_frame_zero_observation_plan`, while
+    ``camera_activation_order`` exposes the auditable nested order.
+    """
+
+    if any(type(count) is not int for count in prefix_camera_counts):
+        raise ValueError("camera prefix counts must be exact integers")
+    counts = tuple(prefix_camera_counts)
+    if counts != (4, 8):
+        raise ValueError("the frozen nested camera prefixes must be exactly (4, 8)")
+    (
+        points,
+        camera_names,
+        supported_view,
+        origins,
+        candidates,
+        centers,
+    ) = _frame_zero_candidates_and_centers(
+        frame_zero_points_m,
+        cameras,
+        support,
+        extrinsics,
+        config=config,
+    )
+    if any(not isinstance(camera, str) or not camera for camera in camera_names):
+        raise ValueError("camera names must be nonempty strings")
+    if len(set(camera_names)) != len(camera_names):
+        raise ValueError("camera names must be unique")
+    if counts[-1] > len(camera_names):
+        raise ValueError("fewer cameras than the largest requested prefix")
+
+    # Own the support array so neither returned plans nor future refactors can
+    # alias and mutate the caller's frame-zero support matrix.
+    supported = np.array(supported_view, dtype=bool, copy=True)
+    supported.setflags(write=False)
+    candidates = np.array(candidates, dtype=np.int64, copy=True)
+    candidates.setflags(write=False)
+    centers = np.array(centers, dtype=np.int64, copy=True)
+    centers.setflags(write=False)
+    best_four, best_four_score = _select_exact_camera_subset_batched(
+        points,
+        centers,
+        supported,
+        origins,
+        selected_camera_count=4,
+        minimum_initial_view_count=config.minimum_initial_view_count,
+    )
+    selected_eight, best_eight_score = _select_exact_camera_subset_batched(
+        points,
+        centers,
+        supported,
+        origins,
+        selected_camera_count=8,
+        minimum_initial_view_count=config.minimum_initial_view_count,
+        required_prefix=best_four,
+    )
+    best_additions = selected_eight[4:]
+    prefix_plans = {
+        count: _frame_zero_plan_for_camera_indices(
+            points=points,
+            camera_names=camera_names,
+            supported=supported,
+            projected_pixels=projected_pixels,
+            camera_origins_m=origins,
+            candidates=candidates,
+            centers=centers,
+            selected_camera_indices=(best_four if count == 4 else selected_eight),
+            minimum_initial_view_count=config.minimum_initial_view_count,
+        )
+        for count in counts
+    }
+    activation_indices = np.asarray(selected_eight, dtype=np.int64)
+    activation_indices.setflags(write=False)
+    return {
+        "candidate_ids": candidates,
+        "center_ids": centers,
+        "camera_names": camera_names,
+        "prefix_camera_counts": counts,
+        "camera_activation_order": tuple(
+            camera_names[index] for index in selected_eight
+        ),
+        "camera_activation_indices": activation_indices,
+        "activation_stages": (
+            {
+                "stage": "legacy_exhaustive_four_view_base",
+                "added_cameras": tuple(camera_names[index] for index in best_four),
+                "selection_score": best_four_score,
+            },
+            {
+                "stage": "exhaustive_four_camera_augmentation",
+                "added_cameras": tuple(camera_names[index] for index in best_additions),
+                "selection_score": best_eight_score,
+            },
+        ),
+        "prefix_plans": prefix_plans,
     }
 
 
@@ -1551,5 +1910,6 @@ __all__ = [
     "frame_zero_camera_support",
     "project_world_points",
     "select_frame_zero_observation_plan",
+    "select_nested_frame_zero_observation_plans",
     "triangulate_observation_ransac",
 ]
