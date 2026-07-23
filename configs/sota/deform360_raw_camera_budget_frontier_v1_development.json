@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-open27-raw-camera-budget-frontier-v1-development",
+  "status": "prospectively frozen before any 2-view or 4-view outcome was produced or inspected",
+  "freeze": {
+    "date_utc": "2026-07-23",
+    "outcome_status_at_freeze": {
+      "2": "not produced or inspected",
+      "4": "not produced or inspected",
+      "8": "previously open development baseline, cryptographically bound below"
+    },
+    "camera_count_is_only_experimental_factor": true
+  },
+  "panel": {
+    "role": "outcome-open development only",
+    "episode_count": 27,
+    "physical_object_count": 5,
+    "object_episodes": {
+      "002-rope-silk": [2, 5, 6, 7, 9],
+      "083-blanket-cloth": [1, 2, 4, 5, 8, 9],
+      "085-scarf-cloth": [3, 4, 6, 8, 9],
+      "092-squirrel": [4, 5, 7, 8, 9],
+      "170-spider": [0, 1, 3, 5, 8, 9]
+    }
+  },
+  "observation": {
+    "camera_counts": [2, 4, 8],
+    "center_count": 16,
+    "require_exact_center_id_equality_across_budgets": true,
+    "update_frames": [19, 38, 57],
+    "budget_semantics": {
+      "all_available_cameras_used_for_frame_zero_planning": true,
+      "tracked_views_after_planning_are_budgeted": true,
+      "full_sensor_count_ablation": false
+    },
+    "source_roots": {
+      "panel": "/mnt/corsair/florianpfaff/deform360-dense-reusable-panel-v1/independent-source-v1",
+      "processed": "/mnt/lexar4tb/datasets/deform360/graph-action-support-independent-source-v1"
+    },
+    "raw_camera_config_except_selected_camera_count": {
+      "alltracker_inference_iterations": 4,
+      "alltracker_max_side": 512,
+      "alltracker_window_length": 16,
+      "center_count": 16,
+      "frame_zero_depth_tolerance_m": 0.015,
+      "maximum_displacement_from_initial_m": 0.5,
+      "maximum_reprojection_median_px": 3.0,
+      "minimum_initial_view_count": 2,
+      "minimum_ray_angle_degrees": 2.0,
+      "minimum_triangulation_view_count": 2,
+      "reprojection_inlier_threshold_px": 3.0,
+      "update_frames": [19, 38, 57],
+      "visibility_threshold": 0.5
+    },
+    "tracker": {
+      "name": "AllTracker",
+      "molmomotion_revision": "61f5b21b694ad8f854ec7ecd2400005acc73f685",
+      "source_tree": "eab012351a01051fa31a348e5b1f21c0e1ed970d",
+      "runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+      "source_root": "/mnt/corsair/florianpfaff/alltracker-molmomotion-61f5b21",
+      "checkpoint": "/mnt/corsair/florianpfaff/model-cache/alltracker.pth",
+      "checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+      "device": "cuda:0"
+    },
+    "causal_prefix": "update u receives exactly RGB frames [0, u]",
+    "target_data_read_during_measurement_construction": false
+  },
+  "evaluation": {
+    "protocol_id": "deform360-raw-camera-alltracker-v1-development",
+    "stream": "raw_measurement",
+    "primary_arm": "recursive_rbf_ungated",
+    "comparators": ["physical_prior", "persistence"],
+    "primary_metrics": [
+      "post_update_hidden_identity_rmse_m",
+      "post_update_hidden_symmetric_chamfer_m"
+    ],
+    "aggregation": {
+      "case_weighting": "equal",
+      "object_weighting": "equal after taking the equal-case mean within each physical object"
+    },
+    "raw_cpd": {
+      "included": false,
+      "reason": "the cryptographically bound 8-view baseline predates the covariance-gated raw-CPD evaluator; adding it only for this frontier would change the method"
+    }
+  },
+  "roots": {
+    "2": {
+      "measurement": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-measurements",
+      "evaluation": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-open27-development"
+    },
+    "4": {
+      "measurement": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-measurements",
+      "evaluation": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-open27-development"
+    },
+    "8": {
+      "measurement": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-measurements",
+      "evaluation": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-open27-development"
+    },
+    "frontier_output": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-frontier"
+  },
+  "bound_existing_8_view_baseline": {
+    "measurement": {
+      "file_count": 56,
+      "total_file_bytes": 2202895,
+      "inventory_sha256": "3aad3d81fb30e5701bf39011c8c9d00483c35555178fc2c7f4f83afeda9342b9"
+    },
+    "evaluation": {
+      "file_count": 55,
+      "total_file_bytes": 158789417,
+      "inventory_sha256": "49c05d9a5b575d2e048b510a8288f7847708f4957464dbec2d9d3911d477dc65",
+      "summary_sha256": "92188a6728b4cca104aff76db386d9f1c4bae79dd307786bbb3a3e64797a874d"
+    }
+  },
+  "inventory_contract": {
+    "record_order": "relative POSIX path encoded as UTF-8 and sorted by raw UTF-8 bytes",
+    "record_encoding": "relpath NUL stat-percent-a NUL stat-percent-s NUL sha256hex NUL",
+    "mode_encoding": "lowercase octal permission bits without a prefix or leading zero, equivalent to stat -c %a",
+    "accepted_entry_type": "regular files only; directories are structural and symlinks are forbidden"
+  },
+  "decision": {
+    "candidate_camera_count": 4,
+    "reference_camera_count": 8,
+    "descriptive_camera_counts": [2],
+    "go_if_all": {
+      "minimum_fraction_of_8_view_relative_improvement_retained_each_primary_metric": 0.8,
+      "minimum_joint_case_wins_vs_physical": 18,
+      "all_five_object_mean_differences_vs_physical_improve_on_both_primary_metrics": true,
+      "maximum_case_chamfer_relative_regression_vs_physical": 0.1
+    },
+    "tie_policy": "ties are not improvements or wins; the maximum regression bound is inclusive"
+  },
+  "claim_boundary": "Prospective outcome-open open27 development diagnostic of the dynamic tracked-view budget after all-view frame-zero planning. It is not a full sensor-count ablation, held confirmation, official Deform360 open-loop parity, or a state-of-the-art claim."
+}
