@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-open27-gated-camera-budget-transfer-v1-development",
+  "status": "prospectively frozen after raw 2/4-view outcomes but before any 2/4-view uncertainty sidecar or gated-evaluation outcome existed",
+  "freeze": {
+    "date_utc": "2026-07-23",
+    "raw_frontier_outcome_status": "open and excluded from this decision",
+    "low_budget_uncertainty_status": {
+      "2": "not produced or inspected",
+      "4": "not produced or inspected"
+    },
+    "low_budget_gated_evaluation_status": {
+      "2": "not produced or inspected",
+      "4": "not produced or inspected"
+    },
+    "method_selection": "the exact existing 8-view gated-base evaluator and its primary arm are transferred without tuning"
+  },
+  "cohort": {
+    "role": "outcome-open development only",
+    "episode_count": 27,
+    "physical_object_count": 5,
+    "parent_frontier_config": "configs/sota/deform360_raw_camera_budget_frontier_v1_development.json",
+    "parent_frontier_config_sha256": "27abed3caa8a54ff4d0744f3de06407ae9e7908f124c3fbb2663d73a83526609"
+  },
+  "method": {
+    "camera_counts": [2, 4, 8],
+    "budget_semantics": "dynamic tracked-view count after all-view frame-zero planning; not a full sensor-count ablation",
+    "uncertainty_protocol_id": "deform360-raw-camera-alltracker-jackknife-uncertainty-v1-development",
+    "gated_evaluation_protocol_id": "deform360-open27-raw-camera-covariance-gated-rbf-cpd-v1-development",
+    "primary_arm": "selected_backbone_euclidean_rbf_ungated",
+    "comparators": [
+      "physical_prior",
+      "persistence",
+      "selected_raw_backbone"
+    ],
+    "primary_metrics": [
+      "post_update_hidden_identity_rmse_m",
+      "post_update_hidden_symmetric_chamfer_m"
+    ],
+    "support_gate": {
+      "minimum_current_observed_centers": 3,
+      "insufficient_support_backbone": "persistence",
+      "backbone_candidates": [
+        "physical_prior",
+        "persistence"
+      ],
+      "backbone_selection": "minimum current unordered-observation Chamfer with physical-prior tie break"
+    },
+    "covariance_threshold_arms": "diagnostic only; the transferred primary arm is the existing support-gated ungated RBF arm",
+    "code_head_before_low_budget_sidecars": "497c0c752283ea7bc805ebad3203e600bfa3c580"
+  },
+  "bound_inputs": {
+    "2": {
+      "measurement_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-measurements",
+      "file_count": 56,
+      "total_file_bytes": 1297772,
+      "inventory_sha256": "4f111f1dcab7a423d2256babaa7481fd3e4c795403832632cf8f6ebbd3d83814"
+    },
+    "4": {
+      "measurement_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-measurements",
+      "file_count": 56,
+      "total_file_bytes": 1643339,
+      "inventory_sha256": "baa9c35a91da4eb3843cdcbb63889d0e2fd60532122da183cad1eda3a4c82141"
+    },
+    "8": {
+      "measurement_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-measurements",
+      "measurement_file_count": 56,
+      "measurement_total_file_bytes": 2202895,
+      "measurement_inventory_sha256": "3aad3d81fb30e5701bf39011c8c9d00483c35555178fc2c7f4f83afeda9342b9",
+      "uncertainty_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-uncertainty",
+      "uncertainty_file_count": 56,
+      "uncertainty_total_file_bytes": 2358852,
+      "uncertainty_inventory_sha256": "5da46cf3859ada32f9c5d8d38ef4958331c51c4554300f2ae60b2266832552c1",
+      "gated_evaluation_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-gated-base-open27-development",
+      "gated_evaluation_file_count": 55,
+      "gated_evaluation_total_file_bytes": 205877144,
+      "gated_evaluation_inventory_sha256": "257d29824a7f9ccd7a2b849f4547264a0713c60275de2783f9a5c03b0a7d8288",
+      "gated_evaluation_summary_sha256": "cf11fc52e573fa8845a50be14f82100ee006abfa4e97a941f4eddf0f89a2afd7"
+    }
+  },
+  "new_output_roots": {
+    "2": {
+      "uncertainty": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-uncertainty",
+      "gated_evaluation": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-gated-base-open27-development"
+    },
+    "4": {
+      "uncertainty": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-uncertainty",
+      "gated_evaluation": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-gated-base-open27-development"
+    }
+  },
+  "decision": {
+    "candidate_camera_count": 4,
+    "reference_camera_count": 8,
+    "descriptive_camera_counts": [2],
+    "go_if_all": {
+      "minimum_fraction_of_8_view_relative_improvement_retained_each_primary_metric": 0.8,
+      "minimum_joint_case_wins_vs_physical": 18,
+      "all_five_object_mean_differences_vs_physical_improve_on_both_primary_metrics": true,
+      "maximum_case_chamfer_relative_regression_vs_physical": 0.1
+    },
+    "secondary_field_value_check": "report whether the 4-view primary arm improves both aggregate primary metrics over selected_raw_backbone; this does not override the four preregistered GO gates",
+    "tie_policy": "ties are not improvements or wins; the maximum regression bound is inclusive"
+  },
+  "claim_boundary": "Secondary fixed-method transfer on outcome-open open27 measurements. It can diagnose whether the already-existing selected-backbone shared-field method tolerates fewer tracked views. It is not held confirmation, a full sensor-count ablation, official Deform360 parity, or a state-of-the-art claim."
+}
