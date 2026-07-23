@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 
@@ -27,6 +28,15 @@ def _write_result(
     track_m: float,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    provenance = {}
+    for key in ("checkpoint", "trajectory", "training_audit"):
+        bound_path = path.parent / f"{case_name}-{key}.bin"
+        bound_path.write_bytes(f"{case_name}-{key}".encode())
+        provenance[key] = {
+            "path": str(bound_path.resolve()),
+            "sha256": hashlib.sha256(bound_path.read_bytes()).hexdigest(),
+            "size_bytes": bound_path.stat().st_size,
+        }
     path.write_text(
         json.dumps(
             {
@@ -35,8 +45,7 @@ def _write_result(
                 "future_observations_used": True,
                 "released_test_outcomes_used_in_objective": True,
                 "case_name": case_name,
-                "checkpoint": {"sha256": f"checkpoint-{case_name}"},
-                "trajectory": {"sha256": f"trajectory-{case_name}"},
+                **provenance,
                 "official_evaluation": {
                     "evaluation": {
                         "test": {
@@ -89,4 +98,15 @@ def test_aggregate_rejects_undisclosed_future_use(tmp_path: Path) -> None:
     result.write_text(json.dumps(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="future-observation disclosure"):
+        aggregator.aggregate_results([result], expected_cases={"a"})
+
+
+def test_aggregate_rejects_changed_bound_file(tmp_path: Path) -> None:
+    aggregator = _load_aggregator()
+    result = tmp_path / "a.json"
+    _write_result(result, "a", frames=1, cd_m=0.004, track_m=0.010)
+    payload = json.loads(result.read_text(encoding="utf-8"))
+    Path(payload["training_audit"]["path"]).write_bytes(b"mutated")
+
+    with pytest.raises(ValueError, match="training_audit provenance hash changed"):
         aggregator.aggregate_results([result], expected_cases={"a"})

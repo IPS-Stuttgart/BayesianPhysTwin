@@ -10,7 +10,11 @@ from pathlib import Path
 
 import numpy as np
 
-from aggregate_matphys_transductive_sweep import METRICS, _load_result
+from aggregate_matphys_transductive_sweep import (
+    METRICS,
+    _load_result,
+    _validate_bound_file,
+)
 from bayesian_phystwin.matphys_causal_bridge import sha256_file
 
 
@@ -24,26 +28,6 @@ GATE_BASELINES = {
         "track_error_m": 0.0232141205,
     },
 }
-
-
-def _validate_bound_file(result: Mapping[str, object], key: str) -> dict[str, object]:
-    record = result.get(key)
-    if not isinstance(record, Mapping):
-        raise ValueError(f"{key} provenance is missing")
-    path = Path(str(record.get("path", ""))).resolve()
-    expected_sha256 = str(record.get("sha256", ""))
-    expected_size = record.get("size_bytes")
-    if not path.is_file():
-        raise ValueError(f"{key} provenance path is missing: {path}")
-    if sha256_file(path) != expected_sha256:
-        raise ValueError(f"{key} provenance hash changed: {path}")
-    if expected_size is None or path.stat().st_size != int(expected_size):
-        raise ValueError(f"{key} provenance size changed: {path}")
-    return {
-        "path": str(path),
-        "sha256": expected_sha256,
-        "size_bytes": int(expected_size),
-    }
 
 
 def evaluate_gate(
