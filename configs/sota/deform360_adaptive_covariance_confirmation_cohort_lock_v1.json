@@ -1,0 +1,624 @@
+{
+  "artifact_kind": "Deform360AdaptiveCovarianceConfirmationCohortLockV1",
+  "artifact_sha256": "7041cc9925a57d2bd82e8bd4b3681a59b19db244f395232cf4895531ec4ef9c6",
+  "camera_budget_semantics": {
+    "accounting_boundary": "The budget is not the total number of calibrated scene cameras, not a hardware-acquisition count, and not an official Deform360 open-loop sensor budget. Any offline run that precomputes both budgets must report that fact and cannot claim realized compute or acquisition savings from routed-view accounting alone.",
+    "nested_policy": "A target-free all-calibrated-camera frame-zero planner fixes a four-camera subset nested inside an eight-camera subset; future object frames are used only from the currently attempted subset.",
+    "physical_fallback": "A rejected eight-view observation returns the bit-exact physical prior and does not update either RBF state.",
+    "routes": [
+      {
+        "dynamic_tracked_camera_streams_attempted": 4,
+        "route": "accept_four"
+      },
+      {
+        "dynamic_tracked_camera_streams_attempted": 8,
+        "route": "accept_eight"
+      },
+      {
+        "dynamic_tracked_camera_streams_attempted": 8,
+        "future_visual_update_applied": false,
+        "route": "physical_fallback"
+      }
+    ],
+    "unit": "selected RGB camera streams admitted to causal per-update tracking and triangulation"
+  },
+  "case_count": 34,
+  "claim_boundary": "Prospective cross-object confirmation of the frozen adaptive-covariance routing policy against its declared causal camera-budget comparators. This is not official Deform360 open-loop parity and does not by itself permit a state-of-the-art claim.",
+  "cohort": {
+    "filament": [
+      {
+        "episodes": [
+          {
+            "case_id": "181-belt-ep0008",
+            "episode_id": 8,
+            "episode_rank_sha256": "08c13c25531656106529efc9e068260382c48b0bf4f28237bd1a47d603b663bd"
+          },
+          {
+            "case_id": "181-belt-ep0003",
+            "episode_id": 3,
+            "episode_rank_sha256": "0d9faf9e312fdd3b34c49d87073896255696afe755d3d87cd1d8d05d93a6f939"
+          }
+        ],
+        "object_id": "181-belt",
+        "object_rank_sha256": "b6b2fb9a7951f1f08c4eb957915ae79263be0d622bff5159a482d758fb93acdc",
+        "selection_rank": 0
+      }
+    ],
+    "sheet": [
+      {
+        "episodes": [
+          {
+            "case_id": "137-kitchen-napkin-cloth-ep0005",
+            "episode_id": 5,
+            "episode_rank_sha256": "0440e0004127a59374a49c2baa4c567363948efbea07c1b803cc1d0678a766c4"
+          },
+          {
+            "case_id": "137-kitchen-napkin-cloth-ep0007",
+            "episode_id": 7,
+            "episode_rank_sha256": "0988892f56ad22a34375cfd9cffc0dddcad53087ed4791501139406958f4047b"
+          }
+        ],
+        "object_id": "137-kitchen-napkin-cloth",
+        "object_rank_sha256": "089853183696d538fb29ce2381a2bf5b408580d511e856694494ebe2104bd3cb",
+        "selection_rank": 0
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "182-plastic-sheets-cloth-ep0004",
+            "episode_id": 4,
+            "episode_rank_sha256": "2900b45ec1482a66c8d73c0a26bc5f5f1aa7f647122b20def3d40d6c5e0ccd53"
+          },
+          {
+            "case_id": "182-plastic-sheets-cloth-ep0005",
+            "episode_id": 5,
+            "episode_rank_sha256": "29d99bc95278e4e1f019a46ea087567f2ba498d41e3ffa975221b1737330b058"
+          }
+        ],
+        "object_id": "182-plastic-sheets-cloth",
+        "object_rank_sha256": "08c4b2d8224486c8cb40b2a7aa65411f3ed36924e27661ab089c5d07b9012ed9",
+        "selection_rank": 1
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "017-chessboard-cloth-ep0007",
+            "episode_id": 7,
+            "episode_rank_sha256": "1e9b2b2b313cd8cf212aec9b41abef5bc889ec913d2d2d31651bac02fa063341"
+          },
+          {
+            "case_id": "017-chessboard-cloth-ep0004",
+            "episode_id": 4,
+            "episode_rank_sha256": "30e17aa37ef36c477f83dc3bc201884e362c99f35d9cac4740f495cb668e275e"
+          }
+        ],
+        "object_id": "017-chessboard-cloth",
+        "object_rank_sha256": "0934302d1d8c20f8f87d6cb2422d8eb6f8011f5b027e4bdcb416e8c84aff4100",
+        "selection_rank": 2
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "109-pouch-cloth-ep0001",
+            "episode_id": 1,
+            "episode_rank_sha256": "1be4e0b1ce38450a3fc9a9b453671f7c15bc8670e3608111144bc1f57808c83f"
+          },
+          {
+            "case_id": "109-pouch-cloth-ep0002",
+            "episode_id": 2,
+            "episode_rank_sha256": "223db1bb1c455fa755d6a895cb5ff07fb7d3cf4ecea37020d4966ce5ed7fb727"
+          }
+        ],
+        "object_id": "109-pouch-cloth",
+        "object_rank_sha256": "0a787e5cf9b927acff78ea4ed7f86217e9304cc96be3243b969ccdf89b6553ce",
+        "selection_rank": 3
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "084-apron-cloth-ep0004",
+            "episode_id": 4,
+            "episode_rank_sha256": "0a1519b217e37e8609ce57e77f356585568ab3382b95c9654d8235adc9b6f891"
+          },
+          {
+            "case_id": "084-apron-cloth-ep0002",
+            "episode_id": 2,
+            "episode_rank_sha256": "1494c17b0f3619781030808f0bcf19e401e7ee988a12313eec2f0bd74194e29b"
+          }
+        ],
+        "object_id": "084-apron-cloth",
+        "object_rank_sha256": "0baab740c6a2bdae708de2c12bad2edfd614b804eb105c0b47659d9b5ee79a68",
+        "selection_rank": 4
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "024-glass-cleaner-cloth-ep0008",
+            "episode_id": 8,
+            "episode_rank_sha256": "09417570a9658758f83a6e349706c042a74a4eb15e15f6add9252901873b089a"
+          },
+          {
+            "case_id": "024-glass-cleaner-cloth-ep0006",
+            "episode_id": 6,
+            "episode_rank_sha256": "290b4e214e1f475533cd4badd8af1d3ba323250582d44f0afa3176a5b5a18a71"
+          }
+        ],
+        "object_id": "024-glass-cleaner-cloth",
+        "object_rank_sha256": "105d4433f40aa9b94e9cd4f622fc843c25a8bd8dd1f71a5826bdd0102c3852ec",
+        "selection_rank": 5
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "087-plastic-bag-blue-cloth-ep0006",
+            "episode_id": 6,
+            "episode_rank_sha256": "05fb393dd7de8733a34530d6820ec5a2a0e4a7a3802fcb09afdd89ff2bd6b47d"
+          },
+          {
+            "case_id": "087-plastic-bag-blue-cloth-ep0007",
+            "episode_id": 7,
+            "episode_rank_sha256": "1be148863cec7c745a1f65bb2da580f5267f7b5c0945ab90c1b3a653d3dc8a0d"
+          }
+        ],
+        "object_id": "087-plastic-bag-blue-cloth",
+        "object_rank_sha256": "11f85ac08c4d80d1aa3813ac8ac8deeae61e709b6bfd7e4704a5b671522683f9",
+        "selection_rank": 6
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "010-orange-cloth-ep0002",
+            "episode_id": 2,
+            "episode_rank_sha256": "1ccfb2c311505d107a446124682ca28795faee9dc09d654057d120f435b23cbc"
+          },
+          {
+            "case_id": "010-orange-cloth-ep0005",
+            "episode_id": 5,
+            "episode_rank_sha256": "27b1f74f652029e6c966ab2f05050ad51139ebb60eae338e1fc880a11c8b9568"
+          }
+        ],
+        "object_id": "010-orange-cloth",
+        "object_rank_sha256": "1a568403ea7717b748f2bb47f5a725914727652aac19a438672974d6a9a90273",
+        "selection_rank": 7
+      }
+    ],
+    "volumetric": [
+      {
+        "episodes": [
+          {
+            "case_id": "191-sloth-green-ep0009",
+            "episode_id": 9,
+            "episode_rank_sha256": "036aaab18736c1c21d285b4e71f2e10dd6a05ac5fab1c5bfe8243bbb63c5eb8d"
+          },
+          {
+            "case_id": "191-sloth-green-ep0003",
+            "episode_id": 3,
+            "episode_rank_sha256": "339211f71ee71d09b789b10e9181e2000ef9a0b51620453ac4d8cab7984f3cf5"
+          }
+        ],
+        "object_id": "191-sloth-green",
+        "object_rank_sha256": "05493b3e0894d30fee94a7fdd91a48e1264e9d01ba189ff59da0eff16220942a",
+        "selection_rank": 0
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "063-flower-ep0000",
+            "episode_id": 0,
+            "episode_rank_sha256": "446431581bfe6b1ac65ac439d88f1ceefdbfd39262f021bae72c7fbbfbe20311"
+          },
+          {
+            "case_id": "063-flower-ep0004",
+            "episode_id": 4,
+            "episode_rank_sha256": "45011635e80b23488624c9f5b98a157626ddaa4d7c3bba6d6a86c03a54373d3f"
+          }
+        ],
+        "object_id": "063-flower",
+        "object_rank_sha256": "0f01e462f1f8905636f2abbe47657feedae0c727efdc3a0c8322d857c218d717",
+        "selection_rank": 1
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "045-cat-ep0000",
+            "episode_id": 0,
+            "episode_rank_sha256": "12e2dedaf91d3366d3ddd295f96e9d8192176981ac26305ca9e1073e4f2c5481"
+          },
+          {
+            "case_id": "045-cat-ep0006",
+            "episode_id": 6,
+            "episode_rank_sha256": "49be0953211f84eee2c3f193b72c2f2a1d21c35c297e61396e3cd9d2f34aaf24"
+          }
+        ],
+        "object_id": "045-cat",
+        "object_rank_sha256": "13ff4d4db2964f8ec58fa672b3c48bcb951b80d388a0c68a58edc9d3c2d4ebe7",
+        "selection_rank": 2
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "093-squeezable-fruit-ep0006",
+            "episode_id": 6,
+            "episode_rank_sha256": "1bc19aacab414462a05e5c46404cc93a8ff840240ad08c17a978b55cb4149643"
+          },
+          {
+            "case_id": "093-squeezable-fruit-ep0004",
+            "episode_id": 4,
+            "episode_rank_sha256": "1ca7a41e4bfe544e2f995f1eba1104b034ffaf208abaa0eb1a737f96c980868a"
+          }
+        ],
+        "object_id": "093-squeezable-fruit",
+        "object_rank_sha256": "17f60c146182e7a443fdfb3015722d78cd6f679eacd2cc3e4ccab90a77f3a752",
+        "selection_rank": 3
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "185-cheese-ep0009",
+            "episode_id": 9,
+            "episode_rank_sha256": "1e2e7d8aa90e2d78104bfaed9aac4c9dd8ba4cc4e19d5abb116a047e4113af74"
+          },
+          {
+            "case_id": "185-cheese-ep0004",
+            "episode_id": 4,
+            "episode_rank_sha256": "28ca86b4b50b8b5fd34801406dadbcd955a3562c3e2c47cf727f7b2c5b2f67e5"
+          }
+        ],
+        "object_id": "185-cheese",
+        "object_rank_sha256": "1b63bab506493f5b0c028e7c9f02e8d48e4ea775769666fd2193403af499ecd9",
+        "selection_rank": 4
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "196-hello-kitty-white-ep0009",
+            "episode_id": 9,
+            "episode_rank_sha256": "204b10177ff51163575b2ba9c4f3d84a8bc1cc29275a78b853259919a32cfb27"
+          },
+          {
+            "case_id": "196-hello-kitty-white-ep0000",
+            "episode_id": 0,
+            "episode_rank_sha256": "6e1e7ef5581252e411f18d04dd71b30f46008475b630994b7127c6d8178c3f4c"
+          }
+        ],
+        "object_id": "196-hello-kitty-white",
+        "object_rank_sha256": "1e01aa629294a1b2057c223bbf8e94b20fbdd31db1b984f8d5bdb2adf77f9970",
+        "selection_rank": 5
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "195-hello-kitty-brown-ep0008",
+            "episode_id": 8,
+            "episode_rank_sha256": "08f312d82ba663b459ad8ceb4df4f287916864a839f7d6307f1b9da23824abba"
+          },
+          {
+            "case_id": "195-hello-kitty-brown-ep0006",
+            "episode_id": 6,
+            "episode_rank_sha256": "1390f74c6d27dc57cbd3ceabdfcf9145d1049631567e641f25bbe7e57cbf9fe6"
+          }
+        ],
+        "object_id": "195-hello-kitty-brown",
+        "object_rank_sha256": "1e056dde3b36faeb82803ba5b0e8c671b511d56017aaae2e71bd4412400ee995",
+        "selection_rank": 6
+      },
+      {
+        "episodes": [
+          {
+            "case_id": "126-jellyfish-ep0007",
+            "episode_id": 7,
+            "episode_rank_sha256": "24b974ebcc8925ed261e0fba80300eb2680123ebe908a2b9d856dc783d1df10b"
+          },
+          {
+            "case_id": "126-jellyfish-ep0003",
+            "episode_id": 3,
+            "episode_rank_sha256": "3905d3a470833539460eacb2bbaf89b1c95f913012e7ad15a9a15538de2daea7"
+          }
+        ],
+        "object_id": "126-jellyfish",
+        "object_rank_sha256": "22e629ae2264a0268892004451c6573476e5d27a9eb8c0b67f4e395add5ac0fc",
+        "selection_rank": 7
+      }
+    ]
+  },
+  "dataset_binding": {
+    "public_object_directory_count": 190,
+    "public_object_inventory_algorithm": "list nonrecursive raw/ RepoFolder names at the pinned revision; remove literal raw/ prefix; Python-sort ASCII object IDs; SHA256 UTF-8(object_id + LF) for every ID including final LF",
+    "public_object_inventory_sha256": "cf82fec6c715c3dafa2f3cadbeb6402f68443305fc40ff418075fe2cc22febb2",
+    "raw_folder_tree_id": "a4a36e0669bcc86ab79e7ffb35aada7f2334c570",
+    "repo_type": "dataset",
+    "repository": "brownu/deform360",
+    "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
+  },
+  "fresh_identity_exclusions": {
+    "digest_algorithm": "Python-sort object IDs; SHA256 UTF-8(object_id + LF) for every ID including final LF",
+    "freshness_boundary": "Fresh means absent from this exact hash-bound union of open27, formal-held, and bias-prospective identities; it does not assert that no unlisted external process has ever accessed the object.",
+    "object_count": 31,
+    "object_ids": [
+      "002-rope-silk",
+      "011-green-cloth",
+      "015-airbag-cloth",
+      "066-glove-half-black-cloth",
+      "072-cotton-clohesline",
+      "075-leather",
+      "076-rubber-bands",
+      "078-fishing-line",
+      "080-wool",
+      "081-stripe-rope",
+      "083-blanket-cloth",
+      "085-scarf-cloth",
+      "088-snake",
+      "091-net-cloth",
+      "092-squirrel",
+      "100-puppet",
+      "112-wristband-cloth",
+      "120-bread-plush",
+      "121-croissant-plush",
+      "123-pipe-cleaner",
+      "139-rubber-ball",
+      "143-silicone-wristband",
+      "160-hose",
+      "161-tube",
+      "163-bear",
+      "164-sheep",
+      "165-glove-yellow-cloth",
+      "168-cat-big",
+      "170-spider",
+      "174-chain",
+      "175-plastic-bag-cloth"
+    ],
+    "object_ids_sha256": "1c937d23a37d9a330e157c0ad40a92131775c378a856364d5fa489a2b52c0bd1",
+    "scope": "physical object identity; every episode of every listed object is excluded"
+  },
+  "information_boundary": {
+    "metric_or_outcome_read": false,
+    "network_accessed": false,
+    "object_names_and_integer_episode_ids_only": true,
+    "prediction_or_measurement_read": false,
+    "scope": "this deterministic lock-generator invocation; global freshness is limited to the separately declared exclusion-union boundary",
+    "selected_object_action_metadata_read": false,
+    "selected_object_media_read": false,
+    "target_array_or_future_geometry_read": false
+  },
+  "name_only_taxonomy_binding": {
+    "broader_class_or_reclassification_added": false,
+    "candidate_pool_counts": {
+      "filament": 12,
+      "sheet": 77,
+      "volumetric": 39
+    },
+    "candidate_pools": {
+      "filament": [
+        "072-cotton-clohesline",
+        "075-leather",
+        "076-rubber-bands",
+        "078-fishing-line",
+        "080-wool",
+        "088-snake",
+        "123-pipe-cleaner",
+        "143-silicone-wristband",
+        "160-hose",
+        "161-tube",
+        "174-chain",
+        "181-belt"
+      ],
+      "sheet": [
+        "010-orange-cloth",
+        "011-green-cloth",
+        "012-hat-cloth",
+        "013-glove-cloth",
+        "014-glove-vinyl-cloth",
+        "015-airbag-cloth",
+        "017-chessboard-cloth",
+        "018-trashbag-cloth",
+        "019-trashbag-plastic-cloth",
+        "020-cutting-mat-cloth",
+        "023-cleaning-cloth",
+        "024-glass-cleaner-cloth",
+        "025-bag-small-cloth",
+        "026-sock-cloth",
+        "027-umbrella-bag-cloth",
+        "028-ziplog-cloth",
+        "029-foam-cloth",
+        "030-bandage-cloth",
+        "030-foam-flat-cloth",
+        "031-cotton-cloth",
+        "032-teabag-cloth",
+        "034-plastic-bag-cloth",
+        "036-napkin-cloth",
+        "037-mop-cloth",
+        "038-black-bag-cloth",
+        "038-mat-cloth",
+        "042-necktie-cloth",
+        "055-lettuce-cloth",
+        "060-bread-cloth",
+        "065-pita-bread-cloth",
+        "066-glove-half-black-cloth",
+        "082-curtain-cloth",
+        "084-apron-cloth",
+        "087-plastic-bag-blue-cloth",
+        "091-net-cloth",
+        "098-beach-ball-cloth",
+        "103-ice-pack-cloth",
+        "105-clay-cloth",
+        "107-mitt-cloth",
+        "108-drying-mat-cloth",
+        "109-pouch-cloth",
+        "110-shower-cap-cloth",
+        "111-headband-cloth",
+        "112-wristband-cloth",
+        "114-finger-wrap-cloth",
+        "115-cotton-gauze-cloth",
+        "116-hydrogel-patch-cloth",
+        "118-envelope-cloth",
+        "119-seal-cloth",
+        "122-sheets-cloth",
+        "124-tulle-fabric-cloth",
+        "136-foam-letters-cloth",
+        "137-kitchen-napkin-cloth",
+        "140-rubber-glove-cloth",
+        "142-shoe-sole-cloth",
+        "144-jar-opener-cloth",
+        "148-crepe-paper-cloth",
+        "149-sticker-paper-cloth",
+        "150-shredded-packing-paper-cloth",
+        "151-parchment-paper-cloth",
+        "156-mesh-produce-bag-cloth",
+        "157-sack-cloth",
+        "158-jewelry-pouch-cloth",
+        "165-glove-yellow-cloth",
+        "166-glove-green-cloth",
+        "167-glove-gray-cloth",
+        "169-pencilcase-cloth",
+        "172-napkin-case-cloth",
+        "173-poster-paper-cloth",
+        "175-plastic-bag-cloth",
+        "176-candy-packet-cloth",
+        "178-bottle-accessory-cloth",
+        "179-towel-black-cloth",
+        "182-plastic-sheets-cloth",
+        "183-shower-cap-transparent-cloth",
+        "184-foam-roller-thick-cloth",
+        "198-kneepad-cloth"
+      ],
+      "volumetric": [
+        "045-cat",
+        "047-rectangle-sponge",
+        "048-butter-sponge",
+        "050-boxing",
+        "053-squeezer",
+        "056-makeup-sponge",
+        "057-kitchen-sponge",
+        "058-roll-napkin",
+        "062-banana",
+        "063-flower",
+        "093-squeezable-fruit",
+        "095-watermelon",
+        "097-pillow",
+        "099-teeth",
+        "100-puppet",
+        "102-stress-ball",
+        "120-bread-plush",
+        "121-croissant-plush",
+        "126-jellyfish",
+        "138-sponge-stamps",
+        "139-rubber-ball",
+        "152-slime",
+        "153-cake",
+        "155-crystal-slime",
+        "163-bear",
+        "164-sheep",
+        "168-cat-big",
+        "185-cheese",
+        "186-monster",
+        "187-white-bear",
+        "188-foam-roll-small",
+        "189-bear-big",
+        "190-monkey",
+        "191-sloth-green",
+        "192-fish",
+        "193-frog",
+        "194-fish-orange",
+        "195-hello-kitty-brown",
+        "196-hello-kitty-white"
+      ]
+    },
+    "copied_field": "config.candidate_pools",
+    "semantics": "Exact pre-existing manual name-only deformation strata; not labels inferred from media and not an exhaustive taxonomy of all public objects.",
+    "source_commit": "d72ca1dee49841b7d3b020da4380d0ef0a3f7d7c",
+    "source_file_sha256": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01",
+    "source_path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json"
+  },
+  "protocol_id": "deform360-adaptive-covariance-confirmation-v1",
+  "schema_version": 1,
+  "selected_case_ids": [
+    "181-belt-ep0008",
+    "181-belt-ep0003",
+    "137-kitchen-napkin-cloth-ep0005",
+    "137-kitchen-napkin-cloth-ep0007",
+    "182-plastic-sheets-cloth-ep0004",
+    "182-plastic-sheets-cloth-ep0005",
+    "017-chessboard-cloth-ep0007",
+    "017-chessboard-cloth-ep0004",
+    "109-pouch-cloth-ep0001",
+    "109-pouch-cloth-ep0002",
+    "084-apron-cloth-ep0004",
+    "084-apron-cloth-ep0002",
+    "024-glass-cleaner-cloth-ep0008",
+    "024-glass-cleaner-cloth-ep0006",
+    "087-plastic-bag-blue-cloth-ep0006",
+    "087-plastic-bag-blue-cloth-ep0007",
+    "010-orange-cloth-ep0002",
+    "010-orange-cloth-ep0005",
+    "191-sloth-green-ep0009",
+    "191-sloth-green-ep0003",
+    "063-flower-ep0000",
+    "063-flower-ep0004",
+    "045-cat-ep0000",
+    "045-cat-ep0006",
+    "093-squeezable-fruit-ep0006",
+    "093-squeezable-fruit-ep0004",
+    "185-cheese-ep0009",
+    "185-cheese-ep0004",
+    "196-hello-kitty-white-ep0009",
+    "196-hello-kitty-white-ep0000",
+    "195-hello-kitty-brown-ep0008",
+    "195-hello-kitty-brown-ep0006",
+    "126-jellyfish-ep0007",
+    "126-jellyfish-ep0003"
+  ],
+  "selection": {
+    "episode_candidate_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "episode_rank": "SHA256 of uint64-big-endian-length-framed domain, raw 32-byte seed, UTF-8 stratum, UTF-8 object_id, and ASCII episode_id; sort by digest then integer ID",
+    "episodes_per_object": 2,
+    "network_or_dataset_read_by_lock_generator": false,
+    "object_quotas": {
+      "filament": 1,
+      "sheet": 8,
+      "volumetric": 8
+    },
+    "object_rank": "SHA256 of uint64-big-endian-length-framed domain, raw 32-byte seed, UTF-8 stratum, and UTF-8 object_id; sort by digest then ID",
+    "prediction_measurement_target_or_metric_read_by_lock_generator": false,
+    "selection_inputs_only": [
+      "protocol ID",
+      "implementation commit H1",
+      "dataset revision",
+      "hash-bound name-only taxonomy object IDs",
+      "hash-bound exclusion object IDs",
+      "integer episode IDs 0 through 9"
+    ]
+  },
+  "status": "metadata-only-cohort-lock-for-h2",
+  "taxonomy_imbalance_disclosure": {
+    "eligible_object_counts": {
+      "filament": 1,
+      "sheet": 70,
+      "volumetric": 32
+    },
+    "filament_statement": "After exact identity exclusions, 181-belt is the sole eligible filament identity and is included deterministically; filament evidence is therefore one object with two nested episodes.",
+    "selected_object_counts": {
+      "filament": 1,
+      "sheet": 8,
+      "volumetric": 8
+    },
+    "statistical_boundary": "Episodes are not independent physical-object replicates. Filament cannot support a stratum-level population claim, and the overall cohort is intentionally unbalanced 1/8/8 rather than repaired by inventing or reclassifying objects."
+  },
+  "two_commit_freeze": {
+    "h1_role": "complete target-free implementation, tests, method parameters, runner, and validator; fixed before cohort identities are known",
+    "h2_role": "this deterministic metadata-only cohort lock and no method or selection-code change",
+    "implementation_commit_h1": "67adac5c7164455f236a742a063dea03812f8bf1",
+    "selection_seed_preimage": "UTF8(protocol_id) || NUL || ASCII(H1) || NUL || ASCII(dataset_revision)",
+    "selection_seed_sha256": "23d1f31c158e4acc30e151de57bc78430f4a259f10238ed77214f21924e1768c"
+  }
+}
