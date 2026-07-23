@@ -94,6 +94,7 @@ DEVELOPMENT_CONFIG_PATH = (
     / "sota"
     / "deform360_adaptive_covariance_view_budget_v1_development.json"
 )
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
@@ -167,11 +168,11 @@ def _load_development_config() -> dict[str, Any]:
     if not parent_path.is_file() or parent.get("sha256") != _sha256(parent_path):
         raise ValueError("adaptive development parent config binding changed")
     return {
-        "path": str(DEVELOPMENT_CONFIG_PATH),
+        "path": DEVELOPMENT_CONFIG_PATH.relative_to(REPOSITORY_ROOT).as_posix(),
         "file_sha256": _sha256(DEVELOPMENT_CONFIG_PATH),
         "protocol_id": DEVELOPMENT_CONFIG_PROTOCOL_ID,
         "parent_config": {
-            "path": str(parent_path),
+            "path": parent_path.relative_to(REPOSITORY_ROOT).as_posix(),
             "file_sha256": _sha256(parent_path),
         },
     }
