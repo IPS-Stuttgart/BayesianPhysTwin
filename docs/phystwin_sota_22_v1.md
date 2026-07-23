@@ -180,6 +180,14 @@ claim, but the public path does not provide a clean local reproduction of the
 stated held-out result. This caveat does not make the present method SOTA:
 NeuSpring also reports lower values on both metrics.
 
+The completed 22-case all-frame public-artifact control obtains 0.012212 m CD
+and 0.026881 m track error, 52.65% and 79.20% above the published rounded
+MatPhys values even though the released future is fitted. MatPhys does not
+release its generated node-semantic and material products, so this is a
+negative result for the pinned public implementation plus the disclosed
+single-part proxy, not a refutation of the private paper pipeline. See
+[`matphys_transductive_reconstruction_result_v1.md`](matphys_transductive_reconstruction_result_v1.md).
+
 ## Original versus ours
 
 | Component | Origin |

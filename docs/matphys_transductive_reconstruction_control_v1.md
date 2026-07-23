@@ -53,6 +53,20 @@ The numeric physics-prior flag is retained for command parity even though the
 current upstream implementation documents it as ignored. Visualization is
 disabled because it does not affect optimization.
 
+## Public-artifact boundary
+
+The public MatPhys repository omits the generated `node_sem.npz` and
+`train_ready.pt` products used by the paper pipeline. This control uses the
+previously frozen `global-onehot-single-part-v1` proxy: the released material
+class is a one-hot input, every node shares one part, and the simple decoder's
+unused semantic tensor is zero. Every generated proxy is recorded and
+hash-bound.
+
+The control therefore tests the runnable public implementation under an
+explicit available-data proxy. It is not an exact reproduction of unreleased
+paper artifacts, and a failed aggregate must be interpreted within that
+boundary.
+
 MatPhys's public video loader lexicographically sorts PNG names before uniform
 sampling. The wrapper intentionally preserves that behavior and records every
 selected path and hash rather than silently correcting it.
@@ -89,3 +103,6 @@ from depending silently on how long interactions are weighted.
 Only after an upstream reproduction succeeds is it meaningful to test a
 Bayesian all-frame smoother. The causal held-future table remains the primary
 Bayesian-PhysTwin result and is reported separately.
+
+The completed result is recorded in
+[`matphys_transductive_reconstruction_result_v1.md`](matphys_transductive_reconstruction_result_v1.md).

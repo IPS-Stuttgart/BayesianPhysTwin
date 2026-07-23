@@ -1,0 +1,581 @@
+{
+  "aggregation": {
+    "primary": "case-balanced mean of official per-case test metrics",
+    "secondary": "test-frame-count-weighted mean"
+  },
+  "case_count": 22,
+  "cases": [
+    {
+      "case_name": "double_lift_cloth_1",
+      "chamfer_distance_m": 0.006545563827512411,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/training/best_checkpoint.pth",
+        "sha256": "a3bd7c6da717756d77decf20097298124a13a9241250c58e9180414fb25ef04e",
+        "size_bytes": 350651831
+      },
+      "frame_count": 35,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/export/transductive_reconstruction_result.json",
+        "sha256": "2a5eab99eaf2e28ab67b1e0b26ae95d3db3d68f5f5f6febefbe3cc77429781a9"
+      },
+      "track_error_m": 0.011943278595144944,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/training/transductive_training_audit.json",
+        "sha256": "769461767b162fc62a2194301b128682f2a594272f530d42aafb063137da6e81",
+        "size_bytes": 14701
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_1/export/trajectory.pkl",
+        "sha256": "1ea0239e1b6a034de7e8d5b72c98e44db474bf506dad171ec4e54601ce44c359",
+        "size_bytes": 6601005
+      }
+    },
+    {
+      "case_name": "double_lift_cloth_3",
+      "chamfer_distance_m": 0.01727075249138097,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_3/training/best_checkpoint.pth",
+        "sha256": "b3263d032d1e3a154e79cafc4c2e81bab7b5af9fbd8b634865c3c134e753c3c6",
+        "size_bytes": 350651831
+      },
+      "frame_count": 36,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_3/export/transductive_reconstruction_result.json",
+        "sha256": "da2ba6a09df79a62255ba16feddd6342ebce0b60aacd97c14c5b94e23bd46e78"
+      },
+      "track_error_m": 0.02131285679124521,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_3/training/transductive_training_audit.json",
+        "sha256": "26bc71f5a0d72c27051a45ba684cfd0f196b71c0fba8733bc32cd2528b65dc1a",
+        "size_bytes": 14700
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_cloth_3/export/trajectory.pkl",
+        "sha256": "59b52d5fc386f54f2d15ef1ed06e7d9d25340afee69542910c79db6447d0844e",
+        "size_bytes": 10649877
+      }
+    },
+    {
+      "case_name": "double_lift_sloth",
+      "chamfer_distance_m": 0.012781846610217374,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_sloth/training/best_checkpoint.pth",
+        "sha256": "9e00596df3d97cb05314f80a8c6f660150a2bf0594aa7215d106a76a6494ffa8",
+        "size_bytes": 350651831
+      },
+      "frame_count": 19,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_sloth/export/transductive_reconstruction_result.json",
+        "sha256": "9c2858e443bc7a168da020fd016303421492d8a378d7d0425c67cbb7e674736c"
+      },
+      "track_error_m": 0.021291596686921325,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_sloth/training/transductive_training_audit.json",
+        "sha256": "021018d2f18de2caaffc051cfb0445f08a726958f550d24667ed4626164ae32c",
+        "size_bytes": 14626
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_sloth/export/trajectory.pkl",
+        "sha256": "7955e2632dd06242efc268d23dd086aa463f46ec19c30e9d8436750ae7a57d18",
+        "size_bytes": 4955181
+      }
+    },
+    {
+      "case_name": "double_lift_zebra",
+      "chamfer_distance_m": 0.009215024296809503,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/training/best_checkpoint.pth",
+        "sha256": "eb1b31e15fc9017c5232a4514102cf19c5bf9ec00b9eca41b93334458ea9a451",
+        "size_bytes": 350651831
+      },
+      "frame_count": 18,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/export/transductive_reconstruction_result.json",
+        "sha256": "6a4b2b4eb803ebe9fbfb6a098d72091465df8b32c875c42a37292025c8da44a4"
+      },
+      "track_error_m": 0.016789931980255766,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/training/transductive_training_audit.json",
+        "sha256": "3465387e61ea1fbf08d7c957a1768ab0ff16046a379ba1c24a326fcc5477eb26",
+        "size_bytes": 14624
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_lift_zebra/export/trajectory.pkl",
+        "sha256": "5ae3d07434610b8fc36b1b2fbd57b8747a6587c45b464cd26eda474d4a28f235",
+        "size_bytes": 3206613
+      }
+    },
+    {
+      "case_name": "double_stretch_sloth",
+      "chamfer_distance_m": 0.00924724126885908,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_sloth/training/best_checkpoint.pth",
+        "sha256": "4b4ffdf898224542d2d7c0c9c5ba9bdd50752d7964ac885b1db69bf5998a4b7b",
+        "size_bytes": 350651831
+      },
+      "frame_count": 58,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_sloth/export/transductive_reconstruction_result.json",
+        "sha256": "855b068080a5f273db2aae6b39b4506f662f53adc56d0cf72bb3954d98e43446"
+      },
+      "track_error_m": 0.01515515539748998,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_sloth/training/transductive_training_audit.json",
+        "sha256": "06fd9adbae177176d89f802b45351d4dd5852331ee2fcaa7bbfd3d07cad5dd13",
+        "size_bytes": 14753
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_sloth/export/trajectory.pkl",
+        "sha256": "9f179ad0a63745707f876aa5331c65497d621b3a7b1e4fc7c6b18b8ce7b96e02",
+        "size_bytes": 14946189
+      }
+    },
+    {
+      "case_name": "double_stretch_zebra",
+      "chamfer_distance_m": 0.007402966662258118,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_zebra/training/best_checkpoint.pth",
+        "sha256": "811c6abfa97989be5f46b6e714905d399b1f1dee96bcea58031ac4028cb558e5",
+        "size_bytes": 350651831
+      },
+      "frame_count": 60,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_zebra/export/transductive_reconstruction_result.json",
+        "sha256": "a3290dc02b313d3509c0009fd6b248155f7f0a5cf1ceb3794dd07c703f56ad2d"
+      },
+      "track_error_m": 0.014339021740192514,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_zebra/training/transductive_training_audit.json",
+        "sha256": "47178dcbcb4b68e2a2262cda0c0384e4bc77886aa32dc89da9e8d36ac01ea5e0",
+        "size_bytes": 14753
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/double_stretch_zebra/export/trajectory.pkl",
+        "sha256": "e80fa71ff164f716777012d2cdebc8afaaf2fc3f0250cb46d20d98c4d1eacf46",
+        "size_bytes": 9998349
+      }
+    },
+    {
+      "case_name": "rope_double_hand",
+      "chamfer_distance_m": 0.008820457505915895,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/rope_double_hand/training/best_checkpoint.pth",
+        "sha256": "d0a5b7895f2615b25ca7f5cce90e8fb1dfa54e0191a463f6c36150cd1a24be38",
+        "size_bytes": 350651831
+      },
+      "frame_count": 80,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/rope_double_hand/export/transductive_reconstruction_result.json",
+        "sha256": "5da8bd33761995c001ecbf521946007863d3624a6c849243716bd92b569617e4"
+      },
+      "track_error_m": 0.018446610005658677,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/rope_double_hand/training/transductive_training_audit.json",
+        "sha256": "da0372ea06b34bff948927712c6b6f153002e2536ca174d1340615ec6f74c38c",
+        "size_bytes": 14632
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/rope_double_hand/export/trajectory.pkl",
+        "sha256": "79de8af0d728cefcc875781565444cc1cc95cd3c866d1ec9fa7524ca63128bee",
+        "size_bytes": 5553646
+      }
+    },
+    {
+      "case_name": "single_clift_cloth_1",
+      "chamfer_distance_m": 0.007380020556584253,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_1/training/best_checkpoint.pth",
+        "sha256": "a819614efbc956bf063f78a831eb205d4910fb61d88784f275ac4d6ad17025e8",
+        "size_bytes": 350651831
+      },
+      "frame_count": 24,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_1/export/transductive_reconstruction_result.json",
+        "sha256": "70de539094781c905f4bc27ad35909bda2deb84b171e41ce28dbb130993d4ddf"
+      },
+      "track_error_m": 0.010265492372812782,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_1/training/transductive_training_audit.json",
+        "sha256": "a55fab86419db6ab4a20dc1476b8977288ad59e80bf5c37986a3f13dc3b61b95",
+        "size_bytes": 14722
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_1/export/trajectory.pkl",
+        "sha256": "5048f997956973854e2b8a9946f62b6667a44fe75783ccd0a363f6fca2c9f39c",
+        "size_bytes": 6230541
+      }
+    },
+    {
+      "case_name": "single_clift_cloth_3",
+      "chamfer_distance_m": 0.0034957301510066324,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_3/training/best_checkpoint.pth",
+        "sha256": "9862b793c72d879d7735b0c43e48d12dbc046821466efacc9d7f6f2f1f604d3f",
+        "size_bytes": 350651831
+      },
+      "frame_count": 30,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_3/export/transductive_reconstruction_result.json",
+        "sha256": "b814c6f4641e41c052c536081335db30056ebb2efe7d5b1563c5d9b987334209"
+      },
+      "track_error_m": 0.010422689276944685,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_3/training/transductive_training_audit.json",
+        "sha256": "bdc442d06f324cdb06444c21bd81c7d10d1eb02a76ce127782feaae187544dbe",
+        "size_bytes": 14719
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_clift_cloth_3/export/trajectory.pkl",
+        "sha256": "15bd6d1e1824c6e796ff126bf426f96e131e88ab5510eff8b6df4cbb43be59cf",
+        "size_bytes": 9496053
+      }
+    },
+    {
+      "case_name": "single_lift_cloth",
+      "chamfer_distance_m": 0.02951480113295413,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth/training/best_checkpoint.pth",
+        "sha256": "a5de26d987220d21ecc0f0930e99a5aab67b5954015691c7a6a38d6886613951",
+        "size_bytes": 350651831
+      },
+      "frame_count": 52,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth/export/transductive_reconstruction_result.json",
+        "sha256": "fa9a10e2c9fd9b249787488055c7bd2a1fa210433c8be326d9e884b9a3321d65"
+      },
+      "track_error_m": 0.07901574364319262,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth/training/transductive_training_audit.json",
+        "sha256": "49f77dd31f4749e44aad897b5604bfa3025aa6ad9bd503f0a994df02ac58ce54",
+        "size_bytes": 14655
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth/export/trajectory.pkl",
+        "sha256": "b35a69bd09a4ee8a53f495c8c7d98a5817d7e2ab52ddd2bf7d27fab20bcf2e61",
+        "size_bytes": 16178409
+      }
+    },
+    {
+      "case_name": "single_lift_cloth_1",
+      "chamfer_distance_m": 0.015233093141760023,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_1/training/best_checkpoint.pth",
+        "sha256": "b4d50558e506465c4f26704b3651a25928c08b11c12a064f6fae0ba6fbfdd05e",
+        "size_bytes": 350651831
+      },
+      "frame_count": 33,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_1/export/transductive_reconstruction_result.json",
+        "sha256": "6ccc645150e0a7350a2aa4737df80c636998d3cb01e9c244eea1daa2b8aed32c"
+      },
+      "track_error_m": 0.023741883284008225,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_1/training/transductive_training_audit.json",
+        "sha256": "9b57fc90ea9d25cad13fc6bd99cbc4b6d8429a85c0fa827c12d0d893bf89be50",
+        "size_bytes": 14698
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_1/export/trajectory.pkl",
+        "sha256": "5d7645ef07a49524b297dcfed73083976193620b8dced9572f3c8130f5d7593b",
+        "size_bytes": 7246941
+      }
+    },
+    {
+      "case_name": "single_lift_cloth_3",
+      "chamfer_distance_m": 0.019065492794720067,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_3/training/best_checkpoint.pth",
+        "sha256": "d04e69b83c7d063c986b62f92c9cda012627b5d7d5d0e6faec3f62b79a8e1713",
+        "size_bytes": 350651831
+      },
+      "frame_count": 47,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_3/export/transductive_reconstruction_result.json",
+        "sha256": "850a148f002c23fde24bbbbd6a92296857a6b87fc9e1a18a8f847c72d728fb80"
+      },
+      "track_error_m": 0.0681926142332723,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_3/training/transductive_training_audit.json",
+        "sha256": "954ca9367d97370ba4da9334a85281ba11eb58fcc1fac7b7f82af9b8539c6086",
+        "size_bytes": 14715
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_3/export/trajectory.pkl",
+        "sha256": "d8366be3aaed5ef4a3989bb1d07292235519acd800794277d0725be465c64fd6",
+        "size_bytes": 16065645
+      }
+    },
+    {
+      "case_name": "single_lift_cloth_4",
+      "chamfer_distance_m": 0.029691620033305895,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_4/training/best_checkpoint.pth",
+        "sha256": "b40f73a95493e2de49bb7d771ce68cb0b1602e786aaef8ae4d0ec6031e07ede5",
+        "size_bytes": 350651831
+      },
+      "frame_count": 52,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_4/export/transductive_reconstruction_result.json",
+        "sha256": "c474fb7cb1122d5292aae06286fd7876a7622718d8f983ee6904c3071683f257"
+      },
+      "track_error_m": 0.10565951756492067,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_4/training/transductive_training_audit.json",
+        "sha256": "887e9ed7f483845dc99e6ada2b4cdc9dcf5b3561dde1f3ceac5b92217b2bb9ef",
+        "size_bytes": 14715
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_cloth_4/export/trajectory.pkl",
+        "sha256": "fb4f40dab24f2865d265241b2ded47d58929b00ba8cfc81b321a911f7499fa2c",
+        "size_bytes": 16893981
+      }
+    },
+    {
+      "case_name": "single_lift_dinosor",
+      "chamfer_distance_m": 0.010070936420745967,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_dinosor/training/best_checkpoint.pth",
+        "sha256": "02efbc8a0a69e4279c7df40641b9d89ff19cd90cba106133a35f7f0f072eb8d6",
+        "size_bytes": 350651831
+      },
+      "frame_count": 26,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_dinosor/export/transductive_reconstruction_result.json",
+        "sha256": "a9cbb9d5124f1b928776dcdafcf58bf9a1ccf42350f044b833def41c5d2cd04a"
+      },
+      "track_error_m": 0.012889813674784055,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_dinosor/training/transductive_training_audit.json",
+        "sha256": "549f3e25a7470c8a9591f88868f49363e14f867ecdf768b97a3db4a289f9599b",
+        "size_bytes": 14686
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_dinosor/export/trajectory.pkl",
+        "sha256": "c8eeed819a896e20610e291563bbe8d88907dd61a5b82306b0ee3d9f12733e8d",
+        "size_bytes": 7818573
+      }
+    },
+    {
+      "case_name": "single_lift_rope",
+      "chamfer_distance_m": 0.00639078874635111,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_rope/training/best_checkpoint.pth",
+        "sha256": "05bb7385e78ab76a0973c4387ac08e6019a50f327a123d4883423b1c189ba46c",
+        "size_bytes": 350651831
+      },
+      "frame_count": 15,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_rope/export/transductive_reconstruction_result.json",
+        "sha256": "615a448fcbaf75bfc00deef9f9f509aeebca5de1bb7a63ef19c70057b3529a93"
+      },
+      "track_error_m": 0.011500131655278334,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_rope/training/transductive_training_audit.json",
+        "sha256": "3c2d1c28f82b30bd3ad77c5df930827531b11e19a4054fd74df3b646391c83d9",
+        "size_bytes": 14593
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_rope/export/trajectory.pkl",
+        "sha256": "f0621186c46eaf145a87637dd3f26558e60c330f9d04ce298a3f73f87ddff985",
+        "size_bytes": 1288941
+      }
+    },
+    {
+      "case_name": "single_lift_sloth",
+      "chamfer_distance_m": 0.011491386490284547,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_sloth/training/best_checkpoint.pth",
+        "sha256": "746ae27609cc684f486200bfbe03236edf94147f6f689f66c87a613ee67e0681",
+        "size_bytes": 350651831
+      },
+      "frame_count": 26,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_sloth/export/transductive_reconstruction_result.json",
+        "sha256": "c4312d18f34c69eb7d33d585d3752cd5f57683756461006e9eaf054a0186b4ce"
+      },
+      "track_error_m": 0.01792076849370291,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_sloth/training/transductive_training_audit.json",
+        "sha256": "ca14b6130d52a1c5b8e1bdf6e032f939582111fc64c98bc0dbfdf64dd0bb7682",
+        "size_bytes": 14624
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_sloth/export/trajectory.pkl",
+        "sha256": "a023350402c615ee2eb3871899065b82d91febb9a3b2d2e1d09ad7291a693d7a",
+        "size_bytes": 7033041
+      }
+    },
+    {
+      "case_name": "single_lift_zebra",
+      "chamfer_distance_m": 0.01080254247709831,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_zebra/training/best_checkpoint.pth",
+        "sha256": "4b443df8d3c3e09409c364db624890e009f7bed6253ce466b09e5cbe2fc777ef",
+        "size_bytes": 350651831
+      },
+      "frame_count": 20,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_zebra/export/transductive_reconstruction_result.json",
+        "sha256": "7d9e1339daf0ca0a9fca6fbf112e6a6716c0354d17c75a53de8e2518b93d530a"
+      },
+      "track_error_m": 0.018778650036852113,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_zebra/training/transductive_training_audit.json",
+        "sha256": "b17df04cac821962a071756c392eb3b5bebeb49aef584054995fce9870d4da8e",
+        "size_bytes": 14624
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_lift_zebra/export/trajectory.pkl",
+        "sha256": "1f0017f141257544423c1c53bb1f50e7a46e60f55bca7f3ee8e97d602acf7273",
+        "size_bytes": 3907869
+      }
+    },
+    {
+      "case_name": "single_push_rope",
+      "chamfer_distance_m": 0.0045099354203819685,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope/training/best_checkpoint.pth",
+        "sha256": "07f7daa8d4e4469458c77ff2f423a8ab210d5ef49fb7f3be4cef50182c13e08a",
+        "size_bytes": 350651831
+      },
+      "frame_count": 18,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope/export/transductive_reconstruction_result.json",
+        "sha256": "d99872af157c03e10867d3c78f2b453dc294146364c4e19fcfaa9a81e42b88c5"
+      },
+      "track_error_m": 0.011221333023488139,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope/training/transductive_training_audit.json",
+        "sha256": "ce112293d91396b9eb49a0181744683c604f2941632e374de10f2c240cd12889",
+        "size_bytes": 14592
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope/export/trajectory.pkl",
+        "sha256": "9d89f662f0428a4032cce68a47639434004c7c12150cc03a280e98bc626b48ea",
+        "size_bytes": 1623213
+      }
+    },
+    {
+      "case_name": "single_push_rope_1",
+      "chamfer_distance_m": 0.004320957026336044,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_1/training/best_checkpoint.pth",
+        "sha256": "50f902b598c9120ef69e426e38a9bb03961035b59e075d9d58e77ee52fcbaf3d",
+        "size_bytes": 350651831
+      },
+      "frame_count": 28,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_1/export/transductive_reconstruction_result.json",
+        "sha256": "860f2f0fcd0b8622a45782fb586751f59efccfe98fbcb4204842107ca079e5fd"
+      },
+      "track_error_m": 0.006717749452177112,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_1/training/transductive_training_audit.json",
+        "sha256": "25720e9c6ea5b35ef378435fd0249919366f56a9af70fddd56da4ebf556a9197",
+        "size_bytes": 14657
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_1/export/trajectory.pkl",
+        "sha256": "be0a22f3e9487a4801c1414b68b63534561759114186a021d3937f31dd83e910",
+        "size_bytes": 2531613
+      }
+    },
+    {
+      "case_name": "single_push_rope_4",
+      "chamfer_distance_m": 0.005122202450344364,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_4/training/best_checkpoint.pth",
+        "sha256": "123ba2709e0d5f331a0917f3020f4a2b84d8d3a9ba775a3f1b1c62d8ab69fd0e",
+        "size_bytes": 350651831
+      },
+      "frame_count": 25,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_4/export/transductive_reconstruction_result.json",
+        "sha256": "89e1ef73d33399d7d2034289e15498f054fba84b7b43e6c870570481531ec3d6"
+      },
+      "track_error_m": 0.009824175608394997,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_4/training/transductive_training_audit.json",
+        "sha256": "68b0fc7863e7f7ba54f7b610c0a42647979812b9fde59108e93645a4c7807b0f",
+        "size_bytes": 14658
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_rope_4/export/trajectory.pkl",
+        "sha256": "4ee95d029d760076031a0991c6731fc80dce6c564979ece5dcfe8df7d5cc4334",
+        "size_bytes": 851721
+      }
+    },
+    {
+      "case_name": "single_push_sloth",
+      "chamfer_distance_m": 0.027701430763917543,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_sloth/training/best_checkpoint.pth",
+        "sha256": "aca76d568d08db6359c446fe469a5dc9da2cd93dfaf7288d90427a70bd16b990",
+        "size_bytes": 350651831
+      },
+      "frame_count": 21,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_sloth/export/transductive_reconstruction_result.json",
+        "sha256": "d14c16d6342b8a14224449fd5992d2223e54f7872632afb6e04bdc97bcce82b2"
+      },
+      "track_error_m": 0.046558255061434496,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_sloth/training/transductive_training_audit.json",
+        "sha256": "ebb8014d52dce55ec9ca50496266d3545613489a4baa83e79fefa163938f5bac",
+        "size_bytes": 14629
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/single_push_sloth/export/trajectory.pkl",
+        "sha256": "e3c69f83c94c53e8568c74a6a85126b57aa7545c5c47c1056fcad0c62408c078",
+        "size_bytes": 5116461
+      }
+    },
+    {
+      "case_name": "weird_package",
+      "chamfer_distance_m": 0.012586078290027516,
+      "checkpoint": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/weird_package/training/best_checkpoint.pth",
+        "sha256": "1252d9d3589b54b0a3a4e88e198bdf0c98dc65ee3071277242d24a8e3e4ed130",
+        "size_bytes": 350651831
+      },
+      "frame_count": 12,
+      "result": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/weird_package/export/transductive_reconstruction_result.json",
+        "sha256": "4371854595857248caf43343a8052a72dacd95bf995a8f62343be2f5e27faf63"
+      },
+      "track_error_m": 0.039387613428215354,
+      "training_audit": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/weird_package/training/transductive_training_audit.json",
+        "sha256": "4339bbdf3b04494d8d4780ca3a59dc41a01d748e57c62dfb9db34c714f8dd123",
+        "size_bytes": 14496
+      },
+      "trajectory": {
+        "path": "/home/florianpfaff/matphys-transductive-bpt-v1/runs/matphys-fitall-22-v1/cases/weird_package/export/trajectory.pkl",
+        "sha256": "dbfb1bc84e51c6c02dedce6ebd81f7f3cc399d7ccdf2047a6a71011044ec2436",
+        "size_bytes": 2121117
+      }
+    }
+  ],
+  "claim_boundary": "offline per-case reconstruction control only; future observations and released test outcomes are used during fitting; not causal future prediction",
+  "contract": "matphys-offline-all-frame-reconstruction-aggregate-v1",
+  "future_observations_used": true,
+  "metrics": {
+    "chamfer_distance_m": {
+      "case_balanced_mean_m": 0.01221185766176235,
+      "case_balanced_percent_vs_reference": 52.648220772029354,
+      "frame_weighted_mean_m": 0.013116646573421934,
+      "frame_weighted_percent_vs_reference": 63.958082167774165,
+      "published_reference_m": 0.008
+    },
+    "track_error_m": {
+      "case_balanced_mean_m": 0.026880676454835786,
+      "case_balanced_percent_vs_reference": 79.20450969890524,
+      "frame_weighted_mean_m": 0.030874853224507053,
+      "frame_weighted_percent_vs_reference": 105.83235483004701,
+      "published_reference_m": 0.015
+    }
+  },
+  "released_test_outcomes_used_in_objective": true,
+  "schema_version": 1,
+  "test_frame_count": 735
+}
