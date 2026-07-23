@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-open27-adaptive-covariance-view-budget-v1-development",
+  "status": "development-selected on the fully outcome-open open27 panel; frozen candidate only after this file is committed",
+  "claim_boundary": "This is a post-hoc threshold-grid-selected development result on reconstructed proxy targets. It may nominate one candidate for a disjoint fresh-object test. It cannot establish covariance calibration, safety, official Deform360 parity, sensor-count reduction, or state of the art.",
+  "parents": {
+    "selected_rbf_camera_budget_config": {
+      "path": "configs/sota/deform360_selected_rbf_primary_camera_budget_transfer_v1_development.json",
+      "sha256": "dd7a005e235ab634e75e6bb14a06d972df3ad96002400be605fef89dd7b0d6fe"
+    }
+  },
+  "method": {
+    "camera_budgets": [
+      4,
+      8
+    ],
+    "camera_budget_semantics": "distinct dynamic RGB prefixes activated after all-view frame-zero planning, with four-view prefixes cached before escalation; not a full sensor-count ablation",
+    "routing_score": "90th percentile across covariance-valid centers of sqrt(trace(total triangulation covariance)) divided by the frame-zero all-point bounding-box diagonal",
+    "covariance_components": "projection-Jacobian covariance plus leave-one-camera-out covariance when available",
+    "minimum_covariance_valid_centers": 8,
+    "maximum_normalized_covariance_dispersion": 0.015,
+    "route_order": "try four views, then eight views",
+    "accepted_route": "use the selected budget measurement, frozen current-observation physical/persistence Chamfer selector, separate recursive RBF states, and exact HELD_RBF_CONFIG",
+    "double_rejection": "bit-exact physical-prior forecast interval and no update to either recursive RBF state",
+    "covariance_interpretation": "target-free ranking and abstention score only; no calibrated probability or coverage claim"
+  },
+  "development_camera_plan_accounting": {
+    "nested_case_count": 26,
+    "nonnested_case_count": 1,
+    "nonnested_case": "170-spider-ep0003",
+    "affected_update_frames": [
+      38,
+      57
+    ],
+    "distinct_cameras_activated_in_each_affected_interval": 9,
+    "prospective_requirement": "use one frozen nested activation order so the four-view set is a strict prefix of the eight-view set"
+  },
+  "development_selection": {
+    "disclosure": "The threshold grid and selection rule were conceived after inspecting open27 outcomes and are post hoc.",
+    "candidate_threshold_grid": [
+      0.005,
+      0.0075,
+      0.01,
+      0.0125,
+      0.015
+    ],
+    "selection_rule": "choose the largest grid threshold whose maximum per-case Chamfer regression versus physical is no greater than 10 percent and whose equal-case identity and Chamfer means are both no worse than fixed four views",
+    "full_panel_selected_threshold": 0.015,
+    "leave_one_object_out_training_selection": {
+      "002-rope-silk": 0.015,
+      "083-blanket-cloth": null,
+      "085-scarf-cloth": 0.015,
+      "092-squirrel": 0.015,
+      "170-spider": 0.015
+    },
+    "leave_one_object_out_interpretation": "four of five folds select the same largest threshold; the blanket-held-out training fold admits no candidate and would fall back to fixed four views; this is stability evidence, not validation",
+    "known_covariance_miscalibration": {
+      "nominal_coverage": 0.95,
+      "empirical_coverage": 0.0795,
+      "consequence": "never describe the routing score as calibrated uncertainty"
+    }
+  },
+  "bound_inputs": {
+    "measurements": {
+      "4": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-measurements",
+        "file_count": 56,
+        "total_file_bytes": 1643339,
+        "inventory_sha256": "baa9c35a91da4eb3843cdcbb63889d0e2fd60532122da183cad1eda3a4c82141"
+      },
+      "8": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-measurements",
+        "file_count": 56,
+        "total_file_bytes": 2202895,
+        "inventory_sha256": "3aad3d81fb30e5701bf39011c8c9d00483c35555178fc2c7f4f83afeda9342b9"
+      }
+    },
+    "uncertainty": {
+      "4": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-uncertainty",
+        "file_count": 56,
+        "total_file_bytes": 1794611,
+        "inventory_sha256": "e055c903323b8b054c3730618b97caaf85a60e9613933c8633ef397b7c77beeb"
+      },
+      "8": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-uncertainty",
+        "file_count": 56,
+        "total_file_bytes": 2358852,
+        "inventory_sha256": "5da46cf3859ada32f9c5d8d38ef4958331c51c4554300f2ae60b2266832552c1"
+      }
+    }
+  },
+  "implementation": {
+    "predictor_source": "src/bayesian_phystwin/deform360_adaptive_covariance_rbf.py",
+    "evaluator_source": "src/bayesian_phystwin/deform360_adaptive_covariance_evaluation.py",
+    "cli_source": "src/bayesian_phystwin/cli/deform360_adaptive_covariance_evaluation.py",
+    "predictor_accepts_target": false,
+    "all_27_predictions_completed_and_hashed_before_any_target_open": true,
+    "atomic_output_publication": true,
+    "exact_input_inventories_enforced": true,
+    "camera_budget_cardinality_and_manifest_archive_equality_enforced": true,
+    "development_config_and_parent_hash_emitted_by_evaluator": true,
+    "prospective_sealing_boundary": "This development evaluator is not a prospective sealer. Fresh measurements, covariances, routes, diagnostics, and prediction arrays must be durably sealed in a separate prepare phase before any target-scoring process is authorized."
+  },
+  "development_result": {
+    "adaptive_identity_rmse_m": 0.007588757870631461,
+    "adaptive_symmetric_chamfer_m": 0.006465069681595665,
+    "route_counts": {
+      "4_view_rbf": 55,
+      "8_view_rbf": 15,
+      "physical_prior_fallback": 11
+    },
+    "nominal_route_budget_equal_interval_mean": 5.283950617283951,
+    "distinct_tracked_camera_count_equal_interval_mean": 5.308641975308642,
+    "joint_case_wins_vs_physical": 20,
+    "maximum_case_chamfer_relative_regression_vs_physical": 0.0849456904620125,
+    "case_count_above_10_percent_regression": 0,
+    "relative_to_fixed_four": {
+      "identity": -0.017352040561626092,
+      "chamfer": -0.04820851523538505
+    },
+    "relative_to_fixed_eight": {
+      "identity": 0.01243718841214414,
+      "chamfer": -0.01449042797004585
+    }
+  },
+  "outputs": {
+    "development_evaluation_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-adaptive-covariance-view-budget-v1-open27-development"
+  },
+  "prospective_promotion": {
+    "decision": "FREEZE_ONE_CANDIDATE_FOR_FRESH_CROSS_OBJECT_TEST",
+    "current_authorization": "do not open or reuse another protocol's reserved cohort",
+    "requirements": [
+      "use a separately hash-selected object-disjoint cohort",
+      "freeze a nested four-to-eight camera activation rule before tracking",
+      "seal all target-free measurements, covariances, routes, and predictions before opening any future targets",
+      "make no threshold or feature change after fresh feature extraction",
+      "use equal object weighting and object-cluster inference",
+      "report automatic-twin failures and persistence fallbacks without outcome-dependent exclusion"
+    ]
+  }
+}
