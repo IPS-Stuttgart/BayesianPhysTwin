@@ -549,14 +549,14 @@ def _validate_measurement_root(
         inputs = manifest.get("inputs")
         expected_input_paths = {
             "prediction_seal": PANEL_ROOT / case / "prediction_seal.json",
-            "prediction_archive": PANEL_ROOT / case / "sealed_prediction.npz",
             "intrinsics": (
                 PROCESSED_ROOT / case / "episode_0000" / "undistorted_intrinsics.npy"
             ),
             "extrinsics": (PROCESSED_ROOT / case / "episode_0000" / "extrinsics.npy"),
         }
         _require(
-            isinstance(inputs, dict) and set(inputs) == set(expected_input_paths),
+            isinstance(inputs, dict)
+            and set(inputs) == {*expected_input_paths, "prediction_archive"},
             f"{camera_count}-view immutable inputs changed for {case}",
         )
         for input_name, expected_path in expected_input_paths.items():
@@ -567,6 +567,15 @@ def _validate_measurement_root(
                 and _is_sha256(input_record.get("sha256")),
                 f"{camera_count}-view {input_name} binding changed for {case}",
             )
+        archive_record = inputs["prediction_archive"]
+        archive_input_path = Path(str(archive_record.get("path", "")))
+        _require(
+            isinstance(archive_record, dict)
+            and archive_input_path.parent == PANEL_ROOT / case
+            and archive_input_path.name in {"prediction.npz", "sealed_prediction.npz"}
+            and _is_sha256(archive_record.get("sha256")),
+            f"{camera_count}-view prediction_archive binding changed for {case}",
+        )
         candidate_ids = plan.get("candidate_ids")
         _require(
             isinstance(candidate_ids, list)

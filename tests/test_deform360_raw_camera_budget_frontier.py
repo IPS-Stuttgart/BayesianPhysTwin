@@ -139,7 +139,7 @@ def _build_budget(
                     "sha256": _fake_sha256(f"{case}/prediction_seal"),
                 },
                 "prediction_archive": {
-                    "path": str(panel_case / "sealed_prediction.npz"),
+                    "path": str(panel_case / "prediction.npz"),
                     "sha256": _fake_sha256(f"{case}/prediction_archive"),
                 },
                 "intrinsics": {
