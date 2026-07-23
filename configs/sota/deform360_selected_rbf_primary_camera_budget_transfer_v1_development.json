@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-open27-selected-rbf-primary-camera-budget-transfer-v1-development",
+  "status": "prospectively frozen before any 2/4-view primary-only outcome was produced or inspected; 8-view compatibility was already established read-only",
+  "freeze": {
+    "date_utc": "2026-07-23",
+    "low_view_primary_outcome_status_at_freeze": {
+      "2": "not produced or inspected",
+      "4": "not produced or inspected"
+    },
+    "eight_view_compatibility_status_at_freeze": "read-only in-memory parity established and inspected for all 27 cases; no fresh 8-view evaluation root materialized",
+    "saved_parity_artifact_status_at_freeze": "not produced or inspected",
+    "method_selection": "exact target-free selected-backbone support-gated ungated RBF implementation transferred without tuning"
+  },
+  "parents": {
+    "gated_transfer": {
+      "path": "configs/sota/deform360_gated_camera_budget_transfer_v1_development.json",
+      "sha256": "a4997964dccef81ba02a67588e6c3730ce263b841c36b6dab6199b56c73a3291"
+    },
+    "raw_frontier": {
+      "path": "configs/sota/deform360_raw_camera_budget_frontier_v1_development.json",
+      "sha256": "27abed3caa8a54ff4d0744f3de06407ae9e7908f124c3fbb2663d73a83526609"
+    }
+  },
+  "implementation": {
+    "analyzer_commit": "20ab9aeffa4d59a3c6e6950023ae7c7613368efe",
+    "analyzer_source": "src/bayesian_phystwin/deform360_primary_camera_budget_transfer.py",
+    "evaluator_commit": "20ab9aeffa4d59a3c6e6950023ae7c7613368efe",
+    "evaluator_source": "src/bayesian_phystwin/deform360_raw_camera_primary_evaluation.py",
+    "held_predictor_commit": "3a23946ab3d647be7c836f92551e264258042325",
+    "held_predictor_source": "src/bayesian_phystwin/deform360_held_online_prefix.py"
+  },
+  "runtime": {
+    "python_executable": "/home/florianpfaff/.venvs/motioncrafter-v1/bin/python",
+    "python_version": "3.12.3",
+    "numpy_version": "2.0.2",
+    "scipy_version": "1.17.1",
+    "pip_freeze_all_sorted_sha256": "3ee155974316d5b200240b47d44328763ba46c83a5e56e93a2a49c4e4f060e90",
+    "gpu_required": false,
+    "pythonpath_contract": "clean_clone/src only",
+    "isolated_mode_forbidden": true,
+    "bytecode_writes_forbidden": true
+  },
+  "method": {
+    "camera_counts": [
+      2,
+      4,
+      8
+    ],
+    "camera_budget_semantics": "dynamic tracked-view count after all-view frame-zero planning; not a full sensor-count ablation",
+    "primary_evaluation_protocol_id": "deform360-open27-raw-camera-selected-backbone-rbf-primary-v1-development",
+    "parity_protocol_id": "deform360-open27-raw-camera-selected-backbone-rbf-parity-v1-development",
+    "gated_reference_protocol_id": "deform360-open27-raw-camera-covariance-gated-rbf-cpd-v1-development",
+    "primary_arm": "selected_backbone_euclidean_rbf_ungated",
+    "comparators": [
+      "physical_prior",
+      "persistence",
+      "selected_raw_backbone"
+    ],
+    "primary_metrics": [
+      "post_update_hidden_identity_rmse_m",
+      "post_update_hidden_symmetric_chamfer_m"
+    ],
+    "minimum_selector_support": 3,
+    "insufficient_support_default": "persistence",
+    "covariance_or_cpd_used": false
+  },
+  "bound_inputs": {
+    "measurements": {
+      "2": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-measurements",
+        "file_count": 56,
+        "total_file_bytes": 1297772,
+        "inventory_sha256": "4f111f1dcab7a423d2256babaa7481fd3e4c795403832632cf8f6ebbd3d83814"
+      },
+      "4": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-measurements",
+        "file_count": 56,
+        "total_file_bytes": 1643339,
+        "inventory_sha256": "baa9c35a91da4eb3843cdcbb63889d0e2fd60532122da183cad1eda3a4c82141"
+      },
+      "8": {
+        "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-measurements",
+        "file_count": 56,
+        "total_file_bytes": 2202895,
+        "inventory_sha256": "3aad3d81fb30e5701bf39011c8c9d00483c35555178fc2c7f4f83afeda9342b9"
+      }
+    },
+    "gated_8_reference": {
+      "root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-gated-base-open27-development",
+      "file_count": 55,
+      "total_file_bytes": 205877144,
+      "inventory_sha256": "257d29824a7f9ccd7a2b849f4547264a0713c60275de2783f9a5c03b0a7d8288",
+      "summary_file_sha256": "cf11fc52e573fa8845a50be14f82100ee006abfa4e97a941f4eddf0f89a2afd7",
+      "summary_result_sha256": "358ad2df91e68a097f59acb60bef760d1791e1d067d86ae90cf2b3fcf4d5798e"
+    }
+  },
+  "outputs": {
+    "primary_evaluations": {
+      "2": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-selected-rbf-primary-v1-cam2-open27-development",
+      "4": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-selected-rbf-primary-v1-cam4-open27-development",
+      "8": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-selected-rbf-primary-v1-cam8-parity-open27-development"
+    },
+    "execution_root": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-selected-rbf-primary-v1-execution",
+    "parity_artifact": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-selected-rbf-primary-v1-execution/cam8-parity.json",
+    "analysis_output": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-selected-rbf-primary-v1-frontier"
+  },
+  "excluded_partial_roots": {
+    "2": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam2-gated-base-open27-development",
+    "4": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-budget-v1-cam4-gated-base-open27-development"
+  },
+  "decision": {
+    "candidate_camera_count": 4,
+    "reference_camera_count": 8,
+    "descriptive_camera_counts": [
+      2
+    ],
+    "go_if_all": {
+      "minimum_fraction_of_8_view_relative_improvement_retained_each_primary_metric": 0.8,
+      "minimum_joint_case_wins_vs_physical": 18,
+      "all_five_object_mean_differences_vs_physical_improve_on_both_primary_metrics": true,
+      "maximum_case_chamfer_relative_regression_vs_physical": 0.1
+    },
+    "secondary_field_value_check": "report whether the 4-view primary arm improves both aggregate primary metrics over selected_raw_backbone; this does not override the four preregistered GO gates",
+    "tie_policy": "ties are not improvements or wins; the maximum regression bound is inclusive"
+  },
+  "claim_boundary": "Outcome-open fixed-method development transfer using reconstructed proxy targets. The low-view outcomes were absent and uninspected at freeze; the 8-view compatibility result was already known. This is not held confirmation, a full sensor-count ablation, official Deform360 parity, or state-of-the-art evidence."
+}
