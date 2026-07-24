@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "analysis_id": "phystwin-cotracker3-multiview-priority-analysis-v1",
+  "locked_at_utc": "2026-07-24T10:00:20Z",
+  "status": "Locked before any newly extracted remaining-case future prediction score was computed.",
+  "protocol": {
+    "path": "configs/sota/phystwin_cotracker3_multiview_priority_exploratory_v1.json",
+    "sha256": "f701097e52195015d2805c7fb3cd84779fd6c3887b38be1e83d955c7289891af"
+  },
+  "case_subset": {
+    "remote_path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/exploratory19_family_selection.json",
+    "sha256": "8cc895b2e4180e54191528374d8e2dbcc5dc564259d49331fd982416c7cf842d"
+  },
+  "analysis_software": {
+    "module": "src/bayesian_phystwin/phystwin_multiview_priority_analysis.py",
+    "module_sha256": "007d81c55b7cf97225e6fc080f3504a2a0713c64b3362032ffd78e5f5afc8814",
+    "script": "scripts/remote/analyze_phystwin_cotracker3_multiview_priority.py",
+    "script_sha256": "3841f34e377e5a5b514273a6d405da4d9d7fd1f22b2387fd129e88b5e8ab3bfa"
+  },
+  "comparison": {
+    "source_observation": "cotracker3_source_depth",
+    "candidate_observation": "cotracker3_multiview_priority",
+    "primary_arm": "causal_selected_dense_relative_cap",
+    "secondary_fixed_graph_arm": "combined_graph__lambda_0p0001__cap_060mm",
+    "manual_prefix_override": false
+  },
+  "statistics": {
+    "bootstrap_unit": "conservative physical-object cluster",
+    "bootstrap_draws": 100000,
+    "bootstrap_seed": 20260724,
+    "interval": "2.5 and 97.5 percent quantiles of equal-cluster mean differences in metres"
+  },
+  "decision": "Only the primary arm and gates in the linked protocol determine whether a fresh-object preregistration is justified. The fixed graph arm is diagnostic and cannot rescue a failed primary gate."
+}
