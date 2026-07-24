@@ -22,7 +22,7 @@ bound to source protocol SHA-256
 `1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171`.
 It does not alter the already-archived v2 force episodes or their target QA.
 The Stage-2 JSON SHA-256 is
-`d12d62f74a7b3140883fcf0d7c638fccde3fabc0a335032ef773b57560703a9b`.
+`a42969b7cfd4fc3dfde8868d31a4cfb6e538c4fdbe9f913c511e2ecc428e3670`.
 
 The CPU-only preflight, still before Stage 1, also closed a provenance gap
 without changing any execution semantics. The lock now binds upstream
@@ -43,7 +43,8 @@ identity. The same lock now requires the Stage-1 handoff to carry the exact
 preflighted implementation SHA-256
 `a93a272ff1b3c518591c715d9cf5f83222aba3ae6a849cef4a6e1e8bb3c4c49c`;
 a merely well-formed but substituted Stage-1 identity is rejected before any
-case data are resolved.
+case data are resolved. The required Stage-1 preflight SHA-256 is
+`036454b6701ff1eb4583f3666f5cda8683e12ff55fd1caba294580cbf40fd8be`.
 
 The final pre-run audit also corrected the implementation to the already
 declared per-node force bound. Previously, the largest force at any node
