@@ -2,8 +2,8 @@
 
 Lock date: 2026-07-24
 
-Status: locked after v2 source-target QA and before any Stage-1 training
-outcome. No historical target artifact was opened.
+Status: not authorized after the frozen Stage-1 competence gate failed.
+No Stage-2 or historical-target artifact was opened.
 
 ## Why this amendment exists
 
@@ -151,6 +151,11 @@ It binds the exact CPU-validated deployment at commit `e26c933`; every earlier
 Stage-2 deployment is recorded as superseded without an outcome.
 It leaves Stage 2 blocked until the registered Stage-1 gate passes and an
 explicit GPU release is observed.
+
+The registered Stage-1 run subsequently failed with 0/3 passing folds and
+0.97% mean held-out force-target improvement against the frozen 10% gate.
+Consequently this Stage-2 protocol remains unexecuted and permanently
+unauthorized for this model snapshot.
 
 ## Claim boundary
 

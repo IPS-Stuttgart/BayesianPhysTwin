@@ -2,7 +2,7 @@
 
 Date: 2026-07-24
 
-Status: source target QA passed; Stage 1 has not started.
+Status: source target QA passed; the subsequently frozen Stage 1 failed.
 
 ## Immutable inputs
 
@@ -56,6 +56,12 @@ independent registered experiments. It will run the frozen three-fold,
 three-seed crossfit and test normalized force-target competence. Passing Stage
 1 still does not authorize a simulator or state-of-the-art claim; it only
 permits the information-matched official-Warp Stage 2.
+
+Stage 1 was later executed from the exact preflighted deployment and failed
+with 0/3 passing folds and 0.97% mean held-out improvement against its 10%
+gate. The immutable result is documented in
+`docs/phystwin_equivariant_force_stage1_v2_result.md`. Stage 2 was not
+authorized and no target artifact was opened.
 
 Before Stage 1, the previously underspecified Stage-2 replay and seed
 aggregation choices were independently locked in

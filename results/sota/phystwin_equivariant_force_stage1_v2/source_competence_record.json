@@ -1,0 +1,2477 @@
+{
+  "case_mean_force_target_improvement": {
+    "double_lift_cloth_3": 0.028546051489416174,
+    "double_lift_sloth": 0.01891610274188234,
+    "double_stretch_sloth": 0.020752875653913743,
+    "double_stretch_zebra": 0.0035325321964031486,
+    "rope_double_hand": 0.09170271127368719,
+    "single_lift_cloth": 0.031480230242497166,
+    "single_lift_cloth_1": 0.0019663895573839296,
+    "single_lift_cloth_3": 0.007317906979463884,
+    "single_lift_cloth_4": -0.0004960942277942119,
+    "single_lift_dinosor": 0.0005463438223231402,
+    "single_lift_rope": 0.004028161736861972,
+    "single_lift_sloth": -0.010519574700079767,
+    "single_lift_zebra": -0.0013894035637869173,
+    "single_push_rope": 0.0014853392033346013,
+    "single_push_rope_1": -0.017629817739477433,
+    "single_push_rope_4": 0.003655900426586108,
+    "weird_package": -0.019229424709556204
+  },
+  "claim_boundary": "Source inverse-dynamics competence only. Passing does not establish trajectory improvement, calibration, or state of the art.",
+  "contract": "phystwin-equivariant-generalized-force-v2",
+  "fold_competence_wins": [
+    false,
+    false,
+    false
+  ],
+  "folds": [
+    {
+      "fold": "fold_0",
+      "held_out_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "single_lift_cloth",
+        "single_push_rope_4",
+        "single_lift_dinosor",
+        "double_lift_cloth_3"
+      ],
+      "seeds": [
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 20,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.12144377827644348,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.24533340334892273,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.030134038999676704,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.11264253407716751,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.07072050124406815,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.11343524605035782,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "weird_package",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.09970149753611894,
+                "frame_count": 7,
+                "improvement": -0.011291061337908026,
+                "relative_rmse": 1.011291061337908,
+                "zero_normalized_force_rmse": 0.0985883306475752
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/weird_package.npz",
+              "latent_sha256": "5d7dafbba67cee014517ced94b08684f32b042a014991dabfc1e093e7f1f5c8e"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 103,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.1325153410434723,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.06812188029289246,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.06018175557255745,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3894825875759125,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.12593728303909302,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.11666381359100342,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_stretch_zebra",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22960528715382175,
+                "frame_count": 35,
+                "improvement": 0.0011574599531877228,
+                "relative_rmse": 0.9988425400468123,
+                "zero_normalized_force_rmse": 0.22987135404050868
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/double_stretch_zebra.npz",
+              "latent_sha256": "7d182af2604038c4f0ad0ceb179e3af70ee99627163e4b16264de5b22ca68bc4"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 90,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.17716199159622192,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.17115747928619385,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.34670838713645935,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.03729824721813202,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.039608944207429886,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.06088485196232796,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2151535274801056,
+                "frame_count": 31,
+                "improvement": 0.028274817057516888,
+                "relative_rmse": 0.9717251829424831,
+                "zero_normalized_force_rmse": 0.22141396688783835
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/single_lift_cloth.npz",
+              "latent_sha256": "0b62fd037ba782b9e3a4a981e06c811e3925ececa0493ec3d0785ab79777999f"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 43,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.2838954031467438,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.2887512743473053,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.3443237543106079,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.30495119094848633,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.30896636843681335,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.2846739590167999,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope_4",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.45318598295193485,
+                "frame_count": 15,
+                "improvement": 0.003881847178853537,
+                "relative_rmse": 0.9961181528211465,
+                "zero_normalized_force_rmse": 0.45495203723418604
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/single_push_rope_4.npz",
+              "latent_sha256": "2ee5a75a1d08f630a4f91f319bec7aa809e185422f1426b8144e2d018131244a"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 45,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.04015856236219406,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.07283797860145569,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.028697432950139046,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.03578168526291847,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.056777600198984146,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.06298860162496567,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_dinosor",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.13407318763761492,
+                "frame_count": 15,
+                "improvement": 0.0024321990771876134,
+                "relative_rmse": 0.9975678009228124,
+                "zero_normalized_force_rmse": 0.1344000753769206
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/single_lift_dinosor.npz",
+              "latent_sha256": "7649fe38704ded7bc5d0c2f3d1e2d227ee3f7733d62256b09e386b53213f48fc"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 61,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.18768323957920074,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.1968311071395874,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.1375921666622162,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1899978220462799,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.1929861158132553,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.18273203074932098,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_lift_cloth_3",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.3298000084390562,
+                "frame_count": 21,
+                "improvement": 0.0258106540091233,
+                "relative_rmse": 0.9741893459908767,
+                "zero_normalized_force_rmse": 0.3385378928606604
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/double_lift_cloth_3.npz",
+              "latent_sha256": "2dafce6968733620541d2676000f54ae8dc2eb0a9bd063a15d1643e9c0adb655"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "116a0e3963c5c6e7bc6660a4c613bf54fc7fbe94680a1f56b4c1ff6cb8b9d256",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/model.json",
+            "manifest_sha256": "f1475afcc952d28f91fb37628418d05a06e3d54614dc357d2c97581976929acb",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_17/model.npz",
+            "weights_sha256": "0c54c0293d4be503ef7905b2696f4b63c57142e1f60dea0e3eff23002236bb4c"
+          },
+          "seed": 17
+        },
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 20,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.03216089308261871,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.12011853605508804,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.002438073279336095,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1148531436920166,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.11475108563899994,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.03135717287659645,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "weird_package",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.10076869118518632,
+                "frame_count": 7,
+                "improvement": -0.02211580745195163,
+                "relative_rmse": 1.0221158074519516,
+                "zero_normalized_force_rmse": 0.0985883306475752
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/weird_package.npz",
+              "latent_sha256": "95225d205d042529bf5eda4c235bae43d7ab12cbd9d7e75c048e6863dd7f90b2"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 103,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.09795230627059937,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.09577416628599167,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.09699037671089172,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.08630254119634628,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.062056198716163635,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.09998442977666855,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_stretch_zebra",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22836969301686053,
+                "frame_count": 35,
+                "improvement": 0.006532614861543551,
+                "relative_rmse": 0.9934673851384564,
+                "zero_normalized_force_rmse": 0.22987135404050868
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/double_stretch_zebra.npz",
+              "latent_sha256": "c0e5567a6e71305db6e654d6a36b60aa52a5f20ae9d05c3e4e674746e9262d2f"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 90,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.39545780420303345,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.11509209126234055,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.2940007150173187,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3488364517688751,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.06310918927192688,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.3519376814365387,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.21539716841870274,
+                "frame_count": 31,
+                "improvement": 0.027174430564190777,
+                "relative_rmse": 0.9728255694358092,
+                "zero_normalized_force_rmse": 0.22141396688783835
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/single_lift_cloth.npz",
+              "latent_sha256": "3d4ce6f47d33e4d2b90877554cbc89cb8ae88417d5e7fbbc69df5985083c98c8"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 43,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.33365529775619507,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.30219584703445435,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.2911520302295685,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3090416491031647,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.28207486867904663,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.31267908215522766,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope_4",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.4534909627529093,
+                "frame_count": 15,
+                "improvement": 0.0032114912379755944,
+                "relative_rmse": 0.9967885087620244,
+                "zero_normalized_force_rmse": 0.45495203723418604
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/single_push_rope_4.npz",
+              "latent_sha256": "de0b83abaeea77a9b8903cb70c2fcd926fc975b33774830910f65b23b861b84e"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 45,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.027421308681368828,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.046130262315273285,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.05121978372335434,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.05775484815239906,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.06278123706579208,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.0346086360514164,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_dinosor",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.134705684498104,
+                "frame_count": 15,
+                "improvement": -0.00227387611447627,
+                "relative_rmse": 1.0022738761144763,
+                "zero_normalized_force_rmse": 0.1344000753769206
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/single_lift_dinosor.npz",
+              "latent_sha256": "6cf4a425823e223f64601edfcd22ffd6746edcd04d99386aed0d16584609fb44"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 61,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.20165398716926575,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.19517210125923157,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.07634370774030685,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1927136331796646,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.1820082664489746,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.17946107685565948,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_lift_cloth_3",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.32866250170515926,
+                "frame_count": 21,
+                "improvement": 0.02917071135539251,
+                "relative_rmse": 0.9708292886446075,
+                "zero_normalized_force_rmse": 0.3385378928606604
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/double_lift_cloth_3.npz",
+              "latent_sha256": "d8a06b3b8fb713f726f2758ac46681cca14d9a28af15c729b88aa311a606cc22"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "0cd8b37a4dca92dbf3757bb7346184574c98da2d3fe3a24d89c097c8e68392fd",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/model.json",
+            "manifest_sha256": "a59e909f9ec582afa8c289f80ec82ea1587d5716349a278abed73d43105cd3f1",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_43/model.npz",
+            "weights_sha256": "767b1f7a2ff076a37cfdca712922ece07a25d97dd1d46c976786bbdc6fd3027c"
+          },
+          "seed": 43
+        },
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 20,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.016980819404125214,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.18361860513687134,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.031163331121206284,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.06780237704515457,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.031194612383842468,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.02562631294131279,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "weird_package",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.1009821938657055,
+                "frame_count": 7,
+                "improvement": -0.02428140533880896,
+                "relative_rmse": 1.024281405338809,
+                "zero_normalized_force_rmse": 0.0985883306475752
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/weird_package.npz",
+              "latent_sha256": "1aabecebe9b9b5f47f6992dc10bcabb540549da1dccf1aad761ea6ee24f417ef"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 103,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.048588644713163376,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.1278955489397049,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.0987204760313034,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.11348458379507065,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.08259708434343338,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.12530197203159332,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_stretch_zebra",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22920299807330713,
+                "frame_count": 35,
+                "improvement": 0.0029075217744781723,
+                "relative_rmse": 0.9970924782255218,
+                "zero_normalized_force_rmse": 0.22987135404050868
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/double_stretch_zebra.npz",
+              "latent_sha256": "db61336bb1bbd86ca94aff1e1daabad0804bf1065e9b9a8ab743041eda56f303"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 90,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.3192993104457855,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.1355535089969635,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.35040783882141113,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.33752647042274475,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3453008234500885,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.32855406403541565,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2127807167951053,
+                "frame_count": 31,
+                "improvement": 0.03899144310578384,
+                "relative_rmse": 0.9610085568942162,
+                "zero_normalized_force_rmse": 0.22141396688783835
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/single_lift_cloth.npz",
+              "latent_sha256": "39118fc470909b88e07db37c127396931bf04c0aadea70fd05aaae3eb32027ec"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 43,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.34684044122695923,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.3100588917732239,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.3166756331920624,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.32547852396965027,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3326411545276642,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.33532750606536865,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope_4",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.45318938795671193,
+                "frame_count": 15,
+                "improvement": 0.0038743628629291926,
+                "relative_rmse": 0.9961256371370708,
+                "zero_normalized_force_rmse": 0.45495203723418604
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/single_push_rope_4.npz",
+              "latent_sha256": "837bd8164f5aefb58b11b67056f34cc3ccb21698185337429262612521cbc131"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 45,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.05188177525997162,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.058971107006073,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.034102413803339005,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.025704650208353996,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.04439539834856987,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.029945122078061104,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_dinosor",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.13420106804233708,
+                "frame_count": 15,
+                "improvement": 0.001480708504258077,
+                "relative_rmse": 0.9985192914957419,
+                "zero_normalized_force_rmse": 0.1344000753769206
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/single_lift_dinosor.npz",
+              "latent_sha256": "992790a44da44887109bdfa950d576daab617f5024ed284b1d356fb653c0daa4"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 61,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.29913806915283203,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.3248259127140045,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.18104447424411774,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.09874699264764786,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.2652120888233185,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.08771616220474243,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_lift_cloth_3",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.32815940807560906,
+                "frame_count": 21,
+                "improvement": 0.030656789103732707,
+                "relative_rmse": 0.9693432108962673,
+                "zero_normalized_force_rmse": 0.3385378928606604
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/double_lift_cloth_3.npz",
+              "latent_sha256": "026e5fc514c3115f0d3b42b57b046e8c6b5712865454e087bbdce190ec2bcfe2"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "4ee63f233277d751fec10bb0383668bc6079a3dfa23d095b586d45179d2351a5",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/model.json",
+            "manifest_sha256": "578257216833f1a5c8a82569bafc53b7222a1d17e488c68878cf9afa63dc2cb3",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/seed_101/model.npz",
+            "weights_sha256": "20a8fcce251907db5b11ce9e5800bbffeb1a2c2bdaccd6f52752ffe5c1c20547"
+          },
+          "seed": 101
+        }
+      ]
+    },
+    {
+      "fold": "fold_1",
+      "held_out_cases": [
+        "double_lift_sloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "rope_double_hand",
+        "single_lift_rope",
+        "single_lift_cloth_3"
+      ],
+      "seeds": [
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 32,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.01727452129125595,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.017811760306358337,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.01893565058708191,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.0537981241941452,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.02290954999625683,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.017098519951105118,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_lift_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.12895348509765,
+                "frame_count": 11,
+                "improvement": 0.019262106212899033,
+                "relative_rmse": 0.980737893787101,
+                "zero_normalized_force_rmse": 0.13148618597747716
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/double_lift_sloth.npz",
+              "latent_sha256": "fb2f048e2b4dd403018d3f7c32501057e9ae78547bf81e534eba445058dd1126"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 90,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.06830455362796783,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.1671903282403946,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.36346903443336487,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.12013985216617584,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3762455880641937,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.3616468608379364,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_4",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.20991943160467785,
+                "frame_count": 30,
+                "improvement": 0.00137398367750996,
+                "relative_rmse": 0.99862601632249,
+                "zero_normalized_force_rmse": 0.2102082543149845
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/single_lift_cloth_4.npz",
+              "latent_sha256": "a5d752bb800be48e6c93fcb56d95b4d585a80f2b64ce9c1581433d276cdc54af"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 34,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.14247919619083405,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.16416053473949432,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.016402754932641983,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1427145153284073,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.10469678044319153,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.2135131061077118,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_zebra",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.1090279618892398,
+                "frame_count": 12,
+                "improvement": -0.00367042186605282,
+                "relative_rmse": 1.0036704218660528,
+                "zero_normalized_force_rmse": 0.10862924672676105
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/single_lift_zebra.npz",
+              "latent_sha256": "559a2ac89a581ec80bdfe769a352756f82e89abdbc8d276fca46e8751e84fd6d"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 138,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.065475232899189,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.06989111751317978,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.12439967691898346,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1629706621170044,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.07422918826341629,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.16534186899662018,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "rope_double_hand",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.18559726995993805,
+                "frame_count": 46,
+                "improvement": 0.08766614085189006,
+                "relative_rmse": 0.9123338591481099,
+                "zero_normalized_force_rmse": 0.2034313076281518
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/rope_double_hand.npz",
+              "latent_sha256": "c078744e264acfe5003ec61b8b8754720a8cc6ee308861a3702b33c26137a980"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 26,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.12422497570514679,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.2610521614551544,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.25189000368118286,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1338050812482834,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.14705690741539001,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.2034808248281479,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_rope",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2411475450376989,
+                "frame_count": 9,
+                "improvement": 0.007973912263528948,
+                "relative_rmse": 0.992026087736471,
+                "zero_normalized_force_rmse": 0.24308589060185992
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/single_lift_rope.npz",
+              "latent_sha256": "1fb9d9651eacf53833abda9e379d36aa14fa268f4a34a560ea986c83d7c719c6"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 81,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.286837637424469,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.2389933168888092,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.36400744318962097,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3635275363922119,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.05690866336226463,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.31676068902015686,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_3",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22457864386270526,
+                "frame_count": 28,
+                "improvement": 0.007997670639142251,
+                "relative_rmse": 0.9920023293608577,
+                "zero_normalized_force_rmse": 0.22638923036340064
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/single_lift_cloth_3.npz",
+              "latent_sha256": "5c55d74532820a362b3b58a83390134a9089a018ee1a81dfb9b7a9e04c443250"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "fbd5a9e2a8f5426d0b4e80d08f2e54911b37942a17a19c4658a72b314d08102d",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/model.json",
+            "manifest_sha256": "f0014ce666b47144946a3f9f9b98225ef5b79337953f4d246f150d8c61dc129e",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_17/model.npz",
+            "weights_sha256": "bdd36f85b526919d4f41c5c10283c80cc1044fc3c741da6abf9636d3980866f0"
+          },
+          "seed": 17
+        },
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 32,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.022731028497219086,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.08162851631641388,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.006582785397768021,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.0626039057970047,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.016891198232769966,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.013897347263991833,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_lift_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.1291714519963555,
+                "frame_count": 11,
+                "improvement": 0.017604389114444063,
+                "relative_rmse": 0.9823956108855559,
+                "zero_normalized_force_rmse": 0.13148618597747716
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/double_lift_sloth.npz",
+              "latent_sha256": "dc448a344562ddd168bb6d04b2fe492183b671beb2794b3450a41c598eded385"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 90,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.3597521483898163,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.23173965513706207,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.3400929868221283,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.11199438571929932,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.36212584376335144,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.3589412569999695,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_4",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.21104194713865373,
+                "frame_count": 30,
+                "improvement": -0.003966032763014216,
+                "relative_rmse": 1.0039660327630142,
+                "zero_normalized_force_rmse": 0.2102082543149845
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/single_lift_cloth_4.npz",
+              "latent_sha256": "d2185077cd5e6f02a4227d1753cfa7aedfcf1c5ec3f50a15e7f2bff32fb7a948"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 34,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.029725484549999237,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.023696238175034523,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.010635321959853172,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.10505478829145432,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.20823870599269867,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.054553765803575516,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_zebra",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.10920914519648955,
+                "frame_count": 12,
+                "improvement": -0.0053383272663865,
+                "relative_rmse": 1.0053383272663865,
+                "zero_normalized_force_rmse": 0.10862924672676105
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/single_lift_zebra.npz",
+              "latent_sha256": "e93b25024532a3e759221c14a10682e827cc52245bbaa7f4366aaba6cf2aba27"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 138,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.04788978025317192,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.08229036629199982,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.05259895697236061,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.16793674230575562,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.15419705212116241,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.04148993268609047,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "rope_double_hand",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.18291712791409334,
+                "frame_count": 46,
+                "improvement": 0.10084081920938115,
+                "relative_rmse": 0.8991591807906189,
+                "zero_normalized_force_rmse": 0.2034313076281518
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/rope_double_hand.npz",
+              "latent_sha256": "6521af577ab73de469370f72ec0423713fbc34a9b93ca91b53e13981714571a0"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 26,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.3065020740032196,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.12340012192726135,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.005107504781335592,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.24447348713874817,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.2039954960346222,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.24394722282886505,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_rope",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.24590438890589217,
+                "frame_count": 9,
+                "improvement": -0.011594660212708607,
+                "relative_rmse": 1.0115946602127086,
+                "zero_normalized_force_rmse": 0.24308589060185992
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/single_lift_rope.npz",
+              "latent_sha256": "87e4fbd29b658de968fa84e10bd2d7ab99a4a8d06ff424547eb4b72bb2eaf814"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 81,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.37636008858680725,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.09172620624303818,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.009209426119923592,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.1445966213941574,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3115203380584717,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.344163179397583,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_3",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22505361521522696,
+                "frame_count": 28,
+                "improvement": 0.005899640835519193,
+                "relative_rmse": 0.9941003591644808,
+                "zero_normalized_force_rmse": 0.22638923036340064
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/single_lift_cloth_3.npz",
+              "latent_sha256": "3e162ad9a3dbf38e04ff23f23fb2ae26f3c7c097a7f004725cfe5e231d507233"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "91a5aaf1de39d8b7d73054de23e29327db5eb466d9588963c6ba7a7d09dd03f0",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/model.json",
+            "manifest_sha256": "a340cd959b0d93b8fdcbf5c63b8c847a290093e30e1b336bf2ab85f9b08d2567",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_43/model.npz",
+            "weights_sha256": "1349654607794c450a4d6e9ede3726ee1d8e627d50b4d632c619066933efe5bc"
+          },
+          "seed": 43
+        },
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 32,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.007571064867079258,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.022043637931346893,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.014144261367619038,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.007197955157607794,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.013723351992666721,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.015539540909230709,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_lift_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.12887200222916137,
+                "frame_count": 11,
+                "improvement": 0.01988181289830393,
+                "relative_rmse": 0.9801181871016961,
+                "zero_normalized_force_rmse": 0.13148618597747716
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/double_lift_sloth.npz",
+              "latent_sha256": "d877970cea2d93453e430d0fae6d266be3ef29eac31ad85c94253c8468de68a7"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 90,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.32652902603149414,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.35518643260002136,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.35760846734046936,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3520315885543823,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3789452612400055,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.33675163984298706,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_4",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.20997623350642297,
+                "frame_count": 30,
+                "improvement": 0.0011037664021216198,
+                "relative_rmse": 0.9988962335978784,
+                "zero_normalized_force_rmse": 0.2102082543149845
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/single_lift_cloth_4.npz",
+              "latent_sha256": "98fae3bae4475aede431c01c427370947caad1e844cb74ba1f87bbc416dc8ddb"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 34,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.011433381587266922,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.11846628785133362,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.05439585819840431,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.04235545173287392,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.08789628744125366,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.012554897926747799,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_zebra",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.10810342268215475,
+                "frame_count": 12,
+                "improvement": 0.004840538441078568,
+                "relative_rmse": 0.9951594615589214,
+                "zero_normalized_force_rmse": 0.10862924672676105
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/single_lift_zebra.npz",
+              "latent_sha256": "3f8a24ec1e58f432f0130594884111fb53aafa39343c56bcba9fea40d53a32b3"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 138,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.15949082374572754,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.2294778823852539,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.04319467768073082,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.15914508700370789,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.06009043753147125,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.1393601894378662,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "rope_double_hand",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.18581391760806484,
+                "frame_count": 46,
+                "improvement": 0.08660117375979037,
+                "relative_rmse": 0.9133988262402096,
+                "zero_normalized_force_rmse": 0.2034313076281518
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/rope_double_hand.npz",
+              "latent_sha256": "4391389b4e48ce6134af661cceb983409a776cc44a2ed9c08b9b708fbb487dd9"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 26,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.2817254960536957,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.2023661881685257,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.2697518467903137,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.16191162168979645,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.16345299780368805,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.08392477035522461,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_rope",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.23926817001210846,
+                "frame_count": 9,
+                "improvement": 0.015705233159765575,
+                "relative_rmse": 0.9842947668402344,
+                "zero_normalized_force_rmse": 0.24308589060185992
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/single_lift_rope.npz",
+              "latent_sha256": "5b93b3301cc2b98174e055b0b387c63cf12b0e8fbf2f8751c63473ce18680958"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 81,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.18913006782531738,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.06594005972146988,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.371229350566864,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.006307814735919237,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3724801242351532,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.003549782559275627,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_3",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22456534602541434,
+                "frame_count": 28,
+                "improvement": 0.008056409463730207,
+                "relative_rmse": 0.9919435905362698,
+                "zero_normalized_force_rmse": 0.22638923036340064
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/single_lift_cloth_3.npz",
+              "latent_sha256": "97c1b12bed5f7f6a5b12d0ce86e4b99f3b608089fd09010c559f27b7b9c77b32"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "f4662ff386e1f002f7a31e85a78b259143e775fc88acafba70ef22e514d87776",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/model.json",
+            "manifest_sha256": "05af0be690ea1a3268e8162939a54c08fc5427468916006e27261293fb07f90c",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/seed_101/model.npz",
+            "weights_sha256": "bfbbfddd35df1a2e8811a519428fb13904153142ee473f995296435cebdd5308"
+          },
+          "seed": 101
+        }
+      ]
+    },
+    {
+      "fold": "fold_2",
+      "held_out_cases": [
+        "single_lift_sloth",
+        "single_push_rope_1",
+        "single_lift_cloth_1",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ],
+      "seeds": [
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 44,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.035264186561107635,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.15117350220680237,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.06693719327449799,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.05241820961236954,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.042092662304639816,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.03494849056005478,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.16548228686745542,
+                "frame_count": 15,
+                "improvement": -0.013571224781020463,
+                "relative_rmse": 1.0135712247810205,
+                "zero_normalized_force_rmse": 0.16326655968672302
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/single_lift_sloth.npz",
+              "latent_sha256": "cc4a17b1f5ebc69c037bf2b14d360b6018f8cc2a1220201da8235f1eb704dfa7"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 48,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.37517887353897095,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.40267646312713623,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.3939102292060852,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.4082070291042328,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.41803622245788574,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.37615281343460083,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope_1",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2288331255709904,
+                "frame_count": 16,
+                "improvement": -0.05698219603865584,
+                "relative_rmse": 1.0569821960386558,
+                "zero_normalized_force_rmse": 0.21649666988583932
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/single_push_rope_1.npz",
+              "latent_sha256": "bf46e8b1a719bd253c935b214dc4c496e1a4886d1d3e37eb887b41b74e986d81"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 57,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.32186591625213623,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.3277561068534851,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.310940682888031,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3222059905529022,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.31575891375541687,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.3247709274291992,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_1",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2642584513199809,
+                "frame_count": 20,
+                "improvement": 0.0009261314151558508,
+                "relative_rmse": 0.9990738685848441,
+                "zero_normalized_force_rmse": 0.26450341624317975
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/single_lift_cloth_1.npz",
+              "latent_sha256": "edb6c47df0e80747977dad43d2c0477ad26416628e5a367936f2a7146b7cb8ed"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 100,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.13501191139221191,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.10756969451904297,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.09201075881719589,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.18155334889888763,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.08153412491083145,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.1587594449520111,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_stretch_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2345733988053863,
+                "frame_count": 34,
+                "improvement": 0.019783123603533737,
+                "relative_rmse": 0.9802168763964663,
+                "zero_normalized_force_rmse": 0.23930765165739595
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/double_stretch_sloth.npz",
+              "latent_sha256": "5006b9cbcc2f010fd02387f141fb98fdbf4ad1d21299d6d2c184fe5d7d721dec"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 30,
+                "seed": 17,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.09589507430791855,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.11802208423614502,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.12408792972564697,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.06753996759653091,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.060076940804719925,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.11099126935005188,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2031465385584703,
+                "frame_count": 10,
+                "improvement": 0.00515676156846967,
+                "relative_rmse": 0.9948432384315303,
+                "zero_normalized_force_rmse": 0.20419954693440054
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/single_push_rope.npz",
+              "latent_sha256": "d29d27dc7c3aff593b2d4e412ecf28732db54dab35578c9c37afc1ea09f5ac7f"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "ef743d8d3c4fb786700f1a298a937dac3f23c642a68209e0ee14e205f152ba36",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/model.json",
+            "manifest_sha256": "26f93639a703393b072743c0f8bdbddf9073ad005744387ad6ca3e718b07b880",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_17/model.npz",
+            "weights_sha256": "48e870e3225a946d4b6a684e51fa4f8a1aa2d8c05f0c78d3f5e2d035ea56eb75"
+          },
+          "seed": 17
+        },
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 44,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.05297575145959854,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.331684947013855,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.015893327072262764,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.04572973772883415,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.036477092653512955,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.06855454295873642,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.16437742408972766,
+                "frame_count": 15,
+                "improvement": -0.006803992226798838,
+                "relative_rmse": 1.0068039922267988,
+                "zero_normalized_force_rmse": 0.16326655968672302
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/single_lift_sloth.npz",
+              "latent_sha256": "1cb656c2621f83ee669c0d7214d1deb3f704ec30ff3ccf0e48b1baba33ff8976"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 48,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.3937186002731323,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.41382795572280884,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.33737778663635254,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.4009661376476288,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3781413435935974,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.40415406227111816,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope_1",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2112338742267176,
+                "frame_count": 16,
+                "improvement": 0.024308898893903752,
+                "relative_rmse": 0.9756911011060962,
+                "zero_normalized_force_rmse": 0.21649666988583932
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/single_push_rope_1.npz",
+              "latent_sha256": "5ed80aa591e866bec8135f013fdd17bc1fcbc022a76cbffe9b46d98cf0ea6d66"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 57,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.29693543910980225,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.08299291133880615,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.21758109331130981,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3097282648086548,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3276074528694153,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.30550870299339294,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_1",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.263833558769163,
+                "frame_count": 20,
+                "improvement": 0.0025325097253220408,
+                "relative_rmse": 0.997467490274678,
+                "zero_normalized_force_rmse": 0.26450341624317975
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/single_lift_cloth_1.npz",
+              "latent_sha256": "830dae6972b61c7cc7a0d3751788073955bfbb59af6eb7c7ac5cbc73a96c0f75"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 100,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.0925835520029068,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.12011966854333878,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.07285130023956299,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.14328959584236145,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.16064943373203278,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.09274815768003464,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_stretch_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.23441468890182154,
+                "frame_count": 34,
+                "improvement": 0.020446328070526598,
+                "relative_rmse": 0.9795536719294734,
+                "zero_normalized_force_rmse": 0.23930765165739595
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/double_stretch_sloth.npz",
+              "latent_sha256": "50d9f8f44aedca3aa5eae6ef6ebde8650a108eb042773b1dee0bab904b2ebd22"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 30,
+                "seed": 43,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.19235646724700928,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.08586147427558899,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.027134131640195847,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.06574735790491104,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.1108391284942627,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.13126201927661896,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.20264160274486598,
+                "frame_count": 10,
+                "improvement": 0.007629518345773079,
+                "relative_rmse": 0.9923704816542269,
+                "zero_normalized_force_rmse": 0.20419954693440054
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/single_push_rope.npz",
+              "latent_sha256": "bad27e22bb84f07c4029a4c891b9a6066035d9cc52cfaeffda8a29fff26eb755"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "f37273694c7d00a2ee07b52c614dfec51d23a90f6bdd77d0d5d39242e020d7eb",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/model.json",
+            "manifest_sha256": "be75c03f1b39fc10cb24c0c4f338825043263bd1674af175f95e27eddc1ec6c8",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_43/model.npz",
+            "weights_sha256": "310fc7056bc4b7d88cc854b83de0fb7d63b54877a767413185d9cf3578eeb004"
+          },
+          "seed": 43
+        },
+        {
+          "held_out": [
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 44,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.056252822279930115,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.07433062046766281,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.06668739765882492,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.04390358552336693,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.033504072576761246,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.028882205486297607,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.1650924524149345,
+                "frame_count": 15,
+                "improvement": -0.011183507092419998,
+                "relative_rmse": 1.01118350709242,
+                "zero_normalized_force_rmse": 0.16326655968672302
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/single_lift_sloth.npz",
+              "latent_sha256": "47ac3e13544c641a66a29eb0e948c843f0722c8289ab38312260fc72273b3ca2"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 48,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.3622003197669983,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.39007991552352905,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.40607598423957825,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3698429763317108,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.3861103653907776,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.3608604967594147,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope_1",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.22087340035368347,
+                "frame_count": 16,
+                "improvement": -0.020216156073680214,
+                "relative_rmse": 1.0202161560736802,
+                "zero_normalized_force_rmse": 0.21649666988583932
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/single_push_rope_1.npz",
+              "latent_sha256": "98d9390b78982aa3ce8cfdc7b4a90ef95ea3243987e83c18628e7bc4d4472142"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 57,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.28315186500549316,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.334556519985199,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.30604204535484314,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.3023223876953125,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.32932332158088684,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.22063593566417694,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_lift_cloth_1",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.26385788837361646,
+                "frame_count": 20,
+                "improvement": 0.0024405275316738972,
+                "relative_rmse": 0.9975594724683261,
+                "zero_normalized_force_rmse": 0.26450341624317975
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/single_lift_cloth_1.npz",
+              "latent_sha256": "df6b10a7e1a9f49562063a7ff175256f5df25bd6a2d6fc76778fbf3a9ce21ab3"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 100,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.15053024888038635,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.08537235856056213,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.09369346499443054,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.13947069644927979,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.09814536571502686,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.12828032672405243,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "double_stretch_sloth",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.2340359014513519,
+                "frame_count": 34,
+                "improvement": 0.02202917528768089,
+                "relative_rmse": 0.9779708247123191,
+                "zero_normalized_force_rmse": 0.23930765165739595
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/double_stretch_sloth.npz",
+              "latent_sha256": "c174dfcc9d43daaa8008600372df5fccbe5dccf9d9321719577d379f7352ccfd"
+            },
+            {
+              "adaptation": {
+                "future_frames_used": false,
+                "prefix_stop": 30,
+                "seed": 101,
+                "terminal_step_selected": true,
+                "trace": [
+                  {
+                    "loss": 0.1678987741470337,
+                    "step": 1
+                  },
+                  {
+                    "loss": 0.12384723126888275,
+                    "step": 50
+                  },
+                  {
+                    "loss": 0.15307937562465668,
+                    "step": 100
+                  },
+                  {
+                    "loss": 0.14295178651809692,
+                    "step": 150
+                  },
+                  {
+                    "loss": 0.11060217767953873,
+                    "step": 200
+                  },
+                  {
+                    "loss": 0.08262496441602707,
+                    "step": 250
+                  }
+                ]
+              },
+              "case": "single_push_rope",
+              "force_target_metrics": {
+                "candidate_normalized_force_rmse": 0.20590058272277084,
+                "frame_count": 10,
+                "improvement": -0.008330262304238945,
+                "relative_rmse": 1.008330262304239,
+                "zero_normalized_force_rmse": 0.20419954693440054
+              },
+              "latent_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/single_push_rope.npz",
+              "latent_sha256": "3d271afb610fc72d42dd9b84620bd914eddeeb88e9ee20c78f6f281a1c6baa81"
+            }
+          ],
+          "model_artifact": {
+            "artifact_id": "89aff346faa4a5da0363528ceed03ee282eafd645ecc962993f72a1234c2108e",
+            "manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/model.json",
+            "manifest_sha256": "acde6401bccbacc0d55c1c4992c01289fb16b1cbd5a290337f4355101333ba8c",
+            "weights_path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/seed_101/model.npz",
+            "weights_sha256": "bcfea90d7718f2f4d0a0ad947908a4541a9af570eb569ed244e564d16bdbd300"
+          },
+          "seed": 101
+        }
+      ]
+    }
+  ],
+  "force_target_competence_passed": false,
+  "model_config": {
+    "displacement_scale_m": 0.05,
+    "hidden_dim": 64,
+    "hidden_layers": 2,
+    "latent_dim": 8,
+    "maximum_normalized_force": 1.0,
+    "minimum_length_m": 1e-06,
+    "regime_dim": 5,
+    "velocity_scale_mps": 0.1
+  },
+  "official_warp_promotion_authorized": false,
+  "protocol_sha256": "1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171",
+  "schema_version": 2,
+  "stage1_execution": {
+    "fold_records": [
+      {
+        "fold": "fold_0",
+        "path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_0/fold_record.json",
+        "sha256": "0665d3bd963181996f9381f409ccfa763684d1d034fed556545ed4767446b45e"
+      },
+      {
+        "fold": "fold_1",
+        "path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_1/fold_record.json",
+        "sha256": "7c6cb1762565f4b605547f67cff9947ec8a0f1b7f481d4305d5f939f848c2cc5"
+      },
+      {
+        "fold": "fold_2",
+        "path": "/home/florianpfaff/bpt-equivariant-force-stage1-6245d42/runs/equivariant_force_stage1_v2/fold_2/fold_record.json",
+        "sha256": "3e4f47995b0622fb57bce4b385a0fc1cbc9e284bfdd1b66b120a4f45c56be785"
+      }
+    ],
+    "mode": "registered_fold_merge",
+    "stage1_implementation_sha256": "a93a272ff1b3c518591c715d9cf5f83222aba3ae6a849cef4a6e1e8bb3c4c49c"
+  },
+  "stage_2_official_warp_required": true,
+  "summary_sha256": "03452cff82c51d65c5c03fb0be326f7a1adeb55dd881d13de5dbce229c7c5120",
+  "target_artifacts_opened": false,
+  "training_config": {
+    "adaptation_learning_rate": 0.01,
+    "adaptation_regularization": 0.01,
+    "adaptation_steps": 250,
+    "device": "cuda:0",
+    "gradient_clip": 1.0,
+    "huber_delta_normalized": 0.05,
+    "latent_regularization": 0.001,
+    "learning_rate": 0.0003,
+    "minimum_both_win_folds": 2,
+    "minimum_force_target_improvement": 0.1,
+    "seeds": [
+      17,
+      43,
+      101
+    ],
+    "training_steps": 2000,
+    "weight_decay": 1e-05
+  }
+}
