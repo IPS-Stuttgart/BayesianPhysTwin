@@ -2,8 +2,22 @@
 
 Lock date: 2026-07-24
 
-Status: implementation and source protocol locked; no source GPU run or target
-access has occurred.
+Status: v2 source protocol amended and locked before Stage 1; no source GPU run
+or target access has occurred.
+
+## Why v1 was stopped
+
+The first target-only preflight found that PhysTwin assigns every released node
+simulation mass `1.0`. These values are not kilograms: interpreting them that
+way would make the released objects weigh 855 to 8,582 kg. Consequently, the
+v1 labels in Newtons were invalid, and its fixed `0.5` cap saturated 43% to 92%
+of supported targets. Stage 1 was not run.
+
+V2 keeps all values in native Warp generalized-force units. It estimates one
+robust scale per case from the allowed prefix only, trains and scores normalized
+forces, and multiplies the bounded equivariant field by that frozen scale during
+rollout. The scale is part of the single robust innovation channel; it is not a
+perception-reliability cue.
 
 ## Why this branch exists
 
@@ -25,16 +39,21 @@ DeformMaster, or MatPhys.
 
 ## Two-stage gate
 
+Before Stage 1, target QA requires the native simulator-unit contract, released
+unit masses, prefix-only scale estimation, and no more than 10% cap saturation
+on every allowed prefix. A failure blocks training.
+
 Stage 1 tests source-only inverse-dynamics competence. Complete outcomes from
 the non-held-out interactions supervise shared weights. For a held-out
 interaction, only its latent is adapted from `[0, fit_end)`, and force targets
 are scored on `[fit_end, train_end)`. The result is diagnostic: passing force
 RMSE does not authorize a simulator claim.
 
-Stage 2 is the promotion gate. The learned field is applied frame by frame
-inside the pinned official Warp simulator. It is compared with the same prefix
-state update and graph-persistence baseline without the learned force. The
-candidate must:
+Stage 2 is the promotion gate. Candidate and reference start from the same
+released state at the allowed prefix endpoint. Each receives a separately
+prefix-fitted graph-persistence readout. The only primary-arm difference is the
+learned force versus exact zero force inside the pinned official Warp simulator.
+Prefix state injection remains a diagnostic control. The candidate must:
 
 1. pass Stage 1;
 2. improve equal-case CD and manual-track error by at least 3% jointly;
@@ -57,8 +76,9 @@ innovation then enters once through a robust local-polynomial fit. It is never
 reused to lower prior reliability.
 
 Dense targets are graph-smoothed with metric acceleration variance before being
-converted to Newtons. This preserves heteroscedastic uncertainty and avoids
-treating correlated points as independent evidence.
+converted to native simulator generalized-force units. They are never presented
+as Newtons or material-force measurements. This preserves heteroscedastic
+uncertainty and avoids treating correlated points as independent evidence.
 
 For each held-out source case:
 

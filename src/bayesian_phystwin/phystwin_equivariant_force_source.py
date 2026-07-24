@@ -27,6 +27,7 @@ from .phystwin_force_targets import (
     acceleration_to_force_targets,
     estimate_residual_acceleration,
     graph_smooth_residual_acceleration,
+    robust_prefix_force_scale,
 )
 from .phystwin_graph import (
     PhysTwinSpringGraphConfig,
@@ -41,7 +42,7 @@ from .phystwin_residual_dynamics import (
 
 
 EQUIVARIANT_FORCE_SOURCE_CONTRACT = (
-    "phystwin-equivariant-generalized-force-source-v1"
+    "phystwin-equivariant-generalized-force-source-v2"
 )
 
 
@@ -56,7 +57,10 @@ class ForceTargetBuildConfig:
     graph_prior_strength: float = 0.5
     graph_ridge: float = 1.0e-8
     graph_covariance_probes: int = 8
-    maximum_force_n: float = 0.5
+    force_scale_node_quantile: float = 0.95
+    force_scale_temporal_quantile: float = 0.90
+    minimum_force_scale_sim: float = 0.10
+    maximum_force_scale_sim: float = 50.0
     minimum_training_weight: float = 1.0e-4
 
     def __post_init__(self) -> None:
@@ -67,13 +71,21 @@ class ForceTargetBuildConfig:
             self.variance_floor_m2ps4,
             self.graph_prior_strength,
             self.graph_ridge,
-            self.maximum_force_n,
+            self.minimum_force_scale_sim,
+            self.maximum_force_scale_sim,
             self.minimum_training_weight,
         )
         if any(value <= 0.0 or not np.isfinite(value) for value in positive):
             raise ValueError("force target scales must be positive and finite")
         if self.graph_covariance_probes < 1:
             raise ValueError("graph_covariance_probes must be positive")
+        if (
+            not 0.0 < self.force_scale_node_quantile < 1.0
+            or not 0.0 < self.force_scale_temporal_quantile < 1.0
+        ):
+            raise ValueError("force-scale quantiles must lie in (0,1)")
+        if self.maximum_force_scale_sim < self.minimum_force_scale_sim:
+            raise ValueError("force-scale bounds must be ordered")
 
 
 @dataclass(frozen=True)
@@ -200,10 +212,19 @@ def build_released_equivariant_force_episode(
         ridge=target_config.graph_ridge,
         covariance_probes=target_config.graph_covariance_probes,
     )
+    force_scale = robust_prefix_force_scale(
+        acceleration,
+        graph.masses[:object_count],
+        prefix_end_frame=fit_end_frame,
+        node_quantile=target_config.force_scale_node_quantile,
+        temporal_quantile=target_config.force_scale_temporal_quantile,
+        minimum_scale_sim=target_config.minimum_force_scale_sim,
+        maximum_scale_sim=target_config.maximum_force_scale_sim,
+    )
     targets = acceleration_to_force_targets(
         acceleration,
         graph.masses[:object_count],
-        maximum_force_n=target_config.maximum_force_n,
+        maximum_force_sim=force_scale.value_sim,
         minimum_training_weight=target_config.minimum_training_weight,
     )
 
@@ -250,6 +271,7 @@ def build_released_equivariant_force_episode(
     }
     diagnostics = {
         "target": targets.diagnostics,
+        "force_scale": force_scale.diagnostics,
         "target_config": asdict(target_config),
         "object_node_count": object_count,
         "object_spring_count": graph.num_object_springs,
@@ -264,6 +286,12 @@ def build_released_equivariant_force_episode(
             if support_prior is None
             else "supplied_geometry"
         ),
+        "mass_unit_contract": (
+            "released_unit_simulation_masses_not_kilograms"
+        ),
+        "unique_object_masses_sim": np.unique(
+            graph.masses[:object_count]
+        ).astype(float).tolist(),
     }
     return EquivariantForceEpisode(
         case_id=case_id,
@@ -279,9 +307,10 @@ def build_released_equivariant_force_episode(
         gravity_mps2=np.asarray(gravity_mps2, dtype=float),
         action_activity=activity,
         regime_probabilities=_regime_probabilities(activity),
-        force_targets_n=targets.mean_n,
-        force_target_variance_n2=targets.variance_n2,
+        force_targets_sim=targets.mean_sim,
+        force_target_variance_sim2=targets.variance_sim2,
         force_target_weight=targets.training_weight,
+        force_scale_sim=force_scale.value_sim,
         fit_end_frame=fit_end_frame,
         validation_end_frame=validation_end_frame,
         frame_dt_s=frame_dt_s,
@@ -291,6 +320,8 @@ def build_released_equivariant_force_episode(
             "force_targets_use_state_innovation_once": True,
             "prior_reliability_uses_state_residual": False,
             "force_targets_are_causal_per_frame": True,
+            "force_scale_uses_prefix_only": True,
+            "force_values_are_claimed_as_newtons": False,
             "target_cohort_accessed": False,
         },
         diagnostics=diagnostics,
@@ -305,6 +336,8 @@ def load_equivariant_force_source_protocol(
     """Validate a locked source protocol without resolving any target path."""
 
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 2:
+        raise ValueError("unsupported equivariant-force source schema")
     if payload.get("contract") != EQUIVARIANT_FORCE_SOURCE_CONTRACT:
         raise ValueError("unsupported equivariant-force source contract")
     source = payload.get("source_cases")
@@ -346,12 +379,22 @@ def load_equivariant_force_source_protocol(
     target_config = ForceTargetBuildConfig(**dict(raw_target))
     gate = payload.get("source_gate")
     warp = payload.get("official_warp")
-    if not isinstance(gate, Mapping) or not isinstance(warp, Mapping):
+    target_qa = payload.get("source_target_qa")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (gate, warp, target_qa)
+    ):
         raise ValueError("source protocol omits promotion settings")
     if warp.get("required_zero_force_bitwise_parity") is not True:
         raise ValueError("source protocol must require exact zero-force parity")
     if gate.get("target_access_on_failure") is not False:
         raise ValueError("source protocol must keep targets closed on failure")
+    if target_qa.get("failure_blocks_stage_1") is not True:
+        raise ValueError("source target QA must block Stage 1 on failure")
+    if not 0.0 <= float(
+        target_qa.get("maximum_prefix_cap_fraction", -1.0)
+    ) <= 1.0:
+        raise ValueError("source target QA cap threshold is invalid")
     return EquivariantForceSourceProtocol(
         payload=payload,
         model=model,
@@ -375,6 +418,8 @@ def build_equivariant_force_source_episodes(
     warp = protocol.payload["official_warp"]
     frame_dt_s = float(warp["dt"]) * int(warp["num_substeps"])
     records = {}
+    qa_records = {}
+    target_qa = protocol.payload["source_target_qa"]
     for case in protocol.payload["source_cases"]:
         case_root = root / str(case)
         split = json.loads(
@@ -399,12 +444,42 @@ def build_equivariant_force_source_episodes(
             output / str(case) / "force_episode",
             episode,
         )
+        unique_masses = episode.diagnostics["unique_object_masses_sim"]
+        cap_fraction = float(
+            episode.diagnostics["force_scale"]["prefix_cap_fraction"]
+        )
+        unit_contract = episode.diagnostics["target"][
+            "force_unit_contract"
+        ]
+        mass_passed = (
+            not bool(target_qa["require_released_unit_simulation_masses"])
+            or unique_masses == [1.0]
+        )
+        unit_passed = (
+            unit_contract == target_qa["required_force_unit_contract"]
+        )
+        cap_passed = cap_fraction <= float(
+            target_qa["maximum_prefix_cap_fraction"]
+        )
+        qa_records[str(case)] = {
+            "prefix_cap_fraction": cap_fraction,
+            "force_scale_sim": episode.force_scale_sim,
+            "unique_object_masses_sim": unique_masses,
+            "unit_contract": unit_contract,
+            "mass_contract_passed": mass_passed,
+            "unit_contract_passed": unit_passed,
+            "prefix_cap_fraction_passed": cap_passed,
+            "passed": mass_passed and unit_passed and cap_passed,
+        }
+    qa_passed = all(record["passed"] for record in qa_records.values())
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "contract": EQUIVARIANT_FORCE_SOURCE_CONTRACT,
         "protocol_sha256": _sha256(protocol_path),
         "source_episode_count": len(records),
         "source_episodes": records,
+        "source_target_qa": qa_records,
+        "source_target_qa_passed": qa_passed,
         "target_artifacts_opened": False,
         "stage": "episode_construction_only",
     }
@@ -431,6 +506,10 @@ def run_equivariant_force_source_competence(
         device=device,
     )
     root = Path(episode_root).resolve()
+    validate_equivariant_force_episode_build(
+        root,
+        protocol_path,
+    )
     episodes = [
         load_equivariant_force_episode(root / str(case) / "force_episode")
         for case in protocol.payload["source_cases"]
@@ -455,3 +534,31 @@ def run_equivariant_force_source_competence(
     result["source_competence_record"] = str(record_path)
     result["source_competence_record_sha256"] = _sha256(record_path)
     return result
+
+
+def validate_equivariant_force_episode_build(
+    episode_root: str | Path,
+    protocol_path: str | Path,
+) -> dict[str, Any]:
+    """Verify that target QA passed before source training can start."""
+
+    root = Path(episode_root).resolve()
+    build_summary_path = root / "episode_build_summary.json"
+    build_summary = json.loads(
+        build_summary_path.read_text(encoding="utf-8")
+    )
+    if build_summary.get("schema_version") != 2:
+        raise ValueError("source episode build schema changed")
+    if build_summary.get("contract") != EQUIVARIANT_FORCE_SOURCE_CONTRACT:
+        raise ValueError("source episode build contract changed")
+    if build_summary.get("protocol_sha256") != _sha256(protocol_path):
+        raise ValueError("source episode build used a different protocol")
+    if build_summary.get("target_artifacts_opened") is not False:
+        raise ValueError("source episode build crossed the target boundary")
+    if build_summary.get("source_target_qa_passed") is not True:
+        raise ValueError("source target QA failed; Stage 1 is blocked")
+    if build_summary.get("source_episode_count") != len(
+        build_summary.get("source_episodes", {})
+    ):
+        raise ValueError("source episode build count is inconsistent")
+    return build_summary

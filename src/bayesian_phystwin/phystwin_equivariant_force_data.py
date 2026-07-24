@@ -17,7 +17,7 @@ from .phystwin_equivariant_force import (
 )
 
 
-FORCE_EPISODE_SCHEMA_VERSION = 1
+FORCE_EPISODE_SCHEMA_VERSION = 2
 
 
 def _sha256(path: Path) -> str:
@@ -79,9 +79,10 @@ class EquivariantForceEpisode:
     gravity_mps2: np.ndarray
     action_activity: np.ndarray
     regime_probabilities: np.ndarray
-    force_targets_n: np.ndarray
-    force_target_variance_n2: np.ndarray
+    force_targets_sim: np.ndarray
+    force_target_variance_sim2: np.ndarray
     force_target_weight: np.ndarray
+    force_scale_sim: float
     fit_end_frame: int
     validation_end_frame: int
     frame_dt_s: float
@@ -112,8 +113,8 @@ class EquivariantForceEpisode:
         external_support = _readonly(self.external_support, dtype=np.float32)
         activity = _readonly(self.action_activity, dtype=np.float32)
         regimes = _readonly(self.regime_probabilities, dtype=np.float32)
-        targets = _readonly(self.force_targets_n, dtype=np.float32)
-        variance = _readonly(self.force_target_variance_n2, dtype=np.float32)
+        targets = _readonly(self.force_targets_sim, dtype=np.float32)
+        variance = _readonly(self.force_target_variance_sim2, dtype=np.float32)
         weight = _readonly(self.force_target_weight, dtype=np.float32)
         if control_delta.shape != positions.shape or control_velocity.shape != positions.shape:
             raise ValueError("control fields must match positions_m")
@@ -134,11 +135,15 @@ class EquivariantForceEpisode:
         ):
             raise ValueError("regime probabilities must be simplex-valued")
         if targets.shape != positions.shape:
-            raise ValueError("force_targets_n must match positions_m")
+            raise ValueError("force_targets_sim must match positions_m")
         if variance.shape != (frames, nodes) or weight.shape != (frames, nodes):
             raise ValueError("force variance and weights must have shape (T,N)")
         if np.any(variance <= 0.0) or np.any(weight < 0.0):
             raise ValueError("force variance must be positive and weights nonnegative")
+        if self.force_scale_sim <= 0.0 or not np.isfinite(
+            self.force_scale_sim
+        ):
+            raise ValueError("force_scale_sim must be positive and finite")
         if not all(
             np.all(np.isfinite(values))
             for values in (
@@ -182,6 +187,8 @@ class EquivariantForceEpisode:
             "target_future_used_for_episode_construction": False,
             "force_targets_use_state_innovation_once": True,
             "prior_reliability_uses_state_residual": False,
+            "force_scale_uses_prefix_only": True,
+            "force_values_are_claimed_as_newtons": False,
         }
         if any(boundary.get(key) != value for key, value in required.items()):
             raise ValueError("force episode violates its information boundary")
@@ -197,8 +204,8 @@ class EquivariantForceEpisode:
         object.__setattr__(self, "gravity_mps2", gravity)
         object.__setattr__(self, "action_activity", activity)
         object.__setattr__(self, "regime_probabilities", regimes)
-        object.__setattr__(self, "force_targets_n", targets)
-        object.__setattr__(self, "force_target_variance_n2", variance)
+        object.__setattr__(self, "force_targets_sim", targets)
+        object.__setattr__(self, "force_target_variance_sim2", variance)
         object.__setattr__(self, "force_target_weight", weight)
         object.__setattr__(self, "source_checksums", checksums)
         object.__setattr__(self, "information_boundary", boundary)
@@ -222,8 +229,8 @@ class EquivariantForceEpisode:
             "gravity_mps2": self.gravity_mps2,
             "action_activity": self.action_activity,
             "regime_probabilities": self.regime_probabilities,
-            "force_targets_n": self.force_targets_n,
-            "force_target_variance_n2": self.force_target_variance_n2,
+            "force_targets_sim": self.force_targets_sim,
+            "force_target_variance_sim2": self.force_target_variance_sim2,
             "force_target_weight": self.force_target_weight,
         }
 
@@ -235,6 +242,7 @@ class EquivariantForceEpisode:
             "fit_end_frame": self.fit_end_frame,
             "validation_end_frame": self.validation_end_frame,
             "frame_dt_s": self.frame_dt_s,
+            "force_scale_sim": self.force_scale_sim,
             "source_checksums": self.source_checksums,
             "information_boundary": self.information_boundary,
             "diagnostics": self.diagnostics,
@@ -313,6 +321,7 @@ def load_equivariant_force_episode(prefix: str | Path) -> EquivariantForceEpisod
         fit_end_frame=int(payload["fit_end_frame"]),
         validation_end_frame=int(payload["validation_end_frame"]),
         frame_dt_s=float(payload["frame_dt_s"]),
+        force_scale_sim=float(payload["force_scale_sim"]),
         source_checksums=payload["source_checksums"],
         information_boundary=payload["information_boundary"],
         diagnostics=payload["diagnostics"],

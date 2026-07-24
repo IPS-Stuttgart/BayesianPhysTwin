@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 
 from .phystwin_discrepancy_localization import _rollout_state_segment
-from .phystwin_equivariant_force import maximum_node_force_n
+from .phystwin_equivariant_force import maximum_node_force_sim
 from .phystwin_state_injection import _state_numpy
 
 
@@ -17,8 +17,10 @@ class ForceRolloutDiagnostics:
     """Target-free diagnostics recorded for one force-conditioned rollout."""
 
     admission_weight: float
-    maximum_force_n: float
-    mean_force_n: float
+    force_unit_contract: str
+    force_scale_sim: float
+    maximum_force_sim: float
+    mean_force_sim: float
     active_force_frames: int
     frame_count: int
 
@@ -127,15 +129,18 @@ def predict_equivariant_force(
     rest_lengths_m: np.ndarray,
     conditioning: dict[str, np.ndarray | float],
     gravity_mps2: np.ndarray,
+    force_scale_sim: float,
     regime_probabilities: np.ndarray,
     latent: np.ndarray,
     admission_weight: float,
     device: str,
 ) -> np.ndarray:
-    """Evaluate one bounded force field without using a state residual cue."""
+    """Evaluate one bounded simulator-force field without residual cues."""
 
     if not 0.0 <= admission_weight <= 1.0:
         raise ValueError("admission_weight must lie in [0, 1]")
+    if force_scale_sim <= 0.0 or not np.isfinite(force_scale_sim):
+        raise ValueError("force_scale_sim must be positive and finite")
     if admission_weight == 0.0:
         return np.zeros_like(np.asarray(positions_m, dtype=np.float32))
     model.eval()
@@ -177,6 +182,7 @@ def predict_equivariant_force(
             gravity_mps2=torch.as_tensor(
                 gravity_mps2, dtype=torch.float32, device=device
             ),
+            force_scale_sim=force_scale_sim,
             action_activity=float(conditioning["action_activity"]),
             regime_probabilities=torch.as_tensor(
                 regime_probabilities, dtype=torch.float32, device=device
@@ -209,6 +215,7 @@ def rollout_equivariant_force_segment(
     regime_probabilities: np.ndarray,
     latent: np.ndarray,
     gravity_mps2: np.ndarray,
+    force_scale_sim: float,
     frame_dt_s: float,
     activity_speed_mps: float,
     admission_weight: float,
@@ -222,6 +229,8 @@ def rollout_equivariant_force_segment(
         raise ValueError("rollout interval is outside the controller trajectory")
     if regimes.shape[0] < stop_frame:
         raise ValueError("regime probabilities do not cover the rollout")
+    if force_scale_sim <= 0.0 or not np.isfinite(force_scale_sim):
+        raise ValueError("force_scale_sim must be positive and finite")
     if admission_weight == 0.0:
         simulator.clear_external_forces()
         positions, velocities = _rollout_state_segment(
@@ -243,8 +252,12 @@ def rollout_equivariant_force_segment(
             force_history,
             ForceRolloutDiagnostics(
                 admission_weight=0.0,
-                maximum_force_n=0.0,
-                mean_force_n=0.0,
+                force_unit_contract=(
+                    "warp_simulator_generalized_force_not_newtons"
+                ),
+                force_scale_sim=float(force_scale_sim),
+                maximum_force_sim=0.0,
+                mean_force_sim=0.0,
                 active_force_frames=0,
                 frame_count=stop_frame - start_frame,
             ),
@@ -292,6 +305,7 @@ def rollout_equivariant_force_segment(
                 rest_lengths_m=rest_lengths_m,
                 conditioning=conditioning,
                 gravity_mps2=gravity_mps2,
+                force_scale_sim=force_scale_sim,
                 regime_probabilities=regimes[frame],
                 latent=latent,
                 admission_weight=admission_weight,
@@ -327,8 +341,10 @@ def rollout_equivariant_force_segment(
     norms = np.linalg.norm(forces, axis=-1)
     diagnostics = ForceRolloutDiagnostics(
         admission_weight=float(admission_weight),
-        maximum_force_n=maximum_node_force_n(forces),
-        mean_force_n=float(np.mean(norms)),
+        force_unit_contract="warp_simulator_generalized_force_not_newtons",
+        force_scale_sim=float(force_scale_sim),
+        maximum_force_sim=maximum_node_force_sim(forces),
+        mean_force_sim=float(np.mean(norms)),
         active_force_frames=int(np.sum(np.max(norms, axis=1) > 0.0)),
         frame_count=len(forces),
     )

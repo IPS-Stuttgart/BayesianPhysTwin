@@ -15,7 +15,7 @@ from typing import Any
 import numpy as np
 
 
-EQUIVARIANT_FORCE_CONTRACT = "phystwin-equivariant-generalized-force-v1"
+EQUIVARIANT_FORCE_CONTRACT = "phystwin-equivariant-generalized-force-v2"
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,7 @@ class EquivariantForceConfig:
     hidden_layers: int = 2
     latent_dim: int = 8
     regime_dim: int = 5
-    maximum_force_per_node_n: float = 0.50
+    maximum_normalized_force: float = 1.0
     velocity_scale_mps: float = 0.10
     displacement_scale_m: float = 0.05
     minimum_length_m: float = 1.0e-6
@@ -37,7 +37,7 @@ class EquivariantForceConfig:
         if self.latent_dim < 0 or self.regime_dim < 1:
             raise ValueError("latent_dim and regime_dim are invalid")
         positive = (
-            self.maximum_force_per_node_n,
+            self.maximum_normalized_force,
             self.velocity_scale_mps,
             self.displacement_scale_m,
             self.minimum_length_m,
@@ -182,6 +182,7 @@ def build_equivariant_force_model(
             action_support,
             external_support,
             gravity_mps2,
+            force_scale_sim,
             action_activity,
             regime_probabilities,
             latent,
@@ -259,6 +260,20 @@ def build_equivariant_force_model(
                 width=3,
                 name="gravity_mps2",
             ).to(device=device, dtype=dtype)
+            force_scale = torch.as_tensor(
+                force_scale_sim,
+                dtype=dtype,
+                device=device,
+            ).reshape(-1)
+            if force_scale.numel() == 1:
+                force_scale = force_scale.expand(batch)
+            if force_scale.shape[0] != batch or bool(
+                torch.any(~torch.isfinite(force_scale))
+                | torch.any(force_scale <= 0.0)
+            ):
+                raise ValueError(
+                    "force_scale_sim must provide B finite positive values"
+                )
             regime = _batched_global(
                 torch,
                 regime_probabilities,
@@ -346,7 +361,8 @@ def build_equivariant_force_model(
                 dim=-2,
             )
             edge_force = (
-                selected.maximum_force_per_node_n
+                force_scale[:, None, None]
+                * selected.maximum_normalized_force
                 * torch.sum(edge_coefficients[..., None] * edge_bases, dim=-2)
             )
             internal_force = torch.zeros_like(positions)
@@ -410,12 +426,16 @@ def build_equivariant_force_model(
                 dim=-2,
             )
             external_force = (
-                selected.maximum_force_per_node_n
+                force_scale[:, None, None]
+                * selected.maximum_normalized_force
                 * torch.sum(node_coefficients[..., None] * node_bases, dim=-2)
             )
             force = internal_force + external_force
             force_norm = torch.linalg.vector_norm(force, dim=-1, keepdim=True)
-            cap = selected.maximum_force_per_node_n
+            cap = (
+                force_scale[:, None, None]
+                * selected.maximum_normalized_force
+            )
             maximum_norm = torch.amax(force_norm, dim=1, keepdim=True)
             force = force * torch.clamp(
                 cap
@@ -438,10 +458,10 @@ def build_equivariant_force_model(
     return EquivariantGeneralizedForce()
 
 
-def maximum_node_force_n(force_n: np.ndarray) -> float:
-    """Return the largest nodal force norm after finite-value validation."""
+def maximum_node_force_sim(force_sim: np.ndarray) -> float:
+    """Return the largest nodal force norm in native simulator units."""
 
-    values = np.asarray(force_n, dtype=float)
+    values = np.asarray(force_sim, dtype=float)
     if values.ndim < 2 or values.shape[-1] != 3 or not np.all(np.isfinite(values)):
-        raise ValueError("force_n must be a finite (..., N, 3) array")
+        raise ValueError("force_sim must be a finite (..., N, 3) array")
     return float(np.max(np.linalg.norm(values, axis=-1), initial=0.0))

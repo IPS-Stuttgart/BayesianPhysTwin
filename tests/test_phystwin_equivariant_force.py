@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import pickle
@@ -12,7 +13,7 @@ from bayesian_phystwin.phystwin_equivariant_force import (
     build_equivariant_force_model,
     canonicalize_force_edges,
     force_rest_lengths,
-    maximum_node_force_n,
+    maximum_node_force_sim,
 )
 from bayesian_phystwin.phystwin_equivariant_force_artifact import (
     EquivariantForceArtifact,
@@ -45,11 +46,13 @@ from bayesian_phystwin.phystwin_equivariant_force_source import (
     ForceTargetBuildConfig,
     build_released_equivariant_force_episode,
     load_equivariant_force_source_protocol,
+    validate_equivariant_force_episode_build,
 )
 from bayesian_phystwin.phystwin_force_targets import (
     acceleration_to_force_targets,
     estimate_residual_acceleration,
     graph_smooth_residual_acceleration,
+    robust_prefix_force_scale,
 )
 
 
@@ -103,6 +106,7 @@ def _inputs(torch, *, batch: int | None = None):
         "action_support": torch.tensor([1.0, 0.8, 0.3, 0.0]),
         "external_support": torch.tensor([0.0, 0.2, 0.7, 1.0]),
         "gravity_mps2": torch.tensor([0.0, 0.0, -9.81]),
+        "force_scale_sim": torch.tensor(0.30),
         "action_activity": torch.tensor(0.75),
         "regime_probabilities": torch.tensor([0.1, 0.2, 0.3, 0.25, 0.15]),
         "latent": torch.linspace(-0.2, 0.2, 8),
@@ -120,6 +124,7 @@ def _inputs(torch, *, batch: int | None = None):
         )
         values["latent"] = values["latent"].unsqueeze(0).expand(batch, -1).clone()
         values["action_activity"] = torch.full((batch,), 0.75)
+        values["force_scale_sim"] = torch.full((batch,), 0.30)
     return values
 
 
@@ -248,14 +253,32 @@ def test_external_action_terms_are_support_gated() -> None:
 
 def test_force_bound_is_enforced_for_the_complete_graph() -> None:
     torch = pytest.importorskip("torch")
-    config = EquivariantForceConfig(maximum_force_per_node_n=0.07)
+    config = EquivariantForceConfig(maximum_normalized_force=1.0)
     model = build_equivariant_force_model(torch, config)
     _randomize_model(torch, model)
     with torch.no_grad():
         for parameter in model.parameters():
             parameter.mul_(30.0)
-    force = model(**_inputs(torch))
-    assert maximum_node_force_n(force.detach().numpy()) <= 0.07 + 1.0e-7
+    inputs = _inputs(torch)
+    inputs["force_scale_sim"] = torch.tensor(0.07)
+    force = model(**inputs)
+    assert maximum_node_force_sim(force.detach().numpy()) <= 0.07 + 1.0e-7
+
+
+def test_force_scale_changes_magnitude_without_changing_normalized_field() -> None:
+    torch = pytest.importorskip("torch")
+    model = build_equivariant_force_model(torch)
+    _randomize_model(torch, model)
+    low = _inputs(torch)
+    low["force_scale_sim"] = torch.tensor(0.08)
+    high = dict(low)
+    high["force_scale_sim"] = torch.tensor(0.20)
+    torch.testing.assert_close(
+        model(**high),
+        2.5 * model(**low),
+        rtol=2.0e-6,
+        atol=2.0e-7,
+    )
 
 
 def test_synthetic_state_dependent_internal_force_is_learnable() -> None:
@@ -264,7 +287,7 @@ def test_synthetic_state_dependent_internal_force_is_learnable() -> None:
     config = EquivariantForceConfig(
         hidden_dim=32,
         hidden_layers=2,
-        maximum_force_per_node_n=0.30,
+        maximum_normalized_force=1.0,
     )
     model = build_equivariant_force_model(torch, config)
     batch = 48
@@ -326,6 +349,9 @@ def _artifact(model, config):
             "target_future_used_for_fit_or_selection": False,
             "exact_zero_force_fallback": True,
             "force_location": "inside_official_warp",
+            "force_unit_contract": (
+                "warp_simulator_generalized_force_not_newtons"
+            ),
             "source_complete_outcomes_may_supervise_shared_weights": True,
             "target_prefix_may_adapt_latent_only": True,
         },
@@ -442,6 +468,7 @@ def test_force_predictor_abstains_without_evaluating_the_model() -> None:
         rest_lengths_m=np.ones(1),
         conditioning={},
         gravity_mps2=np.array([0.0, 0.0, -9.81]),
+        force_scale_sim=0.30,
         regime_probabilities=np.array([1.0, 0.0, 0.0, 0.0, 0.0]),
         latent=np.zeros(8),
         admission_weight=0.0,
@@ -491,6 +518,7 @@ def test_zero_admission_delegates_to_the_existing_warp_rollout(
         regime_probabilities=np.tile([1.0, 0.0, 0.0, 0.0, 0.0], (3, 1)),
         latent=np.zeros(8),
         gravity_mps2=np.array([0.0, 0.0, -9.81]),
+        force_scale_sim=0.30,
         frame_dt_s=1.0 / 30.0,
         activity_speed_mps=0.1,
         admission_weight=0.0,
@@ -500,7 +528,8 @@ def test_zero_admission_delegates_to_the_existing_warp_rollout(
     assert positions is expected_positions
     assert velocities is expected_velocities
     np.testing.assert_array_equal(forces, np.zeros((2, 3, 3)))
-    assert diagnostics.maximum_force_n == 0.0
+    assert diagnostics.maximum_force_sim == 0.0
+    assert diagnostics.force_scale_sim == pytest.approx(0.30)
 
 
 def _quadratic_residual_case(*, noise: float = 0.0):
@@ -743,6 +772,44 @@ def test_causal_force_targets_do_not_read_later_frames_within_boundary() -> None
     assert first.diagnostics["future_frames_used_per_target"] is False
 
 
+def test_simulator_force_scale_uses_only_the_allowed_prefix() -> None:
+    observed, baseline, valid, _, dt = _quadratic_residual_case(
+        noise=1.0e-5
+    )
+    first = estimate_residual_acceleration(
+        observed,
+        baseline,
+        valid,
+        frame_dt_s=dt,
+        causal_window=True,
+    )
+    mutated = observed.copy()
+    mutated[8:] += 1000.0
+    second = estimate_residual_acceleration(
+        mutated,
+        baseline,
+        valid,
+        frame_dt_s=dt,
+        causal_window=True,
+    )
+    first_scale = robust_prefix_force_scale(
+        first,
+        np.ones(valid.shape[1]),
+        prefix_end_frame=8,
+    )
+    second_scale = robust_prefix_force_scale(
+        second,
+        np.ones(valid.shape[1]),
+        prefix_end_frame=8,
+    )
+    assert first_scale.value_sim == second_scale.value_sim
+    assert first_scale.diagnostics == second_scale.diagnostics
+    assert first_scale.diagnostics["future_frames_used"] is False
+    assert first_scale.diagnostics["unit_contract"] == (
+        "warp_simulator_generalized_force_not_newtons"
+    )
+
+
 def test_target_uncertainty_increases_with_observation_noise() -> None:
     low = _quadratic_residual_case(noise=1.0e-5)
     high = _quadratic_residual_case(noise=4.0e-4)
@@ -785,12 +852,12 @@ def test_graph_smoothed_force_targets_cover_unobserved_nodes_and_obey_cap() -> N
     targets = acceleration_to_force_targets(
         smoothed,
         np.array([0.2, 0.3, 0.4, 0.5]),
-        maximum_force_n=0.015,
+        maximum_force_sim=0.015,
     )
-    assert maximum_node_force_n(targets.mean_n) <= 0.015 + 1.0e-12
+    assert maximum_node_force_sim(targets.mean_sim) <= 0.015 + 1.0e-12
     assert np.any(targets.training_weight[:, 3] > 0.0)
-    assert np.all(np.isfinite(targets.variance_n2))
-    assert np.all(targets.variance_n2 > 0.0)
+    assert np.all(np.isfinite(targets.variance_sim2))
+    assert np.all(targets.variance_sim2 > 0.0)
 
 
 def _force_episode() -> EquivariantForceEpisode:
@@ -819,9 +886,10 @@ def _force_episode() -> EquivariantForceEpisode:
         regime_probabilities=np.tile(
             [1.0, 0.0, 0.0, 0.0, 0.0], (frames, 1)
         ),
-        force_targets_n=np.zeros_like(positions),
-        force_target_variance_n2=np.full((frames, nodes), 1.0e-5),
+        force_targets_sim=np.zeros_like(positions),
+        force_target_variance_sim2=np.full((frames, nodes), 1.0e-5),
         force_target_weight=np.ones((frames, nodes)),
+        force_scale_sim=0.10,
         fit_end_frame=5,
         validation_end_frame=8,
         frame_dt_s=0.04,
@@ -830,6 +898,8 @@ def _force_episode() -> EquivariantForceEpisode:
             "target_future_used_for_episode_construction": False,
             "force_targets_use_state_innovation_once": True,
             "prior_reliability_uses_state_residual": False,
+            "force_scale_uses_prefix_only": True,
+            "force_values_are_claimed_as_newtons": False,
         },
         diagnostics={"synthetic": True},
     )
@@ -918,9 +988,10 @@ def _transfer_episode(case_id: str, angle: float) -> EquivariantForceEpisode:
         regime_probabilities=np.tile(
             [1.0, 0.0, 0.0, 0.0, 0.0], (frames, 1)
         ),
-        force_targets_n=targets,
-        force_target_variance_n2=np.full((frames, nodes), 1.0e-6),
+        force_targets_sim=targets,
+        force_target_variance_sim2=np.full((frames, nodes), 1.0e-6),
         force_target_weight=np.ones((frames, nodes)),
+        force_scale_sim=0.05,
         fit_end_frame=5,
         validation_end_frame=frames,
         frame_dt_s=0.04,
@@ -929,6 +1000,8 @@ def _transfer_episode(case_id: str, angle: float) -> EquivariantForceEpisode:
             "target_future_used_for_episode_construction": False,
             "force_targets_use_state_innovation_once": True,
             "prior_reliability_uses_state_residual": False,
+            "force_scale_uses_prefix_only": True,
+            "force_values_are_claimed_as_newtons": False,
         },
         diagnostics={"synthetic_transfer": True, "rotation_rad": angle},
     )
@@ -939,7 +1012,7 @@ def _training_configs():
         hidden_dim=8,
         hidden_layers=1,
         latent_dim=1,
-        maximum_force_per_node_n=0.05,
+        maximum_normalized_force=1.0,
     )
     training = EquivariantForceTrainingConfig(
         training_steps=120,
@@ -950,7 +1023,7 @@ def _training_configs():
         latent_regularization=0.01,
         adaptation_regularization=0.01,
         gradient_clip=5.0,
-        huber_delta_n=0.005,
+        huber_delta_normalized=0.10,
         seeds=(7,),
         minimum_force_target_improvement=0.10,
         minimum_both_win_folds=2,
@@ -1150,7 +1223,14 @@ def test_released_case_adapter_builds_causal_typed_force_episode(
     assert episode.information_boundary["force_targets_are_causal_per_frame"]
     assert episode.diagnostics["target"]["causal_window"] is True
     assert np.any(episode.force_target_weight[2:] > 0.0)
-    assert maximum_node_force_n(episode.force_targets_n) <= 0.5 + 1.0e-12
+    assert (
+        maximum_node_force_sim(episode.force_targets_sim)
+        <= episode.force_scale_sim + 1.0e-6
+    )
+    assert episode.information_boundary["force_scale_uses_prefix_only"]
+    assert episode.diagnostics["mass_unit_contract"] == (
+        "released_unit_simulation_masses_not_kilograms"
+    )
     assert set(episode.source_checksums) == {
         "baseline_trajectory",
         "final_data",
@@ -1165,7 +1245,7 @@ def test_source_protocol_is_typed_and_rejects_overlapping_folds(
         Path(__file__).parents[1]
         / "configs"
         / "sota"
-        / "phystwin_equivariant_force_source_v1.json"
+        / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(
         protocol_path,
@@ -1174,6 +1254,12 @@ def test_source_protocol_is_typed_and_rejects_overlapping_folds(
     assert len(protocol.payload["source_cases"]) == 17
     assert protocol.training.device == "cpu"
     assert protocol.training.seeds == (17, 43, 101)
+    assert protocol.payload["source_target_qa"][
+        "maximum_prefix_cap_fraction"
+    ] == pytest.approx(0.10)
+    assert protocol.payload["information_boundary"]["force_units"].endswith(
+        "never labeled as Newtons."
+    )
 
     payload = json.loads(protocol_path.read_text(encoding="utf-8"))
     payload["source_folds"][1]["held_out_cases"].append(
@@ -1183,6 +1269,42 @@ def test_source_protocol_is_typed_and_rejects_overlapping_folds(
     invalid.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="disjoint complete"):
         load_equivariant_force_source_protocol(invalid)
+
+    payload = json.loads(protocol_path.read_text(encoding="utf-8"))
+    del payload["source_target_qa"]
+    invalid.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="promotion settings"):
+        load_equivariant_force_source_protocol(invalid)
+
+
+def test_failed_source_target_qa_blocks_stage_one(tmp_path) -> None:
+    protocol_path = (
+        Path(__file__).parents[1]
+        / "configs"
+        / "sota"
+        / "phystwin_equivariant_force_source_v2.json"
+    )
+    protocol_sha256 = hashlib.sha256(protocol_path.read_bytes()).hexdigest()
+    summary = {
+        "schema_version": 2,
+        "contract": "phystwin-equivariant-generalized-force-source-v2",
+        "protocol_sha256": protocol_sha256,
+        "source_episode_count": 0,
+        "source_episodes": {},
+        "target_artifacts_opened": False,
+        "source_target_qa_passed": False,
+    }
+    path = tmp_path / "episode_build_summary.json"
+    path.write_text(json.dumps(summary), encoding="utf-8")
+    with pytest.raises(ValueError, match="target QA failed"):
+        validate_equivariant_force_episode_build(tmp_path, protocol_path)
+
+    summary["source_target_qa_passed"] = True
+    path.write_text(json.dumps(summary), encoding="utf-8")
+    assert (
+        validate_equivariant_force_episode_build(tmp_path, protocol_path)
+        == summary
+    )
 
 
 def _official_gate_records(protocol, *, ratio: float = 0.94):
@@ -1212,7 +1334,7 @@ def test_official_warp_gate_passes_only_the_locked_multimetric_result() -> None:
         Path(__file__).parents[1]
         / "configs"
         / "sota"
-        / "phystwin_equivariant_force_source_v1.json"
+        / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(protocol_path)
     result = evaluate_equivariant_force_official_warp_gate(
@@ -1231,7 +1353,7 @@ def test_official_warp_gate_fails_on_parity_or_worst_case_regression() -> None:
         Path(__file__).parents[1]
         / "configs"
         / "sota"
-        / "phystwin_equivariant_force_source_v1.json"
+        / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(protocol_path)
     records = _official_gate_records(protocol)
@@ -1255,7 +1377,7 @@ def test_official_warp_gate_cannot_override_failed_force_competence() -> None:
         Path(__file__).parents[1]
         / "configs"
         / "sota"
-        / "phystwin_equivariant_force_source_v1.json"
+        / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(protocol_path)
     result = evaluate_equivariant_force_official_warp_gate(

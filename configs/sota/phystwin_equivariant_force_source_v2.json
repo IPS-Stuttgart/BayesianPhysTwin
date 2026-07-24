@@ -1,8 +1,8 @@
 {
-  "schema_version": 1,
-  "contract": "phystwin-equivariant-generalized-force-source-v1",
+  "schema_version": 2,
+  "contract": "phystwin-equivariant-generalized-force-source-v2",
   "locked_at_utc": "2026-07-24T00:00:00Z",
-  "status": "Source-only two-stage model-family gate; no target artifact may be opened.",
+  "status": "Source-only two-stage model-family gate amended before Stage 1 after the v1 unit audit; no target artifact may be opened.",
   "claim_boundary": "Inverse-dynamics competence is diagnostic only. Promotion requires cross-fitted official-Warp trajectory gains and discrepancy shrinkage. A later result on previously examined targets cannot establish an independent state-of-the-art claim.",
   "hypothesis": "A bounded gravity-aware E(3)-equivariant graph model can transfer state-, action-, and regime-dependent generalized-force discrepancy across interactions when its global weights are source-trained and only a low-dimensional latent is adapted on each held-out prefix.",
   "fit_fraction": 0.75,
@@ -74,7 +74,10 @@
     "graph_prior_strength": 0.5,
     "graph_ridge": 1e-08,
     "graph_covariance_probes": 8,
-    "maximum_force_n": 0.5,
+    "force_scale_node_quantile": 0.95,
+    "force_scale_temporal_quantile": 0.9,
+    "minimum_force_scale_sim": 0.1,
+    "maximum_force_scale_sim": 50.0,
     "minimum_training_weight": 0.0001
   },
   "model": {
@@ -82,7 +85,7 @@
     "hidden_layers": 2,
     "latent_dim": 8,
     "regime_dim": 5,
-    "maximum_force_per_node_n": 0.5,
+    "maximum_normalized_force": 1.0,
     "velocity_scale_mps": 0.1,
     "displacement_scale_m": 0.05,
     "minimum_length_m": 1e-06
@@ -96,7 +99,7 @@
     "latent_regularization": 0.001,
     "adaptation_regularization": 0.01,
     "gradient_clip": 1.0,
-    "huber_delta_n": 0.01,
+    "huber_delta_normalized": 0.05,
     "seeds": [17, 43, 101],
     "minimum_force_target_improvement": 0.1,
     "minimum_both_win_folds": 2,
@@ -109,8 +112,15 @@
     "activity_speed_mps": 0.1,
     "admission_weight": 1.0,
     "required_zero_force_bitwise_parity": true,
-    "candidate": "prefix_state_update_plus_equivariant_force_plus_refit_graph_persistence",
-    "reference": "same_prefix_state_update_plus_graph_persistence_without_learned_force"
+    "candidate": "same_released_prefix_endpoint_plus_equivariant_force_plus_refit_graph_persistence",
+    "reference": "same_released_prefix_endpoint_plus_zero_force_plus_refit_graph_persistence"
+  },
+  "source_target_qa": {
+    "required_force_unit_contract": "warp_simulator_generalized_force_not_newtons",
+    "require_released_unit_simulation_masses": true,
+    "maximum_prefix_cap_fraction": 0.1,
+    "force_scale_must_use_prefix_only": true,
+    "failure_blocks_stage_1": true
   },
   "source_gate": {
     "stage_1_force_target_competence_required": true,
@@ -126,10 +136,11 @@
   "information_boundary": {
     "complete_source_training": "Complete registered outcomes may supervise shared weights only for non-held-out source interactions.",
     "heldout_adaptation": "Only the held-out case latent may use frames [0, fit_end); global weights and all hyperparameters remain frozen.",
-    "heldout_scoring": "Official Warp is rerun from the permitted prefix state and scored only on [fit_end, train_end).",
+    "heldout_scoring": "Candidate and reference start from the same released endpoint at fit_end. Each receives a separately prefix-fitted graph-persistence readout, and official Warp is scored only on [fit_end, train_end).",
     "target_access": "No target file, trajectory, observation, metric, checkpoint, query, or future artifact may be read by either source stage.",
     "reliability": "Prior reliability may use source confidence, validity, geometry, visibility, and graph support, but never the PhysTwin state residual.",
-    "innovation": "The state innovation enters once through robust inverse-dynamics target construction.",
+    "innovation": "The state innovation enters once through robust inverse-dynamics target construction. Its prefix-only robust scale normalizes the same likelihood contribution and is never reused as prior reliability.",
+    "force_units": "Released node masses are unit simulator values, not kilograms. Targets and injected fields are Warp generalized-force units and are never labeled as Newtons.",
     "prob4d": "Prob4D remains a separate optional observation feeder and is not used in this source mechanism gate.",
     "causal4d": "No Causal4D held-v8 artifact, operator, target, query, score, or outcome is accessed."
   },
@@ -142,7 +153,8 @@
   ],
   "forbidden": [
     "opening any target artifact when either source stage fails",
-    "selecting architecture, target construction, force cap, seeds, folds, or thresholds from held-out suffix metrics",
+    "selecting architecture, target construction, force-scale quantiles, seeds, folds, or thresholds from held-out suffix metrics",
+    "labeling native Warp generalized-force values as Newtons or material-force measurements",
     "using held-out suffix frames to adapt the case latent or initialize the held-out rollout",
     "using a PhysTwin residual as both a prior reliability cue and a robust innovation",
     "calling force-target RMSE a simulator or state-of-the-art result",

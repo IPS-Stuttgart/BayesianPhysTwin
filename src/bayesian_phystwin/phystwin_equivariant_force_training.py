@@ -37,7 +37,7 @@ class EquivariantForceTrainingConfig:
     latent_regularization: float = 1.0e-3
     adaptation_regularization: float = 1.0e-2
     gradient_clip: float = 1.0
-    huber_delta_n: float = 0.01
+    huber_delta_normalized: float = 0.05
     seeds: tuple[int, ...] = (17, 43, 101)
     minimum_force_target_improvement: float = 0.10
     minimum_both_win_folds: int = 2
@@ -50,7 +50,7 @@ class EquivariantForceTrainingConfig:
             self.learning_rate,
             self.adaptation_learning_rate,
             self.gradient_clip,
-            self.huber_delta_n,
+            self.huber_delta_normalized,
         )
         if any(value <= 0.0 or not np.isfinite(value) for value in positive):
             raise ValueError("optimizer and robust-loss scales must be positive")
@@ -102,7 +102,7 @@ def _episode_tensors(
         "gravity_mps2",
         "action_activity",
         "regime_probabilities",
-        "force_targets_n",
+        "force_targets_sim",
         "force_target_weight",
     )
     tensors = {
@@ -116,6 +116,11 @@ def _episode_tensors(
     tensors["object_edges"] = torch.tensor(
         episode.object_edges,
         dtype=torch.long,
+        device=device,
+    )
+    tensors["force_scale_sim"] = torch.tensor(
+        episode.force_scale_sim,
+        dtype=torch.float32,
         device=device,
     )
     return tensors
@@ -143,6 +148,7 @@ def _frame_prediction(
         action_support=values["action_support"][frame],
         external_support=values["external_support"][frame],
         gravity_mps2=values["gravity_mps2"],
+        force_scale_sim=values["force_scale_sim"],
         action_activity=values["action_activity"][frame],
         regime_probabilities=values["regime_probabilities"][frame],
         latent=latent,
@@ -174,13 +180,15 @@ def _frame_loss(
         device=config.device,
         tensors=values,
     )
-    target = values["force_targets_n"][frame]
+    scale = values["force_scale_sim"]
+    target = values["force_targets_sim"][frame] / scale
+    prediction = prediction / scale
     weight = values["force_target_weight"][frame]
     element = torch.nn.functional.smooth_l1_loss(
         prediction,
         target,
         reduction="none",
-        beta=config.huber_delta_n,
+        beta=config.huber_delta_normalized,
     )
     denominator = torch.clamp(3.0 * torch.sum(weight), min=1.0)
     return torch.sum(element * weight[:, None]) / denominator
@@ -392,7 +400,9 @@ def force_target_metrics(
                 device=device,
                 tensors=tensors,
             ).detach().cpu().numpy()
-            target = episode.force_targets_n[frame]
+            scale = episode.force_scale_sim
+            prediction = prediction / scale
+            target = episode.force_targets_sim[frame] / scale
             weight = episode.force_target_weight[frame]
             squared_candidate += float(
                 np.sum(weight[:, None] * np.square(prediction - target))
@@ -404,8 +414,8 @@ def force_target_metrics(
     candidate_rmse = float(np.sqrt(squared_candidate / max(weight_total, 1.0)))
     zero_rmse = float(np.sqrt(squared_zero / max(weight_total, 1.0)))
     return {
-        "candidate_force_rmse_n": candidate_rmse,
-        "zero_force_rmse_n": zero_rmse,
+        "candidate_normalized_force_rmse": candidate_rmse,
+        "zero_normalized_force_rmse": zero_rmse,
         "relative_rmse": candidate_rmse / max(zero_rmse, 1.0e-12),
         "improvement": 1.0 - candidate_rmse / max(zero_rmse, 1.0e-12),
         "frame_count": int(len(frames)),
@@ -474,6 +484,9 @@ def crossfit_equivariant_force_competence(
                     "target_future_used_for_fit_or_selection": False,
                     "exact_zero_force_fallback": True,
                     "force_location": "inside_official_warp",
+                    "force_unit_contract": (
+                        "warp_simulator_generalized_force_not_newtons"
+                    ),
                     "complete_source_outcomes_supervise_shared_weights": True,
                     "heldout_prefix_adapts_latent_only": True,
                 },
@@ -564,7 +577,7 @@ def crossfit_equivariant_force_competence(
         >= training_config.minimum_force_target_improvement
     )
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "contract": EQUIVARIANT_FORCE_CONTRACT,
         "model_config": model_config.to_dict(),
         "training_config": asdict(training_config),

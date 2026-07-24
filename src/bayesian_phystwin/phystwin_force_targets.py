@@ -25,12 +25,20 @@ class ResidualAccelerationEstimate:
 
 @dataclass(frozen=True)
 class GeneralizedForceTargets:
-    """Mass-scaled residual forces and observation-independent fit weights."""
+    """Mass-scaled residual forces in the native simulator unit system."""
 
-    mean_n: np.ndarray
-    variance_n2: np.ndarray
+    mean_sim: np.ndarray
+    variance_sim2: np.ndarray
     observed: np.ndarray
     training_weight: np.ndarray
+    diagnostics: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class SimulatorForceScale:
+    """Prefix-only robust force scale in native Warp simulator units."""
+
+    value_sim: float
     diagnostics: dict[str, Any]
 
 
@@ -341,32 +349,123 @@ def graph_smooth_residual_acceleration(
     )
 
 
-def acceleration_to_force_targets(
+def robust_prefix_force_scale(
     estimate: ResidualAccelerationEstimate,
-    masses_kg: np.ndarray,
+    masses_sim: np.ndarray,
     *,
-    maximum_force_n: float,
-    minimum_training_weight: float = 1.0e-4,
-) -> GeneralizedForceTargets:
-    """Convert residual acceleration into bounded heteroscedastic force targets."""
+    prefix_end_frame: int,
+    node_quantile: float = 0.95,
+    temporal_quantile: float = 0.90,
+    minimum_scale_sim: float = 0.10,
+    maximum_scale_sim: float = 50.0,
+) -> SimulatorForceScale:
+    """Estimate one case scale without reading its held-out suffix.
 
-    masses = np.asarray(masses_kg, dtype=float)
+    PhysTwin assigns every released graph node unit simulation mass. Those
+    values do not establish a kilogram scale, so generalized forces remain in
+    Warp's native simulator units. A high spatial quantile is computed per
+    prefix frame and then robustly aggregated over time.
+    """
+
+    masses = np.asarray(masses_sim, dtype=float)
     nodes = estimate.mean_mps2.shape[1]
     if masses.shape != (nodes,) or np.any(masses <= 0.0) or not np.all(
         np.isfinite(masses)
     ):
-        raise ValueError("masses_kg must be a finite positive N-vector")
-    if maximum_force_n <= 0.0 or minimum_training_weight <= 0.0:
+        raise ValueError("masses_sim must be a finite positive N-vector")
+    if not 3 <= prefix_end_frame <= len(estimate.mean_mps2):
+        raise ValueError("prefix_end_frame must cover at least three frames")
+    if not 0.0 < node_quantile < 1.0 or not 0.0 < temporal_quantile < 1.0:
+        raise ValueError("force-scale quantiles must lie in (0,1)")
+    if (
+        minimum_scale_sim <= 0.0
+        or maximum_scale_sim < minimum_scale_sim
+        or not np.isfinite(minimum_scale_sim)
+        or not np.isfinite(maximum_scale_sim)
+    ):
+        raise ValueError("force-scale bounds must be finite and ordered")
+
+    raw_force = estimate.mean_mps2 * masses[None, :, None]
+    magnitude = np.linalg.norm(raw_force, axis=2)
+    selected = (
+        estimate.observed
+        & np.isfinite(estimate.variance_m2ps4)
+        & (estimate.variance_m2ps4 > 0.0)
+    )
+    frame_scales = []
+    for frame in range(prefix_end_frame):
+        frame_selected = selected[frame]
+        if np.any(frame_selected):
+            frame_scales.append(
+                float(
+                    np.quantile(
+                        magnitude[frame, frame_selected],
+                        node_quantile,
+                    )
+                )
+            )
+    if not frame_scales:
+        raise ValueError("prefix contains no supported simulator-force targets")
+    unclipped = float(np.quantile(frame_scales, temporal_quantile))
+    scale = float(np.clip(unclipped, minimum_scale_sim, maximum_scale_sim))
+    prefix_selected = selected[:prefix_end_frame]
+    cap_fraction = float(
+        np.mean(
+            magnitude[:prefix_end_frame][prefix_selected]
+            >= scale * (1.0 - 1.0e-6)
+        )
+    )
+    return SimulatorForceScale(
+        value_sim=scale,
+        diagnostics={
+            "unit_contract": "warp_simulator_generalized_force_not_newtons",
+            "source": "allowed_prefix_residual_acceleration",
+            "prefix_end_frame": int(prefix_end_frame),
+            "node_quantile": float(node_quantile),
+            "temporal_quantile": float(temporal_quantile),
+            "minimum_scale_sim": float(minimum_scale_sim),
+            "maximum_scale_sim": float(maximum_scale_sim),
+            "unclipped_scale_sim": unclipped,
+            "selected_scale_sim": scale,
+            "prefix_cap_fraction": cap_fraction,
+            "prefix_frame_scale_min_sim": float(np.min(frame_scales)),
+            "prefix_frame_scale_median_sim": float(np.median(frame_scales)),
+            "prefix_frame_scale_max_sim": float(np.max(frame_scales)),
+            "future_frames_used": False,
+            "innovation_reused_as_prior_reliability": False,
+        },
+    )
+
+
+def acceleration_to_force_targets(
+    estimate: ResidualAccelerationEstimate,
+    masses_sim: np.ndarray,
+    *,
+    maximum_force_sim: float,
+    minimum_training_weight: float = 1.0e-4,
+) -> GeneralizedForceTargets:
+    """Convert acceleration to bounded native-simulator force targets."""
+
+    masses = np.asarray(masses_sim, dtype=float)
+    nodes = estimate.mean_mps2.shape[1]
+    if masses.shape != (nodes,) or np.any(masses <= 0.0) or not np.all(
+        np.isfinite(masses)
+    ):
+        raise ValueError("masses_sim must be a finite positive N-vector")
+    if maximum_force_sim <= 0.0 or minimum_training_weight <= 0.0:
         raise ValueError("force and training-weight scales must be positive")
     force = estimate.mean_mps2 * masses[None, :, None]
     variance = estimate.variance_m2ps4 * np.square(masses)[None]
     norm = np.linalg.norm(force, axis=2, keepdims=True)
-    scale = np.minimum(1.0, maximum_force_n / np.maximum(norm, 1.0e-12))
+    scale = np.minimum(
+        1.0,
+        maximum_force_sim / np.maximum(norm, 1.0e-12),
+    )
     force = force * scale
     finite = estimate.observed & np.isfinite(variance) & (variance > 0.0)
     finite_values = variance[finite]
     unsupported_variance = max(
-        maximum_force_n**2,
+        maximum_force_sim**2,
         float(np.max(finite_values, initial=0.0)),
     )
     variance = variance.copy()
@@ -388,10 +487,13 @@ def acceleration_to_force_targets(
     diagnostics = dict(estimate.diagnostics)
     diagnostics.update(
         {
-            "maximum_target_force_n": float(
+            "force_unit_contract": (
+                "warp_simulator_generalized_force_not_newtons"
+            ),
+            "maximum_target_force_sim": float(
                 np.max(np.linalg.norm(force, axis=2), initial=0.0)
             ),
-            "median_target_force_n": (
+            "median_target_force_sim": (
                 float(np.median(np.linalg.norm(force[finite], axis=1)))
                 if np.any(finite)
                 else 0.0
@@ -399,13 +501,13 @@ def acceleration_to_force_targets(
             "nonzero_training_weight_fraction": float(
                 np.mean(training_weight > 0.0)
             ),
-            "target_cap_n": float(maximum_force_n),
-            "unsupported_target_variance_n2": unsupported_variance,
+            "target_cap_sim": float(maximum_force_sim),
+            "unsupported_target_variance_sim2": unsupported_variance,
         }
     )
     return GeneralizedForceTargets(
-        mean_n=force,
-        variance_n2=variance,
+        mean_sim=force,
+        variance_sim2=variance,
         observed=finite,
         training_weight=training_weight,
         diagnostics=diagnostics,

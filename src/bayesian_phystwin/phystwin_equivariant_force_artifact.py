@@ -17,7 +17,7 @@ from .phystwin_equivariant_force import (
 )
 
 
-EQUIVARIANT_FORCE_ARTIFACT_SCHEMA = 1
+EQUIVARIANT_FORCE_ARTIFACT_SCHEMA = 2
 
 
 def _sha256(path: Path) -> str:
@@ -102,6 +102,9 @@ class EquivariantForceArtifact:
             "target_future_used_for_fit_or_selection": False,
             "exact_zero_force_fallback": True,
             "force_location": "inside_official_warp",
+            "force_unit_contract": (
+                "warp_simulator_generalized_force_not_newtons"
+            ),
         }
         if any(boundary.get(key) != value for key, value in required.items()):
             raise ValueError("artifact violates its causal or fallback boundary")
