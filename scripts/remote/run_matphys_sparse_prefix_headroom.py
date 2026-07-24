@@ -34,8 +34,13 @@ from bayesian_phystwin.phystwin_bayesian_anchor import (
     RobustEndpointPosterior,
     robust_random_walk_endpoint,
 )
+from bayesian_phystwin.phystwin_bias_aware_ray import (
+    decide_prefix_admission,
+    remove_affine_ray_nuisance,
+)
 from bayesian_phystwin.phystwin_comparison import official_metrics_by_frame
 from bayesian_phystwin.phystwin_cotracker3_cues import (
+    infer_cotracker3_ray_discrepancy,
     load_cotracker3_multiview_depth_observations,
     load_cotracker3_multiview_observations,
 )
@@ -84,6 +89,19 @@ class HeadroomConfig:
     cotracker_minimum_camera_count: int = 3
     multiview_priority_minimum_availability_fraction: float = 0.10
     multiview_tangent_neighbor_count: int = 16
+    ray_window_frames: int = 31
+    ray_minimum_camera_count: int = 3
+    ray_pixel_noise_std: float = 2.0
+    ray_prior_std_m: float = 0.05
+    ray_degrees_of_freedom: float = 4.0
+    ray_robust_iterations: int = 3
+    ray_graph_prior_strength: float = 1e-4
+    ray_correction_scale: float = 1.0
+    ray_maximum_residual_m: float = 0.02
+    ray_minimum_observed_fraction: float = 0.02
+    ray_minimum_inlier_probability: float = 0.20
+    ray_minimum_absolute_prefix_improvement_m: float = 0.0001
+    ray_minimum_relative_prefix_improvement: float = 0.01
     prior_strengths: tuple[float, ...] = (0.003, 0.01, 0.03, 0.1)
     maximum_residuals_m: tuple[float, ...] = (0.02, 0.04, 0.06, 0.1)
     dense_correction_scales: tuple[float, ...] = (1.0,)
@@ -746,6 +764,11 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
 
     cotracker_summary = None
     directional_endpoint_inputs = None
+    ray_bias_aware = (
+        config.observation_source
+        == "alltracker_multiview_ray_bias_aware"
+    )
+    ray_endpoint_diagnostics: dict[int, dict[str, Any]] = {}
     if config.observation_source == "final_data":
         inference_points = observed_points
         dense_valid = _target_validity(visible, motion_valid)
@@ -1077,6 +1100,30 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
                 "largest endpoint covariance eigenvalue in square metres"
             ),
         }
+    elif ray_bias_aware:
+        inference_points = np.zeros_like(observed_points)
+        dense_valid = np.zeros_like(visible)
+        cotracker_summary = {
+            "method": (
+                "three-view robust ray posterior relative to the physical "
+                "baseline; shared affine field is retained as nuisance "
+                "variance rather than applied as a state correction"
+            ),
+            "window_frames": config.ray_window_frames,
+            "minimum_camera_count": config.ray_minimum_camera_count,
+            "minimum_view_quality": config.cotracker_minimum_quality,
+            "maximum_cycle_error_px": (
+                config.cotracker_maximum_cycle_error_px
+            ),
+            "pixel_noise_std": config.ray_pixel_noise_std,
+            "prior_std_m": config.ray_prior_std_m,
+            "degrees_of_freedom": config.ray_degrees_of_freedom,
+            "robust_iterations": config.ray_robust_iterations,
+            "unknown_correlation_rule": (
+                "temporal effective sample size and conservative cross-view "
+                "precision averaging inside the ray posterior"
+            ),
+        }
     else:
         raise ValueError(
             f"unsupported observation source: {config.observation_source}"
@@ -1086,6 +1133,45 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     )
 
     def endpoint_at(end_frame: int):
+        if ray_bias_aware:
+            ray = infer_cotracker3_ray_discrepancy(
+                Path(cues_path),
+                baseline[:train_end, :original_count],
+                end_frame=end_frame,
+                window_frames=config.ray_window_frames,
+                minimum_view_quality=config.cotracker_minimum_quality,
+                maximum_cycle_error_px=(
+                    config.cotracker_maximum_cycle_error_px
+                ),
+                minimum_camera_count=config.ray_minimum_camera_count,
+                pixel_noise_std=config.ray_pixel_noise_std,
+                prior_std_m=config.ray_prior_std_m,
+                degrees_of_freedom=config.ray_degrees_of_freedom,
+                robust_iterations=config.ray_robust_iterations,
+            )
+            bias_aware = remove_affine_ray_nuisance(
+                ray,
+                baseline[end_frame - 1, :original_count],
+                unobserved_variance_m2=config.ray_prior_std_m**2,
+            )
+            diagnostic = asdict(bias_aware.diagnostics)
+            diagnostic["coefficients"] = (
+                bias_aware.diagnostics.coefficients.tolist()
+            )
+            diagnostic["observed_fraction"] = float(
+                np.mean(ray.observed)
+            )
+            diagnostic["median_inlier_probability"] = (
+                0.0
+                if not np.any(ray.observed)
+                else float(
+                    np.median(
+                        ray.final_inlier_probability[ray.observed]
+                    )
+                )
+            )
+            ray_endpoint_diagnostics[end_frame] = diagnostic
+            return bias_aware.posterior
         if directional_endpoint_inputs is None:
             return _endpoint(
                 dense_residual,
@@ -1116,11 +1202,13 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         raise ValueError(f"invalid fit/validation split for {case}")
 
     fit_dense_endpoint = endpoint_at(fit_end)
-    fit_full_mean, _, _ = _full_endpoint_arrays(
-        fit_dense_endpoint,
-        state_count=len(structure_points),
-        original_count=original_count,
-        initial_variance=config.initial_std_m**2,
+    fit_full_mean, fit_full_variance, fit_full_observed = (
+        _full_endpoint_arrays(
+            fit_dense_endpoint,
+            state_count=len(structure_points),
+            original_count=original_count,
+            initial_variance=config.initial_std_m**2,
+        )
     )
     inner_end = max(3, fit_end - (train_end - fit_end))
     if not inner_end < fit_end:
@@ -1290,6 +1378,145 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
                 }
             )
     selectors: dict[str, dict[str, Any]] = {}
+    if ray_bias_aware:
+        fit_graph = graph_smoothed_discrepancy_posterior(
+            fit_full_mean,
+            fit_full_variance,
+            fit_full_observed,
+            laplacian,
+            prior_strength=config.ray_graph_prior_strength,
+        ).mean
+        fit_ray_correction = _clip_residual(
+            (config.ray_correction_scale * fit_graph)[None],
+            config.ray_maximum_residual_m,
+        )[0]
+        validation_mid = (fit_end + train_end) // 2
+        fit_all_chamfer = _evaluate_chamfer_only(
+            baseline,
+            fit_ray_correction,
+            start_frame=fit_end,
+            end_frame=train_end,
+            observed=observed_points,
+            visible=visible,
+            num_surface_points=num_surface_points,
+        )
+        baseline_early_chamfer = _evaluate_chamfer_only(
+            baseline,
+            np.zeros_like(fit_ray_correction),
+            start_frame=fit_end,
+            end_frame=validation_mid,
+            observed=observed_points,
+            visible=visible,
+            num_surface_points=num_surface_points,
+        )
+        fit_early_chamfer = _evaluate_chamfer_only(
+            baseline,
+            fit_ray_correction,
+            start_frame=fit_end,
+            end_frame=validation_mid,
+            observed=observed_points,
+            visible=visible,
+            num_surface_points=num_surface_points,
+        )
+        baseline_late_chamfer = _evaluate_chamfer_only(
+            baseline,
+            np.zeros_like(fit_ray_correction),
+            start_frame=validation_mid,
+            end_frame=train_end,
+            observed=observed_points,
+            visible=visible,
+            num_surface_points=num_surface_points,
+        )
+        fit_late_chamfer = _evaluate_chamfer_only(
+            baseline,
+            fit_ray_correction,
+            start_frame=validation_mid,
+            end_frame=train_end,
+            observed=observed_points,
+            visible=visible,
+            num_surface_points=num_surface_points,
+        )
+        fit_updated = fit_dense_endpoint.update_count > 0
+        fit_inlier = (
+            0.0
+            if not np.any(fit_updated)
+            else float(
+                np.median(
+                    fit_dense_endpoint.final_inlier_probability[fit_updated]
+                )
+            )
+        )
+        ray_admission = decide_prefix_admission(
+            baseline_all_m=baseline_validation["chamfer_distance_m"],
+            candidate_all_m=fit_all_chamfer,
+            baseline_early_m=baseline_early_chamfer,
+            candidate_early_m=fit_early_chamfer,
+            baseline_late_m=baseline_late_chamfer,
+            candidate_late_m=fit_late_chamfer,
+            observed_fraction=float(np.mean(fit_updated)),
+            median_inlier_probability=fit_inlier,
+            minimum_observed_fraction=(
+                config.ray_minimum_observed_fraction
+            ),
+            minimum_inlier_probability=(
+                config.ray_minimum_inlier_probability
+            ),
+            minimum_absolute_improvement_m=(
+                config.ray_minimum_absolute_prefix_improvement_m
+            ),
+            minimum_relative_improvement=(
+                config.ray_minimum_relative_prefix_improvement
+            ),
+        )
+        if ray_admission.accepted:
+            full_graph = graph_smoothed_discrepancy_posterior(
+                full_mean,
+                full_variance,
+                full_observed,
+                laplacian,
+                prior_strength=config.ray_graph_prior_strength,
+            ).mean
+            ray_future_correction = _clip_residual(
+                (config.ray_correction_scale * full_graph)[None],
+                config.ray_maximum_residual_m,
+            )[0]
+        else:
+            ray_future_correction = np.zeros_like(full_mean)
+        ray_selector = (
+            "causal_selected_alltracker_ray_bias_aware_graph"
+        )
+        candidate_metrics[ray_selector] = _evaluate(
+            baseline,
+            ray_future_correction,
+            start_frame=train_end,
+            end_frame=future_end,
+            observed=observed_points,
+            visible=visible,
+            manual_tracks=manual_tracks,
+            num_surface_points=num_surface_points,
+        )
+        selectors[ray_selector] = {
+            "accepted": ray_admission.accepted,
+            "admission": asdict(ray_admission),
+            "graph_prior_strength": config.ray_graph_prior_strength,
+            "correction_scale": config.ray_correction_scale,
+            "maximum_residual_m": config.ray_maximum_residual_m,
+            "fallback": (
+                "bit-exact zero correction relative to the unchanged baseline"
+            ),
+            "fallback_applied": not ray_admission.accepted,
+            "fallback_is_exact": (
+                None
+                if ray_admission.accepted
+                else bool(
+                    np.array_equal(
+                    ray_future_correction,
+                    np.zeros_like(ray_future_correction),
+                    )
+                )
+            ),
+            "future_metrics": candidate_metrics[ray_selector],
+        }
     for selector, chamfer_weight, require_no_regression in (
         ("causal_selected_dense_scale_balanced", 0.5, False),
         ("causal_selected_dense_scale_cd75", 0.75, False),
@@ -2141,6 +2368,13 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
                     num_surface_points=num_surface_points,
                 )
 
+    if ray_bias_aware:
+        cotracker_summary["endpoint_diagnostics"] = {
+            str(frame): diagnostic
+            for frame, diagnostic in sorted(
+                ray_endpoint_diagnostics.items()
+            )
+        }
     return case, {
         "selected_raw_family": selected_family,
         "selected_within_family_method": selected_within_family_method,
@@ -2298,6 +2532,7 @@ def parse_args() -> argparse.Namespace:
             "cotracker3_multiview_priority",
             "cotracker3_multiview_tangent_priority",
             "cotracker3_multiview_directional_priority",
+            "alltracker_multiview_ray_bias_aware",
         ),
         default="final_data",
     )
