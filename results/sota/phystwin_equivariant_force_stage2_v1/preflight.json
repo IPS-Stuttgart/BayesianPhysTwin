@@ -2,16 +2,16 @@
   "schema_version": 1,
   "stage": "equivariant_force_stage2_preflight",
   "status": "ready_but_blocked_on_stage1_and_explicit_gpu_release",
-  "prepared_at_utc": "2026-07-24T02:13:11Z",
+  "prepared_at_utc": "2026-07-24T02:27:59Z",
   "claim_boundary": "This artifact establishes source-only Stage-2 deployment identity and readiness. It contains no Stage-1 or Stage-2 outcome, authorizes no target access, and authorizes no state-of-the-art claim.",
   "deployment": {
     "host": "gpuserver4090",
-    "code_root": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6",
-    "implementation_commit": "7af20f613cb76fef2f02661f74921abe1cef1ca1",
-    "implementation_archive": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6.tar.gz",
-    "implementation_archive_sha256": "81a4c59548293efbc49dfeed04d4c33a414bcb16f36e8e6cc7a10dca760771d9",
-    "stage2_implementation_sha256": "b9d6e51eb2d89193ecf0af97e28a42a91acae4700de3d043d0cbce0ca89a98fd",
-    "stage2_protocol_sha256": "4a9f5730e8b14071b14013dab20bf6c71a26a3a923abf430c0b4113699db31c4",
+    "code_root": "/home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a",
+    "implementation_commit": "6a4c02a8480d270211ceec88ca657810cb2d0656",
+    "implementation_archive": "/home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a.tar.gz",
+    "implementation_archive_sha256": "a997b4c811b2437505b607b09af5ea6185e01b2c7f2f6699a7d71fd119290977",
+    "stage2_implementation_sha256": "fcb4bfa1573427bc0cdc6545f111192ec02dcc199ca5dff0a9c1e66ca5aaf1de",
+    "stage2_protocol_sha256": "c9b879facd24991373074228ec6b5911c847a131a8da7f79bb238d152a9462b0",
     "python": "3.10.12",
     "numpy": "1.26.4",
     "scipy": "1.13.1",
@@ -31,10 +31,10 @@
     "data_root": "/home/florianpfaff/bayesian-phystwin-confirmatory-data",
     "episode_root": "/home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes",
     "source_archive_sha256": "fdb13f40443bedeadb05e5cff3d4f478530f89e0ffa521b7c5945c5c124378c1",
-    "source_protocol_path": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6/configs/sota/phystwin_equivariant_force_source_v2.json",
+    "source_protocol_path": "/home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a/configs/sota/phystwin_equivariant_force_source_v2.json",
     "source_protocol_sha256": "1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171",
-    "stage2_protocol_path": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6/configs/sota/phystwin_equivariant_force_stage2_v1.json",
-    "source_manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6/configs/sota/phystwin_equivariant_force_stage2_source_manifest_v1.json",
+    "stage2_protocol_path": "/home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a/configs/sota/phystwin_equivariant_force_stage2_v1.json",
+    "source_manifest_path": "/home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a/configs/sota/phystwin_equivariant_force_stage2_source_manifest_v1.json",
     "source_manifest_sha256": "e1c0ff0171291342540227cb2cbeac024c8a9b7e13e0921cf37738a95e83a40a",
     "episode_count": 17,
     "unique_episode_artifact_count": 17,
@@ -49,29 +49,36 @@
     "stage2_authorized": false
   },
   "execution": {
-    "output_root": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6/runs/equivariant_force_stage2_v1",
+    "output_root": "/home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a/runs/equivariant_force_stage2_v1",
     "gpu_release_required": true,
     "gpu_release_observed": false,
     "stage2_started": false,
     "target_execution_supported": false,
     "device_visibility_rule": "Expose one released physical GPU per process and retain the frozen cuda:0 device string inside each process.",
-    "case_command_template": "cd /home/florianpfaff/bpt-equivariant-force-stage2-7af20f6 && CUDA_VISIBLE_DEVICES=<released_physical_gpu> PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_equivariant_force_source official-warp-case /home/florianpfaff/PhysTwin-upstream /home/florianpfaff/bayesian-phystwin-confirmatory-data /home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes <stage1_competence_summary_json> configs/sota/phystwin_equivariant_force_source_v2.json configs/sota/phystwin_equivariant_force_stage2_v1.json <registered_source_case_id> /home/florianpfaff/bpt-equivariant-force-stage2-7af20f6/runs/equivariant_force_stage2_v1/<registered_source_case_id> --device cuda:0"
+    "case_command_template": "cd /home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a && CUDA_VISIBLE_DEVICES=<released_physical_gpu> PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_equivariant_force_source official-warp-case /home/florianpfaff/PhysTwin-upstream /home/florianpfaff/bayesian-phystwin-confirmatory-data /home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes <stage1_competence_summary_json> configs/sota/phystwin_equivariant_force_source_v2.json configs/sota/phystwin_equivariant_force_stage2_v1.json <registered_source_case_id> /home/florianpfaff/bpt-equivariant-force-stage2-6a4c02a/runs/equivariant_force_stage2_v1/<registered_source_case_id> --device cuda:0"
   },
   "preflight_checks": {
     "remote_archive_hash_matches": true,
     "stage2_implementation_hash_matches_deployed_package": true,
     "stage2_protocol_hash_matches": true,
     "official_backend_identity_matches": true,
-    "source_manifest_validator": "b9d6e51eb2d89193ecf0af97e28a42a91acae4700de3d043d0cbce0ca89a98fd 17 True 17",
+    "source_manifest_validator": "5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9 fcb4bfa1573427bc0cdc6545f111192ec02dcc199ca5dff0a9c1e66ca5aaf1de 17 True 17",
     "cli_import_and_help": "passed",
-    "focused_source_manifest_and_official_warp_tests": "8 passed",
-    "full_cpu_suite": "1064 passed, 4 skipped",
+    "focused_source_manifest_and_official_warp_tests": "9 passed",
+    "full_cpu_suite": "1065 passed, 4 skipped",
     "gpu_process_started": false,
     "held_v8_accessed": false
   },
-  "superseded_candidate": {
-    "code_root": "/home/florianpfaff/bpt-equivariant-force-stage2-616e8fe",
-    "outcome_produced": false,
-    "reason": "Superseded before execution by the explicit Stage-2 evaluator implementation lock."
-  }
+  "superseded_candidates": [
+    {
+      "code_root": "/home/florianpfaff/bpt-equivariant-force-stage2-616e8fe",
+      "outcome_produced": false,
+      "reason": "Superseded before execution by the explicit Stage-2 evaluator implementation lock."
+    },
+    {
+      "code_root": "/home/florianpfaff/bpt-equivariant-force-stage2-7af20f6",
+      "outcome_produced": false,
+      "reason": "Superseded before execution by the exact frozen Stage-1 prerequisite check."
+    }
+  ]
 }

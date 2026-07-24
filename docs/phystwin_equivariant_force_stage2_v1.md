@@ -136,7 +136,7 @@ CPU verification with GPUs hidden passes 9 focused source-manifest and
 official-Warp tests and the complete suite: 1,065 passed and 4 skipped.
 The immutable deployment-readiness record is
 `results/sota/phystwin_equivariant_force_stage2_v1/preflight.json`, SHA-256
-`5e057c03c687fba56a66e64594b4170c02e88e5d6dcb194dd4e35bc35db95524`.
+`29af4df4d4b16f0a396905af94368d2d3b9f0ac77cd71fe5600a643d3747797f`.
 It leaves Stage 2 blocked until the registered Stage-1 gate passes and an
 explicit GPU release is observed.
 
