@@ -22,7 +22,13 @@ from .deform360_raw_camera_observation import (
     AllTrackerPrefixRuntime,
     RawCameraObservationConfig,
 )
-from .phystwin_cotracker3_cues import _distribution, _sha256
+from .phystwin_cotracker3_cues import (
+    _distribution,
+    _initial_multiview_eligibility,
+    _sha256,
+    pack_multiview_triangulation,
+    triangulate_multiview_tracks,
+)
 from .phystwin_raw_cues import (
     PhysTwinRawCueConfig,
     load_phystwin_raw_track_map,
@@ -56,6 +62,46 @@ class PhysTwinAllTrackerCueConfig:
             raise ValueError("visibility_threshold must lie in (0, 1)")
         if self.initial_match_tolerance_m <= 0.0:
             raise ValueError("initial_match_tolerance_m must be positive")
+
+
+@dataclass(frozen=True)
+class PhysTwinAllTrackerMultiviewCueConfig:
+    """Settings for an opt-in redundant-view augmentation."""
+
+    train_end_frame: int
+    max_side: int = 512
+    inference_iterations: int = 4
+    window_length: int = 16
+    minimum_cycle_quality: float = 0.5
+    visibility_threshold: float = 0.5
+    initial_match_tolerance_m: float = 1e-6
+    minimum_multiview_quality: float = 0.5
+    maximum_cycle_error_px: float = 5.0
+    multiview_initial_depth_tolerance_m: float = 0.02
+
+    def __post_init__(self) -> None:
+        self.source_config()
+        if not 0.0 <= self.minimum_multiview_quality <= 1.0:
+            raise ValueError("minimum_multiview_quality must lie in [0, 1]")
+        if self.maximum_cycle_error_px <= 0.0:
+            raise ValueError("maximum_cycle_error_px must be positive")
+        if self.multiview_initial_depth_tolerance_m <= 0.0:
+            raise ValueError(
+                "multiview_initial_depth_tolerance_m must be positive"
+            )
+
+    def source_config(self) -> PhysTwinAllTrackerCueConfig:
+        """Return the exact config required of the source-only artifact."""
+
+        return PhysTwinAllTrackerCueConfig(
+            train_end_frame=self.train_end_frame,
+            max_side=self.max_side,
+            inference_iterations=self.inference_iterations,
+            window_length=self.window_length,
+            minimum_cycle_quality=self.minimum_cycle_quality,
+            visibility_threshold=self.visibility_threshold,
+            initial_match_tolerance_m=self.initial_match_tolerance_m,
+        )
 
 
 @dataclass(frozen=True)
@@ -406,6 +452,369 @@ def build_phystwin_alltracker_cues(
         },
         "information_boundary": {
             "rgb_frame_range_half_open": [0, config.train_end_frame],
+            "future_rgb_read": False,
+            "future_cue_rows_neutralized": True,
+            "future_outcome_read": False,
+        },
+    }
+    output.with_suffix(".summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return summary
+
+
+def _load_validated_source_cues(
+    cues_path: Path,
+    *,
+    config: PhysTwinAllTrackerMultiviewCueConfig,
+    frame_count: int,
+    track_count: int,
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    summary_path = cues_path.with_suffix(".summary.json")
+    if not cues_path.is_file() or not summary_path.is_file():
+        raise FileNotFoundError(
+            "AllTracker multiview augmentation requires source cues and summary"
+        )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if summary.get("artifact_kind") != "PhysTwinAllTrackerCues":
+        raise ValueError("base artifact is not PhysTwinAllTrackerCues")
+    if summary.get("config") != asdict(config.source_config()):
+        raise ValueError("base AllTracker config differs from the augmentation")
+    if summary.get("output", {}).get("sha256") != _sha256(cues_path):
+        raise ValueError("base AllTracker cue hash differs from its summary")
+    tracker = summary.get("tracker", {})
+    if tracker.get("runtime_source_sha256") != ALLTRACKER_RUNTIME_SOURCE_SHA256:
+        raise ValueError("base AllTracker runtime hash differs from the lock")
+    if tracker.get("checkpoint_sha256") != ALLTRACKER_CHECKPOINT_SHA256:
+        raise ValueError("base AllTracker checkpoint hash differs from the lock")
+
+    with np.load(cues_path) as archive:
+        cues = {name: np.asarray(archive[name]) for name in archive.files}
+    required = {
+        "source_tracks_xy",
+        "source_quality_probability",
+        "forward_backward_error_px",
+        "forward_backward_valid",
+        "boundary_distance",
+        "cue_available",
+        "source_camera",
+        "source_track",
+        "initial_match_distance_m",
+    }
+    missing = required.difference(cues)
+    if missing:
+        names = ", ".join(sorted(missing))
+        raise ValueError(f"base AllTracker cues lack fields: {names}")
+    if cues["source_tracks_xy"].shape != (frame_count, track_count, 2):
+        raise ValueError("base source_tracks_xy shape differs from the case")
+    for name in (
+        "source_quality_probability",
+        "forward_backward_error_px",
+        "forward_backward_valid",
+        "boundary_distance",
+        "cue_available",
+    ):
+        if cues[name].shape != (frame_count, track_count):
+            raise ValueError(f"base {name} shape differs from the case")
+    future = slice(config.train_end_frame, None)
+    if np.any(cues["cue_available"][future]):
+        raise ValueError("base AllTracker cues expose future availability")
+    if np.any(np.isfinite(cues["source_tracks_xy"][future])):
+        raise ValueError("base AllTracker cues expose future tracks")
+    if np.any(cues["source_quality_probability"][future] != 0.0):
+        raise ValueError("base AllTracker cues expose future quality")
+    return cues, summary
+
+
+def build_phystwin_alltracker_multiview_cues(
+    final_data_path: str | Path,
+    raw_case_dir: str | Path,
+    alltracker_source: str | Path,
+    checkpoint_path: str | Path,
+    base_cues_path: str | Path,
+    output_npz_path: str | Path,
+    *,
+    config: PhysTwinAllTrackerMultiviewCueConfig,
+    device: str = "cuda",
+) -> dict[str, Any]:
+    """Augment exact source-only cues with calibrated cross-view tracks."""
+
+    raw_path = Path(raw_case_dir)
+    output = Path(output_npz_path)
+    base_path = Path(base_cues_path)
+    if output.resolve() == base_path.resolve():
+        raise ValueError("multiview output must not overwrite source-only cues")
+    mapping = load_phystwin_raw_track_map(
+        final_data_path,
+        raw_path,
+        config=PhysTwinRawCueConfig(
+            initial_match_tolerance_m=config.initial_match_tolerance_m
+        ),
+    )
+    frame_count, track_count = mapping.final_visible.shape
+    if config.train_end_frame >= frame_count:
+        raise ValueError("train_end_frame must leave at least one future frame")
+    cues, base_summary = _load_validated_source_cues(
+        base_path,
+        config=config,
+        frame_count=frame_count,
+        track_count=track_count,
+    )
+    if not np.array_equal(cues["source_camera"], mapping.source_camera):
+        raise ValueError("base source_camera differs from reconstructed mapping")
+    if not np.array_equal(cues["source_track"], mapping.source_track):
+        raise ValueError("base source_track differs from reconstructed mapping")
+    reserved_prefix = "multiview_"
+    existing_multiview = sorted(
+        name for name in cues if name.startswith(reserved_prefix)
+    )
+    if existing_multiview:
+        raise ValueError(
+            "base source cues already contain multiview fields: "
+            + ", ".join(existing_multiview)
+        )
+
+    metadata = json.loads(
+        (raw_path / "metadata.json").read_text(encoding="utf-8")
+    )
+    intrinsics = np.asarray(metadata["intrinsics"], dtype=float)
+    with (raw_path / "calibrate.pkl").open("rb") as handle:
+        camera_to_world = np.asarray(pickle.load(handle), dtype=float)
+    camera_count = len(mapping.track_paths)
+    if intrinsics.shape != (camera_count, 3, 3):
+        raise ValueError("metadata intrinsics do not match the raw cameras")
+    if camera_to_world.shape != (camera_count, 4, 4):
+        raise ValueError("calibrate.pkl does not match the raw cameras")
+    with (raw_path / "mask" / "processed_masks.pkl").open("rb") as handle:
+        processed_masks = pickle.load(handle)
+
+    prefix_frames = config.train_end_frame
+    tracks = np.full(
+        (camera_count, prefix_frames, track_count, 2),
+        np.nan,
+        dtype=np.float32,
+    )
+    quality = np.zeros(
+        (camera_count, prefix_frames, track_count),
+        dtype=np.float32,
+    )
+    view_valid = np.zeros_like(quality, dtype=bool)
+    cycle_error = np.full_like(quality, np.inf, dtype=np.float32)
+    cycle_valid = np.zeros_like(quality, dtype=bool)
+    initial_eligible = np.zeros((camera_count, track_count), dtype=bool)
+    initial_surface_distance = np.full(
+        (camera_count, track_count),
+        np.inf,
+        dtype=np.float32,
+    )
+    per_camera: dict[str, Any] = {}
+
+    runner = PhysTwinAllTrackerRunner(
+        alltracker_source,
+        checkpoint_path,
+        device=device,
+        config=config.source_config(),
+    )
+    try:
+        for camera in range(camera_count):
+            video = _load_video_prefix(raw_path, camera, prefix_frames)
+            projected, eligible, surface_distance = (
+                _initial_multiview_eligibility(
+                    mapping.source_world_points,
+                    mapping.camera_points[camera],
+                    np.asarray(
+                        processed_masks[0][camera]["object"],
+                        dtype=bool,
+                    ),
+                    intrinsics[camera],
+                    camera_to_world[camera],
+                    depth_tolerance_m=(
+                        config.multiview_initial_depth_tolerance_m
+                    ),
+                )
+            )
+            initial_eligible[camera] = eligible
+            initial_surface_distance[camera] = surface_distance.astype(
+                np.float32
+            )
+            source_ids = np.flatnonzero(mapping.source_camera == camera)
+            source_ids = source_ids[eligible[source_ids]]
+            tracks[camera][:, source_ids] = cues["source_tracks_xy"][
+                :prefix_frames, source_ids
+            ]
+            quality[camera][:, source_ids] = cues[
+                "source_quality_probability"
+            ][:prefix_frames, source_ids]
+            cycle_error[camera][:, source_ids] = cues[
+                "forward_backward_error_px"
+            ][:prefix_frames, source_ids]
+            cycle_valid[camera][:, source_ids] = cues[
+                "forward_backward_valid"
+            ][:prefix_frames, source_ids]
+
+            cross_ids = np.flatnonzero(
+                eligible & (mapping.source_camera != camera)
+            )
+            if len(cross_ids):
+                forward = runner.track(
+                    video,
+                    projected[cross_ids].astype(np.float32),
+                )
+                reverse = runner.track(
+                    np.ascontiguousarray(video[::-1]),
+                    forward.tracks_xy[-1],
+                )
+                reverse_tracks = reverse.tracks_xy[::-1]
+                reverse_quality = reverse.quality_probability[::-1]
+                tracks[camera][:, cross_ids] = forward.tracks_xy
+                quality[camera][:, cross_ids] = (
+                    forward.quality_probability
+                )
+                cycle_error[camera][:, cross_ids] = np.linalg.norm(
+                    forward.tracks_xy - reverse_tracks,
+                    axis=2,
+                )
+                cycle_valid[camera][:, cross_ids] = (
+                    forward.quality_probability
+                    >= config.minimum_multiview_quality
+                ) & (
+                    reverse_quality >= config.minimum_multiview_quality
+                )
+
+            for frame in range(prefix_frames):
+                object_mask = np.asarray(
+                    processed_masks[frame][camera]["object"],
+                    dtype=bool,
+                )
+                inside = _pixels_inside_mask(tracks[camera, frame], object_mask)
+                view_valid[camera, frame] = (
+                    eligible
+                    & inside
+                    & (
+                        quality[camera, frame]
+                        >= config.minimum_multiview_quality
+                    )
+                    & cycle_valid[camera, frame]
+                    & (
+                        cycle_error[camera, frame]
+                        <= config.maximum_cycle_error_px
+                    )
+                )
+            per_camera[str(camera)] = {
+                "initial_eligible_count": int(np.sum(eligible)),
+                "cross_view_query_count": int(len(cross_ids)),
+                "valid_view_fraction": float(np.mean(view_valid[camera])),
+                "cycle_error_px": _distribution(
+                    cycle_error[camera][cycle_valid[camera]]
+                ),
+            }
+    finally:
+        runner.close()
+
+    points, reprojection, support = triangulate_multiview_tracks(
+        tracks,
+        view_valid,
+        np.where(view_valid, quality, 0.0),
+        intrinsics,
+        camera_to_world,
+    )
+    packed = pack_multiview_triangulation(
+        points,
+        reprojection,
+        support,
+        frame_count=frame_count,
+    )
+    full_reprojection = np.zeros(
+        (frame_count, track_count),
+        dtype=np.float32,
+    )
+    full_reprojection_valid = np.zeros(
+        (frame_count, track_count),
+        dtype=bool,
+    )
+    full_camera_count = np.zeros(
+        (frame_count, track_count),
+        dtype=np.int16,
+    )
+    triangulated = (
+        np.all(np.isfinite(points), axis=2)
+        & np.isfinite(reprojection)
+        & (support >= 2)
+    )
+    full_reprojection[:prefix_frames][triangulated] = reprojection[
+        triangulated
+    ]
+    full_reprojection_valid[:prefix_frames] = triangulated
+    full_camera_count[:prefix_frames] = support
+    augmented = {
+        **cues,
+        "multiview_reprojection_error_px": full_reprojection,
+        "multiview_valid": full_reprojection_valid,
+        "multiview_camera_count": full_camera_count,
+        **packed,
+        "multiview_initial_eligible": initial_eligible,
+        "multiview_initial_surface_distance_m": initial_surface_distance,
+        "multiview_tracks_xy_prefix": tracks,
+        "multiview_quality_probability_prefix": quality,
+        "multiview_view_valid_prefix": view_valid,
+        "multiview_forward_backward_error_px_prefix": cycle_error,
+        "multiview_forward_backward_valid_prefix": cycle_valid,
+        "multiview_intrinsics": intrinsics.astype(np.float64),
+        "multiview_camera_to_world": camera_to_world.astype(np.float64),
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(output, **augmented)
+
+    source_arrays_preserved = all(
+        np.array_equal(augmented[name], value, equal_nan=True)
+        for name, value in cues.items()
+    )
+    selected = triangulated & mapping.final_visible[:prefix_frames]
+    summary: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": "PhysTwinAllTrackerMultiviewCues",
+        "config": asdict(config),
+        "tracker": base_summary["tracker"],
+        "inputs": {
+            "final_data": {
+                "path": str(Path(final_data_path).resolve()),
+                "sha256": _sha256(final_data_path),
+            },
+            "raw_case_dir": str(raw_path.resolve()),
+            "base_source_cues": {
+                "path": str(base_path.resolve()),
+                "sha256": _sha256(base_path),
+                "summary_sha256": _sha256(
+                    base_path.with_suffix(".summary.json")
+                ),
+            },
+        },
+        "camera_summaries": per_camera,
+        "multiview": {
+            "initial_eligible_fraction_by_camera": {
+                str(camera): float(np.mean(initial_eligible[camera]))
+                for camera in range(camera_count)
+            },
+            "triangulated_visible_fraction": float(np.mean(selected)),
+            "three_view_visible_fraction": float(
+                np.mean((support >= 3) & mapping.final_visible[:prefix_frames])
+            ),
+            "reprojection_error_px": _distribution(
+                reprojection[selected]
+            ),
+            "camera_count": _distribution(support[selected]),
+        },
+        "compatibility": {
+            "source_field_count": len(cues),
+            "source_arrays_preserved_exactly": source_arrays_preserved,
+        },
+        "output": {
+            "path": str(output.resolve()),
+            "sha256": _sha256(output),
+        },
+        "information_boundary": {
+            "rgb_frame_range_half_open": [0, prefix_frames],
             "future_rgb_read": False,
             "future_cue_rows_neutralized": True,
             "future_outcome_read": False,
