@@ -95,3 +95,12 @@ provenance, expected fold-local paths, and matching model and latent SHA-256
 digests. Every fold also binds the same deterministic Stage-1 implementation
 hash, and the merged record binds all fold-record hashes. Any incomplete,
 relocated, mixed-code, or modified fold blocks the decision.
+
+The CPU-only remote deployment is recorded in
+`results/sota/phystwin_equivariant_force_stage1_v2/preflight.json`. It binds
+commit `af3eb83`, the deployment archive, the Stage-1 implementation modules,
+the immutable source episodes, the protocol, the environment, and the exact
+fold and merge commands. Its SHA-256 is
+`b6ad6d56da7c9d48977ed341d75c9e42bd05e928d5365ea730cd3873510804e9`.
+Its status remains
+`ready_but_not_started_pending_explicit_gpu_release`.

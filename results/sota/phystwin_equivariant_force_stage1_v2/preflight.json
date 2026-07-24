@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "stage": "equivariant_force_stage1_preflight",
+  "status": "ready_but_not_started_pending_explicit_gpu_release",
+  "prepared_at_utc": "2026-07-24T01:44:05Z",
+  "claim_boundary": "This artifact establishes deployment identity and source readiness only. It contains no Stage-1 outcome and authorizes no Stage-2, target, or state-of-the-art claim.",
+  "deployment": {
+    "host": "gpuserver4090",
+    "code_root": "/home/florianpfaff/bpt-equivariant-force-stage1-af3eb83",
+    "implementation_commit": "af3eb835b94bef7d31b63caf031d29e257b64365",
+    "implementation_archive": "/home/florianpfaff/bpt-equivariant-force-stage1-af3eb83.tar.gz",
+    "implementation_archive_sha256": "d97e70c27d4c39e8fc5f3947b1773e9dee7981a01414182434d6a33371c82ca1",
+    "stage1_implementation_sha256": "5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9",
+    "python": "3.10.12",
+    "numpy": "1.26.4",
+    "scipy": "1.13.1",
+    "torch": "2.4.0+cu121",
+    "python_executable": "/home/florianpfaff/.venvs/bpt-gpu/bin/python"
+  },
+  "source": {
+    "episode_root": "/home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes",
+    "source_archive_sha256": "fdb13f40443bedeadb05e5cff3d4f478530f89e0ffa521b7c5945c5c124378c1",
+    "protocol_path": "/home/florianpfaff/bpt-equivariant-force-stage1-af3eb83/configs/sota/phystwin_equivariant_force_source_v2.json",
+    "protocol_sha256": "1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171",
+    "episode_build_summary_sha256": "68d0e89460439a96099787ce7c8d218f82c8c7a06f9c8722fa8511a4851e7d02",
+    "episode_count": 17,
+    "source_target_qa_passed": true,
+    "target_artifacts_opened": false
+  },
+  "execution": {
+    "output_root": "/home/florianpfaff/bpt-equivariant-force-stage1-af3eb83/runs/equivariant_force_stage1_v2",
+    "gpu_release_required": true,
+    "gpu_release_observed": false,
+    "stage1_started": false,
+    "device_visibility_rule": "Expose one physical GPU per process and retain the frozen cuda:0 device string inside each process.",
+    "fold_commands": {
+      "fold_0": "cd /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83 && CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_equivariant_force_source source-competence-fold /home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes configs/sota/phystwin_equivariant_force_source_v2.json /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83/runs/equivariant_force_stage1_v2 fold_0 --device cuda:0",
+      "fold_1": "cd /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83 && CUDA_VISIBLE_DEVICES=1 PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_equivariant_force_source source-competence-fold /home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes configs/sota/phystwin_equivariant_force_source_v2.json /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83/runs/equivariant_force_stage1_v2 fold_1 --device cuda:0",
+      "fold_2": "cd /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83 && CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_equivariant_force_source source-competence-fold /home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes configs/sota/phystwin_equivariant_force_source_v2.json /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83/runs/equivariant_force_stage1_v2 fold_2 --device cuda:0"
+    },
+    "merge_command": "cd /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83 && CUDA_VISIBLE_DEVICES='' PYTHONPATH=src /home/florianpfaff/.venvs/bpt-gpu/bin/python -m bayesian_phystwin.cli.phystwin_equivariant_force_source source-competence-merge /home/florianpfaff/bpt-equivariant-force-v2-ffb87ea/runs/equivariant_force_source_v2/episodes configs/sota/phystwin_equivariant_force_source_v2.json /home/florianpfaff/bpt-equivariant-force-stage1-af3eb83/runs/equivariant_force_stage1_v2 --device cuda:0"
+  },
+  "preflight_checks": {
+    "remote_archive_hash_matches": true,
+    "stage1_implementation_hash_computed_from_deployed_modules": true,
+    "source_episode_validator": "17 True False",
+    "cli_import_and_help": "passed",
+    "focused_fold_and_merge_tests": "4 passed",
+    "full_cpu_suite": "1063 passed, 4 skipped",
+    "gpu_process_started": false,
+    "held_v8_accessed": false
+  }
+}
