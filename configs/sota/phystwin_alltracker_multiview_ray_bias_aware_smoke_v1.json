@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-alltracker-multiview-ray-bias-aware-smoke-v1",
+  "locked_at_utc": "2026-07-24T16:19:30Z",
+  "status": "Locked after target-free cue extraction and source-prefix calibration, before any future metric from this arm was read.",
+  "claim_boundary": "Post-open three-case development smoke on previously examined PhysTwin cloth interactions. This can reject or justify an exploratory expansion, but cannot establish independent transfer, calibration, or state of the art.",
+  "question": "Can redundant AllTracker image rays improve the selected physical replay after treating the shared affine camera field as nuisance bias and requiring independent prefix point-cloud evidence before any future update is admitted?",
+  "cases": [
+    "single_lift_cloth",
+    "single_lift_cloth_3",
+    "single_lift_cloth_4"
+  ],
+  "software": {
+    "commit": "a0972eced8b9ce93aaafee09de5c5effd1955cc2",
+    "runner": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "runner_sha256": "3ba1f01aabc51ab09b275931fe047573ae594788d8a7e90b3f5427f3d0d9e278",
+    "bias_aware_ray": "src/bayesian_phystwin/phystwin_bias_aware_ray.py",
+    "bias_aware_ray_sha256": "3cf818dcfa343eded46802bc7d464618750679d6b93d7cd04a585c83f14efd17",
+    "ray_posterior": "src/bayesian_phystwin/phystwin_cotracker3_cues.py",
+    "ray_posterior_sha256": "aa1a2ad4c7a865095c16695ed0e6362f53dbed7a2f2a4c0426f095b2451b1f8b",
+    "graph_posterior": "src/bayesian_phystwin/phystwin_graph_discrepancy.py",
+    "graph_posterior_sha256": "6e0313b1350753d0cb88c86a8b43e9b2ffe10b59027ed952f90ed6717af532f8",
+    "backbone_selection": "/mnt/corsair/florianpfaff/bpt-phystwin-alltracker-smoke-v1/backbone_family_selection_smoke3.json",
+    "backbone_selection_sha256": "746b7a5d5a9236d9c11c0a643982af57f60633a7644e4b5bf7b268a1676f756c"
+  },
+  "tracker": {
+    "name": "AllTracker",
+    "molmomotion_revision": "61f5b21b694ad8f854ec7ecd2400005acc73f685",
+    "runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "max_side": 512,
+    "inference_iterations": 4,
+    "window_length": 16,
+    "minimum_cycle_quality": 0.5,
+    "visibility_threshold": 0.5
+  },
+  "cue_artifacts": {
+    "single_lift_cloth": {
+      "npz_sha256": "e71277d0fa80b9a2ed9a50f6c2cc9c636a7b638ba1734c6b92d8168df68a841d",
+      "summary_sha256": "9147864b39e9c2be60fb7ad2e9f32c63f14d8da93ef48bb97aa681117e8655eb"
+    },
+    "single_lift_cloth_3": {
+      "npz_sha256": "a4c85ef5b6c0a8b0ca8bf4e7b83e0155547e1ab0966cd347c3c9b3ba974b02e3",
+      "summary_sha256": "0dfeca3cf5fd194db6188c80c156ab0afc4a5af8b349cc07ca5695f4c58708bd"
+    },
+    "single_lift_cloth_4": {
+      "npz_sha256": "12df1a0c6fad06400b3d436948f8bbe8384e7c9af447617b1760e1949b5c5fde",
+      "summary_sha256": "66db78c0c7d37ef430e63182fe7a1ce4c3130eedb79930d14d906da9964c0853"
+    }
+  },
+  "method": {
+    "baseline_kind": "raw_matphys_replay",
+    "observation_source": "alltracker_multiview_ray_bias_aware",
+    "manual_prefix_override": false,
+    "ray_window_frames": 31,
+    "minimum_view_quality": 0.5,
+    "maximum_cycle_error_px": 5.0,
+    "minimum_camera_count": 3,
+    "pixel_noise_std": 2.0,
+    "prior_std_m": 0.05,
+    "degrees_of_freedom": 4.0,
+    "robust_iterations": 3,
+    "correlation_treatment": "Temporal effective sample size plus conservative averaging of cross-view precision under unknown correlation.",
+    "shared_bias_model": "Fit one affine displacement field to the ray posterior at each endpoint, remove it from the applied mean, and add its per-point squared magnitude divided by three to metric observation variance.",
+    "graph_prior_strength": 0.0001,
+    "correction_scale": 1.0,
+    "maximum_residual_m": 0.02,
+    "primary_prediction_arm": "causal_selected_alltracker_ray_bias_aware_graph"
+  },
+  "admission": {
+    "evidence": "Independent released object point clouds in the held-out portion of the allowed prefix; no future frame or manual track participates.",
+    "minimum_observed_fraction": 0.02,
+    "minimum_median_inlier_probability": 0.2,
+    "minimum_absolute_chamfer_improvement_m": 0.0001,
+    "minimum_relative_chamfer_improvement": 0.01,
+    "early_prefix_nonregression_required": true,
+    "late_prefix_nonregression_required": true,
+    "failure_action": "Apply a bit-exact zero correction relative to the unchanged physical baseline."
+  },
+  "source_prefix_calibration": {
+    "single_lift_cloth": {
+      "admitted": true,
+      "observed_fraction": 0.10047478506351855,
+      "median_inlier_probability": 0.4718467960874723,
+      "baseline_chamfer_m": 0.0287304906947615,
+      "candidate_chamfer_m": 0.026677800521601583,
+      "relative_improvement": 0.07144640148920911,
+      "early_ratio": 0.9114887703820032,
+      "late_ratio": 0.944510162068213
+    },
+    "single_lift_cloth_3": {
+      "admitted": false,
+      "observed_fraction": 0.07632253553950129,
+      "median_inlier_probability": 0.9681501361090079,
+      "baseline_chamfer_m": 0.00853495287855611,
+      "candidate_chamfer_m": 0.00868839849763527,
+      "relative_improvement": -0.01797849633882433,
+      "early_ratio": 1.029355547424995,
+      "late_ratio": 1.0092615390086384
+    },
+    "single_lift_cloth_4": {
+      "admitted": true,
+      "observed_fraction": 0.026023213194868663,
+      "median_inlier_probability": 0.8185250143189358,
+      "baseline_chamfer_m": 0.013565080778575217,
+      "candidate_chamfer_m": 0.013343718338193776,
+      "relative_improvement": 0.016318549369131815,
+      "early_ratio": 0.9962379281036408,
+      "late_ratio": 0.9727442622531406
+    }
+  },
+  "future_read": {
+    "primary_arm": "causal_selected_alltracker_ray_bias_aware_graph",
+    "allowed_metrics": [
+      "future chamfer_distance_m",
+      "future track_error_m",
+      "admission and exact-fallback status"
+    ],
+    "forbidden_metrics": "All other candidate arms produced by the broad exploratory runner remain out of scope and must not be used to modify this protocol."
+  },
+  "comparators": {
+    "primary": "The unchanged selected raw physical replay, including exact ties for rejected updates.",
+    "secondary": "The frozen CoTracker3 source-depth result with identical physical backbone.",
+    "cotracker3_source_result_sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e"
+  },
+  "smoke_gate": {
+    "aggregate_future_chamfer_improves_over_raw_baseline": true,
+    "aggregate_future_track_improves_over_raw_baseline": true,
+    "both_metric_win_or_tie_count_at_least": 2,
+    "maximum_allowed_case_metric_regression_fraction": 0.05,
+    "aggregate_both_metrics_no_worse_than_frozen_cotracker3_source": true,
+    "pass_action": "Freeze the unchanged arm before an exploratory remaining-case run; independent fresh-object evaluation is still required for a SOTA claim.",
+    "fail_action": "Stop this arm without changing ray, affine-bias, graph, cap, or admission settings against these future outcomes."
+  },
+  "information_boundary": {
+    "decoded_rgb_frames": "[0, train_end)",
+    "future_rgb_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_selection": false,
+    "known_future_controller_action_in_physical_backbone": true,
+    "association": "Exact archived PhysTwin material identity.",
+    "state_innovation_likelihood_count": 1,
+    "held_v8_access": false,
+    "pokeflex_target_access": false
+  },
+  "forbidden": [
+    "changing tracker, ray, affine-bias, graph, cap, or admission settings after reading a future score",
+    "using future RGB, object clouds, or manual tracks to build or select a prediction",
+    "inspecting non-primary future candidate arms from the broad exploratory runner",
+    "describing this three-case post-open smoke as independent, confirmatory, calibrated, or state of the art",
+    "opening or modifying any held-v8 barrier, target, query, score, or outcome artifact",
+    "opening any sealed PokeFlex target artifact"
+  ]
+}
