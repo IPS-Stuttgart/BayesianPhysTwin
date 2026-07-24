@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-alltracker-source-depth-smoke-v1",
+  "locked_at_utc": "2026-07-24T11:42:25Z",
+  "status": "Locked after causal cue extraction and before any AllTracker future outcome was scored.",
+  "claim_boundary": "Post-open three-case development smoke on previously examined PhysTwin cloth interactions. This can reject or justify a larger exploratory run, but cannot establish independent transfer, calibration, or state of the art.",
+  "question": "Does replacing CoTracker3 with AllTracker improve the existing source-camera RGB-D observation arm when the physical backbone, causal selector, reliability thresholds, and information boundary are held fixed?",
+  "cases": [
+    "single_lift_cloth",
+    "single_lift_cloth_3",
+    "single_lift_cloth_4"
+  ],
+  "case_selection": "Three difficult cloth cases selected for the AllTracker extraction smoke before AllTracker future metrics were produced. All are already-open development cases.",
+  "software": {
+    "base_commit": "5340cac4786620f17eaacd792d9c42ff49748bd0",
+    "runner": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "runner_sha256": "b3d5307d73b68180fd1b3aeae8b20cb6bdefa407280cd2e141205355fe311776",
+    "cue_builder": "src/bayesian_phystwin/phystwin_alltracker_cues.py",
+    "cue_builder_sha256": "18796e6b63e88256029b0b3f0fe9c959b6526ad6120bd7175c73f1f7d5d65525",
+    "cue_cli": "scripts/remote/build_phystwin_alltracker_cues.py",
+    "cue_cli_sha256": "de30c88a157c1bb0e8877e8c30ce807a8c673c785baf35ab5f7cc6330c79470e",
+    "backbone_selection": "results/sota/matphys_loo22_v2/backbone_family_selection.json",
+    "backbone_selection_sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890"
+  },
+  "tracker": {
+    "name": "AllTracker",
+    "molmomotion_revision": "61f5b21b694ad8f854ec7ecd2400005acc73f685",
+    "runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "max_side": 512,
+    "inference_iterations": 4,
+    "window_length": 16,
+    "minimum_cycle_quality": 0.5,
+    "visibility_threshold": 0.5
+  },
+  "cue_artifacts": {
+    "single_lift_cloth": {
+      "npz_sha256": "6aa9cb03a06dbf6459484d2b5c933922f24af4b44f2c64c96c61d3d23b954060",
+      "summary_sha256": "5d629431ce98ea1558c1dd617b8e1da04cfcdb24b4b09cd962441ab3c0d222ce"
+    },
+    "single_lift_cloth_3": {
+      "npz_sha256": "e73bf859c37c62f93ba1cd6e0f9049ace347876ad79e67ce68325dfd8959cee3",
+      "summary_sha256": "477d936fee10956787372aac6986cba3b32ecf35c142150976a7c683717c03d7"
+    },
+    "single_lift_cloth_4": {
+      "npz_sha256": "2895b19f6e3bb78e8e3ff0c6344e8c0b20084957f7c4901b766a61afdd1aa0df",
+      "summary_sha256": "0b36c5713ed3cbe91391bb6808cbaf03935e6c3669aad4edf7e7ca1b00c413ff"
+    }
+  },
+  "method": {
+    "baseline_kind": "raw_matphys_replay",
+    "observation_source": "alltracker_source_depth",
+    "manual_prefix_override": false,
+    "minimum_quality": 0.5,
+    "maximum_cycle_error_px": 5.0,
+    "prior_strengths": [
+      0.0001
+    ],
+    "maximum_residuals_m": [
+      0.04,
+      0.06,
+      0.1,
+      0.15,
+      0.2,
+      0.4
+    ],
+    "dense_correction_scales": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5,
+      2.0
+    ],
+    "nearest_cloud_windows": [],
+    "relative_cap_quantile": 0.95,
+    "relative_cap_multipliers": [
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0,
+      16.0
+    ],
+    "temporal_gamma_candidates": [
+      0.0,
+      0.25,
+      0.5,
+      1.0
+    ],
+    "rbf_center_counts": [
+      16
+    ],
+    "rbf_minimum_availability_fraction": 0.5,
+    "planar_degrees": [
+      0,
+      1,
+      2
+    ],
+    "planar_ridge_strength": 0.001,
+    "endpoint_filter": {
+      "process_std_m": 0.005,
+      "observation_std_m": 0.001,
+      "initial_std_m": 0.01,
+      "inlier_prior": 0.95,
+      "outlier_variance_multiplier": 100.0
+    },
+    "selection": "Released prefix object-cloud Chamfer only on the nested prefix validation interval.",
+    "primary_prediction_arm": "causal_selected_dense_relative_cap"
+  },
+  "comparators": {
+    "primary": "The frozen CoTracker3 source-camera RGB-D result with identical physical backbone and selector.",
+    "secondary": "The unchanged raw physical backbone.",
+    "cotracker3_source_result_sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e"
+  },
+  "information_boundary": {
+    "decoded_rgb_frames": "[0, train_end)",
+    "future_rgb_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_selection": false,
+    "manual_tracks_role": "Evaluation only after each case prediction and prefix-only selection are fixed.",
+    "known_future_controller_action_in_physical_backbone": true,
+    "association": "Exact archived PhysTwin source identity.",
+    "state_innovation_likelihood_count": 1,
+    "held_v8_access": false,
+    "pokeflex_target_access": false
+  },
+  "smoke_gate": {
+    "both_equal_case_future_means_improve_over_cotracker3_source": true,
+    "both_metric_win_count_at_least": 2,
+    "maximum_allowed_case_regression_fraction": 0.1,
+    "pass_action": "Freeze the unchanged AllTracker source-depth arm before evaluating the remaining opened PhysTwin-19 cases.",
+    "fail_action": "Stop the AllTracker source-depth arm. Do not tune quality, cycle, selector, cap, or graph settings against these future outcomes."
+  },
+  "forbidden": [
+    "changing tracker thresholds, physical backbone, selector, or correction grid after reading an AllTracker future score",
+    "using future RGB, object clouds, or manual tracks to build or select a prediction",
+    "describing this three-case post-open smoke as independent, confirmatory, calibrated, or state of the art",
+    "opening any held-v8 or PokeFlex target artifact"
+  ]
+}
