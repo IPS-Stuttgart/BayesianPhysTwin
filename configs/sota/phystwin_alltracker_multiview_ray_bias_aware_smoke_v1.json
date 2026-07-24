@@ -111,12 +111,18 @@
   },
   "future_read": {
     "primary_arm": "causal_selected_alltracker_ray_bias_aware_graph",
-    "analysis_commit": "95e3771",
+    "analysis_commit": "6faf7fc",
     "locked_analyzer": "src/bayesian_phystwin/phystwin_bias_aware_ray_analysis.py",
-    "locked_analyzer_sha256": "b9497b7a22a3ef06932a313ac7e131ed71368f37181059c86be45ef34837a7cc",
+    "locked_analyzer_sha256": "939807c8c1e49558f72d431997ccb6d48132f26208a8ac7f10f15338776ce534",
     "locked_analyzer_cli": "scripts/remote/analyze_phystwin_alltracker_ray_smoke.py",
     "locked_analyzer_cli_sha256": "27996f696a00074906f26177a795acaa6d079637de5312af7ad5ff0b927ae2af",
     "analyzer_locked_at_utc": "2026-07-24T16:24:21Z",
+    "parser_amendment": {
+      "amended_at_utc": "2026-07-24T16:28:31Z",
+      "trigger": "The first analyzer invocation stopped before metric access because the frozen comparator contained the full cohort rather than exactly the three protocol cases.",
+      "change": "Require protocol cases to be a subset of the comparator and continue to read only those named cases.",
+      "method_or_gate_changed": false
+    },
     "allowed_metrics": [
       "future chamfer_distance_m",
       "future track_error_m",
