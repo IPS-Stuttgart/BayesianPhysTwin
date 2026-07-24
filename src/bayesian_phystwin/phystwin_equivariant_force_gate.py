@@ -11,6 +11,10 @@ import numpy as np
 from .phystwin_equivariant_force_source import (
     EquivariantForceSourceProtocol,
 )
+from .phystwin_equivariant_force_stage2 import (
+    EQUIVARIANT_FORCE_STAGE2_CONTRACT,
+    EquivariantForceStage2Protocol,
+)
 from .phystwin_residual_dynamics import _sha256
 
 
@@ -44,11 +48,14 @@ def _mean_metric(
 def evaluate_equivariant_force_official_warp_gate(
     records: Sequence[Mapping[str, Any]],
     protocol: EquivariantForceSourceProtocol,
+    execution_protocol: EquivariantForceStage2Protocol,
     *,
     force_target_competence_passed: bool,
 ) -> dict[str, Any]:
     """Apply the locked Stage-2 rules without fitting or opening a target."""
 
+    if execution_protocol.seeds != protocol.training.seeds:
+        raise ValueError("Stage-2 seeds differ from the source protocol")
     source_cases = tuple(str(case) for case in protocol.payload["source_cases"])
     if len(records) != len(source_cases):
         raise ValueError("official-Warp gate requires one record per source case")
@@ -66,7 +73,30 @@ def evaluate_equivariant_force_official_warp_gate(
         record = by_case[case]
         if record.get("target_artifacts_opened") is not False:
             raise ValueError(f"{case}: target boundary is not explicitly closed")
+        if (
+            record.get("stage2_execution_contract")
+            != EQUIVARIANT_FORCE_STAGE2_CONTRACT
+        ):
+            raise ValueError(f"{case}: Stage-2 execution contract changed")
+        if record.get("seed_aggregation") != (
+            "arithmetic_mean_force_field_per_frame_float64_then_float32"
+        ):
+            raise ValueError(f"{case}: seed aggregation changed")
+        frame_contract = record.get("frame_contract")
+        if not isinstance(frame_contract, Mapping) or any(
+            frame_contract.get(key) != value
+            for key, value in {
+                "initial_state_frame": 0,
+                "first_simulator_step_frame": 1,
+                "fit_end_is_exclusive": True,
+                "score_interval": "[fit_end_frame, train_end_frame)",
+            }.items()
+        ):
+            raise ValueError(f"{case}: frame contract changed")
         parity = bool(record.get("zero_force_bitwise_parity", False))
+        reference_supported = bool(
+            record.get("readout_correction_reference_supported", False)
+        )
         shrinkage = float(record.get("readout_correction_shrinkage", np.nan))
         if not np.isfinite(shrinkage):
             raise ValueError(f"{case}: correction shrinkage must be finite")
@@ -81,6 +111,7 @@ def evaluate_equivariant_force_official_warp_gate(
             {
                 "case_id": case,
                 "zero_force_bitwise_parity": parity,
+                "readout_correction_reference_supported": reference_supported,
                 "readout_correction_shrinkage": shrinkage,
                 "ratios": ratios,
                 "reference": {
@@ -136,7 +167,8 @@ def evaluate_equivariant_force_official_warp_gate(
         for metric in ("chamfer_distance_m", "track_error_m")
     )
     shrinkage_count = sum(
-        result["readout_correction_shrinkage"]
+        result["readout_correction_reference_supported"]
+        and result["readout_correction_shrinkage"]
         >= float(gate["minimum_readout_correction_shrinkage"])
         for result in case_results
     )
@@ -171,6 +203,10 @@ def evaluate_equivariant_force_official_warp_gate(
     return {
         "schema_version": 1,
         "contract": protocol.payload["contract"],
+        "stage2_execution_contract": EQUIVARIANT_FORCE_STAGE2_CONTRACT,
+        "stage2_source_protocol_sha256": (
+            execution_protocol.source_protocol_sha256
+        ),
         "stage": "official_warp_source_gate",
         "source_gate_passed": passed,
         "independent_preregistered_evaluation_authorized": passed,

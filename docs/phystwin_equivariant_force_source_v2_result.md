@@ -56,3 +56,8 @@ independent registered experiments. It will run the frozen three-fold,
 three-seed crossfit and test normalized force-target competence. Passing Stage
 1 still does not authorize a simulator or state-of-the-art claim; it only
 permits the information-matched official-Warp Stage 2.
+
+Before Stage 1, the previously underspecified Stage-2 replay and seed
+aggregation choices were independently locked in
+`configs/sota/phystwin_equivariant_force_stage2_v1.json`. This amendment does
+not change this v2 source archive or its QA evidence.

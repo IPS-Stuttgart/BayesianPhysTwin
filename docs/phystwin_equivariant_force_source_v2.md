@@ -49,11 +49,16 @@ interaction, only its latent is adapted from `[0, fit_end)`, and force targets
 are scored on `[fit_end, train_end)`. The result is diagnostic: passing force
 RMSE does not authorize a simulator claim.
 
-Stage 2 is the promotion gate. Candidate and reference start from the same
-released state at the allowed prefix endpoint. Each receives a separately
-prefix-fitted graph-persistence readout. The only primary-arm difference is the
-learned force versus exact zero force inside the pinned official Warp simulator.
-Prefix state injection remains a diagnostic control. The candidate must:
+Stage 2 is the promotion gate. Its execution semantics were frozen more
+precisely, before Stage 1, in
+`configs/sota/phystwin_equivariant_force_stage2_v1.json` and
+`docs/phystwin_equivariant_force_stage2_v1.md`. Candidate and reference replay
+from the same released frame-zero state. The candidate force acts during the
+allowed prefix and source scoring suffix; the reference force is exactly zero.
+Each arm receives a separately prefix-fitted graph-persistence readout. The only
+primary-arm difference before that refit is the learned force inside the pinned
+official Warp simulator. Prefix state injection remains a diagnostic control.
+The candidate must:
 
 1. pass Stage 1;
 2. improve equal-case CD and manual-track error by at least 3% jointly;

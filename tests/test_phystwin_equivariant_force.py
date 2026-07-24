@@ -29,10 +29,17 @@ from bayesian_phystwin.phystwin_equivariant_force_data import (
 from bayesian_phystwin.phystwin_equivariant_force_gate import (
     evaluate_equivariant_force_official_warp_gate,
 )
+from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
+    fit_prefix_graph_persistence,
+    load_equivariant_force_stage2_protocol,
+    readout_correction_shrinkage,
+    stage2_frame_intervals,
+)
 from bayesian_phystwin.phystwin_equivariant_force_warp import (
     controller_attachment_matrix,
     controller_conditioning_fields,
     predict_equivariant_force,
+    predict_equivariant_force_ensemble,
     rollout_equivariant_force_segment,
 )
 from bayesian_phystwin.phystwin_equivariant_force_training import (
@@ -475,6 +482,55 @@ def test_force_predictor_abstains_without_evaluating_the_model() -> None:
         device="cpu",
     )
     np.testing.assert_array_equal(force, np.zeros((4, 3), dtype=np.float32))
+
+
+def test_seed_force_ensemble_is_paired_mean_and_has_exact_fallback(
+    monkeypatch,
+) -> None:
+    import bayesian_phystwin.phystwin_equivariant_force_warp as warp_module
+
+    calls = []
+
+    def predict(model, torch, **kwargs):
+        calls.append((model, np.asarray(kwargs["latent"]).copy()))
+        return np.full((3, 3), float(model), dtype=np.float32)
+
+    monkeypatch.setattr(warp_module, "predict_equivariant_force", predict)
+    common = {
+        "positions_m": np.zeros((3, 3)),
+        "velocities_mps": np.zeros((3, 3)),
+        "rest_positions_m": np.zeros((3, 3)),
+        "object_edges": np.array([[0, 1], [1, 2]]),
+        "rest_lengths_m": np.ones(2),
+        "conditioning": {},
+        "gravity_mps2": np.array([0.0, 0.0, -9.81]),
+        "force_scale_sim": 0.3,
+        "regime_probabilities": np.array([1.0, 0.0, 0.0, 0.0, 0.0]),
+        "device": "cpu",
+    }
+    result = predict_equivariant_force_ensemble(
+        [1.0, 2.0, 6.0],
+        object(),
+        latents=[np.array([1.0]), np.array([2.0]), np.array([3.0])],
+        admission_weight=1.0,
+        **common,
+    )
+    np.testing.assert_array_equal(
+        result,
+        np.full((3, 3), 3.0, dtype=np.float32),
+    )
+    assert [value[0] for value in calls] == [1.0, 2.0, 6.0]
+
+    calls.clear()
+    fallback = predict_equivariant_force_ensemble(
+        [1.0, 2.0, 6.0],
+        object(),
+        latents=[np.array([1.0]), np.array([2.0]), np.array([3.0])],
+        admission_weight=0.0,
+        **common,
+    )
+    np.testing.assert_array_equal(fallback, np.zeros((3, 3), dtype=np.float32))
+    assert calls == []
 
 
 def test_zero_admission_delegates_to_the_existing_warp_rollout(
@@ -1277,6 +1333,70 @@ def test_source_protocol_is_typed_and_rejects_overlapping_folds(
         load_equivariant_force_source_protocol(invalid)
 
 
+def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
+    tmp_path,
+) -> None:
+    root = Path(__file__).parents[1]
+    source = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_source_v2.json"
+    )
+    stage2_path = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_stage2_v1.json"
+    )
+    stage2 = load_equivariant_force_stage2_protocol(
+        stage2_path,
+        source_protocol_path=source,
+    )
+    assert stage2.seeds == (17, 43, 101)
+    frames = stage2_frame_intervals(5, 8)
+    assert frames.initial_state_frame == 0
+    assert frames.simulator_step_frames == (1, 2, 3, 4, 5, 6, 7)
+    assert frames.readout_fit_frames == (0, 1, 2, 3, 4)
+    assert frames.scoring_frames == (5, 6, 7)
+
+    payload = json.loads(stage2_path.read_text(encoding="utf-8"))
+    payload["stage_1_outcome_observed_before_lock"] = True
+    invalid = tmp_path / "invalid_stage2.json"
+    invalid.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="before Stage 1"):
+        load_equivariant_force_stage2_protocol(invalid)
+
+
+def test_graph_persistence_refit_is_arm_specific_and_shrinkage_is_amplitude() -> None:
+    frames = 5
+    nodes = 4
+    physical_reference = np.zeros((frames, nodes, 3))
+    physical_candidate = physical_reference.copy()
+    physical_candidate[:, :, 0] = 0.004
+    observed = np.zeros((frames, 2, 3))
+    observed[:, :, 0] = 0.008
+    valid = np.ones((frames, 2), dtype=bool)
+    edges = np.array([[0, 1], [1, 2], [2, 3]])
+    reference = fit_prefix_graph_persistence(
+        observed,
+        physical_reference,
+        valid,
+        edges,
+    )
+    candidate = fit_prefix_graph_persistence(
+        observed,
+        physical_candidate,
+        valid,
+        edges,
+    )
+    assert candidate.correction_rms_m < reference.correction_rms_m
+    shrinkage = readout_correction_shrinkage(
+        candidate.correction_m,
+        reference.correction_m,
+        minimum_reference_rms_m=1.0e-6,
+    )
+    assert shrinkage["reference_supported"] is True
+    assert shrinkage["readout_correction_shrinkage"] == pytest.approx(
+        0.5,
+        abs=0.03,
+    )
+
+
 def test_failed_source_target_qa_blocks_stage_one(tmp_path) -> None:
     protocol_path = (
         Path(__file__).parents[1]
@@ -1312,7 +1432,20 @@ def _official_gate_records(protocol, *, ratio: float = 0.94):
         {
             "case_id": case,
             "target_artifacts_opened": False,
+            "stage2_execution_contract": (
+                "phystwin-equivariant-force-official-warp-stage2-v1"
+            ),
+            "seed_aggregation": (
+                "arithmetic_mean_force_field_per_frame_float64_then_float32"
+            ),
+            "frame_contract": {
+                "initial_state_frame": 0,
+                "first_simulator_step_frame": 1,
+                "fit_end_is_exclusive": True,
+                "score_interval": "[fit_end_frame, train_end_frame)",
+            },
             "zero_force_bitwise_parity": True,
+            "readout_correction_reference_supported": True,
             "readout_correction_shrinkage": 0.20,
             "reference": {
                 "chamfer_distance_m": 0.010,
@@ -1337,9 +1470,14 @@ def test_official_warp_gate_passes_only_the_locked_multimetric_result() -> None:
         / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(protocol_path)
+    execution = load_equivariant_force_stage2_protocol(
+        protocol_path.with_name("phystwin_equivariant_force_stage2_v1.json"),
+        source_protocol_path=protocol_path,
+    )
     result = evaluate_equivariant_force_official_warp_gate(
         _official_gate_records(protocol),
         protocol,
+        execution,
         force_target_competence_passed=True,
     )
     assert result["source_gate_passed"] is True
@@ -1356,6 +1494,10 @@ def test_official_warp_gate_fails_on_parity_or_worst_case_regression() -> None:
         / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(protocol_path)
+    execution = load_equivariant_force_stage2_protocol(
+        protocol_path.with_name("phystwin_equivariant_force_stage2_v1.json"),
+        source_protocol_path=protocol_path,
+    )
     records = _official_gate_records(protocol)
     records[0]["zero_force_bitwise_parity"] = False
     records[1]["candidate"]["track_error_m"] = 1.06 * records[1]["reference"][
@@ -1364,6 +1506,7 @@ def test_official_warp_gate_fails_on_parity_or_worst_case_regression() -> None:
     result = evaluate_equivariant_force_official_warp_gate(
         records,
         protocol,
+        execution,
         force_target_competence_passed=True,
     )
     assert result["source_gate_passed"] is False
@@ -1380,9 +1523,14 @@ def test_official_warp_gate_cannot_override_failed_force_competence() -> None:
         / "phystwin_equivariant_force_source_v2.json"
     )
     protocol = load_equivariant_force_source_protocol(protocol_path)
+    execution = load_equivariant_force_stage2_protocol(
+        protocol_path.with_name("phystwin_equivariant_force_stage2_v1.json"),
+        source_protocol_path=protocol_path,
+    )
     result = evaluate_equivariant_force_official_warp_gate(
         _official_gate_records(protocol),
         protocol,
+        execution,
         force_target_competence_passed=False,
     )
     assert result["source_gate_passed"] is False

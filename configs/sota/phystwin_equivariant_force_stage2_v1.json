@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "contract": "phystwin-equivariant-force-official-warp-stage2-v1",
+  "locked_at_utc": "2026-07-24T00:00:00Z",
+  "status": "Execution amendment locked after source-target QA and before Stage 1; no Stage-1 outcome or target artifact was observed.",
+  "source_protocol_sha256": "1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171",
+  "source_episode_archive_sha256": "fdb13f40443bedeadb05e5cff3d4f478530f89e0ffa521b7c5945c5c124378c1",
+  "stage_1_outcome_observed_before_lock": false,
+  "target_artifacts_opened": false,
+  "supersedes_source_protocol_fields": [
+    "official_warp.candidate",
+    "official_warp.reference",
+    "information_boundary.heldout_scoring"
+  ],
+  "rollout": {
+    "initial_state_frame": 0,
+    "first_simulator_step_frame": 1,
+    "fit_end_is_exclusive": true,
+    "same_initial_state": true,
+    "same_simulator_configuration": true,
+    "physical_parameters": "released_optimal_phystwin_parameters",
+    "reference_force": "exact_zero",
+    "candidate_force_location": "inside_official_warp",
+    "candidate_force_active_during_prefix": true,
+    "candidate_force_active_during_scoring": true,
+    "candidate_force_interval": "[1, train_end_frame)",
+    "reference_force_interval": "exact_zero_on_[1, train_end_frame)",
+    "score_interval": "[fit_end_frame, train_end_frame)",
+    "state_at_fit_end_is_propagated_from_prefix": true,
+    "future_observations_used_for_initialization_or_force": false
+  },
+  "ensemble": {
+    "seeds": [17, 43, 101],
+    "aggregation": "arithmetic_mean_force_field_per_frame_float64_then_float32",
+    "member_pairing": "each_seed_model_with_its_own_prefix_adapted_latent",
+    "seed_selection": "forbidden",
+    "force_bound_preserved_by_convex_averaging": true
+  },
+  "readout_refit": {
+    "fit_interval": "[0, fit_end_frame)",
+    "fit_separately_per_arm": true,
+    "future_frames_used": false,
+    "robust_process_std_m": 0.005,
+    "robust_observation_std_m": 0.001,
+    "robust_initial_std_m": 0.01,
+    "robust_inlier_prior": 0.95,
+    "robust_outlier_variance_multiplier": 100.0,
+    "graph": "normalized_released_spring_laplacian",
+    "graph_prior_strength": 0.3,
+    "maximum_residual_m": 0.01,
+    "correction_application": "persist_fitted_field_over_[fit_end_frame,train_end_frame)",
+    "shrinkage_definition": "1-candidate_correction_rms/reference_correction_rms",
+    "minimum_reference_rms_m": 1e-06,
+    "unsupported_reference_cases_count_toward_shrinkage_gate": false,
+    "laplacian_energy_is_diagnostic_only": true
+  },
+  "primary_comparison": {
+    "candidate": "equivariant_force_replay_plus_separately_refit_graph_persistence",
+    "reference": "exact_zero_force_replay_plus_separately_refit_graph_persistence",
+    "only_arm_difference_before_readout_refit": "equivariant_generalized_force",
+    "equal_case_aggregation": true,
+    "prefix_state_injection": "diagnostic_control_only"
+  },
+  "zero_force_parity": {
+    "required": true,
+    "comparison": "exact_zero_force_replay_vs_existing_no_external_force_replay",
+    "bitwise": true
+  },
+  "information_boundary": {
+    "shared_weights": "Complete outcomes from non-held-out source cases only.",
+    "heldout_latents": "Frames [0, fit_end_frame) only; one latent per seed model.",
+    "readout": "Each arm uses only its own simulated prefix and observed frames [0, fit_end_frame).",
+    "scoring": "Only [fit_end_frame, train_end_frame) source frames are scored after all weights and latents are frozen.",
+    "target": "No target file, trajectory, observation, metric, checkpoint, query, or future artifact may be opened.",
+    "stage_order": "Stage 2 cannot run unless the frozen Stage-1 force-target competence gate passes."
+  }
+}

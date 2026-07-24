@@ -15,6 +15,9 @@ from bayesian_phystwin.phystwin_equivariant_force_source import (
     load_equivariant_force_source_protocol,
     run_equivariant_force_source_competence,
 )
+from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
+    load_equivariant_force_stage2_protocol,
+)
 
 
 def main() -> None:
@@ -33,6 +36,7 @@ def main() -> None:
     decide.add_argument("records_json")
     decide.add_argument("competence_summary_json")
     decide.add_argument("protocol_json")
+    decide.add_argument("stage2_protocol_json")
     decide.add_argument("output_json")
     args = parser.parse_args()
 
@@ -64,6 +68,10 @@ def main() -> None:
         result = evaluate_equivariant_force_official_warp_gate(
             records_payload["records"],
             load_equivariant_force_source_protocol(args.protocol_json),
+            load_equivariant_force_stage2_protocol(
+                args.stage2_protocol_json,
+                source_protocol_path=args.protocol_json,
+            ),
             force_target_competence_passed=bool(
                 competence["force_target_competence_passed"]
             ),

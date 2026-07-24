@@ -196,6 +196,59 @@ def predict_equivariant_force(
     return result
 
 
+def predict_equivariant_force_ensemble(
+    models: tuple[Any, ...] | list[Any],
+    torch: Any,
+    *,
+    latents: tuple[np.ndarray, ...] | list[np.ndarray],
+    positions_m: np.ndarray,
+    velocities_mps: np.ndarray,
+    rest_positions_m: np.ndarray,
+    object_edges: np.ndarray,
+    rest_lengths_m: np.ndarray,
+    conditioning: dict[str, np.ndarray | float],
+    gravity_mps2: np.ndarray,
+    force_scale_sim: float,
+    regime_probabilities: np.ndarray,
+    admission_weight: float,
+    device: str,
+) -> np.ndarray:
+    """Average paired seed-model force fields before one Warp step."""
+
+    members = tuple(models)
+    latent_values = tuple(latents)
+    if not members or len(members) != len(latent_values):
+        raise ValueError("models and latents must be nonempty paired sequences")
+    if admission_weight == 0.0:
+        return np.zeros_like(np.asarray(positions_m, dtype=np.float32))
+    predictions = [
+        predict_equivariant_force(
+            model,
+            torch,
+            positions_m=positions_m,
+            velocities_mps=velocities_mps,
+            rest_positions_m=rest_positions_m,
+            object_edges=object_edges,
+            rest_lengths_m=rest_lengths_m,
+            conditioning=conditioning,
+            gravity_mps2=gravity_mps2,
+            force_scale_sim=force_scale_sim,
+            regime_probabilities=regime_probabilities,
+            latent=latent,
+            admission_weight=admission_weight,
+            device=device,
+        )
+        for model, latent in zip(members, latent_values, strict=True)
+    ]
+    result = np.mean(
+        np.stack(predictions).astype(np.float64),
+        axis=0,
+    ).astype(np.float32)
+    if not np.all(np.isfinite(result)):
+        raise RuntimeError("equivariant-force ensemble produced non-finite values")
+    return np.ascontiguousarray(result)
+
+
 def rollout_equivariant_force_segment(
     simulator: Any,
     torch: Any,
