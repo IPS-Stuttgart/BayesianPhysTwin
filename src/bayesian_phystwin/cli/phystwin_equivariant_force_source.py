@@ -17,6 +17,8 @@ from bayesian_phystwin.phystwin_equivariant_force_source import (
     build_equivariant_force_source_episodes,
     load_equivariant_force_source_protocol,
     run_equivariant_force_source_competence,
+    run_equivariant_force_source_competence_fold,
+    run_equivariant_force_source_competence_merge,
 )
 from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
     load_equivariant_force_stage2_protocol,
@@ -35,6 +37,17 @@ def main() -> None:
     gate.add_argument("protocol_json")
     gate.add_argument("output_dir")
     gate.add_argument("--device")
+    fold = subparsers.add_parser("source-competence-fold")
+    fold.add_argument("episode_root")
+    fold.add_argument("protocol_json")
+    fold.add_argument("output_dir")
+    fold.add_argument("fold_name")
+    fold.add_argument("--device")
+    merge = subparsers.add_parser("source-competence-merge")
+    merge.add_argument("episode_root")
+    merge.add_argument("protocol_json")
+    merge.add_argument("output_dir")
+    merge.add_argument("--device")
     warp_case = subparsers.add_parser("official-warp-case")
     warp_case.add_argument("official_repo")
     warp_case.add_argument("data_root")
@@ -59,16 +72,33 @@ def main() -> None:
             args.protocol_json,
             args.output_dir,
         )
-    elif args.command == "source-competence":
+    elif args.command in {"source-competence", "source-competence-fold"}:
         try:
             import torch
         except ImportError as error:
             raise RuntimeError("source competence requires torch") from error
-        result = run_equivariant_force_source_competence(
+        if args.command == "source-competence":
+            result = run_equivariant_force_source_competence(
+                args.episode_root,
+                args.protocol_json,
+                args.output_dir,
+                torch,
+                device=args.device,
+            )
+        else:
+            result = run_equivariant_force_source_competence_fold(
+                args.episode_root,
+                args.protocol_json,
+                args.output_dir,
+                args.fold_name,
+                torch,
+                device=args.device,
+            )
+    elif args.command == "source-competence-merge":
+        result = run_equivariant_force_source_competence_merge(
             args.episode_root,
             args.protocol_json,
             args.output_dir,
-            torch,
             device=args.device,
         )
     elif args.command == "official-warp-case":

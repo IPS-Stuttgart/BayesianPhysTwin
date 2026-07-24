@@ -220,6 +220,18 @@ def evaluate_equivariant_force_official_warp_case(
         raise ValueError("Stage-1 record crossed the target boundary")
     if competence.get("protocol_sha256") != stage2.source_protocol_sha256:
         raise ValueError("Stage-1 record used another source protocol")
+    execution = competence.get("stage1_execution")
+    if not isinstance(execution, Mapping):
+        raise ValueError("Stage-1 execution provenance is missing")
+    implementation_sha256 = execution.get("stage1_implementation_sha256")
+    if (
+        not isinstance(implementation_sha256, str)
+        or len(implementation_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in implementation_sha256)
+    ):
+        raise ValueError("Stage-1 implementation identity is invalid")
+    if execution.get("mode") not in {"serial", "registered_fold_merge"}:
+        raise ValueError("Stage-1 execution mode is invalid")
 
     try:
         import torch

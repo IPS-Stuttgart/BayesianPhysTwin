@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -18,6 +19,8 @@ from .phystwin_equivariant_force_data import (
 from .phystwin_equivariant_force_training import (
     EquivariantForceTrainingConfig,
     crossfit_equivariant_force_competence,
+    fit_equivariant_force_competence_fold,
+    merge_equivariant_force_competence_folds,
 )
 from .phystwin_equivariant_force_warp import (
     controller_attachment_matrix,
@@ -43,6 +46,13 @@ from .phystwin_residual_dynamics import (
 
 EQUIVARIANT_FORCE_SOURCE_CONTRACT = (
     "phystwin-equivariant-generalized-force-source-v2"
+)
+_STAGE1_IMPLEMENTATION_MODULES = (
+    "phystwin_equivariant_force.py",
+    "phystwin_equivariant_force_artifact.py",
+    "phystwin_equivariant_force_data.py",
+    "phystwin_equivariant_force_source.py",
+    "phystwin_equivariant_force_training.py",
 )
 
 
@@ -522,18 +532,210 @@ def run_equivariant_force_source_competence(
         model_config=protocol.model,
         training_config=protocol.training,
     )
-    result["protocol_sha256"] = _sha256(protocol_path)
-    result["target_artifacts_opened"] = False
-    result["stage_2_official_warp_required"] = True
-    result["official_warp_promotion_authorized"] = False
+    return _finalize_source_competence(
+        result,
+        protocol_path,
+        output_dir,
+        execution={
+            "mode": "serial",
+            "stage1_implementation_sha256": (
+                equivariant_force_stage1_implementation_sha256()
+            ),
+            "fold_records": None,
+        },
+    )
+
+
+def _finalize_source_competence(
+    result: Mapping[str, Any],
+    protocol_path: str | Path,
+    output_dir: str | Path,
+    *,
+    execution: Mapping[str, Any],
+) -> dict[str, Any]:
+    finalized = dict(result)
+    finalized["protocol_sha256"] = _sha256(protocol_path)
+    finalized["target_artifacts_opened"] = False
+    finalized["stage_2_official_warp_required"] = True
+    finalized["official_warp_promotion_authorized"] = False
+    finalized["stage1_execution"] = dict(execution)
     record_path = Path(output_dir).resolve() / "source_competence_record.json"
-    record_path.write_text(
-        json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+    temporary = record_path.with_name(record_path.name + ".tmp")
+    temporary.write_text(
+        json.dumps(finalized, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
-    result["source_competence_record"] = str(record_path)
-    result["source_competence_record_sha256"] = _sha256(record_path)
-    return result
+    temporary.replace(record_path)
+    finalized["source_competence_record"] = str(record_path)
+    finalized["source_competence_record_sha256"] = _sha256(record_path)
+    return finalized
+
+
+def _source_episodes(
+    episode_root: str | Path,
+    protocol: EquivariantForceSourceProtocol,
+) -> list[EquivariantForceEpisode]:
+    root = Path(episode_root).resolve()
+    return [
+        load_equivariant_force_episode(root / str(case) / "force_episode")
+        for case in protocol.payload["source_cases"]
+    ]
+
+
+def _training_config_payload(
+    training: EquivariantForceTrainingConfig,
+) -> dict[str, Any]:
+    payload = asdict(training)
+    payload["seeds"] = list(training.seeds)
+    return payload
+
+
+def equivariant_force_stage1_implementation_sha256() -> str:
+    """Identify the exact source modules that implement frozen Stage 1."""
+
+    root = Path(__file__).resolve().parent
+    file_hashes = {
+        name: _sha256(root / name) for name in _STAGE1_IMPLEMENTATION_MODULES
+    }
+    payload = json.dumps(
+        file_hashes,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def run_equivariant_force_source_competence_fold(
+    episode_root: str | Path,
+    protocol_path: str | Path,
+    output_dir: str | Path,
+    fold_name: str,
+    torch: Any,
+    *,
+    device: str | None = None,
+) -> dict[str, Any]:
+    """Run one immutable registered Stage-1 fold for later mechanical merge."""
+
+    protocol = load_equivariant_force_source_protocol(
+        protocol_path,
+        device=device,
+    )
+    root = Path(episode_root).resolve()
+    validate_equivariant_force_episode_build(root, protocol_path)
+    output = Path(output_dir).resolve()
+    record_path = output / fold_name / "fold_record.json"
+    if record_path.exists():
+        raise FileExistsError(f"completed fold record already exists: {record_path}")
+    episodes = _source_episodes(root, protocol)
+    fold = fit_equivariant_force_competence_fold(
+        episodes,
+        protocol.payload["source_folds"],
+        output,
+        torch,
+        fold_name=fold_name,
+        model_config=protocol.model,
+        training_config=protocol.training,
+    )
+    record = {
+        "schema_version": 1,
+        "contract": EQUIVARIANT_FORCE_SOURCE_CONTRACT,
+        "stage": "source_competence_fold",
+        "protocol_sha256": _sha256(protocol_path),
+        "model_config": protocol.model.to_dict(),
+        "training_config": _training_config_payload(protocol.training),
+        "stage1_implementation_sha256": (
+            equivariant_force_stage1_implementation_sha256()
+        ),
+        "source_episode_artifact_ids": {
+            episode.case_id: episode.artifact_id for episode in episodes
+        },
+        "fold": fold,
+        "target_artifacts_opened": False,
+        "official_warp_promotion_authorized": False,
+    }
+    record_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = record_path.with_name(record_path.name + ".tmp")
+    temporary.write_text(
+        json.dumps(record, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(record_path)
+    return {
+        **record,
+        "fold_record": str(record_path),
+        "fold_record_sha256": _sha256(record_path),
+    }
+
+
+def run_equivariant_force_source_competence_merge(
+    episode_root: str | Path,
+    protocol_path: str | Path,
+    output_dir: str | Path,
+    *,
+    device: str | None = None,
+) -> dict[str, Any]:
+    """Merge all registered fold records after verifying their provenance."""
+
+    protocol = load_equivariant_force_source_protocol(
+        protocol_path,
+        device=device,
+    )
+    root = Path(episode_root).resolve()
+    validate_equivariant_force_episode_build(root, protocol_path)
+    output = Path(output_dir).resolve()
+    if (output / "source_competence_record.json").exists():
+        raise FileExistsError("a merged Stage-1 record already exists")
+    episodes = _source_episodes(root, protocol)
+    episode_ids = {
+        episode.case_id: episode.artifact_id for episode in episodes
+    }
+    records = []
+    fold_record_provenance = []
+    implementation_sha256 = equivariant_force_stage1_implementation_sha256()
+    for fold in protocol.payload["source_folds"]:
+        fold_name = str(fold["name"])
+        record_path = output / fold_name / "fold_record.json"
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+        expected = {
+            "schema_version": 1,
+            "contract": EQUIVARIANT_FORCE_SOURCE_CONTRACT,
+            "stage": "source_competence_fold",
+            "protocol_sha256": _sha256(protocol_path),
+            "model_config": protocol.model.to_dict(),
+            "training_config": _training_config_payload(protocol.training),
+            "stage1_implementation_sha256": implementation_sha256,
+            "source_episode_artifact_ids": episode_ids,
+            "target_artifacts_opened": False,
+            "official_warp_promotion_authorized": False,
+        }
+        if any(record.get(key) != value for key, value in expected.items()):
+            raise ValueError(f"{fold_name}: fold record provenance changed")
+        records.append(record["fold"])
+        fold_record_provenance.append(
+            {
+                "fold": fold_name,
+                "path": str(record_path),
+                "sha256": _sha256(record_path),
+            }
+        )
+    result = merge_equivariant_force_competence_folds(
+        episodes,
+        protocol.payload["source_folds"],
+        records,
+        output,
+        model_config=protocol.model,
+        training_config=protocol.training,
+    )
+    return _finalize_source_competence(
+        result,
+        protocol_path,
+        output,
+        execution={
+            "mode": "registered_fold_merge",
+            "stage1_implementation_sha256": implementation_sha256,
+            "fold_records": fold_record_provenance,
+        },
+    )
 
 
 def validate_equivariant_force_episode_build(

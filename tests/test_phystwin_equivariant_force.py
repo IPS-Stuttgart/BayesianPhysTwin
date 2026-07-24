@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 import hashlib
 import json
 from pathlib import Path
@@ -53,13 +54,18 @@ from bayesian_phystwin.phystwin_equivariant_force_training import (
     EquivariantForceTrainingConfig,
     adapt_equivariant_force_latent,
     crossfit_equivariant_force_competence,
+    fit_equivariant_force_competence_fold,
     fit_shared_equivariant_force_model,
     force_target_metrics,
+    merge_equivariant_force_competence_folds,
 )
 from bayesian_phystwin.phystwin_equivariant_force_source import (
+    EQUIVARIANT_FORCE_SOURCE_CONTRACT,
     ForceTargetBuildConfig,
     build_released_equivariant_force_episode,
     load_equivariant_force_source_protocol,
+    run_equivariant_force_source_competence_fold,
+    run_equivariant_force_source_competence_merge,
     validate_equivariant_force_episode_build,
 )
 from bayesian_phystwin.phystwin_force_targets import (
@@ -1227,6 +1233,58 @@ def test_crossfit_force_competence_never_authorizes_warp_promotion(
     }
     assert (tmp_path / "crossfit" / "summary.json").is_file()
 
+    sharded_root = tmp_path / "sharded"
+    fold_results = [
+        fit_equivariant_force_competence_fold(
+            episodes,
+            folds,
+            sharded_root,
+            torch,
+            fold_name=fold["name"],
+            model_config=model_config,
+            training_config=training_config,
+        )
+        for fold in folds
+    ]
+    merged = merge_equivariant_force_competence_folds(
+        episodes,
+        folds,
+        fold_results,
+        sharded_root,
+        model_config=model_config,
+        training_config=training_config,
+    )
+    assert merged["force_target_competence_passed"] == (
+        summary["force_target_competence_passed"]
+    )
+    assert merged["fold_competence_wins"] == summary["fold_competence_wins"]
+    assert merged["case_mean_force_target_improvement"] == pytest.approx(
+        summary["case_mean_force_target_improvement"]
+    )
+    assert [
+        seed["model_artifact"]["artifact_id"]
+        for fold in merged["folds"]
+        for seed in fold["seeds"]
+    ] == [
+        seed["model_artifact"]["artifact_id"]
+        for fold in summary["folds"]
+        for seed in fold["seeds"]
+    ]
+
+    latent_path = Path(
+        fold_results[0]["seeds"][0]["held_out"][0]["latent_path"]
+    )
+    latent_path.write_bytes(latent_path.read_bytes() + b"tamper")
+    with pytest.raises(ValueError, match="latent hash changed"):
+        merge_equivariant_force_competence_folds(
+            episodes,
+            folds,
+            fold_results,
+            sharded_root,
+            model_config=model_config,
+            training_config=training_config,
+        )
+
 
 @pytest.mark.parametrize(
     "folds",
@@ -1260,6 +1318,108 @@ def test_crossfit_rejects_incomplete_or_overlapping_case_coverage(
             torch,
             model_config=model_config,
             training_config=training_config,
+        )
+
+
+def test_registered_fold_records_round_trip_into_one_immutable_merge(
+    tmp_path,
+) -> None:
+    torch = pytest.importorskip("torch")
+    episodes = [
+        _transfer_episode("case_a", 0.0),
+        _transfer_episode("case_b", np.pi / 3.0),
+        _transfer_episode("case_c", 2.0 * np.pi / 3.0),
+    ]
+    folds = [
+        {"name": "fold_a", "held_out_cases": ["case_a"]},
+        {"name": "fold_b", "held_out_cases": ["case_b"]},
+        {"name": "fold_c", "held_out_cases": ["case_c"]},
+    ]
+    model_config, training_config = _training_configs()
+    training_values = asdict(training_config)
+    training_values["seeds"] = list(training_config.seeds)
+    repository = Path(__file__).parents[1]
+    payload = json.loads(
+        (
+            repository
+            / "configs"
+            / "sota"
+            / "phystwin_equivariant_force_source_v2.json"
+        ).read_text(encoding="utf-8")
+    )
+    payload.update(
+        {
+            "source_cases": [episode.case_id for episode in episodes],
+            "target_cases": ["sealed_case"],
+            "source_folds": folds,
+            "model": model_config.to_dict(),
+            "training": training_values,
+        }
+    )
+    protocol_path = tmp_path / "protocol.json"
+    protocol_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    episode_root = tmp_path / "episodes"
+    source_records = {}
+    for episode in episodes:
+        source_records[episode.case_id] = write_equivariant_force_episode(
+            episode_root / episode.case_id / "force_episode",
+            episode,
+        )
+    (episode_root / "episode_build_summary.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "contract": EQUIVARIANT_FORCE_SOURCE_CONTRACT,
+                "protocol_sha256": hashlib.sha256(
+                    protocol_path.read_bytes()
+                ).hexdigest(),
+                "source_episode_count": len(episodes),
+                "source_episodes": source_records,
+                "source_target_qa_passed": True,
+                "target_artifacts_opened": False,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    output = tmp_path / "sharded"
+    for fold in folds:
+        record = run_equivariant_force_source_competence_fold(
+            episode_root,
+            protocol_path,
+            output,
+            fold["name"],
+            torch,
+            device="cpu",
+        )
+        assert record["target_artifacts_opened"] is False
+        assert record["fold"]["fold"] == fold["name"]
+        assert len(record["stage1_implementation_sha256"]) == 64
+
+    merged = run_equivariant_force_source_competence_merge(
+        episode_root,
+        protocol_path,
+        output,
+        device="cpu",
+    )
+    assert merged["target_artifacts_opened"] is False
+    assert merged["official_warp_promotion_authorized"] is False
+    assert merged["stage1_execution"]["mode"] == "registered_fold_merge"
+    assert len(merged["stage1_execution"]["fold_records"]) == 3
+    assert (output / "source_competence_record.json").is_file()
+    with pytest.raises(FileExistsError, match="already exists"):
+        run_equivariant_force_source_competence_merge(
+            episode_root,
+            protocol_path,
+            output,
+            device="cpu",
         )
 
 
@@ -1555,6 +1715,10 @@ def test_official_warp_case_writes_a_gate_ready_record(
                 "protocol_sha256": hashlib.sha256(
                     source_path.read_bytes()
                 ).hexdigest(),
+                "stage1_execution": {
+                    "mode": "registered_fold_merge",
+                    "stage1_implementation_sha256": "a" * 64,
+                },
             }
         ),
         encoding="utf-8",

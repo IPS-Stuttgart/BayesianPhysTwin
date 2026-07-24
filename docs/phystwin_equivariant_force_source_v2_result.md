@@ -61,3 +61,37 @@ Before Stage 1, the previously underspecified Stage-2 replay and seed
 aggregation choices were independently locked in
 `configs/sota/phystwin_equivariant_force_stage2_v1.json`. This amendment does
 not change this v2 source archive or its QA evidence.
+
+## Registered Stage-1 execution
+
+Stage 1 may run serially with `source-competence`, or as three independently
+recorded folds followed by a mechanical merge. The sharded path changes only
+execution scheduling. It preserves the exact registered folds, seeds, source
+episodes, model settings, thresholds, and target boundary.
+
+After a GPU is explicitly released, two folds may run concurrently by exposing
+one physical GPU to each process while retaining the protocol's `cuda:0`
+device string:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 bpt-gate-phystwin-equivariant-force \
+  source-competence-fold EPISODES PROTOCOL OUTPUT fold_0 --device cuda:0
+
+CUDA_VISIBLE_DEVICES=1 bpt-gate-phystwin-equivariant-force \
+  source-competence-fold EPISODES PROTOCOL OUTPUT fold_1 --device cuda:0
+```
+
+The remaining `fold_2` runs unchanged on the first released device. A completed
+fold record cannot be overwritten. Once all three records exist:
+
+```bash
+bpt-gate-phystwin-equivariant-force \
+  source-competence-merge EPISODES PROTOCOL OUTPUT --device cuda:0
+```
+
+The merge performs no fitting. It requires exact protocol and episode
+identities, registered held-out coverage and seed order, prefix-only latent
+provenance, expected fold-local paths, and matching model and latent SHA-256
+digests. Every fold also binds the same deterministic Stage-1 implementation
+hash, and the merged record binds all fold-record hashes. Any incomplete,
+relocated, mixed-code, or modified fold blocks the decision.

@@ -17,6 +17,7 @@ from .phystwin_equivariant_force import (
 )
 from .phystwin_equivariant_force_artifact import (
     EquivariantForceArtifact,
+    load_equivariant_force_artifact,
     write_equivariant_force_artifact,
 )
 from .phystwin_equivariant_force_data import (
@@ -443,113 +444,252 @@ def _validate_folds(
     return parsed
 
 
-def crossfit_equivariant_force_competence(
+def fit_equivariant_force_competence_fold(
     episodes: Sequence[EquivariantForceEpisode],
     folds: Sequence[Mapping[str, Any]],
     output_dir: str | Path,
     torch: Any,
     *,
+    fold_name: str,
     model_config: EquivariantForceConfig,
     training_config: EquivariantForceTrainingConfig,
 ) -> dict[str, Any]:
-    """Cross-fit source force targets before any official-Warp promotion gate."""
+    """Fit exactly one registered Stage-1 fold without making a gate decision."""
 
     parsed_folds = _validate_folds(episodes, folds)
     by_case = {episode.case_id: episode for episode in episodes}
+    matches = [
+        (name, held_cases)
+        for name, held_cases in parsed_folds
+        if name == fold_name
+    ]
+    if len(matches) != 1:
+        raise ValueError("requested fold is not uniquely registered")
+    registered_name, held_cases = matches[0]
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    fold_results = []
-    for fold_name, held_cases in parsed_folds:
-        source = [
-            episode for episode in episodes if episode.case_id not in held_cases
-        ]
-        seed_results = []
-        for seed in training_config.seeds:
-            model, _, training = fit_shared_equivariant_force_model(
-                source,
+    source = [
+        episode for episode in episodes if episode.case_id not in held_cases
+    ]
+    seed_results = []
+    for seed in training_config.seeds:
+        model, _, training = fit_shared_equivariant_force_model(
+            source,
+            torch,
+            model_config=model_config,
+            training_config=training_config,
+            seed=seed,
+        )
+        source_checksums = {
+            f"source_episode_{episode.case_id}": episode.artifact_id
+            for episode in source
+        }
+        artifact = EquivariantForceArtifact.from_model(
+            model,
+            config=model_config,
+            source_checksums=source_checksums,
+            information_boundary={
+                "target_future_used_for_fit_or_selection": False,
+                "exact_zero_force_fallback": True,
+                "force_location": "inside_official_warp",
+                "force_unit_contract": (
+                    "warp_simulator_generalized_force_not_newtons"
+                ),
+                "complete_source_outcomes_supervise_shared_weights": True,
+                "heldout_prefix_adapts_latent_only": True,
+            },
+            training_summary={
+                **training,
+                "fold": registered_name,
+                "held_out_cases": held_cases,
+            },
+            admission_policy={
+                "force_target_competence_is_not_the_promotion_gate": True,
+                "official_warp_metrics_required_for_promotion": True,
+                "fallback": "unchanged_bayesian_phystwin",
+            },
+        )
+        artifact_record = write_equivariant_force_artifact(
+            output / registered_name / f"seed_{seed}" / "model",
+            artifact,
+        )
+        held_results = []
+        for case in held_cases:
+            latent, adaptation = adapt_equivariant_force_latent(
+                model,
+                by_case[case],
                 torch,
                 model_config=model_config,
                 training_config=training_config,
                 seed=seed,
             )
-            source_checksums = {
-                f"source_episode_{episode.case_id}": episode.artifact_id
-                for episode in source
-            }
-            artifact = EquivariantForceArtifact.from_model(
+            metrics = force_target_metrics(
                 model,
-                config=model_config,
-                source_checksums=source_checksums,
-                information_boundary={
-                    "target_future_used_for_fit_or_selection": False,
-                    "exact_zero_force_fallback": True,
-                    "force_location": "inside_official_warp",
-                    "force_unit_contract": (
-                        "warp_simulator_generalized_force_not_newtons"
-                    ),
-                    "complete_source_outcomes_supervise_shared_weights": True,
-                    "heldout_prefix_adapts_latent_only": True,
-                },
-                training_summary={
-                    **training,
-                    "fold": fold_name,
-                    "held_out_cases": held_cases,
-                },
-                admission_policy={
-                    "force_target_competence_is_not_the_promotion_gate": True,
-                    "official_warp_metrics_required_for_promotion": True,
-                    "fallback": "unchanged_bayesian_phystwin",
-                },
+                by_case[case],
+                latent,
+                torch,
+                start_frame=by_case[case].fit_end_frame,
+                stop_frame=by_case[case].validation_end_frame,
+                device=training_config.device,
             )
-            artifact_record = write_equivariant_force_artifact(
-                output / fold_name / f"seed_{seed}" / "model",
-                artifact,
+            latent_path = (
+                output / registered_name / f"seed_{seed}" / f"{case}.npz"
             )
-            held_results = []
-            for case in held_cases:
-                latent, adaptation = adapt_equivariant_force_latent(
-                    model,
-                    by_case[case],
-                    torch,
-                    model_config=model_config,
-                    training_config=training_config,
-                    seed=seed,
-                )
-                metrics = force_target_metrics(
-                    model,
-                    by_case[case],
-                    latent,
-                    torch,
-                    start_frame=by_case[case].fit_end_frame,
-                    stop_frame=by_case[case].validation_end_frame,
-                    device=training_config.device,
-                )
-                latent_path = output / fold_name / f"seed_{seed}" / f"{case}.npz"
-                latent_path.parent.mkdir(parents=True, exist_ok=True)
-                np.savez_compressed(latent_path, latent=latent)
-                held_results.append(
-                    {
-                        "case": case,
-                        "adaptation": adaptation,
-                        "force_target_metrics": metrics,
-                        "latent_path": str(latent_path.resolve()),
-                        "latent_sha256": _sha256(latent_path),
-                    }
-                )
-            seed_results.append(
+            latent_path.parent.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(latent_path, latent=latent)
+            held_results.append(
                 {
-                    "seed": seed,
-                    "model_artifact": artifact_record,
-                    "held_out": held_results,
+                    "case": case,
+                    "adaptation": adaptation,
+                    "force_target_metrics": metrics,
+                    "latent_path": str(latent_path.resolve()),
+                    "latent_sha256": _sha256(latent_path),
                 }
             )
-        fold_results.append(
+        seed_results.append(
             {
-                "fold": fold_name,
-                "held_out_cases": held_cases,
-                "seeds": seed_results,
+                "seed": seed,
+                "model_artifact": artifact_record,
+                "held_out": held_results,
             }
         )
+    return {
+        "fold": registered_name,
+        "held_out_cases": held_cases,
+        "seeds": seed_results,
+    }
+
+
+def _validate_completed_fold_results(
+    episodes: Sequence[EquivariantForceEpisode],
+    parsed_folds: Sequence[tuple[str, list[str]]],
+    fold_results: Sequence[Mapping[str, Any]],
+    output_dir: str | Path,
+    *,
+    model_config: EquivariantForceConfig,
+    training_config: EquivariantForceTrainingConfig,
+) -> list[dict[str, Any]]:
+    expected = {name: held for name, held in parsed_folds}
+    by_case = {episode.case_id: episode for episode in episodes}
+    by_name: dict[str, Mapping[str, Any]] = {}
+    output = Path(output_dir).resolve()
+    for raw in fold_results:
+        name = str(raw.get("fold", ""))
+        if not name or name in by_name:
+            raise ValueError("completed fold names must be nonempty and unique")
+        by_name[name] = raw
+    if set(by_name) != set(expected):
+        raise ValueError("completed folds differ from the registered folds")
+
+    validated = []
+    for name, held_cases in parsed_folds:
+        raw = by_name[name]
+        if list(raw.get("held_out_cases", ())) != held_cases:
+            raise ValueError(f"{name}: held-out case order changed")
+        seed_records = raw.get("seeds")
+        if not isinstance(seed_records, Sequence) or isinstance(
+            seed_records, (str, bytes)
+        ):
+            raise ValueError(f"{name}: seed records are invalid")
+        seeds = tuple(int(record.get("seed", -1)) for record in seed_records)
+        if seeds != training_config.seeds:
+            raise ValueError(f"{name}: training seed order changed")
+        for seed, record in zip(seeds, seed_records, strict=True):
+            seed_root = (output / name / f"seed_{seed}").resolve()
+            model = record.get("model_artifact")
+            if not isinstance(model, Mapping):
+                raise ValueError(f"{name}: seed {seed} model record is invalid")
+            expected_model_paths = {
+                "manifest_path": seed_root / "model.json",
+                "weights_path": seed_root / "model.npz",
+            }
+            for path_key, expected_path in expected_model_paths.items():
+                path = Path(str(model.get(path_key, ""))).resolve()
+                if path != expected_path:
+                    raise ValueError(
+                        f"{name}: seed {seed} {path_key} left its fold directory"
+                    )
+                digest_key = path_key.replace("_path", "_sha256")
+                if _sha256(path) != model.get(digest_key):
+                    raise ValueError(
+                        f"{name}: seed {seed} {path_key} hash changed"
+                    )
+            artifact = load_equivariant_force_artifact(
+                expected_model_paths["manifest_path"]
+            )
+            expected_sources = {
+                f"source_episode_{case}": episode.artifact_id
+                for case, episode in by_case.items()
+                if case not in held_cases
+            }
+            if artifact.artifact_id != model.get("artifact_id"):
+                raise ValueError(f"{name}: seed {seed} model identity changed")
+            if artifact.config != model_config:
+                raise ValueError(f"{name}: seed {seed} model config changed")
+            if artifact.source_checksums != expected_sources:
+                raise ValueError(f"{name}: seed {seed} training cases changed")
+            if (
+                artifact.training_summary.get("fold") != name
+                or artifact.training_summary.get("seed") != seed
+                or artifact.training_summary.get("held_out_cases") != held_cases
+            ):
+                raise ValueError(f"{name}: seed {seed} training provenance changed")
+            held = record.get("held_out")
+            if not isinstance(held, Sequence) or isinstance(held, (str, bytes)):
+                raise ValueError(f"{name}: seed {seed} holdouts are invalid")
+            if [str(item.get("case", "")) for item in held] != held_cases:
+                raise ValueError(f"{name}: seed {seed} holdout order changed")
+            for item in held:
+                case = str(item["case"])
+                latent_path = Path(str(item.get("latent_path", ""))).resolve()
+                if latent_path != seed_root / f"{case}.npz":
+                    raise ValueError(
+                        f"{name}: seed {seed} latent left its fold directory"
+                    )
+                if _sha256(latent_path) != item.get("latent_sha256"):
+                    raise ValueError(
+                        f"{name}: seed {seed} latent hash changed"
+                    )
+                with np.load(latent_path, allow_pickle=False) as archive:
+                    if set(archive.files) != {"latent"}:
+                        raise ValueError(
+                            f"{name}: seed {seed} latent archive changed"
+                        )
+                    latent = np.asarray(archive["latent"], dtype=float)
+                if latent.shape != (model_config.latent_dim,) or not np.all(
+                    np.isfinite(latent)
+                ):
+                    raise ValueError(
+                        f"{name}: seed {seed} latent values are invalid"
+                    )
+                adaptation = item.get("adaptation")
+                if not isinstance(adaptation, Mapping) or (
+                    adaptation.get("future_frames_used") is not False
+                ):
+                    raise ValueError(
+                        f"{name}: seed {seed} latent crossed the prefix"
+                    )
+                if adaptation.get("prefix_stop") != by_case[case].fit_end_frame:
+                    raise ValueError(
+                        f"{name}: seed {seed} latent prefix changed"
+                    )
+        validated.append(dict(raw))
+
+    episode_ids = {episode.case_id for episode in episodes}
+    if set(case for _, held in parsed_folds for case in held) != episode_ids:
+        raise ValueError("completed folds no longer cover the source episodes")
+    return validated
+
+
+def _summarize_equivariant_force_competence(
+    episodes: Sequence[EquivariantForceEpisode],
+    fold_results: Sequence[Mapping[str, Any]],
+    output_dir: str | Path,
+    *,
+    model_config: EquivariantForceConfig,
+    training_config: EquivariantForceTrainingConfig,
+) -> dict[str, Any]:
+    output = Path(output_dir)
 
     case_metrics: dict[str, list[float]] = {}
     for fold in fold_results:
@@ -592,12 +732,76 @@ def crossfit_equivariant_force_competence(
         ),
     }
     summary_path = output / "summary.json"
-    summary_path.write_text(
+    temporary = summary_path.with_name(summary_path.name + ".tmp")
+    temporary.write_text(
         json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
+    temporary.replace(summary_path)
     summary["summary_sha256"] = _sha256(summary_path)
     return summary
+
+
+def merge_equivariant_force_competence_folds(
+    episodes: Sequence[EquivariantForceEpisode],
+    folds: Sequence[Mapping[str, Any]],
+    fold_results: Sequence[Mapping[str, Any]],
+    output_dir: str | Path,
+    *,
+    model_config: EquivariantForceConfig,
+    training_config: EquivariantForceTrainingConfig,
+) -> dict[str, Any]:
+    """Hash-check and merge complete fold results without fitting anything."""
+
+    parsed_folds = _validate_folds(episodes, folds)
+    validated = _validate_completed_fold_results(
+        episodes,
+        parsed_folds,
+        fold_results,
+        output_dir,
+        model_config=model_config,
+        training_config=training_config,
+    )
+    return _summarize_equivariant_force_competence(
+        episodes,
+        validated,
+        output_dir,
+        model_config=model_config,
+        training_config=training_config,
+    )
+
+
+def crossfit_equivariant_force_competence(
+    episodes: Sequence[EquivariantForceEpisode],
+    folds: Sequence[Mapping[str, Any]],
+    output_dir: str | Path,
+    torch: Any,
+    *,
+    model_config: EquivariantForceConfig,
+    training_config: EquivariantForceTrainingConfig,
+) -> dict[str, Any]:
+    """Cross-fit source force targets before any official-Warp promotion gate."""
+
+    parsed_folds = _validate_folds(episodes, folds)
+    fold_results = [
+        fit_equivariant_force_competence_fold(
+            episodes,
+            folds,
+            output_dir,
+            torch,
+            fold_name=fold_name,
+            model_config=model_config,
+            training_config=training_config,
+        )
+        for fold_name, _ in parsed_folds
+    ]
+    return _summarize_equivariant_force_competence(
+        episodes,
+        fold_results,
+        output_dir,
+        model_config=model_config,
+        training_config=training_config,
+    )
 
 
 def _sha256(path: str | Path) -> str:
