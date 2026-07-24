@@ -130,6 +130,11 @@ the case record consumed by the mechanical source gate.
 
 CPU verification with GPUs hidden passes 8 focused source-manifest and
 official-Warp tests and the complete suite: 1,064 passed and 4 skipped.
+The immutable deployment-readiness record is
+`results/sota/phystwin_equivariant_force_stage2_v1/preflight.json`, SHA-256
+`5e057c03c687fba56a66e64594b4170c02e88e5d6dcb194dd4e35bc35db95524`.
+It leaves Stage 2 blocked until the registered Stage-1 gate passes and an
+explicit GPU release is observed.
 
 ## Claim boundary
 
