@@ -22,7 +22,20 @@ bound to source protocol SHA-256
 `1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171`.
 It does not alter the already-archived v2 force episodes or their target QA.
 The Stage-2 JSON SHA-256 is
-`b0378a6157c9e731da19a2dceed61287a57c9d1527a14890a3abc1e0ecc21b55`.
+`17f605d1bdc6d6f3f7f0c29ec9071e5be7d5ed88f0a6f73dc9889e1f12c10a27`.
+
+The CPU-only preflight, still before Stage 1, also closed a provenance gap
+without changing any execution semantics. The lock now binds upstream
+PhysTwin commit `2b66305`, tree `c52a322`, and the exact imported
+`spring_mass_warp.py` SHA-256
+`7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c`.
+The 17-case source manifest at
+`configs/sota/phystwin_equivariant_force_stage2_source_manifest_v1.json`
+has SHA-256
+`e1c0ff0171291342540227cb2cbeac024c8a9b7e13e0921cf37738a95e83a40a`.
+It binds every source replay, observation archive, parameter file, checkpoint,
+manual-track file, split, and force-episode identity. It contains no target
+path, hash, or outcome.
 
 ## Frame contract
 
@@ -105,13 +118,14 @@ bpt-gate-phystwin-equivariant-force official-warp-case \
 ```
 
 The evaluator refuses a failed Stage-1 record before resolving case data. It
-verifies model, latent, episode, source-data, protocol, and checkpoint hashes;
+verifies model, latent, episode, source-manifest, upstream simulator,
+source-data, protocol, checkpoint, manual-track, and split hashes;
 replays exact zero force and the learned ensemble from the same frame-zero
 state; refits both readouts; writes checksum-bound trajectory arrays; and emits
 the case record consumed by the mechanical source gate.
 
-CPU verification with GPUs hidden passes 42 focused tests and 1,043 broad
-tests, with 4 unrelated optional-dependency tests skipped.
+CPU verification with GPUs hidden passes 8 focused source-manifest and
+official-Warp tests and the complete suite: 1,064 passed and 4 skipped.
 
 ## Claim boundary
 

@@ -28,6 +28,9 @@ from .phystwin_equivariant_force_stage2 import (
     readout_correction_shrinkage,
     stage2_frame_intervals,
 )
+from .phystwin_equivariant_force_stage2_sources import (
+    validate_equivariant_force_stage2_source_case,
+)
 from .phystwin_equivariant_force_warp import (
     controller_attachment_matrix,
     rollout_equivariant_force_ensemble_segment,
@@ -232,6 +235,21 @@ def evaluate_equivariant_force_official_warp_case(
         raise ValueError("Stage-1 implementation identity is invalid")
     if execution.get("mode") not in {"serial", "registered_fold_merge"}:
         raise ValueError("Stage-1 execution mode is invalid")
+    source_identity = validate_equivariant_force_stage2_source_case(
+        stage2.source_manifest_path,
+        official_repo,
+        data_root,
+        episode_root,
+        source_protocol_path,
+        case_id,
+    )
+    if (
+        source_identity["source_manifest_sha256"]
+        != stage2.source_manifest_sha256
+        or source_identity["official_simulator_sha256"]
+        != stage2.official_simulator_sha256
+    ):
+        raise ValueError("Stage-2 source identity and execution lock disagree")
 
     try:
         import torch
@@ -496,6 +514,8 @@ def evaluate_equivariant_force_official_warp_case(
             "competence_record": _sha256(competence_record_path),
             "source_protocol": _sha256(source_protocol_path),
             "stage2_protocol": _sha256(stage2_protocol_path),
+            "stage2_source_manifest": stage2.source_manifest_sha256,
+            "official_simulator": stage2.official_simulator_sha256,
             "force_episode_manifest": _sha256(
                 Path(episode_path).with_suffix(".json")
             ),
@@ -503,6 +523,7 @@ def evaluate_equivariant_force_official_warp_case(
             "optimal_params": _sha256(case_root / "optimal_params.pkl"),
             "checkpoint": _sha256(case_root / "checkpoint.pth"),
             "gt_track_3d": _sha256(case_root / "gt_track_3d.pkl"),
+            "split": _sha256(case_root / "split.json"),
         },
     }
     arrays = {

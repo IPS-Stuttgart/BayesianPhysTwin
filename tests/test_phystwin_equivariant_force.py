@@ -41,6 +41,9 @@ from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
     readout_correction_shrinkage,
     stage2_frame_intervals,
 )
+from bayesian_phystwin.phystwin_equivariant_force_stage2_sources import (
+    load_equivariant_force_stage2_source_manifest,
+)
 from bayesian_phystwin.phystwin_equivariant_force_warp import (
     ForceRolloutDiagnostics,
     controller_attachment_matrix,
@@ -1578,6 +1581,21 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
         source_protocol_path=source,
     )
     assert stage2.seeds == (17, 43, 101)
+    assert stage2.source_manifest_path.name == (
+        "phystwin_equivariant_force_stage2_source_manifest_v1.json"
+    )
+    assert stage2.source_manifest_sha256 == (
+        "e1c0ff0171291342540227cb2cbeac024c8a9b7e13e0921cf37738a95e83a40a"
+    )
+    assert stage2.official_simulator_sha256 == (
+        "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c"
+    )
+    manifest = load_equivariant_force_stage2_source_manifest(
+        stage2.source_manifest_path,
+        source_protocol_path=source,
+    )
+    assert len(manifest["source_cases"]) == 17
+    assert manifest["target_artifacts_opened"] is False
     frames = stage2_frame_intervals(5, 8)
     assert frames.initial_state_frame == 0
     assert frames.simulator_step_frames == (1, 2, 3, 4, 5, 6, 7)
@@ -1590,6 +1608,29 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
     invalid.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="before Stage 1"):
         load_equivariant_force_stage2_protocol(invalid)
+
+    manifest_payload = json.loads(
+        stage2.source_manifest_path.read_text(encoding="utf-8")
+    )
+    manifest_payload["source_cases"][0]["case_id"] = "tampered_case"
+    invalid_manifest = tmp_path / stage2.source_manifest_path.name
+    invalid_manifest.write_text(
+        json.dumps(manifest_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    payload = json.loads(stage2_path.read_text(encoding="utf-8"))
+    payload["source_manifest"]["sha256"] = hashlib.sha256(
+        invalid_manifest.read_bytes()
+    ).hexdigest()
+    invalid.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="case order changed"):
+        load_equivariant_force_stage2_protocol(
+            invalid,
+            source_protocol_path=source,
+        )
 
 
 def test_stage2_metric_summary_uses_existing_count_balanced_thirds() -> None:
@@ -1655,6 +1696,7 @@ def test_official_warp_case_writes_a_gate_ready_record(
         root / "configs" / "sota" / "phystwin_equivariant_force_stage2_v1.json"
     )
     source_payload = json.loads(source_path.read_text(encoding="utf-8"))
+    stage2_payload = json.loads(stage2_path.read_text(encoding="utf-8"))
     frame_dt = (
         source_payload["official_warp"]["dt"]
         * source_payload["official_warp"]["num_substeps"]
@@ -1759,6 +1801,18 @@ def test_official_warp_case_writes_a_gate_ready_record(
             [np.zeros(1), np.zeros(1), np.zeros(1)],
             [{"seed": seed} for seed in (17, 43, 101)],
         ),
+    )
+    monkeypatch.setattr(
+        module,
+        "validate_equivariant_force_stage2_source_case",
+        lambda *args, **kwargs: {
+            "source_manifest_sha256": stage2_payload["source_manifest"][
+                "sha256"
+            ],
+            "official_simulator_sha256": stage2_payload["official_backend"][
+                "simulator_source_sha256"
+            ],
+        },
     )
     monkeypatch.setattr(
         module,
@@ -1928,11 +1982,17 @@ def test_failed_source_target_qa_blocks_stage_one(tmp_path) -> None:
     )
 
 
-def _official_gate_records(protocol, *, ratio: float = 0.94):
+def _official_gate_records(protocol, execution, *, ratio: float = 0.94):
     return [
         {
             "case_id": case,
             "target_artifacts_opened": False,
+            "source_checksums": {
+                "stage2_source_manifest": (
+                    execution.source_manifest_sha256
+                ),
+                "official_simulator": execution.official_simulator_sha256,
+            },
             "stage2_execution_contract": (
                 "phystwin-equivariant-force-official-warp-stage2-v1"
             ),
@@ -1976,7 +2036,7 @@ def test_official_warp_gate_passes_only_the_locked_multimetric_result() -> None:
         source_protocol_path=protocol_path,
     )
     result = evaluate_equivariant_force_official_warp_gate(
-        _official_gate_records(protocol),
+        _official_gate_records(protocol, execution),
         protocol,
         execution,
         force_target_competence_passed=True,
@@ -1999,7 +2059,7 @@ def test_official_warp_gate_fails_on_parity_or_worst_case_regression() -> None:
         protocol_path.with_name("phystwin_equivariant_force_stage2_v1.json"),
         source_protocol_path=protocol_path,
     )
-    records = _official_gate_records(protocol)
+    records = _official_gate_records(protocol, execution)
     records[0]["zero_force_bitwise_parity"] = False
     records[1]["candidate"]["track_error_m"] = 1.06 * records[1]["reference"][
         "track_error_m"
@@ -2016,6 +2076,29 @@ def test_official_warp_gate_fails_on_parity_or_worst_case_regression() -> None:
     assert result["checks"]["maximum_case_metric_ratio"] is False
 
 
+def test_official_warp_gate_rejects_changed_source_identity() -> None:
+    protocol_path = (
+        Path(__file__).parents[1]
+        / "configs"
+        / "sota"
+        / "phystwin_equivariant_force_source_v2.json"
+    )
+    protocol = load_equivariant_force_source_protocol(protocol_path)
+    execution = load_equivariant_force_stage2_protocol(
+        protocol_path.with_name("phystwin_equivariant_force_stage2_v1.json"),
+        source_protocol_path=protocol_path,
+    )
+    records = _official_gate_records(protocol, execution)
+    records[0]["source_checksums"]["official_simulator"] = "0" * 64
+    with pytest.raises(ValueError, match="source provenance changed"):
+        evaluate_equivariant_force_official_warp_gate(
+            records,
+            protocol,
+            execution,
+            force_target_competence_passed=True,
+        )
+
+
 def test_official_warp_gate_cannot_override_failed_force_competence() -> None:
     protocol_path = (
         Path(__file__).parents[1]
@@ -2029,7 +2112,7 @@ def test_official_warp_gate_cannot_override_failed_force_competence() -> None:
         source_protocol_path=protocol_path,
     )
     result = evaluate_equivariant_force_official_warp_gate(
-        _official_gate_records(protocol),
+        _official_gate_records(protocol, execution),
         protocol,
         execution,
         force_target_competence_passed=False,

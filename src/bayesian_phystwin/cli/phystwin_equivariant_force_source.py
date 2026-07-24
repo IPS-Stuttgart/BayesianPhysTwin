@@ -23,6 +23,9 @@ from bayesian_phystwin.phystwin_equivariant_force_source import (
 from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
     load_equivariant_force_stage2_protocol,
 )
+from bayesian_phystwin.phystwin_equivariant_force_stage2_sources import (
+    build_equivariant_force_stage2_source_manifest,
+)
 
 
 def main() -> None:
@@ -48,6 +51,12 @@ def main() -> None:
     merge.add_argument("protocol_json")
     merge.add_argument("output_dir")
     merge.add_argument("--device")
+    source_manifest = subparsers.add_parser("official-warp-source-manifest")
+    source_manifest.add_argument("official_repo")
+    source_manifest.add_argument("data_root")
+    source_manifest.add_argument("episode_root")
+    source_manifest.add_argument("protocol_json")
+    source_manifest.add_argument("output_json")
     warp_case = subparsers.add_parser("official-warp-case")
     warp_case.add_argument("official_repo")
     warp_case.add_argument("data_root")
@@ -100,6 +109,14 @@ def main() -> None:
             args.protocol_json,
             args.output_dir,
             device=args.device,
+        )
+    elif args.command == "official-warp-source-manifest":
+        result = build_equivariant_force_stage2_source_manifest(
+            args.official_repo,
+            args.data_root,
+            args.episode_root,
+            args.protocol_json,
+            args.output_json,
         )
     elif args.command == "official-warp-case":
         result = evaluate_equivariant_force_official_warp_case(

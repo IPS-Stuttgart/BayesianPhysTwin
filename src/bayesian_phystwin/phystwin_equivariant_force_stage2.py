@@ -21,6 +21,11 @@ from .phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
     normalized_spring_laplacian,
 )
+from .phystwin_equivariant_force_stage2_sources import (
+    EQUIVARIANT_FORCE_STAGE2_SOURCE_CONTRACT,
+    OFFICIAL_SIMULATOR_RELATIVE_PATH,
+    load_equivariant_force_stage2_source_manifest,
+)
 from .phystwin_residual_dynamics import _clip_residual, _sha256
 
 
@@ -37,6 +42,14 @@ def _valid_sha256(value: Any) -> bool:
     )
 
 
+def _valid_git_oid(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 40
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 @dataclass(frozen=True)
 class EquivariantForceStage2Protocol:
     """Validated Stage-2 amendment bound to one immutable source protocol."""
@@ -44,6 +57,9 @@ class EquivariantForceStage2Protocol:
     payload: Mapping[str, Any]
     source_protocol_sha256: str
     seeds: tuple[int, ...]
+    source_manifest_path: Path
+    source_manifest_sha256: str
+    official_simulator_sha256: str
 
 
 @dataclass(frozen=True)
@@ -115,6 +131,46 @@ def load_equivariant_force_stage2_protocol(
             raise ValueError("Stage-2 contract is bound to another source protocol")
         source_payload = json.loads(
             Path(source_protocol_path).read_text(encoding="utf-8")
+        )
+
+    backend = payload.get("official_backend")
+    manifest_record = payload.get("source_manifest")
+    if not isinstance(backend, Mapping) or not isinstance(
+        manifest_record, Mapping
+    ):
+        raise ValueError("Stage-2 contract omits source provenance")
+    if (
+        not _valid_git_oid(backend.get("repository_commit"))
+        or not _valid_git_oid(backend.get("repository_tree"))
+        or backend.get("working_tree_clean_at_lock") is not True
+        or backend.get("simulator_source_relative_path")
+        != OFFICIAL_SIMULATOR_RELATIVE_PATH
+        or not _valid_sha256(backend.get("simulator_source_sha256"))
+    ):
+        raise ValueError("Stage-2 official backend identity is invalid")
+    manifest_relative = manifest_record.get("relative_path")
+    if manifest_relative != (
+        "phystwin_equivariant_force_stage2_source_manifest_v1.json"
+    ) or not _valid_sha256(manifest_record.get("sha256")):
+        raise ValueError("Stage-2 source-manifest identity is invalid")
+    manifest_path = Path(path).resolve().parent / str(manifest_relative)
+    manifest_digest = str(manifest_record["sha256"])
+    if _sha256(manifest_path) != manifest_digest:
+        raise ValueError("Stage-2 source-manifest hash changed")
+    raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if (
+        raw_manifest.get("contract")
+        != EQUIVARIANT_FORCE_STAGE2_SOURCE_CONTRACT
+        or raw_manifest.get("source_protocol_sha256") != source_digest
+        or raw_manifest.get("target_artifacts_opened") is not False
+        or raw_manifest.get("official_simulator", {}).get("sha256")
+        != backend.get("simulator_source_sha256")
+    ):
+        raise ValueError("Stage-2 source manifest and execution lock disagree")
+    if source_protocol_path is not None:
+        load_equivariant_force_stage2_source_manifest(
+            manifest_path,
+            source_protocol_path=source_protocol_path,
         )
 
     rollout = payload.get("rollout")
@@ -217,6 +273,11 @@ def load_equivariant_force_stage2_protocol(
         payload=payload,
         source_protocol_sha256=source_digest,
         seeds=seeds,
+        source_manifest_path=manifest_path,
+        source_manifest_sha256=manifest_digest,
+        official_simulator_sha256=str(
+            backend["simulator_source_sha256"]
+        ),
     )
 
 

@@ -73,6 +73,15 @@ def evaluate_equivariant_force_official_warp_gate(
         record = by_case[case]
         if record.get("target_artifacts_opened") is not False:
             raise ValueError(f"{case}: target boundary is not explicitly closed")
+        source_checksums = record.get("source_checksums")
+        if (
+            not isinstance(source_checksums, Mapping)
+            or source_checksums.get("stage2_source_manifest")
+            != execution_protocol.source_manifest_sha256
+            or source_checksums.get("official_simulator")
+            != execution_protocol.official_simulator_sha256
+        ):
+            raise ValueError(f"{case}: Stage-2 source provenance changed")
         if (
             record.get("stage2_execution_contract")
             != EQUIVARIANT_FORCE_STAGE2_CONTRACT
@@ -206,6 +215,12 @@ def evaluate_equivariant_force_official_warp_gate(
         "stage2_execution_contract": EQUIVARIANT_FORCE_STAGE2_CONTRACT,
         "stage2_source_protocol_sha256": (
             execution_protocol.source_protocol_sha256
+        ),
+        "stage2_source_manifest_sha256": (
+            execution_protocol.source_manifest_sha256
+        ),
+        "official_simulator_sha256": (
+            execution_protocol.official_simulator_sha256
         ),
         "stage": "official_warp_source_gate",
         "source_gate_passed": passed,
