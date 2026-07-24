@@ -1590,6 +1590,9 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
     assert stage2.official_simulator_sha256 == (
         "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c"
     )
+    assert stage2.stage1_implementation_sha256 == (
+        "5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9"
+    )
     assert len(stage2.implementation_sha256) == 64
     manifest = load_equivariant_force_stage2_source_manifest(
         stage2.source_manifest_path,
@@ -1617,6 +1620,15 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="implementation identity changed"):
+        load_equivariant_force_stage2_protocol(invalid)
+
+    payload = json.loads(stage2_path.read_text(encoding="utf-8"))
+    payload["stage1_prerequisite"]["implementation_sha256"] = "0" * 64
+    invalid.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Stage-1 prerequisite identity"):
         load_equivariant_force_stage2_protocol(invalid)
 
     manifest_payload = json.loads(
@@ -1678,6 +1690,48 @@ def test_official_warp_case_is_blocked_before_any_failed_stage_one_io(
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="Stage 1 did not pass"):
+        evaluate_equivariant_force_official_warp_case(
+            tmp_path / "forbidden_official_repo",
+            tmp_path / "forbidden_data",
+            tmp_path / "forbidden_episodes",
+            competence,
+            source,
+            stage2,
+            "weird_package",
+            tmp_path / "output",
+            device="cpu",
+        )
+    assert not (tmp_path / "output").exists()
+
+
+def test_official_warp_case_rejects_a_substituted_stage_one_implementation(
+    tmp_path,
+) -> None:
+    root = Path(__file__).parents[1]
+    source = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_source_v2.json"
+    )
+    stage2 = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_stage2_v1.json"
+    )
+    competence = tmp_path / "substituted_competence.json"
+    competence.write_text(
+        json.dumps(
+            {
+                "force_target_competence_passed": True,
+                "target_artifacts_opened": False,
+                "protocol_sha256": hashlib.sha256(
+                    source.read_bytes()
+                ).hexdigest(),
+                "stage1_execution": {
+                    "mode": "registered_fold_merge",
+                    "stage1_implementation_sha256": "0" * 64,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="frozen prerequisite"):
         evaluate_equivariant_force_official_warp_case(
             tmp_path / "forbidden_official_repo",
             tmp_path / "forbidden_data",
@@ -1769,7 +1823,9 @@ def test_official_warp_case_writes_a_gate_ready_record(
                 ).hexdigest(),
                 "stage1_execution": {
                     "mode": "registered_fold_merge",
-                    "stage1_implementation_sha256": "a" * 64,
+                    "stage1_implementation_sha256": stage2_payload[
+                        "stage1_prerequisite"
+                    ]["implementation_sha256"],
                 },
             }
         ),
@@ -2003,6 +2059,9 @@ def _official_gate_records(protocol, execution, *, ratio: float = 0.94):
                 ),
                 "official_simulator": execution.official_simulator_sha256,
                 "stage2_implementation": execution.implementation_sha256,
+                "stage1_implementation": (
+                    execution.stage1_implementation_sha256
+                ),
             },
             "stage2_execution_contract": (
                 "phystwin-equivariant-force-official-warp-stage2-v1"

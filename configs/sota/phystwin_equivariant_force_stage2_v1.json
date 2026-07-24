@@ -16,7 +16,12 @@
     "relative_path": "phystwin_equivariant_force_stage2_source_manifest_v1.json",
     "sha256": "e1c0ff0171291342540227cb2cbeac024c8a9b7e13e0921cf37738a95e83a40a"
   },
-  "stage2_implementation_sha256": "b9d6e51eb2d89193ecf0af97e28a42a91acae4700de3d043d0cbce0ca89a98fd",
+  "stage1_prerequisite": {
+    "implementation_sha256": "5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9",
+    "preflight_sha256": "b6ad6d56da7c9d48977ed341d75c9e42bd05e928d5365ea730cd3873510804e9",
+    "target_artifacts_opened": false
+  },
+  "stage2_implementation_sha256": "fcb4bfa1573427bc0cdc6545f111192ec02dcc199ca5dff0a9c1e66ca5aaf1de",
   "stage_1_outcome_observed_before_lock": false,
   "target_artifacts_opened": false,
   "supersedes_source_protocol_fields": [

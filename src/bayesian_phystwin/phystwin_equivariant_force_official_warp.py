@@ -227,12 +227,8 @@ def evaluate_equivariant_force_official_warp_case(
     if not isinstance(execution, Mapping):
         raise ValueError("Stage-1 execution provenance is missing")
     implementation_sha256 = execution.get("stage1_implementation_sha256")
-    if (
-        not isinstance(implementation_sha256, str)
-        or len(implementation_sha256) != 64
-        or any(character not in "0123456789abcdef" for character in implementation_sha256)
-    ):
-        raise ValueError("Stage-1 implementation identity is invalid")
+    if implementation_sha256 != stage2.stage1_implementation_sha256:
+        raise ValueError("Stage-1 implementation differs from the frozen prerequisite")
     if execution.get("mode") not in {"serial", "registered_fold_merge"}:
         raise ValueError("Stage-1 execution mode is invalid")
     source_identity = validate_equivariant_force_stage2_source_case(
@@ -517,6 +513,7 @@ def evaluate_equivariant_force_official_warp_case(
             "stage2_source_manifest": stage2.source_manifest_sha256,
             "official_simulator": stage2.official_simulator_sha256,
             "stage2_implementation": stage2.implementation_sha256,
+            "stage1_implementation": stage2.stage1_implementation_sha256,
             "force_episode_manifest": _sha256(
                 Path(episode_path).with_suffix(".json")
             ),

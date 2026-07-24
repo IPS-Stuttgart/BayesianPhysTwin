@@ -22,7 +22,7 @@ bound to source protocol SHA-256
 `1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171`.
 It does not alter the already-archived v2 force episodes or their target QA.
 The Stage-2 JSON SHA-256 is
-`4a9f5730e8b14071b14013dab20bf6c71a26a3a923abf430c0b4113699db31c4`.
+`c9b879facd24991373074228ec6b5911c847a131a8da7f79bb238d152a9462b0`.
 
 The CPU-only preflight, still before Stage 1, also closed a provenance gap
 without changing any execution semantics. The lock now binds upstream
@@ -37,9 +37,13 @@ It binds every source replay, observation archive, parameter file, checkpoint,
 manual-track file, split, and force-episode identity. It contains no target
 path, hash, or outcome. The Stage-2 evaluator package is independently locked
 by implementation SHA-256
-`b9d6e51eb2d89193ecf0af97e28a42a91acae4700de3d043d0cbce0ca89a98fd`;
+`fcb4bfa1573427bc0cdc6545f111192ec02dcc199ca5dff0a9c1e66ca5aaf1de`;
 the protocol loader, every case record, and the aggregate gate verify this
-identity.
+identity. The same lock now requires the Stage-1 handoff to carry the exact
+preflighted implementation SHA-256
+`5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9`;
+a merely well-formed but substituted Stage-1 identity is rejected before any
+case data are resolved.
 
 ## Frame contract
 
@@ -128,8 +132,8 @@ replays exact zero force and the learned ensemble from the same frame-zero
 state; refits both readouts; writes checksum-bound trajectory arrays; and emits
 the case record consumed by the mechanical source gate.
 
-CPU verification with GPUs hidden passes 8 focused source-manifest and
-official-Warp tests and the complete suite: 1,064 passed and 4 skipped.
+CPU verification with GPUs hidden passes 9 focused source-manifest and
+official-Warp tests and the complete suite: 1,065 passed and 4 skipped.
 The immutable deployment-readiness record is
 `results/sota/phystwin_equivariant_force_stage2_v1/preflight.json`, SHA-256
 `5e057c03c687fba56a66e64594b4170c02e88e5d6dcb194dd4e35bc35db95524`.

@@ -22,6 +22,9 @@ from .phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
     normalized_spring_laplacian,
 )
+from .phystwin_equivariant_force_source import (
+    equivariant_force_stage1_implementation_sha256,
+)
 from .phystwin_equivariant_force_stage2_sources import (
     EQUIVARIANT_FORCE_STAGE2_SOURCE_CONTRACT,
     OFFICIAL_SIMULATOR_RELATIVE_PATH,
@@ -62,6 +65,7 @@ class EquivariantForceStage2Protocol:
     source_manifest_sha256: str
     official_simulator_sha256: str
     implementation_sha256: str
+    stage1_implementation_sha256: str
 
 
 @dataclass(frozen=True)
@@ -137,11 +141,25 @@ def load_equivariant_force_stage2_protocol(
 
     backend = payload.get("official_backend")
     manifest_record = payload.get("source_manifest")
+    stage1_record = payload.get("stage1_prerequisite")
     implementation_digest = payload.get("stage2_implementation_sha256")
-    if not isinstance(backend, Mapping) or not isinstance(
-        manifest_record, Mapping
+    if (
+        not isinstance(backend, Mapping)
+        or not isinstance(manifest_record, Mapping)
+        or not isinstance(stage1_record, Mapping)
     ):
         raise ValueError("Stage-2 contract omits source provenance")
+    stage1_implementation_digest = stage1_record.get(
+        "implementation_sha256"
+    )
+    if (
+        not _valid_sha256(stage1_implementation_digest)
+        or stage1_implementation_digest
+        != equivariant_force_stage1_implementation_sha256()
+        or not _valid_sha256(stage1_record.get("preflight_sha256"))
+        or stage1_record.get("target_artifacts_opened") is not False
+    ):
+        raise ValueError("Stage-1 prerequisite identity is invalid")
     if (
         not _valid_sha256(implementation_digest)
         or implementation_digest != _implementation_sha256()
@@ -287,6 +305,7 @@ def load_equivariant_force_stage2_protocol(
             backend["simulator_source_sha256"]
         ),
         implementation_sha256=str(implementation_digest),
+        stage1_implementation_sha256=str(stage1_implementation_digest),
     )
 
 
