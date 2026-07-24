@@ -516,6 +516,7 @@ def evaluate_equivariant_force_official_warp_case(
             "stage2_protocol": _sha256(stage2_protocol_path),
             "stage2_source_manifest": stage2.source_manifest_sha256,
             "official_simulator": stage2.official_simulator_sha256,
+            "stage2_implementation": stage2.implementation_sha256,
             "force_episode_manifest": _sha256(
                 Path(episode_path).with_suffix(".json")
             ),

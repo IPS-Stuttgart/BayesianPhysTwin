@@ -22,7 +22,7 @@ bound to source protocol SHA-256
 `1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171`.
 It does not alter the already-archived v2 force episodes or their target QA.
 The Stage-2 JSON SHA-256 is
-`17f605d1bdc6d6f3f7f0c29ec9071e5be7d5ed88f0a6f73dc9889e1f12c10a27`.
+`4a9f5730e8b14071b14013dab20bf6c71a26a3a923abf430c0b4113699db31c4`.
 
 The CPU-only preflight, still before Stage 1, also closed a provenance gap
 without changing any execution semantics. The lock now binds upstream
@@ -35,7 +35,11 @@ has SHA-256
 `e1c0ff0171291342540227cb2cbeac024c8a9b7e13e0921cf37738a95e83a40a`.
 It binds every source replay, observation archive, parameter file, checkpoint,
 manual-track file, split, and force-episode identity. It contains no target
-path, hash, or outcome.
+path, hash, or outcome. The Stage-2 evaluator package is independently locked
+by implementation SHA-256
+`b9d6e51eb2d89193ecf0af97e28a42a91acae4700de3d043d0cbce0ca89a98fd`;
+the protocol loader, every case record, and the aggregate gate verify this
+identity.
 
 ## Frame contract
 

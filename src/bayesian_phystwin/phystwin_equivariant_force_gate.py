@@ -80,6 +80,8 @@ def evaluate_equivariant_force_official_warp_gate(
             != execution_protocol.source_manifest_sha256
             or source_checksums.get("official_simulator")
             != execution_protocol.official_simulator_sha256
+            or source_checksums.get("stage2_implementation")
+            != execution_protocol.implementation_sha256
         ):
             raise ValueError(f"{case}: Stage-2 source provenance changed")
         if (
@@ -221,6 +223,9 @@ def evaluate_equivariant_force_official_warp_gate(
         ),
         "official_simulator_sha256": (
             execution_protocol.official_simulator_sha256
+        ),
+        "stage2_implementation_sha256": (
+            execution_protocol.implementation_sha256
         ),
         "stage": "official_warp_source_gate",
         "source_gate_passed": passed,

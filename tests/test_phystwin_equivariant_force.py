@@ -1590,6 +1590,7 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
     assert stage2.official_simulator_sha256 == (
         "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c"
     )
+    assert len(stage2.implementation_sha256) == 64
     manifest = load_equivariant_force_stage2_source_manifest(
         stage2.source_manifest_path,
         source_protocol_path=source,
@@ -1607,6 +1608,15 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
     invalid = tmp_path / "invalid_stage2.json"
     invalid.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="before Stage 1"):
+        load_equivariant_force_stage2_protocol(invalid)
+
+    payload = json.loads(stage2_path.read_text(encoding="utf-8"))
+    payload["stage2_implementation_sha256"] = "0" * 64
+    invalid.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="implementation identity changed"):
         load_equivariant_force_stage2_protocol(invalid)
 
     manifest_payload = json.loads(
@@ -1992,6 +2002,7 @@ def _official_gate_records(protocol, execution, *, ratio: float = 0.94):
                     execution.source_manifest_sha256
                 ),
                 "official_simulator": execution.official_simulator_sha256,
+                "stage2_implementation": execution.implementation_sha256,
             },
             "stage2_execution_contract": (
                 "phystwin-equivariant-force-official-warp-stage2-v1"

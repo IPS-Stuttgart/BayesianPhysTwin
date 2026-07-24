@@ -17,6 +17,7 @@ from .phystwin_additional_bayesian_confirmation import (
     FIXED_PROCESS_STD_M,
 )
 from .phystwin_bayesian_anchor import robust_random_walk_endpoint
+from .phystwin_confirmatory import _implementation_sha256
 from .phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
     normalized_spring_laplacian,
@@ -60,6 +61,7 @@ class EquivariantForceStage2Protocol:
     source_manifest_path: Path
     source_manifest_sha256: str
     official_simulator_sha256: str
+    implementation_sha256: str
 
 
 @dataclass(frozen=True)
@@ -135,10 +137,16 @@ def load_equivariant_force_stage2_protocol(
 
     backend = payload.get("official_backend")
     manifest_record = payload.get("source_manifest")
+    implementation_digest = payload.get("stage2_implementation_sha256")
     if not isinstance(backend, Mapping) or not isinstance(
         manifest_record, Mapping
     ):
         raise ValueError("Stage-2 contract omits source provenance")
+    if (
+        not _valid_sha256(implementation_digest)
+        or implementation_digest != _implementation_sha256()
+    ):
+        raise ValueError("Stage-2 implementation identity changed")
     if (
         not _valid_git_oid(backend.get("repository_commit"))
         or not _valid_git_oid(backend.get("repository_tree"))
@@ -278,6 +286,7 @@ def load_equivariant_force_stage2_protocol(
         official_simulator_sha256=str(
             backend["simulator_source_sha256"]
         ),
+        implementation_sha256=str(implementation_digest),
     )
 
 
