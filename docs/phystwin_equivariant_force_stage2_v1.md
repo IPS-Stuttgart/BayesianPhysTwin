@@ -22,7 +22,7 @@ bound to source protocol SHA-256
 `1178ffe1545158225818723c700991f76d730c3627ab09644b73f2a14f53a171`.
 It does not alter the already-archived v2 force episodes or their target QA.
 The Stage-2 JSON SHA-256 is
-`c9b879facd24991373074228ec6b5911c847a131a8da7f79bb238d152a9462b0`.
+`d12d62f74a7b3140883fcf0d7c638fccde3fabc0a335032ef773b57560703a9b`.
 
 The CPU-only preflight, still before Stage 1, also closed a provenance gap
 without changing any execution semantics. The lock now binds upstream
@@ -37,13 +37,21 @@ It binds every source replay, observation archive, parameter file, checkpoint,
 manual-track file, split, and force-episode identity. It contains no target
 path, hash, or outcome. The Stage-2 evaluator package is independently locked
 by implementation SHA-256
-`fcb4bfa1573427bc0cdc6545f111192ec02dcc199ca5dff0a9c1e66ca5aaf1de`;
+`56ccdfd3779a1a70fc29a59513db625a9e18886845d3e957f800403d4e6c3812`;
 the protocol loader, every case record, and the aggregate gate verify this
 identity. The same lock now requires the Stage-1 handoff to carry the exact
 preflighted implementation SHA-256
-`5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9`;
+`a93a272ff1b3c518591c715d9cf5f83222aba3ae6a849cef4a6e1e8bb3c4c49c`;
 a merely well-formed but substituted Stage-1 identity is rejected before any
 case data are resolved.
+
+The final pre-run audit also corrected the implementation to the already
+declared per-node force bound. Previously, the largest force at any node
+rescaled the whole graph, so one saturated contact could attenuate unrelated
+far-graph forces. Targets were already clipped per node. The corrected model
+clips each predicted node independently, and a regression test verifies that a
+saturated neighbor cannot change another node's admissible force. No Stage-1
+or Stage-2 outcome had been produced before this correction.
 
 ## Frame contract
 
@@ -133,7 +141,8 @@ state; refits both readouts; writes checksum-bound trajectory arrays; and emits
 the case record consumed by the mechanical source gate.
 
 CPU verification with GPUs hidden passes 9 focused source-manifest and
-official-Warp tests and the complete suite: 1,065 passed and 4 skipped.
+official-Warp tests, all 46 equivariant-force tests, and the complete suite:
+1,066 passed and 4 skipped.
 The immutable deployment-readiness record is
 `results/sota/phystwin_equivariant_force_stage2_v1/preflight.json`, SHA-256
 `29af4df4d4b16f0a396905af94368d2d3b9f0ac77cd71fe5600a643d3747797f`.

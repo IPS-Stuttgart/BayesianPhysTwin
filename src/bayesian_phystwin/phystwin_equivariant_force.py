@@ -436,10 +436,9 @@ def build_equivariant_force_model(
                 force_scale[:, None, None]
                 * selected.maximum_normalized_force
             )
-            maximum_norm = torch.amax(force_norm, dim=1, keepdim=True)
             force = force * torch.clamp(
                 cap
-                / torch.clamp(maximum_norm, min=selected.minimum_length_m),
+                / torch.clamp(force_norm, min=selected.minimum_length_m),
                 max=1.0,
             )
 

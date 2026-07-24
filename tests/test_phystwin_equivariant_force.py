@@ -288,6 +288,43 @@ def test_force_bound_is_enforced_for_the_complete_graph() -> None:
     assert maximum_node_force_sim(force.detach().numpy()) <= 0.07 + 1.0e-7
 
 
+def test_force_cap_does_not_attenuate_other_nodes() -> None:
+    torch = pytest.importorskip("torch")
+    model = build_equivariant_force_model(torch)
+    with torch.no_grad():
+        final = model.node_head[-1]
+        final.weight.zero_()
+        final.bias.zero_()
+        final.bias[1] = 10.0
+        final.bias[2] = 10.0
+    inputs = _inputs(torch)
+    inputs["action_activity"] = torch.tensor(1.0)
+    inputs["external_support"] = torch.zeros(4)
+    inputs["control_displacement_m"] = torch.tensor(
+        [[1.0, 0.0, 0.0]] * 4
+    )
+    inputs["control_velocity_mps"] = torch.tensor(
+        [[1.0, 0.0, 0.0]] * 4
+    )
+    inputs["action_support"] = torch.tensor([1.0, 0.25, 0.0, 0.0])
+    with_saturated_neighbor = model(**inputs)
+
+    without_saturated_neighbor = dict(inputs)
+    without_saturated_neighbor["action_support"] = torch.tensor(
+        [0.0, 0.25, 0.0, 0.0]
+    )
+    isolated = model(**without_saturated_neighbor)
+    torch.testing.assert_close(
+        with_saturated_neighbor[1],
+        isolated[1],
+        rtol=0.0,
+        atol=0.0,
+    )
+    assert float(
+        torch.linalg.vector_norm(with_saturated_neighbor[0]).detach()
+    ) == pytest.approx(float(inputs["force_scale_sim"]))
+
+
 def test_force_scale_changes_magnitude_without_changing_normalized_field() -> None:
     torch = pytest.importorskip("torch")
     model = build_equivariant_force_model(torch)
@@ -1591,7 +1628,7 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
         "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c"
     )
     assert stage2.stage1_implementation_sha256 == (
-        "5b43c8e65b4f3cd3e4486f7cc9d1f3e6a81018c7ba40876f7627d054cc1d8fe9"
+        "a93a272ff1b3c518591c715d9cf5f83222aba3ae6a849cef4a6e1e8bb3c4c49c"
     )
     assert len(stage2.implementation_sha256) == 64
     manifest = load_equivariant_force_stage2_source_manifest(
