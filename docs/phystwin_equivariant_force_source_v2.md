@@ -117,3 +117,8 @@ Local CPU tests cover:
 
 GPU source training is intentionally deferred while both configured compute
 servers are reserved by independent registered experiments.
+
+The immutable v2 source build has since passed target QA on all 17 cases:
+prefix cap fractions are 1.66% to 4.96% against the frozen 10% limit. Native
+verification passes 35 focused tests and 1,055 full-suite tests with 4 skips.
+Stage 1 remains unstarted.
