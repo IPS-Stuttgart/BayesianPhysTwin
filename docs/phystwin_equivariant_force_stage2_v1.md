@@ -146,7 +146,9 @@ official-Warp tests, all 46 equivariant-force tests, and the complete suite:
 1,066 passed and 4 skipped.
 The immutable deployment-readiness record is
 `results/sota/phystwin_equivariant_force_stage2_v1/preflight.json`, SHA-256
-`29af4df4d4b16f0a396905af94368d2d3b9f0ac77cd71fe5600a643d3747797f`.
+`ec421fc70476a2f132257864726e2e31eca1b94dfcbac6c512e8b9f7371657f6`.
+It binds the exact CPU-validated deployment at commit `e26c933`; every earlier
+Stage-2 deployment is recorded as superseded without an outcome.
 It leaves Stage 2 blocked until the registered Stage-1 gate passes and an
 explicit GPU release is observed.
 
