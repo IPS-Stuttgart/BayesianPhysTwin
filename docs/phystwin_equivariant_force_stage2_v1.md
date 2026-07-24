@@ -83,6 +83,36 @@ A reference correction below `1 micrometre` has insufficient signal and cannot
 count toward the shrinkage-case gate. Laplacian energy is reported only as a
 diagnostic and does not replace the amplitude gate.
 
+Late-horizon track error uses the repository's existing count-balanced
+early/middle/late split (`numpy.array_split`) and reports the final group. This
+is the same horizon convention used by the prior PhysTwin horizon analysis.
+
+## Mechanical evaluator
+
+After Stage 1 passes, one registered source case is run with:
+
+```bash
+bpt-gate-phystwin-equivariant-force official-warp-case \
+  /path/to/PhysTwin \
+  /path/to/source-data \
+  /path/to/v2-episodes \
+  /path/to/source_competence_record.json \
+  configs/sota/phystwin_equivariant_force_source_v2.json \
+  configs/sota/phystwin_equivariant_force_stage2_v1.json \
+  CASE_ID \
+  /path/to/output/CASE_ID \
+  --device cuda:0
+```
+
+The evaluator refuses a failed Stage-1 record before resolving case data. It
+verifies model, latent, episode, source-data, protocol, and checkpoint hashes;
+replays exact zero force and the learned ensemble from the same frame-zero
+state; refits both readouts; writes checksum-bound trajectory arrays; and emits
+the case record consumed by the mechanical source gate.
+
+CPU verification with GPUs hidden passes 42 focused tests and 1,043 broad
+tests, with 4 unrelated optional-dependency tests skipped.
+
 ## Claim boundary
 
 Stage 1 remains an inverse-dynamics competence test. Stage 2 may run only if

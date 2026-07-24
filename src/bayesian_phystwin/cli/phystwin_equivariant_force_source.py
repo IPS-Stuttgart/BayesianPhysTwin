@@ -10,6 +10,9 @@ from bayesian_phystwin.phystwin_equivariant_force_gate import (
     evaluate_equivariant_force_official_warp_gate,
     write_equivariant_force_official_warp_gate,
 )
+from bayesian_phystwin.phystwin_equivariant_force_official_warp import (
+    evaluate_equivariant_force_official_warp_case,
+)
 from bayesian_phystwin.phystwin_equivariant_force_source import (
     build_equivariant_force_source_episodes,
     load_equivariant_force_source_protocol,
@@ -32,6 +35,16 @@ def main() -> None:
     gate.add_argument("protocol_json")
     gate.add_argument("output_dir")
     gate.add_argument("--device")
+    warp_case = subparsers.add_parser("official-warp-case")
+    warp_case.add_argument("official_repo")
+    warp_case.add_argument("data_root")
+    warp_case.add_argument("episode_root")
+    warp_case.add_argument("competence_summary_json")
+    warp_case.add_argument("protocol_json")
+    warp_case.add_argument("stage2_protocol_json")
+    warp_case.add_argument("case_id")
+    warp_case.add_argument("output_dir")
+    warp_case.add_argument("--device", default="cuda:0")
     decide = subparsers.add_parser("official-warp-gate")
     decide.add_argument("records_json")
     decide.add_argument("competence_summary_json")
@@ -56,6 +69,18 @@ def main() -> None:
             args.protocol_json,
             args.output_dir,
             torch,
+            device=args.device,
+        )
+    elif args.command == "official-warp-case":
+        result = evaluate_equivariant_force_official_warp_case(
+            args.official_repo,
+            args.data_root,
+            args.episode_root,
+            args.competence_summary_json,
+            args.protocol_json,
+            args.stage2_protocol_json,
+            args.case_id,
+            args.output_dir,
             device=args.device,
         )
     else:

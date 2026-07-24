@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import pickle
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -29,6 +30,10 @@ from bayesian_phystwin.phystwin_equivariant_force_data import (
 from bayesian_phystwin.phystwin_equivariant_force_gate import (
     evaluate_equivariant_force_official_warp_gate,
 )
+from bayesian_phystwin.phystwin_equivariant_force_official_warp import (
+    evaluate_equivariant_force_official_warp_case,
+    summarize_stage2_metrics,
+)
 from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
     fit_prefix_graph_persistence,
     load_equivariant_force_stage2_protocol,
@@ -36,10 +41,12 @@ from bayesian_phystwin.phystwin_equivariant_force_stage2 import (
     stage2_frame_intervals,
 )
 from bayesian_phystwin.phystwin_equivariant_force_warp import (
+    ForceRolloutDiagnostics,
     controller_attachment_matrix,
     controller_conditioning_fields,
     predict_equivariant_force,
     predict_equivariant_force_ensemble,
+    rollout_equivariant_force_ensemble_segment,
     rollout_equivariant_force_segment,
 )
 from bayesian_phystwin.phystwin_equivariant_force_training import (
@@ -531,6 +538,69 @@ def test_seed_force_ensemble_is_paired_mean_and_has_exact_fallback(
     )
     np.testing.assert_array_equal(fallback, np.zeros((3, 3), dtype=np.float32))
     assert calls == []
+
+
+def test_seed_ensemble_rollout_uses_the_shared_warp_stepper(
+    monkeypatch,
+) -> None:
+    import bayesian_phystwin.phystwin_equivariant_force_warp as warp_module
+
+    sentinel = (object(), object(), object(), object())
+    captured = {}
+
+    def common(*args, **kwargs):
+        captured.update(kwargs)
+        force = kwargs["force_predictor"](
+            np.zeros((2, 3)),
+            np.zeros((2, 3)),
+            {"action_activity": 0.0},
+            np.array([1.0, 0.0]),
+        )
+        np.testing.assert_array_equal(force, np.full((2, 3), 4.0))
+        return sentinel
+
+    def ensemble(*args, **kwargs):
+        assert args[0] == ["model_a", "model_b"]
+        assert kwargs["latents"] == ["latent_a", "latent_b"]
+        return np.full((2, 3), 4.0)
+
+    monkeypatch.setattr(
+        warp_module,
+        "_rollout_equivariant_force_policy_segment",
+        common,
+    )
+    monkeypatch.setattr(
+        warp_module,
+        "predict_equivariant_force_ensemble",
+        ensemble,
+    )
+    result = rollout_equivariant_force_ensemble_segment(
+        object(),
+        object(),
+        object(),
+        ["model_a", "model_b"],
+        np.zeros((2, 3)),
+        np.zeros((2, 3)),
+        start_frame=1,
+        stop_frame=3,
+        rest_positions_m=np.zeros((2, 3)),
+        object_edges=np.array([[0, 1]]),
+        rest_lengths_m=np.ones(1),
+        controller_points_m=np.zeros((3, 1, 3)),
+        attachment_matrix=np.zeros((2, 1)),
+        support_prior=np.zeros(2),
+        regime_probabilities=np.tile([1.0, 0.0], (3, 1)),
+        latents=["latent_a", "latent_b"],
+        gravity_mps2=np.array([0.0, 0.0, -9.81]),
+        force_scale_sim=0.3,
+        frame_dt_s=1.0 / 30.0,
+        activity_speed_mps=0.1,
+        admission_weight=1.0,
+        device="cpu",
+    )
+    assert result is sentinel
+    assert captured["start_frame"] == 1
+    assert captured["stop_frame"] == 3
 
 
 def test_zero_admission_delegates_to_the_existing_warp_rollout(
@@ -1360,6 +1430,273 @@ def test_stage2_contract_is_bound_before_stage_one_and_has_exact_frames(
     invalid.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="before Stage 1"):
         load_equivariant_force_stage2_protocol(invalid)
+
+
+def test_stage2_metric_summary_uses_existing_count_balanced_thirds() -> None:
+    result = summarize_stage2_metrics(
+        {
+            "chamfer_distance_m": np.array([1.0, 2.0, 3.0, 4.0]),
+            "track_error_m": np.array([2.0, 4.0, 8.0, 10.0]),
+        }
+    )
+    assert result == {
+        "chamfer_distance_m": pytest.approx(2.5),
+        "track_error_m": pytest.approx(6.0),
+        "late_track_error_m": pytest.approx(10.0),
+    }
+
+
+def test_official_warp_case_is_blocked_before_any_failed_stage_one_io(
+    tmp_path,
+) -> None:
+    root = Path(__file__).parents[1]
+    source = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_source_v2.json"
+    )
+    stage2 = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_stage2_v1.json"
+    )
+    competence = tmp_path / "failed_competence.json"
+    competence.write_text(
+        json.dumps(
+            {
+                "force_target_competence_passed": False,
+                "target_artifacts_opened": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Stage 1 did not pass"):
+        evaluate_equivariant_force_official_warp_case(
+            tmp_path / "forbidden_official_repo",
+            tmp_path / "forbidden_data",
+            tmp_path / "forbidden_episodes",
+            competence,
+            source,
+            stage2,
+            "weird_package",
+            tmp_path / "output",
+            device="cpu",
+        )
+    assert not (tmp_path / "output").exists()
+
+
+def test_official_warp_case_writes_a_gate_ready_record(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    import bayesian_phystwin.phystwin_equivariant_force_official_warp as module
+
+    root = Path(__file__).parents[1]
+    source_path = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_source_v2.json"
+    )
+    stage2_path = (
+        root / "configs" / "sota" / "phystwin_equivariant_force_stage2_v1.json"
+    )
+    source_payload = json.loads(source_path.read_text(encoding="utf-8"))
+    frame_dt = (
+        source_payload["official_warp"]["dt"]
+        * source_payload["official_warp"]["num_substeps"]
+    )
+    case_id = "weird_package"
+    case_root = tmp_path / "data" / case_id
+    case_root.mkdir(parents=True)
+    for name in (
+        "inference.pkl",
+        "final_data.pkl",
+        "optimal_params.pkl",
+        "gt_track_3d.pkl",
+        "checkpoint.pth",
+    ):
+        (case_root / name).write_bytes(name.encode("ascii"))
+    (case_root / "split.json").write_text(
+        json.dumps({"train": [0, 8]}),
+        encoding="utf-8",
+    )
+    episode_sources = {
+        "baseline_trajectory": hashlib.sha256(
+            (case_root / "inference.pkl").read_bytes()
+        ).hexdigest(),
+        "final_data": hashlib.sha256(
+            (case_root / "final_data.pkl").read_bytes()
+        ).hexdigest(),
+        "optimal_params": hashlib.sha256(
+            (case_root / "optimal_params.pkl").read_bytes()
+        ).hexdigest(),
+    }
+    base_episode = _force_episode()
+    episode_payload = {
+        name: getattr(base_episode, name)
+        for name in base_episode.__dataclass_fields__
+    }
+    episode_payload.update(
+        {
+            "case_id": case_id,
+            "frame_dt_s": frame_dt,
+            "source_checksums": episode_sources,
+            "positions_m": np.zeros_like(base_episode.positions_m),
+            "velocities_mps": np.zeros_like(base_episode.velocities_mps),
+        }
+    )
+    episode = EquivariantForceEpisode(**episode_payload)
+    episode_prefix = tmp_path / "episodes" / case_id / "force_episode"
+    episode_prefix.parent.mkdir(parents=True)
+    episode_prefix.with_suffix(".json").write_text(
+        "{}",
+        encoding="utf-8",
+    )
+    competence = tmp_path / "competence.json"
+    competence.write_text(
+        json.dumps(
+            {
+                "force_target_competence_passed": True,
+                "target_artifacts_opened": False,
+                "protocol_sha256": hashlib.sha256(
+                    source_path.read_bytes()
+                ).hexdigest(),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    frames, observed_count, nodes = 8, 2, 4
+    observed = np.zeros((frames, observed_count, 3))
+    observed[:, :, 0] = 0.008
+    data = {
+        "object_points": observed,
+        "object_visibilities": np.ones(
+            (frames, observed_count), dtype=bool
+        ),
+        "object_motions_valid": np.ones(
+            (frames, observed_count), dtype=bool
+        ),
+        "controller_points": np.zeros((frames, 1, 3)),
+        "surface_points": np.zeros((1, 3)),
+        "interior_points": np.zeros((1, 3)),
+    }
+    optimal = {
+        "object_radius": 0.2,
+        "object_max_neighbours": 4,
+        "controller_radius": 0.2,
+        "controller_max_neighbours": 2,
+    }
+    graph = SimpleNamespace(
+        num_object_points=nodes,
+        num_object_springs=3,
+        springs=np.array([[0, 1], [1, 2], [2, 3], [0, 4]]),
+    )
+
+    monkeypatch.setattr(
+        module,
+        "_case_members",
+        lambda *args, **kwargs: (
+            ["model_a", "model_b", "model_c"],
+            [np.zeros(1), np.zeros(1), np.zeros(1)],
+            [{"seed": seed} for seed in (17, 43, 101)],
+        ),
+    )
+    monkeypatch.setattr(
+        module,
+        "load_equivariant_force_episode",
+        lambda path: episode,
+    )
+    monkeypatch.setattr(
+        module,
+        "validate_force_episode_model_compatibility",
+        lambda *args: None,
+    )
+
+    def load_pickle(path):
+        name = Path(path).name
+        if name == "final_data.pkl":
+            return data
+        if name == "optimal_params.pkl":
+            return optimal
+        if name == "gt_track_3d.pkl":
+            return np.zeros((frames, 1, 3))
+        raise AssertionError(f"unexpected pickle read: {name}")
+
+    monkeypatch.setattr(module, "_load_pickle", load_pickle)
+    monkeypatch.setattr(
+        module,
+        "build_phystwin_spring_graph",
+        lambda *args, **kwargs: graph,
+    )
+
+    class Simulator:
+        def clear_external_forces(self):
+            return None
+
+    class Warp:
+        @staticmethod
+        def synchronize():
+            return None
+
+    monkeypatch.setattr(
+        module,
+        "_initialize_simulator",
+        lambda *args, **kwargs: (Simulator(), object(), Warp(), {}),
+    )
+    reference = np.zeros((frames, nodes, 3), dtype=np.float32)
+    candidate = reference.copy()
+    candidate[1:, :, 0] = 0.004
+    diagnostics = ForceRolloutDiagnostics(
+        admission_weight=1.0,
+        force_unit_contract="warp_simulator_generalized_force_not_newtons",
+        force_scale_sim=0.1,
+        maximum_force_sim=0.01,
+        mean_force_sim=0.005,
+        active_force_frames=7,
+        frame_count=7,
+    )
+
+    def rollout(*args, admission_weight, **kwargs):
+        values = reference if admission_weight == 0.0 else candidate
+        force = np.zeros((7, nodes, 3), dtype=np.float32)
+        return values.copy(), values.copy(), force, diagnostics
+
+    monkeypatch.setattr(
+        module,
+        "rollout_equivariant_force_ensemble_segment",
+        rollout,
+    )
+    monkeypatch.setattr(
+        module,
+        "_rollout_state_segment",
+        lambda *args, **kwargs: (reference.copy(), reference.copy()),
+    )
+
+    def metrics(vertices, **kwargs):
+        value = 0.018 if vertices[1, 0, 0] > 0.0 else 0.020
+        return {
+            "chamfer_distance_m": np.full(3, value),
+            "track_error_m": np.full(3, 2.0 * value),
+        }
+
+    monkeypatch.setattr(module, "official_metrics_by_frame", metrics)
+    result = evaluate_equivariant_force_official_warp_case(
+        tmp_path / "official",
+        tmp_path / "data",
+        tmp_path / "episodes",
+        competence,
+        source_path,
+        stage2_path,
+        case_id,
+        tmp_path / "output",
+        device="cpu",
+    )
+    assert result["target_artifacts_opened"] is False
+    assert result["zero_force_bitwise_parity"] is True
+    assert result["candidate"]["track_error_m"] < result["reference"][
+        "track_error_m"
+    ]
+    assert result["readout_correction_shrinkage"] == pytest.approx(
+        0.5,
+        abs=0.03,
+    )
+    assert Path(result["record_path"]).is_file()
+    assert Path(result["array_archive"]["path"]).is_file()
 
 
 def test_graph_persistence_refit_is_arm_specific_and_shrinkage_is_amplitude() -> None:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -249,32 +249,30 @@ def predict_equivariant_force_ensemble(
     return np.ascontiguousarray(result)
 
 
-def rollout_equivariant_force_segment(
+def _rollout_equivariant_force_policy_segment(
     simulator: Any,
     torch: Any,
     wp: Any,
-    model: Any,
     position_m: np.ndarray,
     velocity_mps: np.ndarray,
     *,
     start_frame: int,
     stop_frame: int,
-    rest_positions_m: np.ndarray,
-    object_edges: np.ndarray,
-    rest_lengths_m: np.ndarray,
     controller_points_m: np.ndarray,
     attachment_matrix: np.ndarray,
     support_prior: np.ndarray,
     regime_probabilities: np.ndarray,
-    latent: np.ndarray,
-    gravity_mps2: np.ndarray,
     force_scale_sim: float,
     frame_dt_s: float,
     activity_speed_mps: float,
     admission_weight: float,
     device: str,
+    force_predictor: Callable[
+        [np.ndarray, np.ndarray, dict[str, np.ndarray | float], np.ndarray],
+        np.ndarray,
+    ],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, ForceRolloutDiagnostics]:
-    """Run official captured Warp steps with a freshly predicted force per frame."""
+    """Run one force policy through the shared official-Warp stepping path."""
 
     controllers = np.asarray(controller_points_m, dtype=float)
     regimes = np.asarray(regime_probabilities, dtype=float)
@@ -348,21 +346,11 @@ def rollout_equivariant_force_segment(
                 support_prior=support_prior,
                 activity_speed_mps=activity_speed_mps,
             )
-            force = predict_equivariant_force(
-                model,
-                torch,
-                positions_m=current_position,
-                velocities_mps=current_velocity,
-                rest_positions_m=rest_positions_m,
-                object_edges=object_edges,
-                rest_lengths_m=rest_lengths_m,
-                conditioning=conditioning,
-                gravity_mps2=gravity_mps2,
-                force_scale_sim=force_scale_sim,
-                regime_probabilities=regimes[frame],
-                latent=latent,
-                admission_weight=admission_weight,
-                device=device,
+            force = force_predictor(
+                current_position,
+                current_velocity,
+                conditioning,
+                regimes[frame],
             )
             simulator.set_external_forces(
                 torch.as_tensor(force, dtype=torch.float32, device=device)
@@ -402,3 +390,135 @@ def rollout_equivariant_force_segment(
         frame_count=len(forces),
     )
     return np.stack(positions), np.stack(velocities), forces, diagnostics
+
+
+def rollout_equivariant_force_segment(
+    simulator: Any,
+    torch: Any,
+    wp: Any,
+    model: Any,
+    position_m: np.ndarray,
+    velocity_mps: np.ndarray,
+    *,
+    start_frame: int,
+    stop_frame: int,
+    rest_positions_m: np.ndarray,
+    object_edges: np.ndarray,
+    rest_lengths_m: np.ndarray,
+    controller_points_m: np.ndarray,
+    attachment_matrix: np.ndarray,
+    support_prior: np.ndarray,
+    regime_probabilities: np.ndarray,
+    latent: np.ndarray,
+    gravity_mps2: np.ndarray,
+    force_scale_sim: float,
+    frame_dt_s: float,
+    activity_speed_mps: float,
+    admission_weight: float,
+    device: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, ForceRolloutDiagnostics]:
+    """Run official captured Warp steps with one force model."""
+
+    def force_predictor(position, velocity, conditioning, regime):
+        return predict_equivariant_force(
+            model,
+            torch,
+            positions_m=position,
+            velocities_mps=velocity,
+            rest_positions_m=rest_positions_m,
+            object_edges=object_edges,
+            rest_lengths_m=rest_lengths_m,
+            conditioning=conditioning,
+            gravity_mps2=gravity_mps2,
+            force_scale_sim=force_scale_sim,
+            regime_probabilities=regime,
+            latent=latent,
+            admission_weight=admission_weight,
+            device=device,
+        )
+
+    return _rollout_equivariant_force_policy_segment(
+        simulator,
+        torch,
+        wp,
+        position_m,
+        velocity_mps,
+        start_frame=start_frame,
+        stop_frame=stop_frame,
+        controller_points_m=controller_points_m,
+        attachment_matrix=attachment_matrix,
+        support_prior=support_prior,
+        regime_probabilities=regime_probabilities,
+        force_scale_sim=force_scale_sim,
+        frame_dt_s=frame_dt_s,
+        activity_speed_mps=activity_speed_mps,
+        admission_weight=admission_weight,
+        device=device,
+        force_predictor=force_predictor,
+    )
+
+
+def rollout_equivariant_force_ensemble_segment(
+    simulator: Any,
+    torch: Any,
+    wp: Any,
+    models: tuple[Any, ...] | list[Any],
+    position_m: np.ndarray,
+    velocity_mps: np.ndarray,
+    *,
+    start_frame: int,
+    stop_frame: int,
+    rest_positions_m: np.ndarray,
+    object_edges: np.ndarray,
+    rest_lengths_m: np.ndarray,
+    controller_points_m: np.ndarray,
+    attachment_matrix: np.ndarray,
+    support_prior: np.ndarray,
+    regime_probabilities: np.ndarray,
+    latents: tuple[np.ndarray, ...] | list[np.ndarray],
+    gravity_mps2: np.ndarray,
+    force_scale_sim: float,
+    frame_dt_s: float,
+    activity_speed_mps: float,
+    admission_weight: float,
+    device: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, ForceRolloutDiagnostics]:
+    """Run the frozen per-frame arithmetic seed ensemble through Warp."""
+
+    def force_predictor(position, velocity, conditioning, regime):
+        return predict_equivariant_force_ensemble(
+            models,
+            torch,
+            latents=latents,
+            positions_m=position,
+            velocities_mps=velocity,
+            rest_positions_m=rest_positions_m,
+            object_edges=object_edges,
+            rest_lengths_m=rest_lengths_m,
+            conditioning=conditioning,
+            gravity_mps2=gravity_mps2,
+            force_scale_sim=force_scale_sim,
+            regime_probabilities=regime,
+            admission_weight=admission_weight,
+            device=device,
+        )
+
+    return _rollout_equivariant_force_policy_segment(
+        simulator,
+        torch,
+        wp,
+        position_m,
+        velocity_mps,
+        start_frame=start_frame,
+        stop_frame=stop_frame,
+        controller_points_m=controller_points_m,
+        attachment_matrix=attachment_matrix,
+        support_prior=support_prior,
+        regime_probabilities=regime_probabilities,
+        force_scale_sim=force_scale_sim,
+        frame_dt_s=frame_dt_s,
+        activity_speed_mps=activity_speed_mps,
+        admission_weight=admission_weight,
+        device=device,
+        force_predictor=force_predictor,
+    )
