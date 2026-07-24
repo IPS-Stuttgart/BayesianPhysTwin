@@ -65,7 +65,10 @@ def test_locked_analyzer_reads_only_primary_arm() -> None:
     }
     comparator = {
         "config": {"observation_source": "cotracker3_source_depth"},
-        "case_results": {case: _comparator_case((0.012, 0.022)) for case in cases},
+        "case_results": {
+            case: _comparator_case((0.012, 0.022))
+            for case in [*cases, "unused_full_cohort_case"]
+        },
     }
     protocol = {
         "protocol_id": "unit",

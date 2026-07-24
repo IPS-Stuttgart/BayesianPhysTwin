@@ -43,8 +43,8 @@ def analyze_bias_aware_ray_smoke(
         raise ValueError("comparator observation source is unexpected")
     if set(candidate["case_results"]) != set(cases):
         raise ValueError("candidate cases do not match protocol")
-    if set(comparator["case_results"]) != set(cases):
-        raise ValueError("comparator cases do not match protocol")
+    if not set(cases).issubset(comparator["case_results"]):
+        raise ValueError("comparator lacks a protocol case")
 
     baseline_rows: list[dict[str, float]] = []
     candidate_rows: list[dict[str, float]] = []
