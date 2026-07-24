@@ -1,0 +1,172 @@
+{
+  "aggregate": {
+    "baseline_mean": {
+      "chamfer_distance_m": 0.02123027766960484,
+      "track_error_m": 0.04637832994278148
+    },
+    "both_metric_win_or_tie_count": 1,
+    "candidate_mean": {
+      "chamfer_distance_m": 0.023085848248492996,
+      "track_error_m": 0.047248047779679926
+    },
+    "candidate_percent_change_from_baseline": {
+      "chamfer_distance_m": 8.740208714013937,
+      "track_error_m": 1.8752676906896946
+    },
+    "frozen_cotracker3_source_mean": {
+      "chamfer_distance_m": 0.009294090927683539,
+      "track_error_m": 0.042750477086826104
+    },
+    "maximum_case_metric_regression_fraction": 0.12567558402082663
+  },
+  "case_count": 3,
+  "gates": {
+    "aggregate_both_metrics_no_worse_than_frozen_cotracker3_source": false,
+    "aggregate_future_chamfer_improves_over_raw_baseline": false,
+    "aggregate_future_track_improves_over_raw_baseline": false,
+    "both_metric_win_or_tie_count": false,
+    "maximum_case_metric_regression": false
+  },
+  "inputs": {
+    "candidate": {
+      "path": "/mnt/corsair/florianpfaff/bpt-phystwin-alltracker-ray-smoke-v1/alltracker_multiview_ray_bias_aware_smoke_result.json",
+      "sha256": "c027d6546c570df4809b965f7012b131d8a0e6ed8a768e88702959cddc02a0df"
+    },
+    "comparator": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/source_depth_result.json",
+      "sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e"
+    },
+    "protocol": {
+      "path": "/mnt/corsair/florianpfaff/bpt-phystwin-alltracker-ray-smoke-v1/code/configs/sota/phystwin_alltracker_multiview_ray_bias_aware_smoke_v1.json",
+      "sha256": "0fd157d4a97c2a2d3c030574a89098059bd3c86c06e5efba5e62ef2d229ecd18"
+    }
+  },
+  "per_case": [
+    {
+      "admission": {
+        "absolute_improvement_m": 0.0020526901731599163,
+        "accepted": true,
+        "early_difference_m": -0.00253954461009338,
+        "gates": {
+          "absolute_prefix_improvement": true,
+          "early_prefix_nonregression": true,
+          "late_prefix_nonregression": true,
+          "observation_support": true,
+          "relative_prefix_improvement": true,
+          "robust_inlier_support": true
+        },
+        "late_difference_m": -0.0015962641385347774,
+        "median_inlier_probability": 0.4718467960874723,
+        "observed_fraction": 0.10047478506351855,
+        "relative_improvement": 0.07144640148920911
+      },
+      "admitted": true,
+      "baseline": {
+        "chamfer_distance_m": 0.02462536679421701,
+        "track_error_m": 0.06009776418956369
+      },
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.027720174147807305,
+        "track_error_m": 0.056714826089754894
+      },
+      "candidate_relative_to_baseline": {
+        "chamfer_distance_m": 0.12567558402082663,
+        "track_error_m": -0.05629058161195723
+      },
+      "case": "single_lift_cloth",
+      "fallback_applied": false,
+      "fallback_is_exact": null,
+      "frozen_cotracker3_source": {
+        "chamfer_distance_m": 0.011983535887102813,
+        "track_error_m": 0.050729772691480005
+      }
+    },
+    {
+      "admission": {
+        "absolute_improvement_m": -0.00015344561907915978,
+        "accepted": false,
+        "early_difference_m": 0.00021738003143110564,
+        "gates": {
+          "absolute_prefix_improvement": false,
+          "early_prefix_nonregression": false,
+          "late_prefix_nonregression": false,
+          "observation_support": true,
+          "relative_prefix_improvement": false,
+          "robust_inlier_support": true
+        },
+        "late_difference_m": 8.951120672721392e-05,
+        "median_inlier_probability": 0.9681501361090079,
+        "observed_fraction": 0.07632253553950129,
+        "relative_improvement": -0.0179784963388244
+      },
+      "admitted": false,
+      "baseline": {
+        "chamfer_distance_m": 0.013418786374623988,
+        "track_error_m": 0.028735058109913735
+      },
+      "both_metric_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.013418786374623988,
+        "track_error_m": 0.028735058109913735
+      },
+      "candidate_relative_to_baseline": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_cloth_3",
+      "fallback_applied": true,
+      "fallback_is_exact": true,
+      "frozen_cotracker3_source": {
+        "chamfer_distance_m": 0.006547521920093681,
+        "track_error_m": 0.02560188492712422
+      }
+    },
+    {
+      "admission": {
+        "absolute_improvement_m": 0.00022136244038144064,
+        "accepted": true,
+        "early_difference_m": -4.751539848033004e-05,
+        "gates": {
+          "absolute_prefix_improvement": true,
+          "early_prefix_nonregression": true,
+          "late_prefix_nonregression": true,
+          "observation_support": true,
+          "relative_prefix_improvement": true,
+          "robust_inlier_support": true
+        },
+        "late_difference_m": -0.00039520948228255123,
+        "median_inlier_probability": 0.8185250143189358,
+        "observed_fraction": 0.026023213194868663,
+        "relative_improvement": 0.01631854936913181
+      },
+      "admitted": true,
+      "baseline": {
+        "chamfer_distance_m": 0.025646679839973523,
+        "track_error_m": 0.05030216752886702
+      },
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.0281185842230477,
+        "track_error_m": 0.05629425913937115
+      },
+      "candidate_relative_to_baseline": {
+        "chamfer_distance_m": 0.09638301715847866,
+        "track_error_m": 0.11912193658584266
+      },
+      "case": "single_lift_cloth_4",
+      "fallback_applied": false,
+      "fallback_is_exact": null,
+      "frozen_cotracker3_source": {
+        "chamfer_distance_m": 0.009351214975854122,
+        "track_error_m": 0.051919773641874084
+      }
+    }
+  ],
+  "primary_arm": "causal_selected_alltracker_ray_bias_aware_graph",
+  "protocol_id": "phystwin-alltracker-multiview-ray-bias-aware-smoke-v1",
+  "recommendation": "Stop this arm without changing ray, affine-bias, graph, cap, or admission settings against these future outcomes.",
+  "schema_version": 1,
+  "smoke_gate_passed": false,
+  "status": "post-open development smoke; not independent SOTA evidence"
+}
