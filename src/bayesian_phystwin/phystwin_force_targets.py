@@ -118,61 +118,98 @@ def estimate_residual_acceleration(
     support = np.zeros((frames, nodes), dtype=np.int32)
     fitted = np.zeros((frames, nodes), dtype=bool)
 
-    for node in range(nodes):
-        available = np.flatnonzero(
-            selected_mask[:, node] & (selected_reliability[:, node] > 0.0)
+    identity = np.eye(3, dtype=float)
+    inverse_rhs = np.broadcast_to(
+        np.array([0.0, 0.0, 1.0], dtype=float),
+        (nodes, 3),
+    )
+    for center in range(frames):
+        start = max(0, center - window_radius)
+        stop_local = center + 1 if causal_window else min(
+            frames,
+            center + window_radius + 1,
         )
-        for center in range(frames):
-            local = available[
-                (available >= center - window_radius)
-                & (available <= center + window_radius)
-            ]
-            if causal_window:
-                local = local[local <= center]
-            if len(local) < 3:
-                continue
-            time = (local - center).astype(float) * frame_dt_s
-            design = np.stack(
-                (np.ones_like(time), time, 0.5 * np.square(time)), axis=1
+        local = np.arange(start, stop_local)
+        time = (local - center).astype(float) * frame_dt_s
+        design = np.stack(
+            (np.ones_like(time), time, 0.5 * np.square(time)),
+            axis=1,
+        )
+        base_weight = (
+            selected_reliability[local]
+            * selected_mask[local].astype(float)
+        )
+        support_count = np.sum(base_weight > 0.0, axis=0)
+        eligible = support_count >= 3
+        if not np.any(eligible):
+            continue
+
+        local_residual = residual[local]
+        weights = base_weight.copy()
+        coefficients = np.zeros((nodes, 3, 3), dtype=float)
+        fit_residual = np.zeros_like(local_residual)
+        for _ in range(robust_iterations):
+            normal = np.einsum(
+                "la,ln,lb->nab",
+                design,
+                weights,
+                design,
+                optimize=True,
             )
-            base_weight = selected_reliability[local, node].copy()
-            weights = base_weight.copy()
-            coefficients = np.zeros((3, 3), dtype=float)
-            for _ in range(robust_iterations):
-                normal = design.T @ (weights[:, None] * design)
-                normal.flat[::4] += ridge
-                coefficients = np.linalg.solve(
-                    normal,
-                    design.T @ (weights[:, None] * residual[local, node]),
-                )
-                fit_residual = residual[local, node] - design @ coefficients
-                magnitude = np.linalg.norm(fit_residual, axis=1)
-                robust = np.minimum(
-                    1.0, huber_delta_m / np.maximum(magnitude, 1.0e-12)
-                )
-                weights = base_weight * robust
-            effective = float(np.sum(weights))
-            if effective <= 0.0:
-                continue
-            normal = design.T @ (weights[:, None] * design)
-            normal.flat[::4] += ridge
-            inverse_normal = np.linalg.inv(normal)
-            fit_residual = residual[local, node] - design @ coefficients
-            degrees = max(effective - 3.0, 1.0)
-            residual_variance = float(
-                np.sum(weights[:, None] * np.square(fit_residual))
-                / (3.0 * degrees)
+            normal += ridge * identity[None]
+            right_hand_side = np.einsum(
+                "la,ln,lnc->nac",
+                design,
+                weights,
+                local_residual,
+                optimize=True,
             )
-            acceleration[center, node] = coefficients[2]
-            variance[center, node] = max(
-                residual_variance * float(inverse_normal[2, 2]),
-                variance_floor_m2ps4,
+            coefficients = np.linalg.solve(normal, right_hand_side)
+            fit_residual = local_residual - np.einsum(
+                "la,nac->lnc",
+                design,
+                coefficients,
+                optimize=True,
             )
-            robust_weight[center, node] = float(
-                np.sum(weights) / np.sum(base_weight)
+            magnitude = np.linalg.norm(fit_residual, axis=2)
+            robust = np.minimum(
+                1.0,
+                huber_delta_m / np.maximum(magnitude, 1.0e-12),
             )
-            support[center, node] = len(local)
-            fitted[center, node] = True
+            weights = base_weight * robust
+
+        effective = np.sum(weights, axis=0)
+        eligible &= effective > 0.0
+        if not np.any(eligible):
+            continue
+        normal = np.einsum(
+            "la,ln,lb->nab",
+            design,
+            weights,
+            design,
+            optimize=True,
+        )
+        normal += ridge * identity[None]
+        inverse_acceleration_variance = np.linalg.solve(
+            normal,
+            inverse_rhs[:, :, None],
+        )[:, 2, 0]
+        degrees = np.maximum(effective - 3.0, 1.0)
+        residual_variance = np.sum(
+            weights[:, :, None] * np.square(fit_residual),
+            axis=(0, 2),
+        ) / (3.0 * degrees)
+        estimated_variance = np.maximum(
+            residual_variance * inverse_acceleration_variance,
+            variance_floor_m2ps4,
+        )
+        acceleration[center, eligible] = coefficients[eligible, 2]
+        variance[center, eligible] = estimated_variance[eligible]
+        robust_weight[center, eligible] = (
+            effective[eligible] / np.sum(base_weight[:, eligible], axis=0)
+        )
+        support[center, eligible] = support_count[eligible]
+        fitted[center, eligible] = True
 
     finite_variance = variance[fitted]
     diagnostics = {
@@ -194,6 +231,7 @@ def estimate_residual_acceleration(
         "future_frames_used_per_target": not causal_window,
         "causal_window": causal_window,
         "innovation_used_once": True,
+        "solver": "batched_nodes_v1",
     }
     return ResidualAccelerationEstimate(
         mean_mps2=acceleration,

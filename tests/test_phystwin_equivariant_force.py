@@ -532,6 +532,141 @@ def _quadratic_residual_case(*, noise: float = 0.0):
     return baseline + residual, baseline, np.ones((frames, nodes), dtype=bool), acceleration, dt
 
 
+def _scalar_residual_acceleration_target(
+    residual: np.ndarray,
+    valid: np.ndarray,
+    reliability: np.ndarray,
+    *,
+    center: int,
+    node: int,
+    frame_dt_s: float,
+    window_radius: int,
+    huber_delta_m: float,
+    ridge: float,
+    robust_iterations: int,
+    variance_floor_m2ps4: float,
+    causal_window: bool,
+):
+    available = np.flatnonzero(valid[:, node] & (reliability[:, node] > 0.0))
+    local = available[
+        (available >= center - window_radius)
+        & (available <= center + window_radius)
+    ]
+    if causal_window:
+        local = local[local <= center]
+    if len(local) < 3:
+        return None
+    time = (local - center).astype(float) * frame_dt_s
+    design = np.stack(
+        (np.ones_like(time), time, 0.5 * np.square(time)),
+        axis=1,
+    )
+    base_weight = reliability[local, node].copy()
+    weights = base_weight.copy()
+    for _ in range(robust_iterations):
+        normal = design.T @ (weights[:, None] * design)
+        normal.flat[::4] += ridge
+        coefficients = np.linalg.solve(
+            normal,
+            design.T @ (weights[:, None] * residual[local, node]),
+        )
+        fit_residual = residual[local, node] - design @ coefficients
+        magnitude = np.linalg.norm(fit_residual, axis=1)
+        weights = base_weight * np.minimum(
+            1.0,
+            huber_delta_m / np.maximum(magnitude, 1.0e-12),
+        )
+    normal = design.T @ (weights[:, None] * design)
+    normal.flat[::4] += ridge
+    fit_residual = residual[local, node] - design @ coefficients
+    effective = float(np.sum(weights))
+    residual_variance = float(
+        np.sum(weights[:, None] * np.square(fit_residual))
+        / (3.0 * max(effective - 3.0, 1.0))
+    )
+    variance = max(
+        residual_variance * float(np.linalg.inv(normal)[2, 2]),
+        variance_floor_m2ps4,
+    )
+    return (
+        coefficients[2],
+        variance,
+        effective / float(np.sum(base_weight)),
+        len(local),
+    )
+
+
+@pytest.mark.parametrize("causal_window", [False, True])
+def test_batched_acceleration_targets_match_scalar_reference(
+    causal_window: bool,
+) -> None:
+    rng = np.random.default_rng(77)
+    frames, nodes, dt = 11, 7, 0.035
+    baseline = rng.normal(scale=0.02, size=(frames, nodes, 3))
+    observed = baseline + rng.normal(scale=0.003, size=baseline.shape)
+    valid = rng.random((frames, nodes)) > 0.18
+    reliability = rng.uniform(0.15, 1.0, size=(frames, nodes))
+    reliability[~valid] = 0.0
+    kwargs = {
+        "frame_dt_s": dt,
+        "prior_reliability": reliability,
+        "window_radius": 4,
+        "huber_delta_m": 0.002,
+        "ridge": 1.0e-9,
+        "robust_iterations": 3,
+        "variance_floor_m2ps4": 1.0e-7,
+        "causal_window": causal_window,
+    }
+    estimate = estimate_residual_acceleration(
+        observed,
+        baseline,
+        valid,
+        **kwargs,
+    )
+    residual = observed - baseline
+    for center in range(frames):
+        for node in range(nodes):
+            reference = _scalar_residual_acceleration_target(
+                residual,
+                valid,
+                reliability,
+                center=center,
+                node=node,
+                frame_dt_s=dt,
+                window_radius=kwargs["window_radius"],
+                huber_delta_m=kwargs["huber_delta_m"],
+                ridge=kwargs["ridge"],
+                robust_iterations=kwargs["robust_iterations"],
+                variance_floor_m2ps4=kwargs["variance_floor_m2ps4"],
+                causal_window=causal_window,
+            )
+            assert bool(estimate.observed[center, node]) is (
+                reference is not None
+            )
+            if reference is None:
+                continue
+            np.testing.assert_allclose(
+                estimate.mean_mps2[center, node],
+                reference[0],
+                rtol=1.0e-10,
+                atol=1.0e-10,
+            )
+            np.testing.assert_allclose(
+                estimate.variance_m2ps4[center, node],
+                reference[1],
+                rtol=1.0e-10,
+                atol=1.0e-10,
+            )
+            np.testing.assert_allclose(
+                estimate.robust_weight[center, node],
+                reference[2],
+                rtol=1.0e-12,
+                atol=1.0e-12,
+            )
+            assert estimate.temporal_support[center, node] == reference[3]
+    assert estimate.diagnostics["solver"] == "batched_nodes_v1"
+
+
 def test_local_polynomial_targets_recover_quadratic_acceleration_robustly() -> None:
     observed, baseline, valid, acceleration, dt = _quadratic_residual_case()
     observed[6, 0] += np.array([0.04, -0.03, 0.02])
