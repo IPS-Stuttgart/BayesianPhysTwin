@@ -1,0 +1,113 @@
+{
+  "aggregate": {
+    "both_metric_win_or_tie_count": 0,
+    "metric_win_or_tie_counts": {
+      "chamfer_distance_m": 0,
+      "track_error_m": 1
+    },
+    "metrics": {
+      "chamfer_distance_m": {
+        "candidate_mean_m": 0.009901533840486025,
+        "comparator_mean_m": 0.009294090927683539,
+        "difference_m": 0.0006074429128024861,
+        "percent_change": 6.535796965286256
+      },
+      "track_error_m": {
+        "candidate_mean_m": 0.04222434545444533,
+        "comparator_mean_m": 0.042750477086826104,
+        "difference_m": -0.0005261316323807719,
+        "percent_change": -1.230703534166877
+      }
+    }
+  },
+  "case_count": 3,
+  "gates": {
+    "both_equal_case_future_means_improve_over_cotracker3_source": false,
+    "both_metric_win_count": 0,
+    "both_metric_win_count_gate": false,
+    "maximum_case_metric_regression_fraction": 0.08824178045017272,
+    "maximum_case_regression_gate": true
+  },
+  "inputs": {
+    "candidate": {
+      "path": "/tmp/alltracker_source_depth_smoke_result.json",
+      "sha256": "d0d65741505a9574dcd831e0af718a6890de75d99fbbef759a35b67f11acd606"
+    },
+    "comparator": {
+      "path": "/tmp/cotracker3_source_depth_result.json",
+      "sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e"
+    },
+    "protocol": {
+      "path": "/mnt/c/Users/emper/Documents/Codex/2026-07-09/files-mentioned-by-the-user-teilgespr/work/Bayesian-PhysTwin/configs/sota/phystwin_alltracker_source_depth_smoke_v1.json",
+      "sha256": "be8ce678e00277ade2a95610cca014f670fa2a153e70c1f91bbabe46a06c78b6"
+    }
+  },
+  "per_case": [
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.012601073745641216,
+        "track_error_m": 0.04738581872149514
+      },
+      "candidate_minus_comparator_m": {
+        "chamfer_distance_m": 0.0006175378585384032,
+        "track_error_m": -0.003343953969984867
+      },
+      "case": "single_lift_cloth",
+      "comparator": {
+        "chamfer_distance_m": 0.011983535887102813,
+        "track_error_m": 0.050729772691480005
+      },
+      "relative_change": {
+        "chamfer_distance_m": 0.05153219086221661,
+        "track_error_m": -0.06591699100095672
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.0069271449411210505,
+        "track_error_m": 0.026163208189814144
+      },
+      "candidate_minus_comparator_m": {
+        "chamfer_distance_m": 0.0003796230210273699,
+        "track_error_m": 0.0005613232626899244
+      },
+      "case": "single_lift_cloth_3",
+      "comparator": {
+        "chamfer_distance_m": 0.006547521920093681,
+        "track_error_m": 0.02560188492712422
+      },
+      "relative_change": {
+        "chamfer_distance_m": 0.05797964873738648,
+        "track_error_m": 0.021925075606258337
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.010176382834695808,
+        "track_error_m": 0.053124009452026694
+      },
+      "candidate_minus_comparator_m": {
+        "chamfer_distance_m": 0.0008251678588416869,
+        "track_error_m": 0.0012042358101526096
+      },
+      "case": "single_lift_cloth_4",
+      "comparator": {
+        "chamfer_distance_m": 0.009351214975854122,
+        "track_error_m": 0.051919773641874084
+      },
+      "relative_change": {
+        "chamfer_distance_m": 0.08824178045017272,
+        "track_error_m": 0.02319416526079343
+      }
+    }
+  ],
+  "primary_arm": "causal_selected_dense_relative_cap",
+  "protocol_id": "phystwin-alltracker-source-depth-smoke-v1",
+  "recommendation": "Stop the AllTracker source-depth arm. Do not tune quality, cycle, selector, cap, or graph settings against these future outcomes.",
+  "schema_version": 1,
+  "smoke_gate_passed": false,
+  "status": "post-open development smoke; not independent SOTA evidence"
+}
