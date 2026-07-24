@@ -39,6 +39,10 @@ from bayesian_phystwin.phystwin_cotracker3_cues import (
     load_cotracker3_multiview_depth_observations,
     load_cotracker3_multiview_observations,
 )
+from bayesian_phystwin.phystwin_directional_endpoint import (
+    DirectionalEndpointPosterior,
+    robust_directional_endpoint,
+)
 from bayesian_phystwin.phystwin_graph import (
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
@@ -46,6 +50,10 @@ from bayesian_phystwin.phystwin_graph import (
 from bayesian_phystwin.phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
     normalized_spring_laplacian,
+)
+from bayesian_phystwin.phystwin_multiview_tangent_fusion import (
+    fuse_source_normal_multiview_tangent,
+    local_surface_tangent_projectors,
 )
 from bayesian_phystwin.phystwin_official_evaluation import _nearest_distances
 from bayesian_phystwin.phystwin_online_belief import (
@@ -75,6 +83,7 @@ class HeadroomConfig:
     cotracker_maximum_view_disagreement_m: float = 0.01
     cotracker_minimum_camera_count: int = 3
     multiview_priority_minimum_availability_fraction: float = 0.10
+    multiview_tangent_neighbor_count: int = 16
     prior_strengths: tuple[float, ...] = (0.003, 0.01, 0.03, 0.1)
     maximum_residuals_m: tuple[float, ...] = (0.02, 0.04, 0.06, 0.1)
     dense_correction_scales: tuple[float, ...] = (1.0,)
@@ -645,7 +654,7 @@ def _selection_score(
 
 
 def _full_endpoint_arrays(
-    endpoint: RobustEndpointPosterior,
+    endpoint: RobustEndpointPosterior | DirectionalEndpointPosterior,
     *,
     state_count: int,
     original_count: int,
@@ -736,6 +745,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     laplacian = normalized_spring_laplacian(len(structure_points), springs)
 
     cotracker_summary = None
+    directional_endpoint_inputs = None
     if config.observation_source == "final_data":
         inference_points = observed_points
         dense_valid = _target_validity(visible, motion_valid)
@@ -905,6 +915,168 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
                 )
             ),
         }
+    elif (
+        config.observation_source
+        == "cotracker3_multiview_tangent_priority"
+    ):
+        source_points, source_valid, source_summary = _lift_cotracker_source_depth(
+            Path(cues_path),
+            Path(raw_case_dir),
+            observed_points[0],
+            train_end=train_end,
+            minimum_quality=config.cotracker_minimum_quality,
+            maximum_cycle_error_px=config.cotracker_maximum_cycle_error_px,
+        )
+        multiview_points, multiview_valid, multiview_summary = (
+            _load_cotracker_multiview(
+                Path(cues_path),
+                observed_points[0],
+                train_end=train_end,
+                minimum_quality=config.cotracker_minimum_quality,
+                maximum_cycle_error_px=(
+                    config.cotracker_maximum_cycle_error_px
+                ),
+                maximum_reprojection_error_px=(
+                    config.cotracker_maximum_reprojection_error_px
+                ),
+                minimum_camera_count=config.cotracker_minimum_camera_count,
+            )
+        )
+        tangent_fusion = fuse_source_normal_multiview_tangent(
+            source_points,
+            source_valid,
+            multiview_points,
+            multiview_valid,
+            observed_points[0],
+            minimum_multiview_availability_fraction=(
+                config.multiview_priority_minimum_availability_fraction
+            ),
+            neighbor_count=config.multiview_tangent_neighbor_count,
+        )
+        inference_prefix = tangent_fusion.points_world_m
+        valid_prefix = tangent_fusion.valid
+        inference_points = np.zeros_like(observed_points)
+        inference_points[:train_end] = inference_prefix
+        dense_valid = np.zeros_like(visible)
+        dense_valid[:train_end] = valid_prefix
+        cotracker_summary = {
+            "source_depth": source_summary,
+            "multiview": multiview_summary,
+            "priority_rule": (
+                "identities with sufficient three-view prefix availability "
+                "admit only the multiview correction tangent to the initial "
+                "surface; source depth retains normal authority and exact "
+                "observation support"
+            ),
+            "minimum_multiview_availability_fraction": (
+                config.multiview_priority_minimum_availability_fraction
+            ),
+            "tangent_neighbor_count": (
+                config.multiview_tangent_neighbor_count
+            ),
+            "priority_identity_count": int(
+                np.sum(tangent_fusion.priority_identities)
+            ),
+            "priority_identity_fraction": float(
+                np.mean(tangent_fusion.priority_identities)
+            ),
+            "fused_update_count": int(
+                np.sum(tangent_fusion.fused_update)
+            ),
+            "fused_update_fraction_of_source_support": float(
+                np.sum(tangent_fusion.fused_update)
+                / max(np.sum(source_valid), 1)
+            ),
+            "source_support_preserved_exactly": bool(
+                np.array_equal(valid_prefix, source_valid)
+            ),
+        }
+    elif (
+        config.observation_source
+        == "cotracker3_multiview_directional_priority"
+    ):
+        source_points, source_valid, source_summary = _lift_cotracker_source_depth(
+            Path(cues_path),
+            Path(raw_case_dir),
+            observed_points[0],
+            train_end=train_end,
+            minimum_quality=config.cotracker_minimum_quality,
+            maximum_cycle_error_px=config.cotracker_maximum_cycle_error_px,
+        )
+        multiview_points, multiview_valid, multiview_summary = (
+            _load_cotracker_multiview(
+                Path(cues_path),
+                observed_points[0],
+                train_end=train_end,
+                minimum_quality=config.cotracker_minimum_quality,
+                maximum_cycle_error_px=(
+                    config.cotracker_maximum_cycle_error_px
+                ),
+                maximum_reprojection_error_px=(
+                    config.cotracker_maximum_reprojection_error_px
+                ),
+                minimum_camera_count=config.cotracker_minimum_camera_count,
+            )
+        )
+        multiview_availability = np.mean(multiview_valid, axis=0)
+        priority_identities = (
+            multiview_availability
+            >= config.multiview_priority_minimum_availability_fraction
+        )
+        tangent_projectors = local_surface_tangent_projectors(
+            observed_points[0],
+            neighbor_count=config.multiview_tangent_neighbor_count,
+        )
+        directional_endpoint_inputs = {
+            "source_residual": (
+                source_points - baseline[:train_end, :original_count]
+            ),
+            "source_valid": source_valid,
+            "multiview_residual": (
+                multiview_points - baseline[:train_end, :original_count]
+            ),
+            "multiview_valid": multiview_valid,
+            "tangent_projectors": tangent_projectors,
+            "priority_identities": priority_identities,
+        }
+        # Non-endpoint diagnostics retain the exact source channel. The primary
+        # dense endpoint correction below uses the directional posterior.
+        inference_points = np.zeros_like(observed_points)
+        inference_points[:train_end] = source_points
+        dense_valid = np.zeros_like(visible)
+        dense_valid[:train_end] = source_valid
+        cotracker_summary = {
+            "source_depth": source_summary,
+            "multiview": multiview_summary,
+            "priority_rule": (
+                "nonpriority identities use the existing full source update; "
+                "priority identities use source normal and redundant-view "
+                "tangent innovations as orthogonal robust measurements"
+            ),
+            "minimum_multiview_availability_fraction": (
+                config.multiview_priority_minimum_availability_fraction
+            ),
+            "tangent_neighbor_count": (
+                config.multiview_tangent_neighbor_count
+            ),
+            "priority_identity_count": int(np.sum(priority_identities)),
+            "priority_identity_fraction": float(
+                np.mean(priority_identities)
+            ),
+            "source_update_count": int(np.sum(source_valid)),
+            "multiview_tangent_update_count": int(
+                np.sum(multiview_valid[:, priority_identities])
+            ),
+            "multiview_tangent_updates_without_source_count": int(
+                np.sum(
+                    multiview_valid[:, priority_identities]
+                    & ~source_valid[:, priority_identities]
+                )
+            ),
+            "scalar_graph_variance_rule": (
+                "largest endpoint covariance eigenvalue in square metres"
+            ),
+        }
     else:
         raise ValueError(
             f"unsupported observation source: {config.observation_source}"
@@ -912,12 +1084,28 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     dense_residual = (
         inference_points - baseline[:, :original_count]
     )
-    dense_endpoint = _endpoint(
-        dense_residual,
-        dense_valid,
-        end_frame=train_end,
-        config=config,
-    )
+
+    def endpoint_at(end_frame: int):
+        if directional_endpoint_inputs is None:
+            return _endpoint(
+                dense_residual,
+                dense_valid,
+                end_frame=end_frame,
+                config=config,
+            )
+        return robust_directional_endpoint(
+            **directional_endpoint_inputs,
+            end_frame=end_frame,
+            process_variance=config.process_std_m**2,
+            observation_variance=config.observation_std_m**2,
+            initial_variance=config.initial_std_m**2,
+            inlier_prior=config.inlier_prior,
+            outlier_variance_multiplier=(
+                config.outlier_variance_multiplier
+            ),
+        )
+
+    dense_endpoint = endpoint_at(train_end)
     full_mean, full_variance, full_observed = _full_endpoint_arrays(
         dense_endpoint,
         state_count=len(structure_points),
@@ -927,12 +1115,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     if not 2 < fit_end < train_end:
         raise ValueError(f"invalid fit/validation split for {case}")
 
-    fit_dense_endpoint = _endpoint(
-        dense_residual,
-        dense_valid,
-        end_frame=fit_end,
-        config=config,
-    )
+    fit_dense_endpoint = endpoint_at(fit_end)
     fit_full_mean, _, _ = _full_endpoint_arrays(
         fit_dense_endpoint,
         state_count=len(structure_points),
@@ -942,12 +1125,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     inner_end = max(3, fit_end - (train_end - fit_end))
     if not inner_end < fit_end:
         raise ValueError(f"no inner temporal-selection interval for {case}")
-    inner_dense_endpoint = _endpoint(
-        dense_residual,
-        dense_valid,
-        end_frame=inner_end,
-        config=config,
-    )
+    inner_dense_endpoint = endpoint_at(inner_end)
     inner_full_mean, _, _ = _full_endpoint_arrays(
         inner_dense_endpoint,
         state_count=len(structure_points),
@@ -2118,6 +2296,8 @@ def parse_args() -> argparse.Namespace:
             "cotracker3_multiview_depth",
             "cotracker3_hybrid",
             "cotracker3_multiview_priority",
+            "cotracker3_multiview_tangent_priority",
+            "cotracker3_multiview_directional_priority",
         ),
         default="final_data",
     )
@@ -2151,6 +2331,11 @@ def parse_args() -> argparse.Namespace:
         default=(
             HeadroomConfig.multiview_priority_minimum_availability_fraction
         ),
+    )
+    parser.add_argument(
+        "--multiview-tangent-neighbor-count",
+        type=int,
+        default=HeadroomConfig.multiview_tangent_neighbor_count,
     )
     parser.add_argument(
         "--prior-strengths",
@@ -2243,6 +2428,8 @@ def main() -> None:
         raise ValueError(
             "multiview priority availability must lie in [0, 1]"
         )
+    if args.multiview_tangent_neighbor_count < 3:
+        raise ValueError("multiview tangent neighbor count must be at least three")
     config = HeadroomConfig(
         baseline_kind=args.baseline_kind,
         observation_source=args.observation_source,
@@ -2260,6 +2447,9 @@ def main() -> None:
         ),
         multiview_priority_minimum_availability_fraction=(
             args.multiview_priority_minimum_availability_fraction
+        ),
+        multiview_tangent_neighbor_count=(
+            args.multiview_tangent_neighbor_count
         ),
         prior_strengths=tuple(args.prior_strengths),
         maximum_residuals_m=tuple(args.maximum_residuals_m),
@@ -2296,6 +2486,8 @@ def main() -> None:
         "cotracker3_multiview_depth",
         "cotracker3_hybrid",
         "cotracker3_multiview_priority",
+        "cotracker3_multiview_tangent_priority",
+        "cotracker3_multiview_directional_priority",
     }:
         if args.raw_case_root is None:
             raise ValueError(
