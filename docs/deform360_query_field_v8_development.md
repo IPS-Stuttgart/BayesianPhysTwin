@@ -161,6 +161,46 @@ alter the selected query field, cohorts, metrics, thresholds, or claim
 boundary. They require a new clean freeze, qualification, and replay before a
 fresh formal root may be opened.
 
+### Attempt-5 source-only admission outcome
+
+The repaired implementation was frozen at
+`3a23946ab3d647be7c836f92551e264258042325`. A subsequent one-shot
+source-only lifecycle qualification completed with intact provenance, but it
+did not admit attempt 5. The frozen numerical-equivalence gate rejected two of
+14 metrics:
+
+| Metric | Cross-mode p95 | Frozen within-mode limit | Excess |
+|---|---:|---:|---:|
+| SH-vector L2 mean | `0.0006104023` | `0.0005568509` | `0.0000535513` |
+| Maximum XYZ distance | `0.0212908331 m` | `0.0212901111 m` | `0.0000007220 m` |
+
+The remaining 12 metrics passed. Because the A/B gate was frozen before this
+execution, neither the narrow XYZ miss nor the known label sensitivity permits
+post-hoc acceptance. The terminal status is therefore
+`admission-inconclusive`, not a scientific model failure.
+
+The equivalence rejection prevented the 243-fit resource soak and prevented
+creation of a formal held-v8 root. No calibration score, gate decision,
+confirmation artifact, or formal target prediction was produced or inspected.
+The sealed evidence is:
+
+```text
+gpuserver6000:/mnt/corsair/florianpfaff/bpt-resource-lifecycle-qualification-3a23946ab3d647be7c836f92551e264258042325-integrity-completion.json
+SHA-256 c91ed0534d53ccbecf4a07510dc858cb921bc96b8861c7a8f47f259fb649be5c
+
+qualification artifact SHA-256
+7d72f3a3a97b6fafb07ec7de1491029e3fa5d9025af99c40bb73955b09547ec2
+
+equivalence-result artifact SHA-256
+943c3bb289162a4d16155599edf86b03a95a40fd291cc25380bf7da13e292fe1
+```
+
+The compact repository record is
+`results/sota/deform360_held_v81_attempt5_admission_inconclusive.json`.
+Attempt 5 is closed. Any later execution requires a new disclosed revision and
+a fresh source-only admission root; it may not reuse or reinterpret this
+qualification.
+
 ### Post-GO confirmation-source materialization
 
 The repaired protocol also treats confirmation media as a new post-GO

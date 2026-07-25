@@ -1,0 +1,55 @@
+{
+  "artifact_kind": "Deform360HeldV81Attempt5AdmissionResult",
+  "schema_version": 1,
+  "date": "2026-07-23",
+  "protocol_id": "deform360-held-online-belief-v8.1",
+  "execution_attempt": 5,
+  "source_code": {
+    "git_head": "3a23946ab3d647be7c836f92551e264258042325",
+    "git_tree": "687553bea9d0def8795bc329131935dc4ebca42c"
+  },
+  "terminal_outcome": "admission-inconclusive",
+  "admission_eligible": false,
+  "formal_held_root_created": false,
+  "calibration_score_count": 0,
+  "calibration_gate_decision_count": 0,
+  "confirmation_accessed": false,
+  "formal_target_prediction_count": 0,
+  "qualification": {
+    "qualification_id": "deform360-nerfstudio-resource-lifecycle-qualification-v2",
+    "integrity_complete": true,
+    "source_only": true,
+    "public_development_dataset_only": true,
+    "formal_held_path_accessed": false,
+    "formal_target_query_prediction_or_score_deserialized": false,
+    "scientific_method_selected_from_qualification": false,
+    "integrity_completion_path": "/mnt/corsair/florianpfaff/bpt-resource-lifecycle-qualification-3a23946ab3d647be7c836f92551e264258042325-integrity-completion.json",
+    "integrity_completion_file_sha256": "c91ed0534d53ccbecf4a07510dc858cb921bc96b8861c7a8f47f259fb649be5c",
+    "integrity_completion_artifact_sha256": "807b0c2ba80d5b4db60d9a2fc064c7010f4b3677c379f6eb2fbfe9994a47e5fd",
+    "qualification_artifact_sha256": "7d72f3a3a97b6fafb07ec7de1491029e3fa5d9025af99c40bb73955b09547ec2",
+    "equivalence_result_artifact_sha256": "943c3bb289162a4d16155599edf86b03a95a40fd291cc25380bf7da13e292fe1"
+  },
+  "equivalence_decision": {
+    "accepted": false,
+    "passed_metric_count": 12,
+    "total_metric_count": 14,
+    "failed_metrics": {
+      "sh_vector_l2_mean": {
+        "cross_p95": 0.0006104022649866833,
+        "within_max_limit": 0.0005568509426968355,
+        "excess": 0.00005355132228984779
+      },
+      "xyz_distance_max_m": {
+        "cross_p95": 0.021290833118021206,
+        "within_max_limit": 0.021290111108079993,
+        "excess": 7.220099412133862e-7
+      }
+    }
+  },
+  "claim_boundary": [
+    "This is a source-only engineering admission result.",
+    "It is not a Bayesian-PhysTwin model result.",
+    "It contains no held calibration or confirmation outcome.",
+    "The frozen gate may not be relaxed or reinterpreted after this result."
+  ]
+}
