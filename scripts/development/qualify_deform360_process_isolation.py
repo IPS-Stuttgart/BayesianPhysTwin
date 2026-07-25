@@ -48,6 +48,15 @@ RELATIVE_SOURCE = Path(
 RELATIVE_NUMERICAL_SOURCE = Path(
     "src/bayesian_phystwin/deform360_held_outcome_reconstruction.py"
 )
+RELATIVE_ISOLATION_SOURCE = Path(
+    "src/bayesian_phystwin/deform360_case_process_isolation.py"
+)
+RELATIVE_WORKER_SOURCE = Path(
+    "scripts/held/run_deform360_isolated_reconstruction.py"
+)
+RELATIVE_OUTCOME_DRIVER_SOURCE = Path(
+    "src/bayesian_phystwin/deform360_held_v8_outcome_driver.py"
+)
 CANONICAL_CASE_COUNT = 4
 CANONICAL_FITS_PER_CASE = 81
 CANONICAL_ITERATIONS = 1
@@ -611,6 +620,18 @@ def _run(arguments: argparse.Namespace) -> int:
         code / RELATIVE_NUMERICAL_SOURCE,
         label="process-isolation numerical adapter source",
     )
+    isolation_binding = support._bound_file(
+        code / RELATIVE_ISOLATION_SOURCE,
+        label="process-isolation result adapter source",
+    )
+    worker_binding = support._bound_file(
+        code / RELATIVE_WORKER_SOURCE,
+        label="process-isolation held worker source",
+    )
+    outcome_driver_binding = support._bound_file(
+        code / RELATIVE_OUTCOME_DRIVER_SOURCE,
+        label="process-isolation parent driver source",
+    )
     initial_parent = support._process_boundary()
     cases: list[dict[str, Any]] = []
     for case_index in range(arguments.case_count):
@@ -737,6 +758,9 @@ def _run(arguments: argparse.Namespace) -> int:
                 "deform360": deform360_binding,
                 "qualification_source": source_binding,
                 "numerical_adapter_source": numerical_binding,
+                "isolation_source": isolation_binding,
+                "worker_source": worker_binding,
+                "outcome_driver_source": outcome_driver_binding,
             },
             "process_boundary": {
                 "one_original_trainer_per_child": True,
