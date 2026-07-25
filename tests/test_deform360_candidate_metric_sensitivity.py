@@ -116,3 +116,22 @@ def test_summary_fails_when_one_headline_convention_regresses() -> None:
     assert {check["metric"] for check in failed} == {
         "chamfer_symmetric_mean_euclidean_m"
     }
+
+
+def test_summary_is_independent_of_case_insertion_order() -> None:
+    metrics, groups = _case_metric_fixture(candidate_scale=1.0)
+    reversed_groups = dict(reversed(tuple(groups.items())))
+    reversed_metrics = {
+        method: {
+            metric: dict(reversed(tuple(values.items())))
+            for metric, values in method_metrics.items()
+        }
+        for method, method_metrics in metrics.items()
+    }
+
+    forward = summarize_candidate_metric_sensitivity(metrics, groups)
+    reversed_result = summarize_candidate_metric_sensitivity(
+        reversed_metrics, reversed_groups
+    )
+
+    assert forward == reversed_result

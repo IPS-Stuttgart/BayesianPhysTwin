@@ -232,7 +232,8 @@ def summarize_candidate_metric_sensitivity(
     _require(primary_method in case_metrics, "primary method is missing")
     _require(set(comparators).issubset(case_metrics), "comparator is missing")
     methods = tuple(case_metrics)
-    expected_cases = set(case_to_object)
+    expected_cases = tuple(sorted(case_to_object))
+    expected_case_set = set(expected_cases)
     aggregate: dict[str, dict[str, dict[str, float]]] = {}
     case_means: dict[str, dict[str, dict[str, float]]] = {}
     object_means: dict[str, dict[str, dict[str, float]]] = {}
@@ -246,7 +247,7 @@ def summarize_candidate_metric_sensitivity(
         object_means[method] = {}
         for metric, values_by_case in case_metrics[method].items():
             _require(
-                set(values_by_case) == expected_cases,
+                set(values_by_case) == expected_case_set,
                 f"{method} {metric} case set changed",
             )
             aggregate[method][metric] = aggregate_metric_sensitivity(
