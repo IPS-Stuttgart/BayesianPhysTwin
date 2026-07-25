@@ -166,8 +166,28 @@ def test_malformed_bimanual_enum_is_rejected(tmp_path: Path) -> None:
 
 def test_raw_metadata_must_bind_the_requested_object(tmp_path: Path) -> None:
     episode, metadata = _write_bundle(tmp_path)
+
+    artifact = build_fresh_source_admission(
+        episode,
+        metadata,
+        object_id="201-other-cloth",
+        episode_id=0,
+        category="cloth",
+    )
+
+    assert artifact["accepted"] is False
+    assert (
+        "raw metadata directory differs from requested object ID"
+        in artifact["rejection_reasons"]
+    )
+
+
+def test_descriptive_metadata_label_need_not_equal_directory_name(
+    tmp_path: Path,
+) -> None:
+    episode, metadata = _write_bundle(tmp_path)
     payload = json.loads(metadata.read_text(encoding="utf-8"))
-    payload["object"] = "201-other-cloth"
+    payload["object"] = "pink cloth"
     metadata.write_text(json.dumps(payload), encoding="utf-8")
 
     artifact = build_fresh_source_admission(
@@ -178,11 +198,9 @@ def test_raw_metadata_must_bind_the_requested_object(tmp_path: Path) -> None:
         category="cloth",
     )
 
-    assert artifact["accepted"] is False
-    assert (
-        "requested object ID is inconsistent with raw metadata"
-        in artifact["rejection_reasons"]
-    )
+    assert artifact["accepted"] is True
+    assert artifact["observed_source_contract"]["metadata_parent"] == "200-test-cloth"
+    assert artifact["observed_source_contract"]["metadata_object"] == "pink cloth"
 
 
 def test_split_must_index_actual_final_data_rows(tmp_path: Path) -> None:

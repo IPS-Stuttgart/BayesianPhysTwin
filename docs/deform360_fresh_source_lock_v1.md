@@ -24,7 +24,8 @@ The preregistered source-lock configuration is
 
 Admission may inspect only:
 
-- the public raw-metadata object and episode identity;
+- the canonical public raw object-directory and episode identity;
+- the descriptive `metadata.object` label, without treating it as canonical;
 - the exact `yes`/`no` bimanual metadata enum;
 - source-stream provenance digests;
 - control-point provenance hashes and counts;
@@ -47,7 +48,7 @@ The default frozen gates are:
 | Future test rows | at least 8 |
 | Split | contiguous released 80/20 rule |
 | Contact window | exactly the 76 retained rows |
-| Source identity | consistent with raw metadata |
+| Source identity | raw metadata parent directory equals the public object ID |
 
 The last update must remain inside the train prefix.
 

@@ -111,16 +111,12 @@ def _ply_vertex_count(path: Path) -> int:
 
 
 def _metadata_identity(
-    metadata: Mapping[str, Any], object_id: str, episode_id: int
+    metadata: Mapping[str, Any], episode_id: int
 ) -> tuple[str, bool]:
     metadata_object = metadata.get("object")
     _require(
         isinstance(metadata_object, str) and bool(metadata_object),
-        "raw metadata object identity is missing",
-    )
-    _require(
-        object_id == metadata_object or object_id.startswith(f"{metadata_object}-"),
-        "requested object ID is inconsistent with raw metadata",
+        "raw metadata object label is missing",
     )
     sequences = metadata.get("sequences")
     _require(isinstance(sequences, Mapping), "raw metadata sequences are missing")
@@ -207,9 +203,12 @@ def build_fresh_source_admission(
     control_meta = _load_json(paths["control_meta"])
     split = _load_json(paths["split"])
     reasons: list[str] = []
+    metadata_parent = metadata_path.parent.name
+    if metadata_parent != object_id:
+        reasons.append("raw metadata directory differs from requested object ID")
 
     try:
-        metadata_object, bimanual = _metadata_identity(metadata, object_id, episode_id)
+        metadata_object, bimanual = _metadata_identity(metadata, episode_id)
     except ValueError as exc:
         metadata_object = None
         bimanual = None
@@ -333,6 +332,7 @@ def build_fresh_source_admission(
         "rejection_reasons": reasons,
         "config": asdict(cfg),
         "observed_source_contract": {
+            "metadata_parent": metadata_parent,
             "metadata_object": metadata_object,
             "bimanual": bimanual,
             "camera_count": len(cameras),
@@ -461,12 +461,13 @@ def validate_fresh_source_admission(artifact: Mapping[str, Any]) -> None:
         )
         cameras = observed.get("cameras")
         _require(
+            observed.get("metadata_parent") == object_id,
+            "accepted admission metadata directory is inconsistent",
+        )
+        _require(
             isinstance(observed.get("metadata_object"), str)
-            and (
-                object_id == observed["metadata_object"]
-                or object_id.startswith(f"{observed['metadata_object']}-")
-            ),
-            "accepted admission metadata identity is inconsistent",
+            and bool(observed["metadata_object"]),
+            "accepted admission metadata label is malformed",
         )
         _require(
             isinstance(observed.get("bimanual"), bool),
