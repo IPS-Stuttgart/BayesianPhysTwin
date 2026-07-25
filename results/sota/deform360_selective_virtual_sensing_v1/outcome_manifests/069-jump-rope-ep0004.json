@@ -1,0 +1,100 @@
+{
+  "artifact_kind": "Deform360SelectiveAuthorizedOutcome",
+  "authorization": {
+    "prediction_cohort_result_sha256": "7318fb93981af1cd571437a4f6efb9bd83aeb5b7d6db9b78cf1d0c1a3e16c985",
+    "prediction_result_sha256": "2d9985e4e6eb426930347d231a2ba62cda7c34db2b12b5412e8570c8724206cb"
+  },
+  "camera_count": 8,
+  "cameras": [
+    "brics-odroid-006_cam0",
+    "brics-odroid-010_cam1",
+    "brics-odroid-017_cam0",
+    "brics-odroid-019_cam1",
+    "brics-odroid-024_cam0",
+    "brics-odroid-024_cam1",
+    "brics-odroid-025_cam0",
+    "brics-odroid-025_cam1"
+  ],
+  "case": "069-jump-rope-ep0004",
+  "code_revision": "5f92f517051b3184bbc9ba48f2e269a5e5a1cf19",
+  "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+  "episode_id": 4,
+  "episode_key": "069-jump-rope/4",
+  "information_boundary": {
+    "eligible_prediction_cohort_verified_before_target_construction": true,
+    "future_tactile_read": false,
+    "prediction_metric_computed": false
+  },
+  "inputs_sha256": {
+    "authorized_future_manifest": "e428b5793801df134f40510322888adc68d71e3e7fb7a424599bed7dfe4ccab2",
+    "cotracker_predictor": "783536d6c77790fa6c8e005f2df1d6bd4f0d8955c2c67d464bfb4e64d366375f",
+    "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+    "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+    "prediction_archive": "071529c60dd32d9c8d3ca45f4200281400f96b2bf3f4fac06cd2054d5b6964fa",
+    "prediction_cohort_seal": "a0821a48f6b8e20f38ae9eb28aa120eba7c6868e152cae3a938d7dbe0a3175f4",
+    "prediction_seal": "6cd52ed83f728ecea0d2c5bb13d14b73297a6ab569f1abebe4dd62085d1fda22",
+    "protocol": "cc1d006bda9b0b8e1076b8acf03b57c2564c76d3ccf609177af9639601250d69",
+    "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+    "tracking_checkpoint": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+    "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+    "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467"
+  },
+  "material_identity_sha256": "404399654aaf24ffcb0416c1873d08f0366c216ffea59784fb3470b607ba66a2",
+  "material_point_count": 509,
+  "object_id": "069-jump-rope",
+  "output": {
+    "frame_zero_bit_exact_to_sealed_persistence": true,
+    "target_archive": "/home/florianpfaff/deform360-selective-virtual-sensing-v1/authorized-outcome-5f92f51/069-jump-rope-ep0004/target_trajectory.npz",
+    "target_archive_sha256": "23d0b32507aee9e65d9b7839d226ff1043afdfba286ffe5f6b5350b4ea6e421a",
+    "target_array_sha256": "a67ef6856e9be30dd96fbaeab29485b894ad7c2977ae1efd71803dfae95e6108"
+  },
+  "protocol_config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
+  "protocol_id": "deform360-selective-virtual-sensing-v1",
+  "raw_frame_count": 81,
+  "reconstruction": {
+    "cube_half_extent_m": 0.5,
+    "first_frame_iterations": 500,
+    "minimum_visual_hull_points": 512,
+    "sealed_frame_zero_splat_reused": true,
+    "voxel_resolution": 120,
+    "warm_start_iterations": 250
+  },
+  "result_sha256": "9f91ce7f0ae03c4adee13730ad0f9481fa63e3c72a3925267e9354fc90e52831",
+  "schema_version": 1,
+  "stage_metadata_sha256": {
+    "depth": {
+      "brics-odroid-006_cam0": "06a1f49db3ee7963a743e6382a017767384bf56c73c0fdbba72d9555f12f6f86",
+      "brics-odroid-010_cam1": "7327d39a61cd3d0dae43c35cb488836e21fb83d06501746d7ff6004a75f13d2e",
+      "brics-odroid-017_cam0": "35542426b3d6144b10c10209aac564a3ace1b5aef31f9c362465d35bdfbce478",
+      "brics-odroid-019_cam1": "456574bbbfc25f1f38ce0a2571d9a91881969e725a1fc62de935d63c0ee9456c",
+      "brics-odroid-024_cam0": "f518d9745fb6ae4cc32e7fe058c2dfe4c93d4466b6bec90d61e69fb51ba5dde3",
+      "brics-odroid-024_cam1": "99e1a6a19b3d3bab55e5357734e2bdd5ca9e58ad75712641f3634d869dc40dd0",
+      "brics-odroid-025_cam0": "249a81f36f017600f4af7f129dd74abd8140b6e6787f284be9b21a359c961608",
+      "brics-odroid-025_cam1": "f94586e11afe0ad2803d7e816543ceddedc24e4e4d11060e61cceec7e724f20e"
+    },
+    "gripper_masks": {
+      "brics-odroid-006_cam0": "4ec646723cbc2194854bac0935cdef6f1b65ca2cc53e794f742b26751d372419",
+      "brics-odroid-010_cam1": "5c80c9975c9c57888e7eb7034e45f4fd03e6c707c2d67dbdbc663efd6205f98a",
+      "brics-odroid-017_cam0": "f4323ca6e87a5e57185cf198d33aff2d7eb3ee2402ed1dd298093286ed3ce469",
+      "brics-odroid-019_cam1": "043ebbc1d36400eac72d3300a7631a69391bea393ce6f51d566f0eb7b5cc606f",
+      "brics-odroid-024_cam0": "3c836b61307abb386580e7b87aea0f77eb2295049367ea004c7e60f9b8294921",
+      "brics-odroid-024_cam1": "cf3b3a91c4fcd06beac420bdb6a5634f2674895fd69a227d87eda388bb1e76a2",
+      "brics-odroid-025_cam0": "6453eea79b52d4d2e5b7eec13a8e8c1c67787d55dfc0ab6c55ed283ae3a2bdd8",
+      "brics-odroid-025_cam1": "bdad44cbdab91e1850566cab2213ecc1dbaf6c8e8411e475769df747b0f6c468"
+    },
+    "point_cloud": "324fca80fef5b5c98f0aec9b5cf839c3f2c9bc377974fff16ad66dff94182062",
+    "reconstruction": "0dd168ded0bfdb86fc2f900d4ef1ee29d56e661a9ac39aa4fc1f8f081e91557e",
+    "tracking": {
+      "brics-odroid-006_cam0": "c8783fd1cc6f49949c3aab772d21990d278a8a8b20631a83d79d8ac8b329b456",
+      "brics-odroid-010_cam1": "6725e4723c0b0305280a92e1db2d34de33322eae1b8c3f8ef589a72992f58df7",
+      "brics-odroid-017_cam0": "45f9246d04f9bbf6a38c1a31725fd01edc188f96edcaad0d5d6cbc8156c5b0ed",
+      "brics-odroid-019_cam1": "31eb332f8752cbc9abc0deaea6026fa99a6488c72987380380f5d6632a9a8ff7",
+      "brics-odroid-024_cam0": "a6de7d74d0d91e86a35be3aac41511d8c1b35f1fe33ccbda3ac94b59f413cc33",
+      "brics-odroid-024_cam1": "a6f801e485f27a1ee0cf3575d1f73777facf53c3014ac20820bab0ec8888513d",
+      "brics-odroid-025_cam0": "1ff501fdaf22970afbf45db0d5bf8f5349c771e72883dfcaae95636462da7042",
+      "brics-odroid-025_cam1": "7a2a1398684c7d17ec2aff2195880dcec1d8a77f016fe898027953703b783e0e"
+    }
+  },
+  "stratum": "filament",
+  "target_frame_count": 76
+}

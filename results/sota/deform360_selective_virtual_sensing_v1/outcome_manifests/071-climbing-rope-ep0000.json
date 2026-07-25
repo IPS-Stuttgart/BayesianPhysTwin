@@ -1,0 +1,100 @@
+{
+  "artifact_kind": "Deform360SelectiveAuthorizedOutcome",
+  "authorization": {
+    "prediction_cohort_result_sha256": "7318fb93981af1cd571437a4f6efb9bd83aeb5b7d6db9b78cf1d0c1a3e16c985",
+    "prediction_result_sha256": "e4bf4a369330491e5a18968020cc62aa0a3f10b4223d27bababdf73b096bfdba"
+  },
+  "camera_count": 8,
+  "cameras": [
+    "brics-odroid-006_cam0",
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam1",
+    "brics-odroid-012_cam0",
+    "brics-odroid-012_cam1",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam0"
+  ],
+  "case": "071-climbing-rope-ep0000",
+  "code_revision": "5f92f517051b3184bbc9ba48f2e269a5e5a1cf19",
+  "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+  "episode_id": 0,
+  "episode_key": "071-climbing-rope/0",
+  "information_boundary": {
+    "eligible_prediction_cohort_verified_before_target_construction": true,
+    "future_tactile_read": false,
+    "prediction_metric_computed": false
+  },
+  "inputs_sha256": {
+    "authorized_future_manifest": "5975221c9a690ba3ae68d3f61908cccbe0d378f56a923ae46bc961d3339f62cf",
+    "cotracker_predictor": "783536d6c77790fa6c8e005f2df1d6bd4f0d8955c2c67d464bfb4e64d366375f",
+    "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+    "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+    "prediction_archive": "5293d11973de04c2cd544e58b1fc20b26946b9012bc5d2d5def0ec037fa0705f",
+    "prediction_cohort_seal": "a0821a48f6b8e20f38ae9eb28aa120eba7c6868e152cae3a938d7dbe0a3175f4",
+    "prediction_seal": "45551215b5ff027d321f49271d86fa34419ca672186ece4863f1f658949b5538",
+    "protocol": "cc1d006bda9b0b8e1076b8acf03b57c2564c76d3ccf609177af9639601250d69",
+    "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+    "tracking_checkpoint": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+    "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+    "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467"
+  },
+  "material_identity_sha256": "aa75771d105cef7e40361f841afe88a464f2f57b32091ff4605d351e55113f6b",
+  "material_point_count": 346,
+  "object_id": "071-climbing-rope",
+  "output": {
+    "frame_zero_bit_exact_to_sealed_persistence": true,
+    "target_archive": "/home/florianpfaff/deform360-selective-virtual-sensing-v1/authorized-outcome-5f92f51/071-climbing-rope-ep0000/target_trajectory.npz",
+    "target_archive_sha256": "99f0b6475c4a263b3fd2b12098afa2b4bcc3f4ee999530c16dc4687912236940",
+    "target_array_sha256": "70a240fdfa99cbfee8ae32ed8ccded687248421b90aac6b890dda4e75ec95d32"
+  },
+  "protocol_config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
+  "protocol_id": "deform360-selective-virtual-sensing-v1",
+  "raw_frame_count": 81,
+  "reconstruction": {
+    "cube_half_extent_m": 0.5,
+    "first_frame_iterations": 500,
+    "minimum_visual_hull_points": 512,
+    "sealed_frame_zero_splat_reused": true,
+    "voxel_resolution": 120,
+    "warm_start_iterations": 250
+  },
+  "result_sha256": "8712ea55236820832156c8a4b01192ec8c303449bfb29d317ce588936792b274",
+  "schema_version": 1,
+  "stage_metadata_sha256": {
+    "depth": {
+      "brics-odroid-006_cam0": "cccfb6240942658ee41e29fe11d5c456f3ee27de2f73a8d824b715be8e219269",
+      "brics-odroid-007_cam0": "80bdbf2caed4a40b4656b4e3955bb2efab1ef20309da5e73b41526848215e827",
+      "brics-odroid-008_cam1": "e923ff996dd31d239584782d32ad956807d359d3fb49ef6e8c9a71466349803b",
+      "brics-odroid-012_cam0": "b18c15c787befa3801ac8a39f87e676749262c05578befa3976006231458d6cd",
+      "brics-odroid-012_cam1": "673b6a80840e907714e61e755cb75103eb163caa1ea0f1f6c4564c30aa792f06",
+      "brics-odroid-013_cam0": "4aef3dcaec1c48fbd5624655a2abe1113caceb1d742e063a42e394b469e27a14",
+      "brics-odroid-014_cam1": "dba7fed1d3355d734e3195590639b8aa1035f6439b8c3360fcbce57ed838c32a",
+      "brics-odroid-015_cam0": "2b0493a50fe56e04cb059eb8d289b6d6341a8d1c9b16385cc78fcd0cc8f2b30a"
+    },
+    "gripper_masks": {
+      "brics-odroid-006_cam0": "f0cb8fe72cd37b3e5326522abdfd9094e78a9c1ec75f8a2de51c0f7df2cf21f1",
+      "brics-odroid-007_cam0": "8106762e83fe3bdb4e9a622991c913e6f1197646004ea7d505301bcfd947281e",
+      "brics-odroid-008_cam1": "482df8af11807115ad7406c1cb1e607af871aecd0b342cefc31035e49894de4c",
+      "brics-odroid-012_cam0": "c8ab97b1c29f3077c8682f684b4c1ffc6f454020b4a88bdd39ce75ecb6cfde22",
+      "brics-odroid-012_cam1": "4a86406bfe18d384b9658503f96eaee9bd7bf4b1bc646ad89727b1ae05aa082b",
+      "brics-odroid-013_cam0": "ee16291ac66d081bcafc1b720c58d92ee71f58ce31171f653e101679b035aff1",
+      "brics-odroid-014_cam1": "0b7ff31e73688751fc5481040a3072424128bb6464157fcdb8864dc160d10ef6",
+      "brics-odroid-015_cam0": "4b4557504e973e132ab0d3943360c5fcd53bf2d15c9f881216310a2f69a7bff3"
+    },
+    "point_cloud": "0dfe0f94f2782acc9e17b70bddb9df608fe5915c48d42bedd0b40ac425749806",
+    "reconstruction": "bd64b3cda827bf9c4c2a4104e90d724ed6f998446e63fa73ca69e18b3d83fdab",
+    "tracking": {
+      "brics-odroid-006_cam0": "78efb70b0b587d8fd4c1d93e476802c2b0325b8d52e70d903c20d2d632b64b98",
+      "brics-odroid-007_cam0": "8d8c1493253e3f8989374cb15f17fb49ea13612a80557b21f6d2a70577480bf3",
+      "brics-odroid-008_cam1": "85bc042208779b8eacfbb16c6932f84bdd1a649beaf750a68c28cad2726d33a8",
+      "brics-odroid-012_cam0": "b9577c2b62664bf7626a66e9ad57878f07317e2887ec4cf26dbef52f0460c43b",
+      "brics-odroid-012_cam1": "2d13a24fdd9bc96cddd070d8012366f9067e6976d5900b393f40b85d32826b8a",
+      "brics-odroid-013_cam0": "67c8a1ceb713f4ebb17a6db1e93d83d577a9d6f0992076880720448ac615f7bb",
+      "brics-odroid-014_cam1": "c422ff091e723c9d314cb99a6c11317f5fb79a5bbe2eb1bf77c60feb18dc80e5",
+      "brics-odroid-015_cam0": "67e0459d373b5e0530aa2617ba7f346e700dbcee699edeb36a05f4a120af6b28"
+    }
+  },
+  "stratum": "filament",
+  "target_frame_count": 76
+}

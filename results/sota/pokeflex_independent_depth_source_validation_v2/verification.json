@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexIndependentDepthSourceValidationVerification",
+  "protocol_payload_sha256": "04ecf64f4b15e543825732b4f9296119ebd5fe47d99dcfc8230cfb70f0c86051",
+  "T2_access_permitted": false,
+  "registered_gate_all_passed": false,
+  "files": {
+    "configs/sota/pokeflex_independent_depth_development_v1.json": "e4bd8800e08fe0d9b54817f268ee94d9c3367186cfa534303b3ca905e7eb7b07",
+    "configs/sota/pokeflex_independent_depth_source_validation_v2.json": "7f887836a5fa86b5e6412f055e1475a2b8b0cb4a265534acf088a2f001244b81",
+    "results/sota/pokeflex_independent_depth_source_validation_v2/design_summary.json": "06e058b6bd7ebe143c94de197578dee7202849b740e10f8f33b06d636b64f349",
+    "results/sota/pokeflex_independent_depth_source_validation_v2/execution_manifest.json": "965b6476b79898966e5bfb5b6d370acf3f58ae35b459c896c4a142bb0599537a",
+    "results/sota/pokeflex_independent_depth_source_validation_v2/summary.json": "ec316c8aca915e773adb863b2077c0c69f1b04dcc74e314fe367dfa1f7ffe76f",
+    "scripts/remote/evaluate_pokeflex_independent_depth_source.py": "02cb50c175b597bffc4d2462ec7471fd5af267e24491ba95cb40d5b09b1ef42d",
+    "scripts/remote/run_pokeflex_checkpoint_registration_independent_depth.py": "7927deb862dac8783b5415197ff65854ec3c0235a01db88689997c9b97f22e25",
+    "scripts/remote/run_pokeflex_checkpoint_registration_smoke.py": "79ba8946653a55a70dc0b990e874754397e18948b9b7ba541158c6641cfc4b43",
+    "scripts/remote/run_pokeflex_independent_depth_source_validation.py": "b1afef9976ae98dcbd07a28bb426a88a43b112b1c68e46cab604368f7ff4c7fc",
+    "src/bayesian_phystwin/pokeflex_independent_depth.py": "f70e2becb2e5f0ace344610084b3484441b9b462c6614c36629a1ab406ab15f4",
+    "src/bayesian_phystwin/pokeflex_independent_depth_evaluation.py": "51157b4d78a96d1bdafa36ff3716bcade98e27ea022fed717805097583b0bb79",
+    "src/bayesian_phystwin/pokeflex_independent_depth_protocol.py": "28ce15db109a57bf9eacca0a22df3f35f372621966321533467a5baa9e6e016e",
+    "src/bayesian_phystwin/pokeflex_independent_depth_source_validation_protocol.py": "be224e17e76965e5e97aa1ccb95717df68d2a63001ed0679f30e93874a25cc39",
+    "src/bayesian_phystwin/pokeflex_independent_depth_staging.py": "d809c7b1f9fac6cf1d0199896ee18622903e18c19a8231b8b0a831e1827630af"
+  },
+  "verification": {
+    "full_pytest": "963 passed, 26 skipped in 158.08s",
+    "scoped_ruff": "passed",
+    "repository_wide_ruff": "8 pre-existing violations in unrelated tracked files; no new-file violation"
+  }
+}

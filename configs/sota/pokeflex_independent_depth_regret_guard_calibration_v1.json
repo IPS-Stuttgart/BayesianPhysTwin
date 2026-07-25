@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexIndependentDepthRegretGuardCalibrationProtocol",
+  "protocol_id": "pokeflex-independent-depth-regret-guard-calibration-v1",
+  "locked_at_utc": "2026-07-22T08:00:00Z",
+  "status": "locked after the three-take prospective replication and before reading any calibration-object T2 archive member or outcome",
+  "claim_boundary": "This is a no-refit independent-object evaluation on the four predeclared calibration objects. It is not the sealed PokeFlex target evaluation or a state-of-the-art claim.",
+  "parent_replication": {
+    "protocol_sha256": "be2bbf6f2e1ac1ce0a536bd02a09633d5607677fe3f7ce8d51cfd8e7d533c447",
+    "result_sha256": "0fc409a1bf85d4ef0e697bdb5604689094914ac57d32652660685007bfd67b98",
+    "repository_commit": "b7656a9",
+    "gate_passed": true
+  },
+  "frozen_deployment": {
+    "source_result_path": "results/sota/pokeflex_independent_depth_regret_guard_source_v1/source_cross_object_evaluation.json",
+    "source_result_sha256": "6065d1178796eba949b0411fbd57b53184e39d38f6559357c740d63b8b47398b",
+    "candidate_protocol_sha256": "04ecf64f4b15e543825732b4f9296119ebd5fe47d99dcfc8230cfb70f0c86051",
+    "candidate_runner_sha256": "7927deb862dac8783b5415197ff65854ec3c0235a01db88689997c9b97f22e25",
+    "feature_schema_and_coefficients": "exactly those serialized in the source result",
+    "selector_correction": "exactly the serialized source selector-aware group bound",
+    "no_refit_or_recalibration": true,
+    "exact_fallback": "released Kinect checkpoint vertices byte-for-byte"
+  },
+  "calibration_cohort": {
+    "take_ids": [
+      "3dPrintedPyramid_T2",
+      "Beanbag_T2",
+      "FoamCylinder_T2",
+      "PlushMoon_T2"
+    ],
+    "archive_existence_and_size_checked_before_lock": true,
+    "archive_members_or_outcomes_read_before_lock": false,
+    "replacement_allowed": false,
+    "target_objects_remain_sealed": true
+  },
+  "causal_input_contract": {
+    "target_frame": "f",
+    "kinect_history": "f-5 through f-1 only",
+    "realsense_evidence_frame": "f-1",
+    "robot_history": "through f-1 only",
+    "frame_f_kinect_or_realsense_allowed_before_prediction": false,
+    "frame_f_mesh_allowed_before_scoring": false,
+    "template_mesh_allowed_for_static_sensor_calibration": true,
+    "target_mesh_role": "scoring only after the candidate bank and frozen guard are fixed"
+  },
+  "evaluation": {
+    "aggregation": "equal frames within take, equal objects",
+    "metric": "unidirectional L1 Chamfer in mm",
+    "published_kinect_reference_CD_UL1_mm": 6.498,
+    "surface_points": 10000,
+    "sampling_seed": 20260720,
+    "minimum_object_balanced_relative_improvement": 0.01,
+    "minimum_object_wins": 3,
+    "maximum_object_regression": 0.01,
+    "maximum_false_safe_rate": 0.10,
+    "require_nonempty_acceptance": true,
+    "all_required_before_target_protocol_drafting": true
+  },
+  "code_lock": {
+    "calibration_runner_sha256": "42d5a88e9ffa6d673898151e68b2174ac071d2fc974e5ca29bd375661944d270",
+    "calibration_evaluator_sha256": "a115dfabe6a716ed5bf9cfda97319d9bb22dbb8e88dc85ac9f78a4d7a742b4a6"
+  },
+  "forbidden": [
+    "reading any calibration T2 archive member before this protocol is committed and pushed",
+    "refitting or recalibrating the source certificate on calibration outcomes",
+    "changing candidate features, selector correction, candidate bank, or scoring after opening an outcome",
+    "using frame-f Kinect or D405 data to select a prediction for frame f",
+    "using target error as a feature or reliability cue",
+    "replacing a failed or unfavorable calibration object",
+    "opening any target-object archive",
+    "calling this calibration evaluation a state-of-the-art result"
+  ],
+  "protocol_sha256": "cef28df26d7710670aa3d73883462e896ec2d903c3be5faf00fee6a8d00a2644"
+}

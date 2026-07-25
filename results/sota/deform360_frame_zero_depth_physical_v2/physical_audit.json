@@ -1,0 +1,95 @@
+{
+  "artifact_kind": "Deform360FrameZeroDepthPhysicalDiagnostic",
+  "cases": [
+    {
+      "all_rollout_values_finite": true,
+      "automatic_twin_passed": true,
+      "automatic_twin_result_sha256": "63bf2b26f3cba0e96fd74890fd377ad2165d2cdfcc2211add05b9d2e80ab7692",
+      "case": "015-airbag-cloth-ep0006",
+      "driven_endpoint_median_displacement_m": 0.09323761612176895,
+      "episode_id": 6,
+      "frame_zero_identity_exact": true,
+      "graph_vertex_count": 1024,
+      "material_point_count": 1109,
+      "object_id": "015-airbag-cloth",
+      "passed": false,
+      "physical_manifest_result_sha256": "9bbb3f29136e33c992c6191c8aa07973a00177805ff73898f523de865fe4b9b9",
+      "physical_mode": "warp_twin",
+      "runner_log_sha256": "17884b52d26d7ab6247b1fda4baf26655077f8570fba9ad9f82c230dab7b3afc",
+      "stratum": "sheet",
+      "zero_action_maximum_displacement_m": 0.3592989146709442,
+      "zero_action_p99_displacement_m": 0.33253279149532317
+    },
+    {
+      "all_rollout_values_finite": true,
+      "automatic_twin_passed": true,
+      "automatic_twin_result_sha256": "fe51e00585c4e7c9cc811aa183d58babe7030247e2bb5fa8b77f999d0534012a",
+      "case": "100-puppet-ep0009",
+      "driven_endpoint_median_displacement_m": 0.1291910856962204,
+      "episode_id": 9,
+      "frame_zero_identity_exact": true,
+      "graph_vertex_count": 1024,
+      "material_point_count": 1334,
+      "object_id": "100-puppet",
+      "passed": false,
+      "physical_manifest_result_sha256": "b0053a8c713d2c84e8f9e0ad2e219f38471816522d5384d05622be106719da61",
+      "physical_mode": "warp_twin",
+      "runner_log_sha256": "021fcd95db543496007cce36c993efa87a04751febb1ae170b69462ee5ff4fc2",
+      "stratum": "volumetric",
+      "zero_action_maximum_displacement_m": 0.32775548100471497,
+      "zero_action_p99_displacement_m": 0.3108951151371002
+    },
+    {
+      "all_rollout_values_finite": true,
+      "automatic_twin_passed": true,
+      "automatic_twin_result_sha256": "3ea0e72b3c5ea2537ddb883adb1fd68da0428aeced3c0bad8459dbef63dc3f2c",
+      "case": "160-hose-ep0001",
+      "driven_endpoint_median_displacement_m": 0.08295442909002304,
+      "episode_id": 1,
+      "frame_zero_identity_exact": true,
+      "graph_vertex_count": 1024,
+      "material_point_count": 1193,
+      "object_id": "160-hose",
+      "passed": true,
+      "physical_manifest_result_sha256": "c9f5bbd0fff555507e78277a9cec6f212fbcc80498c0454d8c84952b11fc2397",
+      "physical_mode": "warp_twin",
+      "runner_log_sha256": "e7180c683a256695131fbc6c020fa56b9f6ffdaa80d46e4c78d3d08d622b25ae",
+      "stratum": "filament",
+      "zero_action_maximum_displacement_m": 0.20192469656467438,
+      "zero_action_p99_displacement_m": 0.18343869969248772
+    }
+  ],
+  "claim_boundary": "Diagnostic-only official-Warp stability test for the three cases recovered by the failed 3/4 depth-supported post-open gate. Passing cannot promote v2 or erase the missing chain case.",
+  "information_boundary": {
+    "future_dense_geometry_used": false,
+    "future_object_rgb_used": false,
+    "future_tracks_used": false,
+    "known_future_action_used_as_conditioning_input": true,
+    "object_observation_frames_used": [
+      0
+    ],
+    "outcome_artifact_used": false,
+    "reserved_target_objects_used": false,
+    "target_metric_used": false
+  },
+  "physical_gate_passed": false,
+  "protocol_config_sha256": "4d756ef8bdcede62399e3da1ae2fd4188ac63774c2cc7531de7d60ab6a43a441",
+  "protocol_id": "deform360-frame-zero-depth-physical-v2",
+  "provenance": {
+    "bayesian_phystwin_revision": "0bd88271add0dd8abff53a71870ea7708bfd3f4d",
+    "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "initializer_module_sha256": "ff92c1531a4e4bd492408f626dc5515d084d5a9a538123c99d32f087b66cc6d8",
+    "official_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "postopen_result_sha256": "4a3d5fbb3a4a87c6e9a5dcd3254add8e7deff5e6ac096517229b7fb47626d9c5",
+    "runner_sha256": "9b87148398069481fae5fbf0a1d83bace9e59b0fa25d6dc060c369973c42838f",
+    "upstream_revision": "58ab4808e59da811dd1a2c66ac628fe4ea2faeab"
+  },
+  "result_sha256": "baac9016acf0555a87252b4b5163b88713fa4968d63cef936b445c7d1298e614",
+  "schema_version": 1,
+  "summary": {
+    "case_count": 3,
+    "passing_case_count": 1,
+    "warp_twin_count": 3
+  }
+}

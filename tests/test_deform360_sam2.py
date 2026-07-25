@@ -6,8 +6,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from causal4d_public.deform360 import load_deform360_protocol_config
-from causal4d_public.deform360_sam2 import (
+from bayesian_phystwin.deform360_sam2 import (
     PINNED_SAM2_CHECKPOINT_SHA256,
     PINNED_SAM2_COMMIT,
     RopeSam2MaskConfig,
@@ -18,17 +17,16 @@ from causal4d_public.deform360_sam2 import (
 )
 
 
-def _config_path() -> Path:
-    return (
-        Path(__file__).resolve().parents[1]
-        / "configs"
-        / "causal4d_public"
-        / "deform360_001_rope_v1.json"
+def _protocol_config() -> SimpleNamespace:
+    return SimpleNamespace(
+        expected_episode_count=10,
+        source_episode_ids=(0, 1, 2, 3, 4, 5),
+        target_episode_ids=(6,),
     )
 
 
 def test_source_masks_do_not_require_a_prediction_seal() -> None:
-    config = load_deform360_protocol_config(_config_path())
+    config = _protocol_config()
 
     access = validate_sam2_episode_access(
         0,
@@ -41,7 +39,7 @@ def test_source_masks_do_not_require_a_prediction_seal() -> None:
 
 
 def test_target_masks_require_a_prediction_seal() -> None:
-    config = load_deform360_protocol_config(_config_path())
+    config = _protocol_config()
 
     with pytest.raises(ValueError, match="full target masks"):
         validate_sam2_episode_access(
@@ -60,7 +58,7 @@ def test_target_masks_require_a_prediction_seal() -> None:
 
 
 def test_source_masks_reject_a_target_prediction_seal() -> None:
-    config = load_deform360_protocol_config(_config_path())
+    config = _protocol_config()
 
     with pytest.raises(ValueError, match="only valid for a target"):
         validate_sam2_episode_access(

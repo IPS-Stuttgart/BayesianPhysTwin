@@ -1,0 +1,25 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveQualityFailure",
+  "case": "160-hose-ep0001",
+  "episode_id": 1,
+  "episode_key": "160-hose/1",
+  "error_message": "Frozen frame-zero point-cloud admission failed after 400 exported Gaussians.",
+  "error_type": "ValueError",
+  "evidence_sha256": {
+    "frame_zero_log": "5c9811025d570556e5c34fcaa26b9fab53d60fda8f21769e4d494efd969ab4c3"
+  },
+  "information_boundary": {
+    "failure_recorded_before_future_open": true,
+    "outcome_manifest_read": false,
+    "target_data_read": false
+  },
+  "object_id": "160-hose",
+  "protocol_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+  "replacement_allowed": false,
+  "result_sha256": "f1f864e6932b71c05800adaa4e283eca0381483690f451bb52bd0e19a073a0f2",
+  "role": "calibration",
+  "schema_version": 1,
+  "stage": "frame-zero-reconstruction",
+  "stratum": "filament"
+}

@@ -80,6 +80,7 @@ class HeadlessPhysTwinRefitConfig:
     profile_likelihood_temperature: float = 1.0
     profile_prediction_mass: float = 1.0
     deterministic_spring_forces: bool = True
+    evaluate_future: bool = True
     device: str = "cuda:0"
 
 
@@ -130,22 +131,21 @@ def _common_objective_metrics(
     observation_variance: float,
     outlier_variance_multiplier: float,
     prior: np.ndarray,
+    evaluate_future: bool = True,
 ) -> dict[str, dict[str, float | int]]:
     residual = observed - trajectory[: len(observed), : observed.shape[1]]
     squared_norm = np.sum(np.square(residual), axis=2)
     result: dict[str, dict[str, float | int]] = {}
-    for name, start, stop in (
-        ("train", 1, train_end_frame),
-        ("test", train_end_frame, len(observed)),
-    ):
+    intervals = [("train", 1, train_end_frame)]
+    if evaluate_future:
+        intervals.append(("test", train_end_frame, len(observed)))
+    for name, start, stop in intervals:
         split_weights = weights[start:stop]
         split_support = support[start:stop].astype(bool)
         weight_sum = float(np.sum(split_weights))
         weighted_rmse = (
             float(
-                np.sqrt(
-                    np.sum(split_weights * squared_norm[start:stop]) / weight_sum
-                )
+                np.sqrt(np.sum(split_weights * squared_norm[start:stop]) / weight_sum)
             )
             if weight_sum > 0.0
             else float("nan")
@@ -154,7 +154,9 @@ def _common_objective_metrics(
         selected_q = squared_norm[start:stop][split_support]
         selected_prior = prior[start:stop][split_support]
         if len(selected_q):
-            log_inlier = np.log(selected_prior) - 0.5 * selected_q / observation_variance
+            log_inlier = (
+                np.log(selected_prior) - 0.5 * selected_q / observation_variance
+            )
             log_outlier = (
                 np.log1p(-selected_prior)
                 - 1.5 * np.log(outlier_variance_multiplier)
@@ -164,8 +166,7 @@ def _common_objective_metrics(
             )
             zero_log_mixture = np.logaddexp(
                 np.log(selected_prior),
-                np.log1p(-selected_prior)
-                - 1.5 * np.log(outlier_variance_multiplier),
+                np.log1p(-selected_prior) - 1.5 * np.log(outlier_variance_multiplier),
             )
             shifted_nll = -observation_variance * (
                 np.logaddexp(log_inlier, log_outlier) - zero_log_mixture
@@ -180,6 +181,24 @@ def _common_objective_metrics(
             "shifted_scaled_mixture_loss": mixture_loss,
         }
     return result
+
+
+def _evaluation_intervals(
+    config: HeadlessPhysTwinRefitConfig,
+    frame_count: int,
+) -> dict[str, tuple[int, int]]:
+    """Return the only observation intervals a replay is allowed to score."""
+
+    if config.fit_end_frame is None:
+        intervals = {"train": (1, config.train_end_frame)}
+    else:
+        intervals = {
+            "fit": (1, config.fit_end_frame),
+            "validation": (config.fit_end_frame, config.train_end_frame),
+        }
+    if config.evaluate_future:
+        intervals["test"] = (config.train_end_frame, frame_count)
+    return intervals
 
 
 def _load_checkpoint(torch: Any, path: str | Path, device: str) -> dict[str, Any]:
@@ -266,9 +285,7 @@ def run_headless_phystwin_refit(
     ):
         raise ValueError("damping log scales must be finite")
     if config.selection_metric not in {"hard_valid_rmse", "official_3d"}:
-        raise ValueError(
-            "selection_metric must be 'hard_valid_rmse' or 'official_3d'"
-        )
+        raise ValueError("selection_metric must be 'hard_valid_rmse' or 'official_3d'")
     if config.selection_metric == "official_3d" and gt_track_path is None:
         raise ValueError("official_3d selection requires gt_track_path")
     if config.early_stopping_patience < 1:
@@ -287,7 +304,9 @@ def run_headless_phystwin_refit(
         config.profile_likelihood_temperature,
     )
     if any(value <= 0.0 for value in profile_positive_values):
-        raise ValueError("profile widths, prior scales, and temperature must be positive")
+        raise ValueError(
+            "profile widths, prior scales, and temperature must be positive"
+        )
     if not 0.0 < config.profile_prediction_mass <= 1.0:
         raise ValueError("profile_prediction_mass must be in (0, 1]")
     if config.profile_grid_count:
@@ -351,11 +370,12 @@ def run_headless_phystwin_refit(
     if not 1 < config.train_end_frame < frame_count:
         raise ValueError("train_end_frame must be between 2 and T-1")
     fit_end_frame = (
-        config.train_end_frame
-        if config.fit_end_frame is None
-        else config.fit_end_frame
+        config.train_end_frame if config.fit_end_frame is None else config.fit_end_frame
     )
-    if config.fit_end_frame is not None and not 1 < fit_end_frame < config.train_end_frame:
+    if (
+        config.fit_end_frame is not None
+        and not 1 < fit_end_frame < config.train_end_frame
+    ):
         raise ValueError("fit_end_frame must be between 2 and train_end_frame-1")
     if config.profile_grid_count and config.fit_end_frame is None:
         raise ValueError("parameter profiling requires fit_end_frame")
@@ -401,7 +421,9 @@ def run_headless_phystwin_refit(
             (structure_points, controller_points[0]), axis=0
         ).astype(np.float32)
         if not np.array_equal(graph.vertices, expected_vertices):
-            raise ValueError("piecewise topology vertices differ from the fitting payload")
+            raise ValueError(
+                "piecewise topology vertices differ from the fitting payload"
+            )
         if graph.num_object_points != len(structure_points):
             raise ValueError("piecewise topology object boundary changed")
         if topology_artifact.diagnostics["object_component_count"] != 1:
@@ -441,9 +463,7 @@ def run_headless_phystwin_refit(
             graph.springs,
             num_object_springs=graph.num_object_springs,
             rank=config.spring_basis_rank,
-            length_scale_multiplier=(
-                config.spring_basis_length_scale_multiplier
-            ),
+            length_scale_multiplier=(config.spring_basis_length_scale_multiplier),
         )
     checkpoint = _load_checkpoint(torch, checkpoint_path, config.device)
     checkpoint_spring_y = torch.as_tensor(
@@ -508,9 +528,7 @@ def run_headless_phystwin_refit(
         dashpot_damping=float(
             optimal["dashpot_damping"] * np.exp(config.dashpot_log_scale)
         ),
-        drag_damping=float(
-            optimal["drag_damping"] * np.exp(config.drag_log_scale)
-        ),
+        drag_damping=float(optimal["drag_damping"] * np.exp(config.drag_log_scale)),
         collide_object_elas=float(optimal["collide_object_elas"]),
         collide_object_fric=float(optimal["collide_object_fric"]),
         collision_dist=float(optimal["collision_dist"]),
@@ -535,22 +553,20 @@ def run_headless_phystwin_refit(
         num_object_springs=graph.num_object_springs,
         spring_group_ids=spring_group_ids,
         spring_basis_weights=(
-            None
-            if canonical_spring_basis is None
-            else canonical_spring_basis.weights
+            None if canonical_spring_basis is None else canonical_spring_basis.weights
         ),
         deterministic_spring_forces=config.deterministic_spring_forces,
     )
-    simulator.set_reference_spring_y(
-        torch.log(checkpoint_spring_y).detach().clone()
-    )
+    simulator.set_reference_spring_y(torch.log(checkpoint_spring_y).detach().clone())
 
     def checkpoint_value(name: str) -> Any:
         return torch.as_tensor(
             checkpoint[name], dtype=torch.float32, device=config.device
         ).reshape(-1)
 
-    simulator.set_collide(checkpoint_value("collide_elas"), checkpoint_value("collide_fric"))
+    simulator.set_collide(
+        checkpoint_value("collide_elas"), checkpoint_value("collide_fric")
+    )
     simulator.set_collide_object(
         checkpoint_value("collide_object_elas"),
         checkpoint_value("collide_object_fric"),
@@ -565,11 +581,7 @@ def run_headless_phystwin_refit(
             pure_inference=True,
         )
         frames = [
-            wp.to_torch(simulator.wp_states[0].wp_x)
-            .detach()
-            .cpu()
-            .numpy()
-            .copy()
+            wp.to_torch(simulator.wp_states[0].wp_x).detach().cpu().numpy().copy()
         ]
         for frame in range(1, stop_frame):
             simulator.set_controller_target(frame, pure_inference=True)
@@ -578,11 +590,7 @@ def run_headless_phystwin_refit(
             wp.capture_launch(simulator.forward_graph)
             wp.synchronize()
             frames.append(
-                wp.to_torch(simulator.wp_states[-1].wp_x)
-                .detach()
-                .cpu()
-                .numpy()
-                .copy()
+                wp.to_torch(simulator.wp_states[-1].wp_x).detach().cpu().numpy().copy()
             )
             simulator.set_init_state(
                 simulator.wp_states[-1].wp_x,
@@ -610,9 +618,7 @@ def run_headless_phystwin_refit(
     def restore_parameters(parameters: dict[str, Any]) -> None:
         if config.spring_parameterization != "dense":
             with torch.no_grad():
-                simulator.group_log_scale_tensor.copy_(
-                    parameters["group_log_scales"]
-                )
+                simulator.group_log_scale_tensor.copy_(parameters["group_log_scales"])
         else:
             simulator.set_spring_Y(parameters["spring_log_y"])
         simulator.set_collide(
@@ -659,9 +665,7 @@ def run_headless_phystwin_refit(
             result["official_chamfer_distance_m"] = float(
                 official_metrics["chamfer_distance_m"]
             )
-            result["official_track_error_m"] = float(
-                official_metrics["track_error_m"]
-            )
+            result["official_track_error_m"] = float(official_metrics["track_error_m"])
         return result
 
     def validation_score(
@@ -673,8 +677,7 @@ def run_headless_phystwin_refit(
         return 0.5 * (
             metrics["official_chamfer_distance_m"]
             / baseline["official_chamfer_distance_m"]
-            + metrics["official_track_error_m"]
-            / baseline["official_track_error_m"]
+            + metrics["official_track_error_m"] / baseline["official_track_error_m"]
         )
 
     history: list[dict[str, float | int]] = []
@@ -767,9 +770,7 @@ def run_headless_phystwin_refit(
                         for name, value in current_validation_metrics.items()
                     }
                 )
-                epoch_result["validation_selection_score"] = (
-                    current_validation_score
-                )
+                epoch_result["validation_selection_score"] = current_validation_score
                 if current_validation_score < float(best_validation_score):
                     best_validation_score = current_validation_score
                     best_validation_metrics = current_validation_metrics
@@ -793,11 +794,7 @@ def run_headless_phystwin_refit(
         torch.exp(wp.to_torch(simulator.wp_spring_Y)).detach().cpu().numpy().copy()
     )
     final_group_log_scales = (
-        wp.to_torch(simulator.wp_group_log_scales)
-        .detach()
-        .cpu()
-        .numpy()
-        .copy()
+        wp.to_torch(simulator.wp_group_log_scales).detach().cpu().numpy().copy()
     )
     final_collision = {
         name: float(wp.to_torch(getattr(simulator, f"wp_{name}")).item())
@@ -808,37 +805,40 @@ def run_headless_phystwin_refit(
             "collide_object_fric",
         )
     }
-    evaluation = evaluate_phystwin_trajectory(
-        object_points,
-        trajectory,
-        visible,
-        motion_valid,
-        train_end_frame=config.train_end_frame,
+    evaluation = (
+        evaluate_phystwin_trajectory(
+            object_points,
+            trajectory,
+            visible,
+            motion_valid,
+            train_end_frame=config.train_end_frame,
+        )
+        if config.evaluate_future
+        else evaluate_phystwin_trajectory_splits(
+            object_points,
+            trajectory,
+            visible,
+            motion_valid,
+            splits={"train": (1, config.train_end_frame)},
+        )
     )
     selection_evaluation = None
     baseline_evaluation = None
     if config.fit_end_frame is not None:
+        evaluation_intervals = _evaluation_intervals(config, frame_count)
         selection_evaluation = evaluate_phystwin_trajectory_splits(
             object_points,
             trajectory,
             visible,
             motion_valid,
-            splits={
-                "fit": (1, fit_end_frame),
-                "validation": (fit_end_frame, config.train_end_frame),
-                "test": (config.train_end_frame, frame_count),
-            },
+            splits=evaluation_intervals,
         )
         baseline_evaluation = evaluate_phystwin_trajectory_splits(
             object_points,
             baseline_trajectory,
             visible,
             motion_valid,
-            splits={
-                "fit": (1, fit_end_frame),
-                "validation": (fit_end_frame, config.train_end_frame),
-                "test": (config.train_end_frame, frame_count),
-            },
+            splits=evaluation_intervals,
         )
 
     def official_split_evaluation(
@@ -846,18 +846,7 @@ def run_headless_phystwin_refit(
     ) -> dict[str, dict[str, object]] | None:
         if gt_track_3d is None:
             return None
-        split_intervals = (
-            {
-                "train": (1, config.train_end_frame),
-                "test": (config.train_end_frame, frame_count),
-            }
-            if config.fit_end_frame is None
-            else {
-                "fit": (1, fit_end_frame),
-                "validation": (fit_end_frame, config.train_end_frame),
-                "test": (config.train_end_frame, frame_count),
-            }
-        )
+        split_intervals = _evaluation_intervals(config, frame_count)
         return {
             name: evaluate_official_phystwin_interval(
                 trajectory_value,
@@ -902,6 +891,7 @@ def run_headless_phystwin_refit(
         ),
         outlier_variance_multiplier=config.outlier_variance_multiplier,
         prior=common_objective.prior_inlier_probability,
+        evaluate_future=config.evaluate_future,
     )
 
     profile_summary = None
@@ -936,18 +926,14 @@ def run_headless_phystwin_refit(
                     + ", ".join(sorted(missing_external))
                 )
             if not (
-                np.array_equal(
-                    external_profile["object_log_scales"], object_scale_grid
-                )
+                np.array_equal(external_profile["object_log_scales"], object_scale_grid)
                 and np.array_equal(
                     external_profile["controller_log_scales"],
                     controller_scale_grid,
                 )
             ):
                 raise ValueError("external profile weights do not match config grids")
-            log_likelihood = np.asarray(
-                external_profile["log_likelihood"], dtype=float
-            )
+            log_likelihood = np.asarray(external_profile["log_likelihood"], dtype=float)
         else:
             log_likelihood = np.empty(
                 (config.profile_grid_count, config.profile_grid_count),
@@ -965,9 +951,7 @@ def run_headless_phystwin_refit(
                                 device=config.device,
                             )
                         )
-                    candidate = simulate_trajectory(fit_end_frame)[
-                        :, :original_count
-                    ]
+                    candidate = simulate_trajectory(fit_end_frame)[:, :original_count]
                     log_likelihood[object_index, controller_index] = (
                         clustered_track_log_likelihood(
                             object_points,
@@ -1002,7 +986,9 @@ def run_headless_phystwin_refit(
             if not np.all(np.isfinite(prediction_weights)) or np.any(
                 prediction_weights < 0.0
             ):
-                raise ValueError("external posterior_weights must be finite and nonnegative")
+                raise ValueError(
+                    "external posterior_weights must be finite and nonnegative"
+                )
             weight_sum = float(np.sum(prediction_weights))
             if weight_sum <= 0.0:
                 raise ValueError("external posterior_weights must have positive mass")
@@ -1021,9 +1007,7 @@ def run_headless_phystwin_refit(
         map_trajectory = None
         flat_index = 0
         for object_index, object_scale in enumerate(object_scale_grid):
-            for controller_index, controller_scale in enumerate(
-                controller_scale_grid
-            ):
+            for controller_index, controller_scale in enumerate(controller_scale_grid):
                 with torch.no_grad():
                     simulator.group_log_scale_tensor.copy_(
                         torch.tensor(
@@ -1048,24 +1032,17 @@ def run_headless_phystwin_refit(
             0.0,
         ).astype(np.float32)
         assert map_trajectory is not None
+        profile_intervals = _evaluation_intervals(config, frame_count)
         posterior_evaluation = evaluate_phystwin_trajectory_splits(
             object_points,
             posterior_mean,
             visible,
             motion_valid,
-            splits={
-                "fit": (1, fit_end_frame),
-                "validation": (fit_end_frame, config.train_end_frame),
-                "test": (config.train_end_frame, frame_count),
-            },
+            splits=profile_intervals,
         )
         posterior_calibration: dict[str, dict[str, float | int]] = {}
         reference_calibration: dict[str, dict[str, float | int]] = {}
-        for split_name, split_start, split_stop in (
-            ("fit", 1, fit_end_frame),
-            ("validation", fit_end_frame, config.train_end_frame),
-            ("test", config.train_end_frame, frame_count),
-        ):
+        for split_name, (split_start, split_stop) in profile_intervals.items():
             split_mask = np.zeros_like(visible)
             split_mask[split_start:split_stop] = hard_objective.support[
                 split_start:split_stop
@@ -1076,9 +1053,7 @@ def run_headless_phystwin_refit(
                 epistemic_variance[:, :original_count],
                 split_mask,
                 observation_variance=config.observation_variance,
-                model_discrepancy_variance=(
-                    config.model_discrepancy_variance
-                ),
+                model_discrepancy_variance=(config.model_discrepancy_variance),
             )
             reference_calibration[split_name] = predictive_observation_calibration(
                 object_points,
@@ -1086,9 +1061,7 @@ def run_headless_phystwin_refit(
                 np.zeros_like(object_points),
                 split_mask,
                 observation_variance=config.observation_variance,
-                model_discrepancy_variance=(
-                    config.model_discrepancy_variance
-                ),
+                model_discrepancy_variance=(config.model_discrepancy_variance),
             )
         profile_summary = {
             "particle_count": int(config.profile_grid_count**2),
@@ -1112,9 +1085,7 @@ def run_headless_phystwin_refit(
                 np.sum(np.sum(prediction_weights, axis=1) * object_scale_grid)
             ),
             "prediction_controller_log_scale_mean": float(
-                np.sum(
-                    np.sum(prediction_weights, axis=0) * controller_scale_grid
-                )
+                np.sum(np.sum(prediction_weights, axis=0) * controller_scale_grid)
             ),
             "log_likelihood_minimum": float(np.min(log_likelihood)),
             "log_likelihood_maximum": float(np.max(log_likelihood)),
@@ -1147,19 +1118,30 @@ def run_headless_phystwin_refit(
     released_baseline_parity = None
     selected_baseline_parity = None
     if baseline_trajectory is not None:
+        parity_stop = frame_count if config.evaluate_future else config.train_end_frame
         selected_baseline_parity = phystwin_tracking_metrics(
-            baseline_trajectory,
-            trajectory,
-            np.ones(baseline_trajectory.shape[:2], dtype=bool),
+            baseline_trajectory[:parity_stop],
+            trajectory[:parity_stop],
+            np.ones(baseline_trajectory[:parity_stop].shape[:2], dtype=bool),
         )
     if released_trajectory_path is not None:
         released = np.asarray(_load_pickle(released_trajectory_path), dtype=np.float32)
-        released_evaluation = evaluate_phystwin_trajectory(
-            object_points,
-            released,
-            visible,
-            motion_valid,
-            train_end_frame=config.train_end_frame,
+        released_evaluation = (
+            evaluate_phystwin_trajectory(
+                object_points,
+                released,
+                visible,
+                motion_valid,
+                train_end_frame=config.train_end_frame,
+            )
+            if config.evaluate_future
+            else evaluate_phystwin_trajectory_splits(
+                object_points,
+                released,
+                visible,
+                motion_valid,
+                splits={"train": (1, config.train_end_frame)},
+            )
         )
         if config.fit_end_frame is not None:
             released_split_evaluation = evaluate_phystwin_trajectory_splits(
@@ -1167,14 +1149,11 @@ def run_headless_phystwin_refit(
                 released,
                 visible,
                 motion_valid,
-                splits={
-                    "fit": (1, fit_end_frame),
-                    "validation": (fit_end_frame, config.train_end_frame),
-                    "test": (config.train_end_frame, frame_count),
-                },
+                splits=_evaluation_intervals(config, frame_count),
             )
         released_official_evaluation = official_split_evaluation(released)
-        parity_frames = min(len(released), len(trajectory))
+        parity_limit = frame_count if config.evaluate_future else config.train_end_frame
+        parity_frames = min(len(released), len(trajectory), parity_limit)
         parity_vertices = min(released.shape[1], trajectory.shape[1])
         released_parity = phystwin_tracking_metrics(
             released[:parity_frames, :parity_vertices],
@@ -1182,10 +1161,8 @@ def run_headless_phystwin_refit(
             np.ones((parity_frames, parity_vertices), dtype=bool),
         )
         if baseline_trajectory is not None:
-            baseline_frames = min(len(released), len(baseline_trajectory))
-            baseline_vertices = min(
-                released.shape[1], baseline_trajectory.shape[1]
-            )
+            baseline_frames = min(len(released), len(baseline_trajectory), parity_limit)
+            baseline_vertices = min(released.shape[1], baseline_trajectory.shape[1])
             released_baseline_parity = phystwin_tracking_metrics(
                 released[:baseline_frames, :baseline_vertices],
                 baseline_trajectory[:baseline_frames, :baseline_vertices],
@@ -1258,9 +1235,7 @@ def run_headless_phystwin_refit(
                 else torch.as_tensor(canonical_spring_basis.weights)
             ),
             "spring_group_ids": (
-                None
-                if spring_group_ids is None
-                else torch.as_tensor(spring_group_ids)
+                None if spring_group_ids is None else torch.as_tensor(spring_group_ids)
             ),
             "source_checkpoint": str(Path(checkpoint_path).resolve()),
         },
@@ -1269,6 +1244,7 @@ def run_headless_phystwin_refit(
 
     summary = {
         "schema_version": 1,
+        "future_metrics_opened": config.evaluate_future,
         "config": asdict(config),
         "runtime_seconds": float(time.time() - started),
         "code_commit": _git_commit(Path(__file__).resolve().parents[2]),
@@ -1352,9 +1328,7 @@ def run_headless_phystwin_refit(
             "springs_sha256": _array_hash(graph.springs),
             "rest_lengths_sha256": _array_hash(graph.rest_lengths),
             "spring_group_ids_sha256": (
-                None
-                if spring_group_ids is None
-                else _array_hash(spring_group_ids)
+                None if spring_group_ids is None else _array_hash(spring_group_ids)
             ),
             "spring_group_counts": (
                 None
@@ -1362,25 +1336,19 @@ def run_headless_phystwin_refit(
                 else np.bincount(spring_group_ids).astype(int).tolist()
             ),
             "piecewise_topology_diagnostics": (
-                None
-                if topology_artifact is None
-                else topology_artifact.diagnostics
+                None if topology_artifact is None else topology_artifact.diagnostics
             ),
             "canonical_spring_basis": (
                 None
                 if canonical_spring_basis is None
                 else {
                     "object_rank": canonical_spring_basis.object_rank,
-                    "parameter_count": int(
-                        canonical_spring_basis.weights.shape[1]
-                    ),
+                    "parameter_count": int(canonical_spring_basis.weights.shape[1]),
                     "controller_parameter_index": (
                         canonical_spring_basis.controller_parameter_index
                     ),
                     "length_scale_m": canonical_spring_basis.length_scale_m,
-                    "weights_sha256": _array_hash(
-                        canonical_spring_basis.weights
-                    ),
+                    "weights_sha256": _array_hash(canonical_spring_basis.weights),
                     "center_spring_indices": (
                         canonical_spring_basis.center_spring_indices.tolist()
                     ),
@@ -1393,57 +1361,57 @@ def run_headless_phystwin_refit(
             "log_spring_rms_change": float(
                 np.sqrt(
                     np.mean(
-                        np.square(
-                            np.log(final_spring_y) - np.log(initial_spring_y)
-                        )
+                        np.square(np.log(final_spring_y) - np.log(initial_spring_y))
                     )
                 )
             ),
             "group_log_scales": (
                 None
                 if config.spring_parameterization == "canonical_basis"
-                else ({
-                    "regions": [
-                        float(value)
-                        for value in final_group_log_scales[
-                            : config.spring_region_count
-                        ]
-                    ],
-                    "controller": float(
-                        final_group_log_scales[config.spring_region_count]
-                    ),
-                }
-                if config.spring_parameterization == "regional"
                 else (
                     {
-                        "part_pairs": [
-                            {
-                                "parts": [int(pair[0]), int(pair[1])],
-                                "spring_count": int(
-                                    part_pair_grouping.group_counts[index]
-                                ),
-                                "log_scale": float(final_group_log_scales[index]),
-                            }
-                            for index, pair in enumerate(
-                                part_pair_grouping.object_part_pairs
-                            )
+                        "regions": [
+                            float(value)
+                            for value in final_group_log_scales[
+                                : config.spring_region_count
+                            ]
                         ],
-                        "controller": (
-                            None
-                            if part_pair_grouping.controller_group is None
-                            else float(
-                                final_group_log_scales[
-                                    part_pair_grouping.controller_group
-                                ]
-                            )
+                        "controller": float(
+                            final_group_log_scales[config.spring_region_count]
                         ),
                     }
-                    if config.spring_parameterization == "part_pair"
-                    else {
-                    "object": float(final_group_log_scales[0]),
-                    "controller": float(final_group_log_scales[1]),
-                    }
-                ))
+                    if config.spring_parameterization == "regional"
+                    else (
+                        {
+                            "part_pairs": [
+                                {
+                                    "parts": [int(pair[0]), int(pair[1])],
+                                    "spring_count": int(
+                                        part_pair_grouping.group_counts[index]
+                                    ),
+                                    "log_scale": float(final_group_log_scales[index]),
+                                }
+                                for index, pair in enumerate(
+                                    part_pair_grouping.object_part_pairs
+                                )
+                            ],
+                            "controller": (
+                                None
+                                if part_pair_grouping.controller_group is None
+                                else float(
+                                    final_group_log_scales[
+                                        part_pair_grouping.controller_group
+                                    ]
+                                )
+                            ),
+                        }
+                        if config.spring_parameterization == "part_pair"
+                        else {
+                            "object": float(final_group_log_scales[0]),
+                            "controller": float(final_group_log_scales[1]),
+                        }
+                    )
+                )
             ),
             "canonical_spring_field": (
                 None
@@ -1454,17 +1422,13 @@ def run_headless_phystwin_refit(
                     ],
                     "object_log_scale_min": float(
                         np.min(
-                            canonical_spring_basis.weights[
-                                : graph.num_object_springs
-                            ]
+                            canonical_spring_basis.weights[: graph.num_object_springs]
                             @ final_group_log_scales
                         )
                     ),
                     "object_log_scale_max": float(
                         np.max(
-                            canonical_spring_basis.weights[
-                                : graph.num_object_springs
-                            ]
+                            canonical_spring_basis.weights[: graph.num_object_springs]
                             @ final_group_log_scales
                         )
                     ),
@@ -1531,9 +1495,7 @@ def run_headless_phystwin_refit(
                 None if profile_path is None else str(profile_path.resolve())
             ),
             "canonical_spring_basis": (
-                None
-                if spring_basis_path is None
-                else str(spring_basis_path.resolve())
+                None if spring_basis_path is None else str(spring_basis_path.resolve())
             ),
         },
     }

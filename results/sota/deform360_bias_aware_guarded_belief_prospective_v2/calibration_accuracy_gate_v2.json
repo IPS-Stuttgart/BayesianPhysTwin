@@ -1,0 +1,320 @@
+{
+  "accepted_harmful_objects": [
+    "076-rubber-bands",
+    "078-fishing-line",
+    "175-plastic-bag-cloth",
+    "163-bear"
+  ],
+  "artifact_kind": "Deform360BiasAwareProspectiveV2CalibrationAccuracyGate",
+  "calibration_evaluation_result_sha256": {
+    "011-green-cloth-ep0000": "19568826b7d5d62b1a840dcf37168708d0d2dbd297ff5896f3f917fdeaa11a9c",
+    "076-rubber-bands-ep0000": "5664aa47507e7b8e103665f171bf877028bf7773e45d60472bacfcafde57bf1c",
+    "078-fishing-line-ep0004": "40c9f93a7a70f3c85bf00d82ba170acadc97d4201e5e1a5355acc35f9020d9b4",
+    "088-snake-ep0001": "4682a94d82c2800caa70f165b4d0eccc5e7d7e08941f669b5e678a51d15ba9bc",
+    "161-tube-ep0004": "58f633322e3758d8b2c584bb7680b4dd7e898e69275774f51d7edc682510a49b",
+    "163-bear-ep0001": "5c793858927d2b237e0d51296779899fc3934537d1756ef113252f37a48b3a48",
+    "168-cat-big-ep0000": "3033ae6741b3f611d414822630066785ab873097b7ac2f4859b342bf4b517211",
+    "175-plastic-bag-cloth-ep0003": "3531c11d616e716ea7c30160b1b0fe0459280e0f1157a0bb4a3d1713ac3f7253"
+  },
+  "calibration_gate_passed": false,
+  "calibration_prediction_cohort_result_sha256": "5d5317c9f7c1a35a28242490156cb1971f1a25f82dfbfb7200b175afe424b6c9",
+  "calibration_support_gate_result_sha256": "58194bc33b9018e4b2ccf3e5e71bec39f911d88a98e0f8a69f66381c2413510a",
+  "claim_boundary": "fresh calibration accuracy and non-regression gate only; not an official Deform360 or state-of-the-art result",
+  "combined_eligible_object_group_count": 8,
+  "combined_group_worst_regret_m": {
+    "002-rope-silk": -0.001998798742991026,
+    "076-rubber-bands": 0.00010127958733602933,
+    "078-fishing-line": 0.0023032382003146997,
+    "083-blanket-cloth": -1.887323425379516e-05,
+    "085-scarf-cloth": -8.871136285708119e-06,
+    "163-bear": 0.001565501255642201,
+    "170-spider": -1.527995763579877e-05,
+    "175-plastic-bag-cloth": 0.001310108817788682
+  },
+  "evaluable_object_count": 8,
+  "failed_gate_action": "publish calibration failure and keep every target sealed",
+  "finite_sample_coverage": 0.8888888888888888,
+  "finite_sample_rank": 8,
+  "gates": {
+    "accepted_harmful_object_count": false,
+    "co_primary_object_balanced_mean_regret_negative": false,
+    "every_rejection_bit_exact_fallback": true,
+    "minimum_combined_eligible_object_groups": false,
+    "minimum_new_eligible_object_groups": false,
+    "required_finite_sample_coverage": false,
+    "required_upper_regret": false,
+    "support_gate_passed": true
+  },
+  "information_boundary": {
+    "calibration_futures_opened_after_support_gate": true,
+    "candidate_threshold_changed": false,
+    "method_family_changed": false,
+    "observation_model_changed": false,
+    "target_future_read": false,
+    "target_object_media_read": false
+  },
+  "minimum_improvement_m": 5e-06,
+  "new_eligible_object_group_count": 4,
+  "object_balanced_regret_m": {
+    "post_update_hidden_identity_rmse_m": 0.00012870369511195105,
+    "post_update_hidden_symmetric_chamfer_m": 0.0002068943202013308
+  },
+  "object_results": [
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "076-rubber-bands-ep0000"
+      ],
+      "eligible_update_count": 1,
+      "episode_count": 1,
+      "episodes": [
+        0
+      ],
+      "evaluation_result_sha256": {
+        "076-rubber-bands-ep0000": "5664aa47507e7b8e103665f171bf877028bf7773e45d60472bacfcafde57bf1c"
+      },
+      "object_id": "076-rubber-bands",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": -5.229412648331561e-06,
+        "post_update_hidden_symmetric_chamfer_m": 3.3759862445342965e-05
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.003391858155878527,
+          "post_update_hidden_symmetric_chamfer_m": 0.0023474420610928794
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0033970875685268584,
+          "post_update_hidden_symmetric_chamfer_m": 0.0023136821986475364
+        }
+      },
+      "stratum": "filament",
+      "worst_eligible_interval_regret_m": 0.00010127958733602933
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "078-fishing-line-ep0004"
+      ],
+      "eligible_update_count": 1,
+      "episode_count": 1,
+      "episodes": [
+        4
+      ],
+      "evaluation_result_sha256": {
+        "078-fishing-line-ep0004": "40c9f93a7a70f3c85bf00d82ba170acadc97d4201e5e1a5355acc35f9020d9b4"
+      },
+      "object_id": "078-fishing-line",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.0004264943565596786,
+        "post_update_hidden_symmetric_chamfer_m": 0.0007677460667715667
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.0021217922323175068,
+          "post_update_hidden_symmetric_chamfer_m": 0.0018466040960666535
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0016952978757578281,
+          "post_update_hidden_symmetric_chamfer_m": 0.0010788580292950868
+        }
+      },
+      "stratum": "filament",
+      "worst_eligible_interval_regret_m": 0.0023032382003146997
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "088-snake-ep0001"
+      ],
+      "eligible_update_count": 0,
+      "episode_count": 1,
+      "episodes": [
+        1
+      ],
+      "evaluation_result_sha256": {
+        "088-snake-ep0001": "4682a94d82c2800caa70f165b4d0eccc5e7d7e08941f669b5e678a51d15ba9bc"
+      },
+      "object_id": "088-snake",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.0,
+        "post_update_hidden_symmetric_chamfer_m": 0.0
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.0005854569389860331,
+          "post_update_hidden_symmetric_chamfer_m": 0.0007481848154175619
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0005854569389860331,
+          "post_update_hidden_symmetric_chamfer_m": 0.0007481848154175619
+        }
+      },
+      "stratum": "filament",
+      "worst_eligible_interval_regret_m": null
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "161-tube-ep0004"
+      ],
+      "eligible_update_count": 0,
+      "episode_count": 1,
+      "episodes": [
+        4
+      ],
+      "evaluation_result_sha256": {
+        "161-tube-ep0004": "58f633322e3758d8b2c584bb7680b4dd7e898e69275774f51d7edc682510a49b"
+      },
+      "object_id": "161-tube",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.0,
+        "post_update_hidden_symmetric_chamfer_m": 0.0
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.0002650688355808369,
+          "post_update_hidden_symmetric_chamfer_m": 0.00014914500013624287
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0002650688355808369,
+          "post_update_hidden_symmetric_chamfer_m": 0.00014914500013624287
+        }
+      },
+      "stratum": "filament",
+      "worst_eligible_interval_regret_m": null
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "011-green-cloth-ep0000"
+      ],
+      "eligible_update_count": 0,
+      "episode_count": 1,
+      "episodes": [
+        0
+      ],
+      "evaluation_result_sha256": {
+        "011-green-cloth-ep0000": "19568826b7d5d62b1a840dcf37168708d0d2dbd297ff5896f3f917fdeaa11a9c"
+      },
+      "object_id": "011-green-cloth",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.0,
+        "post_update_hidden_symmetric_chamfer_m": 0.0
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.0001435594018025331,
+          "post_update_hidden_symmetric_chamfer_m": 0.00016114578584231127
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0001435594018025331,
+          "post_update_hidden_symmetric_chamfer_m": 0.00016114578584231127
+        }
+      },
+      "stratum": "sheet",
+      "worst_eligible_interval_regret_m": null
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "175-plastic-bag-cloth-ep0003"
+      ],
+      "eligible_update_count": 1,
+      "episode_count": 1,
+      "episodes": [
+        3
+      ],
+      "evaluation_result_sha256": {
+        "175-plastic-bag-cloth-ep0003": "3531c11d616e716ea7c30160b1b0fe0459280e0f1157a0bb4a3d1713ac3f7253"
+      },
+      "object_id": "175-plastic-bag-cloth",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.000436702939262894,
+        "post_update_hidden_symmetric_chamfer_m": 0.0003318148805130027
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.001441425051100975,
+          "post_update_hidden_symmetric_chamfer_m": 0.0013247182056411347
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.001004722111838081,
+          "post_update_hidden_symmetric_chamfer_m": 0.000992903325128132
+        }
+      },
+      "stratum": "sheet",
+      "worst_eligible_interval_regret_m": 0.001310108817788682
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "163-bear-ep0001"
+      ],
+      "eligible_update_count": 1,
+      "episode_count": 1,
+      "episodes": [
+        1
+      ],
+      "evaluation_result_sha256": {
+        "163-bear-ep0001": "5c793858927d2b237e0d51296779899fc3934537d1756ef113252f37a48b3a48"
+      },
+      "object_id": "163-bear",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.00017166167772136734,
+        "post_update_hidden_symmetric_chamfer_m": 0.0005218337518807341
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 0.002989743936815379,
+          "post_update_hidden_symmetric_chamfer_m": 0.0023505369857645254
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.002818082259094012,
+          "post_update_hidden_symmetric_chamfer_m": 0.0018287032338837913
+        }
+      },
+      "stratum": "volumetric",
+      "worst_eligible_interval_regret_m": 0.001565501255642201
+    },
+    {
+      "all_rejections_bit_exact_fallback": true,
+      "cases": [
+        "168-cat-big-ep0000"
+      ],
+      "eligible_update_count": 0,
+      "episode_count": 1,
+      "episodes": [
+        0
+      ],
+      "evaluation_result_sha256": {
+        "168-cat-big-ep0000": "3033ae6741b3f611d414822630066785ab873097b7ac2f4859b342bf4b517211"
+      },
+      "object_id": "168-cat-big",
+      "regret_m": {
+        "post_update_hidden_identity_rmse_m": 0.0,
+        "post_update_hidden_symmetric_chamfer_m": 0.0
+      },
+      "scores": {
+        "prediction": {
+          "post_update_hidden_identity_rmse_m": 1.0428067568278611e-05,
+          "post_update_hidden_symmetric_chamfer_m": 2.2065495670197167e-06
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 1.0428067568278611e-05,
+          "post_update_hidden_symmetric_chamfer_m": 2.2065495670197167e-06
+        }
+      },
+      "stratum": "volumetric",
+      "worst_eligible_interval_regret_m": null
+    }
+  ],
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "result_sha256": "44ac5447d05ba2d9c5fcc200b0bb63781cf1b6faf83d27ef1051be19365d5a2c",
+  "schema_version": 1,
+  "source_group_count": 4,
+  "source_lock_sha256": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6",
+  "target_access_authorized": false,
+  "upper_regret_m": 0.0023032382003146997
+}

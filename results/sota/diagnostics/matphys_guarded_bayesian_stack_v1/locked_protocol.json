@@ -1,0 +1,45 @@
+{
+  "locked_at_utc": "2026-07-19T19:52:12.215495+00:00",
+  "protocol_id": "e837605957d6e63ab3281e3b69fe3ff5a8e22577974f3738ba5e5aba675952b0",
+  "schema_version": 1,
+  "specification": {
+    "cases": [
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "double_lift_cloth_1",
+      "double_lift_zebra",
+      "single_push_sloth"
+    ],
+    "families": {
+      "incumbent": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/incumbent_released/overlay_v1/external_backbone_registered_subset_summary.json",
+        "sha256": "cbf917e2dde31fe91551838e0f9fe9bc2092fc63b25265e2b51e8b173a58fffd"
+      },
+      "proposal": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/bayesian_overlay_v1/external_backbone_registered_subset_summary.json",
+        "sha256": "3f3e685d5ac1a90e720b9014165aa8ebd26463ec1f1a46a5817663fe44820a28"
+      }
+    },
+    "information_boundary": "selection ends at released training boundary",
+    "maximum_metric_regression": 0.0,
+    "maximum_stability_coordinate_rmse_m": 0.001,
+    "method": "causal validation gate across backbone families",
+    "minimum_relative_improvement": 0.001,
+    "reference_family": "incumbent",
+    "registered_subset_protocol": {
+      "path": "/tmp/bpt-family-gate-v2/configs/sota/matphys_source_supervised_meta_smoke_v1.json",
+      "sha256": "89c59ed5ffe5a4e944939192623cf3e9761bdd8331932c9b2f3232558b448f71"
+    },
+    "score": "equal weight mean of validation CD and track error, each normalized to the reference family's raw backbone",
+    "stability_boundary": "full simulator rollouts under known actions; no future observations",
+    "stability_controls": {
+      "proposal": {
+        "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/proposal_stability_control_manifest.json",
+        "sha256": "3da6cd832d07f85981eb2cf2727b6d921fef3d62594376e99845e93d236ffd5f"
+      }
+    },
+    "status": "exploratory registered subset; not independent SOTA evidence",
+    "tie_break": "family declaration order; reference family declared first",
+    "within_family_candidate": "existing validation-selected trajectory"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveV2ExecutionLock",
+  "schema_version": 1,
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "adapter_lock_commit": "7d534f34a303d9701c9d0a9c77b17d3a97b69148",
+  "locked_before_calibration_future_read": true,
+  "files_sha256": {
+    "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01",
+    "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2.json": "57b4a8c7c9715e722d758ac145d26f543a2123cc65cdb8890de20b457a9d3755",
+    "scripts/remote/seal_deform360_bias_aware_v2_support.py": "b92e8c4cd8c38c96db8518c298e8e994fc8aa60d24e74e0d3832bfd65df654dd",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_artifacts.py": "15ff825257780c13ad0bbb218b894a5b50086be19e3f0914440cc609afef2941",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_protocol.py": "096e645e498c1a5595555f4f3db84c32916a59470fb451532cfc4e6bdc4f77b0",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_protocol.py": "bd089b8e7b368c4124ef377b9645daa0338dbf094c610b90c674e00d3bba98fb",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_runtime.py": "3590e5691db0eb868b7bd66b0ce20a6f701ea9aa3fb0d0a03c70ed1a92380cb2",
+    "src/bayesian_phystwin/deform360_bias_aware_prospective_v2_support.py": "81561cabc844f377259ee3a296e42b6109d1341a4d9ebecf4cefc3b2f501ca53"
+  },
+  "information_boundary": {
+    "authorized_roles": [
+      "calibration-support-sealing"
+    ],
+    "outcome_loader_installed": false,
+    "calibration_future_access_authorized": false,
+    "target_access_authorized": false,
+    "base_v1_dispositions_are_inherited_without_relabeling": true,
+    "support_decision_uses_target_free_artifacts_only": true
+  },
+  "claim_boundary": "Checksum-bound composition of nine immutable v1 dispositions and three fresh v2 dispositions, followed only by the locked pre-outcome support arithmetic. This lock installs no future or target loader.",
+  "config_sha256": "41f747a6dfa5027e0ec58743ce9c3b17d12c264175f0fbe6d66cdd561abe08e3"
+}

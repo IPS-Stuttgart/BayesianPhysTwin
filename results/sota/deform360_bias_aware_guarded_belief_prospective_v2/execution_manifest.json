@@ -1,0 +1,267 @@
+{
+  "accepted_harmful_object_count": 4,
+  "artifact_kind": "Deform360BiasAwareProspectiveV2ExecutionManifest",
+  "automatic_twin_count": 8,
+  "calibration_accuracy_gate": {
+    "file_sha256": "19c99009d7c551fcbe6c42f3e2bfaf82fb4e4f55ae13aef3eb21119547b40b1a",
+    "passed": false,
+    "result_sha256": "44ac5447d05ba2d9c5fcc200b0bb63781cf1b6faf83d27ef1051be19365d5a2c",
+    "target_access_authorized": false
+  },
+  "calibration_execution_lock": {
+    "config_sha256": "aae3cd1f7f5456c115751e3e0b32aff5a3c53a3b9665b66681262e520b89f42c",
+    "file_sha256": "b87d2bc86d3e9c3842290f5b53680c8625e91973051f6b34c3ec66eea0af65fa",
+    "path": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v2_calibration_execution.json"
+  },
+  "calibration_prediction_cohort": {
+    "file_sha256": "1440e5f1e32f41eb78c379de344322d7b308fac2fbc355b365f06f2890e15c82",
+    "result_sha256": "5d5317c9f7c1a35a28242490156cb1971f1a25f82dfbfb7200b175afe424b6c9"
+  },
+  "calibration_quality_failure_count": 4,
+  "calibration_support_gate": {
+    "file_sha256": "eca5ad29a0cf036a956c1b9b540ebc4ac3eea94b8ce22d8939e732fee2b7f8e1",
+    "passed": true,
+    "result_sha256": "58194bc33b9018e4b2ccf3e5e71bec39f911d88a98e0f8a69f66381c2413510a"
+  },
+  "candidate_accepted_object_count": 4,
+  "cases": [
+    {
+      "case": "076-rubber-bands-ep0000",
+      "episode_id": 0,
+      "object_id": "076-rubber-bands",
+      "origin": "inherited_v1",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "21643a8c7c47096fcc08a3fb0d863920eb55a9fc5652ced245b3120ff2732ceb",
+          "artifact_result_sha256": "221864d6100bc6b527c8fc3b5969e52f1805fe029a7b0be2cf5a469d3ff12913",
+          "authorization_file_sha256": "66df3bd68ed4edf0da879271cecbee90f6126edec934ad5a14d51a3fe62d076c",
+          "authorization_result_sha256": "18be9700953a87ae6eacf90e2bb2b607b5ceb3eed01a73d1c3aae18a89673a4c"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "04d7790465604272de2538b06a83356631b4484299170a768ec6b5d195879f92",
+          "artifact_result_sha256": "c5b266dcf03537acb2e7ce96527d97b24f5c61c2d0b12564325d28486e89a48f",
+          "authorization_file_sha256": "b9d699fb009b016ac8210d63b54a0d9027f739fd9c851cb1209a76d5de649bf1",
+          "authorization_result_sha256": "04c5ac488fe25d7b5608690507c543a2c0599d7c86dc3a29cdae0b6d9acb5feb"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "66fa6f467bef1c5fa554406bed3bb668a9653c3b958d23a897a33aa548dba542",
+          "artifact_result_sha256": "5664aa47507e7b8e103665f171bf877028bf7773e45d60472bacfcafde57bf1c",
+          "authorization_file_sha256": "e0397ce1c660217a95b39f469e6e8f3765ed95ed95e51db0872415147d45f431",
+          "authorization_result_sha256": "1f28b4165b0302ff9718640ef111f40f30ee8a707c949f99b17072310cbcbddc"
+        }
+      },
+      "stratum": "filament"
+    },
+    {
+      "case": "078-fishing-line-ep0004",
+      "episode_id": 4,
+      "object_id": "078-fishing-line",
+      "origin": "fresh_v2",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "bb11c1937c6ee1a0a2ed7b6cc1b806006330781c99d69ed526890cbbbfb98b70",
+          "artifact_result_sha256": "f2665633c58e72101f169092115aebd4f027b9b6b01922e04cb8ac6f3181329c",
+          "authorization_file_sha256": "49c94d06b47c81c923e0b33b26f038d245726dff646d4a1c9bf40bd63053c64e",
+          "authorization_result_sha256": "8f13fbc5f94e4bdf60576d2a0ea745ed98ec087c294acd4bff7625d9c1fb1d7f"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "35408fb54dced149684eae22bba7459bc5a1706365649f2ad14b383213da372c",
+          "artifact_result_sha256": "97b85a302184fc0147050d859d742c7e2a7ed1fffbba422e9eb7670b892a9a6e",
+          "authorization_file_sha256": "a34fc82cb20eedaf0a7a65ea429ba0f3226292b0dd4c676e629b5f5ffa441dcd",
+          "authorization_result_sha256": "ddf39ee822d1f2f369ae1574f01221edd1ebf17d19235481a64dea52477832ef"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "4b81c6f714c7590f48db8c8b7e87a83b1b65768be53b133ca0ddf3b0c153373a",
+          "artifact_result_sha256": "40c9f93a7a70f3c85bf00d82ba170acadc97d4201e5e1a5355acc35f9020d9b4",
+          "authorization_file_sha256": "e327cecacacc593196c49f2cf8a25b0f4e033a629bfbe36d4a803621dde2ebc0",
+          "authorization_result_sha256": "6576aed8ef3ba81e03b176f29bd8a3dfd40e36ec783223f7597ec3368e44727e"
+        }
+      },
+      "stratum": "filament"
+    },
+    {
+      "case": "161-tube-ep0004",
+      "episode_id": 4,
+      "object_id": "161-tube",
+      "origin": "fresh_v2",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "19a432a336ddc0cb7a4876bbe5a6b6848772e06022d763c925a323032526b9ec",
+          "artifact_result_sha256": "6f9477af45b81d0d13c00bdc1024dd50c958c2446080b53b514f015f81b0cdce",
+          "authorization_file_sha256": "7955b44bab2c984b742bf71e8372025853b8665e7bf3143e9a09aaeffc84fb19",
+          "authorization_result_sha256": "186d20bb6c2db9bd4384c631e17813ce8d1c2a3b31969db3967ad8b74c2d5e02"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "197dd6f6610b0b4247ae66904dcab4f0d815951494232528174ff5d2205ff09c",
+          "artifact_result_sha256": "f19b05554ba33f63546212d571078ed6619ca7d4e8113f8db84a6c5b3c630f76",
+          "authorization_file_sha256": "74e0eaafa207dd5feb5c8a8ce59b8390da430a6d02354d192a967749b1268d1f",
+          "authorization_result_sha256": "fbd97c110b6c7d4f5773e59bdb0fc8579cd8468b550d1aab04069aceb2b54dcf"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "4dc4f90cf66a974ee730ab4f7bc958dba101ca65871476a6ad933d4cb27b2512",
+          "artifact_result_sha256": "58f633322e3758d8b2c584bb7680b4dd7e898e69275774f51d7edc682510a49b",
+          "authorization_file_sha256": "d9e5c70f7135c4b4dcc6e69bad780036ca23b1be0bb82b7700ed22b3f8a4ada5",
+          "authorization_result_sha256": "39d5b1b85b64249e6c1fd913e49652a1a4f8cf79cf81881c3c6653a156924712"
+        }
+      },
+      "stratum": "filament"
+    },
+    {
+      "case": "088-snake-ep0001",
+      "episode_id": 1,
+      "object_id": "088-snake",
+      "origin": "fresh_v2",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "9b7490baed826fd2c39d87325de77e28547bb070061f1619562c3d664c7a3a4e",
+          "artifact_result_sha256": "3bff199aa85dc1d8670d28193ff01fd46330ab651ae490276feef8e246209860",
+          "authorization_file_sha256": "e3c4213f97ecbb1bd8b6ecf1c34e08af3b7502ee4bc6af2fa2ba5706a4e600dc",
+          "authorization_result_sha256": "634a3fcb04bd682aba40c0b4420d6f8ea488540b3171c7c7c6145f5566a07d91"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "ffc14bb87d7cf6b37620ffb5bf49bff8cf2e8db7e3603701a331a690a1733a25",
+          "artifact_result_sha256": "b3c786110e4f69967167eb504a3b8732cf8a5716df70ccdea293a57ed1815224",
+          "authorization_file_sha256": "de24eeaf5c90d132abf97d6ae254416ceced64d5b7d76c5d5ab36ade7b894d67",
+          "authorization_result_sha256": "8e6a13a3f0c3853057dd8208c7cd7b4c32dcf46d9102df985419f8c720dd5f02"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "ad1f3d9a33344fc32d8452be545d0d3b5cab90c10fa91cf763e45a93871e9d98",
+          "artifact_result_sha256": "4682a94d82c2800caa70f165b4d0eccc5e7d7e08941f669b5e678a51d15ba9bc",
+          "authorization_file_sha256": "303f2d228f70149236ae4f9c8811eb4ecf108f55fc1084497d1e28b295c2a4eb",
+          "authorization_result_sha256": "713e491c1f39f650ceec7f4a374e2f08969d45fd756f0fbace0ffd2095399e73"
+        }
+      },
+      "stratum": "filament"
+    },
+    {
+      "case": "175-plastic-bag-cloth-ep0003",
+      "episode_id": 3,
+      "object_id": "175-plastic-bag-cloth",
+      "origin": "inherited_v1",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "0f16548a9d811fca8e9cdb7931c2b95f7ea54d637a2b9f472456d296a50dc548",
+          "artifact_result_sha256": "a3e66754bfdd68d66e0789d29716fc148d41426a7868be93720c71d22a550596",
+          "authorization_file_sha256": "f6cef65a0d89161812f2f7191c82b4fd876f8e210920ac1824e3c61c439b9b66",
+          "authorization_result_sha256": "806f83a6a12a68e98699861c98612219583633d64a6cbc288e344be00b411094"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "caff32c364ac832f77c30c91228ce0634802e70730fe3854ad417ddc99bb53f4",
+          "artifact_result_sha256": "f5c26c0f849a4c0d0f2a5435cb5b52f2734effc9b692d446d2dd7d02e8e8deab",
+          "authorization_file_sha256": "f3d248c4184bdf32211c37df3cd2bf1a8253996ef29c765798a525a2f4cdeec5",
+          "authorization_result_sha256": "ffde86ac80cfa637e6aaa76abe6aba5f96a0f8b884db2fe7b0f9e0107ad0c4b0"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "f2938e01253b717d7e42b3c3136b9e07485f569a96a1b0a7cf0f30668e25100e",
+          "artifact_result_sha256": "3531c11d616e716ea7c30160b1b0fe0459280e0f1157a0bb4a3d1713ac3f7253",
+          "authorization_file_sha256": "e6898a3c80df05b77174021aa9446b9e035cbf705fc6d0699e0df09c4a609954",
+          "authorization_result_sha256": "f1a55ff46795f69c68c5d67829cf77c1c0296596e7d6909933442f6567a901f1"
+        }
+      },
+      "stratum": "sheet"
+    },
+    {
+      "case": "011-green-cloth-ep0000",
+      "episode_id": 0,
+      "object_id": "011-green-cloth",
+      "origin": "inherited_v1",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "3c4ef05ad40e75f638366ae12ff60be5aafabc0151fa010cace6b9430d64966a",
+          "artifact_result_sha256": "9d5dbf4ed2b02d69b9b6512fc1e2b7d66dcde7d7f10fc79675d5b95f3d75463a",
+          "authorization_file_sha256": "c1f420d3453ac113fd20a01f674c80d1ccbbb8dd4084e8031c8331a9bb0e2cbf",
+          "authorization_result_sha256": "85a815143eca4138418fdb7952244612b28f7a28eb2b5308a822565df8a71600"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "10a52a97a3476cb81fcee27751c78acd7d99b38d049ecc4dec4069aef5615b82",
+          "artifact_result_sha256": "dc3f5db2909c3afc3c3c121edc881d48363b8fe1b6d1025b473711a891421bf0",
+          "authorization_file_sha256": "616309cc3e115dce08d4be90a17630c4dc7d62723560110b0db9e4a818c32b64",
+          "authorization_result_sha256": "8396edfcbce34a649150f763967b7756c1e087437bc0a096411f4ad757da82f0"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "1ac03277058c37a88cf477d9f0e816dfb22ca02a714c5ed31f4748d4623b7488",
+          "artifact_result_sha256": "19568826b7d5d62b1a840dcf37168708d0d2dbd297ff5896f3f917fdeaa11a9c",
+          "authorization_file_sha256": "c9b1fb320aa7bf3686ece0b04c173ea1a6bde1054fa5efc4afc7f95a8e61a953",
+          "authorization_result_sha256": "bc44e89a703121006c64cba1da9d5b991d7403840ffdb2261ee38d23615c3959"
+        }
+      },
+      "stratum": "sheet"
+    },
+    {
+      "case": "163-bear-ep0001",
+      "episode_id": 1,
+      "object_id": "163-bear",
+      "origin": "inherited_v1",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "fdfcca8c5f3d142fab4e28ada8ea729956a0c187147575ce58e360c38358b21e",
+          "artifact_result_sha256": "00cf7c7c8b3a4d251c9e1eb201cc01283c023ac455d2af8babc6d09eadaab6b4",
+          "authorization_file_sha256": "48cab9daf1a1ee86728c5f1d3d87782ce9256abcc71f09a7247d33f7776564e9",
+          "authorization_result_sha256": "a32b61ce66c196365dfa4a288daa13375be3e0e55d4b3a2ef272a47df9d66104"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "a1d570f4a80277fcc430d79b2171e701c2e90ef24f3a8c2a24270a2b47a4a0f8",
+          "artifact_result_sha256": "9a073cfd5f13fa2407c659728355dff133810ec2420db7e94fd37e46e4a5f9b1",
+          "authorization_file_sha256": "aab1ba57ba6b149cf87c4a0ed31031cc99e33ea82824ccd744bd15fb8785e0b0",
+          "authorization_result_sha256": "7e4391c1f5af5515ac47834b1e5bbe66d262a382501007ae9832ed5492fd9f69"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "92657bd07bf7b21f529085715cd39a80635ac4916c891e5dee0698a27bd9e3ac",
+          "artifact_result_sha256": "5c793858927d2b237e0d51296779899fc3934537d1756ef113252f37a48b3a48",
+          "authorization_file_sha256": "2165f2726933cdcbe7bd0e4949c8239525297fd0b12e50a4559506dfe0dae98e",
+          "authorization_result_sha256": "03d201b9383a75b5952774c8f816f01aea0cbf38cde3cbe38a00ffddc7e005ab"
+        }
+      },
+      "stratum": "volumetric"
+    },
+    {
+      "case": "168-cat-big-ep0000",
+      "episode_id": 0,
+      "object_id": "168-cat-big",
+      "origin": "inherited_v1",
+      "stages": {
+        "authorized_future": {
+          "artifact_file_sha256": "b0d3297c05c9a2f33bb7105641e19c274852dbcf61e424b4600e96725dc9a62a",
+          "artifact_result_sha256": "17231f1e43a25f358e87419c0c45fa557b962c14fdeca2ec4e5f540a0233aaad",
+          "authorization_file_sha256": "c538d78c4e14b5496936c02e412a79130ae85980fc8cded9b90408eae6e7774a",
+          "authorization_result_sha256": "b40b5caac0bea886366f6ec41f7039aa56ecbd4e8a18f3f1e2fc62d1740cab4d"
+        },
+        "authorized_outcome": {
+          "artifact_file_sha256": "3a99def6b1c23d7ac4ed5fcb19d4516c20fa0f9d80c6f3e668a1328c24e50d39",
+          "artifact_result_sha256": "26a580ca33d0b3d6bec4f060239dcad844ee6b896eeecdb62e42df41e7e80d8a",
+          "authorization_file_sha256": "9569d3044178eec9c9f8c0198ccf532b7db7229a0257795d7cce575c0188378d",
+          "authorization_result_sha256": "cb4f4f90c31cd4f550f2cb642f491f785d4120d81b7fbd6577ad42a58f8adaa5"
+        },
+        "evaluation": {
+          "artifact_file_sha256": "be276ab0b0287e1f14d5f3b62571a56bed8484d6af1f4593d99acbabbced07bb",
+          "artifact_result_sha256": "3033ae6741b3f611d414822630066785ab873097b7ac2f4859b342bf4b517211",
+          "authorization_file_sha256": "798f56cfb7f694545c4bdabb35f2864c4e672533ae13d09dee3c7b23371907c2",
+          "authorization_result_sha256": "c1d0744020754cb7bbcf90b1eb1c1a05eb8cfaab12ad7b03393d5dfbd53da88a"
+        }
+      },
+      "stratum": "volumetric"
+    }
+  ],
+  "claim_boundary": "Fresh calibration accuracy and non-regression failure; not an official Deform360 or state-of-the-art result. Every reserved target remains sealed.",
+  "exact_camera_selector_equivalence": {
+    "file_sha256": "1d865d103810b94d1a428ed9e1465eeaed706e40a70e92deee06a03c857e82ca",
+    "result_sha256": "4e17f50a9048e5e221a48622bd81b01a833499e93fcdbc3df2e7edb795bfa5cb"
+  },
+  "information_boundary": {
+    "calibration_futures_opened_after_support_gate": true,
+    "method_or_gate_changed_during_execution": false,
+    "target_access_authorized": false,
+    "target_future_read": false,
+    "target_object_media_read": false
+  },
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "remote_evidence_root": "/mnt/corsair/florianpfaff/deform360-bias-aware-prospective-v2",
+  "replacement_count": 0,
+  "result_sha256": "8b579be8d4a52dd937c4e5da690880c837aec7c5f29c144cb45a64c7ce73aee8",
+  "schema_version": 1,
+  "verification": {
+    "intended_file_ruff": "passed",
+    "local_full_test": "918 passed, 26 skipped in 69.05s"
+  }
+}

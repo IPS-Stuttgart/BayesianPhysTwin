@@ -1,0 +1,25 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveQualityFailure",
+  "case": "015-airbag-cloth-ep0006",
+  "episode_id": 6,
+  "episode_key": "015-airbag-cloth/6",
+  "error_message": "Frozen frame-zero point-cloud admission failed after 344 exported Gaussians.",
+  "error_type": "ValueError",
+  "evidence_sha256": {
+    "frame_zero_log": "7961f954f65e652406810d64d80c62df376e7ea428c45a1d52baed53807e7732"
+  },
+  "information_boundary": {
+    "failure_recorded_before_future_open": true,
+    "outcome_manifest_read": false,
+    "target_data_read": false
+  },
+  "object_id": "015-airbag-cloth",
+  "protocol_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+  "replacement_allowed": false,
+  "result_sha256": "70f2c7a236ff40fdd5a029408b31d0b2cbf5edf75f0afefbb9a97e57301d3c4b",
+  "role": "calibration",
+  "schema_version": 1,
+  "stage": "frame-zero-reconstruction",
+  "stratum": "sheet"
+}

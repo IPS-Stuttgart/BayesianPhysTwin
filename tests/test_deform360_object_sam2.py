@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from causal4d_public.deform360_object_sam2 import (
+from bayesian_phystwin.deform360_object_sam2 import (
     DeformableObjectSam2MaskConfig,
     deformable_object_mask_candidate_diagnostics,
     mask_appearance_descriptor,

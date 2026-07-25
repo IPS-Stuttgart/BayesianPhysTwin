@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexIndependentDepthDevelopmentProtocol",
+  "protocol_id": "pokeflex-independent-depth-development-v1",
+  "locked_at_utc": "2026-07-22T00:00:00Z",
+  "status": "source-only method development before any T2, calibration-object, or target-object payload access",
+  "claim_boundary": "This protocol tests whether eye-in-hand RealSense depth can provide an independently mounted metric anchor for a Kinect-derived Bayesian-PhysTwin state update. It is not confirmation, not a Causal4D result, and not a claim that the two depth families have statistically independent errors.",
+  "parent_protocol": {
+    "protocol_id": "pokeflex-bayesian-registration-v1",
+    "protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33"
+  },
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "paper": "https://arxiv.org/abs/2410.07688"
+  },
+  "evidence_boundary": {
+    "development_objects": [
+      "FoamDice",
+      "MemoryFoam",
+      "PlushOctopus",
+      "3dPrintedHeart",
+      "ToiletPaperRoll"
+    ],
+    "outcome_open_design_takes": ["T1", "T3", "T4", "T5", "T6"],
+    "prospective_development_validation_take": "T2",
+    "reserved_development_takes": ["T7", "T8"],
+    "calibration_objects_remain_sealed": true,
+    "target_objects_remain_sealed": true,
+    "replacement_allowed": false
+  },
+  "sensor_roles": {
+    "primary_predictor": "released Kinect point-cloud checkpoint using Kinect cameras 0 and 1",
+    "candidate_observation": "Kinect graph registration through frame f-1",
+    "independent_anchor_family": "RealSense D405 depth cameras 0 and 1 mounted eye-in-hand",
+    "intervention_evidence": "measured force-torque and T_WT/T_WE robot transforms through frame f-1",
+    "outcome_only": "volumetric-capture mesh at frame f"
+  },
+  "causal_input_contract": {
+    "target_frame": "f",
+    "kinect_history": "f-5 through f-1 only",
+    "realsense_history": "f-5 through f-1 only",
+    "robot_history": "through f-1 only",
+    "frame_f_kinect_or_realsense_allowed_before_prediction": false,
+    "frame_f_mesh_allowed_before_scoring": false,
+    "template_mesh_allowed_for_static_sensor_calibration": true,
+    "synthetic_points_from_frame_f_mesh_allowed": false
+  },
+  "anchor_contract": {
+    "depth_scale": 10000.0,
+    "depth_unit_after_conversion": "m",
+    "variance_unit": "m^2",
+    "invalid_depth_value": 65535,
+    "extrinsic_convention": "per-frame world-to-camera matrix; invert for back-projection",
+    "static_calibration_family": "translation-only robust ICP against the allowed template mesh",
+    "camera_clusters_have_fixed_information_mass": true,
+    "unknown_cross-camera_correlation_rule": "maximum per-camera baseline-relative regret",
+    "camera_bias_is_not_assumed_zero": true,
+    "state_innovation_is_processed_once": true,
+    "exact_fallback": "released Kinect checkpoint vertices byte-for-byte"
+  },
+  "development_sequence": {
+    "first_smoke_take": "FoamDice_T3",
+    "stage_one": "measure source-only RealSense calibration and candidate-regret competence",
+    "stage_two": "fit and cross-validate one baseline-relative guard on outcome-open development takes",
+    "stage_three": "freeze code, hashes, hyperparameters, and a T2 outcome-opening command",
+    "stage_four": "open T2 once only if source competence gates pass"
+  },
+  "source_competence_gates": {
+    "minimum_clustered_points_per_camera": 64,
+    "maximum_template_calibration_median_residual_mm": 10.0,
+    "minimum_leave_one_object_out_regret_sign_agreement": 0.65,
+    "maximum_false_safe_rate": 0.1,
+    "minimum_regret_spearman": 0.2,
+    "all_required_before_T2_access": true
+  },
+  "prospective_T2_gate": {
+    "minimum_object_balanced_CD_UL1_relative_improvement": 0.05,
+    "minimum_object_wins": 4,
+    "maximum_per_object_relative_regression": 0.1,
+    "decision_if_failed": "publish the source/T2 result and keep calibration and target objects sealed"
+  },
+  "forbidden": [
+    "extracting or listing T2, calibration-object, or target-object payload members before their registered stage",
+    "using RealSense frame f to select a prediction for frame f",
+    "treating the two eye-in-hand cameras as independent sample-size evidence",
+    "using target-mesh error as perception reliability or a candidate-selection feature",
+    "changing the method after T2 outcomes are opened",
+    "calling source-only development a state-of-the-art result"
+  ],
+  "protocol_sha256": "30e00c23a00e0b4e80af969d3190703f4d9d0b11d21cf8bbf88a9d9306049653"
+}

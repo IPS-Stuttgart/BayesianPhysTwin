@@ -11,8 +11,6 @@ from typing import Any
 import numpy as np
 import pytest
 
-from causal4d_public import deform360_object_sam2
-
 from deform360_held_test_helpers import (
     bound_file,
     write_robot_kinematics_fixture,
@@ -20,6 +18,7 @@ from deform360_held_test_helpers import (
 )
 
 from bayesian_phystwin import deform360_held_outcome_reconstruction as reconstruction
+from bayesian_phystwin import deform360_object_sam2
 
 
 CASE_NAME = "083-blanket-cloth-ep0000"

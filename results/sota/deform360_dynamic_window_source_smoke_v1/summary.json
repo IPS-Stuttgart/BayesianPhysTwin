@@ -1,0 +1,66 @@
+{
+  "artifact_kind": "Deform360DynamicWindowSourceSmokeSummary",
+  "authorization": {
+    "prediction_result_sha256": "ba71aadfd0843275735b439540104afb34a9d862fd72739ac03f0d53615f002b",
+    "prediction_verified_before_future_read": true,
+    "source_window_selection_result_sha256": "42e345602dd8a7bc325d39d94270b66f4740645b04f9c097bbafdd774d033b84"
+  },
+  "case": "035-wipe-cloth-ep0005",
+  "claim_boundary": "Exhausted-source post-open diagnostic; not a prospective, confirmatory, or state-of-the-art result.",
+  "code_revision": "ec077bf2f14c1f1a4dcd44707950b537727b34a4",
+  "contact_supported_future_translation_path_m": 0.052070396316069356,
+  "decision": {
+    "expand_source_cohort": false,
+    "fresh_object_evaluation_justified": false,
+    "reason": "The corrected window remained nearly static and every camera-update arm regressed severely against exact persistence."
+  },
+  "information_boundary": {
+    "exhausted_source_case": true,
+    "fresh_objects_or_reserved_targets_read": false,
+    "future_tactile_exposed_to_prediction_method": false,
+    "prediction_verified_before_future_read": true,
+    "target_metric_used_for_window_selection": false
+  },
+  "inputs_sha256": {
+    "measurement_archive": "d15af282bdb9d7bca3af80d7f4a3bec2cda3cf3758d2e982c54127f3f7eaa5ac",
+    "measurement_manifest": "58214f05179fbbdc4ac81f5eafad8250169d06aa7587b58ceec69b6935a8bdc7",
+    "prediction_archive": "c4fd2c623486b6d18af2d9f8a533f692833e343d9cfcf5cdadfec578c140b447",
+    "prediction_report": "e64f50c67403630ab9c2878b6cce944c1722ff5bcb22b76a76e0441bd7b60444",
+    "prediction_seal": "75564f14de5f9023e000e867dad8ac30bf216424fcf7e3f5bfade512e6c79cc5",
+    "selection_seal": "da57aede050bc87d263afb3bc0e36f9b9c0fc9a0607cf9502a00c16f6a180c4d",
+    "source_config": "f9acb6465238ed24a4b1de4abe16867dec47b903d65795a66f6d29225e334e75",
+    "source_future_manifest": "9c6d02ac66dfe8a3e4df7cd068d71d9a64de9a789d4a69ed45c7de1ea321b5b3"
+  },
+  "measurement_target_audit_m": {
+    "count": 37,
+    "maximum": 0.05421459674835205,
+    "mean": 0.031077812337694136,
+    "median": 0.03661484271287918,
+    "p90": 0.049692502617836
+  },
+  "raw_frame_range_half_open": [
+    98,
+    179
+  ],
+  "source_evaluation_result_sha256": "02feea88d99b0a7ae63158ad7934a3c3cb6c5949f29d2b816ce17aa3feb37a47",
+  "scores_m": {
+    "persistence": {
+      "chamfer": 0.000303785866795001,
+      "identity_rmse": 0.0005287896590886704
+    },
+    "persistence_full_blend_rbf_pairwise_clique": {
+      "chamfer": 0.007618493105722229,
+      "identity_rmse": 0.00901696391305303
+    },
+    "raw_independent_cpd_selected_backbone": {
+      "chamfer": 0.015962309310656148,
+      "identity_rmse": 0.01832120174331648
+    },
+    "raw_selected_backbone_full_blend_rbf_support_gated": {
+      "chamfer": 0.016228476304376363,
+      "identity_rmse": 0.01815201926427545
+    }
+  },
+  "schema_version": 1,
+  "target_motion_rmse_m": 0.0009288215078413486
+}

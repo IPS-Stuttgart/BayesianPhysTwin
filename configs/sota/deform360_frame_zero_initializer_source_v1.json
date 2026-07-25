@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-frame-zero-initializer-source-v1",
+    "status": "open-source-development-only",
+    "claim_boundary": "Target-free coverage and geometry audit on previously opened Deform360 source objects. Forced fallback is not a predictive-accuracy result and does not rehabilitate the failed prospective cohort.",
+    "dataset": {
+      "repository": "brownu/deform360",
+      "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+      "deform360_code_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "source_panel_origin": "Previously opened and exhausted deform360-selective-virtual-sensing-v1 frame-zero staging panel; only the first already-staged episode per object is used and no outcome artifact is read"
+    },
+    "source_objects": {
+      "filament": {
+        "005-thread": [5],
+        "069-jump-rope": [1],
+        "071-climbing-rope": [0],
+        "077-hemp-rope": [8]
+      },
+      "sheet": {
+        "009-yellow-cloth": [9],
+        "022-handkerchief": [0],
+        "035-wipe-cloth": [8],
+        "041-wrap-paper-cloth": [2]
+      },
+      "volumetric": {
+        "044-doll": [0],
+        "049-ball": [5],
+        "125-rabbit": [8],
+        "146-frog": [5]
+      }
+    },
+    "method": {
+      "selector": "Return the admitted original Splatfacto point cloud exactly; build the fallback only after the frozen point-only admission check fails.",
+      "fallback": "Largest 26-connected component of a strict multiview frame-zero silhouette hull, reduced to its six-neighbour surface shell and deterministically Morton-subsampled.",
+      "minimum_original_point_count": 128,
+      "minimum_camera_count": 8,
+      "cube_half_extent_m": 0.5,
+      "voxel_resolution": 120,
+      "consensus_fraction_of_peak": 0.55,
+      "minimum_consensus_votes": 7,
+      "maximum_mask_dilation_pixels": 5,
+      "minimum_fallback_point_count": 128,
+      "maximum_output_point_count": 10000
+    },
+    "source_gates": {
+      "required_case_count": 12,
+      "required_object_count": 12,
+      "required_strata": ["filament", "sheet", "volumetric"],
+      "admitted_original_path_exact_in_every_admitted_case": true,
+      "natural_original_failures_are_recovered": true,
+      "forced_fallback_builds_in_every_case": true,
+      "fallback_is_finite_in_every_case": true,
+      "fallback_meets_its_strict_vote_threshold_in_every_case": true,
+      "fallback_largest_component_fraction_at_least": 0.4,
+      "future_accuracy_is_not_a_gate": true
+    },
+    "information_boundary": {
+      "object_observation_frames_used": [0],
+      "source_panel_is_previously_open": true,
+      "future_source_geometry_used": false,
+      "future_source_rgb_used": false,
+      "prospective_calibration_cases_used": false,
+      "prospective_target_cases_used": false,
+      "target_metric_used": false
+    },
+    "promotion_rule": "If the source gates pass, freeze this initializer before applying it to any new fresh-object cohort. Existing opened prospective calibration failures may be reported only as post-open operational diagnostics, never as confirmation."
+  },
+  "config_sha256": "64f72fe964b61e5283c1acd88c3910807695036608c8a01836d9e5bdf565c759"
+}

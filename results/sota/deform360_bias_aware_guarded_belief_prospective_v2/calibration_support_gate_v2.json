@@ -1,0 +1,46 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveV2CalibrationSupportGate",
+  "automatic_twin_object_count": 8,
+  "automatic_twin_object_count_by_stratum": {
+    "filament": 4,
+    "sheet": 2,
+    "volumetric": 2
+  },
+  "calibration_cohort_file_sha256": "1440e5f1e32f41eb78c379de344322d7b308fac2fbc355b365f06f2890e15c82",
+  "calibration_cohort_result_sha256": "5d5317c9f7c1a35a28242490156cb1971f1a25f82dfbfb7200b175afe424b6c9",
+  "calibration_future_access_authorized": true,
+  "claim_boundary": "target-free calibration-support decision only; no accuracy, calibration, or state-of-the-art claim",
+  "combined_eligible_object_group_count": 12,
+  "decision_stage": "pre-outcome-support",
+  "failed_support_gates": [],
+  "finite_sample_coverage": 0.9230769230769231,
+  "finite_sample_rank": 12,
+  "fresh_filament_automatic_twin_count": 3,
+  "information_boundary": {
+    "calibration_future_read": false,
+    "calibration_outcome_read": false,
+    "candidate_threshold_changed": false,
+    "method_family_changed": false,
+    "observation_model_changed": false,
+    "support_decision_uses_target_free_artifacts_only": true,
+    "target_future_read": false,
+    "target_media_read": false
+  },
+  "new_eligible_object_group_count": 8,
+  "next_action": "open calibration futures under a separate locked evaluator",
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "result_sha256": "58194bc33b9018e4b2ccf3e5e71bec39f911d88a98e0f8a69f66381c2413510a",
+  "schema_version": 1,
+  "source_group_count": 4,
+  "support_gates": {
+    "fresh_filament_automatic_twins_required": true,
+    "minimum_automatic_twin_objects": true,
+    "minimum_automatic_twin_objects_per_stratum": true,
+    "minimum_combined_eligible_object_groups": true,
+    "minimum_new_eligible_object_groups": true,
+    "required_finite_sample_coverage": true
+  },
+  "support_passed": true,
+  "target_access_authorized": false
+}

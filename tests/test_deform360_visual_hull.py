@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from causal4d_public.deform360_visual_hull import (
+from bayesian_phystwin.deform360_visual_hull import (
     AdaptiveRopeHullConfig,
     adaptive_rope_visual_hull,
     carve_candidate_points,

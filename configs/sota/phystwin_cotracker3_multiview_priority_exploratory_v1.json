@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-cotracker3-multiview-priority-exploratory-v1",
+  "locked_at_utc": "2026-07-24T09:44:42Z",
+  "status": "Locked while the first target-free cue extraction was running and before any newly extracted cue or remaining-case future score was completed or inspected.",
+  "claim_boundary": "Post-open method development on the previously examined PhysTwin-19 cohort. The result may reject the method or justify a genuinely fresh-object preregistration, but it cannot establish confirmation, calibration, or state of the art.",
+  "development_history": {
+    "threshold_selection_case": "single_lift_cloth",
+    "threshold_selection_evidence": "Released manual-prefix landmark diagnostics showed that persistent three-view support corrected two severe source-depth identity errors while lower-availability support could be harmful.",
+    "already_scored_transfer_cases": [
+      "single_lift_cloth_3",
+      "single_lift_cloth_4"
+    ],
+    "already_seen_three_case_result": {
+      "source_depth_equal_case_chamfer_m": 0.0092940,
+      "candidate_equal_case_chamfer_m": 0.0092582,
+      "source_depth_equal_case_track_m": 0.0427504,
+      "candidate_equal_case_track_m": 0.0421130
+    },
+    "remaining_cases": "The other 16 cases had been opened by prior studies, but had not been extracted or scored for this multiview-priority method at lock time."
+  },
+  "cohort": {
+    "source_summary": "results/sota/diagnostics/prob4d_observation_v1/exploratory19_summary.json",
+    "source_summary_sha256": "4026ae912a735ecb483b4487d7d1f03ecfb7bae72914f9909cf6298b9386ee33",
+    "cases": [
+      "double_lift_cloth_1",
+      "double_lift_cloth_3",
+      "double_lift_zebra",
+      "double_stretch_zebra",
+      "rope_double_hand",
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_cloth",
+      "single_lift_cloth_1",
+      "single_lift_cloth_3",
+      "single_lift_cloth_4",
+      "single_lift_dinosor",
+      "single_lift_rope",
+      "single_lift_zebra",
+      "single_push_rope",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "weird_package"
+    ]
+  },
+  "software": {
+    "base_commit": "f92fd90f405fe63286916aa804876263cfe6bc77",
+    "deployed_cue_implementation": "/home/florianpfaff/bpt-cotracker3-multiview-v2/code/src/bayesian_phystwin/phystwin_cotracker3_cues.py",
+    "deployed_cue_implementation_sha256": "ead3f95b071526693d98c03b1789e9716093cdd08a75bb3a44214e450369b461",
+    "deployed_cue_cli_sha256": "137bd54c61d57ba20aa97e2f78cca89ada75670a0cbbea6650cfb3cead0acd32",
+    "evaluation_library": "src/bayesian_phystwin/phystwin_cotracker3_cues.py",
+    "evaluation_library_sha256": "aa1a2ad4c7a865095c16695ed0e6362f53dbed7a2f2a4c0426f095b2451b1f8b",
+    "exploratory_runner": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "exploratory_runner_sha256": "3fc7110843d0256d76b81b5e6b886eb80274164ef2031a8a704793ca66078103",
+    "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "cotracker_checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218"
+  },
+  "method": {
+    "name": "three_view_identity_priority_with_source_depth_fallback",
+    "source_channel": "CoTracker3 source-camera track lifted through source-camera RGB-D",
+    "priority_channel": "CoTracker3 tracks triangulated from at least three calibrated camera views",
+    "minimum_identity_prefix_availability_fraction": 0.40,
+    "minimum_view_quality": 0.50,
+    "maximum_forward_backward_error_px": 5.0,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_camera_count": 3,
+    "routing_rule": "An identity meeting the availability threshold uses only three-view observations throughout the prefix; every other identity exactly retains the source-depth channel. Missing priority-channel rows are not filled from source depth.",
+    "association": "Exact archived PhysTwin graph identity; no state-residual-dependent association or reliability.",
+    "endpoint_filter": {
+      "process_std_m": 0.005,
+      "observation_std_m": 0.001,
+      "initial_std_m": 0.010,
+      "inlier_prior": 0.95,
+      "outlier_variance_multiplier": 100.0
+    },
+    "primary_prediction_arm": "causal_selected_dense_relative_cap",
+    "selection": "Use only released prefix object-cloud Chamfer on the nested prefix validation interval.",
+    "relative_cap_quantile": 0.95,
+    "relative_cap_multipliers": [
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0,
+      16.0
+    ],
+    "physical_backbone": "Object-disjoint MatPhys spring-family replay selected before this observation experiment."
+  },
+  "information_boundary": {
+    "decoded_video_frames": "[0, train_end)",
+    "future_rgb_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_selection": false,
+    "manual_tracks_role": "Evaluation only after candidate predictions and selections are fixed.",
+    "known_future_controller_action_in_physical_backbone": true,
+    "prior_reliability_uses_state_innovation": false,
+    "state_innovation_likelihood_count": 1
+  },
+  "evaluation": {
+    "primary_comparator": "Identical CoTracker3 extraction, physical backbone, endpoint filter, and causal selector using source-camera RGB-D lifting for every identity.",
+    "co_primary_metrics": [
+      "official future Chamfer distance",
+      "official future initial-nearest-node manual-track error"
+    ],
+    "secondary_report": [
+      "late-horizon metrics",
+      "priority identity count and fraction",
+      "both-metric wins, ties, and losses",
+      "object-cluster bootstrap confidence intervals",
+      "fixed graph-smoothed 60 mm cap diagnostic"
+    ]
+  },
+  "transfer_gate_for_fresh_evaluation": {
+    "both_equal_case_future_means_improve": true,
+    "both_physical_object_cluster_95_percent_upper_bounds_below_zero": true,
+    "two_metric_win_or_tie_count_at_least": 12,
+    "no_threshold_or_camera_count_changes_after_lock": true,
+    "independent_fresh_object_protocol_required_for_sota_claim": true,
+    "calibration_required_before_bayesian_coverage_claim": true
+  },
+  "forbidden": [
+    "changing the 0.40 availability threshold after inspecting any remaining future score",
+    "trying a two-view replacement after its development diagnostic retained the catastrophic sign error",
+    "using future CoTracker3, object-cloud, or manual-track values to form or select a prediction",
+    "describing this post-open cohort as independent, confirmatory, or state of the art",
+    "opening any held-v8 or PokeFlex target artifact"
+  ]
+}

@@ -1,0 +1,1326 @@
+{
+  "accepted_harmful_count": 0,
+  "all_rejections_bit_exact": true,
+  "artifact_kind": "PhysTwinProb4DActionGuardAdditionalSourceDiagnostic",
+  "candidate_accepted_count": 1,
+  "candidate_available_count": 11,
+  "candidate_family": "action_conditioned",
+  "case_count": 11,
+  "cases": [
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 0,
+          "endpoint_correction_maximum_m": 0.023841359880413887,
+          "endpoint_correction_rms_m": 0.005553634295830957,
+          "maximum_clipped_progress": 1.3782318778730491,
+          "maximum_raw_progress": 1.3782318778730491,
+          "minimum_clipped_progress": -0.0007778081674043299,
+          "minimum_raw_progress": -0.0007778081674043299,
+          "reference_response_rms_m": 0.08571832570556455
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.005090333200836526,
+            "chamfer_frame_count": 29,
+            "identity_frame_count": 29,
+            "pseudo_identity_error_m": 0.007835192136576054
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.0827615521268805,
+            "pseudo_identity_error_m": 1.0087553224693528
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0160199013528621,
+            "pseudo_identity_error_m": 1.0045963920914933
+          },
+          "balanced_baseline_improvement_fraction": -0.04575843729811657,
+          "balanced_dynamic_improvement_fraction": -0.010308146722177725,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.004701250419205898,
+            "chamfer_frame_count": 29,
+            "identity_frame_count": 29,
+            "pseudo_identity_error_m": 0.007767187901815601
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.00501007233623927,
+            "chamfer_frame_count": 29,
+            "identity_frame_count": 29,
+            "pseudo_identity_error_m": 0.007799343296728131
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_blue_fold",
+      "garment": "cloth_blue",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "d5d50166129efe701504a717b655088b3dc2da81751d326e65be433bf8485408",
+        "arm_c_summary": "e2a17e83e97089b27058b2933be0cd68703317f0d4a6a05602f9bf095de465b7",
+        "final_data": "9f97230a04f3a9231b0d9f9621c051d19e6f1c66d321f174cb17fb10fa992d1b",
+        "physical_baseline": "c4fe53dd757109e11412b2cdce483fe0ecefb5ee64efc878a0ebbddb31f8724a",
+        "selected_baseline": "1731f0581250736f5a99db007e07c4d0a2c374e84a1732d0e070f86c15ed8794",
+        "split": "a5beee22c643f74d2f18923f853e3444f704e5821e9dd78e193af9cc3d08cf76"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.004304224796779645,
+          "late_chamfer_m": 0.004705268239808411
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.0048386352963761215,
+          "late_chamfer_m": 0.004977903105306225
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.004304224796779645,
+          "late_chamfer_m": 0.004705268239808411
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 1224,
+        "causal_physical_agreement_gain": 0.988623895223782,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.023841356330216768,
+        "minimum_identifiable_fraction": 0.35454237546542083,
+        "motion_center_count": 170,
+        "observed_motion_rms_m": 0.05570528767756801,
+        "physical_response_rms_m": 0.08571832570556455,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.005090333200836526,
+            "chamfer_frame_count": 29,
+            "identity_frame_count": 29,
+            "pseudo_identity_error_m": 0.007835192136576054
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.0827615521268805,
+            "pseudo_identity_error_m": 1.0087553224693528
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0160199013528621,
+            "pseudo_identity_error_m": 1.0045963920914933
+          },
+          "balanced_baseline_improvement_fraction": -0.04575843729811657,
+          "balanced_dynamic_improvement_fraction": -0.010308146722177725,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.004701250419205898,
+            "chamfer_frame_count": 29,
+            "identity_frame_count": 29,
+            "pseudo_identity_error_m": 0.007767187901815601
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.00501007233623927,
+            "chamfer_frame_count": 29,
+            "identity_frame_count": 29,
+            "pseudo_identity_error_m": 0.007799343296728131
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 17,
+          "endpoint_correction_maximum_m": 0.019957690794843625,
+          "endpoint_correction_rms_m": 0.005307638035886556,
+          "maximum_clipped_progress": 2.0,
+          "maximum_raw_progress": 2.7506454072989133,
+          "minimum_clipped_progress": -0.0017439113203386698,
+          "minimum_raw_progress": -0.0017439113203386698,
+          "reference_response_rms_m": 0.032732875144042016
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.005266214739450155,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.005560733690323344
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.5228885253668907,
+            "pseudo_identity_error_m": 1.1362187636615346
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.1406198660943447,
+            "pseudo_identity_error_m": 1.0657654139189447
+          },
+          "balanced_baseline_improvement_fraction": -0.32955364451421265,
+          "balanced_dynamic_improvement_fraction": -0.10319264000664474,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.0034580434823234555,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.004894069582519073
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.004616976168828685,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.005217596309375318
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_blue_lift",
+      "garment": "cloth_blue",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "44e79919b49e10e82d545be2f51be5762fa9a4efc6c2981d77c5514df1f5e70c",
+        "arm_c_summary": "53b8562d463f307780eceab2268876126d98b69c32ad032a5d0db1ac6de95914",
+        "final_data": "8a89ba2bfb89cfe971b644eea34cd4281f37c9c81833faced0f441bdea312c22",
+        "physical_baseline": "b7a136d459ae81b5f44914d684181a34fd71dfa23c93d070eff1e5fd895ff528",
+        "selected_baseline": "d3e09f29c64b28237ef00dd6b9e4551e6ff7748493e95520f6f1017988d4fff9",
+        "split": "c0b83c52766011c30629f9ed0b3ecf9a1332407537c0f4537a7428cd90b8cf2c"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.003979892388095583,
+          "late_chamfer_m": 0.004602525986351554
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.006838415790422884,
+          "late_chamfer_m": 0.007316490946086888
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.003979892388095583,
+          "late_chamfer_m": 0.004602525986351554
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 1250,
+        "causal_physical_agreement_gain": 1.0,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.019957680555253345,
+        "minimum_identifiable_fraction": 0.3298051604288658,
+        "motion_center_count": 221,
+        "observed_motion_rms_m": 0.017515964935888032,
+        "physical_response_rms_m": 0.032732875144042016,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.005266214739450155,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.005560733690323344
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.5228885253668907,
+            "pseudo_identity_error_m": 1.1362187636615346
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.1406198660943447,
+            "pseudo_identity_error_m": 1.0657654139189447
+          },
+          "balanced_baseline_improvement_fraction": -0.32955364451421265,
+          "balanced_dynamic_improvement_fraction": -0.10319264000664474,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.0034580434823234555,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.004894069582519073
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.004616976168828685,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.005217596309375318
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 0,
+          "endpoint_correction_maximum_m": 0.02958747646399377,
+          "endpoint_correction_rms_m": 0.009170023898056616,
+          "maximum_clipped_progress": 1.2375174215764793,
+          "maximum_raw_progress": 1.2375174215764793,
+          "minimum_clipped_progress": -0.0067451000823721555,
+          "minimum_raw_progress": -0.0067451000823721555,
+          "reference_response_rms_m": 0.09993786254789751
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.00914395491640242,
+            "chamfer_frame_count": 25,
+            "identity_frame_count": 25,
+            "pseudo_identity_error_m": 0.020423018998433462
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.1175017077916878,
+            "pseudo_identity_error_m": 1.0743591889719164
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0354039964132908,
+            "pseudo_identity_error_m": 1.0172982805443158
+          },
+          "balanced_baseline_improvement_fraction": -0.09593044838180198,
+          "balanced_dynamic_improvement_fraction": -0.026351138478803326,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.008182497487607361,
+            "chamfer_frame_count": 25,
+            "identity_frame_count": 25,
+            "pseudo_identity_error_m": 0.01900948882652254
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.008831291890003994,
+            "chamfer_frame_count": 25,
+            "identity_frame_count": 25,
+            "pseudo_identity_error_m": 0.020075743161097174
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_pant_fold",
+      "garment": "cloth_pant",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "0183db8deabe98c96178867a101136d111530a0c1a9e6b4f1dd3a4bd8db1cdf8",
+        "arm_c_summary": "01a5d4c53dcbaec446e98d6ba887453f10c7d764d29761cb268a10e1ec5b651d",
+        "final_data": "71d12e97e852bbc30382e723eecaa2f95dd3b6fea58ec06d66a5a5211de92463",
+        "physical_baseline": "17d810b3f61f928142a142b912bfbe3c8f9b84a8df8f9bccafe71bd555666924",
+        "selected_baseline": "a56f43dfa48bd65e94223387fd0869976e8dea350125d4ee7c4a944deaf9d949",
+        "split": "61302502b7b12d71b2e19ca1be01b6201c2b9a5d92e89f9c666e19ca7c8c565e"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.00612928134945344,
+          "late_chamfer_m": 0.007341414672732769
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.007193797791498893,
+          "late_chamfer_m": 0.007163315153897269
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.00612928134945344,
+          "late_chamfer_m": 0.007341414672732769
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 1256,
+        "causal_physical_agreement_gain": 1.0,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.02958748298274447,
+        "minimum_identifiable_fraction": 0.30276721821323793,
+        "motion_center_count": 295,
+        "observed_motion_rms_m": 0.11593991420018347,
+        "physical_response_rms_m": 0.09993786254789751,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.00914395491640242,
+            "chamfer_frame_count": 25,
+            "identity_frame_count": 25,
+            "pseudo_identity_error_m": 0.020423018998433462
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.1175017077916878,
+            "pseudo_identity_error_m": 1.0743591889719164
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0354039964132908,
+            "pseudo_identity_error_m": 1.0172982805443158
+          },
+          "balanced_baseline_improvement_fraction": -0.09593044838180198,
+          "balanced_dynamic_improvement_fraction": -0.026351138478803326,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.008182497487607361,
+            "chamfer_frame_count": 25,
+            "identity_frame_count": 25,
+            "pseudo_identity_error_m": 0.01900948882652254
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.008831291890003994,
+            "chamfer_frame_count": 25,
+            "identity_frame_count": 25,
+            "pseudo_identity_error_m": 0.020075743161097174
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 12,
+          "endpoint_correction_maximum_m": 0.007694831536972664,
+          "endpoint_correction_rms_m": 0.0012391181911297776,
+          "maximum_clipped_progress": 2.0,
+          "maximum_raw_progress": 3.1414926432088617,
+          "minimum_clipped_progress": -0.0016470498913874836,
+          "minimum_raw_progress": -0.0016470498913874836,
+          "reference_response_rms_m": 0.01891182090749135
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.004962480572573538,
+            "chamfer_frame_count": 9,
+            "identity_frame_count": 9,
+            "pseudo_identity_error_m": 0.005897754599366594
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.0350717077295155,
+            "pseudo_identity_error_m": 1.002772910163562
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.016059790971223,
+            "pseudo_identity_error_m": 1.0049497381849744
+          },
+          "balanced_baseline_improvement_fraction": -0.0189223089465389,
+          "balanced_dynamic_improvement_fraction": -0.01050476457809868,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.004794335054775095,
+            "chamfer_frame_count": 9,
+            "identity_frame_count": 9,
+            "pseudo_identity_error_m": 0.0058814458783141765
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.004884043849260133,
+            "chamfer_frame_count": 9,
+            "identity_frame_count": 9,
+            "pseudo_identity_error_m": 0.00586870604097917
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_pant_lift",
+      "garment": "cloth_pant",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "32d3929d44cc92b0283bbc0274bf48199dcdba808739e09f2e5f880e2144d94b",
+        "arm_c_summary": "8c4cee7f34d4e50c8834abd0ef11bfa4253a8b4fc8c9f949d0d02e2ac83e22f5",
+        "final_data": "7ede140e54388e3a169f030dda3b1e402a0ddaf99ce3dfdc8624889a6ed3c41e",
+        "physical_baseline": "8f70aeffd506cdaba5cd8d699ea19378aaa478e93318445e42f9fcf677fdb25f",
+        "selected_baseline": "00048bae9e9d6afd753181c48e124fd6234b62eabe66b06594114ab54e804438",
+        "split": "6e939ed1cd93f338a2cc48de10991f21790740ab74897cde9021ec0fe42d5b37"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.007930105640769283,
+          "late_chamfer_m": 0.011515710008724327
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.008446899023800655,
+          "late_chamfer_m": 0.011942448813991657
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.007930105640769283,
+          "late_chamfer_m": 0.011515710008724327
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 957,
+        "causal_physical_agreement_gain": 1.0,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.007694838986033206,
+        "minimum_identifiable_fraction": 0.613529506988871,
+        "motion_center_count": 178,
+        "observed_motion_rms_m": 0.01641780746546312,
+        "physical_response_rms_m": 0.018935147668067042,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.004962480572573538,
+            "chamfer_frame_count": 9,
+            "identity_frame_count": 9,
+            "pseudo_identity_error_m": 0.005897754599366594
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.0350717077295155,
+            "pseudo_identity_error_m": 1.002772910163562
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.016059790971223,
+            "pseudo_identity_error_m": 1.0049497381849744
+          },
+          "balanced_baseline_improvement_fraction": -0.0189223089465389,
+          "balanced_dynamic_improvement_fraction": -0.01050476457809868,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.004794335054775095,
+            "chamfer_frame_count": 9,
+            "identity_frame_count": 9,
+            "pseudo_identity_error_m": 0.0058814458783141765
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.004884043849260133,
+            "chamfer_frame_count": 9,
+            "identity_frame_count": 9,
+            "pseudo_identity_error_m": 0.00586870604097917
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 0,
+          "endpoint_correction_maximum_m": 0.01870055631222941,
+          "endpoint_correction_rms_m": 0.004636475680276752,
+          "maximum_clipped_progress": 1.505212964342993,
+          "maximum_raw_progress": 1.505212964342993,
+          "minimum_clipped_progress": -0.004283716279825993,
+          "minimum_raw_progress": -0.004283716279825993,
+          "reference_response_rms_m": 0.07719900609031703
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.0058287280509855275,
+            "chamfer_frame_count": 21,
+            "identity_frame_count": 21,
+            "pseudo_identity_error_m": 0.013150082298723574
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.115343620423226,
+            "pseudo_identity_error_m": 1.0212170779304015
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0309378088521397,
+            "pseudo_identity_error_m": 1.010014237058665
+          },
+          "balanced_baseline_improvement_fraction": -0.0682803491768138,
+          "balanced_dynamic_improvement_fraction": -0.020476022955402406,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.0052259482586844135,
+            "chamfer_frame_count": 21,
+            "identity_frame_count": 21,
+            "pseudo_identity_error_m": 0.012876872687414834
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.005653811511167016,
+            "chamfer_frame_count": 21,
+            "identity_frame_count": 21,
+            "pseudo_identity_error_m": 0.013019699937120563
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_red_fold",
+      "garment": "cloth_red",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "2ed51ddf16b6d729898eeb0f84a7b45c53f28eda034644ff29ef4f7402a4966a",
+        "arm_c_summary": "38a6694c9c0d4a63b0a9b0ee8b9f6f492362a41afe2bedf3abbe7b0c80191e0f",
+        "final_data": "045e651b1126221afa72d439a896e6351c79c55440a296da8adc2777b9107028",
+        "physical_baseline": "bbe26b0c08ad00b296bc3c8574d6c4958f35a5ad5d3dff7d75a477c9b74879a3",
+        "selected_baseline": "7f0134a41c6b31743551123de6a555e18d1d647e3614da9587645ab6c14572aa",
+        "split": "752a5ef5c8af559eac3bfc45154d6b57f46839a60256de27ccefc4ca2744b6cb"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.004876043049929484,
+          "late_chamfer_m": 0.0051818065324676366
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.00600049937056471,
+          "late_chamfer_m": 0.006089437898417094
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.004876043049929484,
+          "late_chamfer_m": 0.0051818065324676366
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 751,
+        "causal_physical_agreement_gain": 0.6517923760226816,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.01870055484484859,
+        "minimum_identifiable_fraction": 0.11279142184245636,
+        "motion_center_count": 142,
+        "observed_motion_rms_m": 0.013266595966487358,
+        "physical_response_rms_m": 0.07719900609031703,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.0058287280509855275,
+            "chamfer_frame_count": 21,
+            "identity_frame_count": 21,
+            "pseudo_identity_error_m": 0.013150082298723574
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.115343620423226,
+            "pseudo_identity_error_m": 1.0212170779304015
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0309378088521397,
+            "pseudo_identity_error_m": 1.010014237058665
+          },
+          "balanced_baseline_improvement_fraction": -0.0682803491768138,
+          "balanced_dynamic_improvement_fraction": -0.020476022955402406,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.0052259482586844135,
+            "chamfer_frame_count": 21,
+            "identity_frame_count": 21,
+            "pseudo_identity_error_m": 0.012876872687414834
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.005653811511167016,
+            "chamfer_frame_count": 21,
+            "identity_frame_count": 21,
+            "pseudo_identity_error_m": 0.013019699937120563
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 13,
+          "endpoint_correction_maximum_m": 0.024786510687752616,
+          "endpoint_correction_rms_m": 0.00897830244318233,
+          "maximum_clipped_progress": 2.0,
+          "maximum_raw_progress": 2.383544053085596,
+          "minimum_clipped_progress": -0.008040605884124863,
+          "minimum_raw_progress": -0.008040605884124863,
+          "reference_response_rms_m": 0.03538941596246147
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.009027356390356863,
+            "chamfer_frame_count": 16,
+            "identity_frame_count": 16,
+            "pseudo_identity_error_m": 0.010667128264519193
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.9069349861351494,
+            "pseudo_identity_error_m": 1.822747393185037
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.1861882753562423,
+            "pseudo_identity_error_m": 1.1808305756477857
+          },
+          "balanced_baseline_improvement_fraction": -0.8648411896600932,
+          "balanced_dynamic_improvement_fraction": -0.183509425502014,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.004733961281319253,
+            "chamfer_frame_count": 16,
+            "identity_frame_count": 16,
+            "pseudo_identity_error_m": 0.005852225220237259
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.0076103908442744644,
+            "chamfer_frame_count": 16,
+            "identity_frame_count": 16,
+            "pseudo_identity_error_m": 0.009033580671526369
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_red_lift",
+      "garment": "cloth_red",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "2bd224814af4d402d33c728a908e97db563f4b9a2a2329a158c2fd1cb83ba7f4",
+        "arm_c_summary": "84bf7f360f9414069f49a9d5bcbdc817797bd5a7b13ea14abbd5393f7c764d04",
+        "final_data": "1ad586dbb998d6310d864bc4510a2110a7abec73aa761b4c1f975a4c9405fa39",
+        "physical_baseline": "cdc770a8cf5c343e94207b6905548a294cda25b77709c8af6f83e8a9ccbf8e14",
+        "selected_baseline": "3ed915d3ce191849244d9779d19e7b4b403712ad6790034a3f83977a1ca01633",
+        "split": "d736432b318c9652b9bc9124c352fe54d26e2374a8393d09cea456e00e4ce08e"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.004761269932523527,
+          "late_chamfer_m": 0.005497691539553785
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.012152359571063157,
+          "late_chamfer_m": 0.012788450685858814
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.004761269932523527,
+          "late_chamfer_m": 0.005497691539553785
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 1197,
+        "causal_physical_agreement_gain": 1.0,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.02478650923161038,
+        "minimum_identifiable_fraction": 0.13950516329015603,
+        "motion_center_count": 125,
+        "observed_motion_rms_m": 0.026738816102305975,
+        "physical_response_rms_m": 0.03538941596246147,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.009027356390356863,
+            "chamfer_frame_count": 16,
+            "identity_frame_count": 16,
+            "pseudo_identity_error_m": 0.010667128264519193
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.9069349861351494,
+            "pseudo_identity_error_m": 1.822747393185037
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.1861882753562423,
+            "pseudo_identity_error_m": 1.1808305756477857
+          },
+          "balanced_baseline_improvement_fraction": -0.8648411896600932,
+          "balanced_dynamic_improvement_fraction": -0.183509425502014,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.004733961281319253,
+            "chamfer_frame_count": 16,
+            "identity_frame_count": 16,
+            "pseudo_identity_error_m": 0.005852225220237259
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.0076103908442744644,
+            "chamfer_frame_count": 16,
+            "identity_frame_count": 16,
+            "pseudo_identity_error_m": 0.009033580671526369
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 0,
+          "endpoint_correction_maximum_m": 0.011240007531701877,
+          "endpoint_correction_rms_m": 0.003914604814541616,
+          "maximum_clipped_progress": 1.6723685878582968,
+          "maximum_raw_progress": 1.6723685878582968,
+          "minimum_clipped_progress": -0.005647385897271331,
+          "minimum_raw_progress": -0.005647385897271331,
+          "reference_response_rms_m": 0.0827817975325003
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.006895878911653147,
+            "chamfer_frame_count": 24,
+            "identity_frame_count": 24,
+            "pseudo_identity_error_m": 0.011028674448923479
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 0.9256487232806674,
+            "pseudo_identity_error_m": 0.9664670644368967
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 0.9876426135584588,
+            "pseudo_identity_error_m": 0.9913416957564262
+          },
+          "balanced_baseline_improvement_fraction": 0.05394210614121797,
+          "balanced_dynamic_improvement_fraction": 0.010507845342557554,
+          "no_primary_baseline_regression": true,
+          "no_primary_static_regression": true,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.007449779531065411,
+            "chamfer_frame_count": 24,
+            "identity_frame_count": 24,
+            "pseudo_identity_error_m": 0.011411329837038199
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.006982160162983873,
+            "chamfer_frame_count": 24,
+            "identity_frame_count": 24,
+            "pseudo_identity_error_m": 0.011124998066895833
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": true,
+      "candidate_available": true,
+      "case": "cloth_shirt_fold",
+      "garment": "cloth_shirt",
+      "guarded_minus_selected_future_chamfer_m": -0.0002960264694290126,
+      "inputs_sha256": {
+        "arm_c_assimilation": "ae29d9b38e0ee744978d00e0aa09aa94f2d5d30e34f234980d6c40f8bd00b80e",
+        "arm_c_summary": "3d12dd1652c35c4f62343bdaac240e930f35615793237a3bd63841a02cf88900",
+        "final_data": "613a11d974fb6ebdd2d9184f346423cbc1dc26a15994da310b155adb7d54cdd2",
+        "physical_baseline": "33298b216e0686fb08bfc7dfed1e1e510efb607434ec679530a05cc3ba81b0bc",
+        "selected_baseline": "9536f587681e915b0759fe2df66db0a5dc2f03cd498ec5d16561b19b5d9e45f8",
+        "split": "a01db0154b6c77c833a104fc650b6173775e4b0aa2bdd106eb72ae59d607c83d"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.00852541242099254,
+          "late_chamfer_m": 0.009379240947053348
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.00852541242099254,
+          "late_chamfer_m": 0.009379240947053348
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.008821438890421553,
+          "late_chamfer_m": 0.009696389213528117
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 1673,
+        "causal_physical_agreement_gain": 0.9809094945000597,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.011240010596535588,
+        "minimum_identifiable_fraction": 0.46953353526055314,
+        "motion_center_count": 367,
+        "observed_motion_rms_m": 0.03262500372991566,
+        "physical_response_rms_m": 0.0827817975325003,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.006895878911653147,
+            "chamfer_frame_count": 24,
+            "identity_frame_count": 24,
+            "pseudo_identity_error_m": 0.011028674448923479
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 0.9256487232806674,
+            "pseudo_identity_error_m": 0.9664670644368967
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 0.9876426135584588,
+            "pseudo_identity_error_m": 0.9913416957564262
+          },
+          "balanced_baseline_improvement_fraction": 0.05394210614121797,
+          "balanced_dynamic_improvement_fraction": 0.010507845342557554,
+          "no_primary_baseline_regression": true,
+          "no_primary_static_regression": true,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.007449779531065411,
+            "chamfer_frame_count": 24,
+            "identity_frame_count": 24,
+            "pseudo_identity_error_m": 0.011411329837038199
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.006982160162983873,
+            "chamfer_frame_count": 24,
+            "identity_frame_count": 24,
+            "pseudo_identity_error_m": 0.011124998066895833
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 13,
+          "endpoint_correction_maximum_m": 0.0058438895775419775,
+          "endpoint_correction_rms_m": 0.0005750335252082898,
+          "maximum_clipped_progress": 2.0,
+          "maximum_raw_progress": 3.991032977616321,
+          "minimum_clipped_progress": -0.009940197610361138,
+          "minimum_raw_progress": -0.009940197610361138,
+          "reference_response_rms_m": 0.01106128186608469
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.0034325209393252037,
+            "chamfer_frame_count": 7,
+            "identity_frame_count": 7,
+            "pseudo_identity_error_m": 0.003295244288447284
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.001374993529488,
+            "pseudo_identity_error_m": 1.0103691511988122
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0011676597505583,
+            "pseudo_identity_error_m": 1.0042818215323435
+          },
+          "balanced_baseline_improvement_fraction": -0.005872072364150105,
+          "balanced_dynamic_improvement_fraction": -0.0027247406414510067,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.003427807725881787,
+            "chamfer_frame_count": 7,
+            "identity_frame_count": 7,
+            "pseudo_identity_error_m": 0.003261426068420088
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.003428517597322729,
+            "chamfer_frame_count": 7,
+            "identity_frame_count": 7,
+            "pseudo_identity_error_m": 0.00328119479790978
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_shirt_lift",
+      "garment": "cloth_shirt",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "5e79e706d82a687f65206c2f0c34243f20efc6820f135493c596f293a969c70c",
+        "arm_c_summary": "9931f06fdf571c4b3373094c62ee79deb307037fbfe4435d22dbb67da24d53ba",
+        "final_data": "b9faaf2c92d9b068e97a2c6ea42ea7b6ea09b1a2be3adb00e005eeec393dd7af",
+        "physical_baseline": "61a99d3c6f276bb94a975a27c2fb67dd1503573e2c2d709472ccc2183fba317a",
+        "selected_baseline": "16fa142a8a9152e89474eb82c3e0e96dfb9f77a02b7c41c534a5b9546f10432a",
+        "split": "74720aa3a087e219f64ca494afaab659fe7c9a9d121fe6fc054f9ff26697d705"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.003793325064068461,
+          "late_chamfer_m": 0.004633415060583481
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.0037867589046837124,
+          "late_chamfer_m": 0.004616944559423769
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.003793325064068461,
+          "late_chamfer_m": 0.004633415060583481
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 1337,
+        "causal_physical_agreement_gain": 1.0,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.005843890945030275,
+        "minimum_identifiable_fraction": 0.708311716232588,
+        "motion_center_count": 469,
+        "observed_motion_rms_m": 0.007001551126891605,
+        "physical_response_rms_m": 0.011073207779916373,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.0034325209393252037,
+            "chamfer_frame_count": 7,
+            "identity_frame_count": 7,
+            "pseudo_identity_error_m": 0.003295244288447284
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.001374993529488,
+            "pseudo_identity_error_m": 1.0103691511988122
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0011676597505583,
+            "pseudo_identity_error_m": 1.0042818215323435
+          },
+          "balanced_baseline_improvement_fraction": -0.005872072364150105,
+          "balanced_dynamic_improvement_fraction": -0.0027247406414510067,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.003427807725881787,
+            "chamfer_frame_count": 7,
+            "identity_frame_count": 7,
+            "pseudo_identity_error_m": 0.003261426068420088
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.003428517597322729,
+            "chamfer_frame_count": 7,
+            "identity_frame_count": 7,
+            "pseudo_identity_error_m": 0.00328119479790978
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 0,
+          "endpoint_correction_maximum_m": 0.029720854944057934,
+          "endpoint_correction_rms_m": 0.010848336857093162,
+          "maximum_clipped_progress": 1.1511600076240818,
+          "maximum_raw_progress": 1.1511600076240818,
+          "minimum_clipped_progress": -0.02441867901413952,
+          "minimum_raw_progress": -0.02441867901413952,
+          "reference_response_rms_m": 0.06495801048578434
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.007797189341065112,
+            "chamfer_frame_count": 20,
+            "identity_frame_count": 20,
+            "pseudo_identity_error_m": 0.016812075972379575
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.1138092172370735,
+            "pseudo_identity_error_m": 1.0553208357976525
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0174282258960388,
+            "pseudo_identity_error_m": 1.0095041012415111
+          },
+          "balanced_baseline_improvement_fraction": -0.08456502651736297,
+          "balanced_dynamic_improvement_fraction": -0.013466163568774947,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.007000471194166358,
+            "chamfer_frame_count": 20,
+            "identity_frame_count": 20,
+            "pseudo_identity_error_m": 0.015930772332067484
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.0076636259370514385,
+            "chamfer_frame_count": 20,
+            "identity_frame_count": 20,
+            "pseudo_identity_error_m": 0.016653796603405276
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_skirt_1_fold",
+      "garment": "cloth_skirt_1",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "c374ae5bb4c0771d082f7b1678f6d23624c54c5d33ef3faea6b1b6c3854cf72e",
+        "arm_c_summary": "7b3cccdc084691758d038eb31d9fbf5cdc48f604295b099954c594cf6ca7700e",
+        "final_data": "4283d955cff353377a02e7a58474b617d9f639ddb886e80029f16a2080a1a8ef",
+        "physical_baseline": "20b68ae6fdbde8fbc45b4a6aeeb9adf15d0795b0ec2457bd5df5245f6461dee9",
+        "selected_baseline": "f71cc4fda79d4ded4bab7a1caa2db2b7f4a029535483b3236aa8a3eefddbe8a1",
+        "split": "ff7155ee3b00312fd4831b571af8b992eda1a15a1f76b683dcfa46e640ebba47"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.004647410826850296,
+          "late_chamfer_m": 0.004873607269300968
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.005546790262934576,
+          "late_chamfer_m": 0.0052192141284725995
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.004647410826850296,
+          "late_chamfer_m": 0.004873607269300968
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 449,
+        "causal_physical_agreement_gain": 0.7228837780186034,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.029720851303358182,
+        "minimum_identifiable_fraction": 0.17971469352295522,
+        "motion_center_count": 33,
+        "observed_motion_rms_m": 0.016578008241105578,
+        "physical_response_rms_m": 0.06495801048578434,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.007797189341065112,
+            "chamfer_frame_count": 20,
+            "identity_frame_count": 20,
+            "pseudo_identity_error_m": 0.016812075972379575
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.1138092172370735,
+            "pseudo_identity_error_m": 1.0553208357976525
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0174282258960388,
+            "pseudo_identity_error_m": 1.0095041012415111
+          },
+          "balanced_baseline_improvement_fraction": -0.08456502651736297,
+          "balanced_dynamic_improvement_fraction": -0.013466163568774947,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.007000471194166358,
+            "chamfer_frame_count": 20,
+            "identity_frame_count": 20,
+            "pseudo_identity_error_m": 0.015930772332067484
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.0076636259370514385,
+            "chamfer_frame_count": 20,
+            "identity_frame_count": 20,
+            "pseudo_identity_error_m": 0.016653796603405276
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 10,
+          "endpoint_correction_maximum_m": 0.027974018027223227,
+          "endpoint_correction_rms_m": 0.01138973948685143,
+          "maximum_clipped_progress": 2.0,
+          "maximum_raw_progress": 2.291784199422618,
+          "minimum_clipped_progress": -0.03099422652564164,
+          "minimum_raw_progress": -0.03099422652564164,
+          "reference_response_rms_m": 0.04169845174552358
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.013507778187865565,
+            "chamfer_frame_count": 14,
+            "identity_frame_count": 14,
+            "pseudo_identity_error_m": 0.021717957772409528
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 2.509541925002649,
+            "pseudo_identity_error_m": 1.6234990827531302
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.161638997133762,
+            "pseudo_identity_error_m": 1.0989437391780985
+          },
+          "balanced_baseline_improvement_fraction": -1.0665205038778898,
+          "balanced_dynamic_improvement_fraction": -0.13029136815593034,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.005382567253922768,
+            "chamfer_frame_count": 14,
+            "identity_frame_count": 14,
+            "pseudo_identity_error_m": 0.013377252875055654
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.011628206543680759,
+            "chamfer_frame_count": 14,
+            "identity_frame_count": 14,
+            "pseudo_identity_error_m": 0.019762574732581323
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_skirt_1_lift",
+      "garment": "cloth_skirt_1",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "a5ab531530d14d9ca34678f34925996247a11316b20d2403d3ee6328381b7f10",
+        "arm_c_summary": "b7354e93c3ba722dba62e04f65d055bb0ece64f5790f21a2adceba85f544e586",
+        "final_data": "3ae697f3ab1043f89066e2dc15a046c42ff45b37b49d4b1cddae3a437fb85a20",
+        "physical_baseline": "e3ea8e5687cfff2ba03916bd828a4dbed3800d0bf2d8dca3a63b68e02f704a47",
+        "selected_baseline": "eb37db4ac25910c68e049e9b5979227f3cd35fbd7f9fc57b824dfc43791ceea1",
+        "split": "94fa076997393ef91ad078d812f2e73839741fa9f2a622b2aa16243be8e379a6"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.005809590598510816,
+          "late_chamfer_m": 0.006707881004942556
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.020916366528286,
+          "late_chamfer_m": 0.023749452413356496
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.005809590598510816,
+          "late_chamfer_m": 0.006707881004942556
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 462,
+        "causal_physical_agreement_gain": 0.9409444475005229,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.027974015352743384,
+        "minimum_identifiable_fraction": 0.12572936468829543,
+        "motion_center_count": 40,
+        "observed_motion_rms_m": 0.02026717771710031,
+        "physical_response_rms_m": 0.04169845174552358,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.013507778187865565,
+            "chamfer_frame_count": 14,
+            "identity_frame_count": 14,
+            "pseudo_identity_error_m": 0.021717957772409528
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 2.509541925002649,
+            "pseudo_identity_error_m": 1.6234990827531302
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.161638997133762,
+            "pseudo_identity_error_m": 1.0989437391780985
+          },
+          "balanced_baseline_improvement_fraction": -1.0665205038778898,
+          "balanced_dynamic_improvement_fraction": -0.13029136815593034,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.005382567253922768,
+            "chamfer_frame_count": 14,
+            "identity_frame_count": 14,
+            "pseudo_identity_error_m": 0.013377252875055654
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.011628206543680759,
+            "chamfer_frame_count": 14,
+            "identity_frame_count": 14,
+            "pseudo_identity_error_m": 0.019762574732581323
+          }
+        }
+      }
+    },
+    {
+      "accepted_harmful": false,
+      "action_conditioned_diagnostic": {
+        "progress": {
+          "clipped_frame_count": 0,
+          "endpoint_correction_maximum_m": 0.01981317816288144,
+          "endpoint_correction_rms_m": 0.005073917256692215,
+          "maximum_clipped_progress": 1.155687344609156,
+          "maximum_raw_progress": 1.155687344609156,
+          "minimum_clipped_progress": -0.005132645207766225,
+          "minimum_raw_progress": -0.005132645207766225,
+          "reference_response_rms_m": 0.09462051008395492
+        },
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.007272347484744351,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.023739203267995324
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.0506008833759566,
+            "pseudo_identity_error_m": 1.051606380457789
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0060051043664862,
+            "pseudo_identity_error_m": 1.0055103056526882
+          },
+          "balanced_baseline_improvement_fraction": -0.05110363191687295,
+          "balanced_dynamic_improvement_fraction": -0.005757705009587166,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.006922083923416945,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.022574229016812438
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.0072289369638178745,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.023609109856498126
+          }
+        }
+      },
+      "bit_exact_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "cloth_skirt_2_fold",
+      "garment": "cloth_skirt_2",
+      "guarded_minus_selected_future_chamfer_m": 0.0,
+      "inputs_sha256": {
+        "arm_c_assimilation": "9c601d9822eaec44ae743896d713bed6b23b54d328f1e1b826bf5ba87b21b2e0",
+        "arm_c_summary": "946db90de98bd8a41037ca4120951b937f65faf8e304efdbabbeafd350d95eef",
+        "final_data": "0c292271c8cc662a22dbc5d5e21ca509377d467906863a6454139a40d5b25a3e",
+        "physical_baseline": "c39ef6a70c36bc6c5e850d8d69503a886675d484a67e05c4b672fa00bcffcaa3",
+        "selected_baseline": "acb4e1463849a0226842098dcdbb079e55ca9c7e36971a86f63c9cdb42b4d3b0",
+        "split": "788b4b1c35dbf46844e04439e3709eb172630b57038fba48e49e25fe22531fb7"
+      },
+      "scores": {
+        "guarded_candidate": {
+          "future_chamfer_m": 0.005966312005688749,
+          "late_chamfer_m": 0.005418438652834224
+        },
+        "raw_candidate": {
+          "future_chamfer_m": 0.0062636760998241205,
+          "late_chamfer_m": 0.00547703899282489
+        },
+        "selected_baseline": {
+          "future_chamfer_m": 0.005966312005688749,
+          "late_chamfer_m": 0.005418438652834224
+        }
+      },
+      "target_free_diagnostic": {
+        "available_center_count": 530,
+        "causal_physical_agreement_gain": 0.9982453806245435,
+        "fallback_reason": null,
+        "maximum_correction_m": 0.019813181796939902,
+        "minimum_identifiable_fraction": 0.6488279253403245,
+        "motion_center_count": 47,
+        "observed_motion_rms_m": 0.027672896781404843,
+        "physical_response_rms_m": 0.09462051008395492,
+        "validation": {
+          "action_conditioned_candidate": {
+            "chamfer_distance_m": 0.007272347484744351,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.023739203267995324
+          },
+          "action_conditioned_over_baseline": {
+            "chamfer_distance_m": 1.0506008833759566,
+            "pseudo_identity_error_m": 1.051606380457789
+          },
+          "action_conditioned_over_static": {
+            "chamfer_distance_m": 1.0060051043664862,
+            "pseudo_identity_error_m": 1.0055103056526882
+          },
+          "balanced_baseline_improvement_fraction": -0.05110363191687295,
+          "balanced_dynamic_improvement_fraction": -0.005757705009587166,
+          "no_primary_baseline_regression": false,
+          "no_primary_static_regression": false,
+          "selected_baseline": {
+            "chamfer_distance_m": 0.006922083923416945,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.022574229016812438
+          },
+          "static_candidate": {
+            "chamfer_distance_m": 0.0072289369638178745,
+            "chamfer_frame_count": 15,
+            "identity_frame_count": 15,
+            "pseudo_identity_error_m": 0.023609109856498126
+          }
+        }
+      }
+    }
+  ],
+  "claim_boundary": "unchanged-method diagnostic on an already-open, separate cloth source cohort; not confirmation, calibration, or SOTA evidence",
+  "garment_count": 6,
+  "guarded_cluster_bootstrap": {
+    "garment_count": 6,
+    "lower_95_m": -7.400661735725315e-05,
+    "mean_difference_m": -2.4668872452417716e-05,
+    "upper_95_m": 0.0
+  },
+  "inputs_sha256": {
+    "source_lock": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6",
+    "source_summary": "02ee8ba418beedd9299d752ad7ba8bd3ca423bc18013cd7577312e8539e8326d"
+  },
+  "result_sha256": "095f29fa7a835344e353c5917ec1089d372b6feca402caa02b859e524da6d37a",
+  "schema_version": 1,
+  "scores": {
+    "guarded_candidate": {
+      "future_chamfer_m": 0.005520260733969256,
+      "late_chamfer_m": 0.006350636355850279
+    },
+    "raw_candidate": {
+      "future_chamfer_m": 0.008228146460040671,
+      "late_chamfer_m": 0.008974539785880822
+    },
+    "selected_baseline": {
+      "future_chamfer_m": 0.005547172231190076,
+      "late_chamfer_m": 0.006379468016438894
+    }
+  }
+}

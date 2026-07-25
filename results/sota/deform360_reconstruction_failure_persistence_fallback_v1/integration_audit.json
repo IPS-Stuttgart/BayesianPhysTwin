@@ -1,0 +1,98 @@
+{
+  "admitted_path": {
+    "case": "011-green-cloth-ep0000",
+    "physical_policy": "automatic_twin",
+    "point_and_color_array_parity": true
+  },
+  "artifact_kind": "Deform360ReconstructionFailurePersistenceFallbackAudit",
+  "cases": [
+    {
+      "action_support_nonzero_count": 0,
+      "automatic_twin_or_warp_artifacts_absent": true,
+      "backbone_seal_sha256": "79f9484f5a6e25337196a3016296df008e89c2f05f23eefda7e27fb55228925e",
+      "case": "160-hose-ep0001",
+      "exact_persistence": true,
+      "frame_zero_manifest_sha256": "1def0d0d5c60eff71e8bb0475937378b16fac13e833f312e686bb94f7d163d66",
+      "material_identity_sha256": "638f28500a780a0ee1a93c6182891eb361ac898c1ec8b941d2a92355ba967abc",
+      "material_point_count": 2675,
+      "passed": true,
+      "physical_archive_sha256": "d221f171e262e9d11ac77b8ea43894579dfb0163c0cf5b3d7b8b4c4ff27a4230",
+      "physical_manifest_sha256": "e6f14c0696bc1c67c777121506ca3b71f152e2e6e636fdb248f8bedce6407b8d",
+      "physical_mode": "persistence_fallback",
+      "physical_policy": "persistence_only"
+    },
+    {
+      "action_support_nonzero_count": 0,
+      "automatic_twin_or_warp_artifacts_absent": true,
+      "backbone_seal_sha256": "9c871a241ddcc886e35b9d43e777623e82af7f340c2d22078cb5af3ad6cfe695",
+      "case": "174-chain-ep0001",
+      "exact_persistence": true,
+      "frame_zero_manifest_sha256": "fc7d47226d7a177017f681bb68efd90a4324df261df8ffade7b00316560e8904",
+      "material_identity_sha256": "7ddcd683145957112b3d162adbdde3477a83fc147650ef45f0748fb8c05d1023",
+      "material_point_count": 264,
+      "passed": true,
+      "physical_archive_sha256": "b588c7be7e0da89ae3646fc069dcf4ee2d6fe2a7d7e531dd370b41b46ca485cd",
+      "physical_manifest_sha256": "808ff422da5fa803b0ae8b62f98869d7e77b84b40ac88ffeb0d930f96395645c",
+      "physical_mode": "persistence_fallback",
+      "physical_policy": "persistence_only"
+    },
+    {
+      "action_support_nonzero_count": 0,
+      "automatic_twin_or_warp_artifacts_absent": true,
+      "backbone_seal_sha256": "6a522d35cbcbdc407e92cadd538f0d7c39a6bdd7bcee5cbd7d8f007abeea2acc",
+      "case": "015-airbag-cloth-ep0006",
+      "exact_persistence": true,
+      "frame_zero_manifest_sha256": "6e26f340aacdb2813003b15fa132bc7ea909aaa4e4eef589431e8546faa732f4",
+      "material_identity_sha256": "a1c93d0a9d069e5d6794a10f9daf4b419591eb43c0b2cace3900f3def32cc3d7",
+      "material_point_count": 3495,
+      "passed": true,
+      "physical_archive_sha256": "89e80e627e00a205a55490c9017dad5e9d92a3ce65b99dae6ee87c2f07c079d0",
+      "physical_manifest_sha256": "81096ee46dcd019abf9b3f13b3637bb549803680536414f91e15063ae7d10d01",
+      "physical_mode": "persistence_fallback",
+      "physical_policy": "persistence_only"
+    },
+    {
+      "action_support_nonzero_count": 0,
+      "automatic_twin_or_warp_artifacts_absent": true,
+      "backbone_seal_sha256": "bc880c358534de8bd19b2e5911a32978e3f9645d4eb9ff87ecabd0b121e4c24a",
+      "case": "100-puppet-ep0009",
+      "exact_persistence": true,
+      "frame_zero_manifest_sha256": "5ce178356ae376f347508b2d129fd0f32b6caa9c1fb0b5fc8b912ef5ade608d4",
+      "material_identity_sha256": "6f207d289bb29fb348193bb12fdf392517286d4c98d3320496a4901bbdb62e50",
+      "material_point_count": 3479,
+      "passed": true,
+      "physical_archive_sha256": "3d970597630b6d75ae18637907c14c5fa633dd0956da61fe4de600814a5b7569",
+      "physical_manifest_sha256": "5459d39a26281720ef95cff55556ec2eb94e56e80a1e4873eeef800f719a6f4a",
+      "physical_mode": "persistence_fallback",
+      "physical_policy": "persistence_only"
+    }
+  ],
+  "config_sha256": "bf483664c191157fe98bd8624247e22bcbd371b709da90b9ce0bb5e5c790aa50",
+  "fallback_case_count": 4,
+  "fallback_pass_count": 4,
+  "information_boundary": {
+    "camera_calibration_read": true,
+    "frame_zero_rgb_and_masks_read": true,
+    "future_object_geometry_read": false,
+    "future_object_rgb_read": false,
+    "future_object_tracks_read": false,
+    "future_tactile_read": false,
+    "known_robot_action_read_for_archive_compatibility": true,
+    "outcome_metric_read": false
+  },
+  "inputs_sha256": {
+    "config": "240554ed41986cf5b330225d759c8df24de99d8642f9c1dcd6114185ee16fc0d",
+    "prospective_protocol": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01"
+  },
+  "passed": true,
+  "protocol_id": "deform360-reconstruction-failure-persistence-fallback-v1",
+  "result_sha256": "8da661c0452a482f9aef3c90676740bcf31a6f7cc24d5ffb63df218687b266ec",
+  "schema_version": 1,
+  "scoring_boundary": {
+    "absolute_chamfer": "Requires a separately declared variable-cardinality target protocol and is not evaluated here.",
+    "absolute_identity_rmse": "Not available: visual-hull points do not inherit official Splat material identities.",
+    "calibration": "Not available for persistence-only dispositions.",
+    "paired_candidate_minus_baseline_regret": "Provably zero for any deterministic metric because the complete trajectories are bit-identical.",
+    "prospective_use": "A future protocol may count persistence-only cases as exact non-regression ties, but not as absolute-accuracy or calibration observations."
+  }
+}

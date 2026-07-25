@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "contract": "matphys-loo-initialization-invalidation-v1",
+  "invalidated_protocol_id": "matphys-guarded-bayesian-loo22-v1",
+  "detected_at_utc": "2026-07-19T22:09:10Z",
+  "future_metrics_opened": false,
+  "training_completed": false,
+  "checkpoint": {
+    "sha256": "38af188bd3ce7f7ab804faa80531c48480684e08721e6ee64a09859bcf0b6a15",
+    "epoch": 200,
+    "metadata": {
+      "save_dir": "checkpoints/video_allcases_simple_nosigmoid_20260507",
+      "base_path": "data/different_types",
+      "epochs": 200
+    }
+  },
+  "finding": "The warm-start representation was trained on the all-cases PhysTwin benchmark. Excluding and zero-initializing the residual spring heads preserves an exact physical fallback but does not remove held-out-object information from the remaining trunk.",
+  "action": "Both in-progress v1 fold jobs were terminated before terminal checkpoints, exports, family selection, or future evaluation. V2 starts every fold from a generic frozen VideoMAE backbone and fresh trainable parameters.",
+  "claim_boundary": "No object-disjoint or predictive result is admitted from v1. Its partial logs are engineering provenance only."
+}

@@ -1,0 +1,317 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectivePrediction",
+  "case": "175-plastic-bag-cloth-ep0003",
+  "episode_id": 3,
+  "episode_key": "175-plastic-bag-cloth/3",
+  "information_boundary": {
+    "future_object_geometry_read": false,
+    "future_object_rgb_read": false,
+    "future_particle_tracks_read": false,
+    "outcome_manifest_read": false,
+    "prediction_hashed_before_outcome": true,
+    "source_lock_read_before_prediction": true,
+    "target_argument_accepted": false,
+    "target_data_read": false
+  },
+  "input_result_sha256": {
+    "backbone": "43827fc718488b8704ab88a26d39eea288680c5af5f9a385e21e5d406b95f48a",
+    "cycle": "f75fecdd4173f226b6335fca59f17d5bb1e2d2754232850e0b33584274aa7354",
+    "measurement": "9da46c87e64911b3ea423337383be38a5e58103562a85de6cb74028583b79431"
+  },
+  "inputs_sha256": {
+    "backbone_seal": "92264896d2fc179e7114d4ac90518dbb1b9d918b29fbb7fe7371eb1998221947",
+    "cycle_archive": "fbc7c4f55a4b0e37f78d34229e41b076b7d9aaac790b155cdcfe684cee06e6dd",
+    "cycle_manifest": "a1ef469497b68a15c4bdf88158cdc918bb1b9f5cf8556f50fea617e6e660aa3e",
+    "measurement_archive": "00ede354f33e018c4e3545159664d5639e05af4d803b446706e5522df7c9bb4c",
+    "measurement_manifest": "70196dc840e6cdbe21709bef6c0b09db6e1a90ff8ebd6bab324dd0e11942259d",
+    "physical_archive": "b8eacb54e419ad1641523bd28a5969c9e8018ffca638879f17b8ab5e0a123033",
+    "protocol": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01",
+    "source_lock": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6"
+  },
+  "method": {
+    "baseline_selector": {
+      "information_boundary": {
+        "future_observation_read": false,
+        "selection_uses_current_update_observation_only": true,
+        "target_argument_accepted": false
+      },
+      "minimum_support": 3,
+      "tie_break": "physical_prior",
+      "updates": [
+        {
+          "available_center_count": 11,
+          "current_observation_chamfer_m": {
+            "persistence": 0.024188105966928157,
+            "physical_prior": 0.024258721112348523
+          },
+          "decision": "current_observation_chamfer",
+          "frame": 19,
+          "interval_end_exclusive": 38,
+          "selected_backbone": "persistence",
+          "support_sufficient": true
+        },
+        {
+          "available_center_count": 9,
+          "current_observation_chamfer_m": {
+            "persistence": 0.0562606176113914,
+            "physical_prior": 0.05632002159145529
+          },
+          "decision": "current_observation_chamfer",
+          "frame": 38,
+          "interval_end_exclusive": 57,
+          "selected_backbone": "persistence",
+          "support_sufficient": true
+        },
+        {
+          "available_center_count": 9,
+          "current_observation_chamfer_m": {
+            "persistence": 0.07030264382278979,
+            "physical_prior": 0.06946653697605491
+          },
+          "decision": "current_observation_chamfer",
+          "frame": 57,
+          "interval_end_exclusive": 76,
+          "selected_backbone": "physical_prior",
+          "support_sufficient": true
+        }
+      ]
+    },
+    "bias_aware_candidate": {
+      "arm": "bias_aware_state_candidate_unguarded",
+      "candidate_update_count": 1,
+      "center_ids": [
+        5,
+        279,
+        372,
+        80,
+        264,
+        22,
+        120,
+        350,
+        256,
+        179,
+        262,
+        25,
+        216,
+        267,
+        32,
+        358
+      ],
+      "config": {
+        "minimum_available_center_count": 9,
+        "minimum_identifiable_fraction": 0.1,
+        "minimum_motion_center_count": 3,
+        "minimum_observed_motion_m": 0.0005,
+        "minimum_physical_agreement_gain": 0.4,
+        "minimum_physical_response_m": 0.0005,
+        "observation_variance_floor_m2": 2.5e-05,
+        "physical_response_rank": 4,
+        "regret_minimum_improvement_m": 5e-06,
+        "regret_nominal_coverage": 0.9,
+        "regret_ridge_penalty": 10.0,
+        "regret_support_margin_std": 0.0,
+        "reprojection_scale_px": 3.0,
+        "state_update": {
+          "ambiguous_subspace_cosine": 0.999,
+          "anchor_std_m": 0.002,
+          "camera_bias_prior_std_m": 0.01,
+          "convergence_tolerance": 1e-09,
+          "degrees_of_freedom": 4.0,
+          "effective_samples_per_view": 64.0,
+          "maximum_condition_number": 1000000000000.0,
+          "maximum_iterations": 8,
+          "maximum_state_update_m": 0.1,
+          "minimum_robust_weight": 0.02,
+          "observation_std_m": 0.005,
+          "reject_unanchored_ambiguity": true,
+          "shared_bias_prior_std_m": 0.02,
+          "state_prior_std_m": 0.02
+        },
+        "update_frames": [
+          19,
+          38,
+          57
+        ]
+      },
+      "feature_names": [
+        "physical_response_rms_over_scale",
+        "observed_motion_rms_over_scale",
+        "innovation_rms_over_scale",
+        "correction_rms_over_scale",
+        "mean_prior_reliability",
+        "causal_physical_agreement_gain",
+        "maximum_state_bias_subspace_cosine",
+        "maximum_state_bias_posterior_correlation"
+      ],
+      "information_boundary": {
+        "future_observation_read": false,
+        "physical_response_frames_by_update": "causal prefix [0, update] only",
+        "prior_reliability_uses_state_innovation": false,
+        "state_innovation_likelihood_count": 1,
+        "target_argument_accepted": false
+      },
+      "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+      "updates": [
+        {
+          "available_center_count": 11,
+          "bit_exact_baseline_fallback": true,
+          "candidate_available": false,
+          "causal_physical_agreement_gain": 0.0,
+          "decision": "dynamic-evidence-exact-baseline-fallback",
+          "dynamic_window_selected": false,
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "features": null,
+          "frame": 19,
+          "interval_end_exclusive": 38,
+          "motion_center_count": 11,
+          "observed_motion_rms_m": 0.030989264773853317,
+          "physical_response_rms_m": 0.002824646717713909
+        },
+        {
+          "available_center_count": 9,
+          "bit_exact_baseline_fallback": true,
+          "candidate_available": false,
+          "causal_physical_agreement_gain": 1.0,
+          "decision": "dynamic-evidence-exact-baseline-fallback",
+          "dynamic_window_selected": false,
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "features": null,
+          "frame": 38,
+          "interval_end_exclusive": 57,
+          "motion_center_count": 8,
+          "observed_motion_rms_m": 0.04455626952845187,
+          "physical_response_rms_m": 0.00014897571320069197
+        },
+        {
+          "available_center_count": 9,
+          "bit_exact_baseline_fallback": false,
+          "candidate_available": true,
+          "causal_physical_agreement_gain": 1.0,
+          "decision": "bias-aware-candidate-available",
+          "dynamic_window_selected": true,
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "features": [
+            0.05760316929145652,
+            0.13747303215795004,
+            0.6852304479991809,
+            0.02501202174273081,
+            0.15881426160457676,
+            1.0,
+            0.971702935802929,
+            0.17396408276287437
+          ],
+          "frame": 57,
+          "identifiable_basis_rank": 1,
+          "interval_end_exclusive": 76,
+          "maximum_correction_m": 0.01476044946487758,
+          "minimum_identifiable_fraction": 0.22599642638834638,
+          "motion_center_count": 9,
+          "observed_motion_rms_m": 0.01698250195334189,
+          "physical_basis_rank": 4,
+          "physical_response_rms_m": 0.007115911533011691,
+          "state_update_diagnostics": {
+            "active_view_count": 1,
+            "condition_number": 11.262593428628346,
+            "correlation_treatment": "effective samples within view and equal-weight covariance intersection across views",
+            "downweighted_camera_fraction": 1.0,
+            "effective_camera_information_mass": 1.4293283544411908,
+            "independent_anchor_count": 0,
+            "iterations": 8,
+            "maximum_state_bias_posterior_correlation": 0.17396408276287437,
+            "maximum_state_update_m": 0.007673827221344909,
+            "minimum_camera_robust_weight": 0.02519662661550596,
+            "per_camera_bias_prior_ci_scaled": true,
+            "prior_reliability_uses_innovation": false,
+            "shared_bias_mode_count": 3,
+            "state_bias_subspace_cosine": 0.971702935802929,
+            "state_mode_count": 1,
+            "usable_camera_observation_count": 9,
+            "view_count": 1
+          }
+        }
+      ]
+    },
+    "config": {
+      "minimum_available_center_count": 9,
+      "minimum_identifiable_fraction": 0.1,
+      "minimum_motion_center_count": 3,
+      "minimum_observed_motion_m": 0.0005,
+      "minimum_physical_agreement_gain": 0.4,
+      "minimum_physical_response_m": 0.0005,
+      "observation_variance_floor_m2": 2.5e-05,
+      "physical_response_rank": 4,
+      "regret_minimum_improvement_m": 5e-06,
+      "regret_nominal_coverage": 0.9,
+      "regret_ridge_penalty": 10.0,
+      "regret_support_margin_std": 0.0,
+      "reprojection_scale_px": 3.0,
+      "state_update": {
+        "ambiguous_subspace_cosine": 0.999,
+        "anchor_std_m": 0.002,
+        "camera_bias_prior_std_m": 0.01,
+        "convergence_tolerance": 1e-09,
+        "degrees_of_freedom": 4.0,
+        "effective_samples_per_view": 64.0,
+        "maximum_condition_number": 1000000000000.0,
+        "maximum_iterations": 8,
+        "maximum_state_update_m": 0.1,
+        "minimum_robust_weight": 0.02,
+        "observation_std_m": 0.005,
+        "reject_unanchored_ambiguity": true,
+        "shared_bias_prior_std_m": 0.02,
+        "state_prior_std_m": 0.02
+      },
+      "update_frames": [
+        19,
+        38,
+        57
+      ]
+    },
+    "source_lock_candidate_certified": true,
+    "source_lock_finite_sample_coverage": 0.8,
+    "source_lock_upper_regret_m": -8.871136285708119e-06
+  },
+  "object_id": "175-plastic-bag-cloth",
+  "output": {
+    "baseline_array_sha256": "75fbfd47e00ddaf148c3b4c88984a3191153087087d9da7ba9c45f1fa24209b1",
+    "candidate_array_sha256": "8bf291e3f23da9de9132d0090d017d4265a1b73c2ff4efa4bbc2b750aa882e15",
+    "candidate_update_count": 1,
+    "exact_fallback_update_count": 2,
+    "prediction_archive": "/mnt/corsair/florianpfaff/deform360-bias-aware-prospective-v1/predictions/175-plastic-bag-cloth-ep0003/bias_aware_prediction.npz",
+    "prediction_archive_sha256": "59043d95b8379dad24e79e132e9658a71adb5c0c93429569105d7f04596ffa76",
+    "prediction_array_sha256": "8bf291e3f23da9de9132d0090d017d4265a1b73c2ff4efa4bbc2b750aa882e15"
+  },
+  "protocol_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+  "result_sha256": "84a2801c11f72d1688511c89f63a938a1112288c01bba87be769d3ac90aca3d2",
+  "role": "calibration",
+  "schema_version": 1,
+  "stratum": "sheet"
+}

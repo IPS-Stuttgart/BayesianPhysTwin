@@ -1,0 +1,339 @@
+{
+  "config": {
+    "base_protocol": {
+      "calibration_future_read": false,
+      "calibration_prediction_cohort_file_sha256": "78d8bebee63b01ba10d4d90897f30534f472110312ddfd5c8533173f28e3e047",
+      "calibration_prediction_cohort_result_sha256": "581bfb211d312d0cadfdd5d1a0005d4cba1369f0eb70015438371a07a0503dc3",
+      "config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+      "file": "configs/sota/deform360_bias_aware_guarded_belief_prospective_v1.json",
+      "file_sha256": "9e933a93e28869cc67101300cd0990feb148841355f6a2416dc8cb92f595fa01",
+      "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+      "support_rejection_file_sha256": "21aea093584561370b47f375df869191dfe163e20835e4da9d5065b931c1a339",
+      "support_rejection_result_sha256": "eeee3907be8404935e32a43c9d11e5d2ffb29f2af0a7d0af3b0faa92429771e0",
+      "target_future_read": false,
+      "target_media_read": false,
+      "target_prefix_staged": false
+    },
+    "calibration_accuracy_gate": {
+      "accepted_harmful_object_count_allowed": 0,
+      "co_primary_object_balanced_mean_regret_must_be_negative": true,
+      "fallback_ties_excluded_from_certificate_fit": true,
+      "permitted_fit": "direct source-group regret bound only",
+      "required_upper_regret_m": -5e-06,
+      "target_access_if_gate_fails": "forbidden",
+      "unit_of_replication": "physical object"
+    },
+    "calibration_cohort": {
+      "filament": [
+        {
+          "episode_ids": [
+            1
+          ],
+          "object_id": "160-hose"
+        },
+        {
+          "episode_ids": [
+            1
+          ],
+          "object_id": "174-chain"
+        },
+        {
+          "episode_ids": [
+            0
+          ],
+          "object_id": "076-rubber-bands"
+        },
+        {
+          "episode_ids": [
+            4
+          ],
+          "object_id": "078-fishing-line"
+        },
+        {
+          "episode_ids": [
+            4
+          ],
+          "object_id": "161-tube"
+        },
+        {
+          "episode_ids": [
+            1
+          ],
+          "object_id": "088-snake"
+        }
+      ],
+      "sheet": [
+        {
+          "episode_ids": [
+            3
+          ],
+          "object_id": "175-plastic-bag-cloth"
+        },
+        {
+          "episode_ids": [
+            0
+          ],
+          "object_id": "011-green-cloth"
+        },
+        {
+          "episode_ids": [
+            6
+          ],
+          "object_id": "015-airbag-cloth"
+        }
+      ],
+      "volumetric": [
+        {
+          "episode_ids": [
+            1
+          ],
+          "object_id": "163-bear"
+        },
+        {
+          "episode_ids": [
+            9
+          ],
+          "object_id": "100-puppet"
+        },
+        {
+          "episode_ids": [
+            0
+          ],
+          "object_id": "168-cat-big"
+        }
+      ]
+    },
+    "calibration_support_gate": {
+      "failed_gate_action": "publish support failure and keep every calibration future and all target data sealed",
+      "fallback_objects_do_not_count": true,
+      "fresh_filament_automatic_twins_required": 2,
+      "minimum_automatic_twin_objects": 7,
+      "minimum_automatic_twin_objects_per_stratum": 2,
+      "minimum_combined_eligible_object_groups": 9,
+      "minimum_new_eligible_object_groups": 5,
+      "replacement_allowed": false,
+      "required_finite_sample_coverage": 0.9
+    },
+    "claim_boundary": "Prospective calibration-support repair for the unchanged source-v4 bias-aware update. The original twelve target objects remain sealed. This is not official Deform360 Table-4 parity or a direct state-of-the-art claim.",
+    "dataset": {
+      "repository": "brownu/deform360",
+      "revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e"
+    },
+    "information_order": [
+      "commit and push the v2 protocol before fresh-object download",
+      "download only the three fresh calibration objects",
+      "stage causal prefixes and seal automatic-twin or fallback disposition",
+      "verify at least seven automatic twins and two per stratum",
+      "open calibration futures only if the support gate passes",
+      "fit only the declared direct group-regret certificate",
+      "authorize target access only if every calibration accuracy gate passes",
+      "stage and seal the unchanged twelve-object target cohort",
+      "open target futures only after the complete prediction cohort seal"
+    ],
+    "locked_at": "2026-07-21",
+    "method": {
+      "baseline": "unchanged selected raw physical/persistence backbone",
+      "candidate": "unchanged bias-aware response-constrained v4 update",
+      "fallback": "bit-exact selected raw baseline",
+      "implementation_sha256": {
+        "scripts/remote/run_deform360_bias_aware_frame_zero.py": "d51410521cd8a894a653d930c2e80257b27099f033fe45951a2d091ec142fdec",
+        "scripts/remote/run_deform360_bias_aware_physical_prior.py": "e5d81207e89ccaa170a3711708d8ee5ba6b4b181fb08ab17819a35e8c0a9a4ff",
+        "scripts/remote/run_deform360_bias_aware_prediction.py": "93efacdd665bcc80eb87248fb580108e8f0e78bc9fcec289149865dcf21ccb1a",
+        "src/bayesian_phystwin/bias_aware_belief.py": "fc6fd6b9b8bb8fbb84b515532553f6de3a9d8f43e7e45f0d3b7c4b9627e981cd",
+        "src/bayesian_phystwin/deform360_bias_aware_belief_development.py": "35acbca215e0d0e98189f1e2ca81dff573817242fec807a5b22485ab2ba0a7b3",
+        "src/bayesian_phystwin/deform360_bias_aware_prospective_physical.py": "9f87a8aec1bd8bd8ae35865b819bae75d2a1d8d97d4950ca90b96ca90fa21226",
+        "src/bayesian_phystwin/deform360_raw_camera_observation.py": "2c24e587e9acd1dda589363240a81b268863fbe808ce05c58f8a5b70f12f76c3"
+      },
+      "lock_commit": "fb959e523b289efdb6c6a6fc5de64a5a000bd134",
+      "source_group_count": 4,
+      "source_lock_sha256": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6"
+    },
+    "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+    "reconstruction_fallback": {
+      "candidate_and_baseline_bit_exact": true,
+      "counts_as_paired_non_regression_tie": true,
+      "eligible_for_absolute_accuracy_or_calibration": false,
+      "integration_audit": "results/sota/deform360_reconstruction_failure_persistence_fallback_v1/integration_audit.json",
+      "integration_audit_file_sha256": "5c06156459204e4a02e1625fea13428848bcdccc3d05b5a673df60de3ae0ed51",
+      "integration_audit_result_sha256": "8da661c0452a482f9aef3c90676740bcf31a6f7cc24d5ffb63df218687b266ec",
+      "physical_policy": "persistence_only",
+      "protocol": "configs/sota/deform360_reconstruction_failure_persistence_fallback_v1.json",
+      "protocol_file_sha256": "240554ed41986cf5b330225d759c8df24de99d8642f9c1dcd6114185ee16fc0d"
+    },
+    "repair": {
+      "calibration_gate_changed": false,
+      "candidate_threshold_changed": false,
+      "fresh_calibration": [
+        {
+          "episode_ids": [
+            4
+          ],
+          "object_id": "078-fishing-line"
+        },
+        {
+          "episode_ids": [
+            4
+          ],
+          "object_id": "161-tube"
+        },
+        {
+          "episode_ids": [
+            1
+          ],
+          "object_id": "088-snake"
+        }
+      ],
+      "fresh_filament_pool": [
+        "078-fishing-line",
+        "088-snake",
+        "161-tube",
+        "181-belt"
+      ],
+      "method_family_changed": false,
+      "prelock_server_path_audit": [
+        {
+          "audit_scope": "directory names only",
+          "host": "gpuserver6000",
+          "roots": [
+            "/mnt/corsair/florianpfaff",
+            "/home/florianpfaff"
+          ],
+          "selected_object_matching_path_count": 0
+        },
+        {
+          "audit_scope": "directory names only",
+          "host": "gpuserver4090",
+          "roots": [
+            "/mnt/corsair/florianpfaff",
+            "/home/florianpfaff"
+          ],
+          "selected_object_matching_path_count": 0
+        }
+      ],
+      "prior_path_open_objects_excluded": [
+        "072-cotton-clohesline"
+      ],
+      "reason": "v1 stopped outcome-blind with five automatic twins; add three fresh filament calibration objects so the unchanged seven-object and two-per-stratum support gate can be met",
+      "selection_rule": "SHA256 rank over frozen name-only pool",
+      "selection_seed": "deform360-bias-aware-guarded-belief-prospective-v2",
+      "target_cohort_changed": false
+    },
+    "status": "locked-before-fresh-calibration-download-or-media-access",
+    "target_cohort": {
+      "filament": [
+        {
+          "episode_ids": [
+            3,
+            1
+          ],
+          "object_id": "075-leather"
+        },
+        {
+          "episode_ids": [
+            4,
+            7
+          ],
+          "object_id": "123-pipe-cleaner"
+        },
+        {
+          "episode_ids": [
+            4,
+            2
+          ],
+          "object_id": "080-wool"
+        },
+        {
+          "episode_ids": [
+            9,
+            7
+          ],
+          "object_id": "143-silicone-wristband"
+        }
+      ],
+      "sheet": [
+        {
+          "episode_ids": [
+            1,
+            9
+          ],
+          "object_id": "165-glove-yellow-cloth"
+        },
+        {
+          "episode_ids": [
+            0,
+            1
+          ],
+          "object_id": "066-glove-half-black-cloth"
+        },
+        {
+          "episode_ids": [
+            0,
+            6
+          ],
+          "object_id": "112-wristband-cloth"
+        },
+        {
+          "episode_ids": [
+            8,
+            4
+          ],
+          "object_id": "091-net-cloth"
+        }
+      ],
+      "volumetric": [
+        {
+          "episode_ids": [
+            3,
+            0
+          ],
+          "object_id": "139-rubber-ball"
+        },
+        {
+          "episode_ids": [
+            7,
+            1
+          ],
+          "object_id": "121-croissant-plush"
+        },
+        {
+          "episode_ids": [
+            6,
+            8
+          ],
+          "object_id": "120-bread-plush"
+        },
+        {
+          "episode_ids": [
+            5,
+            1
+          ],
+          "object_id": "164-sheep"
+        }
+      ]
+    },
+    "target_evaluation": {
+      "co_primary_metrics": [
+        "post_update_hidden_identity_rmse_m",
+        "post_update_hidden_symmetric_chamfer_m"
+      ],
+      "comparison": "frozen v4 selector minus exact selected raw baseline",
+      "direct_official_sota_claim_allowed": false,
+      "episodes_nested_within_object": 2,
+      "fallback_ties_reported_but_excluded_from_absolute_metrics": true,
+      "minimum_automatic_twin_objects": 9,
+      "minimum_automatic_twin_objects_per_stratum": 3,
+      "replacement_allowed": false,
+      "success_gates": {
+        "accepted_harmful_object_rate_at_most": 0.1,
+        "all_quality_failures_reported": true,
+        "both_object_balanced_mean_differences_negative": true,
+        "both_object_cluster_upper_95_bounds_negative": true,
+        "every_rejection_bit_exact_fallback": true,
+        "no_stratum_mean_regression": true
+      },
+      "unit_of_replication": "physical object"
+    }
+  },
+  "config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "schema_version": 1
+}

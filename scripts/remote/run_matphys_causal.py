@@ -35,8 +35,10 @@ if _MATPHYS_PYDEPS:
     sys.path.append(_MATPHYS_PYDEPS)
 
 from bayesian_phystwin.matphys_causal_bridge import (  # noqa: E402
+    MATPHYS_GENERIC_MOTION_BACKBONE,
     MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT,
     causal_uniform_frame_ids,
+    matphys_fresh_fold_initialization,
     numeric_frame_paths,
     prepare_global_material_proxy,
     sha256_file,
@@ -217,13 +219,10 @@ def _checkpoint_finiteness_report(checkpoint_path: Path) -> dict[str, object]:
                         }
                     )
             elif isinstance(item, Mapping):
-                stack.extend(
-                    (f"{name}.{key}", child) for key, child in item.items()
-                )
+                stack.extend((f"{name}.{key}", child) for key, child in item.items())
             elif isinstance(item, (tuple, list)):
                 stack.extend(
-                    (f"{name}[{index}]", child)
-                    for index, child in enumerate(item)
+                    (f"{name}[{index}]", child) for index, child in enumerate(item)
                 )
         return nonfinite_count, examples
 
@@ -262,7 +261,9 @@ def _install_torchvision_nms_stub() -> None:
             if name == "torchvision" or name.startswith("torchvision."):
                 sys.modules.pop(name, None)
         library = torch.library.Library("torchvision", "DEF")
-        library.define("nms(Tensor boxes, Tensor scores, float iou_threshold) -> Tensor")
+        library.define(
+            "nms(Tensor boxes, Tensor scores, float iou_threshold) -> Tensor"
+        )
         _TORCHVISION_STUB_LIBRARY = library
 
 
@@ -285,9 +286,7 @@ def _install_render_stubs() -> None:
     matplotlib = types.ModuleType("matplotlib")
     pyplot = types.ModuleType("matplotlib.pyplot")
     matplotlib.__spec__ = importlib.machinery.ModuleSpec("matplotlib", loader=None)
-    pyplot.__spec__ = importlib.machinery.ModuleSpec(
-        "matplotlib.pyplot", loader=None
-    )
+    pyplot.__spec__ = importlib.machinery.ModuleSpec("matplotlib.pyplot", loader=None)
 
     class GaussianModel:
         pass
@@ -308,11 +307,11 @@ def _install_render_stubs() -> None:
     ):
         setattr(dynamic, name, _unavailable)
     graphics.getWorld2View2 = _unavailable
-    graphics.focal2fov = lambda focal, pixels: 2.0 * math.atan(
-        float(pixels) / (2.0 * float(focal))
+    graphics.focal2fov = lambda focal, pixels: (
+        2.0 * math.atan(float(pixels) / (2.0 * float(focal)))
     )
-    graphics.fov2focal = lambda fov, pixels: float(pixels) / (
-        2.0 * math.tan(float(fov) / 2.0)
+    graphics.fov2focal = lambda fov, pixels: (
+        float(pixels) / (2.0 * math.tan(float(fov) / 2.0))
     )
     rotations.quaternion_multiply = _unavailable
     rotations.matrix_to_quaternion = _unavailable
@@ -507,6 +506,23 @@ def _validated_existing_proxy(
     return summary
 
 
+def _apply_export_proxy_contract(args, proxy_summary: dict[str, object]) -> None:
+    """Recover proxy construction flags from the byte-bound training proxy."""
+
+    contract = proxy_summary.get("contract")
+    if contract == GRAPH_PART_COMPACT_PROXY_CONTRACT:
+        args.graph_parts = True
+        args.compact_unused_edge_semantics = True
+    elif contract == GRAPH_PART_PROXY_CONTRACT:
+        args.graph_parts = True
+        args.compact_unused_edge_semantics = False
+    elif contract == "global-onehot-single-part-v1":
+        args.graph_parts = False
+        args.compact_unused_edge_semantics = False
+    else:
+        raise ValueError("training audit uses an unknown MatPhys proxy contract")
+
+
 def _prepare_proxy(
     args,
     cases: list[str],
@@ -528,9 +544,7 @@ def _prepare_proxy(
             "compact graph proxy must be created from a byte-bound full proxy first"
         )
     mapping_path = (
-        Path(args.matphys_root)
-        / "semantic"
-        / "case_to_material_different_types.json"
+        Path(args.matphys_root) / "semantic" / "case_to_material_different_types.json"
     )
     if not args.graph_parts:
         return prepare_global_material_proxy(
@@ -614,9 +628,7 @@ def _prepare_proxy(
 
 def _splits(data_root: Path, cases: list[str]) -> dict[str, object]:
     return {
-        case: json.loads(
-            (data_root / case / "split.json").read_text(encoding="utf-8")
-        )
+        case: json.loads((data_root / case / "split.json").read_text(encoding="utf-8"))
         for case in cases
     }
 
@@ -662,7 +674,9 @@ def _install_causal_objective_guard(
             raise RuntimeError(f"{case_name}: evidence boundary exceeds objective data")
         previous = _OBJECTIVE_END_FRAMES.setdefault(case_name, resolved)
         if previous != resolved:
-            raise RuntimeError(f"{case_name}: objective boundary changed during training")
+            raise RuntimeError(
+                f"{case_name}: objective boundary changed during training"
+            )
         return resolved
 
     training._resolve_train_frame = resolve_train_frame
@@ -693,7 +707,9 @@ def _install_source_supervised_objective_guard(
             )
         previous = _OBJECTIVE_END_FRAMES.setdefault(case_name, frame_len)
         if previous != frame_len:
-            raise RuntimeError(f"{case_name}: objective boundary changed during training")
+            raise RuntimeError(
+                f"{case_name}: objective boundary changed during training"
+            )
         return frame_len
 
     training._resolve_train_frame = resolve_train_frame
@@ -701,13 +717,16 @@ def _install_source_supervised_objective_guard(
 
 def _collect_distributed_access_logs(
     output_dir: Path,
-) -> tuple[
-    dict[str, set[int]],
-    dict[str, dict[int, Path]],
-    dict[str, int],
-    list[Path],
-    list[dict[str, int]],
-] | None:
+) -> (
+    tuple[
+        dict[str, set[int]],
+        dict[str, dict[int, Path]],
+        dict[str, int],
+        list[Path],
+        list[dict[str, int]],
+    ]
+    | None
+):
     """Merge runtime frame/objective logs after MatPhys destroys its DDP group."""
 
     rank = int(os.environ.get("RANK", "0"))
@@ -721,14 +740,10 @@ def _collect_distributed_access_logs(
                 "rank": rank,
                 "world_size": world_size,
                 "accessed_frame_indices": {
-                    case: sorted(indices)
-                    for case, indices in _ACCESSED_FRAMES.items()
+                    case: sorted(indices) for case, indices in _ACCESSED_FRAMES.items()
                 },
                 "accessed_frame_paths": {
-                    case: {
-                        str(frame_id): str(path)
-                        for frame_id, path in paths.items()
-                    }
+                    case: {str(frame_id): str(path) for frame_id, path in paths.items()}
                     for case, paths in _ACCESSED_FRAME_PATHS.items()
                 },
                 "objective_end_frames_exclusive": _OBJECTIVE_END_FRAMES,
@@ -760,7 +775,9 @@ def _collect_distributed_access_logs(
         if int(payload["world_size"]) != world_size:
             raise RuntimeError("DDP access log world size changed")
         for case, indices in payload["accessed_frame_indices"].items():
-            merged_frames.setdefault(case, set()).update(int(value) for value in indices)
+            merged_frames.setdefault(case, set()).update(
+                int(value) for value in indices
+            )
         for case, raw_paths in payload["accessed_frame_paths"].items():
             case_paths = merged_paths.setdefault(case, {})
             for raw_id, raw_path in raw_paths.items():
@@ -792,7 +809,9 @@ def _collect_distributed_access_logs(
 def _authoritative_uneven_ddp_rank(forward_counts: list[int]) -> int:
     if not forward_counts or any(count < 0 for count in forward_counts):
         raise ValueError("DDP forward counts must be nonnegative")
-    return max(range(len(forward_counts)), key=lambda rank: (forward_counts[rank], rank))
+    return max(
+        range(len(forward_counts)), key=lambda rank: (forward_counts[rank], rank)
+    )
 
 
 def _broadcast_optimizer_state(optimizer, source_rank: int, device, dist) -> None:
@@ -947,9 +966,7 @@ def _install_single_backward_auxiliary_loss(training) -> None:
         return auxiliary.detach(), stats
 
     training._rollout_aux_loss = rollout_aux_loss
-    training._single_backward_auxiliary_contract = (
-        SINGLE_BACKWARD_AUXILIARY_CONTRACT
-    )
+    training._single_backward_auxiliary_contract = SINGLE_BACKWARD_AUXILIARY_CONTRACT
 
 
 def _install_uneven_ddp_training(training) -> None:
@@ -1026,8 +1043,7 @@ def _install_uneven_ddp_training(training) -> None:
         )
         local_graphs = float(stats["num_graphs"])
         packed = torch.tensor(
-            [float(stats[key]) * local_graphs for key in metric_keys]
-            + [local_graphs],
+            [float(stats[key]) * local_graphs for key in metric_keys] + [local_graphs],
             dtype=torch.float64,
             device=device,
         )
@@ -1131,9 +1147,7 @@ def _install_teacher_parameterization(
         case = str(batch["case_name"][idx])
         if case not in bundles:
             raise RuntimeError(f"teacher parameterization omits {case}")
-        return apply_matphys_teacher_residual(
-            output, bundles[case], residual_log_scale
-        )
+        return apply_matphys_teacher_residual(output, bundles[case], residual_log_scale)
 
     training.forward_case = forward_case
 
@@ -1163,10 +1177,15 @@ def train(args) -> None:
         _FINITE_OPTIMIZER_STATS[key] = 0
     if not np.isfinite(args.learning_rate) or args.learning_rate <= 0.0:
         raise ValueError("learning rate must be finite and positive")
-    if not np.isfinite(args.teacher_proximity_weight) or args.teacher_proximity_weight < 0:
+    if (
+        not np.isfinite(args.teacher_proximity_weight)
+        or args.teacher_proximity_weight < 0
+    ):
         raise ValueError("teacher proximity weight must be finite and nonnegative")
     if not np.isfinite(args.grad_clip) or args.grad_clip <= 0.0:
         raise ValueError("gradient clip must be finite and positive")
+    if args.random_seed < 0:
+        raise ValueError("random seed must be nonnegative")
     evidence_end_by_case = _evidence_ends(data_root, cases, args.fit_fraction)
     target_evidence_end_by_case = (
         _evidence_ends(data_root, target_cases, args.target_fit_fraction)
@@ -1183,6 +1202,11 @@ def train(args) -> None:
     initialization_state, initialization_identity = _load_trunk_initialization(args)
     if initialization_state is not None and not args.graph_parts:
         raise ValueError("trunk initialization currently requires --graph-parts")
+    if (
+        initialization_state is None
+        and args.videomae_model != MATPHYS_GENERIC_MOTION_BACKBONE
+    ):
+        raise ValueError("fresh training requires the locked generic VideoMAE backbone")
     if proxy["contract"] in (
         GRAPH_PART_PROXY_CONTRACT,
         GRAPH_PART_COMPACT_PROXY_CONTRACT,
@@ -1212,9 +1236,7 @@ def train(args) -> None:
                 "fit_fraction": float(args.fit_fraction),
                 "optimization": {
                     "learning_rate": float(args.learning_rate),
-                    "teacher_proximity_weight": float(
-                        args.teacher_proximity_weight
-                    ),
+                    "teacher_proximity_weight": float(args.teacher_proximity_weight),
                     "gradient_clip": float(args.grad_clip),
                     "finite_optimizer_guard": bool(args.finite_optimizer_guard),
                     "auxiliary_backward": (
@@ -1227,6 +1249,10 @@ def train(args) -> None:
         )
         if initialization_identity is not None:
             parameterization["initialization"] = initialization_identity
+        else:
+            parameterization["initialization"] = matphys_fresh_fold_initialization(
+                args.random_seed
+            )
     if parameterization is not None:
         _install_teacher_parameterization(
             training,
@@ -1287,6 +1313,10 @@ def train(args) -> None:
         "1.0",
         "--lr",
         str(args.learning_rate),
+        "--seed",
+        str(args.random_seed),
+        "--videomae_model",
+        str(args.videomae_model),
         "--grad_clip",
         str(args.grad_clip),
         "--lambda_track",
@@ -1339,9 +1369,7 @@ def train(args) -> None:
     if parameterization is not None:
         parameterization["optimizer_guard"] = {
             "contract": (
-                FINITE_OPTIMIZER_CONTRACT
-                if args.finite_optimizer_guard
-                else "disabled"
+                FINITE_OPTIMIZER_CONTRACT if args.finite_optimizer_guard else "disabled"
             ),
             "rank_summaries": optimizer_summaries,
             "total_rejected_steps": int(
@@ -1407,9 +1435,7 @@ def _namespace_from_checkpoint(raw: dict[str, object], args) -> SimpleNamespace:
                 Path(args.proxy_root).resolve() / "case_to_material.json"
             ),
             "results_dir": str(Path(args.proxy_root).resolve() / "results"),
-            "sem_cache_dir": str(
-                Path(args.proxy_root).resolve() / "semantic_cache"
-            ),
+            "sem_cache_dir": str(Path(args.proxy_root).resolve() / "semantic_cache"),
             "gaussian_root": "__disabled__",
             "device": args.device,
             "rank": 0,
@@ -1422,30 +1448,47 @@ def _namespace_from_checkpoint(raw: dict[str, object], args) -> SimpleNamespace:
     return SimpleNamespace(**values)
 
 
-def _rollout_model_output(training, runtime, model_out, device, train_end: int):
+def _model_spring_y(training, runtime, model_out, device):
+    """Materialize the complete positive spring field applied by MatPhys."""
+
+    import torch
+
+    model_logk = training._build_model_logk(model_out, runtime, runtime.sim, device)
+    if model_logk is None:
+        raise RuntimeError("MatPhys spring field does not match the runtime topology")
+    spring_y = torch.exp(model_logk).detach().cpu().numpy().reshape(-1)
+    expected_count = int(runtime.sim.wp_spring_Y.shape[0])
+    if spring_y.shape != (expected_count,):
+        raise RuntimeError("MatPhys produced an invalid complete spring field")
+    if not np.isfinite(spring_y).all() or np.any(spring_y <= 0.0):
+        raise RuntimeError("MatPhys produced a non-positive or non-finite spring field")
+    return model_logk, spring_y.astype(np.float32, copy=False)
+
+
+def _rollout_model_output(
+    training,
+    runtime,
+    model_out,
+    device,
+    train_end: int,
+    *,
+    model_logk=None,
+):
     """Apply one spring field and run one fresh official Warp trajectory."""
 
     import warp as wp
 
     sim = runtime.sim
-    model_logk = training._build_model_logk(
-        model_out, runtime, sim, device
-    )
     if model_logk is None:
-        raise RuntimeError("MatPhys spring field does not match the runtime topology")
+        model_logk, _ = _model_spring_y(training, runtime, model_out, device)
     training._apply_model_out_to_sim(model_out, model_logk, sim)
     sim.set_init_state(sim.wp_init_vertices, sim.wp_init_velocities)
     vertices = [
-        wp.to_torch(sim.wp_states[0].wp_x, requires_grad=False)
-        .detach()
-        .cpu()
-        .numpy()
+        wp.to_torch(sim.wp_states[0].wp_x, requires_grad=False).detach().cpu().numpy()
     ]
     frame_count = int(runtime.trainer.dataset.frame_len)
     for frame_index in range(1, frame_count):
-        sim.set_controller_target(
-            frame_index, pure_inference=frame_index >= train_end
-        )
+        sim.set_controller_target(frame_index, pure_inference=frame_index >= train_end)
         if sim.object_collision_flag:
             sim.update_collision_graph()
         sim.step()
@@ -1470,16 +1513,12 @@ def export(args) -> None:
         raw_audit.get("contract") == MATPHYS_SOURCE_SUPERVISED_AUDIT_CONTRACT
     )
     audit = (
-        validate_source_supervised_training_audit(
-            args.training_audit, checkpoint_path
-        )
+        validate_source_supervised_training_audit(args.training_audit, checkpoint_path)
         if source_supervised
         else validate_causal_training_audit(args.training_audit, checkpoint_path)
     )
     cases = _case_names(args.cases)
-    audit_case_records = (
-        audit["target_cases"] if source_supervised else audit["cases"]
-    )
+    audit_case_records = audit["target_cases"] if source_supervised else audit["cases"]
     evidence_end_by_case = {
         str(record["name"]): int(record["evidence_end_frame_exclusive"])
         for record in audit_case_records
@@ -1487,21 +1526,14 @@ def export(args) -> None:
     if source_supervised:
         if not set(cases).issubset(evidence_end_by_case):
             raise ValueError("export request includes an unregistered target case")
-        evidence_end_by_case = {
-            case: evidence_end_by_case[case] for case in cases
-        }
+        evidence_end_by_case = {case: evidence_end_by_case[case] for case in cases}
     elif set(evidence_end_by_case) != set(cases):
         raise ValueError("training audit cases do not match the export request")
     audit_proxy = audit.get("proxy")
     if not isinstance(audit_proxy, dict):
         raise ValueError("training audit omits its proxy")
-    proxy_summary = json.loads(
-        Path(audit_proxy["path"]).read_text(encoding="utf-8")
-    )
-    args.graph_parts = proxy_summary.get("contract") in (
-        GRAPH_PART_PROXY_CONTRACT,
-        GRAPH_PART_COMPACT_PROXY_CONTRACT,
-    )
+    proxy_summary = json.loads(Path(audit_proxy["path"]).read_text(encoding="utf-8"))
+    _apply_export_proxy_contract(args, proxy_summary)
     if source_supervised and args.graph_parts:
         source_proxy_cases = proxy_summary.get("cases", [])
         if not isinstance(source_proxy_cases, list) or not source_proxy_cases:
@@ -1530,6 +1562,15 @@ def export(args) -> None:
     proxy = _prepare_proxy(args, cases, evidence_end_by_case)
     os.chdir(matphys_root)
     _configure_matphys_imports(matphys_root)
+    # MatPhys's warning filter targets a Warp-private helper removed in newer
+    # Warp builds. Supplying the standard equivalent keeps export-only replays
+    # compatible without changing any simulation path.
+    import warnings
+
+    import warp._src.utils as warp_utils
+
+    if not hasattr(warp_utils, "warn"):
+        warp_utils.warn = warnings.warn
     from material_param_dataset import (
         MaterialDatasetConfig,
         MaterialParamDataset,
@@ -1554,8 +1595,7 @@ def export(args) -> None:
         if source_supervised:
             if args.target_teacher_experiments_dir is None:
                 raise ValueError(
-                    "source-supervised export requires "
-                    "--target-teacher-experiments-dir"
+                    "source-supervised export requires --target-teacher-experiments-dir"
                 )
             teacher_bundles = {
                 case: load_matphys_teacher_bundle(
@@ -1573,9 +1613,7 @@ def export(args) -> None:
                 "training_teacher_scope": "registered-source-cases-only-v1",
             }
         else:
-            teacher_bundles = load_matphys_teacher_manifest(
-                parameterization["teacher"]
-            )
+            teacher_bundles = load_matphys_teacher_manifest(parameterization["teacher"])
         _install_teacher_parameterization(
             training,
             teacher_bundles,
@@ -1647,9 +1685,10 @@ def export(args) -> None:
         teacher_trajectory = None
         if parameterization is not None:
             teacher_bundle = teacher_bundles[case]
-            object_log_k = (
-                model_out["log_k"].detach().cpu().numpy().reshape(-1)
+            model_logk, candidate_spring_y = _model_spring_y(
+                training, runtime, model_out, device
             )
+            object_log_k = model_out["log_k"].detach().cpu().numpy().reshape(-1)
             edge_part_index = np.asarray(
                 sample["edge_part_idx"].detach().cpu().numpy(),
                 dtype=np.int64,
@@ -1663,9 +1702,7 @@ def export(args) -> None:
                 {
                     "case": case,
                     "parameterization": parameterization["name"],
-                    "residual_log_scale": float(
-                        parameterization["residual_log_scale"]
-                    ),
+                    "residual_log_scale": float(parameterization["residual_log_scale"]),
                 }
             )
             spring_summary_path = (
@@ -1676,9 +1713,18 @@ def export(args) -> None:
                 json.dumps(spring_summary, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
+            spring_field_path = output_root / "cases" / case / "candidate_spring_y.npy"
+            np.save(spring_field_path, candidate_spring_y, allow_pickle=False)
             spring_field_identity = {
                 "path": str(spring_summary_path),
                 "sha256": sha256_file(spring_summary_path),
+                "complete_spring_y": {
+                    "path": str(spring_field_path),
+                    "sha256": sha256_file(spring_field_path),
+                    "count": int(len(candidate_spring_y)),
+                    "minimum": float(np.min(candidate_spring_y)),
+                    "maximum": float(np.max(candidate_spring_y)),
+                },
             }
             teacher_runtime = training._init_runtime(case, train_end, model_args)
             teacher_model_out = apply_matphys_teacher_residual(
@@ -1714,6 +1760,7 @@ def export(args) -> None:
             model_out,
             device,
             train_end,
+            **({"model_logk": model_logk} if parameterization is not None else {}),
         )
         causal_validation_identity = None
         if teacher_trajectory is not None:
@@ -1857,6 +1904,10 @@ def main() -> None:
     train_parser.add_argument("--implementation-amendment")
     train_parser.add_argument("--target-fit-fraction", type=float, default=0.75)
     train_parser.add_argument("--learning-rate", type=float, default=3.0e-4)
+    train_parser.add_argument("--random-seed", type=int, default=42)
+    train_parser.add_argument(
+        "--videomae-model", default=MATPHYS_GENERIC_MOTION_BACKBONE
+    )
     train_parser.add_argument("--grad-clip", type=float, default=5.0)
     train_parser.add_argument("--teacher-proximity-weight", type=float, default=0.0)
     train_parser.add_argument("--finite-optimizer-guard", action="store_true")
@@ -1869,7 +1920,9 @@ def main() -> None:
     export_parser.add_argument("--training-audit", required=True)
     export_parser.add_argument("--output-dir", required=True)
     export_parser.add_argument("--target-teacher-experiments-dir")
-    export_parser.add_argument("--initial-alignment-tolerance-m", type=float, default=1e-6)
+    export_parser.add_argument(
+        "--initial-alignment-tolerance-m", type=float, default=1e-6
+    )
     export_parser.set_defaults(handler=export)
     args = parser.parse_args()
     os.environ.setdefault("WANDB_MODE", "disabled")
@@ -1880,3 +1933,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    (matphys_fresh_fold_initialization,)

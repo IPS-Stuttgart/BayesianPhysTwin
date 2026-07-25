@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "config_sha256": "030ac9976ef72522cc6e614573bc68d086a7ea89f1c5fe9d65a2bf67425de5e7",
+  "config": {
+    "protocol_id": "deform360-dynamic-window-source-v1",
+    "status": "source-only-post-open-diagnostic",
+    "claim_boundary": "Diagnoses and replaces the invalid five-row pose average used by the exhausted selective-virtual-sensing cohort. It does not reopen or revise that prospective result and is not a prospective accuracy claim.",
+    "source_cohort": {
+      "protocol_id": "deform360-selective-virtual-sensing-v1",
+      "protocol_config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
+      "object_count": 12,
+      "episode_count": 24,
+      "outcome_status": "23 opened evaluations plus one target-free quality failure",
+      "selection_role": "method and benchmark-window development only"
+    },
+    "deform360": {
+      "processing_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "action_schema": "row 0 is end-effector translation, rows 1:4 are rotation, row 4 is [aperture,0,0]",
+      "tactile_baseline_rule": "latest filename-timestamped baseline at or before the episode recording",
+      "contact_rule": "official union over grippers: more than one positive normalized taxel after the released 0.3 normalization threshold"
+    },
+    "selector": {
+      "staging_frame_count": 81,
+      "prediction_frame_count": 76,
+      "first_update_frame": 19,
+      "candidate_first_frame": 8,
+      "candidate_stride_frames": 6,
+      "motion_signal": "robot.actions[...,0,:] end-effector translation",
+      "closure_weight": "minimum endpoint closure confidence",
+      "contact_weight": "minimum endpoint union tactile-contact boolean",
+      "objective": "maximum mean contact- and closure-supported end-effector translation from frame 19 through frame 75",
+      "tie_break": "earliest start",
+      "zero_support_policy": "target-free quality failure; no replacement"
+    },
+    "information_boundary": {
+      "known_future_robot_action_used_for_window_selection": true,
+      "future_tactile_used_for_dataset_window_selection": true,
+      "future_tactile_exposed_to_prediction_method": false,
+      "object_geometry_used_for_window_selection": false,
+      "object_tracks_used_for_window_selection": false,
+      "target_metric_used_for_window_selection": false,
+      "selection_sealed_before_open_outcomes_are_attached_for_diagnosis": true,
+      "fresh_objects_or_reserved_targets_read": false
+    },
+    "next_gate": {
+      "required_before_fresh_protocol": "demonstrate nontrivial object response on source-selected windows using gripper-excluded multiview prefix evidence, then measure persistence on exploratory source outcomes",
+      "direct_state_of_the_art_language_allowed": false
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "artifact_kind": "Deform360BiasAwareProspectiveExecutionManifest",
+  "schema_version": 1,
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v1",
+  "protocol_config_sha256": "b6b19be5eaadf830a77f36cccddd38f5b7a35527ca21f7743d2ef147fceabbce",
+  "prediction_runner_revision": "6becf287b751139e682a31fbb817f1e98a7506f3",
+  "support_rejection_revision": "c2eb481e0d53e99ff973691a0df5ff8452590d4a",
+  "source_lock_sha256": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6",
+  "download_manifest_file_sha256": "3debdeea6c0b7c171d14b52b84a8c26cd6f0f7fa572be70811a785d21699c5dc",
+  "download_manifest_semantic_sha256": "b5e18fec20c9045e1105f66cf755973134d08dab7c040a8ed15b083a41521afa",
+  "prediction_cohort_file_sha256": "78d8bebee63b01ba10d4d90897f30534f472110312ddfd5c8533173f28e3e047",
+  "prediction_cohort_result_sha256": "581bfb211d312d0cadfdd5d1a0005d4cba1369f0eb70015438371a07a0503dc3",
+  "support_rejection_file_sha256": "21aea093584561370b47f375df869191dfe163e20835e4da9d5065b931c1a339",
+  "support_rejection_result_sha256": "eeee3907be8404935e32a43c9d11e5d2ffb29f2af0a7d0af3b0faa92429771e0",
+  "calibration_prediction_count": 5,
+  "calibration_quality_failure_count": 4,
+  "calibration_future_read": false,
+  "calibration_outcome_read": false,
+  "target_prefix_staged": false,
+  "target_future_read": false,
+  "target_outcome_read": false,
+  "replacement_count": 0,
+  "remote_evidence_root": "/mnt/corsair/florianpfaff/deform360-bias-aware-prospective-v1",
+  "verification": {
+    "local_full_test": "845 passed, 26 skipped in 697.38s",
+    "local_focused_test": "19 passed in 19.40s",
+    "remote_focused_test": "19 passed in 0.14s",
+    "intended_file_ruff": "passed"
+  }
+}

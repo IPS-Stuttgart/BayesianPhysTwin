@@ -1,0 +1,176 @@
+{
+  "case_count": 3,
+  "cases": {
+    "double_lift_sloth": {
+      "accepted_state_update": false,
+      "exact_fallback": {
+        "fallback_method": "graph_persistence_readout",
+        "global_bytes_identical": true,
+        "particle_bytes_identical": true,
+        "used": true
+      },
+      "prefix_validation_improvement_fraction": -0.18499866712253432,
+      "readout_correction_shrinkage_fraction": 0.9866477210366159,
+      "selection_reason": "prefix-validation-regret-guard"
+    },
+    "double_stretch_sloth": {
+      "accepted_state_update": false,
+      "exact_fallback": {
+        "fallback_method": "graph_persistence_readout",
+        "global_bytes_identical": true,
+        "particle_bytes_identical": true,
+        "used": true
+      },
+      "prefix_validation_improvement_fraction": -0.12710101602421475,
+      "readout_correction_shrinkage_fraction": 0.985163945639505,
+      "selection_reason": "prefix-validation-regret-guard"
+    },
+    "single_lift_sloth": {
+      "accepted_state_update": false,
+      "exact_fallback": {
+        "fallback_method": "graph_persistence_readout",
+        "global_bytes_identical": true,
+        "particle_bytes_identical": true,
+        "used": true
+      },
+      "prefix_validation_improvement_fraction": -0.2593769136038424,
+      "readout_correction_shrinkage_fraction": 0.9954534579090208,
+      "selection_reason": "prefix-validation-regret-guard"
+    }
+  },
+  "comparison_vs_frozen_graph_persistence": {
+    "all_rejections_are_byte_exact_fallbacks": true,
+    "guarded_state_acceptance_count": 0,
+    "raw_chamfer_percent_change": 20.870049745542808,
+    "raw_track_percent_change": 11.191463825582337
+  },
+  "decision": {
+    "future_development_requirement": "independent state/contact evidence or a genuinely fresh source panel",
+    "prospective_mechanism_promotion_claimed": false,
+    "reason": "No development case passed the forecast-blind prefix gate, and the raw state branch did not beat frozen graph persistence on both case-balanced accuracy metrics.",
+    "run_exploratory_19_case_cohort": false
+  },
+  "experiment": "phystwin_guarded_action_propagated_state_v1_aggregate",
+  "inputs": [
+    {
+      "path": "/mnt/corsair/florianpfaff/bpt-propagated-state-v1/results/single_lift_sloth/summary.json",
+      "sha256": "7d24ed5c4c9b2f2d760e10586cecb22aaba92f0e41c2380fdaf3b3bdcbe59911"
+    },
+    {
+      "path": "/mnt/corsair/florianpfaff/bpt-propagated-state-v1/results/double_lift_sloth/summary.json",
+      "sha256": "7a5ba94d34204a6966a51e3d6542b718986c1555a8216468277c346ae98afab7"
+    },
+    {
+      "path": "/mnt/corsair/florianpfaff/bpt-propagated-state-v1/results/double_stretch_sloth/summary.json",
+      "sha256": "16744cf4dc147e6974545fbfa11438182cf553b73679b54d367450da32e3f53b"
+    }
+  ],
+  "methods": {
+    "action_propagated_state_plus_bias_guarded": {
+      "chamfer_distance_m": {
+        "case_balanced_mean": 0.01184490159243535,
+        "per_case": {
+          "double_lift_sloth": 0.014958059856318272,
+          "double_stretch_sloth": 0.005806963543021871,
+          "single_lift_sloth": 0.01476968137796591
+        }
+      },
+      "coverage_90": {
+        "case_balanced_mean": 0.5859200862893598,
+        "per_case": {
+          "double_lift_sloth": 0.44078761561816,
+          "double_stretch_sloth": 0.8785333326947913,
+          "single_lift_sloth": 0.438439310555128
+        }
+      },
+      "track_error_m": {
+        "case_balanced_mean": 0.01942198072554152,
+        "per_case": {
+          "double_lift_sloth": 0.025280321073885628,
+          "double_stretch_sloth": 0.0081345440409419,
+          "single_lift_sloth": 0.02485107706179704
+        }
+      }
+    },
+    "action_propagated_state_plus_bias_raw": {
+      "chamfer_distance_m": {
+        "case_balanced_mean": 0.0143169384470872,
+        "per_case": {
+          "double_lift_sloth": 0.02000943424748419,
+          "double_stretch_sloth": 0.005726175152143817,
+          "single_lift_sloth": 0.017215205941633588
+        }
+      },
+      "coverage_90": {
+        "case_balanced_mean": 0.5540239024134643,
+        "per_case": {
+          "double_lift_sloth": 0.3436242321542046,
+          "double_stretch_sloth": 0.9023701085681173,
+          "single_lift_sloth": 0.4160773665180711
+        }
+      },
+      "track_error_m": {
+        "case_balanced_mean": 0.021595584672652074,
+        "per_case": {
+          "double_lift_sloth": 0.02972122096139299,
+          "double_stretch_sloth": 0.00913262580437785,
+          "single_lift_sloth": 0.025932907252185382
+        }
+      }
+    },
+    "bpt_particle_baseline": {
+      "chamfer_distance_m": {
+        "case_balanced_mean": 0.01527767703707142,
+        "per_case": {
+          "double_lift_sloth": 0.020860514694919223,
+          "double_stretch_sloth": 0.005885829901056798,
+          "single_lift_sloth": 0.019086686515238243
+        }
+      },
+      "coverage_90": {
+        "case_balanced_mean": 0.5286511372648915,
+        "per_case": {
+          "double_lift_sloth": 0.3234748993857234,
+          "double_stretch_sloth": 0.8913089633748226,
+          "single_lift_sloth": 0.3711695490341286
+        }
+      },
+      "track_error_m": {
+        "case_balanced_mean": 0.022474278867438774,
+        "per_case": {
+          "double_lift_sloth": 0.030707906927907765,
+          "double_stretch_sloth": 0.00946755967079047,
+          "single_lift_sloth": 0.027247370003618092
+        }
+      }
+    },
+    "graph_persistence_readout": {
+      "chamfer_distance_m": {
+        "case_balanced_mean": 0.01184490159243535,
+        "per_case": {
+          "double_lift_sloth": 0.014958059856318272,
+          "double_stretch_sloth": 0.005806963543021871,
+          "single_lift_sloth": 0.01476968137796591
+        }
+      },
+      "coverage_90": {
+        "case_balanced_mean": 0.5859200862893598,
+        "per_case": {
+          "double_lift_sloth": 0.44078761561816,
+          "double_stretch_sloth": 0.8785333326947913,
+          "single_lift_sloth": 0.438439310555128
+        }
+      },
+      "track_error_m": {
+        "case_balanced_mean": 0.01942198072554152,
+        "per_case": {
+          "double_lift_sloth": 0.025280321073885628,
+          "double_stretch_sloth": 0.0081345440409419,
+          "single_lift_sloth": 0.02485107706179704
+        }
+      }
+    }
+  },
+  "schema_version": 1,
+  "status": "frozen_exhausted_case_negative_diagnostic"
+}

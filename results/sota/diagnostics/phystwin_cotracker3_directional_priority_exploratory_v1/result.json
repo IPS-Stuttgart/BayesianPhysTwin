@@ -1,0 +1,984 @@
+{
+  "aggregate": {
+    "bootstrap_draws": 100000,
+    "bootstrap_seed": 20260724,
+    "fixed_graph_60mm_versus_source": {
+      "arm": "combined_graph__lambda_0p0001__cap_060mm",
+      "metrics": {
+        "chamfer_distance_m": {
+          "candidate_mean_m": 0.008638112689459925,
+          "difference_m": 8.10456152297856e-05,
+          "percent_change": 0.9471190832879728,
+          "source_mean_m": 0.00855706707423014
+        },
+        "track_error_m": {
+          "candidate_mean_m": 0.019160030166069895,
+          "difference_m": -0.00018630094023957058,
+          "percent_change": -0.9629781441030549,
+          "source_mean_m": 0.019346331106309466
+        }
+      }
+    },
+    "versus_hard_priority": {
+      "both_metric_win_or_tie_count": 10,
+      "metric_win_or_tie_counts": {
+        "chamfer_distance_m": 15,
+        "track_error_m": 12
+      },
+      "metrics": {
+        "chamfer_distance_m": {
+          "candidate_mean_m": 0.008192473238980114,
+          "difference_m": -5.8602268382808645e-05,
+          "hard_mean_m": 0.008251075507362923,
+          "percent_change": -0.710237936018332
+        },
+        "track_error_m": {
+          "candidate_mean_m": 0.019491929259989334,
+          "difference_m": 0.0001609275133295958,
+          "hard_mean_m": 0.019331001746659738,
+          "percent_change": 0.8324840866428707
+        }
+      },
+      "object_cluster_bootstrap": {
+        "chamfer_distance_m": {
+          "cluster_count": 11,
+          "lower_95_m": -9.836156139070839e-05,
+          "mean_difference_m": -2.2892500162683443e-05,
+          "probability_improved": 0.73029,
+          "upper_95_m": 4.41262002654864e-05
+        },
+        "track_error_m": {
+          "cluster_count": 11,
+          "lower_95_m": -8.924552416525268e-05,
+          "mean_difference_m": 6.943099068122826e-05,
+          "probability_improved": 0.29168,
+          "upper_95_m": 0.00029775261597926323
+        }
+      }
+    },
+    "versus_source": {
+      "both_metric_win_or_tie_count": 7,
+      "metric_win_or_tie_counts": {
+        "chamfer_distance_m": 10,
+        "track_error_m": 14
+      },
+      "metrics": {
+        "chamfer_distance_m": {
+          "candidate_mean_m": 0.008192473238980114,
+          "difference_m": 3.240269282346435e-05,
+          "percent_change": 0.3970883908439582,
+          "source_mean_m": 0.00816007054615665
+        },
+        "track_error_m": {
+          "candidate_mean_m": 0.019491929259989334,
+          "difference_m": -0.0007000761718936321,
+          "percent_change": -3.467095798162867,
+          "source_mean_m": 0.020192005431882966
+        }
+      },
+      "object_cluster_bootstrap": {
+        "chamfer_distance_m": {
+          "cluster_count": 11,
+          "lower_95_m": -2.1948697871486284e-05,
+          "mean_difference_m": 1.4629449850412427e-05,
+          "probability_improved": 0.23704,
+          "upper_95_m": 5.565070023223333e-05
+        },
+        "track_error_m": {
+          "cluster_count": 11,
+          "lower_95_m": -0.0010376705207784539,
+          "mean_difference_m": -0.0005004133667423218,
+          "probability_improved": 0.98811,
+          "upper_95_m": -4.8563236683756763e-05
+        }
+      }
+    }
+  },
+  "case_count": 19,
+  "fresh_evaluation_justified": false,
+  "gates": {
+    "both_equal_case_future_means_improve_over_source": false,
+    "both_physical_object_cluster_95_percent_upper_bounds_below_zero": false,
+    "two_metric_win_or_tie_count": 7,
+    "two_metric_win_or_tie_gate": false
+  },
+  "inputs": {
+    "candidate": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-tangent-v1/directional_priority_result.json",
+      "sha256": "3f5b6da8cc871c39b51f334a2531b26f6608ed4cc1ce0e5ab50635e0ceae76e3"
+    },
+    "hard": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/multiview_priority_result.json",
+      "sha256": "453ebce22ff0bc0cbe91c984cb6f434712ce0c1c21219afa0804f22d6b59b765"
+    },
+    "protocol": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-tangent-v1/phystwin_cotracker3_directional_priority_exploratory_v1.json",
+      "sha256": "937ef9afae8e066ad01318f90081408c94ec8b310678d3d82dd80dc65654688e"
+    },
+    "source": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/source_depth_result.json",
+      "sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e"
+    }
+  },
+  "per_case": [
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.012718978880823793,
+        "track_error_m": 0.022854621873692523
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -2.4157381243960357e-05,
+        "track_error_m": 2.0643193853631808e-05
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.0003164015955923836,
+        "track_error_m": 0.0005569113846752016
+      },
+      "case": "double_lift_cloth_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.013376499469372291,
+          "track_error_m": 0.022521982842734555
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00034756807277479783,
+          "track_error_m": 0.0006141966207047489
+        },
+        "source": {
+          "chamfer_distance_m": 0.013028931396597493,
+          "track_error_m": 0.021907786222029806
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.012743136262067753,
+        "track_error_m": 0.02283397867983889
+      },
+      "multiview_tangent_update_count": 185506,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_1",
+      "priority_identity_count": 2672,
+      "priority_identity_fraction": 0.5634753268663011,
+      "source": {
+        "chamfer_distance_m": 0.01240257728523141,
+        "track_error_m": 0.02229771048901732
+      },
+      "source_update_count": 243110
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.008584794461622827,
+        "track_error_m": 0.011706902353760217
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -0.000919826654082528,
+        "track_error_m": 0.0032284328406568304
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.00013782772270457162,
+        "track_error_m": -0.0041970816958528286
+      },
+      "case": "double_lift_cloth_3",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.008588701071396332,
+          "track_error_m": 0.010048604588990283
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.0004194723042783965,
+          "track_error_m": -0.0034005710241282842
+        },
+        "source": {
+          "chamfer_distance_m": 0.008169228767117936,
+          "track_error_m": 0.013449175613118567
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.009504621115705355,
+        "track_error_m": 0.008478469513103387
+      },
+      "multiview_tangent_update_count": 306869,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_3",
+      "priority_identity_count": 4059,
+      "priority_identity_fraction": 0.5396888711607499,
+      "source": {
+        "chamfer_distance_m": 0.008446966738918255,
+        "track_error_m": 0.015903984049613046
+      },
+      "source_update_count": 351386
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.010999489615562248,
+        "track_error_m": 0.02201607830501258
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -5.9854309550785856e-05,
+        "track_error_m": 6.291880272250513e-05
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -3.0765123613725465e-05,
+        "track_error_m": 7.699316234732051e-05
+      },
+      "case": "double_lift_zebra",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.011173415148588283,
+          "track_error_m": 0.022014781775060846
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 1.125313102968116e-05,
+          "track_error_m": 0.0001302287352293631
+        },
+        "source": {
+          "chamfer_distance_m": 0.011162162017558602,
+          "track_error_m": 0.021884553039831483
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.011059343925113034,
+        "track_error_m": 0.021953159502290074
+      },
+      "multiview_tangent_update_count": 32378,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "zebra",
+      "priority_identity_count": 964,
+      "priority_identity_fraction": 0.2480061744275791,
+      "source": {
+        "chamfer_distance_m": 0.011030254739175974,
+        "track_error_m": 0.02193908514266526
+      },
+      "source_update_count": 126639
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.005826955584550641,
+        "track_error_m": 0.012364010966288842
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -2.1585508289083746e-05,
+        "track_error_m": -2.296562370144098e-06
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -4.515668686847288e-06,
+        "track_error_m": -0.00012046783468288441
+      },
+      "case": "double_stretch_zebra",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.00590066540678182,
+          "track_error_m": 0.011555536420983595
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 4.035268547147516e-06,
+          "track_error_m": -0.00014366892257697446
+        },
+        "source": {
+          "chamfer_distance_m": 0.005896630138234673,
+          "track_error_m": 0.01169920534356057
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.005848541092839725,
+        "track_error_m": 0.012366307528658986
+      },
+      "multiview_tangent_update_count": 23216,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "zebra",
+      "priority_identity_count": 320,
+      "priority_identity_fraction": 0.0916642795760527,
+      "source": {
+        "chamfer_distance_m": 0.005831471253237489,
+        "track_error_m": 0.012484478800971727
+      },
+      "source_update_count": 308259
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.00462350841012453,
+        "track_error_m": 0.011246481480609593
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -8.460607892097835e-06,
+        "track_error_m": 6.733206391653854e-06
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 1.2009205050137785e-05,
+        "track_error_m": -0.0005531631381029758
+      },
+      "case": "rope_double_hand",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004999825560620898,
+          "track_error_m": 0.011475605692419885
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 2.2512927480931172e-05,
+          "track_error_m": -0.0007462611914005844
+        },
+        "source": {
+          "chamfer_distance_m": 0.004977312633139967,
+          "track_error_m": 0.01222186688382047
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.004631969018016628,
+        "track_error_m": 0.011239748274217939
+      },
+      "multiview_tangent_update_count": 28497,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "rope",
+      "priority_identity_count": 197,
+      "priority_identity_fraction": 0.1578525641025641,
+      "source": {
+        "chamfer_distance_m": 0.004611499205074392,
+        "track_error_m": 0.011799644618712569
+      },
+      "source_update_count": 136828
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.005579966429892287,
+        "track_error_m": 0.011038660592252671
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.000357794809894031,
+        "track_error_m": -0.008027580693505685
+      },
+      "case": "single_clift_cloth_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.0054602584782871035,
+          "track_error_m": 0.01695351132919767
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00020983955165078307,
+          "track_error_m": 0.0005774206343355029
+        },
+        "source": {
+          "chamfer_distance_m": 0.00525041892663632,
+          "track_error_m": 0.016376090694862167
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.005579966429892287,
+        "track_error_m": 0.011038660592252671
+      },
+      "multiview_tangent_update_count": 187443,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_1",
+      "priority_identity_count": 4037,
+      "priority_identity_fraction": 0.6220338983050847,
+      "source": {
+        "chamfer_distance_m": 0.005222171619998256,
+        "track_error_m": 0.019066241285758356
+      },
+      "source_update_count": 308168
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.004163518373021403,
+        "track_error_m": 0.013210297998665518
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "case": "single_clift_cloth_3",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004125670759368655,
+          "track_error_m": 0.014684473195473495
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.0001984001268128914,
+          "track_error_m": -0.0009093759727876339
+        },
+        "source": {
+          "chamfer_distance_m": 0.003927270632555764,
+          "track_error_m": 0.015593849168261129
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.004163518373021403,
+        "track_error_m": 0.013210297998665518
+      },
+      "multiview_tangent_update_count": 415404,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_3",
+      "priority_identity_count": 6775,
+      "priority_identity_fraction": 0.8304731551850943,
+      "source": {
+        "chamfer_distance_m": 0.004163518373021403,
+        "track_error_m": 0.013210297998665518
+      },
+      "source_update_count": 469915
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.011893408546939637,
+        "track_error_m": 0.04944540193270109
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 0.0002107836468905333,
+        "track_error_m": 0.00013765383319175317
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -9.012734016317601e-05,
+        "track_error_m": -0.0012843707587789147
+      },
+      "case": "single_lift_cloth",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.014855229973745459,
+          "track_error_m": 0.045587978376833475
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00016183351225167175,
+          "track_error_m": -0.0007091973147484373
+        },
+        "source": {
+          "chamfer_distance_m": 0.014693396461493787,
+          "track_error_m": 0.04629717569158191
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.011682624900049104,
+        "track_error_m": 0.04930774809950934
+      },
+      "multiview_tangent_update_count": 53170,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth",
+      "priority_identity_count": 866,
+      "priority_identity_fraction": 0.11112536892082639,
+      "source": {
+        "chamfer_distance_m": 0.011983535887102813,
+        "track_error_m": 0.050729772691480005
+      },
+      "source_update_count": 435340
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.011316492013215811,
+        "track_error_m": 0.023911725959965578
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -0.0002744432834025992,
+        "track_error_m": 0.0
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -0.00015596573537255895,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_cloth_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.011018997763362456,
+          "track_error_m": 0.02061632970537332
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 2.0512982745479053e-05,
+          "track_error_m": 2.5157776240708474e-07
+        },
+        "source": {
+          "chamfer_distance_m": 0.010998484780616977,
+          "track_error_m": 0.020616078127610914
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.01159093529661841,
+        "track_error_m": 0.023911725959965578
+      },
+      "multiview_tangent_update_count": 37300,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_1",
+      "priority_identity_count": 676,
+      "priority_identity_fraction": 0.12313296903460838,
+      "source": {
+        "chamfer_distance_m": 0.01147245774858837,
+        "track_error_m": 0.023911725959965578
+      },
+      "source_update_count": 163320
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.006640951313580587,
+        "track_error_m": 0.025115081879353282
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -5.602233083479291e-05,
+        "track_error_m": 3.5504313841173973e-06
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 9.342939348690616e-05,
+        "track_error_m": -0.00048680304777093744
+      },
+      "case": "single_lift_cloth_3",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.006721433286623129,
+          "track_error_m": 0.024387080858003826
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 7.998824131980834e-05,
+          "track_error_m": -0.00041353741511754305
+        },
+        "source": {
+          "chamfer_distance_m": 0.00664144504530332,
+          "track_error_m": 0.02480061827312137
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.00669697364441538,
+        "track_error_m": 0.025111531447969165
+      },
+      "multiview_tangent_update_count": 98010,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_3",
+      "priority_identity_count": 1245,
+      "priority_identity_fraction": 0.1450710790025635,
+      "source": {
+        "chamfer_distance_m": 0.006547521920093681,
+        "track_error_m": 0.02560188492712422
+      },
+      "source_update_count": 483589
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.00935992124004992,
+        "track_error_m": 0.051919773641874084
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -3.516094894877829e-05,
+        "track_error_m": 0.0
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 8.70626419579787e-06,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_cloth_4",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.012451526898193038,
+          "track_error_m": 0.04037845139889766
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 2.468087399495021e-05,
+          "track_error_m": 2.4140263760186187e-08
+        },
+        "source": {
+          "chamfer_distance_m": 0.012426846024198088,
+          "track_error_m": 0.0403784272586339
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.009395082188998698,
+        "track_error_m": 0.051919773641874084
+      },
+      "multiview_tangent_update_count": 48601,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "cloth_4",
+      "priority_identity_count": 518,
+      "priority_identity_fraction": 0.06328649969456322,
+      "source": {
+        "chamfer_distance_m": 0.009351214975854122,
+        "track_error_m": 0.051919773641874084
+      },
+      "source_update_count": 338589
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.010099331259247519,
+        "track_error_m": 0.013968999302324706
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -3.970985621638834e-06,
+        "track_error_m": 0.0
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 1.6823037376434424e-05,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_dinosor",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.009380564074898486,
+          "track_error_m": 0.014103701879735288
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 2.2469972858495807e-05,
+          "track_error_m": -8.39199366092086e-07
+        },
+        "source": {
+          "chamfer_distance_m": 0.00935809410203999,
+          "track_error_m": 0.01410454107910138
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.010103302244869158,
+        "track_error_m": 0.013968999302324706
+      },
+      "multiview_tangent_update_count": 4872,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "dinosor",
+      "priority_identity_count": 142,
+      "priority_identity_fraction": 0.02866370609608397,
+      "source": {
+        "chamfer_distance_m": 0.010082508221871084,
+        "track_error_m": 0.013968999302324706
+      },
+      "source_update_count": 168642
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.010080630815253417,
+        "track_error_m": 0.018112125313524737
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 0.00013215591033503837,
+        "track_error_m": 0.00031966031409487103
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -5.105572069968173e-05,
+        "track_error_m": 0.0018392356917990745
+      },
+      "case": "single_lift_rope",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.009706033264531838,
+          "track_error_m": 0.01872555182841473
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": -0.00022381099418592766,
+          "track_error_m": 0.0023889290158785777
+        },
+        "source": {
+          "chamfer_distance_m": 0.009929844258717766,
+          "track_error_m": 0.01633662281253615
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.009948474904918379,
+        "track_error_m": 0.017792464999429866
+      },
+      "multiview_tangent_update_count": 10435,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "rope",
+      "priority_identity_count": 438,
+      "priority_identity_fraction": 0.2687116564417178,
+      "source": {
+        "chamfer_distance_m": 0.010131686535953099,
+        "track_error_m": 0.016272889621725663
+      },
+      "source_update_count": 32576
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.013539874824282042,
+        "track_error_m": 0.019726371837832636
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 4.3859077934702353e-05,
+        "track_error_m": -0.00019630866154796145
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 4.0846791507044566e-05,
+        "track_error_m": 0.001453263044484284
+      },
+      "case": "single_lift_zebra",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.01346742471315703,
+          "track_error_m": 0.019731792367031733
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 6.207054956591795e-05,
+          "track_error_m": 0.001458356374397278
+        },
+        "source": {
+          "chamfer_distance_m": 0.013405354163591112,
+          "track_error_m": 0.018273435992634455
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.01349601574634734,
+        "track_error_m": 0.019922680499380598
+      },
+      "multiview_tangent_update_count": 23318,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "zebra",
+      "priority_identity_count": 742,
+      "priority_identity_fraction": 0.18443947303007704,
+      "source": {
+        "chamfer_distance_m": 0.013499028032774998,
+        "track_error_m": 0.018273108793348352
+      },
+      "source_update_count": 134079
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.004429409002912194,
+        "track_error_m": 0.00970197964943735
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -0.00010410330919964541,
+        "track_error_m": -2.5107815324297567e-06
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -3.391644692530768e-05,
+        "track_error_m": -0.0022366572211109433
+      },
+      "case": "single_push_rope",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004607726227886601,
+          "track_error_m": 0.009846401213887322
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00017966264700207749,
+          "track_error_m": -0.0020915125178086625
+        },
+        "source": {
+          "chamfer_distance_m": 0.004428063580884523,
+          "track_error_m": 0.011937913731695985
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.00453351231211184,
+        "track_error_m": 0.00970449043096978
+      },
+      "multiview_tangent_update_count": 25323,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "rope",
+      "priority_identity_count": 822,
+      "priority_identity_fraction": 0.51375,
+      "source": {
+        "chamfer_distance_m": 0.004463325449837502,
+        "track_error_m": 0.011938636870548294
+      },
+      "source_update_count": 49863
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.003951584328451928,
+        "track_error_m": 0.005651957043516354
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -1.2338332603431534e-05,
+        "track_error_m": -0.00031888477625773796
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 5.2537121219332385e-05,
+        "track_error_m": -0.0002268842797257236
+      },
+      "case": "single_push_rope_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.0038624322433375067,
+          "track_error_m": 0.005604197135542063
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 5.0963589812050986e-05,
+          "track_error_m": -0.00021477388451703223
+        },
+        "source": {
+          "chamfer_distance_m": 0.0038114686535254557,
+          "track_error_m": 0.005818971020059095
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.00396392266105536,
+        "track_error_m": 0.005970841819774092
+      },
+      "multiview_tangent_update_count": 58612,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "rope_1",
+      "priority_identity_count": 1009,
+      "priority_identity_fraction": 0.5825635103926097,
+      "source": {
+        "chamfer_distance_m": 0.0038990472072325958,
+        "track_error_m": 0.005878841323242077
+      },
+      "source_update_count": 98724
+    },
+    {
+      "both_metric_hard_win_or_tie": false,
+      "both_metric_source_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.004109440975414143,
+        "track_error_m": 0.008730119184254226
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 3.514755920856587e-05,
+        "track_error_m": -0.00018881025392164866
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -4.6809378289897757e-07,
+        "track_error_m": 6.541624280162125e-05
+      },
+      "case": "single_push_rope_4",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004250721929718105,
+          "track_error_m": 0.008650219990898165
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 1.600229316959991e-05,
+          "track_error_m": 8.097828402756774e-05
+        },
+        "source": {
+          "chamfer_distance_m": 0.004234719636548505,
+          "track_error_m": 0.008569241706870597
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.0040742934162055775,
+        "track_error_m": 0.008918929438175875
+      },
+      "multiview_tangent_update_count": 9273,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "rope_4",
+      "priority_identity_count": 200,
+      "priority_identity_fraction": 0.23837902264600716,
+      "source": {
+        "chamfer_distance_m": 0.004109909069197042,
+        "track_error_m": 0.008664702941452605
+      },
+      "source_update_count": 40373
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.009550283142097033,
+        "track_error_m": 0.018615047170628403
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": -1.5465641972850844e-05,
+        "track_error_m": -1.3158833403213721e-05
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -5.391064813660418e-05,
+        "track_error_m": -0.00016025812255573285
+      },
+      "case": "single_push_sloth",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.009398148917943725,
+          "track_error_m": 0.018614758264418784
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": -6.799352166503812e-05,
+          "track_error_m": -0.0001603659222297535
+        },
+        "source": {
+          "chamfer_distance_m": 0.009466142439608763,
+          "track_error_m": 0.018775124186648538
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.009565748784069884,
+        "track_error_m": 0.018628206004031617
+      },
+      "multiview_tangent_update_count": 44631,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "sloth",
+      "priority_identity_count": 1166,
+      "priority_identity_fraction": 0.24145785876993167,
+      "source": {
+        "chamfer_distance_m": 0.009604193790233638,
+        "track_error_m": 0.018775305293184136
+      },
+      "source_update_count": 170053
+    },
+    {
+      "both_metric_hard_win_or_tie": true,
+      "both_metric_source_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.008188452323580224,
+        "track_error_m": 0.021011019454102914
+      },
+      "candidate_minus_hard_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "case": "weird_package",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.010778865911925846,
+          "track_error_m": 0.028539614291431325
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 4.051599222301694e-07,
+          "track_error_m": 1.1752997880476457e-10
+        },
+        "source": {
+          "chamfer_distance_m": 0.010778460752003616,
+          "track_error_m": 0.028539614173901346
+        }
+      },
+      "hard": {
+        "chamfer_distance_m": 0.008188452323580224,
+        "track_error_m": 0.021011019454102914
+      },
+      "multiview_tangent_update_count": 0,
+      "multiview_tangent_updates_without_source_count": 0,
+      "physical_object": "weird_package",
+      "priority_identity_count": 0,
+      "priority_identity_fraction": 0.0,
+      "source": {
+        "chamfer_distance_m": 0.008188452323580224,
+        "track_error_m": 0.021011019454102914
+      },
+      "source_update_count": 13125
+    }
+  ],
+  "primary_arm": "causal_selected_dense_relative_cap",
+  "recommendation": "Do not advance this fixed method to fresh-object evaluation.",
+  "schema_version": 1,
+  "status": "post-open exploratory transfer; not independent SOTA evidence"
+}

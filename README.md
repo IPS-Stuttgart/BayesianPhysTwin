@@ -88,7 +88,6 @@ teacher model, and escalation gate.
 
 ```text
 src/bayesian_phystwin/   reusable Python package
-src/causal4d/            independent counterfactual world-model benchmark
 tests/                   unit tests for estimation utilities
 examples/                small synthetic demos
 configs/compute/         host-specific run defaults
@@ -139,6 +138,16 @@ bpt-synthetic-benchmark \
 See [docs/synthetic_benchmark.md](docs/synthetic_benchmark.md) for the complete
 protocol and baseline definitions.
 
+## Causal4D Integration
+
+Causal4D now lives in its own
+[repository](https://github.com/FlorianPfaff/Causal4D). It consumes versioned
+Bayesian-PhysTwin belief and simulation artifacts; the Bayesian-PhysTwin
+package no longer embeds the causal inference implementation. The following
+commands and Causal4D-relative paths are run from that repository. See the
+[migration note](docs/causal4d_migration.md) for command compatibility and
+historical-tag semantics.
+
 Run the independent Causal4D milestone without changing the Bayesian PhysTwin
 pipeline:
 
@@ -151,7 +160,7 @@ causal4d-counterfactual-benchmark \
 This evaluates generative-only, physics-only, and hybrid predictors on one
 untouched action per rope, cloth, and soft-block object under matched and
 shifted contact worlds. See
-[docs/causal4d_counterfactual_benchmark.md](docs/causal4d_counterfactual_benchmark.md)
+[Causal4D benchmark protocol](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_counterfactual_benchmark.md)
 for the locked split, information boundary, metrics, and artifact schema.
 
 Run the next Causal4D milestone, which infers realized contact on a topology
@@ -167,7 +176,7 @@ causal4d-latent-contact-benchmark \
 The model marginalizes graph contact location, transmission gain, delay, slip,
 control-frame bias, and physical parameters before intervention, then updates
 their joint posterior from the first 20% of motion. See
-[docs/causal4d_latent_contact_inference.md](docs/causal4d_latent_contact_inference.md)
+[Causal4D latent-contact protocol](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_latent_contact_inference.md)
 for the transfer protocol, oracle controls, and pre-registered success gates.
 
 The real-backend milestone replaces the controlled simulator with official
@@ -176,7 +185,7 @@ Bayesian-PhysTwin parameter particles, and uses MolmoMotion trajectories only
 as robust ranking evidence over those physical futures. It includes known,
 hidden, and ambiguous future-action settings plus shuffled and generic language
 controls. See
-[docs/causal4d_phystwin_molmo.md](docs/causal4d_phystwin_molmo.md) for the
+[Causal4D PhysTwin/Molmo notes](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_phystwin_molmo.md) for the
 three-environment artifact pipeline and information boundary.
 
 The complete Causal4D architecture now exports particle-specific endpoint
@@ -186,14 +195,14 @@ semantics, separates physical and language-conditioned posteriors, gates
 MolmoMotion trust on source validation, target OOD diagnostics, and strict
 freshness telemetry, and supports constrained receding-horizon replanning with
 a separately transported graph-discrepancy coefficient belief. See
-[docs/causal4d_abduction_intervention_prediction.md](docs/causal4d_abduction_intervention_prediction.md)
+[Causal4D abduction-intervention-prediction notes](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_abduction_intervention_prediction.md)
 for the artifact contracts, commands, audited results, and claim boundary.
 
 The first Causal4D paper is deliberately narrower than the complete software
 architecture: **Bayesian abduction of realized interventions for counterfactual
 prediction of deformable-object dynamics.** Its locked core/optional/application
 hierarchy and current evidence status are in
-[docs/causal4d_paper_scope.md](docs/causal4d_paper_scope.md). MolmoMotion is
+[Causal4D paper scope](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_paper_scope.md). MolmoMotion is
 excluded from the main claim, and closed-loop planning remains an application
 without genuine robot execution.
 
@@ -213,13 +222,13 @@ causal4d-real-protocol scaffold \
 ```
 
 See
-[docs/causal4d_same_object_multi_action_protocol.md](docs/causal4d_same_object_multi_action_protocol.md)
+[Causal4D same-object protocol](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_same_object_multi_action_protocol.md)
 for the contact/action design, slip gate, required actuator measurements,
 matched-reset semantics, and leave-one-contact-and-action-out calibration
 folds. Physical acquisition is not yet claimed complete.
 
 The post-oracle real-undercoverage audit is documented in
-[docs/causal4d_real_undercoverage.md](docs/causal4d_real_undercoverage.md).
+[Causal4D undercoverage audit](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_real_undercoverage.md).
 Full 81-particle support raises coverage only from 50.6% to 55.1%. A
 low-frequency graph-persistent discrepancy improves track error to 23.1 mm and
 coverage to 67.8%, but a locked affine scale from one held-out source action
@@ -254,10 +263,11 @@ frame/settled state, and gravity using rigid-free graph ranks `4/8/16`, then
 exports the exact corrected embedded geometry and rest lengths consumed by
 Warp. `bpt-structural-recovery-benchmark` runs the controlled mechanism and
 leakage gates; `bpt-diagnose-phystwin-structure` builds official-Warp
-sensitivities and reruns the physical ladder; and `bpt-structural-protocol`
-installs the measurement-only amendment before acquisition. The tagged
+sensitivities and reruns the physical ladder; and
+`causal4d-structural-protocol` installs the measurement-only amendment before
+acquisition. The tagged
 `v0.3.0-causal4d-aip` path remains unchanged. See
-[docs/phystwin_structural_calibration.md](docs/phystwin_structural_calibration.md).
+[Causal4D structural-calibration notes](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/phystwin_structural_calibration.md).
 On the three released sloth diagnostics, baseline is selected in every case;
 rest geometry changes equal-case CD/track by `+0.18%/+1.38%`, while graph
 persistence remains much stronger at `-10.59%/-13.76%`. The structural
@@ -274,7 +284,7 @@ path performs no force-buffer write; every real run must pass bitwise zero-force
 parity. Released fused tracks do not identify camera-specific residuals, so the
 observation audit reports cross-view tests as unavailable unless per-view 3D
 identities are supplied. See
-[docs/phystwin_discrepancy_localization.md](docs/phystwin_discrepancy_localization.md).
+[Causal4D discrepancy-localization notes](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/phystwin_discrepancy_localization.md).
 On the three released sloth diagnostics, readout persistence remains strongest
 at `-17.42%/-13.52%` equal-case CD/track. Prefix state changes CD/track by
 `-3.43%/+1.04%`, constant force by `-1.89%/-1.27%`, and the matched rest
@@ -296,19 +306,19 @@ PyRecEst 2.4.1 as an optional source-only actuator synchronization diagnostic.
 The superseding v3 lock adds leave-one-replicate-out mechanism fitting,
 held-out correction shrinkage, exact rank-9-of-9 conformal arithmetic, and
 noise-scaled discovery thresholds without adding or changing an execution. See
-[docs/causal4d_preacquisition_v3.md](docs/causal4d_preacquisition_v3.md). The
+[Causal4D pre-acquisition v3](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_preacquisition_v3.md). The
 v4 addendum leaves those thresholds and executions unchanged, validates the
 10%/8-of-12 mechanism gate with matched placebo and positive controls, locks a
 prospective mode-0/reset-scale prediction, and requires rejected contact-patch
 alternatives to remain in the registration artifact. See
-[docs/causal4d_preacquisition_v4.md](docs/causal4d_preacquisition_v4.md).
+[Causal4D pre-acquisition v4](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_preacquisition_v4.md).
 
 A separate public-only Causal4D track is prepared for PokeFlex while gated
 dataset access is pending. It pins the public loader revision, validates raw or
 processed episode schemas, assigns object/take splits from metadata hashes, and
 keeps geometry-only metrics separate from unverified material identities. No
 PokeFlex outcome or raw data is in this repository. See
-[docs/causal4d_pokeflex_public_readiness.md](docs/causal4d_pokeflex_public_readiness.md).
+[Causal4D PokeFlex readiness notes](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_pokeflex_public_readiness.md).
 
 MolmoMotion now has a separate pre-beta competence gate. The corrected adapter
 samples the 30 fps PhysTwin videos at the checkpoint's 15 fps rate and records
@@ -316,7 +326,7 @@ the temporal contract in every forecast artifact. On `single_lift_sloth`, the
 corrected forecast still fails zero-motion, constant-velocity, motion-scale,
 action-ranking, and stability gates; the true lift ranks fifth of five for all
 three paraphrases. See
-[docs/causal4d_molmo_acceptance.md](docs/causal4d_molmo_acceptance.md). Semantic
+[Causal4D MolmoMotion acceptance notes](https://github.com/FlorianPfaff/Causal4D/blob/main/docs/causal4d_molmo_acceptance.md). Semantic
 reweighting remains disabled with `beta=0`.
 
 Export the exact tracked-point residuals from an official PhysTwin case and

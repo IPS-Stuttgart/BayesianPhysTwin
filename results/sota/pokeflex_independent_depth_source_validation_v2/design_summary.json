@@ -1,0 +1,282 @@
+{
+  "artifact_kind": "PokeFlexIndependentDepthSourceEvaluation",
+  "competence": {
+    "acceptance_rate": 0.5715962441314554,
+    "candidate_frame_pair_count": 852,
+    "false_safe_count": 7,
+    "false_safe_rate_among_accepted": 0.014373716632443531,
+    "pearson": 0.48410955832610975,
+    "sign_agreement": 0.7206572769953051,
+    "spearman": 0.30216450779553433
+  },
+  "maximum_calibration_median_residual_mm": 10.0,
+  "method": "strictly causal one-frame-lag selection using minimum worst-sensor baseline-relative RealSense regret with exact checkpoint fallback",
+  "minimum_anchor_improvement_mm": 0.0,
+  "object_balanced_selector": {
+    "baseline_mean_CD_UL1_mm": 5.846167934337903,
+    "object_losses": 0,
+    "object_ties": 0,
+    "object_wins": 5,
+    "relative_improvement": 0.053052713191501726,
+    "selected_mean_CD_UL1_mm": 5.5360128636481205
+  },
+  "object_count": 5,
+  "objects": [
+    {
+      "baseline_mean_CD_UL1_mm": 8.702404805388767,
+      "difference_mm": -0.27130900727191687,
+      "object": "3dPrintedHeart",
+      "relative_improvement": 0.031176325778814025,
+      "selected_mean_CD_UL1_mm": 8.43109579811685,
+      "take_count": 1
+    },
+    {
+      "baseline_mean_CD_UL1_mm": 4.574882705685191,
+      "difference_mm": -0.31793898296108125,
+      "object": "FoamDice",
+      "relative_improvement": 0.06949664142557788,
+      "selected_mean_CD_UL1_mm": 4.25694372272411,
+      "take_count": 1
+    },
+    {
+      "baseline_mean_CD_UL1_mm": 2.663012879072339,
+      "difference_mm": -0.008216248841121043,
+      "object": "MemoryFoam",
+      "relative_improvement": 0.003085320730398861,
+      "selected_mean_CD_UL1_mm": 2.654796630231218,
+      "take_count": 1
+    },
+    {
+      "baseline_mean_CD_UL1_mm": 4.479424811414453,
+      "difference_mm": -0.3888993728834409,
+      "object": "PlushOctopus",
+      "relative_improvement": 0.08681904245662278,
+      "selected_mean_CD_UL1_mm": 4.090525438531012,
+      "take_count": 1
+    },
+    {
+      "baseline_mean_CD_UL1_mm": 8.811114470128766,
+      "difference_mm": -0.5644117414913481,
+      "object": "ToiletPaperRoll",
+      "relative_improvement": 0.06405679365587674,
+      "selected_mean_CD_UL1_mm": 8.246702728637418,
+      "take_count": 1
+    }
+  ],
+  "schema_version": 1,
+  "source_sha256": {
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T3_smoke40_template15mm_v1.json": "5a551fc8ee58272064f6d9f9e73bcdc0dbf9f202f305362b6a302e30186d12fd",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T3_smoke40_template15mm_v1.json": "04367167f0b3f3f198bae5a733e693ffbbbff11292276ef5f928546e0dc55100",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/MemoryFoam_T3_smoke40_template15mm_v1.json": "04c54e441800b1c3eebefd9116dd14a1dc4f38276a4b3265c496f9a35efa4086",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/PlushOctopus_T3_smoke40_template15mm_v1.json": "89825c0e65237d6f8bead08f8d1a38b39e8c20bdb8982b6e415431f0314877b3",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/ToiletPaperRoll_T3_smoke40_template15mm_v1.json": "48ac06457f730e3e06edaae2461c9cb68286d8f10393efcdb352cc7daf0565f1"
+  },
+  "sources": [
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/FoamDice_T3_smoke40_template15mm_v1.json",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/MemoryFoam_T3_smoke40_template15mm_v1.json",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/PlushOctopus_T3_smoke40_template15mm_v1.json",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/3dPrintedHeart_T3_smoke40_template15mm_v1.json",
+    "/mnt/corsair/florianpfaff/pokeflex-independent-depth-v1/ToiletPaperRoll_T3_smoke40_template15mm_v1.json"
+  ],
+  "take_count": 5,
+  "takes": [
+    {
+      "competence": {
+        "acceptance_rate": 0.8947368421052632,
+        "candidate_frame_pair_count": 228,
+        "false_safe_count": 5,
+        "false_safe_rate_among_accepted": 0.024509803921568627,
+        "mean_hidden_regret_accepted_mm": -0.2056035135280932,
+        "pearson": 0.5762113793573563,
+        "sign_agreement": 0.9780701754385965,
+        "spearman": 0.7035843925204278
+      },
+      "minimum_anchor_improvement_mm": 0.0,
+      "object": "FoamDice",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 4.574882705685191,
+        "fallback_ties": 4,
+        "losses": 1,
+        "mean_difference_mm": -0.3179389829610813,
+        "nonbaseline_selection_count": 17,
+        "relative_improvement": 0.06949664142557788,
+        "selected_mean_CD_UL1_mm": 4.25694372272411,
+        "target_frame_count": 21,
+        "wins": 16
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          2.118097807180898,
+          2.5151886773038776
+        ],
+        "eligible_sensor_count": 2,
+        "eligible_sensor_indices": [
+          0,
+          1
+        ],
+        "maximum_calibration_median_residual_mm": 10.0,
+        "policy": "exclude failed sensor; exact fallback if none remain"
+      },
+      "take": "T3",
+      "take_id": "FoamDice_T3"
+    },
+    {
+      "competence": {
+        "acceptance_rate": 0.03333333333333333,
+        "candidate_frame_pair_count": 60,
+        "false_safe_count": 0,
+        "false_safe_rate_among_accepted": 0.0,
+        "mean_hidden_regret_accepted_mm": -0.053688569664647856,
+        "pearson": 0.9429581171207481,
+        "sign_agreement": 0.7166666666666667,
+        "spearman": 0.7422137575621778
+      },
+      "minimum_anchor_improvement_mm": 0.0,
+      "object": "MemoryFoam",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 2.663012879072339,
+        "fallback_ties": 5,
+        "losses": 0,
+        "mean_difference_mm": -0.008216248841121265,
+        "nonbaseline_selection_count": 1,
+        "relative_improvement": 0.003085320730398861,
+        "selected_mean_CD_UL1_mm": 2.654796630231218,
+        "target_frame_count": 6,
+        "wins": 1
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          15.391675885034276,
+          1.6457634195946589
+        ],
+        "eligible_sensor_count": 1,
+        "eligible_sensor_indices": [
+          1
+        ],
+        "maximum_calibration_median_residual_mm": 10.0,
+        "policy": "exclude failed sensor; exact fallback if none remain"
+      },
+      "take": "T3",
+      "take_id": "MemoryFoam_T3"
+    },
+    {
+      "competence": {
+        "acceptance_rate": 0.7142857142857143,
+        "candidate_frame_pair_count": 168,
+        "false_safe_count": 0,
+        "false_safe_rate_among_accepted": 0.0,
+        "mean_hidden_regret_accepted_mm": -0.40229608045293674,
+        "pearson": 0.4571326878650521,
+        "sign_agreement": 0.8214285714285714,
+        "spearman": 0.453388661169328
+      },
+      "minimum_anchor_improvement_mm": 0.0,
+      "object": "PlushOctopus",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 4.479424811414453,
+        "fallback_ties": 2,
+        "losses": 1,
+        "mean_difference_mm": -0.38889937288344173,
+        "nonbaseline_selection_count": 13,
+        "relative_improvement": 0.08681904245662278,
+        "selected_mean_CD_UL1_mm": 4.090525438531012,
+        "target_frame_count": 15,
+        "wins": 12
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          3.1041372327791454,
+          4.254170134606026
+        ],
+        "eligible_sensor_count": 2,
+        "eligible_sensor_indices": [
+          0,
+          1
+        ],
+        "maximum_calibration_median_residual_mm": 10.0,
+        "policy": "exclude failed sensor; exact fallback if none remain"
+      },
+      "take": "T3",
+      "take_id": "PlushOctopus_T3"
+    },
+    {
+      "competence": {
+        "acceptance_rate": 0.37280701754385964,
+        "candidate_frame_pair_count": 228,
+        "false_safe_count": 2,
+        "false_safe_rate_among_accepted": 0.023529411764705882,
+        "mean_hidden_regret_accepted_mm": -0.35708076058961097,
+        "pearson": 0.5041633526867338,
+        "sign_agreement": 0.5350877192982456,
+        "spearman": 0.35311493072643574
+      },
+      "minimum_anchor_improvement_mm": 0.0,
+      "object": "3dPrintedHeart",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 8.702404805388767,
+        "fallback_ties": 8,
+        "losses": 1,
+        "mean_difference_mm": -0.2713090072719169,
+        "nonbaseline_selection_count": 12,
+        "relative_improvement": 0.031176325778814025,
+        "selected_mean_CD_UL1_mm": 8.43109579811685,
+        "target_frame_count": 20,
+        "wins": 11
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          13.361948324868644,
+          3.748022311302948
+        ],
+        "eligible_sensor_count": 1,
+        "eligible_sensor_indices": [
+          1
+        ],
+        "maximum_calibration_median_residual_mm": 10.0,
+        "policy": "exclude failed sensor; exact fallback if none remain"
+      },
+      "take": "T3",
+      "take_id": "3dPrintedHeart_T3"
+    },
+    {
+      "competence": {
+        "acceptance_rate": 0.4523809523809524,
+        "candidate_frame_pair_count": 168,
+        "false_safe_count": 0,
+        "false_safe_rate_among_accepted": 0.0,
+        "mean_hidden_regret_accepted_mm": -0.43887594042066186,
+        "pearson": -0.034429212146670704,
+        "sign_agreement": 0.5238095238095238,
+        "spearman": -0.002777362847138709
+      },
+      "minimum_anchor_improvement_mm": 0.0,
+      "object": "ToiletPaperRoll",
+      "selector": {
+        "baseline_mean_CD_UL1_mm": 8.811114470128766,
+        "fallback_ties": 2,
+        "losses": 0,
+        "mean_difference_mm": -0.56441174149135,
+        "nonbaseline_selection_count": 13,
+        "relative_improvement": 0.06405679365587674,
+        "selected_mean_CD_UL1_mm": 8.246702728637418,
+        "target_frame_count": 15,
+        "wins": 13
+      },
+      "sensor_quality": {
+        "calibration_median_residual_mm": [
+          3.0170512188096716,
+          3.331142570502381
+        ],
+        "eligible_sensor_count": 2,
+        "eligible_sensor_indices": [
+          0,
+          1
+        ],
+        "maximum_calibration_median_residual_mm": 10.0,
+        "policy": "exclude failed sensor; exact fallback if none remain"
+      },
+      "take": "T3",
+      "take_id": "ToiletPaperRoll_T3"
+    }
+  ]
+}

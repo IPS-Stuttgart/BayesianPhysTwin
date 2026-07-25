@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-cotracker3-directional-priority-exploratory-v1",
+  "locked_at_utc": "2026-07-24T10:38:10Z",
+  "status": "Locked after one already-open development smoke and before scoring the other 18 PhysTwin-19 cases with the directional endpoint method.",
+  "claim_boundary": "Post-open mechanism development on the previously examined PhysTwin-19 cohort. A positive result may justify a genuinely fresh-object preregistration but cannot establish confirmation, calibration, or state of the art.",
+  "development_history": {
+    "case": "single_lift_cloth",
+    "source_depth_primary_metrics_m": {
+      "future_chamfer": 0.011983535887102813,
+      "future_manual_track": 0.050729772691480005
+    },
+    "hard_three_view_primary_metrics_m": {
+      "future_chamfer": 0.011682624900049104,
+      "future_manual_track": 0.04930774809950934
+    },
+    "joint_valid_point_fusion_primary_metrics_m": {
+      "future_chamfer": 0.011984377560657082,
+      "future_manual_track": 0.050729772691480005
+    },
+    "directional_endpoint_primary_metrics_m": {
+      "future_chamfer": 0.011893408546939637,
+      "future_manual_track": 0.04944540193270109
+    },
+    "joint_valid_point_fusion_interpretation": "Rejected at smoke: only one identity had both source and multiview support at the final prefix frame, so tangent point fusion reproduced the source endpoint.",
+    "directional_endpoint_interpretation": "Passed the development smoke on both metrics by retaining multiview tangent updates when source depth was missing.",
+    "joint_valid_point_fusion_result_sha256": "7c2ca6ddddc93d05f33e64ae863818eb88663282ee78edfddcbd4c7c92747f6d",
+    "directional_endpoint_result_sha256": "ad78ca5977981c0751d8b9f3991029c66158522c94d6e40634609e5c962781a1",
+    "development_selection_sha256": "ddb2cdd4093c1e4e5544290f2cb17d7d8f277602020643bfe8ee50309a4aff9f"
+  },
+  "cohort": {
+    "family_selection_sha256": "8cc895b2e4180e54191528374d8e2dbcc5dc564259d49331fd982416c7cf842d",
+    "cue_manifest_sha256": "6e39dbf74da2093bcce2d9ec9317d17129abb48c80296dd096ff1c15a39092f5",
+    "cases": [
+      "double_lift_cloth_1",
+      "double_lift_cloth_3",
+      "double_lift_zebra",
+      "double_stretch_zebra",
+      "rope_double_hand",
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_cloth",
+      "single_lift_cloth_1",
+      "single_lift_cloth_3",
+      "single_lift_cloth_4",
+      "single_lift_dinosor",
+      "single_lift_rope",
+      "single_lift_zebra",
+      "single_push_rope",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "weird_package"
+    ],
+    "remaining_unscored_for_directional_method_at_lock": 18
+  },
+  "software": {
+    "base_commit": "a084e3d",
+    "runner": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "runner_sha256": "b3d5307d73b68180fd1b3aeae8b20cb6bdefa407280cd2e141205355fe311776",
+    "directional_filter": "src/bayesian_phystwin/phystwin_directional_endpoint.py",
+    "directional_filter_sha256": "c1aff67981510aa046333dab3ceb2785e72fd4ec190f007da817981a29887b83",
+    "tangent_basis": "src/bayesian_phystwin/phystwin_multiview_tangent_fusion.py",
+    "tangent_basis_sha256": "94964e5d26b1cfea0ee491def488306c0b9ead100e1bec3bac6b5981bdb235de",
+    "deployed_root": "/home/florianpfaff/bpt-cotracker3-multiview-tangent-v1/code",
+    "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "cotracker_checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218"
+  },
+  "method": {
+    "name": "three_view_directional_endpoint_priority",
+    "priority_threshold": 0.40,
+    "minimum_view_quality": 0.50,
+    "maximum_forward_backward_error_px": 5.0,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_camera_count": 3,
+    "local_tangent_basis": "Initial object point cloud, 16-nearest-neighbor PCA, rank-two tangent projector and orthogonal rank-one normal projector.",
+    "nonpriority_update": "Existing full 3D source-camera RGB-D robust random-walk update, behavior-compatible with the source baseline.",
+    "priority_source_update": "One-dimensional source RGB-D innovation projected onto the fixed local normal.",
+    "priority_multiview_update": "Two-dimensional redundant-view triangulation innovation projected into the fixed local tangent plane, including frames where source depth is unavailable.",
+    "correlation_boundary": "Source and multiview residuals are never accumulated in the same geometric subspace. Each projected innovation enters one robust-mixture likelihood exactly once.",
+    "endpoint_filter": {
+      "process_std_m": 0.005,
+      "observation_std_m": 0.001,
+      "initial_std_m": 0.010,
+      "inlier_prior": 0.95,
+      "outlier_variance_multiplier": 100.0
+    },
+    "graph_variance": "Largest eigenvalue of the 3D endpoint covariance, in square metres; no dimensionless confidence accumulation.",
+    "primary_prediction_arm": "causal_selected_dense_relative_cap",
+    "selection": "Released prefix object-cloud Chamfer only on the nested prefix validation interval.",
+    "relative_cap_quantile": 0.95,
+    "relative_cap_multipliers": [
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0,
+      16.0
+    ],
+    "physical_backbone": "Object-disjoint MatPhys spring-family replay selected before this observation experiment."
+  },
+  "information_boundary": {
+    "decoded_video_frames": "[0, train_end)",
+    "future_rgb_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_selection": false,
+    "manual_tracks_role": "Evaluation only after candidate predictions and selections are fixed.",
+    "known_future_controller_action_in_physical_backbone": true,
+    "association": "Exact archived PhysTwin graph identity.",
+    "prior_reliability_uses_state_innovation": false,
+    "state_innovation_likelihood_count_per_subspace": 1
+  },
+  "evaluation": {
+    "primary_comparator": "CoTracker3 source-camera RGB-D lifting with the identical physical backbone and causal selector.",
+    "secondary_comparator": "Frozen hard three-view identity-priority result.",
+    "co_primary_metrics": [
+      "official future Chamfer distance",
+      "official future initial-nearest-node manual-track error"
+    ],
+    "secondary_report": [
+      "late-horizon metrics",
+      "direct graph support",
+      "priority and tangent-only update counts",
+      "both-metric wins, ties, and losses",
+      "equal-physical-object cluster bootstrap confidence intervals",
+      "fixed graph-smoothed 60 mm cap diagnostic"
+    ]
+  },
+  "transfer_gate_for_fresh_evaluation": {
+    "both_equal_case_future_means_improve_over_source": true,
+    "both_physical_object_cluster_95_percent_upper_bounds_below_zero": true,
+    "two_metric_win_or_tie_count_at_least": 12,
+    "no_threshold_basis_rank_neighbor_or_variance_changes_after_lock": true,
+    "independent_fresh_object_protocol_required_for_sota_claim": true,
+    "calibration_required_before_bayesian_coverage_claim": true
+  },
+  "forbidden": [
+    "changing the 0.40 availability threshold or 16-neighbor basis after inspecting any remaining future score",
+    "changing the directional covariance reduction after inspecting any remaining future score",
+    "using future CoTracker3, object-cloud, or manual-track values to form or select a prediction",
+    "describing this post-open cohort as independent, confirmatory, calibrated, or state of the art",
+    "opening any held-v8 or PokeFlex target artifact"
+  ]
+}

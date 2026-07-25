@@ -1,0 +1,801 @@
+{
+  "aggregate": {
+    "bootstrap_draws": 100000,
+    "bootstrap_seed": 20260724,
+    "both_metric_win_or_tie_count": 4,
+    "fixed_graph_60mm_diagnostic": {
+      "arm": "combined_graph__lambda_0p0001__cap_060mm",
+      "both_metric_win_or_tie_count": 3,
+      "metrics": {
+        "chamfer_distance_m": {
+          "candidate_mean_m": 0.008661285247464007,
+          "difference_m": 0.0001042181732338679,
+          "percent_change": 1.2179193213025519,
+          "source_mean_m": 0.00855706707423014
+        },
+        "track_error_m": {
+          "candidate_mean_m": 0.018675562948631052,
+          "difference_m": -0.0006707681576784141,
+          "percent_change": -3.4671595042620518,
+          "source_mean_m": 0.019346331106309466
+        }
+      }
+    },
+    "metric_win_or_tie_counts": {
+      "chamfer_distance_m": 7,
+      "track_error_m": 13
+    },
+    "metrics": {
+      "chamfer_distance_m": {
+        "candidate_mean_m": 0.008251075507362923,
+        "difference_m": 9.1004961206273e-05,
+        "percent_change": 1.1152472358114007,
+        "source_mean_m": 0.00816007054615665
+      },
+      "track_error_m": {
+        "candidate_mean_m": 0.019331001746659738,
+        "difference_m": -0.0008610036852232279,
+        "percent_change": -4.264082080047937,
+        "source_mean_m": 0.020192005431882966
+      }
+    },
+    "object_cluster_bootstrap": {
+      "chamfer_distance_m": {
+        "cluster_count": 11,
+        "lower_95_m": -6.076235144449092e-05,
+        "mean_difference_m": 3.7521950013095876e-05,
+        "probability_improved": 0.23157,
+        "upper_95_m": 0.00014117268585042488
+      },
+      "track_error_m": {
+        "cluster_count": 11,
+        "lower_95_m": -0.0012334840556578485,
+        "mean_difference_m": -0.0005698443574235501,
+        "probability_improved": 0.9759,
+        "upper_95_m": -4.093015760905547e-06
+      }
+    }
+  },
+  "analysis_software": {
+    "module": {
+      "path": "/home/florianpfaff/bpt-matphys-sparse-headroom-v1/code/src/bayesian_phystwin/phystwin_multiview_priority_analysis.py",
+      "sha256": "007d81c55b7cf97225e6fc080f3504a2a0713c64b3362032ffd78e5f5afc8814"
+    },
+    "script": {
+      "path": "/home/florianpfaff/bpt-matphys-sparse-headroom-v1/code/scripts/remote/analyze_phystwin_cotracker3_multiview_priority.py",
+      "sha256": "3841f34e377e5a5b514273a6d405da4d9d7fd1f22b2387fd129e88b5e8ab3bfa"
+    }
+  },
+  "case_count": 19,
+  "completed_at_utc": "2026-07-24T10:12:06.547921+00:00",
+  "fresh_evaluation_justified": false,
+  "gates": {
+    "both_equal_case_future_means_improve": false,
+    "both_physical_object_cluster_95_percent_upper_bounds_below_zero": false,
+    "two_metric_win_or_tie_count": 4,
+    "two_metric_win_or_tie_gate": false
+  },
+  "inputs": {
+    "candidate_result": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/multiview_priority_result.json",
+      "sha256": "453ebce22ff0bc0cbe91c984cb6f434712ce0c1c21219afa0804f22d6b59b765"
+    },
+    "protocol": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/phystwin_cotracker3_multiview_priority_exploratory_v1.json",
+      "sha256": "f701097e52195015d2805c7fb3cd84779fd6c3887b38be1e83d955c7289891af"
+    },
+    "source_result": {
+      "path": "/home/florianpfaff/bpt-cotracker3-multiview-priority-v1/source_depth_result.json",
+      "sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e"
+    }
+  },
+  "per_case": [
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.012743136262067753,
+        "track_error_m": 0.02283397867983889
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.00034055897683634394,
+        "track_error_m": 0.0005362681908215698
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 2.74587264408237,
+        "track_error_m": 2.4050370152832734
+      },
+      "case": "double_lift_cloth_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.013205468351366243,
+          "track_error_m": 0.022545863382543455
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00017653695476874988,
+          "track_error_m": 0.0006380771605136483
+        },
+        "source": {
+          "chamfer_distance_m": 0.013028931396597493,
+          "track_error_m": 0.021907786222029806
+        }
+      },
+      "physical_object": "cloth_1",
+      "priority_identity_count": 2672,
+      "priority_identity_fraction": 0.5634753268663011,
+      "source": {
+        "chamfer_distance_m": 0.01240257728523141,
+        "track_error_m": 0.02229771048901732
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.009504621115705355,
+        "track_error_m": 0.008478469513103387
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.0010576543767870997,
+        "track_error_m": -0.007425514536509659
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 12.521114495622431,
+        "track_error_m": -46.68965029985883
+      },
+      "case": "double_lift_cloth_3",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.00896088716253028,
+          "track_error_m": 0.007967345588145165
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.0007916583954123441,
+          "track_error_m": -0.005481830024973402
+        },
+        "source": {
+          "chamfer_distance_m": 0.008169228767117936,
+          "track_error_m": 0.013449175613118567
+        }
+      },
+      "physical_object": "cloth_3",
+      "priority_identity_count": 4059,
+      "priority_identity_fraction": 0.5396888711607499,
+      "source": {
+        "chamfer_distance_m": 0.008446966738918255,
+        "track_error_m": 0.015903984049613046
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.011059343925113034,
+        "track_error_m": 0.021953159502290074
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 2.908918593706039e-05,
+        "track_error_m": 1.4074359624815375e-05
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.263721796322125,
+        "track_error_m": 0.0641519896262377
+      },
+      "case": "double_lift_zebra",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.011207136630610438,
+          "track_error_m": 0.021952026499273698
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 4.4974613051836435e-05,
+          "track_error_m": 6.747345944221536e-05
+        },
+        "source": {
+          "chamfer_distance_m": 0.011162162017558602,
+          "track_error_m": 0.021884553039831483
+        }
+      },
+      "physical_object": "zebra",
+      "priority_identity_count": 964,
+      "priority_identity_fraction": 0.2480061744275791,
+      "source": {
+        "chamfer_distance_m": 0.011030254739175974,
+        "track_error_m": 0.02193908514266526
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.005848541092839725,
+        "track_error_m": 0.012366307528658986
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 1.706983960223646e-05,
+        "track_error_m": -0.00011817127231274031
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.29271926176022145,
+        "track_error_m": -0.9465455001897438
+      },
+      "case": "double_stretch_zebra",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.005918583016297683,
+          "track_error_m": 0.011560802982345646
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 2.1952878063009884e-05,
+          "track_error_m": -0.00013840236121492357
+        },
+        "source": {
+          "chamfer_distance_m": 0.005896630138234673,
+          "track_error_m": 0.01169920534356057
+        }
+      },
+      "physical_object": "zebra",
+      "priority_identity_count": 320,
+      "priority_identity_fraction": 0.0916642795760527,
+      "source": {
+        "chamfer_distance_m": 0.005831471253237489,
+        "track_error_m": 0.012484478800971727
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.004631969018016628,
+        "track_error_m": 0.011239748274217939
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 2.046981294223562e-05,
+        "track_error_m": -0.0005598963444946297
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.4438862944985633,
+        "track_error_m": -4.745027181638273
+      },
+      "case": "rope_double_hand",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.005011251703649422,
+          "track_error_m": 0.01147190876754215
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 3.393907050945524e-05,
+          "track_error_m": -0.0007499581162783188
+        },
+        "source": {
+          "chamfer_distance_m": 0.004977312633139967,
+          "track_error_m": 0.01222186688382047
+        }
+      },
+      "physical_object": "rope",
+      "priority_identity_count": 197,
+      "priority_identity_fraction": 0.1578525641025641,
+      "source": {
+        "chamfer_distance_m": 0.004611499205074392,
+        "track_error_m": 0.011799644618712569
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.005579966429892287,
+        "track_error_m": 0.011038660592252671
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.000357794809894031,
+        "track_error_m": -0.008027580693505685
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 6.851456365850916,
+        "track_error_m": -42.10363528495748
+      },
+      "case": "single_clift_cloth_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.005557156684648804,
+          "track_error_m": 0.010919995385909218
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.000306737758012484,
+          "track_error_m": -0.005456095308952949
+        },
+        "source": {
+          "chamfer_distance_m": 0.00525041892663632,
+          "track_error_m": 0.016376090694862167
+        }
+      },
+      "physical_object": "cloth_1",
+      "priority_identity_count": 4037,
+      "priority_identity_fraction": 0.6220338983050847,
+      "source": {
+        "chamfer_distance_m": 0.005222171619998256,
+        "track_error_m": 0.019066241285758356
+      }
+    },
+    {
+      "both_metric_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.004163518373021403,
+        "track_error_m": 0.013210297998665518
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "case": "single_clift_cloth_3",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004202527998280548,
+          "track_error_m": 0.014194473058262078
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.0002752573657247839,
+          "track_error_m": -0.0013993761099990506
+        },
+        "source": {
+          "chamfer_distance_m": 0.003927270632555764,
+          "track_error_m": 0.015593849168261129
+        }
+      },
+      "physical_object": "cloth_3",
+      "priority_identity_count": 6775,
+      "priority_identity_fraction": 0.8304731551850943,
+      "source": {
+        "chamfer_distance_m": 0.004163518373021403,
+        "track_error_m": 0.013210297998665518
+      }
+    },
+    {
+      "both_metric_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.011682624900049104,
+        "track_error_m": 0.04930774809950934
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -0.0003009109870537093,
+        "track_error_m": -0.0014220245919706678
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": -2.5110367247914045,
+        "track_error_m": -2.8031361398343058
+      },
+      "case": "single_lift_cloth",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.014120375013887607,
+          "track_error_m": 0.04539445349064705
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": -0.0005730214476061795,
+          "track_error_m": -0.0009027222009348607
+        },
+        "source": {
+          "chamfer_distance_m": 0.014693396461493787,
+          "track_error_m": 0.04629717569158191
+        }
+      },
+      "physical_object": "cloth",
+      "priority_identity_count": 866,
+      "priority_identity_fraction": 0.11112536892082639,
+      "source": {
+        "chamfer_distance_m": 0.011983535887102813,
+        "track_error_m": 0.050729772691480005
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.01159093529661841,
+        "track_error_m": 0.023911725959965578
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.00011847754803004026,
+        "track_error_m": 0.0
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 1.0327128730948543,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_cloth_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.011177393662033484,
+          "track_error_m": 0.020616272565973412
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00017890888141650768,
+          "track_error_m": 1.9443836249757873e-07
+        },
+        "source": {
+          "chamfer_distance_m": 0.010998484780616977,
+          "track_error_m": 0.020616078127610914
+        }
+      },
+      "physical_object": "cloth_1",
+      "priority_identity_count": 676,
+      "priority_identity_fraction": 0.12313296903460838,
+      "source": {
+        "chamfer_distance_m": 0.01147245774858837,
+        "track_error_m": 0.023911725959965578
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.00669697364441538,
+        "track_error_m": 0.025111531447969165
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.00014945172432169907,
+        "track_error_m": -0.0004903534791550548
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 2.2825692856872637,
+        "track_error_m": -1.9153022543099696
+      },
+      "case": "single_lift_cloth_3",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.006778900712294909,
+          "track_error_m": 0.02437718788706775
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00013745566699158857,
+          "track_error_m": -0.0004234303860536186
+        },
+        "source": {
+          "chamfer_distance_m": 0.00664144504530332,
+          "track_error_m": 0.02480061827312137
+        }
+      },
+      "physical_object": "cloth_3",
+      "priority_identity_count": 1245,
+      "priority_identity_fraction": 0.1450710790025635,
+      "source": {
+        "chamfer_distance_m": 0.006547521920093681,
+        "track_error_m": 0.02560188492712422
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.009395082188998698,
+        "track_error_m": 0.051919773641874084
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 4.386721314457616e-05,
+        "track_error_m": 0.0
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.4691070973969369,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_cloth_4",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.012472969335002292,
+          "track_error_m": 0.04037852412386224
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 4.61233108042039e-05,
+          "track_error_m": 9.686522833840527e-08
+        },
+        "source": {
+          "chamfer_distance_m": 0.012426846024198088,
+          "track_error_m": 0.0403784272586339
+        }
+      },
+      "physical_object": "cloth_4",
+      "priority_identity_count": 518,
+      "priority_identity_fraction": 0.06328649969456322,
+      "source": {
+        "chamfer_distance_m": 0.009351214975854122,
+        "track_error_m": 0.051919773641874084
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.010103302244869158,
+        "track_error_m": 0.013968999302324706
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 2.0794022998073258e-05,
+        "track_error_m": 0.0
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.20623859202977268,
+        "track_error_m": 0.0
+      },
+      "case": "single_lift_dinosor",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.009396726343097518,
+          "track_error_m": 0.014103308815754332
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 3.8632241057528355e-05,
+          "track_error_m": -1.2322633470476102e-06
+        },
+        "source": {
+          "chamfer_distance_m": 0.00935809410203999,
+          "track_error_m": 0.01410454107910138
+        }
+      },
+      "physical_object": "dinosor",
+      "priority_identity_count": 142,
+      "priority_identity_fraction": 0.02866370609608397,
+      "source": {
+        "chamfer_distance_m": 0.010082508221871084,
+        "track_error_m": 0.013968999302324706
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.009948474904918379,
+        "track_error_m": 0.017792464999429866
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -0.0001832116310347201,
+        "track_error_m": 0.0015195753777042034
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": -1.8083033894167433,
+        "track_error_m": 9.338079548425405
+      },
+      "case": "single_lift_rope",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.010018222405039202,
+          "track_error_m": 0.017793077313403762
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 8.837814632143594e-05,
+          "track_error_m": 0.0014564545008676107
+        },
+        "source": {
+          "chamfer_distance_m": 0.009929844258717766,
+          "track_error_m": 0.01633662281253615
+        }
+      },
+      "physical_object": "rope",
+      "priority_identity_count": 438,
+      "priority_identity_fraction": 0.2687116564417178,
+      "source": {
+        "chamfer_distance_m": 0.010131686535953099,
+        "track_error_m": 0.016272889621725663
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.01349601574634734,
+        "track_error_m": 0.019922680499380598
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -3.012286427657787e-06,
+        "track_error_m": 0.0016495717060322455
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": -0.02231483941173007,
+        "track_error_m": 9.027318365404312
+      },
+      "case": "single_lift_zebra",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.013548424681584162,
+          "track_error_m": 0.01992318333377529
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00014307051799304984,
+          "track_error_m": 0.0016497473411408344
+        },
+        "source": {
+          "chamfer_distance_m": 0.013405354163591112,
+          "track_error_m": 0.018273435992634455
+        }
+      },
+      "physical_object": "zebra",
+      "priority_identity_count": 742,
+      "priority_identity_fraction": 0.18443947303007704,
+      "source": {
+        "chamfer_distance_m": 0.013499028032774998,
+        "track_error_m": 0.018273108793348352
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.00453351231211184,
+        "track_error_m": 0.00970449043096978
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 7.018686227433773e-05,
+        "track_error_m": -0.0022341464395785136
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 1.5725239636489752,
+        "track_error_m": -18.71358065249461
+      },
+      "case": "single_push_rope",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004718646149749379,
+          "track_error_m": 0.009788937005390023
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.00029058256886485556,
+          "track_error_m": -0.002148976726305962
+        },
+        "source": {
+          "chamfer_distance_m": 0.004428063580884523,
+          "track_error_m": 0.011937913731695985
+        }
+      },
+      "physical_object": "rope",
+      "priority_identity_count": 822,
+      "priority_identity_fraction": 0.51375,
+      "source": {
+        "chamfer_distance_m": 0.004463325449837502,
+        "track_error_m": 0.011938636870548294
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.00396392266105536,
+        "track_error_m": 0.005970841819774092
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 6.487545382276392e-05,
+        "track_error_m": 9.200049653201436e-05
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 1.663879670459556,
+        "track_error_m": 1.5649426727727622
+      },
+      "case": "single_push_rope_1",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.003893778635368904,
+          "track_error_m": 0.0058441516462531705
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 8.230998184344815e-05,
+          "track_error_m": 2.5180626194075406e-05
+        },
+        "source": {
+          "chamfer_distance_m": 0.0038114686535254557,
+          "track_error_m": 0.005818971020059095
+        }
+      },
+      "physical_object": "rope_1",
+      "priority_identity_count": 1009,
+      "priority_identity_fraction": 0.5825635103926097,
+      "source": {
+        "chamfer_distance_m": 0.0038990472072325958,
+        "track_error_m": 0.005878841323242077
+      }
+    },
+    {
+      "both_metric_win_or_tie": false,
+      "candidate": {
+        "chamfer_distance_m": 0.0040742934162055775,
+        "track_error_m": 0.008918929438175875
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -3.5615652991464845e-05,
+        "track_error_m": 0.0002542264967232699
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": -0.8665800724983685,
+        "track_error_m": 2.934047461766176
+      },
+      "case": "single_push_rope_4",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.004197116600348876,
+          "track_error_m": 0.008836640264311362
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": -3.7603036199629e-05,
+          "track_error_m": 0.0002673985574407657
+        },
+        "source": {
+          "chamfer_distance_m": 0.004234719636548505,
+          "track_error_m": 0.008569241706870597
+        }
+      },
+      "physical_object": "rope_4",
+      "priority_identity_count": 200,
+      "priority_identity_fraction": 0.23837902264600716,
+      "source": {
+        "chamfer_distance_m": 0.004109909069197042,
+        "track_error_m": 0.008664702941452605
+      }
+    },
+    {
+      "both_metric_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.009565748784069884,
+        "track_error_m": 0.018628206004031617
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": -3.8445006163753334e-05,
+        "track_error_m": -0.00014709928915251913
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": -0.40029394453543476,
+        "track_error_m": -0.7834721558744429
+      },
+      "case": "single_push_sloth",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.009400393864022782,
+          "track_error_m": 0.018627929739628818
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": -6.574857558598081e-05,
+          "track_error_m": -0.00014719444701971965
+        },
+        "source": {
+          "chamfer_distance_m": 0.009466142439608763,
+          "track_error_m": 0.018775124186648538
+        }
+      },
+      "physical_object": "sloth",
+      "priority_identity_count": 1166,
+      "priority_identity_fraction": 0.24145785876993167,
+      "source": {
+        "chamfer_distance_m": 0.009604193790233638,
+        "track_error_m": 0.018775305293184136
+      }
+    },
+    {
+      "both_metric_win_or_tie": true,
+      "candidate": {
+        "chamfer_distance_m": 0.008188452323580224,
+        "track_error_m": 0.021011019454102914
+      },
+      "candidate_minus_source_m": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "candidate_percent_change": {
+        "chamfer_distance_m": 0.0,
+        "track_error_m": 0.0
+      },
+      "case": "weird_package",
+      "fixed_graph_diagnostic": {
+        "candidate": {
+          "chamfer_distance_m": 0.010778460752003616,
+          "track_error_m": 0.028539614173901346
+        },
+        "candidate_minus_source_m": {
+          "chamfer_distance_m": 0.0,
+          "track_error_m": 0.0
+        },
+        "source": {
+          "chamfer_distance_m": 0.010778460752003616,
+          "track_error_m": 0.028539614173901346
+        }
+      },
+      "physical_object": "weird_package",
+      "priority_identity_count": 0,
+      "priority_identity_fraction": 0.0,
+      "source": {
+        "chamfer_distance_m": 0.008188452323580224,
+        "track_error_m": 0.021011019454102914
+      }
+    }
+  ],
+  "primary_arm": "causal_selected_dense_relative_cap",
+  "recommendation": "Do not advance this fixed method to a fresh-object evaluation.",
+  "schema_version": 1,
+  "status": "post-open exploratory transfer; not independent SOTA evidence"
+}

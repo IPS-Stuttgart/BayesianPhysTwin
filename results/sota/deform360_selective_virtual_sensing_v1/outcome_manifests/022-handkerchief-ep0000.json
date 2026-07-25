@@ -1,0 +1,100 @@
+{
+  "artifact_kind": "Deform360SelectiveAuthorizedOutcome",
+  "authorization": {
+    "prediction_cohort_result_sha256": "7318fb93981af1cd571437a4f6efb9bd83aeb5b7d6db9b78cf1d0c1a3e16c985",
+    "prediction_result_sha256": "77c5eb46bbe064e84ec40ca75e452973339a1ffb4fcc954d5e03f33d3f2cdcad"
+  },
+  "camera_count": 8,
+  "cameras": [
+    "brics-odroid-006_cam0",
+    "brics-odroid-010_cam0",
+    "brics-odroid-012_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam0",
+    "brics-odroid-016_cam0",
+    "brics-odroid-024_cam1",
+    "brics-odroid-025_cam0"
+  ],
+  "case": "022-handkerchief-ep0000",
+  "code_revision": "5f92f517051b3184bbc9ba48f2e269a5e5a1cf19",
+  "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+  "episode_id": 0,
+  "episode_key": "022-handkerchief/0",
+  "information_boundary": {
+    "eligible_prediction_cohort_verified_before_target_construction": true,
+    "future_tactile_read": false,
+    "prediction_metric_computed": false
+  },
+  "inputs_sha256": {
+    "authorized_future_manifest": "fa1c2567292594397dca880f9e9762cc59ea9e55d68d23aa358980e756fa13d1",
+    "cotracker_predictor": "783536d6c77790fa6c8e005f2df1d6bd4f0d8955c2c67d464bfb4e64d366375f",
+    "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+    "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+    "prediction_archive": "6d6e13498f547321666492234bb8b77fd8fdd6784df15eb342302ca24ac38f96",
+    "prediction_cohort_seal": "a0821a48f6b8e20f38ae9eb28aa120eba7c6868e152cae3a938d7dbe0a3175f4",
+    "prediction_seal": "7f3bf6f9125f0037f574673005d8fdd7695bb8f3e31caf9085dce0ee2eb7af67",
+    "protocol": "cc1d006bda9b0b8e1076b8acf03b57c2564c76d3ccf609177af9639601250d69",
+    "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+    "tracking_checkpoint": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+    "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+    "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467"
+  },
+  "material_identity_sha256": "52d6e09135ca5d447168f5326ff917644e9a8408a701c9d608991db781f220a5",
+  "material_point_count": 89,
+  "object_id": "022-handkerchief",
+  "output": {
+    "frame_zero_bit_exact_to_sealed_persistence": true,
+    "target_archive": "/home/florianpfaff/deform360-selective-virtual-sensing-v1/authorized-outcome-5f92f51/022-handkerchief-ep0000/target_trajectory.npz",
+    "target_archive_sha256": "2bbd8ddf8cf0f174de9272c475ef4a207102354b2129e447d2635e0cbe0a23b3",
+    "target_array_sha256": "892c4b60c76018a5bbfb2d39de0e71f9fd14c075b625090acb98f120fe9fae88"
+  },
+  "protocol_config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
+  "protocol_id": "deform360-selective-virtual-sensing-v1",
+  "raw_frame_count": 81,
+  "reconstruction": {
+    "cube_half_extent_m": 0.5,
+    "first_frame_iterations": 500,
+    "minimum_visual_hull_points": 512,
+    "sealed_frame_zero_splat_reused": true,
+    "voxel_resolution": 120,
+    "warm_start_iterations": 250
+  },
+  "result_sha256": "9d9ceaa014f52c464c540125b9a66f3e48dfe40a8d25e0dd063beb99f8226949",
+  "schema_version": 1,
+  "stage_metadata_sha256": {
+    "depth": {
+      "brics-odroid-006_cam0": "8f353a658fc42ddbf4e9f1ed978f2ff9a1f505f5dfb25b51370fa91ee1c69406",
+      "brics-odroid-010_cam0": "03980b1f2220aef1d4719ac0da6a809d5def61f917ff80893596450b6b9fc837",
+      "brics-odroid-012_cam0": "55d237480abb7922c3f3fbd98eddb8e0caae53c0461b5550d66c6c1834fbba7c",
+      "brics-odroid-014_cam1": "0e652b28c4ab17b5f3431c61d11d1afbec55a55fe61d933500c0dd2b33b46f4f",
+      "brics-odroid-015_cam0": "dd3de548f97c4eb606583b3cec775c58d501bb9029934f40a1221fe6fe242f2c",
+      "brics-odroid-016_cam0": "aa9614f737afe7791126a07afc4069e336d51691a92acc7340d8c162df11a9e3",
+      "brics-odroid-024_cam1": "bb7457eb62ec6e1a4fa2646e1a9503dc74a5f8d58e6c1842c80a48ca3d2cc3ac",
+      "brics-odroid-025_cam0": "8594d91521e92c97f5216da07876a4aa43beaefa2e781398f15ec3463e221967"
+    },
+    "gripper_masks": {
+      "brics-odroid-006_cam0": "c2066a5b35500354ee5ea40a3c214c80749e05d6ea3f3b273b9e3582b34619cf",
+      "brics-odroid-010_cam0": "5600bebb36af1bde9f29e1142a3acdbd531c76663162da1d101641bdd110a491",
+      "brics-odroid-012_cam0": "cb75eec68a2c7593b8be6902ae3c3b1317718f48c8bdc194f9bfded379a584f7",
+      "brics-odroid-014_cam1": "f7af970311309ed5d4672fe8d95e081e89dbca2784b35349d21399a80ef11826",
+      "brics-odroid-015_cam0": "eef3292753534fd49e7da3ab2487f909545ad2e89f14880e0d0fd65935db785c",
+      "brics-odroid-016_cam0": "387e3331e7a918d324cf2328a18fd3006789acbcb620d259d5a851b50839a296",
+      "brics-odroid-024_cam1": "396c1b631a180b264bdcfc00957dadf2b988f5359bed7c3ea48ccb7d4e260d79",
+      "brics-odroid-025_cam0": "c5db452d5c5f685da1b7ada1ec113eb4ea5a5d3d18ca19e4e3bb92b4f6115417"
+    },
+    "point_cloud": "c1961781a7d1846ce705c7c8f574dcb925c02e869cc9517c8242c7c3a6d31c0f",
+    "reconstruction": "0b10f028064a18727a6328a28e6838e2c8ff8bda5e2d32dff0a5fdaf93f71cad",
+    "tracking": {
+      "brics-odroid-006_cam0": "8df1cdc2d6d952a1bdb1887ab3a8632a78b8f03420cfb107487f92948fa0221b",
+      "brics-odroid-010_cam0": "d26c0a55f9c448ad7616fcc9d294f0fb4ed02caf0090bc26851ab73b7a0105d0",
+      "brics-odroid-012_cam0": "052919cc107b79a07a84207c480cef2ba488c534ddab08f635ba38333f65b802",
+      "brics-odroid-014_cam1": "66250c9dd8dd25540e5aa2a2e7d876ee6e1c6c23e9ecca4438981c8bb9f98347",
+      "brics-odroid-015_cam0": "39dbd68449419a09381e8d989cd678a4b73cf0ed46350928dd203af7359760bc",
+      "brics-odroid-016_cam0": "bd667af3758d1ddfca74c6faa0fdbe0ed1e55c21193cc94b88954163143872bd",
+      "brics-odroid-024_cam1": "8bf01af15394e52e784930728b9ff2500a84421a2de0e932794a49a1c181c980",
+      "brics-odroid-025_cam0": "05c127bdfc74839e8961c8a71af56d53df82fb1468e44d94ada419e29f426a62"
+    }
+  },
+  "stratum": "sheet",
+  "target_frame_count": 76
+}

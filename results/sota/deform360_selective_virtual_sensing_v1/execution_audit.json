@@ -1,0 +1,82 @@
+{
+  "artifact_kind": "Deform360SelectiveVirtualSensingExecutionAudit",
+  "schema_version": 1,
+  "protocol_id": "deform360-selective-virtual-sensing-v1",
+  "protocol_config_sha256": "d231b0eb06e724ec131c569e88ca482bca44b3340f5e13d11f973feab0cc53dd",
+  "execution_commit": "5f92f517051b3184bbc9ba48f2e269a5e5a1cf19",
+  "prediction_cohort_result_sha256": "7318fb93981af1cd571437a4f6efb9bd83aeb5b7d6db9b78cf1d0c1a3e16c985",
+  "prospective_result_sha256": "f8336eedb1eae69dec47b64ea2deaae1c80cf5d44fc66f52b937aa6a5476ee84",
+  "posthoc_diagnostic_result_sha256": "1216df16d0855950090196468561ffc96b7dd4df39a9d77563a5b0c2afc66eb1",
+  "authoritative_remote": {
+    "host_alias": "gpuserver4090",
+    "hostname": "workstation1",
+    "root": "/home/florianpfaff/deform360-selective-virtual-sensing-v1"
+  },
+  "final_accounting": {
+    "locked_episode_count": 24,
+    "prediction_seal_count": 23,
+    "target_free_quality_failure_count": 1,
+    "outcome_manifest_count": 23,
+    "evaluation_count": 23,
+    "evaluable_object_count": 12,
+    "objects_per_stratum": 4,
+    "replacement_episode_selected": false
+  },
+  "archive_files": {
+    "prediction_cohort_seal.json": "a0821a48f6b8e20f38ae9eb28aa120eba7c6868e152cae3a938d7dbe0a3175f4",
+    "prospective_aggregate.json": "91cad58f93a569a69369d5f6793db3cde1ad348d5501f9ab6869eefcb738f598",
+    "posthoc_mechanism_diagnostic.json": "5b60867bca08cdf459c3568e5a5194f34fb800aa71128d5559f407cdac1c0c63",
+    "quality_failure.json": "247d9409af62e06aed1ffc7e631bcebe80b730656eb0d5e8339bebb6daee5e81"
+  },
+  "archive_inventories": {
+    "algorithm": "sha256 of sorted sha256sum lines using ./relative paths",
+    "evaluations": {
+      "file_count": 23,
+      "sha256": "57c85a08b15c7d7929c1c3672d1d6d6634853cad364377029defe11c1ae76424"
+    },
+    "outcome_manifests": {
+      "file_count": 23,
+      "sha256": "d8b7803093b5f4c398d5f78e576d09aabdb9f4c312a54d7825345695dd9adf35"
+    },
+    "prediction_seals": {
+      "file_count": 23,
+      "sha256": "b149b4f1d8beba43d26cad37e5befa5621ca629249ad6fd03ad6ccaa31bc898a"
+    },
+    "execution_status": {
+      "file_count": 25,
+      "sha256": "7dabb2e43ff6bf674252307af92d604ef3a45305b27e5f09c42668c17f3a0d88"
+    }
+  },
+  "recovery_events": [
+    {
+      "case": "125-rabbit-ep0008",
+      "initial_status": "failed",
+      "cause": "CUDA out of memory after two outcome builders overlapped on GPU 0",
+      "completed_outcome_manifest_from_failed_attempt": false,
+      "original_log_bytes": 89201049,
+      "original_log_sha256": "4b96c3261f9effffc024ae62cd8a12943084c62e613344300b39fdb3f031fa91",
+      "recovery": "serial rerun from unchanged sealed inputs passed",
+      "recovery_log_bytes": 3598075,
+      "recovery_log_sha256": "3e3a7b89f692f856b62f94b1f5abec65abd2b5338c0665a06ff75defa8d25a7b"
+    },
+    {
+      "case": "049-ball-ep0005",
+      "initial_status": "failed",
+      "cause": "concurrent attempt deliberately terminated to serialize GPU 0 recovery",
+      "completed_outcome_manifest_from_failed_attempt": false,
+      "original_log_bytes": 1430811,
+      "original_log_sha256": "3d0a4b1c9ab5ed19ded7d0f5a19a9aacfa42b66b1596b054d7531e912c81c90b",
+      "recovery": "serial rerun from unchanged sealed inputs passed",
+      "recovery_log_bytes": 102890461,
+      "recovery_log_sha256": "5d6abc4a0b0e7fc5ecb93867e6854144587693519f9f0252af1f372d4122e598"
+    }
+  ],
+  "information_boundary": {
+    "all_locked_cases_accounted_before_target_open": true,
+    "prediction_or_failure_exclusive_per_case": true,
+    "target_data_read_before_prediction_cohort_seal": false,
+    "replacement_episode_selected": false,
+    "posthoc_diagnostic_used_for_confirmation": false
+  },
+  "result_sha256": "de8bf49d9914313278c57e6c803f09caac395f4b11b76e99e8660b8c87a754ff"
+}

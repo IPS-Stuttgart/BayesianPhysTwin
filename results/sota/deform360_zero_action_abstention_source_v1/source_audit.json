@@ -1,0 +1,923 @@
+{
+  "admitted_case_count": 12,
+  "aggregate": {
+    "persistence": {
+      "post_update_hidden_identity_rmse_m": 0.009269076764820982,
+      "post_update_hidden_symmetric_chamfer_m": 0.008189591319223224
+    },
+    "physical": {
+      "post_update_hidden_identity_rmse_m": 0.010539331600663681,
+      "post_update_hidden_symmetric_chamfer_m": 0.008999144230028254
+    },
+    "selected_raw_baseline": {
+      "post_update_hidden_identity_rmse_m": 0.008807111194944251,
+      "post_update_hidden_symmetric_chamfer_m": 0.007888347813936974
+    },
+    "zero_action_abstention": {
+      "post_update_hidden_identity_rmse_m": 0.009217564969746869,
+      "post_update_hidden_symmetric_chamfer_m": 0.008191446771918737
+    }
+  },
+  "artifact_kind": "Deform360ZeroActionAbstentionOpenSourceAudit",
+  "case_count": 27,
+  "cases": [
+    {
+      "case": "002-rope-silk-ep0002",
+      "input_sha256": {
+        "measurement": "a975d5f6c89a0dc2f2ed06c0549838ca3d23e0ad279fbde519d099a524160e2f",
+        "prediction_archive": "606a6cd487d48ff49fa49d123e90595e0286b21186ba2397f3e14a5941596989",
+        "prediction_seal": "75912ac8bad561172d26c9447b499d652130c929a55b90101b90ab625bfac0b2",
+        "selected_baseline": "00b46cbb5a1f67ef4452d13e0f85ec7d1e08f699fdd3abca54644738182829f0",
+        "source_target": "24fc6f7ed5ec4256a8231cb8d3e9b5e1ea354170b3342d42607ee828e9874844"
+      },
+      "object_id": "002-rope-silk",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.001897465014322782,
+          "post_update_hidden_symmetric_chamfer_m": 0.0017252648718235344
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0020903092176687605,
+          "post_update_hidden_symmetric_chamfer_m": 0.0017764503119900496
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.001897465014322782,
+          "post_update_hidden_symmetric_chamfer_m": 0.0017252648718235344
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.001897465014322782,
+          "post_update_hidden_symmetric_chamfer_m": 0.0017252648718235344
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.31688081316424044,
+      "zero_action_p99_displacement_m": 0.24830091116950864
+    },
+    {
+      "case": "002-rope-silk-ep0005",
+      "input_sha256": {
+        "measurement": "5bde5805e265ffe0b15ce4b352b25e6e25167d777759e5684c48d094ded6c949",
+        "prediction_archive": "977700e6d7113234867bdd7162f6a6b8bd3e1577061a71dfc7755ce553d11b7e",
+        "prediction_seal": "a2e965782ef42451541b85254e3c43a80f57e9113b41576a1438daa0d1a46b10",
+        "selected_baseline": "fb0910b0ceff9eeec014453506585aae3820fee03229050bb4ddc42f11c8bf7d",
+        "source_target": "da15b816135791daff3ac21993a43ebdd34330eb30847153952d98c295a45c75"
+      },
+      "object_id": "002-rope-silk",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.011570202620286806,
+          "post_update_hidden_symmetric_chamfer_m": 0.010058439765540413
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.010277528492852657,
+          "post_update_hidden_symmetric_chamfer_m": 0.009461736289615467
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.010277528492852657,
+          "post_update_hidden_symmetric_chamfer_m": 0.009461736289615467
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.011570202620286806,
+          "post_update_hidden_symmetric_chamfer_m": 0.010058439765540413
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.3752569260221704,
+      "zero_action_p99_displacement_m": 0.32230346480332306
+    },
+    {
+      "case": "002-rope-silk-ep0006",
+      "input_sha256": {
+        "measurement": "8cee70a8a39a254f1f43637317a7263e8872f45802e888b736b782042571d078",
+        "prediction_archive": "a88e3a405e47e06853f1f5d95da1fb20a5aec4ec2f171f8e724f42fd6196b2a4",
+        "prediction_seal": "84b4ce9ab3711e3c6f7e0e84eef058e81a5bf1089d6ef86356098030f9a5a471",
+        "selected_baseline": "b1bb0ad59e1733d8a82f64c3e5e1ab877095ea637b9a3219af769cff3bf5b118",
+        "source_target": "70589a2f08c9a1c3f2ac4da510d0062631668436300d8767173ea5f7b164b87e"
+      },
+      "object_id": "002-rope-silk",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.026203751112515713,
+          "post_update_hidden_symmetric_chamfer_m": 0.02994667973124294
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.020384879226548573,
+          "post_update_hidden_symmetric_chamfer_m": 0.024726769956273393
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.020384879226548573,
+          "post_update_hidden_symmetric_chamfer_m": 0.024726769956273393
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.026203751112515713,
+          "post_update_hidden_symmetric_chamfer_m": 0.02994667973124294
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.3304819030057437,
+      "zero_action_p99_displacement_m": 0.2979943898234637
+    },
+    {
+      "case": "002-rope-silk-ep0007",
+      "input_sha256": {
+        "measurement": "f93d32d0050e3b5d35744cb0413808d8d16f7ad9c56cc1e9a60f51a75512bc7e",
+        "prediction_archive": "2963cd6d6000b8defc64d8604db1f72deefa09f64c83f2222b26e2991d42c913",
+        "prediction_seal": "6d786d4497eb939adba43f8f5f35dd5a59f129f9b5a6fc40acb83e2b96be2a04",
+        "selected_baseline": "6ceefea559c8bb1c76445781da8a52e5e8789ea39331bf0133df2fe9c53150f9",
+        "source_target": "5f557a8f6062bf51ad6b0405328226f92ec5ec9a349acb56d8f9b19e9f55eaec"
+      },
+      "object_id": "002-rope-silk",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.003962501886643359,
+          "post_update_hidden_symmetric_chamfer_m": 0.0036857705978578788
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.006271783317071496,
+          "post_update_hidden_symmetric_chamfer_m": 0.006463559716210445
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.003962501886643359,
+          "post_update_hidden_symmetric_chamfer_m": 0.0036857705978578788
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.003962501886643359,
+          "post_update_hidden_symmetric_chamfer_m": 0.0036857705978578788
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.364842645749648,
+      "zero_action_p99_displacement_m": 0.2546732681778874
+    },
+    {
+      "case": "002-rope-silk-ep0009",
+      "input_sha256": {
+        "measurement": "6a14077a725ac951ae73013d9098bce8c9f34d8cb9ca18b2bd7ed08135f8eb97",
+        "prediction_archive": "bd5f75bbd1e434adbeb5c9bca9752aaaddfda05d2239581668e3959a50616325",
+        "prediction_seal": "8f7b32af51101de3f673f6dd85ee088158b00f85019dcb8e1d4451c2180ad8c3",
+        "selected_baseline": "59d7431edd3b4233466b45fc3a8163e1d16bc7d96aac52610782df711cca37d2",
+        "source_target": "3ac976dbe0afd0cea52e444780b89969b4ed7ea00651ed6a700f0d588f4a0db7"
+      },
+      "object_id": "002-rope-silk",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.002259319443830153,
+          "post_update_hidden_symmetric_chamfer_m": 0.0020276093889261214
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0027773989741040634,
+          "post_update_hidden_symmetric_chamfer_m": 0.0026400264328619227
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.002259319443830153,
+          "post_update_hidden_symmetric_chamfer_m": 0.0020276093889261214
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.002259319443830153,
+          "post_update_hidden_symmetric_chamfer_m": 0.0020276093889261214
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.5063567953459428,
+      "zero_action_p99_displacement_m": 0.4397773582996431
+    },
+    {
+      "case": "083-blanket-cloth-ep0001",
+      "input_sha256": {
+        "measurement": "4cac7aacc2c3cbfb05162c2a73916f00d68b61f3808ae1357fcba7c4ef4c9a28",
+        "prediction_archive": "3bcccd2f698c8982cc2614ee51a9516037250104a25779e0f0dbb38d6b80b8a8",
+        "prediction_seal": "5ce47b347ac0a7361dbbb734c8ff72771a0409c143084ea3d15c18972335bd43",
+        "selected_baseline": "cf7bd4008f07115e7d26dbd35998fd2cbdcd94ac3c3bf5d3c007820db6f2f796",
+        "source_target": "6e90cb423a1f3f2842998f5cfc5e2a693cf72423f0ecd60e5912954ac621520b"
+      },
+      "object_id": "083-blanket-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.006822184714546957,
+          "post_update_hidden_symmetric_chamfer_m": 0.005439730331768565
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.006852795904246546,
+          "post_update_hidden_symmetric_chamfer_m": 0.005458107133637637
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.006822184714546957,
+          "post_update_hidden_symmetric_chamfer_m": 0.005439730331768565
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.006822184714546957,
+          "post_update_hidden_symmetric_chamfer_m": 0.005439730331768565
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.2200833287856384,
+      "zero_action_p99_displacement_m": 0.20453264896398707
+    },
+    {
+      "case": "083-blanket-cloth-ep0002",
+      "input_sha256": {
+        "measurement": "0ee5988f7498141aae5c33d2b6cdb3d357b1e7ddc073a20bd44cdc88e63dce88",
+        "prediction_archive": "f7172b33cf98013c322196c63257a62e7c6e0dc7976924b4cc647869b94f4e37",
+        "prediction_seal": "43a625e82a34c021b5a7640f76268d6f74c61f6553fe5c1b3bb3ee20c341faa4",
+        "selected_baseline": "c003387c313bff63191b47430e0ccde7203d9b2780930643693f7809c362191a",
+        "source_target": "503fbdaed798f7dea5712ad2ae6c6d9d51ef381782182e1d399f68934558cd4f"
+      },
+      "object_id": "083-blanket-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.008570483930936184,
+          "post_update_hidden_symmetric_chamfer_m": 0.005740547808532576
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.00893272621041004,
+          "post_update_hidden_symmetric_chamfer_m": 0.00598104415623429
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.008701534634160816,
+          "post_update_hidden_symmetric_chamfer_m": 0.0058334157388540316
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.008701534634160816,
+          "post_update_hidden_symmetric_chamfer_m": 0.0058334157388540316
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.25532768633742803,
+      "zero_action_p99_displacement_m": 0.17387371597546367
+    },
+    {
+      "case": "083-blanket-cloth-ep0004",
+      "input_sha256": {
+        "measurement": "d43aa44c5db630bb5ba903558b5693d4d3cf21e33e5b127d66e229f6f0717c6d",
+        "prediction_archive": "cdf612cdd0dff551ef47e86c1c75e149f033bdc5dcc8e2c166765926d44498f1",
+        "prediction_seal": "f8d16e29c5157ae0ef3d30db9a37963ee157e12a0998fd1b011e76b9c6e23496",
+        "selected_baseline": "8af7b6f813fcdd363546d653899e435e5b881435fb329178b69b4b44e8aaa0a2",
+        "source_target": "1f70c53c43ecc5246d4ad6acb92b586db71a7c9092e89577b9306f4c509a8d1c"
+      },
+      "object_id": "083-blanket-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.003597527362821629,
+          "post_update_hidden_symmetric_chamfer_m": 0.0036945887930621485
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0035979203351328916,
+          "post_update_hidden_symmetric_chamfer_m": 0.003684145813949103
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.003597527362821629,
+          "post_update_hidden_symmetric_chamfer_m": 0.0036945887930621485
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.003597527362821629,
+          "post_update_hidden_symmetric_chamfer_m": 0.0036945887930621485
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.2921836304148271,
+      "zero_action_p99_displacement_m": 0.18888169849409445
+    },
+    {
+      "case": "083-blanket-cloth-ep0005",
+      "input_sha256": {
+        "measurement": "eb73be488806d02bcf96d5c3c7bfa7d49bb7fdf0ee31f37744c3cb7b7c7b44d8",
+        "prediction_archive": "4769f1f2e239a88aaae23d721c6ecbdb777535af4767ebf5ff3d2cbd946347c0",
+        "prediction_seal": "d565a8906cd57c64b2bce6f98479ade2d9e0e8c9712716653aa3b008a63cdf0e",
+        "selected_baseline": "0496d4bc16b6f0f663c9a40d1933e3fe65365cd4dbede7eef4d35aed1b36dec1",
+        "source_target": "03d3b991b0db61a76ca759dad79df3e1344c4f9bf548e0be8a13aa03d79a455d"
+      },
+      "object_id": "083-blanket-cloth",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.015904880002904388,
+          "post_update_hidden_symmetric_chamfer_m": 0.015170257182536652
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.015493295470903347,
+          "post_update_hidden_symmetric_chamfer_m": 0.014690412133414911
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.015576465702624838,
+          "post_update_hidden_symmetric_chamfer_m": 0.014809914734244457
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.015904880002904388,
+          "post_update_hidden_symmetric_chamfer_m": 0.015170257182536652
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.42575871070739896,
+      "zero_action_p99_displacement_m": 0.2958613741011646
+    },
+    {
+      "case": "083-blanket-cloth-ep0008",
+      "input_sha256": {
+        "measurement": "2828bbdf3e5a9ac5f4b2e76ee2b367ec96c99b600c5efe4421f21e350e0fdd3c",
+        "prediction_archive": "c98107a55e5379b2f1d4e4cfc63fa4bf5734549d29641046686964b46e122791",
+        "prediction_seal": "62642ea6b20f7e0d9bdb99df548f308aeec0d8901f662638d05dec36c0dade22",
+        "selected_baseline": "282c4cc0aa7b4c063c0c9eee7969fd54c977665ac47e06ad9068cd929a60e76d",
+        "source_target": "e9b09b4d4640b8624dcd2bbbebf30806487dcb3e733c3731204d0af9737c742f"
+      },
+      "object_id": "083-blanket-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.03606759608872058,
+          "post_update_hidden_symmetric_chamfer_m": 0.03356300465697721
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.03293684356907394,
+          "post_update_hidden_symmetric_chamfer_m": 0.03045899899196924
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.03293684356907394,
+          "post_update_hidden_symmetric_chamfer_m": 0.03045899899196924
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.03293684356907394,
+          "post_update_hidden_symmetric_chamfer_m": 0.03045899899196924
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.2205603949986117,
+      "zero_action_p99_displacement_m": 0.16758564435206966
+    },
+    {
+      "case": "083-blanket-cloth-ep0009",
+      "input_sha256": {
+        "measurement": "adc17beff2792833d9ed9e7de330ea24efde2b42f1e6c724d7335d6882000b19",
+        "prediction_archive": "8b1c294d483124e3c015f3e6bcc1763b39ecfb9337e8cd2ce76ece7551023867",
+        "prediction_seal": "4eed1ab2e742ca2776d51b5f70f1c23b5554bbba595e32f33a09b49cf513c8e1",
+        "selected_baseline": "086bf5346f6efc7a186ea5df151d6837e18f5130d18e1b8274fafa3aef66a394",
+        "source_target": "9ed68d8225172e01951a0df05747f5419e7a983a0dc22cba750f76d55f99cf57"
+      },
+      "object_id": "083-blanket-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.011658853553931007,
+          "post_update_hidden_symmetric_chamfer_m": 0.00811519212843884
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.020096019861275325,
+          "post_update_hidden_symmetric_chamfer_m": 0.018751004991272288
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.020096019861275325,
+          "post_update_hidden_symmetric_chamfer_m": 0.018751004991272288
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.020096019861275325,
+          "post_update_hidden_symmetric_chamfer_m": 0.018751004991272288
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.24854970732533385,
+      "zero_action_p99_displacement_m": 0.24126014488238587
+    },
+    {
+      "case": "085-scarf-cloth-ep0003",
+      "input_sha256": {
+        "measurement": "9da760b541af9a4867e2f153d14753685d14a86b7150e52fc87419f7333c84d5",
+        "prediction_archive": "06c8feb09eaa4b64c3d4437907bc07b56c28f38e56f2677438877fa834667877",
+        "prediction_seal": "6f2d2af34ee4019573afba19a8233329ae752766775c92a397fc07789d564053",
+        "selected_baseline": "fe1a95f1f4f4f6ddd313c3462a52964ef51355e63e91b5b19838dc87f77ec497",
+        "source_target": "752e4043ecf7bdfbca392ebf312e5ee6360f7f55d4f60e2429f4760e70cced01"
+      },
+      "object_id": "085-scarf-cloth",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.007377127035139965,
+          "post_update_hidden_symmetric_chamfer_m": 0.005984334406409792
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0076859912034145765,
+          "post_update_hidden_symmetric_chamfer_m": 0.005878209623379204
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.007377127035139965,
+          "post_update_hidden_symmetric_chamfer_m": 0.005984334406409792
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.007377127035139965,
+          "post_update_hidden_symmetric_chamfer_m": 0.005984334406409792
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.4171529011783429,
+      "zero_action_p99_displacement_m": 0.34955670664469934
+    },
+    {
+      "case": "085-scarf-cloth-ep0004",
+      "input_sha256": {
+        "measurement": "5968c9fce95ea2639256bdb3a94e27d2c68210b4fac0ee9956ed8ee6ac8cf576",
+        "prediction_archive": "77329da6b21e259a4448a6d8e61f6eb2dde6bf78e91dbe7729aac9e81ddd5972",
+        "prediction_seal": "7b519125309864abd4245db8a32c0128cfe8773a904ac282806df4b9d79ee3dd",
+        "selected_baseline": "a927e5af041ed10577b6c420a7e044e351e8ddad5b5cb03272884a194ea73627",
+        "source_target": "22e69bc591eaf2086bbd412b94f5e750c17f7df2fb53a120f458a59c6f5911a3"
+      },
+      "object_id": "085-scarf-cloth",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.007287078600955926,
+          "post_update_hidden_symmetric_chamfer_m": 0.005243018415348797
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.008620972000140122,
+          "post_update_hidden_symmetric_chamfer_m": 0.006286702439380471
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.005854987214561965,
+          "post_update_hidden_symmetric_chamfer_m": 0.004533268324822067
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.007287078600955926,
+          "post_update_hidden_symmetric_chamfer_m": 0.005243018415348797
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.36122223948044446,
+      "zero_action_p99_displacement_m": 0.27198652760075426
+    },
+    {
+      "case": "085-scarf-cloth-ep0006",
+      "input_sha256": {
+        "measurement": "ce921308fa204276a719b001544e12a18af20ad0bba4d90eea8ddbf9aa44d045",
+        "prediction_archive": "77f6c775b017fede1a02c2377394100f433dc0dfe48b8790ef39338344595502",
+        "prediction_seal": "a918da1c59a60f6fd4e1a0b14943401897b3a0dc50f3fc6274d8374f3ac68a45",
+        "selected_baseline": "604534c4c4558b3d36dc4ab255a2f7d0bb09ed568a889876079bebd6ce502b83",
+        "source_target": "bbca64e6ee03d33c46002acd65c3cab0430752445ddcfb53b11f168f5caddbaa"
+      },
+      "object_id": "085-scarf-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.02713026014319991,
+          "post_update_hidden_symmetric_chamfer_m": 0.02132806758184928
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.023125694710722292,
+          "post_update_hidden_symmetric_chamfer_m": 0.01751561888491936
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.02713026014319991,
+          "post_update_hidden_symmetric_chamfer_m": 0.02132806758184928
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.02713026014319991,
+          "post_update_hidden_symmetric_chamfer_m": 0.02132806758184928
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.27085288280712594,
+      "zero_action_p99_displacement_m": 0.22510416738625258
+    },
+    {
+      "case": "085-scarf-cloth-ep0008",
+      "input_sha256": {
+        "measurement": "366345d20d0b62e569ea781852a41290d95fc2b7ba35b4e322c79c84e29525b5",
+        "prediction_archive": "a0e49b9f23edd4073d006b646bfa2019351d324990ff5b964ff55d9e0354fb83",
+        "prediction_seal": "c31012e6cea06ecc76e10c20c6221f8e377acc73d26e3319eeab975fd07628eb",
+        "selected_baseline": "63442c982e330eee5cb247b2089dd0b019d9477c4fa5cf72e329048bd0636924",
+        "source_target": "0d13d13ac1578a08ce5ca146d8e5dd95aec2e46627ce51d885532377edc571ff"
+      },
+      "object_id": "085-scarf-cloth",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.020568846547093893,
+          "post_update_hidden_symmetric_chamfer_m": 0.016913550116535028
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.014711590047786634,
+          "post_update_hidden_symmetric_chamfer_m": 0.0105878071919748
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.014711590047786634,
+          "post_update_hidden_symmetric_chamfer_m": 0.0105878071919748
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.014711590047786634,
+          "post_update_hidden_symmetric_chamfer_m": 0.0105878071919748
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.29377467804629204,
+      "zero_action_p99_displacement_m": 0.2135730729197431
+    },
+    {
+      "case": "085-scarf-cloth-ep0009",
+      "input_sha256": {
+        "measurement": "78cf8bb278957cd901aef8228ec132ad53273234265e4e2091c604eb2f0695f9",
+        "prediction_archive": "2707ed5523d15efab56d375cef0f422aaffdcf2cb46112a8ab96b0ca41a58072",
+        "prediction_seal": "f5109e6564163f1659d5db55d56cb13ed9801f1a4ee943c72a51387e07a40c2f",
+        "selected_baseline": "fb8c7e90cc782a7aa89c7ccfc91b090273b9beeb148cfe626fc97c23d27e213d",
+        "source_target": "464b1b93ed84c1e00748f0774ba31067664b0863fb017fde018d937d7e608dac"
+      },
+      "object_id": "085-scarf-cloth",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.004888729023514592,
+          "post_update_hidden_symmetric_chamfer_m": 0.004894042409028352
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.020162027993653693,
+          "post_update_hidden_symmetric_chamfer_m": 0.016727926295771668
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.004888729023514592,
+          "post_update_hidden_symmetric_chamfer_m": 0.004894042409028352
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.004888729023514592,
+          "post_update_hidden_symmetric_chamfer_m": 0.004894042409028352
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.3671513427985499,
+      "zero_action_p99_displacement_m": 0.35252666683040845
+    },
+    {
+      "case": "092-squirrel-ep0004",
+      "input_sha256": {
+        "measurement": "10654e00472e6a2f9d43a5b96df1be883b861304c57e4df4beb6c2c83188d710",
+        "prediction_archive": "ea0fe1745d93410dcf125f3f4d983202254356804617f93363f10c1482a3b7a4",
+        "prediction_seal": "346a88dfc6a9461f04ac0e640a4747abb43d4df5f56503c53b09769a2f643de6",
+        "selected_baseline": "d76cd4272b33e3f41d946bb581fe0800903485205888a1a09739970ea0abf802",
+        "source_target": "2be4bc2c66b604953865c73669e3b56dd2aa9a014daaa47d8627eae5da7aea60"
+      },
+      "object_id": "092-squirrel",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.004061514668597389,
+          "post_update_hidden_symmetric_chamfer_m": 0.003600469707827226
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0039278776684225315,
+          "post_update_hidden_symmetric_chamfer_m": 0.0035176632625419347
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.003959805644978313,
+          "post_update_hidden_symmetric_chamfer_m": 0.003552647714796447
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.003959805644978313,
+          "post_update_hidden_symmetric_chamfer_m": 0.003552647714796447
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.22131861375887169,
+      "zero_action_p99_displacement_m": 0.18747686434047403
+    },
+    {
+      "case": "092-squirrel-ep0005",
+      "input_sha256": {
+        "measurement": "bb3755f878bdf429226a86f8867e87600962439b17d9f6d7d9d457688cc3ffbd",
+        "prediction_archive": "69e2bb62ceb91115609a4659144f577040508b137faf476e7abe1ce30c695acb",
+        "prediction_seal": "3b1bf76fef9a684d7de9b72bfe9fbf96dae1206105a84ef72f7205458201bc8c",
+        "selected_baseline": "dad59f7e6c0ed5f8fb4cad27b0de1a0bc282b2e65b93254cc93158ca5e7781d1",
+        "source_target": "f83507233ab60b37963ec4964257da7d354ebaed0131e2ee3be8c49447fddc05"
+      },
+      "object_id": "092-squirrel",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.001899662308581102,
+          "post_update_hidden_symmetric_chamfer_m": 0.0022378543221762645
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0019340655995211296,
+          "post_update_hidden_symmetric_chamfer_m": 0.0022731402989132118
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.001899662308581102,
+          "post_update_hidden_symmetric_chamfer_m": 0.0022378543221762645
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.001899662308581102,
+          "post_update_hidden_symmetric_chamfer_m": 0.0022378543221762645
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.23877494674027575,
+      "zero_action_p99_displacement_m": 0.19759694361581664
+    },
+    {
+      "case": "092-squirrel-ep0007",
+      "input_sha256": {
+        "measurement": "5627d5bf5b0a62d895ba17ad7c127e3b2d876707f4acc7783bf5c4110c0b8b9f",
+        "prediction_archive": "2a29dca532d0425eab2c575ca09e57191f0928bb53d11d10333c5aeb90eeb28f",
+        "prediction_seal": "947747ac368687b5d50395074701b42f6e1d01c957cfbaf8260a51003f8b25f7",
+        "selected_baseline": "16a3e9bb7dc352ffbeddcc4c0d036a4720fdb3780e1ed228d4c87833f543d58b",
+        "source_target": "b0aab8afbb14365ad454a456bfb7fb5cdfa04e4c2861f9b4aa47e3a2470a66e1"
+      },
+      "object_id": "092-squirrel",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.002932076408198913,
+          "post_update_hidden_symmetric_chamfer_m": 0.0032437013975642496
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.009870540081712878,
+          "post_update_hidden_symmetric_chamfer_m": 0.007755837906848053
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.002932076408198913,
+          "post_update_hidden_symmetric_chamfer_m": 0.0032437013975642496
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.002932076408198913,
+          "post_update_hidden_symmetric_chamfer_m": 0.0032437013975642496
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.21353119643301335,
+      "zero_action_p99_displacement_m": 0.2065303739796326
+    },
+    {
+      "case": "092-squirrel-ep0008",
+      "input_sha256": {
+        "measurement": "cfdc70666891867cba76074b5bd19047cbe8f3fb4f36d25e204216ecf680e698",
+        "prediction_archive": "89fba98a6bfbe3314ccfc133089a8d56a4eade3b471b8a447e8a87f20aef900f",
+        "prediction_seal": "639b54c5d8e14281745f6afbf11238535b9baffb38d3d1e75768e2aac8632d35",
+        "selected_baseline": "57dafa2df53a6fd9c506f1b6a8c5da55dd3cb293d6162a706eee6fcfa2863290",
+        "source_target": "a3b87ade453f56107ed34b240355df3ebc531a73459b05cbb711d64234243b0b"
+      },
+      "object_id": "092-squirrel",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.0009725801318384293,
+          "post_update_hidden_symmetric_chamfer_m": 0.000875173785317893
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.013825200520605214,
+          "post_update_hidden_symmetric_chamfer_m": 0.006590859879606414
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0009725801318384293,
+          "post_update_hidden_symmetric_chamfer_m": 0.000875173785317893
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.0009725801318384293,
+          "post_update_hidden_symmetric_chamfer_m": 0.000875173785317893
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.29578113359361596,
+      "zero_action_p99_displacement_m": 0.2893114462815909
+    },
+    {
+      "case": "092-squirrel-ep0009",
+      "input_sha256": {
+        "measurement": "7a6ce6b2e1682ba9bd00d66201ca33a9c7e1a7e871673f88f68a7424a0f3d965",
+        "prediction_archive": "b1becdc93d1ad433295a319bbc2f026ace1366498bab48c9ba3fbe5dc721da90",
+        "prediction_seal": "5161cb710766cab585390f28573418a78033be30f51c42e1cf9aff0d63c0d3eb",
+        "selected_baseline": "4abf753e99e9fbcc071427a29af7f83747f1c4fbfbb7a0886beffc95c411ddc3",
+        "source_target": "c7d3cb01981af4a4e196e9e534c058eba37af4c961640198a6a5152b15c26ce6"
+      },
+      "object_id": "092-squirrel",
+      "physical_admitted": true,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.004127047834137292,
+          "post_update_hidden_symmetric_chamfer_m": 0.0038849530869391113
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.004675632373559435,
+          "post_update_hidden_symmetric_chamfer_m": 0.004195934172420684
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.004266998071108895,
+          "post_update_hidden_symmetric_chamfer_m": 0.003951008381795507
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.004266998071108895,
+          "post_update_hidden_symmetric_chamfer_m": 0.003951008381795507
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.1772477611380415,
+      "zero_action_p99_displacement_m": 0.15873175900330364
+    },
+    {
+      "case": "170-spider-ep0000",
+      "input_sha256": {
+        "measurement": "e9198c668022d1d6ab22dd00293cbecf44c83ac1e06e997d68e58d29352cd749",
+        "prediction_archive": "da33a85e253a0d03e02f5feefb9e4254a51d7c40e8e735c0e54cd94b1c0b1b39",
+        "prediction_seal": "be45409f2a3ddd45b4e096112d97c1e40ff5b1df17f5a1ebe1f8bc50c369b35b",
+        "selected_baseline": "3d701f179764c16350265fddbb6216baf94e01e36c836152440b3dee06790c33",
+        "source_target": "b6180d391ec324da633a73c2222495697c664f212f55c73c8c80cb44d0ef6c1c"
+      },
+      "object_id": "170-spider",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.01735431561531949,
+          "post_update_hidden_symmetric_chamfer_m": 0.011376312957043524
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.015454951546824787,
+          "post_update_hidden_symmetric_chamfer_m": 0.010800462959864627
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.015621656434757502,
+          "post_update_hidden_symmetric_chamfer_m": 0.01047346150139116
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.01735431561531949,
+          "post_update_hidden_symmetric_chamfer_m": 0.011376312957043524
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.3747351852740786,
+      "zero_action_p99_displacement_m": 0.34733925394595383
+    },
+    {
+      "case": "170-spider-ep0001",
+      "input_sha256": {
+        "measurement": "552a107f568508a6adf68af909e93b729cf78ddc05f88cc05927b5094bc38688",
+        "prediction_archive": "1c42d3432242529fb122435f0c9e606f97cb4453902d84f4d6512cd549d92940",
+        "prediction_seal": "723599c42fb3d4d8ccc47fb1a6b53bb04d18914fae4e7a55ddaaf2056b56a344",
+        "selected_baseline": "521da0c77aa58ec9b120f921f5120987a684eaba7f6a71f525714d437e38a808",
+        "source_target": "52c93d3cfa33b3d4785264a256343dc8ec3f3b6801672062aac7f17665b6821f"
+      },
+      "object_id": "170-spider",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.008047076693164026,
+          "post_update_hidden_symmetric_chamfer_m": 0.007109901715307276
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.008339933073769167,
+          "post_update_hidden_symmetric_chamfer_m": 0.007171867400363051
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.008047076693164026,
+          "post_update_hidden_symmetric_chamfer_m": 0.007109901715307276
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.008047076693164026,
+          "post_update_hidden_symmetric_chamfer_m": 0.007109901715307276
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.3367389422923349,
+      "zero_action_p99_displacement_m": 0.2917337852914715
+    },
+    {
+      "case": "170-spider-ep0003",
+      "input_sha256": {
+        "measurement": "726c66dd6e8a9380a51e1e1e87dd6774c17745edd72053a94dbfc37260324d1d",
+        "prediction_archive": "1e2e7445009baad7f5402f0be211bb767206549a90b250a969f915328ddfcf5d",
+        "prediction_seal": "6e574a6577efbbfe5b313e039dd0cc886e68c52f80bacf1f4327a2fbad8e9193",
+        "selected_baseline": "a0a995dd16eac4f08860f3e1b10cde5dae13a5102261205c6094063911b905e6",
+        "source_target": "cc8540917674e10ac7614520e91bbe01aeb817b6b06664bd495e58752026db0f"
+      },
+      "object_id": "170-spider",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.008489677723861479,
+          "post_update_hidden_symmetric_chamfer_m": 0.007409903646987076
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.009015625171624918,
+          "post_update_hidden_symmetric_chamfer_m": 0.007759369161801615
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.008489677723861479,
+          "post_update_hidden_symmetric_chamfer_m": 0.007409903646987076
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.008489677723861479,
+          "post_update_hidden_symmetric_chamfer_m": 0.007409903646987076
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.35772395614832564,
+      "zero_action_p99_displacement_m": 0.3040932199987914
+    },
+    {
+      "case": "170-spider-ep0005",
+      "input_sha256": {
+        "measurement": "08f0065c51ed029d2c215657265bf275ec9ed8415499c5eb254356b46cbb1306",
+        "prediction_archive": "b526e5d62e6bb8924940e1989fb91addd452f34de4ef77d2140fa31e8f2f8b5a",
+        "prediction_seal": "6cc2feea8ccd2bfeb88f20dda7d4339782eb2a58f8895f528d000b86652bfb79",
+        "selected_baseline": "0fe86cd977d627e57dda61615dbaceffed1c0380d64b8988cdc98121cc6effe2",
+        "source_target": "48256bb53fa49f8f1672970d3debd5385b7c6720f0d8c57d22e9c5307c221635"
+      },
+      "object_id": "170-spider",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.002237906951277391,
+          "post_update_hidden_symmetric_chamfer_m": 0.0024722774887204224
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.007230029112246224,
+          "post_update_hidden_symmetric_chamfer_m": 0.006027954922598702
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.002237906951277391,
+          "post_update_hidden_symmetric_chamfer_m": 0.0024722774887204224
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.002237906951277391,
+          "post_update_hidden_symmetric_chamfer_m": 0.0024722774887204224
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.2899942261497789,
+      "zero_action_p99_displacement_m": 0.2670725400336438
+    },
+    {
+      "case": "170-spider-ep0008",
+      "input_sha256": {
+        "measurement": "c8cc9ae738a5548eb8d65385aa78efaddf3431e35120cb7442baf21443c585da",
+        "prediction_archive": "2e8893417c8c6f0ade628ef3df9e44e6ed27234910c168dcfaaccc5cc656f0bf",
+        "prediction_seal": "b82b3ce15839b285560945861d2fce4432d61c0509543a7647444f3c6942ffe4",
+        "selected_baseline": "4abddbbc74fd1bcf9f73c0f35a3f847274dd587265e0754dbdc8d1447b3883b4",
+        "source_target": "bf074cd06420bc10e62761dd7a601982d349b4aa1e6604ac41453a57b5ffd05b"
+      },
+      "object_id": "170-spider",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.0037840518197374768,
+          "post_update_hidden_symmetric_chamfer_m": 0.0035347146325545153
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0037837945431103436,
+          "post_update_hidden_symmetric_chamfer_m": 0.0035434902543203936
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.003783876936254794,
+          "post_update_hidden_symmetric_chamfer_m": 0.0035365758067516747
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.0037840518197374768,
+          "post_update_hidden_symmetric_chamfer_m": 0.0035347146325545153
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.4393923184501458,
+      "zero_action_p99_displacement_m": 0.37151452018999664
+    },
+    {
+      "case": "170-spider-ep0009",
+      "input_sha256": {
+        "measurement": "28f894540d976458f471c04fe08111d153fcaf9db5d339d0072d0c3ec000cdf0",
+        "prediction_archive": "1fd881c97c721e485163f9a605b96ea572ee791538b5ba0b19d3e1b2aea36483",
+        "prediction_seal": "510e12d4d35c5156743c74dbee8336f2d0dbc2e40a544800c675b44dbcdb325c",
+        "selected_baseline": "fcc94215e81e857a7ff1edeb38723ac385fd57cf4c46bc700e36f233e659f89c",
+        "source_target": "3a224fc1f9b281ceb31acc80fdec1e1bc025d7e24baffe037b8a9a295012b760"
+      },
+      "object_id": "170-spider",
+      "physical_admitted": false,
+      "scores": {
+        "persistence": {
+          "post_update_hidden_identity_rmse_m": 0.0029719531527813907,
+          "post_update_hidden_symmetric_chamfer_m": 0.003282592733503661
+        },
+        "physical": {
+          "post_update_hidden_identity_rmse_m": 0.0040362235079519975,
+          "post_update_hidden_symmetric_chamfer_m": 0.0039695777861732985
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0029719531527813907,
+          "post_update_hidden_symmetric_chamfer_m": 0.003282592733503661
+        },
+        "zero_action_abstention": {
+          "post_update_hidden_identity_rmse_m": 0.0029719531527813907,
+          "post_update_hidden_symmetric_chamfer_m": 0.003282592733503661
+        }
+      },
+      "zero_action_maximum_displacement_m": 0.3153521121029026,
+      "zero_action_p99_displacement_m": 0.30920140685366876
+    }
+  ],
+  "comparison_to_selected_raw_baseline": {
+    "post_update_hidden_identity_rmse_m": {
+      "difference_m": 0.00041045377480261776,
+      "relative_change": 0.04660481351004629
+    },
+    "post_update_hidden_symmetric_chamfer_m": {
+      "difference_m": 0.00030309895798176327,
+      "relative_change": 0.03842363003394122
+    }
+  },
+  "decision": "reject-zero-action-displacement-as-physical-selector",
+  "information_boundary": {
+    "already_open_target_used_for_diagnostic_scoring": true,
+    "fresh_or_reserved_object_read": false,
+    "selector_uses_target": false,
+    "threshold_tuned_on_source_outcome": false
+  },
+  "input_roots": {
+    "measurement": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-measurements",
+    "selected_baseline": "/mnt/corsair/florianpfaff/bpt-online-belief-v1/runs/deform360-raw-camera-alltracker-v1-gated-cycle-open27-development",
+    "source": "/mnt/corsair/florianpfaff/deform360-dense-reusable-panel-v1/independent-source-v1"
+  },
+  "object_count": 5,
+  "promoted": false,
+  "rejected_case_count": 15,
+  "result_sha256": "75408ed1571dd4a5a9e60f04fb359de21bf22b4ec7c72248138b101acbfc2b46",
+  "schema_version": 1,
+  "script_sha256": "841be6047f2bf113fe56c0e9a64cc4dfce00fabd12e2242feb2427a77351d207",
+  "status": "post-open-negative-diagnostic",
+  "thresholds": {
+    "maximum_displacement_limit_m": 0.5,
+    "origin": "Reused without outcome tuning from the frozen frame-zero physical diagnostic.",
+    "p99_displacement_limit_m": 0.25
+  }
+}

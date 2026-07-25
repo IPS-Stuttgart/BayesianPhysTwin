@@ -255,7 +255,7 @@ CONFIRMATION_SOURCE_CONTRACT = {
         ),
         "camera_lists_source_sha256": SOURCE_GEOMETRY_QA_FILE_SHA256,
         "bimanual_flags_source": (
-            "configs/causal4d_public/deform360_replication_v1.json"
+            "configs/sota/deform360_replication_v1.json"
         ),
         "bimanual_flags_source_sha256": REPLICATION_PREREGISTRATION_FILE_SHA256,
     },

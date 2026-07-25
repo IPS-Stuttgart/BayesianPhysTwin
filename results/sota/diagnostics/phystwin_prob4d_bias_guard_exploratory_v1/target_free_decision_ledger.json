@@ -1,0 +1,752 @@
+{
+  "artifact_kind": "PhysTwinProb4DBiasAwareCompactDecisionLedger",
+  "candidate_accepted_count": 2,
+  "candidate_available_count": 13,
+  "case_count": 19,
+  "cases": [
+    {
+      "available_center_count": 645,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "double_lift_cloth_1",
+      "causal_physical_agreement_gain": 1.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 60,
+      "fit_frame": 59,
+      "maximum_correction_m": 0.016604994492179014,
+      "minimum_identifiable_fraction": 0.5828950980893531,
+      "motion_center_count": 121,
+      "observed_motion_rms_m": 0.007181372484086343,
+      "physical_response_rms_m": 0.01674105505108242,
+      "prediction_result_sha256": "0f8db614ae2a96df0f09fc1f73ae5884d9417bb62c3512af761641aeafa65107",
+      "train_end_exclusive": 81,
+      "validation": {
+        "balanced_improvement_fraction": -0.01109562186092683,
+        "candidate": {
+          "chamfer_distance_m": 0.004282721333096584,
+          "chamfer_frame_count": 21,
+          "identity_frame_count": 21,
+          "pseudo_identity_error_m": 0.005609651643409376
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0176759226779835,
+          "pseudo_identity_error_m": 1.00451532104387
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.00420833512679236,
+          "chamfer_frame_count": 21,
+          "identity_frame_count": 21,
+          "pseudo_identity_error_m": 0.005584436121471946
+        }
+      }
+    },
+    {
+      "available_center_count": 2341,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "double_lift_cloth_3",
+      "causal_physical_agreement_gain": 0.9322410344301101,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 61,
+      "fit_frame": 60,
+      "maximum_correction_m": 0.016218949562816363,
+      "minimum_identifiable_fraction": 0.8444897750253354,
+      "motion_center_count": 1013,
+      "observed_motion_rms_m": 0.0071921392968363395,
+      "physical_response_rms_m": 0.017736255977108394,
+      "prediction_result_sha256": "2eee534af5f940816ecdfcbb17d83290b9ab829976259af3c49f7bda7d6e6afa",
+      "train_end_exclusive": 82,
+      "validation": {
+        "balanced_improvement_fraction": -0.019174903614458394,
+        "candidate": {
+          "chamfer_distance_m": 0.004485154921102479,
+          "chamfer_frame_count": 21,
+          "identity_frame_count": 21,
+          "pseudo_identity_error_m": 0.007194827882392323
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0448789373806364,
+          "pseudo_identity_error_m": 0.9934708698482805
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.004292511563441146,
+          "chamfer_frame_count": 21,
+          "identity_frame_count": 21,
+          "pseudo_identity_error_m": 0.007242112577987408
+        }
+      }
+    },
+    {
+      "available_center_count": 212,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "double_lift_zebra",
+      "causal_physical_agreement_gain": 0.9846462087474093,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 30,
+      "fit_frame": 29,
+      "maximum_correction_m": 0.03664560399081701,
+      "minimum_identifiable_fraction": 0.1606354544557367,
+      "motion_center_count": 23,
+      "observed_motion_rms_m": 0.03325376882286302,
+      "physical_response_rms_m": 0.02884006659261242,
+      "prediction_result_sha256": "cc8c8cd30ea1fcfbef00493c5d054cc57b5a2b13bdcf57c4f964ad06e1a7404c",
+      "train_end_exclusive": 40,
+      "validation": {
+        "balanced_improvement_fraction": -0.6625056465132872,
+        "candidate": {
+          "chamfer_distance_m": 0.008092479357825765,
+          "chamfer_frame_count": 10,
+          "identity_frame_count": 10,
+          "pseudo_identity_error_m": 0.012832636069867103
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.596355671445882,
+          "pseudo_identity_error_m": 1.7286556215806927
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.005069346075299177,
+          "chamfer_frame_count": 10,
+          "identity_frame_count": 10,
+          "pseudo_identity_error_m": 0.007423477475596248
+        }
+      }
+    },
+    {
+      "available_center_count": 115,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "double_stretch_zebra",
+      "causal_physical_agreement_gain": 0.84684714243836,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 103,
+      "fit_frame": 102,
+      "maximum_correction_m": 0.0208889357222686,
+      "minimum_identifiable_fraction": 0.10029448704505824,
+      "motion_center_count": 32,
+      "observed_motion_rms_m": 0.014199308284951282,
+      "physical_response_rms_m": 0.008569301925558938,
+      "prediction_result_sha256": "eb376e9e8d066fd88837f33187e8270a1dc998fceceeefd02170628b4ca38eb4",
+      "train_end_exclusive": 138,
+      "validation": {
+        "balanced_improvement_fraction": -0.05782300832744802,
+        "candidate": {
+          "chamfer_distance_m": 0.006463947190840432,
+          "chamfer_frame_count": 35,
+          "identity_frame_count": 35,
+          "pseudo_identity_error_m": 0.007784711414356078
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0919802010021051,
+          "pseudo_identity_error_m": 1.0236658156527907
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.005919472885047273,
+          "chamfer_frame_count": 35,
+          "identity_frame_count": 35,
+          "pseudo_identity_error_m": 0.0076047390616358285
+        }
+      }
+    },
+    {
+      "available_center_count": 110,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": false,
+      "case": "rope_double_hand",
+      "causal_physical_agreement_gain": 0.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 138,
+      "fit_frame": 137,
+      "maximum_correction_m": null,
+      "minimum_identifiable_fraction": null,
+      "motion_center_count": 3,
+      "observed_motion_rms_m": 0.015545271089949216,
+      "physical_response_rms_m": 0.015426006044412315,
+      "prediction_result_sha256": "49fc59a9d023d4085c549c7a45f9b12eb8e2c7744b073e390fb7e7a22d6a3ece",
+      "train_end_exclusive": 184,
+      "validation": {
+        "balanced_improvement_fraction": 0.0,
+        "candidate": {
+          "chamfer_distance_m": 0.004695846780421194,
+          "chamfer_frame_count": 46,
+          "identity_frame_count": 46,
+          "pseudo_identity_error_m": 0.007978563194043813
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0,
+          "pseudo_identity_error_m": 1.0
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.004695846780421194,
+          "chamfer_frame_count": 46,
+          "identity_frame_count": 46,
+          "pseudo_identity_error_m": 0.007978563194043813
+        }
+      }
+    },
+    {
+      "available_center_count": 626,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "single_clift_cloth_1",
+      "causal_physical_agreement_gain": 1.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 42,
+      "fit_frame": 41,
+      "maximum_correction_m": 0.008264659722802898,
+      "minimum_identifiable_fraction": 0.609750902745433,
+      "motion_center_count": 24,
+      "observed_motion_rms_m": 0.018069396591260122,
+      "physical_response_rms_m": 0.015230095044471325,
+      "prediction_result_sha256": "79de43cbf289ba37aa4e66a1a6bf0ea91e660a4c5b9647f4296d4b1aa51faaa0",
+      "train_end_exclusive": 56,
+      "validation": {
+        "balanced_improvement_fraction": 0.00046959860229933703,
+        "candidate": {
+          "chamfer_distance_m": 0.003677031993013976,
+          "chamfer_frame_count": 14,
+          "identity_frame_count": 14,
+          "pseudo_identity_error_m": 0.006975255691021476
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0161021701689354,
+          "pseudo_identity_error_m": 0.9829586326264658
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.0036187620703562115,
+          "chamfer_frame_count": 14,
+          "identity_frame_count": 14,
+          "pseudo_identity_error_m": 0.0070961843759218945
+        }
+      }
+    },
+    {
+      "available_center_count": 1947,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "single_clift_cloth_3",
+      "causal_physical_agreement_gain": 0.8672026285914067,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 50,
+      "fit_frame": 49,
+      "maximum_correction_m": 0.008292772400322801,
+      "minimum_identifiable_fraction": 0.44336769997218817,
+      "motion_center_count": 743,
+      "observed_motion_rms_m": 0.007972996559986682,
+      "physical_response_rms_m": 0.00809915091412346,
+      "prediction_result_sha256": "81438ea530bbb135f15d76c63047e35e7a3e56e054b92352bdc77f22b90573d4",
+      "train_end_exclusive": 67,
+      "validation": {
+        "balanced_improvement_fraction": -0.1914596476905599,
+        "candidate": {
+          "chamfer_distance_m": 0.0027719377667018742,
+          "chamfer_frame_count": 17,
+          "identity_frame_count": 17,
+          "pseudo_identity_error_m": 0.003004440122559986
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.229718737903422,
+          "pseudo_identity_error_m": 1.1532005574776978
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.002254123387131451,
+          "chamfer_frame_count": 17,
+          "identity_frame_count": 17,
+          "pseudo_identity_error_m": 0.0026053058187305725
+        }
+      }
+    },
+    {
+      "available_center_count": 409,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "single_lift_cloth",
+      "causal_physical_agreement_gain": 1.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 90,
+      "fit_frame": 89,
+      "maximum_correction_m": 0.0189027334524999,
+      "minimum_identifiable_fraction": 0.329121982035728,
+      "motion_center_count": 13,
+      "observed_motion_rms_m": 0.13724744591541757,
+      "physical_response_rms_m": 0.13253335483913098,
+      "prediction_result_sha256": "2dde0abec45de2d0f1f3df531bc98ffc6d2a8641981864505ac3bb316699d9d5",
+      "train_end_exclusive": 121,
+      "validation": {
+        "balanced_improvement_fraction": -0.0014847267732447378,
+        "candidate": {
+          "chamfer_distance_m": 0.01963915606862949,
+          "chamfer_frame_count": 31,
+          "identity_frame_count": 31,
+          "pseudo_identity_error_m": 0.039824234235316724
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 0.9927852190358244,
+          "pseudo_identity_error_m": 1.010184234510665
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.019781877985353864,
+          "chamfer_frame_count": 31,
+          "identity_frame_count": 31,
+          "pseudo_identity_error_m": 0.03942274376773228
+        }
+      }
+    },
+    {
+      "available_center_count": 384,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": true,
+      "candidate_available": true,
+      "case": "single_lift_cloth_1",
+      "causal_physical_agreement_gain": 0.8431940007822006,
+      "decision": "accepted-by-disjoint-prefix-validation",
+      "fallback_reason": null,
+      "fit_end_exclusive": 57,
+      "fit_frame": 56,
+      "maximum_correction_m": 0.03434255541875228,
+      "minimum_identifiable_fraction": 0.15415217150705915,
+      "motion_center_count": 47,
+      "observed_motion_rms_m": 0.0387726124997243,
+      "physical_response_rms_m": 0.04198744369667964,
+      "prediction_result_sha256": "06585dddba0774de8c5031dc125b396c89bde32c80d421f69df44a39e67fd989",
+      "train_end_exclusive": 77,
+      "validation": {
+        "balanced_improvement_fraction": 0.04093256677803625,
+        "candidate": {
+          "chamfer_distance_m": 0.01142229635980248,
+          "chamfer_frame_count": 20,
+          "identity_frame_count": 20,
+          "pseudo_identity_error_m": 0.029722398272632566
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 0.9382902078407831,
+          "pseudo_identity_error_m": 0.9798446586031445
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.012173521863867422,
+          "chamfer_frame_count": 20,
+          "identity_frame_count": 20,
+          "pseudo_identity_error_m": 0.030333786087076785
+        }
+      }
+    },
+    {
+      "available_center_count": 1418,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "single_lift_cloth_3",
+      "causal_physical_agreement_gain": 1.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 81,
+      "fit_frame": 80,
+      "maximum_correction_m": 0.041277832697292044,
+      "minimum_identifiable_fraction": 0.3796796702895552,
+      "motion_center_count": 567,
+      "observed_motion_rms_m": 0.03495040304551732,
+      "physical_response_rms_m": 0.03806850866781293,
+      "prediction_result_sha256": "84ab7eea2c0af5cadc4c0487fa58fd3f349e371d6a0aae6afe0260b92f58710d",
+      "train_end_exclusive": 109,
+      "validation": {
+        "balanced_improvement_fraction": -0.2674432849876307,
+        "candidate": {
+          "chamfer_distance_m": 0.010783451275063739,
+          "chamfer_frame_count": 28,
+          "identity_frame_count": 28,
+          "pseudo_identity_error_m": 0.023373429701803238
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.5042740748804342,
+          "pseudo_identity_error_m": 1.0306124950948272
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.007168541594337356,
+          "chamfer_frame_count": 28,
+          "identity_frame_count": 28,
+          "pseudo_identity_error_m": 0.022679163907917337
+        }
+      }
+    },
+    {
+      "available_center_count": 608,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "single_lift_cloth_4",
+      "causal_physical_agreement_gain": 0.9831008607070074,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 90,
+      "fit_frame": 89,
+      "maximum_correction_m": 0.029511426666119965,
+      "minimum_identifiable_fraction": 0.16297500866303555,
+      "motion_center_count": 107,
+      "observed_motion_rms_m": 0.048969281176753976,
+      "physical_response_rms_m": 0.04813828398860301,
+      "prediction_result_sha256": "b127a13b6c503a9d39bec3a8c3a0bc6bc3ce2c0a304d22bbc4ccee4f6bb366ef",
+      "train_end_exclusive": 120,
+      "validation": {
+        "balanced_improvement_fraction": -0.06752398714144237,
+        "candidate": {
+          "chamfer_distance_m": 0.012476442886278334,
+          "chamfer_frame_count": 30,
+          "identity_frame_count": 30,
+          "pseudo_identity_error_m": 0.04149597617514098
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.1322398420575521,
+          "pseudo_identity_error_m": 1.0028081322253326
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.011019257954750679,
+          "chamfer_frame_count": 30,
+          "identity_frame_count": 30,
+          "pseudo_identity_error_m": 0.04137977629185876
+        }
+      }
+    },
+    {
+      "available_center_count": 393,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": false,
+      "case": "single_lift_dinosor",
+      "causal_physical_agreement_gain": 1.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": "ValueError: no physical state mode is identifiable beyond bias",
+      "fit_end_exclusive": 45,
+      "fit_frame": 44,
+      "maximum_correction_m": null,
+      "minimum_identifiable_fraction": null,
+      "motion_center_count": 83,
+      "observed_motion_rms_m": 0.0744349620580131,
+      "physical_response_rms_m": 0.06780413743061799,
+      "prediction_result_sha256": "1fc528c52e1bfb70a729c2fb8807c6ca511c434bce1965adedbc054f63530119",
+      "train_end_exclusive": 60,
+      "validation": {
+        "balanced_improvement_fraction": 0.0,
+        "candidate": {
+          "chamfer_distance_m": 0.0059181222875642715,
+          "chamfer_frame_count": 15,
+          "identity_frame_count": 15,
+          "pseudo_identity_error_m": 0.014008518450663709
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0,
+          "pseudo_identity_error_m": 1.0
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.0059181222875642715,
+          "chamfer_frame_count": 15,
+          "identity_frame_count": 15,
+          "pseudo_identity_error_m": 0.014008518450663709
+        }
+      }
+    },
+    {
+      "available_center_count": 49,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": false,
+      "case": "single_lift_rope",
+      "causal_physical_agreement_gain": 0.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 26,
+      "fit_frame": 25,
+      "maximum_correction_m": null,
+      "minimum_identifiable_fraction": null,
+      "motion_center_count": 0,
+      "observed_motion_rms_m": 0.0,
+      "physical_response_rms_m": 0.0385043780853154,
+      "prediction_result_sha256": "d2f494d4a6cdd821260a45d6eb0654645e3807d1cd08e2705ec7728f1e615159",
+      "train_end_exclusive": 35,
+      "validation": {
+        "balanced_improvement_fraction": 0.0,
+        "candidate": {
+          "chamfer_distance_m": 0.004551640513082049,
+          "chamfer_frame_count": 9,
+          "identity_frame_count": 9,
+          "pseudo_identity_error_m": 0.009922483149566378
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0,
+          "pseudo_identity_error_m": 1.0
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.004551640513082049,
+          "chamfer_frame_count": 9,
+          "identity_frame_count": 9,
+          "pseudo_identity_error_m": 0.009922483149566378
+        }
+      }
+    },
+    {
+      "available_center_count": 126,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "single_lift_zebra",
+      "causal_physical_agreement_gain": 0.9120675200869471,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 34,
+      "fit_frame": 33,
+      "maximum_correction_m": 0.016451571916098227,
+      "minimum_identifiable_fraction": 0.3607901358414721,
+      "motion_center_count": 26,
+      "observed_motion_rms_m": 0.026151508245814026,
+      "physical_response_rms_m": 0.02926994881300783,
+      "prediction_result_sha256": "1c8a69f67527fb25cf49662baf5ba709f863055e412356163a8928ec614f4f28",
+      "train_end_exclusive": 46,
+      "validation": {
+        "balanced_improvement_fraction": -0.25689970215948454,
+        "candidate": {
+          "chamfer_distance_m": 0.005559403662003412,
+          "chamfer_frame_count": 12,
+          "identity_frame_count": 12,
+          "pseudo_identity_error_m": 0.006845874931227323
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.2327496808558849,
+          "pseudo_identity_error_m": 1.2810497234630842
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.004509758751787774,
+          "chamfer_frame_count": 12,
+          "identity_frame_count": 12,
+          "pseudo_identity_error_m": 0.005343957229638791
+        }
+      }
+    },
+    {
+      "available_center_count": 55,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": false,
+      "case": "single_push_rope",
+      "causal_physical_agreement_gain": 0.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 30,
+      "fit_frame": 29,
+      "maximum_correction_m": null,
+      "minimum_identifiable_fraction": null,
+      "motion_center_count": 0,
+      "observed_motion_rms_m": 0.0,
+      "physical_response_rms_m": 0.06421241030413505,
+      "prediction_result_sha256": "a123e7206ad0dfc8595644441bf4c6623fd4bb4923899d6a4588abae6a20f197",
+      "train_end_exclusive": 40,
+      "validation": {
+        "balanced_improvement_fraction": 0.0,
+        "candidate": {
+          "chamfer_distance_m": 0.00451271311771343,
+          "chamfer_frame_count": 10,
+          "identity_frame_count": 10,
+          "pseudo_identity_error_m": 0.008937389048925864
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0,
+          "pseudo_identity_error_m": 1.0
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.00451271311771343,
+          "chamfer_frame_count": 10,
+          "identity_frame_count": 10,
+          "pseudo_identity_error_m": 0.008937389048925864
+        }
+      }
+    },
+    {
+      "available_center_count": 32,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": false,
+      "case": "single_push_rope_1",
+      "causal_physical_agreement_gain": 0.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 48,
+      "fit_frame": 47,
+      "maximum_correction_m": null,
+      "minimum_identifiable_fraction": null,
+      "motion_center_count": 3,
+      "observed_motion_rms_m": 0.0551735068351572,
+      "physical_response_rms_m": 0.041086395288300506,
+      "prediction_result_sha256": "28afacaff5a2d90e14ca52e27125e0ff0ef372509d311e71ebc8fe38b3251823",
+      "train_end_exclusive": 64,
+      "validation": {
+        "balanced_improvement_fraction": 0.0,
+        "candidate": {
+          "chamfer_distance_m": 0.0035498712341387674,
+          "chamfer_frame_count": 16,
+          "identity_frame_count": 16,
+          "pseudo_identity_error_m": 0.004649997649336296
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0,
+          "pseudo_identity_error_m": 1.0
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.0035498712341387674,
+          "chamfer_frame_count": 16,
+          "identity_frame_count": 16,
+          "pseudo_identity_error_m": 0.004649997649336296
+        }
+      }
+    },
+    {
+      "available_center_count": 10,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": false,
+      "case": "single_push_rope_4",
+      "causal_physical_agreement_gain": 0.0,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 43,
+      "fit_frame": 42,
+      "maximum_correction_m": null,
+      "minimum_identifiable_fraction": null,
+      "motion_center_count": 0,
+      "observed_motion_rms_m": 0.0,
+      "physical_response_rms_m": 0.047850785838956376,
+      "prediction_result_sha256": "9762f50dde5cfe6a956a961d873f8f3b3ab992a37fa2a80decab1e07646eb96b",
+      "train_end_exclusive": 58,
+      "validation": {
+        "balanced_improvement_fraction": 0.0,
+        "candidate": {
+          "chamfer_distance_m": 0.0038627151048915734,
+          "chamfer_frame_count": 15,
+          "identity_frame_count": 15,
+          "pseudo_identity_error_m": 0.006066246873641161
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.0,
+          "pseudo_identity_error_m": 1.0
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.0038627151048915734,
+          "chamfer_frame_count": 15,
+          "identity_frame_count": 15,
+          "pseudo_identity_error_m": 0.006066246873641161
+        }
+      }
+    },
+    {
+      "available_center_count": 383,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": true,
+      "candidate_available": true,
+      "case": "single_push_sloth",
+      "causal_physical_agreement_gain": 0.9967728684814994,
+      "decision": "accepted-by-disjoint-prefix-validation",
+      "fallback_reason": null,
+      "fit_end_exclusive": 35,
+      "fit_frame": 34,
+      "maximum_correction_m": 0.012140706567469742,
+      "minimum_identifiable_fraction": 0.25726601285846346,
+      "motion_center_count": 140,
+      "observed_motion_rms_m": 0.10790200839109514,
+      "physical_response_rms_m": 0.09250128261876368,
+      "prediction_result_sha256": "6b3cd92bd205a14f59c8daa8d645cac05519bc1bfda734a80e2afee133f4ec20",
+      "train_end_exclusive": 47,
+      "validation": {
+        "balanced_improvement_fraction": 0.06796192398101653,
+        "candidate": {
+          "chamfer_distance_m": 0.008917722759486895,
+          "chamfer_frame_count": 12,
+          "identity_frame_count": 12,
+          "pseudo_identity_error_m": 0.018394626080290757
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 0.9138071433907836,
+          "pseudo_identity_error_m": 0.9502690086471832
+        },
+        "no_primary_regression": true,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.009758867419657815,
+          "chamfer_frame_count": 12,
+          "identity_frame_count": 12,
+          "pseudo_identity_error_m": 0.01935728295135881
+        }
+      }
+    },
+    {
+      "available_center_count": 179,
+      "bit_exact_selected_baseline_fallback": true,
+      "candidate_accepted": false,
+      "candidate_available": true,
+      "case": "weird_package",
+      "causal_physical_agreement_gain": 0.8702643554489852,
+      "decision": "exact-selected-baseline-fallback",
+      "fallback_reason": null,
+      "fit_end_exclusive": 20,
+      "fit_frame": 19,
+      "maximum_correction_m": 0.018361525270520356,
+      "minimum_identifiable_fraction": 0.2719797122934512,
+      "motion_center_count": 28,
+      "observed_motion_rms_m": 0.04004654809477756,
+      "physical_response_rms_m": 0.05932409361854711,
+      "prediction_result_sha256": "ef0a38ce2e3e386c3ff15e441cbd7fec753c2934b5512340a3bf59616866cc98",
+      "train_end_exclusive": 27,
+      "validation": {
+        "balanced_improvement_fraction": -0.16482212076130764,
+        "candidate": {
+          "chamfer_distance_m": 0.02618595230769099,
+          "chamfer_frame_count": 7,
+          "identity_frame_count": 7,
+          "pseudo_identity_error_m": 0.049209038482791664
+        },
+        "candidate_over_baseline": {
+          "chamfer_distance_m": 1.2813272642837572,
+          "pseudo_identity_error_m": 1.048316977238858
+        },
+        "no_primary_regression": false,
+        "selected_baseline": {
+          "chamfer_distance_m": 0.020436584030956793,
+          "chamfer_frame_count": 7,
+          "identity_frame_count": 7,
+          "pseudo_identity_error_m": 0.04694099165731571
+        }
+      }
+    }
+  ],
+  "claim_boundary": "compact target-free ledger for an opened exploratory cohort; full checksum-bound reports remain on gpuserver6000",
+  "result_sha256": "f8a539f6c63b533743d9c6d8b5021334fee2799004281d006d29a664e89e5521",
+  "schema_version": 1
+}

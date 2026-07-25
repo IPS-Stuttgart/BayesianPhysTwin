@@ -139,6 +139,7 @@ def fit_bayesian_residual_anchor(
     output_dir: str | Path,
     *,
     config: BayesianResidualAnchorConfig,
+    evaluate_future: bool = True,
 ) -> dict[str, object]:
     """Select a robust filter on validation and hold its training posterior mean."""
 
@@ -158,12 +159,26 @@ def fit_bayesian_residual_anchor(
     observed = np.asarray(data["object_points"], dtype=float)
     visible = np.asarray(data["object_visibilities"], dtype=bool)
     motion_valid = np.asarray(data["object_motions_valid"], dtype=bool)
-    frame_count, original_count, _ = observed.shape
-    if baseline.shape[0] < frame_count or baseline.shape[1] < original_count:
+    observation_frame_count, original_count, _ = observed.shape
+    frame_count = baseline.shape[0]
+    if observation_frame_count < config.train_end_frame:
+        raise ValueError("observations do not cover the selection interval")
+    if baseline.shape[1] < original_count:
         raise ValueError("baseline trajectory does not cover the observations")
-    baseline = baseline[:frame_count]
+    if evaluate_future and observation_frame_count < frame_count:
+        raise ValueError("future evaluation requires complete observations")
+    if gt_track.shape[0] < config.train_end_frame:
+        raise ValueError("tracks do not cover the selection interval")
+    if evaluate_future and gt_track.shape[0] < frame_count:
+        raise ValueError("future evaluation requires complete tracks")
+    usable_observation_count = frame_count if evaluate_future else config.train_end_frame
+    observed = observed[:usable_observation_count]
+    observation_frame_count = len(observed)
+    visible = visible[:observation_frame_count]
+    motion_valid = motion_valid[: max(observation_frame_count - 1, 0)]
+    gt_track = gt_track[:usable_observation_count]
     valid = _target_validity(visible, motion_valid)
-    residual = observed - baseline[:, :original_count]
+    residual = observed - baseline[:observation_frame_count, :original_count]
     lift_indices, lift_weights = _lift_map(
         baseline[0], original_count, config.interpolation_neighbors
     )
@@ -251,18 +266,28 @@ def fit_bayesian_residual_anchor(
     tracked_future = np.zeros((future_count, original_count, 3), dtype=float)
     if accepted:
         tracked_future[:] = posterior.mean
-    corrected_test, correction = corrected_metrics(
-        tracked_future, config.train_end_frame, frame_count
+    correction = _lift_residual(
+        tracked_future,
+        baseline.shape[1],
+        lift_indices,
+        lift_weights,
+        maximum_norm=config.maximum_residual_m,
     )
-    baseline_test = evaluate_official_phystwin_interval(
-        baseline,
-        observed,
-        visible,
-        gt_track,
-        num_surface_points=num_surface_points,
-        start_frame=config.train_end_frame,
-        end_frame=frame_count,
-    )
+    corrected_test = None
+    baseline_test = None
+    if evaluate_future:
+        corrected_test, _ = corrected_metrics(
+            tracked_future, config.train_end_frame, frame_count
+        )
+        baseline_test = evaluate_official_phystwin_interval(
+            baseline,
+            observed,
+            visible,
+            gt_track,
+            num_surface_points=num_surface_points,
+            start_frame=config.train_end_frame,
+            end_frame=frame_count,
+        )
     corrected = baseline.copy()
     corrected[config.train_end_frame :] += correction
     output = Path(output_dir)
@@ -316,13 +341,7 @@ def fit_bayesian_residual_anchor(
             "selected_candidate": selected_candidate,
             "candidates": candidates,
         },
-        "test": {
-            "baseline_official_evaluation": baseline_test,
-            "corrected_official_evaluation": corrected_test,
-            "selection_score_relative_to_baseline": _selection_score(
-                corrected_test, baseline_test
-            ),
-        },
+        "future_metrics_opened": evaluate_future,
         "correction": {
             "rms_m": float(np.sqrt(np.mean(np.square(correction_norm)))),
             "maximum_m": float(np.max(correction_norm, initial=0.0)),
@@ -346,6 +365,15 @@ def fit_bayesian_residual_anchor(
             "posterior": str(posterior_path.resolve()),
         },
     }
+    if evaluate_future:
+        assert corrected_test is not None and baseline_test is not None
+        summary["test"] = {
+            "baseline_official_evaluation": baseline_test,
+            "corrected_official_evaluation": corrected_test,
+            "selection_score_relative_to_baseline": _selection_score(
+                corrected_test, baseline_test
+            ),
+        }
     summary_path = output / "summary.json"
     summary_path.write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n",

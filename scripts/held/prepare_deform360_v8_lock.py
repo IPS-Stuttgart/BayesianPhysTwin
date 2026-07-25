@@ -575,7 +575,7 @@ _LOCAL_BINDING_FILES: Mapping[str, str] = {
         "source_geometry_qa.json"
     ),
     "held_v8_confirmation_preregistration_lineage": (
-        "configs/causal4d_public/deform360_replication_v1.json"
+        "configs/sota/deform360_replication_v1.json"
     ),
     "held_v8_builder_adapter_source": (
         "src/bayesian_phystwin/deform360_held_v8_builders.py"

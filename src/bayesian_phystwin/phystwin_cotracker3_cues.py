@@ -41,6 +41,40 @@ class CoTracker3Prediction:
     confidence_probability: np.ndarray
 
 
+@dataclass(frozen=True)
+class CoTracker3MultiviewObservation:
+    """Causal, residual-independent multiview 3D observations."""
+
+    points_world_m: np.ndarray
+    valid: np.ndarray
+    camera_count: np.ndarray
+    reprojection_error_px: np.ndarray
+    minimum_view_quality: np.ndarray
+
+
+@dataclass(frozen=True)
+class CoTracker3MultiviewDepthObservation:
+    """Gauge-anchored multiview RGB-D observations of material queries."""
+
+    points_world_m: np.ndarray
+    valid: np.ndarray
+    camera_count: np.ndarray
+    view_disagreement_m: np.ndarray
+    minimum_view_quality: np.ndarray
+
+
+@dataclass(frozen=True)
+class CoTracker3RayDiscrepancyPosterior:
+    """Persistent 3D correction inferred directly from multiview image rays."""
+
+    mean_m: np.ndarray
+    variance_m2: np.ndarray
+    observed: np.ndarray
+    update_count: np.ndarray
+    final_inlier_probability: np.ndarray
+    camera_support: np.ndarray
+
+
 def _sha256(path: str | Path) -> str:
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
@@ -304,6 +338,693 @@ def triangulate_multiview_tracks(
     return points, error, camera_counts
 
 
+def pack_multiview_triangulation(
+    points_world_m: np.ndarray,
+    reprojection_error_px: np.ndarray,
+    camera_count: np.ndarray,
+    *,
+    frame_count: int,
+) -> dict[str, np.ndarray]:
+    """Pack prefix triangulations into leakage-safe full-sequence cue arrays."""
+
+    points = np.asarray(points_world_m, dtype=float)
+    reprojection = np.asarray(reprojection_error_px, dtype=float)
+    counts = np.asarray(camera_count)
+    if points.ndim != 3 or points.shape[2] != 3:
+        raise ValueError("points_world_m must have shape (T_prefix, N, 3)")
+    if reprojection.shape != points.shape[:2]:
+        raise ValueError("reprojection_error_px must match points' first two axes")
+    if counts.shape != points.shape[:2]:
+        raise ValueError("camera_count must match points' first two axes")
+    prefix_frame_count, track_count, _ = points.shape
+    if frame_count < prefix_frame_count:
+        raise ValueError("frame_count cannot be shorter than the prefix")
+    if np.any(counts < 0):
+        raise ValueError("camera_count must be nonnegative")
+
+    valid = (
+        np.all(np.isfinite(points), axis=2)
+        & np.isfinite(reprojection)
+        & (counts >= 2)
+    )
+    full_points = np.full(
+        (frame_count, track_count, 3),
+        np.nan,
+        dtype=np.float32,
+    )
+    full_valid = np.zeros((frame_count, track_count), dtype=bool)
+    full_points[:prefix_frame_count] = np.where(
+        valid[:, :, None],
+        points,
+        np.nan,
+    ).astype(np.float32)
+    full_valid[:prefix_frame_count] = valid
+    return {
+        "multiview_points_world_m": full_points,
+        "multiview_point_valid": full_valid,
+    }
+
+
+def load_cotracker3_multiview_observations(
+    cues_path: str | Path,
+    initial_world_points_m: np.ndarray,
+    *,
+    train_end_frame: int,
+    minimum_view_quality: float,
+    maximum_reprojection_error_px: float,
+    maximum_cycle_error_px: float,
+    minimum_camera_count: int = 3,
+) -> CoTracker3MultiviewObservation:
+    """Load and re-triangulate a leakage-free CoTracker3 observation prefix."""
+
+    if train_end_frame <= 0:
+        raise ValueError("train_end_frame must be positive")
+    if not 0.0 <= minimum_view_quality <= 1.0:
+        raise ValueError("minimum_view_quality must lie in [0, 1]")
+    if maximum_reprojection_error_px <= 0.0:
+        raise ValueError("maximum_reprojection_error_px must be positive")
+    if maximum_cycle_error_px <= 0.0:
+        raise ValueError("maximum_cycle_error_px must be positive")
+    if minimum_camera_count < 2:
+        raise ValueError("minimum_camera_count must be at least two")
+
+    required = {
+        "multiview_tracks_xy_prefix",
+        "multiview_quality_probability_prefix",
+        "multiview_view_valid_prefix",
+        "multiview_intrinsics",
+        "multiview_camera_to_world",
+        "forward_backward_error_px",
+        "forward_backward_valid",
+        "boundary_distance",
+        "cue_available",
+    }
+    with np.load(cues_path) as archive:
+        missing = required.difference(archive.files)
+        if missing:
+            names = ", ".join(sorted(missing))
+            raise ValueError(
+                f"CoTracker3 archive lacks multiview schema-v2 fields: {names}"
+            )
+        tracks = np.asarray(
+            archive["multiview_tracks_xy_prefix"][:, :train_end_frame],
+            dtype=float,
+        )
+        quality = np.asarray(
+            archive["multiview_quality_probability_prefix"][
+                :, :train_end_frame
+            ],
+            dtype=float,
+        )
+        view_valid = np.asarray(
+            archive["multiview_view_valid_prefix"][:, :train_end_frame],
+            dtype=bool,
+        )
+        intrinsics = np.asarray(archive["multiview_intrinsics"], dtype=float)
+        camera_to_world = np.asarray(
+            archive["multiview_camera_to_world"],
+            dtype=float,
+        )
+        cycle_error = np.asarray(
+            archive["forward_backward_error_px"][:train_end_frame],
+            dtype=float,
+        )
+        cycle_valid = np.asarray(
+            archive["forward_backward_valid"][:train_end_frame],
+            dtype=bool,
+        )
+        boundary = np.asarray(
+            archive["boundary_distance"][:train_end_frame],
+            dtype=float,
+        )
+        available = np.asarray(
+            archive["cue_available"][:train_end_frame],
+            dtype=bool,
+        )
+
+    if tracks.shape[:3] != quality.shape or tracks.shape[3] != 2:
+        raise ValueError("multiview track and quality shapes are inconsistent")
+    if view_valid.shape != quality.shape:
+        raise ValueError("multiview validity does not match quality")
+    if tracks.shape[1] != train_end_frame:
+        raise ValueError("archive is shorter than train_end_frame")
+    initial = np.asarray(initial_world_points_m, dtype=float)
+    if initial.shape != (tracks.shape[2], 3):
+        raise ValueError("initial_world_points_m must have shape (N, 3)")
+    if cycle_error.shape != tracks.shape[1:3]:
+        raise ValueError("cycle error does not match multiview tracks")
+    if cycle_valid.shape != cycle_error.shape:
+        raise ValueError("cycle validity does not match cycle error")
+    if boundary.shape != cycle_error.shape or available.shape != cycle_error.shape:
+        raise ValueError("source reliability cues do not match multiview tracks")
+    if minimum_camera_count > tracks.shape[0]:
+        raise ValueError("minimum_camera_count exceeds the archived camera count")
+
+    selected_views = (
+        view_valid
+        & np.isfinite(tracks).all(axis=3)
+        & np.isfinite(quality)
+        & (quality >= minimum_view_quality)
+    )
+    points, reprojection, camera_count = triangulate_multiview_tracks(
+        tracks,
+        selected_views,
+        np.where(selected_views, quality, 0.0),
+        intrinsics,
+        camera_to_world,
+    )
+    initial_valid = (
+        np.all(np.isfinite(points[0]), axis=1)
+        & (camera_count[0] >= minimum_camera_count)
+    )
+    anchored = np.full_like(points, np.nan)
+    anchored[:, initial_valid] = (
+        initial[initial_valid][None]
+        + points[:, initial_valid]
+        - points[0, initial_valid][None]
+    )
+    valid = (
+        np.all(np.isfinite(anchored), axis=2)
+        & np.isfinite(reprojection)
+        & (camera_count >= minimum_camera_count)
+        & (reprojection <= maximum_reprojection_error_px)
+        & cycle_valid
+        & (cycle_error <= maximum_cycle_error_px)
+        & (boundary > 0.0)
+        & available
+    )
+    minimum_quality = np.min(
+        np.where(selected_views, quality, np.inf),
+        axis=0,
+    )
+    minimum_quality[~np.isfinite(minimum_quality)] = 0.0
+    anchored[~valid] = np.nan
+    return CoTracker3MultiviewObservation(
+        points_world_m=anchored,
+        valid=valid,
+        camera_count=camera_count,
+        reprojection_error_px=reprojection,
+        minimum_view_quality=minimum_quality,
+    )
+
+
+def load_cotracker3_multiview_depth_observations(
+    cues_path: str | Path,
+    raw_case_dir: str | Path,
+    initial_world_points_m: np.ndarray,
+    *,
+    train_end_frame: int,
+    minimum_view_quality: float,
+    maximum_view_disagreement_m: float,
+    maximum_cycle_error_px: float,
+    minimum_camera_count: int = 3,
+) -> CoTracker3MultiviewDepthObservation:
+    """Fuse gauge-anchored per-view depth lifts without using state residuals."""
+
+    if train_end_frame <= 0:
+        raise ValueError("train_end_frame must be positive")
+    if not 0.0 <= minimum_view_quality <= 1.0:
+        raise ValueError("minimum_view_quality must lie in [0, 1]")
+    if maximum_view_disagreement_m <= 0.0:
+        raise ValueError("maximum_view_disagreement_m must be positive")
+    if maximum_cycle_error_px <= 0.0:
+        raise ValueError("maximum_cycle_error_px must be positive")
+    if minimum_camera_count < 2:
+        raise ValueError("minimum_camera_count must be at least two")
+
+    required = {
+        "multiview_tracks_xy_prefix",
+        "multiview_quality_probability_prefix",
+        "multiview_view_valid_prefix",
+        "multiview_intrinsics",
+        "multiview_camera_to_world",
+        "forward_backward_error_px",
+        "forward_backward_valid",
+        "boundary_distance",
+        "cue_available",
+    }
+    with np.load(cues_path) as archive:
+        missing = required.difference(archive.files)
+        if missing:
+            names = ", ".join(sorted(missing))
+            raise ValueError(
+                f"CoTracker3 archive lacks multiview schema-v2 fields: {names}"
+            )
+        tracks = np.asarray(
+            archive["multiview_tracks_xy_prefix"][:, :train_end_frame],
+            dtype=float,
+        )
+        quality = np.asarray(
+            archive["multiview_quality_probability_prefix"][
+                :, :train_end_frame
+            ],
+            dtype=float,
+        )
+        archived_view_valid = np.asarray(
+            archive["multiview_view_valid_prefix"][:, :train_end_frame],
+            dtype=bool,
+        )
+        intrinsics = np.asarray(archive["multiview_intrinsics"], dtype=float)
+        camera_to_world = np.asarray(
+            archive["multiview_camera_to_world"],
+            dtype=float,
+        )
+        cycle_error = np.asarray(
+            archive["forward_backward_error_px"][:train_end_frame],
+            dtype=float,
+        )
+        cycle_valid = np.asarray(
+            archive["forward_backward_valid"][:train_end_frame],
+            dtype=bool,
+        )
+        boundary = np.asarray(
+            archive["boundary_distance"][:train_end_frame],
+            dtype=float,
+        )
+        available = np.asarray(
+            archive["cue_available"][:train_end_frame],
+            dtype=bool,
+        )
+
+    if tracks.shape[:3] != quality.shape or tracks.shape[3] != 2:
+        raise ValueError("multiview track and quality shapes are inconsistent")
+    if archived_view_valid.shape != quality.shape:
+        raise ValueError("multiview validity does not match quality")
+    if tracks.shape[1] != train_end_frame:
+        raise ValueError("archive is shorter than train_end_frame")
+    camera_count, _, track_count, _ = tracks.shape
+    initial = np.asarray(initial_world_points_m, dtype=float)
+    if initial.shape != (track_count, 3):
+        raise ValueError("initial_world_points_m must have shape (N, 3)")
+    if intrinsics.shape != (camera_count, 3, 3):
+        raise ValueError("archived intrinsics do not match the camera count")
+    if camera_to_world.shape != (camera_count, 4, 4):
+        raise ValueError("archived camera poses do not match the camera count")
+    if minimum_camera_count > camera_count:
+        raise ValueError("minimum_camera_count exceeds the archived camera count")
+    if cycle_error.shape != tracks.shape[1:3]:
+        raise ValueError("cycle error does not match multiview tracks")
+    if cycle_valid.shape != cycle_error.shape:
+        raise ValueError("cycle validity does not match cycle error")
+    if boundary.shape != cycle_error.shape or available.shape != cycle_error.shape:
+        raise ValueError("source reliability cues do not match multiview tracks")
+
+    world_by_view = np.full(
+        (camera_count, train_end_frame, track_count, 3),
+        np.nan,
+        dtype=float,
+    )
+    depth_valid = np.zeros(tracks.shape[:3], dtype=bool)
+    raw_path = Path(raw_case_dir)
+    for camera in range(camera_count):
+        inverse_intrinsic = np.linalg.inv(intrinsics[camera])
+        for frame in range(train_end_frame):
+            depth_path = raw_path / "depth" / str(camera) / f"{frame}.npy"
+            if not depth_path.is_file():
+                raise FileNotFoundError(f"missing raw depth frame: {depth_path}")
+            depth = np.asarray(np.load(depth_path), dtype=float)
+            xy = tracks[camera, frame]
+            finite = np.all(np.isfinite(xy), axis=1)
+            pixels = np.rint(np.where(finite[:, None], xy, 0.0)).astype(np.int64)
+            inside = (
+                finite
+                & (pixels[:, 0] >= 0)
+                & (pixels[:, 0] < depth.shape[1])
+                & (pixels[:, 1] >= 0)
+                & (pixels[:, 1] < depth.shape[0])
+            )
+            selected = np.flatnonzero(inside)
+            if len(selected) == 0:
+                continue
+            z_m = (
+                depth[pixels[selected, 1], pixels[selected, 0]].astype(float)
+                / 1000.0
+            )
+            positive = np.isfinite(z_m) & (z_m > 0.0)
+            selected = selected[positive]
+            z_m = z_m[positive]
+            if len(selected) == 0:
+                continue
+            homogeneous_pixels = np.column_stack(
+                [xy[selected], np.ones(len(selected))]
+            )
+            camera_points = (
+                homogeneous_pixels @ inverse_intrinsic.T
+            ) * z_m[:, None]
+            homogeneous_camera = np.column_stack(
+                [camera_points, np.ones(len(camera_points))]
+            )
+            world_points = homogeneous_camera @ camera_to_world[camera].T
+            world_by_view[camera, frame, selected] = world_points[:, :3]
+            depth_valid[camera, frame, selected] = True
+
+    selected_views = (
+        archived_view_valid
+        & depth_valid
+        & np.isfinite(quality)
+        & (quality >= minimum_view_quality)
+    )
+    initial_view_valid = selected_views[:, 0]
+    selected_views &= initial_view_valid[:, None]
+    anchored_by_view = np.full_like(world_by_view, np.nan)
+    for camera in range(camera_count):
+        selected = np.flatnonzero(initial_view_valid[camera])
+        camera_world = world_by_view[camera]
+        anchored_by_view[camera][:, selected] = (
+            initial[selected][None]
+            + camera_world[:, selected]
+            - camera_world[0, selected][None]
+        )
+
+    masked = np.ma.array(
+        anchored_by_view,
+        mask=np.broadcast_to(~selected_views[:, :, :, None], anchored_by_view.shape),
+    )
+    fused = np.ma.median(masked, axis=0).filled(np.nan)
+    counts = np.sum(selected_views, axis=0).astype(np.int16)
+    squared_distance = np.sum(
+        np.square(anchored_by_view - fused[None]),
+        axis=3,
+    )
+    weight = np.where(selected_views, quality, 0.0)
+    weight_sum = np.sum(weight, axis=0)
+    disagreement = np.full(counts.shape, np.nan, dtype=float)
+    usable = weight_sum > 0.0
+    disagreement[usable] = np.sqrt(
+        np.sum(
+            weight * np.where(selected_views, squared_distance, 0.0),
+            axis=0,
+        )[usable]
+        / weight_sum[usable]
+    )
+    minimum_quality = np.min(
+        np.where(selected_views, quality, np.inf),
+        axis=0,
+    )
+    minimum_quality[~np.isfinite(minimum_quality)] = 0.0
+    valid = (
+        np.all(np.isfinite(fused), axis=2)
+        & (counts >= minimum_camera_count)
+        & np.isfinite(disagreement)
+        & (disagreement <= maximum_view_disagreement_m)
+        & cycle_valid
+        & (cycle_error <= maximum_cycle_error_px)
+        & (boundary > 0.0)
+        & available
+    )
+    fused[~valid] = np.nan
+    return CoTracker3MultiviewDepthObservation(
+        points_world_m=fused,
+        valid=valid,
+        camera_count=counts,
+        view_disagreement_m=disagreement,
+        minimum_view_quality=minimum_quality,
+    )
+
+
+def infer_cotracker3_ray_discrepancy(
+    cues_path: str | Path,
+    baseline_points_world_m: np.ndarray,
+    *,
+    end_frame: int,
+    window_frames: int,
+    minimum_view_quality: float,
+    maximum_cycle_error_px: float,
+    minimum_camera_count: int = 2,
+    pixel_noise_std: float = 2.0,
+    prior_std_m: float = 0.05,
+    degrees_of_freedom: float = 4.0,
+    robust_iterations: int = 3,
+) -> CoTracker3RayDiscrepancyPosterior:
+    """Infer one robust persistent correction from causal multiview ray evidence."""
+
+    if end_frame <= 0:
+        raise ValueError("end_frame must be positive")
+    if window_frames <= 0:
+        raise ValueError("window_frames must be positive")
+    if not 0.0 <= minimum_view_quality <= 1.0:
+        raise ValueError("minimum_view_quality must lie in [0, 1]")
+    if maximum_cycle_error_px <= 0.0:
+        raise ValueError("maximum_cycle_error_px must be positive")
+    if minimum_camera_count < 2:
+        raise ValueError("minimum_camera_count must be at least two")
+    if pixel_noise_std <= 0.0 or prior_std_m <= 0.0:
+        raise ValueError("ray likelihood scales must be positive")
+    if degrees_of_freedom <= 0.0:
+        raise ValueError("degrees_of_freedom must be positive")
+    if robust_iterations < 1:
+        raise ValueError("robust_iterations must be positive")
+
+    required = {
+        "multiview_tracks_xy_prefix",
+        "multiview_quality_probability_prefix",
+        "multiview_view_valid_prefix",
+        "multiview_intrinsics",
+        "multiview_camera_to_world",
+        "forward_backward_error_px",
+        "forward_backward_valid",
+        "boundary_distance",
+        "cue_available",
+    }
+    with np.load(cues_path) as archive:
+        missing = required.difference(archive.files)
+        if missing:
+            names = ", ".join(sorted(missing))
+            raise ValueError(
+                f"CoTracker3 archive lacks multiview schema-v2 fields: {names}"
+            )
+        tracks_all = np.asarray(
+            archive["multiview_tracks_xy_prefix"],
+            dtype=float,
+        )
+        quality_all = np.asarray(
+            archive["multiview_quality_probability_prefix"],
+            dtype=float,
+        )
+        view_valid_all = np.asarray(
+            archive["multiview_view_valid_prefix"],
+            dtype=bool,
+        )
+        intrinsics = np.asarray(archive["multiview_intrinsics"], dtype=float)
+        camera_to_world = np.asarray(
+            archive["multiview_camera_to_world"],
+            dtype=float,
+        )
+        cycle_error_all = np.asarray(
+            archive["forward_backward_error_px"],
+            dtype=float,
+        )
+        cycle_valid_all = np.asarray(
+            archive["forward_backward_valid"],
+            dtype=bool,
+        )
+        boundary_all = np.asarray(
+            archive["boundary_distance"],
+            dtype=float,
+        )
+        available_all = np.asarray(
+            archive["cue_available"],
+            dtype=bool,
+        )
+
+    baseline = np.asarray(baseline_points_world_m, dtype=float)
+    if baseline.ndim != 3 or baseline.shape[2] != 3:
+        raise ValueError("baseline_points_world_m must have shape (T, N, 3)")
+    camera_count, archived_frames, track_count, coordinate_count = tracks_all.shape
+    if coordinate_count != 2:
+        raise ValueError("multiview tracks must contain x/y coordinates")
+    if end_frame > archived_frames or end_frame > len(baseline):
+        raise ValueError("end_frame exceeds the causal cue or baseline prefix")
+    if baseline.shape[1] != track_count:
+        raise ValueError("baseline point count does not match CoTracker queries")
+    if quality_all.shape != tracks_all.shape[:3]:
+        raise ValueError("multiview quality does not match tracks")
+    if view_valid_all.shape != quality_all.shape:
+        raise ValueError("multiview validity does not match quality")
+    if intrinsics.shape != (camera_count, 3, 3):
+        raise ValueError("archived intrinsics do not match the camera count")
+    if camera_to_world.shape != (camera_count, 4, 4):
+        raise ValueError("archived camera poses do not match the camera count")
+    if minimum_camera_count > camera_count:
+        raise ValueError("minimum_camera_count exceeds the archived camera count")
+    if cycle_error_all.shape[1] != track_count:
+        raise ValueError("cycle error does not match CoTracker queries")
+
+    start_frame = max(0, end_frame - window_frames)
+    tracks = tracks_all[:, start_frame:end_frame]
+    quality = quality_all[:, start_frame:end_frame]
+    view_valid = view_valid_all[:, start_frame:end_frame].copy()
+    cycle_error = cycle_error_all[start_frame:end_frame]
+    cycle_valid = cycle_valid_all[start_frame:end_frame]
+    boundary = boundary_all[start_frame:end_frame]
+    available = available_all[start_frame:end_frame]
+    source_valid = (
+        cycle_valid
+        & np.isfinite(cycle_error)
+        & (cycle_error <= maximum_cycle_error_px)
+        & (boundary > 0.0)
+        & available
+    )
+    view_valid &= np.isfinite(tracks).all(axis=3)
+    view_valid &= np.isfinite(quality) & (quality >= minimum_view_quality)
+    view_valid &= source_valid[None]
+    redundant = np.sum(view_valid, axis=0) >= minimum_camera_count
+    view_valid &= redundant[None]
+
+    frame_count = end_frame - start_frame
+    inverse_intrinsics = np.linalg.inv(intrinsics)
+    centers = camera_to_world[:, :3, 3]
+    rotations = camera_to_world[:, :3, :3]
+    identity = np.eye(3)
+    ray_direction = np.zeros((camera_count, frame_count, track_count, 3))
+    projector = np.zeros((camera_count, frame_count, track_count, 3, 3))
+    metric_sigma = np.full(
+        (camera_count, frame_count, track_count),
+        np.inf,
+        dtype=float,
+    )
+    for camera in range(camera_count):
+        pixel_homogeneous = np.concatenate(
+            [tracks[camera], np.ones((*tracks[camera].shape[:2], 1))],
+            axis=2,
+        )
+        rays_camera = pixel_homogeneous @ inverse_intrinsics[camera].T
+        rays_world = rays_camera @ rotations[camera].T
+        rays_world /= np.maximum(
+            np.linalg.norm(rays_world, axis=2, keepdims=True),
+            1e-12,
+        )
+        ray_direction[camera] = rays_world
+        projector[camera] = identity - np.einsum(
+            "tni,tnj->tnij",
+            rays_world,
+            rays_world,
+        )
+        distance = np.linalg.norm(
+            baseline[start_frame:end_frame] - centers[camera],
+            axis=2,
+        )
+        focal = float(
+            np.sqrt(intrinsics[camera, 0, 0] * intrinsics[camera, 1, 1])
+        )
+        metric_sigma[camera] = pixel_noise_std * distance / focal
+
+    robust_weight = np.ones_like(quality)
+    mean = np.zeros((track_count, 3), dtype=float)
+    precision = np.repeat(
+        (identity / prior_std_m**2)[None],
+        track_count,
+        axis=0,
+    )
+    update_count = np.sum(view_valid, axis=(0, 1)).astype(np.int64)
+    camera_support = np.sum(np.any(view_valid, axis=1), axis=0).astype(np.int16)
+    for iteration in range(robust_iterations):
+        precision = np.repeat(
+            (identity / prior_std_m**2)[None],
+            track_count,
+            axis=0,
+        )
+        right_hand_side = np.zeros((track_count, 3), dtype=float)
+        raw_observation_precision = np.where(
+            view_valid,
+            quality
+            * robust_weight
+            / np.maximum(np.square(metric_sigma), 1e-12),
+            0.0,
+        )
+        temporal_sum = np.sum(raw_observation_precision, axis=1)
+        temporal_square_sum = np.sum(
+            np.square(raw_observation_precision),
+            axis=1,
+        )
+        temporal_effective_count = np.divide(
+            np.square(temporal_sum),
+            temporal_square_sum,
+            out=np.ones_like(temporal_sum),
+            where=temporal_square_sum > 0.0,
+        )
+        observation_precision = raw_observation_precision / np.maximum(
+            temporal_effective_count[:, None],
+            1.0,
+        )
+        # Unknown cross-view correlation is handled conservatively: distinct
+        # rays improve geometry, but their nominal information is averaged.
+        observation_precision /= np.maximum(
+            camera_support[None, None],
+            1,
+        )
+        for camera in range(camera_count):
+            for local_frame, frame in enumerate(
+                range(start_frame, end_frame)
+            ):
+                selected = view_valid[camera, local_frame]
+                if not np.any(selected):
+                    continue
+                current_precision = observation_precision[camera, local_frame]
+                weighted_projector = (
+                    current_precision[:, None, None]
+                    * projector[camera, local_frame]
+                )
+                precision[selected] += weighted_projector[selected]
+                offset = centers[camera] - baseline[frame]
+                right_hand_side[selected] += (
+                    current_precision[selected, None]
+                    * np.einsum(
+                        "nij,nj->ni",
+                        projector[camera, local_frame, selected],
+                        offset[selected],
+                    )
+                )
+        mean = np.linalg.solve(
+            precision,
+            right_hand_side[:, :, None],
+        )[:, :, 0]
+        if iteration + 1 == robust_iterations:
+            break
+        for camera in range(camera_count):
+            for local_frame, frame in enumerate(
+                range(start_frame, end_frame)
+            ):
+                selected = view_valid[camera, local_frame]
+                if not np.any(selected):
+                    continue
+                projected, depth = project_world_points(
+                    baseline[frame] + mean,
+                    intrinsics[camera],
+                    camera_to_world[camera],
+                )
+                radial_px = np.linalg.norm(
+                    projected - tracks[camera, local_frame],
+                    axis=1,
+                )
+                standardized_sq = np.square(radial_px / pixel_noise_std)
+                student_weight = (
+                    degrees_of_freedom + 2.0
+                ) / (degrees_of_freedom + standardized_sq)
+                robust_weight[camera, local_frame] = np.where(
+                    selected & (depth > 0.0),
+                    np.clip(student_weight, 0.02, 1.0),
+                    0.0,
+                )
+
+    covariance = np.linalg.inv(precision)
+    variance = np.mean(np.diagonal(covariance, axis1=1, axis2=2), axis=1)
+    observed = (update_count > 0) & (camera_support >= minimum_camera_count)
+    mean[~observed] = 0.0
+    variance[~observed] = prior_std_m**2
+    final_inlier = np.zeros(track_count, dtype=float)
+    robust_mass = np.sum(np.where(view_valid, robust_weight, 0.0), axis=(0, 1))
+    final_inlier[observed] = robust_mass[observed] / update_count[observed]
+    return CoTracker3RayDiscrepancyPosterior(
+        mean_m=mean,
+        variance_m2=variance,
+        observed=observed,
+        update_count=update_count,
+        final_inlier_probability=final_inlier,
+        camera_support=camera_support,
+    )
+
+
 def _load_video_prefix(
     raw_case_dir: Path,
     camera: int,
@@ -555,17 +1276,25 @@ def build_phystwin_cotracker3_cues(
                 )
             )
 
-    _, reprojection_error, multiview_camera_count = triangulate_multiview_tracks(
+    triangulated_points, reprojection_error, multiview_camera_count = (
+        triangulate_multiview_tracks(
         multiview_tracks,
         multiview_valid,
         multiview_quality,
         intrinsics,
         camera_to_world,
+        )
     )
     reprojection_full = np.zeros((frame_count, track_count), dtype=np.float32)
     reprojection_valid_full = np.zeros((frame_count, track_count), dtype=bool)
     camera_count_full = np.zeros((frame_count, track_count), dtype=np.int16)
     triangulated = np.isfinite(reprojection_error) & (multiview_camera_count >= 2)
+    packed_triangulation = pack_multiview_triangulation(
+        triangulated_points,
+        reprojection_error,
+        multiview_camera_count,
+        frame_count=frame_count,
+    )
     reprojection_prefix = reprojection_full[: config.train_end_frame]
     reprojection_prefix[triangulated] = reprojection_error[triangulated]
     reprojection_valid_full[: config.train_end_frame] = triangulated
@@ -581,6 +1310,7 @@ def build_phystwin_cotracker3_cues(
             "multiview_reprojection_error_px": reprojection_full,
             "multiview_valid": reprojection_valid_full,
             "multiview_camera_count": camera_count_full,
+            **packed_triangulation,
             "boundary_distance": boundary,
             "cue_available": cue_available,
             "source_camera": mapping.source_camera,
@@ -591,6 +1321,11 @@ def build_phystwin_cotracker3_cues(
             "source_tracks_xy": source_tracks,
             "multiview_initial_eligible": initial_eligible,
             "multiview_initial_surface_distance_m": initial_surface_distance,
+            "multiview_tracks_xy_prefix": multiview_tracks,
+            "multiview_quality_probability_prefix": multiview_quality,
+            "multiview_view_valid_prefix": multiview_valid,
+            "multiview_intrinsics": intrinsics.astype(np.float64),
+            "multiview_camera_to_world": camera_to_world.astype(np.float64),
         }
     )
     output = Path(output_npz_path)
@@ -602,13 +1337,17 @@ def build_phystwin_cotracker3_cues(
     multiview_selection = triangulated & fit_visible
     tracker_revision = _git_revision(tracker_root)
     summary: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "config": asdict(config),
         "contract": {
             "source_queries": "all 5000 archived frame-zero queries rerun jointly per camera",
             "source_probability": "separate low-level CoTracker3 visibility and <=12-pixel confidence probabilities",
             "forward_backward": "cycle disagreement over the training-video prefix only",
             "multiview": "weighted ray triangulation and RMS calibrated reprojection error",
+            "multiview_coordinates": (
+                "world-frame points in metres plus prefix-only cross-view tracks "
+                "and weights; covariance is not calibrated"
+            ),
             "causality": "no frame at or after train_end_frame is decoded or tracked",
             "held_out_storage": "future cue entries are neutral and cue_available is false",
         },

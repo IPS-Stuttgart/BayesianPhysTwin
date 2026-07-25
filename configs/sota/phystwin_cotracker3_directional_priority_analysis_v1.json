@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "analysis_id": "phystwin-cotracker3-directional-priority-analysis-v1",
+  "locked_at_utc": "2026-07-24T10:42:32Z",
+  "status": "Locked while the 19-case directional runner was still executing and before its aggregate or remaining-case future metrics were read.",
+  "protocol": "configs/sota/phystwin_cotracker3_directional_priority_exploratory_v1.json",
+  "protocol_sha256": "937ef9afae8e066ad01318f90081408c94ec8b310678d3d82dd80dc65654688e",
+  "source_result_sha256": "42606b9d9e17085a68f417eba79bd3747c5c8aac49134777a533159d09da7f5e",
+  "hard_priority_result_sha256": "453ebce22ff0bc0cbe91c984cb6f434712ce0c1c21219afa0804f22d6b59b765",
+  "candidate_result": "/home/florianpfaff/bpt-cotracker3-multiview-tangent-v1/directional_priority_result.json",
+  "candidate_result_sha256": null,
+  "analysis_module": "src/bayesian_phystwin/phystwin_directional_priority_analysis.py",
+  "analysis_module_sha256": "6ad63e12e5db6afa73bb240374eca7f68338e7d20da692a2475bb51ab0ce6a57",
+  "analysis_cli": "scripts/remote/analyze_phystwin_cotracker3_directional_priority.py",
+  "analysis_cli_sha256": "3521cbf64ee8a87e15036b599b8a84ab4b4787264e9a675944bb187332a32f70",
+  "primary_arm": "causal_selected_dense_relative_cap",
+  "fixed_graph_diagnostic_arm": "combined_graph__lambda_0p0001__cap_060mm",
+  "co_primary_metrics": [
+    "chamfer_distance_m",
+    "track_error_m"
+  ],
+  "primary_comparator": "source depth",
+  "secondary_comparator": "hard three-view priority",
+  "bootstrap": {
+    "unit": "equal-weight physical-object cluster",
+    "draws": 100000,
+    "seed": 20260724,
+    "interval": 0.95
+  },
+  "advancement_gate": {
+    "both_source_mean_differences_strictly_below_zero": true,
+    "both_source_object_cluster_interval_upper_bounds_strictly_below_zero": true,
+    "both_metric_source_win_or_tie_count_at_least": 12
+  },
+  "forbidden": [
+    "choosing a different prediction arm after reading the candidate result",
+    "changing the bootstrap unit, draw count, seed, or interval after reading the candidate result",
+    "using the hard-priority comparison instead of source depth for advancement",
+    "describing a passing result as independent, confirmatory, calibrated, or state of the art"
+  ]
+}

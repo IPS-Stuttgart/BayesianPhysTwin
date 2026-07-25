@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexBayesianRegistrationProtocol",
+  "protocol_id": "pokeflex-bayesian-registration-v1",
+  "locked_at_utc": "2026-07-20T15:00:00Z",
+  "status": "prospective public-data benchmark with development, calibration, and sealed target objects",
+  "claim_boundary": "This protocol tests causal one-step template-mesh prediction on the open PokeFlex poking release. It is a Bayesian-PhysTwin observation-and-state update study, not a Causal4D counterfactual result and not a material-parameter identification claim.",
+  "upstream": {
+    "repository": "https://github.com/pokeflex-dataset/reconstruction",
+    "code_commit": "aaa8726072834a95bbe97e1a113588968c36e185",
+    "open_dataset_layout_commit": "fa484b0fa94f59f51e8c5f2293a6b1bc378b7375",
+    "paper": "https://arxiv.org/abs/2410.07688",
+    "paper_reference": {
+      "table": "Table III",
+      "input": "Kinect point clouds",
+      "cd_ul1_mm": 6.498,
+      "jaccard": 0.82,
+      "history_frames": 5
+    },
+    "released_kinect_checkpoint": {
+      "attention_model.pth": {
+        "google_drive_id": "1KRLNhYx0MOnzNUbxLJn_NsYvfuHO6Jgc",
+        "sha256": "51181c22d7ad9fcc194a48411fda64759bdfb491c73abfa94f63d0a7167284fe"
+      },
+      "decoder.pth": {
+        "google_drive_id": "1aRJSB9pj2DerFi8CClK-0W_C16gRsMmL",
+        "sha256": "34a29ab89912ffdd0ea2a4436bcaca0e843d2c51a19f77c88844702b596b46cf"
+      },
+      "pointcloud_encoder.pth": {
+        "google_drive_id": "1DMk4W5IZxiIhGQpUwSqhSDb4skJjyNEw",
+        "sha256": "3053f0656e4ca61645aa194e2d33540f68953efe9fd0cbab062ec561c405609b"
+      }
+    }
+  },
+  "cohort": {
+    "action": "poking",
+    "excluded_objects": {
+      "3dPrintedBunny": "previous PokeFlex development and target protocol already inspected this object"
+    },
+    "development_objects": [
+      "FoamDice",
+      "MemoryFoam",
+      "PlushOctopus",
+      "3dPrintedHeart",
+      "ToiletPaperRoll"
+    ],
+    "calibration_objects": [
+      "Beanbag",
+      "FoamCylinder",
+      "PlushMoon",
+      "3dPrintedPyramid"
+    ],
+    "target_objects": [
+      "3dPrintedCylinder",
+      "3dPrintedPizza",
+      "FoamHalfSphere",
+      "Pillow",
+      "PlushDice",
+      "PlushTurtle",
+      "PlushVolleyball",
+      "Sponge"
+    ],
+    "held_out_take": "T2",
+    "development_smoke_take": "FoamDice_T3",
+    "partition_basis": "object identity and material/shape category metadata only; no mesh outcome or model score was read",
+    "official_unseen_objects_in_target": [
+      "PlushDice",
+      "PlushVolleyball",
+      "Sponge"
+    ]
+  },
+  "causal_input_contract": {
+    "target_frame": "f",
+    "allowed_observation_frames": "f-5 through f-1 only",
+    "forbidden_observation_frames": "f and all later frames",
+    "history_frame_count": 5,
+    "kinect_camera_ids": [0, 1],
+    "robot_history_allowed": true,
+    "target_take_template_mesh_allowed": true,
+    "target_take_deformed_mesh_allowed_before_final_scoring": false,
+    "synthetic_point_clouds_from_target_mesh_allowed": false,
+    "future_mesh_cropping_or_registration_allowed": false
+  },
+  "methods": {
+    "required_arms": [
+      "template_or_exact_persistence",
+      "rigid_icp_history",
+      "released_kinect_checkpoint",
+      "bayesian_graph_registration_with_action_supported_prediction"
+    ],
+    "optional_arm": "retrained_official_kinect_architecture_on_the_exact_registered_split",
+    "candidate_constraints": {
+      "observation_reliability_is_residual_independent": true,
+      "state_innovation_is_processed_once": true,
+      "camera_correlation_is_not_treated_as_independent_evidence": true,
+      "common_mode_camera_bias_is_explicit": true,
+      "assignment_mixture_spread_enters_covariance": true,
+      "metric_variance_unit": "m^2",
+      "update_requires": "action/contact support plus two-view agreement, or at least three independent observation groups",
+      "exact_fallback": "return the physical/persistence prior byte-for-byte when the update gate rejects"
+    }
+  },
+  "selection": {
+    "development_outcomes": "all takes of development objects may be used for implementation and family selection",
+    "calibration_outcomes": "only T2 of calibration objects may be opened after the candidate family and hyperparameter grid are frozen",
+    "target_outcomes": "T2 of target objects are opened once after code, hyperparameters, covariance calibration, and checkpoint hashes are frozen",
+    "hyperparameter_tie_break": "simplest model, strongest shrinkage, then exact fallback",
+    "no_target_adaptation": true
+  },
+  "evaluation": {
+    "primary_metric": "CD_UL1_mm",
+    "primary_definition": "mean nearest-neighbor L1 distance from deterministically sampled predicted surface points to deterministically sampled target surface points in original millimetre coordinates",
+    "secondary_metrics": [
+      "symmetric_CD_L1_mm",
+      "LPFD_normalized",
+      "LROI_normalized",
+      "Jaccard_where_boolean_backend_is_valid",
+      "one_step_vertex_or_surface_coverage",
+      "NEES",
+      "interval_width",
+      "fallback_rate",
+      "runtime_hz"
+    ],
+    "sampling": {
+      "surface_points": 10000,
+      "seed": 20260720,
+      "same_samples_for_all_methods": true
+    },
+    "aggregation": "equal mean over target objects after equal mean over scored frames within each held-out take",
+    "uncertainty": "object-cluster paired bootstrap with fixed seed 20260720"
+  },
+  "gates": {
+    "direct_published_sota": {
+      "mean_target_CD_UL1_mm_below": 6.498,
+      "mean_target_jaccard_not_below": 0.82
+    },
+    "paired_transfer": {
+      "minimum_relative_CD_UL1_improvement_over_released_checkpoint": 0.05,
+      "bootstrap_upper_bound_of_paired_CD_UL1_change_mm_below": 0.0,
+      "maximum_per_object_relative_CD_UL1_regression": 0.1
+    },
+    "calibration": {
+      "nominal_coverage": 0.9,
+      "minimum_aggregate_coverage": 0.85,
+      "maximum_aggregate_coverage": 0.95,
+      "minimum_worst_object_coverage": 0.8
+    }
+  },
+  "forbidden": [
+    "opening any target T2 deformed mesh before the final target-scoring command",
+    "using frame f or later observations to predict frame f",
+    "using synthetic point clouds sampled from a target mesh as method input",
+    "choosing an update from its error against the sealed target mesh",
+    "treating two correlated Kinect views as independent sample-size evidence",
+    "changing method or gates after calibration or target outcomes are opened",
+    "calling the published 5.00 normalized ROI loss a 5.00 mm Chamfer result",
+    "altering the frozen Causal4D PokeFlex Bunny protocol"
+  ],
+  "protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33"
+}

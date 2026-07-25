@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexDualSensorRegretKillExecutionManifest",
+  "claim_status": "post-open calibration-object kill test",
+  "repository_commit": "2d66cb1",
+  "candidate_artifacts": [
+    {
+      "take_id": "3dPrintedPyramid_T2",
+      "sha256": "4ad9a7440e2d41a875c3099c255e37690d35fae205c7b6ca8d352c8e6923b7c1"
+    },
+    {
+      "take_id": "Beanbag_T2",
+      "sha256": "45be5403c1bd6a1c70d810c27d15be2765f732a41b0652a55d6abbe6ab1e2458"
+    },
+    {
+      "take_id": "FoamCylinder_T2",
+      "sha256": "e49557f2c9e4088344ae581bc6b9592118feb2c83fe3dc6a1525123f444dc32b"
+    },
+    {
+      "take_id": "PlushMoon_T2",
+      "sha256": "7a3579b1ba7b0083018d08d8bf44b5640112d2632e41bc7b86ea9ac15cd4e47c"
+    }
+  ],
+  "evaluation": {
+    "path": "results/sota/pokeflex_dual_sensor_regret_kill_v1/calibration_consensus.json",
+    "sha256": "a5a29b6749143d18a147d1f7414855ddbdb590221817866996fcb6566cc12fd9"
+  },
+  "replacement_performed": false,
+  "target_objects_opened": false,
+  "decision": "stop delayed camera-family consensus as a safety mechanism"
+}

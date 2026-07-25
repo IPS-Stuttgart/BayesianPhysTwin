@@ -1,0 +1,71 @@
+{
+  "calibrated_90_percent_claim_allowed": false,
+  "candidate_certified": true,
+  "candidate_interval_count": 10,
+  "claim_boundary": "This lock was selected on already-open source outcomes. Its finite-sample level is conditional on the frozen eligibility rule and the eligible source-object exchangeability assumption. It permits only a fresh accuracy/non-regression evaluation, not a 90% safety or calibration claim.",
+  "config": {
+    "minimum_available_center_count": 9,
+    "minimum_identifiable_fraction": 0.1,
+    "minimum_motion_center_count": 3,
+    "minimum_observed_motion_m": 0.0005,
+    "minimum_physical_agreement_gain": 0.4,
+    "minimum_physical_response_m": 0.0005,
+    "observation_variance_floor_m2": 2.5e-05,
+    "physical_response_rank": 4,
+    "regret_minimum_improvement_m": 5e-06,
+    "regret_nominal_coverage": 0.9,
+    "regret_ridge_penalty": 10.0,
+    "regret_support_margin_std": 0.0,
+    "reprojection_scale_px": 3.0,
+    "state_update": {
+      "ambiguous_subspace_cosine": 0.999,
+      "anchor_std_m": 0.002,
+      "camera_bias_prior_std_m": 0.01,
+      "convergence_tolerance": 1e-09,
+      "degrees_of_freedom": 4.0,
+      "effective_samples_per_view": 64.0,
+      "maximum_condition_number": 1000000000000.0,
+      "maximum_iterations": 8,
+      "maximum_state_update_m": 0.1,
+      "minimum_robust_weight": 0.02,
+      "observation_std_m": 0.005,
+      "reject_unanchored_ambiguity": true,
+      "shared_bias_prior_std_m": 0.02,
+      "state_prior_std_m": 0.02
+    },
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "eligible_source_object_ids": [
+    "002-rope-silk",
+    "083-blanket-cloth",
+    "085-scarf-cloth",
+    "170-spider"
+  ],
+  "fallback": "bit-exact selected raw baseline",
+  "finite_sample_coverage": 0.8,
+  "finite_sample_rank": 4,
+  "fresh_accuracy_evaluation_allowed": true,
+  "information_boundary": {
+    "eligibility_is_target_free": true,
+    "future_observations_used_to_construct_candidate": false,
+    "prospective_outcomes_used_to_construct_candidate": false,
+    "source_outcomes_used_to_fit_lock": true
+  },
+  "minimum_improvement_m": 5e-06,
+  "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+  "requested_nominal_coverage": 0.9,
+  "selector": "target-free physical-response eligibility followed by one frozen source-group regret decision",
+  "source_group_count": 4,
+  "source_group_worst_regret_m": {
+    "002-rope-silk": -0.001998798742991026,
+    "083-blanket-cloth": -1.887323425379516e-05,
+    "085-scarf-cloth": -8.871136285708119e-06,
+    "170-spider": -1.527995763579877e-05
+  },
+  "status": "source-fitted-prospective-candidate-lock",
+  "upper_regret_m": -8.871136285708119e-06
+}

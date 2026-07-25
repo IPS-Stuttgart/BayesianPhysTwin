@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "material_names": [
+    "fabric",
+    "leather",
+    "rubber",
+    "plastic",
+    "metal",
+    "wood",
+    "paper",
+    "silk",
+    "denim",
+    "fur"
+  ],
+  "claim_boundary": "Diagnostic capacity control only. Distinct material one-hot rows are assigned to arbitrary graph-part identifiers to test whether the frozen MatPhys decoder can express a nondegenerate spatial spring field. This artifact is not a semantic material estimate and must not be used for predictive claims.",
+  "cases": {
+    "single_lift_sloth": {
+      "part_weights": [
+        {"fabric": 1.0},
+        {"rubber": 1.0},
+        {"silk": 1.0},
+        {"denim": 1.0},
+        {"fur": 1.0}
+      ]
+    }
+  }
+}

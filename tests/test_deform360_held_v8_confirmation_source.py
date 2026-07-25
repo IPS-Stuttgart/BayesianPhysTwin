@@ -739,7 +739,7 @@ def test_wrapper_rejects_camera_episode_or_bimanual_lineage_drift() -> None:
     )
     preregistration = json.loads(
         (
-            repository / "configs" / "causal4d_public" / "deform360_replication_v1.json"
+            repository / "configs" / "sota" / "deform360_replication_v1.json"
         ).read_text(encoding="utf-8")
     )
     wrapper._validate_confirmation_selection_lineage(

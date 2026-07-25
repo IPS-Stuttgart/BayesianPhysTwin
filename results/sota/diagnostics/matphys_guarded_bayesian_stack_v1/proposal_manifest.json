@@ -1,0 +1,224 @@
+{
+  "backbone": {
+    "causal_training_audit": {
+      "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2b/source_supervised_training_audit.json",
+      "sha256": "c993fe5dbc59d1256aeaf791bdb9894b7fc3f5e9cbcffa0f8d9250ca928e8112"
+    },
+    "checkpoint": {
+      "path": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/train_ddp5_stable_v2b/last_checkpoint.pth",
+      "sha256": "cb59db8bb8e7344337cbaab71f7f3b33fdb0067dba2ae45964f93dc8d2e84dd8"
+    },
+    "claim_boundary": "Exploratory five-case trajectory bank selected from a target prefix; target futures were previously opened and cannot support an independent claim.",
+    "coordinate_frame": "phystwin-world-metres-v1",
+    "future_observations_used": false,
+    "name": "Pinned upstream PhysTwin with prefix-gated MatPhys spring proposal",
+    "parameterization": {
+      "distributed_training_contract": "ddp-join-uneven-case-steps-v1",
+      "fit_fraction": 0.75,
+      "global_parameters": "frozen at released PhysTwin values",
+      "identity_scale": 0.0,
+      "initialization": {
+        "checkpoint": {
+          "path": "/mnt/corsair/florianpfaff/matphys-causal-sota-v1/checkpoints/checkpoint_all_latest.pth",
+          "sha256": "38af188bd3ce7f7ab804faa80531c48480684e08721e6ee64a09859bcf0b6a15"
+        },
+        "contract": "public-matphys-trunk-zero-residual-head-v1",
+        "excluded_prefixes": [
+          "spring_base.5.",
+          "ctrl_spring_base.5.",
+          "spring_mod."
+        ],
+        "reason": "reuse the source-trained representation while preserving the exact zero-residual PhysTwin identity"
+      },
+      "name": "released-phystwin-bounded-logk-residual-v1",
+      "optimization": {
+        "auxiliary_backward": "intermediate-hook-single-backward-aux-v1",
+        "finite_optimizer_guard": true,
+        "gradient_clip": 5.0,
+        "learning_rate": 3e-05,
+        "teacher_proximity_weight": 1.0
+      },
+      "optimizer_guard": {
+        "contract": "transactional-finite-adamw-v1",
+        "rank_summaries": [
+          {
+            "accepted_steps": 5182,
+            "attempted_steps": 5182,
+            "rejected_post_step": 0,
+            "rejected_pre_step": 0
+          },
+          {
+            "accepted_steps": 5766,
+            "attempted_steps": 5766,
+            "rejected_post_step": 0,
+            "rejected_pre_step": 0
+          }
+        ],
+        "total_rejected_steps": 0
+      },
+      "part_feature_scale": 1.0,
+      "part_model_contract": "simple-videomae-dino-part-conditioning-v1",
+      "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+      "residual_log_scale": 0.6931471805599453,
+      "teacher": {
+        "cases": [
+          {
+            "case_name": "single_clift_cloth_1",
+            "checkpoint": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_1/train/best_99.pth",
+              "sha256": "9bcda719b5a5125a84e9b19c6a992cfc9b474a8465fa0b7e82019dbf01bd8829"
+            },
+            "global_parameters": {
+              "collide_elas": -0.004715820774435997,
+              "collide_fric": 2.001607894897461,
+              "collide_object_elas": -0.014729151502251625,
+              "collide_object_fric": 0.5860878825187683,
+              "collision_dist": 0.01982937514781952,
+              "dashpot_damping": 71.15359306335449,
+              "drag_damping": 19.817683696746826
+            },
+            "optimal_params": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization/single_clift_cloth_1/optimal_params.pkl",
+              "sha256": "92d8dd6e16d4f8cebcb4a608c2d7889c6d3c2a4fb7ed0b97ff487fa36f29e573"
+            },
+            "spring_count": 108508
+          },
+          {
+            "case_name": "single_clift_cloth_3",
+            "checkpoint": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_clift_cloth_3/train/best_99.pth",
+              "sha256": "a99a1fa6a54e5e2d11d7fa4380a54ea5c27ed3bcd01bd327074ae74789ded72c"
+            },
+            "global_parameters": {
+              "collide_elas": 0.6665353775024414,
+              "collide_fric": 0.9506561160087585,
+              "collide_object_elas": -0.012948722578585148,
+              "collide_object_fric": 0.09476206451654434,
+              "collision_dist": 0.024329370260238646,
+              "dashpot_damping": 88.09834122657776,
+              "drag_damping": 2.2875891625881195
+            },
+            "optimal_params": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization/single_clift_cloth_3/optimal_params.pkl",
+              "sha256": "ecd02a6f99e6259a23cb902bccb0ca99e2dbd0b00b5566a4cc80544c2ce9eb26"
+            },
+            "spring_count": 40707
+          },
+          {
+            "case_name": "double_lift_cloth_1",
+            "checkpoint": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_cloth_1/train/best_99.pth",
+              "sha256": "93f6d095c645550e0ac9c4916d842b42b223d5c5d8dbab524e3636b8e544daaa"
+            },
+            "global_parameters": {
+              "collide_elas": 0.7599777579307556,
+              "collide_fric": 2.0026004314422607,
+              "collide_object_elas": -0.0022390589583665133,
+              "collide_object_fric": 0.21057067811489105,
+              "collision_dist": 0.02829444766044617,
+              "dashpot_damping": 192.52405166625977,
+              "drag_damping": 11.000057458877563
+            },
+            "optimal_params": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization/double_lift_cloth_1/optimal_params.pkl",
+              "sha256": "2e14aa3aef2e695933fc1355b828b25d43d46a989f5f9e220c8aa53928f01bc3"
+            },
+            "spring_count": 103975
+          },
+          {
+            "case_name": "double_lift_zebra",
+            "checkpoint": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/double_lift_zebra/train/best_199.pth",
+              "sha256": "061d580a0ed7faf1e07b6fb067bff182beb92aedacc460ea01ea624783e9cf2f"
+            },
+            "global_parameters": {
+              "collide_elas": 0.053145311772823334,
+              "collide_fric": 1.531507134437561,
+              "collide_object_elas": 0.9991983771324158,
+              "collide_object_fric": 0.002116415649652481,
+              "collision_dist": 0.010014684463385493,
+              "dashpot_damping": 129.01335954666138,
+              "drag_damping": 19.954023361206055
+            },
+            "optimal_params": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization/double_lift_zebra/optimal_params.pkl",
+              "sha256": "9dc8496dfa23820210103f9547b9dfa17285b148cfc3a8aaa1bf73918db9ed5e"
+            },
+            "spring_count": 74893
+          },
+          {
+            "case_name": "single_push_sloth",
+            "checkpoint": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments/single_push_sloth/train/best_199.pth",
+              "sha256": "d286681ef59e20c89a95c90e1c59adc7c2aff2e57a28f0377711a47d47053e52"
+            },
+            "global_parameters": {
+              "collide_elas": -0.0074821109883487225,
+              "collide_fric": 1.0985356569290161,
+              "collide_object_elas": 0.9953585863113403,
+              "collide_object_fric": 0.633948802947998,
+              "collision_dist": 0.01956026792526245,
+              "dashpot_damping": 59.19179320335388,
+              "drag_damping": 14.852006435394287
+            },
+            "optimal_params": {
+              "path": "/mnt/corsair/florianpfaff/phystwin-sota-render-20260715/code/experiments_optimization/single_push_sloth/optimal_params.pkl",
+              "sha256": "9e8d2c229dd5dfde97251ec298fcea3bd47de198c5499b70e34b69b7ff27deb5"
+            },
+            "spring_count": 33599
+          }
+        ]
+      },
+      "training_teacher_scope": "registered-source-cases-only-v1"
+    },
+    "proxy_contract": "causal-dino-graph-voronoi-parts-v1",
+    "selection_contract": "matphys-upstream-spring-proposal-exploratory-v1",
+    "source_commit": "0d41297",
+    "source_repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "training_scope": "registered-source-supervised-target-disjoint-v1",
+    "vertex_contract": "phystwin-observed-prefix-then-surface-v1"
+  },
+  "cases": [
+    {
+      "evidence_end_frame_exclusive": 42,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "single_clift_cloth_1",
+      "selected_family": "baseline",
+      "sha256": "1ae5dc6398e73cf1f5fa0aaf971da12eba74d0325259a79133ca93b82b08e942",
+      "trajectory": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/single_clift_cloth_1/baseline/trajectory.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 50,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "single_clift_cloth_3",
+      "selected_family": "baseline",
+      "sha256": "635580ca3fbc269238e26babdbd623f7e24e3266b83bdf2c12bd44736455c206",
+      "trajectory": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/single_clift_cloth_3/baseline/trajectory.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 60,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "double_lift_cloth_1",
+      "selected_family": "baseline",
+      "sha256": "11d9e504689ed2606a2c2ade09279a1d92bced9d3e31c15d00e9cbdd36824523",
+      "trajectory": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/double_lift_cloth_1/baseline/trajectory.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 30,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "double_lift_zebra",
+      "selected_family": "candidate",
+      "sha256": "acccb2d58a823683cd4863bc8897424a3b238c6617373c9a6aa269070865fe02",
+      "trajectory": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/double_lift_zebra/candidate/trajectory.pkl"
+    },
+    {
+      "evidence_end_frame_exclusive": 35,
+      "initial_alignment_tolerance_m": 1e-06,
+      "name": "single_push_sloth",
+      "selected_family": "baseline",
+      "sha256": "840ce3d3e95ce12b171051e74d4e62f4d90b304bc5d321992932adc0ee09a821",
+      "trajectory": "/mnt/corsair/florianpfaff/matphys-source-meta-v1/smoke20/upstream_spring_overlay_v1/single_push_sloth/baseline/trajectory.pkl"
+    }
+  ],
+  "schema_version": 1
+}

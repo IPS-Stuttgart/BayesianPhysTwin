@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "contract": "source-meta-canonical-triplane-residual-v1",
+  "locked_at_utc": "2026-07-19T09:30:00Z",
+  "status": "Source-only model-family gate; target artifacts remain closed.",
+  "claim_boundary": "A passing result may admit only an exploratory five-case target-prefix gate. These targets have been examined previously and cannot establish an independent SOTA claim.",
+  "hypothesis": "A canonical material-frame triplane model, meta-trained across source interactions and adapted through a low-dimensional latent on each held-out prefix, can transfer residual evolution that pooled world-frame MLP/GNN models miss.",
+  "fit_fraction": 0.75,
+  "source_cases": [
+    "weird_package",
+    "double_stretch_zebra",
+    "double_lift_sloth",
+    "single_lift_sloth",
+    "single_lift_cloth",
+    "single_lift_cloth_4",
+    "single_lift_zebra",
+    "single_push_rope_4",
+    "rope_double_hand",
+    "single_lift_dinosor",
+    "single_push_rope_1",
+    "single_lift_rope",
+    "single_lift_cloth_1",
+    "double_lift_cloth_3",
+    "single_lift_cloth_3",
+    "double_stretch_sloth",
+    "single_push_rope"
+  ],
+  "target_cases": [
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "double_lift_cloth_1",
+    "double_lift_zebra",
+    "single_push_sloth"
+  ],
+  "source_folds": [
+    {
+      "name": "fold_0",
+      "held_out_cases": [
+        "weird_package",
+        "double_stretch_zebra",
+        "single_lift_cloth",
+        "single_push_rope_4",
+        "single_lift_dinosor",
+        "double_lift_cloth_3"
+      ]
+    },
+    {
+      "name": "fold_1",
+      "held_out_cases": [
+        "double_lift_sloth",
+        "single_lift_cloth_4",
+        "single_lift_zebra",
+        "rope_double_hand",
+        "single_lift_rope",
+        "single_lift_cloth_3"
+      ]
+    },
+    {
+      "name": "fold_2",
+      "held_out_cases": [
+        "single_lift_sloth",
+        "single_push_rope_1",
+        "single_lift_cloth_1",
+        "double_stretch_sloth",
+        "single_push_rope"
+      ]
+    }
+  ],
+  "model": {
+    "grid_resolution": 16,
+    "plane_channels": 24,
+    "point_hidden_dim": 64,
+    "decoder_hidden_dim": 96,
+    "latent_dim": 16,
+    "rollout_horizon": 12,
+    "meta_training_steps": 1500,
+    "adaptation_steps": 250,
+    "maximum_training_points": 192,
+    "learning_rate": 0.0003,
+    "adaptation_learning_rate": 0.01,
+    "weight_decay": 0.00001,
+    "latent_regularization": 0.001,
+    "adaptation_regularization": 0.01,
+    "gradient_clip": 1.0,
+    "seeds": [17, 43, 101],
+    "blend_candidates": [0.25, 0.5, 0.75, 1.0],
+    "interpolation_neighbors": 4,
+    "controller_kernel_fraction": 0.25,
+    "maximum_velocity_multiplier": 2.0,
+    "maximum_residual_m": 0.01,
+    "minimum_balanced_improvement": 0.03,
+    "minimum_both_win_folds": 2,
+    "maximum_case_metric_ratio": 1.05,
+    "device": "cuda:0"
+  },
+  "source_gate": {
+    "reference": "endpoint residual persistence",
+    "minimum_balanced_improvement": 0.03,
+    "minimum_fold_aggregate_both_win_count": 2,
+    "both_aggregate_metrics_must_improve": true,
+    "maximum_single_case_metric_ratio": 1.05
+  },
+  "information_boundary": {
+    "meta_training": "Complete registered outcomes may supervise only non-held-out source interactions.",
+    "heldout_adaptation": "Only a case latent is optimized from held-out frames [0, fit_end). Global network weights remain fixed.",
+    "heldout_scoring": "Each held-out source case is scored on [fit_end, train_end) after its prefix-only adaptation.",
+    "target_access": "No target file, trajectory, observation, metric, checkpoint, or future artifact is read by this source gate.",
+    "prob4d": "Prob4D is deferred until a dynamics family passes using trusted released residuals."
+  },
+  "registered_motivation": {
+    "neuspring": "Canonical spatial spring fields outperform unstructured spring parameters in the published ablation.",
+    "deformmaster": "Its published particle-grid residual outperforms its MLP and three-round KNN-GNN residual controls.",
+    "local_nulls": "Shared linear, PGRD, and pooled graph-local MLP residual dynamics all failed transfer gates."
+  },
+  "forbidden": [
+    "opening target artifacts when the source gate fails",
+    "changing architecture, folds, seeds, blends, adaptation budget, or thresholds after source results",
+    "using held-out suffix frames to set velocity caps or adapt the case latent",
+    "calling a passing target-five result independent or state of the art",
+    "calling this implementation a reproduction of NeuSpring or DeformMaster"
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PokeFlexIndependentDepthRegretGuardCalibrationExecutionManifest",
+  "claim_status": "negative no-refit independent-object calibration evaluation",
+  "repository_commit": "098f6d1",
+  "protocol_sha256": "cef28df26d7710670aa3d73883462e896ec2d903c3be5faf00fee6a8d00a2644",
+  "source_evaluation_sha256": "6065d1178796eba949b0411fbd57b53184e39d38f6559357c740d63b8b47398b",
+  "archives": [
+    {
+      "take_id": "3dPrintedPyramid_T2",
+      "path": "/mnt/lexar4tb/pokeflex/poking/3dPrintedPyramid/3dPrintedPyramid_T2.zip",
+      "size_bytes": 3973287057,
+      "sha256": "3e59d55dd07aa5d7de007156b2f73f9ef722f17273af0cede5e7965dd4ee479e"
+    },
+    {
+      "take_id": "Beanbag_T2",
+      "path": "/mnt/lexar4tb/pokeflex/poking/Beanbag/Beanbag_T2.zip",
+      "size_bytes": 4891861606,
+      "sha256": "c2f0851e8d2d22585da07bac839bc773f121f1fa1fdd5c80babfa95b0f722695"
+    },
+    {
+      "take_id": "FoamCylinder_T2",
+      "path": "/mnt/lexar4tb/pokeflex/poking/FoamCylinder/FoamCylinder_T2.zip",
+      "size_bytes": 4652442326,
+      "sha256": "55fb18ba3d85dce05f0329f9861867fdf9e179093fc5a646f7f515d57a065f9e"
+    },
+    {
+      "take_id": "PlushMoon_T2",
+      "path": "/mnt/lexar4tb/pokeflex/poking/PlushMoon/PlushMoon_T2.zip",
+      "size_bytes": 5060313098,
+      "sha256": "528b236e674bde4e4077f36ca8349d5a83634c68723fc80be9e1502b2f5f2f84"
+    }
+  ],
+  "candidate_artifacts": [
+    {
+      "take_id": "3dPrintedPyramid_T2",
+      "path": "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/3dPrintedPyramid_T2.json",
+      "sha256": "1369d85a5ef8cbfc2e2d05c0f41b5400990fe313c878d9dbcb873ef6b633e5ed"
+    },
+    {
+      "take_id": "Beanbag_T2",
+      "path": "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/Beanbag_T2.json",
+      "sha256": "9e2d2edc8b08e4cc61985da7d0c8a9c1311aff4595cb4324af9dbae4b16ed5d6"
+    },
+    {
+      "take_id": "FoamCylinder_T2",
+      "path": "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/FoamCylinder_T2.json",
+      "sha256": "6b65c1a6c573498e81cc24f68b425c3f35b6bf305355d395f663b03412059da7"
+    },
+    {
+      "take_id": "PlushMoon_T2",
+      "path": "/mnt/corsair/florianpfaff/pokeflex-regret-calibration-v1/candidates/PlushMoon_T2.json",
+      "sha256": "53311fe164379691eace6a88e0fa4782f7354f1e5867583308b18e5c2802c126"
+    }
+  ],
+  "calibration_evaluation": {
+    "path": "results/sota/pokeflex_independent_depth_regret_guard_calibration_v1/calibration_evaluation.json",
+    "sha256": "63cdd6fd06419937a7515356e1cb9f3b9177d879a1047071f3689f85d4605e93",
+    "gate_passed": false
+  },
+  "execution_notes": [
+    "The first aggregate evaluator invocation refused because two GPU candidate sessions were still live; it produced no result artifact.",
+    "FoamCylinder candidate generation was polled a second time after the hidden live-session boundary; the frozen runner verified the existing and regenerated renderings were byte-identical.",
+    "No object or take was replaced after outcomes were opened."
+  ],
+  "replacement_performed": false,
+  "target_protocol_drafted": false,
+  "target_objects_opened": false
+}

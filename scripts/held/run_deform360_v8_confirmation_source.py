@@ -42,7 +42,7 @@ _SOURCE_BINDINGS = {
         "source_geometry_qa.json"
     ),
     "held_v8_confirmation_preregistration_lineage": (
-        "configs/causal4d_public/deform360_replication_v1.json"
+        "configs/sota/deform360_replication_v1.json"
     ),
 }
 _GIT_ENVIRONMENT = {

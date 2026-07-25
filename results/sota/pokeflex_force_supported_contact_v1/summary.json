@@ -1,0 +1,127 @@
+{
+  "artifact_kind": "PokeFlexForceSupportedContactDevelopmentResult",
+  "schema_version": 1,
+  "parent_protocol_sha256": "c68a33d82ee4c7474a09d30806df14cd3f8d3437acb2f4f1ad947cc83e09be33",
+  "claim_boundary": {
+    "status": "post_open_development_diagnostic",
+    "sota_claim_permitted": false,
+    "future_observation_used": false,
+    "selection_data": [
+      "development_T1",
+      "development_T4",
+      "development_T5",
+      "development_T6"
+    ]
+  },
+  "implementation": {
+    "registration_module_sha256": "97f3878f95a69782efc450e98d8bc2876bf35bf9d308bc628e7865f5c872c112",
+    "runner_sha256": "79ba8946653a55a70dc0b990e874754397e18948b9b7ba541158c6641cfc4b43",
+    "test_module_sha256": "f1771e2a3af3b92b9f3ac893f9f093ee34013a06cdcf6388e0d9897379064f55"
+  },
+  "candidate_family": {
+    "fields": [
+      "force_parallel_local_state",
+      "action_axis_local_state",
+      "force_action_plane_local_state",
+      "force_mean_local_state"
+    ],
+    "relative_support_radii": [0.25, 0.4, 0.55, 0.7],
+    "nonzero_scales": [0.125, 0.25, 0.5, 1.0],
+    "nonzero_candidate_count": 64,
+    "exact_zero_fallback": true
+  },
+  "development_evaluation": {
+    "take_count": 20,
+    "frame_count": 1418,
+    "baseline_object_balanced_CD_UL1_mm": 4.648924620811673,
+    "best_candidate": "checkpoint_force_action_plane_local_state_relative_0.7_residual_scale_0.25",
+    "best_object_balanced_CD_UL1_mm": 4.510001771554937,
+    "relative_improvement": 0.02988279238489373,
+    "object_wins": 5,
+    "worst_object_relative_change": -0.013564862833614503,
+    "per_object": [
+      {
+        "object": "3dPrintedHeart",
+        "baseline_CD_UL1_mm": 3.6947482159835747,
+        "candidate_CD_UL1_mm": 3.6044541994535875,
+        "relative_improvement": 0.024438476251067133
+      },
+      {
+        "object": "FoamDice",
+        "baseline_CD_UL1_mm": 6.034383751003034,
+        "candidate_CD_UL1_mm": 5.792450345039832,
+        "relative_improvement": 0.040092479355988586
+      },
+      {
+        "object": "MemoryFoam",
+        "baseline_CD_UL1_mm": 2.3496798763864972,
+        "candidate_CD_UL1_mm": 2.31780679116041,
+        "relative_improvement": 0.013564862833614503
+      },
+      {
+        "object": "PlushOctopus",
+        "baseline_CD_UL1_mm": 5.584861305719388,
+        "candidate_CD_UL1_mm": 5.464021310972974,
+        "relative_improvement": 0.02163706279020083
+      },
+      {
+        "object": "ToiletPaperRoll",
+        "baseline_CD_UL1_mm": 5.580949954965871,
+        "candidate_CD_UL1_mm": 5.37127621114788,
+        "relative_improvement": 0.03756954380704061
+      }
+    ],
+    "frame_oracle": {
+      "object_balanced_CD_UL1_mm": 4.24000328282173,
+      "relative_improvement": 0.08796041479342118,
+      "status": "diagnostic_upper_bound_only"
+    },
+    "comparison_with_previous_post_open_best": {
+      "previous_candidate": "checkpoint_action_local_state_relative_0.7_residual_scale_0.25",
+      "previous_object_balanced_CD_UL1_mm": 4.503973887854412,
+      "force_supported_minus_previous_mm": 0.006027883700524761
+    },
+    "gates": {
+      "minimum_relative_improvement": {
+        "threshold": 0.05,
+        "observed": 0.02988279238489373,
+        "passed": false
+      },
+      "minimum_object_wins": {
+        "threshold": 4,
+        "observed": 5,
+        "passed": true
+      },
+      "all_passed": false
+    },
+    "decision": "FAILED: do not open reserved, calibration, or target data for this family"
+  },
+  "unopened_boundaries": {
+    "development_take_T2": true,
+    "development_takes": ["T7", "T8"],
+    "calibration_objects": true,
+    "target_objects": true
+  },
+  "source_artifacts": [
+    {"take": "3dPrintedHeart_T1", "sha256": "670489921c791f06e78988656f69258095bbb81a3c68ebaa64fd2be03dc2c831"},
+    {"take": "3dPrintedHeart_T4", "sha256": "c784c104303958e4aad06372814e57f2d59a9189084a34fbf3c0cae51200876e"},
+    {"take": "3dPrintedHeart_T5", "sha256": "e2069d57de393dd748834198a363589f84fcd4ca4870100a6f2f21059de1a22f"},
+    {"take": "3dPrintedHeart_T6", "sha256": "58874dd945623ada1832601982c03c45001de7e898e5f449803b696205ec571f"},
+    {"take": "FoamDice_T1", "sha256": "bd195393f00c07f2f2c0bec858a45660ff1944a99c43764b77a6180520883d33"},
+    {"take": "FoamDice_T4", "sha256": "491901562dccfde4c43648ddf6486a1654beb2595e6b4ebcc95a6657cdd79f53"},
+    {"take": "FoamDice_T5", "sha256": "6eb57f2af3f92a37bccbcdd554d4fe95ed1d8b4c449fd615987eb825ba1949b3"},
+    {"take": "FoamDice_T6", "sha256": "9226d62cef3c3075263c8db9bbbb66b57eab244c2146764cb5f15a4dffbd7ba3"},
+    {"take": "MemoryFoam_T1", "sha256": "12ffa2f5cc9f5d58635b2466c810b8ff4bbe11fb6a6ef8046fb059af6f39c2c7"},
+    {"take": "MemoryFoam_T4", "sha256": "49e9e39a7009fc7f7202b17daa525fe708e41e8deac8f3aa2d170b8e56578fc5"},
+    {"take": "MemoryFoam_T5", "sha256": "3e9c3d9ec79214edf7b3f96632dd8494fa7745ffb2070a7635418b0aef9f6b67"},
+    {"take": "MemoryFoam_T6", "sha256": "7414e08fa6fa2752235a59a1574297a169e142e5863cb409579053eb642e179f"},
+    {"take": "PlushOctopus_T1", "sha256": "8700d1057dcb51bd98218c676ba98923c3cab50d6a478a19a90babea87a8ecbf"},
+    {"take": "PlushOctopus_T4", "sha256": "28f8b9b5219f7c3fab17a7c1c899006e27fcc89fa0e81c73bf6e1a00a1f9d9f3"},
+    {"take": "PlushOctopus_T5", "sha256": "80fd10bb18c39bf4c48e5a0b12f6911afc229ea69178565439bf755ee2af5613"},
+    {"take": "PlushOctopus_T6", "sha256": "8ba02e91db8efdc628fa07b7a646c08d48501b1ddd239320d80f6aa11b7847e9"},
+    {"take": "ToiletPaperRoll_T1", "sha256": "285efc355d2d6e11dd6cf85c63886021102b112b1703dc918eea8bbe1c2114fc"},
+    {"take": "ToiletPaperRoll_T4", "sha256": "a91ff67a8a8f28d6896fde58986ee80278a25172bcc47164cd0b9439a19cf84e"},
+    {"take": "ToiletPaperRoll_T5", "sha256": "e8265dcf43867c88e929d9e13fa3157f6e09755bba98c4a542310a0837eb8d8a"},
+    {"take": "ToiletPaperRoll_T6", "sha256": "e1233f27a61587e39484b5a390bce91bcf0f86b1ec791139c53a62ea24e8db0c"}
+  ]
+}

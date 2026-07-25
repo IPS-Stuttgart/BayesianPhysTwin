@@ -1,0 +1,114 @@
+{
+  "aborted_intermediate_sha256": {
+    "measurement/measurement.npz": "a607f66928ab7d8191c52372dc9b695956b3719ce606fb8c99f54a36b6cb3644",
+    "measurement/measurement_manifest.json": "3feb539e12db4c1acd8bc932fcd1950f5aebbcfb2cd62fb39d5c707c6453f730",
+    "uncertainty/measurement_uncertainty.npz": "19ea94cf3710f85007d7d723cbfedf9a58a7d35baea6ded433b3376c7efc76a2",
+    "uncertainty/measurement_uncertainty_manifest.json": "606302b993fe6f9b5326e994092fb39f6d1ac523a62678899871fbff1ffb7884"
+  },
+  "accelerated_elapsed_seconds": 0.08439539419487119,
+  "accelerated_exact_plan": {
+    "center_ids": [
+      0,
+      438,
+      312,
+      346,
+      145,
+      212,
+      113,
+      277,
+      132,
+      408,
+      323,
+      28,
+      98,
+      413,
+      352,
+      319
+    ],
+    "selected_cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam1",
+      "brics-odroid-011_cam0",
+      "brics-odroid-016_cam0",
+      "brics-odroid-017_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-025_cam1"
+    ],
+    "selection_score": [
+      16,
+      12,
+      59,
+      83.59493938639095
+    ]
+  },
+  "artifact_kind": "Deform360ExactCameraSelectorExecutionEquivalence",
+  "case": "078-fishing-line-ep0004",
+  "exact_match": true,
+  "frozen_exhaustive_plan": {
+    "center_ids": [
+      0,
+      438,
+      312,
+      346,
+      145,
+      212,
+      113,
+      277,
+      132,
+      408,
+      323,
+      28,
+      98,
+      413,
+      352,
+      319
+    ],
+    "selected_cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam1",
+      "brics-odroid-011_cam0",
+      "brics-odroid-016_cam0",
+      "brics-odroid-017_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-025_cam1"
+    ],
+    "selection_score": [
+      16,
+      12,
+      59,
+      83.59493938639095
+    ]
+  },
+  "information_boundary": {
+    "calibration_future_read": false,
+    "calibration_outcome_read": false,
+    "interrupted_intermediates_reused": false,
+    "method_or_gate_changed": false,
+    "target_future_read": false,
+    "target_media_read": false
+  },
+  "new_execution_lock": {
+    "config_sha256": "ac86d09bc4fec20b08b92d5cc4a855c43a43ccb3d000a6c0389202882a262d55",
+    "file_sha256": "1bb49ba8318e5cc7c6564e9b28658cadde851d7efb8fef256d878644ff8e4b04"
+  },
+  "original_attempt": {
+    "completed_target_free_stages": [
+      "measurement",
+      "uncertainty"
+    ],
+    "cycle_completed": false,
+    "execution_lock_file_sha256": "11d835f4e1cf0ab6f725b78245d4aca812ab61ff0f2f4c28a749c9b322e51ae9",
+    "exit_code": 143,
+    "final_prediction_written": false
+  },
+  "protocol_config_sha256": "67e1157fa04283f1376855a7ac60f85a4de02434612592ffe8b4ef1e4607ebe4",
+  "protocol_id": "deform360-bias-aware-guarded-belief-prospective-v2",
+  "result_sha256": "4e17f50a9048e5e221a48622bd81b01a833499e93fcdbc3df2e7edb795bfa5cb",
+  "schema_version": 1,
+  "solver_provenance": {
+    "native_executable_sha256": "e3aa613e6e16139cd1cd7f8dd0f30913077bd707ce7c022a29c023e271372f49",
+    "native_source_sha256": "8d359bcbc400c53ed84d0dab89f2312ddba199fd3289861070e79e1d4a485d3d"
+  }
+}

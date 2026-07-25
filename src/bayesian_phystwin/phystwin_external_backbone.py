@@ -292,6 +292,7 @@ def _load_cached_summary(
     *,
     expected_config: dict[str, object],
     expected_baseline_sha256: str,
+    expected_evaluate_future: bool = True,
 ) -> dict[str, object] | None:
     if not path.is_file():
         return None
@@ -307,6 +308,11 @@ def _load_cached_summary(
     recorded = summary.get("inputs", {}).get("baseline_trajectory", {})
     if recorded.get("sha256") != expected_baseline_sha256:
         raise RuntimeError(f"cached overlay uses a different backbone: {path}")
+    recorded_future = summary.get("future_metrics_opened")
+    if recorded_future is None and not expected_evaluate_future:
+        raise RuntimeError(f"cached overlay has no sealed future boundary: {path}")
+    if recorded_future is not None and recorded_future is not expected_evaluate_future:
+        raise RuntimeError(f"cached overlay uses a different future boundary: {path}")
     return summary
 
 
@@ -329,9 +335,18 @@ def _fit_external_case(
         BayesianAnchorConfirmationProtocol,
         PhysTwinConfirmatoryProtocol,
         bool,
+        bool,
     ],
 ) -> tuple[str, dict[str, object]]:
-    root, output, entry, bayesian_protocol, residual_protocol, force = job
+    (
+        root,
+        output,
+        entry,
+        bayesian_protocol,
+        residual_protocol,
+        force,
+        evaluate_future,
+    ) = job
     case = str(entry["name"])
     case_root = root / case
     case_output = output / "cases" / case
@@ -363,6 +378,7 @@ def _fit_external_case(
         bayesian_output / "summary.json",
         expected_config=asdict(bayesian_config),
         expected_baseline_sha256=baseline_hash,
+        expected_evaluate_future=evaluate_future,
     )
     if bayesian_summary is None:
         bayesian_summary = fit_bayesian_residual_anchor(
@@ -371,6 +387,7 @@ def _fit_external_case(
             case_root / "gt_track_3d.pkl",
             bayesian_output,
             config=bayesian_config,
+            evaluate_future=evaluate_future,
         )
 
     residual_config = PhysTwinResidualDynamicsConfig(
@@ -392,6 +409,7 @@ def _fit_external_case(
         residual_output / "summary.json",
         expected_config=asdict(residual_config),
         expected_baseline_sha256=baseline_hash,
+        expected_evaluate_future=evaluate_future,
     )
     if residual_summary is None:
         residual_summary = fit_residual_dynamics_baselines(
@@ -400,6 +418,7 @@ def _fit_external_case(
             case_root / "gt_track_3d.pkl",
             residual_output,
             config=residual_config,
+            evaluate_future=evaluate_future,
         )
 
     bayesian_selection = bayesian_summary["selection"]
@@ -455,10 +474,7 @@ def _fit_external_case(
                 ),
             },
         },
-        "test": {
-            "bayesian_anchor": bayesian_summary["test"],
-            "last_residual": residual_summary["methods"]["last_residual"]["test"],
-        },
+        "future_metrics_opened": evaluate_future,
         "outputs": {
             "backbone": str(staged_baseline.resolve()),
             "bayesian_anchor": str(
@@ -476,6 +492,11 @@ def _fit_external_case(
             "validation_selected": str(selected_path.resolve()),
         },
     }
+    if evaluate_future:
+        case_summary["test"] = {
+            "bayesian_anchor": bayesian_summary["test"],
+            "last_residual": residual_summary["methods"]["last_residual"]["test"],
+        }
     case_summary_path = case_output / "external_overlay_summary.json"
     case_summary_path.write_text(
         json.dumps(case_summary, indent=2, sort_keys=True) + "\n",
@@ -575,6 +596,7 @@ def run_external_backbone_overlay(
     workers: int = 1,
     development_smoke: bool = False,
     registered_subset_protocol: str | Path | None = None,
+    evaluate_future: bool = True,
 ) -> dict[str, object]:
     """Run frozen corrections over a full or explicit development backbone."""
 
@@ -638,6 +660,12 @@ def run_external_backbone_overlay(
             else "exploratory on the previously examined PhysTwin cohort"
         ),
         "registered_subset_protocol": subset_protocol_identity,
+        "future_metrics_opened": evaluate_future,
+        "future_evaluation": (
+            "official future metrics evaluated after fitting"
+            if evaluate_future
+            else "forbidden; only fit and validation intervals are evaluated"
+        ),
     }
     locked = _lock_protocol(output, specification)
     jobs = [
@@ -648,6 +676,7 @@ def run_external_backbone_overlay(
             bayesian_protocol,
             residual_protocol,
             force,
+            evaluate_future,
         )
         for entry in validated["cases"]
     ]
@@ -658,7 +687,13 @@ def run_external_backbone_overlay(
             fitted = list(executor.map(_fit_external_case, jobs))
     case_results = dict(fitted)
 
-    if development_smoke:
+    if not evaluate_future:
+        comparison = {
+            "status": "prefix-only family selection; future metrics remain sealed",
+            "case_count": len(case_results),
+            "cases": list(case_results),
+        }
+    elif development_smoke:
         comparison = _development_comparison(case_results)
     elif registered_order is not None:
         comparison = _subset_comparison(
@@ -702,9 +737,12 @@ def run_external_backbone_overlay(
         "case_results": case_results,
         "selection_counts": selection_counts,
         "comparison": comparison,
+        "future_metrics_opened": evaluate_future,
     }
     summary_name = (
-        "external_backbone_development_smoke_summary.json"
+        "external_backbone_selection_summary.json"
+        if not evaluate_future
+        else "external_backbone_development_smoke_summary.json"
         if development_smoke
         else "external_backbone_registered_subset_summary.json"
         if registered_order is not None

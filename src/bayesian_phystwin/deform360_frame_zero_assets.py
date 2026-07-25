@@ -29,19 +29,19 @@ from typing import Any, Mapping, Protocol, Sequence
 
 import numpy as np
 
-from causal4d_public.deform360_object_sam2 import (
+from .deform360_object_sam2 import (
     DeformableObjectSam2MaskConfig,
     deformable_object_mask_candidate_diagnostics,
     mask_appearance_descriptor,
     mask_appearance_similarity,
 )
-from causal4d_public.deform360_sam2 import (
+from .deform360_sam2 import (
     PINNED_SAM2_CHECKPOINT_SHA256,
     PINNED_SAM2_COMMIT,
     PINNED_SAM2_MODEL_CONFIG,
     PINNED_SAM2_REPOSITORY,
 )
-from causal4d_public.deform360_visual_hull import (
+from .deform360_visual_hull import (
     carve_candidate_points,
     regular_grid_in_bounds,
 )

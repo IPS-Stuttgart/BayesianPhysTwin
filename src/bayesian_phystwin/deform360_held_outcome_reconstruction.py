@@ -217,11 +217,11 @@ DEFORM360_SOURCE_SHA256 = {
 }
 
 LOCAL_PROPAGATION_SOURCE_SHA256 = {
-    "causal4d_public/deform360_object_sam2.py": (
+    "bayesian_phystwin/deform360_object_sam2.py": (
         "c10391578c73dde47fbce160312559a7e638007e9053ec89373fe575cc64d7e5"
     ),
-    "causal4d_public/deform360_sam2.py": (
-        "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184"
+    "bayesian_phystwin/deform360_sam2.py": (
+        "000c378a9439470dc0ccc0619f41289d3a25b6d2ce10cb42c6660a1430a8a11b"
     ),
 }
 
@@ -1484,7 +1484,7 @@ def _propagate_sealed_masks(
     backend: PinnedOfficialPipelineBackend,
     staged_root: Path,
 ) -> dict[str, Any]:
-    from causal4d_public.deform360_object_sam2 import (
+    from .deform360_object_sam2 import (
         DeformableObjectSam2VideoPredictor,
     )
 
