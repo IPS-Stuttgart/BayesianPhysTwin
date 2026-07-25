@@ -497,6 +497,8 @@ def test_wrong_runtime_rejects_before_any_chmod(
     role_root.mkdir()
     payload = role_root / "payload.bin"
     payload.write_bytes(b"still writable")
+    initial_payload_mode = payload.stat().st_mode & 0o777
+    initial_role_mode = role_root.stat().st_mode & 0o777
     artifacts = integrity._RoleArtifacts(
         held_root=posix_tmp_path,
         role_root=role_root,
@@ -541,8 +543,9 @@ def test_wrong_runtime_rejects_before_any_chmod(
             deployed_code=posix_tmp_path / "code",
             operator_source=posix_tmp_path / "operator.py",
         )
-    assert payload.stat().st_mode & 0o777 == 0o644
-    assert role_root.stat().st_mode & 0o777 == 0o755
+    assert initial_payload_mode & 0o200
+    assert payload.stat().st_mode & 0o777 == initial_payload_mode
+    assert role_root.stat().st_mode & 0o777 == initial_role_mode
 
 
 def test_missing_execution_completion_rejects_before_deep_validation_or_chmod(
@@ -552,6 +555,7 @@ def test_missing_execution_completion_rejects_before_deep_validation_or_chmod(
     role_root.mkdir()
     payload = role_root / "payload.bin"
     payload.write_bytes(b"still writable")
+    initial_payload_mode = payload.stat().st_mode & 0o777
     lock_path = posix_tmp_path / "calibration-lock.json"
     monkeypatch.setattr(
         integrity,
@@ -583,7 +587,8 @@ def test_missing_execution_completion_rejects_before_deep_validation_or_chmod(
             deployed_code=posix_tmp_path / "code",
             operator_source=posix_tmp_path / "operator.py",
         )
-    assert payload.stat().st_mode & 0o777 == 0o644
+    assert initial_payload_mode & 0o200
+    assert payload.stat().st_mode & 0o777 == initial_payload_mode
 
 
 def test_writable_descriptor_into_freeze_root_is_rejected(
