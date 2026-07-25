@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshObjectExecutionHandoff",
+  "protocol_id": "deform360-fresh-object-pairwise-belief-v1",
+  "status": "awaiting_external_exclusions_and_fresh_source_pool",
+  "method": {
+    "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "implementation_commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
+    "arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique",
+    "changes_after_open_development": "none"
+  },
+  "source_lock": {
+    "implementation_commit": "a9d4737ce5e0b3113aefe1ed67f329dd14b88e42",
+    "evidence_commit": "383d9c5d9460853b3eb9d2779f15168f2cedb0d8",
+    "config": "configs/sota/deform360_fresh_object_source_lock_v1.json",
+    "config_sha256": "fc8a68bd769a7b71d570e4c6879ea186b3ff4453457d29e4dc141a462a0038b7"
+  },
+  "evaluation": {
+    "parity_audit": "results/sota/deform360_official_parity_v1/public_audit.json",
+    "parity_audit_file_sha256": "e9937ddfb040f25cca8d74b3327ac80f09af357f7fa74eb22cdc3403cf0a1f5c",
+    "parity_ready": false,
+    "allowed_claim_label": "fresh_object_candidate_conventions_only",
+    "missing_authoritative_fields": [
+      "training_case_manifest",
+      "evaluation_case_manifest",
+      "object_aggregation",
+      "missing_case_policy"
+    ]
+  },
+  "available_exclusions": [
+    {
+      "scope": "open27 selected-method development cohort",
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/open27-development.exclusion.json",
+      "object_count": 5,
+      "exclusion_sha256": "c8b79a1f6b76853229a5877428252ab69fcaf5b655f901e00b60cc1325795730"
+    },
+    {
+      "scope": "all public Deform360 objects named in tracked Bayesian-PhysTwin result artifacts or result reports",
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/repository-results.exclusion.json",
+      "object_count": 42,
+      "exclusion_sha256": "fe62c0f3284c078ecc44e9c1fce28fecbd17223a29bf2a95762efc5e85b0fcd2"
+    }
+  ],
+  "required_external_exclusions": [
+    {
+      "owner_scope": "held-v8 and every associated attempt",
+      "status": "requested",
+      "target_access_permitted": false
+    },
+    {
+      "owner_scope": "MolmoMotion-Field 34-object frozen campaign",
+      "status": "requested",
+      "target_access_permitted": false
+    },
+    {
+      "owner_scope": "any other unpublished or externally managed Deform360 cohort",
+      "status": "required_before_lock",
+      "target_access_permitted": false
+    }
+  ],
+  "candidate_pool": {
+    "minimum_admitted_physical_objects_before_lock": 12,
+    "recommended_source_candidates_before_admission": 18,
+    "selection_rule": "lowest admitted episode per non-excluded physical object, then deterministic category-sorted round robin and object-ID ordering",
+    "replacement_after_lock": false,
+    "technical_failures_remain_in_denominator": true
+  },
+  "custody_order": [
+    "collect every hash-only exclusion manifest",
+    "stage source bundles without reading future object positions or metrics",
+    "emit and publish all source admission artifacts",
+    "build and publish the ordered 12-object cohort lock",
+    "seal every baseline and candidate prediction or registered technical failure",
+    "pass a completeness barrier over all locked objects",
+    "permit one outcome-opening operator",
+    "score official metrics only if evaluator parity becomes authoritative",
+    "always score the frozen explicit secondary metrics",
+    "publish one immutable result artifact with every locked object accounted for"
+  ],
+  "forbidden_before_completeness": [
+    "future object-position deserialization by cohort-selection code",
+    "future metric reads",
+    "held-v8 target, query, score, barrier, or outcome access",
+    "method, threshold, rank, update-time, or camera-policy changes",
+    "replacement of an inadmissible or failed object after cohort lock"
+  ]
+}
