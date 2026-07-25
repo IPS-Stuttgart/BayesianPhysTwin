@@ -11,11 +11,11 @@ import stat
 from typing import Any
 
 
-QUALIFICATION_ID = "deform360-original-trainer-process-isolation-v1"
-QUALIFICATION_KIND = "Deform360ProcessIsolationQualificationEvidenceV1"
-ATTEMPT_KIND = "Deform360ProcessIsolationQualificationAttemptV1"
-CHILD_KIND = "Deform360ProcessIsolationCaseChildEvidenceV1"
-COMPLETION_KIND = "Deform360ProcessIsolationQualificationIntegrityCompletionV1"
+QUALIFICATION_ID = "deform360-original-trainer-process-isolation-v2"
+QUALIFICATION_KIND = "Deform360ProcessIsolationQualificationEvidenceV2"
+ATTEMPT_KIND = "Deform360ProcessIsolationQualificationAttemptV2"
+CHILD_KIND = "Deform360ProcessIsolationCaseChildEvidenceV2"
+COMPLETION_KIND = "Deform360ProcessIsolationQualificationIntegrityCompletionV2"
 QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
 QUALIFICATION_ROOT_PREFIX = "bpt-process-isolation-qualification-"
 EVIDENCE_NAME = "process-isolation-qualification.json"
@@ -49,12 +49,16 @@ RELATIVE_WORKER_SOURCE = Path(
 RELATIVE_OUTCOME_DRIVER_SOURCE = Path(
     "src/bayesian_phystwin/deform360_held_v8_outcome_driver.py"
 )
+RELATIVE_WORKER_RUNTIME_SOURCE = Path(
+    "src/bayesian_phystwin/deform360_held_v83_gsplat_runtime.py"
+)
 RUNTIME_SOURCE_BINDINGS = {
     "qualification_source": RELATIVE_QUALIFICATION_SOURCE,
     "numerical_adapter_source": RELATIVE_NUMERICAL_SOURCE,
     "isolation_source": RELATIVE_ISOLATION_SOURCE,
     "worker_source": RELATIVE_WORKER_SOURCE,
     "outcome_driver_source": RELATIVE_OUTCOME_DRIVER_SOURCE,
+    "worker_runtime_source": RELATIVE_WORKER_RUNTIME_SOURCE,
 }
 ROOT_CONSUMPTION_POLICY = {
     "same_root_retry_permitted": False,
@@ -255,6 +259,21 @@ def _validate_child_evidence(
         child.get("information_boundary") == EXPECTED_INFORMATION_BOUNDARY,
         "case-child information boundary changed",
     )
+    worker_runtime = child.get("worker_entry_gsplat_runtime")
+    _require(
+        isinstance(worker_runtime, Mapping)
+        and isinstance(worker_runtime.get("adapter_source"), Mapping)
+        and worker_runtime.get(
+            "backend_retained_before_original_trainer_import"
+        )
+        is True
+        and isinstance(worker_runtime.get("evidence"), Mapping)
+        and worker_runtime["evidence"].get("artifact_sha256")
+        == artifact_sha256(worker_runtime["evidence"])
+        and worker_runtime["evidence"].get("extension_loaded_and_retained") is True
+        and worker_runtime["evidence"].get("target_or_outcome_path_accessed") is False,
+        "case-child worker-entry gsplat runtime changed",
+    )
     fits = child.get("fits")
     evaluation = child.get("evaluation")
     _require(
@@ -345,6 +364,7 @@ def _validate_evidence(
             "trainer_configuration_overridden": False,
             "process_exit_reclaims_case_resources": True,
             "parent_process_imports_nerfstudio": False,
+            "worker_entry_gsplat_preload_required": True,
         },
         "process-isolation boundary changed",
     )
@@ -821,6 +841,9 @@ def validate_process_isolation_qualification_lineage(
             "isolation_source_sha256": runtime["isolation_source"]["sha256"],
             "worker_source_sha256": runtime["worker_source"]["sha256"],
             "outcome_driver_source_sha256": runtime["outcome_driver_source"][
+                "sha256"
+            ],
+            "worker_runtime_source_sha256": runtime["worker_runtime_source"][
                 "sha256"
             ],
             "sealer_source_sha256": sealer_source["sha256"],

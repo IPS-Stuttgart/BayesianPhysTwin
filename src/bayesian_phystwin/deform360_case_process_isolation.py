@@ -295,6 +295,7 @@ def validate_isolated_reconstruction_result(
     expected_lock_path: str | Path | None = None,
     expected_cohort_barrier_sha256: str | None = None,
     expected_worker_source_path: str | Path | None = None,
+    expected_gsplat_runtime_smoke_artifact_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Validate and rehash one child result and every contained array."""
 
@@ -410,10 +411,30 @@ def validate_isolated_reconstruction_result(
         == {name: _array_record(array) for name, array in sorted(arrays.items())},
         "isolated result array records changed",
     )
+    provenance = value.get("reconstruction_provenance")
     _require(
-        isinstance(value.get("reconstruction_provenance"), Mapping),
+        isinstance(provenance, Mapping),
         "isolated reconstruction provenance changed",
     )
+    if expected_gsplat_runtime_smoke_artifact_sha256 is not None:
+        _require(
+            isinstance(expected_gsplat_runtime_smoke_artifact_sha256, str)
+            and len(expected_gsplat_runtime_smoke_artifact_sha256) == 64
+            and all(
+                character in "0123456789abcdef"
+                for character in expected_gsplat_runtime_smoke_artifact_sha256
+            ),
+            "expected gsplat runtime smoke digest is invalid",
+        )
+        smoke = provenance.get("isolated_gsplat_runtime_smoke")
+        _require(
+            isinstance(smoke, Mapping)
+            and smoke.get("artifact_sha256")
+            == expected_gsplat_runtime_smoke_artifact_sha256
+            and smoke.get("extension_loaded_and_retained") is True
+            and smoke.get("target_or_outcome_path_accessed") is False,
+            "isolated gsplat runtime smoke differs from the locked runtime",
+        )
     return value
 
 
@@ -543,8 +564,12 @@ def run_isolated_reconstruction_subprocess(
         and not os.path.lexists(stderr_path),
         "isolated worker logs are split or already exist",
     )
+    subprocess_kwargs = dict(build_kwargs)
+    expected_smoke = subprocess_kwargs.pop(
+        "expected_gsplat_runtime_smoke_artifact_sha256", None
+    )
     argv, environment, safe_cwd = build_isolated_reconstruction_subprocess(
-        **build_kwargs
+        **subprocess_kwargs
     )
     stdout_descriptor = os.open(
         stdout_path,
@@ -599,6 +624,10 @@ def run_isolated_reconstruction_subprocess(
             / "held"
             / "run_deform360_isolated_reconstruction.py",
         }
+        if expected_smoke is not None:
+            validation_kwargs[
+                "expected_gsplat_runtime_smoke_artifact_sha256"
+            ] = expected_smoke
         return load_isolated_reconstruction(
             build_kwargs["result_manifest_path"], **validation_kwargs
         )

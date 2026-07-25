@@ -47,6 +47,9 @@ def main() -> int:
         raise RuntimeError("isolated reconstruction Python flags changed")
     source = Path(__file__).resolve().parents[2] / "src"
     sys.path.insert(0, str(source))
+    from bayesian_phystwin import deform360_held_v83_gsplat_runtime as gsplat
+
+    gsplat_runtime_smoke = gsplat.load_and_smoke_gsplat_runtime()
     from bayesian_phystwin import deform360_case_process_isolation as isolation
     from bayesian_phystwin import deform360_held_outcome_reconstruction as numerical
     from bayesian_phystwin import deform360_held_v8_outcome_driver as driver
@@ -74,6 +77,10 @@ def main() -> int:
         cohort_barrier_sha256=arguments.cohort_barrier_sha256,
         backend=backend,
     )
+    reconstruction = dict(reconstruction)
+    provenance = dict(reconstruction.get("provenance", {}))
+    provenance["isolated_gsplat_runtime_smoke"] = dict(gsplat_runtime_smoke)
+    reconstruction["provenance"] = provenance
     isolation.write_isolated_reconstruction_result(
         arguments.result_archive,
         arguments.result_manifest,

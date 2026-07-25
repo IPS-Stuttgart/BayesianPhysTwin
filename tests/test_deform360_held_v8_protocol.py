@@ -382,6 +382,7 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "numerical_adapter_source_sha256": "6" * 64,
         "isolation_source_sha256": "7" * 64,
         "worker_source_sha256": "8" * 64,
+        "worker_runtime_source_sha256": "b" * 64,
         "outcome_driver_source_sha256": "9" * 64,
         "sealer_source_sha256": "a" * 64,
     }
@@ -417,7 +418,7 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     )
 
     config = {"prediction_frame_count": 76, "test_fixture": True}
-    root = tmp_path / "held-v82"
+    root = tmp_path / "held-v83"
     fresh_root_capability = protocol.prepare_fresh_held_root(root)
     lock = root / "calibration-lock.json"
     protocol.create_calibration_protocol_lock(
@@ -474,11 +475,14 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "held_official_reconstruction_numerical_source": source_hashes[
                 "numerical_adapter_source_sha256"
             ],
-            "held_v82_process_isolation_source": source_hashes[
+            "held_v83_process_isolation_source": source_hashes[
                 "isolation_source_sha256"
             ],
-            "held_v82_process_isolation_worker_source": source_hashes[
+            "held_v83_process_isolation_worker_source": source_hashes[
                 "worker_source_sha256"
+            ],
+            "held_v83_gsplat_runtime_adapter_source": source_hashes[
+                "worker_runtime_source_sha256"
             ],
             "held_v8_outcome_driver_source": source_hashes[
                 "outcome_driver_source_sha256"
@@ -730,11 +734,11 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     assert lock["primary_method"]["center_exclusion_contract_sha256"] == (
         query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
     )
-    assert lock["protocol_id"] == "deform360-held-online-belief-v8.2"
+    assert lock["protocol_id"] == "deform360-held-online-belief-v8.3"
     assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 1
     assert lock["freshness_and_reuse"] == protocol.FRESHNESS_AND_REUSE_CONTRACT
     assert (
-        lock["freshness_and_reuse"]["held_v82_root_absent_before_attempt1_lock"] is True
+        lock["freshness_and_reuse"]["held_v83_root_absent_before_attempt1_lock"] is True
     )
     assert (
         lock["freshness_and_reuse"][

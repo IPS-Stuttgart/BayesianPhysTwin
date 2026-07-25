@@ -460,6 +460,10 @@ def test_process_isolated_reconstruction_runs_only_after_target_permit(
         events.append(f"isolated:{paths.case_name}")
         assert kwargs["arguments"] is arguments
         assert kwargs["cohort_barrier_sha256"] == "1" * 64
+        assert (
+            kwargs["expected_gsplat_runtime_smoke_artifact_sha256"]
+            == "a" * 64
+        )
         return {"case_name": paths.case_name}
 
     result = driver.execute_outcomes(
@@ -496,7 +500,7 @@ def test_formal_outcome_rejects_in_process_reconstruction(
 
     with pytest.raises(
         ValueError,
-        match="formal v8.2 outcomes require process-isolated reconstruction",
+        match="formal v8.3 outcomes require process-isolated reconstruction",
     ):
         driver.execute_outcomes(
             arguments,

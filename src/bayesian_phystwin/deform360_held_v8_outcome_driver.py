@@ -24,7 +24,7 @@ import sys
 from typing import Any, Callable, Literal, Mapping, Sequence
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8.2"
+PROTOCOL_ID = "deform360-held-online-belief-v8.3"
 NO_GO_EXIT_CODE = 3
 NOT_CONFIRMED_EXIT_CODE = 4
 POST_CASE_FD_GROWTH_LIMIT = 32
@@ -32,7 +32,7 @@ QUALIFIED_RLIMIT_NOFILE_SOFT = 1024
 ROLE_EXECUTION_COMPLETION_KIND = "Deform360HeldV8RoleExecutionCompletion"
 ROLE_EXECUTION_COMPLETION_STATUS = "role-execution-complete"
 ROLE_EXECUTION_COMPLETION_SUFFIX = "-execution-completion.json"
-CANONICAL_HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v82")
+CANONICAL_HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v83")
 CANONICAL_ALIGNED_ROOT = Path(
     "/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned"
 )
@@ -45,12 +45,12 @@ PINNED_PYTHON = Path(
     "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/"
     "bin/python"
 )
-PYCACHE_PREFIX = "/nonexistent/bpt-held-v82-pycache"
+PYCACHE_PREFIX = "/nonexistent/bpt-held-v83-pycache"
 PINNED_PATH = "/usr/local/bin:/usr/bin:/bin"
 
 _DEPLOYMENT_BINDINGS = {
-    "held_v82_lock_preparer_source": (
-        "scripts/held/prepare_deform360_v82_lock.py"
+    "held_v83_lock_preparer_source": (
+        "scripts/held/prepare_deform360_v83_lock.py"
     ),
     "process_isolation_qualification_operator_source": (
         "scripts/development/qualify_deform360_process_isolation.py"
@@ -62,10 +62,10 @@ _DEPLOYMENT_BINDINGS = {
     "held_v8_outcome_driver_source": (
         "src/bayesian_phystwin/deform360_held_v8_outcome_driver.py"
     ),
-    "held_v82_process_isolation_source": (
+    "held_v83_process_isolation_source": (
         "src/bayesian_phystwin/deform360_case_process_isolation.py"
     ),
-    "held_v82_process_isolation_worker_source": (
+    "held_v83_process_isolation_worker_source": (
         "scripts/held/run_deform360_isolated_reconstruction.py"
     ),
     "held_v8_outcome_integrity_source": (
@@ -78,8 +78,8 @@ _DEPLOYMENT_BINDINGS = {
         "src/bayesian_phystwin/deform360_held_v8_outcome_reconstruction.py"
     ),
     "held_v8_x0_query_worker_source": ("scripts/held/run_deform360_v8_x0_query.py"),
-    "held_v82_gsplat_runtime_adapter_source": (
-        "src/bayesian_phystwin/deform360_held_v82_gsplat_runtime.py"
+    "held_v83_gsplat_runtime_adapter_source": (
+        "src/bayesian_phystwin/deform360_held_v83_gsplat_runtime.py"
     ),
     "held_v8_protocol_source": ("src/bayesian_phystwin/deform360_held_v8_protocol.py"),
     "held_v8_confirmation_source_operator_source": (
@@ -1376,6 +1376,7 @@ def run_process_isolated_reconstruction(
     paths: CasePaths,
     aligned_episode_dir: str | Path,
     cohort_barrier_sha256: str,
+    expected_gsplat_runtime_smoke_artifact_sha256: str,
 ) -> Mapping[str, Any]:
     """Run one original-trainer reconstruction in a fresh child process."""
 
@@ -1413,6 +1414,9 @@ def run_process_isolated_reconstruction(
         ffmpeg=arguments.ffmpeg,
         pycache_prefix=PYCACHE_PREFIX,
         path_environment=PINNED_PATH,
+        expected_gsplat_runtime_smoke_artifact_sha256=(
+            expected_gsplat_runtime_smoke_artifact_sha256
+        ),
     )
 
 
@@ -1735,7 +1739,7 @@ def execute_outcomes(
     if formal_paths and not arguments.dry_run_barrier_only:
         _require(
             reconstruction_runner is not None,
-            "formal v8.2 outcomes require process-isolated reconstruction",
+            "formal v8.3 outcomes require process-isolated reconstruction",
         )
     rlimit_nofile_reference: tuple[int, int] | None = None
     resource_boundary: dict[str, Any] | None = None
@@ -1916,6 +1920,7 @@ def execute_outcomes(
                     paths=paths,
                     aligned_episode_dir=aligned,
                     cohort_barrier_sha256=barrier_one.barrier_sha256,
+                    expected_gsplat_runtime_smoke_artifact_sha256=str(smoke_sha),
                 )
             _require(backend is not None, "in-process backend was not constructed")
             return post.reconstruct(
@@ -2214,9 +2219,9 @@ def _load_post_barrier_api(source: Path) -> PostBarrierApi:
 
 
 def _load_smoke(source: Path) -> Callable[[], Mapping[str, Any]]:
-    from bayesian_phystwin import deform360_held_v82_gsplat_runtime as runtime
+    from bayesian_phystwin import deform360_held_v83_gsplat_runtime as runtime
 
-    expected = source / "bayesian_phystwin" / "deform360_held_v82_gsplat_runtime.py"
+    expected = source / "bayesian_phystwin" / "deform360_held_v83_gsplat_runtime.py"
     _require(
         Path(runtime.__file__).resolve() == expected, "runtime smoke escaped source"
     )

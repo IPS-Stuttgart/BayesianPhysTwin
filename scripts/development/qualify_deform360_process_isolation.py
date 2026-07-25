@@ -38,10 +38,10 @@ def _load_support_module() -> Any:
 
 support = _load_support_module()
 
-QUALIFICATION_ID = "deform360-original-trainer-process-isolation-v1"
-QUALIFICATION_KIND = "Deform360ProcessIsolationQualificationEvidenceV1"
-ATTEMPT_KIND = "Deform360ProcessIsolationQualificationAttemptV1"
-CHILD_KIND = "Deform360ProcessIsolationCaseChildEvidenceV1"
+QUALIFICATION_ID = "deform360-original-trainer-process-isolation-v2"
+QUALIFICATION_KIND = "Deform360ProcessIsolationQualificationEvidenceV2"
+ATTEMPT_KIND = "Deform360ProcessIsolationQualificationAttemptV2"
+CHILD_KIND = "Deform360ProcessIsolationCaseChildEvidenceV2"
 RELATIVE_SOURCE = Path(
     "scripts/development/qualify_deform360_process_isolation.py"
 )
@@ -57,6 +57,9 @@ RELATIVE_WORKER_SOURCE = Path(
 RELATIVE_OUTCOME_DRIVER_SOURCE = Path(
     "src/bayesian_phystwin/deform360_held_v8_outcome_driver.py"
 )
+RELATIVE_WORKER_RUNTIME_SOURCE = Path(
+    "src/bayesian_phystwin/deform360_held_v83_gsplat_runtime.py"
+)
 CANONICAL_CASE_COUNT = 4
 CANONICAL_FITS_PER_CASE = 81
 CANONICAL_ITERATIONS = 1
@@ -69,6 +72,7 @@ CHILD_START_SPREAD_LIMIT = 4
 PARENT_RESOURCE_GROWTH_LIMIT = 2
 CASE_TIMEOUT_SECONDS = 28_800
 QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
+V83_PYCACHE_PREFIX = "/nonexistent/bpt-held-v83-pycache"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -83,6 +87,44 @@ def _global_counts(writer: Any, profiler: Any) -> dict[str, int]:
         "global_buffer_key_count": len(writer.GLOBAL_BUFFER),
         "profiler_count": len(profiler.PROFILER),
         "pytorch_profiler_present": int(profiler.PYTORCH_PROFILER is not None),
+    }
+
+
+def _load_worker_entry_gsplat_runtime(code_root: Path) -> dict[str, Any]:
+    """Exercise the exact preload used by the held one-case worker."""
+
+    source_root = code_root / "src"
+    source_value = os.fspath(source_root)
+    if source_value not in sys.path:
+        sys.path.insert(0, source_value)
+    module_name = "bayesian_phystwin.deform360_held_v83_gsplat_runtime"
+    runtime = importlib.import_module(module_name)
+    expected = (code_root / RELATIVE_WORKER_RUNTIME_SOURCE).resolve(strict=True)
+    _require(
+        Path(runtime.__file__).resolve(strict=True) == expected,
+        "worker-entry gsplat runtime escaped the bound code root",
+    )
+    smoke = runtime.load_and_smoke_gsplat_runtime()
+    _require(
+        isinstance(smoke, Mapping)
+        and smoke.get("artifact_sha256") == support._artifact_sha256(smoke)
+        and smoke.get("extension_loaded_and_retained") is True
+        and smoke.get("target_or_outcome_path_accessed") is False,
+        "worker-entry gsplat runtime smoke failed",
+    )
+    backend = importlib.import_module("gsplat.cuda._backend")
+    extension = getattr(backend, "_C", None)
+    _require(
+        extension is not None
+        and getattr(extension, "CameraModelType", None) is not None,
+        "worker-entry gsplat CUDA backend was not retained",
+    )
+    return {
+        "adapter_source": support._bound_file(
+            expected, label="worker-entry gsplat runtime adapter"
+        ),
+        "evidence": dict(smoke),
+        "backend_retained_before_original_trainer_import": True,
     }
 
 
@@ -226,6 +268,21 @@ def _validate_child_evidence(
         },
         "case-child information boundary changed",
     )
+    worker_runtime = value.get("worker_entry_gsplat_runtime")
+    _require(
+        isinstance(worker_runtime, Mapping)
+        and isinstance(worker_runtime.get("adapter_source"), Mapping)
+        and worker_runtime.get(
+            "backend_retained_before_original_trainer_import"
+        )
+        is True
+        and isinstance(worker_runtime.get("evidence"), Mapping)
+        and worker_runtime["evidence"].get("artifact_sha256")
+        == support._artifact_sha256(worker_runtime["evidence"])
+        and worker_runtime["evidence"].get("extension_loaded_and_retained") is True
+        and worker_runtime["evidence"].get("target_or_outcome_path_accessed") is False,
+        "case-child worker-entry gsplat runtime changed",
+    )
     evaluation = value.get("evaluation")
     _require(
         isinstance(evaluation, Mapping)
@@ -364,7 +421,7 @@ def _case_child(arguments: argparse.Namespace) -> int:
             "case-child operator escaped the bound code root",
         )
         runtime = support._seed_runtime(arguments.seed)
-        gsplat_runtime = support._load_and_smoke_gsplat_runtime(code)
+        gsplat_runtime = _load_worker_entry_gsplat_runtime(code)
         trainer_type, _, writer, profiler = support._import_trainers(code, deform360)
         numerical_source = (
             code / RELATIVE_NUMERICAL_SOURCE
@@ -464,7 +521,7 @@ def _case_child(arguments: argparse.Namespace) -> int:
                     "trainer_variant": "original-pinned-default",
                 },
                 "runtime": runtime,
-                "gsplat_runtime_smoke": gsplat_runtime,
+                "worker_entry_gsplat_runtime": gsplat_runtime,
                 "trainer_source": support._bound_file(
                     expected_trainer_source, label="original trainer source"
                 ),
@@ -632,6 +689,10 @@ def _run(arguments: argparse.Namespace) -> int:
         code / RELATIVE_OUTCOME_DRIVER_SOURCE,
         label="process-isolation parent driver source",
     )
+    worker_runtime_binding = support._bound_file(
+        code / RELATIVE_WORKER_RUNTIME_SOURCE,
+        label="process-isolation worker runtime source",
+    )
     initial_parent = support._process_boundary()
     cases: list[dict[str, Any]] = []
     for case_index in range(arguments.case_count):
@@ -645,7 +706,12 @@ def _run(arguments: argparse.Namespace) -> int:
         dataset_audit = support._materialize_dataset(dataset, materialized)
         result_path = case_root / "case-child-evidence.json"
         command = [
-            *support._child_python_argv_prefix(python, script),
+            os.fspath(python),
+            "-I",
+            "-B",
+            "-X",
+            f"pycache_prefix={V83_PYCACHE_PREFIX}",
+            os.fspath(script),
             "_case-child",
             "--code-root",
             os.fspath(code),
@@ -667,11 +733,13 @@ def _run(arguments: argparse.Namespace) -> int:
             str(arguments.seed),
         ]
         before_child = support._process_boundary()
+        child_environment = support._child_environment(
+            arguments.cuda_device, temporary
+        )
+        child_environment["PYTHONPYCACHEPREFIX"] = V83_PYCACHE_PREFIX
         invocation = support._invoke_child(
             command,
-            environment=support._child_environment(
-                arguments.cuda_device, temporary
-            ),
+            environment=child_environment,
             log_path=case_root / "case-child.log",
             timeout_seconds=arguments.case_timeout_seconds,
         )
@@ -761,6 +829,7 @@ def _run(arguments: argparse.Namespace) -> int:
                 "isolation_source": isolation_binding,
                 "worker_source": worker_binding,
                 "outcome_driver_source": outcome_driver_binding,
+                "worker_runtime_source": worker_runtime_binding,
             },
             "process_boundary": {
                 "one_original_trainer_per_child": True,
@@ -769,6 +838,7 @@ def _run(arguments: argparse.Namespace) -> int:
                 "trainer_configuration_overridden": False,
                 "process_exit_reclaims_case_resources": True,
                 "parent_process_imports_nerfstudio": False,
+                "worker_entry_gsplat_preload_required": True,
             },
             "cases": cases,
             "evaluation": evaluation,

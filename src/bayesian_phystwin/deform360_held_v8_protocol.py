@@ -38,7 +38,7 @@ from . import deform360_held_v8_query_artifacts as query_artifacts
 from . import deform360_process_isolation_qualification as process_qualification
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8.2"
+PROTOCOL_ID = "deform360-held-online-belief-v8.3"
 EXECUTION_ATTEMPT = 1
 SCHEMA_VERSION = 1
 LOCK_KIND = "Deform360HeldOnlineBeliefLock"
@@ -325,7 +325,7 @@ PRIMARY_METHOD = {
 }
 
 FRESHNESS_AND_REUSE_CONTRACT = {
-    "held_v82_root_absent_before_attempt1_lock": True,
+    "held_v83_root_absent_before_attempt1_lock": True,
     "all_predictions_must_be_fresh_v8_2_attempt1_outputs": True,
     "all_targets_queries_and_scores_must_be_fresh_v8_2_attempt1_outputs": True,
     "v7_execution_artifacts_reused": False,
@@ -3317,7 +3317,7 @@ def create_calibration_protocol_lock(
     process_isolation_qualification_path: str | Path,
     process_isolation_qualification_completion_path: str | Path,
 ) -> dict[str, Any]:
-    """Create v8.2 attempt 1 after qualifying the exact isolated runtime."""
+    """Create v8.3 attempt 1 after qualifying the exact isolated runtime."""
 
     root = _canonical_path(held_root)
     output = _canonical_path(output_path)
@@ -3326,7 +3326,7 @@ def create_calibration_protocol_lock(
     _require(root.is_dir() and root.resolve() == root, "prepared held root changed")
     _require(
         not any(root.iterdir()),
-        "fresh held-v8.2 root contains a pre-lock artifact",
+        "fresh held-v8.3 root contains a pre-lock artifact",
     )
     try:
         bindings = {str(key): str(value) for key, value in immutable_bindings.items()}
@@ -3355,7 +3355,7 @@ def create_calibration_protocol_lock(
             == held_contract_sha256(PROCESS_ISOLATION_POLICY_CONTRACT)
             and bindings.get("post_case_resource_boundary_contract")
             == held_contract_sha256(POST_CASE_RESOURCE_BOUNDARY_CONTRACT),
-            "v8.2 process-boundary contracts are not independently locked",
+            "v8.3 process-boundary contracts are not independently locked",
         )
         _require_mode(
             v7_withdrawal_report_path,
@@ -3443,11 +3443,11 @@ def create_calibration_protocol_lock(
             ),
             (
                 "isolation_source_sha256",
-                "held_v82_process_isolation_source",
+                "held_v83_process_isolation_source",
             ),
             (
                 "worker_source_sha256",
-                "held_v82_process_isolation_worker_source",
+                "held_v83_process_isolation_worker_source",
             ),
             (
                 "outcome_driver_source_sha256",
@@ -3594,7 +3594,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         == held_contract_sha256(PROCESS_ISOLATION_POLICY_CONTRACT)
         and bindings.get("post_case_resource_boundary_contract")
         == held_contract_sha256(POST_CASE_RESOURCE_BOUNDARY_CONTRACT),
-        "held-v8.2 process-boundary contracts changed",
+        "held-v8.3 process-boundary contracts changed",
     )
     lineage = artifact.get("lineage")
     _require(
@@ -3712,8 +3712,12 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "numerical_adapter_source_sha256",
             "held_official_reconstruction_numerical_source",
         ),
-        ("isolation_source_sha256", "held_v82_process_isolation_source"),
-        ("worker_source_sha256", "held_v82_process_isolation_worker_source"),
+        ("isolation_source_sha256", "held_v83_process_isolation_source"),
+        ("worker_source_sha256", "held_v83_process_isolation_worker_source"),
+        (
+            "worker_runtime_source_sha256",
+            "held_v83_gsplat_runtime_adapter_source",
+        ),
         ("outcome_driver_source_sha256", "held_v8_outcome_driver_source"),
         (
             "sealer_source_sha256",

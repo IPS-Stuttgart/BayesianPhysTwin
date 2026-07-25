@@ -27,6 +27,24 @@ def _load_operator() -> ModuleType:
 operator = _load_operator()
 
 
+def _worker_runtime() -> dict[str, object]:
+    evidence = {
+        "artifact_kind": "Deform360HeldGsplatRuntimeSmokeV1",
+        "extension_loaded_and_retained": True,
+        "target_or_outcome_path_accessed": False,
+    }
+    evidence["artifact_sha256"] = operator.support._artifact_sha256(evidence)
+    return {
+        "adapter_source": {
+            "path": "/code/runtime.py",
+            "sha256": "a" * 64,
+            "size_bytes": 1,
+        },
+        "evidence": evidence,
+        "backend_retained_before_original_trainer_import": True,
+    }
+
+
 def _boundary(fd: int, tasks: int) -> dict[str, int]:
     return {
         "file_descriptor_count": fd,
@@ -160,6 +178,7 @@ def test_child_evidence_contract_is_signed_and_exact() -> None:
                 "gate_path_received": False,
                 "score_path_received": False,
             },
+            "worker_entry_gsplat_runtime": _worker_runtime(),
             "evaluation": {
                 "passed": True,
                 "predicates": {"all": True},

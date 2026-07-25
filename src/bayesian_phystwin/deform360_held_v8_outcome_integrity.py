@@ -31,7 +31,7 @@ from typing import Any, Literal
 
 
 SCHEMA_VERSION = 1
-PROTOCOL_ID = "deform360-held-online-belief-v8.2"
+PROTOCOL_ID = "deform360-held-online-belief-v8.3"
 TARGET_RECONSTRUCTION_OPERATION = "create-official-target-v1"
 FUTURE_SCORE_OPERATION = "read-official-target-for-score-v1"
 ROLE_COMPLETION_KIND = "Deform360HeldV8RoleOutcomeIntegrityCompletion"

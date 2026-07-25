@@ -14,6 +14,7 @@ from bayesian_phystwin import deform360_held_v8_outcome_driver as driver
 
 CASE_NAME = "083-blanket-cloth-ep0000"
 BARRIER = "a" * 64
+SMOKE_SHA256 = "b" * 64
 
 
 def _write(path: Path, payload: bytes = b"fixture\n") -> Path:
@@ -34,6 +35,14 @@ def _reconstruction(point_count: int = 5) -> dict[str, object]:
             "adapter_id": "fixture",
             "fresh_v8_reconstruction": True,
         },
+    }
+
+
+def _runtime_smoke() -> dict[str, object]:
+    return {
+        "artifact_sha256": SMOKE_SHA256,
+        "extension_loaded_and_retained": True,
+        "target_or_outcome_path_accessed": False,
     }
 
 
@@ -117,6 +126,41 @@ def test_isolated_result_is_write_once_and_rejects_wrong_dtypes(
         )
     assert not (parent / "wrong.npz").exists()
     assert not (parent / "wrong.json").exists()
+
+
+def test_isolated_result_requires_the_locked_child_runtime_smoke(
+    tmp_path: Path,
+) -> None:
+    lock = _write(tmp_path / "lock.json")
+    worker = _write(tmp_path / "worker.py")
+    parent = tmp_path / "private"
+    parent.mkdir()
+    reconstruction = _reconstruction()
+    reconstruction["provenance"] = {
+        **dict(reconstruction["provenance"]),  # type: ignore[arg-type]
+        "isolated_gsplat_runtime_smoke": _runtime_smoke(),
+    }
+    manifest = parent / "result.json"
+    isolation.write_isolated_reconstruction_result(
+        parent / "result.npz",
+        manifest,
+        case_name=CASE_NAME,
+        role="calibration",
+        lock_path=lock,
+        cohort_barrier_sha256=BARRIER,
+        reconstruction=reconstruction,
+        worker_source_path=worker,
+    )
+
+    isolation.validate_isolated_reconstruction_result(
+        manifest,
+        expected_gsplat_runtime_smoke_artifact_sha256=SMOKE_SHA256,
+    )
+    with pytest.raises(ValueError, match="differs from the locked runtime"):
+        isolation.validate_isolated_reconstruction_result(
+            manifest,
+            expected_gsplat_runtime_smoke_artifact_sha256="c" * 64,
+        )
 
 
 def test_isolated_worker_argv_has_no_query_score_or_gate_path(
@@ -221,6 +265,7 @@ def test_runner_seals_logs_and_validates_child_result(
         "ffmpeg": "ffmpeg",
         "pycache_prefix": driver.PYCACHE_PREFIX,
         "path_environment": driver.PINNED_PATH,
+        "expected_gsplat_runtime_smoke_artifact_sha256": SMOKE_SHA256,
     }
 
     def fake_run(*_args: object, **kwargs: object) -> SimpleNamespace:
@@ -233,7 +278,13 @@ def test_runner_seals_logs_and_validates_child_result(
             role="calibration",
             lock_path=lock,
             cohort_barrier_sha256=BARRIER,
-            reconstruction=_reconstruction(),
+            reconstruction={
+                **_reconstruction(),
+                "provenance": {
+                    **dict(_reconstruction()["provenance"]),  # type: ignore[arg-type]
+                    "isolated_gsplat_runtime_smoke": _runtime_smoke(),
+                },
+            },
             worker_source_path=worker,
         )
         return SimpleNamespace(returncode=0)

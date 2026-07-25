@@ -112,7 +112,7 @@ def test_two_gpu_shards_are_disjoint_and_complete(
 
 def test_case_common_is_v8_only_and_freezes_field_before_any_barrier() -> None:
     source = COMMON.read_text()
-    assert '/held-v82"' in source
+    assert '/held-v83"' in source
     assert "held-v7" not in source
     assert "run_deform360_v7" not in source
     assert "bayesian_phystwin.cli.deform360_held_v8_frame_zero_assets" in source
@@ -297,7 +297,7 @@ def test_explicit_v8_adapter_changes_only_process_local_hooks_and_restores_v7() 
         # its deep audit on a transient legacy view.
         assert frame_zero.HELD_PROTOCOL_ID == v7_protocol.PROTOCOL_ID
         assert physical.PROTOCOL_ID == v8_protocol.PROTOCOL_ID
-        assert physical.HELD_PYCACHE_PREFIX == "/nonexistent/bpt-held-v82-pycache"
+        assert physical.HELD_PYCACHE_PREFIX == "/nonexistent/bpt-held-v83-pycache"
         assert (
             physical.create_physical_prior_seal
             is v8_protocol.create_physical_prior_seal

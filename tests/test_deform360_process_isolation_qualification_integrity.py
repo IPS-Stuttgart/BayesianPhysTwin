@@ -10,6 +10,24 @@ import pytest
 from bayesian_phystwin import deform360_process_isolation_qualification as gate
 
 
+def _worker_runtime() -> dict[str, Any]:
+    evidence = {
+        "artifact_kind": "Deform360HeldGsplatRuntimeSmokeV1",
+        "extension_loaded_and_retained": True,
+        "target_or_outcome_path_accessed": False,
+    }
+    evidence["artifact_sha256"] = gate.artifact_sha256(evidence)
+    return {
+        "adapter_source": {
+            "path": "/code/runtime.py",
+            "sha256": "a" * 64,
+            "size_bytes": 1,
+        },
+        "evidence": evidence,
+        "backend_retained_before_original_trainer_import": True,
+    }
+
+
 def _write_signed(path: Path, value: dict[str, Any]) -> dict[str, Any]:
     result = dict(value)
     result["artifact_sha256"] = gate.artifact_sha256(result)
@@ -79,6 +97,7 @@ def _child(case_index: int) -> dict[str, Any]:
             "passed": True,
             "predicates": {"complete": True},
         },
+        "worker_entry_gsplat_runtime": _worker_runtime(),
         "information_boundary": dict(gate.EXPECTED_INFORMATION_BOUNDARY),
     }
     value["artifact_sha256"] = gate.artifact_sha256(value)
@@ -180,6 +199,7 @@ def _fixture(
                 "trainer_configuration_overridden": False,
                 "process_exit_reclaims_case_resources": True,
                 "parent_process_imports_nerfstudio": False,
+                "worker_entry_gsplat_preload_required": True,
             },
             "cases": cases,
             "evaluation": {

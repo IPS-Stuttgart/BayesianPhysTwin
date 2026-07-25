@@ -22,11 +22,11 @@ case "$V8_ROLE" in
   *) die "invalid v8 case role" ;;
 esac
 
-readonly HELD="/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v82"
+readonly HELD="/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v83"
 readonly CODE="${BPT_HELD_V8_CODE:?set BPT_HELD_V8_CODE to the immutable v8 deployment}"
 readonly VERIFIED_LOCK_SHA256="${BPT_HELD_V8_LOCK_VERIFIED_SHA256:?run cases through a verified v8 shard}"
 readonly PY="/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/bin/python"
-readonly PYCACHE_PREFIX="/nonexistent/bpt-held-v82-pycache"
+readonly PYCACHE_PREFIX="/nonexistent/bpt-held-v83-pycache"
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly COMMON_RUNNER="$SCRIPT_DIR/$(basename -- "${BASH_SOURCE[0]}")"
 readonly ALIGNED="/mnt/lexar4tb/datasets/deform360/data-7fea8e2/replication-v1/aligned"
@@ -129,7 +129,7 @@ from bayesian_phystwin.deform360_held_v8_protocol import (
 )
 lock = validate_protocol_lock(sys.argv[1])
 case_name, role = sys.argv[2:4]
-if lock["protocol_id"] != "deform360-held-online-belief-v8.2":
+if lock["protocol_id"] != "deform360-held-online-belief-v8.3":
     raise RuntimeError("lock is not held-v8")
 if tuple(locked_case_names(sys.argv[1], role=role)).count(case_name) != 1:
     raise RuntimeError("case is not present exactly once in the locked role")
@@ -443,7 +443,7 @@ from bayesian_phystwin.deform360_held_v8_protocol import validate_physical_prior
 seal = validate_physical_prior_seal(
     sys.argv[1], sys.argv[2], expected_case_name=sys.argv[3], expected_role=sys.argv[4]
 )
-if seal["protocol_id"] != "deform360-held-online-belief-v8.2":
+if seal["protocol_id"] != "deform360-held-online-belief-v8.3":
     raise RuntimeError("physical seal is not v8")
 PY
 
@@ -484,7 +484,7 @@ from bayesian_phystwin.deform360_held_v8_protocol import validate_online_predict
 seal = validate_online_prediction_seal(
     sys.argv[1], sys.argv[2], expected_case_name=sys.argv[3], expected_role=sys.argv[4]
 )
-if seal["protocol_id"] != "deform360-held-online-belief-v8.2":
+if seal["protocol_id"] != "deform360-held-online-belief-v8.3":
     raise RuntimeError("online seal is not v8")
 PY
 
@@ -532,7 +532,7 @@ result = artifacts.write_preoutcome_frozen_field_manifest(
     development_decision_sha256=decision_sha256,
     case_name=case_name,
 )
-if result["protocol_id"] != "deform360-held-online-belief-v8.2":
+if result["protocol_id"] != "deform360-held-online-belief-v8.3":
     raise RuntimeError("frozen field manifest is not v8")
 PY
 

@@ -129,7 +129,7 @@ def test_replay_rejects_wrong_interpreter_before_source_preflight(
 
 def test_attempt5_replay_is_historical_under_current_protocol() -> None:
     module = _module()
-    assert module.protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.2"
+    assert module.protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.3"
     assert module.protocol.EXECUTION_ATTEMPT == 1
     assert str(module.ROOT).endswith(
         "bpt-held-v8.1-attempt-5-admission-wrapper-scratch-20260722"

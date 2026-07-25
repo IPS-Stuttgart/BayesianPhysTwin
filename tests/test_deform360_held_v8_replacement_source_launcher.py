@@ -32,7 +32,7 @@ def _load_launcher() -> ModuleType:
 def test_formal_paths_and_environment_are_exact() -> None:
     launcher = _load_launcher()
     paths = launcher.formal_source_paths()
-    held = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v82")
+    held = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v83")
 
     assert launcher.HELD_ROOT == held
     assert launcher.CALIBRATION_LOCK == held / "calibration-lock.json"

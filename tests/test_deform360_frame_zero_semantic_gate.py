@@ -341,7 +341,7 @@ def test_reference_optional_selector_abstains_reference_only_in_fourth_mode(
     monkeypatch.setattr(
         frame_zero_assets,
         "HELD_PROTOCOL_ID",
-        "deform360-held-online-belief-v8.2",
+        "deform360-held-online-belief-v8.3",
     )
     masks, diagnostics, audit = frame_zero_assets._common_voxel_mask_assignment(
         rgb,

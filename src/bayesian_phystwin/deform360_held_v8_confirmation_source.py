@@ -31,7 +31,7 @@ from typing import Any, Protocol
 from .deform360_robot_kinematics import load_robot_kinematics_archive
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8.2"
+PROTOCOL_ID = "deform360-held-online-belief-v8.3"
 SCHEMA_VERSION = 1
 SOURCE_OPERATION = "materialize-confirmation-source-cohort-v1"
 COHORT_MANIFEST_KIND = "Deform360HeldV8ConfirmationAlignedSourceCohort"

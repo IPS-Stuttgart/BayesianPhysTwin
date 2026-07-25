@@ -362,7 +362,7 @@ def test_attempt4_launcher_routine_validation_checks_metadata_without_hashing(
 
 
 def test_current_protocol_preserves_attempt5_resource_lineage() -> None:
-    assert protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.2"
+    assert protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.3"
     assert protocol._ATTEMPT4_PROTOCOL_ID == "deform360-held-online-belief-v8.1"
     assert protocol._ATTEMPT4_PROTOCOL_ID != protocol.PROTOCOL_ID
     assert protocol.EXECUTION_ATTEMPT == 1

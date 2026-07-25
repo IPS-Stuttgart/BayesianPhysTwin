@@ -129,7 +129,7 @@ def test_module_is_version_isolated_pure_scoring_code() -> None:
     assert imported_roots == {"hashlib", "math", "numpy"}
     assert imported_from == {"typing"}
     assert "open" not in called_names
-    assert scoring.PROTOCOL_ID == "deform360-held-online-belief-v8.2"
+    assert scoring.PROTOCOL_ID == "deform360-held-online-belief-v8.3"
 
 
 def test_direct_score_uses_exact_frozen_frames_and_official_identities() -> None:
