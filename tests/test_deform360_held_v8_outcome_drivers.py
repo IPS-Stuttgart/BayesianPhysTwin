@@ -446,6 +446,45 @@ def test_every_semantic_outcome_publishes_then_seals_and_preserves_return_code(
     assert resource_boundary["publication"]["parent_directory_fd_open"] is True
 
 
+def test_process_isolated_reconstruction_runs_only_after_target_permit(
+    tmp_path: Path,
+) -> None:
+    arguments, fake_protocol, post, events, cases, query_runner = (
+        _fake_outcome_execution(
+            tmp_path, role="calibration", decision_label="NO-GO"
+        )
+    )
+
+    def isolated_runner(**kwargs: Any) -> dict[str, Any]:
+        paths = kwargs["paths"]
+        events.append(f"isolated:{paths.case_name}")
+        assert kwargs["arguments"] is arguments
+        assert kwargs["cohort_barrier_sha256"] == "1" * 64
+        return {"case_name": paths.case_name}
+
+    result = driver.execute_outcomes(
+        arguments,
+        protocol=fake_protocol,
+        deployment_verifier=lambda _arguments: events.append("verify"),
+        smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+        load_post_barrier_api=lambda: post,
+        query_runner=query_runner,
+        reconstruction_runner=isolated_runner,
+        validate_runtime=lambda _arguments: None,
+        rlimit_nofile_getter=lambda: (1024, 4096),
+        role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
+        formal_paths=False,
+    )
+
+    assert result == driver.NO_GO_EXIT_CODE
+    assert "backend" not in events
+    for case in cases:
+        consume = events.index(f"consume:create-official-target-v1:{case}")
+        isolated = events.index(f"isolated:{case}")
+        query = events.index(f"query:{case}")
+        assert consume < isolated < query
+
+
 @pytest.mark.parametrize("drift_call", (9, 10))
 def test_final_or_open_descriptor_boundary_drift_leaves_no_marker_or_seal(
     tmp_path: Path,

@@ -591,6 +591,10 @@ class CasePaths:
     online_seal: Path
     frozen_field_manifest: Path
     reconstruction_dir: Path
+    isolated_reconstruction_archive: Path
+    isolated_reconstruction_manifest: Path
+    isolated_reconstruction_stdout: Path
+    isolated_reconstruction_stderr: Path
     target_archive: Path
     target_manifest: Path
     official_query_archive: Path
@@ -643,6 +647,18 @@ def _case_paths(root: Path, role: str, case_name: str) -> CasePaths:
             case_root / "frozen-field" / "preoutcome-frozen-field-manifest.json"
         ),
         reconstruction_dir=protected / "fresh-official-reconstruction",
+        isolated_reconstruction_archive=(
+            protected / "isolated-official-reconstruction.npz"
+        ),
+        isolated_reconstruction_manifest=(
+            protected / "isolated-official-reconstruction.json"
+        ),
+        isolated_reconstruction_stdout=(
+            protected / "isolated-official-reconstruction.stdout.log"
+        ),
+        isolated_reconstruction_stderr=(
+            protected / "isolated-official-reconstruction.stderr.log"
+        ),
         target_archive=protected / "official-target.npz",
         target_manifest=protected / "official-target-manifest.json",
         official_query_archive=x0_query / "official-frame-zero-query.npz",
@@ -1339,6 +1355,52 @@ def run_query_subprocess(**kwargs: Any) -> None:
     )
 
 
+def run_process_isolated_reconstruction(
+    *,
+    arguments: DriverArguments,
+    paths: CasePaths,
+    aligned_episode_dir: str | Path,
+    cohort_barrier_sha256: str,
+) -> Mapping[str, Any]:
+    """Run one original-trainer reconstruction in a fresh child process."""
+
+    from bayesian_phystwin import deform360_case_process_isolation as isolation
+
+    required = {
+        "deform360_repo": arguments.deform360_repo,
+        "sam2_repository": arguments.sam2_repository,
+        "sam2_checkpoint": arguments.sam2_checkpoint,
+        "cotracker_repo": arguments.cotracker_repo,
+        "cotracker_checkpoint": arguments.cotracker_checkpoint,
+    }
+    missing = sorted(name for name, value in required.items() if value is None)
+    _require(not missing, f"isolated reconstruction runtime is missing: {missing}")
+    return isolation.run_isolated_reconstruction_subprocess(
+        stdout_log_path=paths.isolated_reconstruction_stdout,
+        stderr_log_path=paths.isolated_reconstruction_stderr,
+        python_executable=PINNED_PYTHON,
+        deployed_code=arguments.deployed_code,
+        lock_path=arguments.lock_path,
+        role=arguments.role,
+        case_name=paths.case_name,
+        online_prediction_seal_path=paths.online_seal,
+        aligned_episode_dir=aligned_episode_dir,
+        reconstruction_output_dir=paths.reconstruction_dir,
+        result_archive_path=paths.isolated_reconstruction_archive,
+        result_manifest_path=paths.isolated_reconstruction_manifest,
+        cohort_barrier_sha256=cohort_barrier_sha256,
+        deform360_repo=str(required["deform360_repo"]),
+        sam2_repository=str(required["sam2_repository"]),
+        sam2_checkpoint=str(required["sam2_checkpoint"]),
+        cotracker_repo=str(required["cotracker_repo"]),
+        cotracker_checkpoint=str(required["cotracker_checkpoint"]),
+        device=arguments.device,
+        ffmpeg=arguments.ffmpeg,
+        pycache_prefix=PYCACHE_PREFIX,
+        path_environment=PINNED_PATH,
+    )
+
+
 def _source_verifier_environment() -> dict[str, str]:
     return {
         "GIT_OPTIONAL_LOCKS": "0",
@@ -1645,6 +1707,7 @@ def execute_outcomes(
     smoke_gsplat_runtime: Callable[[], Mapping[str, Any]],
     load_post_barrier_api: Callable[[], PostBarrierApi],
     query_runner: Callable[..., None] = run_query_subprocess,
+    reconstruction_runner: Callable[..., Mapping[str, Any]] | None = None,
     validate_runtime: Callable[[DriverArguments], None] = _validate_runtime,
     fd_counter: Callable[[], int] = _open_file_descriptor_count,
     rlimit_nofile_getter: Callable[[], tuple[int, int]] = _rlimit_nofile_pair,
@@ -1759,14 +1822,18 @@ def execute_outcomes(
     validate_runtime(arguments)
     post = load_post_barrier_api()
     _prepare_fresh_outputs(layout)
-    backend = post.backend_type(
-        deform360_repo=arguments.deform360_repo,
-        sam2_repository=arguments.sam2_repository,
-        sam2_checkpoint=arguments.sam2_checkpoint,
-        cotracker_repo=arguments.cotracker_repo,
-        cotracker_checkpoint=arguments.cotracker_checkpoint,
-        device=arguments.device,
-        ffmpeg=arguments.ffmpeg,
+    backend = (
+        post.backend_type(
+            deform360_repo=arguments.deform360_repo,
+            sam2_repository=arguments.sam2_repository,
+            sam2_checkpoint=arguments.sam2_checkpoint,
+            cotracker_repo=arguments.cotracker_repo,
+            cotracker_checkpoint=arguments.cotracker_checkpoint,
+            device=arguments.device,
+            ffmpeg=arguments.ffmpeg,
+        )
+        if reconstruction_runner is None
+        else None
     )
     lock_sha256 = _sha256_file(arguments.lock_path)
     consumed_target_evidence: dict[str, Mapping[str, Any]] = {}
@@ -1813,11 +1880,24 @@ def execute_outcomes(
             consumed_target_evidence[case_name] = dict(evidence)
             return evidence
 
-        def reconstruct() -> Mapping[str, Any]:
+        def reconstruct(
+            *,
+            case_name: str = case_name,
+            paths: CasePaths = paths,
+            aligned: Path = aligned,
+        ) -> Mapping[str, Any]:
             _require(
                 case_name in consumed_target_evidence,
                 "reconstruction loader ran before target capability consumption",
             )
+            if reconstruction_runner is not None:
+                return reconstruction_runner(
+                    arguments=arguments,
+                    paths=paths,
+                    aligned_episode_dir=aligned,
+                    cohort_barrier_sha256=barrier_one.barrier_sha256,
+                )
+            _require(backend is not None, "in-process backend was not constructed")
             return post.reconstruct(
                 lock_path=arguments.lock_path,
                 role=arguments.role,
@@ -2220,7 +2300,11 @@ def _parse_args(role: Literal["calibration", "confirmation"]) -> argparse.Namesp
     return namespace
 
 
-def main_for_role(role: Literal["calibration", "confirmation"]) -> int:
+def main_for_role(
+    role: Literal["calibration", "confirmation"],
+    *,
+    process_isolated_reconstruction: bool = False,
+) -> int:
     namespace = _parse_args(role)
     protocol, source = _load_protocol(namespace.deployed_code)
     if namespace.source_only_verifier:
@@ -2276,6 +2360,11 @@ def main_for_role(role: Literal["calibration", "confirmation"]) -> int:
         deployment_verifier=run_source_only_deployment_verifier,
         smoke_gsplat_runtime=_load_smoke(source),
         load_post_barrier_api=lambda: _load_post_barrier_api(source),
+        reconstruction_runner=(
+            run_process_isolated_reconstruction
+            if process_isolated_reconstruction
+            else None
+        ),
     )
 
 
@@ -2299,6 +2388,7 @@ __all__ = [
     "execute_outcomes",
     "main_for_role",
     "run_query_subprocess",
+    "run_process_isolated_reconstruction",
     "run_role_outcome_sealer",
     "run_source_only_deployment_verifier",
     "validate_role_execution_completion",

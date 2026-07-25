@@ -119,6 +119,27 @@ RESOURCE_LIFECYCLE_POLICY = MappingProxyType(
         "rlimit_nofile_changed": False,
     }
 )
+PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY = MappingProxyType(
+    {
+        "policy_id": "deform360-per-case-process-isolation-v1",
+        "viewer_enabled": True,
+        "pinned_default_trainer": True,
+        "trainer_configuration_overridden": False,
+        "one_official_case_per_child_process": True,
+        "process_exit_reclaims_case_resources": True,
+        "parent_process_runs_nerfstudio": False,
+        "rlimit_nofile_changed": False,
+    }
+)
+
+RESOURCE_BOUNDED_TRAINER_MODE = "resource-bounded"
+PROCESS_ISOLATED_PINNED_TRAINER_MODE = "process-isolated-pinned"
+_SPLAT_TRAINER_MODES = frozenset(
+    {
+        RESOURCE_BOUNDED_TRAINER_MODE,
+        PROCESS_ISOLATED_PINNED_TRAINER_MODE,
+    }
+)
 
 _NERFSTUDIO_FIT_LIFECYCLE_LOCK = threading.Lock()
 
@@ -694,9 +715,24 @@ class PinnedOfficialPipelineBackend:
     cotracker_checkpoint: str
     device: str = "cuda:0"
     ffmpeg: str = "ffmpeg"
+    splat_trainer_mode: Literal[
+        "resource-bounded", "process-isolated-pinned"
+    ] = RESOURCE_BOUNDED_TRAINER_MODE
 
     def build(self, request: ReconstructionRequest) -> ReconstructionBackendResult:
         return _run_pinned_official_pipeline(request, self)
+
+
+def resource_lifecycle_policy_for_backend(
+    backend: PinnedOfficialPipelineBackend,
+) -> Mapping[str, Any]:
+    """Return the exact lifecycle policy selected by a pinned backend."""
+
+    mode = backend.splat_trainer_mode
+    _require(mode in _SPLAT_TRAINER_MODES, "unknown Splatfacto trainer mode")
+    if mode == PROCESS_ISOLATED_PINNED_TRAINER_MODE:
+        return PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY
+    return RESOURCE_LIFECYCLE_POLICY
 
 
 @dataclass
@@ -864,6 +900,22 @@ class _ResourceBoundedSplatTrainer:
                         )
                 else:
                     raise cleanup_errors[0]
+
+
+def _splat_trainer_keyword_arguments(
+    backend: PinnedOfficialPipelineBackend,
+    reconstruct_stage: Any,
+) -> dict[str, Any]:
+    """Build only the trainer argument selected by the lifecycle contract."""
+
+    resource_lifecycle_policy_for_backend(backend)
+    if backend.splat_trainer_mode == PROCESS_ISOLATED_PINNED_TRAINER_MODE:
+        return {}
+    return {
+        "trainer": _ResourceBoundedSplatTrainer(
+            reconstruct_stage.NerfstudioSplatTrainer()
+        )
+    }
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -1638,21 +1690,28 @@ def _run_deform360_stages(
         kwargs["min_points"] = STRICT_HULL_PARAMETERS["minimum_visual_hull_points"]
         return original_hull(*args, **kwargs)
 
+    lifecycle_policy = resource_lifecycle_policy_for_backend(backend)
     reconstruct_stage.visual_hull_points = strict_hull
     try:
-        splat_trainer = _ResourceBoundedSplatTrainer(
-            reconstruct_stage.NerfstudioSplatTrainer()
+        keyword_arguments = {
+            "cameras": list(request.camera_names),
+            "first_frame_iterations": STRICT_HULL_PARAMETERS[
+                "first_frame_iterations"
+            ],
+            "warm_start_iterations": STRICT_HULL_PARAMETERS[
+                "warm_start_iterations"
+            ],
+            "cube_half_extent_m": STRICT_HULL_PARAMETERS["cube_half_extent_m"],
+            "voxel_resolution": STRICT_HULL_PARAMETERS["voxel_resolution"],
+            "overwrite": True,
+        }
+        keyword_arguments.update(
+            _splat_trainer_keyword_arguments(backend, reconstruct_stage)
         )
         reconstruction = reconstruct_stage.process_reconstruction_episode(
             staged_root,
             STAGED_EPISODE_ID,
-            cameras=list(request.camera_names),
-            trainer=splat_trainer,
-            first_frame_iterations=STRICT_HULL_PARAMETERS["first_frame_iterations"],
-            warm_start_iterations=STRICT_HULL_PARAMETERS["warm_start_iterations"],
-            cube_half_extent_m=STRICT_HULL_PARAMETERS["cube_half_extent_m"],
-            voxel_resolution=STRICT_HULL_PARAMETERS["voxel_resolution"],
-            overwrite=True,
+            **keyword_arguments,
         )
     finally:
         reconstruct_stage.visual_hull_points = original_hull
@@ -1739,7 +1798,7 @@ def _run_deform360_stages(
     stage_audit = {
         "runtime": runtime,
         "cotracker_runtime": cotracker_runtime,
-        "resource_lifecycle_policy": dict(RESOURCE_LIFECYCLE_POLICY),
+        "resource_lifecycle_policy": dict(lifecycle_policy),
         "strict_hull_parameters": dict(STRICT_HULL_PARAMETERS),
         "depth_parameters": dict(DEPTH_PARAMETERS),
         "tracking_parameters": dict(TRACKING_PARAMETERS),
@@ -1947,6 +2006,10 @@ def _validate_staged_robot_kinematics(
 def _validate_backend_result(
     request: ReconstructionRequest,
     result: ReconstructionBackendResult,
+    *,
+    expected_resource_lifecycle_policy: Mapping[str, Any] = (
+        RESOURCE_LIFECYCLE_POLICY
+    ),
 ) -> ReconstructionBackendResult:
     points = np.asarray(result.object_points)
     colors = np.asarray(result.object_colors)
@@ -2136,7 +2199,8 @@ def _validate_backend_result(
             "output_bindings",
             "staged_episode_tree",
         }
-        and official.get("resource_lifecycle_policy") == dict(RESOURCE_LIFECYCLE_POLICY)
+        and official.get("resource_lifecycle_policy")
+        == dict(expected_resource_lifecycle_policy)
         and official.get("strict_hull_parameters") == STRICT_HULL_PARAMETERS
         and official.get("depth_parameters") == DEPTH_PARAMETERS
         and official.get("tracking_parameters") == TRACKING_PARAMETERS

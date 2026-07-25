@@ -233,7 +233,13 @@ def reconstruct_fresh_official_target(
     )
     output.mkdir(parents=True, exist_ok=False)
     try:
-        result = numerical._validate_backend_result(request, backend.build(request))
+        result = numerical._validate_backend_result(
+            request,
+            backend.build(request),
+            expected_resource_lifecycle_policy=(
+                numerical.resource_lifecycle_policy_for_backend(backend)
+            ),
+        )
         audit_path = output / "held-v8-official-reconstruction-audit.json"
         audit = {
             "schema_version": 1,

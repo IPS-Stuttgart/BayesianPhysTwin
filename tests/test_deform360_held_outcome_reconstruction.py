@@ -145,6 +145,98 @@ def test_resource_lifecycle_policy_is_immutable_and_non_escalating() -> None:
     }
     with pytest.raises(TypeError):
         reconstruction.RESOURCE_LIFECYCLE_POLICY["viewer_enabled"] = True
+    assert dict(reconstruction.PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY) == {
+        "policy_id": "deform360-per-case-process-isolation-v1",
+        "viewer_enabled": True,
+        "pinned_default_trainer": True,
+        "trainer_configuration_overridden": False,
+        "one_official_case_per_child_process": True,
+        "process_exit_reclaims_case_resources": True,
+        "parent_process_runs_nerfstudio": False,
+        "rlimit_nofile_changed": False,
+    }
+    with pytest.raises(TypeError):
+        reconstruction.PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY[
+            "pinned_default_trainer"
+        ] = False
+
+
+def test_process_isolated_mode_keeps_the_pinned_trainer_configuration() -> None:
+    bounded = reconstruction.PinnedOfficialPipelineBackend(
+        deform360_repo="d",
+        sam2_repository="s",
+        sam2_checkpoint="sc",
+        cotracker_repo="c",
+        cotracker_checkpoint="cc",
+    )
+    original = reconstruction.PinnedOfficialPipelineBackend(
+        deform360_repo="d",
+        sam2_repository="s",
+        sam2_checkpoint="sc",
+        cotracker_repo="c",
+        cotracker_checkpoint="cc",
+        splat_trainer_mode=reconstruction.PROCESS_ISOLATED_PINNED_TRAINER_MODE,
+    )
+    stage = SimpleNamespace(
+        NerfstudioSplatTrainer=lambda: SimpleNamespace(name="delegate")
+    )
+
+    bounded_arguments = reconstruction._splat_trainer_keyword_arguments(
+        bounded, stage
+    )
+    original_arguments = reconstruction._splat_trainer_keyword_arguments(
+        original, stage
+    )
+
+    assert set(bounded_arguments) == {"trainer"}
+    assert isinstance(
+        bounded_arguments["trainer"], reconstruction._ResourceBoundedSplatTrainer
+    )
+    assert original_arguments == {}
+    assert (
+        reconstruction.resource_lifecycle_policy_for_backend(original)
+        is reconstruction.PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY
+    )
+    malformed = reconstruction.PinnedOfficialPipelineBackend(
+        deform360_repo="d",
+        sam2_repository="s",
+        sam2_checkpoint="sc",
+        cotracker_repo="c",
+        cotracker_checkpoint="cc",
+        splat_trainer_mode="unknown",  # type: ignore[arg-type]
+    )
+    with pytest.raises(ValueError, match="unknown Splatfacto trainer mode"):
+        reconstruction._splat_trainer_keyword_arguments(malformed, stage)
+
+
+def test_process_isolated_policy_must_be_requested_explicitly(
+    tmp_path: Path,
+) -> None:
+    request = _request(tmp_path / "request", tmp_path / "out")
+    baseline = _SyntheticOfficialBackend().build(request)
+    audit = copy.deepcopy(baseline.audit)
+    audit["official_stages"]["resource_lifecycle_policy"] = dict(
+        reconstruction.PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY
+    )
+    isolated = reconstruction.ReconstructionBackendResult(
+        object_points=baseline.object_points,
+        object_colors=baseline.object_colors,
+        object_visibilities=baseline.object_visibilities,
+        object_motions_valid=baseline.object_motions_valid,
+        audit=audit,
+    )
+
+    with pytest.raises(ValueError, match="official backend parameters changed"):
+        reconstruction._validate_backend_result(request, isolated)
+    validated = reconstruction._validate_backend_result(
+        request,
+        isolated,
+        expected_resource_lifecycle_policy=(
+            reconstruction.PROCESS_ISOLATED_RESOURCE_LIFECYCLE_POLICY
+        ),
+    )
+    assert np.array_equal(validated.object_points, isolated.object_points)
+    assert validated.audit == isolated.audit
 
 
 def test_resource_bounded_splat_trainer_rejects_reentrant_process_global_use(
