@@ -10,8 +10,8 @@
     "changes_after_open_development": "none"
   },
   "source_lock": {
-    "implementation_commit": "a9d4737ce5e0b3113aefe1ed67f329dd14b88e42",
-    "evidence_commit": "383d9c5d9460853b3eb9d2779f15168f2cedb0d8",
+    "implementation_commit": "ee9c93edcef8a7ac7631f12c4c201977793f7cde",
+    "evidence_branch": "deform360-fresh-source-lock-v1",
     "config": "configs/sota/deform360_fresh_object_source_lock_v1.json",
     "config_sha256": "fc8a68bd769a7b71d570e4c6879ea186b3ff4453457d29e4dc141a462a0038b7"
   },
@@ -39,16 +39,28 @@
       "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/repository-results.exclusion.json",
       "object_count": 42,
       "exclusion_sha256": "fe62c0f3284c078ecc44e9c1fce28fecbd17223a29bf2a95762efc5e85b0fcd2"
+    },
+    {
+      "scope": "MolmoMotion-Field frozen 34-case adaptive-confirmation campaign",
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/molmomotion-field-adaptive-confirmation.exclusion.json",
+      "object_count": 17,
+      "case_count": 34,
+      "exclusion_sha256": "18054955f5d8effb69eebc58aca2b3783e4e1fd0aa604f87bc2611f1f19a967c",
+      "file_sha256": "d25cc3044080459cef47851d292410def8a592aa95478dabeb1db9fa513e925a"
+    },
+    {
+      "scope": "Prob4D opened, reserved, selected, or technically dispositioned Deform360 objects",
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/prob4d-deform360-studies.exclusion.json",
+      "object_count": 65,
+      "enumerated_case_count": 88,
+      "object_only_reserved_disposition_count": 23,
+      "exclusion_sha256": "181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff",
+      "file_sha256": "4ee33074944daa86d036c1486e2ff6cefd5db7cc13dbe798d766df4c81e18e44"
     }
   ],
   "required_external_exclusions": [
     {
       "owner_scope": "held-v8 and every associated attempt",
-      "status": "requested",
-      "target_access_permitted": false
-    },
-    {
-      "owner_scope": "MolmoMotion-Field 34-object frozen campaign",
       "status": "requested",
       "target_access_permitted": false
     },
@@ -59,6 +71,19 @@
     }
   ],
   "candidate_pool": {
+    "public_catalog_snapshot": "results/sota/deform360_fresh_source_lock_v1/public_object_catalog_2026-07-26.json",
+    "public_catalog_object_count": 190,
+    "provisional_pool": "results/sota/deform360_fresh_source_lock_v1/provisional_public_source_pool.json",
+    "provisional_pool_sha256": "4d354cbb84cb535adf4b994c437cc5f1d5a90226dfd13a7140b1ef8c358958e7",
+    "provisional_pool_file_sha256": "ad08c32def6cb973c92e2e149f70e2b8dd9e66cda93596dfd746ab3d603cca65",
+    "available_exclusion_union_object_count": 82,
+    "provisional_count_after_available_exclusions": 108,
+    "provisional_pool_is_a_cohort_lock": false,
+    "metadata_preflight": "results/sota/deform360_fresh_source_lock_v1/provisional_metadata_admission.json",
+    "metadata_preflight_sha256": "7e0b751e6fc8609638e972ff3ad97dab69ff3e1a9f4050b083a5e54f88107f13",
+    "metadata_preflight_file_sha256": "e394630b7058d3453134bf939d8f1577263c41a1d001b3a013a7f6b26c6835f6",
+    "metadata_preflight_accepted": 107,
+    "metadata_preflight_rejected": 1,
     "minimum_admitted_physical_objects_before_lock": 12,
     "recommended_source_candidates_before_admission": 18,
     "selection_rule": "lowest admitted episode per non-excluded physical object, then deterministic category-sorted round robin and object-ID ordering",

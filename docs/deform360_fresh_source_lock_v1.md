@@ -151,21 +151,23 @@ No outcome-opening command belongs in this package.
 ## Real source-only smoke
 
 The exact implementation commit
-`a9d4737ce5e0b3113aefe1ed67f329dd14b88e42` was deployed in a clean checkout
+`ee9c93edcef8a7ac7631f12c4c201977793f7cde` was deployed in a clean checkout
 on `gpuserver6000` and exercised on the already-open source case
 `081-stripe-rope-ep0003`.
 
 The admission passed with 12 cameras, 654 frame-zero points, 76 active rows,
-and the released 60/16 train/test split. The emitted artifact is
+and the released 60/16 train/test split. Its canonical source directory is
+`081-stripe-rope`; the public `metadata.object` value is the descriptive label
+`081-stripe`. The emitted artifact is
 `results/sota/deform360_fresh_source_lock_v1/081-stripe-rope-ep0003.admission.json`,
 file SHA-256
-`432055876a648a16e0d213f3ab8be5239f272047801f0b9076c4ba7826c8d263`.
+`f8849ae8d659421b90cde0202c2f6f398c370964b544a236b9173e63c381783a`.
 Its internal admission digest is
-`2cdf992407861b87ab6e39232090730ffc537cf9bcacd41bdf65de0a5ff654a5`.
+`6e6e31e39b8dd8d28f9bccce2ccb4a85c34dded385ddb98b32103ea7c99045ec`.
 
 This is an operational smoke only. The object was already open, no prediction
 was run, and the result supplies no accuracy, calibration, prospective, or
 SOTA evidence.
 
-The complete repository suite on the unchanged implementation passed 774
-tests with 28 expected skips in 336.04 seconds.
+The complete repository suite on the unchanged implementation passed 775
+tests with 28 expected skips in 337.02 seconds.

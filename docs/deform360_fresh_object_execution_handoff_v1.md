@@ -8,37 +8,59 @@ public-object evaluation. Its method commit remains
 authorized.
 
 The fail-closed source admission and cohort lock are implemented at
-`a9d4737ce5e0b3113aefe1ed67f329dd14b88e42`. The exact implementation passed
-the complete suite (774 passed, 28 skipped) and accepted one real, already-open
-source bundle without deserializing future geometry. The smoke is operational
-evidence only.
+`ee9c93edcef8a7ac7631f12c4c201977793f7cde`. It accepted one real,
+already-open source bundle without deserializing future geometry, and the exact
+implementation passed the complete suite (775 passed, 28 skipped). The smoke
+is operational evidence only.
 
 The machine-readable handoff is
 `configs/sota/deform360_fresh_object_execution_handoff_v1.json`.
 
 ## Exclusion state
 
-Two repository-owned manifests are ready:
+Four hash-only manifests are ready:
 
 | Scope | Objects | Internal digest |
 |---|---:|---|
 | Open-27 method development | 5 | `c8b79a1f6b76853229a5877428252ab69fcaf5b655f901e00b60cc1325795730` |
 | Every public object named in tracked result artifacts/reports | 42 | `fe62c0f3284c078ecc44e9c1fce28fecbd17223a29bf2a95762efc5e85b0fcd2` |
+| MolmoMotion-Field frozen campaign (34 cases) | 17 | `18054955f5d8effb69eebc58aca2b3783e4e1fd0aa604f87bc2611f1f19a967c` |
+| Prob4D opened/reserved/dispositioned objects (88 enumerated cases plus 23 object-only reservations) | 65 | `181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff` |
 
-The second set is deliberately conservative. Its plaintext inventory is
-versioned because every listed identity was already public in this repository;
-the exclusion artifact itself contains only namespaced hashes.
+The repository-result set is deliberately conservative. Its plaintext
+inventory is versioned because every listed identity was already public in this
+repository. The independently supplied MolmoMotion-Field and Prob4D artifacts
+contain only namespaced hashes and source-lock digests.
 
 Independent hash-only manifests are still required from:
 
 1. the held-v8 owner, covering every selected, reserved, opened, or technically
    dispositioned object across its attempts;
-2. the frozen 34-object MolmoMotion-Field campaign owner, including the
-   unsealable and retained technical-failure cases;
-3. any other owner of an unpublished Deform360 cohort.
+2. any other owner of an unpublished Deform360 cohort.
 
 Those owners need only source/cohort identities. They must not inspect target
 or score artifacts to create the exclusions.
+
+## Public source pool
+
+The public Hugging Face directory catalog was snapshotted on 2026-07-26. It
+currently exposes 190 object directories; the official README notes that the
+public snapshot may be staged independently of the paper's reported 198
+objects.
+
+Prob4D subsumes all 42 repository-result hashes, and its 65 hashes have no
+overlap with the 17 MolmoMotion-Field hashes. After applying their union of 82
+physical-object exclusions, 108 public object identities remain. They are
+recorded in
+`results/sota/deform360_fresh_source_lock_v1/provisional_public_source_pool.json`.
+This is explicitly provisional: it has not yet incorporated the independent
+held-v8 exclusion and is not a cohort lock.
+
+A metadata-only preflight accepts 107 of these 108 identities. It rejects
+`197-hand-sanitizer` because the manifest-bound public metadata contains a
+`bimanual` value outside the exact `yes`/`no` domain. No camera, geometry,
+tactile, future-position, or metric payload was read, and the rejected object
+was neither normalized nor replaced.
 
 ## Fresh source custodian
 
@@ -94,4 +116,3 @@ contract, the strongest permitted result is:
 An official state-of-the-art claim additionally requires evaluator parity and
 local reproduction of the strongest eligible baseline under that same
 contract.
-

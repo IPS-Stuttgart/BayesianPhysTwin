@@ -4,7 +4,7 @@
   "purpose": "source_only_implementation_smoke",
   "implementation": {
     "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
-    "commit": "a9d4737ce5e0b3113aefe1ed67f329dd14b88e42",
+    "commit": "ee9c93edcef8a7ac7631f12c4c201977793f7cde",
     "branch": "deform360-fresh-source-lock-v1",
     "server_alias": "gpuserver6000",
     "server_hostname": "workstation2",
@@ -18,14 +18,16 @@
   },
   "admission": {
     "artifact": "081-stripe-rope-ep0003.admission.json",
-    "file_sha256": "432055876a648a16e0d213f3ab8be5239f272047801f0b9076c4ba7826c8d263",
-    "admission_sha256": "2cdf992407861b87ab6e39232090730ffc537cf9bcacd41bdf65de0a5ff654a5",
+    "file_sha256": "f8849ae8d659421b90cde0202c2f6f398c370964b544a236b9173e63c381783a",
+    "admission_sha256": "6e6e31e39b8dd8d28f9bccce2ccb4a85c34dded385ddb98b32103ea7c99045ec",
     "accepted": true,
     "rejection_reasons": []
   },
   "observed_source_contract": {
     "camera_count": 12,
     "frame_zero_point_count": 654,
+    "canonical_object_directory": "081-stripe-rope",
+    "descriptive_metadata_object_label": "081-stripe",
     "split_frame_count": 76,
     "active_frame_count": 76,
     "train": [
@@ -40,9 +42,9 @@
   },
   "verification": {
     "command": "PYTHONPATH=src python -m pytest -q -s",
-    "passed": 774,
+    "passed": 775,
     "skipped": 28,
-    "duration_seconds": 336.04,
+    "duration_seconds": 337.02,
     "implementation_files_modified_after_commit": false
   },
   "information_boundary": {
