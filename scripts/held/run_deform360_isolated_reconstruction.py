@@ -48,8 +48,10 @@ def main() -> int:
     source = Path(__file__).resolve().parents[2] / "src"
     sys.path.insert(0, str(source))
     from bayesian_phystwin import deform360_held_v83_gsplat_runtime as gsplat
+    from bayesian_phystwin import deform360_held_v83_viser_guard as viser_guard
 
     gsplat_runtime_smoke = gsplat.load_and_smoke_gsplat_runtime()
+    viser_process_guard = viser_guard.install_viser_process_churn_guard()
     from bayesian_phystwin import deform360_case_process_isolation as isolation
     from bayesian_phystwin import deform360_held_outcome_reconstruction as numerical
     from bayesian_phystwin import deform360_held_v8_outcome_driver as driver
@@ -80,6 +82,9 @@ def main() -> int:
     reconstruction = dict(reconstruction)
     provenance = dict(reconstruction.get("provenance", {}))
     provenance["isolated_gsplat_runtime_smoke"] = dict(gsplat_runtime_smoke)
+    provenance["isolated_viser_process_churn_guard"] = dict(
+        viser_process_guard
+    )
     reconstruction["provenance"] = provenance
     isolation.write_isolated_reconstruction_result(
         arguments.result_archive,

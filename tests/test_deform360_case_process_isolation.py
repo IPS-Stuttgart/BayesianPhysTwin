@@ -34,6 +34,7 @@ def _reconstruction(point_count: int = 5) -> dict[str, object]:
         "provenance": {
             "adapter_id": "fixture",
             "fresh_v8_reconstruction": True,
+            "isolated_viser_process_churn_guard": _viser_guard(),
         },
     }
 
@@ -44,6 +45,27 @@ def _runtime_smoke() -> dict[str, object]:
         "extension_loaded_and_retained": True,
         "target_or_outcome_path_accessed": False,
     }
+
+
+def _viser_guard(source: Path | None = None) -> dict[str, object]:
+    source_record = (
+        isolation._bound_file(source)
+        if source is not None
+        else {
+            "path": "/code/viser_guard.py",
+            "sha256": "d" * 64,
+            "size_bytes": 1,
+        }
+    )
+    value: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360HeldViserProcessChurnGuardV1",
+        "guard_source": source_record,
+        "guard_installed_before_original_trainer_import": True,
+        "target_or_outcome_path_accessed": False,
+    }
+    value["artifact_sha256"] = isolation._artifact_sha256(value)
+    return value
 
 
 def test_isolated_result_round_trip_and_tamper_detection(tmp_path: Path) -> None:
@@ -239,6 +261,12 @@ def test_runner_seals_logs_and_validates_child_result(
     worker = _write(
         code / "scripts" / "held" / "run_deform360_isolated_reconstruction.py"
     )
+    guard_source = _write(
+        code
+        / "src"
+        / "bayesian_phystwin"
+        / "deform360_held_v83_viser_guard.py"
+    )
     lock = _write(tmp_path / "lock.json")
     private = tmp_path / "private"
     private.mkdir()
@@ -283,6 +311,9 @@ def test_runner_seals_logs_and_validates_child_result(
                 "provenance": {
                     **dict(_reconstruction()["provenance"]),  # type: ignore[arg-type]
                     "isolated_gsplat_runtime_smoke": _runtime_smoke(),
+                    "isolated_viser_process_churn_guard": _viser_guard(
+                        guard_source
+                    ),
                 },
             },
             worker_source_path=worker,

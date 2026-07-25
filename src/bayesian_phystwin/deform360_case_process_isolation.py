@@ -22,7 +22,7 @@ import numpy as np
 
 from . import deform360_held_outcome_reconstruction as numerical
 
-ISOLATION_ID = "deform360-official-case-process-isolation-v1"
+ISOLATION_ID = "deform360-official-case-process-isolation-v2"
 RESULT_KIND = "Deform360IsolatedOfficialReconstructionResult"
 SCHEMA_VERSION = 1
 RESULT_ARRAY_NAMES = frozenset(
@@ -296,6 +296,7 @@ def validate_isolated_reconstruction_result(
     expected_cohort_barrier_sha256: str | None = None,
     expected_worker_source_path: str | Path | None = None,
     expected_gsplat_runtime_smoke_artifact_sha256: str | None = None,
+    expected_viser_guard_source_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Validate and rehash one child result and every contained array."""
 
@@ -434,6 +435,23 @@ def validate_isolated_reconstruction_result(
             and smoke.get("extension_loaded_and_retained") is True
             and smoke.get("target_or_outcome_path_accessed") is False,
             "isolated gsplat runtime smoke differs from the locked runtime",
+        )
+    guard = provenance.get("isolated_viser_process_churn_guard")
+    _require(
+        isinstance(guard, Mapping)
+        and guard.get("artifact_kind")
+        == "Deform360HeldViserProcessChurnGuardV1"
+        and guard.get("artifact_sha256") == _artifact_sha256(guard)
+        and guard.get("guard_installed_before_original_trainer_import") is True
+        and guard.get("target_or_outcome_path_accessed") is False
+        and isinstance(guard.get("guard_source"), Mapping),
+        "isolated Viser process-churn guard is absent or invalid",
+    )
+    if expected_viser_guard_source_path is not None:
+        _require(
+            dict(guard["guard_source"])
+            == _bound_file(expected_viser_guard_source_path),
+            "isolated Viser process-churn guard source changed",
         )
     return value
 
@@ -623,6 +641,12 @@ def run_isolated_reconstruction_subprocess(
             / "scripts"
             / "held"
             / "run_deform360_isolated_reconstruction.py",
+            "expected_viser_guard_source_path": Path(
+                build_kwargs["deployed_code"]
+            )
+            / "src"
+            / "bayesian_phystwin"
+            / "deform360_held_v83_viser_guard.py",
         }
         if expected_smoke is not None:
             validation_kwargs[

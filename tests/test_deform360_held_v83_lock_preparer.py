@@ -52,6 +52,7 @@ def _lineage() -> dict[str, Any]:
             "isolation_source_sha256": "b" * 64,
             "worker_source_sha256": "c" * 64,
             "worker_runtime_source_sha256": "f" * 64,
+            "viser_guard_source_sha256": "0" * 64,
             "outcome_driver_source_sha256": "d" * 64,
             "sealer_source_sha256": "e" * 64,
         },

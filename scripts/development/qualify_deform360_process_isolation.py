@@ -38,10 +38,10 @@ def _load_support_module() -> Any:
 
 support = _load_support_module()
 
-QUALIFICATION_ID = "deform360-original-trainer-process-isolation-v2"
-QUALIFICATION_KIND = "Deform360ProcessIsolationQualificationEvidenceV2"
-ATTEMPT_KIND = "Deform360ProcessIsolationQualificationAttemptV2"
-CHILD_KIND = "Deform360ProcessIsolationCaseChildEvidenceV2"
+QUALIFICATION_ID = "deform360-original-trainer-process-isolation-v3"
+QUALIFICATION_KIND = "Deform360ProcessIsolationQualificationEvidenceV3"
+ATTEMPT_KIND = "Deform360ProcessIsolationQualificationAttemptV3"
+CHILD_KIND = "Deform360ProcessIsolationCaseChildEvidenceV3"
 RELATIVE_SOURCE = Path(
     "scripts/development/qualify_deform360_process_isolation.py"
 )
@@ -59,6 +59,9 @@ RELATIVE_OUTCOME_DRIVER_SOURCE = Path(
 )
 RELATIVE_WORKER_RUNTIME_SOURCE = Path(
     "src/bayesian_phystwin/deform360_held_v83_gsplat_runtime.py"
+)
+RELATIVE_VISER_GUARD_SOURCE = Path(
+    "src/bayesian_phystwin/deform360_held_v83_viser_guard.py"
 )
 CANONICAL_CASE_COUNT = 4
 CANONICAL_FITS_PER_CASE = 81
@@ -125,6 +128,34 @@ def _load_worker_entry_gsplat_runtime(code_root: Path) -> dict[str, Any]:
         ),
         "evidence": dict(smoke),
         "backend_retained_before_original_trainer_import": True,
+    }
+
+
+def _install_worker_entry_viser_guard(code_root: Path) -> dict[str, Any]:
+    """Install the exact process-churn guard used by the held one-case worker."""
+
+    module_name = "bayesian_phystwin.deform360_held_v83_viser_guard"
+    runtime = importlib.import_module(module_name)
+    expected = (code_root / RELATIVE_VISER_GUARD_SOURCE).resolve(strict=True)
+    _require(
+        Path(runtime.__file__).resolve(strict=True) == expected,
+        "worker-entry Viser guard escaped the bound code root",
+    )
+    evidence = runtime.install_viser_process_churn_guard()
+    _require(
+        isinstance(evidence, Mapping)
+        and evidence.get("artifact_sha256")
+        == support._artifact_sha256(evidence)
+        and evidence.get("guard_installed_before_original_trainer_import") is True
+        and evidence.get("target_or_outcome_path_accessed") is False,
+        "worker-entry Viser process-churn guard failed",
+    )
+    return {
+        "adapter_source": support._bound_file(
+            expected, label="worker-entry Viser process-churn guard"
+        ),
+        "evidence": dict(evidence),
+        "installed_before_original_trainer_import": True,
     }
 
 
@@ -283,6 +314,21 @@ def _validate_child_evidence(
         and worker_runtime["evidence"].get("target_or_outcome_path_accessed") is False,
         "case-child worker-entry gsplat runtime changed",
     )
+    viser_guard = value.get("worker_entry_viser_process_churn_guard")
+    _require(
+        isinstance(viser_guard, Mapping)
+        and isinstance(viser_guard.get("adapter_source"), Mapping)
+        and viser_guard.get("installed_before_original_trainer_import") is True
+        and isinstance(viser_guard.get("evidence"), Mapping)
+        and viser_guard["evidence"].get("artifact_sha256")
+        == support._artifact_sha256(viser_guard["evidence"])
+        and viser_guard["evidence"].get(
+            "guard_installed_before_original_trainer_import"
+        )
+        is True
+        and viser_guard["evidence"].get("target_or_outcome_path_accessed") is False,
+        "case-child worker-entry Viser process-churn guard changed",
+    )
     evaluation = value.get("evaluation")
     _require(
         isinstance(evaluation, Mapping)
@@ -422,6 +468,7 @@ def _case_child(arguments: argparse.Namespace) -> int:
         )
         runtime = support._seed_runtime(arguments.seed)
         gsplat_runtime = _load_worker_entry_gsplat_runtime(code)
+        viser_guard = _install_worker_entry_viser_guard(code)
         trainer_type, _, writer, profiler = support._import_trainers(code, deform360)
         numerical_source = (
             code / RELATIVE_NUMERICAL_SOURCE
@@ -522,6 +569,7 @@ def _case_child(arguments: argparse.Namespace) -> int:
                 },
                 "runtime": runtime,
                 "worker_entry_gsplat_runtime": gsplat_runtime,
+                "worker_entry_viser_process_churn_guard": viser_guard,
                 "trainer_source": support._bound_file(
                     expected_trainer_source, label="original trainer source"
                 ),
@@ -693,6 +741,10 @@ def _run(arguments: argparse.Namespace) -> int:
         code / RELATIVE_WORKER_RUNTIME_SOURCE,
         label="process-isolation worker runtime source",
     )
+    viser_guard_binding = support._bound_file(
+        code / RELATIVE_VISER_GUARD_SOURCE,
+        label="process-isolation Viser process-churn guard source",
+    )
     initial_parent = support._process_boundary()
     cases: list[dict[str, Any]] = []
     for case_index in range(arguments.case_count):
@@ -830,6 +882,7 @@ def _run(arguments: argparse.Namespace) -> int:
                 "worker_source": worker_binding,
                 "outcome_driver_source": outcome_driver_binding,
                 "worker_runtime_source": worker_runtime_binding,
+                "viser_guard_source": viser_guard_binding,
             },
             "process_boundary": {
                 "one_original_trainer_per_child": True,
@@ -839,6 +892,7 @@ def _run(arguments: argparse.Namespace) -> int:
                 "process_exit_reclaims_case_resources": True,
                 "parent_process_imports_nerfstudio": False,
                 "worker_entry_gsplat_preload_required": True,
+                "worker_entry_viser_process_churn_guard_required": True,
             },
             "cases": cases,
             "evaluation": evaluation,

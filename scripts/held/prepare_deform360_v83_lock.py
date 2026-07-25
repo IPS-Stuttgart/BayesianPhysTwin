@@ -66,6 +66,9 @@ PROCESS_SOURCE_BINDINGS: Mapping[str, str] = {
     "held_v83_gsplat_runtime_adapter_source": (
         "src/bayesian_phystwin/deform360_held_v83_gsplat_runtime.py"
     ),
+    "held_v83_viser_process_churn_guard_source": (
+        "src/bayesian_phystwin/deform360_held_v83_viser_guard.py"
+    ),
     "held_v82_technical_failure_integrity_source": (
         "src/bayesian_phystwin/deform360_held_v82_technical_failure.py"
     ),
@@ -89,6 +92,9 @@ QUALIFIED_SOURCE_MAP: Mapping[str, str] = {
     "isolation_source_sha256": "held_v83_process_isolation_source",
     "worker_source_sha256": "held_v83_process_isolation_worker_source",
     "worker_runtime_source_sha256": "held_v83_gsplat_runtime_adapter_source",
+    "viser_guard_source_sha256": (
+        "held_v83_viser_process_churn_guard_source"
+    ),
     "outcome_driver_source_sha256": "held_v8_outcome_driver_source",
     "sealer_source_sha256": "process_isolation_qualification_sealer_source",
 }

@@ -45,6 +45,24 @@ def _worker_runtime() -> dict[str, object]:
     }
 
 
+def _viser_guard() -> dict[str, object]:
+    evidence = {
+        "artifact_kind": "Deform360HeldViserProcessChurnGuardV1",
+        "guard_installed_before_original_trainer_import": True,
+        "target_or_outcome_path_accessed": False,
+    }
+    evidence["artifact_sha256"] = operator.support._artifact_sha256(evidence)
+    return {
+        "adapter_source": {
+            "path": "/code/viser_guard.py",
+            "sha256": "b" * 64,
+            "size_bytes": 1,
+        },
+        "evidence": evidence,
+        "installed_before_original_trainer_import": True,
+    }
+
+
 def _boundary(fd: int, tasks: int) -> dict[str, int]:
     return {
         "file_descriptor_count": fd,
@@ -179,6 +197,7 @@ def test_child_evidence_contract_is_signed_and_exact() -> None:
                 "score_path_received": False,
             },
             "worker_entry_gsplat_runtime": _worker_runtime(),
+            "worker_entry_viser_process_churn_guard": _viser_guard(),
             "evaluation": {
                 "passed": True,
                 "predicates": {"all": True},
