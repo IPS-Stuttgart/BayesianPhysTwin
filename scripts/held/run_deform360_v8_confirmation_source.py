@@ -14,7 +14,7 @@ import sys
 from typing import Any, Mapping
 
 
-HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8")
+HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v82")
 LOCK = HELD_ROOT / "confirmation-lock.json"
 SOURCE_ROOT = HELD_ROOT / "confirmation-source"
 PROCESSING_CODE = Path(
@@ -26,7 +26,7 @@ PINNED_PYTHON = Path(
     "bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/"
     "bin/python"
 )
-PYCACHE_PREFIX = "/nonexistent/bpt-held-v8-pycache"
+PYCACHE_PREFIX = "/nonexistent/bpt-held-v82-pycache"
 NORMALIZED_MARKER = "BPT_HELD_V8_CONFIRMATION_SOURCE_ENV_NORMALIZED"
 EXPECTED_HOST = "workstation2"
 _SOURCE_BINDINGS = {

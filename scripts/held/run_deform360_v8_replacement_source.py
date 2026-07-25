@@ -17,7 +17,7 @@ from types import ModuleType
 from typing import Any, Mapping, Sequence
 
 
-HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8")
+HELD_ROOT = Path("/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v82")
 CALIBRATION_LOCK = HELD_ROOT / "calibration-lock.json"
 SOURCE_ROOT = HELD_ROOT / "replacement-source"
 PROCESSING_CODE = Path(
@@ -34,7 +34,7 @@ PINNED_PYTHON_RESOLVED = Path("/usr/bin/python3.12")
 PINNED_PYTHON_TARGET_SHA256 = (
     "e1efa562c2cc2e35521a5c9c9b9939921001ff8ca9708a13ef15ace68cc2ccd7"
 )
-PYCACHE_PREFIX = Path("/nonexistent/bpt-held-v8-pycache")
+PYCACHE_PREFIX = Path("/nonexistent/bpt-held-v82-pycache")
 PROCESSING_REVISION = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
 PROCESSING_TREE = "c566ed29db7e0fd6a4cb768d840a4aa662864680"
 NORMALIZED_MARKER = "BPT_HELD_V8_REPLACEMENT_SOURCE_ENV_NORMALIZED"

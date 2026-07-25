@@ -1011,7 +1011,7 @@ def test_common_voxel_assignment_is_strict_top_seeded_and_deterministic(
     monkeypatch.setattr(
         frame_zero_assets,
         "HELD_PROTOCOL_ID",
-        "deform360-held-online-belief-v8.1",
+        "deform360-held-online-belief-v8.2",
     )
     second_masks, second_diagnostics, second_audit = (
         frame_zero_assets._common_voxel_mask_assignment(

@@ -551,4 +551,4 @@ def test_module_is_v8_only_and_contains_no_assignment_or_scorer_import() -> None
     assert not any("scoring" in name for name in imported)
     assert "scipy" not in imported
     assert "linear_sum_assignment" not in source
-    assert artifacts.PROTOCOL_ID == "deform360-held-online-belief-v8.1"
+    assert artifacts.PROTOCOL_ID == "deform360-held-online-belief-v8.2"

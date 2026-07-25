@@ -365,203 +365,60 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "validate_attempt4_withdrawal_lineage",
         lambda **_kwargs: attempt4_lineage,
     )
-    qualification_root = lineage / f"bpt-resource-lifecycle-qualification-{'a' * 40}"
+    qualification_root = lineage / f"bpt-process-isolation-qualification-{'a' * 40}"
     qualification_root.mkdir()
-    qualification_evidence = (
-        qualification_root / "resource-lifecycle-qualification.json"
-    )
+    qualification_evidence = qualification_root / "process-isolation-qualification.json"
     qualification_evidence.write_text("qualification\n", encoding="utf-8")
     qualification_evidence.chmod(0o400)
     qualification_attempt = qualification_root / "qualification-attempt.json"
     qualification_attempt.write_text("attempt\n", encoding="utf-8")
     qualification_attempt.chmod(0o400)
-    equivalence = qualification_root / "equivalence"
-    equivalence.mkdir()
-    qualification_manifest = equivalence / "repeat-manifest.json"
-    qualification_manifest.write_text("manifest\n", encoding="utf-8")
-    qualification_manifest.chmod(0o400)
-    qualification_result = equivalence / "analysis-result.json"
-    qualification_result.write_text("result\n", encoding="utf-8")
-    qualification_result.chmod(0o400)
-    equivalence.chmod(0o500)
     qualification_root.chmod(0o500)
     qualification_completion = Path(f"{qualification_root}-integrity-completion.json")
     qualification_completion.write_text("completion\n", encoding="utf-8")
     qualification_completion.chmod(0o400)
+    source_hashes = {
+        "qualification_source_sha256": "5" * 64,
+        "numerical_adapter_source_sha256": "6" * 64,
+        "isolation_source_sha256": "7" * 64,
+        "worker_source_sha256": "8" * 64,
+        "outcome_driver_source_sha256": "9" * 64,
+        "sealer_source_sha256": "a" * 64,
+    }
     qualification_lineage = {
-        "resource_lifecycle_qualification_attempt": {
+        "process_isolation_qualification_attempt": {
             **_bound_file(qualification_attempt),
             "artifact_sha256": "0" * 64,
         },
-        "resource_lifecycle_qualification_evidence": {
+        "process_isolation_qualification_evidence": {
             **_bound_file(qualification_evidence),
             "artifact_sha256": "1" * 64,
         },
-        "resource_lifecycle_qualification_repeat_manifest": {
-            **_bound_file(qualification_manifest),
+        "process_isolation_qualification_integrity_completion": {
+            **_bound_file(qualification_completion),
             "artifact_sha256": "2" * 64,
         },
-        "resource_lifecycle_qualification_equivalence_result": {
-            **_bound_file(qualification_result),
-            "artifact_sha256": "3" * 64,
-        },
-        "resource_lifecycle_qualification_integrity_completion": {
-            **_bound_file(qualification_completion),
-            "artifact_sha256": "4" * 64,
-        },
-        "resource_lifecycle_qualification_integrity": {
-            "root": str(qualification_root),
-            "root_mode_octal": "0500",
-            "fully_nonwritable": True,
-            "entry_count": 5,
-            "inventory_sha256": "5" * 64,
+        "process_isolation_qualification_integrity": {
+            "qualification_id": protocol.process_qualification.QUALIFICATION_ID,
             "source_head": "a" * 40,
             "source_tree": "b" * 40,
             "terminal_outcome": "qualified",
             "admission_eligible": True,
-            "generator_profile": "same-as-analyzer",
-            "physical_gpu_index": 1,
-            "equivalence_acceptance_basis": "secondary-distributional-envelope",
-            "analyzer_source_sha256": (
-                protocol.RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256
-            ),
+            "inventory_sha256": "3" * 64,
+            "metadata_inventory_sha256": "4" * 64,
+            "entry_count": 5,
+            **source_hashes,
         },
     }
     monkeypatch.setattr(
-        protocol,
-        "validate_resource_lifecycle_qualification_lineage",
+        protocol.process_qualification,
+        "validate_process_isolation_qualification_lineage",
         lambda **_kwargs: qualification_lineage,
     )
 
     config = {"prediction_frame_count": 76, "test_fixture": True}
-    root = tmp_path / "held-v8"
+    root = tmp_path / "held-v82"
     fresh_root_capability = protocol.prepare_fresh_held_root(root)
-    disclosure = root / "post-withdrawal-development-use-disclosure.json"
-    disclosure_value: dict[str, Any] = {
-        "schema_version": 1,
-        "artifact_kind": protocol.POST_WITHDRAWAL_DISCLOSURE_KIND,
-        "protocol_id": protocol.PROTOCOL_ID,
-        "disclosed_v7_files": {
-            name: {
-                **_bound_file(disclosed_paths[name]),
-                "mode_octal": "0400",
-            }
-            for name in sorted(disclosed_paths)
-        },
-        "disclosed_v8_attempt3_files": {
-            name: {**attempt3[f"{short}_record"], "mode_octal": "0400"}
-            for name, short in (
-                ("v8_attempt3_withdrawal_report", "report"),
-                ("v8_attempt3_withdrawal_pointer", "pointer"),
-                (
-                    "v8_attempt3_withdrawal_integrity_completion",
-                    "completion",
-                ),
-            )
-        },
-        "disclosed_v8_attempt4_files": {
-            name: {**attempt4_records[short], "mode_octal": "0400"}
-            for name, short in (
-                ("v8_attempt4_withdrawal_report", "report"),
-                ("v8_attempt4_withdrawal_pointer", "pointer"),
-                (
-                    "v8_attempt4_withdrawal_integrity_completion",
-                    "completion",
-                ),
-            )
-        },
-        "v8_attempt3_archive_integrity": attempt3["archive_integrity"],
-        "v8_attempt4_archive_integrity": attempt4_archive_integrity,
-        "v8_attempt4_launcher_integrity": attempt4_launcher_integrity,
-        "v8_attempt4_execution_boundary": {
-            "calibration_result": "NO_CALIBRATION_RESULT",
-            "first_complete_cohort_barrier_crossed": True,
-            "completed_target_x0_queried_pairs": 2,
-            "partial_third_target_reconstruction": True,
-            "second_complete_cohort_barrier_crossed": False,
-            "score_evidence_count": 0,
-            "gate_decision_count": 0,
-            "confirmation_accessed": False,
-            "report_execution_boundary": {},
-            "report_information_boundary": {},
-        },
-        "resource_lifecycle_qualification_files": {
-            name: {**qualification_lineage[name], "mode_octal": "0400"}
-            for name in protocol.RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES
-        },
-        "resource_lifecycle_qualification_integrity": qualification_lineage[
-            "resource_lifecycle_qualification_integrity"
-        ],
-        "v8_attempt3_revision_basis": {
-            "official_x0_geometry_used_to_diagnose_exclusion_liveness": True,
-            "future_target_coordinates_masks_or_scores_used_for_revision": False,
-            "queried_prediction_score_or_gate_existed": False,
-            "revision": (
-                "replace exact-one-per-center matching with the inclusive 15 mm "
-                "x0-only radius union"
-            ),
-        },
-        "post_withdrawal_development": {
-            **protocol.POST_WITHDRAWAL_DEVELOPMENT_HASHES,
-            "retired_official_target_opened_by_development_process": True,
-            "retired_online_prediction_opened_by_development_process": True,
-            "future_coordinates_or_masks_may_have_been_read": True,
-            "derived_metrics_may_have_been_computed": True,
-            "field_hypothesis_was_subsequently_reselected_on_independent_open27": True,
-        },
-        "attempt4_technical_failure_development": {
-            "durable_launcher_log_used_for_fixed_marker_and_traceback_diagnosis": True,
-            "too_many_open_files_diagnosed": True,
-            "formal_target_query_prediction_or_score_array_deserialized": False,
-            "attempt4_score_gate_or_confirmation_existed": False,
-            "scientific_method_or_threshold_selected_from_attempt4_outcomes": False,
-            "repair_scope": (
-                "per-fit Nerfstudio resource lifecycle plus a post-case file-"
-                "descriptor growth guard"
-            ),
-        },
-        "retirement": {
-            "exact_episode": protocol.RETIRED_V7_CASE_NAME,
-            "replacement_episode": protocol.FRESH_REPLACEMENT_CASE_NAME,
-            "replacement_search_excluded_entire_002_rope_silk_object": True,
-            "reason": (
-                "the exact held-v7 episode was exposed after formal withdrawal; "
-                "the replacement was selected outside that object's episodes"
-            ),
-        },
-        "v8_1_reuse_boundary": {
-            "v7_target_or_staging_reused": False,
-            "v7_physical_prediction_reused": False,
-            "v7_online_prediction_reused": False,
-            "v7_query_or_score_reused": False,
-            "v7_execution_artifact_reused": False,
-            "v7_withdrawal_report_used_only_as_immutable_lineage": True,
-            "v8_attempt3_predictions_reused": False,
-            "v8_attempt3_source_manifests_reused": False,
-            "v8_attempt3_frozen_fields_reused": False,
-            "v8_attempt3_target_artifacts_reused": False,
-            "v8_attempt3_official_x0_query_artifacts_reused": False,
-            "v8_attempt3_queried_prediction_artifacts_reused": False,
-            "v8_attempt3_score_or_gate_artifacts_reused": False,
-            "v8_attempt3_partial_artifacts_reused": False,
-            "v8_attempt4_predictions_reused": False,
-            "v8_attempt4_source_manifests_reused": False,
-            "v8_attempt4_frozen_fields_reused": False,
-            "v8_attempt4_target_artifacts_reused": False,
-            "v8_attempt4_official_x0_query_artifacts_reused": False,
-            "v8_attempt4_queried_prediction_artifacts_reused": False,
-            "v8_attempt4_score_or_gate_artifacts_reused": False,
-            "v8_attempt4_partial_artifacts_reused": False,
-            "all_v8_1_attempt5_predictions_targets_queries_and_scores_fresh": True,
-            "full_15_case_fresh_rerun_required": True,
-        },
-        "claim_boundary": (
-            "This disclosure preserves prospective episode-level evaluation; it "
-            "does not turn open development or v8.1 into an official Deform360 "
-            "state-of-the-art comparison."
-        ),
-    }
-    _artifact(disclosure, disclosure_value)
     lock = root / "calibration-lock.json"
     protocol.create_calibration_protocol_lock(
         lock,
@@ -578,46 +435,60 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "center_exclusion_contract": (
                 query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
             ),
-            "resource_lifecycle_policy_contract": protocol.held_contract_sha256(
-                protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT
+            "process_isolation_policy_contract": protocol.held_contract_sha256(
+                protocol.PROCESS_ISOLATION_POLICY_CONTRACT
             ),
             "post_case_resource_boundary_contract": protocol.held_contract_sha256(
                 protocol.POST_CASE_RESOURCE_BOUNDARY_CONTRACT
             ),
-            "resource_lifecycle_qualification_evidence": qualification_lineage[
-                "resource_lifecycle_qualification_evidence"
+            "method_deployed_commit_text_sha256": hashlib.sha256(
+                ("a" * 40).encode("ascii")
+            ).hexdigest(),
+            "process_isolation_qualification_attempt": qualification_lineage[
+                "process_isolation_qualification_attempt"
             ]["sha256"],
-            "resource_lifecycle_qualification_attempt": qualification_lineage[
-                "resource_lifecycle_qualification_attempt"
+            "process_isolation_qualification_attempt_artifact": qualification_lineage[
+                "process_isolation_qualification_attempt"
+            ]["artifact_sha256"],
+            "process_isolation_qualification_evidence": qualification_lineage[
+                "process_isolation_qualification_evidence"
             ]["sha256"],
-            "resource_lifecycle_qualification_repeat_manifest": (
+            "process_isolation_qualification_evidence_artifact": qualification_lineage[
+                "process_isolation_qualification_evidence"
+            ]["artifact_sha256"],
+            "process_isolation_qualification_integrity_completion": (
                 qualification_lineage[
-                    "resource_lifecycle_qualification_repeat_manifest"
+                    "process_isolation_qualification_integrity_completion"
                 ]["sha256"]
             ),
-            "resource_lifecycle_qualification_equivalence_result": (
+            "process_isolation_qualification_integrity_completion_artifact": (
                 qualification_lineage[
-                    "resource_lifecycle_qualification_equivalence_result"
-                ]["sha256"]
+                    "process_isolation_qualification_integrity_completion"
+                ]["artifact_sha256"]
             ),
-            "resource_lifecycle_qualification_integrity_completion": (
-                qualification_lineage[
-                    "resource_lifecycle_qualification_integrity_completion"
-                ]["sha256"]
-            ),
-            **{
-                binding_name: qualification_lineage[lineage_name]["artifact_sha256"]
-                for lineage_name, binding_name in (
-                    protocol.RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES.items()
-                )
-            },
-            "resource_lifecycle_qualification_analyzer_source": (
-                protocol.RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256
-            ),
+            "process_isolation_qualification_inventory": "3" * 64,
+            "process_isolation_qualification_metadata_inventory": "4" * 64,
+            "process_isolation_qualification_operator_source": source_hashes[
+                "qualification_source_sha256"
+            ],
+            "held_official_reconstruction_numerical_source": source_hashes[
+                "numerical_adapter_source_sha256"
+            ],
+            "held_v82_process_isolation_source": source_hashes[
+                "isolation_source_sha256"
+            ],
+            "held_v82_process_isolation_worker_source": source_hashes[
+                "worker_source_sha256"
+            ],
+            "held_v8_outcome_driver_source": source_hashes[
+                "outcome_driver_source_sha256"
+            ],
+            "process_isolation_qualification_sealer_source": source_hashes[
+                "sealer_source_sha256"
+            ],
             "test_operator_source": "a" * 64,
         },
         v7_withdrawal_report_path=withdrawal,
-        post_withdrawal_disclosure_path=disclosure,
         development_decision_path=development,
         attempt3_withdrawal_report_path=attempt3["report_path"],
         attempt3_withdrawal_pointer_path=attempt3["pointer_path"],
@@ -625,8 +496,8 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         attempt4_withdrawal_report_path=attempt4_paths["report"],
         attempt4_withdrawal_pointer_path=attempt4_paths["pointer"],
         attempt4_withdrawal_integrity_completion_path=attempt4_paths["completion"],
-        resource_lifecycle_qualification_path=qualification_evidence,
-        resource_lifecycle_qualification_completion_path=qualification_completion,
+        process_isolation_qualification_path=qualification_evidence,
+        process_isolation_qualification_completion_path=qualification_completion,
     )
     return lock
 
@@ -859,21 +730,21 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     assert lock["primary_method"]["center_exclusion_contract_sha256"] == (
         query_artifacts.CENTER_EXCLUSION_CONTRACT_SHA256
     )
-    assert lock["protocol_id"] == "deform360-held-online-belief-v8.1"
-    assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 5
+    assert lock["protocol_id"] == "deform360-held-online-belief-v8.2"
+    assert lock["execution_attempt"] == protocol.EXECUTION_ATTEMPT == 1
     assert lock["freshness_and_reuse"] == protocol.FRESHNESS_AND_REUSE_CONTRACT
     assert (
-        lock["freshness_and_reuse"]["held_v8_root_absent_before_attempt5_lock"] is True
+        lock["freshness_and_reuse"]["held_v82_root_absent_before_attempt1_lock"] is True
     )
     assert (
         lock["freshness_and_reuse"][
-            "all_predictions_must_be_fresh_v8_1_attempt5_outputs"
+            "all_predictions_must_be_fresh_v8_2_attempt1_outputs"
         ]
         is True
     )
     assert (
         lock["freshness_and_reuse"][
-            "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt5_outputs"
+            "all_targets_queries_and_scores_must_be_fresh_v8_2_attempt1_outputs"
         ]
         is True
     )
@@ -919,7 +790,7 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
         )
 
     with pytest.raises(ValueError, match="must be absent"):
-        protocol.prepare_fresh_held_root(tmp_path / "held-v8")
+        protocol.prepare_fresh_held_root(lock_path.parent)
 
 
 def test_lock_rejects_attempt3_pointer_byte_tamper(
@@ -1261,18 +1132,19 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
             frozen_field_validator=_field_validator,
         )
 
-    no_go = tmp_path / "held-v8" / "calibration" / "calibration-no-go.json"
+    held_root = calibration_lock.parent
+    no_go = held_root / "calibration" / "calibration-no-go.json"
     _gate_decision(no_go, calibration_lock, passed=False)
     with pytest.raises(ValueError, match="after calibration NO-GO"):
         protocol.create_confirmation_protocol_lock(
-            tmp_path / "held-v8" / "confirmation-lock.json",
+            held_root / "confirmation-lock.json",
             calibration_lock,
             no_go,
         )
 
-    go = tmp_path / "held-v8" / "calibration" / "calibration-go.json"
+    go = held_root / "calibration" / "calibration-go.json"
     _gate_decision(go, calibration_lock, passed=True)
-    confirmation_lock = tmp_path / "held-v8" / "confirmation-lock.json"
+    confirmation_lock = held_root / "confirmation-lock.json"
     with pytest.raises(ValueError, match="outcome integrity completion is absent"):
         protocol.create_confirmation_protocol_lock(
             confirmation_lock,
@@ -1281,12 +1153,7 @@ def test_confirmation_is_inaccessible_until_a_sealed_go(
         )
     assert not confirmation_lock.exists()
 
-    completion_path = (
-        tmp_path
-        / "held-v8"
-        / "calibration"
-        / "calibration-outcome-integrity-completion.json"
-    )
+    completion_path = held_root / "calibration/calibration-outcome-integrity-completion.json"
     _write_json(completion_path, {"sealed": True})
     # The real validator must be importable and must reject this structurally
     # sealed but content-free completion before the test installs its valid

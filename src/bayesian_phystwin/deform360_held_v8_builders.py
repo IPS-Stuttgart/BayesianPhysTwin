@@ -32,8 +32,8 @@ from . import deform360_held_v8_protocol as v8_protocol
 
 
 V7_PROTOCOL_ID = "deform360-held-online-belief-v7"
-V8_PROTOCOL_ID = "deform360-held-online-belief-v8.1"
-V8_PYCACHE_PREFIX = "/nonexistent/bpt-held-v8-pycache"
+V8_PROTOCOL_ID = "deform360-held-online-belief-v8.2"
+V8_PYCACHE_PREFIX = "/nonexistent/bpt-held-v82-pycache"
 V8_EXTERNAL_CALIBRATION_CASE_NAME = "072-cotton-clohesline-ep0003"
 V8_EXTERNAL_CALIBRATION_OBJECT_ID = "072-cotton-clohesline"
 V8_EXTERNAL_CALIBRATION_EPISODE_ID = 3

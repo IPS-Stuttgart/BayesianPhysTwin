@@ -68,12 +68,12 @@ else
   readonly -a CASE_SPECS=("${SHARD_1_CASE_SPECS[@]}")
 fi
 
-readonly HELD="/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v8"
+readonly HELD="/mnt/corsair/florianpfaff/bpt-online-belief-v1/held-v82"
 readonly LOCK="$HELD/confirmation-lock.json"
 readonly CANONICAL_CONFIRMATION_SOURCE_MANIFEST="$HELD/confirmation-source/manifests/aligned-source-cohort.json"
 readonly CODE="${BPT_HELD_V8_CODE:?set BPT_HELD_V8_CODE to immutable v8 deployment}"
 readonly PY="/mnt/corsair/florianpfaff/bpt-held-v5-runtimes/bpt-gpu-pip-4948737892f77c6a9496795e6c3f25b92fcea466ddb7b5f1e9c1b0de1137f004/bin/python"
-readonly PYCACHE_PREFIX="/nonexistent/bpt-held-v8-pycache"
+readonly PYCACHE_PREFIX="/nonexistent/bpt-held-v82-pycache"
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly SHARD_RUNNER="$SCRIPT_DIR/$(basename -- "${BASH_SOURCE[0]}")"
 readonly CASE_RUNNER="$SCRIPT_DIR/run_deform360_v8_confirmation_case.sh"
@@ -168,7 +168,7 @@ from bayesian_phystwin.deform360_held_v8_protocol import (
     validate_protocol_lock,
 )
 lock = validate_protocol_lock(sys.argv[1])
-if lock["protocol_id"] != "deform360-held-online-belief-v8.1":
+if lock["protocol_id"] != "deform360-held-online-belief-v8.2":
     raise RuntimeError("not a v8 confirmation lock")
 if tuple(locked_case_names(sys.argv[1], role="confirmation")) != tuple(CONFIRMATION_CASE_NAMES):
     raise RuntimeError("locked confirmation cohort changed")

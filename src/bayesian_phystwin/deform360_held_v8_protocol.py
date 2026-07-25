@@ -35,10 +35,11 @@ from . import deform360_frame_zero_assets as frame_zero_assets
 from . import deform360_held_v8_confirmation_source as confirmation_source
 from . import deform360_held_v8_replacement_source as replacement_source
 from . import deform360_held_v8_query_artifacts as query_artifacts
+from . import deform360_process_isolation_qualification as process_qualification
 
 
-PROTOCOL_ID = "deform360-held-online-belief-v8.1"
-EXECUTION_ATTEMPT = 5
+PROTOCOL_ID = "deform360-held-online-belief-v8.2"
+EXECUTION_ATTEMPT = 1
 SCHEMA_VERSION = 1
 LOCK_KIND = "Deform360HeldOnlineBeliefLock"
 FRAME_ZERO_KIND = "Deform360HeldFrameZeroBundle"
@@ -324,9 +325,9 @@ PRIMARY_METHOD = {
 }
 
 FRESHNESS_AND_REUSE_CONTRACT = {
-    "held_v8_root_absent_before_attempt5_lock": True,
-    "all_predictions_must_be_fresh_v8_1_attempt5_outputs": True,
-    "all_targets_queries_and_scores_must_be_fresh_v8_1_attempt5_outputs": True,
+    "held_v82_root_absent_before_attempt1_lock": True,
+    "all_predictions_must_be_fresh_v8_2_attempt1_outputs": True,
+    "all_targets_queries_and_scores_must_be_fresh_v8_2_attempt1_outputs": True,
     "v7_execution_artifacts_reused": False,
     "v7_prediction_artifacts_reused": False,
     "v7_target_or_query_artifacts_reused": False,
@@ -354,7 +355,23 @@ FRESHNESS_AND_REUSE_CONTRACT = {
     "v8_attempt4_queried_prediction_artifacts_reused": False,
     "v8_attempt4_score_or_gate_artifacts_reused": False,
     "v8_attempt4_partial_artifacts_reused": False,
+    "v8_1_attempt5_admission_artifacts_reused": False,
     "full_15_case_fresh_rerun_required": True,
+}
+
+PROCESS_ISOLATION_POLICY_CONTRACT = {
+    "policy_id": "deform360-official-case-process-isolation-v1",
+    "one_official_case_lifecycle_per_child": True,
+    "one_original_trainer_per_child": True,
+    "parent_imports_nerfstudio": False,
+    "parent_holds_target_capabilities": True,
+    "target_capability_consumed_before_child_launch": True,
+    "child_receives_query_score_or_gate_paths": False,
+    "in_process_reconstruction_permitted": False,
+    "test_only_injected_backend_permitted": True,
+    "child_result_schema": "Deform360IsolatedOfficialReconstructionResult",
+    "child_exit_reclaims_case_resources": True,
+    "source_only_qualification_required": True,
 }
 
 RESOURCE_LIFECYCLE_POLICY_CONTRACT = {
@@ -3290,7 +3307,6 @@ def create_calibration_protocol_lock(
     fresh_root_capability: object,
     immutable_bindings: Mapping[str, str],
     v7_withdrawal_report_path: str | Path,
-    post_withdrawal_disclosure_path: str | Path,
     development_decision_path: str | Path,
     attempt3_withdrawal_report_path: str | Path,
     attempt3_withdrawal_pointer_path: str | Path,
@@ -3298,24 +3314,19 @@ def create_calibration_protocol_lock(
     attempt4_withdrawal_report_path: str | Path,
     attempt4_withdrawal_pointer_path: str | Path,
     attempt4_withdrawal_integrity_completion_path: str | Path,
-    resource_lifecycle_qualification_path: str | Path,
-    resource_lifecycle_qualification_completion_path: str | Path,
+    process_isolation_qualification_path: str | Path,
+    process_isolation_qualification_completion_path: str | Path,
 ) -> dict[str, Any]:
-    """Create v8.1 attempt 5 only after proving its formal root was absent."""
+    """Create v8.2 attempt 1 after qualifying the exact isolated runtime."""
 
     root = _canonical_path(held_root)
     output = _canonical_path(output_path)
     _require(output == root / "calibration-lock.json", "non-canonical lock path")
     _consume_fresh_root_capability(fresh_root_capability, root)
     _require(root.is_dir() and root.resolve() == root, "prepared held root changed")
-    disclosure_expected = root / "post-withdrawal-development-use-disclosure.json"
     _require(
-        _canonical_path(post_withdrawal_disclosure_path) == disclosure_expected,
-        "disclosure is outside the freshly prepared held-v8 root",
-    )
-    _require(
-        set(root.iterdir()) == {disclosure_expected},
-        "fresh held-v8 root contains an artifact other than the disclosure",
+        not any(root.iterdir()),
+        "fresh held-v8.2 root contains a pre-lock artifact",
     )
     try:
         bindings = {str(key): str(value) for key, value in immutable_bindings.items()}
@@ -3340,11 +3351,11 @@ def create_calibration_protocol_lock(
             "center-exclusion contract is not independently locked",
         )
         _require(
-            bindings.get("resource_lifecycle_policy_contract")
-            == held_contract_sha256(RESOURCE_LIFECYCLE_POLICY_CONTRACT)
+            bindings.get("process_isolation_policy_contract")
+            == held_contract_sha256(PROCESS_ISOLATION_POLICY_CONTRACT)
             and bindings.get("post_case_resource_boundary_contract")
             == held_contract_sha256(POST_CASE_RESOURCE_BOUNDARY_CONTRACT),
-            "attempt-5 resource lifecycle contracts are not independently locked",
+            "v8.2 process-boundary contracts are not independently locked",
         )
         _require_mode(
             v7_withdrawal_report_path,
@@ -3355,17 +3366,6 @@ def create_calibration_protocol_lock(
         _require(
             withdrawal["sha256"] == V7_WITHDRAWAL_REPORT_FILE_SHA256,
             "v7 withdrawal report SHA-256 changed",
-        )
-        disclosure = validate_post_withdrawal_development_use_disclosure(
-            post_withdrawal_disclosure_path
-        )
-        disclosed_withdrawal = disclosure["disclosed_v7_files"][
-            "v7_outcome_withdrawal_report"
-        ]
-        _require(
-            {key: disclosed_withdrawal[key] for key in ("path", "sha256", "size_bytes")}
-            == withdrawal,
-            "disclosure binds another v7 withdrawal report",
         )
         _require_mode(
             development_decision_path,
@@ -3391,99 +3391,83 @@ def create_calibration_protocol_lock(
             completion_path=attempt4_withdrawal_integrity_completion_path,
             verify_content_inventory=True,
         )
-        qualification_lineage = validate_resource_lifecycle_qualification_lineage(
-            evidence_path=resource_lifecycle_qualification_path,
-            completion_path=resource_lifecycle_qualification_completion_path,
-            verify_content_inventory=True,
-        )
-        disclosed_attempt3 = disclosure["disclosed_v8_attempt3_files"]
-        for name in (
-            "v8_attempt3_withdrawal_report",
-            "v8_attempt3_withdrawal_pointer",
-            "v8_attempt3_withdrawal_integrity_completion",
-        ):
-            disclosed = disclosed_attempt3[name]
-            _require(
-                {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
-                == attempt3_lineage[name],
-                f"disclosure binds another {name}",
+        qualification_lineage = (
+            process_qualification.validate_process_isolation_qualification_lineage(
+                evidence_path=process_isolation_qualification_path,
+                completion_path=process_isolation_qualification_completion_path,
+                verify_content_inventory=True,
             )
-        _require(
-            disclosure["v8_attempt3_archive_integrity"]
-            == attempt3_lineage["v8_attempt3_archive_integrity"],
-            "disclosure binds another attempt-3 archive",
         )
-        for name in (
-            "v8_attempt4_withdrawal_report",
-            "v8_attempt4_withdrawal_pointer",
-            "v8_attempt4_withdrawal_integrity_completion",
-        ):
-            disclosed = disclosure["disclosed_v8_attempt4_files"][name]
-            _require(
-                {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
-                == attempt4_lineage[name],
-                f"disclosure binds another {name}",
-            )
+        qualification_integrity = qualification_lineage[
+            "process_isolation_qualification_integrity"
+        ]
         _require(
-            disclosure["v8_attempt4_archive_integrity"]
-            == attempt4_lineage["v8_attempt4_archive_integrity"]
-            and disclosure["v8_attempt4_launcher_integrity"]
-            == attempt4_lineage["v8_attempt4_launcher_integrity"]
-            and attempt4_lineage["v8_attempt4_calibration_result"]
-            == "NO_CALIBRATION_RESULT",
-            "disclosure binds another attempt-4 failure boundary",
+            qualification_integrity["terminal_outcome"] == "qualified"
+            and qualification_integrity["admission_eligible"] is True,
+            "process-isolation qualification is not admission eligible",
         )
-        for name in RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES:
-            disclosed = disclosure["resource_lifecycle_qualification_files"][name]
-            _require(
-                {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
-                == {
-                    key: qualification_lineage[name][key]
-                    for key in ("path", "sha256", "size_bytes")
-                }
-                and disclosed.get("artifact_sha256")
-                == qualification_lineage[name]["artifact_sha256"],
-                f"disclosure binds another {name}",
-            )
-        _require(
-            disclosure["resource_lifecycle_qualification_integrity"]
-            == qualification_lineage["resource_lifecycle_qualification_integrity"],
-            "disclosure binds another resource qualification tree",
-        )
-        _require(
-            bindings.get("resource_lifecycle_qualification_evidence")
-            == qualification_lineage["resource_lifecycle_qualification_evidence"][
-                "sha256"
-            ]
-            and bindings.get("resource_lifecycle_qualification_integrity_completion")
-            == qualification_lineage[
-                "resource_lifecycle_qualification_integrity_completion"
-            ]["sha256"]
-            and bindings.get("resource_lifecycle_qualification_attempt")
-            == qualification_lineage["resource_lifecycle_qualification_attempt"][
-                "sha256"
-            ]
-            and bindings.get("resource_lifecycle_qualification_repeat_manifest")
-            == qualification_lineage[
-                "resource_lifecycle_qualification_repeat_manifest"
-            ]["sha256"]
-            and bindings.get("resource_lifecycle_qualification_equivalence_result")
-            == qualification_lineage[
-                "resource_lifecycle_qualification_equivalence_result"
-            ]["sha256"]
-            and bindings.get("resource_lifecycle_qualification_analyzer_source")
-            == RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
-            "resource qualification file hashes are not independently locked",
-        )
-        _require(
-            all(
-                bindings.get(binding_name)
-                == qualification_lineage[lineage_name]["artifact_sha256"]
-                for lineage_name, binding_name in (
-                    RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES.items()
-                )
+        for lineage_name, binding_name in (
+            (
+                "process_isolation_qualification_attempt",
+                "process_isolation_qualification_attempt",
             ),
-            "resource qualification artifact hashes are not independently locked",
+            (
+                "process_isolation_qualification_evidence",
+                "process_isolation_qualification_evidence",
+            ),
+            (
+                "process_isolation_qualification_integrity_completion",
+                "process_isolation_qualification_integrity_completion",
+            ),
+        ):
+            record = qualification_lineage[lineage_name]
+            _require(
+                bindings.get(binding_name) == record["sha256"]
+                and bindings.get(f"{binding_name}_artifact")
+                == record["artifact_sha256"],
+                f"{lineage_name} is not independently locked",
+            )
+        for integrity_name, binding_name in (
+            ("inventory_sha256", "process_isolation_qualification_inventory"),
+            (
+                "metadata_inventory_sha256",
+                "process_isolation_qualification_metadata_inventory",
+            ),
+            (
+                "qualification_source_sha256",
+                "process_isolation_qualification_operator_source",
+            ),
+            (
+                "numerical_adapter_source_sha256",
+                "held_official_reconstruction_numerical_source",
+            ),
+            (
+                "isolation_source_sha256",
+                "held_v82_process_isolation_source",
+            ),
+            (
+                "worker_source_sha256",
+                "held_v82_process_isolation_worker_source",
+            ),
+            (
+                "outcome_driver_source_sha256",
+                "held_v8_outcome_driver_source",
+            ),
+            (
+                "sealer_source_sha256",
+                "process_isolation_qualification_sealer_source",
+            ),
+        ):
+            _require(
+                bindings.get(binding_name) == qualification_integrity[integrity_name],
+                f"{binding_name} differs from the qualified source",
+            )
+        _require(
+            hashlib.sha256(
+                qualification_integrity["source_head"].encode("ascii")
+            ).hexdigest()
+            == bindings.get("method_deployed_commit_text_sha256"),
+            "process-isolation qualification used another source revision",
         )
         artifact: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION,
@@ -3499,9 +3483,6 @@ def create_calibration_protocol_lock(
             "immutable_bindings": dict(sorted(bindings.items())),
             "lineage": {
                 "v7_withdrawal_report": withdrawal,
-                "post_withdrawal_development_use_disclosure": _bound_file(
-                    post_withdrawal_disclosure_path
-                ),
                 "open27_development_decision": development,
                 **attempt3_lineage,
                 **attempt4_lineage,
@@ -3512,7 +3493,7 @@ def create_calibration_protocol_lock(
                 replacement_source.REPLACEMENT_SOURCE_INVENTORY_CONTRACT
             ),
             "primary_method": deepcopy(PRIMARY_METHOD),
-            "resource_lifecycle_policy": deepcopy(RESOURCE_LIFECYCLE_POLICY_CONTRACT),
+            "process_isolation_policy": deepcopy(PROCESS_ISOLATION_POLICY_CONTRACT),
             "post_case_resource_boundary": deepcopy(
                 POST_CASE_RESOURCE_BOUNDARY_CONTRACT
             ),
@@ -3528,6 +3509,7 @@ def create_calibration_protocol_lock(
                 "target_reconstruction_before_barrier_one_permitted": False,
                 "future_target_read_before_barrier_two_permitted": False,
                 "confirmation_before_calibration_go_permitted": False,
+                "formal_in_process_reconstruction_permitted": False,
             },
         }
         artifact["artifact_sha256"] = held_artifact_sha256(artifact)
@@ -3576,8 +3558,8 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         and artifact.get("replacement_source_inventory_contract")
         == replacement_source.REPLACEMENT_SOURCE_INVENTORY_CONTRACT
         and artifact.get("primary_method") == PRIMARY_METHOD
-        and artifact.get("resource_lifecycle_policy")
-        == RESOURCE_LIFECYCLE_POLICY_CONTRACT
+        and artifact.get("process_isolation_policy")
+        == PROCESS_ISOLATION_POLICY_CONTRACT
         and artifact.get("post_case_resource_boundary")
         == POST_CASE_RESOURCE_BOUNDARY_CONTRACT,
         "held-v8 method or temporal contract changed",
@@ -3608,11 +3590,11 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         "center-exclusion contract changed",
     )
     _require(
-        bindings.get("resource_lifecycle_policy_contract")
-        == held_contract_sha256(RESOURCE_LIFECYCLE_POLICY_CONTRACT)
+        bindings.get("process_isolation_policy_contract")
+        == held_contract_sha256(PROCESS_ISOLATION_POLICY_CONTRACT)
         and bindings.get("post_case_resource_boundary_contract")
         == held_contract_sha256(POST_CASE_RESOURCE_BOUNDARY_CONTRACT),
-        "held-v8 resource lifecycle contracts changed",
+        "held-v8.2 process-boundary contracts changed",
     )
     lineage = artifact.get("lineage")
     _require(
@@ -3620,7 +3602,6 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         and set(lineage)
         == {
             "v7_withdrawal_report",
-            "post_withdrawal_development_use_disclosure",
             "open27_development_decision",
             "v8_attempt3_withdrawal_report",
             "v8_attempt3_withdrawal_pointer",
@@ -3632,12 +3613,10 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "v8_attempt4_archive_integrity",
             "v8_attempt4_launcher_integrity",
             "v8_attempt4_calibration_result",
-            "resource_lifecycle_qualification_attempt",
-            "resource_lifecycle_qualification_evidence",
-            "resource_lifecycle_qualification_repeat_manifest",
-            "resource_lifecycle_qualification_equivalence_result",
-            "resource_lifecycle_qualification_integrity_completion",
-            "resource_lifecycle_qualification_integrity",
+            "process_isolation_qualification_attempt",
+            "process_isolation_qualification_evidence",
+            "process_isolation_qualification_integrity_completion",
+            "process_isolation_qualification_integrity",
         },
         "held-v8 lineage fields changed",
     )
@@ -3649,20 +3628,6 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
     _require(
         _sha256_file(withdrawal_path) == V7_WITHDRAWAL_REPORT_FILE_SHA256,
         "v7 withdrawal lineage changed",
-    )
-    disclosure_path = _validate_bound_file(
-        lineage["post_withdrawal_development_use_disclosure"],
-        role="post-withdrawal disclosure",
-        required_mode=_SEALED_FILE_MODE,
-    )
-    disclosure = validate_post_withdrawal_development_use_disclosure(disclosure_path)
-    disclosed_withdrawal = disclosure["disclosed_v7_files"][
-        "v7_outcome_withdrawal_report"
-    ]
-    _require(
-        {key: disclosed_withdrawal[key] for key in ("path", "sha256", "size_bytes")}
-        == lineage["v7_withdrawal_report"],
-        "post-withdrawal disclosure lineage changed",
     )
     development = _validate_bound_file(
         lineage["open27_development_decision"],
@@ -3683,23 +3648,6 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         all(lineage[name] == value for name, value in attempt3_lineage.items()),
         "attempt-3 withdrawal lineage changed",
     )
-    disclosed_attempt3 = disclosure["disclosed_v8_attempt3_files"]
-    for name in (
-        "v8_attempt3_withdrawal_report",
-        "v8_attempt3_withdrawal_pointer",
-        "v8_attempt3_withdrawal_integrity_completion",
-    ):
-        disclosed = disclosed_attempt3[name]
-        _require(
-            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
-            == lineage[name],
-            f"post-withdrawal disclosure {name} lineage changed",
-        )
-    _require(
-        disclosure["v8_attempt3_archive_integrity"]
-        == lineage["v8_attempt3_archive_integrity"],
-        "post-withdrawal disclosure archive lineage changed",
-    )
     attempt4_lineage = validate_attempt4_withdrawal_lineage(
         archive_path=lineage["v8_attempt4_archive_integrity"]["path"],
         report_path=lineage["v8_attempt4_withdrawal_report"]["path"],
@@ -3710,68 +3658,78 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
         all(lineage[name] == value for name, value in attempt4_lineage.items()),
         "attempt-4 withdrawal lineage changed",
     )
-    for name in (
-        "v8_attempt4_withdrawal_report",
-        "v8_attempt4_withdrawal_pointer",
-        "v8_attempt4_withdrawal_integrity_completion",
-    ):
-        disclosed = disclosure["disclosed_v8_attempt4_files"][name]
-        _require(
-            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
-            == lineage[name],
-            f"post-withdrawal disclosure {name} lineage changed",
-        )
     _require(
-        disclosure["v8_attempt4_archive_integrity"]
-        == lineage["v8_attempt4_archive_integrity"]
-        and disclosure["v8_attempt4_launcher_integrity"]
-        == lineage["v8_attempt4_launcher_integrity"]
-        and lineage["v8_attempt4_calibration_result"] == "NO_CALIBRATION_RESULT",
-        "post-withdrawal disclosure attempt-4 boundary changed",
+        lineage["v8_attempt4_calibration_result"] == "NO_CALIBRATION_RESULT",
+        "attempt-4 failure boundary changed",
     )
-    qualification_lineage = validate_resource_lifecycle_qualification_lineage(
-        evidence_path=lineage["resource_lifecycle_qualification_evidence"]["path"],
-        completion_path=lineage[
-            "resource_lifecycle_qualification_integrity_completion"
-        ]["path"],
+    qualification_lineage = (
+        process_qualification.validate_process_isolation_qualification_lineage(
+            evidence_path=lineage["process_isolation_qualification_evidence"]["path"],
+            completion_path=lineage[
+                "process_isolation_qualification_integrity_completion"
+            ]["path"],
+        )
     )
     _require(
         all(lineage[name] == value for name, value in qualification_lineage.items()),
-        "resource lifecycle qualification lineage changed",
+        "process-isolation qualification lineage changed",
     )
-    for name in RESOURCE_LIFECYCLE_LINEAGE_FILE_NAMES:
-        disclosed = disclosure["resource_lifecycle_qualification_files"][name]
+    qualification_integrity = lineage[
+        "process_isolation_qualification_integrity"
+    ]
+    for lineage_name, binding_name in (
+        (
+            "process_isolation_qualification_attempt",
+            "process_isolation_qualification_attempt",
+        ),
+        (
+            "process_isolation_qualification_evidence",
+            "process_isolation_qualification_evidence",
+        ),
+        (
+            "process_isolation_qualification_integrity_completion",
+            "process_isolation_qualification_integrity_completion",
+        ),
+    ):
+        record = lineage[lineage_name]
         _require(
-            {key: disclosed[key] for key in ("path", "sha256", "size_bytes")}
-            == {key: lineage[name][key] for key in ("path", "sha256", "size_bytes")}
-            and disclosed.get("artifact_sha256") == lineage[name]["artifact_sha256"],
-            f"post-withdrawal disclosure {name} lineage changed",
+            bindings.get(binding_name) == record["sha256"]
+            and bindings.get(f"{binding_name}_artifact")
+            == record["artifact_sha256"],
+            f"{lineage_name} binding changed",
+        )
+    for integrity_name, binding_name in (
+        ("inventory_sha256", "process_isolation_qualification_inventory"),
+        (
+            "metadata_inventory_sha256",
+            "process_isolation_qualification_metadata_inventory",
+        ),
+        (
+            "qualification_source_sha256",
+            "process_isolation_qualification_operator_source",
+        ),
+        (
+            "numerical_adapter_source_sha256",
+            "held_official_reconstruction_numerical_source",
+        ),
+        ("isolation_source_sha256", "held_v82_process_isolation_source"),
+        ("worker_source_sha256", "held_v82_process_isolation_worker_source"),
+        ("outcome_driver_source_sha256", "held_v8_outcome_driver_source"),
+        (
+            "sealer_source_sha256",
+            "process_isolation_qualification_sealer_source",
+        ),
+    ):
+        _require(
+            bindings.get(binding_name) == qualification_integrity[integrity_name],
+            f"{binding_name} binding changed",
         )
     _require(
-        disclosure["resource_lifecycle_qualification_integrity"]
-        == lineage["resource_lifecycle_qualification_integrity"]
-        and bindings.get("resource_lifecycle_qualification_attempt")
-        == lineage["resource_lifecycle_qualification_attempt"]["sha256"]
-        and bindings.get("resource_lifecycle_qualification_evidence")
-        == lineage["resource_lifecycle_qualification_evidence"]["sha256"]
-        and bindings.get("resource_lifecycle_qualification_repeat_manifest")
-        == lineage["resource_lifecycle_qualification_repeat_manifest"]["sha256"]
-        and bindings.get("resource_lifecycle_qualification_equivalence_result")
-        == lineage["resource_lifecycle_qualification_equivalence_result"]["sha256"]
-        and bindings.get("resource_lifecycle_qualification_integrity_completion")
-        == lineage["resource_lifecycle_qualification_integrity_completion"]["sha256"]
-        and bindings.get("resource_lifecycle_qualification_analyzer_source")
-        == RESOURCE_LIFECYCLE_ANALYZER_SOURCE_SHA256,
-        "post-withdrawal qualification binding changed",
-    )
-    _require(
-        all(
-            bindings.get(binding_name) == lineage[lineage_name]["artifact_sha256"]
-            for lineage_name, binding_name in (
-                RESOURCE_LIFECYCLE_ARTIFACT_BINDING_NAMES.items()
-            )
-        ),
-        "post-withdrawal qualification artifact binding changed",
+        hashlib.sha256(
+            qualification_integrity["source_head"].encode("ascii")
+        ).hexdigest()
+        == bindings.get("method_deployed_commit_text_sha256"),
+        "qualified source revision binding changed",
     )
     _require(
         artifact.get("freshness_and_reuse") == FRESHNESS_AND_REUSE_CONTRACT,
@@ -3785,6 +3743,7 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "target_reconstruction_before_barrier_one_permitted": False,
             "future_target_read_before_barrier_two_permitted": False,
             "confirmation_before_calibration_go_permitted": False,
+            "formal_in_process_reconstruction_permitted": False,
         },
         "held-v8 information boundary changed",
     )
@@ -5495,6 +5454,7 @@ __all__ = [
     "PREFIX_AUTHORIZATION_KIND",
     "PRIMARY_METHOD",
     "POST_CASE_RESOURCE_BOUNDARY_CONTRACT",
+    "PROCESS_ISOLATION_POLICY_CONTRACT",
     "PROTOCOL_ID",
     "REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT",
     "REPLACEMENT_AUTOMATIC_TWIN_ADMISSION_CONTRACT_SHA256",

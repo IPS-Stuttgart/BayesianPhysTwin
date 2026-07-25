@@ -485,6 +485,35 @@ def test_process_isolated_reconstruction_runs_only_after_target_permit(
         assert consume < isolated < query
 
 
+def test_formal_outcome_rejects_in_process_reconstruction(
+    tmp_path: Path,
+) -> None:
+    arguments, fake_protocol, post, events, _cases, query_runner = (
+        _fake_outcome_execution(
+            tmp_path, role="calibration", decision_label="NO-GO"
+        )
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="formal v8.2 outcomes require process-isolated reconstruction",
+    ):
+        driver.execute_outcomes(
+            arguments,
+            protocol=fake_protocol,
+            deployment_verifier=lambda _arguments: events.append("verify"),
+            smoke_gsplat_runtime=lambda: {"artifact_sha256": "a" * 64},
+            load_post_barrier_api=lambda: post,
+            query_runner=query_runner,
+            reconstruction_runner=None,
+            validate_runtime=lambda _arguments: None,
+            rlimit_nofile_getter=lambda: (1024, 4096),
+            role_sealer=lambda sealed: events.append(f"seal:{sealed.role}"),
+            formal_paths=True,
+        )
+    assert events == []
+
+
 @pytest.mark.parametrize("drift_call", (9, 10))
 def test_final_or_open_descriptor_boundary_drift_leaves_no_marker_or_seal(
     tmp_path: Path,

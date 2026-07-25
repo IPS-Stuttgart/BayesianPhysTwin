@@ -361,9 +361,9 @@ def test_attempt4_launcher_routine_validation_checks_metadata_without_hashing(
     )
 
 
-def test_attempt5_protocol_keeps_science_and_adds_only_resource_contracts() -> None:
-    assert protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.1"
-    assert protocol.EXECUTION_ATTEMPT == 5
+def test_current_protocol_preserves_attempt5_resource_lineage() -> None:
+    assert protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.2"
+    assert protocol.EXECUTION_ATTEMPT == 1
     assert protocol.FRAME_COUNT == 76
     assert protocol.UPDATE_FRAMES == (19, 38, 57)
     assert protocol.RESOURCE_LIFECYCLE_QUALIFICATION_KIND.endswith("EvidenceV2")
@@ -407,9 +407,15 @@ def test_attempt5_protocol_keeps_science_and_adds_only_resource_contracts() -> N
     assert protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT["rlimit_nofile_changed"] is False
     assert (
         protocol.FRESHNESS_AND_REUSE_CONTRACT[
-            "all_predictions_must_be_fresh_v8_1_attempt5_outputs"
+            "all_predictions_must_be_fresh_v8_2_attempt1_outputs"
         ]
         is True
+    )
+    assert (
+        protocol.FRESHNESS_AND_REUSE_CONTRACT[
+            "v8_1_attempt5_admission_artifacts_reused"
+        ]
+        is False
     )
     assert all(
         value is False

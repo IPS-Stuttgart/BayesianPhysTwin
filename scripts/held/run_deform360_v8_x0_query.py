@@ -27,7 +27,7 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     arguments = _parse_args()
     if os.path.lexists("/nonexistent") or os.path.lexists(
-        "/nonexistent/bpt-held-v8-pycache"
+        "/nonexistent/bpt-held-v82-pycache"
     ):
         raise RuntimeError("reserved held-v8 bytecode prefix is available")
     forbidden = sorted(
