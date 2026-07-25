@@ -259,7 +259,7 @@ ATTEMPT4_LAUNCHER_EXIT_SHA256 = (
 )
 ATTEMPT4_LAUNCHER_EXIT_SIZE_BYTES = 2
 RESOURCE_LIFECYCLE_QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
-_ATTEMPT4_PROTOCOL_ID = PROTOCOL_ID
+_ATTEMPT4_PROTOCOL_ID = "deform360-held-online-belief-v8.1"
 _ATTEMPT4_EXECUTION_ATTEMPT = 4
 _ATTEMPT4_STATUS = (
     "withdrawn-postbarrier-during-third-target-reconstruction-before-barrier2-or-score"

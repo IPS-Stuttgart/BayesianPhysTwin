@@ -74,7 +74,7 @@ def _chain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         {
             "schema_version": 1,
             "artifact_kind": "Deform360HeldV81Attempt4PostBarrierWithdrawalReport",
-            "protocol_id": protocol.PROTOCOL_ID,
+            "protocol_id": protocol._ATTEMPT4_PROTOCOL_ID,
             "execution_attempt": 4,
             "status": protocol._ATTEMPT4_STATUS,
             "disposition": protocol._ATTEMPT4_DISPOSITION,
@@ -142,7 +142,7 @@ def _chain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         {
             "schema_version": 1,
             "artifact_kind": "Deform360HeldV81Attempt4WithdrawalIntegrityCompletion",
-            "protocol_id": protocol.PROTOCOL_ID,
+            "protocol_id": protocol._ATTEMPT4_PROTOCOL_ID,
             "execution_attempt": 4,
             "status": "withdrawal-integrity-complete",
             "disposition": protocol._ATTEMPT4_DISPOSITION,
@@ -165,7 +165,7 @@ def _chain(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         {
             "schema_version": 1,
             "artifact_kind": "Deform360HeldV81Attempt4WithdrawalPointer",
-            "protocol_id": protocol.PROTOCOL_ID,
+            "protocol_id": protocol._ATTEMPT4_PROTOCOL_ID,
             "execution_attempt": 4,
             "status": protocol._ATTEMPT4_STATUS,
             "disposition": protocol._ATTEMPT4_DISPOSITION,
@@ -363,6 +363,8 @@ def test_attempt4_launcher_routine_validation_checks_metadata_without_hashing(
 
 def test_current_protocol_preserves_attempt5_resource_lineage() -> None:
     assert protocol.PROTOCOL_ID == "deform360-held-online-belief-v8.2"
+    assert protocol._ATTEMPT4_PROTOCOL_ID == "deform360-held-online-belief-v8.1"
+    assert protocol._ATTEMPT4_PROTOCOL_ID != protocol.PROTOCOL_ID
     assert protocol.EXECUTION_ATTEMPT == 1
     assert protocol.FRAME_COUNT == 76
     assert protocol.UPDATE_FRAMES == (19, 38, 57)
