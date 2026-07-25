@@ -10,13 +10,14 @@ fallback.
 ## Released-checkpoint competence result
 
 The pinned MatPhys checkpoint was evaluated on `single_lift_sloth` with the
-released PhysTwin graph and teacher field. Three input controls were run:
+released PhysTwin graph and teacher field. Four input controls were run:
 
 | Video / part input | Object prediction | Result |
 | --- | ---: | --- |
 | causal prefix, one global part | all 110,597 springs at 1,000 | reject |
 | all-frame reconstruction control, one global part | identical to causal | reject |
 | causal prefix, five DINO graph parts | identical to one part | reject |
+| causal prefix, five graph parts with distinct valid material one-hots | identical to one part | reject |
 
 The predicted object log stiffness is effectively constant at
 `log(1000) = 6.907755`; its spatial standard deviation is below `1e-7`. The raw
@@ -25,6 +26,14 @@ correlation approximately `-1` with the teacher log-stiffness field. It therefor
 does not provide a learned spatial proposal: it cancels the teacher variation and
 pushes the object field to the decoder's lower bound. Causal and all-frame outputs
 are numerically indistinguishable for this case.
+
+The final row is a diagnostic capacity control, not a semantic material
+prediction. It assigns the five graph parts maximally distinct valid MatPhys
+material codes (`fabric`, `rubber`, `silk`, `denim`, and `fur`). The frozen
+decoder still returns exactly `log(1000)` for every object spring. Thus the
+remaining failure is not explained by missing per-part VLM material labels on
+the public inference interface. Recovering or inventing such labels is not a
+credible fast path for this checkpoint.
 
 The exporter now records a target-independent competence gate. A proposal is not
 allowed into a Warp family gate when at least 99% of object springs occupy either
