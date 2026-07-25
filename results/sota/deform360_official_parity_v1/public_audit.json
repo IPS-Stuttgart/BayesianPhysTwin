@@ -1,0 +1,1081 @@
+{
+  "aggregation_ambiguity_example": {
+    "episode_balanced_mean": 4.0,
+    "frame_pooled_mean": 1.0,
+    "object_balanced_mean": 6.0
+  },
+  "artifact_kind": "Deform360Official3DParityPublicAudit",
+  "audits": {
+    "multi_episode": {
+      "allowed_claim_label": "candidate_convention_sensitivity_only",
+      "artifact_kind": "Deform360Official3DParityContractAudit",
+      "authoritative_fields": [
+        "benchmark_setting"
+      ],
+      "benchmark_setting": "multi_episode",
+      "candidate_fields": [
+        "particle_identity_alignment",
+        "prediction_preprocessing",
+        "ground_truth_preprocessing",
+        "chamfer_direction",
+        "chamfer_point_distance",
+        "chamfer_reduction",
+        "track_correspondence",
+        "track_point_distance",
+        "track_reduction",
+        "frame_aggregation",
+        "episode_aggregation"
+      ],
+      "claim_boundary": "Published aggregate values may be quoted as paper results, but local scores cannot be called official or directly SOTA-comparable until every required field is authoritative.",
+      "contract_sha256": "765e0c417907343f3b970a890b553eb3a2d8693a4522277e3ac6f68be3c5b03b",
+      "field_counts": {
+        "authoritative": 1,
+        "candidate": 11,
+        "missing": 8
+      },
+      "information_request": [
+        {
+          "current_status": "candidate",
+          "field": "particle_identity_alignment",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "prediction_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "ground_truth_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_direction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_point_distance",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_reduction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_correspondence",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_point_distance",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_reduction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "frame_aggregation",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "episode_aggregation",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "missing",
+          "field": "training_case_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "evaluation_case_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "future_frame_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "validity_visibility_mask",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "coordinate_frame",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "length_unit",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "object_aggregation",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "missing_case_policy",
+          "request": "Release or explicitly specify this field."
+        }
+      ],
+      "missing_fields": [
+        "training_case_manifest",
+        "evaluation_case_manifest",
+        "future_frame_manifest",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
+        "object_aggregation",
+        "missing_case_policy"
+      ],
+      "official_claim_allowed": false,
+      "parity_ready": false,
+      "schema_version": 1
+    },
+    "multi_object": {
+      "allowed_claim_label": "candidate_convention_sensitivity_only",
+      "artifact_kind": "Deform360Official3DParityContractAudit",
+      "authoritative_fields": [
+        "benchmark_setting"
+      ],
+      "benchmark_setting": "multi_object",
+      "candidate_fields": [
+        "particle_identity_alignment",
+        "prediction_preprocessing",
+        "ground_truth_preprocessing",
+        "chamfer_direction",
+        "chamfer_point_distance",
+        "chamfer_reduction",
+        "track_correspondence",
+        "track_point_distance",
+        "track_reduction",
+        "frame_aggregation",
+        "episode_aggregation"
+      ],
+      "claim_boundary": "Published aggregate values may be quoted as paper results, but local scores cannot be called official or directly SOTA-comparable until every required field is authoritative.",
+      "contract_sha256": "9bcae9d384470d038027f6a46617b4778978f0712a7a85e05c3a3fd9fda424d0",
+      "field_counts": {
+        "authoritative": 1,
+        "candidate": 11,
+        "missing": 8
+      },
+      "information_request": [
+        {
+          "current_status": "candidate",
+          "field": "particle_identity_alignment",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "prediction_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "ground_truth_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_direction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_point_distance",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_reduction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_correspondence",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_point_distance",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_reduction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "frame_aggregation",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "episode_aggregation",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "missing",
+          "field": "training_case_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "evaluation_case_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "future_frame_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "validity_visibility_mask",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "coordinate_frame",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "length_unit",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "object_aggregation",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "missing_case_policy",
+          "request": "Release or explicitly specify this field."
+        }
+      ],
+      "missing_fields": [
+        "training_case_manifest",
+        "evaluation_case_manifest",
+        "future_frame_manifest",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
+        "object_aggregation",
+        "missing_case_policy"
+      ],
+      "official_claim_allowed": false,
+      "parity_ready": false,
+      "schema_version": 1
+    },
+    "per_episode": {
+      "allowed_claim_label": "candidate_convention_sensitivity_only",
+      "artifact_kind": "Deform360Official3DParityContractAudit",
+      "authoritative_fields": [
+        "benchmark_setting"
+      ],
+      "benchmark_setting": "per_episode",
+      "candidate_fields": [
+        "particle_identity_alignment",
+        "prediction_preprocessing",
+        "ground_truth_preprocessing",
+        "chamfer_direction",
+        "chamfer_point_distance",
+        "chamfer_reduction",
+        "track_correspondence",
+        "track_point_distance",
+        "track_reduction",
+        "frame_aggregation",
+        "episode_aggregation"
+      ],
+      "claim_boundary": "Published aggregate values may be quoted as paper results, but local scores cannot be called official or directly SOTA-comparable until every required field is authoritative.",
+      "contract_sha256": "f2408f26ac93b7ad8a2bfebd152374e1816161506551ff6e1445f1b0a4678564",
+      "field_counts": {
+        "authoritative": 1,
+        "candidate": 11,
+        "missing": 8
+      },
+      "information_request": [
+        {
+          "current_status": "candidate",
+          "field": "particle_identity_alignment",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "prediction_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "ground_truth_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_direction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_point_distance",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "chamfer_reduction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_correspondence",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_point_distance",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "track_reduction",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "frame_aggregation",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "episode_aggregation",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "missing",
+          "field": "training_case_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "evaluation_case_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "future_frame_manifest",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "validity_visibility_mask",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "coordinate_frame",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "length_unit",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "object_aggregation",
+          "request": "Release or explicitly specify this field."
+        },
+        {
+          "current_status": "missing",
+          "field": "missing_case_policy",
+          "request": "Release or explicitly specify this field."
+        }
+      ],
+      "missing_fields": [
+        "training_case_manifest",
+        "evaluation_case_manifest",
+        "future_frame_manifest",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
+        "object_aggregation",
+        "missing_case_policy"
+      ],
+      "official_claim_allowed": false,
+      "parity_ready": false,
+      "schema_version": 1
+    }
+  },
+  "conclusion": "No public contract is parity-ready. The published table values are reference results; local values remain candidate-convention sensitivity results until the missing evaluator contract is supplied.",
+  "contracts": {
+    "multi_episode": {
+      "artifact_kind": "Deform360Official3DParityContract",
+      "benchmark_setting": "multi_episode",
+      "contract_sha256": "765e0c417907343f3b970a890b553eb3a2d8693a4522277e3ac6f68be3c5b03b",
+      "fields": {
+        "benchmark_setting": {
+          "locator": "main.tex lines 399-499",
+          "note": "The paper defines per-episode, multi-episode, and multi-object settings.",
+          "source_id": "deform360_arxiv_v1",
+          "status": "authoritative",
+          "value": "multi_episode"
+        },
+        "chamfer_direction": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "prediction_to_ground_truth"
+        },
+        "chamfer_point_distance": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "euclidean"
+        },
+        "chamfer_reduction": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "mean_nearest_neighbor"
+        },
+        "coordinate_frame": {
+          "locator": null,
+          "note": "The table does not bind the exact metric coordinate frame or alignment.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "episode_aggregation": {
+          "locator": "eval.py lines 1020-1071",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "episode_mean_then_arithmetic_mean_over_steps"
+        },
+        "evaluation_case_manifest": {
+          "locator": null,
+          "note": "The exact ordered object/episode evaluation cohort is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "frame_aggregation": {
+          "locator": "eval.py lines 1043-1071",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "arithmetic_mean_over_evaluation_steps"
+        },
+        "future_frame_manifest": {
+          "locator": null,
+          "note": "T_train and exact per-case future frame indices are not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "ground_truth_preprocessing": {
+          "locator": "metric_eval.py lines 301-308",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Use xyz_gt_downsampled for track error and full xyz_gt for Chamfer unless camera-drop evaluation is enabled."
+        },
+        "length_unit": {
+          "locator": null,
+          "note": "The table values are not labeled with an exact unit or normalization.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "missing_case_policy": {
+          "locator": null,
+          "note": "The treatment of failed, missing, or unequal-length episodes is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "object_aggregation": {
+          "locator": null,
+          "note": "The object weighting used in the reported aggregate is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "particle_identity_alignment": {
+          "locator": "metric_eval.py lines 301-305",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Prediction and downsampled ground truth use matching row indices."
+        },
+        "prediction_preprocessing": {
+          "locator": "metric_eval.py lines 301-308",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Use the evaluator-provided predicted xyz array without an additional metric-space alignment."
+        },
+        "track_correspondence": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "shared_particle_index"
+        },
+        "track_point_distance": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "squared_coordinate_residual"
+        },
+        "track_reduction": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "mean_over_points_and_xyz_coordinates"
+        },
+        "training_case_manifest": {
+          "locator": null,
+          "note": "The paper names a training subset but does not release exact case membership.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "validity_visibility_mask": {
+          "locator": null,
+          "note": "The exact particle/frame validity and visibility policy is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        }
+      },
+      "schema_version": 1,
+      "sources": {
+        "deform360_arxiv_v1": {
+          "authority": "deform360_authoritative",
+          "bound_files": {
+            "appendix.tex": "b8ccbb6c8b588d85dcd1b05908780473b712e9fc4018a237beeaac41a6e5e0b0",
+            "main.tex": "b2239e4e83bf62b0960119b92c9a370f2769c2026ed5ebae75de145ceefdfe95"
+          },
+          "content_sha256": "66d2bfecd6ec9b829cd810913238821adc143c4831393704ed4bcc4ccc09e05c",
+          "kind": "official_paper",
+          "revision": "arxiv:2607.05390v1",
+          "url": "https://arxiv.org/abs/2607.05390"
+        },
+        "deform360_public_repo": {
+          "authority": "deform360_authoritative",
+          "bound_files": {},
+          "content_sha256": null,
+          "kind": "official_repository_without_evaluator",
+          "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "url": "https://github.com/lhy0807/deform360"
+        },
+        "pgrd_candidate_metric": {
+          "authority": "external_method_only",
+          "bound_files": {
+            "experiments/train/eval.py": "80a95f1b477bc3852f08d5bd33cc13f33d5152f2798f60c572716d441587c606",
+            "experiments/train/metric.py": "39745215e9eeebf735b9ce23b1e8f0052ae19d1a81019cf60a25d52eb7cbf991",
+            "experiments/train/metric_eval.py": "240168a5ab80c872fdf424b7efc5d53893ae442f15496a2dcf3d0681186d1716"
+          },
+          "content_sha256": null,
+          "kind": "candidate_implementation",
+          "revision": "e294d96723054f77a1cfdd3c2c052de7b7cd9ce3",
+          "url": "https://github.com/shivanshpatel35/pgrd"
+        }
+      }
+    },
+    "multi_object": {
+      "artifact_kind": "Deform360Official3DParityContract",
+      "benchmark_setting": "multi_object",
+      "contract_sha256": "9bcae9d384470d038027f6a46617b4778978f0712a7a85e05c3a3fd9fda424d0",
+      "fields": {
+        "benchmark_setting": {
+          "locator": "main.tex lines 399-499",
+          "note": "The paper defines per-episode, multi-episode, and multi-object settings.",
+          "source_id": "deform360_arxiv_v1",
+          "status": "authoritative",
+          "value": "multi_object"
+        },
+        "chamfer_direction": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "prediction_to_ground_truth"
+        },
+        "chamfer_point_distance": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "euclidean"
+        },
+        "chamfer_reduction": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "mean_nearest_neighbor"
+        },
+        "coordinate_frame": {
+          "locator": null,
+          "note": "The table does not bind the exact metric coordinate frame or alignment.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "episode_aggregation": {
+          "locator": "eval.py lines 1020-1071",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "episode_mean_then_arithmetic_mean_over_steps"
+        },
+        "evaluation_case_manifest": {
+          "locator": null,
+          "note": "The exact ordered object/episode evaluation cohort is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "frame_aggregation": {
+          "locator": "eval.py lines 1043-1071",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "arithmetic_mean_over_evaluation_steps"
+        },
+        "future_frame_manifest": {
+          "locator": null,
+          "note": "T_train and exact per-case future frame indices are not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "ground_truth_preprocessing": {
+          "locator": "metric_eval.py lines 301-308",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Use xyz_gt_downsampled for track error and full xyz_gt for Chamfer unless camera-drop evaluation is enabled."
+        },
+        "length_unit": {
+          "locator": null,
+          "note": "The table values are not labeled with an exact unit or normalization.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "missing_case_policy": {
+          "locator": null,
+          "note": "The treatment of failed, missing, or unequal-length episodes is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "object_aggregation": {
+          "locator": null,
+          "note": "The object weighting used in the reported aggregate is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "particle_identity_alignment": {
+          "locator": "metric_eval.py lines 301-305",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Prediction and downsampled ground truth use matching row indices."
+        },
+        "prediction_preprocessing": {
+          "locator": "metric_eval.py lines 301-308",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Use the evaluator-provided predicted xyz array without an additional metric-space alignment."
+        },
+        "track_correspondence": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "shared_particle_index"
+        },
+        "track_point_distance": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "squared_coordinate_residual"
+        },
+        "track_reduction": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "mean_over_points_and_xyz_coordinates"
+        },
+        "training_case_manifest": {
+          "locator": null,
+          "note": "The paper names a training subset but does not release exact case membership.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "validity_visibility_mask": {
+          "locator": null,
+          "note": "The exact particle/frame validity and visibility policy is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        }
+      },
+      "schema_version": 1,
+      "sources": {
+        "deform360_arxiv_v1": {
+          "authority": "deform360_authoritative",
+          "bound_files": {
+            "appendix.tex": "b8ccbb6c8b588d85dcd1b05908780473b712e9fc4018a237beeaac41a6e5e0b0",
+            "main.tex": "b2239e4e83bf62b0960119b92c9a370f2769c2026ed5ebae75de145ceefdfe95"
+          },
+          "content_sha256": "66d2bfecd6ec9b829cd810913238821adc143c4831393704ed4bcc4ccc09e05c",
+          "kind": "official_paper",
+          "revision": "arxiv:2607.05390v1",
+          "url": "https://arxiv.org/abs/2607.05390"
+        },
+        "deform360_public_repo": {
+          "authority": "deform360_authoritative",
+          "bound_files": {},
+          "content_sha256": null,
+          "kind": "official_repository_without_evaluator",
+          "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "url": "https://github.com/lhy0807/deform360"
+        },
+        "pgrd_candidate_metric": {
+          "authority": "external_method_only",
+          "bound_files": {
+            "experiments/train/eval.py": "80a95f1b477bc3852f08d5bd33cc13f33d5152f2798f60c572716d441587c606",
+            "experiments/train/metric.py": "39745215e9eeebf735b9ce23b1e8f0052ae19d1a81019cf60a25d52eb7cbf991",
+            "experiments/train/metric_eval.py": "240168a5ab80c872fdf424b7efc5d53893ae442f15496a2dcf3d0681186d1716"
+          },
+          "content_sha256": null,
+          "kind": "candidate_implementation",
+          "revision": "e294d96723054f77a1cfdd3c2c052de7b7cd9ce3",
+          "url": "https://github.com/shivanshpatel35/pgrd"
+        }
+      }
+    },
+    "per_episode": {
+      "artifact_kind": "Deform360Official3DParityContract",
+      "benchmark_setting": "per_episode",
+      "contract_sha256": "f2408f26ac93b7ad8a2bfebd152374e1816161506551ff6e1445f1b0a4678564",
+      "fields": {
+        "benchmark_setting": {
+          "locator": "main.tex lines 399-499",
+          "note": "The paper defines per-episode, multi-episode, and multi-object settings.",
+          "source_id": "deform360_arxiv_v1",
+          "status": "authoritative",
+          "value": "per_episode"
+        },
+        "chamfer_direction": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "prediction_to_ground_truth"
+        },
+        "chamfer_point_distance": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "euclidean"
+        },
+        "chamfer_reduction": {
+          "locator": "metric.py lines 59-64",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "mean_nearest_neighbor"
+        },
+        "coordinate_frame": {
+          "locator": null,
+          "note": "The table does not bind the exact metric coordinate frame or alignment.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "episode_aggregation": {
+          "locator": "eval.py lines 1020-1071",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "episode_mean_then_arithmetic_mean_over_steps"
+        },
+        "evaluation_case_manifest": {
+          "locator": null,
+          "note": "The exact ordered object/episode evaluation cohort is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "frame_aggregation": {
+          "locator": "eval.py lines 1043-1071",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "arithmetic_mean_over_evaluation_steps"
+        },
+        "future_frame_manifest": {
+          "locator": null,
+          "note": "T_train and exact per-case future frame indices are not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "ground_truth_preprocessing": {
+          "locator": "metric_eval.py lines 301-308",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Use xyz_gt_downsampled for track error and full xyz_gt for Chamfer unless camera-drop evaluation is enabled."
+        },
+        "length_unit": {
+          "locator": null,
+          "note": "The table values are not labeled with an exact unit or normalization.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "missing_case_policy": {
+          "locator": null,
+          "note": "The treatment of failed, missing, or unequal-length episodes is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "object_aggregation": {
+          "locator": null,
+          "note": "The object weighting used in the reported aggregate is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "particle_identity_alignment": {
+          "locator": "metric_eval.py lines 301-305",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Prediction and downsampled ground truth use matching row indices."
+        },
+        "prediction_preprocessing": {
+          "locator": "metric_eval.py lines 301-308",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "Use the evaluator-provided predicted xyz array without an additional metric-space alignment."
+        },
+        "track_correspondence": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "shared_particle_index"
+        },
+        "track_point_distance": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "squared_coordinate_residual"
+        },
+        "track_reduction": {
+          "locator": "metric.py lines 53-56",
+          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
+          "source_id": "pgrd_candidate_metric",
+          "status": "candidate",
+          "value": "mean_over_points_and_xyz_coordinates"
+        },
+        "training_case_manifest": {
+          "locator": null,
+          "note": "The paper names a training subset but does not release exact case membership.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        },
+        "validity_visibility_mask": {
+          "locator": null,
+          "note": "The exact particle/frame validity and visibility policy is not public.",
+          "source_id": null,
+          "status": "missing",
+          "value": null
+        }
+      },
+      "schema_version": 1,
+      "sources": {
+        "deform360_arxiv_v1": {
+          "authority": "deform360_authoritative",
+          "bound_files": {
+            "appendix.tex": "b8ccbb6c8b588d85dcd1b05908780473b712e9fc4018a237beeaac41a6e5e0b0",
+            "main.tex": "b2239e4e83bf62b0960119b92c9a370f2769c2026ed5ebae75de145ceefdfe95"
+          },
+          "content_sha256": "66d2bfecd6ec9b829cd810913238821adc143c4831393704ed4bcc4ccc09e05c",
+          "kind": "official_paper",
+          "revision": "arxiv:2607.05390v1",
+          "url": "https://arxiv.org/abs/2607.05390"
+        },
+        "deform360_public_repo": {
+          "authority": "deform360_authoritative",
+          "bound_files": {},
+          "content_sha256": null,
+          "kind": "official_repository_without_evaluator",
+          "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "url": "https://github.com/lhy0807/deform360"
+        },
+        "pgrd_candidate_metric": {
+          "authority": "external_method_only",
+          "bound_files": {
+            "experiments/train/eval.py": "80a95f1b477bc3852f08d5bd33cc13f33d5152f2798f60c572716d441587c606",
+            "experiments/train/metric.py": "39745215e9eeebf735b9ce23b1e8f0052ae19d1a81019cf60a25d52eb7cbf991",
+            "experiments/train/metric_eval.py": "240168a5ab80c872fdf424b7efc5d53893ae442f15496a2dcf3d0681186d1716"
+          },
+          "content_sha256": null,
+          "kind": "candidate_implementation",
+          "revision": "e294d96723054f77a1cfdd3c2c052de7b7cd9ce3",
+          "url": "https://github.com/shivanshpatel35/pgrd"
+        }
+      }
+    }
+  },
+  "metric_ambiguity_example": {
+    "chamfer": {
+      "pred_to_target_mean_euclidean_m": 0.5,
+      "pred_to_target_mean_squared_m2": 0.5,
+      "symmetric_mean_euclidean_m": 2.5,
+      "symmetric_mean_squared_m2": 20.5,
+      "target_to_pred_mean_euclidean_m": 4.5,
+      "target_to_pred_mean_squared_m2": 40.5
+    },
+    "prediction_m": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "target_m": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "track": {
+      "coordinate_mse_m2": 13.5,
+      "coordinate_rmse_m": 3.6742346141747673,
+      "mean_point_euclidean_m": 4.5,
+      "point_rmse_m": 6.363961030678928
+    }
+  },
+  "public_sources": {
+    "deform360_arxiv_v1": {
+      "authority": "deform360_authoritative",
+      "bound_files": {
+        "appendix.tex": "b8ccbb6c8b588d85dcd1b05908780473b712e9fc4018a237beeaac41a6e5e0b0",
+        "main.tex": "b2239e4e83bf62b0960119b92c9a370f2769c2026ed5ebae75de145ceefdfe95"
+      },
+      "content_sha256": "66d2bfecd6ec9b829cd810913238821adc143c4831393704ed4bcc4ccc09e05c",
+      "kind": "official_paper",
+      "revision": "arxiv:2607.05390v1",
+      "url": "https://arxiv.org/abs/2607.05390"
+    },
+    "deform360_public_repo": {
+      "authority": "deform360_authoritative",
+      "bound_files": {},
+      "content_sha256": null,
+      "kind": "official_repository_without_evaluator",
+      "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "url": "https://github.com/lhy0807/deform360"
+    },
+    "pgrd_candidate_metric": {
+      "authority": "external_method_only",
+      "bound_files": {
+        "experiments/train/eval.py": "80a95f1b477bc3852f08d5bd33cc13f33d5152f2798f60c572716d441587c606",
+        "experiments/train/metric.py": "39745215e9eeebf735b9ce23b1e8f0052ae19d1a81019cf60a25d52eb7cbf991",
+        "experiments/train/metric_eval.py": "240168a5ab80c872fdf424b7efc5d53893ae442f15496a2dcf3d0681186d1716"
+      },
+      "content_sha256": null,
+      "kind": "candidate_implementation",
+      "revision": "e294d96723054f77a1cfdd3c2c052de7b7cd9ce3",
+      "url": "https://github.com/shivanshpatel35/pgrd"
+    }
+  },
+  "published_reference_scores": {
+    "multi_episode": {
+      "PGND": {
+        "future_cd": 0.13,
+        "future_track_error": 0.144
+      },
+      "ParticleFormer": {
+        "future_cd": 0.051,
+        "future_track_error": 0.079
+      }
+    },
+    "multi_object": {
+      "PGND": {
+        "future_cd": 0.429,
+        "future_track_error": 0.32
+      },
+      "ParticleFormer": {
+        "future_cd": 0.038,
+        "future_track_error": 0.048
+      }
+    },
+    "per_episode": {
+      "PGND": {
+        "future_cd": 0.073,
+        "future_track_error": 0.073
+      },
+      "ParticleFormer": {
+        "future_cd": 0.044,
+        "future_track_error": 0.041
+      },
+      "PhysTwin": {
+        "future_cd": 0.014,
+        "future_track_error": 0.025
+      }
+    }
+  },
+  "report_sha256": "206f3dd19fb5f4cac79d17e6c66c73f9820845d1089bf3613bfa951fddf2efbe",
+  "schema_version": 1
+}
