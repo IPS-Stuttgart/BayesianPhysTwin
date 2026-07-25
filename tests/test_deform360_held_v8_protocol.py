@@ -365,6 +365,51 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "validate_attempt4_withdrawal_lineage",
         lambda **_kwargs: attempt4_lineage,
     )
+    v82_failure_paths = {
+        short: lineage / f"v82-failure-{short}.json"
+        for short in ("report", "pointer", "completion")
+    }
+    v82_failure_records: dict[str, dict[str, Any]] = {}
+    for index, (short, path) in enumerate(v82_failure_paths.items()):
+        path.write_text(f"v8.2-failure-{short}\n", encoding="utf-8")
+        path.chmod(0o400)
+        v82_failure_records[short] = {
+            **_bound_file(path),
+            "artifact_sha256": str(index + 5) * 64,
+        }
+    v82_failure_archive = lineage / "v82-failure-archive"
+    v82_failure_archive.mkdir()
+    v82_failure_archive.chmod(0o500)
+    v82_failure_lineage = {
+        "v82_technical_failure_report": v82_failure_records["report"],
+        "v82_technical_failure_pointer": v82_failure_records["pointer"],
+        "v82_technical_failure_integrity_completion": v82_failure_records[
+            "completion"
+        ],
+        "v82_technical_failure_archive_integrity": {
+            "path": str(v82_failure_archive),
+            "inventory_sha256": "c" * 64,
+        },
+        "v82_calibration_result": "NO_CALIBRATION_RESULT",
+    }
+    v82_failure_sealer_sha256 = "d" * 64
+    monkeypatch.setattr(
+        protocol,
+        "validate_v82_technical_failure_lineage",
+        lambda **_kwargs: v82_failure_lineage,
+    )
+    monkeypatch.setattr(
+        protocol.v82_technical_failure,
+        "load_signed",
+        lambda *_args, **_kwargs: (
+            {
+                "executed_operator_source": {
+                    "sha256": v82_failure_sealer_sha256,
+                }
+            },
+            {},
+        ),
+    )
     qualification_root = lineage / f"bpt-process-isolation-qualification-{'a' * 40}"
     qualification_root.mkdir()
     qualification_evidence = qualification_root / "process-isolation-qualification.json"
@@ -490,6 +535,29 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
             "process_isolation_qualification_sealer_source": source_hashes[
                 "sealer_source_sha256"
             ],
+            "held_v82_technical_failure_sealer_source": (
+                v82_failure_sealer_sha256
+            ),
+            "v82_technical_failure_report": v82_failure_records["report"]["sha256"],
+            "v82_technical_failure_report_artifact": v82_failure_records["report"][
+                "artifact_sha256"
+            ],
+            "v82_technical_failure_pointer": v82_failure_records["pointer"][
+                "sha256"
+            ],
+            "v82_technical_failure_pointer_artifact": v82_failure_records["pointer"][
+                "artifact_sha256"
+            ],
+            "v82_technical_failure_integrity_completion": v82_failure_records[
+                "completion"
+            ]["sha256"],
+            "v82_technical_failure_integrity_completion_artifact": (
+                v82_failure_records["completion"]["artifact_sha256"]
+            ),
+            "v82_technical_failure_archive_inventory": "c" * 64,
+            "v82_technical_failure_lineage_contract": (
+                protocol.held_contract_sha256(v82_failure_lineage)
+            ),
             "test_operator_source": "a" * 64,
         },
         v7_withdrawal_report_path=withdrawal,
@@ -500,6 +568,10 @@ def _lock_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         attempt4_withdrawal_report_path=attempt4_paths["report"],
         attempt4_withdrawal_pointer_path=attempt4_paths["pointer"],
         attempt4_withdrawal_integrity_completion_path=attempt4_paths["completion"],
+        v82_technical_failure_archive_path=v82_failure_archive,
+        v82_technical_failure_report_path=v82_failure_paths["report"],
+        v82_technical_failure_pointer_path=v82_failure_paths["pointer"],
+        v82_technical_failure_completion_path=v82_failure_paths["completion"],
         process_isolation_qualification_path=qualification_evidence,
         process_isolation_qualification_completion_path=qualification_completion,
     )
@@ -742,13 +814,13 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
     )
     assert (
         lock["freshness_and_reuse"][
-            "all_predictions_must_be_fresh_v8_2_attempt1_outputs"
+            "all_predictions_must_be_fresh_v8_3_attempt1_outputs"
         ]
         is True
     )
     assert (
         lock["freshness_and_reuse"][
-            "all_targets_queries_and_scores_must_be_fresh_v8_2_attempt1_outputs"
+            "all_targets_queries_and_scores_must_be_fresh_v8_3_attempt1_outputs"
         ]
         is True
     )
@@ -756,6 +828,11 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
         value is False
         for key, value in lock["freshness_and_reuse"].items()
         if key.endswith("_reused")
+    )
+    assert all(
+        value is False
+        for key, value in lock["freshness_and_reuse"].items()
+        if key.startswith("v8_2_attempt1_")
     )
     assert lock["freshness_and_reuse"]["full_15_case_fresh_rerun_required"] is True
 
@@ -778,6 +855,10 @@ def test_lock_replaces_only_retired_case_and_binds_frozen_field(
         ),
         "postseal_noncode_entry_count": protocol.ATTEMPT3_ARCHIVE_ENTRY_COUNT,
     }
+    assert lineage["v82_calibration_result"] == "NO_CALIBRATION_RESULT"
+    assert lineage["v82_technical_failure_archive_integrity"][
+        "inventory_sha256"
+    ] == lock["immutable_bindings"]["v82_technical_failure_archive_inventory"]
 
     source_permit = protocol.authorize_replacement_source_acquisition(lock_path)
     source_evidence = protocol.consume_replacement_source_acquisition_capability(

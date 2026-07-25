@@ -35,6 +35,7 @@ from . import deform360_frame_zero_assets as frame_zero_assets
 from . import deform360_held_v8_confirmation_source as confirmation_source
 from . import deform360_held_v8_replacement_source as replacement_source
 from . import deform360_held_v8_query_artifacts as query_artifacts
+from . import deform360_held_v82_technical_failure as v82_technical_failure
 from . import deform360_process_isolation_qualification as process_qualification
 
 
@@ -268,6 +269,42 @@ _ATTEMPT4_DISPOSITION = (
     "WITHDRAWN_AFTER_TWO_TARGET_X0_QUERY_PAIRS_DURING_THIRD_TARGET_"
     "RECONSTRUCTION_BEFORE_SECOND_BARRIER_OR_SCORE"
 )
+V82_TECHNICAL_FAILURE_ARCHIVE_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v82-attempt-1-technical-failure"
+)
+V82_TECHNICAL_FAILURE_REPORT_PATH = (
+    V82_TECHNICAL_FAILURE_ARCHIVE_PATH / v82_technical_failure.REPORT_NAME
+)
+V82_TECHNICAL_FAILURE_POINTER_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v82-attempt-1-technical-failure-pointer.json"
+)
+V82_TECHNICAL_FAILURE_COMPLETION_PATH = Path(
+    "/mnt/corsair/florianpfaff/bpt-online-belief-v1/"
+    "held-v82-attempt-1-technical-failure-completion.json"
+)
+V82_TECHNICAL_FAILURE_REPORT_FILE_SHA256 = (
+    "44b04cbf3b42a28c65116f48f12db34b44abebc73a24763b9de04736c1bd2283"
+)
+V82_TECHNICAL_FAILURE_REPORT_ARTIFACT_SHA256 = (
+    "5a9133315ae1ece291f0196a3eea5bd2499dbc335293e09f64ba01018a1711a8"
+)
+V82_TECHNICAL_FAILURE_POINTER_FILE_SHA256 = (
+    "0d01d03a7c1acc25e98914c02e89ccd67f8ac9bfd75af327c4c825d533fac2f1"
+)
+V82_TECHNICAL_FAILURE_POINTER_ARTIFACT_SHA256 = (
+    "3e57da053bbf1ad89a5647336404270603b3d2e2f8b2a50789f478dc83d42819"
+)
+V82_TECHNICAL_FAILURE_COMPLETION_FILE_SHA256 = (
+    "242801a411250ece8830271ded855204ae90d9e6ec54cfc8930269814212771e"
+)
+V82_TECHNICAL_FAILURE_COMPLETION_ARTIFACT_SHA256 = (
+    "24ec18afc22498bc9e49b91f1129f63daed146f95f204ff2b0f264bf4366bfd8"
+)
+V82_TECHNICAL_FAILURE_ARCHIVE_INVENTORY_SHA256 = (
+    "fa806b0b5ae70ead9d51e5895f757f40a3b100c1f0e58b8955d6ae0e05128c09"
+)
 RETIRED_V7_CASE_NAME = "002-rope-silk-ep0003"
 FRESH_REPLACEMENT_CASE_NAME = "072-cotton-clohesline-ep0003"
 
@@ -326,8 +363,8 @@ PRIMARY_METHOD = {
 
 FRESHNESS_AND_REUSE_CONTRACT = {
     "held_v83_root_absent_before_attempt1_lock": True,
-    "all_predictions_must_be_fresh_v8_2_attempt1_outputs": True,
-    "all_targets_queries_and_scores_must_be_fresh_v8_2_attempt1_outputs": True,
+    "all_predictions_must_be_fresh_v8_3_attempt1_outputs": True,
+    "all_targets_queries_and_scores_must_be_fresh_v8_3_attempt1_outputs": True,
     "v7_execution_artifacts_reused": False,
     "v7_prediction_artifacts_reused": False,
     "v7_target_or_query_artifacts_reused": False,
@@ -356,6 +393,11 @@ FRESHNESS_AND_REUSE_CONTRACT = {
     "v8_attempt4_score_or_gate_artifacts_reused": False,
     "v8_attempt4_partial_artifacts_reused": False,
     "v8_1_attempt5_admission_artifacts_reused": False,
+    "v8_2_attempt1_predictions_reused": False,
+    "v8_2_attempt1_source_manifests_reused": False,
+    "v8_2_attempt1_frozen_fields_reused": False,
+    "v8_2_attempt1_target_or_query_artifacts_reused": False,
+    "v8_2_attempt1_partial_reconstruction_reused": False,
     "full_15_case_fresh_rerun_required": True,
 }
 
@@ -2338,6 +2380,49 @@ def validate_attempt4_withdrawal_lineage(
     }
 
 
+def validate_v82_technical_failure_lineage(
+    *,
+    archive_path: str | Path,
+    report_path: str | Path,
+    pointer_path: str | Path,
+    completion_path: str | Path,
+    verify_content_inventory: bool = False,
+) -> dict[str, Any]:
+    """Validate the consumed v8.2 runtime failure and its no-result boundary."""
+
+    lineage = v82_technical_failure.validate_v82_technical_failure_lineage(
+        archive_path=archive_path,
+        report_path=report_path,
+        pointer_path=pointer_path,
+        completion_path=completion_path,
+        verify_content_inventory=verify_content_inventory,
+    )
+    _require(
+        lineage["v82_technical_failure_report"]["sha256"]
+        == V82_TECHNICAL_FAILURE_REPORT_FILE_SHA256
+        and lineage["v82_technical_failure_report"]["artifact_sha256"]
+        == V82_TECHNICAL_FAILURE_REPORT_ARTIFACT_SHA256
+        and lineage["v82_technical_failure_pointer"]["sha256"]
+        == V82_TECHNICAL_FAILURE_POINTER_FILE_SHA256
+        and lineage["v82_technical_failure_pointer"]["artifact_sha256"]
+        == V82_TECHNICAL_FAILURE_POINTER_ARTIFACT_SHA256
+        and lineage["v82_technical_failure_integrity_completion"]["sha256"]
+        == V82_TECHNICAL_FAILURE_COMPLETION_FILE_SHA256
+        and lineage["v82_technical_failure_integrity_completion"][
+            "artifact_sha256"
+        ]
+        == V82_TECHNICAL_FAILURE_COMPLETION_ARTIFACT_SHA256
+        and lineage["v82_technical_failure_archive_integrity"][
+            "inventory_sha256"
+        ]
+        == V82_TECHNICAL_FAILURE_ARCHIVE_INVENTORY_SHA256
+        and lineage["v82_calibration_result"]
+        == v82_technical_failure.RESULT_STATUS,
+        "v8.2 technical-failure lineage changed",
+    )
+    return lineage
+
+
 def _resource_lifecycle_qualification_inventory(
     root: Path, *, verify_content: bool
 ) -> dict[str, Any]:
@@ -3314,6 +3399,10 @@ def create_calibration_protocol_lock(
     attempt4_withdrawal_report_path: str | Path,
     attempt4_withdrawal_pointer_path: str | Path,
     attempt4_withdrawal_integrity_completion_path: str | Path,
+    v82_technical_failure_archive_path: str | Path,
+    v82_technical_failure_report_path: str | Path,
+    v82_technical_failure_pointer_path: str | Path,
+    v82_technical_failure_completion_path: str | Path,
     process_isolation_qualification_path: str | Path,
     process_isolation_qualification_completion_path: str | Path,
 ) -> dict[str, Any]:
@@ -3390,6 +3479,56 @@ def create_calibration_protocol_lock(
             pointer_path=attempt4_withdrawal_pointer_path,
             completion_path=attempt4_withdrawal_integrity_completion_path,
             verify_content_inventory=True,
+        )
+        v82_failure_lineage = validate_v82_technical_failure_lineage(
+            archive_path=v82_technical_failure_archive_path,
+            report_path=v82_technical_failure_report_path,
+            pointer_path=v82_technical_failure_pointer_path,
+            completion_path=v82_technical_failure_completion_path,
+            verify_content_inventory=True,
+        )
+        for lineage_name, binding_name in (
+            (
+                "v82_technical_failure_report",
+                "v82_technical_failure_report",
+            ),
+            (
+                "v82_technical_failure_pointer",
+                "v82_technical_failure_pointer",
+            ),
+            (
+                "v82_technical_failure_integrity_completion",
+                "v82_technical_failure_integrity_completion",
+            ),
+        ):
+            record = v82_failure_lineage[lineage_name]
+            _require(
+                bindings.get(binding_name) == record["sha256"]
+                and bindings.get(f"{binding_name}_artifact")
+                == record["artifact_sha256"],
+                f"{lineage_name} is not independently locked",
+            )
+        _require(
+            bindings.get("v82_technical_failure_archive_inventory")
+            == v82_failure_lineage["v82_technical_failure_archive_integrity"][
+                "inventory_sha256"
+            ]
+            and bindings.get("v82_technical_failure_lineage_contract")
+            == held_contract_sha256(v82_failure_lineage),
+            "v8.2 technical-failure archive is not independently locked",
+        )
+        v82_failure_report, _v82_failure_report_record = (
+            v82_technical_failure.load_signed(
+                v82_technical_failure_report_path,
+                role="v8.2 technical-failure report",
+            )
+        )
+        executed_operator = v82_failure_report.get("executed_operator_source")
+        _require(
+            isinstance(executed_operator, Mapping)
+            and executed_operator.get("sha256")
+            == bindings.get("held_v82_technical_failure_sealer_source"),
+            "v8.2 technical-failure operator differs from the locked source",
         )
         qualification_lineage = (
             process_qualification.validate_process_isolation_qualification_lineage(
@@ -3486,6 +3625,7 @@ def create_calibration_protocol_lock(
                 "open27_development_decision": development,
                 **attempt3_lineage,
                 **attempt4_lineage,
+                **v82_failure_lineage,
                 **qualification_lineage,
             },
             "frozen_field_contract": deepcopy(FROZEN_FIELD_CONTRACT),
@@ -3613,6 +3753,11 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
             "v8_attempt4_archive_integrity",
             "v8_attempt4_launcher_integrity",
             "v8_attempt4_calibration_result",
+            "v82_technical_failure_report",
+            "v82_technical_failure_pointer",
+            "v82_technical_failure_integrity_completion",
+            "v82_technical_failure_archive_integrity",
+            "v82_calibration_result",
             "process_isolation_qualification_attempt",
             "process_isolation_qualification_evidence",
             "process_isolation_qualification_integrity_completion",
@@ -3661,6 +3806,51 @@ def validate_protocol_lock(path: str | Path) -> dict[str, Any]:
     _require(
         lineage["v8_attempt4_calibration_result"] == "NO_CALIBRATION_RESULT",
         "attempt-4 failure boundary changed",
+    )
+    v82_failure_lineage = validate_v82_technical_failure_lineage(
+        archive_path=lineage["v82_technical_failure_archive_integrity"]["path"],
+        report_path=lineage["v82_technical_failure_report"]["path"],
+        pointer_path=lineage["v82_technical_failure_pointer"]["path"],
+        completion_path=lineage[
+            "v82_technical_failure_integrity_completion"
+        ]["path"],
+    )
+    _require(
+        all(lineage[name] == value for name, value in v82_failure_lineage.items()),
+        "v8.2 technical-failure lineage changed",
+    )
+    for lineage_name, binding_name in (
+        ("v82_technical_failure_report", "v82_technical_failure_report"),
+        ("v82_technical_failure_pointer", "v82_technical_failure_pointer"),
+        (
+            "v82_technical_failure_integrity_completion",
+            "v82_technical_failure_integrity_completion",
+        ),
+    ):
+        record = lineage[lineage_name]
+        _require(
+            bindings.get(binding_name) == record["sha256"]
+            and bindings.get(f"{binding_name}_artifact")
+            == record["artifact_sha256"],
+            f"{lineage_name} binding changed",
+        )
+    _require(
+        bindings.get("v82_technical_failure_archive_inventory")
+        == lineage["v82_technical_failure_archive_integrity"]["inventory_sha256"]
+        and bindings.get("v82_technical_failure_lineage_contract")
+        == held_contract_sha256(v82_failure_lineage),
+        "v8.2 technical-failure archive binding changed",
+    )
+    v82_failure_report, _v82_failure_report_record = v82_technical_failure.load_signed(
+        lineage["v82_technical_failure_report"]["path"],
+        role="v8.2 technical-failure report",
+    )
+    executed_operator = v82_failure_report.get("executed_operator_source")
+    _require(
+        isinstance(executed_operator, Mapping)
+        and executed_operator.get("sha256")
+        == bindings.get("held_v82_technical_failure_sealer_source"),
+        "v8.2 technical-failure operator binding changed",
     )
     qualification_lineage = (
         process_qualification.validate_process_isolation_qualification_lineage(

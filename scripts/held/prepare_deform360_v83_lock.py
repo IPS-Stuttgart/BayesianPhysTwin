@@ -23,6 +23,18 @@ LOCK_PATH = HELD_ROOT / "calibration-lock.json"
 QUALIFICATION_BASE = Path("/mnt/corsair/florianpfaff")
 QUALIFICATION_ROOT_PREFIX = "bpt-process-isolation-qualification-"
 QUALIFICATION_EVIDENCE_NAME = "process-isolation-qualification.json"
+V82_TECHNICAL_FAILURE_ARCHIVE = (
+    HELD_BASE / "held-v82-attempt-1-technical-failure"
+)
+V82_TECHNICAL_FAILURE_REPORT = (
+    V82_TECHNICAL_FAILURE_ARCHIVE / "execution-technical-failure-attempt1.json"
+)
+V82_TECHNICAL_FAILURE_POINTER = (
+    HELD_BASE / "held-v82-attempt-1-technical-failure-pointer.json"
+)
+V82_TECHNICAL_FAILURE_COMPLETION = (
+    HELD_BASE / "held-v82-attempt-1-technical-failure-completion.json"
+)
 SOURCE_RELATIVE = Path("scripts/held/prepare_deform360_v83_lock.py")
 SUPPORT_RELATIVE = Path("scripts/held/prepare_deform360_v8_lock.py")
 ATTEMPT5_RESULT_RELATIVE = Path(
@@ -53,6 +65,12 @@ PROCESS_SOURCE_BINDINGS: Mapping[str, str] = {
     ),
     "held_v83_gsplat_runtime_adapter_source": (
         "src/bayesian_phystwin/deform360_held_v83_gsplat_runtime.py"
+    ),
+    "held_v82_technical_failure_integrity_source": (
+        "src/bayesian_phystwin/deform360_held_v82_technical_failure.py"
+    ),
+    "held_v82_technical_failure_sealer_source": (
+        "scripts/held/seal_deform360_v82_technical_failure.py"
     ),
     "held_official_reconstruction_numerical_source": (
         "src/bayesian_phystwin/deform360_held_outcome_reconstruction.py"
@@ -262,6 +280,22 @@ def prospective_bindings(
     support._validate_attempt3_archive_lineage(local)
     bindings.update(local)
     attempt4 = support._validate_attempt4_archive_lineage(local, protocol)
+    v82_failure = protocol.validate_v82_technical_failure_lineage(
+        archive_path=V82_TECHNICAL_FAILURE_ARCHIVE,
+        report_path=V82_TECHNICAL_FAILURE_REPORT,
+        pointer_path=V82_TECHNICAL_FAILURE_POINTER,
+        completion_path=V82_TECHNICAL_FAILURE_COMPLETION,
+        verify_content_inventory=True,
+    )
+    v82_report, _v82_report_record = protocol.v82_technical_failure.load_signed(
+        V82_TECHNICAL_FAILURE_REPORT,
+        role="v8.2 technical-failure report",
+    )
+    _require(
+        v82_report["executed_operator_source"]["sha256"]
+        == local["held_v82_technical_failure_sealer_source"],
+        "v8.2 technical-failure operator differs from the current source",
+    )
     lineage, qualification_root, evidence, completion = _validate_qualification(
         code=code,
         head=provenance["head"],
@@ -318,6 +352,30 @@ def prospective_bindings(
             ),
             "v8_attempt4_withdrawal_lineage_contract": hashlib.sha256(
                 _canonical_bytes(attempt4)
+            ).hexdigest(),
+            "v82_technical_failure_report": v82_failure[
+                "v82_technical_failure_report"
+            ]["sha256"],
+            "v82_technical_failure_report_artifact": v82_failure[
+                "v82_technical_failure_report"
+            ]["artifact_sha256"],
+            "v82_technical_failure_pointer": v82_failure[
+                "v82_technical_failure_pointer"
+            ]["sha256"],
+            "v82_technical_failure_pointer_artifact": v82_failure[
+                "v82_technical_failure_pointer"
+            ]["artifact_sha256"],
+            "v82_technical_failure_integrity_completion": v82_failure[
+                "v82_technical_failure_integrity_completion"
+            ]["sha256"],
+            "v82_technical_failure_integrity_completion_artifact": v82_failure[
+                "v82_technical_failure_integrity_completion"
+            ]["artifact_sha256"],
+            "v82_technical_failure_archive_inventory": v82_failure[
+                "v82_technical_failure_archive_integrity"
+            ]["inventory_sha256"],
+            "v82_technical_failure_lineage_contract": hashlib.sha256(
+                _canonical_bytes(v82_failure)
             ).hexdigest(),
             "process_isolation_qualification_attempt": lineage[
                 "process_isolation_qualification_attempt"
@@ -408,6 +466,10 @@ def create_lock_and_deployment(source_code: str | Path) -> dict[str, Any]:
             attempt4_withdrawal_integrity_completion_path=(
                 support._V8_ATTEMPT4_INTEGRITY_COMPLETION
             ),
+            v82_technical_failure_archive_path=V82_TECHNICAL_FAILURE_ARCHIVE,
+            v82_technical_failure_report_path=V82_TECHNICAL_FAILURE_REPORT,
+            v82_technical_failure_pointer_path=V82_TECHNICAL_FAILURE_POINTER,
+            v82_technical_failure_completion_path=V82_TECHNICAL_FAILURE_COMPLETION,
             process_isolation_qualification_path=qualification_paths_value[1],
             process_isolation_qualification_completion_path=qualification_paths_value[
                 2

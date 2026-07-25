@@ -409,7 +409,7 @@ def test_current_protocol_preserves_attempt5_resource_lineage() -> None:
     assert protocol.RESOURCE_LIFECYCLE_POLICY_CONTRACT["rlimit_nofile_changed"] is False
     assert (
         protocol.FRESHNESS_AND_REUSE_CONTRACT[
-            "all_predictions_must_be_fresh_v8_2_attempt1_outputs"
+            "all_predictions_must_be_fresh_v8_3_attempt1_outputs"
         ]
         is True
     )
