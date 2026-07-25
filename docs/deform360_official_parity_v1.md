@@ -29,17 +29,24 @@ The audit binds:
 - Deform360 arXiv source `2607.05390v1`, source-tar SHA-256
   `66d2bfecd6ec9b829cd810913238821adc143c4831393704ed4bcc4ccc09e05c`;
 - public Deform360 repository commit
-  `0fe36f0b7a7a917ba62b5f8cee707299a9a4a317`;
+  `d8522a4403b766aeb387510c04e89032a56fdf35`;
 - PGRD commit `e294d96723054f77a1cfdd3c2c052de7b7cd9ce3` and its exact
   metric-source hashes.
 
 The paper defines the three evaluation settings and says that CD and
-mean-squared track error are used. The public Deform360 repository currently
-contains dataset and processing code, but no benchmark evaluator or split
-manifest. The PGRD source implements one-sided, unsquared Euclidean Chamfer
-from prediction to ground truth and coordinate-wise MSE for aligned particles.
-That is a useful candidate convention, not proof of the Deform360 table
-contract.
+mean-squared track error are used. The updated public Deform360 repository now
+releases the complete annotation pipeline and the PhysTwin interchange stage.
+That stage specifies persistent point identities, world-frame metric geometry,
+all-true visibility/validity arrays, and a deterministic 80/20 contact-window
+split. These details reduce the ambiguity from eight missing fields to four.
+
+The repository still explicitly omits world-model baselines, training code,
+checkpoints, and the benchmark evaluator. The released 80/20 rule is therefore
+authoritative for generated PhysTwin bundles but only a candidate convention
+for reproducing the paper table. Likewise, the PGRD source implements
+one-sided, unsquared Euclidean Chamfer from prediction to ground truth and
+coordinate-wise MSE for aligned particles; that remains candidate evidence,
+not proof of the Deform360 table contract.
 
 ## Missing authoritative contract
 
@@ -47,15 +54,14 @@ An official 3D comparison still needs all of the following from a released
 evaluator or content-hashed author confirmation:
 
 1. exact training and evaluation object/episode manifests;
-2. exact future-frame indices or per-case split manifest;
-3. particle identity, resampling, and alignment rules;
-4. prediction and ground-truth preprocessing;
-5. validity and visibility masks;
-6. coordinate frame, units, and normalization;
-7. Chamfer direction, distance power, and reduction;
-8. track correspondence, distance, and reduction;
-9. frame, episode, and object aggregation order;
-10. failed, missing, and unequal-length episode policy.
+2. confirmation that the released 80/20 PhysTwin-bundle split is the table
+   evaluator's future-frame policy;
+3. confirmation that the released point identities, world frame, units,
+   preprocessing, and all-true masks are the table evaluator's contract;
+4. Chamfer direction, distance power, and reduction;
+5. track correspondence, distance, and reduction;
+6. frame, episode, and object aggregation order;
+7. failed, missing, and unequal-length episode policy.
 
 The CLI emits this list as a machine-readable information request:
 

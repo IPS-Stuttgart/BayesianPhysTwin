@@ -76,9 +76,22 @@ PUBLIC_SOURCE_BINDINGS: dict[str, dict[str, Any]] = {
         "kind": "official_repository_without_evaluator",
         "authority": "deform360_authoritative",
         "url": "https://github.com/lhy0807/deform360",
-        "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+        "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
         "content_sha256": None,
-        "bound_files": {},
+        "bound_files": {
+            "README.md": (
+                "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a"
+            ),
+            "deform360/processing/control_points_stage.py": (
+                "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373"
+            ),
+            "deform360/processing/pcd_stage.py": (
+                "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+            ),
+            "deform360/processing/tracking_stage.py": (
+                "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2"
+            ),
+        },
     },
     "pgrd_candidate_metric": {
         "kind": "candidate_implementation",
@@ -174,8 +187,7 @@ def _validate_source(source_id: str, source: Mapping[str, Any]) -> None:
         )
     if content_sha256 is not None:
         _require(
-            isinstance(content_sha256, str)
-            and bool(_HEX64.fullmatch(content_sha256)),
+            isinstance(content_sha256, str) and bool(_HEX64.fullmatch(content_sha256)),
             f"{source_id} content digest is malformed",
         )
     bound_files = source.get("bound_files")
@@ -198,9 +210,7 @@ def seal_parity_contract(contract: Mapping[str, Any]) -> dict[str, Any]:
     """Return a canonical JSON-compatible copy with a tamper-evident digest."""
 
     sealed = json.loads(json.dumps(contract, allow_nan=False))
-    sealed["contract_sha256"] = _canonical_sha256(
-        sealed, digest_key="contract_sha256"
-    )
+    sealed["contract_sha256"] = _canonical_sha256(sealed, digest_key="contract_sha256")
     return sealed
 
 
@@ -244,7 +254,9 @@ def audit_parity_contract(contract: Mapping[str, Any]) -> dict[str, Any]:
             f"{field_name} note is missing",
         )
         if status == "missing":
-            _require(evidence.get("value") is None, f"{field_name} missing value exists")
+            _require(
+                evidence.get("value") is None, f"{field_name} missing value exists"
+            )
             _require(
                 evidence.get("source_id") is None and evidence.get("locator") is None,
                 f"{field_name} missing evidence claims a source",
@@ -255,18 +267,18 @@ def audit_parity_contract(contract: Mapping[str, Any]) -> dict[str, Any]:
                 isinstance(source_id, str) and source_id in sources,
                 f"{field_name} source is not bound",
             )
-            _require(evidence.get("value") is not None, f"{field_name} value is missing")
             _require(
-                isinstance(evidence.get("locator"), str)
-                and bool(evidence["locator"]),
+                evidence.get("value") is not None, f"{field_name} value is missing"
+            )
+            _require(
+                isinstance(evidence.get("locator"), str) and bool(evidence["locator"]),
                 f"{field_name} locator is missing",
             )
             source_kind = str(sources[source_id]["kind"])
             if status == "authoritative":
                 _require(
                     sources[source_id]["authority"] == "deform360_authoritative"
-                    and source_kind
-                    in _allowed_authoritative_source_kinds(field_name),
+                    and source_kind in _allowed_authoritative_source_kinds(field_name),
                     f"{field_name} is not backed by an authoritative evaluator contract",
                 )
         by_status[str(status)].append(field_name)
@@ -385,23 +397,55 @@ def _candidate_public_fields(setting: str) -> dict[str, dict[str, Any]]:
                 "authoritative Deform360 evaluator contract."
             ),
         )
+    official_pipeline_candidates = {
+        "particle_identity_alignment": (
+            "The released pcd stage seeds one fixed point set and advects it through "
+            "the episode, preserving row identity.",
+            "deform360/processing/pcd_stage.py lines 325-420",
+        ),
+        "ground_truth_preprocessing": (
+            "The released PhysTwin bundle stacks active pcd_clean point sets inside "
+            "the detected contact window into final_data.object_points.",
+            "deform360/processing/control_points_stage.py lines 319-389",
+        ),
+        "future_frame_manifest": (
+            "The released PhysTwin bundle writes train=[0,floor(0.8 F)] and "
+            "test=[floor(0.8 F),F] for its detected contact window.",
+            "deform360/processing/control_points_stage.py lines 391-401",
+        ),
+        "validity_visibility_mask": (
+            "The released PhysTwin bundle writes all-true object_visibilities and "
+            "object_motions_valid arrays.",
+            "deform360/processing/control_points_stage.py lines 373-388",
+        ),
+        "coordinate_frame": (
+            "Released depth lifting, tracking, point-cloud advection, and controller "
+            "points use the calibrated episode world frame.",
+            "deform360/processing/tracking_stage.py lines 163-204",
+        ),
+        "length_unit": (
+            "Released depth, world points, robot translations, and controller "
+            "geometry are expressed in metres.",
+            "README.md lines 440-479",
+        ),
+    }
+    for field_name, (value, locator) in official_pipeline_candidates.items():
+        fields[field_name] = _field(
+            "candidate",
+            value,
+            source_id="deform360_public_repo",
+            locator=locator,
+            note=(
+                "This is authoritative for the released annotation/PhysTwin-bundle "
+                "pipeline, but the repository explicitly omits the benchmark "
+                "evaluator and does not bind this convention to the paper table."
+            ),
+        )
     fields["training_case_manifest"] = _missing(
         "The paper names a training subset but does not release exact case membership."
     )
     fields["evaluation_case_manifest"] = _missing(
         "The exact ordered object/episode evaluation cohort is not public."
-    )
-    fields["future_frame_manifest"] = _missing(
-        "T_train and exact per-case future frame indices are not public."
-    )
-    fields["validity_visibility_mask"] = _missing(
-        "The exact particle/frame validity and visibility policy is not public."
-    )
-    fields["coordinate_frame"] = _missing(
-        "The table does not bind the exact metric coordinate frame or alignment."
-    )
-    fields["length_unit"] = _missing(
-        "The table values are not labeled with an exact unit or normalization."
     )
     fields["object_aggregation"] = _missing(
         "The object weighting used in the reported aggregate is not public."
@@ -531,11 +575,14 @@ def aggregate_metric_sensitivity(
             f"{case} frame metrics are invalid",
         )
         normalized[str(case)] = array
-    episode_means = {case: float(np.mean(values)) for case, values in normalized.items()}
+    episode_means = {
+        case: float(np.mean(values)) for case, values in normalized.items()
+    }
     object_means = []
     for object_id in sorted(set(case_to_object.values())):
         cases = [
-            case for case, assigned_object in case_to_object.items()
+            case
+            for case, assigned_object in case_to_object.items()
             if assigned_object == object_id
         ]
         _require(bool(cases), f"{object_id} has no episodes")
@@ -553,8 +600,7 @@ def build_public_parity_audit() -> dict[str, Any]:
     """Return a sealed public-evidence audit and deterministic ambiguity example."""
 
     contracts = {
-        setting: build_public_parity_contract(setting)
-        for setting in BENCHMARK_SETTINGS
+        setting: build_public_parity_contract(setting) for setting in BENCHMARK_SETTINGS
     }
     audits = {
         setting: audit_parity_contract(contract)
@@ -593,9 +639,7 @@ def build_public_parity_audit() -> dict[str, Any]:
             "sensitivity results until the missing evaluator contract is supplied."
         ),
     }
-    report["report_sha256"] = _canonical_sha256(
-        report, digest_key="report_sha256"
-    )
+    report["report_sha256"] = _canonical_sha256(report, digest_key="report_sha256")
     return report
 
 

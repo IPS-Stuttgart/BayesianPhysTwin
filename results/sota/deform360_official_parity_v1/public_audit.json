@@ -14,9 +14,13 @@
       ],
       "benchmark_setting": "multi_episode",
       "candidate_fields": [
+        "future_frame_manifest",
         "particle_identity_alignment",
         "prediction_preprocessing",
         "ground_truth_preprocessing",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
         "chamfer_direction",
         "chamfer_point_distance",
         "chamfer_reduction",
@@ -27,13 +31,18 @@
         "episode_aggregation"
       ],
       "claim_boundary": "Published aggregate values may be quoted as paper results, but local scores cannot be called official or directly SOTA-comparable until every required field is authoritative.",
-      "contract_sha256": "765e0c417907343f3b970a890b553eb3a2d8693a4522277e3ac6f68be3c5b03b",
+      "contract_sha256": "964c7b6da973acd43f55872b2ce6933da0cc0c0b3e157db9284cb3149d35c5b3",
       "field_counts": {
         "authoritative": 1,
-        "candidate": 11,
-        "missing": 8
+        "candidate": 15,
+        "missing": 4
       },
       "information_request": [
+        {
+          "current_status": "candidate",
+          "field": "future_frame_manifest",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
         {
           "current_status": "candidate",
           "field": "particle_identity_alignment",
@@ -47,6 +56,21 @@
         {
           "current_status": "candidate",
           "field": "ground_truth_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "validity_visibility_mask",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "coordinate_frame",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "length_unit",
           "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
         },
         {
@@ -101,26 +125,6 @@
         },
         {
           "current_status": "missing",
-          "field": "future_frame_manifest",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "validity_visibility_mask",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "coordinate_frame",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "length_unit",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
           "field": "object_aggregation",
           "request": "Release or explicitly specify this field."
         },
@@ -133,10 +137,6 @@
       "missing_fields": [
         "training_case_manifest",
         "evaluation_case_manifest",
-        "future_frame_manifest",
-        "validity_visibility_mask",
-        "coordinate_frame",
-        "length_unit",
         "object_aggregation",
         "missing_case_policy"
       ],
@@ -152,9 +152,13 @@
       ],
       "benchmark_setting": "multi_object",
       "candidate_fields": [
+        "future_frame_manifest",
         "particle_identity_alignment",
         "prediction_preprocessing",
         "ground_truth_preprocessing",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
         "chamfer_direction",
         "chamfer_point_distance",
         "chamfer_reduction",
@@ -165,13 +169,18 @@
         "episode_aggregation"
       ],
       "claim_boundary": "Published aggregate values may be quoted as paper results, but local scores cannot be called official or directly SOTA-comparable until every required field is authoritative.",
-      "contract_sha256": "9bcae9d384470d038027f6a46617b4778978f0712a7a85e05c3a3fd9fda424d0",
+      "contract_sha256": "8e09ec8abfb956f2b7565393fe7863fd7688f3678abdf13000e7afdecb799ccf",
       "field_counts": {
         "authoritative": 1,
-        "candidate": 11,
-        "missing": 8
+        "candidate": 15,
+        "missing": 4
       },
       "information_request": [
+        {
+          "current_status": "candidate",
+          "field": "future_frame_manifest",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
         {
           "current_status": "candidate",
           "field": "particle_identity_alignment",
@@ -185,6 +194,21 @@
         {
           "current_status": "candidate",
           "field": "ground_truth_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "validity_visibility_mask",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "coordinate_frame",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "length_unit",
           "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
         },
         {
@@ -239,26 +263,6 @@
         },
         {
           "current_status": "missing",
-          "field": "future_frame_manifest",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "validity_visibility_mask",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "coordinate_frame",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "length_unit",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
           "field": "object_aggregation",
           "request": "Release or explicitly specify this field."
         },
@@ -271,10 +275,6 @@
       "missing_fields": [
         "training_case_manifest",
         "evaluation_case_manifest",
-        "future_frame_manifest",
-        "validity_visibility_mask",
-        "coordinate_frame",
-        "length_unit",
         "object_aggregation",
         "missing_case_policy"
       ],
@@ -290,9 +290,13 @@
       ],
       "benchmark_setting": "per_episode",
       "candidate_fields": [
+        "future_frame_manifest",
         "particle_identity_alignment",
         "prediction_preprocessing",
         "ground_truth_preprocessing",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
         "chamfer_direction",
         "chamfer_point_distance",
         "chamfer_reduction",
@@ -303,13 +307,18 @@
         "episode_aggregation"
       ],
       "claim_boundary": "Published aggregate values may be quoted as paper results, but local scores cannot be called official or directly SOTA-comparable until every required field is authoritative.",
-      "contract_sha256": "f2408f26ac93b7ad8a2bfebd152374e1816161506551ff6e1445f1b0a4678564",
+      "contract_sha256": "a8e903060ac58bfabd13ab1b43f15296fd685a04294f45a1c6c3c022280c1f95",
       "field_counts": {
         "authoritative": 1,
-        "candidate": 11,
-        "missing": 8
+        "candidate": 15,
+        "missing": 4
       },
       "information_request": [
+        {
+          "current_status": "candidate",
+          "field": "future_frame_manifest",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
         {
           "current_status": "candidate",
           "field": "particle_identity_alignment",
@@ -323,6 +332,21 @@
         {
           "current_status": "candidate",
           "field": "ground_truth_preprocessing",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "validity_visibility_mask",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "coordinate_frame",
+          "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
+        },
+        {
+          "current_status": "candidate",
+          "field": "length_unit",
           "request": "Confirm this exact convention in a released evaluator or a content-hashed author contract."
         },
         {
@@ -377,26 +401,6 @@
         },
         {
           "current_status": "missing",
-          "field": "future_frame_manifest",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "validity_visibility_mask",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "coordinate_frame",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
-          "field": "length_unit",
-          "request": "Release or explicitly specify this field."
-        },
-        {
-          "current_status": "missing",
           "field": "object_aggregation",
           "request": "Release or explicitly specify this field."
         },
@@ -409,10 +413,6 @@
       "missing_fields": [
         "training_case_manifest",
         "evaluation_case_manifest",
-        "future_frame_manifest",
-        "validity_visibility_mask",
-        "coordinate_frame",
-        "length_unit",
         "object_aggregation",
         "missing_case_policy"
       ],
@@ -426,7 +426,7 @@
     "multi_episode": {
       "artifact_kind": "Deform360Official3DParityContract",
       "benchmark_setting": "multi_episode",
-      "contract_sha256": "765e0c417907343f3b970a890b553eb3a2d8693a4522277e3ac6f68be3c5b03b",
+      "contract_sha256": "964c7b6da973acd43f55872b2ce6933da0cc0c0b3e157db9284cb3149d35c5b3",
       "fields": {
         "benchmark_setting": {
           "locator": "main.tex lines 399-499",
@@ -457,11 +457,11 @@
           "value": "mean_nearest_neighbor"
         },
         "coordinate_frame": {
-          "locator": null,
-          "note": "The table does not bind the exact metric coordinate frame or alignment.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/tracking_stage.py lines 163-204",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "Released depth lifting, tracking, point-cloud advection, and controller points use the calibrated episode world frame."
         },
         "episode_aggregation": {
           "locator": "eval.py lines 1020-1071",
@@ -485,25 +485,25 @@
           "value": "arithmetic_mean_over_evaluation_steps"
         },
         "future_frame_manifest": {
-          "locator": null,
-          "note": "T_train and exact per-case future frame indices are not public.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/control_points_stage.py lines 391-401",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "The released PhysTwin bundle writes train=[0,floor(0.8 F)] and test=[floor(0.8 F),F] for its detected contact window."
         },
         "ground_truth_preprocessing": {
-          "locator": "metric_eval.py lines 301-308",
-          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
-          "source_id": "pgrd_candidate_metric",
+          "locator": "deform360/processing/control_points_stage.py lines 319-389",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
           "status": "candidate",
-          "value": "Use xyz_gt_downsampled for track error and full xyz_gt for Chamfer unless camera-drop evaluation is enabled."
+          "value": "The released PhysTwin bundle stacks active pcd_clean point sets inside the detected contact window into final_data.object_points."
         },
         "length_unit": {
-          "locator": null,
-          "note": "The table values are not labeled with an exact unit or normalization.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "README.md lines 440-479",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "Released depth, world points, robot translations, and controller geometry are expressed in metres."
         },
         "missing_case_policy": {
           "locator": null,
@@ -520,11 +520,11 @@
           "value": null
         },
         "particle_identity_alignment": {
-          "locator": "metric_eval.py lines 301-305",
-          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
-          "source_id": "pgrd_candidate_metric",
+          "locator": "deform360/processing/pcd_stage.py lines 325-420",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
           "status": "candidate",
-          "value": "Prediction and downsampled ground truth use matching row indices."
+          "value": "The released pcd stage seeds one fixed point set and advects it through the episode, preserving row identity."
         },
         "prediction_preprocessing": {
           "locator": "metric_eval.py lines 301-308",
@@ -562,11 +562,11 @@
           "value": null
         },
         "validity_visibility_mask": {
-          "locator": null,
-          "note": "The exact particle/frame validity and visibility policy is not public.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/control_points_stage.py lines 373-388",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "The released PhysTwin bundle writes all-true object_visibilities and object_motions_valid arrays."
         }
       },
       "schema_version": 1,
@@ -584,10 +584,15 @@
         },
         "deform360_public_repo": {
           "authority": "deform360_authoritative",
-          "bound_files": {},
+          "bound_files": {
+            "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+            "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+            "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+            "deform360/processing/tracking_stage.py": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2"
+          },
           "content_sha256": null,
           "kind": "official_repository_without_evaluator",
-          "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
           "url": "https://github.com/lhy0807/deform360"
         },
         "pgrd_candidate_metric": {
@@ -607,7 +612,7 @@
     "multi_object": {
       "artifact_kind": "Deform360Official3DParityContract",
       "benchmark_setting": "multi_object",
-      "contract_sha256": "9bcae9d384470d038027f6a46617b4778978f0712a7a85e05c3a3fd9fda424d0",
+      "contract_sha256": "8e09ec8abfb956f2b7565393fe7863fd7688f3678abdf13000e7afdecb799ccf",
       "fields": {
         "benchmark_setting": {
           "locator": "main.tex lines 399-499",
@@ -638,11 +643,11 @@
           "value": "mean_nearest_neighbor"
         },
         "coordinate_frame": {
-          "locator": null,
-          "note": "The table does not bind the exact metric coordinate frame or alignment.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/tracking_stage.py lines 163-204",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "Released depth lifting, tracking, point-cloud advection, and controller points use the calibrated episode world frame."
         },
         "episode_aggregation": {
           "locator": "eval.py lines 1020-1071",
@@ -666,25 +671,25 @@
           "value": "arithmetic_mean_over_evaluation_steps"
         },
         "future_frame_manifest": {
-          "locator": null,
-          "note": "T_train and exact per-case future frame indices are not public.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/control_points_stage.py lines 391-401",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "The released PhysTwin bundle writes train=[0,floor(0.8 F)] and test=[floor(0.8 F),F] for its detected contact window."
         },
         "ground_truth_preprocessing": {
-          "locator": "metric_eval.py lines 301-308",
-          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
-          "source_id": "pgrd_candidate_metric",
+          "locator": "deform360/processing/control_points_stage.py lines 319-389",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
           "status": "candidate",
-          "value": "Use xyz_gt_downsampled for track error and full xyz_gt for Chamfer unless camera-drop evaluation is enabled."
+          "value": "The released PhysTwin bundle stacks active pcd_clean point sets inside the detected contact window into final_data.object_points."
         },
         "length_unit": {
-          "locator": null,
-          "note": "The table values are not labeled with an exact unit or normalization.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "README.md lines 440-479",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "Released depth, world points, robot translations, and controller geometry are expressed in metres."
         },
         "missing_case_policy": {
           "locator": null,
@@ -701,11 +706,11 @@
           "value": null
         },
         "particle_identity_alignment": {
-          "locator": "metric_eval.py lines 301-305",
-          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
-          "source_id": "pgrd_candidate_metric",
+          "locator": "deform360/processing/pcd_stage.py lines 325-420",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
           "status": "candidate",
-          "value": "Prediction and downsampled ground truth use matching row indices."
+          "value": "The released pcd stage seeds one fixed point set and advects it through the episode, preserving row identity."
         },
         "prediction_preprocessing": {
           "locator": "metric_eval.py lines 301-308",
@@ -743,11 +748,11 @@
           "value": null
         },
         "validity_visibility_mask": {
-          "locator": null,
-          "note": "The exact particle/frame validity and visibility policy is not public.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/control_points_stage.py lines 373-388",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "The released PhysTwin bundle writes all-true object_visibilities and object_motions_valid arrays."
         }
       },
       "schema_version": 1,
@@ -765,10 +770,15 @@
         },
         "deform360_public_repo": {
           "authority": "deform360_authoritative",
-          "bound_files": {},
+          "bound_files": {
+            "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+            "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+            "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+            "deform360/processing/tracking_stage.py": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2"
+          },
           "content_sha256": null,
           "kind": "official_repository_without_evaluator",
-          "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
           "url": "https://github.com/lhy0807/deform360"
         },
         "pgrd_candidate_metric": {
@@ -788,7 +798,7 @@
     "per_episode": {
       "artifact_kind": "Deform360Official3DParityContract",
       "benchmark_setting": "per_episode",
-      "contract_sha256": "f2408f26ac93b7ad8a2bfebd152374e1816161506551ff6e1445f1b0a4678564",
+      "contract_sha256": "a8e903060ac58bfabd13ab1b43f15296fd685a04294f45a1c6c3c022280c1f95",
       "fields": {
         "benchmark_setting": {
           "locator": "main.tex lines 399-499",
@@ -819,11 +829,11 @@
           "value": "mean_nearest_neighbor"
         },
         "coordinate_frame": {
-          "locator": null,
-          "note": "The table does not bind the exact metric coordinate frame or alignment.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/tracking_stage.py lines 163-204",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "Released depth lifting, tracking, point-cloud advection, and controller points use the calibrated episode world frame."
         },
         "episode_aggregation": {
           "locator": "eval.py lines 1020-1071",
@@ -847,25 +857,25 @@
           "value": "arithmetic_mean_over_evaluation_steps"
         },
         "future_frame_manifest": {
-          "locator": null,
-          "note": "T_train and exact per-case future frame indices are not public.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/control_points_stage.py lines 391-401",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "The released PhysTwin bundle writes train=[0,floor(0.8 F)] and test=[floor(0.8 F),F] for its detected contact window."
         },
         "ground_truth_preprocessing": {
-          "locator": "metric_eval.py lines 301-308",
-          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
-          "source_id": "pgrd_candidate_metric",
+          "locator": "deform360/processing/control_points_stage.py lines 319-389",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
           "status": "candidate",
-          "value": "Use xyz_gt_downsampled for track error and full xyz_gt for Chamfer unless camera-drop evaluation is enabled."
+          "value": "The released PhysTwin bundle stacks active pcd_clean point sets inside the detected contact window into final_data.object_points."
         },
         "length_unit": {
-          "locator": null,
-          "note": "The table values are not labeled with an exact unit or normalization.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "README.md lines 440-479",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "Released depth, world points, robot translations, and controller geometry are expressed in metres."
         },
         "missing_case_policy": {
           "locator": null,
@@ -882,11 +892,11 @@
           "value": null
         },
         "particle_identity_alignment": {
-          "locator": "metric_eval.py lines 301-305",
-          "note": "This is an exact convention in the PGRD implementation, not an authoritative Deform360 evaluator contract.",
-          "source_id": "pgrd_candidate_metric",
+          "locator": "deform360/processing/pcd_stage.py lines 325-420",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
           "status": "candidate",
-          "value": "Prediction and downsampled ground truth use matching row indices."
+          "value": "The released pcd stage seeds one fixed point set and advects it through the episode, preserving row identity."
         },
         "prediction_preprocessing": {
           "locator": "metric_eval.py lines 301-308",
@@ -924,11 +934,11 @@
           "value": null
         },
         "validity_visibility_mask": {
-          "locator": null,
-          "note": "The exact particle/frame validity and visibility policy is not public.",
-          "source_id": null,
-          "status": "missing",
-          "value": null
+          "locator": "deform360/processing/control_points_stage.py lines 373-388",
+          "note": "This is authoritative for the released annotation/PhysTwin-bundle pipeline, but the repository explicitly omits the benchmark evaluator and does not bind this convention to the paper table.",
+          "source_id": "deform360_public_repo",
+          "status": "candidate",
+          "value": "The released PhysTwin bundle writes all-true object_visibilities and object_motions_valid arrays."
         }
       },
       "schema_version": 1,
@@ -946,10 +956,15 @@
         },
         "deform360_public_repo": {
           "authority": "deform360_authoritative",
-          "bound_files": {},
+          "bound_files": {
+            "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+            "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+            "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+            "deform360/processing/tracking_stage.py": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2"
+          },
           "content_sha256": null,
           "kind": "official_repository_without_evaluator",
-          "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+          "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
           "url": "https://github.com/lhy0807/deform360"
         },
         "pgrd_candidate_metric": {
@@ -1021,10 +1036,15 @@
     },
     "deform360_public_repo": {
       "authority": "deform360_authoritative",
-      "bound_files": {},
+      "bound_files": {
+        "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+        "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+        "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+        "deform360/processing/tracking_stage.py": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2"
+      },
       "content_sha256": null,
       "kind": "official_repository_without_evaluator",
-      "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+      "revision": "d8522a4403b766aeb387510c04e89032a56fdf35",
       "url": "https://github.com/lhy0807/deform360"
     },
     "pgrd_candidate_metric": {
@@ -1076,6 +1096,6 @@
       }
     }
   },
-  "report_sha256": "206f3dd19fb5f4cac79d17e6c66c73f9820845d1089bf3613bfa951fddf2efbe",
+  "report_sha256": "fe42c863c281ca1f7e3156133d7a9471986805967433ee67d663039c509b8f60",
   "schema_version": 1
 }

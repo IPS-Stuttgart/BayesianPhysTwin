@@ -2,10 +2,12 @@
 
 ## Status
 
-This is the selected next experiment, not yet a locked cohort. Cohort locking
-must wait for a source-only admission manifest and an exclusion manifest
-covering every previously opened or reserved object. No existing held
-evaluation is authorized by this document.
+This is the selected next experiment, not yet a locked cohort. The source-only
+admission, exclusion, and deterministic cohort-lock implementation now exists
+in `deform360_fresh_source_lock.py`. A final lock still requires actual
+admission artifacts and exclusion manifests covering every previously opened
+or reserved object. No existing held evaluation is authorized by this
+document.
 
 ## Objective
 
@@ -59,6 +61,12 @@ Before cohort selection:
 6. Publish the ordered object/episode manifest and all source hashes.
 7. Bind the exact code commit, environment, model checkpoints, and evaluator
    contract before any future outcome is read.
+
+The source admission additionally requires the released `split.json`
+`frame_len` to equal `control_points.meta.json` `num_active_frames`. The public
+generator sizes the split from the complete contact window while dropping
+inactive frames from `final_data`; episodes where those counts differ are
+inadmissible because the split can index beyond the actual trajectory.
 
 Technical failures remain in the denominator and are reported separately as
 successful predictions, retained technical failures, and unsealable cases.

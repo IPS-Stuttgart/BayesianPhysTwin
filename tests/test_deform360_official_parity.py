@@ -57,10 +57,6 @@ def test_public_contract_fails_closed_for_every_setting() -> None:
 
     assert report["conclusion"].startswith("No public contract")
     assert (
-        report["public_sources"]["deform360_public_repo"]["revision"]
-        == "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
-    )
-    assert (
         report["public_sources"]["deform360_arxiv_v1"]["content_sha256"]
         == "66d2bfecd6ec9b829cd810913238821adc143c4831393704ed4bcc4ccc09e05c"
     )
@@ -70,10 +66,34 @@ def test_public_contract_fails_closed_for_every_setting() -> None:
         ]
         == "80a95f1b477bc3852f08d5bd33cc13f33d5152f2798f60c572716d441587c606"
     )
+    assert (
+        report["public_sources"]["deform360_public_repo"]["revision"]
+        == "d8522a4403b766aeb387510c04e89032a56fdf35"
+    )
+    assert (
+        report["public_sources"]["deform360_public_repo"]["bound_files"][
+            "deform360/processing/control_points_stage.py"
+        ]
+        == "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373"
+    )
+    contract = report["contracts"]["per_episode"]
+    for field_name in (
+        "future_frame_manifest",
+        "validity_visibility_mask",
+        "coordinate_frame",
+        "length_unit",
+    ):
+        assert contract["fields"][field_name]["status"] == "candidate"
+        assert contract["fields"][field_name]["source_id"] == "deform360_public_repo"
     for audit in report["audits"].values():
         assert audit["parity_ready"] is False
         assert audit["official_claim_allowed"] is False
         assert audit["allowed_claim_label"] == "candidate_convention_sensitivity_only"
+        assert audit["field_counts"] == {
+            "authoritative": 1,
+            "candidate": 15,
+            "missing": 4,
+        }
         assert audit["candidate_fields"]
         assert audit["missing_fields"]
 
@@ -143,9 +163,7 @@ def test_candidate_metric_variants_expose_direction_and_reduction_ambiguity() ->
     assert np.isclose(chamfer["symmetric_mean_euclidean_m"], 2.5)
     assert np.isclose(track["coordinate_mse_m2"], 13.5)
     assert np.isclose(track["mean_point_euclidean_m"], 4.5)
-    assert not np.isclose(
-        track["coordinate_rmse_m"], track["mean_point_euclidean_m"]
-    )
+    assert not np.isclose(track["coordinate_rmse_m"], track["mean_point_euclidean_m"])
 
 
 def test_track_metric_requires_explicit_validity_for_nonfinite_rows() -> None:

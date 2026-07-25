@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshObjectSourceLockConfig",
+  "protocol_id": "deform360-fresh-object-source-lock-v1",
+  "upstream": {
+    "repository": "https://github.com/lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  },
+  "admission": {
+    "minimum_camera_count": 3,
+    "minimum_point_count": 128,
+    "maximum_point_count": 10000,
+    "required_frame_count": 76,
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "minimum_test_frame_count": 8,
+    "require_split_frame_count_equals_active_frame_count": true,
+    "future_object_positions_deserialized": false,
+    "future_metrics_read": false
+  },
+  "method": {
+    "commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
+    "arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique",
+    "source_protocol_id": "deform360-open27-raw-alltracker-pairwise-gate-v1-development",
+    "changes_after_open_development": "none"
+  },
+  "cohort": {
+    "physical_object_count": 12,
+    "episode_rule": "lowest admitted episode per non-excluded physical object",
+    "object_rule": "category-sorted round robin, then object-ID order",
+    "replacement_after_lock": false,
+    "technical_failures_remain_in_denominator": true
+  },
+  "evaluation": {
+    "official_claim_requires_parity_ready_contract": true,
+    "fallback_claim_label": "fresh_object_candidate_conventions_only",
+    "unit_of_resampling": "physical_object"
+  }
+}
