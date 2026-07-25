@@ -146,3 +146,25 @@ bpt-prepare-deform360-fresh-source lock \
 The next operational step is to run admission over a source-only candidate
 pool and obtain exclusion manifests from every independent evaluation owner.
 No outcome-opening command belongs in this package.
+
+## Real source-only smoke
+
+The exact implementation commit
+`a9d4737ce5e0b3113aefe1ed67f329dd14b88e42` was deployed in a clean checkout
+on `gpuserver6000` and exercised on the already-open source case
+`081-stripe-rope-ep0003`.
+
+The admission passed with 12 cameras, 654 frame-zero points, 76 active rows,
+and the released 60/16 train/test split. The emitted artifact is
+`results/sota/deform360_fresh_source_lock_v1/081-stripe-rope-ep0003.admission.json`,
+file SHA-256
+`432055876a648a16e0d213f3ab8be5239f272047801f0b9076c4ba7826c8d263`.
+Its internal admission digest is
+`2cdf992407861b87ab6e39232090730ffc537cf9bcacd41bdf65de0a5ff654a5`.
+
+This is an operational smoke only. The object was already open, no prediction
+was run, and the result supplies no accuracy, calibration, prospective, or
+SOTA evidence.
+
+The complete repository suite on the unchanged implementation passed 774
+tests with 28 expected skips in 336.04 seconds.
