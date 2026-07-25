@@ -1,0 +1,133 @@
+{
+  "artifact_kind": "Deform360ProcessIsolationQualificationResultRecordV1",
+  "status": "source-only-lifecycle-admitted",
+  "decision": "pass",
+  "qualified_code_revision": "387f82b40f6b684c58b868db7d85c481a41a804e",
+  "qualified_branch": "online-belief-v82-process-isolation",
+  "qualification_id": "deform360-original-trainer-process-isolation-v1",
+  "qualification_root": "/mnt/corsair/florianpfaff/bpt-process-isolation-qualification-387f82b40f6b684c58b868db7d85c481a41a804e",
+  "qualification_artifact": {
+    "path": "/mnt/corsair/florianpfaff/bpt-process-isolation-qualification-387f82b40f6b684c58b868db7d85c481a41a804e/process-isolation-qualification.json",
+    "size_bytes": 416179,
+    "sha256": "93494cd807fcb4232750da385552e21453543364759718cabe9641342ccbea6a",
+    "artifact_sha256": "2b58e5508a454166c5a2fab7c8c46f8fa94e022152ef40dc0ff4d3e98b9fc931"
+  },
+  "attempt_marker": {
+    "path": "/mnt/corsair/florianpfaff/bpt-process-isolation-qualification-387f82b40f6b684c58b868db7d85c481a41a804e/qualification-attempt.json",
+    "size_bytes": 1269,
+    "sha256": "16f84ab0e7b82600cf4c5c3c2c65c6de4c0d8a6d2c17ec06fa10afbda125921a"
+  },
+  "canonical_parameters": {
+    "case_count": 4,
+    "fits_per_case": 81,
+    "iterations_per_fit": 1,
+    "seed": 0,
+    "physical_gpu_index": 1,
+    "soft_nofile_limit": 1024,
+    "minimum_unused_file_descriptors": 256,
+    "child_task_growth_limit": 192,
+    "parent_fd_growth_limit": 2,
+    "parent_task_growth_limit": 2
+  },
+  "process_boundary": {
+    "one_original_trainer_per_child": true,
+    "one_official_case_lifecycle_per_child": true,
+    "trainer_configuration_overridden": false,
+    "process_exit_reclaims_case_resources": true,
+    "parent_process_imports_nerfstudio": false
+  },
+  "parent_observation": {
+    "initial_file_descriptor_count": 4,
+    "post_child_file_descriptor_counts": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "initial_task_count": 1,
+    "post_child_task_counts": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "child_observations": [
+    {
+      "case_index": 0,
+      "process_id": 2649661,
+      "initial_file_descriptor_count": 48,
+      "peak_file_descriptor_count": 372,
+      "unused_file_descriptors_at_peak": 652,
+      "initial_task_count": 165,
+      "peak_task_count": 247,
+      "final_event_writer_count": 81,
+      "final_profiler_count": 81,
+      "evidence_sha256": "4d6dd0d1f4b7b6b0f9f93c06ba4aff67fa03846f96ef6a3f89b736db04f3ca09",
+      "log_sha256": "eb280d9238e226d444b1f9a341caf24ca2d8fdad6c7ef60219803289151b0d9c"
+    },
+    {
+      "case_index": 1,
+      "process_id": 2651874,
+      "initial_file_descriptor_count": 48,
+      "peak_file_descriptor_count": 372,
+      "unused_file_descriptors_at_peak": 652,
+      "initial_task_count": 165,
+      "peak_task_count": 247,
+      "final_event_writer_count": 81,
+      "final_profiler_count": 81,
+      "evidence_sha256": "8508e639e7c73db097dc2a71e61aa4e718c4aca877dc481462853fd74880aaf6",
+      "log_sha256": "18bbc7a46a390c208be6ed60b28e5989ab20251a487ea1f816f81458e8712462"
+    },
+    {
+      "case_index": 2,
+      "process_id": 2654087,
+      "initial_file_descriptor_count": 48,
+      "peak_file_descriptor_count": 372,
+      "unused_file_descriptors_at_peak": 652,
+      "initial_task_count": 165,
+      "peak_task_count": 247,
+      "final_event_writer_count": 81,
+      "final_profiler_count": 81,
+      "evidence_sha256": "96c69bd7d0a24f6c6d7b6d05aeb31a2fe3b866cfbd6fd8b5bec4a163e789df1e",
+      "log_sha256": "1f3900df77172e0970da3d329d57332554420fd38a446fcfcef9ecef645f4049"
+    },
+    {
+      "case_index": 3,
+      "process_id": 2656199,
+      "initial_file_descriptor_count": 48,
+      "peak_file_descriptor_count": 372,
+      "unused_file_descriptors_at_peak": 652,
+      "initial_task_count": 165,
+      "peak_task_count": 247,
+      "final_event_writer_count": 81,
+      "final_profiler_count": 81,
+      "evidence_sha256": "cdde6666621f2edcf17b3735aa0cc56c3b47a428b6fb5ead53a9da7c90d4bf80",
+      "log_sha256": "8af162a031e1062d858c65eb267de6236c186a26ae12f464970582356f590cda"
+    }
+  ],
+  "passed_predicates": [
+    "all_child_contracts_valid",
+    "all_child_evidence_passed",
+    "all_child_invocations_succeeded",
+    "all_child_processes_distinct",
+    "all_materialized_inputs_stable",
+    "all_source_inputs_stable",
+    "case_count_exact",
+    "child_start_fd_spread_within_limit",
+    "child_start_task_spread_within_limit",
+    "no_generated_dataset_outputs_remain",
+    "parent_fd_growth_within_limit",
+    "parent_nofile_limit_unchanged",
+    "parent_task_growth_within_limit"
+  ],
+  "information_boundary": {
+    "formal_held_path_supplied": false,
+    "target_query_path_received": false,
+    "outcome_path_received": false,
+    "gate_path_received": false,
+    "score_path_received": false
+  },
+  "claim_boundary": "This pass admits the per-case process lifecycle as an engineering boundary. It is not a numerical-accuracy, calibration, confirmation, or state-of-the-art result, and it does not reinterpret attempt 5's frozen equivalence decision.",
+  "next_gate": "Prepare a new held protocol revision that binds the isolated worker and result schema, forbids in-process fallback, preserves all scientific cohorts and gates, and opens confirmation outcomes only after its registered calibration gate passes."
+}

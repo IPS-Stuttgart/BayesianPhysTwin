@@ -1,6 +1,6 @@
 # Deform360 Process-Isolation Qualification
 
-Status: prospective source-only development protocol
+Status: source-only lifecycle gate passed
 
 ## Motivation
 
@@ -83,3 +83,20 @@ A new held protocol may be prepared only after this source-only lifecycle gate
 passes. That protocol must bind the isolated worker and result schema, forbid
 fallback to the in-process wrapper, preserve all scientific cohorts and gates,
 and keep target queries and scoring in the parent process.
+
+## Frozen outcome
+
+The canonical run at code revision
+`387f82b40f6b684c58b868db7d85c481a41a804e` passed all registered
+predicates. Each of four distinct children completed 81 fits, started with 48
+file descriptors and 165 tasks, peaked at 372 descriptors and 247 tasks, and
+accumulated the expected 81 original-path writers and profilers. After every
+child exit, the parent returned exactly to four descriptors and one task.
+
+The checksummed result record is
+`results/sota/deform360_process_isolation_qualification_v1.json`. The canonical
+remote evidence has file SHA-256
+`93494cd807fcb4232750da385552e21453543364759718cabe9641342ccbea6a`
+and internal artifact SHA-256
+`2b58e5508a454166c5a2fab7c8c46f8fa94e022152ef40dc0ff4d3e98b9fc931`.
+No formal held path or target-side artifact was supplied.
