@@ -58,6 +58,29 @@ The posterior nominal responsibility may depend on the residual. The supplied
 prior nominal probability never does. Association support is reported as a
 separate diagnostic.
 
+## Gauge-aware state adapter
+
+`build_gauge_aware_batch_from_observation_belief` connects this neutral
+artifact to the query-identifiable state update without collapsing its
+uncertainty structure:
+
+- `mean_xyz_m - physical_prediction_xyz_m` forms the innovation once;
+- `local_covariance_m2` remains the conditional metric covariance;
+- each `(factor_group_id, factor_name)` becomes an explicit standard-normal
+  nuisance parameter, so `low_rank_factor_m` is not added to local covariance
+  a second time;
+- row reliability, group nominal probability, and composite-likelihood weight
+  remain distinct residual-independent inputs;
+- association probability is retained only as a diagnostic;
+- the default shared bias is a global 3-D translation;
+- default camera biases are zero-sum Helmert translation contrasts, avoiding a
+  duplicate global-translation column.
+
+An unanchored global state translation is therefore indistinguishable from the
+default shared observation bias and triggers exact fallback. Independent
+anchors or query-relevant state modes outside the nuisance subspace can make a
+state update identifiable.
+
 ## Commands
 
 Validate an artifact:

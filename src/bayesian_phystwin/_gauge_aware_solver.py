@@ -27,6 +27,8 @@ from ._gauge_aware_contracts import (
 def _correlation_group_weights(
     group_ids: tuple[str, ...],
     reliability: np.ndarray,
+    prior_nominal_probability: np.ndarray,
+    composite_weight: np.ndarray,
     effective_samples_per_group: float,
 ) -> tuple[np.ndarray, dict[str, int]]:
     weights = np.zeros(len(group_ids), dtype=np.float64)
@@ -36,7 +38,12 @@ def _correlation_group_weights(
     for index, group_id in enumerate(group_ids):
         count = counts[group_id]
         group_scale = min(effective_samples_per_group, float(count)) / count
-        weights[index] = reliability[index] * group_scale
+        weights[index] = (
+            reliability[index]
+            * prior_nominal_probability[index]
+            * composite_weight[index]
+            * group_scale
+        )
     return weights, counts
 
 
@@ -165,6 +172,8 @@ def update_gauge_aware_belief(
     base_weight, group_counts = _correlation_group_weights(
         batch.correlation_group_ids,
         batch.prior_reliability,
+        batch.prior_nominal_probability,
+        batch.composite_weight,
         cfg.effective_samples_per_correlation_group,
     )
     diagnostics: dict[str, Any] = {
@@ -182,6 +191,8 @@ def update_gauge_aware_belief(
             0 if batch.anchor_innovation_m is None else len(batch.anchor_innovation_m)
         ),
         "prior_reliability_uses_innovation": False,
+        "prior_nominal_probability_uses_innovation": False,
+        "association_probability_used_as_reliability": False,
         "correlation_treatment": "effective-sample cap within declared groups",
     }
     if not np.any(base_weight > 0.0):

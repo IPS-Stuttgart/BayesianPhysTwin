@@ -180,6 +180,8 @@ class GaugeAwareObservationBatch:
     correlation_group_ids: tuple[str, ...]
     prior_reliability: np.ndarray
     physical_response_scale_m: float
+    prior_nominal_probability: np.ndarray | None = None
+    composite_weight: np.ndarray | None = None
     state_prior_covariance_m2: np.ndarray | None = None
     anchor_innovation_m: np.ndarray | None = None
     anchor_covariance_m2: np.ndarray | None = None
@@ -248,6 +250,42 @@ class GaugeAwareObservationBatch:
             np.all(np.isfinite(reliability))
             and np.all((reliability >= 0.0) & (reliability <= 1.0)),
             "prior_reliability must lie in [0, 1]",
+        )
+        nominal_probability = (
+            np.ones(count, dtype=np.float64)
+            if self.prior_nominal_probability is None
+            else np.asarray(
+                self.prior_nominal_probability,
+                dtype=np.float64,
+            )
+        )
+        _require(
+            nominal_probability.shape == (count,),
+            "prior_nominal_probability must have shape (M,)",
+        )
+        _require(
+            np.all(np.isfinite(nominal_probability))
+            and np.all(
+                (nominal_probability >= 0.0)
+                & (nominal_probability <= 1.0)
+            ),
+            "prior_nominal_probability must lie in [0, 1]",
+        )
+        composite_weight = (
+            np.ones(count, dtype=np.float64)
+            if self.composite_weight is None
+            else np.asarray(self.composite_weight, dtype=np.float64)
+        )
+        _require(
+            composite_weight.shape == (count,),
+            "composite_weight must have shape (M,)",
+        )
+        _require(
+            np.all(np.isfinite(composite_weight))
+            and np.all(
+                (composite_weight > 0.0) & (composite_weight <= 1.0)
+            ),
+            "composite_weight must lie in (0, 1]",
         )
         _require(
             np.isfinite(self.physical_response_scale_m)
@@ -321,6 +359,8 @@ class GaugeAwareObservationBatch:
             ("query_state_jacobian", query),
             ("gauge_prior_covariance", gauge_prior),
             ("prior_reliability", reliability),
+            ("prior_nominal_probability", nominal_probability),
+            ("composite_weight", composite_weight),
         ):
             object.__setattr__(self, name, _readonly(value))
         object.__setattr__(self, "correlation_group_ids", groups)

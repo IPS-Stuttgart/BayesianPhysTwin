@@ -63,6 +63,26 @@ The state, gauge, and bias posterior cross-covariances are retained in
 query-ambiguity gate to the resulting physical particle support. This module
 does not replace that nonlinear downstream check.
 
+For a versioned `ObservationBeliefV1`, use the repository adapter rather than
+manually flattening the low-rank factors:
+
+```python
+adapted = build_gauge_aware_batch_from_observation_belief(
+    belief,
+    physical_prediction_xyz_m=physical_prediction,
+    state_jacobian=physical_state_jacobian,
+    query_state_jacobian=future_query_jacobian,
+    physical_response_scale_m=physical_response_scale_m,
+)
+result = update_gauge_aware_belief(adapted.batch)
+```
+
+The adapter maps every shared low-rank covariance factor to an explicit
+nuisance coefficient with a standard-normal prior. It does not also add that
+factor to the conditional covariance. Association probability is available in
+`adapted.association_probability` for reporting, but is not used as prior
+reliability.
+
 ## Claim boundary
 
 The update is an inference primitive, not an empirical acceptance certificate.

@@ -45,6 +45,12 @@ from .observation_belief import (
     load_observation_belief,
     save_observation_belief,
 )
+from .observation_belief_gauge_adapter import (
+    ObservationBeliefGaugeAdapterResult,
+    build_gauge_aware_batch_from_observation_belief,
+    centered_view_translation_bias_jacobian,
+    global_translation_bias_jacobian,
+)
 from .parameter_posterior import ParameterEnsemble
 from .phystwin_adapter import (
     PhysTwinExportConfig,
@@ -96,6 +102,7 @@ __all__ = [
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefV1",
+    "ObservationBeliefGaugeAdapterResult",
     "ParameterEnsemble",
     "PhysicalResponseBasis",
     "PhysTwinExportConfig",
@@ -116,6 +123,8 @@ __all__ = [
     "binary_calibration_metrics",
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
+    "build_gauge_aware_batch_from_observation_belief",
+    "centered_view_translation_bias_jacobian",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
     "export_phystwin_residuals",
@@ -123,6 +132,7 @@ __all__ = [
     "fit_source_group_regret_bound",
     "fit_source_regret_certificate",
     "grouped_student_t_mixture_likelihood",
+    "global_translation_bias_jacobian",
     "load_observation_belief",
     "markov_log_evidence_batch",
     "measurement_variance",
