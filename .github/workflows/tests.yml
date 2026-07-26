@@ -20,11 +20,13 @@ env:
 
 jobs:
   quality:
-    name: Stable-interface quality
+    name: Repository quality
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -32,26 +34,30 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install development tools
         run: python -m pip install -e ".[dev]"
-      - name: Lint stable interfaces
+      - name: Lint source, tests, and CI tools
+        run: python -m ruff check src tests tools
+      - name: Check formatting of changed Python files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
         run: >-
-          python -m ruff check
-          src/bayesian_phystwin/run_manifest.py
-          src/bayesian_phystwin/repository_provenance.py
-          src/bayesian_phystwin/run_manifest_v2.py
-          src/bayesian_phystwin/cli/main.py
-          src/bayesian_phystwin/cli/run_manifest.py
-          tests/test_cli_main.py
-          tests/test_run_manifest.py
-          tests/test_run_manifest_v2.py
-          tests/test_run_manifest_cli.py
-      - name: Type-check stable interfaces
+          python tools/check_changed_python_format.py
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+      - name: Type-check stable contracts and interfaces
         run: >-
           python -m mypy
+          src/bayesian_phystwin/causal4d_provider_v1.py
+          src/bayesian_phystwin/observation_belief.py
+          src/bayesian_phystwin/observation_belief_gauge_adapter.py
+          src/bayesian_phystwin/_gauge_aware_contracts.py
+          src/bayesian_phystwin/gauge_aware_belief.py
           src/bayesian_phystwin/run_manifest.py
           src/bayesian_phystwin/repository_provenance.py
           src/bayesian_phystwin/run_manifest_v2.py
           src/bayesian_phystwin/cli/main.py
           src/bayesian_phystwin/cli/run_manifest.py
+          tools/check_changed_python_format.py
 
   core-contracts:
     name: Core contracts / Python ${{ matrix.python-version }}
@@ -84,6 +90,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/test_causal4d_provider_v1.py \
+            tests/test_contract_properties.py \
             tests/test_gauge_aware_belief.py \
             tests/test_observation_belief.py \
             tests/test_observation_belief_gauge_adapter.py \
