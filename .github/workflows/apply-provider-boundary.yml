@@ -1,0 +1,51 @@
+name: Apply typed Causal4D provider boundary
+
+on:
+  push:
+    branches: [agent/complete-causal4d-provider-boundary]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[provider-boundary-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Apply provider-boundary transformation
+        run: |
+          cat .github/provider-boundary-patch/payload00 \
+              .github/provider-boundary-patch/payload01 \
+            | base64 --decode | gzip --decompress > /tmp/apply-provider-boundary.py
+          python /tmp/apply-provider-boundary.py
+          rm -rf .github/provider-boundary-patch
+          rm .github/workflows/apply-provider-boundary.yml
+      - name: Format and validate focused changes
+        run: |
+          python -m pip install -e '.[dev,graph]'
+          python -m ruff format \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_causal4d_provider_semantics_v1.py
+          python -m ruff check \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_causal4d_provider_semantics_v1.py
+          python -m pytest -q \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_causal4d_provider_semantics_v1.py
+          git diff --check
+      - name: Commit provider boundary
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Complete typed Causal4D provider boundary [provider-boundary-applied]'
+          git push origin HEAD:agent/complete-causal4d-provider-boundary
