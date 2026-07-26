@@ -36,7 +36,8 @@ least `5 mm` predicted motion at frame 19.
 - RGB and rendered-depth indices: `0..19`
 - queries: the 16 material identities from the frozen open-27 camera plan
 - cameras: all eight cameras from that plan
-- scene normalization: MVTracker's frame-zero camera/depth normalization
+- scene normalization: MVTracker's camera/depth normalization over prefix
+  frames `0..19`
 - target access during prediction: none
 
 MVTracker does not enforce an exact query-frame identity. The adapter therefore

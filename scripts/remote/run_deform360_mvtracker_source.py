@@ -273,7 +273,10 @@ def _run_prediction(args: argparse.Namespace) -> dict[str, object]:
             "scale": float(scale),
             "rotation": rotation.tolist(),
             "translation": translation.tolist(),
-            "inputs": "frame-zero rendered depth and calibrated cameras only",
+            "inputs": (
+                "rendered depth and calibrated cameras from prefix frames "
+                f"0..{config.update_frame}"
+            ),
         },
         "checkpoint_sha256_verified": MVTRACKER_CHECKPOINT_SHA256,
         "pointops_fallback": True,

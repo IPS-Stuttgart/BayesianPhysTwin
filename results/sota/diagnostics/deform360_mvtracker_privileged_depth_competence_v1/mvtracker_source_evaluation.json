@@ -1,0 +1,89 @@
+{
+  "artifact_kind": "Deform360MVTrackerPrivilegedDepthSourceEvaluation",
+  "case": "092-squirrel-ep0008",
+  "claim_boundary": "outcome-open privileged-depth competence result; a pass only authorizes causal learned-depth development",
+  "compatibility": {
+    "target_bytes_modified": false,
+    "target_pickle_module_aliases": {
+      "numpy._core.numeric": "numpy.core.numeric"
+    }
+  },
+  "competence": {
+    "eligible_identity_frames": 304,
+    "gates": {
+      "absolute_rmse": false,
+      "relative_gain_over_best_baseline": false,
+      "supported_fraction": true
+    },
+    "passed": false,
+    "relative_gain_over_best_baseline": -9.285629848139175,
+    "scores": {
+      "mvtracker_identity_rmse_m": 0.011984298918290975,
+      "persistence_identity_rmse_m": 0.001165149737568975,
+      "physical_prior_identity_rmse_m": 0.012696156966629717
+    },
+    "supported_fraction": 1.0,
+    "supported_identity_frames": 304
+  },
+  "config": {
+    "case_name": "092-squirrel-ep0008",
+    "center_ids": [
+      69,
+      678,
+      350,
+      660,
+      563,
+      605,
+      526,
+      347,
+      590,
+      130,
+      624,
+      134,
+      548,
+      637,
+      399,
+      371
+    ],
+    "depth_scale_to_m": 0.001,
+    "maximum_tracker_rmse_m": 0.01,
+    "minimum_relative_gain_over_best_baseline": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "normalization_target_camera_radius": 6.3,
+    "observation_std_floor_m": 0.005,
+    "prefix_frame_count": 20,
+    "selected_cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-024_cam1"
+    ],
+    "update_frame": 19,
+    "visibility_threshold": 0.5
+  },
+  "decision": "stop-mvtracker-deform360-route",
+  "implementation_sha256": {
+    "adapter_and_evaluator": "0a6e228d0a3f0730e90bbd67d24966bd5f111c3ba813c08b1b449f4b9fa4435d",
+    "protocol": "7c2c0ccc61f1dbeef700d0bf36014c47ddeb70c5a7b371dfccdc75649c5e912c",
+    "runner": "36f1870292de2877b346d913b6e137b7ffe677b692d53aa2c0c61ce5ff5bfce4"
+  },
+  "information_boundary": {
+    "already_open_source_target_used_for_scoring": true,
+    "fresh_or_held_target_used": false,
+    "mvtracker_prediction_validated_before_source_target_loading": true,
+    "privileged_depth_control": true
+  },
+  "inputs_sha256": {
+    "mvtracker_prediction_seal": "3719875b54f4928140ba361df48ae37a4a1e17b12e8ab7591ab96572ec109697",
+    "source_outcome": "87e104d432b22ce0030fa7c3aab8e85ce80d85cbd4f0b6349b64501cdb69e56f",
+    "source_prediction_seal": "639b54c5d8e14281745f6afbf11238535b9baffb38d3d1e75768e2aac8632d35",
+    "source_target": "a3b87ade453f56107ed34b240355df3ebc531a73459b05cbb711d64234243b0b"
+  },
+  "protocol_id": "deform360-mvtracker-privileged-depth-competence-v1",
+  "result_sha256": "000da21dbef486172294763632004fd73aa911caac87fb002daa5ca768cf4c37",
+  "schema_version": 1
+}

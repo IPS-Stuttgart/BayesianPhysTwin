@@ -1,0 +1,54 @@
+{
+  "artifact_kind": "Deform360MVTrackerPrivilegedDepthPredictionSeal",
+  "case": "092-squirrel-ep0008",
+  "claim_boundary": "one-case competence-control prediction seal; source target remains outside this operation",
+  "config": {
+    "case_name": "092-squirrel-ep0008",
+    "center_ids": [
+      69,
+      678,
+      350,
+      660,
+      563,
+      605,
+      526,
+      347,
+      590,
+      130,
+      624,
+      134,
+      548,
+      637,
+      399,
+      371
+    ],
+    "depth_scale_to_m": 0.001,
+    "maximum_tracker_rmse_m": 0.01,
+    "minimum_relative_gain_over_best_baseline": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "normalization_target_camera_radius": 6.3,
+    "observation_std_floor_m": 0.005,
+    "prefix_frame_count": 20,
+    "selected_cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-024_cam1"
+    ],
+    "update_frame": 19,
+    "visibility_threshold": 0.5
+  },
+  "information_boundary": {
+    "prediction_hashed_before_source_target_loading": true,
+    "privileged_depth_control": true
+  },
+  "prediction_archive_sha256": "55112b2557d40a1bac0744944291042bf225a66cb9542d46fb7ae249282a6eda",
+  "prediction_report_sha256": "86e18ffe462bebee0a0949ac28e73ee6f81b7c7e67b04b0981d0772d6f0dad2b",
+  "protocol_id": "deform360-mvtracker-privileged-depth-competence-v1",
+  "result_sha256": "ad720349c96359369c1460cdec7ebd15914c759eff114e0010b8923bb7bbb8a0",
+  "schema_version": 1
+}
