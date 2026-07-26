@@ -3,6 +3,8 @@ name: PR 20 repair
 on:
   push:
     branches: ["agent/selective-risk-evaluation"]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
