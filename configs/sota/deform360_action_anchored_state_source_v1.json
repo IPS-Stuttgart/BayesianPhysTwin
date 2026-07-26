@@ -1,0 +1,72 @@
+{
+  "protocol_id": "deform360-action-anchored-state-source-v1",
+  "status": "frozen-source-development",
+  "case": {
+    "object_id": "002-rope-silk",
+    "episode_id": 5,
+    "action": "lift sides",
+    "bimanual": true,
+    "selection_rule": "first bimanual source episode of the first filament object in the locked Deform360 replication ordering",
+    "prefix_hull_frames": [
+      7,
+      8
+    ],
+    "prediction_branch_frame": 8,
+    "untouched_future_starts_at_archived_frame": 14
+  },
+  "state_estimator": {
+    "dt_seconds": 0.03333333333333333,
+    "config": {
+      "laplacian_weight": 4.0,
+      "solve_ridge": 1e-09,
+      "maximum_initial_speed_m_s": 1.5,
+      "minimum_orientation_margin": 1e-06
+    },
+    "shared_bias_model": "coordinatewise median of camera-topology minus measured-controller velocity at registered contact nodes",
+    "hard_anchor_model": "Dirichlet measured-controller velocities at registered contact nodes",
+    "free_node_model": "graph-Laplacian regularized prefix velocity"
+  },
+  "physical_model": {
+    "pooled_fit_relative_path": "milestones/deform360-replication-source-backend-v1/artifacts/pooled-fits/002-rope-silk/pooled_source_fit.json",
+    "leave_one_source_candidate_index": 21,
+    "candidate_selected_without_episode_5_fit_scores": true,
+    "official_warp_backend_unchanged": true
+  },
+  "arms": [
+    "exact_persistence",
+    "physical_zero_velocity",
+    "camera_topology_velocity",
+    "action_harmonic_velocity",
+    "bias_aware_action_anchored_velocity"
+  ],
+  "promotion_gate": {
+    "minimum_mean_improvement_fraction": 0.05,
+    "maximum_late_degradation_fraction": 0.05,
+    "maximum_p99_relative_edge_strain": 0.5,
+    "all_checks_required": true
+  },
+  "references": {
+    "trackdeform3d_repository": "https://github.com/roahmlab/trackDeform3D-core-tracking",
+    "trackdeform3d_commit": "9920060a76f7d750f98e429bd1e0f172150c9ffa",
+    "trackdeform3d_scope": "The dedicated deform-with-hands path hard-replaces measured end-effector anchors every frame. The generic WireTracker does not; it uses end-effector poses to select camera-detected leaves.",
+    "causal4d_replication_protocol_sha256": "f0aab308345807b2183f653306a062d4ad0295584b6b283deb99d29b3c247934",
+    "causal4d_backend_policy_sha256": "96e9a99d4b1052e97e53c28281af0af45b4c5cd3fee9b07dac06b722b460d478"
+  },
+  "information_boundary": {
+    "trusted_stager_may_extract_exact_prefix_hulls_from_the_already_open_source_archive": true,
+    "predictor_may_read_prefix_hulls_through_frame_8": true,
+    "predictor_may_read_full_known_robot_trajectory": true,
+    "predictor_may_not_read_geometry_after_frame_8": true,
+    "predictor_may_not_read_future_tactile": true,
+    "predictor_may_not_read_source_scores": true,
+    "held_v8_access": false,
+    "fresh_target_access": false
+  },
+  "claim_boundary": {
+    "post_open_source_development": true,
+    "upstream_trackdeform3d_benchmark": false,
+    "object_level_transfer": false,
+    "calibration": false,
+    "state_of_the_art": false
+  }
+}
