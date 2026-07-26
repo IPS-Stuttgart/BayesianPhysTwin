@@ -35,29 +35,70 @@ jobs:
       - name: Install development tools
         run: python -m pip install -e ".[dev]"
       - name: Lint source, tests, and CI tools
-        run: python -m ruff check src tests tools
+        id: ruff_lint
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m ruff check src tests tools --output-format=github \
+            2>&1 | tee ruff-lint.txt
       - name: Check formatting of changed Python files
+        id: ruff_format
+        continue-on-error: true
+        shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.sha }}
-        run: >-
-          python tools/check_changed_python_format.py
-          --base "$BASE_SHA"
-          --head "$HEAD_SHA"
+        run: |
+          set -o pipefail
+          python tools/check_changed_python_format.py \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            2>&1 | tee ruff-format.txt
       - name: Type-check stable contracts and interfaces
-        run: >-
-          python -m mypy
-          src/bayesian_phystwin/causal4d_provider_v1.py
-          src/bayesian_phystwin/observation_belief.py
-          src/bayesian_phystwin/observation_belief_gauge_adapter.py
-          src/bayesian_phystwin/_gauge_aware_contracts.py
-          src/bayesian_phystwin/gauge_aware_belief.py
-          src/bayesian_phystwin/run_manifest.py
-          src/bayesian_phystwin/repository_provenance.py
-          src/bayesian_phystwin/run_manifest_v2.py
-          src/bayesian_phystwin/cli/main.py
-          src/bayesian_phystwin/cli/run_manifest.py
-          tools/check_changed_python_format.py
+        id: mypy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m mypy \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/observation_belief_gauge_adapter.py \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/gauge_aware_belief.py \
+            src/bayesian_phystwin/run_manifest.py \
+            src/bayesian_phystwin/repository_provenance.py \
+            src/bayesian_phystwin/run_manifest_v2.py \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/run_manifest.py \
+            tools/check_changed_python_format.py \
+            2>&1 | tee mypy.txt
+      - name: Upload quality diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-diagnostics
+          path: |
+            ruff-lint.txt
+            ruff-format.txt
+            mypy.txt
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Enforce quality gates
+        if: always()
+        shell: bash
+        env:
+          RUFF_LINT_OUTCOME: ${{ steps.ruff_lint.outcome }}
+          RUFF_FORMAT_OUTCOME: ${{ steps.ruff_format.outcome }}
+          MYPY_OUTCOME: ${{ steps.mypy.outcome }}
+        run: |
+          printf 'ruff lint: %s\n' "$RUFF_LINT_OUTCOME"
+          printf 'ruff format: %s\n' "$RUFF_FORMAT_OUTCOME"
+          printf 'mypy: %s\n' "$MYPY_OUTCOME"
+          [[ "$RUFF_LINT_OUTCOME" == "success" ]]
+          [[ "$RUFF_FORMAT_OUTCOME" == "success" ]]
+          [[ "$MYPY_OUTCOME" == "success" ]]
 
   core-contracts:
     name: Core contracts / Python ${{ matrix.python-version }}
