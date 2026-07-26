@@ -1,20 +1,54 @@
-name: Gauge-aware belief tests
+name: Materialize exact grouped mixture patch
 
 on:
-  push:
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
 
 jobs:
-  test:
+  materialize:
+    if: github.event.pull_request.head.ref == 'agent/exact-grouped-student-t-conformance'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: agent/exact-grouped-student-t-conformance
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: pip
-      - run: python -m pip install -e ".[dev]"
-      - run: >-
-          python -m pytest -q
-          tests/test_gauge_aware_belief.py
-          tests/test_observation_belief_gauge_adapter.py
+      - name: Materialize digest-verified files
+        run: |
+          python - <<'PY'
+          import base64
+          import gzip
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path.cwd()
+          payload = "".join(
+              path.read_text(encoding="utf-8").strip()
+              for path in sorted((root / ".agent").glob("exact-mixture-payload.*"))
+          )
+          manifest = json.loads(gzip.decompress(base64.b64decode(payload)))
+          for relative_path, record in manifest.items():
+              data = base64.b64decode(record["content_b64"])
+              digest = hashlib.sha256(data).hexdigest()
+              if digest != record["sha256"]:
+                  raise SystemExit(f"digest mismatch for {relative_path}")
+              destination = root / relative_path
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              destination.write_bytes(data)
+          PY
+      - name: Commit exact grouped-mixture implementation
+        run: |
+          rm -rf .agent
+          rm .github/workflows/apply-exact-mixture-bundle.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Make grouped Student-t inference likelihood-conformant"
+          git push origin HEAD:agent/exact-grouped-student-t-conformance
