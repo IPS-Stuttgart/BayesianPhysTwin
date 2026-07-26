@@ -1,0 +1,79 @@
+name: Legacy artifact contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/legacy_artifacts.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "tests/test_legacy_artifacts.py"
+      - "docs/causal4d_provider_v1.md"
+      - ".github/workflows/legacy-artifact-contract.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/legacy_artifacts.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "tests/test_legacy_artifacts.py"
+      - "docs/causal4d_provider_v1.md"
+      - ".github/workflows/legacy-artifact-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-artifacts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Legacy artifact API quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Run Ruff
+        run: >-
+          python -m ruff check
+          src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/causal4d_artifacts_v1.py
+          tests/test_legacy_artifacts.py
+      - name: Check formatting
+        run: >-
+          python -m ruff format --check
+          src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/causal4d_artifacts_v1.py
+          tests/test_legacy_artifacts.py
+      - name: Type-check the stable boundary
+        run: >-
+          python -m mypy --python-version 3.12
+          src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/causal4d_artifacts_v1.py
+
+  compatibility:
+    name: Legacy artifact API / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install NumPy-only package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run the digest and artifact-contract tests
+        run: python -m pytest -q tests/test_legacy_artifacts.py
