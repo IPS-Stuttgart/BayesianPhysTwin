@@ -166,24 +166,6 @@ def _load_calibration(
     return intrinsics, extrinsics
 
 
-def materialized_calibrated_camera_names(
-    processed_episode_dir: str | Path,
-) -> tuple[str, ...]:
-    """Return the deterministic camera panel with every required source asset."""
-
-    processed = Path(processed_episode_dir).resolve()
-    intrinsics, extrinsics = _load_calibration(processed)
-    return tuple(
-        sorted(
-            camera
-            for camera in set(intrinsics) & set(extrinsics)
-            if (processed / camera / "undistorted.mp4").is_file()
-            and (processed / camera / "mask_refined.h5").is_file()
-            and (processed / camera / "rendered_depth.h5").is_file()
-        )
-    )
-
-
 def project_world_points(
     points_m: np.ndarray,
     intrinsics: np.ndarray,
@@ -948,7 +930,6 @@ def build_raw_camera_measurement_case_with_contract(
     expected_case_names: Sequence[str],
     prediction_seal_validator: Callable[[Mapping[str, Any]], None],
     claim_boundary: str,
-    eligible_camera_names: Sequence[str] | None = None,
     config: RawCameraObservationConfig | None = None,
 ) -> dict[str, Any]:
     """Build one target-free measurement under an explicit case contract."""
@@ -974,17 +955,6 @@ def build_raw_camera_measurement_case_with_contract(
     if cfg.update_frames[-1] >= len(prior):
         raise ValueError("sealed trajectory does not reach every update")
     intrinsics, extrinsics = _load_calibration(processed)
-    if eligible_camera_names is not None:
-        eligible = tuple(str(name) for name in eligible_camera_names)
-        if (
-            eligible != tuple(sorted(set(eligible)))
-            or len(eligible) < cfg.selected_camera_count
-        ):
-            raise ValueError("eligible camera panel is malformed or too small")
-        if not set(eligible) <= set(intrinsics) & set(extrinsics):
-            raise ValueError("eligible camera is absent from calibration")
-        intrinsics = {name: intrinsics[name] for name in eligible}
-        extrinsics = {name: extrinsics[name] for name in eligible}
     cameras, support, projected = frame_zero_camera_support(
         frame_zero,
         processed,
@@ -1129,12 +1099,6 @@ def build_raw_camera_measurement_case_with_contract(
         "episode_key": str(seal["episode_key"]),
         "config": asdict(cfg),
         "plan": {
-            "eligible_cameras": list(cameras),
-            "eligible_camera_policy": (
-                "all calibrated RGB cameras"
-                if eligible_camera_names is None
-                else "caller-bound materialized RGB/mask/depth intersection"
-            ),
             "candidate_count": len(candidates),
             "candidate_ids": candidates.tolist(),
             "center_ids": centers.tolist(),
@@ -1613,7 +1577,6 @@ __all__ = [
     "evaluate_raw_camera_measurement_cohort",
     "expected_open_case_names",
     "frame_zero_camera_support",
-    "materialized_calibrated_camera_names",
     "project_world_points",
     "select_frame_zero_observation_plan",
     "triangulate_observation_ransac",
