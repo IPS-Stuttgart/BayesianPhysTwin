@@ -8,6 +8,12 @@
     "case_name": "single_lift_cloth",
     "source_frame_start": 90,
     "source_frame_end_exclusive": 121,
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
     "selected_cameras": [
       0,
       1,
@@ -33,7 +39,7 @@
   "source_artifacts": {
     "query_input_sha256": "TO_BE_LOCKED_AFTER_SOURCE_STAGING",
     "withheld_prefix_sha256": "TO_BE_LOCKED_AFTER_SOURCE_STAGING",
-    "query_source": "Only the nine benchmark 3D query locations at source frame 90.",
+    "query_source": "Only benchmark identities 3, 4, 6, and 8, the four identities finite at source frame 90.",
     "withheld_source": "Manual identity trajectories on frames [90, 121), inaccessible to prediction and opened only after prediction sealing."
   },
   "competence_gate": {

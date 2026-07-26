@@ -8,7 +8,7 @@ This control asks whether a released joint multiview 3D tracker can close
 enough of that observation gap to justify simulator assimilation.
 
 The test is deliberately upstream of Bayesian inference. MVTracker receives
-the three released calibrated RGB-D views and nine benchmark query locations
+the three released calibrated RGB-D views and four benchmark query locations
 at frame 90. It predicts those identities through frame 120. Its prediction is
 sealed before the separately staged manual prefix target is opened.
 
@@ -24,8 +24,8 @@ Prob4D blend or camera-only confidence accumulation is introduced.
 - Case: `single_lift_cloth`, already-open source development only.
 - Prediction frames: `[90, 121)`, wholly inside the released training prefix.
 - Cameras: 0, 1, and 2.
-- Identities: all nine benchmark manual-track queries, initialized only at
-  frame 90.
+- Identities: benchmark identities 3, 4, 6, and 8, the four identities finite
+  at frame 90, initialized only at that frame.
 - Tracker: MVTracker revision
   `ceea8ad2af77ed9b44148ef8e9eeba4ea3c3f072`.
 - Checkpoint SHA-256:

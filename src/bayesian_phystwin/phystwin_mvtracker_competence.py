@@ -81,6 +81,7 @@ class PhysTwinMVTrackerCompetenceConfig:
     case_name: str = CASE_NAME
     source_frame_start: int = 90
     source_frame_end_exclusive: int = 121
+    selected_identity_ids: tuple[int, ...] = (3, 4, 6, 8)
     selected_cameras: tuple[int, ...] = (0, 1, 2)
     depth_scale_to_m: float = 0.001
     visibility_threshold: float = 0.5
@@ -98,6 +99,16 @@ class PhysTwinMVTrackerCompetenceConfig:
         _require(
             self.source_frame_end_exclusive > self.source_frame_start + 1,
             "source interval is too short",
+        )
+        _require(
+            len(self.selected_identity_ids) >= 3
+            and len(set(self.selected_identity_ids))
+            == len(self.selected_identity_ids),
+            "selected identities must be unique and contain at least three points",
+        )
+        _require(
+            all(identity >= 0 for identity in self.selected_identity_ids),
+            "identity indices must be nonnegative",
         )
         _require(
             len(self.selected_cameras) >= 2
@@ -176,15 +187,21 @@ def prepare_source_artifacts(
         cfg.source_frame_end_exclusive <= len(tracks),
         "manual tracks are shorter than the source interval",
     )
+    selected_ids = np.asarray(cfg.selected_identity_ids, dtype=np.int64)
+    _require(
+        int(np.max(selected_ids)) < tracks.shape[1],
+        "selected identity exceeds the manual track array",
+    )
     withheld = tracks[
-        cfg.source_frame_start : cfg.source_frame_end_exclusive
+        cfg.source_frame_start : cfg.source_frame_end_exclusive,
+        selected_ids,
     ].copy()
     query = withheld[0].copy()
     _require(
         np.all(np.isfinite(query)),
         "every frozen query identity must be finite at the query frame",
     )
-    identity_ids = np.arange(len(query), dtype=np.int64)
+    identity_ids = selected_ids
 
     input_dir = output / "prediction_input"
     withheld_dir = output / "withheld_evaluation"
@@ -274,7 +291,10 @@ def validate_query_input(
     )
     _require(
         identity_ids.shape == (len(query),)
-        and np.array_equal(identity_ids, np.arange(len(query))),
+        and np.array_equal(
+            identity_ids,
+            np.asarray(cfg.selected_identity_ids, dtype=np.int64),
+        ),
         "query identity IDs are invalid",
     )
     _require(np.all(np.isfinite(query)), "query points are not finite")
@@ -370,7 +390,11 @@ def write_prediction_artifact(
     )
     _require(visibility.shape == raw.shape[:2], "visibility shape differs")
     _require(
-        ids.shape == (len(query),) and np.array_equal(ids, np.arange(len(query))),
+        ids.shape == (len(query),)
+        and np.array_equal(
+            ids,
+            np.asarray(cfg.selected_identity_ids, dtype=np.int64),
+        ),
         "identity IDs differ from the query contract",
     )
     anchored, correction = exact_anchor_trajectory(raw, query)
