@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from importlib.metadata import metadata, version
 from pathlib import Path
-import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,3 +47,18 @@ def test_distribution_declares_spdx_license_expression() -> None:
     assert package_metadata["License-Expression"] == "MIT"
     license_files = set(package_metadata.get_all("License-File") or ())
     assert {"LICENSE", "THIRD_PARTY_NOTICES.md"} <= license_files
+
+
+def test_third_party_notice_records_pinned_restrictions() -> None:
+    notice = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    required = (
+        "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+        "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+        "Creative Commons Attribution-NonCommercial 4.0",
+        "1d6a8947ec6ebabbcf4fc1e0f6d06828fcf6f257",
+        "academic purposes",
+        "commercial or production use",
+        "European Union",
+    )
+    for term in required:
+        assert term in notice
