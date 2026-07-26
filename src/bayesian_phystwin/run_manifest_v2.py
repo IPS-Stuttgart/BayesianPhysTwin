@@ -20,8 +20,10 @@ from .run_manifest import (
     ArtifactDigest,
     RunClassification,
     RunManifestV1,
-    load_run_manifest as load_run_manifest_v1,
     sha256_file,
+)
+from .run_manifest import (
+    load_run_manifest as load_run_manifest_v1,
 )
 
 RUN_MANIFEST_V2_VERSION = 2
