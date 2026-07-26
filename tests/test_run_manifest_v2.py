@@ -15,6 +15,8 @@ from bayesian_phystwin.repository_provenance import (
 from bayesian_phystwin.run_manifest import (
     RunManifestV1,
     artifact_digest,
+)
+from bayesian_phystwin.run_manifest import (
     write_run_manifest as write_run_manifest_v1,
 )
 from bayesian_phystwin.run_manifest_v2 import (
