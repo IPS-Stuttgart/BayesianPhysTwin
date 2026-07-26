@@ -97,7 +97,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python -m mypy \
+          python -m mypy --python-version 3.12 \
             src/bayesian_phystwin/contracts \
             src/bayesian_phystwin/phystwin \
             src/bayesian_phystwin/causal4d_provider_v1.py \
