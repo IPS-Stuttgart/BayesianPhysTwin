@@ -31,6 +31,12 @@ bpt run manifest create runs/example/manifest.json \
   --output-artifact metrics=metrics.json
 ```
 
+Finalize the manifest once, after all named outputs are immutable. Its creation
+timestamp is part of the content-addressed descriptor, so regenerating an
+otherwise identical manifest deliberately produces a different manifest ID.
+Copy the finalized JSON with the result bundle rather than recreating it during
+paper assembly.
+
 Validate the manifest and all referenced files after copying or extracting a
 bundle:
 
