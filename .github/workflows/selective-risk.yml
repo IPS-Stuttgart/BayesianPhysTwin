@@ -49,23 +49,9 @@ jobs:
           src/bayesian_phystwin/selective_risk.py
           tests/test_selective_risk.py
       - name: Type-check selective-risk contracts
-        id: mypy
-        continue-on-error: true
-        run: |
-          python -m mypy --python-version 3.12 \
-            src/bayesian_phystwin/selective_risk.py \
-            2>&1 | tee mypy-output.txt
-      - name: Upload mypy diagnostics
-        if: steps.mypy.outcome == 'failure'
-        uses: actions/upload-artifact@v7
-        with:
-          name: selective-risk-mypy-diagnostics
-          path: mypy-output.txt
-          if-no-files-found: error
-          retention-days: 14
-      - name: Fail on mypy diagnostics
-        if: steps.mypy.outcome == 'failure'
-        run: exit 1
+        run: >-
+          python -m mypy --python-version 3.12
+          src/bayesian_phystwin/selective_risk.py
 
   test:
     name: Selective-risk tests / Python ${{ matrix.python-version }}
