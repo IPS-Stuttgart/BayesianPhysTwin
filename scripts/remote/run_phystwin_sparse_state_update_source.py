@@ -364,6 +364,31 @@ def _predict(protocol_path: Path, output: Path) -> None:
             observed_ids,
         )
     )
+    expected_qa = protocol["source_qa"]
+    _require(
+        len(structure) == int(expected_qa["state_node_count"])
+        and graph.num_object_springs == int(expected_qa["object_spring_count"]),
+        "source graph cardinality changed",
+    )
+    _require(
+        observed_ids.tolist() == expected_qa["observed_identity_indices"]
+        and identity_split.hidden_indices.tolist()
+        == expected_qa["hidden_identity_indices"],
+        "deterministic identity split changed",
+    )
+    _require(
+        association_nodes.tolist() == expected_qa["association_node_indices"],
+        "frame-zero identity association changed",
+    )
+    _require(
+        np.allclose(
+            graph_eigenvalues,
+            np.asarray(expected_qa["graph_eigenvalues"], dtype=np.float64),
+            rtol=0.0,
+            atol=1e-10,
+        ),
+        "low-frequency graph spectrum changed",
+    )
     _require(
         float(np.max(association_distance, initial=0.0))
         <= float(settings["maximum_initial_association_distance_m"]),
