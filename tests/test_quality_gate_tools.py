@@ -4,12 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from tools import check_ruff_baseline as ruff_baseline_module
 from tools.check_changed_python_quality import changed_python_files
 from tools.check_changed_semantic_coverage import (
     check_changed_semantic_coverage,
     coverage_failures,
     parse_added_lines,
 )
+from tools.check_ruff_baseline import RuffDiagnostic, check_ruff_baseline
 
 
 def _git(repository: Path, *arguments: str) -> str:
@@ -170,3 +172,66 @@ def test_changed_semantic_coverage_rejects_an_uncovered_new_branch(
             base=base,
             head=head,
         )
+
+
+def _write_ruff_baseline(path: Path, *, count: int = 1) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "diagnostics": {"src/example.py": {"F401": count}},
+            }
+        )
+    )
+
+
+def test_ruff_baseline_accepts_existing_or_removed_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    baseline = tmp_path / "baseline.json"
+    _write_ruff_baseline(baseline, count=2)
+    diagnostics = [
+        RuffDiagnostic(
+            filename=str(tmp_path / "src/example.py"),
+            code="F401",
+            message="unused import",
+        )
+    ]
+    monkeypatch.setattr(
+        ruff_baseline_module,
+        "_run_ruff",
+        lambda repository_root, paths: diagnostics,
+    )
+
+    report = tmp_path / "report.json"
+    assert (
+        check_ruff_baseline(
+            tmp_path,
+            baseline,
+            ("src",),
+            report_path=report,
+        )
+        == 0
+    )
+    assert json.loads(report.read_text()) == diagnostics
+
+
+def test_ruff_baseline_rejects_new_diagnostic_counts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    baseline = tmp_path / "baseline.json"
+    _write_ruff_baseline(baseline)
+    diagnostic = RuffDiagnostic(
+        filename=str(tmp_path / "src/example.py"),
+        code="F401",
+        message="unused import",
+    )
+    monkeypatch.setattr(
+        ruff_baseline_module,
+        "_run_ruff",
+        lambda repository_root, paths: [diagnostic, diagnostic],
+    )
+
+    assert check_ruff_baseline(tmp_path, baseline, ("src",)) == 1
