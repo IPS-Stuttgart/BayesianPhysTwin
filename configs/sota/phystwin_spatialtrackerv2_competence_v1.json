@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-spatialtrackerv2-competence-v1",
+  "locked_at_utc": "2026-07-26T19:07:57Z",
+  "status": "Locked after implementation and full-suite verification, before any SpatialTrackerV2 trajectory inference or trajectory scoring.",
+  "claim_boundary": "One-case post-open observation-competence control on the previously examined single_lift_cloth source interaction. Frame-zero manual identity coordinates are supplied as an association oracle. The result may reject SpatialTrackerV2 as a PhysTwin sparse-identity feeder or authorize an automatic frame-zero graph-query source study. It cannot establish forecasting performance, transfer, calibration, state of the art, or permission to inspect any fresh or held-v8 target.",
+  "question": "Does official SpatialTrackerV2 recover persistent metric material identities from a causal RGB-D prefix with materially broader and more accurate support than the frozen strict-three-view CoTracker3 comparator?",
+  "case": "single_lift_cloth",
+  "case_selection": "The same already-open source case used by the frozen TAPIP3D competence control. It was selected before SpatialTrackerV2 inference because all nine released manual identities are visible in camera 0 at frame zero and agree with sensor depth to within 1 mm.",
+  "implementation_commit": "c219ee91b5e384013e672720103a261f7c3f1a4b",
+  "software": {
+    "git_archive_sha256": "f63a0e5461e5683f51a84f07a84e68914e3224c3230117f46b99c364abb411d3",
+    "competence_module_sha256": "c92240799a30f427fd40660105ea5baad080ae161e82d167c8dbc0c38651cad2",
+    "competence_cli_sha256": "2f2ef1e0db93d6f87a01ce0d04e34ef380d183c937130aef61e629b00ee2e7ee",
+    "runner_sha256": "8ca53341129b96b0d33890bc6e9ab7296397689575626588e9b41b45766c0254",
+    "tests_sha256": "9ad2e5fe665c0f29ea813ccc60ca3c5b4ce299fe4d1a0196fadfe1fd8b641a13",
+    "pyproject_sha256": "6d3a68d1e83e5f954d4884cdec9186f0189f9b14c6373bc5dea18750beb8f38d",
+    "verification": {
+      "focused_pytest": "15 passed in 22.98 s",
+      "full_pytest": "839 passed, 29 skipped in 356.75 s",
+      "full_pytest_log_sha256": "3006c0cf39aac24ece8045d517187857ca6e62dc541a10ad9a82e3d3cb7e2f1f",
+      "ruff_changed_python_files": "passed",
+      "py_compile": "passed",
+      "git_diff_check": "passed",
+      "repo_wide_ruff": "not claimed; eight pre-existing findings remain in untouched files"
+    }
+  },
+  "spatialtrackerv2": {
+    "repository": "https://github.com/henry123-boy/SpaTrackerV2",
+    "license": "CC BY-NC 4.0; external research dependency, not vendored",
+    "commit": "7e12274c52077860cebfe007a6290777db43b63c",
+    "checkout": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/SpaTrackerV2",
+    "huggingface_repository": "Yuxihenry/SpatialTrackerV2-Offline",
+    "huggingface_revision": "76e275b00f9c57dab71d46544df5255d4538106d",
+    "checkpoint": {
+      "model_path": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/checkpoint/model.safetensors",
+      "model_sha256": "f1236958b274867ca9a743303eb2cf48a9d217a7d005e163b45a9ab87ed2e723",
+      "config_path": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/checkpoint/config.json",
+      "config_sha256": "028d8e6295f6b360c824e375ec82beff58e57395b99b67fff7ccbe1a771aee9a"
+    },
+    "official_code": {
+      "inference_py_sha256": "7ebf84ca540bcfea4749002bf6de7b49489cde34e49d9457ce136ffc817a873c",
+      "predictor_py_sha256": "dd35ccf2c31f68621d370878b87da9011432b61b373cf08d58eced16df4af8ff",
+      "spatrack_py_sha256": "c7326068b8729c85a36b526cdb63c275efb42628d39b756053e6b9e83ed29be7",
+      "utils3d_commit": "d3a577acf0a9ad7e513a1416449a07b6f47d967f"
+    },
+    "environment": {
+      "python": "3.10.12",
+      "torch": "2.4.0+cu121",
+      "numpy": "1.26.4",
+      "transformers": "4.57.3",
+      "huggingface_hub": "0.36.2"
+    },
+    "official_inference": {
+      "checkpoint_variant": "offline",
+      "device": "cuda:0 through CUDA_VISIBLE_DEVICES=0",
+      "autocast": "bfloat16",
+      "track_num": 756,
+      "iters_track": 4,
+      "replace_ratio": 0.2,
+      "query_no_BA": true,
+      "fixed_cam": false,
+      "stage": 1,
+      "support_frame": 120,
+      "fps": 1,
+      "visibility_threshold": 0.5,
+      "configured_window": 200,
+      "configured_overlap": 4,
+      "configured_resolution": 336
+    },
+    "gauge": {
+      "input_extrinsics": "known camera-to-world transforms passed to the official RGB-D path",
+      "model_output": "tracks transformed by the model-returned camera-to-initial-camera trajectory, matching official inference.py",
+      "approved_world_conversion": "one fixed camera-0-to-PhysTwin-world SE(3) transform from the locked calibration",
+      "score_time_alignment": "none; no fitted translation, SE(3), Sim(3), affine map, or scale"
+    },
+    "output_directory_at_lock": {
+      "path": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/outputs/single_lift_cloth_camera0_prefix121_oracle9",
+      "entry_count": 0
+    }
+  },
+  "prefix_frame_count": 121,
+  "query_count": 9,
+  "query_tolerance_m": 1e-07,
+  "pixel_tolerance": 0.0001,
+  "inputs": {
+    "input_manifest": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/inputs/single_lift_cloth_camera0_prefix121_oracle9_manifest.json",
+      "sha256": "1f5ea63348a2a15aab32e7daac0e893c615731bf5222f2c8fa5cb535b677bf2d"
+    },
+    "input_npz": {
+      "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/inputs/single_lift_cloth_camera0_prefix121_oracle9.npz",
+      "sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc",
+      "video_shape": [
+        121,
+        480,
+        848,
+        3
+      ],
+      "video_dtype": "uint8",
+      "depth_shape": [
+        121,
+        480,
+        848
+      ],
+      "depth_units": "metres",
+      "extrinsics_convention": "world-to-camera",
+      "query_shape": [
+        9,
+        4
+      ],
+      "query_dtype": "float32",
+      "query_layout": "[frame_index, world_x_m, world_y_m, world_z_m]"
+    }
+  },
+  "score_inputs": {
+    "case_dir": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_cloth",
+    "final_data_sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+    "gt_track_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "cues_path": "/home/florianpfaff/bpt-cotracker3-open22-v3/cues/single_lift_cloth/cues.npz",
+    "cues_sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56"
+  },
+  "cotracker3_comparator": {
+    "description": "Frozen nearest-node frame-zero association followed by strict-three-view, gauge-anchored CoTracker3 displacement, re-anchored to the identical nine query coordinates.",
+    "minimum_view_quality": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_cycle_error_px": 5.0,
+    "minimum_camera_count": 3,
+    "association_uses_later_manual_trajectory": false
+  },
+  "metrics": {
+    "support_denominator": "finite released manual identity-frame pairs in frames [0, 121)",
+    "displacement_rmse": "Euclidean RMSE of tracker displacement relative to each tracker's frame-zero coordinate against released manual displacement.",
+    "shared_support_comparison": "SpatialTrackerV2 and CoTracker3 are compared only on identity-frame pairs valid for both, preventing different support from creating the relative accuracy result.",
+    "position_rmse": "Euclidean world-position RMSE on each method's valid identity-frame pairs.",
+    "frame_zero_anchor_rmse": "Euclidean RMSE between predicted and supplied frame-zero query coordinates.",
+    "late_third": "Frames [80, 121), with start computed as floor(2 * 121 / 3).",
+    "common_translation_diagnostic": "Per-frame mean displacement error and residual RMSE after removing that mean; diagnostic only and not a gate."
+  },
+  "competence_gate": {
+    "minimum_support_fraction": 0.7,
+    "minimum_shared_rmse_improvement_fraction": 0.2,
+    "maximum_displacement_rmse_m": 0.005,
+    "maximum_frame_zero_anchor_rmse_m": 0.002,
+    "minimum_late_support_fraction": 0.5,
+    "maximum_late_displacement_rmse_m": 0.01,
+    "conjunction": "All six conditions must pass.",
+    "pass_action": "Freeze this result and design an automatic frame-zero graph-query study on opened source data only. Do not open a fresh target.",
+    "fail_action": "Stop SpatialTrackerV2 as the PhysTwin sparse-identity feeder without tuning on this opened source trajectory."
+  },
+  "artifact_boundary": {
+    "inference_inputs": [
+      "locked camera-0 RGB-D prefix",
+      "locked camera intrinsics and extrinsics",
+      "nine frame-zero manual identity coordinates as query locations",
+      "frozen official SpatialTrackerV2 checkpoint"
+    ],
+    "seal_prediction_inputs": [
+      "locked protocol",
+      "locked prefix input manifest",
+      "official SpatialTrackerV2 result"
+    ],
+    "seal_prediction_forbidden_inputs": [
+      "manual trajectory after frame zero",
+      "future object observations",
+      "CoTracker3 cues",
+      "held-v8 artifacts"
+    ],
+    "score_after_seal_inputs": [
+      "released manual source trajectory",
+      "frame-zero object geometry",
+      "frozen CoTracker3 cues"
+    ],
+    "canonical_prediction_excludes_rgbd_copy": true
+  },
+  "technical_failure_policy": {
+    "automatic_retry": false,
+    "setting_change_after_failure": false,
+    "rule": "Record an inference failure without scoring. Any lower-resolution, lower-track-count, camera, window, or memory-setting retry requires a separately committed amendment before another model run."
+  },
+  "information_boundary": {
+    "decoded_rgbd_frames": "[0, 121)",
+    "future_rgbd_allowed": false,
+    "manual_identity_available_to_prediction": "frame-zero world coordinates only",
+    "manual_identity_trajectory_available_before_prediction_seal": false,
+    "future_after_frame_120_used": false,
+    "fresh_object_access_authorized": false,
+    "held_v8_access": false,
+    "held_v8_artifact_access": false
+  },
+  "forbidden": [
+    "changing SpatialTrackerV2 inference settings, visibility threshold, gauge conversion, comparator support, metric definitions, or competence thresholds after model inference",
+    "using manual identity coordinates after frame zero to generate, select, align, repair, or admit the prediction",
+    "fitting any score-time translation, rigid, similarity, affine, or scale alignment",
+    "calling this association-oracle source control deployable, predictive, transferable, calibrated, confirmatory, or state of the art",
+    "integrating SpatialTrackerV2 into Bayesian-PhysTwin before all competence gates pass",
+    "opening any fresh-object outcome on the authority of this one-case control",
+    "opening, inspecting, modifying, or rerunning any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
