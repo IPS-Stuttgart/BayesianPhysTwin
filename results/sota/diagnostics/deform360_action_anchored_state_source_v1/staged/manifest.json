@@ -1,0 +1,48 @@
+{
+  "artifact_kind": "Deform360ActionAnchoredPrefixCustody",
+  "case": {
+    "action": "lift sides",
+    "bimanual": true,
+    "episode_id": 5,
+    "object_id": "002-rope-silk",
+    "prediction_branch_frame": 8,
+    "prefix_hull_frames": [
+      7,
+      8
+    ],
+    "selection_rule": "first bimanual source episode of the first filament object in the locked Deform360 replication ordering",
+    "untouched_future_starts_at_archived_frame": 14
+  },
+  "custody_boundary": {
+    "claim": "post-open source development only",
+    "future_geometry_values_written_to_prediction_stage": false,
+    "prediction_receives_only_staged_prefix_hulls": true,
+    "source_outcomes_previously_open": true,
+    "trusted_stager_read_source_archive": true
+  },
+  "protocol_id": "deform360-action-anchored-state-source-v1",
+  "result_sha256": "026a011ccfcc3418cbff71aa996b992615669ab968622b9cf7371e83e58e261c",
+  "schema_version": 1,
+  "source": {
+    "contact_model_sha256": "1654381beea3a4c3255963d2cb73195394c2deeb0e472f4f64911e691612fe7c",
+    "hull_archive_path": "/home/florianpfaff/bpt-action-anchored-state-source-v1/data/replication-v1/observations/002-rope-silk/episode_0005/sampled_hulls.npz",
+    "hull_archive_sha256": "7cd137770661e7d511a6b997066591172c8bb313809fe247bb0d687f484409ad",
+    "robot_sha256": "e77467e537cf986a115bf754b29730989075e100a6226268022949db8d9d1eda"
+  },
+  "staged_prefix": {
+    "archive_path": "/home/florianpfaff/bpt-action-anchored-state-source-v1/run-d73887c/staged/prefix_hulls.npz",
+    "archive_sha256": "160039c75a2954bb333fcd4f0c470232524889d27c0b00eaaed30556f4e03188",
+    "frame_indices": [
+      7,
+      8
+    ],
+    "point_counts": [
+      90,
+      436
+    ],
+    "points_sha256": [
+      "371d303b2d3717c7ad7aebe8780a9e238d3df7474556e4b8270943cfac61cea0",
+      "1dd0d89f68d1f3722d0028cb0ba8c49121b8dbedb8560ca48f62d8aa3d50d745"
+    ]
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "artifact_kind": "Deform360ActionAnchoredStatePrediction",
+  "case": {
+    "action": "lift sides",
+    "bimanual": true,
+    "episode_id": 5,
+    "object_id": "002-rope-silk",
+    "prediction_branch_frame": 8,
+    "prefix_hull_frames": [
+      7,
+      8
+    ],
+    "selection_rule": "first bimanual source episode of the first filament object in the locked Deform360 replication ordering",
+    "untouched_future_starts_at_archived_frame": 14
+  },
+  "contact_associations": [
+    {
+      "contact_node_index": 20,
+      "contact_offset_m": [
+        0.002520308149193226,
+        -0.06594527852118384,
+        0.044786093031750546
+      ],
+      "contact_patch_world_m": [
+        0.12368405320746957,
+        0.05725331782319695,
+        -0.002836111517626947
+      ],
+      "contact_rest_length_m": 0.0001,
+      "nearest_surface_distance_m": 0.07733082967260775,
+      "patch_to_node_distance_m": 0.07975541261539568,
+      "registered_contact_patch_world_m": [
+        0.1262043613566628,
+        -0.008691960697986889,
+        0.0419499815141236
+      ],
+      "robot_axis": 0,
+      "selected_taxel_indices": [
+        62,
+        126,
+        60,
+        190,
+        124,
+        58,
+        254,
+        188
+      ]
+    },
+    {
+      "contact_node_index": 0,
+      "contact_offset_m": [
+        -0.043085186147523824,
+        -0.08120062922621121,
+        0.06689800969796694
+      ],
+      "contact_patch_world_m": [
+        0.42418100277603143,
+        0.07452390252658875,
+        -0.008953042229244014
+      ],
+      "contact_rest_length_m": 0.0001,
+      "nearest_surface_distance_m": 0.11122240784267448,
+      "patch_to_node_distance_m": 0.11368913384157998,
+      "registered_contact_patch_world_m": [
+        0.3810958166285076,
+        -0.006676726699622465,
+        0.05794496746872293
+      ],
+      "robot_axis": 1,
+      "selected_taxel_indices": [
+        63,
+        61,
+        127,
+        59,
+        125,
+        191,
+        57,
+        123
+      ]
+    }
+  ],
+  "implementation": {
+    "adapter_scope": "new Bayesian-PhysTwin endpoint-state adapter; no upstream TrackDeform3D code is vendored or claimed as evaluated",
+    "bayesian_phystwin_commit": "d73887c21fe5bcbc68ec6d94fd0d6c28557d7162",
+    "causal4d_commit": "310943c382b412f033352872724fc2f9c330910f",
+    "official_phystwin_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "trackdeform3d_reference_commit": "9920060a76f7d750f98e429bd1e0f172150c9ffa"
+  },
+  "information_boundary": {
+    "fresh_target_read": false,
+    "future_geometry_read": false,
+    "future_tactile_read": false,
+    "held_v8_read": false,
+    "known_future_robot_trajectory_read": true,
+    "prediction_read_staged_prefix_hulls_only": true,
+    "score_bearing_fit_or_grid_artifact_read": false,
+    "source_metrics_read": false
+  },
+  "physical_model": {
+    "feasibility_config": {
+      "bend_spring_y_grid": [
+        1e-06,
+        10.0,
+        100.0,
+        1000.0
+      ],
+      "controller_spring_y_grid": [
+        100.0,
+        300.0,
+        1000.0,
+        3000.0,
+        10000.0
+      ],
+      "dashpot_damping": 0.0,
+      "drag_damping": 3.0,
+      "ground_elasticity": 0.0,
+      "ground_friction_grid": [
+        0.0,
+        0.3
+      ],
+      "inactive_controller_spring_y": 1e-12,
+      "initial_ground_clearance_m": 0.001,
+      "maximum_p99_relative_edge_strain": 0.5,
+      "maximum_repeat_rollout_rmse_m": 0.0001,
+      "minimum_leave_one_source_win_fraction": 0.6,
+      "minimum_source_chamfer_improvement_fraction": 0.05,
+      "prefix_frame_count": 6,
+      "stretch_spring_y_grid": [
+        100.0,
+        300.0,
+        1000.0,
+        3000.0,
+        10000.0
+      ],
+      "substeps": 128
+    },
+    "leave_one_source_candidate_index": 21,
+    "parameters": {
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3,
+      "stretch_spring_y": 100.0
+    },
+    "source_lock": {
+      "pooled_fit_file_sha256": "8cd529d8ba707e49ae0b5c41fabd12218c1c0b1be06417aecc79756424b72ab6",
+      "pooled_fit_relative_path": "milestones/deform360-replication-source-backend-v1/artifacts/pooled-fits/002-rope-silk/pooled_source_fit.json",
+      "pooled_fit_result_sha256": "23574faf4bd3202a1aff7ce726f995f3cce8c3750abc8565047e5352b9746d48",
+      "source_grid_file_sha256": "c9e514b690d0c1152b93fd23ade9e48b2701eb0cd5fee49279c3e666551fbe5d"
+    }
+  },
+  "prediction": {
+    "archive_path": "/home/florianpfaff/bpt-action-anchored-state-source-v1/run-d73887c/predictions/prediction.npz",
+    "archive_sha256": "5addf8cd8e295e35297e61f0bf74ce6443017bf6d96531729d8b7c3f7d21cad2",
+    "arms": [
+      "action_harmonic_velocity",
+      "bias_aware_action_anchored_velocity",
+      "camera_topology_velocity",
+      "exact_persistence",
+      "physical_zero_velocity"
+    ],
+    "full_rate_frame_count": 404
+  },
+  "prefix": {
+    "branch_frame": 8,
+    "custody_manifest_sha256": "c6fc2aa9ae865ed98ac9c8e00f038255723639eabea86a3ea87830bb0ae290c7",
+    "frames": [
+      7,
+      8
+    ],
+    "staged_archive_sha256": "160039c75a2954bb333fcd4f0c470232524889d27c0b00eaaed30556f4e03188"
+  },
+  "protocol_id": "deform360-action-anchored-state-source-v1",
+  "result_sha256": "5cc721c16456a4ef991e28c635cd62d4b6a776039b3fa46b8ba76cf31890b76c",
+  "schema_version": 1,
+  "state_estimate": {
+    "accepted": true,
+    "config": {
+      "laplacian_weight": 4.0,
+      "maximum_initial_speed_m_s": 1.5,
+      "minimum_orientation_margin": 1e-06,
+      "solve_ridge": 1e-09
+    },
+    "diagnostics": {
+      "accepted": true,
+      "action_harmonic_velocity": {
+        "maximum_m_s": 0.03294037645195191,
+        "median_m_s": 0.016470187402466537,
+        "p95_m_s": 0.03129335742594748
+      },
+      "anchor_node_indices": [
+        20,
+        0
+      ],
+      "bias_corrected_action_velocity": {
+        "maximum_m_s": 0.3083596653096379,
+        "median_m_s": 0.13256988375381001,
+        "p95_m_s": 0.2975187537690865
+      },
+      "camera_smoothed_velocity": {
+        "maximum_m_s": 0.40705999398112613,
+        "median_m_s": 0.24405825460547137,
+        "p95_m_s": 0.40097760986676495
+      },
+      "camera_velocity": {
+        "maximum_m_s": 0.5335855425489703,
+        "median_m_s": 0.22828132094104228,
+        "p95_m_s": 0.5288437970634927
+      },
+      "dt_seconds": 0.03333333333333333,
+      "fallback_policy": "use exact zero-velocity physical baseline when the target-free state gate rejects",
+      "laplacian_weight": 4.0,
+      "maximum_hard_anchor_error_m_s": 0.0,
+      "maximum_initial_speed_m_s": 1.5,
+      "orientation": {
+        "direct_mean_squared_m2": 9.720581651067061e-05,
+        "relative_orientation_margin": 0.9980384188393948,
+        "reversed": false,
+        "reversed_mean_squared_m2": 0.0495548277394138
+      },
+      "shared_observation_bias_m_s": [
+        -0.02881771409753181,
+        -0.004444628689490161,
+        0.13790949557933113
+      ],
+      "shared_observation_bias_norm_m_s": 0.14095830710156843
+    },
+    "initial_velocity_sha256": {
+      "action_harmonic_velocity": "69491a582476f2c4a8284c40d08b5291eefd6f6995316246bb293a60f63b85b2",
+      "bias_aware_action_anchored_velocity": "937188bf5b14c9d7d566ac1159087951b33a837a08d7740653157fe29f9f9531",
+      "camera_topology_velocity": "f694b4ff29456fc9968d0f8ca3489fb6cffb00aaf79b3f6c4b7ce2e0bd496806",
+      "physical_zero_velocity": "1af84c930f11231fdb7d60385254074a9658d585a2c750161b384947227a9b2a"
+    },
+    "routes": {
+      "action_harmonic_velocity": "candidate",
+      "bias_aware_action_anchored_velocity": "candidate",
+      "camera_topology_velocity": "candidate",
+      "physical_zero_velocity": "candidate"
+    }
+  }
+}
