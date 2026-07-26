@@ -1,0 +1,64 @@
+"""Lazy dispatch for grouped and legacy-compatible commands."""
+
+from __future__ import annotations
+
+import importlib
+import inspect
+import sys
+from collections.abc import Callable
+from typing import Any
+
+from .command_registry import CommandSpec
+
+
+def _accepts_argv(function: Callable[..., Any]) -> tuple[bool, bool]:
+    try:
+        parameters = inspect.signature(function).parameters.values()
+    except (TypeError, ValueError):
+        return False, False
+    positional = any(
+        parameter.kind
+        in {
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.VAR_POSITIONAL,
+        }
+        for parameter in parameters
+    )
+    keyword = any(
+        parameter.name == "argv" and parameter.kind is inspect.Parameter.KEYWORD_ONLY
+        for parameter in parameters
+    )
+    return positional, keyword
+
+
+def invoke(command: CommandSpec, arguments: list[str]) -> int:
+    """Import one target on demand and forward only its command arguments."""
+
+    try:
+        module = importlib.import_module(command.module)
+    except ModuleNotFoundError as exc:
+        if not command.optional_dependencies:
+            raise
+        extras = ",".join(command.optional_dependencies)
+        print(
+            f"{command.command_id} requires optional dependencies; "
+            f"install bayesian-phystwin[{extras}] ({exc})",
+            file=sys.stderr,
+        )
+        return 1
+
+    function = getattr(module, command.function)
+    positional, keyword = _accepts_argv(function)
+    if positional:
+        result = function(arguments)
+    elif keyword:
+        result = function(argv=arguments)
+    else:
+        previous_argv = sys.argv
+        sys.argv = [command.legacy_alias or command.grouped_command, *arguments]
+        try:
+            result = function()
+        finally:
+            sys.argv = previous_argv
+    return 0 if result is None else int(result)
