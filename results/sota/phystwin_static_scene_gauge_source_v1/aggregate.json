@@ -1,0 +1,662 @@
+{
+  "aggregate": {
+    "late_mean_error_mm": {
+      "case_ties": 0,
+      "case_wins": 9,
+      "raw_equal_case_mean": 9.063979436513234,
+      "relative_improvement": -0.03561716109524715,
+      "static_scene_gauge_equal_case_mean": 9.386812652267533,
+      "worst_case_relative_improvement": -0.42218699784093583
+    },
+    "mean_error_mm": {
+      "case_ties": 0,
+      "case_wins": 8,
+      "raw_equal_case_mean": 6.0973358851374675,
+      "relative_improvement": -0.06746491857194514,
+      "static_scene_gauge_equal_case_mean": 6.508692154134065,
+      "worst_case_relative_improvement": -0.7250549923309051
+    },
+    "rmse_mm": {
+      "case_ties": 0,
+      "case_wins": 7,
+      "raw_equal_case_mean": 9.1451119466452,
+      "relative_improvement": -0.06287489104340116,
+      "static_scene_gauge_equal_case_mean": 9.720109863870222,
+      "worst_case_relative_improvement": -1.4082077806201112
+    }
+  },
+  "artifact_kind": "PhysTwinStaticSceneGaugeSourceAggregateV1",
+  "case_count": 21,
+  "cases": [
+    {
+      "case": "double_lift_cloth_1",
+      "common_point_frame_count": 325,
+      "common_point_frame_fraction": 0.4458161865569273,
+      "gauge_supported_dense_fraction": 0.7023368792664448,
+      "inputs": {
+        "cues_sha256": "7ed80a9293dab7fa562f9aabf0a24c61900e90912c95d97d57cef996c2b97891",
+        "final_data_sha256": "c823c86c5d2b29c289287c46ad1c6fa5c50e7c9c84b5e61f21fe2001b9dc0a88",
+        "gauge_sha256": "275fad77e0877ebc5cbeee07181dd84e76f16e4342d9534916cec5857bb330cd",
+        "manual_tracks_sha256": "6702a80b7c09d7628a05acd1951fd186373ea3df9e137416b06ebc3ff8523d9a"
+      },
+      "raw": {
+        "late_mean_error_mm": 5.58063771163055,
+        "mean_error_mm": 3.9116949483039365,
+        "rmse_mm": 4.702722604588083
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.051802340995734664,
+        "mean_error_mm": -0.19191164422404072,
+        "rmse_mm": -0.20580498465287245
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/double_lift_cloth_1/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 5.869727809342092,
+        "mean_error_mm": 4.662394757535819,
+        "rmse_mm": 5.67056635805205
+      }
+    },
+    {
+      "case": "double_lift_cloth_3",
+      "common_point_frame_count": 568,
+      "common_point_frame_fraction": 0.7696476964769647,
+      "gauge_supported_dense_fraction": 0.4904397767551668,
+      "inputs": {
+        "cues_sha256": "8725d7317fb50cffb5725b85429d8f6f9f666452f30c4daf037290ba74c3ae8b",
+        "final_data_sha256": "ed4e77bd74c6641ec6bb7a3ed36e069cb0896af3ed273a615c6a2ae31cc71de3",
+        "gauge_sha256": "cdde7e034e1d2c05c638aa2dcf1bcd8da1768d0050dd576763eb95e36795749b",
+        "manual_tracks_sha256": "9b05b081ae1746e92cdc901d96066ab3f7ff2cbee9503336f5aed97cae19655d"
+      },
+      "raw": {
+        "late_mean_error_mm": 3.313098601571374,
+        "mean_error_mm": 2.7686635836577698,
+        "rmse_mm": 4.763825827232979
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.028160043843442395,
+        "mean_error_mm": -0.0023328116621155193,
+        "rmse_mm": -0.00895709067541861
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/double_lift_cloth_3/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 3.4063956034492717,
+        "mean_error_mm": 2.775122354354201,
+        "rmse_mm": 4.806495847129406
+      }
+    },
+    {
+      "case": "double_lift_sloth",
+      "common_point_frame_count": 354,
+      "common_point_frame_fraction": 0.9147286821705426,
+      "gauge_supported_dense_fraction": 0.8080890196281137,
+      "inputs": {
+        "cues_sha256": "1271484be4d93219c8a94e6c6df3a64929f2f0a7dd435c280dbff426ac622fa1",
+        "final_data_sha256": "6bbb1245812a9b6c760f6881b8b6174343fd0df717c168b09fb7b365caabb33c",
+        "gauge_sha256": "67ab57d2f15f2ad59cd0acffda4074abbbd1855c3771f726fc1302443c97644e",
+        "manual_tracks_sha256": "6bd648125d2068924b02586b27e797d538a8220a26857a0758693a9a15cf3d2f"
+      },
+      "raw": {
+        "late_mean_error_mm": 8.583217354580288,
+        "mean_error_mm": 5.621960876932117,
+        "rmse_mm": 8.240803309030124
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.06479135658989232,
+        "mean_error_mm": 0.06990753661800164,
+        "rmse_mm": 0.10309198406204334
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/double_lift_sloth/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 8.027099058271125,
+        "mean_error_mm": 5.228943441063012,
+        "rmse_mm": 7.391242545637156
+      }
+    },
+    {
+      "case": "double_lift_zebra",
+      "common_point_frame_count": 342,
+      "common_point_frame_fraction": 0.95,
+      "gauge_supported_dense_fraction": 0.9321391818883458,
+      "inputs": {
+        "cues_sha256": "593f4e2e812ef4f8abdf639ec689919f150d2b025017354b2318c8edb7297864",
+        "final_data_sha256": "fa81083526ab4d41a9b153a8d39b51a7baa9f5726184c52ff34e4902e26b9dc8",
+        "gauge_sha256": "dd1f64c2e3ac0daae23e481165c311776a9d98977854027fb4f1a6a9bb2e52fe",
+        "manual_tracks_sha256": "053a5f59bb859a980fd5aeef51d1b04f5a650288197cf6d511dff9c397831585"
+      },
+      "raw": {
+        "late_mean_error_mm": 6.11767848958846,
+        "mean_error_mm": 5.377127493802487,
+        "rmse_mm": 6.291950626477142
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.020479054209198266,
+        "mean_error_mm": 0.029003664045547328,
+        "rmse_mm": -0.10407053664854882
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/double_lift_zebra/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 5.992394220165732,
+        "mean_error_mm": 5.221171094442163,
+        "rmse_mm": 6.946757304740791
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "common_point_frame_count": 1050,
+      "common_point_frame_fraction": 0.8706467661691543,
+      "gauge_supported_dense_fraction": 0.7811249181690187,
+      "inputs": {
+        "cues_sha256": "fe9e2ef0116366d0bdcc345fd5b36444ee17cfc11295ca6e335588eb9276f9e8",
+        "final_data_sha256": "d5a4d44eed6d8d78a6fedbbfa01f1f720b29f757fbb82768b28bb62391f5e346",
+        "gauge_sha256": "09add62812474f4aefb7b6e82150f702b90813b06fc7c29dbe4c247c7c047ae9",
+        "manual_tracks_sha256": "90f14a3bbe3c3686523a11140168dc5b9520534836339f9f2de274778eb1284e"
+      },
+      "raw": {
+        "late_mean_error_mm": 9.227552026054603,
+        "mean_error_mm": 6.797869906735045,
+        "rmse_mm": 10.778628962337036
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.22171917250219386,
+        "mean_error_mm": -0.13021153660520302,
+        "rmse_mm": -0.04727847803974328
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/double_stretch_sloth/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 11.273477225492373,
+        "mean_error_mm": 7.683030992933284,
+        "rmse_mm": 11.288226135031428
+      }
+    },
+    {
+      "case": "double_stretch_zebra",
+      "common_point_frame_count": 928,
+      "common_point_frame_fraction": 0.7471819645732689,
+      "gauge_supported_dense_fraction": 0.4324826987823762,
+      "inputs": {
+        "cues_sha256": "9fe0c4f943ea046911efe5a27a5cc94a32685a87ce317c0ed0a56a2d84de88c8",
+        "final_data_sha256": "880a083589457ba0db8e937f6283d7918afae048eb290bf0a9cea78645854b44",
+        "gauge_sha256": "115bb8ac2ade024c1746d4a026ae9aaa5bc43b3e547583d4ef5bcba468906e45",
+        "manual_tracks_sha256": "de2f690cd86d49c45e5b4444bc28fc4c909f0b1afb80245c53df81d988662cd8"
+      },
+      "raw": {
+        "late_mean_error_mm": 13.4855776740594,
+        "mean_error_mm": 5.744565098028621,
+        "rmse_mm": 17.43643102522634
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.037430187794787906,
+        "mean_error_mm": 0.02417433706791794,
+        "rmse_mm": 0.027844169244658046
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/double_stretch_zebra/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 12.980809969198157,
+        "mean_error_mm": 5.605694045040281,
+        "rmse_mm": 16.950928088737133
+      }
+    },
+    {
+      "case": "rope_double_hand",
+      "common_point_frame_count": 1078,
+      "common_point_frame_fraction": 0.8369565217391305,
+      "gauge_supported_dense_fraction": 0.7937439032887402,
+      "inputs": {
+        "cues_sha256": "9a67ee5d08238c2c99b4cde90c4fdce97d84649dcac918e612f7764c14c01cd7",
+        "final_data_sha256": "12e5f20d83c63a65e07ec92d53acdcef449f6046f626e3bb187926644d148caa",
+        "gauge_sha256": "a14fa727545069d0a689036a9324c4c756871ca067aa1a5e2112bdd19861da6b",
+        "manual_tracks_sha256": "3a3cae254990c574b4756eb047adba3eebd9bdc93f6977fd64a71674377fd678"
+      },
+      "raw": {
+        "late_mean_error_mm": 5.388064822143796,
+        "mean_error_mm": 7.024354614504292,
+        "rmse_mm": 8.656381382088906
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.0844318115888083,
+        "mean_error_mm": -0.05484574346786886,
+        "rmse_mm": -0.036099971205087344
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/rope_double_hand/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 5.842988896035327,
+        "mean_error_mm": 7.409610565718735,
+        "rmse_mm": 8.968876500722569
+      }
+    },
+    {
+      "case": "single_clift_cloth_1",
+      "common_point_frame_count": 438,
+      "common_point_frame_fraction": 0.8690476190476191,
+      "gauge_supported_dense_fraction": 0.7215881576051068,
+      "inputs": {
+        "cues_sha256": "226efe18a1552dfeda3550e3d011663d56139fbda8e50ee5a428fd2b140c3107",
+        "final_data_sha256": "945998ecd4127bb9acc96296202c25cc55454055603b3e2480a0e6346a6b546c",
+        "gauge_sha256": "73f418208d3c85bc998886d879726cb495a4440b35faadffd36553aa6e8689c7",
+        "manual_tracks_sha256": "10ad2022dc3de0539ca18e9c5e6c1adc0c73eba6cc49e62da25b0106ccebae6e"
+      },
+      "raw": {
+        "late_mean_error_mm": 8.327202782744658,
+        "mean_error_mm": 4.953841817963372,
+        "rmse_mm": 14.615136506937509
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.05270645826301368,
+        "mean_error_mm": -0.07593116570477854,
+        "rmse_mm": -0.016649270634166324
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_clift_cloth_1/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 8.76610014866104,
+        "mean_error_mm": 5.329992801918411,
+        "rmse_mm": 14.858467869996794
+      }
+    },
+    {
+      "case": "single_clift_cloth_3",
+      "common_point_frame_count": 530,
+      "common_point_frame_fraction": 0.87893864013267,
+      "gauge_supported_dense_fraction": 0.5562546424533377,
+      "inputs": {
+        "cues_sha256": "3fa61cf0d9e7171864c4c5c2aa3b3146863f742a15331a521e922bb113bf3d26",
+        "final_data_sha256": "693807277a795d250ba63f88a394ba5865d076803ce7fc5bc8defc847d7403b7",
+        "gauge_sha256": "7ced4d333d1099ba1f58cb5c41fa6f29e9caf81527a6ab5ee16106e2f7d186ad",
+        "manual_tracks_sha256": "d1f2daf2db64aeec9ad6c8b071d16467af2f9f5893bd4c4e3e98861217cf725f"
+      },
+      "raw": {
+        "late_mean_error_mm": 10.701282274541725,
+        "mean_error_mm": 6.34681044200621,
+        "rmse_mm": 9.532109114592952
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.05397578856188878,
+        "mean_error_mm": 0.06058040048585389,
+        "rmse_mm": 0.08146049055942295
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_clift_cloth_3/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 10.123672125149973,
+        "mean_error_mm": 5.9623181236216745,
+        "rmse_mm": 8.755618830052263
+      }
+    },
+    {
+      "case": "single_lift_cloth_1",
+      "common_point_frame_count": 472,
+      "common_point_frame_fraction": 0.6810966810966811,
+      "gauge_supported_dense_fraction": 0.778515837532231,
+      "inputs": {
+        "cues_sha256": "68aa127e0c10c24cf04dcabc41cfce13514b0bc97ebd1a660b069cc3bff22e33",
+        "final_data_sha256": "3ec505a6a39f734d55969590225aba89c4efdb239c67cecf6e4addff6b549d9d",
+        "gauge_sha256": "3647277d6e1f93bde5fe0ed5d01dabf183feb078d9cf71ebceeece08c9095c56",
+        "manual_tracks_sha256": "b7a69ece3858bd2373313299998b316ef625215f9fa6ecda2e166b1cca1a110a"
+      },
+      "raw": {
+        "late_mean_error_mm": 13.756693898303924,
+        "mean_error_mm": 7.758185118551243,
+        "rmse_mm": 10.176019556240899
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.03156188705075169,
+        "mean_error_mm": -0.030621000501976914,
+        "rmse_mm": -0.041556104255535686
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_cloth_1/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 14.190881117313957,
+        "mean_error_mm": 7.995748508960831,
+        "rmse_mm": 10.598895285826416
+      }
+    },
+    {
+      "case": "single_lift_cloth_3",
+      "common_point_frame_count": 562,
+      "common_point_frame_fraction": 0.5728848114169215,
+      "gauge_supported_dense_fraction": 0.5573592263731001,
+      "inputs": {
+        "cues_sha256": "c330f625ddf9b68b89e06c588c177887a86912ef674b8f184086aa1dca893930",
+        "final_data_sha256": "0ecbea5028e7bc7014f2a3b9bb1ae8cfdd165ec8194ffab7907b2f5cdba514a2",
+        "gauge_sha256": "31b6e0936fb712bbb3bff16c9ad32d40cbaa425debb6c7dc7b1def791543c0f9",
+        "manual_tracks_sha256": "e49e9e89b41526fc09ccf95bb6e53317d95b4949e5e1a9591c1a463b40446995"
+      },
+      "raw": {
+        "late_mean_error_mm": 23.486913938195833,
+        "mean_error_mm": 10.612755828030133,
+        "rmse_mm": 19.29474598061973
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.06427197680858798,
+        "mean_error_mm": -0.09344409145935972,
+        "rmse_mm": -0.02559549555571805
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_cloth_3/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 24.996464326136856,
+        "mean_error_mm": 11.604455154260434,
+        "rmse_mm": 19.78860456561539
+      }
+    },
+    {
+      "case": "single_lift_cloth_4",
+      "common_point_frame_count": 567,
+      "common_point_frame_fraction": 0.525,
+      "gauge_supported_dense_fraction": 0.6397851761352067,
+      "inputs": {
+        "cues_sha256": "dd087eb540adf66827035b1d615c24961212502e43d85112f4caf4e48348cf09",
+        "final_data_sha256": "264a5453df2be9393ea6d3a4789af9739e7b5cd9438f13b493c24f5168bf79fa",
+        "gauge_sha256": "66c2b71a89ee3f2e5ef6b082506132871edfec6b0bed574b8fc2b8a24252f9b4",
+        "manual_tracks_sha256": "7c1a5aa7f0d0e1be2d84ec29b89dbbedb00edecbb84e6d5728afde24dbce0bc3"
+      },
+      "raw": {
+        "late_mean_error_mm": 24.132767692417122,
+        "mean_error_mm": 16.33688301918384,
+        "rmse_mm": 20.611460750510368
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.03723155842142367,
+        "mean_error_mm": 0.028308769652223065,
+        "rmse_mm": 0.02231513826050291
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_cloth_4/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 23.23426714220625,
+        "mean_error_mm": 15.87440596095845,
+        "rmse_mm": 20.1515131541118
+      }
+    },
+    {
+      "case": "single_lift_dinosor",
+      "common_point_frame_count": 434,
+      "common_point_frame_fraction": 0.8037037037037037,
+      "gauge_supported_dense_fraction": 0.5463665724666936,
+      "inputs": {
+        "cues_sha256": "a6c02e3f6f76aa1214be012d06935be13756c05bc967ec81ea95d08e3bb9b305",
+        "final_data_sha256": "94ddd2f6b530c62f25bdc5b1d53b01a20340f254025da72723b2c5b83c80cec6",
+        "gauge_sha256": "85eb249590d51e6ba9e1dd3685ce94eccfb95866d84dcc90b92aebe310573d14",
+        "manual_tracks_sha256": "3b17a1f0e5be7c2e7e533b07d949874b64ad89e2c8da591fe11c36cf7ff0a51b"
+      },
+      "raw": {
+        "late_mean_error_mm": 7.422613945593728,
+        "mean_error_mm": 4.993947173661147,
+        "rmse_mm": 6.153870563492799
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.008797043094869172,
+        "mean_error_mm": -0.14015668895698496,
+        "rmse_mm": -0.20717019965922434
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_dinosor/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 7.487911000349693,
+        "mean_error_mm": 5.693882274347587,
+        "rmse_mm": 7.428769156808626
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "common_point_frame_count": 302,
+      "common_point_frame_fraction": 0.9587301587301588,
+      "gauge_supported_dense_fraction": 0.9960210341805433,
+      "inputs": {
+        "cues_sha256": "1b1ff28da326398b25f4567346c74d51e9ac2c810d9710c679d29023b20274de",
+        "final_data_sha256": "d5395ed5c4b7848ee3d5a0e9e7d5955f18de68437b24a9e8965aea447401201d",
+        "gauge_sha256": "004d4087fcf3829617aa2611788c6b865b1de6f1a008e406bd5610651482bb72",
+        "manual_tracks_sha256": "69249831ffff16bcb30eef6b34b57e85a5eb810e645591eb53769e74c50e1869"
+      },
+      "raw": {
+        "late_mean_error_mm": 6.759456079846777,
+        "mean_error_mm": 5.272339090697888,
+        "rmse_mm": 7.464863519484649
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.006546676849985111,
+        "mean_error_mm": -0.05980267348951629,
+        "rmse_mm": -0.015176018220763643
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_rope/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 6.715204105210353,
+        "mean_error_mm": 5.5876390638649065,
+        "rmse_mm": 7.578150424271863
+      }
+    },
+    {
+      "case": "single_lift_sloth",
+      "common_point_frame_count": 475,
+      "common_point_frame_fraction": 0.8945386064030132,
+      "gauge_supported_dense_fraction": 0.8299677174511445,
+      "inputs": {
+        "cues_sha256": "09a5cd75e5a34ae36f156e221f2dbb2d972229ea26a7ff5b3a488d7b711f8f4a",
+        "final_data_sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2",
+        "gauge_sha256": "d637077bca8fc92175d85c8038008a1d10b07efcc93d3ecf1849c9430e2b5cc8",
+        "manual_tracks_sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255"
+      },
+      "raw": {
+        "late_mean_error_mm": 5.862146272678255,
+        "mean_error_mm": 4.188000358795974,
+        "rmse_mm": 4.949772375814098
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.061205129643194245,
+        "mean_error_mm": 0.06575118016515158,
+        "rmse_mm": 0.06672662582048106
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_sloth/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 5.5033528500716145,
+        "mean_error_mm": 3.9126343926730605,
+        "rmse_mm": 4.619490766596598
+      }
+    },
+    {
+      "case": "single_lift_zebra",
+      "common_point_frame_count": 348,
+      "common_point_frame_fraction": 0.9456521739130435,
+      "gauge_supported_dense_fraction": 0.868781679257314,
+      "inputs": {
+        "cues_sha256": "89672fb48282fb05cd1db260676e618dc8eed7d8e48a0d72407195f420ed9d0d",
+        "final_data_sha256": "655bec2536fe9ce51fb187ea89ba401fa97545d94ebd96d4c595696a7cbf571e",
+        "gauge_sha256": "f828c2cde5106b8e69b17799ed2a2f7bd864b32b626c05bfa8681caa9c97e048",
+        "manual_tracks_sha256": "ce1da22169fce5063eff159b4ff297e2989559aa8410d30cdb8e4f2d0ee28e80"
+      },
+      "raw": {
+        "late_mean_error_mm": 5.8258922835807105,
+        "mean_error_mm": 4.009513465856501,
+        "rmse_mm": 4.93626377099254
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.02720725725302231,
+        "mean_error_mm": 0.028277126760362536,
+        "rmse_mm": -0.033567762946871804
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_lift_zebra/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 5.6673857334929325,
+        "mean_error_mm": 3.896135945335096,
+        "rmse_mm": 5.1019631031004495
+      }
+    },
+    {
+      "case": "single_push_rope",
+      "common_point_frame_count": 333,
+      "common_point_frame_fraction": 0.925,
+      "gauge_supported_dense_fraction": 0.850125,
+      "inputs": {
+        "cues_sha256": "adffff3f237dd1a3341caf9da37cbafba0896830b5f6ebc9bb753227fa014074",
+        "final_data_sha256": "6e956043d11dd48f2a8b345d160d892500de5539568ef96a3a6ed3c10863584e",
+        "gauge_sha256": "6c76c5111f9178f74929a52bd1709fe76ee9a59c1da531636881265edd22e0c0",
+        "manual_tracks_sha256": "744d52daba60acd90c42dede95b5a9143eac25f607e5f9d730eda37c96a13274"
+      },
+      "raw": {
+        "late_mean_error_mm": 6.91604079911104,
+        "mean_error_mm": 5.8058712410809,
+        "rmse_mm": 7.074162692724853
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": 0.054043911199692096,
+        "mean_error_mm": -0.03616001337662067,
+        "rmse_mm": 0.02825044504079044
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_push_rope/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 6.542270904310436,
+        "mean_error_mm": 6.015811622821323,
+        "rmse_mm": 6.874314448364419
+      }
+    },
+    {
+      "case": "single_push_rope_1",
+      "common_point_frame_count": 504,
+      "common_point_frame_fraction": 0.984375,
+      "gauge_supported_dense_fraction": 0.8647517321016166,
+      "inputs": {
+        "cues_sha256": "648e3682a771504e930a4f1a9dca028d0a489e8c01e31752ee28b98a602cc8ed",
+        "final_data_sha256": "675319bf30b4d6d91b833424e07d1ce1454efa027e710092ba4f29d51a4d434e",
+        "gauge_sha256": "3e4eca776330119113074486fc1abf426f1cedbc7edacc235b10a2b6cfc1dbab",
+        "manual_tracks_sha256": "139f006a2b6b8746ba9033a32c69113ca8c3f140b9f075e3e652f08676b0c2e2"
+      },
+      "raw": {
+        "late_mean_error_mm": 4.463695814853562,
+        "mean_error_mm": 4.13325720689798,
+        "rmse_mm": 4.8187352810362345
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.42218699784093583,
+        "mean_error_mm": -0.2893098832791716,
+        "rmse_mm": -0.2869187675382521
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_push_rope_1/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 6.348210150201737,
+        "mean_error_mm": 5.329049366988429,
+        "rmse_mm": 6.201320868964244
+      }
+    },
+    {
+      "case": "single_push_rope_4",
+      "common_point_frame_count": 461,
+      "common_point_frame_fraction": 0.8831417624521073,
+      "gauge_supported_dense_fraction": 0.8468414779499404,
+      "inputs": {
+        "cues_sha256": "b42f67bb1ebd48ac1756c17f5e48f18b68a0239e29ff93b341902b8f18a3f056",
+        "final_data_sha256": "ec64e6342cfa2d59faa8193c7c40ae09e796d471142b700ed226870d8d7261fb",
+        "gauge_sha256": "d6beb401343ee6f5c68a67462336cbe29b874e0bd95c445c2d30162812575a98",
+        "manual_tracks_sha256": "92f783d846d4f6d282fcb686042e7d8a16c3463a17359d185a8e0521373ea40d"
+      },
+      "raw": {
+        "late_mean_error_mm": 7.068420008232017,
+        "mean_error_mm": 5.106794476649873,
+        "rmse_mm": 5.842611683929562
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.3284401618466737,
+        "mean_error_mm": -0.7250549923309051,
+        "rmse_mm": -1.4082077806201112
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_push_rope_4/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 9.389973019736008,
+        "mean_error_mm": 8.809501306752756,
+        "rmse_mm": 14.070222916381141
+      }
+    },
+    {
+      "case": "single_push_sloth",
+      "common_point_frame_count": 376,
+      "common_point_frame_fraction": 0.8888888888888888,
+      "gauge_supported_dense_fraction": 0.6768239757141031,
+      "inputs": {
+        "cues_sha256": "55b2eed90ca0f5e3dc04d8daed6511e3aa6eaab0922ee8994ca351cf4a5b737b",
+        "final_data_sha256": "d71975a65f78110d944a13687d7f2b0b48a9ac6ad51e994e88a1a63567703ba9",
+        "gauge_sha256": "3565f59d59c65691bfa47181d52303a1f488413982b2b1b675a75de636e64c70",
+        "manual_tracks_sha256": "6d0f5547d2e7c0a9a6871ff0a9ae1b87135d55801bde58a26dcf2a8f5f465e67"
+      },
+      "raw": {
+        "late_mean_error_mm": 7.44023972551475,
+        "mean_error_mm": 5.7801568386500035,
+        "rmse_mm": 8.488694389574174
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.11054242952288162,
+        "mean_error_mm": -0.148544642284403,
+        "rmse_mm": -0.04442845000995277
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/single_push_sloth/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 8.262701901005808,
+        "mean_error_mm": 6.638768168595014,
+        "rmse_mm": 8.865833923911138
+      }
+    },
+    {
+      "case": "weird_package",
+      "common_point_frame_count": 89,
+      "common_point_frame_fraction": 0.3662551440329218,
+      "gauge_supported_dense_fraction": 0.42485534961263116,
+      "inputs": {
+        "cues_sha256": "0bf9d16e36a8badf18f1ccd6fb5a63ba619e94b57198d92de6c0932ee0d86ac6",
+        "final_data_sha256": "cb081bab8ca86f15d29487bba57ec8cecb65b3a520b370c3b7dc473f1b7d58f5",
+        "gauge_sha256": "7ac4b9bbc74f9399652373fb5fbfa2995e5a36ab3d6831ed70f2bb5f04d1a967",
+        "manual_tracks_sha256": "6e289bc336fd5334672ba8d7447ec37e90f815c9c7e2d402f8265f5c2ac0296a"
+      },
+      "raw": {
+        "late_mean_error_mm": 6.484375971535356,
+        "mean_error_mm": 5.4994609878975,
+        "rmse_mm": 7.218160956618226
+      },
+      "relative_improvement": {
+        "late_mean_error_mm": -0.0026837463402025197,
+        "mean_error_mm": 0.009680165635271964,
+        "rmse_mm": 0.0016779771839467994
+      },
+      "result_path": "/home/florianpfaff/bpt-static-scene-gauge-source-v1/results-70b55cf7/weird_package/prefix_competence.json",
+      "static_scene_gauge": {
+        "late_mean_error_mm": 6.501778391817461,
+        "mean_error_mm": 5.446225294629936,
+        "rmse_mm": 7.206049047222964
+      }
+    }
+  ],
+  "claim_boundary": "Opened-source automatic-observation competence only; this is neither independent confirmation nor a state-of-the-art claim.",
+  "expected_cases": [
+    "double_lift_cloth_1",
+    "double_lift_cloth_3",
+    "double_lift_sloth",
+    "double_lift_zebra",
+    "double_stretch_sloth",
+    "double_stretch_zebra",
+    "rope_double_hand",
+    "single_clift_cloth_1",
+    "single_clift_cloth_3",
+    "single_lift_cloth_1",
+    "single_lift_cloth_3",
+    "single_lift_cloth_4",
+    "single_lift_dinosor",
+    "single_lift_rope",
+    "single_lift_sloth",
+    "single_lift_zebra",
+    "single_push_rope",
+    "single_push_rope_1",
+    "single_push_rope_4",
+    "single_push_sloth",
+    "weird_package"
+  ],
+  "gate": {
+    "maximum_case_mean_error_regression": 0.1,
+    "minimum_late_error_gain": 0.02,
+    "minimum_mean_error_gain": 0.03,
+    "minimum_mean_error_wins": 14,
+    "minimum_rmse_gain": 0.02
+  },
+  "gate_checks": {
+    "late_error_gain": false,
+    "maximum_case_regression": false,
+    "mean_error_gain": false,
+    "mean_error_wins": false,
+    "rmse_gain": false
+  },
+  "gate_passed": false,
+  "protocol_id": "phystwin-static-scene-gauge-source-v1",
+  "protocol_sha256": "70b55cf76ec25ed9212792ab2f0ae032c8e502710c00453d8dc26e903aade300",
+  "schema_version": 1
+}
