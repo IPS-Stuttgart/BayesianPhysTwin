@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, cast
 
 import numpy as np
 
@@ -36,7 +37,7 @@ def _internal_spring_graph(graph: PhysTwinSpringGraph | object) -> object:
         if isinstance(graph, PhysTwinSpringGraph)
         else _public_spring_graph(graph)
     )
-    module = import_module("bayesian_phystwin.phystwin_graph")
+    module = cast(Any, import_module("bayesian_phystwin.phystwin_graph"))
     return module.PhysTwinSpringGraph(
         vertices=np.asarray(public.vertices, dtype=np.float32).copy(),
         springs=np.asarray(public.springs, dtype=np.int32).copy(),
@@ -55,7 +56,7 @@ def build_phystwin_spring_graph(
 ) -> PhysTwinSpringGraph:
     """Build the released graph and return a provider-owned immutable value."""
 
-    module = import_module("bayesian_phystwin.phystwin_graph")
+    module = cast(Any, import_module("bayesian_phystwin.phystwin_graph"))
     internal = module.build_phystwin_spring_graph(
         structure_points_m,
         controller_points_m,
@@ -70,14 +71,18 @@ def build_phystwin_spring_graph(
 
 
 def controller_hand_count(case_name: str) -> int:
-    module = import_module("bayesian_phystwin.phystwin_controller_sensitivity")
+    module = cast(
+        Any, import_module("bayesian_phystwin.phystwin_controller_sensitivity")
+    )
     return int(module.controller_hand_count(case_name))
 
 
 def infer_controller_groups(
     initial_controller_points_m: np.ndarray, *, group_count: int
 ) -> np.ndarray:
-    module = import_module("bayesian_phystwin.phystwin_controller_sensitivity")
+    module = cast(
+        Any, import_module("bayesian_phystwin.phystwin_controller_sensitivity")
+    )
     values = module.infer_controller_groups(
         initial_controller_points_m, group_count=group_count
     )
