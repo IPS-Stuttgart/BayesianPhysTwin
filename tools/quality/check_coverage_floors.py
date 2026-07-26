@@ -8,8 +8,9 @@ import json
 import re
 import subprocess
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 _TOLERANCE_PERCENTAGE_POINTS = 1e-6
 _HUNK_HEADER = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
