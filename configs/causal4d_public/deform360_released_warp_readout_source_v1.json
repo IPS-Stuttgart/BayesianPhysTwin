@@ -1,0 +1,278 @@
+{
+  "schema_version": 1,
+  "config": {
+    "protocol_id": "deform360-released-warp-readout-source-v1",
+    "status": "locked-before-matched-origin-source-scoring",
+    "locked_at": "2026-07-26T12:13:35+02:00",
+    "code_repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "lock_parent_commit": "e0ef4727ff7e1b9cc2db4977906af8750f2b9b4f",
+    "object_id": "001-rope",
+    "development_source_episode_ids": [0, 3, 4, 5, 8],
+    "forbidden_episode_ids": [1, 2, 6, 7, 9],
+    "claim_boundary": {
+      "development_only": true,
+      "all_selected_episodes_previously_opened": true,
+      "direct_deform360_table4_comparison_authorized": false,
+      "state_of_the_art_claim_authorized": false,
+      "bayesian_uncertainty_claim_authorized": false,
+      "official_phystwin_backend": true,
+      "dense_phystwin_reconstruction": false,
+      "description": "A source-only evaluator-transfer audit of a 21-node official-Warp rope model against author-released ordered particles."
+    },
+    "author_release": {
+      "repository": "brownu/deform360",
+      "revision": "93280cbb466de6b9e59927c58a99fd3b9e91900e",
+      "relative_object_root": "processed/001-rope",
+      "fps": 30,
+      "coordinate_unit": "m",
+      "pcd_frame_manifest": {
+        "algorithm": "SHA256(canonical JSON list of sorted {relative_path,sha256} records)",
+        "file_count": 75,
+        "sha256": "c8bc9c30a3b8bfd86c61e6c66c92ec554b2cc7eb7d48663c86593491071ee73a"
+      }
+    },
+    "prior_source_gate": {
+      "protocol_id": "causal4d-deform360-shared-physics-replication-v1",
+      "official_phystwin_repository": "https://github.com/Jianghanxiao/PhysTwin",
+      "official_phystwin_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+      "feasibility_json_sha256": "bbcee93cd4c3ccf11bf7f192d6564960a31d29b6c6e8215ef10153e6d3d9d856",
+      "feasibility_result_sha256": "dd5838f880ec84a18f7d55dd09c6bb14296c614778ee3e177ecf19a9ad388a33",
+      "feasibility_npz_sha256": "c2580d31f6c3f440a2fe732a30a9d08078ac0037de509efd431bc01d21506f3d",
+      "pooling_control_json_sha256": "319c3b54b7b6b982375370259c80f68c66d2fa221afe6f9a10f9298f5facc0a5",
+      "pooling_control_result_sha256": "e735ef243fe2722896f140368ae4816acdbd84b70939ca0614f5d02396fae032",
+      "candidate_selection_information": "Candidates were selected using the older sparse source gate before any matched-origin dense released-particle score was computed.",
+      "pooled_candidate_index": 115,
+      "leave_one_source_out_candidate_by_episode": {
+        "0": 115,
+        "3": 119,
+        "4": 115,
+        "5": 195,
+        "8": 197
+      },
+      "candidate_parameters": {
+        "115": {
+          "stretch_spring_y": 1000.0,
+          "bend_spring_y": 1000.0,
+          "controller_spring_y": 1000.0,
+          "ground_friction": 0.3
+        },
+        "119": {
+          "stretch_spring_y": 1000.0,
+          "bend_spring_y": 1000.0,
+          "controller_spring_y": 10000.0,
+          "ground_friction": 0.3
+        },
+        "195": {
+          "stretch_spring_y": 10000.0,
+          "bend_spring_y": 1000.0,
+          "controller_spring_y": 1000.0,
+          "ground_friction": 0.3
+        },
+        "197": {
+          "stretch_spring_y": 10000.0,
+          "bend_spring_y": 1000.0,
+          "controller_spring_y": 3000.0,
+          "ground_friction": 0.3
+        }
+      }
+    },
+    "simulator": {
+      "runner": "causal4d_public.deform360_replication_warp.OfficialWarpSparseGraphRunner",
+      "graph_node_count": 21,
+      "stretch_edges": "adjacent ordered centerline nodes",
+      "bend_edges": "ordered centerline nodes at distance two",
+      "object_rest_lengths": "computed from the matched-origin sparse graph without future frames",
+      "contact_rest_lengths": "maximum of the registered source contact-offset norm and 0.001 m",
+      "substeps": 128,
+      "initial_ground_clearance_m": 0.001,
+      "dashpot_damping": 0.0,
+      "drag_damping": 3.0,
+      "ground_elasticity": 0.0,
+      "inactive_controller_spring_y": 1e-12,
+      "deterministic_spring_forces": true,
+      "coordinate_transform": "Deform360 xyz to Warp xzy with matched-origin support height; invert exactly before readout"
+    },
+    "temporal_policy": {
+      "source_observation_fps": 15,
+      "source_observation_frame_stride": 2,
+      "simulator_dt_seconds": 0.066666,
+      "evaluation_policy": "exact 15 Hz frames inside the author-released test window; no temporal interpolation",
+      "matched_origin_policy": "latest available 15 Hz source-observation frame strictly before the first evaluated frame",
+      "initial_velocity_policy": "(sparse_state_at_origin - sparse_state_at_previous_15Hz_frame) / source_observation_dt",
+      "zero_velocity_control": "replace the finite-difference initial velocity by zero without changing any other input"
+    },
+    "dense_readout": {
+      "association_frame": "matched origin",
+      "association": "closest clamped point on the matched-origin 21-node polyline; ties select the lowest segment index",
+      "barycentric_coordinates": "fixed after the matched-origin association",
+      "local_offset": "released origin particle minus its associated polyline point",
+      "primary_offset_transport": "minimum rotation from the origin segment tangent to the predicted segment tangent, then add the rotated local offset",
+      "antiparallel_policy": "pi rotation around the normalized cross product with the Cartesian basis axis least aligned to the origin tangent",
+      "degenerate_tangent_policy": "identity rotation",
+      "diagnostic_offset_transport": "translation-only fixed local offset",
+      "future_particle_use_for_association": false,
+      "expected_direct_particle_support_fraction": 1.0
+    },
+    "method_arms": {
+      "primary": {
+        "name": "loo_finite_velocity_rotated_offset",
+        "candidate": "locked leave-one-source-out candidate per episode",
+        "initial_velocity": "causal finite difference",
+        "offset_transport": "minimum rotation"
+      },
+      "controls": [
+        {
+          "name": "constant_persistence",
+          "state": "author-released dense particles at the matched origin"
+        },
+        {
+          "name": "loo_zero_velocity_rotated_offset",
+          "candidate": "locked leave-one-source-out candidate per episode",
+          "initial_velocity": "zero",
+          "offset_transport": "minimum rotation"
+        },
+        {
+          "name": "pooled_finite_velocity_rotated_offset",
+          "candidate_index": 115,
+          "initial_velocity": "causal finite difference",
+          "offset_transport": "minimum rotation"
+        },
+        {
+          "name": "loo_finite_velocity_fixed_offset",
+          "candidate": "reuse primary sparse rollout",
+          "initial_velocity": "causal finite difference",
+          "offset_transport": "translation only"
+        },
+        {
+          "name": "archived_long_rollout",
+          "candidate_index": 115,
+          "role": "diagnostic only because its action-prefix origin is not matched to persistence"
+        }
+      ]
+    },
+    "metrics": {
+      "primary": "symmetric mean Euclidean Chamfer distance in metres",
+      "secondary": [
+        "mean Euclidean ordered-particle identity error in metres",
+        "early/middle/late horizon Chamfer and identity error",
+        "endpoint Chamfer and identity error",
+        "direct dense particle support",
+        "p99 sparse-graph relative edge strain",
+        "repeat-rollout RMSE"
+      ],
+      "particle_policy": "all finite author-released ordered particles",
+      "episode_aggregation": "mean over exact evaluated frames",
+      "panel_aggregation": "unweighted mean over the five development episodes",
+      "replication_unit": "episode",
+      "uncertainty_metrics": "not applicable; this audit has no predictive covariance"
+    },
+    "transfer_gate": {
+      "evaluated_arm": "loo_finite_velocity_rotated_offset",
+      "minimum_mean_chamfer_improvement_vs_matched_persistence": 0.05,
+      "minimum_episode_chamfer_wins": 3,
+      "maximum_mean_identity_error_ratio_vs_matched_persistence": 1.0,
+      "require_all_states_finite": true,
+      "maximum_p99_relative_edge_strain": 0.5,
+      "decision": "A pass justifies a separately preregistered fresh-object evaluation; a failure stops this readout route."
+    },
+    "information_boundary": {
+      "source_only": true,
+      "future_robot_actions_allowed": true,
+      "future_object_particles_used_by_simulator": false,
+      "future_object_particles_used_by_readout_association": false,
+      "future_object_particles_used_only_after_prediction_seal_for_scoring": true,
+      "candidate_reselection_from_dense_scores": false,
+      "forbidden_episode_access": false,
+      "held_v8_access": false,
+      "sealed_pokeflex_target_access": false
+    },
+    "episodes": [
+      {
+        "episode_id": 0,
+        "action": "move edge",
+        "metadata_sha256": "31588de54a525f02d09f89c34784ae992016cf8e45c72cea4aa37cacb5da59bd",
+        "split_sha256": "66581ca6776387be0136ff6ad4d045b27228812aba88b00a0e9f9931ae367a90",
+        "robot_sha256": "dd3665f0767faba4ea8f1e213e79b0826a2177bb181c2e6811e6ed2e64df994f",
+        "source_json_sha256": "a8bae133a2f798c487d94af47e1a40658fb34dd85378a6e20a035b842cfdd3c3",
+        "source_npz_sha256": "69773beed3e9a8dc9e988e95ad96f88c75a45288b116950bf9552680ec35c42a",
+        "source_result_sha256": "420b4cbf3b7a33358680caf60fb3818fec4f7f58387bb689e0d56ebb0a2509d4",
+        "author_train_window": [82, 174],
+        "author_test_window": [174, 198],
+        "matched_origin_frame": 172,
+        "previous_state_frame": 170,
+        "evaluation_frames": [174, 176, 178, 180, 182, 184, 186, 188, 190, 192, 194, 196],
+        "pcd_files_sha256": "be90fcf6c80e1550d3bcf55ebc629bac7e861689f432d8891fc4a67a1780ca35",
+        "loo_candidate_index": 115
+      },
+      {
+        "episode_id": 3,
+        "action": "lift center",
+        "metadata_sha256": "49964985ed00fc1d3279a32a92b6dfd85287f7ce3b7de649d7e4d39772a71ae9",
+        "split_sha256": "f97c0a5302389603dc00e85e23d74c9a066caa59ca34eb1976e8b93dafa6693b",
+        "robot_sha256": "657ac8ed8e6073b8aef8b31aade8ebd5917050e5a93d4dd85046782766aa6593",
+        "source_json_sha256": "7307e5099224bb6d5f5b31e110df7e04e9ac7b5309ab86a00c8d1576ce7fd40b",
+        "source_npz_sha256": "db2e3d1e96b5138ce57642da93a5ab28e7306599934d0fb5cc2dc477e1e75bc5",
+        "source_result_sha256": "07d02961e3b04b4450f593b76a743d6f725631e5822932ff3e284b6f66eae54c",
+        "author_train_window": [64, 211],
+        "author_test_window": [211, 248],
+        "matched_origin_frame": 210,
+        "previous_state_frame": 208,
+        "evaluation_frames": [212, 214, 216, 218, 220, 222, 224, 226, 228, 230, 232, 234, 236, 238, 240, 242, 244, 246],
+        "pcd_files_sha256": "e93eaa75e6d7387f743d0d6b0aac7d1ceeeebfbd698ee052c5465ea92c02761a",
+        "loo_candidate_index": 119
+      },
+      {
+        "episode_id": 4,
+        "action": "curl edge",
+        "metadata_sha256": "0a50d80aa728452a75fe72cc2f9f4363862261feb90136248a008f01648aa225",
+        "split_sha256": "52653129cb3410d4eba8ed68f5d21e52975b9a1bfba124c1fc5e6ff2fc90b61b",
+        "robot_sha256": "a1d03d8d56e93a72808f81175ac71f90809152de148206eb681ceeb41d2176e8",
+        "source_json_sha256": "e62842b3dafcb4e0cf8e2d2dcdc6f32644ba99f9c274f92361d994805374692d",
+        "source_npz_sha256": "f56bc4bfd8f48901b7575e86403695997c4b7dc3940b41fbae302f488649a07f",
+        "source_result_sha256": "fa8f46057d601d1192f3dca1c46260688a871a78a65b73fcdf36bcb9fa765225",
+        "author_train_window": [151, 271],
+        "author_test_window": [271, 302],
+        "matched_origin_frame": 270,
+        "previous_state_frame": 268,
+        "evaluation_frames": [272, 274, 276, 278, 280, 282, 284, 286, 288, 290, 292, 294, 296, 298, 300],
+        "pcd_files_sha256": "922c5ea1b7f51d39e6166d110dabe6e354f44fa3944e2fb5e29eb77d84749662",
+        "loo_candidate_index": 115
+      },
+      {
+        "episode_id": 5,
+        "action": "lift both edges",
+        "metadata_sha256": "5df98fb4637c04f3181cb5f72d9c09ae9a6c88f72abfe247103eb322e23002c7",
+        "split_sha256": "4b85ad9125da9c3cfa3d57e4fb4657edd2b717aefa509e0bd04dc0459613e5fb",
+        "robot_sha256": "94680b06dffb6226440587d0e78a002ae3ea7793a8b1405560e11bd4511b8200",
+        "source_json_sha256": "106e64118c44c814250a9531a20462c69601349a963596675a188b5aacb249e1",
+        "source_npz_sha256": "2cb3fc32d01e09182404f55ad4659f7c5f359ba4283aaca9b23d9dc2255d0b8d",
+        "source_result_sha256": "5554f2dec5fb821c254dc1121d7c8f2afb64928efb2940a2a293c46b94bcfe8b",
+        "author_train_window": [97, 226],
+        "author_test_window": [226, 259],
+        "matched_origin_frame": 224,
+        "previous_state_frame": 222,
+        "evaluation_frames": [226, 228, 230, 232, 234, 236, 238, 240, 242, 244, 246, 248, 250, 252, 254, 256, 258],
+        "pcd_files_sha256": "b939e210f2bafac910882bf92d05215ae2d13c140d68a95e5a7ffb7db3af421e",
+        "loo_candidate_index": 195
+      },
+      {
+        "episode_id": 8,
+        "action": "curl both edges",
+        "metadata_sha256": "5b2a1018465db1893974550de197838b9444214e954fc79099d95c289ac5ba28",
+        "split_sha256": "4397ed77ef506b577dffced884e9d799c43dd58427415788481b380b97383f58",
+        "robot_sha256": "3fadb8b9caa3c42d0f1cfe484319ca45528d73b118806ed5e58cbfa8cb6703a2",
+        "source_json_sha256": "f14beb0b81a13d2e40208c1d5e27be5908c76efc083c496d7625430337bc4b1f",
+        "source_npz_sha256": "ff7741f6a47394b5c9039e5d47755cb0258cf8341fad5c3ca6ae29e426eac5ec",
+        "source_result_sha256": "d9ef1a8bb70b6407a77c5dea0a86d68a0b578c3113689fe5625e9aed5e0e0f69",
+        "author_train_window": [86, 146],
+        "author_test_window": [146, 162],
+        "matched_origin_frame": 144,
+        "previous_state_frame": 142,
+        "evaluation_frames": [146, 148, 150, 152, 154, 156, 158, 160],
+        "pcd_files_sha256": "0c7612ce95944235592f26e4d0c887102be558af0dba4921cce669771c77ad66",
+        "loo_candidate_index": 197
+      }
+    ]
+  },
+  "config_sha256": "dfba4e6f840af252d8e4dc30e8d37650d3acdc6ea6f5868fea4c2992ac123f23"
+}
