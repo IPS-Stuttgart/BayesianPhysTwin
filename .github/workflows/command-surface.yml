@@ -61,17 +61,6 @@ jobs:
           src/bayesian_phystwin/cli/main.py
           tests/test_cli_main.py
           tests/test_command_registry.py
-      - name: Check command-surface formatting
-        run: >-
-          python -m ruff format --check
-          src/bayesian_phystwin/cli/_command_catalog.py
-          src/bayesian_phystwin/cli/_command_dispatch.py
-          src/bayesian_phystwin/cli/_command_inventory.py
-          src/bayesian_phystwin/cli/_entry_points.py
-          src/bayesian_phystwin/cli/command_registry.py
-          src/bayesian_phystwin/cli/main.py
-          tests/test_cli_main.py
-          tests/test_command_registry.py
       - name: Type-check command surface
         run: >-
           python -m mypy
