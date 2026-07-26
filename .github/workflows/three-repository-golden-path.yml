@@ -1,0 +1,107 @@
+name: Three-repository installed-wheel golden path
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/three-repository-golden-path.yml"
+      - "scripts/run_three_repository_golden_path.sh"
+      - "tests/integration/test_three_repository_golden_path.py"
+      - "docs/three_repository_golden_path.md"
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/causal4d_provider_v1.py"
+      - "src/bayesian_phystwin/observation_belief.py"
+      - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
+      - "src/bayesian_phystwin/prob4d_causal_lineage.py"
+      - "src/bayesian_phystwin/prob4d_observation_contract.py"
+      - "src/bayesian_phystwin/gauge_aware_belief.py"
+      - "src/bayesian_phystwin/_gauge_aware_contracts.py"
+      - "src/bayesian_phystwin/_gauge_aware_solver.py"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/three-repository-golden-path.yml"
+      - "scripts/run_three_repository_golden_path.sh"
+      - "tests/integration/test_three_repository_golden_path.py"
+      - "docs/three_repository_golden_path.md"
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/causal4d_provider_v1.py"
+      - "src/bayesian_phystwin/observation_belief.py"
+      - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
+      - "src/bayesian_phystwin/prob4d_causal_lineage.py"
+      - "src/bayesian_phystwin/prob4d_observation_contract.py"
+      - "src/bayesian_phystwin/gauge_aware_belief.py"
+      - "src/bayesian_phystwin/_gauge_aware_contracts.py"
+      - "src/bayesian_phystwin/_gauge_aware_solver.py"
+  workflow_dispatch:
+    inputs:
+      prob4d_ref:
+        description: Prob4D branch, tag, or commit to validate
+        required: false
+        default: main
+      causal4d_ref:
+        description: Causal4D branch, tag, or commit to validate
+        required: false
+        default: main
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: three-repository-golden-path-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  installed-wheel-golden-path:
+    name: Prob4D -> BPT -> Causal4D / Python 3.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PROB4D_READ_TOKEN: ${{ secrets.PROB4D_READ_TOKEN }}
+    steps:
+      - name: Require Prob4D private-repository token
+        if: env.PROB4D_READ_TOKEN == ''
+        run: |
+          echo "::error title=Missing PROB4D_READ_TOKEN::Configure a contents-read token for FlorianPfaff/Prob4D."
+          exit 1
+
+      - name: Check out Bayesian-PhysTwin
+        uses: actions/checkout@v7
+        with:
+          path: bayesian-phystwin
+          persist-credentials: false
+
+      - name: Check out Prob4D
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianPfaff/Prob4D
+          ref: ${{ inputs.prob4d_ref || 'main' }}
+          path: prob4d
+          token: ${{ env.PROB4D_READ_TOKEN }}
+          persist-credentials: false
+
+      - name: Check out Causal4D
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianPfaff/Causal4D
+          ref: ${{ inputs.causal4d_ref || 'main' }}
+          path: causal4d
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            bayesian-phystwin/pyproject.toml
+            prob4d/pyproject.toml
+            causal4d/pyproject.toml
+
+      - name: Build, install, and execute the isolated golden path
+        run: |
+          bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
+            bayesian-phystwin \
+            prob4d \
+            causal4d
