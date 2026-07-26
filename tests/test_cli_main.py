@@ -85,11 +85,13 @@ def test_grouped_cli_dispatches_argv_aware_command(monkeypatch) -> None:
 
 
 def test_grouped_cli_dispatches_legacy_no_arg_command(monkeypatch) -> None:
-    captured: list[str] = []
+    captured_program: list[str] = []
+    captured_arguments: list[str] = []
     original_argv = list(sys.argv)
 
     def fake_main() -> None:
-        captured.extend(sys.argv[1:])
+        captured_program.append(sys.argv[0])
+        captured_arguments.extend(sys.argv[1:])
 
     monkeypatch.setattr(
         dispatch.importlib,
@@ -109,7 +111,10 @@ def test_grouped_cli_dispatches_legacy_no_arg_command(monkeypatch) -> None:
         )
         == 0
     )
-    assert captured == ["data", "output", "--force"]
+    assert captured_program == [
+        "bpt experiment run confirm-phystwin-bayesian-anchor"
+    ]
+    assert captured_arguments == ["data", "output", "--force"]
     assert sys.argv == original_argv
 
 
