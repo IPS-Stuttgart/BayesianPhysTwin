@@ -1,0 +1,36 @@
+name: PR 20 Ruff format diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Apply exact Ruff formatting
+        run: >-
+          python -m ruff format
+          src/bayesian_phystwin/selective_risk.py
+          tests/test_selective_risk.py
+      - name: Upload exact formatted files
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr20-ruff-formatted
+          path: |
+            src/bayesian_phystwin/selective_risk.py
+            tests/test_selective_risk.py
+          if-no-files-found: error
+          retention-days: 1
