@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "protocol_id": "phystwin-rendered-alltracker-prefix-competence-v1",
-  "status": "locked-before-prediction",
+  "status": "prediction-sealed-outcome-parser-amended-before-metric",
   "claim_boundary": "One-case opened-source association-oracle competence control on single_lift_cloth. It can reject or admit a later automatic-query source study, but cannot establish deployability, independent transfer, Bayesian calibration, or state of the art.",
   "question": "Can direct two-frame correspondence from a PhysTwin material render to the simultaneous real prefix image recover selected material identities more accurately than the physical carrier and the frozen strict CoTracker3 comparator?",
   "case": {
@@ -91,6 +91,15 @@
     "alltracker_checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
     "manual_track_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
     "cotracker3_comparator_sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56"
+  },
+  "outcome_parser_amendment": {
+    "reason": "The first score attempt opened the hash-locked comparator but stopped before computing or writing any metric because its quality tensor covers the 121-frame prefix while its triangulated trajectory has 173 rows. The original scorer incorrectly required both frame dimensions to be equal.",
+    "scope": "Accept shape (camera, prefix_frame, track) when every scored frame exists and the track dimension matches the full trajectory. No prediction, comparator, support rule, threshold, covariance, metric, or gate changed.",
+    "failed_score_artifact_written": false,
+    "amendment_commit": "5e3f0b0173b6f903ad59d48d78862e26a6f093ca",
+    "amended_competence_scorer_sha256": "a058dd18739818a4ca9eed7e739f9726c7e755655f161ad7406f8a9c13eaf044",
+    "amended_outcome_runner_sha256": "29d296ad819a42b3a4efa31661aeb6ebe39c2371d76c245686cc28fbc29ea1fc",
+    "focused_test_count": 12
   },
   "information_boundary": {
     "rgb_and_mask_frames_allowed": [

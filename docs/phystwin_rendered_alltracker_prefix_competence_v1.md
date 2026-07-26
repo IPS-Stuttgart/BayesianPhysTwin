@@ -115,3 +115,22 @@ c74c60caa3b881083f9153a8e924fa543e9d42067980c72a14ac37af05433235
 
 The exact source and deferred scoring hashes are recorded in the machine-readable
 protocol. No held-v8 artifact may be opened, inspected, modified, or rerun.
+
+## Outcome Parser Amendment
+
+The predictor completed and was sealed before either scoring input was opened.
+The first scorer invocation then validated that seal and opened the hash-locked
+CoTracker3 comparator, but stopped before computing or writing a metric. The
+archive stores full triangulated trajectories for 173 frames and network
+quality only for the authorized 121-frame prefix. The frozen parser had
+incorrectly required those two frame dimensions to be equal.
+
+Commit `5e3f0b0173b6f903ad59d48d78862e26a6f093ca` changes only that schema
+validation: quality may have shape `(camera, prefix_frame, track)` when it
+covers every scored frame and has the same track inventory. It does not change
+the prediction, identities, comparator, support rule, thresholds, metric, or
+gate. The amended competence module and outcome runner have SHA-256
+`a058dd18739818a4ca9eed7e739f9726c7e755655f161ad7406f8a9c13eaf044`
+and
+`29d296ad819a42b3a4efa31661aeb6ebe39c2371d76c245686cc28fbc29ea1fc`;
+12 focused tests pass.
