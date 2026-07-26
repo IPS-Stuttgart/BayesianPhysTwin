@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 
 import bayesian_phystwin.legacy_artifacts as legacy_artifacts
-from bayesian_phystwin.causal4d_provider_v1 import (
-    causal4d_provider_manifest,
+from bayesian_phystwin.causal4d_artifacts_v1 import (
+    causal4d_artifact_provider_manifest,
     load_trusted_legacy_phystwin_pickle,
 )
 
@@ -21,8 +21,10 @@ def _write_pickle(path: Path, value) -> str:
 
 
 def test_provider_advertises_trusted_legacy_loading() -> None:
-    manifest = causal4d_provider_manifest(provider_revision="test-revision")
-    assert "trusted_legacy_pickle_loading" in manifest["capabilities"]
+    manifest = causal4d_artifact_provider_manifest()
+    assert manifest["provider_api_version"] == 1
+    assert "digest_preflight_before_pickle" in manifest["capabilities"]
+    assert manifest["new_artifact_policy"] == "json-npz-only"
 
 
 def test_loads_hash_locked_mapping_and_validates_required_keys(tmp_path: Path) -> None:
