@@ -9,6 +9,7 @@ on:
       - "docs/three_repository_golden_path.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
+      - "src/bayesian_phystwin/evidence_policy.py"
       - "src/bayesian_phystwin/observation_belief.py"
       - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
       - "src/bayesian_phystwin/prob4d_causal_lineage.py"
@@ -16,6 +17,9 @@ on:
       - "src/bayesian_phystwin/gauge_aware_belief.py"
       - "src/bayesian_phystwin/_gauge_aware_contracts.py"
       - "src/bayesian_phystwin/_gauge_aware_solver.py"
+      - "src/bayesian_phystwin/repository_provenance.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/run_manifest_v2.py"
   push:
     branches: [main]
     paths:
@@ -25,6 +29,7 @@ on:
       - "docs/three_repository_golden_path.md"
       - "pyproject.toml"
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
+      - "src/bayesian_phystwin/evidence_policy.py"
       - "src/bayesian_phystwin/observation_belief.py"
       - "src/bayesian_phystwin/observation_belief_gauge_adapter.py"
       - "src/bayesian_phystwin/prob4d_causal_lineage.py"
@@ -32,6 +37,9 @@ on:
       - "src/bayesian_phystwin/gauge_aware_belief.py"
       - "src/bayesian_phystwin/_gauge_aware_contracts.py"
       - "src/bayesian_phystwin/_gauge_aware_solver.py"
+      - "src/bayesian_phystwin/repository_provenance.py"
+      - "src/bayesian_phystwin/run_manifest.py"
+      - "src/bayesian_phystwin/run_manifest_v2.py"
   workflow_dispatch:
     inputs:
       prob4d_ref:
