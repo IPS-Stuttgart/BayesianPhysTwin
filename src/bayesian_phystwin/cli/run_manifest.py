@@ -7,15 +7,36 @@ import json
 import shlex
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from bayesian_phystwin.repository_provenance import (
+    RepositoryRole,
+    RepositoryState,
+    default_runtime_environment,
+    discover_git_repository_state,
+)
 from bayesian_phystwin.run_manifest import (
-    RunManifestV1,
     artifact_digest,
     installed_package_versions,
+)
+from bayesian_phystwin.run_manifest_v2 import (
+    RunManifestV2,
     load_run_manifest,
     verify_run_manifest_artifacts,
     write_run_manifest,
+)
+
+_DEFAULT_REPOSITORY = "FlorianPfaff/Bayesian-PhysTwin"
+_REPOSITORY_FIELDS = frozenset({"repository", "revision", "dirty", "role"})
+_RELATED_REPOSITORY_ROLES = frozenset(
+    {
+        "upstream",
+        "observation",
+        "downstream",
+        "paper",
+        "environment",
+        "dependency",
+    }
 )
 
 
@@ -26,6 +47,41 @@ def _load_json_mapping(path: Path | None, *, name: str) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} JSON must contain an object")
     return dict(value)
+
+
+def _load_repository_states(path: Path | None) -> tuple[RepositoryState, ...]:
+    if path is None:
+        return ()
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise ValueError("related repositories JSON must contain an array")
+    states: list[RepositoryState] = []
+    for position, raw_record in enumerate(value):
+        if not isinstance(raw_record, Mapping):
+            raise ValueError(
+                f"related repository record {position} must contain an object"
+            )
+        actual = frozenset(map(str, raw_record))
+        if actual != _REPOSITORY_FIELDS:
+            raise ValueError(
+                "related repository records require exactly "
+                f"{sorted(_REPOSITORY_FIELDS)}"
+            )
+        role = str(raw_record["role"])
+        if role not in _RELATED_REPOSITORY_ROLES:
+            raise ValueError("related repository role is unsupported")
+        dirty = raw_record["dirty"]
+        if not isinstance(dirty, bool):
+            raise ValueError("related repository dirty field must be boolean")
+        states.append(
+            RepositoryState(
+                repository=str(raw_record["repository"]),
+                revision=str(raw_record["revision"]),
+                dirty=dirty,
+                role=cast(RepositoryRole, role),
+            )
+        )
+    return tuple(states)
 
 
 def _named_path(value: str) -> tuple[str, Path]:
@@ -39,6 +95,29 @@ def _resolve_artifact_path(path: Path, *, root: Path) -> Path:
     return path if path.is_absolute() else root / path
 
 
+def _primary_repository_state(args: argparse.Namespace) -> RepositoryState:
+    if args.revision is not None:
+        state = RepositoryState(
+            repository=args.repository or _DEFAULT_REPOSITORY,
+            revision=args.revision,
+            dirty=bool(args.dirty),
+            role="primary",
+        )
+    else:
+        if args.dirty:
+            raise ValueError("--dirty requires an explicit --revision")
+        state = discover_git_repository_state(
+            args.repository_root,
+            repository=args.repository,
+        )
+    if state.dirty and not args.allow_dirty:
+        raise ValueError(
+            "repository checkout is dirty; pass --allow-dirty to record and "
+            "acknowledge that state"
+        )
+    return state
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command_name", required=True)
@@ -48,10 +127,33 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--run-id", required=True)
     create.add_argument(
         "--repository",
-        default="FlorianPfaff/Bayesian-PhysTwin",
+        help="override the GitHub owner/name inferred from --repository-root",
     )
-    create.add_argument("--revision", required=True)
-    create.add_argument("--dirty", action="store_true")
+    create.add_argument(
+        "--revision",
+        help="explicit exact revision; otherwise discover it from Git",
+    )
+    create.add_argument(
+        "--dirty",
+        action="store_true",
+        help="record a dirty checkout when --revision is supplied explicitly",
+    )
+    create.add_argument(
+        "--repository-root",
+        type=Path,
+        default=Path.cwd(),
+        help="Git checkout used for automatic repository-state discovery",
+    )
+    create.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help="acknowledge a dirty primary checkout instead of failing closed",
+    )
+    create.add_argument(
+        "--related-repositories-json",
+        type=Path,
+        help="JSON array of exact participating repository states",
+    )
     create.add_argument(
         "--classification",
         choices=(
@@ -67,6 +169,18 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--command-line", required=True)
     create.add_argument("--configuration-json", type=Path)
     create.add_argument("--information-boundary-json", type=Path)
+    create.add_argument("--runtime-json", type=Path)
+    create.add_argument(
+        "--environment-variable",
+        action="append",
+        default=[],
+        help="record one explicitly named environment variable",
+    )
+    create.add_argument("--claim-id", action="append", default=[])
+    create.add_argument("--method-freeze-id", default="")
+    create.add_argument("--protocol-id", default="")
+    create.add_argument("--split-id", default="")
+    create.add_argument("--baseline-id", default="")
     create.add_argument("--seed", type=int, action="append", default=[])
     create.add_argument("--input", type=_named_path, action="append", default=[])
     create.add_argument(
@@ -91,6 +205,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _create(args: argparse.Namespace) -> int:
     root = args.artifact_root.resolve()
+    primary = _primary_repository_state(args)
     inputs = tuple(
         artifact_digest(
             _resolve_artifact_path(path, root=root),
@@ -109,11 +224,14 @@ def _create(args: argparse.Namespace) -> int:
         )
         for name, path in args.output_artifact
     )
-    manifest = RunManifestV1(
+    manifest = RunManifestV2(
         run_id=args.run_id,
-        repository=args.repository,
-        revision=args.revision,
-        dirty=args.dirty,
+        repository=primary.repository,
+        revision=primary.revision,
+        dirty=primary.dirty,
+        related_repositories=_load_repository_states(
+            args.related_repositories_json
+        ),
         command=tuple(shlex.split(args.command_line)),
         classification=args.classification,
         statistical_unit=args.statistical_unit,
@@ -129,6 +247,15 @@ def _create(args: argparse.Namespace) -> int:
         inputs=inputs,
         outputs=outputs,
         package_versions=installed_package_versions(args.package),
+        runtime_environment=default_runtime_environment(
+            overrides=_load_json_mapping(args.runtime_json, name="runtime"),
+            environment_variables=args.environment_variable,
+        ),
+        claim_ids=tuple(args.claim_id),
+        method_freeze_id=args.method_freeze_id,
+        protocol_id=args.protocol_id,
+        split_id=args.split_id,
+        baseline_id=args.baseline_id,
         notes=args.notes,
     )
     write_run_manifest(args.manifest, manifest)
@@ -136,7 +263,10 @@ def _create(args: argparse.Namespace) -> int:
         json.dumps(
             {
                 "manifest": str(args.manifest.resolve()),
+                "schema_version": 2,
                 "manifest_id": manifest.manifest_id,
+                "evidence_fingerprint": manifest.evidence_fingerprint,
+                "repository_count": 1 + len(manifest.related_repositories),
                 "input_count": len(manifest.inputs),
                 "output_count": len(manifest.outputs),
             },
@@ -151,19 +281,19 @@ def _validate(args: argparse.Namespace) -> int:
     manifest = load_run_manifest(args.manifest)
     if args.artifact_root is not None:
         verify_run_manifest_artifacts(manifest, root=args.artifact_root)
-    print(
-        json.dumps(
-            {
-                "status": "valid",
-                "manifest_id": manifest.manifest_id,
-                "run_id": manifest.run_id,
-                "classification": manifest.classification,
-                "artifacts_verified": args.artifact_root is not None,
-            },
-            indent=2,
-            sort_keys=True,
-        )
-    )
+    summary: dict[str, object] = {
+        "status": "valid",
+        "manifest_id": manifest.manifest_id,
+        "run_id": manifest.run_id,
+        "classification": manifest.classification,
+        "artifacts_verified": args.artifact_root is not None,
+    }
+    if isinstance(manifest, RunManifestV2):
+        summary["schema_version"] = 2
+        summary["evidence_fingerprint"] = manifest.evidence_fingerprint
+    else:
+        summary["schema_version"] = 1
+    print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
 
