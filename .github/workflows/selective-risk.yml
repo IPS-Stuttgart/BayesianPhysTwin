@@ -1,0 +1,70 @@
+name: Selective guard risk
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/selective_risk.py"
+      - "tests/test_selective_risk.py"
+      - "docs/selective_guard_evaluation.md"
+      - ".github/workflows/selective-risk.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/selective_risk.py"
+      - "tests/test_selective_risk.py"
+      - "docs/selective_guard_evaluation.md"
+      - ".github/workflows/selective-risk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selective-risk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Selective-risk quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Lint, format, and type-check
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/selective_risk.py \
+            tests/test_selective_risk.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/selective_risk.py \
+            tests/test_selective_risk.py
+          python -m mypy --python-version 3.12 \
+            src/bayesian_phystwin/selective_risk.py
+
+  test:
+    name: Selective-risk tests / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install NumPy-only package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run selective-risk tests
+        run: python -m pytest -q tests/test_selective_risk.py
