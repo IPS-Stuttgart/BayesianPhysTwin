@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "study_id": "phystwin_cotracker3_open22_headroom_v1",
+  "status": "locked_before_outcome_evaluation",
+  "evidence_role": "post_open_development_headroom",
+  "claim_boundary": [
+    "The 22 PhysTwin cases have already been opened and used for method development.",
+    "Results may diagnose observation quality and model-class headroom but cannot confirm a new method or support a state-of-the-art claim.",
+    "Manual sparse prefix identities are an observation-quality ceiling, not a deployable input.",
+    "Only observations through the permitted response prefix may update the rollout; future object observations are forbidden.",
+    "Manual tracks remain available after the prefix only for evaluation."
+  ],
+  "evaluator": {
+    "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin.git",
+    "commit": "241ab65a1d9061ea96f454ae0da64c0bced8be17",
+    "script": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "python": "3.12.3",
+    "numpy": "2.0.2",
+    "scipy": "1.17.1",
+    "graph_solver": "preconditioned conjugate gradient with a residual-verified sparse-direct fallback on iteration-cap or nonfinite failure",
+    "baseline_kind": "raw_matphys_replay",
+    "workers": 2
+  },
+  "inputs": {
+    "case_count": 22,
+    "case_bundle_required_file_count": 88,
+    "case_bundle_required_file_manifest_sha256": "454afe7bbf000f93fc1e0ac9a355963362139743f0638aa5b14e25e5733e52fe",
+    "family_selection_sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890",
+    "selected_family_manifest_sha256": {
+      "alpha_0000": "cb168e202d726ac2912a124f8906fe85795653f8ebf057cc5cbf1d42b29cb61e",
+      "alpha_0250": "61b9174e5dff2b905178a93924fbe4b27b3d0bf1bcbcf83e9ce479ea541d0e61",
+      "alpha_0500": "32fdead225324d3e6478985bfcc762a5c872c141bf8f164dbd3f32f28c5727c9",
+      "alpha_0750": "4fb4212f6ef602849ac1a221eebacc9740aaadbaa097abc3a837164a26568d3f",
+      "alpha_1000": "5e621b1aede4bb2e6ad6cbf7f3cd4b5d945ef2d9bb57a9e8e99fb58397307916"
+    },
+    "cotracker3_cue_manifest_sha256": "899fadb41531bfe27d7743d8ba055e16fab3521259d1e3b7cbf945059ca82175",
+    "cotracker3_checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+    "cotracker3_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
+  },
+  "arms": {
+    "manual_sparse_prefix_ceiling": {
+      "observation_source": "final_data",
+      "manual_prefix_override": true,
+      "role": "reproduce the previously observed manual-identity headroom and identify causal versus future-open candidates"
+    },
+    "automatic_cotracker3_multiview": {
+      "observation_source": "cotracker3_multiview",
+      "manual_prefix_override": false,
+      "role": "deployable causal observation arm frozen before its 22-case outcomes"
+    }
+  },
+  "primary_diagnostics": [
+    "mean future Chamfer distance",
+    "mean future manual identity-track error",
+    "case wins against the selected physical baseline",
+    "prefix selector acceptance",
+    "automatic-to-manual observation gap",
+    "published 8 mm Chamfer and 15 mm track thresholds as context only"
+  ],
+  "interpretation_rule": {
+    "automatic_joint_threshold_pass": "justify a new preregistered evaluation on genuinely fresh objects after merging every hash-only object exclusion manifest",
+    "automatic_improves_but_misses_threshold": "treat automatic material-identity acquisition as the remaining bottleneck and improve it only with source-only evidence",
+    "automatic_regresses": "stop threshold tuning on the opened cohort and require an independent modality or separately trained source-only identity observer"
+  }
+}
