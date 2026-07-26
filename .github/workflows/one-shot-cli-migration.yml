@@ -5,6 +5,13 @@ on:
     branches: [agent/consolidate-cli-entrypoints]
     paths:
       - ".github/workflows/one-shot-cli-migration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/one-shot-cli-migration.yml"
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/cli/main.py"
+      - "src/bayesian_phystwin/cli/experiments.py"
 
 permissions:
   contents: write
@@ -75,7 +82,7 @@ jobs:
               }
           )
 
-          candidates: set[Path] = set()
+          candidates: set[Path] = {Path("README.md")}
           candidates.update(Path("docs").rglob("*.md"))
           for suffix in ("*.py", "*.sh"):
               candidates.update(Path("scripts").rglob(suffix))
@@ -87,7 +94,9 @@ jobs:
               Path(".github/workflows/one-shot-cli-migration.yml"),
           }
           changed: list[Path] = []
-          ordered = sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True)
+          ordered = sorted(
+              replacements.items(), key=lambda item: len(item[0]), reverse=True
+          )
           for path in sorted(candidates - excluded):
               text = path.read_text(encoding="utf-8")
               updated = text
