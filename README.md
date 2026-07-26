@@ -32,6 +32,7 @@ Initial scope:
 - regularized spatial spring regions and explicit damping sweeps
 - causal, action-conditioned low-rank simulator discrepancy
 - recursive low-rank graph-discrepancy beliefs with robust partial observations
+- fail-closed prior-aware complete-belief updates with nonlinear replay closure
 - capped persistent and robust Bayesian endpoint discrepancy anchors
 - sparse spring-graph discrepancy smoothing and covariance solves
 - raw camera/mask cue recovery and paired moving-block evaluation
@@ -64,6 +65,13 @@ and its exact overlay before recomputing NEES and conformal coverage.
 See the [causal MatPhys experiments](docs/matphys_causal_backbone_v1.md) for the
 information boundary, public-artifact limitation, negative result, bounded
 teacher model, and escalation gate.
+
+The current source-safe candidate combines prior-aware nuisance/state
+inference, independent structural and action support, nonlinear PhysTwin
+closure, and a source-fitted regret guard. Any rejected gate returns the exact
+baseline belief rather than a partially updated state. See the
+[complete-belief pipeline note](docs/prior_aware_complete_belief_pipeline.md)
+for the causal boundary and the fresh-object evaluation requirement.
 
 ## Repository Layout
 

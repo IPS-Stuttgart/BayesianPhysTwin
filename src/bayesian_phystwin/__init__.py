@@ -1,6 +1,5 @@
 """Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
 
-from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
 from .bias_aware_belief import (
     BiasAwareStateUpdateConfig,
     BiasAwareStateUpdateResult,
@@ -18,6 +17,7 @@ from .bias_aware_belief import (
     restrict_state_basis_to_identifiable_subspace,
     update_bias_aware_state,
 )
+from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
 from .complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
     CompleteBeliefSelectionV1,
@@ -42,6 +42,12 @@ from .grouped_likelihood import (
     GroupedStudentTLikelihoodConfig,
     GroupedStudentTLikelihoodResult,
     grouped_student_t_mixture_likelihood,
+)
+from .guarded_belief_pipeline import (
+    GuardedBeliefPipelineConfigV1,
+    GuardedBeliefPipelineOutcomeV1,
+    ProspectiveSupportDecisionV1,
+    run_prior_aware_guarded_belief_update,
 )
 from .observation_belief import (
     OBSERVATION_BELIEF_SCHEMA,
@@ -122,6 +128,8 @@ __all__ = [
     "GaugeAwareSelection",
     "GroupedStudentTLikelihoodConfig",
     "GroupedStudentTLikelihoodResult",
+    "GuardedBeliefPipelineConfigV1",
+    "GuardedBeliefPipelineOutcomeV1",
     "GuardedUpdateDecision",
     "IdentifiableStateBasis",
     "MarkovReliabilityConfig",
@@ -140,6 +148,7 @@ __all__ = [
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
     "PriorAwareGaugeConfigV1",
+    "ProspectiveSupportDecisionV1",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
     "RandomWalkBiasResult",
@@ -178,6 +187,7 @@ __all__ = [
     "restrict_state_basis_to_identifiable_subspace",
     "robust_mixture_likelihood",
     "robust_random_walk_log_evidence_batch",
+    "run_prior_aware_guarded_belief_update",
     "run_synthetic_benchmark",
     "run_synthetic_case",
     "save_observation_belief",
