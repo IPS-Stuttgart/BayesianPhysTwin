@@ -440,6 +440,10 @@ def _load_cotracker_multiview_depth(
     return points, valid, summary
 
 
+class InsufficientRbfCentersError(ValueError):
+    """Raised when the frozen availability gate leaves too few RBF centers."""
+
+
 def _recursive_rbf_correction(
     observation_points: np.ndarray,
     observation_valid: np.ndarray,
@@ -464,7 +468,7 @@ def _recursive_rbf_correction(
         & (availability >= minimum_availability_fraction)
     )
     if len(eligible) < center_count:
-        raise ValueError(
+        raise InsufficientRbfCentersError(
             f"only {len(eligible)} RBF centers meet the availability gate"
         )
     center_ids = deterministic_farthest_point_ids(
@@ -513,6 +517,49 @@ def _recursive_rbf_correction(
             config=belief_config,
         ).mean_m
     return correction, center_ids, availability[center_ids]
+
+
+def _recursive_rbf_refit_or_fallback(
+    observation_points: np.ndarray,
+    observation_valid: np.ndarray,
+    baseline: np.ndarray,
+    initial_structure_points: np.ndarray,
+    *,
+    fit_end_frame: int,
+    query_start_frame: int,
+    query_end_frame: int,
+    original_count: int,
+    center_count: int,
+    minimum_availability_fraction: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, str | None]:
+    try:
+        correction, center_ids, availability = _recursive_rbf_correction(
+            observation_points,
+            observation_valid,
+            baseline,
+            initial_structure_points,
+            fit_end_frame=fit_end_frame,
+            query_start_frame=query_start_frame,
+            query_end_frame=query_end_frame,
+            original_count=original_count,
+            center_count=center_count,
+            minimum_availability_fraction=minimum_availability_fraction,
+        )
+    except InsufficientRbfCentersError as error:
+        return (
+            np.zeros(
+                (
+                    query_end_frame - query_start_frame,
+                    baseline.shape[1],
+                    3,
+                ),
+                dtype=float,
+            ),
+            np.empty(0, dtype=np.int64),
+            np.empty(0, dtype=float),
+            str(error),
+        )
+    return correction, center_ids, availability, None
 
 
 def _canonical_planar_correction(
@@ -2176,22 +2223,27 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         and float(selected_rbf["selection_score"]) < 1.0
     )
     if rbf_accepted:
-        rbf_future_correction, full_centers, full_center_availability = (
-            _recursive_rbf_correction(
-                inference_points,
-                dense_valid,
-                baseline,
-                structure_points,
-                fit_end_frame=train_end,
-                query_start_frame=train_end,
-                query_end_frame=future_end,
-                original_count=original_count,
-                center_count=int(selected_rbf["center_count"]),
-                minimum_availability_fraction=(
-                    config.rbf_minimum_availability_fraction
-                ),
-            )
+        (
+            rbf_future_correction,
+            full_centers,
+            full_center_availability,
+            rbf_refit_rejection_reason,
+        ) = _recursive_rbf_refit_or_fallback(
+            inference_points,
+            dense_valid,
+            baseline,
+            structure_points,
+            fit_end_frame=train_end,
+            query_start_frame=train_end,
+            query_end_frame=future_end,
+            original_count=original_count,
+            center_count=int(selected_rbf["center_count"]),
+            minimum_availability_fraction=(
+                config.rbf_minimum_availability_fraction
+            ),
         )
+        if rbf_refit_rejection_reason is not None:
+            rbf_accepted = False
     else:
         rbf_future_correction = np.zeros(
             (future_end - train_end, len(structure_points), 3),
@@ -2199,6 +2251,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         )
         full_centers = np.empty(0, dtype=np.int64)
         full_center_availability = np.empty(0, dtype=float)
+        rbf_refit_rejection_reason = None
     rbf_selector = "causal_selected_recursive_rbf"
     candidate_metrics[rbf_selector] = _evaluate(
         baseline,
@@ -2220,6 +2273,7 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         ),
         "validation_candidates": rbf_validation_candidates,
         "selected_candidate": selected_rbf,
+        "refit_rejection_reason": rbf_refit_rejection_reason,
         "refit_center_ids": full_centers.tolist(),
         "refit_minimum_center_availability": (
             None
