@@ -87,6 +87,7 @@ use the routes below; non-stable research commands are discovered with
 | `bpt observation validate` | Validate or summarize an `ObservationBeliefV1` artifact. |
 | `bpt residual replay` | Replay exported residuals through the robust likelihood. |
 | `bpt benchmark synthetic` | Run the controlled synthetic benchmark. |
+| `bpt evidence summarize` | Summarize matched guarded prospective evidence. |
 | `bpt run manifest` | Create or validate content-addressed run provenance. |
 
 Replay the bundled residual example:
@@ -144,6 +145,8 @@ state-update and exact-fallback boundaries.
 
 ## Documentation map
 
+- [Command-line interface](docs/command_line.md): stable routes, experiment
+  registry, and migration from removed executables.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, experimental command families, and placement policy.
 - [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
