@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import pickle
 import sys
+import types
 from typing import Any
 
 import numpy as np
@@ -33,7 +34,6 @@ def _load_frozen_upstream(repo: Path) -> dict[str, Any]:
     """Load numerical modules only from the separately checksummed source tree."""
 
     import bayesian_phystwin
-    import causal4d_public
 
     source = repo.resolve() / "src"
     causal_path = source / "causal4d_public"
@@ -41,13 +41,19 @@ def _load_frozen_upstream(repo: Path) -> dict[str, Any]:
     _require(causal_path.is_dir(), "frozen causal4d_public package is missing")
     _require(bayesian_path.is_dir(), "frozen Bayesian-PhysTwin package is missing")
     _require(
+        "causal4d_public" not in sys.modules,
+        "causal4d_public loaded before frozen runtime binding",
+    )
+    _require(
         "bayesian_phystwin.phystwin_graph" not in sys.modules,
         "local PhysTwin graph loaded before frozen runtime binding",
     )
-    if str(causal_path) not in causal4d_public.__path__:
-        causal4d_public.__path__.insert(0, str(causal_path))
     if str(bayesian_path) not in bayesian_phystwin.__path__:
         bayesian_phystwin.__path__.insert(0, str(bayesian_path))
+    causal4d_public = types.ModuleType("causal4d_public")
+    causal4d_public.__path__ = [str(causal_path)]
+    causal4d_public.__package__ = "causal4d_public"
+    sys.modules["causal4d_public"] = causal4d_public
     dense = importlib.import_module("causal4d_public.deform360_dense_reusable_panel")
     independent = importlib.import_module(
         "causal4d_public.deform360_independent_source"
