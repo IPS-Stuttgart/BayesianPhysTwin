@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, cast
 
 import numpy as np
 
@@ -97,7 +98,9 @@ def robust_random_walk_endpoint(
     inlier_prior: float,
     outlier_variance_multiplier: float,
 ) -> Any:
-    module = import_module("bayesian_phystwin.phystwin_bayesian_anchor")
+    module = cast(
+        Any, import_module("bayesian_phystwin.phystwin_bayesian_anchor")
+    )
     return module.robust_random_walk_endpoint(
         residual,
         valid,
