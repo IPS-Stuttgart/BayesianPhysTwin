@@ -1,0 +1,50 @@
+name: PR 19 quality diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Capture Ruff and mypy output
+        shell: bash
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/legacy_artifacts.py \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
+            tests/test_legacy_artifacts.py \
+            > ruff.txt 2>&1 || true
+          python -m mypy \
+            src/bayesian_phystwin/legacy_artifacts.py \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
+            > mypy.txt 2>&1 || true
+          python -m ruff format \
+            src/bayesian_phystwin/legacy_artifacts.py \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
+            tests/test_legacy_artifacts.py
+      - name: Upload exact diagnostics and formatted files
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr19-quality-diagnostic
+          path: |
+            ruff.txt
+            mypy.txt
+            src/bayesian_phystwin/legacy_artifacts.py
+            src/bayesian_phystwin/causal4d_artifacts_v1.py
+            tests/test_legacy_artifacts.py
+          if-no-files-found: error
+          retention-days: 1
