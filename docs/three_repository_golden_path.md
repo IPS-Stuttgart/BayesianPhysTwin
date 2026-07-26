@@ -1,40 +1,50 @@
 # Three-repository installed-wheel golden path
 
-This integration check exercises the released package boundary
+This integration gate executes the released package boundary
 
 ```text
 Prob4D -> Bayesian-PhysTwin -> Causal4D
 ```
 
-without importing any repository directly from its source checkout.
+without importing any repository from its source checkout.
 
-## What the check proves
+## What the gate proves
 
-The runner builds one wheel from each repository, installs those wheels in a
-fresh virtual environment, copies the test outside all source trees, clears
-`PYTHONPATH`, and starts Python in isolated mode. The test then verifies:
+The runner requires three clean Git checkouts, records their exact commits,
+creates immutable `git archive` source snapshots, builds one wheel from each
+snapshot, and installs only those wheels in a fresh virtual environment. It
+copies the integration test outside every source tree, clears `PYTHONPATH`, and
+starts Python in isolated mode. The test then verifies:
 
 1. Prob4D emits a deterministic, content-addressed strict causal-stream-v2
-   observation with joint gauge covariance and complete source lineage.
-2. Bayesian-PhysTwin independently reloads and validates that artifact,
-   adapts it to the gauge-aware inference contract, and executes a
-   deterministic update or its exact zero-update fallback.
-3. Causal4D independently reloads and validates the Prob4D observation,
-   binds that lineage to a content-addressed `TwinBelief`, validates the
-   installed Bayesian-PhysTwin provider, and executes a
-   counterfactual query through a deterministic `PhysTwinReplayProvider`
-   implementation while preserving staged posterior-mass accounting.
-4. Future-dependent lineage, stream-version disagreement, missing metric
-   calibration provenance, omitted anchor covariance, per-window gauge
-   factors, and excessive covariance truncation are rejected fail-closed.
+   observation with joint cross-window gauge covariance, complete metric-anchor
+   provenance, and the exact tested Prob4D revision.
+2. Bayesian-PhysTwin independently reloads and validates that artifact, adapts
+   it to the gauge-aware inference contract, and executes a deterministic update
+   or its exact zero-update fallback.
+3. Causal4D independently reloads and validates the same observation archive,
+   verifies that all source frames lie in `O-`, binds the observation lineage to
+   a content-addressed `TwinBelief`, validates the installed Bayesian-PhysTwin
+   provider, and executes a deterministic counterfactual query.
+4. Posterior support reduction preserves staged probability-mass accounting and
+   never requests replay for an exact-zero posterior cell.
+5. A `RunManifestV2` binds all three repository commits, all three wheel hashes,
+   package versions, the observation, `TwinBelief`, physical posterior, provider
+   manifest, information boundary, protocol, split, baseline, method freeze, and
+   claim ID. Promotion fails closed for dirty, incomplete, or tampered evidence.
+6. Both independent consumers reject future-dependent lineage, future-payload
+   access, stream-version disagreement, fixed-lag covariance falsely labelled as
+   strict v2, changed metric-anchor source digests, missing calibration
+   provenance, omitted anchor covariance, per-window gauge factors, duplicated
+   gauge semantics, and excessive covariance truncation. Causal4D also rejects
+   inconsistent composed posterior mass.
 
 Validators remain implemented in their owning repositories. The integration
-test shares only an immutable producer artifact and expected accept/reject
-decisions.
+test shares only immutable artifacts and expected accept/reject decisions.
 
 ## Local execution
 
-From any directory with all three repositories checked out:
+From any directory with clean checkouts of all three repositories:
 
 ```bash
 bash Bayesian-PhysTwin/scripts/run_three_repository_golden_path.sh \
@@ -43,17 +53,18 @@ bash Bayesian-PhysTwin/scripts/run_three_repository_golden_path.sh \
   Causal4D
 ```
 
-The script needs a normal Python installation with `venv`, `pip`, `git`, and
-network access for build/runtime dependencies. It removes all temporary build
-and test environments when finished.
+The script requires a normal Linux or macOS Python installation with `venv`,
+`pip`, `git`, `tar`, and network access for build/runtime dependencies. It
+removes all temporary source snapshots, wheels, and virtual environments on
+exit.
 
 ## GitHub Actions credential
 
-`FlorianPfaff/Prob4D` is private. Configure a Bayesian-PhysTwin repository
-secret named `PROB4D_READ_TOKEN` whose token has read-only contents access to
-that repository. The workflow deliberately fails rather than silently
-skipping the integration gate when this credential is absent.
+`FlorianPfaff/Prob4D` is private. Configure a Bayesian-PhysTwin repository secret
+named `PROB4D_READ_TOKEN` whose token has read-only contents access to that
+repository. The workflow deliberately fails rather than silently skipping the
+integration gate when this credential is absent.
 
 Manual runs may select specific Prob4D and Causal4D refs. Pull-request and
 scheduled runs use their `main` branches, so the weekly run also detects
-downstream contract drift.
+cross-repository contract drift.
