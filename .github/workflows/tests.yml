@@ -20,7 +20,7 @@ env:
 
 jobs:
   quality:
-    name: Repository quality
+    name: Changed-file quality and strict core typing
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -34,16 +34,8 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install development tools
         run: python -m pip install -e ".[dev]"
-      - name: Lint source, tests, and CI tools
-        id: ruff_lint
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          python -m ruff check src tests tools --output-format=github \
-            2>&1 | tee ruff-lint.txt
-      - name: Check formatting of changed Python files
-        id: ruff_format
+      - name: Lint and format-check changed Python files
+        id: ruff
         continue-on-error: true
         shell: bash
         env:
@@ -51,28 +43,30 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: |
           set -o pipefail
-          python tools/check_changed_python_format.py \
+          python tools/check_changed_python_quality.py \
             --base "$BASE_SHA" \
             --head "$HEAD_SHA" \
-            2>&1 | tee ruff-format.txt
-      - name: Type-check stable contracts and interfaces
+            2>&1 | tee ruff.txt
+      - name: Strictly type-check stable contracts and scientific interfaces
         id: mypy
         continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
-          python -m mypy \
+          python -m mypy --strict \
             src/bayesian_phystwin/causal4d_provider_v1.py \
             src/bayesian_phystwin/observation_belief.py \
             src/bayesian_phystwin/observation_belief_gauge_adapter.py \
             src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/_gauge_aware_solver.py \
             src/bayesian_phystwin/gauge_aware_belief.py \
             src/bayesian_phystwin/run_manifest.py \
             src/bayesian_phystwin/repository_provenance.py \
             src/bayesian_phystwin/run_manifest_v2.py \
             src/bayesian_phystwin/cli/main.py \
             src/bayesian_phystwin/cli/run_manifest.py \
-            tools/check_changed_python_format.py \
+            tools/check_changed_python_quality.py \
+            tools/check_changed_semantic_coverage.py \
             2>&1 | tee mypy.txt
       - name: Upload quality diagnostics
         if: always()
@@ -80,8 +74,7 @@ jobs:
         with:
           name: quality-diagnostics
           path: |
-            ruff-lint.txt
-            ruff-format.txt
+            ruff.txt
             mypy.txt
           if-no-files-found: warn
           retention-days: 14
@@ -89,15 +82,12 @@ jobs:
         if: always()
         shell: bash
         env:
-          RUFF_LINT_OUTCOME: ${{ steps.ruff_lint.outcome }}
-          RUFF_FORMAT_OUTCOME: ${{ steps.ruff_format.outcome }}
+          RUFF_OUTCOME: ${{ steps.ruff.outcome }}
           MYPY_OUTCOME: ${{ steps.mypy.outcome }}
         run: |
-          printf 'ruff lint: %s\n' "$RUFF_LINT_OUTCOME"
-          printf 'ruff format: %s\n' "$RUFF_FORMAT_OUTCOME"
-          printf 'mypy: %s\n' "$MYPY_OUTCOME"
-          [[ "$RUFF_LINT_OUTCOME" == "success" ]]
-          [[ "$RUFF_FORMAT_OUTCOME" == "success" ]]
+          printf 'changed-file Ruff: %s\n' "$RUFF_OUTCOME"
+          printf 'strict core mypy: %s\n' "$MYPY_OUTCOME"
+          [[ "$RUFF_OUTCOME" == "success" ]]
           [[ "$MYPY_OUTCOME" == "success" ]]
 
   core-contracts:
@@ -133,12 +123,66 @@ jobs:
             tests/test_causal4d_provider_v1.py \
             tests/test_contract_properties.py \
             tests/test_gauge_aware_belief.py \
+            tests/test_gauge_aware_properties.py \
+            tests/test_observation_belief.py \
+            tests/test_observation_belief_gauge_adapter.py \
+            tests/test_profile_properties.py \
+            tests/test_quality_gate_tools.py \
+            tests/test_cli_main.py \
+            tests/test_run_manifest.py \
+            tests/test_run_manifest_v2.py \
+            tests/test_run_manifest_cli.py
+
+  semantic-coverage:
+    name: Changed scientific-core coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install NumPy-only package and development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Exercise stable semantic interfaces with branch coverage
+        run: |
+          python -m coverage erase
+          python -m coverage run \
+            --branch \
+            --source=src/bayesian_phystwin \
+            -m pytest -q \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_contract_properties.py \
+            tests/test_gauge_aware_belief.py \
+            tests/test_gauge_aware_properties.py \
             tests/test_observation_belief.py \
             tests/test_observation_belief_gauge_adapter.py \
             tests/test_cli_main.py \
             tests/test_run_manifest.py \
             tests/test_run_manifest_v2.py \
             tests/test_run_manifest_cli.py
+          python -m coverage json -o coverage.json
+      - name: Require line and branch coverage on changed semantic code
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: >-
+          python tools/check_changed_semantic_coverage.py
+          --coverage-json coverage.json
+          --base "$BASE_SHA"
+          --head "$HEAD_SHA"
+      - name: Upload semantic coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: semantic-coverage
+          path: coverage.json
+          if-no-files-found: warn
+          retention-days: 14
 
   full-suite:
     name: Full suite / Python ${{ matrix.python-version }}
@@ -217,7 +261,7 @@ jobs:
 
   build:
     name: Build distributions
-    needs: [quality, core-contracts, full-suite, provider-contract]
+    needs: [quality, core-contracts, semantic-coverage, full-suite, provider-contract]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
