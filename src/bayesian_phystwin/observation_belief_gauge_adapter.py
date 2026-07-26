@@ -134,9 +134,8 @@ class ObservationBeliefGaugeAdapterResult:
 
     def __post_init__(self) -> None:
         _require(
-            self.observation_artifact_id == self.batch.metadata.get(
-                "observation_artifact_id"
-            ),
+            self.observation_artifact_id
+            == self.batch.metadata.get("observation_artifact_id"),
             "observation artifact provenance changed",
         )
         groups = _readonly(self.gauge_parameter_group_ids, dtype=np.int64)
@@ -172,10 +171,16 @@ class ObservationBeliefGaugeAdapterResult:
             "view_bias_parameter_count": (
                 self.batch.view_bias_jacobian.shape[2]
             ),
+            "anchor_bias_parameter_count": (
+                0
+                if self.batch.anchor_bias_jacobian is None
+                else self.batch.anchor_bias_jacobian.shape[2]
+            ),
             "association_used_as_prior_reliability": False,
             "low_rank_covariance_treatment": (
                 "explicit standard-normal nuisance parameters"
             ),
+            "causal_frame_stop_convention": "exclusive",
         }
 
 
@@ -192,6 +197,12 @@ def build_gauge_aware_batch_from_observation_belief(
     anchor_innovation_m: np.ndarray | None = None,
     anchor_covariance_m2: np.ndarray | None = None,
     anchor_state_jacobian: np.ndarray | None = None,
+    anchor_correlation_group_ids: tuple[str, ...] | None = None,
+    anchor_prior_reliability: np.ndarray | None = None,
+    anchor_prior_nominal_probability: np.ndarray | None = None,
+    anchor_composite_weight: np.ndarray | None = None,
+    anchor_bias_jacobian: np.ndarray | None = None,
+    anchor_bias_prior_covariance: np.ndarray | None = None,
 ) -> ObservationBeliefGaugeAdapterResult:
     """Build one residual-independent, covariance-safe gauge-aware batch.
 
@@ -201,8 +212,8 @@ def build_gauge_aware_batch_from_observation_belief(
     local covariance again.
 
     Association probability is retained only as a diagnostic. Row reliability,
-    group nominal probability, and composite-likelihood weight remain distinct
-    residual-independent inputs to the downstream solver.
+    group nominal probability, and composite-likelihood weight remain distinct.
+    Anchor rows can declare their own correlation groups and latent bias model.
     """
 
     predicted = np.asarray(physical_prediction_xyz_m, dtype=np.float64)
@@ -261,11 +272,18 @@ def build_gauge_aware_batch_from_observation_belief(
     )
     metadata = {
         "observation_artifact_id": belief.artifact_id,
+        "observation_schema": "phys4d.observation_belief",
+        "observation_schema_version": 1,
+        "observation_case_id": belief.case_id,
+        "observation_stream_id": belief.stream_id,
+        "observation_causal_frame_stop": belief.causal_frame_stop,
         "observation_source_repository": belief.source_repository,
         "observation_source_revision": belief.source_revision,
+        "observation_source_artifact_sha256": belief.source_artifact_sha256,
         "association_used_as_prior_reliability": False,
         "innovation_formed_once": True,
         "low_rank_covariance_double_counted": False,
+        "causal_frame_stop_convention": "exclusive",
     }
     batch = GaugeAwareObservationBatch(
         innovation_m=belief.mean_xyz_m - predicted,
@@ -285,6 +303,12 @@ def build_gauge_aware_batch_from_observation_belief(
         anchor_innovation_m=anchor_innovation_m,
         anchor_covariance_m2=anchor_covariance_m2,
         anchor_state_jacobian=anchor_state_jacobian,
+        anchor_correlation_group_ids=anchor_correlation_group_ids,
+        anchor_prior_reliability=anchor_prior_reliability,
+        anchor_prior_nominal_probability=anchor_prior_nominal_probability,
+        anchor_composite_weight=anchor_composite_weight,
+        anchor_bias_jacobian=anchor_bias_jacobian,
+        anchor_bias_prior_covariance=anchor_bias_prior_covariance,
         metadata=metadata,
     )
     return ObservationBeliefGaugeAdapterResult(
