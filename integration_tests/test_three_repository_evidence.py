@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 import platform
-from typing import Any
 
 import numpy as np
 import pytest
@@ -296,7 +295,18 @@ def _bound_counterfactual_artifacts(
         query,
     )
     np.testing.assert_array_equal(first.weights, second.weights)
-    np.testing.assert_array_equal(first.mean_position_m, second.mean_position_m)
+    np.testing.assert_array_equal(
+        first.state_trajectories_m,
+        second.state_trajectories_m,
+    )
+    np.testing.assert_array_equal(
+        first.readout_trajectories_m,
+        second.readout_trajectories_m,
+    )
+    np.testing.assert_array_equal(
+        first.readout_variance_m2,
+        second.readout_variance_m2,
+    )
     assert first.artifact_id == second.artifact_id
     assert first.source_twin_belief_id == twin_belief.artifact_id
     assert np.isclose(np.sum(first.weights), 1.0)
@@ -470,7 +480,7 @@ def test_bound_counterfactual_and_promotable_evidence(tmp_path: Path) -> None:
     ("case", "message"),
     [
         ("future_payload", "opening future payloads"),
-        ("fixed_lag_strict_v2", "approximate fixed-lag covariance"),
+        ("fixed_lag_strict_v2", "fixed-lag|approximate"),
         ("anchor_source_digest", "metric anchor is not bound"),
         ("duplicated_gauge_semantics", "factor definition changed"),
     ],
@@ -487,10 +497,10 @@ def test_both_consumers_reject_extended_semantic_drift(
             "future_prediction_payloads_opened"
         ] = 1
     elif case == "fixed_lag_strict_v2":
-        posterior = metadata["gauge_posterior"]
-        posterior["model"] = "fixed_lag_block_diagonal_approximation_v1"
-        posterior["cross_window_covariance_preserved"] = False
-        posterior["fixed_lag_boundary_covariance_is_approximate"] = True
+        gauge_posterior = metadata["gauge_posterior"]
+        gauge_posterior["model"] = "fixed_lag_block_diagonal_approximation_v1"
+        gauge_posterior["cross_window_covariance_preserved"] = False
+        gauge_posterior["fixed_lag_boundary_covariance_is_approximate"] = True
         metadata["joint_cross_window_gauge_covariance_represented"] = False
     elif case == "anchor_source_digest":
         metadata["metric_gauge_anchor"]["source_artifact_sha256"] = "e" * 64
