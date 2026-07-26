@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "protocol_id": "phystwin-mvtracker-prefix-competence-v1",
-  "status": "implementation-prelock-no-prediction-authorized",
+  "status": "locked-before-mvtracker-prediction",
   "claim_boundary": "One-case prefix-only competence control on the already-open single_lift_cloth source interaction. It cannot establish Bayesian-PhysTwin improvement, calibration, independent transfer, or state of the art.",
-  "question": "Can a frozen joint multiview RGB-D tracker recover the nine benchmark material identities over the held-out portion of the allowed PhysTwin prefix accurately enough to justify a separately locked Bayesian assimilation smoke?",
+  "question": "Can a frozen joint multiview RGB-D tracker recover the four observable benchmark material identities over the held-out portion of the allowed PhysTwin prefix accurately enough to justify a separately locked Bayesian assimilation smoke?",
   "method_config": {
     "case_name": "single_lift_cloth",
     "source_frame_start": 90,
@@ -37,10 +37,18 @@
     "runtime_choices": "Official public predictor defaults, bfloat16 inference, seed 72, deterministic cuDNN, official automatic scene normalization to camera radius 6.3, and exact query-frame anchoring."
   },
   "source_artifacts": {
-    "query_input_sha256": "TO_BE_LOCKED_AFTER_SOURCE_STAGING",
-    "withheld_prefix_sha256": "TO_BE_LOCKED_AFTER_SOURCE_STAGING",
+    "source_staging_commit": "269f0e34ef9cb08b4aa85bb02fa1e2d1d32a0581",
+    "source_report_sha256": "998f51e9b31cda044f7f2bef5122b4751ca41fc5e7f537b1aa0be98c9e5424a7",
+    "query_input_sha256": "1aafdb6074d6e53643e086a0ef4aea2caf28be8a2218fce9b315abf9fd621f11",
+    "query_array_sha256": "72125afc49621f437e34d7ca426ae852f9708c35b11284181abab7bba7ee35df",
+    "withheld_prefix_sha256": "a7657e40fd26811f0fff2b49e29b32b82fda251d616454f7dfc9c62620782488",
+    "withheld_target_array_sha256": "240fa7682b1188e5f9710d91b931988cfef01f50c0768c5fae88a25c52bd4b68",
     "query_source": "Only benchmark identities 3, 4, 6, and 8, the four identities finite at source frame 90.",
     "withheld_source": "Manual identity trajectories on frames [90, 121), inaccessible to prediction and opened only after prediction sealing."
+  },
+  "implementation": {
+    "adapter_sha256": "0d419fcef7067a057862d1956f149a0815594244d22ba10a0e9bf9eb420f12d0",
+    "runner_sha256": "b14a7d7d6824605542a006a61026933d3860e692644faa7d356933299d2f1342"
   },
   "competence_gate": {
     "minimum_supported_fraction": 0.75,

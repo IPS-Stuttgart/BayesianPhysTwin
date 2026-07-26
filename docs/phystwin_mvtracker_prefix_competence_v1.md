@@ -47,3 +47,17 @@ involved.
 The source staging step reads the public manual-track file once, then writes
 two disjoint artifacts: a prediction-visible frame-90 query file and a
 withheld `[90, 121)` evaluation file. Future rows are never retained.
+
+## Prediction Lock
+
+Source staging was executed from Bayesian-PhysTwin commit
+`269f0e34ef9cb08b4aa85bb02fa1e2d1d32a0581`. Before any MVTracker prediction,
+the prediction-visible query archive was locked at SHA-256
+`1aafdb6074d6e53643e086a0ef4aea2caf28be8a2218fce9b315abf9fd621f11`
+and the inaccessible prefix target at SHA-256
+`a7657e40fd26811f0fff2b49e29b32b82fda251d616454f7dfc9c62620782488`.
+The source report is bound by SHA-256
+`998f51e9b31cda044f7f2bef5122b4751ca41fc5e7f537b1aa0be98c9e5424a7`.
+The protocol status is now `locked-before-mvtracker-prediction`; the frozen
+prediction may proceed, but withheld scoring remains forbidden until the
+prediction archive has been sealed.
