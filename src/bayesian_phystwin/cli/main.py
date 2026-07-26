@@ -93,25 +93,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     for length in range(1, len(arguments) + 1):
         prefix = tuple(arguments[:length])
         if arguments[length - 1] in {"-h", "--help"}:
-            namespace = prefix[:-1]
-            if namespace == () or _children(namespace):
-                print(_render_help(namespace), end="")
+            help_namespace = prefix[:-1]
+            if help_namespace == () or _children(help_namespace):
+                print(_render_help(help_namespace), end="")
                 return 0
             break
 
     resolved = _resolve(arguments)
     if resolved is None:
-        namespace: list[str] = []
+        matched_namespace: list[str] = []
         for token in arguments:
-            candidate = (*namespace, token)
+            candidate = (*matched_namespace, token)
             if _children(candidate):
-                namespace.append(token)
+                matched_namespace.append(token)
             else:
                 break
-        if namespace and len(namespace) == len(arguments):
-            print(_render_help(tuple(namespace)), end="")
+        if matched_namespace and len(matched_namespace) == len(arguments):
+            print(_render_help(tuple(matched_namespace)), end="")
             return 0
-        print(_render_help(tuple(namespace)), file=sys.stderr, end="")
+        print(_render_help(tuple(matched_namespace)), file=sys.stderr, end="")
         return 2
 
     route, remaining = resolved
