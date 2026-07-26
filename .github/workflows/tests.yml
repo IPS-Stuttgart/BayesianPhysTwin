@@ -93,6 +93,7 @@ jobs:
             tests/test_run_manifest_v2.py \
             tests/test_run_manifest_cli.py \
             tests/test_phystwin_profile.py \
+            tests/test_information_mass_invariants.py \
             tests/test_quality_invariants.py
 
           python -m coverage json -o package-coverage.json
@@ -185,6 +186,7 @@ jobs:
             tests/test_run_manifest_v2.py \
             tests/test_run_manifest_cli.py \
             tests/test_phystwin_profile.py \
+            tests/test_information_mass_invariants.py \
             tests/test_quality_invariants.py
 
   full-suite:
