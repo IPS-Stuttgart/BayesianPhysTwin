@@ -10,9 +10,11 @@ import pytest
 from bayesian_phystwin.deform360_fresh_source_download import (
     DATASET_REVISION,
     build_fresh_download_manifest,
+    download_fresh_episode_sources_from_index,
     download_fresh_source_queue,
     download_fresh_source_queue_by_object,
     fresh_source_download_plan,
+    select_episode_camera_source_files,
     validate_fresh_download_root,
 )
 
@@ -179,3 +181,70 @@ def test_by_object_download_never_lists_the_global_tree(tmp_path: Path) -> None:
 
     assert listed_paths == [f"raw/{object_id}" for object_id in plan.object_ids]
     assert manifest["object_count"] == len(plan.object_ids)
+
+
+def test_episode_source_selection_keeps_exact_camera_pairs_only() -> None:
+    prefix = "raw/001-source-object"
+    paths = [
+        f"{prefix}/metadata.json",
+        f"{prefix}/calibration_refined/intrinsics.npy",
+        f"{prefix}/calibration_refined/extrinsics.npy",
+        f"{prefix}/brics-odroid-001_cam0/camera_100.mp4",
+        f"{prefix}/brics-odroid-001_cam0/camera_100.txt",
+        f"{prefix}/brics-odroid-001_cam0/camera_200.mp4",
+        f"{prefix}/brics-odroid-001_cam0/camera_200.txt",
+        f"{prefix}/brics-odroid_tactilel_left/tactile_100.npy",
+        f"{prefix}/brics-odroid_tactilel_left/tactile_100.txt",
+    ]
+
+    selected = select_episode_camera_source_files(
+        paths,
+        object_id="001-source-object",
+        episode_id=0,
+    )
+
+    assert f"{prefix}/brics-odroid-001_cam0/camera_100.mp4" in selected
+    assert f"{prefix}/brics-odroid-001_cam0/camera_100.txt" in selected
+    assert not any("camera_200" in path for path in selected)
+    assert not any("tactile" in path for path in selected)
+
+
+def test_indexed_episode_download_is_camera_only(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    plan = fresh_source_download_plan(queue)
+    output = tmp_path / "download"
+
+    def list_object_files(object_id: str) -> list[str]:
+        prefix = f"raw/{object_id}"
+        return [
+            f"{prefix}/metadata.json",
+            f"{prefix}/calibration_refined/intrinsics.npy",
+            f"{prefix}/calibration_refined/extrinsics.npy",
+            f"{prefix}/brics-odroid-001_cam0/camera_100.mp4",
+            f"{prefix}/brics-odroid-001_cam0/camera_100.txt",
+            f"{prefix}/brics-odroid_tactilel_left/tactile_100.npy",
+            f"{prefix}/brics-odroid_tactilel_left/tactile_100.txt",
+        ]
+
+    def hub_download(**kwargs: object) -> str:
+        path = output / str(kwargs["filename"])
+        if path.name == "metadata.json":
+            _write_metadata(path)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"source bytes")
+        return str(path)
+
+    manifest = download_fresh_episode_sources_from_index(
+        queue,
+        output,
+        max_workers=2,
+        object_delay_seconds=0.0,
+        list_object_files=list_object_files,
+        hub_download=hub_download,
+    )
+
+    assert manifest["object_count"] == len(plan.object_ids)
+    assert manifest["download_scope"] == "queued_episode_camera_source_only"
+    assert manifest["tactile_included"] is False
+    assert not list(output.rglob("*tactile*"))

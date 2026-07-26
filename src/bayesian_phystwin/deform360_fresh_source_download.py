@@ -19,11 +19,13 @@ DOWNLOAD_KIND = "Deform360FreshSourceDownload"
 _HEX40 = re.compile(r"^[0-9a-f]{40}$")
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _OBJECT_ID = re.compile(r"^[0-9]{3}-[a-z0-9][a-z0-9-]*$")
+_CAMERA_DIR = re.compile(r"^brics-odroid-\d+_cam\d+$")
 
 
 SnapshotDownload = Callable[..., str]
 ListRepoTree = Callable[..., Any]
 HubDownload = Callable[..., str]
+ListObjectFiles = Callable[[str], list[str]]
 
 
 def _require(condition: bool, message: str) -> None:
@@ -223,6 +225,7 @@ def build_fresh_download_manifest(
     output_root: str | Path,
     *,
     plan: FreshSourceDownloadPlan,
+    selected_files_by_object: Mapping[str, tuple[str, ...]] | None = None,
 ) -> dict[str, Any]:
     """Inventory the exact download without opening episode payloads."""
 
@@ -232,6 +235,16 @@ def build_fresh_download_manifest(
     for object_id, episode_id, category in plan.candidates:
         object_root = root / "raw" / object_id
         files = sorted(path for path in object_root.rglob("*") if path.is_file())
+        if selected_files_by_object is not None:
+            expected = set(selected_files_by_object[object_id])
+            observed = {
+                path.relative_to(root).as_posix()
+                for path in files
+            }
+            _require(
+                observed == expected,
+                f"episode-source inventory changed: {object_id}",
+            )
         rows.append(
             {
                 "object_id": object_id,
@@ -253,7 +266,13 @@ def build_fresh_download_manifest(
         "revision": plan.revision,
         "queue_sha256": plan.queue_sha256,
         "queue_file_sha256": plan.queue_file_sha256,
+        "download_scope": (
+            "full_queued_objects_without_audio"
+            if selected_files_by_object is None
+            else "queued_episode_camera_source_only"
+        ),
         "audio_included": False,
+        "tactile_included": selected_files_by_object is None,
         "object_count": len(rows),
         "objects": rows,
         "information_boundary": {
@@ -267,6 +286,73 @@ def build_fresh_download_manifest(
         payload, digest_key="manifest_sha256"
     )
     return payload
+
+
+def select_episode_camera_source_files(
+    paths: list[str],
+    *,
+    object_id: str,
+    episode_id: int,
+) -> tuple[str, ...]:
+    """Select one exact-stem recording per camera plus source calibration."""
+
+    prefix = f"raw/{object_id}/"
+    _require(
+        bool(paths) and all(path.startswith(prefix) for path in paths),
+        f"file index escaped queued object: {object_id}",
+    )
+    relative = [path[len(prefix) :] for path in paths]
+    cameras = sorted(
+        {
+            Path(path).parts[0]
+            for path in relative
+            if len(Path(path).parts) == 2
+            and _CAMERA_DIR.fullmatch(Path(path).parts[0]) is not None
+        }
+    )
+    _require(bool(cameras), f"queued object has no camera streams: {object_id}")
+    selected = {
+        f"{prefix}metadata.json",
+        *(
+            path
+            for path in paths
+            if path.startswith(f"{prefix}calibration_refined/")
+        ),
+    }
+    for camera in cameras:
+        camera_prefix = f"{prefix}{camera}/"
+        camera_files = [path for path in paths if path.startswith(camera_prefix)]
+        videos = {
+            Path(path).stem: path
+            for path in camera_files
+            if Path(path).suffix.lower() == ".mp4"
+        }
+        timestamps = {
+            Path(path).stem: path
+            for path in camera_files
+            if Path(path).suffix.lower() == ".txt"
+        }
+        paired = sorted(set(videos) & set(timestamps))
+        _require(
+            set(videos) == set(timestamps),
+            f"camera source has unpaired recordings: {object_id}/{camera}",
+        )
+        _require(
+            episode_id < len(paired),
+            f"queued episode is missing from camera: {object_id}/{camera}",
+        )
+        stem = paired[episode_id]
+        selected.add(videos[stem])
+        selected.add(timestamps[stem])
+    _require(
+        f"{prefix}metadata.json" in paths,
+        f"queued object metadata is absent: {object_id}",
+    )
+    _require(
+        any(path.startswith(f"{prefix}calibration_refined/") for path in selected),
+        f"queued object calibration is absent: {object_id}",
+    )
+    return tuple(sorted(selected))
 
 
 def download_fresh_source_queue(
@@ -354,6 +440,51 @@ def download_fresh_source_queue_by_object(
     return build_fresh_download_manifest(root, plan=plan)
 
 
+def download_fresh_episode_sources_from_index(
+    queue_path: str | Path,
+    output_root: str | Path,
+    *,
+    max_workers: int,
+    object_delay_seconds: float,
+    list_object_files: ListObjectFiles,
+    hub_download: HubDownload,
+) -> dict[str, Any]:
+    """Download only the queued episode's camera sources from a pinned file index."""
+
+    _require(max_workers >= 1, "download workers must be positive")
+    _require(object_delay_seconds >= 0.0, "object delay must be non-negative")
+    plan = fresh_source_download_plan(queue_path)
+    root = Path(output_root).resolve()
+    validate_fresh_download_root(root, plan=plan, require_complete=False)
+    selected_files_by_object: dict[str, tuple[str, ...]] = {}
+    for object_index, (object_id, episode_id, _) in enumerate(plan.candidates):
+        files = select_episode_camera_source_files(
+            list_object_files(object_id),
+            object_id=object_id,
+            episode_id=episode_id,
+        )
+        selected_files_by_object[object_id] = files
+
+        def download_one(filename: str) -> str:
+            return hub_download(
+                repo_id=plan.repository,
+                filename=filename,
+                repo_type="dataset",
+                revision=plan.revision,
+                local_dir=str(root),
+            )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            tuple(executor.map(download_one, files))
+        if object_index + 1 < len(plan.object_ids) and object_delay_seconds:
+            time.sleep(object_delay_seconds)
+    return build_fresh_download_manifest(
+        root,
+        plan=plan,
+        selected_files_by_object=selected_files_by_object,
+    )
+
+
 def write_fresh_download_manifest(
     path: str | Path, payload: Mapping[str, Any]
 ) -> None:
@@ -370,9 +501,11 @@ __all__ = [
     "DATASET_REVISION",
     "FreshSourceDownloadPlan",
     "build_fresh_download_manifest",
+    "download_fresh_episode_sources_from_index",
     "download_fresh_source_queue",
     "download_fresh_source_queue_by_object",
     "fresh_source_download_plan",
+    "select_episode_camera_source_files",
     "validate_fresh_download_root",
     "write_fresh_download_manifest",
 ]
