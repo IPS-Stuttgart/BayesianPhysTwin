@@ -1,0 +1,155 @@
+{
+  "artifact_kind": "PhysTwinRecursiveGaugeRbfPredictionV1",
+  "case": "single_lift_cloth",
+  "created_at_utc": "2026-07-26T17:40:21.492212+00:00",
+  "diagnostics": {
+    "center_availability_fraction": [
+      0.4111111111111111,
+      0.6444444444444445,
+      0.4222222222222222,
+      0.5111111111111111,
+      0.35555555555555557,
+      0.4444444444444444,
+      0.4222222222222222,
+      0.35555555555555557,
+      0.32222222222222224,
+      0.3,
+      0.5111111111111111,
+      0.6666666666666666,
+      0.3,
+      0.6111111111111112,
+      0.3888888888888889,
+      0.5333333333333333
+    ],
+    "center_count": 16,
+    "center_ids": [
+      52,
+      7669,
+      524,
+      7283,
+      4798,
+      1574,
+      4694,
+      4632,
+      7431,
+      7494,
+      5304,
+      5978,
+      2837,
+      66,
+      5821,
+      4266
+    ],
+    "dense_comparator": {
+      "dense_cap_multiplier": 1.0,
+      "dense_cap_quantile": 0.95,
+      "dense_temporal_gamma": 0.25,
+      "fit_end_frame_exclusive": 90,
+      "fit_updated_count": 7793,
+      "full_updated_count": 7793,
+      "inner_end_frame_exclusive": 59,
+      "train_end_frame_exclusive": 121
+    },
+    "exact_fallback": true,
+    "fit_accepted_update_count": 4,
+    "fit_updates": [
+      {
+        "accepted": true,
+        "frame": 1,
+        "identifiable_query_state_mode_count": 42,
+        "maximum_state_update_m": null,
+        "observation_count": 15,
+        "physical_response_scale_m": 0.001,
+        "reason": "accepted"
+      },
+      {
+        "accepted": true,
+        "frame": 19,
+        "identifiable_query_state_mode_count": 33,
+        "maximum_state_update_m": null,
+        "observation_count": 12,
+        "physical_response_scale_m": 0.003980198875069618,
+        "reason": "accepted"
+      },
+      {
+        "accepted": true,
+        "frame": 38,
+        "identifiable_query_state_mode_count": 18,
+        "maximum_state_update_m": null,
+        "observation_count": 7,
+        "physical_response_scale_m": 0.02050080895423889,
+        "reason": "accepted"
+      },
+      {
+        "accepted": true,
+        "frame": 59,
+        "identifiable_query_state_mode_count": 9,
+        "maximum_state_update_m": null,
+        "observation_count": 4,
+        "physical_response_scale_m": 0.04001791775226593,
+        "reason": "accepted"
+      }
+    ],
+    "full_accepted_update_count": 4,
+    "full_updates": [
+      {
+        "accepted": true,
+        "frame": 1,
+        "identifiable_query_state_mode_count": 42,
+        "maximum_state_update_m": null,
+        "observation_count": 15,
+        "physical_response_scale_m": 0.001,
+        "reason": "accepted"
+      },
+      {
+        "accepted": true,
+        "frame": 19,
+        "identifiable_query_state_mode_count": 33,
+        "maximum_state_update_m": null,
+        "observation_count": 12,
+        "physical_response_scale_m": 0.003980198875069618,
+        "reason": "accepted"
+      },
+      {
+        "accepted": true,
+        "frame": 38,
+        "identifiable_query_state_mode_count": 18,
+        "maximum_state_update_m": null,
+        "observation_count": 7,
+        "physical_response_scale_m": 0.02050080895423889,
+        "reason": "accepted"
+      },
+      {
+        "accepted": true,
+        "frame": 59,
+        "identifiable_query_state_mode_count": 9,
+        "maximum_state_update_m": null,
+        "observation_count": 4,
+        "physical_response_scale_m": 0.04001791775226593,
+        "reason": "accepted"
+      }
+    ],
+    "future_manual_tracks_used": false,
+    "future_object_observations_used": false,
+    "method": "recursive-gauge-aware-rbf-v1",
+    "prefix_cd_improvement_fraction": 1.4090399302890688e-07,
+    "prefix_gate_metric": "released pseudo-track Chamfer distance",
+    "prefix_gate_uses_manual_tracks": false
+  },
+  "future_target_loaded": false,
+  "held_v8_access": false,
+  "implementation_commit": "cc1dbf1f2b8cf48b1724e33b3b8ae63d1a0f2ef5",
+  "manual_tracks_loaded": false,
+  "prediction": {
+    "path": "/home/florianpfaff/bpt-recursive-gauge-rbf-source-v1/outputs/prediction/prediction.npz",
+    "sha256": "f215e38768eb3642bf697c52fe7fa709a4dd43cb113cc9f87ef577bdefc8e4c5"
+  },
+  "prefix_admitted": false,
+  "prefix_baseline_cd_m": 0.011304499307423022,
+  "prefix_candidate_cd_m": 0.01130449771457393,
+  "protocol": {
+    "path": "/home/florianpfaff/bpt-recursive-gauge-rbf-source-v1/inputs/locked_protocol.json",
+    "sha256": "ae5fa97a80611edbf48e8c04ea98208c84ebf9cbcc2c9fb5fffad9801863c751"
+  },
+  "schema_version": 1
+}

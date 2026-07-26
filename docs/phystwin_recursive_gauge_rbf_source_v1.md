@@ -1,7 +1,9 @@
 # PhysTwin recursive gauge-RBF source smoke v1
 
-Status: implementation and target-free controls complete. The one-case
-development protocol must be committed before its candidate future is scored.
+Status: completed negative one-case source smoke. The prefix gate rejected the
+recursive update and selected the frozen dense comparator exactly. This
+camera-only arm is stopped without expansion or post-open tuning. See
+`docs/phystwin_recursive_gauge_rbf_source_v1_result.md`.
 
 ## Question
 
@@ -66,6 +68,18 @@ The source-smoke gate requires:
 Failure stops this exact camera-only arm without tuning on the opened future.
 Passing authorizes only an object-disjoint source-panel design. It does not
 authorize a fresh target, held-v8 access, or a state-of-the-art claim.
+
+## Completed decision
+
+The recursive filter accepted four causal updates, but their independent
+prefix-CD improvement was only `1.409e-7` as a fraction, versus the locked
+`0.01` requirement. The candidate therefore fell back exactly and produced
+zero change in future CD and manual-track error. The future smoke gate failed.
+
+Do not run this arm over the opened 19-case cohort. Preserve the recursive
+belief implementation for future observation sources that add independent
+information, but do not tune this strict-three-view camera feeder against the
+opened result.
 
 ## Calibration boundary
 
