@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+import pytest
 
 
 def _load_runner():
@@ -85,4 +86,41 @@ def test_recursive_rbf_refit_does_not_hide_unrelated_value_errors() -> None:
             original_count=1,
             center_count=1,
             minimum_availability_fraction=2.0,
+        )
+
+
+def test_selection_score_falls_back_to_supported_prefix_metric() -> None:
+    runner = _load_runner()
+
+    score = runner._selection_score(
+        {
+            "chamfer_distance_m": 0.008,
+            "track_error_m": 0.0,
+        },
+        {
+            "chamfer_distance_m": 0.010,
+            "track_error_m": 0.0,
+        },
+        chamfer_weight=0.5,
+    )
+
+    assert score == pytest.approx(0.8)
+
+
+def test_selection_score_rejects_interval_without_metric_support() -> None:
+    runner = _load_runner()
+
+    with pytest.raises(
+        ValueError,
+        match="selection baseline has no positive metric support",
+    ):
+        runner._selection_score(
+            {
+                "chamfer_distance_m": 0.0,
+                "track_error_m": 0.0,
+            },
+            {
+                "chamfer_distance_m": 0.0,
+                "track_error_m": 0.0,
+            },
         )

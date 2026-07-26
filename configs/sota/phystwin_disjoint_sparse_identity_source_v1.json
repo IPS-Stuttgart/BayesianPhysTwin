@@ -26,6 +26,7 @@
   },
   "primary_candidate": "causal_selected_dense_relative_cap_temporal",
   "candidate_origin": "fixed by the earlier open-cohort manual headroom audit; no candidate or hyperparameter is selected by hidden-identity outcomes",
+  "prefix_selection_support_rule": "Use the observed prefix identities for the track component when they have validation support; renormalize to prefix Chamfer alone when that fixed sparse identity set has no valid validation observation. This rule was added after a zero-denominator technical abort and before any report or hidden score was written.",
   "source_gates": {
     "minimum_relative_chamfer_improvement_percent": 5.0,
     "minimum_relative_hidden_track_improvement_percent": 5.0,

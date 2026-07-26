@@ -711,17 +711,22 @@ def _selection_score(
 ) -> float:
     if not 0.0 <= chamfer_weight <= 1.0:
         raise ValueError("chamfer_weight must lie in [0, 1]")
-    if chamfer_weight == 1.0:
-        return candidate["chamfer_distance_m"] / baseline["chamfer_distance_m"]
-    if chamfer_weight == 0.0:
-        return candidate["track_error_m"] / baseline["track_error_m"]
-    return (
-        chamfer_weight
-        * candidate["chamfer_distance_m"]
-        / baseline["chamfer_distance_m"]
-        + (1.0 - chamfer_weight)
-        * candidate["track_error_m"]
-        / baseline["track_error_m"]
+    weighted_ratios: list[tuple[float, float]] = []
+    for metric, weight in (
+        ("chamfer_distance_m", chamfer_weight),
+        ("track_error_m", 1.0 - chamfer_weight),
+    ):
+        reference = float(baseline[metric])
+        if weight > 0.0 and np.isfinite(reference) and reference > 0.0:
+            weighted_ratios.append(
+                (weight, float(candidate[metric]) / reference)
+            )
+    total_weight = float(sum(weight for weight, _ in weighted_ratios))
+    if total_weight <= 0.0:
+        raise ValueError("selection baseline has no positive metric support")
+    return float(
+        sum(weight * ratio for weight, ratio in weighted_ratios)
+        / total_weight
     )
 
 
@@ -2526,6 +2531,9 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         "baseline": baseline_metrics,
         "causal_selection": {
             "baseline_validation": baseline_validation,
+            "validation_track_metric_available": bool(
+                baseline_validation["track_error_m"] > 0.0
+            ),
             "candidates": validation_candidates,
             "relative_cap_candidates": relative_validation_candidates,
             "selectors": selectors,

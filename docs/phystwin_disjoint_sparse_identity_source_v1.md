@@ -29,6 +29,12 @@ sensor-budget ablations. The physical baseline, dense released pseudo-track
 channel, graph method, temporal selector, caps, and all numerical settings are
 unchanged from the earlier headroom audit.
 
+If the fixed sparse identity set has no valid observation in a case's prefix
+validation interval, the selector renormalizes to the supported prefix Chamfer
+term rather than assigning a zero track denominator. This causal support rule
+was added after a technical abort and before any report or hidden score was
+written.
+
 ## Gate
 
 Only `causal_selected_dense_relative_cap_temporal` is analyzed. Other broad
