@@ -334,10 +334,6 @@ def select_episode_camera_source_files(
         }
         paired = sorted(set(videos) & set(timestamps))
         _require(
-            set(videos) == set(timestamps),
-            f"camera source has unpaired recordings: {object_id}/{camera}",
-        )
-        _require(
             episode_id < len(paired),
             f"queued episode is missing from camera: {object_id}/{camera}",
         )
@@ -466,6 +462,9 @@ def download_fresh_episode_sources_from_index(
         selected_files_by_object[object_id] = files
 
         def download_one(filename: str) -> str:
+            destination = root / filename
+            if destination.is_file():
+                return str(destination)
             return hub_download(
                 repo_id=plan.repository,
                 filename=filename,

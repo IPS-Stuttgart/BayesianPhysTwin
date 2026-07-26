@@ -193,6 +193,7 @@ def test_episode_source_selection_keeps_exact_camera_pairs_only() -> None:
         f"{prefix}/brics-odroid-001_cam0/camera_100.txt",
         f"{prefix}/brics-odroid-001_cam0/camera_200.mp4",
         f"{prefix}/brics-odroid-001_cam0/camera_200.txt",
+        f"{prefix}/brics-odroid-001_cam0/unrelated_later_episode.txt",
         f"{prefix}/brics-odroid_tactilel_left/tactile_100.npy",
         f"{prefix}/brics-odroid_tactilel_left/tactile_100.txt",
     ]
@@ -248,3 +249,13 @@ def test_indexed_episode_download_is_camera_only(tmp_path: Path) -> None:
     assert manifest["download_scope"] == "queued_episode_camera_source_only"
     assert manifest["tactile_included"] is False
     assert not list(output.rglob("*tactile*"))
+
+    resumed = download_fresh_episode_sources_from_index(
+        queue,
+        output,
+        max_workers=2,
+        object_delay_seconds=0.0,
+        list_object_files=list_object_files,
+        hub_download=lambda **_: pytest.fail("completed source file was requested again"),
+    )
+    assert resumed["manifest_sha256"] == manifest["manifest_sha256"]
