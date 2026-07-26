@@ -1,0 +1,84 @@
+name: Process discrepancy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/process_discrepancy.py"
+      - "src/bayesian_phystwin/process_discrepancy_replay.py"
+      - "src/bayesian_phystwin/process_discrepancy_evidence.py"
+      - "tests/test_process_discrepancy.py"
+      - "docs/dynamics_consistent_process_discrepancy_v1.md"
+      - ".github/workflows/process-discrepancy.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/process_discrepancy.py"
+      - "src/bayesian_phystwin/process_discrepancy_replay.py"
+      - "src/bayesian_phystwin/process_discrepancy_evidence.py"
+      - "tests/test_process_discrepancy.py"
+      - "docs/dynamics_consistent_process_discrepancy_v1.md"
+      - ".github/workflows/process-discrepancy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: process-discrepancy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Process discrepancy quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Lint process discrepancy boundary
+        run: >-
+          python -m ruff check
+          src/bayesian_phystwin/process_discrepancy.py
+          src/bayesian_phystwin/process_discrepancy_replay.py
+          src/bayesian_phystwin/process_discrepancy_evidence.py
+          tests/test_process_discrepancy.py
+      - name: Check formatting
+        run: >-
+          python -m ruff format --check
+          src/bayesian_phystwin/process_discrepancy.py
+          src/bayesian_phystwin/process_discrepancy_replay.py
+          src/bayesian_phystwin/process_discrepancy_evidence.py
+          tests/test_process_discrepancy.py
+      - name: Type-check process discrepancy boundary
+        run: >-
+          python -m mypy
+          src/bayesian_phystwin/process_discrepancy.py
+          src/bayesian_phystwin/process_discrepancy_replay.py
+          src/bayesian_phystwin/process_discrepancy_evidence.py
+
+  compatibility:
+    name: Process discrepancy / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install NumPy-only package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run focused process discrepancy tests
+        run: python -m pytest -q tests/test_process_discrepancy.py
