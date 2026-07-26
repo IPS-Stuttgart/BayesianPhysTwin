@@ -19,10 +19,11 @@ fresh virtual environment, copies the test outside all source trees, clears
 2. Bayesian-PhysTwin independently reloads and validates that artifact,
    adapts it to the gauge-aware inference contract, and executes a
    deterministic update or its exact zero-update fallback.
-3. Causal4D independently validates the installed Bayesian-PhysTwin provider,
-   emits and round-trips a content-addressed `TwinBelief`, executes a
+3. Causal4D independently reloads and validates the Prob4D observation,
+   binds that lineage to a content-addressed `TwinBelief`, validates the
+   installed Bayesian-PhysTwin provider, and executes a
    counterfactual query through a deterministic `PhysTwinReplayProvider`
-   implementation, and preserves staged posterior-mass accounting.
+   implementation while preserving staged posterior-mass accounting.
 4. Future-dependent lineage, stream-version disagreement, missing metric
    calibration provenance, omitted anchor covariance, per-window gauge
    factors, and excessive covariance truncation are rejected fail-closed.
