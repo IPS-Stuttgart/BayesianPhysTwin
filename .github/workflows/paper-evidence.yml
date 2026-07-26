@@ -1,0 +1,45 @@
+name: Paper evidence contracts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/bayesian_phystwin/paper_evidence_v1.py
+      - src/bayesian_phystwin/cli/run_manifest.py
+      - tests/test_paper_evidence_v1.py
+      - tests/test_paper_evidence_cli.py
+      - docs/paper_evidence_profile.md
+      - .github/workflows/paper-evidence.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - src/bayesian_phystwin/paper_evidence_v1.py
+      - src/bayesian_phystwin/cli/run_manifest.py
+      - tests/test_paper_evidence_v1.py
+      - tests/test_paper_evidence_cli.py
+      - docs/paper_evidence_profile.md
+      - .github/workflows/paper-evidence.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Check stable evidence interfaces
+        run: python -m ruff check src/bayesian_phystwin/paper_evidence_v1.py src/bayesian_phystwin/cli/run_manifest.py tests/test_paper_evidence_v1.py tests/test_paper_evidence_cli.py
+      - name: Type-check evidence interfaces
+        run: python -m mypy src/bayesian_phystwin/paper_evidence_v1.py src/bayesian_phystwin/cli/run_manifest.py
+      - name: Run evidence contract tests
+        run: python -m pytest -q tests/test_run_manifest_v2.py tests/test_run_manifest_cli.py tests/test_paper_evidence_v1.py tests/test_paper_evidence_cli.py
