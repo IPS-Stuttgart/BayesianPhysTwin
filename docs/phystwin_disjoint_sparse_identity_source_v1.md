@@ -2,10 +2,10 @@
 
 ## Question
 
-The opened PhysTwin-22 headroom audit reached 7.892 mm Chamfer distance and
-13.429 mm manual-track error when released manual identities were observed
-during the prefix. That number is not a fair state-of-the-art result because
-the same identities also formed the future track metric.
+The opened PhysTwin-22 headroom audit reached exactly `7.891873 mm` Chamfer
+distance and `13.429357 mm` manual-track error when released manual identities
+were observed during the prefix. That number is not a fair state-of-the-art
+result because the same identities also formed the future track metric.
 
 This protocol asks the harder question:
 

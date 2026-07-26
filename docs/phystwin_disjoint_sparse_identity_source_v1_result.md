@@ -6,11 +6,12 @@ Status: source gate failed; stop the disjoint sparse-identity route.
 
 ## Question
 
-The earlier opened-cohort ceiling reached 7.892 mm Chamfer distance and
-13.429 mm manual-track error by observing the same manual identity family that
-was later scored. This audit tests a stricter interface: observe 1, 2, or 4
-deterministically selected material identities during the released prefix, then
-score future track error only on identities that were never assimilated.
+The earlier opened-cohort ceiling reached exactly `7.891873 mm` Chamfer
+distance and `13.429357 mm` manual-track error by observing the same manual
+identity family that was later scored. This audit tests a stricter interface:
+observe 1, 2, or 4 deterministically selected material identities during the
+released prefix, then score future track error only on identities that were
+never assimilated.
 
 This is post-open mechanism evidence on the released PhysTwin-22 cohort. It is
 not confirmation, a deployable observation method, or an open-loop
