@@ -1,0 +1,25 @@
+name: Agent source export
+
+on:
+  push:
+    branches:
+      - agent/audit-student-t-mixture
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Archive source tree
+        run: tar --exclude=.git -czf ../bayesian-phystwin-source.tgz .
+      - name: Upload source tree
+        uses: actions/upload-artifact@v7
+        with:
+          name: bayesian-phystwin-source
+          path: ../bayesian-phystwin-source.tgz
+          if-no-files-found: error
+          retention-days: 1
