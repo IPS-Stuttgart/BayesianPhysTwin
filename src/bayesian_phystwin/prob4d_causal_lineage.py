@@ -291,17 +291,22 @@ def validate_prob4d_causal_observation_belief(
     )
     anchor_frame = anchor.get(
         "coordinate_frame",
-        anchor.get("world_frame_id"),
+        anchor.get("world_frame_id", coordinate_frame),
     )
     _require(
         anchor_frame == coordinate_frame,
         "metric gauge-anchor frame differs from observation frame",
     )
-    _require(
-        anchor.get("covariance_treatment") == "fixed_external_calibration",
-        "portable Prob4D causal artifact requires a fixed metric anchor",
-    )
-    if stream_version == PROB4D_CAUSAL_STREAM_CONTRACT_VERSION:
+    covariance_treatment = anchor.get("covariance_treatment")
+    if covariance_treatment is not None or not stream_version_inferred:
+        _require(
+            covariance_treatment == "fixed_external_calibration",
+            "portable Prob4D causal artifact requires a fixed metric anchor",
+        )
+    if (
+        stream_version == PROB4D_CAUSAL_STREAM_CONTRACT_VERSION
+        and not stream_version_inferred
+    ):
         _require(
             anchor.get("schema_name") == "prob4d.metric-gauge-anchor"
             and _require_integer(
@@ -315,6 +320,7 @@ def validate_prob4d_causal_observation_belief(
             anchor.get("metric_units") == "m",
             "Prob4D stream contract v2 anchor must declare metric units",
         )
+    if stream_version == PROB4D_CAUSAL_STREAM_CONTRACT_VERSION:
         _require(
             bool(str(anchor.get("source_kind", ""))),
             "Prob4D stream contract v2 anchor has no source kind",
