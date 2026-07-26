@@ -7,14 +7,14 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from bayesian_phystwin.causal4d_provider_v1 import provider_manifest
+from bayesian_phystwin.causal4d_provider_v1 import causal4d_provider_manifest
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--provider-revision",
-        help="explicit source revision; defaults to the current Git checkout",
+        help="explicit source revision; otherwise use the installed VCS metadata",
     )
     parser.add_argument("--output", type=Path, help="optional JSON output path")
     return parser
@@ -22,7 +22,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    payload = provider_manifest(args.provider_revision).as_dict()
+    payload = causal4d_provider_manifest(
+        provider_revision=args.provider_revision
+    )
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

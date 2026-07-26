@@ -125,11 +125,16 @@ jobs:
           "$RUNNER_TEMP/bpt-wheel-smoke/bin/python" -m pip install dist/*.whl
           cd "$RUNNER_TEMP"
           "$RUNNER_TEMP/bpt-wheel-smoke/bin/python" - <<'PY'
-          from bayesian_phystwin.causal4d_provider_v1 import provider_manifest
+          from bayesian_phystwin.causal4d_provider_v1 import (
+              causal4d_provider_manifest,
+          )
 
-          manifest = provider_manifest("wheel-smoke")
-          assert manifest.schema_version == 1
-          print(manifest.manifest_id)
+          manifest = causal4d_provider_manifest(
+              provider_revision="wheel-smoke"
+          )
+          assert manifest["schema_version"] == 1
+          assert manifest["provider_revision"] == "wheel-smoke"
+          print(manifest["provider_api_version"] if "provider_api_version" in manifest else manifest["metadata"]["provider_api_version"])
           PY
           "$RUNNER_TEMP/bpt-wheel-smoke/bin/bpt-provider-manifest" \
             --provider-revision wheel-smoke >/dev/null

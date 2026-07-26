@@ -1,383 +1,113 @@
-"""Versioned public compatibility facade for Causal4D consumers.
+"""Stable Bayesian-PhysTwin compatibility surface for Causal4D.
 
-Causal4D should depend on this module instead of underscore-prefixed implementation
-details spread across Bayesian-PhysTwin.  The facade keeps imports lazy so the
-contract remains available in lightweight installations without Torch, Warp, OpenCV,
-or an official PhysTwin checkout.
+The module owns the dependency on implementation-private PhysTwin helpers.  Downstream
+projects should import artifacts and execution primitives from here rather than from
+underscore-prefixed implementation modules.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import dataclass, field
-import hashlib
-from importlib import import_module
-from importlib import metadata as importlib_metadata
+import gc
 import json
+import os
+from importlib import import_module
+from importlib.metadata import (
+    PackageNotFoundError,
+    distribution,
+    version as distribution_version,
+)
 from pathlib import Path
-import subprocess
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Mapping, Protocol, runtime_checkable
 
 import numpy as np
 
-PROVIDER_CONTRACT_SCHEMA_VERSION = 1
-PROVIDER_API_VERSION = "1.0.0"
-PROVIDER_NAME = "bayesian-phystwin"
-
-BASE_CAUSAL4D_PROVIDER_CAPABILITIES = (
+CAUSAL4D_PROVIDER_API_VERSION = 1
+CAUSAL4D_PROVIDER_PACKAGE_VERSION = "0.4.0"
+CAUSAL4D_PROVIDER_CAPABILITIES = (
     "artifact_checksums",
+    "diagnostic_compatibility",
     "particle_endpoint_position",
     "particle_endpoint_velocity",
     "physical_parameter_particles",
-)
-CAUSAL4D_PROVIDER_CAPABILITIES = BASE_CAUSAL4D_PROVIDER_CAPABILITIES + (
-    "causal_observation_belief_v1",
-    "dynamic_discrepancy_artifact_v1",
-    "full_covariance_observation_update",
-    "official_warp_initial_replay",
-    "official_warp_restart_replay",
-    "physical_graph_construction",
+    "phystwin_replay",
     "residual_lifting",
+    "target_validity",
 )
-ARTIFACT_SCHEMA_VERSIONS = {
-    "observation_belief": 1,
-    "dynamic_discrepancy_correction": 1,
-}
-
-# Public facade name -> (implementation module, implementation attribute).
-# Existing implementation modules remain authoritative; only these names form the
-# compatibility contract.
-_ALIAS_TARGETS: dict[str, tuple[str, str]] = {
-    # Frozen endpoint-filter settings.
-    "FIXED_INITIAL_STD_M": (
-        ".phystwin_additional_bayesian_confirmation",
-        "FIXED_INITIAL_STD_M",
-    ),
-    "FIXED_INLIER_PRIOR": (
-        ".phystwin_additional_bayesian_confirmation",
-        "FIXED_INLIER_PRIOR",
-    ),
-    "FIXED_OBSERVATION_STD_M": (
-        ".phystwin_additional_bayesian_confirmation",
-        "FIXED_OBSERVATION_STD_M",
-    ),
-    "FIXED_OUTLIER_VARIANCE_MULTIPLIER": (
-        ".phystwin_additional_bayesian_confirmation",
-        "FIXED_OUTLIER_VARIANCE_MULTIPLIER",
-    ),
-    "FIXED_PROCESS_STD_M": (
-        ".phystwin_additional_bayesian_confirmation",
-        "FIXED_PROCESS_STD_M",
-    ),
-    # Physical graph and controller helpers.
-    "PhysTwinSpringGraph": (".phystwin_graph", "PhysTwinSpringGraph"),
-    "PhysTwinSpringGraphConfig": (".phystwin_graph", "PhysTwinSpringGraphConfig"),
-    "build_phystwin_spring_graph": (
-        ".phystwin_graph",
-        "build_phystwin_spring_graph",
-    ),
-    "controller_hand_count": (
-        ".phystwin_controller_sensitivity",
-        "controller_hand_count",
-    ),
-    "infer_controller_groups": (
-        ".phystwin_controller_sensitivity",
-        "infer_controller_groups",
-    ),
-    # Residual loading, validity, lifting, and hashing.
-    "build_lift_map": (".phystwin_residual_dynamics", "_lift_map"),
-    "clip_residual": (".phystwin_residual_dynamics", "_clip_residual"),
-    "lift_residual": (".phystwin_residual_dynamics", "_lift_residual"),
-    "load_pickle": (".phystwin_residual_dynamics", "_load_pickle"),
-    "sha256_file": (".phystwin_residual_dynamics", "_sha256"),
-    "target_validity": (".phystwin_residual_dynamics", "_target_validity"),
-    # Official Warp initialization and replay.
-    "git_commit": (".phystwin_state_injection", "_git_commit"),
-    "initialize_simulator": (".phystwin_state_injection", "_initialize_simulator"),
-    "metric_summary": (".phystwin_state_injection", "_metric_summary"),
-    "released_self_collision_for_case": (
-        ".phystwin_state_injection",
-        "_released_self_collision_for_case",
-    ),
-    "rollout_initial": (".phystwin_state_injection", "_rollout_initial"),
-    "rollout_restart": (".phystwin_state_injection", "_rollout_restart"),
-    "simulator_runtime": (".phystwin_state_injection", "_simulator_runtime"),
-    "state_numpy": (".phystwin_state_injection", "_state_numpy"),
-    "estimate_endpoint_velocity_delta": (
-        ".phystwin_state_injection",
-        "estimate_endpoint_velocity_delta",
-    ),
-    "load_official_spring_mass_module": (
-        "._phystwin_warp_backend",
-        "load_official_spring_mass_module",
-    ),
-    "make_reliability_simulator_class": (
-        "._phystwin_warp_backend",
-        "make_reliability_simulator_class",
-    ),
-    "build_phystwin_track_objective": (
-        ".phystwin_refit",
-        "build_phystwin_track_objective",
-    ),
-    # Metrics, protocol locks, and robust endpoint inference.
-    "chamfer_by_frame": (".phystwin_additional_confirmation", "_chamfer_by_frame"),
-    "official_metrics_by_frame": (
-        ".phystwin_comparison",
-        "official_metrics_by_frame",
-    ),
-    "paired_block_bootstrap": (".phystwin_comparison", "paired_block_bootstrap"),
-    "phystwin_physical_object_cluster": (
-        ".phystwin_comparison",
-        "phystwin_physical_object_cluster",
-    ),
-    "DEVELOPMENT_CASES": (".phystwin_confirmatory", "DEVELOPMENT_CASES"),
-    "lock_protocol": (".phystwin_confirmatory", "_lock_protocol"),
-    "robust_random_walk_endpoint": (
-        ".phystwin_bayesian_anchor",
-        "robust_random_walk_endpoint",
-    ),
-    # Graph discrepancy and structural-diagnostic helpers.
-    "graph_discrepancy_diagnostics": (
-        ".phystwin_graph_discrepancy",
-        "graph_discrepancy_diagnostics",
-    ),
-    "graph_smoothed_discrepancy_posterior": (
-        ".phystwin_graph_discrepancy",
-        "graph_smoothed_discrepancy_posterior",
-    ),
-    "normalized_spring_laplacian": (
-        ".phystwin_graph_discrepancy",
-        "normalized_spring_laplacian",
-    ),
-    "attachment_support_nodes": (
-        ".phystwin_structural_diagnostic",
-        "_attachment_support_nodes",
-    ),
-    "far_graph_observation_error": (
-        ".phystwin_structural_diagnostic",
-        "_far_graph_observation_error",
-    ),
-    "graph_distance": (".phystwin_structural_diagnostic", "_graph_distance"),
-    "horizon_summary": (".phystwin_structural_diagnostic", "_horizon_summary"),
-    "object_rest_lengths": (
-        ".phystwin_structural_diagnostic",
-        "_object_rest_lengths",
-    ),
-    "set_simulator_arrays": (
-        ".phystwin_structural_diagnostic",
-        "_set_simulator_arrays",
-    ),
-    # Versioned discrepancy and observation-audit artifacts.
-    "LOCALIZATION_GRAPH_RANK": (".dynamic_discrepancy", "LOCALIZATION_GRAPH_RANK"),
-    "DynamicDiscrepancyCorrection": (
-        ".dynamic_discrepancy",
-        "DynamicDiscrepancyCorrection",
-    ),
-    "fit_dimensionless_linearized_correction": (
-        ".dynamic_discrepancy",
-        "fit_dimensionless_linearized_correction",
-    ),
-    "load_dynamic_discrepancy_correction": (
-        ".dynamic_discrepancy",
-        "load_dynamic_discrepancy_correction",
-    ),
-    "prefix_position_velocity_coefficients": (
-        ".dynamic_discrepancy",
-        "prefix_position_velocity_coefficients",
-    ),
-    "scale_coefficients_to_field_limit": (
-        ".dynamic_discrepancy",
-        "scale_coefficients_to_field_limit",
-    ),
-    "write_dynamic_discrepancy_correction": (
-        ".dynamic_discrepancy",
-        "write_dynamic_discrepancy_correction",
-    ),
-    "cross_view_residual_audit": (
-        ".observation_model_audit",
-        "cross_view_residual_audit",
-    ),
-    "metric_agreement_audit": (
-        ".observation_model_audit",
-        "metric_agreement_audit",
-    ),
-    "released_observation_capability_audit": (
-        ".observation_model_audit",
-        "released_observation_capability_audit",
-    ),
+CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS = {
+    "GraphBelief": 1,
+    "TwinBelief": 1,
 }
 
 
-def _validated_json_mapping(values: Mapping[str, Any], *, name: str) -> dict[str, Any]:
+def _installed_provider_version() -> str:
     try:
-        return json.loads(json.dumps(dict(values), sort_keys=True, allow_nan=False))
-    except (TypeError, ValueError) as error:
-        raise ValueError(f"{name} must contain finite JSON data") from error
+        return distribution_version("bayesian-phystwin")
+    except PackageNotFoundError:
+        return CAUSAL4D_PROVIDER_PACKAGE_VERSION
 
 
-def _installed_version() -> str:
+def _installed_provider_revision() -> str | None:
     try:
-        return importlib_metadata.version(PROVIDER_NAME)
-    except importlib_metadata.PackageNotFoundError:
-        # Source-tree imports remain deterministic before installation.
-        return "0.4.0"
+        direct_url = distribution("bayesian-phystwin").read_text("direct_url.json")
+    except PackageNotFoundError:
+        return None
+    if not direct_url:
+        return None
+    try:
+        payload = json.loads(direct_url)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    commit_id = payload.get("vcs_info", {}).get("commit_id")
+    return str(commit_id) if commit_id else None
 
 
-def _repository_revision() -> str:
-    root = Path(__file__).resolve().parents[2]
-    result = subprocess.run(
-        ["git", "-C", str(root), "rev-parse", "HEAD"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    value = result.stdout.strip()
-    return value if result.returncode == 0 and value else "unavailable"
-
-
-@dataclass(frozen=True)
-class PhysicalBeliefProviderManifest:
-    """Provider identity, semantic capabilities, and artifact schema versions."""
-
-    provider_name: str
-    provider_version: str
-    provider_revision: str
-    schema_version: int = PROVIDER_CONTRACT_SCHEMA_VERSION
-    capabilities: tuple[str, ...] = CAUSAL4D_PROVIDER_CAPABILITIES
-    artifact_schema_versions: Mapping[str, int] = field(
-        default_factory=lambda: dict(ARTIFACT_SCHEMA_VERSIONS)
-    )
-    metadata: Mapping[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not self.provider_name or not self.provider_version or not self.provider_revision:
-            raise ValueError("provider identity fields must be nonempty")
-        if self.schema_version < 1:
-            raise ValueError("schema_version must be positive")
-        capabilities = tuple(sorted(map(str, self.capabilities)))
-        if not capabilities or any(not value for value in capabilities):
-            raise ValueError("capabilities must contain nonempty names")
-        if len(set(capabilities)) != len(capabilities):
-            raise ValueError("capabilities must be unique")
-        artifact_versions = {
-            str(name): int(version)
-            for name, version in dict(self.artifact_schema_versions).items()
-        }
-        if not artifact_versions or any(
-            not name or version < 1 for name, version in artifact_versions.items()
-        ):
-            raise ValueError("artifact schema versions must be positive and named")
-        object.__setattr__(self, "capabilities", capabilities)
-        object.__setattr__(
-            self,
-            "artifact_schema_versions",
-            dict(sorted(artifact_versions.items())),
-        )
-        object.__setattr__(
-            self,
-            "metadata",
-            _validated_json_mapping(self.metadata, name="metadata"),
-        )
-
-    @property
-    def manifest_id(self) -> str:
-        descriptor = {
-            "provider_name": self.provider_name,
-            "provider_version": self.provider_version,
-            "provider_revision": self.provider_revision,
-            "schema_version": self.schema_version,
-            "capabilities": list(self.capabilities),
-            "artifact_schema_versions": dict(self.artifact_schema_versions),
-            "metadata": dict(self.metadata),
-        }
-        return hashlib.sha256(
-            json.dumps(
-                descriptor,
-                sort_keys=True,
-                separators=(",", ":"),
-                allow_nan=False,
-            ).encode("utf-8")
-        ).hexdigest()
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "manifest_id": self.manifest_id,
-            "provider_name": self.provider_name,
-            "provider_version": self.provider_version,
-            "provider_revision": self.provider_revision,
-            "schema_version": self.schema_version,
-            "capabilities": list(self.capabilities),
-            "artifact_schema_versions": dict(self.artifact_schema_versions),
-            "metadata": dict(self.metadata),
-        }
-
-
-def provider_manifest(
+def causal4d_provider_manifest(
+    *,
     provider_revision: str | None = None,
-) -> PhysicalBeliefProviderManifest:
-    """Return the installed provider's content-addressed semantic manifest."""
+) -> dict[str, object]:
+    """Return the versioned provider descriptor consumed by Causal4D.
 
-    revision = _repository_revision() if provider_revision is None else str(provider_revision)
-    if not revision:
-        raise ValueError("provider_revision must be nonempty")
-    return PhysicalBeliefProviderManifest(
-        provider_name=PROVIDER_NAME,
-        provider_version=_installed_version(),
-        provider_revision=revision,
-        metadata={
-            "provider_api_version": PROVIDER_API_VERSION,
-            "provider_module": __name__,
-            "implementation_imports_are_lazy": True,
-        },
+    ``provider_revision`` should be the exact Git revision for frozen experiments.
+    Normal editable or package-index installs may omit it; their compatibility is
+    decided from ``provider_version`` and the API/schema versions instead.
+    """
+
+    revision = (
+        provider_revision
+        or os.environ.get("BAYESIAN_PHYSTWIN_REVISION")
+        or _installed_provider_revision()
+        or "unversioned-install"
     )
-
-
-@dataclass(frozen=True)
-class ReplayTrajectory:
-    """Validated position and velocity trajectory returned by a replay provider."""
-
-    position_m: np.ndarray
-    velocity_mps: np.ndarray
-    metadata: Mapping[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        position = np.asarray(self.position_m, dtype=np.float64).copy()
-        velocity = np.asarray(self.velocity_mps, dtype=np.float64).copy()
-        if position.ndim != 3 or position.shape[-1] != 3 or len(position) < 1:
-            raise ValueError("position_m must have nonempty shape (T, N, 3)")
-        if velocity.shape != position.shape:
-            raise ValueError("velocity_mps must match position_m")
-        if not np.all(np.isfinite(position)) or not np.all(np.isfinite(velocity)):
-            raise ValueError("replay trajectory arrays must be finite")
-        position.setflags(write=False)
-        velocity.setflags(write=False)
-        object.__setattr__(self, "position_m", position)
-        object.__setattr__(self, "velocity_mps", velocity)
-        object.__setattr__(
-            self,
-            "metadata",
-            _validated_json_mapping(self.metadata, name="metadata"),
-        )
-
-    @property
-    def frame_count(self) -> int:
-        return int(self.position_m.shape[0])
-
-    @property
-    def node_count(self) -> int:
-        return int(self.position_m.shape[1])
+    return {
+        "provider_name": "bayesian-phystwin",
+        "provider_version": _installed_provider_version(),
+        "provider_revision": revision,
+        "schema_version": CAUSAL4D_PROVIDER_API_VERSION,
+        "capabilities": list(CAUSAL4D_PROVIDER_CAPABILITIES),
+        "artifact_schema_versions": dict(CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS),
+        "metadata": {
+            "provider_api": "bayesian_phystwin.causal4d_provider_v1",
+            "provider_api_version": CAUSAL4D_PROVIDER_API_VERSION,
+        },
+    }
 
 
 @runtime_checkable
 class PhysTwinReplayProvider(Protocol):
-    """Execution boundary used by Causal4D instead of a simulator implementation."""
+    """Execution boundary required by Causal4D's official PhysTwin backend."""
 
     @property
-    def manifest(self) -> PhysicalBeliefProviderManifest:
-        """Return the semantic provider manifest for this implementation."""
+    def device(self) -> str:
+        """Torch device used by the provider."""
 
-    def replay_initial(self, *, frame_count: int) -> ReplayTrajectory:
-        """Replay the physical twin from its registered initial state."""
+    def set_group_log_scales(self, values: np.ndarray) -> None:
+        """Set the grouped object/controller spring log-scales."""
+
+    def set_controller_points(self, values: np.ndarray) -> None:
+        """Replace the controller trajectory used by subsequent replays."""
+
+    def replay_initial(self, *, frame_count: int) -> tuple[np.ndarray, np.ndarray]:
+        """Replay from the released initial state and return position/velocity histories."""
 
     def replay_restart(
         self,
@@ -386,35 +116,356 @@ class PhysTwinReplayProvider(Protocol):
         *,
         start_frame: int,
         stop_frame: int,
-    ) -> ReplayTrajectory:
-        """Replay from an explicit branch-time state over a half-open frame range."""
+    ) -> np.ndarray:
+        """Replay from an explicit endpoint state and return future positions."""
+
+    def close(self) -> None:
+        """Release simulator and accelerator resources."""
 
 
-def __getattr__(name: str) -> Any:
-    target = _ALIAS_TARGETS.get(name)
-    if target is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    module_name, attribute = target
-    module = import_module(module_name, package=__package__)
-    value = getattr(module, attribute)
-    globals()[name] = value
-    return value
+class OfficialPhysTwinReplayProvider:
+    """Adapter around the released Warp simulator implementing the public protocol."""
+
+    def __init__(self, simulator: Any, torch: Any, wp: Any, *, device: str) -> None:
+        self._simulator = simulator
+        self._torch = torch
+        self._wp = wp
+        self._device = str(device)
+        self._closed = False
+
+    @property
+    def device(self) -> str:
+        return self._device
+
+    def _require_open(self) -> None:
+        if self._closed:
+            raise RuntimeError("PhysTwin replay provider is closed")
+
+    def set_group_log_scales(self, values: np.ndarray) -> None:
+        self._require_open()
+        array = np.asarray(values, dtype=np.float32)
+        target = self._simulator.group_log_scale_tensor
+        expected = tuple(int(value) for value in target.shape)
+        if array.shape != expected:
+            raise ValueError(f"group log-scales must have shape {expected}")
+        if not np.all(np.isfinite(array)):
+            raise ValueError("group log-scales must be finite")
+        with self._torch.no_grad():
+            target.copy_(
+                self._torch.as_tensor(
+                    array,
+                    dtype=self._torch.float32,
+                    device=self._device,
+                )
+            )
+        self._wp.synchronize()
+
+    def set_controller_points(self, values: np.ndarray) -> None:
+        self._require_open()
+        array = np.asarray(values, dtype=np.float32)
+        current = self._simulator.controller_points
+        expected = tuple(int(value) for value in current.shape)
+        if array.shape != expected:
+            raise ValueError(f"controller points must have shape {expected}")
+        if not np.all(np.isfinite(array)):
+            raise ValueError("controller points must be finite")
+        self._simulator.controller_points = self._torch.as_tensor(
+            array,
+            dtype=self._torch.float32,
+            device=self._device,
+        ).contiguous()
+        self._wp.synchronize()
+
+    def replay_initial(self, *, frame_count: int) -> tuple[np.ndarray, np.ndarray]:
+        self._require_open()
+        if frame_count < 1:
+            raise ValueError("frame_count must be positive")
+        positions, velocities = _rollout_initial(
+            self._simulator,
+            self._wp,
+            frame_count=frame_count,
+        )
+        return np.asarray(positions), np.asarray(velocities)
+
+    def replay_restart(
+        self,
+        position_m: np.ndarray,
+        velocity_mps: np.ndarray,
+        *,
+        start_frame: int,
+        stop_frame: int,
+    ) -> np.ndarray:
+        self._require_open()
+        position = np.asarray(position_m, dtype=np.float32)
+        velocity = np.asarray(velocity_mps, dtype=np.float32)
+        if position.ndim != 2 or position.shape[1] != 3 or velocity.shape != position.shape:
+            raise ValueError("restart position and velocity must have shape (N, 3)")
+        if not np.all(np.isfinite(position)) or not np.all(np.isfinite(velocity)):
+            raise ValueError("restart state must be finite")
+        if not 0 <= start_frame < stop_frame:
+            raise ValueError("restart frame interval must be nonempty")
+        return np.asarray(
+            rollout_restart(
+                self._simulator,
+                self._torch,
+                self._wp,
+                position,
+                velocity,
+                start_frame=start_frame,
+                stop_frame=stop_frame,
+                device=self._device,
+            )
+        )
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        self._simulator = None
+        gc.collect()
+        cuda = getattr(self._torch, "cuda", None)
+        if cuda is not None and hasattr(cuda, "empty_cache"):
+            cuda.empty_cache()
+
+    def __enter__(self) -> "OfficialPhysTwinReplayProvider":
+        self._require_open()
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+        self.close()
 
 
-def __dir__() -> list[str]:
-    return sorted(set(globals()) | set(_ALIAS_TARGETS))
+def create_official_replay_provider(
+    official_repo: str | Path,
+    data: Mapping[str, object],
+    optimal: Mapping[str, object],
+    checkpoint_path: str | Path,
+    graph: Any,
+    *,
+    num_surface_points: int,
+    original_count: int,
+    dt: float,
+    num_substeps: int,
+    self_collision: bool,
+    deterministic_spring_forces: bool = False,
+    spring_parameterization: str = "dense",
+    device: str,
+) -> OfficialPhysTwinReplayProvider:
+    """Construct the official replay adapter without exposing simulator internals."""
+
+    simulator, torch, wp, _ = initialize_simulator(
+        official_repo,
+        dict(data),
+        dict(optimal),
+        checkpoint_path,
+        graph,
+        num_surface_points=num_surface_points,
+        original_count=original_count,
+        dt=dt,
+        num_substeps=num_substeps,
+        self_collision=self_collision,
+        deterministic_spring_forces=deterministic_spring_forces,
+        spring_parameterization=spring_parameterization,
+        device=device,
+    )
+    return OfficialPhysTwinReplayProvider(simulator, torch, wp, device=device)
+
+
+def _delegate(module: str, name: str, *args: Any, **kwargs: Any) -> Any:
+    function = getattr(import_module(f"bayesian_phystwin.{module}"), name)
+    return function(*args, **kwargs)
+
+
+# Artifact and geometry primitives.
+def load_pickle(path: str | Path) -> Any:
+    return _delegate("phystwin_residual_dynamics", "_load_pickle", path)
+
+
+def sha256_file(path: str | Path) -> str:
+    return str(_delegate("phystwin_residual_dynamics", "_sha256", path))
+
+
+def target_validity(visible: np.ndarray, motion_valid: np.ndarray) -> np.ndarray:
+    return np.asarray(
+        _delegate("phystwin_residual_dynamics", "_target_validity", visible, motion_valid),
+        dtype=bool,
+    )
+
+
+def build_lift_map(
+    initial_vertices: np.ndarray,
+    original_count: int,
+    neighbors: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    indices, weights = _delegate(
+        "phystwin_residual_dynamics",
+        "_lift_map",
+        initial_vertices,
+        original_count,
+        neighbors,
+    )
+    return np.asarray(indices, dtype=np.int64), np.asarray(weights, dtype=float)
+
+
+def lift_residual(
+    tracked_residual: np.ndarray,
+    state_count: int,
+    indices: np.ndarray,
+    weights: np.ndarray,
+    *,
+    maximum_norm: float,
+) -> np.ndarray:
+    return np.asarray(
+        _delegate(
+            "phystwin_residual_dynamics",
+            "_lift_residual",
+            tracked_residual,
+            state_count,
+            indices,
+            weights,
+            maximum_norm=maximum_norm,
+        )
+    )
+
+
+# Publicly named compatibility operations for advanced Causal4D diagnostics.
+def chamfer_by_frame(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_additional_confirmation", "_chamfer_by_frame", *args, **kwargs)
+
+
+def lock_protocol(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_confirmatory", "_lock_protocol", *args, **kwargs)
+
+
+def git_commit(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_git_commit", *args, **kwargs)
+
+
+def initialize_simulator(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_initialize_simulator", *args, **kwargs)
+
+
+def metric_summary(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_metric_summary", *args, **kwargs)
+
+
+def released_self_collision_for_case(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_state_injection",
+        "_released_self_collision_for_case",
+        *args,
+        **kwargs,
+    )
+
+
+def _rollout_initial(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_rollout_initial", *args, **kwargs)
+
+
+def rollout_restart(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_rollout_restart", *args, **kwargs)
+
+
+def simulator_runtime(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_simulator_runtime", *args, **kwargs)
+
+
+def state_numpy(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_state_numpy", *args, **kwargs)
+
+
+def load_official_spring_mass_module(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "_phystwin_warp_backend",
+        "load_official_spring_mass_module",
+        *args,
+        **kwargs,
+    )
+
+
+def make_reliability_simulator_class(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "_phystwin_warp_backend",
+        "make_reliability_simulator_class",
+        *args,
+        **kwargs,
+    )
+
+
+def measurement_target_audit(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "deform360_selective_virtual_sensing_evaluation",
+        "_measurement_target_audit",
+        *args,
+        **kwargs,
+    )
+
+
+def attachment_support_nodes(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic", "_attachment_support_nodes", *args, **kwargs
+    )
+
+
+def far_graph_observation_error(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic",
+        "_far_graph_observation_error",
+        *args,
+        **kwargs,
+    )
+
+
+def graph_distance(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_structural_diagnostic", "_graph_distance", *args, **kwargs)
+
+
+def horizon_summary(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_structural_diagnostic", "_horizon_summary", *args, **kwargs)
+
+
+def object_rest_lengths(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic", "_object_rest_lengths", *args, **kwargs
+    )
+
+
+def set_simulator_arrays(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic", "_set_simulator_arrays", *args, **kwargs
+    )
 
 
 __all__ = [
-    "ARTIFACT_SCHEMA_VERSIONS",
-    "BASE_CAUSAL4D_PROVIDER_CAPABILITIES",
+    "CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS",
+    "CAUSAL4D_PROVIDER_API_VERSION",
     "CAUSAL4D_PROVIDER_CAPABILITIES",
-    "PROVIDER_API_VERSION",
-    "PROVIDER_CONTRACT_SCHEMA_VERSION",
-    "PROVIDER_NAME",
-    "PhysicalBeliefProviderManifest",
+    "CAUSAL4D_PROVIDER_PACKAGE_VERSION",
+    "OfficialPhysTwinReplayProvider",
     "PhysTwinReplayProvider",
-    "ReplayTrajectory",
-    "provider_manifest",
-    *_ALIAS_TARGETS,
+    "attachment_support_nodes",
+    "build_lift_map",
+    "causal4d_provider_manifest",
+    "chamfer_by_frame",
+    "create_official_replay_provider",
+    "far_graph_observation_error",
+    "git_commit",
+    "graph_distance",
+    "horizon_summary",
+    "initialize_simulator",
+    "lift_residual",
+    "load_official_spring_mass_module",
+    "load_pickle",
+    "lock_protocol",
+    "make_reliability_simulator_class",
+    "measurement_target_audit",
+    "metric_summary",
+    "object_rest_lengths",
+    "released_self_collision_for_case",
+    "rollout_restart",
+    "set_simulator_arrays",
+    "sha256_file",
+    "simulator_runtime",
+    "state_numpy",
+    "target_validity",
 ]
