@@ -34,6 +34,21 @@ _ROUTES: Final[dict[Route, tuple[str, str, str]]] = {
         "main",
         "summarize matched guarded prospective evidence",
     ),
+    ("experiment", "list"): (
+        "bayesian_phystwin.cli.experiment",
+        "list_main",
+        "list installed research experiment commands",
+    ),
+    ("experiment", "describe"): (
+        "bayesian_phystwin.cli.experiment",
+        "describe_main",
+        "describe one experiment without importing it",
+    ),
+    ("experiment", "run"): (
+        "bayesian_phystwin.cli.experiment",
+        "run_main",
+        "run an experiment through its compatibility entry point",
+    ),
     ("run", "manifest"): (
         "bayesian_phystwin.cli.run_manifest",
         "main",
@@ -58,7 +73,9 @@ def _render_help(prefix: Route = ()) -> str:
     children = _children(prefix)
     lines = [f"usage: {command} <command> [arguments]", ""]
     if not prefix:
-        lines.append("Grouped access to stable Bayesian-PhysTwin commands.")
+        lines.append(
+            "Grouped access to stable Bayesian-PhysTwin commands and experiments."
+        )
         lines.append("")
     lines.append("commands:")
     for child in children:
@@ -69,7 +86,7 @@ def _render_help(prefix: Route = ()) -> str:
     lines.extend(
         [
             "",
-            "Legacy bpt-* entry points remain available for compatibility.",
+            "Legacy bpt-* entry points remain available for frozen compatibility.",
         ]
     )
     return "\n".join(lines) + "\n"
