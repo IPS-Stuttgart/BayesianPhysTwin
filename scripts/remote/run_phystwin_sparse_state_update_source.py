@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib
 import json
 import os
 import pickle
@@ -59,6 +60,12 @@ from bayesian_phystwin.propagated_state_correction import (  # noqa: E402
 )
 
 
+_NUMPY_PICKLE_MODULE_ALIASES = {
+    "numpy._core.multiarray": "numpy.core.multiarray",
+    "numpy._core.numeric": "numpy.core.numeric",
+}
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
@@ -82,8 +89,18 @@ def _array_sha256(value: np.ndarray) -> str:
 
 
 def _load_pickle(path: str | Path) -> Any:
+    class NumpyCompatibilityUnpickler(pickle.Unpickler):
+        def find_class(self, module: str, name: str) -> Any:
+            compatible = _NUMPY_PICKLE_MODULE_ALIASES.get(module)
+            if compatible is not None:
+                try:
+                    importlib.import_module(module)
+                except ModuleNotFoundError:
+                    module = compatible
+            return super().find_class(module, name)
+
     with Path(path).open("rb") as handle:
-        return pickle.load(handle)
+        return NumpyCompatibilityUnpickler(handle).load()
 
 
 def _git_commit(path: str | Path) -> str | None:
