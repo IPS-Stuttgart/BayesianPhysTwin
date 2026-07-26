@@ -11,7 +11,7 @@ from tools.check_changed_semantic_coverage import (
     coverage_failures,
     parse_added_lines,
 )
-from tools.check_ruff_baseline import RuffDiagnostic, check_ruff_baseline
+from tools.check_ruff_baseline import RuffDiagnostic, check_ruff_regression
 
 
 def _git(repository: Path, *arguments: str) -> str:
@@ -174,64 +174,83 @@ def test_changed_semantic_coverage_rejects_an_uncovered_new_branch(
         )
 
 
-def _write_ruff_baseline(path: Path, *, count: int = 1) -> None:
-    path.write_text(
-        json.dumps(
-            {
-                "schema_version": 1,
-                "diagnostics": {"src/example.py": {"F401": count}},
-            }
-        )
-    )
-
-
-def test_ruff_baseline_accepts_existing_or_removed_diagnostics(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    baseline = tmp_path / "baseline.json"
-    _write_ruff_baseline(baseline, count=2)
-    diagnostics = [
+def _ruff_diagnostics(repository_root: Path, count: int) -> list[RuffDiagnostic]:
+    return [
         RuffDiagnostic(
-            filename=str(tmp_path / "src/example.py"),
+            filename=str(repository_root / "src/example.py"),
             code="F401",
             message="unused import",
         )
+        for _ in range(count)
     ]
-    monkeypatch.setattr(
-        ruff_baseline_module,
-        "_run_ruff",
-        lambda repository_root, paths: diagnostics,
-    )
-
-    report = tmp_path / "report.json"
-    assert (
-        check_ruff_baseline(
-            tmp_path,
-            baseline,
-            ("src",),
-            report_path=report,
-        )
-        == 0
-    )
-    assert json.loads(report.read_text()) == diagnostics
 
 
-def test_ruff_baseline_rejects_new_diagnostic_counts(
+def _ruff_repository(tmp_path: Path) -> tuple[Path, str, str]:
+    repository = _repository(tmp_path)
+    source = repository / "src/example.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("BASE = True\n")
+    base = _commit(repository, "base")
+    source.write_text("HEAD = True\n")
+    head = _commit(repository, "head")
+    return repository, base, head
+
+
+def test_repository_ruff_gate_accepts_removed_diagnostics(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    baseline = tmp_path / "baseline.json"
-    _write_ruff_baseline(baseline)
-    diagnostic = RuffDiagnostic(
-        filename=str(tmp_path / "src/example.py"),
-        code="F401",
-        message="unused import",
-    )
-    monkeypatch.setattr(
-        ruff_baseline_module,
-        "_run_ruff",
-        lambda repository_root, paths: [diagnostic, diagnostic],
-    )
+    repository, base, head = _ruff_repository(tmp_path)
 
-    assert check_ruff_baseline(tmp_path, baseline, ("src",)) == 1
+    def fake_run_ruff(
+        repository_root: Path,
+        paths: tuple[str, ...],
+    ) -> list[RuffDiagnostic]:
+        del paths
+        is_base = (repository_root / "src/example.py").read_text() == "BASE = True\n"
+        return _ruff_diagnostics(repository_root, 2 if is_base else 1)
+
+    monkeypatch.setattr(ruff_baseline_module, "_run_ruff", fake_run_ruff)
+    baseline_report = tmp_path / "baseline-report.json"
+    current_report = tmp_path / "current-report.json"
+
+    assert (
+        check_ruff_regression(
+            repository,
+            base=base,
+            head=head,
+            paths=("src",),
+            baseline_report_path=baseline_report,
+            current_report_path=current_report,
+        )
+        == 0
+    )
+    assert len(json.loads(baseline_report.read_text())) == 2
+    assert len(json.loads(current_report.read_text())) == 1
+
+
+def test_repository_ruff_gate_rejects_increased_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository, base, head = _ruff_repository(tmp_path)
+
+    def fake_run_ruff(
+        repository_root: Path,
+        paths: tuple[str, ...],
+    ) -> list[RuffDiagnostic]:
+        del paths
+        is_base = (repository_root / "src/example.py").read_text() == "BASE = True\n"
+        return _ruff_diagnostics(repository_root, 1 if is_base else 2)
+
+    monkeypatch.setattr(ruff_baseline_module, "_run_ruff", fake_run_ruff)
+
+    assert (
+        check_ruff_regression(
+            repository,
+            base=base,
+            head=head,
+            paths=("src",),
+        )
+        == 1
+    )
