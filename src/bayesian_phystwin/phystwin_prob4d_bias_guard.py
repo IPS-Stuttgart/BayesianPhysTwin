@@ -255,8 +255,9 @@ def build_guarded_prob4d_prefix_candidate(
     else:
         guarded[fit_end:] = baseline_input[fit_end:]
         decision = "exact-selected-baseline-fallback"
-    exact_fallback = accepted or np.array_equal(guarded, baseline_input)
-    if not exact_fallback:
+    selected_baseline_unchanged = np.array_equal(guarded, baseline_input)
+    bit_exact_fallback = bool(not accepted and selected_baseline_unchanged)
+    if not (accepted or bit_exact_fallback):
         raise AssertionError("Prob4D validation guard violated exact fallback")
 
     report = {
@@ -271,7 +272,7 @@ def build_guarded_prob4d_prefix_candidate(
         "candidate_available": candidate_available,
         "candidate_accepted": accepted,
         "decision": decision,
-        "bit_exact_selected_baseline_fallback": exact_fallback,
+        "bit_exact_selected_baseline_fallback": bit_exact_fallback,
         "physical_response_rms_m": float(
             np.sqrt(np.mean(np.square(response_norm[:fit_end])))
         ),
