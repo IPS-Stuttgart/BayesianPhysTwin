@@ -241,7 +241,7 @@ def _run_prediction(args: argparse.Namespace) -> dict[str, object]:
             None,
         )
     )
-    torch.cuda.reset_peak_memory_stats(device)
+    torch.cuda.reset_peak_memory_stats()
     hubconf._WEIGHTS["mvtracker_main"] = str(checkpoint)
     model = hubconf.mvtracker(pretrained=True, device=str(device))
     start = time.perf_counter()
@@ -267,7 +267,7 @@ def _run_prediction(args: argparse.Namespace) -> dict[str, object]:
         "device": str(device),
         "elapsed_seconds": elapsed,
         "peak_gpu_memory_gib": (
-            torch.cuda.max_memory_allocated(device) / (1024**3)
+            torch.cuda.max_memory_allocated() / (1024**3)
         ),
         "scene_normalization": {
             "scale": float(scale),
