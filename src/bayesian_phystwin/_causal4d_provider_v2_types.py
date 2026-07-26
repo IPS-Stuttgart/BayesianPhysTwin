@@ -5,11 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
+from typing import Any
 
 import numpy as np
 
 
-def _immutable_array(value: object, *, dtype: object, name: str) -> np.ndarray:
+def _immutable_array(value: object, *, dtype: Any, name: str) -> np.ndarray:
     array = np.asarray(value, dtype=dtype)
     if np.issubdtype(array.dtype, np.number) and not np.all(np.isfinite(array)):
         raise ValueError(f"{name} must contain finite values")
