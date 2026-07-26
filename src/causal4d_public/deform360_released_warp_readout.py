@@ -16,7 +16,7 @@ RELEASED_WARP_READOUT_PROTOCOL_ID = "deform360-released-warp-readout-source-v1"
 PINNED_AUTHOR_RELEASE_REVISION = "93280cbb466de6b9e59927c58a99fd3b9e91900e"
 PINNED_OFFICIAL_PHYSTWIN_COMMIT = "2b6630528141b9cba5a7677c8b88b2129b4a8390"
 CANONICAL_RELEASED_WARP_READOUT_CONFIG_SHA256 = (
-    "dfba4e6f840af252d8e4dc30e8d37650d3acdc6ea6f5868fea4c2992ac123f23"
+    "b7d06929079fd97ad8e2b6dbe149946851321bb6dc23a92c44cc9b2a0409e0c0"
 )
 
 
@@ -213,6 +213,7 @@ def validate_released_warp_readout_protocol(
     _require(isinstance(boundary, Mapping), "information boundary is missing")
     _require(
         boundary.get("source_only") is True
+        and boundary.get("future_contact_active_used") is False
         and boundary.get("future_object_particles_used_by_simulator") is False
         and boundary.get("future_object_particles_used_by_readout_association")
         is False

@@ -43,6 +43,10 @@ Initial velocity is estimated causally from the two last sparse states. A
 zero-velocity rerun is a declared control. No future object particle affects
 the simulator, association, candidate identity, or readout rule.
 
+The matched-origin contact state is held fixed through the rollout. In
+particular, the predictor does not consume future tactile contact transitions;
+future controller motion is the only permitted future action input.
+
 ## Dense Readout
 
 At the matched origin, each ordered released particle is projected onto the

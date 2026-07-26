@@ -83,6 +83,7 @@
       "bend_edges": "ordered centerline nodes at distance two",
       "object_rest_lengths": "computed from the matched-origin sparse graph without future frames",
       "contact_rest_lengths": "maximum of the registered source contact-offset norm and 0.001 m",
+      "contact_schedule": "hold the matched-origin contact_active state fixed through the forecast; do not use future tactile contact transitions",
       "substeps": 128,
       "initial_ground_clearance_m": 0.001,
       "dashpot_damping": 0.0,
@@ -178,6 +179,7 @@
     "information_boundary": {
       "source_only": true,
       "future_robot_actions_allowed": true,
+      "future_contact_active_used": false,
       "future_object_particles_used_by_simulator": false,
       "future_object_particles_used_by_readout_association": false,
       "future_object_particles_used_only_after_prediction_seal_for_scoring": true,
@@ -274,5 +276,5 @@
       }
     ]
   },
-  "config_sha256": "dfba4e6f840af252d8e4dc30e8d37650d3acdc6ea6f5868fea4c2992ac123f23"
+  "config_sha256": "b7d06929079fd97ad8e2b6dbe149946851321bb6dc23a92c44cc9b2a0409e0c0"
 }
