@@ -8,6 +8,10 @@ import numpy as np
 
 from .gauge_aware_belief import GaugeAwareObservationBatch
 from .observation_belief import ObservationBeliefV1
+from .prob4d_causal_lineage import (
+    is_prob4d_causal_observation_belief,
+    validate_prob4d_causal_observation_belief,
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -181,6 +185,10 @@ class ObservationBeliefGaugeAdapterResult:
                 "explicit standard-normal nuisance parameters"
             ),
             "causal_frame_stop_convention": "exclusive",
+            "prob4d_causal_lineage_validated": self.batch.metadata.get(
+                "prob4d_causal_lineage_validated",
+                False,
+            ),
         }
 
 
@@ -214,7 +222,13 @@ def build_gauge_aware_batch_from_observation_belief(
     Association probability is retained only as a diagnostic. Row reliability,
     group nominal probability, and composite-likelihood weight remain distinct.
     Anchor rows can declare their own correlation groups and latent bias model.
+    The strict Prob4D causal stream is independently checked against its metric
+    and source-lineage metadata before any innovation is formed.
     """
+
+    prob4d_lineage: dict[str, object] | None = None
+    if is_prob4d_causal_observation_belief(belief):
+        prob4d_lineage = validate_prob4d_causal_observation_belief(belief)
 
     predicted = np.asarray(physical_prediction_xyz_m, dtype=np.float64)
     _require(
@@ -270,7 +284,7 @@ def build_gauge_aware_batch_from_observation_belief(
         f"{belief.stream_id}:correlation-group-{int(group_id)}"
         for group_id in belief.correlation_group_ids
     )
-    metadata = {
+    metadata: dict[str, object] = {
         "observation_artifact_id": belief.artifact_id,
         "observation_schema": "phys4d.observation_belief",
         "observation_schema_version": 1,
@@ -284,7 +298,10 @@ def build_gauge_aware_batch_from_observation_belief(
         "innovation_formed_once": True,
         "low_rank_covariance_double_counted": False,
         "causal_frame_stop_convention": "exclusive",
+        "prob4d_causal_lineage_validated": prob4d_lineage is not None,
     }
+    if prob4d_lineage is not None:
+        metadata["prob4d_causal_lineage"] = prob4d_lineage
     batch = GaugeAwareObservationBatch(
         innovation_m=belief.mean_xyz_m - predicted,
         observation_covariance_m2=belief.local_covariance_m2,
