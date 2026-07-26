@@ -1,4 +1,4 @@
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -6,6 +6,11 @@ import numpy as np
 import pytest
 from hypothesis import given, strategies as st
 
+from bayesian_phystwin._gauge_aware_solver import _correlation_group_weights
+from bayesian_phystwin.gauge_aware_belief import (
+    GaugeAwareBeliefResult,
+    select_gauge_aware_candidate,
+)
 from bayesian_phystwin.observation_belief import (
     ObservationBeliefV1,
     load_observation_belief,
@@ -59,6 +64,32 @@ def _belief() -> ObservationBeliefV1:
     )
 
 
+def _belief_result(*, inference_admissible: bool) -> GaugeAwareBeliefResult:
+    return GaugeAwareBeliefResult(
+        inference_admissible=inference_admissible,
+        reason=("inference-admissible" if inference_admissible else "rejected"),
+        state_coefficients=np.zeros(1, dtype=np.float64),
+        gauge_delta=np.zeros(0, dtype=np.float64),
+        shared_bias_coefficients=np.zeros(0, dtype=np.float64),
+        view_bias_coefficients=np.zeros(0, dtype=np.float64),
+        anchor_bias_coefficients=np.zeros(0, dtype=np.float64),
+        posterior_covariance=np.eye(1, dtype=np.float64),
+        identifiable_state_transform=np.ones((1, 1), dtype=np.float64),
+        identifiable_fractions=np.ones(1, dtype=np.float64),
+        query_sensitivity_fractions=np.ones(1, dtype=np.float64),
+        robust_weights=np.ones(1, dtype=np.float64),
+        anchor_robust_weights=np.zeros(0, dtype=np.float64),
+        diagnostics={},
+    )
+
+
+@dataclass(frozen=True)
+class _GuardDecision:
+    selected_value: np.ndarray
+    candidate_accepted: bool
+    reason: str = "property-test"
+
+
 _NONZERO_STEPS = st.one_of(
     st.integers(min_value=-10_000, max_value=-1),
     st.integers(min_value=1, max_value=10_000),
@@ -66,6 +97,21 @@ _NONZERO_STEPS = st.one_of(
 _FINITE_COORDINATE = st.floats(
     min_value=-10.0,
     max_value=10.0,
+    allow_nan=False,
+    allow_infinity=False,
+)
+_PROBABILITY = st.one_of(
+    st.just(0.0),
+    st.floats(
+        min_value=1e-6,
+        max_value=1.0,
+        allow_nan=False,
+        allow_infinity=False,
+    ),
+)
+_POSITIVE_WEIGHT = st.floats(
+    min_value=1e-6,
+    max_value=1.0,
     allow_nan=False,
     allow_infinity=False,
 )
@@ -127,6 +173,86 @@ def test_local_covariance_must_remain_positive_definite(diagonal: float) -> None
 
     with pytest.raises(ValueError, match="positive definite"):
         replace(belief, local_covariance_m2=covariance)
+
+
+@given(
+    values=st.lists(
+        st.integers(min_value=-100_000, max_value=100_000),
+        min_size=1,
+        max_size=32,
+    ),
+    delta=st.integers(min_value=1, max_value=100),
+    rejection_route=st.sampled_from(
+        ("inference-rejected", "missing-guard", "guard-rejected")
+    ),
+)
+def test_every_rejection_route_preserves_exact_baseline_bytes(
+    values: list[int],
+    delta: int,
+    rejection_route: str,
+) -> None:
+    baseline = np.asarray(values, dtype=np.int32)
+    candidate = baseline.copy()
+    candidate[0] += delta
+
+    if rejection_route == "inference-rejected":
+        result = _belief_result(inference_admissible=False)
+        decision = _GuardDecision(
+            selected_value=candidate,
+            candidate_accepted=True,
+        )
+    elif rejection_route == "missing-guard":
+        result = _belief_result(inference_admissible=True)
+        decision = None
+    else:
+        result = _belief_result(inference_admissible=True)
+        decision = _GuardDecision(
+            selected_value=baseline,
+            candidate_accepted=False,
+        )
+
+    selection = select_gauge_aware_candidate(
+        baseline,
+        candidate,
+        result,
+        regret_decision=decision,
+    )
+
+    assert not selection.candidate_accepted
+    assert selection.selected_value.shape == baseline.shape
+    assert selection.selected_value.dtype == baseline.dtype
+    assert selection.selected_value.tobytes() == baseline.tobytes()
+
+
+@given(
+    factors=st.lists(
+        st.tuples(_PROBABILITY, _PROBABILITY, _POSITIVE_WEIGHT),
+        min_size=1,
+        max_size=32,
+    ),
+    effective_samples=st.integers(min_value=1, max_value=64),
+)
+def test_information_mass_combines_probability_terms_multiplicatively(
+    factors: list[tuple[float, float, float]],
+    effective_samples: int,
+) -> None:
+    reliability = np.asarray([value[0] for value in factors])
+    nominal_probability = np.asarray([value[1] for value in factors])
+    composite_weight = np.asarray([value[2] for value in factors])
+    group_ids = ("shared-window",) * len(factors)
+
+    actual, counts = _correlation_group_weights(
+        group_ids,
+        reliability,
+        nominal_probability,
+        composite_weight,
+        float(effective_samples),
+    )
+
+    group_scale = min(float(effective_samples), float(len(factors))) / len(factors)
+    expected = reliability * nominal_probability * composite_weight * group_scale
+    np.testing.assert_allclose(actual, expected, rtol=1e-12, atol=0.0)
+    assert counts == {"shared-window": len(factors)}
 
 
 @given(
