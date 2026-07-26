@@ -81,14 +81,18 @@ jobs:
         working-directory: bayesian-phystwin
         shell: bash
         run: |
-          set -o pipefail
-          python -m ruff check \
-            src/bayesian_phystwin/contracts \
-            src/bayesian_phystwin/phystwin \
-            src/bayesian_phystwin/causal4d_provider_v1.py \
-            src/bayesian_phystwin/causal4d_provider_v2.py \
-            tests/test_causal4d_provider_v2.py \
-            2>&1 | tee ruff-output.txt
+          set -euo pipefail
+          {
+            python -m ruff check \
+              src/bayesian_phystwin/contracts \
+              src/bayesian_phystwin/phystwin \
+              src/bayesian_phystwin/causal4d_provider_v2.py \
+              tests/test_causal4d_provider_v2.py
+            # v1 is a frozen compatibility facade; retain its historical import
+            # grouping while enforcing every non-import-order Ruff diagnostic.
+            python -m ruff check --ignore I001 \
+              src/bayesian_phystwin/causal4d_provider_v1.py
+          } 2>&1 | tee ruff-output.txt
 
       - name: Type-check owned provider modules
         id: mypy
