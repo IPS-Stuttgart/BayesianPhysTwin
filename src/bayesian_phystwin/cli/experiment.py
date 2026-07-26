@@ -7,13 +7,14 @@ import json
 from collections.abc import Sequence
 
 from bayesian_phystwin.experiment_registry import (
+    ExperimentSpec,
     list_experiments,
     resolve_experiment,
     run_experiment,
 )
 
 
-def _print_specs_json(specs: Sequence[object]) -> None:
+def _print_specs_json(specs: Sequence[ExperimentSpec]) -> None:
     payload = [spec.as_dict() for spec in specs]
     print(json.dumps(payload, indent=2, sort_keys=True))
 
