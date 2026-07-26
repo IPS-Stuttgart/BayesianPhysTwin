@@ -81,6 +81,28 @@ default shared observation bias and triggers exact fallback. Independent
 anchors or query-relevant state modes outside the nuisance subspace can make a
 state update identifiable.
 
+## Strict Prob4D causal stream
+
+An artifact whose repository and stream identify
+`FlorianPfaff/Prob4D` and `prob4d:causal-overlap-window-points` receives an
+additional provider-independent admission check before the physical innovation
+is formed. Bayesian-PhysTwin verifies that:
+
+- the source revision is exact rather than `unknown`;
+- the seven gauge factor names and factor-group/window mapping are unchanged;
+- coordinates are metric and the declared world frame is nonempty;
+- a fixed external metric anchor is bound to the first selected payload;
+- the causal-lineage cutoff equals the descriptor cutoff;
+- no future prediction payload was opened;
+- the source product is independently decoded overlap windows;
+- every selected window is in descriptor order, has valid source bounds before
+  the cutoff, and contains all rows assigned to it; and
+- the lineage source digest equals the descriptor source digest.
+
+The validation result is copied into the gauge-aware batch metadata. A generic
+ObservationBelief from another feeder remains governed by the neutral schema;
+provider-specific claims are never inferred from its repository name alone.
+
 ## Commands
 
 Validate an artifact:
