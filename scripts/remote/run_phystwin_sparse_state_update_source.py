@@ -159,6 +159,13 @@ def _verify_implementation(protocol: dict[str, Any]) -> None:
         _sha256(module) == implementation["state_update_module_sha256"],
         "state-update module changed",
     )
+    propagated = (
+        REPO_ROOT / "src" / "bayesian_phystwin" / "propagated_state_correction.py"
+    )
+    _require(
+        _sha256(propagated) == implementation["propagated_state_module_sha256"],
+        "propagated-state module changed",
+    )
 
 
 def _verify_official_repo(protocol: dict[str, Any]) -> Path:
