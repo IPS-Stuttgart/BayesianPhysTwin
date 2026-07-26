@@ -83,6 +83,28 @@ the same namespace and excludes matches.
 This permits independent held-cohort ownership without granting this process
 access to held outcomes.
 
+The held-v8 exclusion is additionally backed by a committed-source history
+audit. It covers all revisions that changed the production authorization and
+source-preparation paths across the published v8 through v8.3 lineage. The
+audit accessed neither the campaign root nor target, query, score, barrier, or
+outcome artifacts. Its 23 case identities reduce to seven physical-object
+hashes, all already subsumed by the Prob4D exclusion.
+
+## Frozen staging queue
+
+The first source queue is
+`configs/sota/deform360_fresh_source_staging_queue_v1.json`, internal SHA-256
+`f80fed80ca2b9f1857539834bd92c6acb1b45a88eefbcae16e35cddaf9185d0e`.
+It binds the public catalog, metadata preflight, all known independent
+exclusions, and 18 episode-zero candidates before candidate media or processed
+geometry is inspected.
+
+The queue contains five filament, seven sheet, and six volumetric morphology
+strata. These labels are predeclared from public identity only and are used
+solely for deterministic balance. If fewer than 12 candidates pass source
+admission, the run stops and records every rejection. Any reserve candidates
+require a new immutable queue locked before their payloads are inspected.
+
 ## Deterministic cohort rule
 
 The lock:
@@ -144,8 +166,7 @@ bpt-prepare-deform360-fresh-source lock \
   --parity-contract parity-contract.json
 ```
 
-The next operational step is to run admission over a source-only candidate
-pool and obtain exclusion manifests from every independent evaluation owner.
+The next operational step is to stage and admit the frozen source-only queue.
 No outcome-opening command belongs in this package.
 
 ## Real source-only smoke

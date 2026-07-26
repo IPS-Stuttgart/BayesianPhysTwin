@@ -23,6 +23,14 @@
       "object_count": 65,
       "owner": "prob4d-deform360-studies-owner-v1",
       "scope": "Prob4D opened, reserved, selected, or technically dispositioned objects"
+    },
+    {
+      "artifact": "exclusions/held-v8-source-authorization-history.exclusion.json",
+      "exclusion_sha256": "562640ce93bcb6c230dce8c684888e2895cb31e6a6f06b8e52858c263e667635",
+      "file_sha256": "cb4d01090a8e96092e5da36dc1b94b4818d272845c690601aa46395d80edb73d",
+      "object_count": 7,
+      "owner": "deform360-held-v8-source-authorization-history-v1",
+      "scope": "held-v8 published source-authorization history"
     }
   ],
   "artifact_kind": "Deform360ProvisionalPublicSourcePool",
@@ -32,8 +40,11 @@
     "excluded_public_object_count": 82,
     "pairwise_overlap_counts": {
       "molmomotion_field__prob4d": 0,
+      "molmomotion_field__held_v8": 0,
+      "repository_results__held_v8": 6,
       "repository_results__molmomotion_field": 0,
-      "repository_results__prob4d": 42
+      "repository_results__prob4d": 42,
+      "prob4d__held_v8": 7
     },
     "union_object_hash_count": 82
   },
@@ -477,12 +488,9 @@
       "oid": "9d1fd7ee2d1b20b832ce79ffea7b73230c57eb71"
     }
   ],
-  "pool_sha256": "4d354cbb84cb535adf4b994c437cc5f1d5a90226dfd13a7140b1ef8c358958e7",
+  "pool_sha256": "42eb322303c48d88c9d5a1c0285f4a90218ced3fc84dfc77661e554d6ea669a9",
   "remaining_public_object_count": 108,
-  "required_before_download_selection": [
-    "held-v8 hash-only exclusion manifest",
-    "any other externally managed Deform360 exclusion manifest"
-  ],
+  "required_before_download_selection": [],
   "schema_version": 1,
-  "status": "provisional_pending_independent_exclusions"
+  "status": "ready_for_source_staging"
 }

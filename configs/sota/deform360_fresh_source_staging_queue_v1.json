@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshSourceStagingQueue",
+  "protocol_id": "deform360-fresh-object-pairwise-belief-v1",
+  "status": "source_only_locked_before_payload",
+  "frozen_method": {
+    "commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
+    "arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique",
+    "changes_after_open_development": "none"
+  },
+  "source_lock": {
+    "implementation_commit": "ee9c93edcef8a7ac7631f12c4c201977793f7cde",
+    "config_sha256": "fc8a68bd769a7b71d570e4c6879ea186b3ff4453457d29e4dc141a462a0038b7"
+  },
+  "input_bindings": {
+    "public_catalog": {
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/public_object_catalog_2026-07-26.json",
+      "file_sha256": "88e9f733fc8e5c24e281e3bb81fb72914cd3ba0f160c7193085594a41989e74c",
+      "object_count": 190
+    },
+    "source_pool": {
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/provisional_public_source_pool.json",
+      "pool_sha256": "42eb322303c48d88c9d5a1c0285f4a90218ced3fc84dfc77661e554d6ea669a9",
+      "file_sha256": "d08a516822317fca57c2f40ca732ea55de23a5e3bacb53620f57189a16d8f1bc",
+      "object_count": 108
+    },
+    "metadata_preflight": {
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/provisional_metadata_admission.json",
+      "report_sha256": "6483265ff4a7eebc9a9b97afc44c9da43e22c3a2717f263207f2a4934768348f",
+      "file_sha256": "ded6cc360ba33f20789208ce5dee522bb1e83da1c697dc50cfda6c0a40df1af9",
+      "accepted_object_count": 107,
+      "rejected_object_count": 1
+    },
+    "exclusions": [
+      {
+        "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/repository-results.exclusion.json",
+        "exclusion_sha256": "fe62c0f3284c078ecc44e9c1fce28fecbd17223a29bf2a95762efc5e85b0fcd2",
+        "file_sha256": "522a8ef13a9bbb7eb9091f1d605698b1602ec3b2a9aa2dce7dbccae5afe65429"
+      },
+      {
+        "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/molmomotion-field-adaptive-confirmation.exclusion.json",
+        "exclusion_sha256": "18054955f5d8effb69eebc58aca2b3783e4e1fd0aa604f87bc2611f1f19a967c",
+        "file_sha256": "d25cc3044080459cef47851d292410def8a592aa95478dabeb1db9fa513e925a"
+      },
+      {
+        "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/prob4d-deform360-studies.exclusion.json",
+        "exclusion_sha256": "181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff",
+        "file_sha256": "4ee33074944daa86d036c1486e2ff6cefd5db7cc13dbe798d766df4c81e18e44"
+      },
+      {
+        "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/held-v8-source-authorization-history.exclusion.json",
+        "exclusion_sha256": "562640ce93bcb6c230dce8c684888e2895cb31e6a6f06b8e52858c263e667635",
+        "file_sha256": "cb4d01090a8e96092e5da36dc1b94b4818d272845c690601aa46395d80edb73d"
+      }
+    ]
+  },
+  "queue_contract": {
+    "target_cohort_size": 12,
+    "staged_candidate_count": 18,
+    "candidate_episode": 0,
+    "category_assignment": "predeclared morphology stratum from public object identity only; used for balancing, not treated as an outcome label",
+    "admission_order": "queue_rank",
+    "cohort_selection_after_admission": "lowest admitted episode per non-excluded physical object, then deterministic category-sorted round robin and object-ID ordering",
+    "implicit_replacement": false,
+    "insufficient_admissions": "stop, publish every rejection, and lock a separately versioned reserve queue before inspecting any additional payload",
+    "new_external_exclusion": "apply before cohort lock; do not substitute another candidate after lock"
+  },
+  "candidates": [
+    {
+      "queue_rank": 1,
+      "object_id": "006-fur",
+      "catalog_oid": "2deba45f05ae1271d4698ebc1ec37fdd4a1ad7d7",
+      "episode_id": 0,
+      "category": "filament"
+    },
+    {
+      "queue_rank": 2,
+      "object_id": "012-hat-cloth",
+      "catalog_oid": "5839a0c3244d08153738da7ea79ac308005b4327",
+      "episode_id": 0,
+      "category": "sheet"
+    },
+    {
+      "queue_rank": 3,
+      "object_id": "047-rectangle-sponge",
+      "catalog_oid": "6f61536597186f8d590e5104d64b2bdf6eeadcfb",
+      "episode_id": 0,
+      "category": "volumetric"
+    },
+    {
+      "queue_rank": 4,
+      "object_id": "007-feather",
+      "catalog_oid": "64bfd2aaafd57c2ca2ea2cf48c970fd2c1b0de7e",
+      "episode_id": 0,
+      "category": "filament"
+    },
+    {
+      "queue_rank": 5,
+      "object_id": "013-glove-cloth",
+      "catalog_oid": "3719042a43cc937cfc9ecb524ec67465b1a0a67f",
+      "episode_id": 0,
+      "category": "sheet"
+    },
+    {
+      "queue_rank": 6,
+      "object_id": "048-butter-sponge",
+      "catalog_oid": "b11ca91b553c9996608b0d72ab97cee064b16467",
+      "episode_id": 0,
+      "category": "volumetric"
+    },
+    {
+      "queue_rank": 7,
+      "object_id": "104-alloy",
+      "catalog_oid": "159919b16275274e1bb853bc6963bb4abaac3af1",
+      "episode_id": 0,
+      "category": "filament"
+    },
+    {
+      "queue_rank": 8,
+      "object_id": "014-glove-vinyl-cloth",
+      "catalog_oid": "b0fa15bdce4c8de38b50495eb91817d7d0aa2f7d",
+      "episode_id": 0,
+      "category": "sheet"
+    },
+    {
+      "queue_rank": 9,
+      "object_id": "050-boxing",
+      "catalog_oid": "d3a62b471e61b9b1b7321facbd145fafeb492aae",
+      "episode_id": 0,
+      "category": "volumetric"
+    },
+    {
+      "queue_rank": 10,
+      "object_id": "162-straw",
+      "catalog_oid": "7067000609e8a6479c10b6a92dacb4b04c88e780",
+      "episode_id": 0,
+      "category": "filament"
+    },
+    {
+      "queue_rank": 11,
+      "object_id": "018-trashbag-cloth",
+      "catalog_oid": "06ce1f3cd3417d9fae7d3226a3b7d3c20cc14ea1",
+      "episode_id": 0,
+      "category": "sheet"
+    },
+    {
+      "queue_rank": 12,
+      "object_id": "051-cube",
+      "catalog_oid": "c98ead71a47f21b87c06ba920bc05816e527ce16",
+      "episode_id": 0,
+      "category": "volumetric"
+    },
+    {
+      "queue_rank": 13,
+      "object_id": "200-watch",
+      "catalog_oid": "9d1fd7ee2d1b20b832ce79ffea7b73230c57eb71",
+      "episode_id": 0,
+      "category": "filament"
+    },
+    {
+      "queue_rank": 14,
+      "object_id": "019-trashbag-plastic-cloth",
+      "catalog_oid": "7de10477cd3cea143e2d0a70ff53a9a54a73a32a",
+      "episode_id": 0,
+      "category": "sheet"
+    },
+    {
+      "queue_rank": 15,
+      "object_id": "053-squeezer",
+      "catalog_oid": "ae2634aabe575ba4cf6210c86bd8b1e2770b5782",
+      "episode_id": 0,
+      "category": "volumetric"
+    },
+    {
+      "queue_rank": 16,
+      "object_id": "020-cutting-mat-cloth",
+      "catalog_oid": "77b6dbaeb5a96915b91e32e58becbc5010f07027",
+      "episode_id": 0,
+      "category": "sheet"
+    },
+    {
+      "queue_rank": 17,
+      "object_id": "054-toothpaste",
+      "catalog_oid": "e6754a16e9d041470951415e70216e6681afecc8",
+      "episode_id": 0,
+      "category": "volumetric"
+    },
+    {
+      "queue_rank": 18,
+      "object_id": "023-cleaning-cloth",
+      "catalog_oid": "c701d5de91381a14a68a1b638d5eb80db2ef1a55",
+      "episode_id": 0,
+      "category": "sheet"
+    }
+  ],
+  "stratum_counts": {
+    "filament": 5,
+    "sheet": 7,
+    "volumetric": 6
+  },
+  "information_boundary": {
+    "candidate_identity_inputs": "public object directory identity, public metadata preflight, and predeclared morphology label only",
+    "episode_media_read_before_queue_lock": false,
+    "processed_geometry_read_before_queue_lock": false,
+    "future_object_positions_deserialized": false,
+    "outcome_or_metric_read": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false
+  },
+  "queue_sha256": "f80fed80ca2b9f1857539834bd92c6acb1b45a88eefbcae16e35cddaf9185d0e"
+}

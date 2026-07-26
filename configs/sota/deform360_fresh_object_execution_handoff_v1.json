@@ -2,7 +2,7 @@
   "schema_version": 1,
   "artifact_kind": "Deform360FreshObjectExecutionHandoff",
   "protocol_id": "deform360-fresh-object-pairwise-belief-v1",
-  "status": "awaiting_external_exclusions_and_fresh_source_pool",
+  "status": "ready_for_source_staging",
   "method": {
     "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
     "implementation_commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
@@ -56,17 +56,24 @@
       "object_only_reserved_disposition_count": 23,
       "exclusion_sha256": "181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff",
       "file_sha256": "4ee33074944daa86d036c1486e2ff6cefd5db7cc13dbe798d766df4c81e18e44"
+    },
+    {
+      "scope": "held-v8 authorization history across published v8, v8.1, v8.2, and v8.3 source revisions",
+      "artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/held-v8-source-authorization-history.exclusion.json",
+      "audit_artifact": "results/sota/deform360_fresh_source_lock_v1/exclusions/held-v8-source-authorization-history.audit.json",
+      "object_count": 7,
+      "case_identity_count": 23,
+      "source_history_revision_count": 20,
+      "exclusion_sha256": "562640ce93bcb6c230dce8c684888e2895cb31e6a6f06b8e52858c263e667635",
+      "file_sha256": "cb4d01090a8e96092e5da36dc1b94b4818d272845c690601aa46395d80edb73d",
+      "audit_sha256": "b0a824f3d07fbfdc5666357fea557954c86a1c7012695a0d3b9537db9dde7675",
+      "audit_file_sha256": "b2a0031e159ab80b791a56378c771c4dfc4c24bcd61af93fa20fab8e0a47bd1b"
     }
   ],
   "required_external_exclusions": [
     {
-      "owner_scope": "held-v8 and every associated attempt",
-      "status": "requested",
-      "target_access_permitted": false
-    },
-    {
-      "owner_scope": "any other unpublished or externally managed Deform360 cohort",
-      "status": "required_before_lock",
+      "owner_scope": "any newly disclosed unpublished or externally managed Deform360 cohort",
+      "status": "monitor_until_cohort_lock",
       "target_access_permitted": false
     }
   ],
@@ -74,18 +81,21 @@
     "public_catalog_snapshot": "results/sota/deform360_fresh_source_lock_v1/public_object_catalog_2026-07-26.json",
     "public_catalog_object_count": 190,
     "provisional_pool": "results/sota/deform360_fresh_source_lock_v1/provisional_public_source_pool.json",
-    "provisional_pool_sha256": "4d354cbb84cb535adf4b994c437cc5f1d5a90226dfd13a7140b1ef8c358958e7",
-    "provisional_pool_file_sha256": "ad08c32def6cb973c92e2e149f70e2b8dd9e66cda93596dfd746ab3d603cca65",
+    "provisional_pool_sha256": "42eb322303c48d88c9d5a1c0285f4a90218ced3fc84dfc77661e554d6ea669a9",
+    "provisional_pool_file_sha256": "d08a516822317fca57c2f40ca732ea55de23a5e3bacb53620f57189a16d8f1bc",
     "available_exclusion_union_object_count": 82,
     "provisional_count_after_available_exclusions": 108,
     "provisional_pool_is_a_cohort_lock": false,
     "metadata_preflight": "results/sota/deform360_fresh_source_lock_v1/provisional_metadata_admission.json",
-    "metadata_preflight_sha256": "7e0b751e6fc8609638e972ff3ad97dab69ff3e1a9f4050b083a5e54f88107f13",
-    "metadata_preflight_file_sha256": "e394630b7058d3453134bf939d8f1577263c41a1d001b3a013a7f6b26c6835f6",
+    "metadata_preflight_sha256": "6483265ff4a7eebc9a9b97afc44c9da43e22c3a2717f263207f2a4934768348f",
+    "metadata_preflight_file_sha256": "ded6cc360ba33f20789208ce5dee522bb1e83da1c697dc50cfda6c0a40df1af9",
     "metadata_preflight_accepted": 107,
     "metadata_preflight_rejected": 1,
     "minimum_admitted_physical_objects_before_lock": 12,
     "recommended_source_candidates_before_admission": 18,
+    "source_staging_queue": "configs/sota/deform360_fresh_source_staging_queue_v1.json",
+    "source_staging_queue_sha256": "f80fed80ca2b9f1857539834bd92c6acb1b45a88eefbcae16e35cddaf9185d0e",
+    "source_staging_queue_file_sha256": "4f31de5f2a4300916bff0b78c29796adffb60b84aad94b0d4895c1615831c372",
     "selection_rule": "lowest admitted episode per non-excluded physical object, then deterministic category-sorted round robin and object-ID ordering",
     "replacement_after_lock": false,
     "technical_failures_remain_in_denominator": true
