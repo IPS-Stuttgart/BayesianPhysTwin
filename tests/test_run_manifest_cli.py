@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from bayesian_phystwin.cli.run_manifest import main
@@ -16,6 +17,25 @@ def test_run_manifest_cli_create_and_validate(
     artifact = artifact_root / "result.json"
     artifact.write_text("{}\n", encoding="utf-8")
     manifest_path = tmp_path / "manifest.json"
+    related_path = tmp_path / "repositories.json"
+    related_path.write_text(
+        json.dumps(
+            [
+                {
+                    "repository": "Jianghanxiao/PhysTwin",
+                    "revision": "c" * 40,
+                    "dirty": False,
+                    "role": "upstream",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    runtime_path = tmp_path / "runtime.json"
+    runtime_path.write_text(
+        json.dumps({"gpu_model": "test-gpu", "container_digest": "sha256:test"}),
+        encoding="utf-8",
+    )
     monkeypatch.chdir(tmp_path)
 
     assert (
@@ -37,12 +57,31 @@ def test_run_manifest_cli_create_and_validate(
                 str(artifact_root),
                 "--output-artifact",
                 "result=result.json",
+                "--related-repositories-json",
+                str(related_path),
+                "--runtime-json",
+                str(runtime_path),
+                "--claim-id",
+                "bpt.infrastructure.run_manifest_v1",
+                "--method-freeze-id",
+                "method-v1",
+                "--protocol-id",
+                "protocol-v1",
+                "--split-id",
+                "split-v1",
+                "--baseline-id",
+                "baseline-v1",
             ]
         )
         == 0
     )
-    capsys.readouterr()
-    assert load_run_manifest(manifest_path).outputs[0].path == "result.json"
+    create_output = capsys.readouterr().out
+    assert '"evidence_fingerprint"' in create_output
+    manifest = load_run_manifest(manifest_path)
+    assert manifest.outputs[0].path == "result.json"
+    assert manifest.related_repositories[0].repository == "Jianghanxiao/PhysTwin"
+    assert manifest.runtime_environment["gpu_model"] == "test-gpu"
+    assert manifest.claim_ids == ("bpt.infrastructure.run_manifest_v1",)
 
     assert (
         main(
