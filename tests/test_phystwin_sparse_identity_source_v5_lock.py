@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_PATH = (
-    ROOT / "configs" / "sota" / "phystwin_prior_aware_sparse_identity_source_v4.json"
+    ROOT / "configs" / "sota" / "phystwin_prior_aware_sparse_identity_source_v5.json"
 )
 V1_FAILURE_PATH = (
     ROOT
@@ -28,6 +28,13 @@ V3_FAILURE_PATH = (
     / "phystwin_prior_aware_sparse_identity_source_v3"
     / "technical_failure.json"
 )
+V4_FAILURE_PATH = (
+    ROOT
+    / "results"
+    / "sota"
+    / "phystwin_prior_aware_sparse_identity_source_v4"
+    / "technical_failure.json"
+)
 
 
 def _load(path: Path) -> dict:
@@ -38,7 +45,7 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_v4_lock_binds_every_runtime_implementation_dependency() -> None:
+def test_v5_lock_binds_every_runtime_implementation_dependency() -> None:
     protocol = _load(PROTOCOL_PATH)
     implementation = protocol["implementation"]
     paths = {
@@ -54,23 +61,28 @@ def test_v4_lock_binds_every_runtime_implementation_dependency() -> None:
         "state_injection_module_sha256": (
             ROOT / "src" / "bayesian_phystwin" / "phystwin_state_injection.py"
         ),
+        "identity_split_module_sha256": (
+            ROOT / "src" / "bayesian_phystwin" / "phystwin_sparse_identity_split.py"
+        ),
     }
 
-    assert protocol["schema_version"] == 4
+    assert protocol["schema_version"] == 5
     assert protocol["protocol_id"] == (
-        "phystwin-prior-aware-sparse-identity-source-v4"
+        "phystwin-prior-aware-sparse-identity-source-v5"
     )
     for field, path in paths.items():
         assert implementation[field] == _sha256(path)
 
 
-def test_v4_lock_preserves_hidden_identity_and_exact_fallback_boundaries() -> None:
+def test_v5_lock_preserves_hidden_identity_and_exact_fallback_boundaries() -> None:
     protocol = _load(PROTOCOL_PATH)
     source_qa = protocol["source_qa"]
 
     assert set(source_qa["observed_identity_indices"]).isdisjoint(
         source_qa["hidden_identity_indices"]
     )
+    assert source_qa["observed_identity_indices"] == [3, 4, 8, 5]
+    assert source_qa["prefix_complete_candidate_indices"] == [3, 4, 5, 6, 8]
     assert protocol["state_update"]["fit_frame_count"] < (
         protocol["state_update"]["response_frame_count"]
     )
@@ -127,4 +139,21 @@ def test_v3_failure_binds_replay_parity_before_state_fit() -> None:
     assert failure["target_free_diagnosis"]["historical_source_self_collision"] is False
     assert failure["disposition"]["replacement_protocol"] == (
         "phystwin-prior-aware-sparse-identity-source-v4"
+    )
+
+
+def test_v4_failure_preserves_exact_state_carrier_before_source_redesign() -> None:
+    failure = _load(V4_FAILURE_PATH)
+
+    assert failure["registered_replay_parity"]["all_frames_vector_rmse_m"] == 0.0
+    assert failure["registered_attempt"]["state_carrier_path"] == (
+        "replay_state_carrier.npz"
+    )
+    assert failure["information_boundary"]["state_fit_started"] is False
+    assert failure["allowed_prefix_support_audit"][
+        "replacement_selection_uses_future_frames"
+    ] is False
+    assert failure["disposition"]["replacement_changes_scientific_method"] is True
+    assert failure["disposition"]["replacement_protocol"] == (
+        "phystwin-prior-aware-sparse-identity-source-v5"
     )

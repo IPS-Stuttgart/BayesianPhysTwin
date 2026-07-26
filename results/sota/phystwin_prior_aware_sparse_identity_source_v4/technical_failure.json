@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-prior-aware-sparse-identity-source-v4",
+  "protocol_sha256": "5070c62539eadaa2f8a6f8bf73a9c2e28e2c071905e90102481a542393d9573b",
+  "implementation_commit": "4684d65fbf8841dfbb31024cbf62c52413075c74",
+  "status": "source_qa_failure_after_exact_replay_before_state_fit_or_outcome_scoring",
+  "case_id": "single_lift_cloth",
+  "registered_attempt": {
+    "output_directory": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v4/run/single_lift_cloth",
+    "failure_stage": "declared_prefix_sensor_support_check",
+    "error": "ValueError: locked smoke requires all four prefix identities",
+    "replay_parity_path": "replay_parity.json",
+    "replay_parity_sha256": "2cb9e6ee66ab506f4ecc9251f1bd52ea63208039a0cd2d54de168c26e7e1513b",
+    "state_carrier_path": "replay_state_carrier.npz",
+    "state_carrier_sha256": "211fb927ec1c89d4179f375779163c145e61331303cec8082f4902e3b20b5de6",
+    "prediction_manifest_written": false,
+    "score_written": false
+  },
+  "information_boundary": {
+    "response_prefix_frames": [
+      114,
+      121
+    ],
+    "input_arrays_unpickled": true,
+    "manual_tracks_deterministically_split": true,
+    "future_manual_identity_values_used_for_fit_selection_or_diagnosis": false,
+    "future_object_observations_removed_before_simulator_initialization": true,
+    "simulator_initialized": true,
+    "state_fit_started": false,
+    "prediction_sealed": false,
+    "future_metrics_computed": false,
+    "held_v8_accessed": false
+  },
+  "registered_replay_parity": {
+    "all_frames_vector_rmse_m": 0.0,
+    "all_frames_maximum_norm_m": 0.0,
+    "prefix_endpoint_vector_rmse_m": 0.0,
+    "future_vector_rmse_m": 0.0
+  },
+  "allowed_prefix_support_audit": {
+    "v4_observed_identity_indices": [
+      0,
+      8,
+      1,
+      7
+    ],
+    "support_by_frame_and_identity": [
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        0
+      ]
+    ],
+    "fully_supported_candidate_indices": [
+      3,
+      4,
+      5,
+      6,
+      8
+    ],
+    "replacement_observed_identity_indices": [
+      3,
+      4,
+      8,
+      5
+    ],
+    "replacement_selection_uses_future_frames": false,
+    "replacement_selection_uses_future_error": false
+  },
+  "disposition": {
+    "rerun_v4": false,
+    "score_v4": false,
+    "replacement_protocol": "phystwin-prior-aware-sparse-identity-source-v5",
+    "replacement_changes_scientific_method": true,
+    "change_scope": "Observed sensors are selected by the same deterministic frame-zero FPS rule after requiring complete availability in the allowed response prefix."
+  },
+  "claim_boundary": "V4 validates exact replay and exposes a source-design failure. It is not evidence for or against the state-update estimator."
+}
