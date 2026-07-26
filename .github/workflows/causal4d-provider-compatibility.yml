@@ -43,59 +43,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  provider-quality:
-    name: Provider API quality
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Install development tools
-        run: python -m pip install -e ".[dev]"
-      - name: Lint owned provider modules
-        id: ruff
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          python -m ruff check \
-            src/bayesian_phystwin/contracts \
-            src/bayesian_phystwin/phystwin \
-            src/bayesian_phystwin/causal4d_provider_v1.py \
-            src/bayesian_phystwin/causal4d_provider_v2.py \
-            tests/test_causal4d_provider_v2.py \
-            2>&1 | tee ruff-output.txt
-      - name: Type-check owned provider modules
-        id: mypy
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          python -m mypy \
-            src/bayesian_phystwin/contracts \
-            src/bayesian_phystwin/phystwin \
-            src/bayesian_phystwin/causal4d_provider_v1.py \
-            src/bayesian_phystwin/causal4d_provider_v2.py \
-            2>&1 | tee mypy-output.txt
-      - name: Upload provider quality diagnostics
-        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
-        uses: actions/upload-artifact@v7
-        with:
-          name: provider-quality-diagnostics
-          path: |
-            ruff-output.txt
-            mypy-output.txt
-          if-no-files-found: error
-          retention-days: 3
-      - name: Fail on provider quality diagnostics
-        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
-        run: exit 1
-
   compatibility:
+    name: Provider API and Causal4D compatibility
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -126,6 +75,46 @@ jobs:
           python -m pip install -e "./bayesian-phystwin[dev,graph]" opencv-python-headless
           python -m pip install -e "./causal4d[dev]"
 
+      - name: Lint owned provider modules
+        id: ruff
+        continue-on-error: true
+        working-directory: bayesian-phystwin
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/contracts \
+            src/bayesian_phystwin/phystwin \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/causal4d_provider_v2.py \
+            tests/test_causal4d_provider_v2.py \
+            2>&1 | tee ruff-output.txt
+
+      - name: Type-check owned provider modules
+        id: mypy
+        continue-on-error: true
+        working-directory: bayesian-phystwin
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m mypy \
+            src/bayesian_phystwin/contracts \
+            src/bayesian_phystwin/phystwin \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/causal4d_provider_v2.py \
+            2>&1 | tee mypy-output.txt
+
+      - name: Upload provider quality diagnostics
+        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: provider-quality-diagnostics
+          path: |
+            bayesian-phystwin/ruff-output.txt
+            bayesian-phystwin/mypy-output.txt
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Run provider and downstream compatibility tests
         env:
           CAUSAL4D_REQUIRE_BPT_PROVIDER: "1"
@@ -145,3 +134,7 @@ jobs:
             tests+=(causal4d/tests/test_bpt_provider_integration.py)
           fi
           python -m pytest -q "${tests[@]}"
+
+      - name: Fail on provider quality diagnostics
+        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
+        run: exit 1
