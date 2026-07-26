@@ -2,9 +2,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from hypothesis import given, strategies as st
 import numpy as np
 import pytest
+from hypothesis import given, strategies as st
 
 from bayesian_phystwin._gauge_aware_solver import _correlation_group_weights
 from bayesian_phystwin.gauge_aware_belief import (
@@ -19,14 +19,11 @@ from bayesian_phystwin.observation_belief import (
 
 
 def _belief() -> ObservationBeliefV1:
-    local_covariance = (
-        np.repeat(
-            np.eye(3, dtype=np.float64)[None],
-            4,
-            axis=0,
-        )
-        * 1e-4
-    )
+    local_covariance = np.repeat(
+        np.eye(3, dtype=np.float64)[None],
+        4,
+        axis=0,
+    ) * 1e-4
     factors = np.zeros((4, 3, 2), dtype=np.float64)
     factors[:2, 0, 0] = 0.002
     factors[2:, 1, 1] = 0.003
@@ -93,6 +90,55 @@ class _GuardDecision:
     reason: str = "property-test"
 
 
+def _rotation(angles: tuple[float, float, float]) -> np.ndarray:
+    roll, pitch, yaw = angles
+    cx, sx = np.cos(roll), np.sin(roll)
+    cy, sy = np.cos(pitch), np.sin(pitch)
+    cz, sz = np.cos(yaw), np.sin(yaw)
+    rotation_x = np.asarray([[1.0, 0.0, 0.0], [0.0, cx, -sx], [0.0, sx, cx]])
+    rotation_y = np.asarray([[cy, 0.0, sy], [0.0, 1.0, 0.0], [-sy, 0.0, cy]])
+    rotation_z = np.asarray([[cz, -sz, 0.0], [sz, cz, 0.0], [0.0, 0.0, 1.0]])
+    return rotation_z @ rotation_y @ rotation_x
+
+
+def _full_covariance(belief: ObservationBeliefV1) -> np.ndarray:
+    row_count = belief.observation_count
+    covariance = np.zeros((3 * row_count, 3 * row_count), dtype=np.float64)
+    for row in range(row_count):
+        block = slice(3 * row, 3 * row + 3)
+        covariance[block, block] = belief.local_covariance_m2[row]
+    for group_id in np.unique(belief.factor_group_ids):
+        factor = np.zeros((3 * row_count, belief.factor_rank), dtype=np.float64)
+        for row in np.flatnonzero(belief.factor_group_ids == group_id):
+            factor[3 * row : 3 * row + 3] = belief.low_rank_factor_m[row]
+        covariance += factor @ factor.T
+    return covariance
+
+
+def test_full_covariance_reconstructs_each_dependence_exactly_once() -> None:
+    belief = _belief()
+    covariance = _full_covariance(belief)
+
+    for first in range(belief.observation_count):
+        first_block = slice(3 * first, 3 * first + 3)
+        for second in range(belief.observation_count):
+            second_block = slice(3 * second, 3 * second + 3)
+            expected = np.zeros((3, 3), dtype=np.float64)
+            if first == second:
+                expected += belief.local_covariance_m2[first]
+            if belief.factor_group_ids[first] == belief.factor_group_ids[second]:
+                expected += (
+                    belief.low_rank_factor_m[first]
+                    @ belief.low_rank_factor_m[second].T
+                )
+            np.testing.assert_allclose(
+                covariance[first_block, second_block],
+                expected,
+                atol=0.0,
+                rtol=0.0,
+            )
+
+
 _NONZERO_STEPS = st.one_of(
     st.integers(min_value=-10_000, max_value=-1),
     st.integers(min_value=1, max_value=10_000),
@@ -100,6 +146,12 @@ _NONZERO_STEPS = st.one_of(
 _FINITE_COORDINATE = st.floats(
     min_value=-10.0,
     max_value=10.0,
+    allow_nan=False,
+    allow_infinity=False,
+)
+_FINITE_ANGLE = st.floats(
+    min_value=-float(np.pi),
+    max_value=float(np.pi),
     allow_nan=False,
     allow_infinity=False,
 )
@@ -252,7 +304,9 @@ def test_information_mass_combines_probability_terms_multiplicatively(
         float(effective_samples),
     )
 
-    group_scale = min(float(effective_samples), float(len(factors))) / len(factors)
+    group_scale = min(float(effective_samples), float(len(factors))) / len(
+        factors
+    )
     expected = reliability * nominal_probability * composite_weight * group_scale
     np.testing.assert_allclose(actual, expected, rtol=1e-12, atol=0.0)
     assert counts == {"shared-window": len(factors)}
@@ -270,22 +324,34 @@ def test_information_mass_combines_probability_terms_multiplicatively(
         _FINITE_COORDINATE,
         _FINITE_COORDINATE,
     ),
+    angles=st.tuples(_FINITE_ANGLE, _FINITE_ANGLE, _FINITE_ANGLE),
 )
-def test_similarity_transform_preserves_covariance_contract(
+def test_similarity_transform_is_equivariant_for_full_covariance(
     scale: float,
     translation: tuple[float, float, float],
+    angles: tuple[float, float, float],
 ) -> None:
     belief = _belief()
+    rotation = _rotation(angles)
+    translation_array = np.asarray(translation)
     transformed = belief.transformed(
-        rotation=np.eye(3),
-        translation_m=np.asarray(translation),
+        rotation=rotation,
+        translation_m=translation_array,
         scale=scale,
         stream_id="world",
     )
 
+    expected_mean = scale * np.einsum("ij,nj->ni", rotation, belief.mean_xyz_m)
+    expected_mean += translation_array
+    np.testing.assert_allclose(transformed.mean_xyz_m, expected_mean, atol=1e-11)
+
+    jacobian = scale * np.kron(np.eye(belief.observation_count), rotation)
+    expected_covariance = jacobian @ _full_covariance(belief) @ jacobian.T
     np.testing.assert_allclose(
-        transformed.local_covariance_m2,
-        scale**2 * belief.local_covariance_m2,
+        _full_covariance(transformed),
+        expected_covariance,
+        atol=1e-11,
+        rtol=1e-11,
     )
     assert np.all(np.linalg.eigvalsh(transformed.local_covariance_m2) > 0.0)
     assert transformed.local_covariance_m2.flags.writeable is False
