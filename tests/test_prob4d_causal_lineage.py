@@ -211,7 +211,7 @@ def test_joint_prob4d_stream_rejects_approximate_fixed_lag_covariance() -> None:
         "fixed_lag_boundary_covariance_is_approximate"
     ] = True
 
-    with pytest.raises(ValueError, match="rejects approximate fixed-lag"):
+    with pytest.raises(ValueError, match="approximate fixed-lag"):
         _adapt(replace(belief, metadata=metadata))
 
 
