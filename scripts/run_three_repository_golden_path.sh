@@ -9,8 +9,8 @@ Usage:
 
 Requires clean Git checkouts at exact commits. Builds one wheel from each
 repository, installs only those wheels into a fresh virtual environment, copies
-the integration test outside every source tree, and runs it in Python isolated
-mode.
+the integration tests outside every source tree, and runs them in Python
+isolated mode.
 EOF
 }
 
@@ -168,9 +168,15 @@ python -m venv "${TEST_VENV}"
   pytest "${PROB4D_WHEEL}" "${BPT_WHEEL}" "${CAUSAL4D_WHEEL}"
 "${TEST_VENV}/bin/python" -m pip check
 
-cp \
-  "${BPT_BUILD_ROOT}/integration_tests/test_three_repository_golden_path.py" \
-  "${RUN_ROOT}/test_three_repository_golden_path.py"
+shopt -s nullglob
+integration_tests=(
+  "${BPT_BUILD_ROOT}"/integration_tests/test_three_repository_*.py
+)
+if (( ${#integration_tests[@]} == 0 )); then
+  echo "No three-repository integration tests were found." >&2
+  exit 1
+fi
+cp "${integration_tests[@]}" "${RUN_ROOT}/"
 
 export THREE_REPO_SOURCE_ROOTS="$({
   printf '%s' "${BPT_ROOT}"
@@ -187,4 +193,4 @@ env -u PYTHONPATH \
   PYTHONNOUSERSITE=1 \
   "${TEST_VENV}/bin/python" -I -m pytest \
   -q \
-  test_three_repository_golden_path.py
+  test_three_repository_*.py
