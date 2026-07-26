@@ -26,8 +26,6 @@ from .phystwin.geometry import build_lift_map, lift_residual, target_validity
 from .phystwin.replay import (
     _rollout_initial_trajectory,
     _rollout_restart_trajectory,
-)
-from .phystwin.replay import (
     _state_numpy as _owned_state_numpy,
 )
 
@@ -159,4 +157,236 @@ class OfficialPhysTwinReplayProvider:
         position = np.asarray(position_m, dtype=np.float32)
         velocity = np.asarray(velocity_mps, dtype=np.float32)
         if position.ndim != 2 or position.shape[1] != 3 or velocity.shape != position.shape:
-            raise ValueError(
+            raise ValueError("restart position and velocity must have shape (N, 3)")
+        if not np.all(np.isfinite(position)) or not np.all(np.isfinite(velocity)):
+            raise ValueError("restart state must be finite")
+        if not 0 <= start_frame < stop_frame:
+            raise ValueError("restart frame interval must be nonempty")
+        return np.asarray(
+            rollout_restart(
+                self._simulator,
+                self._torch,
+                self._wp,
+                position,
+                velocity,
+                start_frame=start_frame,
+                stop_frame=stop_frame,
+                device=self._device,
+            )
+        )
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        self._simulator = None
+        gc.collect()
+        cuda = getattr(self._torch, "cuda", None)
+        if cuda is not None and hasattr(cuda, "empty_cache"):
+            cuda.empty_cache()
+
+    def __enter__(self) -> OfficialPhysTwinReplayProvider:
+        self._require_open()
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+        self.close()
+
+
+def create_official_replay_provider(
+    official_repo: str | Path,
+    data: Mapping[str, object],
+    optimal: Mapping[str, object],
+    checkpoint_path: str | Path,
+    graph: Any,
+    *,
+    num_surface_points: int,
+    original_count: int,
+    dt: float,
+    num_substeps: int,
+    self_collision: bool,
+    deterministic_spring_forces: bool = False,
+    spring_parameterization: str = "dense",
+    device: str,
+) -> OfficialPhysTwinReplayProvider:
+    """Construct the official replay adapter without exposing simulator internals."""
+
+    simulator, torch, wp, _ = initialize_simulator(
+        official_repo,
+        dict(data),
+        dict(optimal),
+        checkpoint_path,
+        graph,
+        num_surface_points=num_surface_points,
+        original_count=original_count,
+        dt=dt,
+        num_substeps=num_substeps,
+        self_collision=self_collision,
+        deterministic_spring_forces=deterministic_spring_forces,
+        spring_parameterization=spring_parameterization,
+        device=device,
+    )
+    return OfficialPhysTwinReplayProvider(simulator, torch, wp, device=device)
+
+
+def _delegate(module: str, name: str, *args: Any, **kwargs: Any) -> Any:
+    function = getattr(import_module(f"bayesian_phystwin.{module}"), name)
+    return function(*args, **kwargs)
+
+
+# Legacy artifact compatibility. New code should use the hash-locked artifact API.
+def load_pickle(path: str | Path) -> Any:
+    return _delegate("phystwin_residual_dynamics", "_load_pickle", path)
+
+
+# Publicly named compatibility operations for advanced Causal4D diagnostics.
+def chamfer_by_frame(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_additional_confirmation", "_chamfer_by_frame", *args, **kwargs)
+
+
+def lock_protocol(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_confirmatory", "_lock_protocol", *args, **kwargs)
+
+
+def git_commit(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_git_commit", *args, **kwargs)
+
+
+def initialize_simulator(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_initialize_simulator", *args, **kwargs)
+
+
+def metric_summary(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_metric_summary", *args, **kwargs)
+
+
+def released_self_collision_for_case(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_state_injection",
+        "_released_self_collision_for_case",
+        *args,
+        **kwargs,
+    )
+
+
+def _rollout_initial(*args: Any, **kwargs: Any) -> Any:
+    return _rollout_initial_trajectory(*args, **kwargs)
+
+
+def rollout_restart(*args: Any, **kwargs: Any) -> Any:
+    positions, _ = _rollout_restart_trajectory(*args, **kwargs)
+    return positions
+
+
+def simulator_runtime(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_state_injection", "_simulator_runtime", *args, **kwargs)
+
+
+def state_numpy(*args: Any, **kwargs: Any) -> Any:
+    return _owned_state_numpy(*args, **kwargs)
+
+
+def load_official_spring_mass_module(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "_phystwin_warp_backend",
+        "load_official_spring_mass_module",
+        *args,
+        **kwargs,
+    )
+
+
+def make_reliability_simulator_class(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "_phystwin_warp_backend",
+        "make_reliability_simulator_class",
+        *args,
+        **kwargs,
+    )
+
+
+def measurement_target_audit(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "deform360_selective_virtual_sensing_evaluation",
+        "_measurement_target_audit",
+        *args,
+        **kwargs,
+    )
+
+
+def attachment_support_nodes(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic",
+        "_attachment_support_nodes",
+        *args,
+        **kwargs,
+    )
+
+
+def far_graph_observation_error(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic",
+        "_far_graph_observation_error",
+        *args,
+        **kwargs,
+    )
+
+
+def graph_distance(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_structural_diagnostic", "_graph_distance", *args, **kwargs)
+
+
+def horizon_summary(*args: Any, **kwargs: Any) -> Any:
+    return _delegate("phystwin_structural_diagnostic", "_horizon_summary", *args, **kwargs)
+
+
+def object_rest_lengths(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic",
+        "_object_rest_lengths",
+        *args,
+        **kwargs,
+    )
+
+
+def set_simulator_arrays(*args: Any, **kwargs: Any) -> Any:
+    return _delegate(
+        "phystwin_structural_diagnostic",
+        "_set_simulator_arrays",
+        *args,
+        **kwargs,
+    )
+
+
+__all__ = [
+    "CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS",
+    "CAUSAL4D_PROVIDER_API_VERSION",
+    "CAUSAL4D_PROVIDER_CAPABILITIES",
+    "CAUSAL4D_PROVIDER_PACKAGE_VERSION",
+    "OfficialPhysTwinReplayProvider",
+    "PhysTwinReplayProvider",
+    "attachment_support_nodes",
+    "build_lift_map",
+    "causal4d_provider_manifest",
+    "chamfer_by_frame",
+    "create_official_replay_provider",
+    "far_graph_observation_error",
+    "git_commit",
+    "graph_distance",
+    "horizon_summary",
+    "initialize_simulator",
+    "lift_residual",
+    "load_official_spring_mass_module",
+    "load_pickle",
+    "lock_protocol",
+    "make_reliability_simulator_class",
+    "measurement_target_audit",
+    "metric_summary",
+    "object_rest_lengths",
+    "released_self_collision_for_case",
+    "rollout_restart",
+    "set_simulator_arrays",
+    "sha256_file",
+    "simulator_runtime",
+    "state_numpy",
+    "target_validity",
+]
