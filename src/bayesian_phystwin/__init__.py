@@ -79,6 +79,21 @@ from .phystwin_adapter import (
     export_phystwin_residuals,
     write_export_summary,
 )
+from .phystwin_static_scene_gauge import (
+    PHYSTWIN_STATIC_SCENE_GAUGE_ARTIFACT_KIND,
+    PhysTwinStaticSceneGaugeConfig,
+    build_phystwin_static_scene_gauge,
+    load_static_scene_corrected_multiview_tracks,
+    load_static_scene_corrected_source_tracks,
+)
+from .phystwin_static_scene_gauge_competence import (
+    StaticSceneGaugeCompetenceConfig,
+    evaluate_phystwin_static_scene_gauge_prefix,
+)
+from .phystwin_static_scene_gauge_source import (
+    StaticSceneGaugeSourceGate,
+    aggregate_phystwin_static_scene_gauge_source,
+)
 from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
@@ -103,6 +118,14 @@ from .robust_likelihood import (
     RobustLikelihoodConfig,
     RobustLikelihoodResult,
     robust_mixture_likelihood,
+)
+from .static_scene_gauge import (
+    STATIC_SCENE_GAUGE_SCHEMA_VERSION,
+    StaticSceneGaugeConfig,
+    StaticSceneGaugeEstimate,
+    apply_static_scene_gauge,
+    estimate_static_scene_gauge,
+    select_static_scene_queries,
 )
 from .structured_reliability import (
     MarkovReliabilityConfig,
@@ -145,8 +168,10 @@ __all__ = [
     "ParameterEnsemble",
     "PhysicalLinearizationV1",
     "PhysicalResponseBasis",
+    "PHYSTWIN_STATIC_SCENE_GAUGE_ARTIFACT_KIND",
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
+    "PhysTwinStaticSceneGaugeConfig",
     "PriorAwareGaugeConfigV1",
     "ProspectiveSupportDecisionV1",
     "PseudoMeasurementBatch",
@@ -159,18 +184,28 @@ __all__ = [
     "RobustLikelihoodResult",
     "SourceGroupRegretBound",
     "SourceRegretCertificate",
+    "STATIC_SCENE_GAUGE_SCHEMA_VERSION",
+    "StaticSceneGaugeConfig",
+    "StaticSceneGaugeCompetenceConfig",
+    "StaticSceneGaugeSourceGate",
+    "StaticSceneGaugeEstimate",
     "SyntheticBenchmarkConfig",
+    "aggregate_phystwin_static_scene_gauge_source",
     "apply_group_regret_bound",
     "apply_regret_guard",
+    "apply_static_scene_gauge",
     "binary_calibration_metrics",
     "build_gauge_aware_batch_from_artifacts",
     "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
+    "build_phystwin_static_scene_gauge",
     "centered_view_translation_bias_jacobian",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
     "evaluate_nonlinear_closure",
+    "evaluate_phystwin_static_scene_gauge_prefix",
+    "estimate_static_scene_gauge",
     "export_phystwin_residuals",
     "filter_random_walk_bias",
     "fit_source_group_regret_bound",
@@ -180,6 +215,8 @@ __all__ = [
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
     "load_physical_linearization",
+    "load_static_scene_corrected_multiview_tracks",
+    "load_static_scene_corrected_source_tracks",
     "markov_log_evidence_batch",
     "measurement_variance",
     "reliability_weighted_loss",
@@ -195,6 +232,7 @@ __all__ = [
     "score_reliability",
     "select_complete_belief",
     "select_gauge_aware_candidate",
+    "select_static_scene_queries",
     "smooth_markov_reliability",
     "update_bias_aware_state",
     "update_gauge_aware_belief",

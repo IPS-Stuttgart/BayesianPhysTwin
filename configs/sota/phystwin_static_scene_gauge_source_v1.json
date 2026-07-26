@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-static-scene-gauge-source-v1",
+  "protocol_sha256": "d7c15d14ec7873fd55f554453ca07ccc1f9a94da9ddd72f335561fbe2374e285",
+  "status": "locked-before-source-transfer",
+  "claim_boundary": "Opened-source prefix-only automatic-observation competence. This cannot establish independent transfer, future-simulation improvement, calibration, or state of the art.",
+  "development_result": {
+    "case": "single_lift_cloth",
+    "raw_mean_error_mm": 19.287710152317608,
+    "corrected_mean_error_mm": 17.847633689304432,
+    "relative_mean_error_improvement": 0.07466742353141076,
+    "relative_rmse_improvement": 0.02857476810510795,
+    "relative_late_mean_error_improvement": 0.02876819314009027,
+    "common_point_frame_count": 601,
+    "role": "Sole method-development case; excluded from the frozen source-transfer gate."
+  },
+  "cohort": {
+    "source_manifest": "configs/sota/phystwin_table1_evaluation_manifest.json",
+    "development_cases": [
+      "single_lift_cloth"
+    ],
+    "transfer_cases": [
+      "double_lift_cloth_1",
+      "double_lift_cloth_3",
+      "double_lift_sloth",
+      "double_lift_zebra",
+      "double_stretch_sloth",
+      "double_stretch_zebra",
+      "rope_double_hand",
+      "single_clift_cloth_1",
+      "single_clift_cloth_3",
+      "single_lift_cloth_1",
+      "single_lift_cloth_3",
+      "single_lift_cloth_4",
+      "single_lift_dinosor",
+      "single_lift_rope",
+      "single_lift_sloth",
+      "single_lift_zebra",
+      "single_push_rope",
+      "single_push_rope_1",
+      "single_push_rope_4",
+      "single_push_sloth",
+      "weird_package"
+    ]
+  },
+  "method": {
+    "query_stride_px": 20,
+    "dynamic_mask_margin_px": 0,
+    "maximum_queries_per_camera": 768,
+    "correlation_cell_px": 20,
+    "cross_validation_cell_px": 40,
+    "neighbor_count": 16,
+    "rbf_bandwidth_px": 24.0,
+    "rbf_cutoff_multiplier": 3.0,
+    "maximum_query_distance_px": 48.0,
+    "minimum_track_quality": 0.5,
+    "maximum_background_displacement_px": 10.0,
+    "minimum_effective_support": 3.0,
+    "variance_floor_px2": 0.0625,
+    "minimum_cross_validation_count": 128,
+    "minimum_raw_cross_validation_error_px": 0.05,
+    "minimum_cross_validation_gain": 0.1,
+    "late_frame_count": 20
+  },
+  "source_transfer_gate": {
+    "minimum_mean_error_gain": 0.03,
+    "minimum_rmse_gain": 0.02,
+    "minimum_late_error_gain": 0.02,
+    "minimum_mean_error_wins": 14,
+    "maximum_case_mean_error_regression": 0.1
+  },
+  "source_artifacts": {
+    "cotracker_cue_manifest_sha256": "899fadb41531bfe27d7743d8ba055e16fab3521259d1e3b7cbf945059ca82175",
+    "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "cotracker_checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+    "static_scene_gauge_source_sha256": "bc0c8acd8291247398b666da7dc610d4b0d7e5f12b14cb894964cb29db1be086",
+    "phystwin_adapter_source_sha256": "33e78f22dc5ad36d268c78b704408399a49dc65c2eab80aca704824fe6228222",
+    "competence_source_sha256": "ecff48518835811febc86454dd541316077ad63cbcfc7c7417fb2ae7a4b397b2",
+    "aggregate_source_sha256": "482bd31d599ae162a786498ff784db56a11e90bfa48121165049aafe24952b84",
+    "builder_source_sha256": "e09fb0f150b2a09e72088b6e4ef37917b2eb06b0b6d654ee099f412127f252d9",
+    "evaluator_source_sha256": "2aa0a7bc9f60a56102036476958e6616ed0b626d978986915e8c941c039f89c3",
+    "analyzer_source_sha256": "d0436e91af10ecc93e7eb3bd63052e12a14fa456490a491cc207ea075e639f26"
+  },
+  "information_boundary": {
+    "gauge_inputs": "Only calibrated RGB and dynamic masks from frames [0, training_frame_count), plus the already-frozen CoTracker3 checkpoint.",
+    "manual_prefix_role": "Score only after the per-case gauge artifact is written and hashed.",
+    "future_rgb_allowed": false,
+    "future_manual_tracks_allowed": false,
+    "future_simulator_outcomes_allowed": false,
+    "physical_state_residual_allowed": false,
+    "held_v8_access_allowed": false,
+    "pokeflex_target_access_allowed": false
+  },
+  "pass_action": "Freeze a separate future-simulation assimilation protocol before reading any future simulator metric.",
+  "fail_action": "Stop the static-scene gauge route without tuning it on the 21 transfer outcomes.",
+  "forbidden": [
+    "using a PhysTwin innovation or future outcome to fit or admit the gauge",
+    "changing gauge hyperparameters or transfer gates after any transfer-case manual prefix score is read",
+    "describing this opened-source prefix test as independent confirmation or state-of-the-art evidence",
+    "opening or modifying any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
