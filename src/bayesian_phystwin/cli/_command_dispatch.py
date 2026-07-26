@@ -75,7 +75,7 @@ def invoke(command: CommandSpec, arguments: list[str]) -> int:
         result = function(argv=arguments)
     else:
         previous_argv = sys.argv
-        sys.argv = [command.legacy_alias or command.grouped_command, *arguments]
+        sys.argv = [command.grouped_command, *arguments]
         try:
             result = function()
         finally:
