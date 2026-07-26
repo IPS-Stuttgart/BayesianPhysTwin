@@ -150,3 +150,17 @@ harm. A 90% calibration or safety claim is not justified: the source lock has
 only four eligible object groups and exact 80% finite-sample resolution. Until
 a fresh outcome is opened, the strongest confirmed result remains the
 camera-only impossibility/failure result plus controlled positive mechanisms.
+
+## Later Fresh-Cohort Stress Test
+
+The unchanged source-v4 lock was subsequently applied, without retuning, to
+the already outcome-open 12-object fresh-pairwise cohort. It accepted four
+intervals and all four were harmful, yielding +5.07% identity RMSE and +8.29%
+Chamfer relative to the selected raw baseline. This is post-open stress
+evidence rather than prospective confirmation, but it invalidates the earlier
+recommendation to deploy source v4 unchanged on another camera-only cohort.
+
+See `docs/deform360_fresh_bias_guard_postopen_v1.md`. The next candidate must
+replace triangulated-3-D agreement with gripper-excluded per-camera motion
+evidence or an independent modality, and must use a feature-conditional regret
+bound with adequate source-group support.
