@@ -1,0 +1,140 @@
+name: One-shot CLI migration
+
+on:
+  push:
+    branches: [agent/consolidate-cli-entrypoints]
+    paths:
+      - ".github/workflows/one-shot-cli-migration.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-cli-migration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/consolidate-cli-entrypoints
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install package and development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Format the new command surface
+        run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/experiments.py \
+            tests/test_cli_main.py
+          python -m ruff format \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/experiments.py \
+            tests/test_cli_main.py
+      - name: Migrate active command invocations
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import ast
+          from pathlib import Path
+
+          registry_path = Path("src/bayesian_phystwin/cli/experiments.py")
+          tree = ast.parse(registry_path.read_text(encoding="utf-8"))
+          experiment_modules: dict[str, str] | None = None
+          for node in tree.body:
+              if (
+                  isinstance(node, ast.AnnAssign)
+                  and isinstance(node.target, ast.Name)
+                  and node.target.id == "_EXPERIMENT_MODULES"
+              ):
+                  experiment_modules = ast.literal_eval(node.value)
+                  break
+          if experiment_modules is None:
+              raise SystemExit("cannot locate the experiment registry")
+
+          replacements = {
+              "bpt-provider-manifest": "bpt provider manifest",
+              "bpt-validate-observation-belief": "bpt observation validate",
+              "bpt-replay-residuals": "bpt residual replay",
+              "bpt-synthetic-benchmark": "bpt benchmark synthetic",
+              "bpt-run-manifest": "bpt run manifest",
+          }
+          replacements.update(
+              {
+                  f"bpt-{experiment_id}": f"bpt experiment run {experiment_id}"
+                  for experiment_id in experiment_modules
+              }
+          )
+
+          candidates: set[Path] = set()
+          candidates.update(Path("docs").rglob("*.md"))
+          for suffix in ("*.py", "*.sh"):
+              candidates.update(Path("scripts").rglob(suffix))
+          for suffix in ("*.yml", "*.yaml"):
+              candidates.update(Path(".github/workflows").rglob(suffix))
+
+          excluded = {
+              Path("docs/command_line.md"),
+              Path(".github/workflows/one-shot-cli-migration.yml"),
+          }
+          changed: list[Path] = []
+          ordered = sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True)
+          for path in sorted(candidates - excluded):
+              text = path.read_text(encoding="utf-8")
+              updated = text
+              for old, new in ordered:
+                  updated = updated.replace(old, new)
+              if updated != text:
+                  path.write_text(updated, encoding="utf-8")
+                  changed.append(path)
+
+          remaining: list[str] = []
+          for path in sorted(candidates - excluded):
+              text = path.read_text(encoding="utf-8")
+              for old in replacements:
+                  if old in text:
+                      remaining.append(f"{path}: {old}")
+          if remaining:
+              raise SystemExit(
+                  "active legacy command invocations remain:\n" + "\n".join(remaining)
+              )
+
+          print(f"migrated {len(changed)} active files")
+          for path in changed:
+              print(path)
+          PY
+      - name: Validate the command surface
+        run: |
+          python -m pytest -q tests/test_cli_main.py
+          python -m ruff check \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/experiments.py \
+            tests/test_cli_main.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/experiments.py \
+            tests/test_cli_main.py
+          python -m mypy \
+            src/bayesian_phystwin/cli/main.py \
+            src/bayesian_phystwin/cli/experiments.py
+          git diff --check
+      - name: Commit migrated invocations
+        run: |
+          if git diff --quiet; then
+            echo "No migration changes were required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Migrate active invocations to the grouped CLI"
+          git push origin HEAD:agent/consolidate-cli-entrypoints
