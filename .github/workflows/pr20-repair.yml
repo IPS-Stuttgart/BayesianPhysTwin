@@ -9,10 +9,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: pr20-focused-repair
+  cancel-in-progress: true
+
 jobs:
   repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
@@ -25,7 +29,7 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install development tools
         run: python -m pip install -e ".[dev]"
-      - name: Apply focused repair and remove diagnostics
+      - name: Apply focused type repair and remove temporary workflows
         shell: bash
         run: |
           python - <<'PY'
@@ -54,95 +58,17 @@ jobs:
               if count == 1:
                   text = text.replace(old, new)
               elif new not in text:
-                  raise RuntimeError(f"Expected exactly one repair target, found {count}: {old!r}")
+                  raise RuntimeError(
+                      f"Expected exactly one repair target, found {count}: {old!r}"
+                  )
           source.write_text(text, encoding="utf-8")
 
           for path in (
               Path(".github/workflows/pr20-format-diagnostic.yml"),
               Path(".github/workflows/pr20-mypy-diagnostic.yml"),
+              Path(".github/workflows/pr20-repair.yml"),
           ):
               path.unlink(missing_ok=True)
-
-          matrix_expression = "${" + "{ matrix.python-version }}"
-          workflow = f'''name: Selective guard risk
-
-          on:
-            push:
-              branches: [main]
-              paths:
-                - "src/bayesian_phystwin/selective_risk.py"
-                - "tests/test_selective_risk.py"
-                - "docs/selective_guard_evaluation.md"
-                - ".github/workflows/selective-risk.yml"
-            pull_request:
-              branches: [main]
-              paths:
-                - "src/bayesian_phystwin/selective_risk.py"
-                - "tests/test_selective_risk.py"
-                - "docs/selective_guard_evaluation.md"
-                - ".github/workflows/selective-risk.yml"
-            workflow_dispatch:
-
-          permissions:
-            contents: read
-
-          jobs:
-            quality:
-              name: Selective-risk quality
-              runs-on: ubuntu-latest
-              timeout-minutes: 15
-              steps:
-                - uses: actions/checkout@v7
-                - uses: actions/setup-python@v6
-                  with:
-                    python-version: "3.12"
-                    cache: pip
-                    cache-dependency-path: pyproject.toml
-                - name: Install development tools
-                  run: python -m pip install -e ".[dev]"
-                - name: Run Ruff
-                  run: >-
-                    python -m ruff check
-                    src/bayesian_phystwin/selective_risk.py
-                    tests/test_selective_risk.py
-                - name: Check formatting
-                  run: >-
-                    python -m ruff format --check
-                    src/bayesian_phystwin/selective_risk.py
-                    tests/test_selective_risk.py
-                - name: Type-check selective-risk contracts
-                  run: >-
-                    python -m mypy --python-version 3.12
-                    src/bayesian_phystwin/selective_risk.py
-
-            test:
-              name: Selective-risk tests / Python {matrix_expression}
-              runs-on: ubuntu-latest
-              timeout-minutes: 15
-              strategy:
-                fail-fast: false
-                matrix:
-                  python-version: ["3.10", "3.12", "3.14"]
-              steps:
-                - uses: actions/checkout@v7
-                - uses: actions/setup-python@v6
-                  with:
-                    python-version: {matrix_expression}
-                    cache: pip
-                    cache-dependency-path: pyproject.toml
-                - name: Install NumPy-only package and tests
-                  run: python -m pip install -e ".[dev]"
-                - name: Run selective-risk tests
-                  run: python -m pytest -q tests/test_selective_risk.py
-          '''
-          workflow = "\n".join(
-              line[10:] if line.startswith("          ") else line
-              for line in workflow.splitlines()
-          ) + "\n"
-          Path(".github/workflows/selective-risk.yml").write_text(
-              workflow,
-              encoding="utf-8",
-          )
           PY
       - name: Format and validate focused files
         run: |
@@ -158,9 +84,7 @@ jobs:
           python -m mypy --python-version 3.12 \
             src/bayesian_phystwin/selective_risk.py
           python -m pytest -q tests/test_selective_risk.py
-      - name: Run repository test suite
-        run: python -m pytest -q
-      - name: Commit repair
+      - name: Commit focused repair
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -170,5 +94,5 @@ jobs:
             echo "No repair changes required"
             exit 0
           fi
-          git commit -m "Fix selective-risk checks and remove diagnostics"
+          git commit -m "Fix selective-risk type checks and remove repair workflow"
           git push origin HEAD:agent/selective-risk-evaluation
