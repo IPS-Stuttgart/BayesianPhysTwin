@@ -14,4 +14,20 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install -e ".[dev]"
-      - run: python -m pytest -q
+      - name: Run focused observation-belief tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -q tests/test_observation_belief.py tests/test_grouped_likelihood.py --tb=short 2>&1 | tee pytest-focused.log
+      - name: Run full test suite
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -q --tb=short 2>&1 | tee pytest-full.log
+      - name: Upload pytest logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: pytest-logs
+          path: pytest-*.log
+          if-no-files-found: ignore
