@@ -6,9 +6,28 @@ import importlib
 import inspect
 import sys
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Final
 
 from .command_registry import CommandSpec
+
+_OPTIONAL_IMPORTS: Final[dict[str, frozenset[str]]] = {
+    "data": frozenset({"remotezip"}),
+    "graph": frozenset({"scipy"}),
+    "pyrecest": frozenset({"pyrecest"}),
+    "vision": frozenset({"cv2"}),
+}
+
+
+def _is_declared_optional_import(
+    command: CommandSpec, error: ModuleNotFoundError
+) -> bool:
+    missing_root = (error.name or "").partition(".")[0]
+    declared_modules = {
+        module
+        for extra in command.optional_dependencies
+        for module in _OPTIONAL_IMPORTS.get(extra, ())
+    }
+    return missing_root in declared_modules
 
 
 def _accepts_argv(function: Callable[..., Any]) -> tuple[bool, bool]:
@@ -38,7 +57,7 @@ def invoke(command: CommandSpec, arguments: list[str]) -> int:
     try:
         module = importlib.import_module(command.module)
     except ModuleNotFoundError as exc:
-        if not command.optional_dependencies:
+        if not _is_declared_optional_import(command, exc):
             raise
         extras = ",".join(command.optional_dependencies)
         print(

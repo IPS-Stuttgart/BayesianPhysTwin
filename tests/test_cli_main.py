@@ -4,6 +4,8 @@ import json
 import sys
 from types import SimpleNamespace
 
+import pytest
+
 from bayesian_phystwin.cli import _command_dispatch as dispatch
 from bayesian_phystwin.cli import main as cli_main
 
@@ -109,6 +111,36 @@ def test_grouped_cli_dispatches_legacy_no_arg_command(monkeypatch) -> None:
     )
     assert captured == ["data", "output", "--force"]
     assert sys.argv == original_argv
+
+
+def test_grouped_cli_reports_declared_missing_optional_dependency(
+    monkeypatch, capsys
+) -> None:
+    def missing_module(_: str):
+        raise ModuleNotFoundError("No module named 'scipy'", name="scipy")
+
+    monkeypatch.setattr(dispatch.importlib, "import_module", missing_module)
+    assert (
+        cli_main.main(
+            ["experiment", "run", "confirm-phystwin-bayesian-anchor"]
+        )
+        == 1
+    )
+    assert "install bayesian-phystwin[graph]" in capsys.readouterr().err
+
+
+def test_grouped_cli_does_not_mask_internal_import_errors(monkeypatch) -> None:
+    def missing_module(_: str):
+        raise ModuleNotFoundError(
+            "No module named 'bayesian_phystwin.missing'",
+            name="bayesian_phystwin.missing",
+        )
+
+    monkeypatch.setattr(dispatch.importlib, "import_module", missing_module)
+    with pytest.raises(ModuleNotFoundError, match="bayesian_phystwin.missing"):
+        cli_main.main(
+            ["experiment", "run", "confirm-phystwin-bayesian-anchor"]
+        )
 
 
 def test_grouped_cli_rejects_unknown_command(capsys) -> None:
