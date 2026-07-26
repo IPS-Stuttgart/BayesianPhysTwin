@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from importlib import import_module
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 
@@ -105,7 +105,7 @@ def _load_legacy(
     path: str | Path,
     *,
     expected_sha256: str | None,
-    artifact_kind: str,
+    artifact_kind: Literal["mapping", "sequence", "ndarray"],
     required_keys: tuple[str, ...] = (),
 ) -> Any:
     if expected_sha256 is None:
@@ -113,7 +113,7 @@ def _load_legacy(
     return load_trusted_legacy_phystwin_pickle(
         path,
         expected_sha256=expected_sha256,
-        artifact_kind=artifact_kind,  # type: ignore[arg-type]
+        artifact_kind=artifact_kind,
         required_keys=required_keys,
     )
 
