@@ -105,6 +105,38 @@ solely for deterministic balance. If fewer than 12 candidates pass source
 admission, the run stops and records every rejection. Any reserve candidates
 require a new immutable queue locked before their payloads are inspected.
 
+## Frozen source window
+
+The queue-bound temporal rule is
+`configs/sota/deform360_fresh_source_window_v1.json`, internal SHA-256
+`015305926274bda59ae0b03390a86ac321e615b598001961fc70f13ee9f69511`.
+It binds the completed camera-only source download before source RGB is decoded:
+
+- download-manifest SHA-256
+  `a7774030848e2df5d4f33de37d8b6292b79665914053d690eff37b0f56f958ff`;
+- 18 objects, 1,452 files, and 1,834,930,956 bytes;
+- an exact 12-camera panel;
+- 81 staged frames and 76 prediction rows;
+- candidate starts at frame 8 with stride 6;
+- action scoring from staged step 19 through step 74;
+- earliest-start tie breaking.
+
+The score uses only the released end-effector translation
+`robot.actions[...,0,:]` and robust gripper-closure confidence. The known future
+action is an explicit conditioning input. Object geometry, tracks, response,
+tactile, and target metrics are not used to choose the window.
+
+This corrects a defect in the frozen negative selective-virtual-sensing
+experiment: its legacy `select_action_only_window` averages the translation,
+three rotation rows, and aperture metadata as if all five rows were spatial
+points. That function remains unchanged for exact reproduction of the negative
+result. New source windows use `select_fresh_source_window`.
+
+Window selection is not an admission gate. In particular, no motion or response
+threshold can remove a queued case or cause an implicit replacement. The
+existing source contract alone determines admission, and a method may use a
+source-locked exact fallback when its observation-support gate fails.
+
 ## Deterministic cohort rule
 
 The lock:
