@@ -17,6 +17,9 @@ from bayesian_phystwin.observation_belief import (
     load_observation_belief,
     save_observation_belief,
 )
+from bayesian_phystwin.observation_belief_gauge_adapter import (
+    build_gauge_aware_batch_from_observation_belief,
+)
 from bayesian_phystwin.phystwin_profile import truncate_profile_prediction_weights
 
 
@@ -27,12 +30,18 @@ def _proper_rotation(rng: np.random.Generator) -> np.ndarray:
     return rotation
 
 
-def _dense_observation_covariance(belief: ObservationBeliefV1) -> np.ndarray:
+def _dense_local_covariance(belief: ObservationBeliefV1) -> np.ndarray:
     count = belief.observation_count
     dense = np.zeros((3 * count, 3 * count), dtype=np.float64)
     for index, covariance in enumerate(belief.local_covariance_m2):
         row = slice(3 * index, 3 * index + 3)
         dense[row, row] = covariance
+    return dense
+
+
+def _dense_observation_covariance(belief: ObservationBeliefV1) -> np.ndarray:
+    count = belief.observation_count
+    dense = _dense_local_covariance(belief)
     factor_blocks = np.zeros(
         (count, 3, belief.factor_rank),
         dtype=np.float64,
@@ -85,6 +94,26 @@ def _random_observation_belief(seed: int) -> ObservationBeliefV1:
         ),
         group_composite_weight=rng.uniform(0.5, 1.0, size=len(group_ids)),
         metadata={"seed": seed, "nested": {"beta": 2, "alpha": 1}},
+    )
+
+
+def _adapt_random_belief(
+    belief: ObservationBeliefV1,
+    *,
+    seed: int,
+):
+    rng = np.random.default_rng(seed)
+    state_count = 2
+    count = belief.observation_count
+    empty_nuisance = np.zeros((count, 3, 0), dtype=np.float64)
+    return build_gauge_aware_batch_from_observation_belief(
+        belief,
+        physical_prediction_xyz_m=np.zeros_like(belief.mean_xyz_m),
+        state_jacobian=rng.normal(size=(count, 3, state_count)),
+        query_state_jacobian=rng.normal(size=(4, 3, state_count)),
+        physical_response_scale_m=0.25,
+        shared_bias_jacobian=empty_nuisance,
+        view_bias_jacobian=empty_nuisance,
     )
 
 
@@ -180,6 +209,91 @@ def test_random_sim3_transform_preserves_covariance_semantics(seed: int) -> None
     )
 
 
+@pytest.mark.parametrize("seed", range(5))
+def test_adapter_represents_low_rank_covariance_exactly_once(seed: int) -> None:
+    belief = _random_observation_belief(seed + 500)
+    adapted = _adapt_random_belief(belief, seed=seed + 600)
+    batch = adapted.batch
+
+    np.testing.assert_array_equal(
+        batch.observation_covariance_m2,
+        belief.local_covariance_m2,
+    )
+    expanded_factor = batch.gauge_jacobian.reshape(
+        3 * belief.observation_count,
+        -1,
+    )
+    represented_covariance = _dense_local_covariance(belief)
+    represented_covariance += (
+        expanded_factor
+        @ batch.gauge_prior_covariance
+        @ expanded_factor.T
+    )
+    np.testing.assert_allclose(
+        represented_covariance,
+        _dense_observation_covariance(belief),
+        atol=1e-15,
+        rtol=1e-12,
+    )
+    assert batch.metadata["low_rank_covariance_double_counted"] is False
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_future_source_suffix_does_not_change_causal_numerics(seed: int) -> None:
+    belief = _random_observation_belief(seed + 700)
+    with_suffix = replace(
+        belief,
+        source_artifact_sha256="c" * 64,
+        metadata={
+            **belief.metadata,
+            "unobserved_source_suffix_frame_count": 100 + seed,
+        },
+    )
+    original = _adapt_random_belief(belief, seed=seed + 800)
+    appended = _adapt_random_belief(with_suffix, seed=seed + 800)
+
+    assert original.observation_artifact_id != appended.observation_artifact_id
+    for name in (
+        "innovation_m",
+        "observation_covariance_m2",
+        "state_jacobian",
+        "gauge_jacobian",
+        "shared_bias_jacobian",
+        "view_bias_jacobian",
+        "query_state_jacobian",
+        "gauge_prior_covariance",
+        "prior_reliability",
+        "prior_nominal_probability",
+        "composite_weight",
+    ):
+        np.testing.assert_array_equal(
+            getattr(original.batch, name),
+            getattr(appended.batch, name),
+        )
+
+    config = GaugeAwareBeliefConfig(
+        effective_samples_per_correlation_group=belief.observation_count,
+        maximum_state_update_m=1.0,
+        maximum_update_to_physical_response_ratio=10.0,
+    )
+    original_result = update_gauge_aware_belief(original.batch, config=config)
+    appended_result = update_gauge_aware_belief(appended.batch, config=config)
+    assert original_result.inference_admissible
+    assert appended_result.inference_admissible
+    np.testing.assert_allclose(
+        appended_result.state_coefficients,
+        original_result.state_coefficients,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    np.testing.assert_allclose(
+        appended_result.posterior_covariance,
+        original_result.posterior_covariance,
+        atol=1e-12,
+        rtol=1e-12,
+    )
+
+
 def _random_identifiable_batch(seed: int) -> GaugeAwareObservationBatch:
     rng = np.random.default_rng(seed)
     count = 14
@@ -272,6 +386,66 @@ def test_gauge_update_is_permutation_invariant_and_covariance_psd(seed: int) -> 
     assert np.trace(result.posterior_covariance[:2, :2]) <= (
         np.trace(batch.state_prior_covariance_m2) + 1e-10
     )
+
+
+@pytest.mark.parametrize("seed", range(6))
+def test_unsupported_state_mode_retains_prior_variance(seed: int) -> None:
+    rng = np.random.default_rng(seed + 1100)
+    count = 12
+    raw_modes = rng.normal(size=(count, 2))
+    modes, _ = np.linalg.qr(raw_modes)
+    modes *= np.sqrt(count)
+    state = np.zeros((count, 3, 3), dtype=np.float64)
+    state[:, 0, 0] = modes[:, 0]
+    state[:, 1, 1] = modes[:, 1]
+    true_coefficients = np.asarray([0.003, -0.002, 0.0])
+    innovation = np.einsum("mcs,s->mc", state, true_coefficients)
+    covariance = np.repeat(
+        np.diag([2e-6, 3e-6, 4e-6])[None],
+        count,
+        axis=0,
+    )
+    prior = np.diag([0.002, 0.003, 0.007])
+    empty = np.zeros((count, 3, 0), dtype=np.float64)
+    batch = GaugeAwareObservationBatch(
+        innovation_m=innovation,
+        observation_covariance_m2=covariance,
+        state_jacobian=state,
+        gauge_jacobian=empty,
+        shared_bias_jacobian=empty,
+        view_bias_jacobian=empty,
+        query_state_jacobian=state.copy(),
+        gauge_prior_covariance=np.zeros((0, 0), dtype=np.float64),
+        correlation_group_ids=tuple(f"group-{index % 3}" for index in range(count)),
+        prior_reliability=np.ones(count, dtype=np.float64),
+        physical_response_scale_m=0.05,
+        state_prior_covariance_m2=prior,
+    )
+    result = update_gauge_aware_belief(
+        batch,
+        config=GaugeAwareBeliefConfig(
+            effective_samples_per_correlation_group=float(count),
+            maximum_state_update_m=1.0,
+            maximum_update_to_physical_response_ratio=10.0,
+        ),
+    )
+
+    assert result.inference_admissible
+    assert result.identifiable_state_transform.shape == (3, 2)
+    assert result.state_coefficients[2] == pytest.approx(0.0, abs=1e-12)
+    np.testing.assert_allclose(
+        result.posterior_covariance[2],
+        prior[2],
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.posterior_covariance[:, 2],
+        prior[:, 2],
+        atol=1e-12,
+        rtol=1e-12,
+    )
+    assert np.all(np.diag(result.posterior_covariance)[:2] < np.diag(prior)[:2])
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32])
