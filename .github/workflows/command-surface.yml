@@ -1,0 +1,108 @@
+name: Command surface
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/cli/_command_catalog.py"
+      - "src/bayesian_phystwin/cli/_command_dispatch.py"
+      - "src/bayesian_phystwin/cli/_command_inventory.py"
+      - "src/bayesian_phystwin/cli/_entry_points.py"
+      - "src/bayesian_phystwin/cli/command_registry.py"
+      - "src/bayesian_phystwin/cli/main.py"
+      - "tests/test_cli_main.py"
+      - "tests/test_command_registry.py"
+      - ".github/workflows/command-surface.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "src/bayesian_phystwin/cli/_command_catalog.py"
+      - "src/bayesian_phystwin/cli/_command_dispatch.py"
+      - "src/bayesian_phystwin/cli/_command_inventory.py"
+      - "src/bayesian_phystwin/cli/_entry_points.py"
+      - "src/bayesian_phystwin/cli/command_registry.py"
+      - "src/bayesian_phystwin/cli/main.py"
+      - "tests/test_cli_main.py"
+      - "tests/test_command_registry.py"
+      - ".github/workflows/command-surface.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: command-surface-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Command registry quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Lint command surface
+        run: >-
+          python -m ruff check
+          src/bayesian_phystwin/cli/_command_catalog.py
+          src/bayesian_phystwin/cli/_command_dispatch.py
+          src/bayesian_phystwin/cli/_command_inventory.py
+          src/bayesian_phystwin/cli/_entry_points.py
+          src/bayesian_phystwin/cli/command_registry.py
+          src/bayesian_phystwin/cli/main.py
+          tests/test_cli_main.py
+          tests/test_command_registry.py
+      - name: Type-check command surface
+        run: >-
+          python -m mypy
+          src/bayesian_phystwin/cli/_command_catalog.py
+          src/bayesian_phystwin/cli/_command_dispatch.py
+          src/bayesian_phystwin/cli/_command_inventory.py
+          src/bayesian_phystwin/cli/_entry_points.py
+          src/bayesian_phystwin/cli/command_registry.py
+          src/bayesian_phystwin/cli/main.py
+      - name: Run command-surface tests
+        run: >-
+          python -m pytest -q
+          tests/test_cli_main.py
+          tests/test_command_registry.py
+
+  installed-wheel:
+    name: Installed wheel command registry
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Build wheel
+        run: |
+          python -m pip install build
+          python -m build --wheel
+      - name: Exercise installed grouped commands
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/bpt-command-surface"
+          bin="$RUNNER_TEMP/bpt-command-surface/bin"
+          "$bin/python" -m pip install --upgrade pip
+          wheel=$(find dist -maxdepth 1 -name '*.whl' -print -quit)
+          test -n "$wheel"
+          "$bin/python" -m pip install "$wheel"
+          "$bin/python" -m pip check
+          "$bin/bpt" commands list --status stable --json
+          "$bin/bpt" commands describe bpt-provider-manifest --json
+          "$bin/bpt" commands describe decisive-evidence --json
+          "$bin/bpt" experiment list
+          "$bin/bpt" archive describe evaluate-phystwin-state-injection --json
+          "$bin/bpt" provider manifest --help
+          "$bin/bpt" evidence summarize --help
