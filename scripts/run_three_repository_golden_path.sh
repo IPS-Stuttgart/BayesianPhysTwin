@@ -82,7 +82,7 @@ python -m venv "${TEST_VENV}"
 "${TEST_VENV}/bin/python" -m pip check
 
 cp \
-  "${BPT_ROOT}/tests/integration/test_three_repository_golden_path.py" \
+  "${BPT_ROOT}/integration_tests/test_three_repository_golden_path.py" \
   "${RUN_ROOT}/test_three_repository_golden_path.py"
 
 export THREE_REPO_SOURCE_ROOTS="$(
