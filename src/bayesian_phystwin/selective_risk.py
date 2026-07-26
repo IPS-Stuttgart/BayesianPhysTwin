@@ -136,9 +136,7 @@ def evaluate_guard(
     if accepted_count:
         accepted_excess = excess[decision]
         accepted_mean_excess: float | None = float(np.mean(accepted_excess))
-        harmful_rate: float | None = float(
-            np.mean(accepted_excess > tolerance)
-        )
+        harmful_rate: float | None = float(np.mean(accepted_excess > tolerance))
         worst_excess: float | None = float(np.max(accepted_excess))
     else:
         accepted_mean_excess = None
@@ -295,9 +293,7 @@ def bootstrap_guard_evaluation(
         "harmful_accepted_rate",
         "worst_accepted_excess_loss",
     )
-    replicate_values = {
-        name: np.empty(repeats, dtype=float) for name in metric_names
-    }
+    replicate_values = {name: np.empty(repeats, dtype=float) for name in metric_names}
 
     generator = np.random.default_rng(seed_value)
     group_count = len(groups)
@@ -313,17 +309,15 @@ def bootstrap_guard_evaluation(
             harmful_tolerance=harmful_tolerance,
         )
         replicate_values["coverage"][replicate_index] = evaluation.coverage
-        replicate_values["fallback_rate"][replicate_index] = (
-            evaluation.fallback_rate
-        )
+        replicate_values["fallback_rate"][replicate_index] = evaluation.fallback_rate
         replicate_values["selected_mean_excess_loss"][replicate_index] = (
             evaluation.selected_mean_excess_loss
         )
         replicate_values["accepted_mean_excess_loss"][replicate_index] = (
             _optional_metric(evaluation.accepted_mean_excess_loss)
         )
-        replicate_values["harmful_accepted_rate"][replicate_index] = (
-            _optional_metric(evaluation.harmful_accepted_rate)
+        replicate_values["harmful_accepted_rate"][replicate_index] = _optional_metric(
+            evaluation.harmful_accepted_rate
         )
         replicate_values["worst_accepted_excess_loss"][replicate_index] = (
             _optional_metric(evaluation.worst_accepted_excess_loss)
