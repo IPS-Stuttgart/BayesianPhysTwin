@@ -77,8 +77,9 @@ the pinned PyRecEst integration.
 
 ## Stable command surface
 
-The grouped `bpt` interface is the stable entry point. Historical `bpt-*`
-commands remain available for compatibility with frozen experiments.
+The grouped `bpt` interface is the only installed executable. Stable operations
+use the routes below; non-stable research commands are discovered with
+`bpt experiment list` and invoked with `bpt experiment run ID`.
 
 | Command | Purpose |
 | --- | --- |
