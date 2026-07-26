@@ -45,6 +45,26 @@ def _belief() -> tuple[ObservationBeliefV1, str]:
     return belief, payload["expected_artifact_id"]
 
 
+def _explicit_v2_belief() -> ObservationBeliefV1:
+    belief, _ = _belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["prob4d_causal_stream_contract_version"] = 2
+    metadata["metric_anchor_covariance_in_joint_factor"] = True
+    metadata["metric_gauge_anchor"].update(
+        {
+            "schema_name": "prob4d.metric-gauge-anchor",
+            "schema_version": 1,
+            "case_id": belief.case_id,
+            "coordinate_frame": "phystwin-world",
+            "world_frame_id": "phystwin-world",
+            "metric_units": "m",
+            "calibration_artifact_sha256": "b" * 64,
+            "covariance_treatment": "propagated_external_prior",
+        }
+    )
+    return replace(belief, metadata=metadata)
+
+
 def _adapt(belief: ObservationBeliefV1):
     state = np.zeros((belief.observation_count, 3, 2))
     state[:, 0, 0] = 1.0
@@ -72,13 +92,48 @@ def test_joint_gauge_fixture_has_identical_content_address_and_semantics() -> No
     assert adapted.summary()["gauge_parameter_count"] == 5
     assert adapted.summary()["prob4d_causal_lineage_validated"] is True
 
-    # The same latent column affects observations from different windows.  The
+    # The same latent column affects observations from different windows. The
     # adapter must therefore retain one shared nuisance vector, not duplicate it
     # once per window.
     cross_covariance = (
         belief.low_rank_factor_m[0] @ belief.low_rank_factor_m[2].T
     )
     assert cross_covariance[0, 0] != 0.0
+
+
+def test_explicit_v2_binds_calibration_and_propagated_anchor_covariance() -> None:
+    validation = validate_prob4d_causal_observation_belief(
+        _explicit_v2_belief()
+    )
+
+    assert validation["stream_contract_version"] == 2
+    assert validation["stream_contract_version_inferred"] is False
+    assert validation["calibration_artifact_sha256"] == "b" * 64
+    assert validation["metric_anchor_covariance_treatment"] == (
+        "propagated_external_prior"
+    )
+
+
+def test_explicit_v2_rejects_missing_calibration_digest() -> None:
+    belief = _explicit_v2_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    del metadata["metric_gauge_anchor"]["calibration_artifact_sha256"]
+
+    with pytest.raises(ValueError, match="calibration_artifact_sha256"):
+        validate_prob4d_causal_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_explicit_v2_rejects_untracked_anchor_covariance() -> None:
+    belief = _explicit_v2_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["metric_anchor_covariance_in_joint_factor"] = False
+
+    with pytest.raises(ValueError, match="include metric-anchor covariance"):
+        validate_prob4d_causal_observation_belief(
+            replace(belief, metadata=metadata)
+        )
 
 
 def test_joint_gauge_fixture_rejects_per_window_factor_groups() -> None:
