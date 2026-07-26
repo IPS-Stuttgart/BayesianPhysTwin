@@ -40,6 +40,16 @@ Passing this gate supports fresh-object transfer under the declared candidate
 metrics only. It does not establish calibrated uncertainty (the sealed archive
 contains no predictive covariance) or official Deform360 SOTA parity.
 
+## Outcome
+
+The prospective gate failed on all three comparators. The candidate regressed
+against persistence and the selected raw backbone on all 12 physical objects
+for both primary metrics. See
+`docs/deform360_fresh_pairwise_outcome_v1.md` and
+`results/sota/deform360_fresh_pairwise_outcome_v1/summary.json`.
+
+These 12 objects are outcome-open and must not be reused for model selection.
+
 No prediction process accepts a future target, outcome manifest, future dense
 geometry, future tactile data, or post-update RGB. All 12 belief predictions
 must be checksummed and pass the completeness barrier before a separate

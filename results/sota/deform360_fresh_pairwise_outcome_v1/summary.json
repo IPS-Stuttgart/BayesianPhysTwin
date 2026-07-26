@@ -1,0 +1,358 @@
+{
+  "aggregate": {
+    "persistence": {
+      "post_update_hidden_identity_rmse_m": 0.00020199440648398172,
+      "post_update_hidden_symmetric_chamfer_m": 0.00024315440514297785
+    },
+    "physical_prior": {
+      "post_update_hidden_identity_rmse_m": 0.0025922372163717853,
+      "post_update_hidden_symmetric_chamfer_m": 0.0019256015288732365
+    },
+    "raw_selected_backbone_full_blend_rbf_pairwise_clique": {
+      "post_update_hidden_identity_rmse_m": 0.002709425976162663,
+      "post_update_hidden_symmetric_chamfer_m": 0.0024771550777728233
+    },
+    "selected_raw_backbone_persistence_insufficient_default": {
+      "post_update_hidden_identity_rmse_m": 0.0008991155403916305,
+      "post_update_hidden_symmetric_chamfer_m": 0.0007720829200019764
+    }
+  },
+  "analysis_lock": {
+    "analysis_id": "deform360-fresh-pairwise-outcome-v1",
+    "file_sha256": "38285a2e28717456f4d7067276e83250b9c8456be3bc40fda0aa5cb507301313",
+    "path": "/home/florianpfaff/bpt-fresh-outcome-0a01fb8/configs/sota/deform360_fresh_pairwise_outcome_v1.json"
+  },
+  "artifact_kind": "Deform360FreshPairwiseOutcomeSummary",
+  "artifacts": [
+    {
+      "case": "007-feather-ep0000",
+      "report_file": "007-feather-ep0000.json",
+      "report_file_sha256": "414132399152ca465d282c9d9dba6e2f38c154505f33b5efbe49d4139bd06725",
+      "report_result_sha256": "92d4c73594c957b56a121083bd3c7990b0f1829b52f6319d41d48ba58d9e4051"
+    },
+    {
+      "case": "012-hat-cloth-ep0000",
+      "report_file": "012-hat-cloth-ep0000.json",
+      "report_file_sha256": "8790c164544b9b4c3cd4d1e645d4cce48c665fb6bd0c04365b1312061e089198",
+      "report_result_sha256": "b69a320db7f125ef3fc147336001e7f843a7e0f293aa6fd1c40188ff696c6505"
+    },
+    {
+      "case": "048-butter-sponge-ep0000",
+      "report_file": "048-butter-sponge-ep0000.json",
+      "report_file_sha256": "baaf45d8bb04b6ec727e8f021476d94762fdc80ba656e14770eb5b9012be70e2",
+      "report_result_sha256": "58c80d6fbba3402c4f05c1d65a9625e4100e086e2d53fd8dc5c8d3559fdb9607"
+    },
+    {
+      "case": "162-straw-ep0000",
+      "report_file": "162-straw-ep0000.json",
+      "report_file_sha256": "5a07aac31b65c0e711fdba321386bc5e51b1ec4703ce246c44db75ecfc9e103b",
+      "report_result_sha256": "6721e43baf853843a505cb4ac128e79c399ebfa1b1b5c820d14cc99f5e4ceeb8"
+    },
+    {
+      "case": "014-glove-vinyl-cloth-ep0000",
+      "report_file": "014-glove-vinyl-cloth-ep0000.json",
+      "report_file_sha256": "8f2d9ba8f97783da0da1ec1a868f497a0165915ce4635bc056201de4a5341abd",
+      "report_result_sha256": "5491f1b9813fcc12c681f3ec49c53737816989a2908b6ab15eaef37965e092c8"
+    },
+    {
+      "case": "050-boxing-ep0000",
+      "report_file": "050-boxing-ep0000.json",
+      "report_file_sha256": "adce858c4146e7cc7f5576f5ad7d9dc2406d9bf324fafda249dc46eaae9e85a1",
+      "report_result_sha256": "ef00857fd3fbd1abfed34bc621b1e33541ba94e824db63397e85300be5f7d8d6"
+    },
+    {
+      "case": "200-watch-ep0000",
+      "report_file": "200-watch-ep0000.json",
+      "report_file_sha256": "54a1bdc6a8c1ff0250c8e81b9c93d92627aecef0018007a81e5f23d14866bf8c",
+      "report_result_sha256": "a2911098c53edf269c25cf76a1a2857bc57fd4fb2835cf4e7229d12794d7e752"
+    },
+    {
+      "case": "018-trashbag-cloth-ep0000",
+      "report_file": "018-trashbag-cloth-ep0000.json",
+      "report_file_sha256": "ffd6715aec48165ccffdc902dbccc6f2f395bea661ed49168033dfb396fe4441",
+      "report_result_sha256": "f371a97449807a70118771596e6bee8d6c59976d3dbaea4c44dd2ae636c3ee9a"
+    },
+    {
+      "case": "051-cube-ep0000",
+      "report_file": "051-cube-ep0000.json",
+      "report_file_sha256": "dcf23f2af38e3e85d5dec39ff39b0acd689e6e2d998f27c2540174ed41bc2ba3",
+      "report_result_sha256": "92d83602d5fdab7d7149848226da2b33dafde9b8f5eb0eaaa0e2841560e7d9ef"
+    },
+    {
+      "case": "019-trashbag-plastic-cloth-ep0000",
+      "report_file": "019-trashbag-plastic-cloth-ep0000.json",
+      "report_file_sha256": "b57ee0a78827362d24f0fe34422584d754cb5fa838bcb6aea2acd5d4eaa14a56",
+      "report_result_sha256": "657d9225c781dae6c66c9ad0a2e87cc546ee71b2a752612f2c3b876bf6f3ade5"
+    },
+    {
+      "case": "053-squeezer-ep0000",
+      "report_file": "053-squeezer-ep0000.json",
+      "report_file_sha256": "1fc7bfaf34da79ea1c9c11ce7765941789f922b230f58636e8b91ae9769a69e0",
+      "report_result_sha256": "7f4446dabe6408a53712d296f6b478849697aa615c786adb2dd2c4a1376356fb"
+    },
+    {
+      "case": "020-cutting-mat-cloth-ep0000",
+      "report_file": "020-cutting-mat-cloth-ep0000.json",
+      "report_file_sha256": "640bb3d6e9f67fa03fd0902365707f8c80367f969f0a60c840df66c9c6d99ddb",
+      "report_result_sha256": "9e2dce48cff1268e3b39388d7f62bccdc357df0948af7481f7f34fc0fa6f5285"
+    }
+  ],
+  "barrier": {
+    "file_sha256": "acb6de6b445cb4d3acffba7b3011093f6212ec32d950209100e1327c1b8dbb2d",
+    "path": "/home/florianpfaff/deform360-fresh-pairwise-eval-32f0fe1/completeness_barrier.json",
+    "result_sha256": "ac55fa454cf4351cca4ecaa680268607fc103bb33d58d382674f6e3a86ac6ca9"
+  },
+  "calibration_claim": {
+    "evaluated": false,
+    "reason": "the sealed candidate archive contains point predictions but no frozen predictive covariance"
+  },
+  "case_count": 12,
+  "category_aggregate": {
+    "filament": {
+      "persistence": {
+        "post_update_hidden_identity_rmse_m": 1.721682920265341e-05,
+        "post_update_hidden_symmetric_chamfer_m": 5.685449805002375e-06
+      },
+      "physical_prior": {
+        "post_update_hidden_identity_rmse_m": 0.004816449831737453,
+        "post_update_hidden_symmetric_chamfer_m": 0.0030703495958700217
+      },
+      "raw_selected_backbone_full_blend_rbf_pairwise_clique": {
+        "post_update_hidden_identity_rmse_m": 0.004703978825352821,
+        "post_update_hidden_symmetric_chamfer_m": 0.0035333320132566472
+      },
+      "selected_raw_backbone_persistence_insufficient_default": {
+        "post_update_hidden_identity_rmse_m": 0.0019339416904154657,
+        "post_update_hidden_symmetric_chamfer_m": 0.0012503765312597299
+      }
+    },
+    "sheet": {
+      "persistence": {
+        "post_update_hidden_identity_rmse_m": 0.00026003104560080225,
+        "post_update_hidden_symmetric_chamfer_m": 0.00032287160943938944
+      },
+      "physical_prior": {
+        "post_update_hidden_identity_rmse_m": 0.0025014234541303024,
+        "post_update_hidden_symmetric_chamfer_m": 0.0018863500890358496
+      },
+      "raw_selected_backbone_full_blend_rbf_pairwise_clique": {
+        "post_update_hidden_identity_rmse_m": 0.0019000221979885768,
+        "post_update_hidden_symmetric_chamfer_m": 0.00199604810292982
+      },
+      "selected_raw_backbone_persistence_insufficient_default": {
+        "post_update_hidden_identity_rmse_m": 0.00047639504893841436,
+        "post_update_hidden_symmetric_chamfer_m": 0.0005389364623077444
+      }
+    },
+    "volumetric": {
+      "persistence": {
+        "post_update_hidden_identity_rmse_m": 0.0002680317905489524,
+        "post_update_hidden_symmetric_chamfer_m": 0.0003216096162759449
+      },
+      "physical_prior": {
+        "post_update_hidden_identity_rmse_m": 0.0010375949576493884,
+        "post_update_hidden_symmetric_chamfer_m": 0.0011161047784223807
+      },
+      "raw_selected_backbone_full_blend_rbf_pairwise_clique": {
+        "post_update_hidden_identity_rmse_m": 0.0022252660619876525,
+        "post_update_hidden_symmetric_chamfer_m": 0.0022864060947137103
+      },
+      "selected_raw_backbone_persistence_insufficient_default": {
+        "post_update_hidden_identity_rmse_m": 0.0006513965421902742,
+        "post_update_hidden_symmetric_chamfer_m": 0.0007047957836764507
+      }
+    }
+  },
+  "claim_boundary": "prospective fresh-object transfer under candidate hidden-identity metrics; neither calibrated uncertainty nor official Deform360 SOTA is claimed",
+  "cohort_lock_sha256": "bafe26848ee83d8a4201e9d11d51af106370647f76ec702003e9ec51d3843729",
+  "comparisons": {
+    "raw_selected_backbone_full_blend_rbf_pairwise_clique_vs_persistence": {
+      "joint_two_metric_regressions": 12,
+      "joint_two_metric_wins": 0,
+      "metrics": {
+        "post_update_hidden_identity_rmse_m": {
+          "episode_mean_difference_m": 0.002507431569678681,
+          "object_balanced_mean_difference_m": 0.002507431569678681,
+          "object_cluster_lower_95_m": 0.0014453534191080177,
+          "object_cluster_probability_improved": 0.0,
+          "object_cluster_upper_95_m": 0.0036346195591242386,
+          "regressions": 12,
+          "relative_change": 12.413371307276877,
+          "ties": 0,
+          "transfer_gate_passed": false,
+          "wins": 0
+        },
+        "post_update_hidden_symmetric_chamfer_m": {
+          "episode_mean_difference_m": 0.0022340006726298454,
+          "object_balanced_mean_difference_m": 0.0022340006726298454,
+          "object_cluster_lower_95_m": 0.0014232915953606088,
+          "object_cluster_probability_improved": 0.0,
+          "object_cluster_upper_95_m": 0.0030970826746081564,
+          "regressions": 12,
+          "relative_change": 9.18758050595968,
+          "ties": 0,
+          "transfer_gate_passed": false,
+          "wins": 0
+        }
+      },
+      "transfer_gate_passed": false
+    },
+    "raw_selected_backbone_full_blend_rbf_pairwise_clique_vs_physical_prior": {
+      "joint_two_metric_regressions": 9,
+      "joint_two_metric_wins": 2,
+      "metrics": {
+        "post_update_hidden_identity_rmse_m": {
+          "episode_mean_difference_m": 0.00011718875979087777,
+          "object_balanced_mean_difference_m": 0.00011718875979087777,
+          "object_cluster_lower_95_m": -0.001953135965625201,
+          "object_cluster_probability_improved": 0.4241,
+          "object_cluster_upper_95_m": 0.0018752737755140891,
+          "regressions": 10,
+          "relative_change": 0.045207575545458845,
+          "ties": 0,
+          "transfer_gate_passed": false,
+          "wins": 2
+        },
+        "post_update_hidden_symmetric_chamfer_m": {
+          "episode_mean_difference_m": 0.0005515535488995871,
+          "object_balanced_mean_difference_m": 0.0005515535488995872,
+          "object_cluster_lower_95_m": -0.0009658765022365455,
+          "object_cluster_probability_improved": 0.2211,
+          "object_cluster_upper_95_m": 0.0018756869138181556,
+          "regressions": 9,
+          "relative_change": 0.2864318191637123,
+          "ties": 0,
+          "transfer_gate_passed": false,
+          "wins": 3
+        }
+      },
+      "transfer_gate_passed": false
+    },
+    "raw_selected_backbone_full_blend_rbf_pairwise_clique_vs_selected_raw_backbone_persistence_insufficient_default": {
+      "joint_two_metric_regressions": 12,
+      "joint_two_metric_wins": 0,
+      "metrics": {
+        "post_update_hidden_identity_rmse_m": {
+          "episode_mean_difference_m": 0.0018103104357710326,
+          "object_balanced_mean_difference_m": 0.0018103104357710326,
+          "object_cluster_lower_95_m": 0.001006198305603343,
+          "object_cluster_probability_improved": 0.0,
+          "object_cluster_upper_95_m": 0.002682888969327027,
+          "regressions": 12,
+          "relative_change": 2.0134347082717645,
+          "ties": 0,
+          "transfer_gate_passed": false,
+          "wins": 0
+        },
+        "post_update_hidden_symmetric_chamfer_m": {
+          "episode_mean_difference_m": 0.0017050721577708471,
+          "object_balanced_mean_difference_m": 0.001705072157770847,
+          "object_cluster_lower_95_m": 0.0010238762280319167,
+          "object_cluster_probability_improved": 0.0,
+          "object_cluster_upper_95_m": 0.0024453549784190097,
+          "regressions": 12,
+          "relative_change": 2.208405488061415,
+          "ties": 0,
+          "transfer_gate_passed": false,
+          "wins": 0
+        }
+      },
+      "transfer_gate_passed": false
+    }
+  },
+  "information_boundary": {
+    "all_predictions_hashed_before_future_outcome": true,
+    "barrier_validated_before_first_future_deserialization": true,
+    "future_payloads_opened_once_by_this_operator": true
+  },
+  "official_sota_claim": {
+    "allowed": false,
+    "reason": "the cohort lock permits only fresh-object candidate metric conventions until official Deform360 evaluator parity is resolved"
+  },
+  "operator": {
+    "evaluator_source_file_sha256": "8fcbd72ce86c3f79dddc43e03d036057442aa34f34e0fb83930585d48163c53a",
+    "file_sha256": "326dcc3b8af1f1b9b7f1fe0be2d4fb9e9683fa52c3542c5bcfb368919a407922",
+    "path": "/home/florianpfaff/bpt-fresh-outcome-0a01fb8/scripts/remote/score_deform360_fresh_pairwise_outcomes.py"
+  },
+  "physical_object_count": 12,
+  "protocol_config_sha256": "04e29aed6e0a99a295de37299ce7fb84d8f455d93836234ff4ca9c732e6a443c",
+  "protocol_id": "deform360-fresh-pairwise-belief-v1",
+  "repository_revision": "0a01fb864d44feb8bf27be96bcbe339ebad45bd9",
+  "result_sha256": "18f4355bf2236e009532d24ceac3a47a349be151d6b317252d1d94817fdeae22",
+  "schema_version": 1,
+  "scoring": {
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 0,
+    "center_policy": "exclude the 16 source-selected measurement identities from both primary metrics",
+    "scored_frames": [
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75
+    ],
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "transfer_gate": {
+    "checks": {
+      "raw_selected_backbone_full_blend_rbf_pairwise_clique_vs_persistence": false,
+      "raw_selected_backbone_full_blend_rbf_pairwise_clique_vs_physical_prior": false,
+      "raw_selected_backbone_full_blend_rbf_pairwise_clique_vs_selected_raw_backbone_persistence_insufficient_default": false
+    },
+    "definition": "candidate object-balanced mean difference and 95% object-bootstrap upper bound are both below zero for both primary metrics against each comparator",
+    "passed": false
+  }
+}
