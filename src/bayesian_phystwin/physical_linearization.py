@@ -10,7 +10,7 @@ from typing import Any, Mapping
 
 import numpy as np
 
-from .causal4d_provider_v1 import array_sha256
+from .guarded_physical_belief import array_sha256
 
 PHYSICAL_LINEARIZATION_SCHEMA = "bayesian_phystwin.physical_linearization"
 PHYSICAL_LINEARIZATION_VERSION = 1
@@ -20,10 +20,7 @@ NONLINEAR_CLOSURE_VERSION = 1
 
 def _canonical_json(values: Mapping[str, Any]) -> bytes:
     return json.dumps(
-        dict(values),
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
+        dict(values), sort_keys=True, separators=(",", ":"), allow_nan=False
     ).encode("utf-8")
 
 
@@ -145,7 +142,9 @@ class PhysicalLinearizationV1:
                 window_indices[order],
             )
         )
-        if len(keys) > 1 and np.any(np.all(keys[1:] == keys[:-1], axis=1)):
+        if len(keys) > 1 and np.any(
+            np.all(keys[1:] == keys[:-1], axis=1)
+        ):
             raise ValueError("linearization row identities must be unique")
         object.__setattr__(self, "frame_ids", frame_ids)
         object.__setattr__(self, "entity_ids", entity_ids)
