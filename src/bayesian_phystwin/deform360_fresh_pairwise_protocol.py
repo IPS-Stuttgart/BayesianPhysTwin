@@ -127,6 +127,13 @@ def load_fresh_pairwise_protocol(
         and physical.get("autonomous_drift_response") == 0.0,
         "physical-backbone contract changed",
     )
+    action_window = physical.get("known_action_window", {})
+    _require(
+        action_window.get("staged_frame_count") == 81
+        and action_window.get("prediction_frame_range_half_open") == [0, 76]
+        and action_window.get("tracking_tail_frames_skipped") == 5,
+        "known-action window contract changed",
+    )
     custody = payload.get("custody", {})
     _require(
         custody.get("outcome_before_barrier") is False

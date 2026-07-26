@@ -249,9 +249,11 @@ def load_controller_trajectory(
         bimanual_value.shape == () and bimanual_value.dtype == np.bool_,
         "invalid bimanual flag",
     )
+    source_frame_count = len(actions)
     _require(
-        len(actions) == len(poses) == len(openings) == EXPECTED_FRAME_COUNT,
-        "known action is not the frozen 76-frame window",
+        source_frame_count == len(poses) == len(openings)
+        and source_frame_count in {EXPECTED_FRAME_COUNT, EXPECTED_FRAME_COUNT + 5},
+        "known action is not the frozen 76/81-frame window",
     )
     _require(
         np.all(np.isfinite(actions))
@@ -260,6 +262,8 @@ def load_controller_trajectory(
         "robot archive is non-finite",
     )
     bimanual = bool(bimanual_value.item())
+    poses = poses[:EXPECTED_FRAME_COUNT]
+    openings = openings[:EXPECTED_FRAME_COUNT]
     controllers: list[np.ndarray] = []
     for frame in range(EXPECTED_FRAME_COUNT):
         blocks = []
@@ -273,6 +277,8 @@ def load_controller_trajectory(
     return trajectory, {
         "selection_rule": "preselected_action_only_prediction_window",
         "prediction_frame_range_half_open": [0, EXPECTED_FRAME_COUNT],
+        "staged_frame_count": source_frame_count,
+        "tracking_tail_frames_skipped": source_frame_count - EXPECTED_FRAME_COUNT,
         "controller_point_count": int(trajectory.shape[1]),
         "controller_trajectory_sha256": array_sha256(trajectory),
         "source_robot_sha256": file_sha256(source),

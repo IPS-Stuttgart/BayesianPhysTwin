@@ -7,6 +7,7 @@ import numpy as np
 from bayesian_phystwin.deform360_fresh_pairwise_physical import (
     CANONICAL_NODE_COUNT,
     build_warp_backbone_arrays,
+    load_controller_trajectory,
     load_frame_zero_ply,
 )
 
@@ -87,3 +88,28 @@ def test_driven_minus_zero_backbone_uses_frozen_action_support() -> None:
         atol=1e-7,
     )
     assert np.all(arrays["action_support"] == 1.0)
+
+
+def test_controller_loader_skips_only_frozen_five_frame_tail(
+    tmp_path: Path,
+) -> None:
+    frame_count = 81
+    poses = np.repeat(np.eye(4)[None], frame_count, axis=0)
+    poses[:, 0, 3] = np.arange(frame_count)
+    path = tmp_path / "robot.npz"
+    np.savez_compressed(
+        path,
+        format_version=np.asarray(1),
+        actions=np.zeros((frame_count, 5, 3)),
+        T_worlds=poses,
+        openings=np.full(frame_count, 0.08),
+        bimanual=np.asarray(False),
+    )
+
+    trajectory, record = load_controller_trajectory(path)
+
+    assert trajectory.shape == (76, 768, 3)
+    assert record["staged_frame_count"] == 81
+    assert record["tracking_tail_frames_skipped"] == 5
+    assert record["prediction_frame_range_half_open"] == [0, 76]
+    assert float(np.mean(trajectory[-1, :, 0])) > 74.0

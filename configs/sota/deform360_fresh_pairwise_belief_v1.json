@@ -67,7 +67,15 @@
       "support_dynamics": "official-ground"
     },
     "automatic_twin_source_admission_failure": "bit-exact persistence fallback",
-    "runtime_failure": "technical failure; blocks completeness barrier"
+    "runtime_failure": "technical failure; blocks completeness barrier",
+    "known_action_window": {
+      "staged_frame_count": 81,
+      "prediction_frame_range_half_open": [
+        0,
+        76
+      ],
+      "tracking_tail_frames_skipped": 5
+    }
   },
   "observation": {
     "tracker": "AllTracker vendored by MolmoMotion at 61f5b21b694ad8f854ec7ecd2400005acc73f685",

@@ -20,7 +20,9 @@ The method is frozen in
 ## Causal Boundary
 
 The physical backbone reads frame-zero object geometry and the known robot
-action. At update frame `u`, AllTracker reads exactly RGB frames `[0,u]`.
+action. The action staging archive has 81 frames; the frozen prediction uses
+frames `[0,76)` and skips the five-frame tracking tail. At update frame `u`,
+AllTracker reads exactly RGB frames `[0,u]`.
 Selection and correspondence gating use only the current sparse observation,
 the two sealed backbones, and prior belief state.
 
