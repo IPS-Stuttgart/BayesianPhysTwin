@@ -1,4 +1,4 @@
-"""Check Ruff formatting for Python files changed by the current Git event."""
+"""Check full Ruff lint and formatting for changed Python files."""
 
 from __future__ import annotations
 
@@ -38,14 +38,21 @@ def _commit_exists(repository_root: Path, revision: str) -> bool:
     return completed.returncode == 0
 
 
-def _resolved_base(
+def _comparison_base(
     repository_root: Path,
     *,
     base: str,
     head: str,
 ) -> str | None:
     if _commit_exists(repository_root, base):
-        return base
+        merge_base = _git_output(
+            repository_root,
+            "merge-base",
+            base,
+            head,
+        ).strip()
+        if merge_base:
+            return merge_base
     parent = f"{head}^"
     return parent if _commit_exists(repository_root, parent) else None
 
@@ -59,7 +66,7 @@ def changed_python_files(
     """Return existing changed Python paths relative to ``repository_root``."""
 
     resolved_root = repository_root.resolve()
-    resolved_base = _resolved_base(
+    resolved_base = _comparison_base(
         resolved_root,
         base=base,
         head=head,
@@ -93,28 +100,37 @@ def _batches(values: Sequence[str]) -> Iterable[Sequence[str]]:
         yield values[start : start + _BATCH_SIZE]
 
 
-def check_changed_python_format(
+def _run_ruff(
+    repository_root: Path,
+    arguments: Sequence[str],
+    files: Sequence[str],
+) -> None:
+    for batch in _batches(files):
+        subprocess.run(
+            [sys.executable, "-m", "ruff", *arguments, *batch],
+            cwd=repository_root,
+            check=True,
+        )
+
+
+def check_changed_python_quality(
     repository_root: Path,
     *,
     base: str = "",
     head: str = "HEAD",
 ) -> tuple[str, ...]:
-    """Run ``ruff format --check`` on changed Python files and return them."""
+    """Enforce the configured Ruff lint and formatting policy on changed files."""
 
     files = changed_python_files(repository_root, base=base, head=head)
     if not files:
-        print("No changed Python files require formatting checks.")
+        print("No changed Python files require Ruff checks.")
         return files
 
-    print("Checking Ruff formatting for:")
+    print("Checking full Ruff policy for:")
     for path in files:
         print(f"  {path}")
-    for batch in _batches(files):
-        subprocess.run(
-            [sys.executable, "-m", "ruff", "format", "--check", *batch],
-            cwd=repository_root,
-            check=True,
-        )
+    _run_ruff(repository_root, ("check",), files)
+    _run_ruff(repository_root, ("format", "--check"), files)
     return files
 
 
@@ -134,14 +150,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--head",
         default="HEAD",
-        help="head revision to compare and format-check",
+        help="head revision to compare and check",
     )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    check_changed_python_format(
+    check_changed_python_quality(
         args.repository_root,
         base=args.base,
         head=args.head,
