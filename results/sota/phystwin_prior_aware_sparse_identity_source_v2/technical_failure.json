@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-prior-aware-sparse-identity-source-v2",
+  "protocol_sha256": "b1233013937a983da8f426234b2129fdb7a7cfbb74cbf99cf4e912cddfa70f08",
+  "implementation_commit": "c17f129601531550d01e892fd285b9ddfc470ab3",
+  "status": "technical_failure_before_output_creation_or_array_loading",
+  "case_id": "single_lift_cloth",
+  "registered_attempt": {
+    "output_directory": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v2/run/single_lift_cloth",
+    "failure_stage": "historical_source_replay_provenance_validation",
+    "error": "ValueError: source replay did not seal exact trajectory parity: released_trajectory_parity",
+    "input_files_checksum_read": true,
+    "input_arrays_unpickled": false,
+    "output_directory_created": false,
+    "prediction_manifest_written": false,
+    "score_written": false
+  },
+  "information_boundary": {
+    "simulator_initialized": false,
+    "state_fit_started": false,
+    "prediction_sealed": false,
+    "future_manual_identity_values_used_for_fit_selection_or_diagnosis": false,
+    "future_metrics_computed": false,
+    "held_v8_accessed": false
+  },
+  "target_free_diagnosis": {
+    "root_cause": "The v2 validator incorrectly required zero error against both the selected raw MatPhys baseline and the older released trajectory.",
+    "selected_baseline_vector_rmse_m": 0.0,
+    "selected_baseline_maximum_norm_m": 0.0,
+    "released_trajectory_vector_rmse_m": 0.03736121334431973,
+    "released_trajectory_maximum_norm_m": 0.1779697776600413,
+    "interpretation": "The selected raw trajectory is an intentionally new epochs-zero replay. Its exact self-parity is the relevant state-carrier contract; its recorded gap from the older release is provenance, not replay failure."
+  },
+  "disposition": {
+    "rerun_v2": false,
+    "score_v2": false,
+    "replacement_protocol": "phystwin-prior-aware-sparse-identity-source-v3",
+    "replacement_changes_scientific_method": false
+  },
+  "claim_boundary": "This record is implementation provenance only. It is neither positive nor negative evidence about the sparse-identity state-update hypothesis."
+}

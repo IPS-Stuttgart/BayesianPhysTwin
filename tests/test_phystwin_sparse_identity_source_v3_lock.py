@@ -5,13 +5,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_PATH = (
-    ROOT / "configs" / "sota" / "phystwin_prior_aware_sparse_identity_source_v2.json"
+    ROOT / "configs" / "sota" / "phystwin_prior_aware_sparse_identity_source_v3.json"
 )
-FAILURE_PATH = (
+V1_FAILURE_PATH = (
     ROOT
     / "results"
     / "sota"
     / "phystwin_prior_aware_sparse_identity_source_v1"
+    / "technical_failure.json"
+)
+V2_FAILURE_PATH = (
+    ROOT
+    / "results"
+    / "sota"
+    / "phystwin_prior_aware_sparse_identity_source_v2"
     / "technical_failure.json"
 )
 
@@ -24,7 +31,7 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_v2_lock_binds_every_runtime_implementation_dependency() -> None:
+def test_v3_lock_binds_every_runtime_implementation_dependency() -> None:
     protocol = _load(PROTOCOL_PATH)
     implementation = protocol["implementation"]
     paths = {
@@ -42,15 +49,15 @@ def test_v2_lock_binds_every_runtime_implementation_dependency() -> None:
         ),
     }
 
-    assert protocol["schema_version"] == 2
+    assert protocol["schema_version"] == 3
     assert protocol["protocol_id"] == (
-        "phystwin-prior-aware-sparse-identity-source-v2"
+        "phystwin-prior-aware-sparse-identity-source-v3"
     )
     for field, path in paths.items():
         assert implementation[field] == _sha256(path)
 
 
-def test_v2_lock_preserves_hidden_identity_and_exact_fallback_boundaries() -> None:
+def test_v3_lock_preserves_hidden_identity_and_exact_fallback_boundaries() -> None:
     protocol = _load(PROTOCOL_PATH)
     source_qa = protocol["source_qa"]
 
@@ -69,7 +76,7 @@ def test_v2_lock_preserves_hidden_identity_and_exact_fallback_boundaries() -> No
 
 
 def test_v1_failure_is_archived_as_pre_outcome_technical_evidence() -> None:
-    failure = _load(FAILURE_PATH)
+    failure = _load(V1_FAILURE_PATH)
 
     assert failure["registered_attempt"]["prediction_manifest_written"] is False
     assert failure["registered_attempt"]["score_written"] is False
@@ -83,4 +90,19 @@ def test_v1_failure_is_archived_as_pre_outcome_technical_evidence() -> None:
     assert failure["target_free_diagnosis"]["fixed_helper_vector_rmse_m"] == 0.0
     assert failure["disposition"]["replacement_protocol"] == (
         "phystwin-prior-aware-sparse-identity-source-v2"
+    )
+
+
+def test_v2_failure_is_archived_before_array_loading() -> None:
+    failure = _load(V2_FAILURE_PATH)
+
+    assert failure["registered_attempt"]["input_arrays_unpickled"] is False
+    assert failure["registered_attempt"]["output_directory_created"] is False
+    assert failure["information_boundary"]["simulator_initialized"] is False
+    assert (
+        failure["target_free_diagnosis"]["selected_baseline_vector_rmse_m"] == 0.0
+    )
+    assert failure["target_free_diagnosis"]["released_trajectory_vector_rmse_m"] > 0.0
+    assert failure["disposition"]["replacement_protocol"] == (
+        "phystwin-prior-aware-sparse-identity-source-v3"
     )
