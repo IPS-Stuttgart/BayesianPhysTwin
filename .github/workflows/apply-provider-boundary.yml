@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   apply:
-    if: ${{ !contains(github.event.pull_request.head.sha || github.event.after, '') && !contains(github.event.head_commit.message || '', '[provider-boundary-applied]') }}
+    if: ${{ github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[provider-boundary-applied]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
