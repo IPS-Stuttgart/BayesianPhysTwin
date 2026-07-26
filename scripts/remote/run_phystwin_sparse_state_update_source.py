@@ -42,7 +42,6 @@ from bayesian_phystwin.phystwin_sparse_state_update import (  # noqa: E402
 )
 from bayesian_phystwin.phystwin_state_injection import (  # noqa: E402
     _initialize_simulator,
-    _released_self_collision_for_case,
     _rollout_initial,
     _rollout_restart,
     _trajectory_error,
@@ -133,10 +132,10 @@ def _load_protocol(path: Path) -> dict[str, Any]:
     protocol = json.loads(path.read_text(encoding="utf-8"))
     _require(
         protocol.get("protocol_id")
-        == "phystwin-prior-aware-sparse-identity-source-v3",
+        == "phystwin-prior-aware-sparse-identity-source-v4",
         "unexpected protocol id",
     )
-    _require(int(protocol.get("schema_version", -1)) == 3, "unsupported protocol")
+    _require(int(protocol.get("schema_version", -1)) == 4, "unsupported protocol")
     return protocol
 
 
@@ -457,7 +456,7 @@ def _predict(protocol_path: Path, output: Path) -> None:
         original_count=original_count,
         dt=float(simulator_settings["dt_s"]),
         num_substeps=int(simulator_settings["num_substeps"]),
-        self_collision=_released_self_collision_for_case(case_id),
+        self_collision=bool(simulator_settings["self_collision"]),
         deterministic_spring_forces=bool(
             simulator_settings["deterministic_spring_forces"]
         ),
