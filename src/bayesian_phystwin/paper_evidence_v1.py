@@ -1,9 +1,9 @@
 """Validated paper-evidence bindings layered on :mod:`run_manifest_v2`.
 
 The profile intentionally lives inside ``RunManifestV2.information_boundary``.
-That preserves the released V2 schema while making the provider, stream,
-artifact, distribution, and paper-claim semantics machine-checkable and part of
-the existing evidence fingerprint.
+That preserves the released V2 schema while making provider, stream, artifact,
+distribution, and paper-claim semantics machine-checkable and part of the
+existing evidence fingerprint.
 """
 
 from __future__ import annotations
@@ -42,6 +42,11 @@ _STREAM_BINDING_FIELDS = frozenset({"version", "resolution"})
 _DISTRIBUTION_BINDING_FIELDS = frozenset(
     {"project", "kind", "artifact_name", "artifact_id"}
 )
+_VALID_ARTIFACT_ROLES = frozenset({"input", "output"})
+_VALID_DISTRIBUTION_KINDS = frozenset({"wheel", "sdist"})
+_VALID_STREAM_RESOLUTIONS = frozenset(
+    {"declared", "inferred", "not_applicable"}
+)
 
 
 def _require_exact_fields(
@@ -53,13 +58,14 @@ def _require_exact_fields(
     actual = frozenset(map(str, value))
     missing = sorted(expected - actual)
     unknown = sorted(actual - expected)
-    if missing or unknown:
-        details: list[str] = []
-        if missing:
-            details.append(f"missing {missing}")
-        if unknown:
-            details.append(f"unknown {unknown}")
-        raise ValueError(f"{name} does not match schema: {', '.join(details)}")
+    if not missing and not unknown:
+        return
+    details: list[str] = []
+    if missing:
+        details.append(f"missing {missing}")
+    if unknown:
+        details.append(f"unknown {unknown}")
+    raise ValueError(f"{name} does not match schema: {', '.join(details)}")
 
 
 def _require_mapping(value: Any, *, name: str) -> Mapping[str, Any]:
@@ -74,20 +80,44 @@ def _require_sequence(value: Any, *, name: str) -> Sequence[Any]:
     return value
 
 
-def _require_nonempty(value: Any, *, name: str) -> str:
-    normalized = str(value).strip()
-    if not normalized:
-        raise ValueError(f"{name} must be nonempty")
-    return normalized
+def _require_nonempty_text(value: Any, *, name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{name} must be nonempty text")
+    return value.strip()
 
 
 def _require_sha256(value: Any, *, name: str) -> str:
-    normalized = str(value).lower()
-    if len(normalized) != 64 or any(
-        character not in "0123456789abcdef" for character in normalized
+    if not isinstance(value, str):
+        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+    if len(value) != 64 or any(
+        character not in "0123456789abcdef" for character in value
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
-    return normalized
+    return value
+
+
+def _require_integer(value: Any, *, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{name} must be an integer")
+    return value
+
+
+def _require_artifact_role(value: Any) -> ArtifactRole:
+    if value not in _VALID_ARTIFACT_ROLES:
+        raise ValueError("artifact binding role must be 'input' or 'output'")
+    return cast(ArtifactRole, value)
+
+
+def _require_distribution_kind(value: Any) -> DistributionKind:
+    if value not in _VALID_DISTRIBUTION_KINDS:
+        raise ValueError("distribution kind must be 'wheel' or 'sdist'")
+    return cast(DistributionKind, value)
+
+
+def _require_stream_resolution(value: Any) -> StreamResolution:
+    if value not in _VALID_STREAM_RESOLUTIONS:
+        raise ValueError("unsupported Prob4D stream-contract resolution")
+    return cast(StreamResolution, value)
 
 
 @dataclass(frozen=True)
@@ -99,12 +129,17 @@ class ArtifactBindingV1:
     role: ArtifactRole
 
     def __post_init__(self) -> None:
-        name = _require_nonempty(self.artifact_name, name="artifact_name")
-        artifact_id = _require_sha256(self.artifact_id, name="artifact_id")
-        if self.role not in {"input", "output"}:
-            raise ValueError("artifact binding role must be 'input' or 'output'")
-        object.__setattr__(self, "artifact_name", name)
-        object.__setattr__(self, "artifact_id", artifact_id)
+        object.__setattr__(
+            self,
+            "artifact_name",
+            _require_nonempty_text(self.artifact_name, name="artifact_name"),
+        )
+        object.__setattr__(
+            self,
+            "artifact_id",
+            _require_sha256(self.artifact_id, name="artifact_id"),
+        )
+        object.__setattr__(self, "role", _require_artifact_role(self.role))
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -120,13 +155,16 @@ class ArtifactBindingV1:
             expected=_ARTIFACT_BINDING_FIELDS,
             name="paper-evidence artifact binding",
         )
-        role = str(value["role"])
-        if role not in {"input", "output"}:
-            raise ValueError("artifact binding role must be 'input' or 'output'")
         return cls(
-            artifact_name=str(value["artifact_name"]),
-            artifact_id=str(value["artifact_id"]),
-            role=cast(ArtifactRole, role),
+            artifact_name=_require_nonempty_text(
+                value["artifact_name"],
+                name="artifact_name",
+            ),
+            artifact_id=_require_sha256(
+                value["artifact_id"],
+                name="artifact_id",
+            ),
+            role=_require_artifact_role(value["role"]),
         )
 
 
@@ -138,21 +176,21 @@ class Prob4DStreamBindingV1:
     resolution: StreamResolution
 
     def __post_init__(self) -> None:
-        if self.resolution not in {"declared", "inferred", "not_applicable"}:
-            raise ValueError("unsupported Prob4D stream-contract resolution")
-        if self.resolution == "not_applicable":
+        resolution = _require_stream_resolution(self.resolution)
+        object.__setattr__(self, "resolution", resolution)
+        if resolution == "not_applicable":
             if self.version is not None:
                 raise ValueError(
                     "not-applicable Prob4D stream contract cannot have a version"
                 )
             return
-        if isinstance(self.version, bool) or not isinstance(self.version, int):
-            raise ValueError(
-                "declared or inferred Prob4D stream contract requires an "
-                "integer version"
-            )
-        if self.version < 1:
+        version = _require_integer(
+            self.version,
+            name="Prob4D stream-contract version",
+        )
+        if version < 1:
             raise ValueError("Prob4D stream-contract version must be positive")
+        object.__setattr__(self, "version", version)
 
     def as_dict(self) -> dict[str, object]:
         return {"version": self.version, "resolution": self.resolution}
@@ -165,18 +203,17 @@ class Prob4DStreamBindingV1:
             name="Prob4D stream binding",
         )
         raw_version = value["version"]
-        if raw_version is not None and (
-            isinstance(raw_version, bool) or not isinstance(raw_version, int)
-        ):
-            raise ValueError(
-                "Prob4D stream-contract version must be an integer or null"
+        version = (
+            None
+            if raw_version is None
+            else _require_integer(
+                raw_version,
+                name="Prob4D stream-contract version",
             )
-        resolution = str(value["resolution"])
-        if resolution not in {"declared", "inferred", "not_applicable"}:
-            raise ValueError("unsupported Prob4D stream-contract resolution")
+        )
         return cls(
-            version=cast(int | None, raw_version),
-            resolution=cast(StreamResolution, resolution),
+            version=version,
+            resolution=_require_stream_resolution(value["resolution"]),
         )
 
 
@@ -190,20 +227,28 @@ class DistributionBindingV1:
     artifact_id: str
 
     def __post_init__(self) -> None:
-        project = _require_nonempty(self.project, name="distribution project")
-        artifact_name = _require_nonempty(
-            self.artifact_name,
-            name="distribution artifact_name",
+        object.__setattr__(
+            self,
+            "project",
+            _require_nonempty_text(self.project, name="distribution project"),
         )
-        artifact_id = _require_sha256(
-            self.artifact_id,
-            name="distribution artifact_id",
+        object.__setattr__(self, "kind", _require_distribution_kind(self.kind))
+        object.__setattr__(
+            self,
+            "artifact_name",
+            _require_nonempty_text(
+                self.artifact_name,
+                name="distribution artifact_name",
+            ),
         )
-        if self.kind not in {"wheel", "sdist"}:
-            raise ValueError("distribution kind must be 'wheel' or 'sdist'")
-        object.__setattr__(self, "project", project)
-        object.__setattr__(self, "artifact_name", artifact_name)
-        object.__setattr__(self, "artifact_id", artifact_id)
+        object.__setattr__(
+            self,
+            "artifact_id",
+            _require_sha256(
+                self.artifact_id,
+                name="distribution artifact_id",
+            ),
+        )
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -220,14 +265,20 @@ class DistributionBindingV1:
             expected=_DISTRIBUTION_BINDING_FIELDS,
             name="distribution binding",
         )
-        kind = str(value["kind"])
-        if kind not in {"wheel", "sdist"}:
-            raise ValueError("distribution kind must be 'wheel' or 'sdist'")
         return cls(
-            project=str(value["project"]),
-            kind=cast(DistributionKind, kind),
-            artifact_name=str(value["artifact_name"]),
-            artifact_id=str(value["artifact_id"]),
+            project=_require_nonempty_text(
+                value["project"],
+                name="distribution project",
+            ),
+            kind=_require_distribution_kind(value["kind"]),
+            artifact_name=_require_nonempty_text(
+                value["artifact_name"],
+                name="distribution artifact_name",
+            ),
+            artifact_id=_require_sha256(
+                value["artifact_id"],
+                name="distribution artifact_id",
+            ),
         )
 
 
@@ -243,27 +294,40 @@ class PaperEvidenceBindingsV1:
     distributions: tuple[DistributionBindingV1, ...]
 
     def __post_init__(self) -> None:
-        project = _require_nonempty(
+        project = _require_nonempty_text(
             self.primary_distribution_project,
             name="primary_distribution_project",
         )
         distributions = tuple(self.distributions)
-        if self.provider_manifest.role != "input":
-            raise ValueError("provider manifest must be bound as an input artifact")
-        if self.observation_belief.role != "input":
-            raise ValueError("observation belief must be bound as an input artifact")
+        required_roles = (
+            ("provider manifest", self.provider_manifest, "input"),
+            ("observation belief", self.observation_belief, "input"),
+            ("TwinBelief", self.twin_belief, "output"),
+        )
+        for name, binding, expected_role in required_roles:
+            if binding.role != expected_role:
+                raise ValueError(
+                    f"{name} must be bound as an {expected_role} artifact"
+                )
         if not distributions:
             raise ValueError("paper-evidence profile requires distribution artifacts")
-        artifact_names = [item.artifact_name for item in distributions]
+
+        artifact_names = [
+            self.provider_manifest.artifact_name,
+            self.observation_belief.artifact_name,
+            self.twin_belief.artifact_name,
+            *(item.artifact_name for item in distributions),
+        ]
         if len(artifact_names) != len(set(artifact_names)):
-            raise ValueError("distribution artifact names must be unique")
+            raise ValueError("paper-evidence artifact names must be unique")
+
         project_kinds = [(item.project, item.kind) for item in distributions]
         if len(project_kinds) != len(set(project_kinds)):
             raise ValueError("distribution project/kind pairs must be unique")
         primary_kinds = {
             item.kind for item in distributions if item.project == project
         }
-        if primary_kinds != {"wheel", "sdist"}:
+        if primary_kinds != _VALID_DISTRIBUTION_KINDS:
             raise ValueError(
                 "primary distribution project must bind exactly one wheel and one sdist"
             )
@@ -289,13 +353,20 @@ class PaperEvidenceBindingsV1:
             expected=_PROFILE_FIELDS,
             name="paper-evidence profile",
         )
-        if value.get("schema_name") != PAPER_EVIDENCE_SCHEMA:
+        if value["schema_name"] != PAPER_EVIDENCE_SCHEMA:
             raise ValueError("unsupported paper-evidence schema")
-        if int(value.get("schema_version", -1)) != PAPER_EVIDENCE_SCHEMA_VERSION:
+        if (
+            _require_integer(
+                value["schema_version"],
+                name="paper-evidence schema version",
+            )
+            != PAPER_EVIDENCE_SCHEMA_VERSION
+        ):
             raise ValueError("unsupported paper-evidence schema version")
         return cls(
-            primary_distribution_project=str(
-                value["primary_distribution_project"]
+            primary_distribution_project=_require_nonempty_text(
+                value["primary_distribution_project"],
+                name="primary_distribution_project",
             ),
             provider_manifest=ArtifactBindingV1.from_mapping(
                 _require_mapping(
@@ -373,10 +444,18 @@ def _artifact_index(
     manifest: RunManifestV2,
 ) -> dict[tuple[ArtifactRole, str], ArtifactDigest]:
     result: dict[tuple[ArtifactRole, str], ArtifactDigest] = {}
-    for artifact in manifest.inputs:
-        result[("input", artifact.name)] = artifact
-    for artifact in manifest.outputs:
-        result[("output", artifact.name)] = artifact
+    for role, artifacts in (
+        ("input", manifest.inputs),
+        ("output", manifest.outputs),
+    ):
+        typed_role = cast(ArtifactRole, role)
+        for artifact in artifacts:
+            key = (typed_role, artifact.name)
+            if key in result:
+                raise ValueError(
+                    f"run manifest contains duplicate {role} artifact {artifact.name!r}"
+                )
+            result[key] = artifact
     return result
 
 
@@ -412,7 +491,9 @@ def validate_paper_evidence_manifest(
         "baseline_id": manifest.baseline_id,
     }
     missing = sorted(
-        name for name, value in required_identifiers.items() if not str(value).strip()
+        name
+        for name, value in required_identifiers.items()
+        if not isinstance(value, str) or not value.strip()
     )
     if missing:
         raise ValueError(
@@ -437,16 +518,14 @@ def validate_paper_evidence_manifest(
         bindings.twin_belief,
         name="TwinBelief",
     )
-
     for distribution in bindings.distributions:
-        binding = ArtifactBindingV1(
-            artifact_name=distribution.artifact_name,
-            artifact_id=distribution.artifact_id,
-            role="input",
-        )
         _verify_binding(
             artifacts,
-            binding,
+            ArtifactBindingV1(
+                artifact_name=distribution.artifact_name,
+                artifact_id=distribution.artifact_id,
+                role="input",
+            ),
             name=f"{distribution.project} {distribution.kind}",
         )
     return bindings
