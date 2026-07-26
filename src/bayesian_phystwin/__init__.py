@@ -77,6 +77,13 @@ from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
 )
+from .prob4d_causal_lineage import (
+    PROB4D_CAUSAL_LINEAGE_VERSION,
+    PROB4D_CAUSAL_STREAM_ID,
+    PROB4D_SOURCE_REPOSITORY,
+    is_prob4d_causal_observation_belief,
+    validate_prob4d_causal_observation_belief,
+)
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
@@ -124,6 +131,9 @@ __all__ = [
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefV1",
     "ObservationBeliefGaugeAdapterResult",
+    "PROB4D_CAUSAL_LINEAGE_VERSION",
+    "PROB4D_CAUSAL_STREAM_ID",
+    "PROB4D_SOURCE_REPOSITORY",
     "ParameterEnsemble",
     "PhysicalLinearizationV1",
     "PhysicalResponseBasis",
@@ -158,6 +168,7 @@ __all__ = [
     "fit_source_regret_certificate",
     "global_translation_bias_jacobian",
     "grouped_student_t_mixture_likelihood",
+    "is_prob4d_causal_observation_belief",
     "load_observation_belief",
     "load_physical_linearization",
     "markov_log_evidence_batch",
@@ -179,5 +190,6 @@ __all__ = [
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",
     "validate_observation_linearization_alignment",
+    "validate_prob4d_causal_observation_belief",
     "write_export_summary",
 ]
