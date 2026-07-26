@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-prior-aware-sparse-identity-source-v3",
+  "protocol_sha256": "5a416e8d31655beb4c2cc2a0bd1fec9ae4df35f33f3927e76a9a9bc17ba17f04",
+  "implementation_commit": "55f2f551c49af88a13e9cc5c6e88a2204f85b9c3",
+  "status": "technical_failure_at_replay_parity_before_state_fit_or_outcome_scoring",
+  "case_id": "single_lift_cloth",
+  "registered_attempt": {
+    "output_directory": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v3/run/single_lift_cloth",
+    "failure_stage": "official_warp_replay_parity_gate",
+    "error": "ValueError: official Warp replay parity gate failed",
+    "replay_parity_path": "replay_parity.json",
+    "replay_parity_sha256": "69ed7394733930abc526bcdf7c9c5af24c2223a5726954f0854a6b43637aa188",
+    "state_carrier_written": false,
+    "prediction_manifest_written": false,
+    "score_written": false
+  },
+  "information_boundary": {
+    "input_arrays_unpickled": true,
+    "manual_tracks_deterministically_split": true,
+    "future_manual_identity_values_used_for_fit_selection_or_diagnosis": false,
+    "future_object_observations_removed_before_simulator_initialization": true,
+    "simulator_initialized": true,
+    "state_fit_started": false,
+    "prediction_sealed": false,
+    "future_metrics_computed": false,
+    "held_v8_accessed": false
+  },
+  "registered_replay_parity": {
+    "all_frames": {
+      "vector_rmse_m": 0.04236053695268122,
+      "maximum_norm_m": 0.21239567207214938
+    },
+    "prefix_endpoint": {
+      "vector_rmse_m": 0.05565685709693506,
+      "maximum_norm_m": 0.14197840699986114
+    },
+    "future": {
+      "vector_rmse_m": 0.05177404010345378,
+      "maximum_norm_m": 0.21239567207214938
+    }
+  },
+  "target_free_diagnosis": {
+    "root_cause": "The v3 runner enabled self-collision for a cloth case through a generic released-case rule. The historical headless MatPhys replay that defines the selected baseline uses self_collision=False.",
+    "v3_self_collision": true,
+    "historical_source_self_collision": false,
+    "prior_diagnostic_with_historical_setting_vector_rmse_m": 0.0,
+    "prior_diagnostic_with_historical_setting_maximum_norm_m": 0.0
+  },
+  "disposition": {
+    "rerun_v3": false,
+    "score_v3": false,
+    "replacement_protocol": "phystwin-prior-aware-sparse-identity-source-v4",
+    "replacement_changes_scientific_method": false
+  },
+  "claim_boundary": "This record is implementation provenance only. It is neither positive nor negative evidence about the sparse-identity state-update hypothesis."
+}
