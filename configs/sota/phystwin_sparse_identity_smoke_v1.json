@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-sparse-identity-smoke-v1",
+  "locked_at_utc": "2026-07-26T08:05:37Z",
+  "status": "Locked after implementation and target-free artifact validation, before any future metric from the covariance-aware sparse-identity arm was read.",
+  "claim_boundary": "One-case post-open development smoke on a previously examined PhysTwin interaction. It can reject this exact arm or authorize object-disjoint source development, but cannot establish transfer, calibration, state of the art, or permission to inspect any fresh target.",
+  "question": "Does a covariance-aware CoTracker3 material-identity channel improve the frozen released-dense discrepancy predictor when perception reliability is residual-independent and correlated views retain conservative metric uncertainty?",
+  "cases": [
+    "single_lift_cloth"
+  ],
+  "case_selection": "The already-open single_lift_cloth case was fixed as a schema and numerical smoke before this arm produced any future score. No fresh or held-v8 object is involved.",
+  "software": {
+    "implementation_base_commit": "abb897e8808e9897af47232ee265f2111631fc91",
+    "runner": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "runner_sha256": "5bcf02dc307e8d907b3aa65db6ad1c46db178a848b8b16a2d2cd5be7073fba1c",
+    "sparse_identity_observation": "src/bayesian_phystwin/phystwin_sparse_identity_observation.py",
+    "sparse_identity_observation_sha256": "8375ed24c83092341bd483acd74659ef3eebc749eb6d3fa93ac1fba581ab08d2",
+    "bayesian_endpoint": "src/bayesian_phystwin/phystwin_bayesian_anchor.py",
+    "bayesian_endpoint_sha256": "3f986b0817af2a4aedb35fec15133912019d7bfe93469f7cb2c480d47fc617cc",
+    "locked_analyzer": "src/bayesian_phystwin/phystwin_sparse_identity_smoke_analysis.py",
+    "locked_analyzer_sha256": "959ac3fde96c1f4e5a2b1f86e208f94ce707273b3089c14ea92822f497aab511",
+    "locked_analyzer_cli": "scripts/remote/analyze_phystwin_sparse_identity_smoke.py",
+    "locked_analyzer_cli_sha256": "c921b2d80b8099be5fff335e75b64aa1b2da4dcf49785e100a8e03198870a5f0"
+  },
+  "inputs": {
+    "family_selection": {
+      "path": "/mnt/corsair/florianpfaff/bpt-sparse-identity-smoke-v1/inputs/backbone_family_selection_single_lift_cloth.json",
+      "sha256": "eb6682e217db25da1284983e8793bc7e5c5dd1ab19700c6bbc418c28131aaae3",
+      "selected_family": "alpha_0000",
+      "selected_within_family_method": "last_residual",
+      "fit_end_frame_exclusive": 90,
+      "train_end_frame_exclusive": 121
+    },
+    "source_family_selection": {
+      "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/family_selection/backbone_family_selection.json",
+      "sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890"
+    },
+    "physical_baseline": {
+      "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/strength_sweep/replays/alpha_0000/cases/single_lift_cloth/replay/trajectory.pkl",
+      "sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72"
+    },
+    "cotracker3_cues": {
+      "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/cotracker3_cues_v3_open22/cues/single_lift_cloth/cues.npz",
+      "sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56",
+      "checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
+      "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
+    },
+    "case_artifacts": {
+      "final_data.pkl": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+      "gt_track_3d.pkl": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+      "optimal_params.pkl": "d926c3dd7471363616bb67bd1dbad96b01be5a487c151bbae37769c68064fc48",
+      "split.json": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+    },
+    "frozen_comparator": {
+      "path": "results/sota/phystwin_cotracker3_open22_headroom_v1/released_dense_without_manual.json",
+      "sha256": "1e9167865be45142b34d1b56b1ffa4c18b41cba4e316679ba58370eca9492889",
+      "arm": "causal_selected_dense_relative_cap_temporal",
+      "future_chamfer_distance_m": 0.011962914712127896,
+      "future_track_error_m": 0.05297582171468694
+    }
+  },
+  "method": {
+    "description": "Retain released final_data pseudo-tracks as the dense geometry channel and use CoTracker3 only as a sparse material-identity endpoint override with full metric covariance.",
+    "runner_config": {
+      "baseline_kind": "raw_matphys_replay",
+      "observation_source": "final_data_plus_cotracker3_sparse_identity",
+      "manual_prefix_override": false,
+      "cotracker_minimum_quality": 0.5,
+      "cotracker_maximum_cycle_error_px": 5.0,
+      "cotracker_maximum_reprojection_error_px": 3.0,
+      "sparse_identity_minimum_camera_count": 2,
+      "sparse_identity_redundant_camera_count": 3,
+      "sparse_identity_pixel_noise_std": 2.0,
+      "sparse_identity_prior_std_m": 0.1,
+      "sparse_identity_shared_bias_std_m": 0.005,
+      "sparse_identity_two_view_extra_std_m": 0.01,
+      "sparse_identity_boundary_scale_px": 8.0,
+      "sparse_identity_two_view_reliability_multiplier": 0.5,
+      "sparse_identity_minimum_ray_angle_degrees": 0.5,
+      "dense_correction_scales": [
+        1.0
+      ],
+      "relative_cap_quantile": 0.95,
+      "relative_cap_multipliers": [
+        1.0,
+        2.0,
+        4.0,
+        8.0
+      ],
+      "temporal_gamma_candidates": [
+        0.0,
+        0.25,
+        0.5,
+        1.0
+      ],
+      "process_std_m": 0.005,
+      "initial_std_m": 0.01,
+      "inlier_prior": 0.95,
+      "outlier_variance_multiplier": 100.0
+    },
+    "association": "Exact archived original PhysTwin material identity; no state residual determines association or prior reliability.",
+    "correlation_treatment": "Duplicate camera poses are collapsed, cross-view information is normalized rather than summed as independent precision, and common-mode plus two-view uncertainty remains in covariance.",
+    "innovation_treatment": "The PhysTwin innovation enters exactly once through the robust inlier/outlier likelihood after prior reliability and metric covariance are fixed.",
+    "primary_prediction_arm": "causal_selected_dense_relative_cap_temporal"
+  },
+  "future_read": {
+    "primary_arm": "causal_selected_dense_relative_cap_temporal",
+    "allowed_fields": [
+      "candidate and physical-baseline future Chamfer distance",
+      "candidate and physical-baseline future manual-track error",
+      "the same frozen comparator arm",
+      "automatic identity count and prefix valid fraction",
+      "two-view fraction, prior reliability, and metric observation standard deviation",
+      "the primary arm's prefix-selected cap, scale, and temporal gamma"
+    ],
+    "forbidden_fields": "Every non-primary candidate and per-case metric oracle emitted by the broad development runner remain out of scope and must not influence this method or gate."
+  },
+  "smoke_gate": {
+    "minimum_identity_count": 1,
+    "minimum_valid_fraction": 0.001,
+    "minimum_track_improvement_fraction": 0.05,
+    "maximum_cd_regression_fraction": 0.01,
+    "both_metrics_no_worse_than_physical_baseline": true,
+    "prefix_selector_must_accept": true,
+    "pass_action": "Freeze this exact observation path and design an object-disjoint source transfer/calibration gate. Do not inspect any fresh target.",
+    "fail_action": "Stop this exact sparse-identity arm without tuning covariance, support, reliability, cap, or temporal settings against this future."
+  },
+  "information_boundary": {
+    "decoded_rgb_frames": "[0, train_end)",
+    "future_rgb_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_selection": false,
+    "manual_tracks_role": "Evaluation only after the candidate prediction and prefix-only selector are fixed.",
+    "known_future_controller_action_in_physical_backbone": true,
+    "fresh_object_access_authorized": false,
+    "held_v8_access": false,
+    "held_v8_artifact_access": false
+  },
+  "forbidden": [
+    "printing or inspecting the broad runner's best candidate, metric oracle, or non-primary candidate futures",
+    "changing sparse covariance, reliability, camera support, selector, cap, or temporal settings after this future is read",
+    "using future RGB, object clouds, or manual tracks to build or select a prediction",
+    "calling this one opened case independent, confirmatory, calibrated, or state of the art",
+    "opening any fresh-object outcome before an object-disjoint source gate passes",
+    "opening, inspecting, modifying, or rerunning any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
