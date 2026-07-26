@@ -43,9 +43,11 @@ all supported Python versions. It covers:
 - content-address stability and tamper sensitivity;
 - JSON/NPZ serialization round trips;
 - Sim(3) transport of means, local covariance, and shared low-rank factors;
+- exact reconstruction of shared covariance without low-rank double counting;
+- numerical append-invariance when only an unobserved source suffix changes;
 - row/group permutation invariance of the gauge-aware update;
-- positive-semidefinite posterior covariance and preservation of prior
-  uncertainty;
+- positive-semidefinite posterior covariance and exact retention of unsupported
+  prior-state variance;
 - byte-exact baseline fallback across dtypes;
 - composition of Bayesian-PhysTwin and downstream retained posterior mass.
 
