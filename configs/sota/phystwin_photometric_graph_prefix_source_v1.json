@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-photometric-graph-prefix-source-v1",
+  "status": "prelock-awaiting-source-hashes",
+  "claim_boundary": "One-case prefix-only competence smoke on the already-open single_lift_cloth source interaction. It can reject or admit a separately frozen nonlinear PhysTwin rerun, but cannot establish future improvement, calibration, independent transfer, or state of the art.",
+  "question": "Can material-attached PhysTwin Gaussian appearance identify a low-rank graph-position correction from early response RGB that improves held-out response-prefix rendering without manual identities or future observations?",
+  "case": {
+    "name": "single_lift_cloth",
+    "source_status": "previously opened development interaction",
+    "train_end_frame_exclusive": 121,
+    "rendered_prefix_frames": [
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120
+    ],
+    "fit_frames": [
+      114,
+      115,
+      116,
+      117
+    ],
+    "held_out_prefix_frames": [
+      118,
+      119,
+      120
+    ],
+    "cameras": [
+      "cam0",
+      "cam1",
+      "cam2"
+    ]
+  },
+  "observation_model": {
+    "appearance_source": "released frame-zero PhysTwin Gaussian splat",
+    "material_attachment": "fixed inverse-distance weights from every retained Gaussian to its 16 nearest frame-zero PhysTwin graph nodes",
+    "trajectory_source": "selected raw MatPhys/PhysTwin physical trajectory",
+    "skinning": "Gaussian means receive the weighted graph-node displacement from frame zero; Gaussian rotation, scale, opacity, and spherical-harmonic appearance remain fixed",
+    "graph_basis_source": "frozen rank-4 basis from the prior matched state/discrepancy audit",
+    "parameterization": "12 graph-position directions: rank-4 modes independently displaced along world x, y, and z",
+    "finite_difference_step_m": 0.005,
+    "render_downsample": 4,
+    "object_mask_erosion_pixels": 2,
+    "render_alpha_threshold": 0.1,
+    "opacity_retention_threshold": 0.1,
+    "per_frame_camera_channel_affine_nuisance": true
+  },
+  "correlation_and_robustness": {
+    "correlation_block_size_pixels_at_render_resolution": 8,
+    "information_mass": "fixed per frame and divided equally across usable cameras and occupied spatial blocks; pixel count does not increase total information",
+    "duplicate_camera_policy": "a duplicated camera divides rather than adds camera information mass",
+    "robust_group_likelihood": "Huber-style IRLS over spatial block residual RMS",
+    "huber_threshold": 2.5,
+    "maximum_iterations": 8,
+    "graph_weight_ridge": 0.05,
+    "nuisance_ridge": 1e-06,
+    "maximum_graph_weight_l2_norm": 2.0,
+    "prior_reliability_uses_phystwin_innovation": false
+  },
+  "prefix_gate": {
+    "minimum_relative_held_out_render_rmse_improvement": 0.02,
+    "minimum_absolute_held_out_render_rmse_improvement": 0.0005,
+    "minimum_fit_correlation_groups": 12,
+    "minimum_validation_correlation_groups": 6,
+    "pass_action": "Seal the prefix artifact, then preregister and implement a separate official-Warp position-and-velocity state-injection rerun. No future RGB or mask may be read.",
+    "fail_action": "Return exact zero graph weights and stop this Gaussian-attachment, translation-skinning, rank-4 parameterization without threshold, frame, camera, mask, attachment, or rank tuning."
+  },
+  "source_artifacts": {
+    "implementation_commit": "PENDING",
+    "solver_sha256": "PENDING",
+    "renderer_sha256": "PENDING",
+    "trajectory_sha256": "PENDING",
+    "graph_basis_sha256": "PENDING",
+    "gaussian_ply_sha256": "PENDING",
+    "camera_json_sha256": "PENDING",
+    "prefix_rgb_and_mask_manifest_sha256": "PENDING"
+  },
+  "information_boundary": {
+    "rgb_and_mask_frames_allowed": [
+      114,
+      121
+    ],
+    "rgb_or_mask_at_or_after_frame_121_allowed": false,
+    "manual_tracks_allowed": false,
+    "future_point_cloud_or_metric_allowed": false,
+    "held_v8_access_allowed": false,
+    "other_sealed_target_access_allowed": false
+  },
+  "forbidden": [
+    "running the prefix selector before replacing all PENDING source hashes and changing status to locked-before-prefix-render",
+    "reading RGB, masks, tracks, point clouds, or outcomes at or after frame 121",
+    "changing frames, cameras, graph rank, rendering, attachment, regularization, robustness, or gate thresholds after lock",
+    "describing a prefix competence pass as a successful state update, future improvement, Bayesian calibration, independent transfer, or state of the art",
+    "opening, inspecting, modifying, or rerunning any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
