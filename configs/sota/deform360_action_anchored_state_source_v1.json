@@ -28,8 +28,54 @@
   },
   "physical_model": {
     "pooled_fit_relative_path": "milestones/deform360-replication-source-backend-v1/artifacts/pooled-fits/002-rope-silk/pooled_source_fit.json",
+    "pooled_fit_file_sha256": "8cd529d8ba707e49ae0b5c41fabd12218c1c0b1be06417aecc79756424b72ab6",
+    "pooled_fit_result_sha256": "23574faf4bd3202a1aff7ce726f995f3cce8c3750abc8565047e5352b9746d48",
+    "source_grid_file_sha256": "c9e514b690d0c1152b93fd23ade9e48b2701eb0cd5fee49279c3e666551fbe5d",
     "leave_one_source_candidate_index": 21,
     "candidate_selected_without_episode_5_fit_scores": true,
+    "candidate_parameters": {
+      "stretch_spring_y": 100.0,
+      "bend_spring_y": 100.0,
+      "controller_spring_y": 100.0,
+      "ground_friction": 0.3
+    },
+    "feasibility_config": {
+      "prefix_frame_count": 6,
+      "substeps": 128,
+      "initial_ground_clearance_m": 0.001,
+      "stretch_spring_y_grid": [
+        100.0,
+        300.0,
+        1000.0,
+        3000.0,
+        10000.0
+      ],
+      "bend_spring_y_grid": [
+        1e-06,
+        10.0,
+        100.0,
+        1000.0
+      ],
+      "controller_spring_y_grid": [
+        100.0,
+        300.0,
+        1000.0,
+        3000.0,
+        10000.0
+      ],
+      "ground_friction_grid": [
+        0.0,
+        0.3
+      ],
+      "dashpot_damping": 0.0,
+      "drag_damping": 3.0,
+      "ground_elasticity": 0.0,
+      "inactive_controller_spring_y": 1e-12,
+      "maximum_repeat_rollout_rmse_m": 0.0001,
+      "maximum_p99_relative_edge_strain": 0.5,
+      "minimum_source_chamfer_improvement_fraction": 0.05,
+      "minimum_leave_one_source_win_fraction": 0.6
+    },
     "official_warp_backend_unchanged": true
   },
   "arms": [
@@ -59,6 +105,7 @@
     "predictor_may_not_read_geometry_after_frame_8": true,
     "predictor_may_not_read_future_tactile": true,
     "predictor_may_not_read_source_scores": true,
+    "predictor_may_not_open_score_bearing_fit_or_grid_artifacts": true,
     "held_v8_access": false,
     "fresh_target_access": false
   },

@@ -80,6 +80,12 @@ All Warp arms use candidate 21, the archived leave-one-source selection made
 without episode-5 fit scores. The graph, action, contact schedule, solver, and
 spring parameters are otherwise identical.
 
+The selected parameters and solver constants are copied into the frozen
+protocol together with hashes of the source fit and grid that established
+them. Prediction does not open either score-bearing JSON file. This keeps
+source outcomes outside the predictor even though the candidate originated in
+an earlier source-only experiment.
+
 ## Gate
 
 The action-anchored arm must:

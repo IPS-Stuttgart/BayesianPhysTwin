@@ -380,31 +380,12 @@ def _predict(
         for name in candidate_velocities
     }
 
-    pooled_fit_path = (
-        causal4d_root.resolve() / config["physical_model"]["pooled_fit_relative_path"]
-    )
-    pooled = _load_json(pooled_fit_path)
     index = int(config["physical_model"]["leave_one_source_candidate_index"])
-    _require(
-        index
-        == next(
-            int(item["selected_candidate_index"])
-            for item in pooled["leave_one_source"]
-            if item["held_out_episode_id"]
-            == f"{config['case']['object_id']}/episode_{config['case']['episode_id']:04d}"
-        ),
-        "configured candidate is not the archived leave-one-source choice",
-    )
-    parameters = pooled["sealed_candidate_parameters"][str(index)]
+    parameters = dict(config["physical_model"]["candidate_parameters"])
     candidate = WarpRopeCandidate(**parameters)
-    source_grid_path = (
-        data_root.resolve()
-        / "fits"
-        / config["case"]["object_id"]
-        / f"source_episode_{int(config['case']['episode_id']):04d}_grid.json"
+    feasibility = WarpRopeFeasibilityConfig(
+        **config["physical_model"]["feasibility_config"]
     )
-    source_grid = json.loads(source_grid_path.read_text(encoding="utf-8"))
-    feasibility = WarpRopeFeasibilityConfig(**source_grid["config"])
 
     trajectories: dict[str, np.ndarray] = {}
     for name, velocity in candidate_velocities.items():
@@ -469,8 +450,20 @@ def _predict(
             "branch_frame": branch_frame,
         },
         "physical_model": {
-            "pooled_fit_path": str(pooled_fit_path),
-            "pooled_fit_sha256": _file_sha256(pooled_fit_path),
+            "source_lock": {
+                "pooled_fit_relative_path": config["physical_model"][
+                    "pooled_fit_relative_path"
+                ],
+                "pooled_fit_file_sha256": config["physical_model"][
+                    "pooled_fit_file_sha256"
+                ],
+                "pooled_fit_result_sha256": config["physical_model"][
+                    "pooled_fit_result_sha256"
+                ],
+                "source_grid_file_sha256": config["physical_model"][
+                    "source_grid_file_sha256"
+                ],
+            },
             "leave_one_source_candidate_index": index,
             "parameters": parameters,
             "feasibility_config": asdict(feasibility),
@@ -498,6 +491,7 @@ def _predict(
             "future_geometry_read": False,
             "future_tactile_read": False,
             "source_metrics_read": False,
+            "score_bearing_fit_or_grid_artifact_read": False,
             "held_v8_read": False,
             "fresh_target_read": False,
         },
