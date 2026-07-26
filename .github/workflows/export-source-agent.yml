@@ -1,0 +1,49 @@
+name: Export source for local validation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Apply local Ruff fixes for reviewed files
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m ruff check --fix --unsafe-fixes \
+            src/bayesian_phystwin/phystwin_controller_sensitivity.py \
+            src/bayesian_phystwin/phystwin_discrepancy.py \
+            src/bayesian_phystwin/phystwin_raw_cues.py \
+            tests/test_contract_properties.py \
+            tests/test_phystwin_data.py \
+            tests/test_phystwin_state_injection.py \
+            tools/check_changed_python_format.py
+          python -m ruff format \
+            src/bayesian_phystwin/phystwin_controller_sensitivity.py \
+            src/bayesian_phystwin/phystwin_discrepancy.py \
+            src/bayesian_phystwin/phystwin_raw_cues.py \
+            tests/test_contract_properties.py \
+            tests/test_phystwin_data.py \
+            tests/test_phystwin_state_injection.py \
+            tools/check_changed_python_format.py
+      - name: Create source archive
+        run: git archive --format=tar.gz --output=bayesian-phystwin-source.tar.gz HEAD
+      - name: Add Ruff-fixed working tree to archive
+        run: tar --append --file=bayesian-phystwin-source.tar $(git diff --name-only --diff-filter=ACMRT) || true
+      - name: Compress source archive
+        run: gzip -f bayesian-phystwin-source.tar
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bayesian-phystwin-source
+          path: bayesian-phystwin-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
