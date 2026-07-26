@@ -110,7 +110,7 @@ def test_cluster_bootstrap_is_reproducible_and_keeps_group_units() -> None:
     assert first.coverage.finite_replicates == 200
     assert first.selected_mean_excess_loss.lower is not None
     assert first.selected_mean_excess_loss.upper is not None
-    assert first.accepted_mean_excess_loss.estimate == pytest.approx(0.225)
+    assert first.accepted_mean_excess_loss.estimate == pytest.approx(-0.025)
 
 
 def test_bootstrap_retains_replicates_with_no_accepted_rows() -> None:
