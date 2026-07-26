@@ -125,7 +125,7 @@ class HorizonIntervalEvaluation:
 
 
 def _finite_vector(values: Sequence[float] | np.ndarray, *, name: str) -> np.ndarray:
-    array = np.asarray(values, dtype=float)
+    array: np.ndarray = np.asarray(values, dtype=float)
     if array.ndim != 1 or len(array) == 0:
         raise ValueError(f"{name} must be a nonempty one-dimensional vector")
     if not np.all(np.isfinite(array)):
@@ -144,7 +144,7 @@ def _boolean_vector(
     array = np.asarray(values)
     if array.shape != (length,) or array.dtype.kind != "b":
         raise ValueError(f"{name} must be a Boolean vector with shape ({length},)")
-    result = np.asarray(array, dtype=bool).copy()
+    result: np.ndarray = np.asarray(array, dtype=bool).copy()
     result.setflags(write=False)
     return result
 
@@ -558,7 +558,9 @@ def bootstrap_guard_evaluation(
         "harmful_accepted_rate",
         "worst_accepted_excess_loss",
     )
-    replicate_values = {name: np.empty(repeats, dtype=float) for name in metric_names}
+    replicate_values: dict[str, np.ndarray] = {
+        name: np.empty(repeats, dtype=float) for name in metric_names
+    }
 
     generator = np.random.default_rng(seed_value)
     group_count = len(group_indices)
