@@ -1,9 +1,8 @@
 name: Export source for local validation
 
 on:
-  push:
-    branches:
-      - agent/strengthen-ci-quality-gates
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
