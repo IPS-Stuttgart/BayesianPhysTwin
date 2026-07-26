@@ -13,8 +13,8 @@ from .bias_aware_belief import (
     apply_regret_guard,
     build_physical_response_basis,
     decode_bias_aware_state,
-    fit_source_regret_certificate,
     fit_source_group_regret_bound,
+    fit_source_regret_certificate,
     restrict_state_basis_to_identifiable_subspace,
     update_bias_aware_state,
 )
@@ -23,6 +23,15 @@ from .drift_bias import (
     RandomWalkBiasResult,
     filter_random_walk_bias,
     robust_random_walk_log_evidence_batch,
+)
+from .gauge_aware_belief import (
+    GaugeAwareBeliefConfig,
+    GaugeAwareBeliefResult,
+    GaugeAwareObservationBatch,
+    GaugeAwareSelection,
+    decode_gauge_aware_query,
+    select_gauge_aware_candidate,
+    update_gauge_aware_belief,
 )
 from .grouped_likelihood import (
     GroupedStudentTLikelihoodConfig,
@@ -74,6 +83,10 @@ __all__ = [
     "BinaryCalibrationMetrics",
     "BiasAwareStateUpdateConfig",
     "BiasAwareStateUpdateResult",
+    "GaugeAwareBeliefConfig",
+    "GaugeAwareBeliefResult",
+    "GaugeAwareObservationBatch",
+    "GaugeAwareSelection",
     "GroupedStudentTLikelihoodConfig",
     "GroupedStudentTLikelihoodResult",
     "GuardedUpdateDecision",
@@ -104,6 +117,7 @@ __all__ = [
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
     "decode_bias_aware_state",
+    "decode_gauge_aware_query",
     "export_phystwin_residuals",
     "filter_random_walk_bias",
     "fit_source_group_regret_bound",
@@ -121,7 +135,9 @@ __all__ = [
     "run_synthetic_case",
     "save_observation_belief",
     "score_reliability",
+    "select_gauge_aware_candidate",
     "smooth_markov_reliability",
     "update_bias_aware_state",
+    "update_gauge_aware_belief",
     "write_export_summary",
 ]
