@@ -146,6 +146,23 @@ successful cameras. There is no manual prompting. Per-camera failures are
 preserved, and fewer than eight successful masks is a technical failure rather
 than permission to tune the selector or replace the object.
 
+The completed mask campaign is sealed in
+`results/sota/deform360_fresh_source_lock_v1/fresh_source_mask_campaign_v1.json`.
+Fifteen of the 18 queued cases are ready for source processing. Three cases
+(`047-rectangle-sponge`, `013-glove-cloth`, and `104-alloy`) produced only
+seven successful camera masks and remain technical failures under the frozen
+eight-camera minimum. They were neither repaired nor replaced.
+
+The next source-only stage is frozen in
+`configs/sota/deform360_fresh_source_processing_v1.json`, internal SHA-256
+`3ba3931816d6cca5e9e25f82c7aee222972c4b2ad29cfd392bdd8225affcdad3`.
+For each processing-ready case it uses all successful frozen-panel cameras in
+lexical order and runs the pinned Deform360 reconstruction, gripper-mask,
+depth, CoTracker3, point-cloud, and control-point stages in a derived
+workspace. The sealed source windows and masks remain immutable. Processing
+or admission failures are terminal for that queue entry; they do not authorize
+camera changes or a replacement object.
+
 ## Deterministic cohort rule
 
 The lock:
