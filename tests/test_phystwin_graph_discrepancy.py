@@ -78,6 +78,41 @@ def test_graph_posterior_computes_exact_selected_marginal_variance() -> None:
     assert np.isnan(posterior.marginal_variance[1])
 
 
+def test_graph_posterior_uses_verified_direct_fallback_after_cg_cap() -> None:
+    laplacian = normalized_spring_laplacian(
+        5,
+        np.array([[0, 1], [1, 2], [2, 3], [3, 4]]),
+    )
+    mean = np.column_stack(
+        (
+            np.linspace(0.0, 1.0, 5),
+            np.linspace(1.0, 0.0, 5),
+            np.zeros(5),
+        )
+    )
+    posterior = graph_smoothed_discrepancy_posterior(
+        mean,
+        np.geomspace(1e-6, 1.0, 5),
+        np.ones(5, dtype=bool),
+        laplacian,
+        prior_strength=1.0,
+        relative_tolerance=1e-14,
+        maximum_iterations=1,
+    )
+    reference = np.median(np.geomspace(1e-6, 1.0, 5))
+    weights = reference / np.geomspace(1e-6, 1.0, 5)
+    precision = (
+        np.diag(weights)
+        + 2.0 * (laplacian.T @ laplacian).toarray()
+        + 1e-8 * np.eye(5)
+    )
+    expected = np.linalg.solve(precision, weights[:, None] * mean)
+
+    np.testing.assert_allclose(posterior.mean, expected, rtol=1e-10, atol=1e-12)
+    assert "sparse_direct_after_cg" in posterior.solve_methods
+    assert max(posterior.solve_relative_residuals) < 1e-10
+
+
 def test_graph_anchor_variants_share_the_endpoint_posterior(tmp_path: Path) -> None:
     frame_count = 6
     points = np.array(

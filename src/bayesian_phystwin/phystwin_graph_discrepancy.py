@@ -17,6 +17,7 @@ class GraphDiscrepancyPosterior:
     reference_variance: float
     solve_iterations: tuple[int, ...]
     solve_relative_residuals: tuple[float, ...]
+    solve_methods: tuple[str, ...]
     covariance_negative_fraction: float | None
 
 
@@ -72,7 +73,8 @@ def _precision_solver(
     maximum_iterations: int,
 ):
     try:
-        from scipy.sparse.linalg import LinearOperator, cg
+        from scipy import sparse
+        from scipy.sparse.linalg import LinearOperator, cg, spsolve
     except (ImportError, OSError) as error:
         raise RuntimeError("graph discrepancy smoothing requires scipy") from error
     if prior_strength <= 0.0:
@@ -109,8 +111,10 @@ def _precision_solver(
         rmatvec=lambda vector: np.asarray(vector, dtype=float) / diagonal,
         dtype=float,
     )
+    direct_precision = None
 
-    def solve(right_hand_side: np.ndarray) -> tuple[np.ndarray, int, float]:
+    def solve(right_hand_side: np.ndarray) -> tuple[np.ndarray, int, float, str]:
+        nonlocal direct_precision
         rhs = np.asarray(right_hand_side, dtype=float)
         if rhs.shape != (size,):
             raise ValueError("right_hand_side must match graph node count")
@@ -133,12 +137,39 @@ def _precision_solver(
         relative_residual = float(
             np.linalg.norm(residual) / max(np.linalg.norm(rhs), 1e-15)
         )
-        if info != 0 or not np.all(np.isfinite(solution)):
-            raise RuntimeError(
-                "graph posterior conjugate-gradient solve did not converge: "
-                f"info={info}, residual={relative_residual:.3e}"
+        if info == 0 and np.all(np.isfinite(solution)):
+            return solution, iteration_count, relative_residual, "conjugate_gradient"
+
+        if direct_precision is None:
+            direct_precision = (
+                sparse.diags(weights, format="csc")
+                + prior_scale * (laplacian.T @ laplacian).tocsc()
+                + ridge * sparse.eye(size, format="csc")
             )
-        return solution, iteration_count, relative_residual
+        direct_solution = np.asarray(spsolve(direct_precision, rhs), dtype=float)
+        direct_residual = precision_product(direct_solution) - rhs
+        direct_relative_residual = float(
+            np.linalg.norm(direct_residual) / max(np.linalg.norm(rhs), 1e-15)
+        )
+        direct_tolerance = max(
+            10.0 * relative_tolerance,
+            100.0 * np.finfo(float).eps * size,
+        )
+        if (
+            not np.all(np.isfinite(direct_solution))
+            or direct_relative_residual > direct_tolerance
+        ):
+            raise RuntimeError(
+                "graph posterior solvers did not converge: "
+                f"cg_info={info}, cg_residual={relative_residual:.3e}, "
+                f"direct_residual={direct_relative_residual:.3e}"
+            )
+        return (
+            direct_solution,
+            iteration_count,
+            direct_relative_residual,
+            "sparse_direct_after_cg",
+        )
 
     return solve
 
@@ -217,11 +248,13 @@ def graph_smoothed_discrepancy_posterior(
     posterior_mean = np.empty_like(full_mean)
     iterations: list[int] = []
     residuals: list[float] = []
+    methods: list[str] = []
     for coordinate in range(3):
-        solution, count, residual = solve(right_hand_side[:, coordinate])
+        solution, count, residual, method = solve(right_hand_side[:, coordinate])
         posterior_mean[:, coordinate] = solution
         iterations.append(count)
         residuals.append(residual)
+        methods.append(method)
 
     marginal_variance = None
     negative_fraction = None
@@ -230,10 +263,11 @@ def graph_smoothed_discrepancy_posterior(
         for index in selected_covariance_indices:
             unit = np.zeros(node_count, dtype=float)
             unit[index] = 1.0
-            inverse_unit, count, residual = solve(unit)
+            inverse_unit, count, residual, method = solve(unit)
             diagonal[index] = reference_variance * inverse_unit[index]
             iterations.append(count)
             residuals.append(residual)
+            methods.append(method)
         selected_diagonal = diagonal[selected_covariance_indices]
         negative_fraction = float(np.mean(selected_diagonal < 0.0))
         diagonal[selected_covariance_indices] = np.maximum(selected_diagonal, 0.0)
@@ -243,10 +277,11 @@ def graph_smoothed_discrepancy_posterior(
         diagonal = np.zeros(node_count, dtype=float)
         for _ in range(covariance_probes):
             probe = rng.choice(np.array([-1.0, 1.0]), size=node_count)
-            inverse_probe, count, residual = solve(probe)
+            inverse_probe, count, residual, method = solve(probe)
             diagonal += probe * inverse_probe
             iterations.append(count)
             residuals.append(residual)
+            methods.append(method)
         diagonal *= reference_variance / covariance_probes
         negative_fraction = float(np.mean(diagonal < 0.0))
         marginal_variance = np.maximum(diagonal, 0.0)
@@ -258,6 +293,7 @@ def graph_smoothed_discrepancy_posterior(
         reference_variance=reference_variance,
         solve_iterations=tuple(iterations),
         solve_relative_residuals=tuple(residuals),
+        solve_methods=tuple(methods),
         covariance_negative_fraction=negative_fraction,
     )
 
