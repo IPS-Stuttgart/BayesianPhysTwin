@@ -151,8 +151,10 @@ why none of these values is represented as a Table 4 comparison.
 The latest Deform360 code revision inspected,
 `d8522a4403b766aeb387510c04e89032a56fdf35`, changes only the paper link
 relative to the pinned processing revision and still contains no world-model
-evaluator. The processed release therefore narrows the unresolved contract but
-does not establish official parity.
+evaluator. The paper also states that ParticleFormer was not open-sourced when
+the benchmark was produced and that the Deform360 authors reproduced it from
+the paper. The processed release therefore narrows the unresolved contract but
+does not establish executable baseline or evaluator parity.
 
 ## Next evidence
 
