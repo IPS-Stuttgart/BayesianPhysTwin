@@ -35,6 +35,10 @@ def _named_path(value: str) -> tuple[str, Path]:
     return name, Path(path)
 
 
+def _resolve_artifact_path(path: Path, *, root: Path) -> Path:
+    return path if path.is_absolute() else root / path
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command_name", required=True)
@@ -88,11 +92,21 @@ def build_parser() -> argparse.ArgumentParser:
 def _create(args: argparse.Namespace) -> int:
     root = args.artifact_root.resolve()
     inputs = tuple(
-        artifact_digest(path, name=name, role="input", root=root)
+        artifact_digest(
+            _resolve_artifact_path(path, root=root),
+            name=name,
+            role="input",
+            root=root,
+        )
         for name, path in args.input
     )
     outputs = tuple(
-        artifact_digest(path, name=name, role="output", root=root)
+        artifact_digest(
+            _resolve_artifact_path(path, root=root),
+            name=name,
+            role="output",
+            root=root,
+        )
         for name, path in args.output_artifact
     )
     manifest = RunManifestV1(
