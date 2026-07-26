@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import hashlib
+import importlib
 import json
 import pickle
 from pathlib import Path
@@ -36,6 +37,9 @@ MVTRACKER_REVISION = "ceea8ad2af77ed9b44148ef8e9eeba4ea3c3f072"
 MVTRACKER_CHECKPOINT_SHA256 = (
     "a7fa86f2a7223e3e0aa4c1d3eff0dec5fe8a9227a48572ce943b8e49d8a4f8e6"
 )
+_NUMPY_PICKLE_MODULE_ALIASES = {
+    "numpy._core.numeric": "numpy.core.numeric",
+}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -76,6 +80,57 @@ def canonical_sha256(payload: Mapping[str, Any]) -> str:
         allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+class _NumpyCompatibilityUnpickler(pickle.Unpickler):
+    """Read NumPy 2 archives with the NumPy 1 private-module layout."""
+
+    def find_class(self, module: str, name: str) -> Any:
+        compatible_module = _compatible_pickle_module(module)
+        return super().find_class(compatible_module, name)
+
+
+def _compatible_pickle_module(module: str) -> str:
+    """Use the producer namespace when present and its exact legacy alias otherwise."""
+
+    compatible_module = _NUMPY_PICKLE_MODULE_ALIASES.get(module)
+    if compatible_module is None:
+        return module
+    try:
+        importlib.import_module(module)
+    except ModuleNotFoundError:
+        return compatible_module
+    return module
+
+
+def _load_manifest_validated_target_pickle(path: str | Path) -> Any:
+    """Load a validated source target across the NumPy 1/2 namespace change."""
+
+    with Path(path).open("rb") as stream:
+        return _NumpyCompatibilityUnpickler(stream).load()
+
+
+def _evaluation_implementation_sha256() -> dict[str, str]:
+    """Bind the exact scorer, command wrapper, and frozen protocol."""
+
+    adapter_path = Path(__file__).resolve()
+    repository_root = adapter_path.parents[2]
+    paths = {
+        "adapter_and_evaluator": adapter_path,
+        "runner": (
+            repository_root
+            / "scripts"
+            / "remote"
+            / "run_deform360_mvtracker_source.py"
+        ),
+        "protocol": (
+            repository_root
+            / "configs"
+            / "sota"
+            / "deform360_mvtracker_privileged_depth_competence_v1.json"
+        ),
+    }
+    return {name: file_sha256(path) for name, path in paths.items()}
 
 
 def _config_payload(config: MVTrackerSourceConfig) -> dict[str, Any]:
@@ -613,8 +668,7 @@ def evaluate_prediction(
         np.array_equal(centers, np.asarray(cfg.center_ids, dtype=np.int64)),
         "sealed MVTracker centers changed",
     )
-    with target_path.open("rb") as stream:
-        target_data = pickle.load(stream)
+    target_data = _load_manifest_validated_target_pickle(target_path)
     target = np.asarray(target_data["object_points"])
     target_visibility = np.asarray(
         target_data["object_visibilities"], dtype=bool
@@ -650,6 +704,11 @@ def evaluate_prediction(
             "source_prediction_seal": file_sha256(original_seal_path),
             "source_outcome": file_sha256(outcome_path),
             "source_target": file_sha256(target_path),
+        },
+        "implementation_sha256": _evaluation_implementation_sha256(),
+        "compatibility": {
+            "target_pickle_module_aliases": dict(_NUMPY_PICKLE_MODULE_ALIASES),
+            "target_bytes_modified": False,
         },
         "information_boundary": {
             "mvtracker_prediction_validated_before_source_target_loading": True,

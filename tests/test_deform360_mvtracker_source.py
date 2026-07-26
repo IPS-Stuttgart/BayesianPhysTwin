@@ -1,8 +1,11 @@
+import io
 from pathlib import Path
 
 import numpy as np
 
 from bayesian_phystwin.deform360_mvtracker_source import (
+    _NumpyCompatibilityUnpickler,
+    _compatible_pickle_module,
     MVTrackerSourceConfig,
     exact_anchor_trajectory,
     metric_observation_variance_m2,
@@ -10,6 +13,32 @@ from bayesian_phystwin.deform360_mvtracker_source import (
     seal_prediction,
     write_prediction_artifact,
 )
+
+
+def test_numpy_two_private_pickle_namespace_resolves_when_available() -> None:
+    unpickler = _NumpyCompatibilityUnpickler(io.BytesIO())
+
+    resolved = unpickler.find_class("numpy._core.numeric", "_frombuffer")
+
+    assert resolved is np._core.numeric._frombuffer
+
+
+def test_numpy_two_private_pickle_namespace_has_legacy_fallback(
+    monkeypatch,
+) -> None:
+    def missing_private_module(module: str) -> None:
+        assert module == "numpy._core.numeric"
+        raise ModuleNotFoundError(module)
+
+    monkeypatch.setattr(
+        "bayesian_phystwin.deform360_mvtracker_source.importlib.import_module",
+        missing_private_module,
+    )
+
+    assert (
+        _compatible_pickle_module("numpy._core.numeric")
+        == "numpy.core.numeric"
+    )
 
 
 def _small_config() -> MVTrackerSourceConfig:
