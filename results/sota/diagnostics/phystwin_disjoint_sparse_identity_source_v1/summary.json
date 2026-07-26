@@ -1,0 +1,97 @@
+{
+  "arms": {
+    "1": {
+      "baseline": {
+        "chamfer_distance_m": 0.011388593332776803,
+        "track_error_m": 0.021773999660631836
+      },
+      "below_published_8mm_15mm_operating_point": false,
+      "candidate": {
+        "chamfer_distance_m": 0.007898073782369987,
+        "track_error_m": 0.020037436499567404
+      },
+      "hidden_identity_count_maximum": 8,
+      "hidden_identity_count_minimum": 6,
+      "joint_case_wins": 15,
+      "minimum_hidden_future_frame_support": 0.8846153846153846,
+      "observed_identity_count": 1,
+      "relative_improvement_percent": {
+        "chamfer_distance_m": 30.649259732200363,
+        "track_error_m": 7.975398126804423
+      },
+      "trackless_future_frame_count": 3
+    },
+    "2": {
+      "baseline": {
+        "chamfer_distance_m": 0.011388593332776803,
+        "track_error_m": 0.021366526655149928
+      },
+      "below_published_8mm_15mm_operating_point": false,
+      "candidate": {
+        "chamfer_distance_m": 0.007926838856884486,
+        "track_error_m": 0.020022487500357844
+      },
+      "hidden_identity_count_maximum": 7,
+      "hidden_identity_count_minimum": 5,
+      "joint_case_wins": 12,
+      "minimum_hidden_future_frame_support": 0.8461538461538461,
+      "observed_identity_count": 2,
+      "relative_improvement_percent": {
+        "chamfer_distance_m": 30.39668179150148,
+        "track_error_m": 6.290396078335614
+      },
+      "trackless_future_frame_count": 4
+    },
+    "4": {
+      "baseline": {
+        "chamfer_distance_m": 0.011388593332776803,
+        "track_error_m": 0.022703407805039547
+      },
+      "below_published_8mm_15mm_operating_point": false,
+      "candidate": {
+        "chamfer_distance_m": 0.007926577166400883,
+        "track_error_m": 0.021415076492708376
+      },
+      "hidden_identity_count_maximum": 5,
+      "hidden_identity_count_minimum": 3,
+      "joint_case_wins": 13,
+      "minimum_hidden_future_frame_support": 0.8461538461538461,
+      "observed_identity_count": 4,
+      "relative_improvement_percent": {
+        "chamfer_distance_m": 30.39897962123299,
+        "track_error_m": 5.674616442581792
+      },
+      "trackless_future_frame_count": 4
+    }
+  },
+  "claim_boundary": "The cohort is outcome-open and manual prefix tracks emulate sparse material sensors. Assimilated identities are excluded from every future track score. This is source mechanism evidence, not confirmation or an open-loop state-of-the-art claim.",
+  "decision": "stop-disjoint-sparse-identity-route",
+  "gate_passed": false,
+  "gates": {
+    "chamfer_improvement_at_least_threshold": true,
+    "hidden_track_improvement_at_least_threshold": true,
+    "joint_case_wins_at_least_threshold": false,
+    "minimum_hidden_future_frame_support_is_one": false,
+    "zero_trackless_future_frames": false
+  },
+  "inputs": {
+    "1": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/run/observed_1.json",
+      "sha256": "149ee446c90cea4e84f362aa5e46608618d016569b8d5c658dfff1ae1f97cfa1"
+    },
+    "2": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/run/observed_2.json",
+      "sha256": "d26361d695c80bc82f0269d48495250d767dffb0bbe0f869be147ea89e076f83"
+    },
+    "4": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/run/observed_4.json",
+      "sha256": "45bfd665a736c35ec375ebc714fe0cab3ed34dde28af32b892df769e0dff7bf0"
+    }
+  },
+  "minimum_joint_case_wins": 16,
+  "minimum_relative_improvement_percent": 5.0,
+  "primary_candidate": "causal_selected_dense_relative_cap_temporal",
+  "primary_observed_identity_count": 4,
+  "schema_version": 1,
+  "status": "post-open disjoint sparse-identity source diagnostic"
+}
