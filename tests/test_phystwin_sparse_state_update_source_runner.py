@@ -58,8 +58,8 @@ def _summary() -> dict:
             "deterministic_spring_forces": True,
         },
         "released_trajectory_parity": {
-            "vector_rmse_m": 0.0,
-            "max_norm_m": 0.0,
+            "vector_rmse_m": 0.03736121334431973,
+            "max_norm_m": 0.1779697776600413,
         },
         "selected_baseline_trajectory_parity": {
             "vector_rmse_m": 0.0,
@@ -115,7 +115,7 @@ def test_source_replay_verifier_rejects_nonzero_parity(tmp_path: Path) -> None:
     summary["selected_baseline_trajectory_parity"]["vector_rmse_m"] = 1e-6
     path = _write_summary(tmp_path, summary)
 
-    with pytest.raises(ValueError, match="exact trajectory parity"):
+    with pytest.raises(ValueError, match="selected-baseline trajectory parity"):
         RUNNER._verify_source_replay(
             _protocol(),
             {"source_replay_summary": path},

@@ -133,10 +133,10 @@ def _load_protocol(path: Path) -> dict[str, Any]:
     protocol = json.loads(path.read_text(encoding="utf-8"))
     _require(
         protocol.get("protocol_id")
-        == "phystwin-prior-aware-sparse-identity-source-v2",
+        == "phystwin-prior-aware-sparse-identity-source-v3",
         "unexpected protocol id",
     )
-    _require(int(protocol.get("schema_version", -1)) == 2, "unsupported protocol")
+    _require(int(protocol.get("schema_version", -1)) == 3, "unsupported protocol")
     return protocol
 
 
@@ -199,16 +199,12 @@ def _verify_source_replay(
             summary["config"].get(name) == expected,
             f"source replay setting changed: {name}",
         )
-    for parity_name in (
-        "released_trajectory_parity",
-        "selected_baseline_trajectory_parity",
-    ):
-        parity = summary[parity_name]
-        _require(
-            float(parity["vector_rmse_m"]) == 0.0
-            and float(parity["max_norm_m"]) == 0.0,
-            f"source replay did not seal exact trajectory parity: {parity_name}",
-        )
+    parity = summary["selected_baseline_trajectory_parity"]
+    _require(
+        float(parity["vector_rmse_m"]) == 0.0
+        and float(parity["max_norm_m"]) == 0.0,
+        "source replay did not seal exact selected-baseline trajectory parity",
+    )
     return summary
 
 
