@@ -118,6 +118,17 @@ def load_fresh_pairwise_protocol(
         and all(_valid_digest(value) for value in source_hashes.values()),
         "method source hashes are malformed",
     )
+    observation = payload.get("observation", {})
+    _require(
+        observation.get("selected_camera_count") == 8
+        and observation.get("minimum_eligible_camera_count") == 8
+        and observation.get("eligible_camera_policy")
+        == (
+            "lexically sorted intersection of calibrated cameras with "
+            "materialized RGB, frame-zero mask, and frame-zero depth assets"
+        ),
+        "fresh observation camera contract changed",
+    )
     physical = payload.get("physical_backbone", {})
     _require(
         physical.get("canonical_observed_node_count") == 384

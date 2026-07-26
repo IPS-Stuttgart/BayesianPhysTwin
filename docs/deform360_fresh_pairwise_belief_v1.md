@@ -23,6 +23,9 @@ The physical backbone reads frame-zero object geometry and the known robot
 action. The action staging archive has 81 frames; the frozen prediction uses
 frames `[0,76)` and skips the five-frame tracking tail. At update frame `u`,
 AllTracker reads exactly RGB frames `[0,u]`.
+The eligible camera panel is the lexically sorted intersection of calibrated
+cameras with materialized RGB, frame-zero mask, and frame-zero depth files;
+the frozen selector still chooses exactly eight cameras from that panel.
 Selection and correspondence gating use only the current sparse observation,
 the two sealed backbones, and prior belief state.
 

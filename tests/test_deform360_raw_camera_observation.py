@@ -162,6 +162,41 @@ def test_measurement_builder_has_no_target_or_outcome_argument() -> None:
     }
 
 
+def test_generic_measurement_contract_exposes_only_source_camera_filter() -> None:
+    parameters = inspect.signature(
+        raw_camera.build_raw_camera_measurement_case_with_contract
+    ).parameters
+
+    assert "eligible_camera_names" in parameters
+    assert "target" not in parameters
+    assert "outcome" not in parameters
+
+
+def test_materialized_camera_panel_is_sorted_calibrated_intersection(
+    tmp_path: Path,
+) -> None:
+    cameras = ("camera-2", "camera-0", "camera-1", "camera-uncalibrated")
+    np.save(
+        tmp_path / "undistorted_intrinsics.npy",
+        {camera: np.eye(3) for camera in cameras[:-1]},
+    )
+    np.save(
+        tmp_path / "extrinsics.npy",
+        {camera: np.eye(4) for camera in cameras[:-1]},
+    )
+    for camera in cameras:
+        camera_dir = tmp_path / camera
+        camera_dir.mkdir()
+        (camera_dir / "undistorted.mp4").touch()
+        (camera_dir / "mask_refined.h5").touch()
+        (camera_dir / "rendered_depth.h5").touch()
+    (tmp_path / "camera-1" / "rendered_depth.h5").unlink()
+
+    result = raw_camera.materialized_calibrated_camera_names(tmp_path)
+
+    assert result == ("camera-0", "camera-2")
+
+
 def test_camera_manifest_hashes_only_causal_materialized_slices(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

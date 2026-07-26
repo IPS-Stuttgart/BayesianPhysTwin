@@ -17,6 +17,7 @@ from bayesian_phystwin.deform360_raw_camera_observation import (
     AllTrackerPrefixRuntime,
     RawCameraObservationConfig,
     build_raw_camera_measurement_case_with_contract,
+    materialized_calibrated_camera_names,
 )
 
 
@@ -54,6 +55,12 @@ def main() -> int:
         )
 
     config = RawCameraObservationConfig()
+    processed = args.processed_episode_dir.resolve()
+    eligible_cameras = materialized_calibrated_camera_names(processed)
+    if len(eligible_cameras) < protocol["observation"][
+        "minimum_eligible_camera_count"
+    ]:
+        raise ValueError("fresh case has too few fully materialized cameras")
     runtime = AllTrackerPrefixRuntime(
         args.alltracker_source,
         args.alltracker_checkpoint,
@@ -63,7 +70,7 @@ def main() -> int:
     try:
         manifest = build_raw_camera_measurement_case_with_contract(
             args.backbone_case_dir,
-            args.processed_episode_dir,
+            processed,
             args.output_dir,
             runtime,
             protocol_id=protocol["protocol_id"],
@@ -73,6 +80,7 @@ def main() -> int:
                 "frozen fresh-object causal RGB-prefix measurement; no target or "
                 "outcome artifact is available to this process"
             ),
+            eligible_camera_names=eligible_cameras,
             config=config,
         )
     finally:

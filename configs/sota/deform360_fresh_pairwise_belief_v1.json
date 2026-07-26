@@ -84,6 +84,8 @@
     "tracker_checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
     "center_count": 16,
     "selected_camera_count": 8,
+    "eligible_camera_policy": "lexically sorted intersection of calibrated cameras with materialized RGB, frame-zero mask, and frame-zero depth assets",
+    "minimum_eligible_camera_count": 8,
     "causal_prefix": "update u receives exactly RGB frames [0,u]",
     "minimum_initial_views": 2,
     "minimum_triangulation_views": 2,
