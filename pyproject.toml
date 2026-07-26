@@ -8,11 +8,21 @@ version = "0.4.0"
 description = "Reliability-aware Bayesian estimation utilities for PhysTwin-style deformable digital twins."
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+    { name = "Florian Pfaff" },
+]
 dependencies = [
     "numpy>=1.23",
 ]
 
+[project.urls]
+Repository = "https://github.com/FlorianPfaff/Bayesian-PhysTwin"
+Documentation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/tree/main/docs"
+Issues = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/issues"
+
 [project.scripts]
+bpt = "bayesian_phystwin.cli.main:main"
+bpt-run-manifest = "bayesian_phystwin.cli.run_manifest:main"
 bpt-provider-manifest = "bayesian_phystwin.cli.provider_manifest:main"
 bpt-validate-observation-belief = "bayesian_phystwin.cli.observation_belief:main"
 bpt-build-phystwin-cues = "bayesian_phystwin.cli.phystwin_cues:main"
@@ -79,7 +89,7 @@ bpt-predict-deform360-crossview-guard = "bayesian_phystwin.cli.deform360_crossvi
 bpt-diagnose-deform360-raw-pairwise = "bayesian_phystwin.cli.deform360_raw_pairwise_correspondence_diagnostic:main"
 bpt-download-deform360-selective-virtual-sensing = "bayesian_phystwin.cli.deform360_selective_virtual_sensing_download:main"
 bpt-benchmark-bias-aware-belief = "bayesian_phystwin.cli.bias_aware_belief_benchmark:main"
-bpt-develop-deform360-bias-aware-belief = "bayesian_phystwin.cli.deform360_bias_aware_belief_development:main"
+bpt-develop-deform360-bias-aware-belief = "bayesian_phystwin.cli.bias_aware_belief_development:main"
 bpt-deform360-bias-aware-prospective = "bayesian_phystwin.cli.deform360_bias_aware_prospective:main"
 bpt-deform360-bias-aware-result = "bayesian_phystwin.cli.deform360_bias_aware_prospective_result:main"
 bpt-fetch-phystwin-eval-data = "bayesian_phystwin.cli.phystwin_data:main"
@@ -94,13 +104,18 @@ bpt-aggregate-phystwin-state-modes = "bayesian_phystwin.cli.phystwin_state_mode_
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "ruff>=0.6",
 ]
 data = [
     "remotezip>=0.12.3",
 ]
 graph = [
     "scipy>=1.10",
+]
+vision = [
+    "opencv-python-headless>=4.8",
 ]
 pyrecest = [
     "pyrecest==2.4.1",
@@ -111,3 +126,19 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+follow_imports = "skip"
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+warn_unused_ignores = true
