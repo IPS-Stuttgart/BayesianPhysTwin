@@ -1,0 +1,112 @@
+{
+  "protocol_id": "deform360-fresh-pairwise-belief-v1",
+  "status": "frozen before prediction construction and all future-outcome access",
+  "cohort": {
+    "lock_artifact_kind": "Deform360FreshObjectCohortLock",
+    "lock_sha256": "bafe26848ee83d8a4201e9d11d51af106370647f76ec702003e9ec51d3843729",
+    "case_count": 12,
+    "physical_object_count": 12,
+    "replacement_policy": "none"
+  },
+  "method": {
+    "development_commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
+    "selected_arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique",
+    "source_sha256": {
+      "deform360_raw_pairwise_correspondence_diagnostic.py": "8a5df910d7354d418ae745925784d8f4a90c92ff8a6a38c32a5ebdb93718cc17",
+      "phystwin_correspondence_gate.py": "4141e766abc61df0b527c46e6bff4b0d359920518608c7b353b62f406c4329be",
+      "phystwin_online_belief.py": "ed0da8142d854433e7dbb5ffc60ce80570258d0fdf8d1e1ceb6ba0fa4123ae4e"
+    },
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "selector": {
+      "minimum_support": 3,
+      "metric": "current-observation symmetric set Chamfer",
+      "tie_break": "physical prior",
+      "insufficient_support_default": "persistence"
+    },
+    "pairwise_gate": {
+      "absolute_pair_strain_m": 0.03,
+      "relative_pair_strain": 0.1,
+      "minimum_inlier_count": 9,
+      "minimum_inlier_fraction": 0.7,
+      "maximum_exact_center_count": 24
+    },
+    "recursive_rbf": {
+      "length_scale_fraction": 0.1,
+      "local_blend": 1.0,
+      "observation_std_m": 0.005,
+      "process_std_m_per_sqrt_frame": 0.003,
+      "global_prior_std_m": 0.1,
+      "local_prior_std_m": 0.02,
+      "degrees_of_freedom": 4.0,
+      "minimum_reliability": 0.02,
+      "maximum_correction_m": 0.1,
+      "minimum_length_scale_m": 0.0001
+    },
+    "rejection_policy": "bit-exact selected raw backbone"
+  },
+  "physical_backbone": {
+    "protocol": "deform360-graph-action-support-independent-source-v1",
+    "official_phystwin_revision": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "official_real_config_sha256": "a40a5ec2f5c978c1290810f20ed56db7cab99dc0c227adfe6b7434dfc95ead48",
+    "canonical_observed_node_count": 384,
+    "minimum_observed_node_count": 128,
+    "length_scale_m": 0.12,
+    "action_response": 0.9,
+    "autonomous_drift_response": 0.0,
+    "warp": {
+      "init_spring_y": 10000.0,
+      "drag_damping": 10.0,
+      "dashpot_damping": 100.0,
+      "controller_radius_m": 0.03,
+      "controller_max_neighbours": 1,
+      "canonical_controller_patch_size": 16,
+      "support_dynamics": "official-ground"
+    },
+    "automatic_twin_source_admission_failure": "bit-exact persistence fallback",
+    "runtime_failure": "technical failure; blocks completeness barrier"
+  },
+  "observation": {
+    "tracker": "AllTracker vendored by MolmoMotion at 61f5b21b694ad8f854ec7ecd2400005acc73f685",
+    "tracker_source_tree": "eab012351a01051fa31a348e5b1f21c0e1ed970d",
+    "tracker_runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "tracker_checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "center_count": 16,
+    "selected_camera_count": 8,
+    "causal_prefix": "update u receives exactly RGB frames [0,u]",
+    "minimum_initial_views": 2,
+    "minimum_triangulation_views": 2,
+    "minimum_ray_angle_degrees": 2.0,
+    "ransac_reprojection_threshold_px": 3.0,
+    "maximum_displacement_from_initial_m": 0.5
+  },
+  "custody": {
+    "prediction_order": [
+      "frame-zero physical backbone",
+      "causal RGB-prefix measurements",
+      "target-free pairwise belief prediction",
+      "all-case completeness barrier",
+      "single authorized future-outcome opening",
+      "scoring"
+    ],
+    "outcome_before_barrier": false,
+    "technical_failure_is_model_prediction": false,
+    "failed_case_replacement": false
+  },
+  "evaluation": {
+    "primary_metrics": [
+      "hidden identity RMSE",
+      "hidden symmetric Chamfer"
+    ],
+    "comparators": [
+      "physical prior",
+      "persistence",
+      "selected raw backbone"
+    ],
+    "replicate_unit": "physical object",
+    "claim_boundary": "fresh-object transfer under explicit candidate metric conventions; not official Deform360 3-D SOTA until evaluator parity is resolved"
+  }
+}
