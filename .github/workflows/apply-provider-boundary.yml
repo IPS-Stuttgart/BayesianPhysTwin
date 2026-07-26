@@ -27,9 +27,20 @@ jobs:
           cat .github/provider-boundary-patch/payload00 \
               .github/provider-boundary-patch/payload01 \
             | base64 --decode | gzip --decompress > /tmp/apply-provider-boundary.py
-          python /tmp/apply-provider-boundary.py
+          set +e
+          python /tmp/apply-provider-boundary.py > /tmp/provider-boundary.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/provider-boundary.log
+          test "$status" -eq 0
           rm -rf .github/provider-boundary-patch
           rm .github/workflows/apply-provider-boundary.yml
+      - name: Upload migration diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-boundary-diagnostics
+          path: /tmp/provider-boundary.log
       - name: Format and validate focused changes
         run: |
           python -m pip install -e '.[dev,graph]'
