@@ -125,6 +125,9 @@ def test_prefix_guard_accepts_predictive_action_propagated_state() -> None:
     assert result.accepted
     assert result.diagnostics["validation_improvement_fraction"] > 0.01
     assert np.linalg.norm(result.position_update_m) > 0.0
+    assert np.max(np.linalg.norm(basis @ result.shared_bias_coefficients_m, axis=1)) <= (
+        0.05 + 1e-12
+    )
 
 
 def test_prefix_guard_returns_exact_zero_state_when_persistence_wins() -> None:
@@ -154,6 +157,10 @@ def test_prefix_guard_returns_exact_zero_state_when_persistence_wins() -> None:
     assert (
         result.position_update_m.tobytes()
         == np.zeros_like(result.position_update_m).tobytes()
+    )
+    assert (
+        result.shared_bias_coefficients_m.tobytes()
+        == np.zeros_like(result.shared_bias_coefficients_m).tobytes()
     )
 
 
@@ -202,10 +209,11 @@ def test_state_limit_scaling_transforms_covariance_and_cross_terms() -> None:
         graph_rank=rank,
         position_scale=0.5,
         velocity_scale=0.25,
+        shared_bias_scale=0.1,
     )
 
     assert scaled[0, 0] == 0.25
     assert scaled[3, 3] == 0.0625
     assert scaled[0, 3] == 0.125
-    assert scaled[0, 6] == 0.5
-    assert scaled[6, 6] == 1.0
+    assert scaled[0, 6] == 0.05
+    assert np.isclose(scaled[6, 6], 0.01)

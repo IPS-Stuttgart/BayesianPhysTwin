@@ -148,8 +148,9 @@ def scale_posterior_covariance_for_state_limits(
     graph_rank: int,
     position_scale: float,
     velocity_scale: float,
+    shared_bias_scale: float = 1.0,
 ) -> np.ndarray:
-    """Apply the deterministic state-limit map to a coefficient covariance."""
+    """Apply deterministic radial state and bias limits to a covariance."""
 
     covariance = np.asarray(posterior_covariance, dtype=np.float64)
     dimension = 9 * graph_rank
@@ -157,9 +158,14 @@ def scale_posterior_covariance_for_state_limits(
     _require(np.all(np.isfinite(covariance)), "covariance is non-finite")
     _require(0.0 < position_scale <= 1.0, "position scale must lie in (0, 1]")
     _require(0.0 < velocity_scale <= 1.0, "velocity scale must lie in (0, 1]")
+    _require(
+        0.0 < shared_bias_scale <= 1.0,
+        "shared bias scale must lie in (0, 1]",
+    )
     scale = np.ones(dimension, dtype=np.float64)
     scale[: 3 * graph_rank] = position_scale
     scale[3 * graph_rank : 6 * graph_rank] = velocity_scale
+    scale[6 * graph_rank :] = shared_bias_scale
     return scale[:, None] * covariance * scale[None]
 
 
@@ -189,6 +195,7 @@ class PropagatedStateSelectionConfig:
     projection_ridge: float = 1e-5
     maximum_position_update_m: float = 0.05
     maximum_velocity_update_mps: float = 0.25
+    maximum_shared_bias_m: float = 0.05
 
     def __post_init__(self) -> None:
         _require(self.fit_frame_count >= 2, "fit frame count must be at least two")
@@ -209,6 +216,10 @@ class PropagatedStateSelectionConfig:
             self.maximum_velocity_update_mps > 0.0,
             "maximum velocity update must be positive",
         )
+        _require(
+            self.maximum_shared_bias_m > 0.0,
+            "maximum shared bias must be positive",
+        )
 
 
 @dataclass(frozen=True)
@@ -221,15 +232,18 @@ class PropagatedStateSelection:
     state_weights: np.ndarray
     position_update_m: np.ndarray
     velocity_update_mps: np.ndarray
+    shared_bias_coefficients_m: np.ndarray
     diagnostics: Mapping[str, Any]
 
     def __post_init__(self) -> None:
         weights = _readonly(self.state_weights)
         position = _readonly(self.position_update_m)
         velocity = _readonly(self.velocity_update_mps)
+        bias = _readonly(self.shared_bias_coefficients_m)
         _require(weights.ndim == 1, "state weights must be a vector")
         _require(position.ndim == 2 and position.shape[1] == 3, "position changed")
         _require(velocity.shape == position.shape, "velocity shape changed")
+        _require(bias.ndim == 2 and bias.shape[1] == 3, "shared bias changed")
         if not self.accepted:
             _require(
                 np.array_equal(weights, np.zeros_like(weights)),
@@ -240,9 +254,14 @@ class PropagatedStateSelection:
                 and np.array_equal(velocity, np.zeros_like(velocity)),
                 "rejected selection must carry exact zero state fields",
             )
+            _require(
+                np.array_equal(bias, np.zeros_like(bias)),
+                "rejected selection must carry exact zero shared bias",
+            )
         object.__setattr__(self, "state_weights", weights)
         object.__setattr__(self, "position_update_m", position)
         object.__setattr__(self, "velocity_update_mps", velocity)
+        object.__setattr__(self, "shared_bias_coefficients_m", bias)
         object.__setattr__(
             self, "diagnostics", _json_data(self.diagnostics, "diagnostics")
         )
@@ -335,6 +354,7 @@ def select_propagated_state_update(
 
     zero_weights = np.zeros(response.shape[3], dtype=np.float64)
     zero_position = np.zeros((len(full_basis), 3), dtype=np.float64)
+    zero_bias = np.zeros((observed_basis.shape[1], 3), dtype=np.float64)
     diagnostics: dict[str, Any] = {
         "selection_uses_forecast_frames": False,
         "fit_frame_count": cfg.fit_frame_count,
@@ -356,6 +376,7 @@ def select_propagated_state_update(
             state_weights=zero_weights,
             position_update_m=zero_position,
             velocity_update_mps=zero_position,
+            shared_bias_coefficients_m=zero_bias,
             diagnostics=diagnostics,
         )
 
@@ -367,11 +388,16 @@ def select_propagated_state_update(
         maximum_position_update_m=cfg.maximum_position_update_m,
         maximum_velocity_update_mps=cfg.maximum_velocity_update_mps,
     )
+    limited_fit_bias, fit_bias_limit = scale_coefficients_to_field_limit(
+        full_basis,
+        fit_belief.shared_bias_coefficients_m,
+        maximum_node_norm=cfg.maximum_shared_bias_m,
+    )
     joint_prediction = propagated_state_readout(
         response[validation],
         limited_fit_weights,
         observed_basis,
-        fit_belief.shared_bias_coefficients_m,
+        limited_fit_bias,
     )
     joint_rmse = _weighted_rmse(
         innovation[validation] - joint_prediction,
@@ -386,6 +412,7 @@ def select_propagated_state_update(
             "validation_improvement_fraction": improvement,
             "validation_improvement_m": absolute_improvement,
             "fit_state_limits": fit_limits,
+            "fit_shared_bias_limit": fit_bias_limit,
             "fit_belief_diagnostics": fit_belief.diagnostics,
         }
     )
@@ -400,6 +427,7 @@ def select_propagated_state_update(
             state_weights=zero_weights,
             position_update_m=zero_position,
             velocity_update_mps=zero_position,
+            shared_bias_coefficients_m=zero_bias,
             diagnostics=diagnostics,
         )
 
@@ -421,6 +449,7 @@ def select_propagated_state_update(
             state_weights=zero_weights,
             position_update_m=zero_position,
             velocity_update_mps=zero_position,
+            shared_bias_coefficients_m=zero_bias,
             diagnostics=diagnostics,
         )
     limited_weights, position, velocity, full_limits = decode_limited_state_weights(
@@ -431,9 +460,15 @@ def select_propagated_state_update(
         maximum_position_update_m=cfg.maximum_position_update_m,
         maximum_velocity_update_mps=cfg.maximum_velocity_update_mps,
     )
+    limited_bias, full_bias_limit = scale_coefficients_to_field_limit(
+        full_basis,
+        full_belief.shared_bias_coefficients_m,
+        maximum_node_norm=cfg.maximum_shared_bias_m,
+    )
     diagnostics.update(
         {
             "full_state_limits": full_limits,
+            "full_shared_bias_limit": full_bias_limit,
             "full_belief_diagnostics": full_belief.diagnostics,
         }
     )
@@ -444,6 +479,7 @@ def select_propagated_state_update(
         state_weights=limited_weights,
         position_update_m=position,
         velocity_update_mps=velocity,
+        shared_bias_coefficients_m=limited_bias,
         diagnostics=diagnostics,
     )
 
