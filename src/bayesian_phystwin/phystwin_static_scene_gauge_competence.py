@@ -54,7 +54,7 @@ def _load_pickle(path: Path) -> Any:
 def _nearest_initial_identities(
     object_points_m: np.ndarray,
     manual_points_m: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     object_points = np.asarray(object_points_m, dtype=np.float64)
     manual_points = np.asarray(manual_points_m, dtype=np.float64)
     _require(
@@ -66,16 +66,27 @@ def _nearest_initial_identities(
         "initial manual points must have shape (M, 3)",
     )
     _require(
-        np.all(np.isfinite(object_points))
-        and np.all(np.isfinite(manual_points)),
-        "initial identity coordinates must be finite",
+        np.all(np.isfinite(object_points)),
+        "initial object coordinates must be finite",
     )
+    manual_identity = np.flatnonzero(
+        np.all(np.isfinite(manual_points), axis=1)
+    )
+    _require(
+        len(manual_identity) > 0,
+        "no manual identity is finite at frame zero",
+    )
+    selected_manual = manual_points[manual_identity]
     squared = np.sum(
-        (manual_points[:, None] - object_points[None]) ** 2,
+        (selected_manual[:, None] - object_points[None]) ** 2,
         axis=2,
     )
     index = np.argmin(squared, axis=1)
-    return np.sqrt(squared[np.arange(len(index)), index]), index
+    return (
+        np.sqrt(squared[np.arange(len(index)), index]),
+        index,
+        manual_identity,
+    )
 
 
 def _lift_source_depth_tracks(
@@ -264,10 +275,13 @@ def evaluate_phystwin_static_scene_gauge_prefix(
         and len(manual) == config.train_end_frame,
         "manual tracks must have shape (T, M, 3)",
     )
-    initial_distance, identity = _nearest_initial_identities(
-        initial,
-        manual[0],
+    initial_distance, identity, manual_identity = (
+        _nearest_initial_identities(
+            initial,
+            manual[0],
+        )
     )
+    selected_manual = manual[:, manual_identity]
 
     lift_arguments = {
         "source_camera": source_camera,
@@ -288,7 +302,7 @@ def evaluate_phystwin_static_scene_gauge_prefix(
         corrected_tracks,
         **lift_arguments,
     )
-    manual_valid = np.all(np.isfinite(manual), axis=2)
+    manual_valid = np.all(np.isfinite(selected_manual), axis=2)
     common = (
         manual_valid
         & raw_valid[:, identity]
@@ -298,13 +312,13 @@ def evaluate_phystwin_static_scene_gauge_prefix(
     corrected_selected = corrected_points[:, identity]
     raw_metrics = _metrics(
         raw_selected,
-        manual,
+        selected_manual,
         common,
         late_frame_count=config.late_frame_count,
     )
     corrected_metrics = _metrics(
         corrected_selected,
-        manual,
+        selected_manual,
         common,
         late_frame_count=config.late_frame_count,
     )
@@ -325,7 +339,9 @@ def evaluate_phystwin_static_scene_gauge_prefix(
         "static_scene_gauge": corrected_metrics,
         "relative_improvement": changes,
         "support": {
-            "manual_identity_count": int(manual.shape[1]),
+            "manual_identity_count": int(len(manual_identity)),
+            "manual_identity_total_count": int(manual.shape[1]),
+            "selected_manual_identity_ids": manual_identity.tolist(),
             "common_point_frame_count": int(np.sum(common)),
             "common_point_frame_fraction": float(np.mean(common)),
             "gauge_supported_dense_fraction": float(

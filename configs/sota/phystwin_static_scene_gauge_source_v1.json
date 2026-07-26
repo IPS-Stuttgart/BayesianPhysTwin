@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "protocol_id": "phystwin-static-scene-gauge-source-v1",
-  "protocol_sha256": "d7c15d14ec7873fd55f554453ca07ccc1f9a94da9ddd72f335561fbe2374e285",
-  "status": "locked-before-source-transfer",
+  "protocol_sha256": "70b55cf76ec25ed9212792ab2f0ae032c8e502710c00453d8dc26e903aade300",
+  "status": "locked-after-admissibility-amendment-before-transfer-resume",
   "claim_boundary": "Opened-source prefix-only automatic-observation competence. This cannot establish independent transfer, future-simulation improvement, calibration, or state of the art.",
   "development_result": {
     "case": "single_lift_cloth",
@@ -69,13 +69,22 @@
     "minimum_mean_error_wins": 14,
     "maximum_case_mean_error_regression": 0.1
   },
+  "amendments": [
+    {
+      "id": "frame-zero-finite-manual-identities-v1",
+      "trigger": "rope_double_hand sealed its gauge but the scorer stopped before output because two of nine manual identities were non-finite at frame zero.",
+      "outcome_exposure": "double_stretch_sloth had written one score, but no metric value was inspected and no aggregate was run before this amendment.",
+      "change": "Score exactly manual identities finite at frame zero; record selected indices and total identity count. Preserve common-support handling for later missingness.",
+      "method_effect": "No change to the static-scene gauge, camera admission, correction, cohort, or gates. Cases with all frame-zero identities finite are numerically unchanged."
+    }
+  ],
   "source_artifacts": {
     "cotracker_cue_manifest_sha256": "899fadb41531bfe27d7743d8ba055e16fab3521259d1e3b7cbf945059ca82175",
     "cotracker_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
     "cotracker_checkpoint_sha256": "205d34789f19699d64b22cf93f9b697f15f28d4025240e31532e504109837218",
     "static_scene_gauge_source_sha256": "bc0c8acd8291247398b666da7dc610d4b0d7e5f12b14cb894964cb29db1be086",
     "phystwin_adapter_source_sha256": "33e78f22dc5ad36d268c78b704408399a49dc65c2eab80aca704824fe6228222",
-    "competence_source_sha256": "ecff48518835811febc86454dd541316077ad63cbcfc7c7417fb2ae7a4b397b2",
+    "competence_source_sha256": "6a5d24f6bfaeff6dbcc2dda5a752b0e8479a8ef2aa5cda2454558329068e9bd3",
     "aggregate_source_sha256": "482bd31d599ae162a786498ff784db56a11e90bfa48121165049aafe24952b84",
     "builder_source_sha256": "e09fb0f150b2a09e72088b6e4ef37917b2eb06b0b6d654ee099f412127f252d9",
     "evaluator_source_sha256": "2aa0a7bc9f60a56102036476958e6616ed0b626d978986915e8c941c039f89c3",

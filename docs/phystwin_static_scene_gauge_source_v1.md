@@ -54,6 +54,20 @@ Failure stops this gauge route without changing the rank, background mask,
 RBF bandwidth, support radius, quality threshold, or gates. Passing authorizes
 only a separately locked simulator-assimilation experiment.
 
+## Admissibility Amendment 1
+
+The first transfer worker sealed a `rope_double_hand` gauge and then stopped
+before producing a score because two of nine manual identities are non-finite
+at frame zero. One other case, `double_stretch_sloth`, had already written a
+score, but its metric values were not inspected and no aggregate was run.
+
+Before transfer resumed, the scorer was amended to admit exactly the manual
+identities finite at frame zero and to record their indices and the original
+total. Future missingness remains handled by the predeclared common-support
+mask. This changes neither the gauge, its admission rule, the cohort, nor any
+gate, and it is an identity operation for cases whose frame-zero identities
+are all finite.
+
 ## Boundaries
 
 This is opened-source observation-feeder development, not independent

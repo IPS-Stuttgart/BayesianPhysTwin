@@ -274,8 +274,9 @@ def test_prefix_competence_scores_only_allowed_frames(tmp_path: Path) -> None:
             handle,
         )
     manual = tmp_path / "manual.pkl"
-    manual_values = np.zeros((5, 1, 3), dtype=float)
-    manual_values[:, :, 2] = 1.0
+    manual_values = np.zeros((5, 2, 3), dtype=float)
+    manual_values[:, 0, 2] = 1.0
+    manual_values[:, 1] = np.nan
     manual_values[4, 0, 0] = 10_000.0
     with manual.open("wb") as handle:
         pickle.dump(manual_values, handle)
@@ -296,4 +297,7 @@ def test_prefix_competence_scores_only_allowed_frames(tmp_path: Path) -> None:
     assert result["raw"]["mean_error_mm"] > 0.0
     assert result["static_scene_gauge"]["mean_error_mm"] == pytest.approx(0.0)
     assert result["relative_improvement"]["mean_error_mm"] == pytest.approx(1.0)
+    assert result["support"]["manual_identity_count"] == 1
+    assert result["support"]["manual_identity_total_count"] == 2
+    assert result["support"]["selected_manual_identity_ids"] == [0]
     assert result["information_boundary"]["future_manual_track_read"] is False
