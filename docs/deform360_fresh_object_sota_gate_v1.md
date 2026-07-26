@@ -2,12 +2,13 @@
 
 ## Status
 
-This is the selected next experiment, not yet a locked cohort. The source-only
-admission, exclusion, and deterministic cohort-lock implementation now exists
-in `deform360_fresh_source_lock.py`. A final lock still requires actual
-admission artifacts and exclusion manifests covering every previously opened
-or reserved object. No existing held evaluation is authorized by this
-document.
+The source-only phase is complete. Fourteen of 18 queued objects passed, all
+four technical failures were preserved without retry or replacement, and the
+deterministic 12-object cohort is locked at
+`results/sota/deform360_fresh_source_lock_v1/deform360_fresh_object_cohort_lock_v1.json`
+with internal SHA-256
+`bafe26848ee83d8a4201e9d11d51af106370647f76ec702003e9ec51d3843729`.
+Predictions and outcomes have not been opened by this protocol.
 
 ## Objective
 

@@ -163,6 +163,19 @@ workspace. The sealed source windows and masks remain immutable. Processing
 or admission failures are terminal for that queue entry; they do not authorize
 camera changes or a replacement object.
 
+The completed processing campaign is sealed in
+`results/sota/deform360_fresh_source_lock_v1/fresh_source_processing_campaign_v1.json`,
+internal SHA-256
+`62a34f301439746172953a8216509925fd24bb6f0892afa1787c610be125a8c7`.
+Fourteen cases were admitted. The three mask failures remain terminal, and
+`006-fur` retains its first-attempt source-processing failure caused by a
+missing CUDA-toolkit runtime binding. It was not retried or replaced. The
+processed-source inventory contains 4,198 files and 1,230,127,897 bytes with
+tree SHA-256
+`f6ce312233e216252511bf7fdeef42d655526445edf62bb80b80cada69160482`.
+All 14 admission artifacts are committed under
+`results/sota/deform360_fresh_source_lock_v1/admissions`.
+
 ## Deterministic cohort rule
 
 The lock:
@@ -184,6 +197,21 @@ fresh_object_candidate_conventions_only
 ```
 
 No caller-supplied flag can elevate that label.
+
+## Locked cohort
+
+The ordered 12-object cohort is now immutable in
+`results/sota/deform360_fresh_source_lock_v1/deform360_fresh_object_cohort_lock_v1.json`,
+internal SHA-256
+`bafe26848ee83d8a4201e9d11d51af106370647f76ec702003e9ec51d3843729`.
+It contains three filament, five sheet, and four volumetric objects. The lock
+binds all five independent exclusion manifests, the unchanged method commit,
+the source-lock configuration, and per-episode parity-contract SHA-256
+`a8e903060ac58bfabd13ab1b43f15296fd685a04294f45a1c6c3c022280c1f95`.
+
+The parity contract remains incomplete, so this cohort can establish only
+fresh-object transfer under the fixed candidate metric conventions. No object
+may be replaced after this lock.
 
 ## CLI
 
@@ -224,8 +252,10 @@ bpt-prepare-deform360-fresh-source lock \
   --parity-contract parity-contract.json
 ```
 
-The next operational step is to stage and admit the frozen source-only queue.
-No outcome-opening command belongs in this package.
+The next operational step is to seal every baseline and candidate prediction,
+or an explicit technical-failure disposition, for all 12 locked cases. No
+outcome-opening command is authorized until the all-case completeness barrier
+passes.
 
 ## Real source-only smoke
 
