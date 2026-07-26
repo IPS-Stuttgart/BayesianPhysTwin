@@ -42,6 +42,21 @@ coverage, and baseline-relative regret still require a genuinely fresh,
 object-clustered prospective evaluation. The opened Deform360-27 results may
 motivate this construction but cannot confirm it.
 
+## Source evidence boundary
+
+The opened PhysTwin-22 manual-prefix capacity ceiling is
+`7.891873 mm` CD and `13.429357 mm` manual-track error. It uses released manual
+trajectories from the permitted prefix as the sparse identity channel and then
+scores the same identity family in the future. It is useful headroom evidence,
+but it is neither automatic nor a fair state-of-the-art result.
+
+The completed automatic CoTracker3 multiview arm is separate. It reached
+`10.627 mm` CD and `20.415 mm` manual-track error and failed its advancement
+gate. Its 22 causal cue archives already exist; regenerating them would not
+create independent evidence. A deployable claim for this pipeline must use
+automatic prefix observations, disjoint hidden future identities, and a new
+prospective cohort.
+
 ## Required controls
 
 The source-safe synthetic controls cover:
