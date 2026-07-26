@@ -129,6 +129,15 @@ def load_official_phystwin_case(
     """
 
     digests = dict(expected_sha256 or {})
+    required_digest_keys = {"final_data", "optimal_params"}
+    if baseline_trajectory_path is not None:
+        required_digest_keys.add("baseline_trajectory")
+    if expected_sha256 is not None:
+        missing_digests = sorted(required_digest_keys - set(digests))
+        if missing_digests:
+            raise ValueError(
+                "expected_sha256 is missing: " + ", ".join(missing_digests)
+            )
     required_data = (
         "object_points",
         "object_visibilities",
