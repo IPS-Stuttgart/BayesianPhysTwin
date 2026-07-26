@@ -36,15 +36,20 @@ jobs:
         run: >-
           python -m ruff check
           src/bayesian_phystwin/run_manifest.py
+          src/bayesian_phystwin/repository_provenance.py
+          src/bayesian_phystwin/run_manifest_v2.py
           src/bayesian_phystwin/cli/main.py
           src/bayesian_phystwin/cli/run_manifest.py
           tests/test_cli_main.py
           tests/test_run_manifest.py
+          tests/test_run_manifest_v2.py
           tests/test_run_manifest_cli.py
       - name: Type-check stable interfaces
         run: >-
           python -m mypy
           src/bayesian_phystwin/run_manifest.py
+          src/bayesian_phystwin/repository_provenance.py
+          src/bayesian_phystwin/run_manifest_v2.py
           src/bayesian_phystwin/cli/main.py
           src/bayesian_phystwin/cli/run_manifest.py
 
@@ -84,6 +89,7 @@ jobs:
             tests/test_observation_belief_gauge_adapter.py \
             tests/test_cli_main.py \
             tests/test_run_manifest.py \
+            tests/test_run_manifest_v2.py \
             tests/test_run_manifest_cli.py
 
   full-suite:
