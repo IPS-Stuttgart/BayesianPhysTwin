@@ -56,6 +56,9 @@ from bayesian_phystwin.phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
     normalized_spring_laplacian,
 )
+from bayesian_phystwin.phystwin_frame_zero_query import (
+    associate_frame_zero_queries,
+)
 from bayesian_phystwin.phystwin_multiview_tangent_fusion import (
     fuse_source_normal_multiview_tangent,
     local_surface_tangent_projectors,
@@ -763,6 +766,8 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     laplacian = normalized_spring_laplacian(len(structure_points), springs)
 
     cotracker_summary = None
+    frame_zero_query_points = None
+    frame_zero_query_valid = None
     directional_endpoint_inputs = None
     ray_bias_aware = (
         config.observation_source
@@ -770,6 +775,27 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     )
     ray_endpoint_diagnostics: dict[int, dict[str, Any]] = {}
     if config.observation_source == "final_data":
+        inference_points = observed_points
+        dense_valid = _target_validity(visible, motion_valid)
+    elif (
+        config.observation_source
+        == "final_data_cotracker3_frame0_query_oracle"
+    ):
+        frame_zero_query_points, frame_zero_query_valid, cotracker_summary = (
+            _load_cotracker_multiview(
+                Path(cues_path),
+                observed_points[0],
+                train_end=train_end,
+                minimum_quality=config.cotracker_minimum_quality,
+                maximum_cycle_error_px=(
+                    config.cotracker_maximum_cycle_error_px
+                ),
+                maximum_reprojection_error_px=(
+                    config.cotracker_maximum_reprojection_error_px
+                ),
+                minimum_camera_count=config.cotracker_minimum_camera_count,
+            )
+        )
         inference_points = observed_points
         dense_valid = _target_validity(visible, motion_valid)
     elif config.observation_source in {
@@ -1221,6 +1247,8 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         initial_variance=config.initial_std_m**2,
     )
 
+    frame_zero_query_count = 0
+    sparse_anchor_source = "none"
     if config.manual_prefix_override:
         manual_initial = np.isfinite(manual_tracks[0]).all(axis=1)
         initial_match_m, manual_indices = _nearest_distances(
@@ -1235,6 +1263,25 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         manual_residual[manual_valid] = (
             manual_values[manual_valid] - baseline_at_manual[manual_valid]
         )
+        sparse_anchor_source = "manual_prefix_trajectory"
+    elif frame_zero_query_points is not None:
+        manual_initial = np.zeros(manual_tracks.shape[1], dtype=bool)
+        query_initial = np.isfinite(manual_tracks[0]).all(axis=1)
+        association = associate_frame_zero_queries(
+            baseline[0, :original_count],
+            manual_tracks[0, query_initial],
+        )
+        initial_match_m = association.distance_m
+        manual_indices = association.node_indices
+        tracker_values = frame_zero_query_points[:, manual_indices]
+        manual_valid = frame_zero_query_valid[:, manual_indices]
+        manual_residual = np.zeros_like(tracker_values)
+        baseline_at_manual = baseline[:train_end, manual_indices]
+        manual_residual[manual_valid] = (
+            tracker_values[manual_valid] - baseline_at_manual[manual_valid]
+        )
+        frame_zero_query_count = int(np.sum(query_initial))
+        sparse_anchor_source = "frame_zero_query_plus_cotracker3"
     else:
         manual_initial = np.zeros(manual_tracks.shape[1], dtype=bool)
         initial_match_m = np.empty(0, dtype=float)
@@ -2388,6 +2435,9 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         "future_end_frame_exclusive": future_end,
         "manual_prefix_track_count": int(np.sum(manual_initial)),
         "manual_initial_match_max_m": float(np.max(initial_match_m, initial=0.0)),
+        "frame_zero_query_count": frame_zero_query_count,
+        "sparse_anchor_source": sparse_anchor_source,
+        "sparse_anchor_count": int(len(manual_indices)),
         "observation_source": config.observation_source,
         "cotracker_depth_lift": cotracker_summary,
         "baseline": baseline_metrics,
@@ -2524,6 +2574,7 @@ def parse_args() -> argparse.Namespace:
         "--observation-source",
         choices=(
             "final_data",
+            "final_data_cotracker3_frame0_query_oracle",
             "cotracker3_source_depth",
             "alltracker_source_depth",
             "cotracker3_multiview",
@@ -2794,7 +2845,13 @@ def main() -> None:
             "manual_prefix_role": (
                 "label-assisted sparse-observation upper bound; not a deployable input"
                 if config.manual_prefix_override
-                else "disabled; manual tracks are evaluation-only"
+                else (
+                    "frame-zero query coordinates only; CoTracker3 supplies every "
+                    "later anchor observation; not label-free"
+                    if config.observation_source
+                    == "final_data_cotracker3_frame0_query_oracle"
+                    else "disabled; manual tracks are evaluation-only"
+                )
             ),
             "observation_source": config.observation_source,
             "future_inputs_used_for_prediction": False,
