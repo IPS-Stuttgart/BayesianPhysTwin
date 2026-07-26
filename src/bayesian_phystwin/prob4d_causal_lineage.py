@@ -13,6 +13,7 @@ from typing import Any
 
 from .observation_belief import ObservationBeliefV1
 from .prob4d_observation_contract import (
+    FIXED_EXTERNAL_CALIBRATION,
     PROB4D_CAUSAL_LINEAGE_VERSION,
     PROB4D_CAUSAL_STREAM_ID,
     PROB4D_FIXED_LAG_GAUGE_MODEL,
@@ -21,6 +22,7 @@ from .prob4d_observation_contract import (
     PROB4D_JOINT_GAUGE_MODEL,
     PROB4D_LEGACY_GAUGE_FACTOR_NAMES,
     PROB4D_SOURCE_REPOSITORY,
+    PROPAGATED_EXTERNAL_PRIOR,
     is_prob4d_causal_observation_belief,
     validate_prob4d_causal_observation_belief as _validate_prob4d_semantics,
 )
@@ -88,6 +90,7 @@ def validate_prob4d_causal_observation_belief(
 
 
 __all__ = [
+    "FIXED_EXTERNAL_CALIBRATION",
     "PROB4D_CAUSAL_LINEAGE_VERSION",
     "PROB4D_CAUSAL_STREAM_CONTRACT_VERSION",
     "PROB4D_CAUSAL_STREAM_ID",
@@ -99,6 +102,7 @@ __all__ = [
     "PROB4D_LEGACY_COVARIANCE_SEMANTICS",
     "PROB4D_LEGACY_GAUGE_FACTOR_NAMES",
     "PROB4D_SOURCE_REPOSITORY",
+    "PROPAGATED_EXTERNAL_PRIOR",
     "is_prob4d_causal_observation_belief",
     "validate_prob4d_causal_observation_belief",
 ]
