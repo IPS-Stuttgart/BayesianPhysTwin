@@ -59,6 +59,13 @@ from .phystwin_adapter import (
     export_phystwin_residuals,
     write_export_summary,
 )
+from .prob4d_causal_lineage import (
+    PROB4D_CAUSAL_LINEAGE_VERSION,
+    PROB4D_CAUSAL_STREAM_ID,
+    PROB4D_SOURCE_REPOSITORY,
+    is_prob4d_causal_observation_belief,
+    validate_prob4d_causal_observation_belief,
+)
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
@@ -103,6 +110,9 @@ __all__ = [
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefV1",
     "ObservationBeliefGaugeAdapterResult",
+    "PROB4D_CAUSAL_LINEAGE_VERSION",
+    "PROB4D_CAUSAL_STREAM_ID",
+    "PROB4D_SOURCE_REPOSITORY",
     "ParameterEnsemble",
     "PhysicalResponseBasis",
     "PhysTwinExportConfig",
@@ -133,6 +143,7 @@ __all__ = [
     "fit_source_regret_certificate",
     "grouped_student_t_mixture_likelihood",
     "global_translation_bias_jacobian",
+    "is_prob4d_causal_observation_belief",
     "load_observation_belief",
     "markov_log_evidence_batch",
     "measurement_variance",
@@ -149,5 +160,6 @@ __all__ = [
     "smooth_markov_reliability",
     "update_bias_aware_state",
     "update_gauge_aware_belief",
+    "validate_prob4d_causal_observation_belief",
     "write_export_summary",
 ]
