@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bayesian-phystwin"
-version = "0.3.0"
+version = "0.4.0"
 description = "Reliability-aware Bayesian estimation utilities for PhysTwin-style deformable digital twins."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,6 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
+bpt-provider-manifest = "bayesian_phystwin.cli.provider_manifest:main"
 bpt-validate-observation-belief = "bayesian_phystwin.cli.observation_belief:main"
 bpt-build-phystwin-cues = "bayesian_phystwin.cli.phystwin_cues:main"
 bpt-calibrate-phystwin-discrepancy = "bayesian_phystwin.cli.phystwin_discrepancy:main"
