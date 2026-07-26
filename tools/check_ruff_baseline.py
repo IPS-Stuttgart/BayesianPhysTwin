@@ -1,4 +1,4 @@
-"""Fail when repository-wide Ruff diagnostics exceed the checked-in baseline."""
+"""Reject repository-wide Ruff regressions relative to the Git merge base."""
 
 from __future__ import annotations
 
@@ -7,13 +7,59 @@ import json
 import subprocess
 import sys
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import cast
+
+_ZERO_SHA = "0" * 40
 
 
 class RuffDiagnostic(dict[str, object]):
     """Validated JSON object emitted by Ruff for one diagnostic."""
+
+
+def _git_output(repository_root: Path, *arguments: str) -> str:
+    return subprocess.check_output(
+        ["git", "-C", str(repository_root), *arguments],
+        text=True,
+    ).strip()
+
+
+def _commit_exists(repository_root: Path, revision: str) -> bool:
+    if not revision or revision == _ZERO_SHA:
+        return False
+    completed = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository_root),
+            "cat-file",
+            "-e",
+            f"{revision}^{{commit}}",
+        ],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return completed.returncode == 0
+
+
+def _comparison_base(
+    repository_root: Path,
+    *,
+    base: str,
+    head: str,
+) -> str:
+    if _commit_exists(repository_root, base):
+        merge_base = _git_output(repository_root, "merge-base", base, head)
+        if merge_base:
+            return merge_base
+    parent = f"{head}^"
+    if _commit_exists(repository_root, parent):
+        return _git_output(repository_root, "rev-parse", parent)
+    raise ValueError("a comparison base is required for repository-wide Ruff gating")
 
 
 def _relative_path(repository_root: Path, filename: str) -> str:
@@ -28,51 +74,24 @@ def _relative_path(repository_root: Path, filename: str) -> str:
     return path.as_posix()
 
 
-def _load_baseline(path: Path) -> Counter[tuple[str, str]]:
-    raw_payload: object = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(raw_payload, dict):
-        raise ValueError("Ruff baseline must be an object")
-    payload = cast(dict[str, object], raw_payload)
-    if payload.get("schema_version") != 1:
-        raise ValueError("unsupported Ruff baseline schema")
-
-    raw_diagnostics = payload.get("diagnostics")
-    if not isinstance(raw_diagnostics, dict):
-        raise ValueError("Ruff baseline diagnostics must be an object")
-    diagnostics = cast(dict[object, object], raw_diagnostics)
-
-    baseline: Counter[tuple[str, str]] = Counter()
-    for path_value, raw_codes in diagnostics.items():
-        if not isinstance(path_value, str) or not path_value:
-            raise ValueError("Ruff baseline contains an invalid path")
-        if not isinstance(raw_codes, dict):
-            raise ValueError(f"Ruff baseline codes must be an object: {path_value}")
-        codes = cast(dict[object, object], raw_codes)
-        normalized_path = Path(path_value).as_posix()
-        for code, count in codes.items():
-            if not isinstance(code, str) or not code:
-                raise ValueError(
-                    f"Ruff baseline contains an invalid code: {path_value}"
-                )
-            if not isinstance(count, int) or isinstance(count, bool) or count < 1:
-                raise ValueError(
-                    f"Ruff baseline contains an invalid count: {path_value} {code}"
-                )
-            baseline[(normalized_path, code)] = count
-    return baseline
+def _existing_paths(repository_root: Path, paths: Sequence[str]) -> tuple[str, ...]:
+    return tuple(path for path in paths if (repository_root / path).exists())
 
 
 def _run_ruff(
     repository_root: Path,
     paths: Sequence[str],
 ) -> list[RuffDiagnostic]:
+    existing_paths = _existing_paths(repository_root, paths)
+    if not existing_paths:
+        return []
     completed = subprocess.run(
         [
             sys.executable,
             "-m",
             "ruff",
             "check",
-            *paths,
+            *existing_paths,
             "--output-format=json",
         ],
         cwd=repository_root,
@@ -95,33 +114,11 @@ def _run_ruff(
     return [RuffDiagnostic(cast(dict[str, object], item)) for item in raw_payload]
 
 
-def check_ruff_baseline(
+def _diagnostic_counts(
     repository_root: Path,
-    baseline_path: Path,
-    paths: Sequence[str],
-    *,
-    report_path: Path | None = None,
-) -> int:
-    """Return zero when no path/code diagnostic count exceeds the baseline."""
-
-    resolved_root = repository_root.resolve()
-    resolved_baseline = (
-        baseline_path
-        if baseline_path.is_absolute()
-        else resolved_root / baseline_path
-    )
-    baseline = _load_baseline(resolved_baseline)
-    diagnostics = _run_ruff(resolved_root, paths)
-    if report_path is not None:
-        resolved_report = (
-            report_path if report_path.is_absolute() else resolved_root / report_path
-        )
-        resolved_report.write_text(
-            json.dumps(diagnostics, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-
-    current: Counter[tuple[str, str]] = Counter()
+    diagnostics: Sequence[RuffDiagnostic],
+) -> tuple[Counter[tuple[str, str]], dict[tuple[str, str], str]]:
+    counts: Counter[tuple[str, str]] = Counter()
     messages: dict[tuple[str, str], str] = {}
     for diagnostic in diagnostics:
         filename = diagnostic.get("filename")
@@ -129,22 +126,140 @@ def check_ruff_baseline(
         message = diagnostic.get("message")
         if not isinstance(filename, str) or not isinstance(code, str):
             raise ValueError("Ruff diagnostic is missing filename or code")
-        key = (_relative_path(resolved_root, filename), code)
-        current[key] += 1
+        key = (_relative_path(repository_root, filename), code)
+        counts[key] += 1
         if isinstance(message, str):
             messages.setdefault(key, message)
+    return counts, messages
 
-    unexpected = current - baseline
-    removed = baseline - current
+
+@contextmanager
+def _temporary_worktree(
+    repository_root: Path,
+    revision: str,
+    *,
+    label: str,
+) -> Iterator[Path]:
+    with TemporaryDirectory(prefix=f"bpt-ruff-{label}-") as directory:
+        worktree = Path(directory) / "worktree"
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository_root),
+                "worktree",
+                "add",
+                "--detach",
+                "--force",
+                str(worktree),
+                revision,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+        try:
+            yield worktree
+        finally:
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repository_root),
+                    "worktree",
+                    "remove",
+                    "--force",
+                    str(worktree),
+                ],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["git", "-C", str(repository_root), "worktree", "prune"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+
+def _write_report(path: Path | None, diagnostics: Sequence[RuffDiagnostic]) -> None:
+    if path is None:
+        return
+    path.write_text(
+        json.dumps(diagnostics, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def check_ruff_regression(
+    repository_root: Path,
+    *,
+    base: str = "",
+    head: str = "HEAD",
+    paths: Sequence[str] = ("src", "tests", "tools"),
+    baseline_report_path: Path | None = None,
+    current_report_path: Path | None = None,
+) -> int:
+    """Return zero when no path/code diagnostic count exceeds the merge base."""
+
+    resolved_root = repository_root.resolve()
+    baseline_revision = _comparison_base(resolved_root, base=base, head=head)
+    head_revision = _git_output(resolved_root, "rev-parse", head)
+    with _temporary_worktree(
+        resolved_root,
+        baseline_revision,
+        label="baseline",
+    ) as baseline_root:
+        baseline_diagnostics = _run_ruff(baseline_root, paths)
+        baseline_counts, _ = _diagnostic_counts(
+            baseline_root,
+            baseline_diagnostics,
+        )
+    with _temporary_worktree(
+        resolved_root,
+        head_revision,
+        label="current",
+    ) as current_root:
+        current_diagnostics = _run_ruff(current_root, paths)
+        current_counts, messages = _diagnostic_counts(
+            current_root,
+            current_diagnostics,
+        )
+
+    resolved_baseline_report = (
+        None
+        if baseline_report_path is None
+        else (
+            baseline_report_path
+            if baseline_report_path.is_absolute()
+            else resolved_root / baseline_report_path
+        )
+    )
+    resolved_current_report = (
+        None
+        if current_report_path is None
+        else (
+            current_report_path
+            if current_report_path.is_absolute()
+            else resolved_root / current_report_path
+        )
+    )
+    _write_report(resolved_baseline_report, baseline_diagnostics)
+    _write_report(resolved_current_report, current_diagnostics)
+
+    unexpected = current_counts - baseline_counts
+    removed = baseline_counts - current_counts
     print(
-        "Ruff baseline summary: "
-        f"current={sum(current.values())}, "
-        f"baseline={sum(baseline.values())}, "
+        "Repository-wide Ruff comparison: "
+        f"base={baseline_revision[:12]}, "
+        f"head={head_revision[:12]}, "
+        f"baseline={sum(baseline_counts.values())}, "
+        f"current={sum(current_counts.values())}, "
         f"removed={sum(removed.values())}, "
         f"unexpected={sum(unexpected.values())}"
     )
     if unexpected:
-        print("Unexpected Ruff diagnostics:", file=sys.stderr)
+        print("New or increased Ruff diagnostics:", file=sys.stderr)
         for (path, code), count in sorted(unexpected.items()):
             message = messages.get((path, code), "")
             suffix = f": {message}" if message else ""
@@ -159,35 +274,46 @@ def build_parser() -> argparse.ArgumentParser:
         "--repository-root",
         type=Path,
         default=Path.cwd(),
-        help="repository to lint",
+        help="Git repository whose Ruff diagnostics should be compared",
     )
     parser.add_argument(
-        "--baseline",
+        "--base",
+        default="",
+        help="base revision; falls back to the head parent when unavailable",
+    )
+    parser.add_argument(
+        "--head",
+        default="HEAD",
+        help="head revision whose repository-wide diagnostics should be checked",
+    )
+    parser.add_argument(
+        "--baseline-report",
         type=Path,
-        default=Path("tools/ruff_baseline.json"),
-        help="checked-in Ruff diagnostic baseline",
+        help="optional JSON report for merge-base diagnostics",
     )
     parser.add_argument(
         "--report",
         type=Path,
-        help="optional path for the complete current Ruff JSON report",
+        help="optional JSON report for current diagnostics",
     )
     parser.add_argument(
         "paths",
         nargs="*",
         default=["src", "tests", "tools"],
-        help="paths passed to Ruff",
+        help="repository paths passed to Ruff in both revisions",
     )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    return check_ruff_baseline(
+    return check_ruff_regression(
         cast(Path, args.repository_root),
-        cast(Path, args.baseline),
-        cast(list[str], args.paths),
-        report_path=cast(Path | None, args.report),
+        base=cast(str, args.base),
+        head=cast(str, args.head),
+        paths=cast(list[str], args.paths),
+        baseline_report_path=cast(Path | None, args.baseline_report),
+        current_report_path=cast(Path | None, args.report),
     )
 
 
