@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-recursive-gauge-rbf-source-v1",
+  "locked_at_utc": "2026-07-26T18:02:00Z",
+  "status": "Locked after implementation, synthetic controls, full-suite verification, and target-free prefix QA; before generating or scoring the recursive candidate future.",
+  "claim_boundary": "One-case post-open development smoke on the previously examined single_lift_cloth interaction. It may reject this exact recursive camera-only arm or authorize an object-disjoint source-panel design. It cannot establish transfer, calibration, state of the art, or permission to inspect a fresh or held-v8 target.",
+  "question": "Does a strict-three-view, covariance-aware, shared-bias-projected recursive RBF state update improve the frozen released-dense physical comparator when its local discrepancy is transported by action-conditioned physical rotations?",
+  "case": "single_lift_cloth",
+  "case_selection": "The same already-open numerical smoke used by the stopped static sparse-identity arm, chosen before this recursive arm generated a future trajectory.",
+  "implementation_commit": "cc1dbf1f2b8cf48b1724e33b3b8ae63d1a0f2ef5",
+  "software": {
+    "bundle_sha256": "f8a8c517f36b51e1720c4297afcf0b14d3106e114c385ebe2bb66002accbad0a",
+    "recursive_source_sha256": "1e1f525cceb6969414d9ebdf84b5eeeb07b8caa8baf0d5df51cf56bcb912d278",
+    "recursive_belief_sha256": "26f9388fcd66202f3c58ec9b2a654ca75da0b9a49cb13463e3d724b54baed5be",
+    "runner_sha256": "5ef74febc4b81c84d1495babc57cf002fb9ae4ca79b3efdb4221230aedfcaae5",
+    "sparse_observation_sha256": "8375ed24c83092341bd483acd74659ef3eebc7496d3fa93ac1fba581ab08d2"
+  },
+  "fit_end_frame_exclusive": 90,
+  "train_end_frame_exclusive": 121,
+  "future_end_frame_exclusive": 173,
+  "num_surface_points": 7793,
+  "inputs": {
+    "prefix_artifact": {
+      "path": "/home/florianpfaff/bpt-recursive-gauge-rbf-source-v1/outputs/prefix/prefix_only.npz",
+      "sha256": "8190604b52804feb73cf587f68ade93a42e2256a75f72840c9a3a339b7abfaa7"
+    },
+    "prefix_manifest": {
+      "path": "/home/florianpfaff/bpt-recursive-gauge-rbf-source-v1/outputs/prefix/prefix_manifest.json",
+      "sha256": "bbcb65684453cf3274bcc92f9a2f289f0f39141d07623804511c4f4d38cc5366"
+    },
+    "baseline": {
+      "path": "/home/florianpfaff/bpt-recursive-gauge-rbf-source-v1/inputs/single_lift_cloth_trajectory.pkl",
+      "sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72"
+    },
+    "cues": {
+      "path": "/home/florianpfaff/bpt-cotracker3-open22-v3/cues/single_lift_cloth/cues.npz",
+      "sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56"
+    }
+  },
+  "score_inputs": {
+    "final_data_sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+    "gt_track_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e"
+  },
+  "target_free_qa": {
+    "strict_three_view_identity_count": 1502,
+    "strict_three_view_valid_fraction": 0.07922027927160738,
+    "eligible_center_count_at_minimum_availability": 1398,
+    "median_observation_std_m": 0.015684672228158045,
+    "mean_prior_reliability": 0.00025200932993618507,
+    "two_view_fraction": 0.0,
+    "last_frame_with_at_least_four_selected_centers": 59,
+    "decision": "Retain the low reliability and sparse late support. Select four quantiles of causally supported frames, including the last; do not loosen camera, covariance, or reliability settings."
+  },
+  "method_descriptor": {
+    "source_config": {
+      "center_count": 16,
+      "dense_cap_multiplier": 1.0,
+      "dense_cap_quantile": 0.95,
+      "dense_initial_std_m": 0.01,
+      "dense_inlier_prior": 0.95,
+      "dense_observation_std_m": 0.005,
+      "dense_outlier_variance_multiplier": 100.0,
+      "dense_process_std_m": 0.005,
+      "dense_temporal_gamma": 0.25,
+      "minimum_center_availability_fraction": 0.25,
+      "minimum_prefix_cd_improvement_fraction": 0.01,
+      "minimum_rows_per_update": 4,
+      "physical_response_floor_m": 0.001,
+      "recursive": {
+        "covariance_eigenvalue_floor_m2": 1e-12,
+        "gauge_update": {
+          "convergence_tolerance": 1e-09,
+          "degrees_of_freedom": 4.0,
+          "effective_samples_per_correlation_group": 8.0,
+          "maximum_condition_number": 100000000000000.0,
+          "maximum_iterations": 12,
+          "maximum_state_update_m": 0.05,
+          "maximum_update_to_physical_response_ratio": 2.0,
+          "minimum_identifiable_fraction": 0.1,
+          "minimum_query_sensitivity_fraction": 0.001,
+          "minimum_robust_weight": 0.02,
+          "prior_eigenvalue_floor": 1e-12,
+          "shared_bias_prior_std_m": 0.02,
+          "state_prior_std_m": 0.02,
+          "view_bias_prior_std_m": 0.01
+        },
+        "global_prior_std_m": 0.1,
+        "global_process_std_m_per_sqrt_frame": 0.003,
+        "length_scale_fraction": 0.1,
+        "local_blend": 0.25,
+        "local_prior_std_m": 0.02,
+        "local_process_std_m_per_sqrt_frame": 0.003,
+        "maximum_total_query_correction_m": 0.1,
+        "minimum_length_scale_m": 0.0001
+      },
+      "transport_neighbor_count": 16,
+      "update_count": 4
+    },
+    "sparse_observation_config": {
+      "boundary_scale_px": 8.0,
+      "duplicate_center_tolerance_m": 1e-09,
+      "duplicate_rotation_tolerance": 1e-09,
+      "maximum_cycle_error_px": 5.0,
+      "maximum_reprojection_error_px": 3.0,
+      "minimum_camera_count": 3,
+      "minimum_ray_angle_degrees": 0.5,
+      "minimum_view_quality": 0.5,
+      "pixel_noise_std": 2.0,
+      "prior_std_m": 0.1,
+      "redundant_camera_count": 3,
+      "shared_bias_std_m": 1e-06,
+      "two_view_extra_std_m": 0.01,
+      "two_view_reliability_multiplier": 0.5
+    }
+  },
+  "prefix_admission": {
+    "metric": "released pseudo-track one-sided Chamfer distance over frames [90, 121)",
+    "minimum_improvement_fraction": 0.01,
+    "manual_tracks_available_to_predictor": false,
+    "failure": "Return the frozen dense comparator byte-for-byte."
+  },
+  "future_smoke_gate": {
+    "minimum_manual_track_improvement_fraction": 0.05,
+    "maximum_chamfer_regression_fraction": 0.01,
+    "both_metrics_no_worse_than_raw_physical": true,
+    "pass_action": "Freeze this exact arm and design an object-disjoint source panel without opening a fresh target.",
+    "fail_action": "Stop this exact recursive camera-only arm without tuning against the opened future."
+  },
+  "information_boundary": {
+    "decoded_rgb_frames": "[0, 121)",
+    "future_rgb_allowed": false,
+    "future_object_observation_allowed": false,
+    "future_manual_tracks_allowed_for_prediction_or_admission": false,
+    "known_future_controller_action_in_physical_backbone": true,
+    "fresh_object_access_authorized": false,
+    "held_v8_access": false,
+    "held_v8_artifact_access": false
+  },
+  "forbidden": [
+    "changing center count, support scheduling, reliability, covariance, gauge priors, transition, dense comparator, or prefix gate after future scoring",
+    "using future RGB, object clouds, or manual tracks to build or admit the prediction",
+    "calling this one opened case independent, confirmatory, calibrated, or state of the art",
+    "opening any fresh-object outcome before a later object-disjoint source gate passes",
+    "opening, inspecting, modifying, or rerunning any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
