@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "study_id": "phystwin_cotracker3_open22_headroom_v1",
+  "status": "complete_post_open_headroom_and_factorial_diagnostic",
+  "evidence_role": "opened development cohort; not confirmation or SOTA evidence",
+  "published_context_mm": {
+    "chamfer_distance": 8.0,
+    "manual_track_error": 15.0
+  },
+  "baseline_mm": {
+    "chamfer_distance": 11.388593332776804,
+    "manual_track_error": 21.30015870080579
+  },
+  "same_causal_selector": {
+    "selector": "causal_selected_dense_relative_cap_temporal",
+    "released_dense_with_manual_prefix": {
+      "chamfer_distance_mm": 7.89187329122432,
+      "manual_track_error_mm": 13.42935742370951,
+      "accepted_cases": 22,
+      "joint_wins": 21
+    },
+    "released_dense_without_manual_prefix": {
+      "chamfer_distance_mm": 7.898202225395499,
+      "manual_track_error_mm": 19.98890814389277,
+      "accepted_cases": 22,
+      "joint_wins": 14
+    },
+    "cotracker3_dense_with_manual_prefix": {
+      "chamfer_distance_mm": 10.587966399931425,
+      "manual_track_error_mm": 13.42935742370951,
+      "accepted_cases": 22,
+      "joint_wins": 15
+    },
+    "cotracker3_dense_without_manual_prefix": {
+      "chamfer_distance_mm": 10.627040404743514,
+      "manual_track_error_mm": 20.41498087895192,
+      "accepted_cases": 16,
+      "joint_wins": 7
+    }
+  },
+  "post_open_best_fixed_candidate": {
+    "released_dense_with_manual_prefix": {
+      "name": "causal_selected_dense_relative_cap_temporal",
+      "chamfer_distance_mm": 7.89187329122432,
+      "manual_track_error_mm": 13.42935742370951
+    },
+    "released_dense_without_manual_prefix": {
+      "name": "combined_graph__lambda_0p1__cap_040mm",
+      "chamfer_distance_mm": 8.9162962358342,
+      "manual_track_error_mm": 17.65553680075715
+    },
+    "cotracker3_dense_with_manual_prefix": {
+      "name": "combined_graph_manual_override__lambda_0p1__cap_100mm",
+      "chamfer_distance_mm": 10.569017155623909,
+      "manual_track_error_mm": 13.423808480647885
+    },
+    "cotracker3_dense_without_manual_prefix": {
+      "name": "causal_selected_sparse_graph_support",
+      "chamfer_distance_mm": 10.650626125800713,
+      "manual_track_error_mm": 19.580591153757336,
+      "cd_change_vs_baseline_percent": -6.4798802223641765,
+      "track_change_vs_baseline_percent": -8.073026925303639,
+      "accepted_cases": 17,
+      "joint_wins": 9
+    }
+  },
+  "frame_zero_query_cotracker3_oracle": {
+    "post_open_best_candidate": {
+      "name": "combined_graph__lambda_0p1__cap_040mm",
+      "chamfer_distance_mm": 8.91626025171819,
+      "manual_track_error_mm": 17.57523020794259
+    },
+    "per_case_metric_oracle_mm": {
+      "chamfer_distance": 7.779357701097264,
+      "manual_track_error": 16.19759383304196
+    },
+    "prefix_landmark_audit": {
+      "strict_three_view_support_mean": 0.32711210061722773,
+      "strict_three_view_support_median": 0.3285628019323672,
+      "cotracker3_displacement_rmse_on_supported_landmark_frames_mm": 4.348240334900921,
+      "released_dense_displacement_rmse_mm": 10.858481912468845,
+      "cases_with_zero_strict_three_view_landmark_support": 2
+    }
+  },
+  "interpretation": [
+    "Released dense pseudo-tracks provide the Chamfer gain; replacing them with strict-three-view CoTracker3 costs about 2.7 mm CD under the same causal selector.",
+    "Manual sparse prefix identities provide the track gain; removing them costs about 6.6 to 7.0 mm track error while barely changing CD.",
+    "Supplying frame-zero query association does not rescue CoTracker3, so unknown landmark association is not the principal remaining gap.",
+    "CoTracker3 is substantially more accurate than released pseudo-tracks on landmark frames that survive the three-view gate, but support is too sparse and uneven for the persistent endpoint update.",
+    "The current automatic arm and its per-case oracle both miss the published 8/15 mm operating point."
+  ],
+  "decision": {
+    "fresh_preregistered_run_of_current_arm": false,
+    "reason": "The automatic arm misses both thresholds and even its post-open per-case oracle cannot satisfy the track threshold.",
+    "next_method": "Keep the released dense geometry channel. Add a bias-aware, covariance-calibrated sparse identity channel with conservative two-view fallback, redundant-view consistency when available, physical/action support, covariance intersection under unknown correlation, and exact baseline fallback."
+  },
+  "artifacts": {
+    "protocol_sha256": "9dfbf7e4a3be9514a74dc33c99bcee755eac9d2a6230b20cf5b8f15c2babb816",
+    "postopen_factorial_protocol_sha256": "3f8461dfee8cca5e8fad5d971f2be7ee7df37bb9b555737bf28ee20ccded17ea",
+    "frame_zero_query_oracle_protocol_sha256": "d85bfe9de3b8307e19afed766d87546c32073ef8ed96ff62cc8926a4271163b3",
+    "manual_sparse_prefix_ceiling_sha256": "a57b31391f0a777f0967e55cf836681958a5fbca25649d651bf918dc0ca8c4a5",
+    "released_dense_without_manual_sha256": "1e9167865be45142b34d1b56b1ffa4c18b41cba4e316679ba58370eca9492889",
+    "cotracker3_dense_with_manual_sha256": "7b8beff396989cd42e59a8153dd3d047b07f095cc86f0c3c9866f5fd54ae8847",
+    "automatic_cotracker3_multiview_sha256": "4ccb1a91b03d21826b88224d191907faf72a980e5c3bacb30ecb60b68dfdc165",
+    "frame_zero_query_cotracker3_oracle_sha256": "24acdff042143b38220dc8b62755190424c68788ed9657838bd5b8d5864bf71e"
+  }
+}

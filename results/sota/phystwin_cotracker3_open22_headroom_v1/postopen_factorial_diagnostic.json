@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "study_id": "phystwin_cotracker3_open22_headroom_v1_postopen_factorial",
+  "status": "specified_after_primary_arm_outcomes_and_before_crossed_control_outcomes",
+  "evidence_role": "post_open_bottleneck_localization_only",
+  "reason": "The primary ceiling and automatic arms jointly changed the dense observation source and the use of manual sparse prefix identities. Two crossed controls are required to localize the observed gap.",
+  "claim_boundary": [
+    "These controls were specified after the primary-arm outcomes were known.",
+    "They cannot select a method, confirm transfer, or support a state-of-the-art claim.",
+    "No thresholds, candidate grids, physical backbones, or future-evaluation rules may change."
+  ],
+  "evaluator_commit": "241ab65a1d9061ea96f454ae0da64c0bced8be17",
+  "controls": {
+    "released_dense_without_manual": {
+      "observation_source": "final_data",
+      "manual_prefix_override": false
+    },
+    "cotracker3_dense_with_manual": {
+      "observation_source": "cotracker3_multiview",
+      "manual_prefix_override": true
+    }
+  },
+  "interpretation": {
+    "released_dense_wins": "CoTracker3 multiview observation quality or support is the leading bottleneck.",
+    "manual_anchor_wins": "Sparse material-identity anchoring is the leading bottleneck.",
+    "interaction": "Both observation source and sparse identity anchoring matter; preserve the full factorial result and do not collapse it to one cause."
+  }
+}
