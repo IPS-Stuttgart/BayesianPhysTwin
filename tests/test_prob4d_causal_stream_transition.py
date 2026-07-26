@@ -53,6 +53,11 @@ def test_prob4d_020_joint_artifact_without_explicit_version_is_inferred() -> Non
                 "covariance_treatment": "fixed_external_calibration",
             },
             "gauge_mode": "sequential",
+            "factor_definition": "one shared joint gauge latent vector",
+            "factor_group_semantics": (
+                "all rows use one factor group; each window contributes its "
+                "block of the same joint gauge covariance root"
+            ),
             "joint_cross_window_gauge_covariance_represented": True,
             "gauge_posterior": {
                 "model": "sequential_joint_spanning_tree_v1",
@@ -102,3 +107,4 @@ def test_prob4d_020_joint_artifact_without_explicit_version_is_inferred() -> Non
     assert validation["gauge_covariance_semantics"] == (
         "joint_cross_window_sim3_gauge_covariance"
     )
+    assert validation["calibration_artifact_sha256"] is None
