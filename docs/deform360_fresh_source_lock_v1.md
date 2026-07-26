@@ -137,6 +137,15 @@ threshold can remove a queued case or cause an implicit replacement. The
 existing source contract alone determines admission, and a method may use a
 source-locked exact fallback when its observation-support gate fails.
 
+The automatic source-mask rule is separately frozen in
+`configs/sota/deform360_fresh_source_masks_v1.json`, internal SHA-256
+`1c530153e693149e3defc54d20c153dbaff2aa26009006f7c7a805ca7db0f67c`.
+It binds the generic object-agnostic SAM2 selector, SAM2 commit and checkpoint,
+the exact window implementation, 81 mask frames, and a minimum of eight
+successful cameras. There is no manual prompting. Per-camera failures are
+preserved, and fewer than eight successful masks is a technical failure rather
+than permission to tune the selector or replace the object.
+
 ## Deterministic cohort rule
 
 The lock:

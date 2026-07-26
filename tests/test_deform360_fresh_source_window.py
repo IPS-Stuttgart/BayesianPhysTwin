@@ -15,14 +15,19 @@ from bayesian_phystwin.deform360_fresh_source_window import (
     SCORE_STEP_RANGE,
     canonical_sha256,
     fresh_source_case,
+    load_fresh_source_mask_protocol,
     load_fresh_source_window_protocol,
     seal_fresh_source_window_selection,
     select_fresh_source_window,
+    validate_fresh_source_window_stage,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = ROOT / "configs" / "sota" / "deform360_fresh_source_window_v1.json"
+MASK_PROTOCOL = (
+    ROOT / "configs" / "sota" / "deform360_fresh_source_masks_v1.json"
+)
 
 
 def _actions(frame_count: int = 180, grippers: int = 1) -> np.ndarray:
@@ -152,6 +157,72 @@ def test_window_seal_binds_case_and_provenance() -> None:
     )
     assert seal["information_boundary"]["object_tracks_read"] is False
     assert seal["information_boundary"]["known_future_action_read"] is True
+
+
+def test_mask_protocol_is_locked_to_window_and_generic_selector() -> None:
+    protocol = load_fresh_source_mask_protocol(MASK_PROTOCOL)
+
+    assert (
+        protocol["parent_window_protocol"]["config_sha256"]
+        == load_fresh_source_window_protocol(PROTOCOL)["config_sha256"]
+    )
+    assert protocol["mask_contract"]["minimum_successful_cameras"] == 8
+    assert protocol["generic_selector"]["manual_prompting"] is False
+
+
+def test_window_stage_validation_rejects_target_boundary(tmp_path: Path) -> None:
+    protocol = load_fresh_source_window_protocol(PROTOCOL)
+    case = {
+        "queue_rank": 1,
+        "object_id": "006-fur",
+        "catalog_oid": "a" * 40,
+        "episode_id": 0,
+        "category": "filament",
+    }
+    stage: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360FreshSourceWindowStage",
+        "protocol_id": PROTOCOL_ID,
+        "protocol_config_sha256": protocol["config_sha256"],
+        **case,
+        "code_revision": "9e0622efbf9244ce9aa6d75a87505c99ec457f6f",
+        "staged_frame_count": RAW_FRAME_COUNT,
+        "camera_count": len(FROZEN_CAMERA_PANEL),
+        "camera_records": [
+            {
+                "camera": camera,
+                "decoded_frame_count": RAW_FRAME_COUNT,
+            }
+            for camera in FROZEN_CAMERA_PANEL
+        ],
+        "information_boundary": {
+            "known_future_action_read": True,
+            "object_rgb_materialized_after_selection_seal_built": True,
+            "object_geometry_read": False,
+            "object_tracks_read": False,
+            "object_response_used_for_window_selection": False,
+            "tactile_read": False,
+            "target_metric_read": False,
+        },
+    }
+    stage["result_sha256"] = canonical_sha256(
+        stage, digest_key="result_sha256"
+    )
+    path = tmp_path / "stage.json"
+    path.write_text(json.dumps(stage), encoding="utf-8")
+    assert validate_fresh_source_window_stage(
+        path, window_protocol=protocol, case=case
+    )["result_sha256"] == stage["result_sha256"]
+
+    stage["information_boundary"]["target_metric_read"] = True
+    stage["result_sha256"] = canonical_sha256(
+        stage, digest_key="result_sha256"
+    )
+    path.write_text(json.dumps(stage), encoding="utf-8")
+    with pytest.raises(ValueError, match="information boundary"):
+        validate_fresh_source_window_stage(
+            path, window_protocol=protocol, case=case
+        )
 
 
 def test_canonical_hash_rejects_nan() -> None:

@@ -22,8 +22,27 @@ from .deform360_selective_virtual_sensing_staging import (
 PROTOCOL_KIND = "Deform360FreshSourceWindowProtocol"
 PROTOCOL_ID = "deform360-fresh-object-pairwise-belief-window-v1"
 SELECTION_KIND = "Deform360FreshSourceWindowSelection"
+MASK_PROTOCOL_KIND = "Deform360FreshSourceMaskProtocol"
+MASK_PROTOCOL_ID = "deform360-fresh-object-pairwise-belief-masks-v1"
+MASK_ARTIFACT_KIND = "Deform360FreshSourceMasks"
 FROZEN_METHOD_COMMIT = "e2f8d827bfd60df79eeffee511a5df7e2d53ea21"
 FROZEN_METHOD_ARM = "raw_selected_backbone_full_blend_rbf_pairwise_clique"
+FROZEN_WINDOW_IMPLEMENTATION_COMMIT = (
+    "9e0622efbf9244ce9aa6d75a87505c99ec457f6f"
+)
+FROZEN_WINDOW_PROTOCOL_FILE_SHA256 = (
+    "a92595fedb85bc17723743914db38bb085ff7179126d47f83b2ac328d9db0ba1"
+)
+FROZEN_OBJECT_SAM2_SOURCE_SHA256 = (
+    "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df"
+)
+FROZEN_BASE_SAM2_SOURCE_SHA256 = (
+    "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184"
+)
+FROZEN_SAM2_COMMIT = "2b90b9f5ceec907a1c18123530e92e794ad901a4"
+FROZEN_SAM2_CHECKPOINT_SHA256 = (
+    "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38"
+)
 FROZEN_QUEUE_SHA256 = (
     "f80fed80ca2b9f1857539834bd92c6acb1b45a88eefbcae16e35cddaf9185d0e"
 )
@@ -184,6 +203,86 @@ def load_fresh_source_window_protocol(path: str | Path) -> dict[str, Any]:
         all(boundary.get(key) is True for key in required_true)
         and all(boundary.get(key) is False for key in required_false),
         "window protocol crossed its information boundary",
+    )
+    return protocol
+
+
+def load_fresh_source_mask_protocol(path: str | Path) -> dict[str, Any]:
+    """Load the frozen generic-SAM2 source-mask protocol."""
+
+    protocol = _load_json(path)
+    _require(protocol.get("schema_version") == 1, "mask protocol schema changed")
+    _require(
+        protocol.get("artifact_kind") == MASK_PROTOCOL_KIND,
+        "wrong mask protocol kind",
+    )
+    _require(
+        protocol.get("protocol_id") == MASK_PROTOCOL_ID,
+        "mask protocol ID changed",
+    )
+    _require(
+        protocol.get("status") == "locked_before_source_mask_generation",
+        "mask protocol is not locked",
+    )
+    _require(
+        protocol.get("config_sha256")
+        == canonical_sha256(protocol, digest_key="config_sha256"),
+        "mask protocol checksum changed",
+    )
+    parent = protocol.get("parent_window_protocol")
+    _require(
+        isinstance(parent, Mapping)
+        and parent.get("protocol_id") == PROTOCOL_ID
+        and parent.get("config_sha256")
+        == "015305926274bda59ae0b03390a86ac321e615b598001961fc70f13ee9f69511"
+        and parent.get("file_sha256") == FROZEN_WINDOW_PROTOCOL_FILE_SHA256
+        and parent.get("implementation_commit")
+        == FROZEN_WINDOW_IMPLEMENTATION_COMMIT,
+        "parent window protocol changed",
+    )
+    selector = protocol.get("generic_selector")
+    _require(
+        isinstance(selector, Mapping)
+        and selector.get("object_source_sha256")
+        == FROZEN_OBJECT_SAM2_SOURCE_SHA256
+        and selector.get("base_source_sha256")
+        == FROZEN_BASE_SAM2_SOURCE_SHA256
+        and selector.get("manual_prompting") is False,
+        "generic SAM2 selector changed",
+    )
+    sam2 = protocol.get("sam2")
+    _require(
+        isinstance(sam2, Mapping)
+        and sam2.get("commit") == FROZEN_SAM2_COMMIT
+        and sam2.get("checkpoint_sha256")
+        == FROZEN_SAM2_CHECKPOINT_SHA256,
+        "SAM2 dependency changed",
+    )
+    contract = protocol.get("mask_contract")
+    _require(
+        isinstance(contract, Mapping)
+        and contract.get("input_camera_count") == len(FROZEN_CAMERA_PANEL)
+        and contract.get("frame_count") == RAW_FRAME_COUNT
+        and contract.get("minimum_successful_cameras") == 8
+        and contract.get("implicit_replacement") is False,
+        "source-mask contract changed",
+    )
+    boundary = protocol.get("information_boundary")
+    _require(
+        isinstance(boundary, Mapping)
+        and boundary.get("source_rgb_read") is True
+        and boundary.get("all_81_frames_used_to_create_observation_assets") is True
+        and boundary.get("manual_mask_selection") is False
+        and boundary.get("object_geometry_read") is False
+        and boundary.get("particle_tracks_read") is False
+        and boundary.get("target_metric_read") is False
+        and boundary.get("held_v8_target_query_score_barrier_or_outcome_access")
+        is False
+        and boundary.get(
+            "prediction_method_may_receive_only_its_separately_authorized_prefix"
+        )
+        is True,
+        "source-mask protocol crossed its information boundary",
     )
     return protocol
 
@@ -373,11 +472,67 @@ def seal_fresh_source_window_selection(
     return payload
 
 
+def validate_fresh_source_window_stage(
+    path: str | Path,
+    *,
+    window_protocol: Mapping[str, Any],
+    case: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate a staged source window before derived observations are created."""
+
+    stage = _load_json(path)
+    _require(
+        stage.get("artifact_kind") == "Deform360FreshSourceWindowStage"
+        and stage.get("protocol_id") == PROTOCOL_ID
+        and stage.get("protocol_config_sha256")
+        == window_protocol["config_sha256"]
+        and stage.get("code_revision") == FROZEN_WINDOW_IMPLEMENTATION_COMMIT
+        and stage.get("result_sha256")
+        == canonical_sha256(stage, digest_key="result_sha256")
+        and all(stage.get(key) == value for key, value in case.items()),
+        "fresh source window stage changed",
+    )
+    _require(
+        stage.get("staged_frame_count") == RAW_FRAME_COUNT
+        and stage.get("camera_count") == len(FROZEN_CAMERA_PANEL),
+        "fresh source window dimensions changed",
+    )
+    camera_rows = stage.get("camera_records")
+    _require(
+        isinstance(camera_rows, list)
+        and tuple(row.get("camera") for row in camera_rows)
+        == FROZEN_CAMERA_PANEL
+        and all(row.get("decoded_frame_count") == RAW_FRAME_COUNT for row in camera_rows),
+        "fresh source camera records changed",
+    )
+    boundary = stage.get("information_boundary")
+    _require(
+        isinstance(boundary, Mapping)
+        and boundary.get("known_future_action_read") is True
+        and boundary.get("object_rgb_materialized_after_selection_seal_built")
+        is True
+        and boundary.get("object_geometry_read") is False
+        and boundary.get("object_tracks_read") is False
+        and boundary.get("object_response_used_for_window_selection") is False
+        and boundary.get("tactile_read") is False
+        and boundary.get("target_metric_read") is False,
+        "fresh source stage crossed its information boundary",
+    )
+    return stage
+
+
 __all__ = [
     "CANDIDATE_FIRST_FRAME",
     "CANDIDATE_STRIDE_FRAMES",
     "FIRST_UPDATE_FRAME",
+    "FROZEN_BASE_SAM2_SOURCE_SHA256",
     "FROZEN_CAMERA_PANEL",
+    "FROZEN_OBJECT_SAM2_SOURCE_SHA256",
+    "FROZEN_SAM2_CHECKPOINT_SHA256",
+    "FROZEN_SAM2_COMMIT",
+    "FROZEN_WINDOW_IMPLEMENTATION_COMMIT",
+    "MASK_ARTIFACT_KIND",
+    "MASK_PROTOCOL_ID",
     "PREDICTION_FRAME_COUNT",
     "PROTOCOL_ID",
     "RAW_FRAME_COUNT",
@@ -386,8 +541,10 @@ __all__ = [
     "canonical_sha256",
     "file_sha256",
     "fresh_source_case",
+    "load_fresh_source_mask_protocol",
     "load_fresh_source_window_protocol",
     "seal_fresh_source_window_selection",
     "select_fresh_source_window",
+    "validate_fresh_source_window_stage",
     "validate_window_sources",
 ]
