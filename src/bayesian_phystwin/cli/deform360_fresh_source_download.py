@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 
 from bayesian_phystwin.deform360_fresh_source_download import (
-    download_fresh_source_queue,
+    download_fresh_source_queue_by_object,
     fresh_source_download_plan,
     write_fresh_download_manifest,
 )
@@ -18,6 +18,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--object-delay-seconds", type=float, default=2.0)
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
@@ -29,16 +30,18 @@ def main() -> None:
         print(plan)
         return
     try:
-        from huggingface_hub import snapshot_download
+        from huggingface_hub import HfApi, hf_hub_download
     except ModuleNotFoundError as error:  # pragma: no cover - integration dependency
         raise RuntimeError(
             "Deform360 download requires the optional huggingface_hub package"
         ) from error
-    manifest = download_fresh_source_queue(
+    manifest = download_fresh_source_queue_by_object(
         args.queue,
         args.output_root,
         max_workers=args.workers,
-        snapshot_download=snapshot_download,
+        object_delay_seconds=args.object_delay_seconds,
+        list_repo_tree=HfApi().list_repo_tree,
+        hub_download=hf_hub_download,
     )
     write_fresh_download_manifest(args.manifest, manifest)
     print(manifest["manifest_sha256"])

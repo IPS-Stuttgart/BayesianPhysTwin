@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
 import re
+import time
 from typing import Any, Callable, Mapping
 
 
@@ -20,6 +22,8 @@ _OBJECT_ID = re.compile(r"^[0-9]{3}-[a-z0-9][a-z0-9-]*$")
 
 
 SnapshotDownload = Callable[..., str]
+ListRepoTree = Callable[..., Any]
+HubDownload = Callable[..., str]
 
 
 def _require(condition: bool, message: str) -> None:
@@ -289,6 +293,67 @@ def download_fresh_source_queue(
     return build_fresh_download_manifest(output_root, plan=plan)
 
 
+def download_fresh_source_queue_by_object(
+    queue_path: str | Path,
+    output_root: str | Path,
+    *,
+    max_workers: int,
+    object_delay_seconds: float,
+    list_repo_tree: ListRepoTree,
+    hub_download: HubDownload,
+) -> dict[str, Any]:
+    """Download one queued object subtree at a time to avoid global enumeration."""
+
+    _require(max_workers >= 1, "download workers must be positive")
+    _require(object_delay_seconds >= 0.0, "object delay must be non-negative")
+    plan = fresh_source_download_plan(queue_path)
+    root = Path(output_root).resolve()
+    validate_fresh_download_root(root, plan=plan, require_complete=False)
+    for object_index, object_id in enumerate(plan.object_ids):
+        prefix = f"raw/{object_id}/"
+        entries = list(
+            list_repo_tree(
+                repo_id=plan.repository,
+                path_in_repo=f"raw/{object_id}",
+                recursive=True,
+                expand=False,
+                revision=plan.revision,
+                repo_type="dataset",
+            )
+        )
+        files = sorted(
+            str(entry.path)
+            for entry in entries
+            if getattr(entry, "blob_id", None) is not None
+            and str(entry.path).startswith(prefix)
+            and Path(str(entry.path)).suffix.lower() not in {".flac", ".wav"}
+        )
+        _require(files, f"queued object subtree is empty: {object_id}")
+        _require(
+            f"raw/{object_id}/metadata.json" in files,
+            f"queued object metadata is absent: {object_id}",
+        )
+        _require(
+            all(path.startswith(prefix) for path in files),
+            f"object listing escaped its queued subtree: {object_id}",
+        )
+
+        def download_one(filename: str) -> str:
+            return hub_download(
+                repo_id=plan.repository,
+                filename=filename,
+                repo_type="dataset",
+                revision=plan.revision,
+                local_dir=str(root),
+            )
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            tuple(executor.map(download_one, files))
+        if object_index + 1 < len(plan.object_ids) and object_delay_seconds:
+            time.sleep(object_delay_seconds)
+    return build_fresh_download_manifest(root, plan=plan)
+
+
 def write_fresh_download_manifest(
     path: str | Path, payload: Mapping[str, Any]
 ) -> None:
@@ -306,6 +371,7 @@ __all__ = [
     "FreshSourceDownloadPlan",
     "build_fresh_download_manifest",
     "download_fresh_source_queue",
+    "download_fresh_source_queue_by_object",
     "fresh_source_download_plan",
     "validate_fresh_download_root",
     "write_fresh_download_manifest",

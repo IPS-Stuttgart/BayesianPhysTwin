@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -10,6 +11,7 @@ from bayesian_phystwin.deform360_fresh_source_download import (
     DATASET_REVISION,
     build_fresh_download_manifest,
     download_fresh_source_queue,
+    download_fresh_source_queue_by_object,
     fresh_source_download_plan,
     validate_fresh_download_root,
 )
@@ -141,3 +143,39 @@ def test_manifest_rejects_invalid_metadata_enum(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="metadata enum domain changed"):
         build_fresh_download_manifest(output, plan=plan)
+
+
+def test_by_object_download_never_lists_the_global_tree(tmp_path: Path) -> None:
+    queue = _queue(tmp_path)
+    plan = fresh_source_download_plan(queue)
+    output = tmp_path / "download"
+    listed_paths: list[str] = []
+
+    def list_repo_tree(**kwargs: object) -> list[SimpleNamespace]:
+        path = str(kwargs["path_in_repo"])
+        listed_paths.append(path)
+        return [
+            SimpleNamespace(path=f"{path}/metadata.json", blob_id="metadata"),
+            SimpleNamespace(path=f"{path}/episode_0000/data.bin", blob_id="data"),
+        ]
+
+    def hub_download(**kwargs: object) -> str:
+        path = output / str(kwargs["filename"])
+        if path.name == "metadata.json":
+            _write_metadata(path)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"source bytes")
+        return str(path)
+
+    manifest = download_fresh_source_queue_by_object(
+        queue,
+        output,
+        max_workers=2,
+        object_delay_seconds=0.0,
+        list_repo_tree=list_repo_tree,
+        hub_download=hub_download,
+    )
+
+    assert listed_paths == [f"raw/{object_id}" for object_id in plan.object_ids]
+    assert manifest["object_count"] == len(plan.object_ids)
