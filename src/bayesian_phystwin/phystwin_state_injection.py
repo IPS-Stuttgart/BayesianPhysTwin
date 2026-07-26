@@ -400,6 +400,7 @@ def _rollout_initial(
     simulator.set_init_state(
         simulator.wp_init_vertices,
         simulator.wp_init_velocities,
+        pure_inference=True,
     )
     wp.synchronize()
     positions = []
@@ -419,6 +420,7 @@ def _rollout_initial(
         simulator.set_init_state(
             simulator.wp_states[-1].wp_x,
             simulator.wp_states[-1].wp_v,
+            pure_inference=True,
         )
     return np.stack(positions), np.stack(velocities)
 
@@ -442,7 +444,7 @@ def _rollout_restart(
     ).contiguous()
     position_wp = wp.from_torch(position_tensor, dtype=wp.vec3, requires_grad=False)
     velocity_wp = wp.from_torch(velocity_tensor, dtype=wp.vec3, requires_grad=False)
-    simulator.set_init_state(position_wp, velocity_wp)
+    simulator.set_init_state(position_wp, velocity_wp, pure_inference=True)
     wp.synchronize()
     future = []
     for frame in range(start_frame, stop_frame):
@@ -456,6 +458,7 @@ def _rollout_restart(
         simulator.set_init_state(
             simulator.wp_states[-1].wp_x,
             simulator.wp_states[-1].wp_v,
+            pure_inference=True,
         )
     return np.stack(future)
 

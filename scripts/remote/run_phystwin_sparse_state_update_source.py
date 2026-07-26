@@ -133,10 +133,10 @@ def _load_protocol(path: Path) -> dict[str, Any]:
     protocol = json.loads(path.read_text(encoding="utf-8"))
     _require(
         protocol.get("protocol_id")
-        == "phystwin-prior-aware-sparse-identity-source-v1",
+        == "phystwin-prior-aware-sparse-identity-source-v2",
         "unexpected protocol id",
     )
-    _require(int(protocol.get("schema_version", -1)) == 1, "unsupported protocol")
+    _require(int(protocol.get("schema_version", -1)) == 2, "unsupported protocol")
     return protocol
 
 
@@ -166,6 +166,50 @@ def _verify_implementation(protocol: dict[str, Any]) -> None:
         _sha256(propagated) == implementation["propagated_state_module_sha256"],
         "propagated-state module changed",
     )
+    injection = (
+        REPO_ROOT / "src" / "bayesian_phystwin" / "phystwin_state_injection.py"
+    )
+    _require(
+        _sha256(injection) == implementation["state_injection_module_sha256"],
+        "state-injection module changed",
+    )
+
+
+def _verify_source_replay(
+    protocol: dict[str, Any],
+    paths: dict[str, Path],
+) -> dict[str, Any]:
+    summary = json.loads(paths["source_replay_summary"].read_text(encoding="utf-8"))
+    source = protocol["source_replay"]
+    _require(
+        summary.get("code_commit") == source["code_commit"],
+        "source replay code commit changed",
+    )
+    _require(
+        summary.get("runtime") == source["runtime"],
+        "source replay runtime changed",
+    )
+    for name in ("final_data", "optimal_params", "checkpoint"):
+        _require(
+            summary["inputs"][name]["sha256"] == protocol["inputs"][name]["sha256"],
+            f"source replay input changed: {name}",
+        )
+    for name, expected in source["config"].items():
+        _require(
+            summary["config"].get(name) == expected,
+            f"source replay setting changed: {name}",
+        )
+    for parity_name in (
+        "released_trajectory_parity",
+        "selected_baseline_trajectory_parity",
+    ):
+        parity = summary[parity_name]
+        _require(
+            float(parity["vector_rmse_m"]) == 0.0
+            and float(parity["max_norm_m"]) == 0.0,
+            f"source replay did not seal exact trajectory parity: {parity_name}",
+        )
+    return summary
 
 
 def _verify_official_repo(protocol: dict[str, Any]) -> Path:
@@ -295,6 +339,7 @@ def _predict(protocol_path: Path, output: Path) -> None:
     official_repo = _verify_official_repo(protocol)
     runtime = _verify_runtime(protocol)
     paths = _input_paths(protocol)
+    source_replay = _verify_source_replay(protocol, paths)
     _require(not output.exists(), "prediction output already exists")
     output.mkdir(parents=True)
 
@@ -444,7 +489,30 @@ def _predict(protocol_path: Path, output: Path) -> None:
         and parity["future"]["maximum_norm_m"]
         <= float(simulator_settings["maximum_replay_norm_m"])
     )
+    parity_path = output / "replay_parity.json"
+    _atomic_json(
+        parity_path,
+        {
+            "schema_version": 1,
+            "protocol_id": protocol["protocol_id"],
+            "baseline_trajectory_sha256": protocol["inputs"]["baseline_trajectory"][
+                "sha256"
+            ],
+            "source_replay_summary_sha256": protocol["inputs"][
+                "source_replay_summary"
+            ]["sha256"],
+            "source_replay_code_commit": source_replay["code_commit"],
+            "runtime": runtime,
+            "parity": parity,
+        },
+    )
     _require(parity["passed"], "official Warp replay parity gate failed")
+    state_carrier_path = output / "replay_state_carrier.npz"
+    _atomic_npz(
+        state_carrier_path,
+        positions_m=replay_positions,
+        velocities_mps=replay_velocities,
+    )
 
     position_fields, velocity_fields, position_steps, velocity_steps = (
         modal_state_parameter_fields(
@@ -681,6 +749,10 @@ def _predict(protocol_path: Path, output: Path) -> None:
         "selection_reason": correction.selection_reason,
         "prediction_path": prediction_path.name,
         "prediction_sha256": _sha256(prediction_path),
+        "replay_parity_path": parity_path.name,
+        "replay_parity_sha256": _sha256(parity_path),
+        "replay_state_carrier_path": state_carrier_path.name,
+        "replay_state_carrier_sha256": _sha256(state_carrier_path),
         "prediction_array_sha256": {
             "baseline_trajectory": _array_sha256(baseline),
             "persistence_trajectory": _array_sha256(persistence),
