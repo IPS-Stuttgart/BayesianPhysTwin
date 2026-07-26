@@ -30,6 +30,29 @@ _VALID_CLASSIFICATIONS = frozenset(
         "infrastructure",
     }
 )
+_ARTIFACT_FIELDS = frozenset({"name", "role", "path", "sha256", "size_bytes"})
+_RUN_MANIFEST_FIELDS = frozenset(
+    {
+        "manifest_id",
+        "schema_name",
+        "schema_version",
+        "run_id",
+        "created_utc",
+        "repository",
+        "revision",
+        "dirty",
+        "command",
+        "classification",
+        "statistical_unit",
+        "information_boundary",
+        "configuration",
+        "seeds",
+        "inputs",
+        "outputs",
+        "package_versions",
+        "notes",
+    }
+)
 
 
 def _canonical_json(value: Mapping[str, Any]) -> bytes:
@@ -48,6 +71,24 @@ def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
         )
     except (TypeError, ValueError) as error:
         raise ValueError(f"{name} must contain finite JSON data") from error
+
+
+def _require_exact_fields(
+    value: Mapping[str, Any],
+    *,
+    expected: frozenset[str],
+    name: str,
+) -> None:
+    actual = frozenset(map(str, value))
+    missing = sorted(expected - actual)
+    unknown = sorted(actual - expected)
+    if missing or unknown:
+        details = []
+        if missing:
+            details.append(f"missing {missing}")
+        if unknown:
+            details.append(f"unknown {unknown}")
+        raise ValueError(f"{name} does not match schema: {', '.join(details)}")
 
 
 def _validate_sha256(value: str, *, name: str) -> str:
@@ -248,6 +289,7 @@ def write_run_manifest(path: str | Path, manifest: RunManifestV1) -> None:
 
 
 def _artifact_from_dict(value: Mapping[str, Any]) -> ArtifactDigest:
+    _require_exact_fields(value, expected=_ARTIFACT_FIELDS, name="artifact record")
     return ArtifactDigest(
         name=str(value["name"]),
         role=str(value["role"]),  # type: ignore[arg-type]
@@ -261,6 +303,13 @@ def load_run_manifest(path: str | Path) -> RunManifestV1:
     """Load a manifest and reject schema, content-address, or field drift."""
 
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, Mapping):
+        raise ValueError("run manifest must contain a JSON object")
+    _require_exact_fields(
+        payload,
+        expected=_RUN_MANIFEST_FIELDS,
+        name="run manifest",
+    )
     if payload.get("schema_name") != RUN_MANIFEST_SCHEMA:
         raise ValueError("unsupported run-manifest schema")
     if int(payload.get("schema_version", -1)) != RUN_MANIFEST_VERSION:
