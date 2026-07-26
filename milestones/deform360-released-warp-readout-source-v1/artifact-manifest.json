@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ReleasedWarpReadoutSourceMilestone",
+  "protocol_id": "deform360-released-warp-readout-source-v1",
+  "protocol_config_sha256": "b7d06929079fd97ad8e2b6dbe149946851321bb6dc23a92c44cc9b2a0409e0c0",
+  "lock_commits": [
+    "09f2bee",
+    "1e2a6e0"
+  ],
+  "prediction_implementation_commit": "8a1d3108e3380f9605bce1e733c18e1f56a2e743",
+  "official_phystwin_commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+  "author_release_revision": "93280cbb466de6b9e59927c58a99fd3b9e91900e",
+  "prediction_result_sha256": "5b5934dbcf642fd4f6af7e0494760425269007ae69df389622953714d9319fd3",
+  "prediction_archive_sha256": "7545cb7b7609ff181b61101d0f5f7baabb43b11a7691441b34b3eed542be3c01",
+  "score_result_sha256": "4a73cb34b3d61356b6dc57406588f77a245405d7a356cb9e848fd50bc283cd1b",
+  "transfer_gate_passed": false,
+  "decision": "stop_released_particle_readout_route",
+  "files": [
+    {
+      "path": "artifacts/deform360_released_warp_readout_prediction_v1.json",
+      "bytes": 15060,
+      "sha256": "5488d5e1d937efc9f96aa6608244002b28219e8616b3268a227cdc1ed0a05786"
+    },
+    {
+      "path": "artifacts/deform360_released_warp_readout_prediction_v1.npz",
+      "bytes": 24133688,
+      "sha256": "7545cb7b7609ff181b61101d0f5f7baabb43b11a7691441b34b3eed542be3c01"
+    },
+    {
+      "path": "artifacts/deform360_released_warp_readout_score_v1.json",
+      "bytes": 59164,
+      "sha256": "ebb913ba58cc495aee60a86f42911da765807cdcb12a0bef9f3d598d8e9428ed"
+    }
+  ],
+  "environment": {
+    "host": "gpuserver4090",
+    "device": "NVIDIA GeForce RTX 4090",
+    "torch": "2.4.0+cu121",
+    "warp": "1.15.0",
+    "numpy": "1.26.4"
+  },
+  "information_boundary": {
+    "development_source_episode_ids": [0, 3, 4, 5, 8],
+    "forbidden_episode_ids": [1, 2, 6, 7, 9],
+    "prediction_future_particle_file_count_read": 0,
+    "future_contact_active_used": false,
+    "held_v8_access": false,
+    "sealed_pokeflex_target_access": false
+  }
+}

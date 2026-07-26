@@ -1,17 +1,26 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+from causal4d_public.deform360_released_warp_readout import (
+    load_released_warp_readout_protocol,
+)
 from causal4d_public.deform360_released_warp_readout_execution import (
     associate_particles_to_polyline,
     build_matched_origin_warp_cases,
     lift_sparse_polyline_to_particles,
     minimum_rotation_matrix,
     symmetric_chamfer_distance_m,
+    validate_released_warp_prediction_artifact,
+    validate_released_warp_score_artifact,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_polyline_association_reconstructs_origin_particles() -> None:
@@ -161,3 +170,48 @@ def test_chunked_chamfer_matches_explicit_reference() -> None:
     )
 
     assert observed == pytest.approx(1.0 / 12.0)
+
+
+def test_frozen_released_warp_readout_milestone_validates() -> None:
+    protocol = load_released_warp_readout_protocol(
+        ROOT
+        / "configs"
+        / "causal4d_public"
+        / "deform360_released_warp_readout_source_v1.json"
+    )
+    milestone = (
+        ROOT / "milestones" / "deform360-released-warp-readout-source-v1"
+    )
+    artifact_root = milestone / "artifacts"
+    prediction = json.loads(
+        (
+            artifact_root / "deform360_released_warp_readout_prediction_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    score = json.loads(
+        (
+            artifact_root / "deform360_released_warp_readout_score_v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    manifest = json.loads(
+        (milestone / "artifact-manifest.json").read_text(encoding="utf-8")
+    )
+
+    prediction_validation = validate_released_warp_prediction_artifact(
+        prediction,
+        protocol=protocol,
+        artifact_directory=artifact_root,
+    )
+    score_validation = validate_released_warp_score_artifact(
+        score,
+        protocol=protocol,
+    )
+
+    assert prediction_validation["passed"] is True
+    assert score_validation["passed"] is True
+    assert score_validation["transfer_gate_passed"] is False
+    assert manifest["decision"] == "stop_released_particle_readout_route"
+    for record in manifest["files"]:
+        path = milestone / record["path"]
+        assert path.stat().st_size == record["bytes"]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == record["sha256"]

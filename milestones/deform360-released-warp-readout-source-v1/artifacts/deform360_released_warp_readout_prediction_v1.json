@@ -1,0 +1,536 @@
+{
+  "artifact_kind": "Deform360ReleasedWarpReadoutPrediction",
+  "claim_boundary": "A source-only evaluator-transfer audit of a 21-node official-Warp rope model against author-released ordered particles.",
+  "device": "cuda:0",
+  "episodes": [
+    {
+      "action": "move edge",
+      "all_prediction_arrays_finite": true,
+      "association": {
+        "direct_support_fraction": 1.0,
+        "maximum_offset_m": 0.028821240134812805,
+        "particle_count": 5426,
+        "segment_count": 20
+      },
+      "case_diagnostics": {
+        "contact_node_indices": [
+          0
+        ],
+        "future_contact_active_used": false,
+        "initial_velocity_maximum_m_s": 0.047513521106643565,
+        "initial_velocity_rms_m_s": 0.020076499420444063,
+        "origin_contact_active": [
+          1
+        ],
+        "origin_source_index": 86,
+        "previous_source_index": 85,
+        "rollout_frames": [
+          172,
+          174,
+          176,
+          178,
+          180,
+          182,
+          184,
+          186,
+          188,
+          190,
+          192,
+          194,
+          196
+        ]
+      },
+      "episode_id": 0,
+      "frame_indices": [
+        172,
+        174,
+        176,
+        178,
+        180,
+        182,
+        184,
+        186,
+        188,
+        190,
+        192,
+        194,
+        196
+      ],
+      "loo_candidate_index": 115,
+      "origin_particle_count": 5426,
+      "origin_particle_identity_sha256": "c43e81f6875718ab6390009dd93015421d5b952af94ad551cac9dc0a84e9840e",
+      "origin_pcd_relative_path": "episode_0/pcd_clean/000172.npz",
+      "origin_pcd_sha256": "24c6102e973227cb49fabb32eeb37e10084da28232bd646b5b0bddcb7734cf9a",
+      "pooled_candidate_index": 115,
+      "repeat_rollout_rmse_m": 0.0,
+      "strain": {
+        "loo_finite": {
+          "maximum": 0.029663582530140564,
+          "p95": 0.012115743116294327,
+          "p99": 0.020385406760548452
+        },
+        "loo_zero": {
+          "maximum": 0.029058770430861136,
+          "p95": 0.013661655576214812,
+          "p99": 0.02300360387066507
+        },
+        "pooled_finite": {
+          "maximum": 0.029663582530140564,
+          "p95": 0.012115743116294327,
+          "p99": 0.020385406760548452
+        }
+      }
+    },
+    {
+      "action": "lift center",
+      "all_prediction_arrays_finite": true,
+      "association": {
+        "direct_support_fraction": 1.0,
+        "maximum_offset_m": 0.030161889783885478,
+        "particle_count": 5949,
+        "segment_count": 20
+      },
+      "case_diagnostics": {
+        "contact_node_indices": [
+          8
+        ],
+        "future_contact_active_used": false,
+        "initial_velocity_maximum_m_s": 0.06684613470195563,
+        "initial_velocity_rms_m_s": 0.026541890229172225,
+        "origin_contact_active": [
+          1
+        ],
+        "origin_source_index": 105,
+        "previous_source_index": 104,
+        "rollout_frames": [
+          210,
+          212,
+          214,
+          216,
+          218,
+          220,
+          222,
+          224,
+          226,
+          228,
+          230,
+          232,
+          234,
+          236,
+          238,
+          240,
+          242,
+          244,
+          246
+        ]
+      },
+      "episode_id": 3,
+      "frame_indices": [
+        210,
+        212,
+        214,
+        216,
+        218,
+        220,
+        222,
+        224,
+        226,
+        228,
+        230,
+        232,
+        234,
+        236,
+        238,
+        240,
+        242,
+        244,
+        246
+      ],
+      "loo_candidate_index": 119,
+      "origin_particle_count": 5949,
+      "origin_particle_identity_sha256": "4027be898265d0e2cecaab4d7729d9eea37a65a7fcaae5b65780c6b30fc80404",
+      "origin_pcd_relative_path": "episode_3/pcd_clean/000210.npz",
+      "origin_pcd_sha256": "facb5855859fb90ad4093f56f737c74cfc8aea76ff14a0723da5b320a77bf579",
+      "pooled_candidate_index": 115,
+      "repeat_rollout_rmse_m": 0.0,
+      "strain": {
+        "loo_finite": {
+          "maximum": 0.23581295586600182,
+          "p95": 0.06004240674209741,
+          "p99": 0.11702853481709025
+        },
+        "loo_zero": {
+          "maximum": 0.4813680595243297,
+          "p95": 0.07162034771455776,
+          "p99": 0.18345554158554958
+        },
+        "pooled_finite": {
+          "maximum": 0.05750293762980596,
+          "p95": 0.025782975780968154,
+          "p99": 0.0375837142267572
+        }
+      }
+    },
+    {
+      "action": "curl edge",
+      "all_prediction_arrays_finite": true,
+      "association": {
+        "direct_support_fraction": 1.0,
+        "maximum_offset_m": 0.01796323420607015,
+        "particle_count": 5299,
+        "segment_count": 20
+      },
+      "case_diagnostics": {
+        "contact_node_indices": [
+          0
+        ],
+        "future_contact_active_used": false,
+        "initial_velocity_maximum_m_s": 0.11682039995725793,
+        "initial_velocity_rms_m_s": 0.04579420560699082,
+        "origin_contact_active": [
+          1
+        ],
+        "origin_source_index": 135,
+        "previous_source_index": 134,
+        "rollout_frames": [
+          270,
+          272,
+          274,
+          276,
+          278,
+          280,
+          282,
+          284,
+          286,
+          288,
+          290,
+          292,
+          294,
+          296,
+          298,
+          300
+        ]
+      },
+      "episode_id": 4,
+      "frame_indices": [
+        270,
+        272,
+        274,
+        276,
+        278,
+        280,
+        282,
+        284,
+        286,
+        288,
+        290,
+        292,
+        294,
+        296,
+        298,
+        300
+      ],
+      "loo_candidate_index": 115,
+      "origin_particle_count": 5299,
+      "origin_particle_identity_sha256": "ba3c94e9fdfe517bedddac424082671244d73211e48f0119935aac55d0b0864b",
+      "origin_pcd_relative_path": "episode_4/pcd_clean/000270.npz",
+      "origin_pcd_sha256": "cb54951298059371f8531186c38acacd8ebd26675d3dbbcdea9d71cf7f8a60d9",
+      "pooled_candidate_index": 115,
+      "repeat_rollout_rmse_m": 0.0,
+      "strain": {
+        "loo_finite": {
+          "maximum": 0.03888294049334595,
+          "p95": 0.028839284053917114,
+          "p99": 0.03521563054343874
+        },
+        "loo_zero": {
+          "maximum": 0.08117681662749088,
+          "p95": 0.02956506571095563,
+          "p99": 0.04394334692113274
+        },
+        "pooled_finite": {
+          "maximum": 0.03888294049334595,
+          "p95": 0.028839284053917114,
+          "p99": 0.03521563054343874
+        }
+      }
+    },
+    {
+      "action": "lift both edges",
+      "all_prediction_arrays_finite": true,
+      "association": {
+        "direct_support_fraction": 1.0,
+        "maximum_offset_m": 0.03384658691752508,
+        "particle_count": 5949,
+        "segment_count": 20
+      },
+      "case_diagnostics": {
+        "contact_node_indices": [
+          0,
+          19
+        ],
+        "future_contact_active_used": false,
+        "initial_velocity_maximum_m_s": 0.14250107329094255,
+        "initial_velocity_rms_m_s": 0.051735233564219475,
+        "origin_contact_active": [
+          1,
+          1
+        ],
+        "origin_source_index": 112,
+        "previous_source_index": 111,
+        "rollout_frames": [
+          224,
+          226,
+          228,
+          230,
+          232,
+          234,
+          236,
+          238,
+          240,
+          242,
+          244,
+          246,
+          248,
+          250,
+          252,
+          254,
+          256,
+          258
+        ]
+      },
+      "episode_id": 5,
+      "frame_indices": [
+        224,
+        226,
+        228,
+        230,
+        232,
+        234,
+        236,
+        238,
+        240,
+        242,
+        244,
+        246,
+        248,
+        250,
+        252,
+        254,
+        256,
+        258
+      ],
+      "loo_candidate_index": 195,
+      "origin_particle_count": 5949,
+      "origin_particle_identity_sha256": "7dc208409a4071af3049e4c3a95fed8b38f8ffc895f1191ffe73a90cd7677c9d",
+      "origin_pcd_relative_path": "episode_5/pcd_clean/000224.npz",
+      "origin_pcd_sha256": "cddd95cc12430d12ce86ae4893bd920eb45f0ab5f7216193db218be3ccea6686",
+      "pooled_candidate_index": 115,
+      "repeat_rollout_rmse_m": 0.0,
+      "strain": {
+        "loo_finite": {
+          "maximum": 0.03813672526582823,
+          "p95": 0.012868515045040172,
+          "p99": 0.026024640370598786
+        },
+        "loo_zero": {
+          "maximum": 0.0493260338564987,
+          "p95": 0.016183769570029212,
+          "p99": 0.03417169601385462
+        },
+        "pooled_finite": {
+          "maximum": 0.27336088962623717,
+          "p95": 0.05766247486220626,
+          "p99": 0.13857033291329335
+        }
+      }
+    },
+    {
+      "action": "curl both edges",
+      "all_prediction_arrays_finite": true,
+      "association": {
+        "direct_support_fraction": 1.0,
+        "maximum_offset_m": 0.028927683627044405,
+        "particle_count": 5858,
+        "segment_count": 18
+      },
+      "case_diagnostics": {
+        "contact_node_indices": [
+          0,
+          20
+        ],
+        "future_contact_active_used": false,
+        "initial_velocity_maximum_m_s": 0.10272004204393234,
+        "initial_velocity_rms_m_s": 0.03610568245765359,
+        "origin_contact_active": [
+          0,
+          1
+        ],
+        "origin_source_index": 72,
+        "previous_source_index": 71,
+        "rollout_frames": [
+          144,
+          146,
+          148,
+          150,
+          152,
+          154,
+          156,
+          158,
+          160
+        ]
+      },
+      "episode_id": 8,
+      "frame_indices": [
+        144,
+        146,
+        148,
+        150,
+        152,
+        154,
+        156,
+        158,
+        160
+      ],
+      "loo_candidate_index": 197,
+      "origin_particle_count": 5858,
+      "origin_particle_identity_sha256": "65e46a2977492394eeebd34e48c76a3962e78e7c2be71e39317b0999999781ee",
+      "origin_pcd_relative_path": "episode_8/pcd_clean/000144.npz",
+      "origin_pcd_sha256": "39a18ec8071d09f02846e11cddd74e908927016d4d43ecced0e1ca0f18889d40",
+      "pooled_candidate_index": 115,
+      "repeat_rollout_rmse_m": 0.0,
+      "strain": {
+        "loo_finite": {
+          "maximum": 0.19520794925900797,
+          "p95": 0.06170268411594888,
+          "p99": 0.12029197433883664
+        },
+        "loo_zero": {
+          "maximum": 0.1935240195917003,
+          "p95": 0.0627779205287624,
+          "p99": 0.11261494242239863
+        },
+        "pooled_finite": {
+          "maximum": 0.2097858886434012,
+          "p95": 0.0698687258355257,
+          "p99": 0.1490678035248312
+        }
+      }
+    }
+  ],
+  "information_boundary": {
+    "dense_scores_computed": false,
+    "forbidden_episode_ids": [
+      1,
+      2,
+      6,
+      7,
+      9
+    ],
+    "future_contact_active_used": false,
+    "future_controller_motion_used": true,
+    "held_v8_access": false,
+    "released_future_particle_file_count_read": 0,
+    "released_particle_files_read": [
+      "episode_0/pcd_clean/000172.npz",
+      "episode_3/pcd_clean/000210.npz",
+      "episode_4/pcd_clean/000270.npz",
+      "episode_5/pcd_clean/000224.npz",
+      "episode_8/pcd_clean/000144.npz"
+    ],
+    "source_episode_ids": [
+      0,
+      3,
+      4,
+      5,
+      8
+    ]
+  },
+  "official_phystwin": {
+    "commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "simulator_source_sha256": "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c"
+  },
+  "prediction_archive": {
+    "bytes": 24133688,
+    "keys": [
+      "episode_0000_association_barycentric",
+      "episode_0000_association_offsets_m",
+      "episode_0000_association_segments",
+      "episode_0000_frame_indices",
+      "episode_0000_loo_finite_fixed_m",
+      "episode_0000_loo_finite_repeat_sparse_m",
+      "episode_0000_loo_finite_rotated_m",
+      "episode_0000_loo_finite_sparse_m",
+      "episode_0000_loo_zero_rotated_m",
+      "episode_0000_loo_zero_sparse_m",
+      "episode_0000_origin_particles_m",
+      "episode_0000_persistence_m",
+      "episode_0000_pooled_finite_rotated_m",
+      "episode_0000_pooled_finite_sparse_m",
+      "episode_0003_association_barycentric",
+      "episode_0003_association_offsets_m",
+      "episode_0003_association_segments",
+      "episode_0003_frame_indices",
+      "episode_0003_loo_finite_fixed_m",
+      "episode_0003_loo_finite_repeat_sparse_m",
+      "episode_0003_loo_finite_rotated_m",
+      "episode_0003_loo_finite_sparse_m",
+      "episode_0003_loo_zero_rotated_m",
+      "episode_0003_loo_zero_sparse_m",
+      "episode_0003_origin_particles_m",
+      "episode_0003_persistence_m",
+      "episode_0003_pooled_finite_rotated_m",
+      "episode_0003_pooled_finite_sparse_m",
+      "episode_0004_association_barycentric",
+      "episode_0004_association_offsets_m",
+      "episode_0004_association_segments",
+      "episode_0004_frame_indices",
+      "episode_0004_loo_finite_fixed_m",
+      "episode_0004_loo_finite_repeat_sparse_m",
+      "episode_0004_loo_finite_rotated_m",
+      "episode_0004_loo_finite_sparse_m",
+      "episode_0004_loo_zero_rotated_m",
+      "episode_0004_loo_zero_sparse_m",
+      "episode_0004_origin_particles_m",
+      "episode_0004_persistence_m",
+      "episode_0004_pooled_finite_rotated_m",
+      "episode_0004_pooled_finite_sparse_m",
+      "episode_0005_association_barycentric",
+      "episode_0005_association_offsets_m",
+      "episode_0005_association_segments",
+      "episode_0005_frame_indices",
+      "episode_0005_loo_finite_fixed_m",
+      "episode_0005_loo_finite_repeat_sparse_m",
+      "episode_0005_loo_finite_rotated_m",
+      "episode_0005_loo_finite_sparse_m",
+      "episode_0005_loo_zero_rotated_m",
+      "episode_0005_loo_zero_sparse_m",
+      "episode_0005_origin_particles_m",
+      "episode_0005_persistence_m",
+      "episode_0005_pooled_finite_rotated_m",
+      "episode_0005_pooled_finite_sparse_m",
+      "episode_0008_association_barycentric",
+      "episode_0008_association_offsets_m",
+      "episode_0008_association_segments",
+      "episode_0008_frame_indices",
+      "episode_0008_loo_finite_fixed_m",
+      "episode_0008_loo_finite_repeat_sparse_m",
+      "episode_0008_loo_finite_rotated_m",
+      "episode_0008_loo_finite_sparse_m",
+      "episode_0008_loo_zero_rotated_m",
+      "episode_0008_loo_zero_sparse_m",
+      "episode_0008_origin_particles_m",
+      "episode_0008_persistence_m",
+      "episode_0008_pooled_finite_rotated_m",
+      "episode_0008_pooled_finite_sparse_m"
+    ],
+    "path": "deform360_released_warp_readout_prediction_v1.npz",
+    "sha256": "7545cb7b7609ff181b61101d0f5f7baabb43b11a7691441b34b3eed542be3c01"
+  },
+  "prediction_code_commit": "8a1d3108e3380f9605bce1e733c18e1f56a2e743",
+  "protocol_config_sha256": "b7d06929079fd97ad8e2b6dbe149946851321bb6dc23a92c44cc9b2a0409e0c0",
+  "protocol_id": "deform360-released-warp-readout-source-v1",
+  "result_sha256": "5b5934dbcf642fd4f6af7e0494760425269007ae69df389622953714d9319fd3",
+  "schema_version": 1,
+  "sealed_at": "2026-07-26T10:35:55.235881+00:00"
+}
