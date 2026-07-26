@@ -1,0 +1,66 @@
+{
+  "artifact_kind": "Deform360PenguinCoTrackerBiasSourcePredictionSeal",
+  "claim_boundary": "complete source-only prediction seal; outcomes remain outside this operation",
+  "config": {
+    "center_count": 16,
+    "minimum_improvement_m": 5e-06,
+    "minimum_initial_view_count": 2,
+    "minimum_triangulation_view_count": 2,
+    "nominal_regret_coverage": 0.9,
+    "observation_variance_floor_m2": 2.5e-05,
+    "reprojection_scale_px": 3.0,
+    "selected_camera_count": 5,
+    "two_view_variance_multiplier": 4.0,
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "episodes": [
+    {
+      "archive_sha256": "e4b1da02b2ba50215adf489739237e24c6dd6a481a1cbd5e2a75eb56171e4885",
+      "episode_id": 1,
+      "report_sha256": "8faad50d16cd15cd1451c82f0f227ea10f548d630bf9266df504f19147e6bc04",
+      "technical_fallback": false
+    },
+    {
+      "archive_sha256": "89fb1731d7056909dcbad6d0704b88e2432653a19be5304e1babb7805b5874a2",
+      "episode_id": 3,
+      "report_sha256": "3aa93200bb4a745ef46ded71ec76064aae542b149d1f03f994d63e798bbc77f6",
+      "technical_fallback": false
+    },
+    {
+      "archive_sha256": "a455467bb17dbf5c8c777e0124e2235c66bd5dddbd1344702cd65b6a5e11a366",
+      "episode_id": 4,
+      "report_sha256": "52d492836119b77cb93f8aa8730b675ea0b3e895ba8d48829fa7c48660841c19",
+      "technical_fallback": false
+    },
+    {
+      "archive_sha256": "341164a016a28ec38c2dffba7a6f8ba01a80e09e543d52d9404f53c3209c8731",
+      "episode_id": 6,
+      "report_sha256": "6cc3e5baae3c13c89a4fc18858d2c08c9c7c83398303cd572df710a91afe8c48",
+      "technical_fallback": false
+    },
+    {
+      "archive_sha256": "46135152aada18b488f224138b976e20e7f765ef943762180007ed10d4a194c3",
+      "episode_id": 7,
+      "report_sha256": "2cb6699f4828d35cc977d73b74cb880c1eeb1070baab294fbb52e7ccbceac600",
+      "technical_fallback": false
+    },
+    {
+      "archive_sha256": "cf57edcf8e1a54ceca2b51a58f84f6976a3648c8ca2707c1a71ad9efadc99f37",
+      "episode_id": 9,
+      "report_sha256": "495f7f32c7e0e48a9a3aa0fdaca67d08938bf17482769f9f94637be6388db6af",
+      "technical_fallback": false
+    }
+  ],
+  "information_boundary": {
+    "all_predictions_hashed_before_source_outcome_open": true,
+    "pcd_clean_read": false
+  },
+  "prediction_count": 6,
+  "protocol_id": "deform360-penguin-cotracker-bias-source-v1",
+  "result_sha256": "efef2f111f3a5b1af5c8e77702fb6a4bf9e38893ae45387aa59634811f4eba38",
+  "schema_version": 1
+}
