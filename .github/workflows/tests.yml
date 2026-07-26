@@ -228,5 +228,5 @@ jobs:
           "$bin/bpt" provider manifest --help
           "$bin/bpt" observation validate --help
           "$bin/bpt" run manifest --help
-          "$bin/bpt-provider-manifest" --help
-          "$bin/bpt-run-manifest" --help
+          "$bin/bpt" experiment list >/dev/null
+          "$bin/bpt" experiment describe phystwin-refit
