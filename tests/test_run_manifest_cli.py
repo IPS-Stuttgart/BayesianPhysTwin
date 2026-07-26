@@ -6,10 +6,17 @@ from bayesian_phystwin.cli.run_manifest import main
 from bayesian_phystwin.run_manifest import load_run_manifest
 
 
-def test_run_manifest_cli_create_and_validate(tmp_path: Path, capsys) -> None:
-    artifact = tmp_path / "result.json"
+def test_run_manifest_cli_create_and_validate(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    artifact_root = tmp_path / "bundle"
+    artifact_root.mkdir()
+    artifact = artifact_root / "result.json"
     artifact.write_text("{}\n", encoding="utf-8")
     manifest_path = tmp_path / "manifest.json"
+    monkeypatch.chdir(tmp_path)
 
     assert (
         main(
@@ -27,9 +34,9 @@ def test_run_manifest_cli_create_and_validate(tmp_path: Path, capsys) -> None:
                 "--command-line",
                 "bpt provider manifest",
                 "--artifact-root",
-                str(tmp_path),
+                str(artifact_root),
                 "--output-artifact",
-                f"result={artifact}",
+                "result=result.json",
             ]
         )
         == 0
@@ -43,7 +50,7 @@ def test_run_manifest_cli_create_and_validate(tmp_path: Path, capsys) -> None:
                 "validate",
                 str(manifest_path),
                 "--artifact-root",
-                str(tmp_path),
+                str(artifact_root),
             ]
         )
         == 0
