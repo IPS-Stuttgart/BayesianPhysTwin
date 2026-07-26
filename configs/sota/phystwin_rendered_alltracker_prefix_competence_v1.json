@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-rendered-alltracker-prefix-competence-v1",
+  "status": "locked-before-prediction",
+  "claim_boundary": "One-case opened-source association-oracle competence control on single_lift_cloth. It can reject or admit a later automatic-query source study, but cannot establish deployability, independent transfer, Bayesian calibration, or state of the art.",
+  "question": "Can direct two-frame correspondence from a PhysTwin material render to the simultaneous real prefix image recover selected material identities more accurately than the physical carrier and the frozen strict CoTracker3 comparator?",
+  "case": {
+    "name": "single_lift_cloth",
+    "source_status": "previously opened development interaction",
+    "train_end_frame_exclusive": 121,
+    "frames": [
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120
+    ],
+    "cameras": [
+      "cam0",
+      "cam1",
+      "cam2"
+    ],
+    "identity_count": 9,
+    "identity_source": "frame-zero manual world positions already used by the frozen TAPIP3D/SpatialTrackerV2 association-oracle source controls",
+    "identity_use": "prediction receives only the nine frame-zero positions; the later manual trajectory remains unavailable until the prediction is sealed"
+  },
+  "candidate": {
+    "tracker": "AllTracker",
+    "tracker_revision": "61f5b21b694ad8f854ec7ecd2400005acc73f685",
+    "pairing": "independent two-frame pair [PhysTwin rendered RGB at t, real RGB at t] for each allowed frame and camera",
+    "reverse_cycle": "a second [real RGB at t, PhysTwin rendered RGB at t] pass must return the proposed target pixel to the material-render source pixel",
+    "physical_material_query": "nearest physical graph node at frame zero, maximum association distance 0.005 m",
+    "world_observation": "residual-independent robust support followed by calibrated multiview ray triangulation",
+    "material_anchor": "frame-zero oracle position plus triangulated displacement relative to its associated physical graph-node render",
+    "maximum_side_pixels": 512,
+    "inference_iterations": 4,
+    "window_length": 16,
+    "minimum_render_alpha": 0.1,
+    "minimum_quality_probability": 0.5,
+    "maximum_forward_reverse_cycle_error_px": 5.0,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_camera_count": 2
+  },
+  "correlation_and_covariance": {
+    "duplicate_camera_policy": "camera poses identical within 1e-9 m and 1e-9 rotation units form one evidence group; only the highest-quality member remains",
+    "unknown_cross_view_correlation": "per-camera information is averaged in a covariance-intersection-style update rather than summed as independent evidence",
+    "pixel_noise_std": 2.0,
+    "shared_bias_std_m": 0.005,
+    "two_view_extra_std_m": 0.01,
+    "prior_std_m": 0.1,
+    "minimum_ray_angle_degrees": 0.5,
+    "prior_reliability_uses_phystwin_innovation": false,
+    "calibration_claim": "conditional covariance diagnostic only; this one-case control cannot establish calibration"
+  },
+  "comparators_opened_only_after_prediction_seal": {
+    "physical": "frame-zero oracle position plus the selected physical graph-node displacement",
+    "cotracker3": {
+      "source": "frozen opened-22 CoTracker3 multiview archive",
+      "minimum_camera_count": 3,
+      "minimum_quality_in_every_camera": 0.5,
+      "maximum_reprojection_error_px": 3.0,
+      "maximum_forward_backward_error_px": 5.0,
+      "scoring": "candidate and comparator use exact shared material identity-frame support"
+    },
+    "target": "released manual identity trajectory at frames 114 through 120"
+  },
+  "competence_gate": {
+    "minimum_candidate_support_fraction": 0.5,
+    "maximum_candidate_position_rmse_m": 0.005,
+    "maximum_candidate_final_frame_rmse_m": 0.008,
+    "minimum_relative_improvement_over_physical_on_shared_support": 0.1,
+    "minimum_relative_improvement_over_strict_cotracker3_on_shared_support": 0.2,
+    "combination": "all five gates must pass",
+    "pass_action": "Freeze the interface, then preregister a source-only automatic graph-query and guarded Bayesian assimilation study without reusing the nine manual identities.",
+    "fail_action": "Stop this rendered-to-real AllTracker interface without tuning frames, cameras, identities, tracker settings, support thresholds, covariance scales, anchoring, or gates."
+  },
+  "source_artifacts": {
+    "implementation_commit": "1a1968ad1851295f676060c469dfb5e0a76bfb98",
+    "observation_builder_sha256": "fb92d0554976f073b87775bdd72f44c6cb310b86009e4af5015c6071dc32398f",
+    "competence_scorer_sha256": "9d214abf27be35f8f25af2110783ed45517e806538a6dd42624cb265bfee90e8",
+    "prediction_runner_sha256": "c74c60caa3b881083f9153a8e924fa543e9d42067980c72a14ac37af05433235",
+    "outcome_runner_sha256": "24a3d9ed31f257b531720d1fc69035277919d118511d892e78d6c5491833a23d",
+    "photometric_carrier_sha256": "0cee8708a80811b898c5bd34530b696888adab72d145336a5b696085822c44e7",
+    "trajectory_sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72",
+    "frame_zero_query_input_sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc",
+    "camera_json_sha256": "99b80635489980b814f9abd4fbc663a2677df2b13ae901f9512a6e2901f8e970",
+    "prefix_rgb_and_mask_manifest_sha256": "6a27b59c8ae8cd85156d93561adddd1a1541dd59fad08ebd03e22ff232425329",
+    "alltracker_runtime_source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "alltracker_checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "manual_track_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "cotracker3_comparator_sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56"
+  },
+  "information_boundary": {
+    "rgb_and_mask_frames_allowed": [
+      114,
+      121
+    ],
+    "rgb_or_mask_at_or_after_frame_121_allowed": false,
+    "manual_identity_frames_after_frame_zero_allowed_before_prediction_seal": false,
+    "cotracker3_comparator_allowed_before_prediction_seal": false,
+    "future_point_cloud_allowed": false,
+    "held_v8_access_allowed": false,
+    "other_sealed_target_access_allowed": false
+  },
+  "forbidden": [
+    "running the predictor before this protocol is committed with status locked-before-prediction",
+    "reading the later manual trajectory or CoTracker3 comparator before the prediction archive and report are hash-sealed",
+    "reading RGB, masks, point clouds, or outcomes at or after frame 121",
+    "changing frames, cameras, identities, tracker settings, association tolerance, support thresholds, covariance scales, anchoring, comparators, or gates after lock",
+    "describing an association-oracle competence pass as a deployable method, independent transfer, Bayesian calibration, or state of the art",
+    "opening, inspecting, modifying, or rerunning any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
