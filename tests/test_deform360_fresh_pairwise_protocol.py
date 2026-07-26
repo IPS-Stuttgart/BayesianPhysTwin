@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from bayesian_phystwin.deform360_fresh_pairwise_protocol import (
     BACKBONE_SEAL_KIND,
@@ -17,6 +18,7 @@ from bayesian_phystwin.deform360_fresh_pairwise_protocol import (
     load_fresh_pairwise_protocol,
     validate_backbone_seal,
     validate_belief_prediction_seal,
+    validate_completeness_barrier,
 )
 
 
@@ -179,3 +181,21 @@ def test_completeness_barrier_requires_exact_locked_cohort(tmp_path: Path) -> No
     assert barrier["barrier_passed"] is True
     assert barrier["ordinary_prediction_count"] == 12
     assert barrier["retained_technical_failure_count"] == 0
+    validated = validate_completeness_barrier(
+        tmp_path / "barrier.json",
+        protocol_path=PROTOCOL,
+        cohort_path=COHORT,
+        prediction_root=prediction_root,
+    )
+    assert validated == barrier
+
+    first_case = str(cohort["cases"][0]["case"])
+    seal_path = prediction_root / first_case / "belief_prediction_seal.json"
+    seal_path.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="prediction seal changed after barrier"):
+        validate_completeness_barrier(
+            tmp_path / "barrier.json",
+            protocol_path=PROTOCOL,
+            cohort_path=COHORT,
+            prediction_root=prediction_root,
+        )

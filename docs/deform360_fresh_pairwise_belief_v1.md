@@ -29,6 +29,17 @@ the frozen selector still chooses exactly eight cameras from that panel.
 Selection and correspondence gating use only the current sparse observation,
 the two sealed backbones, and prior belief state.
 
+After all 12 ordinary predictions exist, a completeness barrier must be sealed
+before `final_data.pkl` is deserialized. The one-shot scorer uses frames
+`20:38`, `39:57`, and `58:76`, permanently excludes the 16 measured material
+identities, and evaluates hidden-identity RMSE plus hidden symmetric Chamfer.
+The prospective transfer gate requires the candidate's object-balanced mean
+difference and 95% object-bootstrap upper bound to be below zero for both
+metrics against the physical prior, persistence, and selected raw backbone.
+Passing this gate supports fresh-object transfer under the declared candidate
+metrics only. It does not establish calibrated uncertainty (the sealed archive
+contains no predictive covariance) or official Deform360 SOTA parity.
+
 No prediction process accepts a future target, outcome manifest, future dense
 geometry, future tactile data, or post-update RGB. All 12 belief predictions
 must be checksummed and pass the completeness barrier before a separate

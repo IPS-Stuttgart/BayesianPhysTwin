@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "analysis_id": "deform360-fresh-pairwise-outcome-v1",
+  "status": "frozen after the 12-of-12 pre-outcome completeness barrier and before any future-payload deserialization",
+  "prediction_protocol": {
+    "protocol_id": "deform360-fresh-pairwise-belief-v1",
+    "config_file_sha256": "04e29aed6e0a99a295de37299ce7fb84d8f455d93836234ff4ca9c732e6a443c"
+  },
+  "cohort": {
+    "lock_sha256": "bafe26848ee83d8a4201e9d11d51af106370647f76ec702003e9ec51d3843729",
+    "lock_file_sha256": "7d6fb68f97892bb60923b1d79ba31f5a535171c6b43243921913414822c74818",
+    "case_count": 12,
+    "physical_object_count": 12
+  },
+  "completeness_barrier": {
+    "artifact_kind": "Deform360FreshPairwiseCompletenessBarrier",
+    "file_sha256": "acb6de6b445cb4d3acffba7b3011093f6212ec32d950209100e1327c1b8dbb2d",
+    "result_sha256": "ac55fa454cf4351cca4ecaa680268607fc103bb33d58d382674f6e3a86ac6ca9",
+    "ordinary_prediction_count": 12,
+    "retained_technical_failure_count": 0,
+    "unsealable_case_count": 0,
+    "replacement_count": 0
+  },
+  "scoring": {
+    "frame_count": 76,
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "scored_frame_ranges_half_open": [
+      [
+        20,
+        38
+      ],
+      [
+        39,
+        57
+      ],
+      [
+        58,
+        76
+      ]
+    ],
+    "permanently_excluded_measurement_identity_count": 16,
+    "primary_metrics": [
+      "post_update_hidden_identity_rmse_m",
+      "post_update_hidden_symmetric_chamfer_m"
+    ],
+    "candidate_arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique",
+    "comparators": [
+      "physical_prior",
+      "persistence",
+      "selected_raw_backbone_persistence_insufficient_default"
+    ],
+    "replicate_unit": "physical object"
+  },
+  "bootstrap": {
+    "draws": 10000,
+    "seed": 0,
+    "interval": 0.95,
+    "resampling_unit": "physical object"
+  },
+  "transfer_gate": {
+    "per_comparator_metric": "candidate object-balanced mean difference < 0 and object-cluster 95% upper bound < 0",
+    "joint_rule": "both primary metrics pass against every comparator"
+  },
+  "calibration_claim": {
+    "evaluated": false,
+    "reason": "the sealed candidate archive contains point predictions but no frozen predictive covariance"
+  },
+  "official_sota_claim": {
+    "allowed": false,
+    "reason": "fresh-object candidate metric conventions only until official Deform360 evaluator parity is resolved"
+  }
+}

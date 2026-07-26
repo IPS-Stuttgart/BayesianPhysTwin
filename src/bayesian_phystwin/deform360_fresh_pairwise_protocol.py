@@ -509,6 +509,77 @@ def build_completeness_barrier(
     return payload
 
 
+def validate_completeness_barrier(
+    barrier_path: str | Path,
+    *,
+    protocol_path: str | Path,
+    cohort_path: str | Path,
+    prediction_root: str | Path,
+) -> dict[str, Any]:
+    """Validate the sealed all-case barrier before any future payload is opened."""
+
+    protocol = load_fresh_pairwise_protocol(protocol_path)
+    cohort = load_bound_cohort(cohort_path, protocol)
+    barrier = load_json(barrier_path)
+    _require(
+        barrier.get("schema_version") == 1
+        and barrier.get("artifact_kind") == COMPLETENESS_BARRIER_KIND
+        and barrier.get("protocol_id") == PROTOCOL_ID
+        and barrier.get("protocol_config_sha256") == file_sha256(protocol_path)
+        and barrier.get("cohort_lock_sha256") == cohort["cohort_lock_sha256"]
+        and barrier.get("result_sha256")
+        == canonical_sha256(barrier, digest_key="result_sha256"),
+        "fresh completeness barrier is incompatible",
+    )
+    expected_cases = tuple(str(case["case"]) for case in cohort["cases"])
+    records = barrier.get("records")
+    _require(
+        barrier.get("expected_case_count") == len(expected_cases)
+        and barrier.get("ordinary_prediction_count") == len(expected_cases)
+        and barrier.get("retained_technical_failure_count") == 0
+        and barrier.get("unsealable_case_count") == 0
+        and barrier.get("replacement_count") == 0
+        and barrier.get("barrier_passed") is True
+        and isinstance(records, list)
+        and [record.get("case") for record in records] == list(expected_cases),
+        "fresh completeness barrier did not pass exactly",
+    )
+    boundary = barrier.get("information_boundary", {})
+    _require(
+        boundary.get("future_target_read") is False
+        and boundary.get("outcome_manifest_read") is False
+        and boundary.get("all_predictions_hashed_before_outcome") is True,
+        "fresh completeness barrier crossed the outcome boundary",
+    )
+    root = Path(prediction_root).resolve()
+    for record in records:
+        case = str(record["case"])
+        seal_path = root / case / "belief_prediction_seal.json"
+        _require(
+            seal_path.is_file()
+            and file_sha256(seal_path) == record.get("seal_file_sha256"),
+            f"prediction seal changed after barrier: {case}",
+        )
+        seal = load_json(seal_path)
+        validate_belief_prediction_seal(
+            seal,
+            protocol_config_sha256=file_sha256(protocol_path),
+            cohort_lock_sha256=cohort["cohort_lock_sha256"],
+        )
+        _require(
+            seal.get("case") == case
+            and seal.get("result_sha256") == record.get("seal_result_sha256"),
+            f"prediction result changed after barrier: {case}",
+        )
+    observed = sorted(
+        path.parent.name
+        for path in root.glob("*/belief_prediction_seal.json")
+        if path.is_file()
+    )
+    _require(observed == sorted(expected_cases), "prediction root changed after barrier")
+    return barrier
+
+
 __all__ = [
     "BACKBONE_SEAL_KIND",
     "BELIEF_SEAL_KIND",
@@ -528,5 +599,6 @@ __all__ = [
     "load_json",
     "validate_backbone_seal",
     "validate_belief_prediction_seal",
+    "validate_completeness_barrier",
     "write_json",
 ]
