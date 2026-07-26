@@ -1,0 +1,48 @@
+/home/florianpfaff/tapip3d-phystwin-source-v1/venv/lib/python3.10/site-packages/xformers/ops/fmha/flash.py:211: FutureWarning: `torch.library.impl_abstract` was renamed to `torch.library.register_fake`. Please use that instead; we will remove `torch.library.impl_abstract` in a future version of PyTorch.
+  @torch.library.impl_abstract("xformers_flash::flash_fwd")
+/home/florianpfaff/tapip3d-phystwin-source-v1/venv/lib/python3.10/site-packages/xformers/ops/fmha/flash.py:344: FutureWarning: `torch.library.impl_abstract` was renamed to `torch.library.register_fake`. Please use that instead; we will remove `torch.library.impl_abstract` in a future version of PyTorch.
+  @torch.library.impl_abstract("xformers_flash::flash_bwd")
+2026-07-26 21:12:02,153 - WARNING - /home/florianpfaff/.venvs/bpt-gpu/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py:600: UserWarning: torch.utils.checkpoint: the use_reentrant parameter should be passed explicitly. In version 2.4 we will raise an exception if use_reentrant is not passed. use_reentrant=False is recommended, but if you need to preserve the current default behavior, you can pass use_reentrant=True. Refer to docs for more details on the differences between the two variants.
+  return fn(*args, **kwargs)
+
+2026-07-26 21:12:02,153 - WARNING - /home/florianpfaff/.venvs/bpt-gpu/lib/python3.10/site-packages/torch/utils/checkpoint.py:92: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+  warnings.warn(
+
+2026-07-26 21:12:02,607 - WARNING - /usr/lib/python3.10/contextlib.py:103: FutureWarning: `torch.backends.cuda.sdp_kernel()` is deprecated. In the future, this context manager will be removed. Please see `torch.nn.attention.sdpa_kernel()` for the new context manager, with updated signature.
+  self.gen = func(*args, **kwds)
+
+2026-07-26 21:12:07,771 - INFO - Residuals : 132042
+2026-07-26 21:12:07,771 - INFO - Parameters : 2550
+2026-07-26 21:12:07,771 - INFO - Iterations : 101
+2026-07-26 21:12:07,771 - INFO - Time : 4.2958009243011475 [s]
+2026-07-26 21:12:07,771 - INFO - Initial cost : 0.8120859494283953 [px]
+2026-07-26 21:12:07,771 - INFO - Final cost : 0.3319294238213479 [px]
+2026-07-26 21:12:13,064 - INFO - Residuals : 132864
+2026-07-26 21:12:13,064 - INFO - Parameters : 2547
+2026-07-26 21:12:13,064 - INFO - Iterations : 101
+2026-07-26 21:12:13,064 - INFO - Time : 4.315881013870239 [s]
+2026-07-26 21:12:13,064 - INFO - Initial cost : 0.6319049550285483 [px]
+2026-07-26 21:12:13,064 - INFO - Final cost : 0.3054058846794325 [px]
+2026-07-26 21:12:18,387 - INFO - Residuals : 134210
+2026-07-26 21:12:18,387 - INFO - Parameters : 2556
+2026-07-26 21:12:18,387 - INFO - Iterations : 101
+2026-07-26 21:12:18,387 - INFO - Time : 4.403698921203613 [s]
+2026-07-26 21:12:18,387 - INFO - Initial cost : 0.6052239759262448 [px]
+2026-07-26 21:12:18,387 - INFO - Final cost : 0.30483092878838725 [px]
+2026-07-26 21:12:23,679 - INFO - Residuals : 134650
+2026-07-26 21:12:23,679 - INFO - Parameters : 2556
+2026-07-26 21:12:23,679 - INFO - Iterations : 101
+2026-07-26 21:12:23,679 - INFO - Time : 4.3673670291900635 [s]
+2026-07-26 21:12:23,679 - INFO - Initial cost : 0.6025612765773073 [px]
+2026-07-26 21:12:23,679 - INFO - Final cost : 0.3050982136517323 [px]
+Loading weights from local directory
+{
+  "frame_count": 121,
+  "future_target_loaded": false,
+  "held_v8_access": false,
+  "maximum_query_depth_m": 0.7609999991200553,
+  "minimum_query_depth_m": 0.5719999919720513,
+  "output": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/outputs/single_lift_cloth_camera0_prefix121_oracle9/official_result.npz",
+  "query_count": 9,
+  "visibility_fraction": 0.8393021120293848
+}

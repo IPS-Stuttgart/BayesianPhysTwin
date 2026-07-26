@@ -1,0 +1,317 @@
+{
+  "case": "single_lift_cloth",
+  "frame_zero_association": {
+    "distance_m": [
+      0.003546923957838477,
+      0.0029667583818279108,
+      0.0038175279688296548,
+      0.0015976039498540526,
+      0.0034828708025553905,
+      0.0011684933028964898,
+      0.0020121917752789053,
+      0.0030141665009392193,
+      0.0015423721493721609
+    ],
+    "maximum_distance_m": 0.0038175279688296548,
+    "mean_distance_m": 0.00257210097659914,
+    "node_indices": [
+      6732,
+      6284,
+      5289,
+      4821,
+      3860,
+      2606,
+      2849,
+      1821,
+      1496
+    ]
+  },
+  "gates": {
+    "competence_gate_passed": false,
+    "displacement_rmse_at_most_maximum": false,
+    "frame_zero_anchor_rmse_at_most_maximum": false,
+    "late_displacement_rmse_at_most_maximum": false,
+    "late_support_at_least_minimum": true,
+    "prefix_support_at_least_minimum": true,
+    "shared_rmse_improvement_at_least_minimum": false
+  },
+  "information_boundary": {
+    "future_after_prefix_used": false,
+    "held_v8_access": false,
+    "manual_identity_role": "frame-zero coordinates are prediction queries; the sealed source prefix trajectory is score-only",
+    "rgbd_frames_used_by_prediction": [
+      0,
+      121
+    ]
+  },
+  "prediction_manifest": {
+    "path": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/outputs/single_lift_cloth_camera0_prefix121_oracle9/sealed/prediction_manifest.json",
+    "sha256": "3c51a765a84e1bcd02189267d344d4dda88848a43c9413ec0383562bbdc4f020"
+  },
+  "protocol": {
+    "path": "/home/florianpfaff/spatialtrackerv2-phystwin-source-v1/Bayesian-PhysTwin-8ea0d29/configs/sota/phystwin_spatialtrackerv2_competence_v1.json",
+    "sha256": "94607def313a0849d97508e541a57dc31e6027fcba84f100a3e04c3f9b88e0ab"
+  },
+  "query_frame_zero_match_max_m": 1.2598789271057058e-08,
+  "recommendation": "Stop SpatialTrackerV2 as the PhysTwin sparse-identity feeder without tuning on this opened source trajectory.",
+  "schema_version": 1,
+  "scored_at_utc": "2026-07-26T19:12:59.275761+00:00",
+  "shared_support_comparison": {
+    "first_displacement_rmse_m": 0.010148815477556545,
+    "first_relative_improvement_fraction": -0.21904254997150074,
+    "frame_range": [
+      0,
+      121
+    ],
+    "second_displacement_rmse_m": 0.008325234814645156,
+    "shared_count": 159
+  },
+  "spatialtrackerv2": {
+    "displacement_rmse_m": 0.060979349001436596,
+    "frame_range": [
+      0,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 0.0031418337539066785,
+    "per_identity": [
+      {
+        "displacement_rmse_m": 0.014703467487450404,
+        "identity_index": 0,
+        "support_fraction": 1.0,
+        "supported_count": 66,
+        "target_count": 66
+      },
+      {
+        "displacement_rmse_m": 0.06760401636969723,
+        "identity_index": 1,
+        "support_fraction": 0.8641975308641975,
+        "supported_count": 70,
+        "target_count": 81
+      },
+      {
+        "displacement_rmse_m": 0.004970092878644967,
+        "identity_index": 2,
+        "support_fraction": 1.0,
+        "supported_count": 51,
+        "target_count": 51
+      },
+      {
+        "displacement_rmse_m": 0.016030778092528997,
+        "identity_index": 3,
+        "support_fraction": 0.3392857142857143,
+        "supported_count": 38,
+        "target_count": 112
+      },
+      {
+        "displacement_rmse_m": 0.10586579918041068,
+        "identity_index": 4,
+        "support_fraction": 0.825,
+        "supported_count": 99,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": 0.09567866590942974,
+        "identity_index": 5,
+        "support_fraction": 0.8583333333333333,
+        "supported_count": 103,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": 0.012153826550098796,
+        "identity_index": 6,
+        "support_fraction": 1.0,
+        "supported_count": 121,
+        "target_count": 121
+      },
+      {
+        "displacement_rmse_m": 0.020769103130709,
+        "identity_index": 7,
+        "support_fraction": 0.9879518072289156,
+        "supported_count": 82,
+        "target_count": 83
+      },
+      {
+        "displacement_rmse_m": 0.053138385629364966,
+        "identity_index": 8,
+        "support_fraction": 1.0,
+        "supported_count": 121,
+        "target_count": 121
+      }
+    ],
+    "position_rmse_m": 0.06145496125713451,
+    "support_fraction": 0.8582857142857143,
+    "supported_count": 751,
+    "target_count": 875,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.051544379943459895,
+      "frame_count": 121,
+      "translation_removed_rmse_m": 0.042826939687918175
+    }
+  },
+  "spatialtrackerv2_late_third": {
+    "displacement_rmse_m": 0.11784297580842125,
+    "frame_range": [
+      80,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 0.0031418337539066785,
+    "per_identity": [
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 0,
+        "support_fraction": null,
+        "supported_count": 0,
+        "target_count": 0
+      },
+      {
+        "displacement_rmse_m": 0.15585105284700454,
+        "identity_index": 1,
+        "support_fraction": 0.6666666666666666,
+        "supported_count": 12,
+        "target_count": 18
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 2,
+        "support_fraction": null,
+        "supported_count": 0,
+        "target_count": 0
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 3,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 41
+      },
+      {
+        "displacement_rmse_m": 0.15140581883355753,
+        "identity_index": 4,
+        "support_fraction": 1.0,
+        "supported_count": 40,
+        "target_count": 40
+      },
+      {
+        "displacement_rmse_m": 0.14907543386926406,
+        "identity_index": 5,
+        "support_fraction": 0.975,
+        "supported_count": 39,
+        "target_count": 40
+      },
+      {
+        "displacement_rmse_m": 0.01878557555610208,
+        "identity_index": 6,
+        "support_fraction": 1.0,
+        "supported_count": 41,
+        "target_count": 41
+      },
+      {
+        "displacement_rmse_m": 0.07033110795686132,
+        "identity_index": 7,
+        "support_fraction": 0.6666666666666666,
+        "supported_count": 2,
+        "target_count": 3
+      },
+      {
+        "displacement_rmse_m": 0.08981255181354783,
+        "identity_index": 8,
+        "support_fraction": 1.0,
+        "supported_count": 41,
+        "target_count": 41
+      }
+    ],
+    "position_rmse_m": 0.11851708304439579,
+    "support_fraction": 0.78125,
+    "supported_count": 175,
+    "target_count": 224,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.08442636004007943,
+      "frame_count": 41,
+      "translation_removed_rmse_m": 0.08169974262489972
+    }
+  },
+  "status": "opened one-case association-oracle observation competence control; not prediction, transfer, confirmation, or SOTA evidence",
+  "strict_three_view_cotracker3": {
+    "displacement_rmse_m": 0.008325234814645156,
+    "frame_range": [
+      0,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 7.1731646418167985e-09,
+    "per_identity": [
+      {
+        "displacement_rmse_m": 0.010986900145577993,
+        "identity_index": 0,
+        "support_fraction": 0.9848484848484849,
+        "supported_count": 65,
+        "target_count": 66
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 1,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 81
+      },
+      {
+        "displacement_rmse_m": 0.005452001668621653,
+        "identity_index": 2,
+        "support_fraction": 1.0,
+        "supported_count": 51,
+        "target_count": 51
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 3,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 112
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 4,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 5,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 6,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 121
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 7,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 83
+      },
+      {
+        "displacement_rmse_m": 0.006209514877901519,
+        "identity_index": 8,
+        "support_fraction": 0.35537190082644626,
+        "supported_count": 43,
+        "target_count": 121
+      }
+    ],
+    "position_rmse_m": 0.008325232059042648,
+    "support_fraction": 0.18171428571428572,
+    "supported_count": 159,
+    "target_count": 875,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.00924599094990159,
+      "frame_count": 66,
+      "translation_removed_rmse_m": 0.004927553578725234
+    }
+  },
+  "study_id": "phystwin-spatialtrackerv2-competence-v1"
+}
