@@ -28,6 +28,52 @@ def test_robust_endpoint_downweights_a_terminal_outlier() -> None:
     assert posterior.final_inlier_probability[0] < 0.1
 
 
+def test_array_variance_with_unit_reliability_matches_scalar_path() -> None:
+    residual = np.array(
+        [
+            [[0.001, 0.0, 0.0], [0.0, 0.002, 0.0]],
+            [[0.002, 0.0, 0.0], [0.0, 0.003, 0.0]],
+            [[0.003, 0.0, 0.0], [0.0, 0.004, 0.0]],
+        ]
+    )
+    valid = np.ones((3, 2), dtype=bool)
+    arguments = {
+        "end_frame": 3,
+        "process_variance": 1e-6,
+        "initial_variance": 1e-4,
+        "inlier_prior": 0.95,
+        "outlier_variance_multiplier": 100.0,
+    }
+
+    scalar = robust_random_walk_endpoint(
+        residual,
+        valid,
+        observation_variance=4e-6,
+        **arguments,
+    )
+    heteroscedastic = robust_random_walk_endpoint(
+        residual,
+        valid,
+        observation_variance=np.full((3, 2), 4e-6),
+        prior_reliability=np.ones((3, 2)),
+        **arguments,
+    )
+
+    np.testing.assert_array_equal(heteroscedastic.mean, scalar.mean)
+    np.testing.assert_array_equal(
+        heteroscedastic.variance,
+        scalar.variance,
+    )
+    np.testing.assert_array_equal(
+        heteroscedastic.final_inlier_probability,
+        scalar.final_inlier_probability,
+    )
+    np.testing.assert_array_equal(
+        heteroscedastic.update_count,
+        scalar.update_count,
+    )
+
+
 def test_bayesian_anchor_improves_constant_held_out_discrepancy(
     tmp_path: Path,
 ) -> None:

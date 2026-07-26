@@ -52,12 +52,19 @@ def robust_random_walk_endpoint(
     *,
     end_frame: int,
     process_variance: float,
-    observation_variance: float,
+    observation_variance: float | np.ndarray,
     initial_variance: float,
     inlier_prior: float,
     outlier_variance_multiplier: float,
+    prior_reliability: np.ndarray | None = None,
 ) -> RobustEndpointPosterior:
-    """Filter a 3D random-walk discrepancy with a shared robust inlier state."""
+    """Filter a 3D random-walk discrepancy with a robust inlier state.
+
+    Observation variance may be a scalar or a causal ``(T, N)``/``(T, N, 3)``
+    array in square metres. Residual-independent reliability only inflates
+    that metric variance; the innovation is handled exactly once by the
+    inlier/outlier mixture.
+    """
 
     values = np.asarray(residual, dtype=float)
     validity = np.asarray(valid, dtype=bool)
@@ -67,14 +74,50 @@ def robust_random_walk_endpoint(
         raise ValueError("valid must match the residual frame and track dimensions")
     if not 0 < end_frame <= len(values):
         raise ValueError("end_frame must lie inside the residual sequence")
-    if process_variance < 0.0 or observation_variance <= 0.0:
-        raise ValueError("process variance must be nonnegative and observation positive")
+    if process_variance < 0.0:
+        raise ValueError("process variance must be nonnegative")
     if initial_variance <= 0.0:
         raise ValueError("initial_variance must be positive")
     if not 0.0 < inlier_prior < 1.0:
         raise ValueError("inlier_prior must lie in (0, 1)")
     if outlier_variance_multiplier <= 1.0:
         raise ValueError("outlier_variance_multiplier must exceed one")
+
+    supplied_variance = np.asarray(observation_variance, dtype=float)
+    if supplied_variance.ndim == 0:
+        if not np.isfinite(supplied_variance) or supplied_variance <= 0.0:
+            raise ValueError(
+                "observation variance must be finite and positive"
+            )
+        observation_variance_by_frame = None
+        scalar_observation_variance = float(supplied_variance)
+    else:
+        if supplied_variance.shape == values.shape:
+            supplied_variance = np.mean(supplied_variance, axis=2)
+        if supplied_variance.shape != values.shape[:2]:
+            raise ValueError(
+                "array observation variance must have shape "
+                "(T, N) or (T, N, 3)"
+            )
+        if not np.all(np.isfinite(supplied_variance)) or np.any(
+            supplied_variance <= 0.0
+        ):
+            raise ValueError(
+                "observation variance must be finite and positive"
+            )
+        observation_variance_by_frame = supplied_variance
+        scalar_observation_variance = 0.0
+
+    if prior_reliability is None:
+        reliability = None
+    else:
+        reliability = np.asarray(prior_reliability, dtype=float)
+        if reliability.shape != values.shape[:2]:
+            raise ValueError("prior_reliability must have shape (T, N)")
+        if not np.all(np.isfinite(reliability)) or np.any(
+            (reliability < 0.0) | (reliability > 1.0)
+        ):
+            raise ValueError("prior_reliability must lie in [0, 1]")
 
     track_count = values.shape[1]
     mean = np.zeros((track_count, 3), dtype=float)
@@ -85,15 +128,29 @@ def robust_random_walk_endpoint(
     log_outlier_prior = np.log1p(-inlier_prior)
     for frame in range(end_frame):
         predicted_variance = variance + process_variance
-        mask = validity[frame]
+        mask = validity[frame].copy()
+        if reliability is not None:
+            mask &= reliability[frame] > 0.0
         variance = predicted_variance
         if not np.any(mask):
             continue
         innovation = values[frame, mask] - mean[mask]
         predicted = predicted_variance[mask]
-        inlier_innovation_variance = predicted + observation_variance
+        frame_observation_variance = (
+            np.full(
+                np.sum(mask),
+                scalar_observation_variance,
+                dtype=float,
+            )
+            if observation_variance_by_frame is None
+            else observation_variance_by_frame[frame, mask].copy()
+        )
+        if reliability is not None:
+            frame_observation_variance /= reliability[frame, mask]
+        inlier_innovation_variance = predicted + frame_observation_variance
         outlier_innovation_variance = (
-            predicted + observation_variance * outlier_variance_multiplier
+            predicted
+            + frame_observation_variance * outlier_variance_multiplier
         )
         squared_norm = np.sum(np.square(innovation), axis=1)
         log_inlier = log_prior - 0.5 * (
