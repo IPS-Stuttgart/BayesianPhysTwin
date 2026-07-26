@@ -18,6 +18,11 @@ from .bias_aware_belief import (
     restrict_state_basis_to_identifiable_subspace,
     update_bias_aware_state,
 )
+from .complete_belief_selection import (
+    CompleteBeliefGuardDecisionV1,
+    CompleteBeliefSelectionV1,
+    select_complete_belief,
+)
 from .drift_bias import (
     RandomWalkBiasConfig,
     RandomWalkBiasResult,
@@ -52,12 +57,25 @@ from .observation_belief_gauge_adapter import (
     global_translation_bias_jacobian,
 )
 from .parameter_posterior import ParameterEnsemble
+from .physical_linearization import (
+    NonlinearClosureV1,
+    PhysicalLinearizationV1,
+    build_gauge_aware_batch_from_artifacts,
+    evaluate_nonlinear_closure,
+    load_physical_linearization,
+    save_physical_linearization,
+    validate_observation_linearization_alignment,
+)
 from .phystwin_adapter import (
     PhysTwinExportConfig,
     PhysTwinMotionCueConfig,
     build_phystwin_motion_cues,
     export_phystwin_residuals,
     write_export_summary,
+)
+from .prior_aware_gauge_belief import (
+    PriorAwareGaugeConfigV1,
+    update_prior_aware_gauge_belief,
 )
 from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_LINEAGE_VERSION,
@@ -96,6 +114,8 @@ __all__ = [
     "BinaryCalibrationMetrics",
     "BiasAwareStateUpdateConfig",
     "BiasAwareStateUpdateResult",
+    "CompleteBeliefGuardDecisionV1",
+    "CompleteBeliefSelectionV1",
     "GaugeAwareBeliefConfig",
     "GaugeAwareBeliefResult",
     "GaugeAwareObservationBatch",
@@ -106,6 +126,7 @@ __all__ = [
     "IdentifiableStateBasis",
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
+    "NonlinearClosureV1",
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefV1",
@@ -114,9 +135,11 @@ __all__ = [
     "PROB4D_CAUSAL_STREAM_ID",
     "PROB4D_SOURCE_REPOSITORY",
     "ParameterEnsemble",
+    "PhysicalLinearizationV1",
     "PhysicalResponseBasis",
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
+    "PriorAwareGaugeConfigV1",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
     "RandomWalkBiasResult",
@@ -131,20 +154,23 @@ __all__ = [
     "apply_group_regret_bound",
     "apply_regret_guard",
     "binary_calibration_metrics",
+    "build_gauge_aware_batch_from_artifacts",
+    "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
-    "build_gauge_aware_batch_from_observation_belief",
     "centered_view_translation_bias_jacobian",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
+    "evaluate_nonlinear_closure",
     "export_phystwin_residuals",
     "filter_random_walk_bias",
     "fit_source_group_regret_bound",
     "fit_source_regret_certificate",
-    "grouped_student_t_mixture_likelihood",
     "global_translation_bias_jacobian",
+    "grouped_student_t_mixture_likelihood",
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
+    "load_physical_linearization",
     "markov_log_evidence_batch",
     "measurement_variance",
     "reliability_weighted_loss",
@@ -155,11 +181,15 @@ __all__ = [
     "run_synthetic_benchmark",
     "run_synthetic_case",
     "save_observation_belief",
+    "save_physical_linearization",
     "score_reliability",
+    "select_complete_belief",
     "select_gauge_aware_candidate",
     "smooth_markov_reliability",
     "update_bias_aware_state",
     "update_gauge_aware_belief",
+    "update_prior_aware_gauge_belief",
+    "validate_observation_linearization_alignment",
     "validate_prob4d_causal_observation_belief",
     "write_export_summary",
 ]
