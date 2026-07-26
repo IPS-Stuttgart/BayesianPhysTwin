@@ -186,6 +186,19 @@ def _run_prediction(args: argparse.Namespace) -> dict[str, object]:
         raise ValueError("MVTracker checkpoint checksum changed")
     arrays, input_provenance = _load_prefix_inputs(source, frame_zero, config)
     input_provenance["mvtracker_checkpoint_sha256"] = file_sha256(checkpoint)
+    runner_path = Path(__file__).resolve()
+    adapter_path = Path(validate_source_contract.__code__.co_filename).resolve()
+    protocol_path = (
+        runner_path.parents[2]
+        / "configs"
+        / "sota"
+        / "deform360_mvtracker_privileged_depth_competence_v1.json"
+    )
+    input_provenance["bayesian_phystwin_implementation_sha256"] = {
+        "runner": file_sha256(runner_path),
+        "adapter": file_sha256(adapter_path),
+        "protocol": file_sha256(protocol_path),
+    }
 
     if str(mvtracker_root) not in sys.path:
         sys.path.insert(0, str(mvtracker_root))
