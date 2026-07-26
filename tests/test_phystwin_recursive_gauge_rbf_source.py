@@ -7,6 +7,7 @@ from bayesian_phystwin.phystwin_recursive_gauge_rbf_source import (
     fixed_update_frames,
     run_recursive_gauge_rbf_source_prediction,
     sparse_frame_observation_belief,
+    support_adaptive_update_frames,
 )
 from bayesian_phystwin.phystwin_sparse_identity_observation import (
     SparseIdentityObservations,
@@ -62,6 +63,21 @@ def test_fixed_update_frames_are_positive_unique_and_end_at_prefix() -> None:
     assert np.all(np.diff(frames) > 0)
     assert frames[0] > 0
     assert frames[-1] == 9
+
+
+def test_support_adaptive_frames_include_last_supported_frame() -> None:
+    valid = np.zeros((12, 4), dtype=bool)
+    valid[1:8] = True
+    valid[9, :2] = True
+
+    frames = support_adaptive_update_frames(
+        valid,
+        end_frame=11,
+        update_count=4,
+        minimum_rows=3,
+    )
+
+    np.testing.assert_array_equal(frames, [1, 3, 5, 7])
 
 
 def test_action_conditioned_transition_rotates_local_vectors() -> None:

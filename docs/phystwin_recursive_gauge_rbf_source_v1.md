@@ -33,7 +33,8 @@ The intended one-case smoke uses:
 - strict support from all three distinct camera poses;
 - 16 frame-zero farthest-point centers selected using availability before the
   validation boundary;
-- four fixed update fractions;
+- four quantiles of causally supported frames, including the last frame with at
+  least four observed selected centers;
 - one correlation group per fused frame with an effective-information cap;
 - the existing Student-t gauge-aware likelihood;
 - the existing dense temporal comparator with `gamma=0.25`;

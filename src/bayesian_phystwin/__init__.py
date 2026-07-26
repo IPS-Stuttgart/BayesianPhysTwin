@@ -68,6 +68,7 @@ from .phystwin_recursive_gauge_rbf_source import (
     run_recursive_gauge_rbf_source_prediction,
     score_recursive_gauge_rbf_prediction,
     sparse_frame_observation_belief,
+    support_adaptive_update_frames,
 )
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
@@ -186,6 +187,7 @@ __all__ = [
     "select_recursive_gauge_rbf_candidate",
     "smooth_markov_reliability",
     "sparse_frame_observation_belief",
+    "support_adaptive_update_frames",
     "update_bias_aware_state",
     "update_gauge_aware_belief",
     "update_recursive_gauge_rbf_belief",

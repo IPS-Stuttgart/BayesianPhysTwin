@@ -428,6 +428,40 @@ def fixed_update_frames(end_frame: int, update_count: int) -> np.ndarray:
     return result
 
 
+def support_adaptive_update_frames(
+    valid: np.ndarray,
+    *,
+    end_frame: int,
+    update_count: int,
+    minimum_rows: int,
+) -> np.ndarray:
+    """Select quantiles of causally supported frames, including the last."""
+
+    availability = np.asarray(valid, dtype=bool)
+    _require(
+        availability.ndim == 2,
+        "valid must have shape (T, K)",
+    )
+    _require(
+        2 <= end_frame <= len(availability),
+        "end_frame must lie inside the validity sequence",
+    )
+    _require(update_count >= 1, "update_count must be positive")
+    _require(minimum_rows >= 1, "minimum_rows must be positive")
+    supported = np.flatnonzero(
+        (np.arange(end_frame) > 0)
+        & (np.sum(availability[:end_frame], axis=1) >= minimum_rows)
+    )
+    _require(len(supported) > 0, "no causally supported update frame")
+    count = min(update_count, len(supported))
+    positions = np.rint(
+        np.linspace(0, len(supported) - 1, count)
+    ).astype(np.int64)
+    result = np.unique(supported[positions])
+    result.setflags(write=False)
+    return result
+
+
 def _proper_rotation(source: np.ndarray, target: np.ndarray) -> np.ndarray:
     cross = source.T @ target
     left, _, right_t = np.linalg.svd(cross, full_matrices=False)
@@ -589,7 +623,13 @@ def _run_prefix_updates(
     )
     previous_frame = 0
     diagnostics: list[dict[str, Any]] = []
-    for frame in fixed_update_frames(end_frame, config.update_count):
+    update_frames = support_adaptive_update_frames(
+        sparse_observations.valid[:, center_ids],
+        end_frame=end_frame,
+        update_count=config.update_count,
+        minimum_rows=config.minimum_rows_per_update,
+    )
+    for frame in update_frames:
         transition = action_conditioned_rigid_transition(
             snapshot,
             raw_baseline[previous_frame, :original_count],
@@ -997,4 +1037,5 @@ __all__ = [
     "run_recursive_gauge_rbf_source_prediction",
     "score_recursive_gauge_rbf_prediction",
     "sparse_frame_observation_belief",
+    "support_adaptive_update_frames",
 ]
