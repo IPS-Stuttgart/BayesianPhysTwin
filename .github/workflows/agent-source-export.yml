@@ -17,6 +17,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Report checked-out tree
+        run: git rev-parse HEAD^{tree}
       - name: Archive source tree
         run: |
           tar --exclude=.git -czf "$RUNNER_TEMP/bayesian-phystwin-source.tgz" .
