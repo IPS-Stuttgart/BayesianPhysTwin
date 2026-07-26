@@ -1,79 +1,51 @@
 # Causal4D provider API v1
 
-`bayesian_phystwin.causal4d_provider_v1` is the stable compatibility boundary
-for downstream Causal4D code. Causal4D should not import underscore-prefixed
-helpers from Bayesian-PhysTwin implementation modules.
+`bayesian_phystwin.causal4d_provider_v1` is the supported integration surface
+for Causal4D. It centralizes the implementation-private dependencies that were
+previously imported directly by the downstream repository.
 
-The facade has three responsibilities:
+## Manifest and artifacts
 
-1. expose a content-addressed provider manifest with explicit capabilities and
-   artifact-schema versions;
-2. define the `PhysTwinReplayProvider` protocol and validated
-   `ReplayTrajectory` return type;
-3. publish stable names for the existing graph, lifting, validity, simulator,
-   replay, metric, and structural-diagnostic primitives.
+`causal4d_provider_manifest()` reports:
 
-Implementation code remains in its owning Bayesian-PhysTwin modules. The facade
-resolves those functions lazily, so importing the contract does not import
-Torch, Warp, OpenCV, or an official PhysTwin checkout.
+- provider package version and optional exact Git revision;
+- provider API/schema version 1;
+- declared execution and artifact capabilities;
+- `TwinBelief` and `GraphBelief` artifact schema version 1.
 
-## Provider manifest
+The module also exposes stable names for artifact loading and hashing, target
+validity, residual lifting, and the diagnostic operations currently consumed
+by Causal4D. These functions deliberately delegate to BPT's internal
+implementations so those implementations can move without changing the
+cross-repository import path.
 
-```python
-from bayesian_phystwin.causal4d_provider_v1 import provider_manifest
+## Execution protocol
 
-manifest = provider_manifest("<exact git revision>")
-print(manifest.manifest_id)
-print(manifest.capabilities)
-print(manifest.artifact_schema_versions)
-```
+`PhysTwinReplayProvider` is a runtime-checkable protocol with a narrow surface:
 
-The base capabilities intentionally match Causal4D's
-`PhysicalBeliefProviderManifest` contract:
+- `set_group_log_scales()`;
+- `set_controller_points()`;
+- `replay_initial()`;
+- `replay_restart()`;
+- `close()`.
 
-- `artifact_checksums`;
-- `particle_endpoint_position`;
-- `particle_endpoint_velocity`;
-- `physical_parameter_particles`.
+`create_official_replay_provider()` returns
+`OfficialPhysTwinReplayProvider`, which owns the Torch/Warp simulator details
+and resource cleanup. Causal4D should not access the wrapped simulator,
+Torch, or Warp objects directly in normal execution code.
 
-Additional capabilities declare official-Warp replay, residual lifting, graph
-construction, full-covariance observation updates, and the versioned
-observation/discrepancy artifacts.
+## Versioning policy
 
-## Replay protocol
+BPT 0.4.x provides `causal4d_provider_v1`; Causal4D accepts
+`bayesian-phystwin>=0.4,<0.5` for normal development. Backward-compatible
+changes may be added to this module in 0.4.x. Removing or changing a required
+operation needs a new provider module/API version and a new BPT compatibility
+minor line.
 
-A provider implementation supplies:
+Frozen experiments continue to record and install exact Git revisions. The
+version range is for upgradeable development environments; it does not replace
+experiment locks.
 
-```python
-class PhysTwinReplayProvider:
-    manifest: PhysicalBeliefProviderManifest
-
-    def replay_initial(*, frame_count: int) -> ReplayTrajectory: ...
-    def replay_restart(
-        position_m,
-        velocity_mps,
-        *,
-        start_frame: int,
-        stop_frame: int,
-    ) -> ReplayTrajectory: ...
-```
-
-`ReplayTrajectory` requires matching finite `(T, N, 3)` position and velocity
-arrays and makes them read-only. This lets Causal4D test a backend against the
-protocol without depending on one simulator class.
-
-## Compatibility policy
-
-- Frozen experiments may continue to pin an exact Bayesian-PhysTwin commit.
-- Normal development should validate the semantic provider manifest and
-  required artifact versions in addition to the package version.
-- Adding a capability is backward compatible.
-- Renaming a facade symbol, changing artifact canonicalization, or changing
-  replay semantics requires a new provider API module.
-- Private implementation names may change without requiring Causal4D changes.
-
-Print the installed manifest with:
-
-```bash
-bpt-provider-manifest --provider-revision "$(git rev-parse HEAD)"
-```
+Both repositories contain cross-repository tests. They validate the manifest,
+verify every facade name imported by Causal4D, and prevent new imports from
+underscore-prefixed BPT modules or functions.
