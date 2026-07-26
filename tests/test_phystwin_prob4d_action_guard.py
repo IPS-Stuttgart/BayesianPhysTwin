@@ -104,6 +104,7 @@ def test_action_progress_beats_static_endpoint_on_dynamic_gain_error() -> None:
 
     assert report["candidate_available"] is True
     assert report["candidate_accepted"] is True
+    assert report["bit_exact_selected_baseline_fallback"] is False
     assert report["validation"]["no_primary_baseline_regression"] is True
     assert report["validation"]["no_primary_static_regression"] is True
     assert (
