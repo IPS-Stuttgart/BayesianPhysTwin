@@ -8,9 +8,9 @@ from typing import Literal
 import pytest
 
 from bayesian_phystwin.paper_evidence_v1 import (
+    PAPER_EVIDENCE_PROFILE_KEY,
     ArtifactBindingV1,
     DistributionBindingV1,
-    PAPER_EVIDENCE_PROFILE_KEY,
     PaperEvidenceBindingsV1,
     Prob4DStreamBindingV1,
     embed_paper_evidence_bindings,
