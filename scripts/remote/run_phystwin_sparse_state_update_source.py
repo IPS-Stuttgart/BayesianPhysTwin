@@ -132,10 +132,10 @@ def _load_protocol(path: Path) -> dict[str, Any]:
     protocol = json.loads(path.read_text(encoding="utf-8"))
     _require(
         protocol.get("protocol_id")
-        == "phystwin-prior-aware-sparse-identity-source-v4",
+        == "phystwin-prior-aware-sparse-identity-source-v5",
         "unexpected protocol id",
     )
-    _require(int(protocol.get("schema_version", -1)) == 4, "unsupported protocol")
+    _require(int(protocol.get("schema_version", -1)) == 5, "unsupported protocol")
     return protocol
 
 
@@ -171,6 +171,13 @@ def _verify_implementation(protocol: dict[str, Any]) -> None:
     _require(
         _sha256(injection) == implementation["state_injection_module_sha256"],
         "state-injection module changed",
+    )
+    identity_split = (
+        REPO_ROOT / "src" / "bayesian_phystwin" / "phystwin_sparse_identity_split.py"
+    )
+    _require(
+        _sha256(identity_split) == implementation["identity_split_module_sha256"],
+        "identity-split module changed",
     )
 
 
@@ -366,6 +373,7 @@ def _predict(protocol_path: Path, output: Path) -> None:
         tracks_raw,
         observed_count=int(settings["observed_identity_count"]),
         future_start_frame=train_end,
+        observed_support_frame_range=(prefix_start, train_end),
     )
     observation_tracks = identity_split.observation_tracks_m
     observed_ids = identity_split.observed_indices
@@ -700,6 +708,7 @@ def _predict(protocol_path: Path, output: Path) -> None:
             "future_controller_action_is_given": True,
             "observed_identity_count": int(len(observed_ids)),
             "hidden_identity_count": int(len(identity_split.hidden_indices)),
+            "observed_identity_selection_uses_prefix_availability_only": True,
         },
         source_checksums={
             name: str(protocol["inputs"][name]["sha256"])
@@ -827,6 +836,7 @@ def _score(protocol_path: Path, output: Path) -> None:
     split = json.loads(paths["split"].read_text(encoding="utf-8"))
     train_end = int(split["train"][1])
     future_end = int(split["test"][1])
+    prefix_start = train_end - int(protocol["state_update"]["response_frame_count"])
     tracks = np.asarray(_load_pickle(paths["manual_tracks"]), dtype=np.float64)[
         :future_end
     ]
@@ -834,6 +844,7 @@ def _score(protocol_path: Path, output: Path) -> None:
         tracks,
         observed_count=int(protocol["state_update"]["observed_identity_count"]),
         future_start_frame=train_end,
+        observed_support_frame_range=(prefix_start, train_end),
     )
     _require(
         np.array_equal(observed_ids, identity_split.observed_indices)

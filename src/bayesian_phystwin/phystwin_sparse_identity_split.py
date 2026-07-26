@@ -64,12 +64,14 @@ def split_sparse_identity_tracks(
     *,
     observed_count: int,
     future_start_frame: int,
+    observed_support_frame_range: tuple[int, int] | None = None,
 ) -> DisjointSparseIdentityTracks:
     """Select prefix sensors from frame zero and reserve all others for scoring.
 
     Selection uses deterministic farthest-point sampling on finite frame-zero
-    locations. No later visibility, displacement, or error influences the
-    identity split.
+    locations. An optional support range can restrict candidates to identities
+    observed in every declared prefix frame. No future visibility,
+    displacement, or error influences the identity split.
     """
 
     tracks = np.asarray(tracks_m, dtype=float)
@@ -79,23 +81,40 @@ def split_sparse_identity_tracks(
         raise ValueError("future_start_frame must lie inside the trajectory")
     if observed_count < 1:
         raise ValueError("observed_count must be positive")
-    eligible = np.flatnonzero(np.all(np.isfinite(tracks[0]), axis=1))
-    if observed_count >= len(eligible):
+    frame_zero_finite = np.all(np.isfinite(tracks[0]), axis=1)
+    if observed_support_frame_range is None:
+        support_finite = np.ones(tracks.shape[1], dtype=bool)
+    else:
+        support_start, support_stop = observed_support_frame_range
+        if not 0 <= support_start < support_stop <= future_start_frame:
+            raise ValueError(
+                "observed support range must be nonempty and end by "
+                "future_start_frame"
+            )
+        support_finite = np.all(
+            np.all(np.isfinite(tracks[support_start:support_stop]), axis=2),
+            axis=0,
+        )
+    eligible = np.flatnonzero(frame_zero_finite & support_finite)
+    if observed_count > len(eligible):
+        raise ValueError("observed_count exceeds support-eligible identities")
+    frame_zero_indices = np.flatnonzero(frame_zero_finite)
+    if observed_count >= len(frame_zero_indices):
         raise ValueError(
-            "observed_count must leave at least one finite frame-zero identity hidden"
+            "observed_count must leave at least one frame-zero identity hidden"
         )
     observed = deterministic_farthest_point_ids(
         tracks[0],
         eligible,
         observed_count,
     )
-    hidden = np.setdiff1d(eligible, observed, assume_unique=True)
+    hidden = np.setdiff1d(frame_zero_indices, observed, assume_unique=True)
 
     observation = np.full_like(tracks, np.nan)
     observation[:future_start_frame, observed] = tracks[:future_start_frame, observed]
 
     scoring = np.full_like(tracks, np.nan)
-    scoring[0, eligible] = tracks[0, eligible]
+    scoring[0, frame_zero_indices] = tracks[0, frame_zero_indices]
     scoring[1:future_start_frame, observed] = tracks[1:future_start_frame, observed]
     scoring[future_start_frame:, hidden] = tracks[future_start_frame:, hidden]
     return DisjointSparseIdentityTracks(
