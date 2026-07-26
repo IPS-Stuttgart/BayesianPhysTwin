@@ -81,9 +81,13 @@ python -m venv "${TEST_VENV}"
   pytest "${WHEELHOUSE}"/*.whl
 "${TEST_VENV}/bin/python" -m pip check
 
-cp \
-  "${BPT_ROOT}/integration_tests/test_three_repository_golden_path.py" \
-  "${RUN_ROOT}/test_three_repository_golden_path.py"
+shopt -s nullglob
+integration_tests=("${BPT_ROOT}"/integration_tests/test_*.py)
+if (( ${#integration_tests[@]} == 0 )); then
+  echo "No three-repository integration tests were found." >&2
+  exit 1
+fi
+cp "${integration_tests[@]}" "${RUN_ROOT}/"
 
 export THREE_REPO_SOURCE_ROOTS="$(
   "${TEST_VENV}/bin/python" - "${BPT_ROOT}" "${PROB4D_ROOT}" "${CAUSAL4D_ROOT}" <<'PY'
@@ -111,4 +115,4 @@ env -u PYTHONPATH \
   PYTHONNOUSERSITE=1 \
   "${TEST_VENV}/bin/python" -I -m pytest \
   -q \
-  test_three_repository_golden_path.py
+  test_*.py
