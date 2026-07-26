@@ -61,6 +61,30 @@ def test_run_manifest_rejects_payload_tampering(tmp_path: Path) -> None:
         load_run_manifest(path)
 
 
+def test_run_manifest_rejects_uncovered_schema_fields(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    path = tmp_path / "manifest.json"
+    write_run_manifest(path, manifest)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["uncovered"] = "tampering"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not match schema"):
+        load_run_manifest(path)
+
+
+def test_run_manifest_rejects_uncovered_artifact_fields(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    path = tmp_path / "manifest.json"
+    write_run_manifest(path, manifest)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["outputs"][0]["uncovered"] = "tampering"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not match schema"):
+        load_run_manifest(path)
+
+
 def test_run_manifest_detects_artifact_tampering(tmp_path: Path) -> None:
     manifest = _manifest(tmp_path)
     (tmp_path / "output.txt").write_text("changed\n", encoding="utf-8")
