@@ -1,0 +1,154 @@
+{
+  "aggregation": {
+    "episode": "mean",
+    "frame": "mean",
+    "object": "mean",
+    "panel": "object_balanced_mean"
+  },
+  "annotation_pipeline": {
+    "author_released_processed_artifacts": true,
+    "producer": "author-released processed pcd_clean artifacts",
+    "world_model_evaluator_released": false
+  },
+  "artifact_kind": "Deform360EvaluatorContract",
+  "contract_id": "deform360-author-released-processed-independent-v1",
+  "dataset": {
+    "coordinate_unit": "m",
+    "repository": "brownu/deform360",
+    "revision": "93280cbb466de6b9e59927c58a99fd3b9e91900e"
+  },
+  "evaluator_provenance": {
+    "entrypoint_sha256": null,
+    "particleformer_table4_reproduction": {
+      "future_chamfer_m": null,
+      "future_track_error_m": null,
+      "passed": false
+    },
+    "released_by_deform360_authors": false,
+    "source_revision_sha256": null
+  },
+  "information_boundary": {
+    "confirmatory_object_opened": false,
+    "development_only": true,
+    "held_v8_accessed": false,
+    "public_processed_outcomes_read": true
+  },
+  "input_boundary": {
+    "future_object_observation": false,
+    "known_future_robot_action": true,
+    "prediction_origin": "last author-released train frame"
+  },
+  "metrics": {
+    "chamfer": {
+      "definition": "symmetric_mean_euclidean_m",
+      "visibility_policy": "all_finite_material_points"
+    },
+    "track": {
+      "definition": "mean_euclidean_m",
+      "visibility_policy": "all_finite_material_points"
+    }
+  },
+  "particles": {
+    "identity_policy": "ordered_frame_zero_seed_advected_by_author_released_velocities",
+    "identity_sha256_by_episode": {
+      "001-rope/0": "9480453907ddb43d8b2d1bd43bbe57dc1526a3cb8c89e48979ad6612c50c237e"
+    },
+    "released_processed_manifest_sha256_by_episode": {
+      "001-rope/0": "9380514af8905d0179cfdb9a9bb514a4bc268bf442e77d5c3d4a3834e98a7ead"
+    }
+  },
+  "published_reference": {
+    "future_chamfer_m": 0.051,
+    "future_track_error_m": 0.079,
+    "method": "ParticleFormer",
+    "paper": "Deform360 arXiv:2607.05390v1",
+    "setting": "multi-episode future prediction",
+    "table": 4
+  },
+  "result_sha256": "f6d20c8252e2e995320ae56d94a741985f2b655843e0b4b6bb958751004fee83",
+  "schema_version": 2,
+  "split": {
+    "fit_episode_ids_by_object": {
+      "001-rope": []
+    },
+    "held_episode_ids_by_object": {
+      "001-rope": [
+        0
+      ]
+    },
+    "object_ids": [
+      "001-rope"
+    ]
+  },
+  "status": "independent-protocol",
+  "temporal": {
+    "array_indexing": "evaluation_sequence_local_indices",
+    "evaluation_frame_indices_by_episode": {
+      "001-rope/0": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ]
+    },
+    "prediction_origin_source_frame_by_episode": {
+      "001-rope/0": 173
+    },
+    "source_frame_indices_by_episode": {
+      "001-rope/0": [
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197
+      ]
+    },
+    "source_frame_rate_hz": 30.0
+  },
+  "unresolved_fields": [
+    "official_parity.complete_object_and_episode_split",
+    "official_parity.metric_definitions",
+    "official_parity.panel_aggregation",
+    "official_parity.evaluator",
+    "official_parity.particleformer_table4_reproduction"
+  ]
+}

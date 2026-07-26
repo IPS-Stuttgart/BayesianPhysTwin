@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -10,8 +11,11 @@ from causal4d_public.deform360_sota_evaluation import (
     aggregate_deform360_panel,
     authorize_deform360_table4_claim,
     build_development_evaluator_contract,
+    build_released_processed_evaluator_contract,
     deform360_evaluator_contract_sha256,
+    inspect_deform360_released_processed_episode,
     score_deform360_episode,
+    score_deform360_released_processed_persistence,
     validate_deform360_evaluator_contract,
 )
 from causal4d_public.deform360_reusable_sota_protocol import (
@@ -122,6 +126,49 @@ def _episode_score(
     )
 
 
+def _write_released_processed_episode(root: Path) -> Path:
+    episode = root / "episode_0"
+    pcd = episode / "pcd_clean"
+    pcd.mkdir(parents=True)
+    metadata = {
+        "fps": 30,
+        "frame_num": 10,
+        "start_frame": 2,
+        "end_frame": 11,
+        "cameras": ["camera-0", "camera-1"],
+    }
+    split = {
+        "frame_len": 10,
+        "train": [2, 10],
+        "test": [10, 12],
+    }
+    (episode / "metadata.json").write_text(
+        json.dumps(metadata),
+        encoding="utf-8",
+    )
+    (episode / "split.json").write_text(
+        json.dumps(split),
+        encoding="utf-8",
+    )
+    frame_zero = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]], dtype=np.float32)
+    velocity = np.repeat(
+        np.array([[0.0, 0.3, 0.0]], dtype=np.float32),
+        len(frame_zero),
+        axis=0,
+    )
+    for frame_index in range(12):
+        points = frame_zero + frame_index * velocity / 30.0
+        np.savez_compressed(
+            pcd / f"{frame_index:06d}.npz",
+            pts=points.astype(np.float32),
+            colors=np.zeros_like(points, dtype=np.float32),
+            vels=velocity.astype(np.float32),
+            camera_indices=np.zeros(len(points), dtype=np.int32),
+            visibility_matrix=np.ones((len(points), 2), dtype=np.uint8),
+        )
+    return episode
+
+
 def test_episode_score_obeys_explicit_future_horizon_and_metric() -> None:
     contract = _contract()
     target = np.zeros((3, 1, 3), dtype=np.float64)
@@ -142,6 +189,51 @@ def test_episode_score_obeys_explicit_future_horizon_and_metric() -> None:
     assert result["evaluated_frame_indices"] == [1, 2]
     assert result["metrics"]["future_chamfer"] == pytest.approx(0.15)
     assert result["metrics"]["future_track_error"] == pytest.approx(0.15)
+
+
+@pytest.mark.parametrize(
+    ("definition", "take_square_root"),
+    [
+        ("symmetric_mean_euclidean_m", True),
+        ("symmetric_mean_squared_euclidean_m2", False),
+    ],
+)
+def test_chunked_chamfer_matches_explicit_pairwise_reference(
+    definition: str,
+    take_square_root: bool,
+) -> None:
+    contract = _contract()
+    contract["metrics"]["chamfer"]["definition"] = definition
+    _seal(contract)
+    target_points = np.array(
+        [[0.0, 0.0, 0.0], [0.8, -0.2, 0.1], [1.4, 0.4, -0.3]],
+        dtype=np.float64,
+    )
+    prediction_points = np.array(
+        [[0.1, 0.2, 0.0], [0.7, -0.4, 0.2], [1.8, 0.1, -0.1]],
+        dtype=np.float64,
+    )
+    target = np.repeat(target_points[None, :, :], 3, axis=0)
+    prediction = np.repeat(prediction_points[None, :, :], 3, axis=0)
+    difference = target_points[:, None, :] - prediction_points[None, :, :]
+    pairwise = np.sum(difference * difference, axis=2)
+    if take_square_root:
+        pairwise = np.sqrt(pairwise)
+    expected = 0.5 * (
+        float(np.mean(np.min(pairwise, axis=0)))
+        + float(np.mean(np.min(pairwise, axis=1)))
+    )
+
+    score = score_deform360_episode(
+        contract,
+        object_id="object-a",
+        episode_id=0,
+        particle_identity_sha256="a" * 64,
+        target_m=target,
+        prediction_m=prediction,
+    )
+
+    assert score["metrics"]["future_chamfer"] == pytest.approx(expected)
 
 
 def test_track_semantics_are_not_interchangeable() -> None:
@@ -356,4 +448,57 @@ def test_development_contract_is_explicit_but_never_table4_authorizing() -> None
             [altered],
             evaluation_start_frame=1,
             evaluation_stop_frame_exclusive=12,
+        )
+
+
+def test_author_released_processed_episode_preserves_identity_and_split(
+    tmp_path: Path,
+) -> None:
+    episode = _write_released_processed_episode(tmp_path)
+
+    manifest = inspect_deform360_released_processed_episode(
+        episode,
+        object_id="001-rope",
+        episode_id=0,
+        dataset_revision="9" * 40,
+    )
+    contract = build_released_processed_evaluator_contract([manifest])
+    score = score_deform360_released_processed_persistence(
+        contract,
+        episode_dir=episode,
+        episode_manifest=manifest,
+    )
+
+    assert manifest["split"]["train_source_frames"] == [2, 10]
+    assert manifest["split"]["test_source_frames"] == [10, 12]
+    assert manifest["particles"]["released_trajectory_source_frames"] == [0, 12]
+    assert manifest["particles"]["ordered_advection_check"]["passed"] is True
+    assert contract["status"] == "independent-protocol"
+    assert contract["temporal"]["evaluation_frame_indices_by_episode"] == {
+        "001-rope/0": [0, 1]
+    }
+    assert score["evaluated_frame_indices"] == [0, 1]
+    assert score["evaluated_source_frame_indices"] == [10, 11]
+    assert score["metrics"]["future_track_error"] == pytest.approx(0.015)
+    assert score["metrics"]["future_chamfer"] == pytest.approx(0.015)
+    with pytest.raises(ValueError, match="evaluator parity is not established"):
+        authorize_deform360_table4_claim(contract, {})
+
+
+def test_author_released_processed_episode_rejects_identity_reordering(
+    tmp_path: Path,
+) -> None:
+    episode = _write_released_processed_episode(tmp_path)
+    path = episode / "pcd_clean" / "000011.npz"
+    with np.load(path, allow_pickle=False) as archive:
+        arrays = {name: np.asarray(archive[name]) for name in archive.files}
+    arrays["pts"] = arrays["pts"][::-1].copy()
+    np.savez_compressed(path, **arrays)
+
+    with pytest.raises(ValueError, match="ordered velocity advection"):
+        inspect_deform360_released_processed_episode(
+            episode,
+            object_id="001-rope",
+            episode_id=0,
+            dataset_revision="9" * 40,
         )

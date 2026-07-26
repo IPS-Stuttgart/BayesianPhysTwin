@@ -4,11 +4,12 @@
 
 Deform360 Table 4 reports ParticleFormer multi-episode future errors of
 `0.051 m` Chamfer distance and `0.079 m` track error. The paper describes the
-task, but the public repository currently releases the raw data and annotation
-pipeline rather than the world-model split, evaluator, baseline code, or
-checkpoints. In particular, the paper calls track error a mean squared error
-without exposing enough executable detail to decide whether the table contains
-a mean distance, root mean squared distance, or squared distance.
+task, and the dataset now releases processed particle trajectories for
+`001-rope`, but it still does not release the complete world-model split,
+evaluator, baseline predictions, or checkpoints. In particular, the paper calls
+track error a mean squared error without exposing enough executable detail to
+decide whether the table contains a mean distance, root mean squared distance,
+or squared distance.
 
 An independent score is still useful for method development. It is not a
 protocol-matched state-of-the-art comparison. The typed contract in
@@ -21,15 +22,15 @@ The checked-in template is deliberately
 guessing it. A direct Table 4 authorization requires all of the following:
 
 1. the complete ordered fit and held object/episode split;
-2. the exact evaluation horizon and stride;
-3. checksummed material-particle identities for every held episode;
-4. explicit, separate Chamfer and track visibility policies plus metric and
+2. checksummed material-particle identities and released test windows for every
+   held episode;
+3. explicit, separate Chamfer and track visibility policies plus metric and
    aggregation definitions;
-5. an author-released evaluator revision and entrypoint checksum;
-6. exact reproduction of the published ParticleFormer `0.051/0.079` row.
+4. an author-released evaluator revision and entrypoint checksum;
+5. exact reproduction of the published ParticleFormer `0.051/0.079` row.
 
 `authorize_deform360_table4_claim` raises before comparing numbers unless the
-contract has `official-parity` status and all six conditions pass. Merely
+contract has `official-parity` status and all five conditions pass. Merely
 placing our score below the published numbers under an independent protocol is
 not sufficient.
 
@@ -43,13 +44,11 @@ objects with more episodes do not become accidental extra replicates.
 
 ## Development mask and processing path
 
-The locked Hugging Face revision was inventoried recursively before scaling the
-experiment. It contains 179,700 tree entries: 179,698 below `raw/`, plus the
-repository README and `.gitattributes`. No `processed/`, `pcd_clean`, tracking,
-particle-identity, or evaluator artifact is present. The official release README
-also states that processed annotations are not assumed to be present. Therefore
-there is no public precomputed supervision path that can silently stand in for
-the released annotation pipeline.
+The originally locked Hugging Face revision was inventoried recursively before
+scaling the experiment. It contains 179,700 tree entries: 179,698 below `raw/`,
+plus the repository README and `.gitattributes`. No `processed/`, `pcd_clean`,
+tracking, particle-identity, or evaluator artifact was present at that revision.
+The source and prospective locks built against it remain unchanged.
 
 The official annotation pipeline uses gated SAM3 masks. On 2026-07-17 the
 server had no authenticated SAM3 checkpoint, so a pinned public SAM2.1 fallback
@@ -115,18 +114,59 @@ visibility, and object-balanced aggregation. The resulting contract remains
 programmatically refused as a direct Table 4 claim until author-evaluator parity
 is established.
 
+## Author-released processed path
+
+On 2026-07-26, Hugging Face revision
+`93280cbb466de6b9e59927c58a99fd3b9e91900e` added author-released
+`processed/001-rope` trees. They contain:
+
+- `metadata.json`, including the contact-window start and end;
+- `split.json`, with the episode-specific 80/20 train/test boundary;
+- fixed-cardinality `pcd_clean/<frame>.npz` trajectories with `pts`, `vels`,
+  `visibility_matrix`, colors, and camera indices;
+- per-frame dynamic splats and associated rendering products.
+
+The released particles provide a genuine ordered material-identity contract.
+For open development episode `001-rope/0`, all 5,426 points retain their order
+over all 252 released source frames. The released velocity relation
+`x[t+1] = x[t] + v[t] / 30` holds with a maximum absolute residual of
+`2.98e-8 m`. This resolves particle identity and the temporal test window for
+that episode.
+
+`inspect_deform360_released_processed_episode` binds the file checksums,
+metadata, split, frame-zero identity, and full-trajectory ordered-advection
+check. The resulting manifest feeds
+`build_released_processed_evaluator_contract`, which supports episode-specific
+test windows. `score_deform360_released_processed_persistence` then scores an
+exact last-training-frame baseline. Chamfer evaluation now uses an exact
+chunked implementation, avoiding the previous quadratic full-matrix allocation
+for 5,000--10,000 particles.
+
+Under the explicitly named independent mean-Euclidean contract, persistence on
+`001-rope/0` gives `0.001215 m` Chamfer and `0.001742 m` identity error. Under
+the alternative root-mean-square track convention, track error is
+`0.002032 m`; squared Chamfer is `2.0876e-6 m^2`. This sensitivity is exactly
+why none of these values is represented as a Table 4 comparison.
+
+The latest Deform360 code revision inspected,
+`d8522a4403b766aeb387510c04e89032a56fdf35`, changes only the paper link
+relative to the pinned processing revision and still contains no world-model
+evaluator. The processed release therefore narrows the unresolved contract but
+does not establish official parity.
+
 ## Next evidence
 
-The next source-only steps are:
+The next valid steps are:
 
-1. run the released reconstruction at declared development iterations, then
-   depth, tracking, point-cloud, and control-point stages on fit episode 1;
-2. instantiate an `independent-protocol` evaluator contract from checksummed
-   held-development manifests and a prospectively declared horizon;
-3. run persistence and reusable-PhysTwin smoke scores;
-4. replace the independent contract with an official one only if the authors
-   release the split/evaluator or provide enough artifacts to reproduce the
-   ParticleFormer reference row exactly.
+1. ingest further author-released processed objects without changing any
+   prospective source or target lock;
+2. score existing sealed predictions under the released identity and test-window
+   contract where their information boundaries are compatible;
+3. request or locate the complete Table 4 object/episode split, metric
+   implementation, aggregation, and ParticleFormer predictions;
+4. replace the independent contract with an official one only after the
+   published `0.051/0.079` row is reproduced exactly.
 
-No confirmatory object, held future, PokeFlex target, or frozen Causal4D
-artifact is opened or modified by this work.
+The only newly read future is the already-open public development episode
+`001-rope/0`. No prospective confirmatory object or future, PokeFlex target,
+held-v8 artifact, or frozen Causal4D artifact is opened or modified by this work.

@@ -1,0 +1,38 @@
+{
+  "artifact_kind": "Deform360AuthorReleasedEvaluatorSmokeVerification",
+  "artifact_validation": {
+    "released_episode_manifest": true,
+    "mean_euclidean_contract": true,
+    "squared_chamfer_rmse_track_contract": true
+  },
+  "dataset_revision": "93280cbb466de6b9e59927c58a99fd3b9e91900e",
+  "full_trajectory_advection_check": {
+    "frame_count": 252,
+    "maximum_absolute_residual_m": 2.9802322387695312e-08,
+    "passed": true
+  },
+  "focused_test_command": "PYTHONPATH=src uv run --no-project --with pytest --with 'numpy<2' --with scipy python -m pytest -s tests/test_deform360_sota_evaluation.py -q",
+  "focused_test_result": {
+    "passed": 13,
+    "failed": 0
+  },
+  "full_suite_attempt": {
+    "collected": false,
+    "pre_existing_blockers": [
+      "TemporalBayesianResidualModelConfig is absent from causal4d_public.deform360_bayesian_residual",
+      "the checked-in virtual environment does not contain h5py"
+    ]
+  },
+  "information_boundary": {
+    "development_only": true,
+    "held_v8_accessed": false,
+    "official_table4_claim_authorized": false
+  },
+  "related_test_command": "PYTHONPATH=src uv run --no-project --with pytest --with 'numpy<2' --with scipy --with h5py python -m pytest -s tests/test_deform360_sota_evaluation.py tests/test_deform360_sota_processing.py tests/test_deform360_reusable_sota_protocol.py -q",
+  "related_test_result": {
+    "passed": 28,
+    "failed": 0
+  },
+  "ruff_check": true,
+  "schema_version": 1
+}
