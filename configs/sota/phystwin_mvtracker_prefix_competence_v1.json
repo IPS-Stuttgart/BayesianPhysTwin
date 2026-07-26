@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-mvtracker-prefix-competence-v1",
+  "status": "implementation-prelock-no-prediction-authorized",
+  "claim_boundary": "One-case prefix-only competence control on the already-open single_lift_cloth source interaction. It cannot establish Bayesian-PhysTwin improvement, calibration, independent transfer, or state of the art.",
+  "question": "Can a frozen joint multiview RGB-D tracker recover the nine benchmark material identities over the held-out portion of the allowed PhysTwin prefix accurately enough to justify a separately locked Bayesian assimilation smoke?",
+  "method_config": {
+    "case_name": "single_lift_cloth",
+    "source_frame_start": 90,
+    "source_frame_end_exclusive": 121,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "depth_scale_to_m": 0.001,
+    "visibility_threshold": 0.5,
+    "observation_std_floor_m": 0.005,
+    "normalization_target_camera_radius": 6.3,
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 6
+  },
+  "tracker": {
+    "name": "MVTracker",
+    "repository": "https://github.com/ethz-vlg/mvtracker",
+    "revision": "ceea8ad2af77ed9b44148ef8e9eeba4ea3c3f072",
+    "checkpoint_sha256": "a7fa86f2a7223e3e0aa4c1d3eff0dec5fe8a9227a48572ce943b8e49d8a4f8e6",
+    "runtime_choices": "Official public predictor defaults, bfloat16 inference, seed 72, deterministic cuDNN, official automatic scene normalization to camera radius 6.3, and exact query-frame anchoring."
+  },
+  "source_artifacts": {
+    "query_input_sha256": "TO_BE_LOCKED_AFTER_SOURCE_STAGING",
+    "withheld_prefix_sha256": "TO_BE_LOCKED_AFTER_SOURCE_STAGING",
+    "query_source": "Only the nine benchmark 3D query locations at source frame 90.",
+    "withheld_source": "Manual identity trajectories on frames [90, 121), inaccessible to prediction and opened only after prediction sealing."
+  },
+  "competence_gate": {
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_exact_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_last_six_frame_rmse_m": 0.015,
+    "pass_action": "Freeze a separate assimilation method and gate before reading any PhysTwin future score.",
+    "fail_action": "Stop the MVTracker-to-PhysTwin route without tuning tracker, camera, depth, normalization, visibility, or anchoring choices."
+  },
+  "information_boundary": {
+    "prediction_rgb_depth_frame_range_half_open": [
+      90,
+      121
+    ],
+    "query_frame": 90,
+    "future_frame_at_or_after_121_allowed": false,
+    "simulator_future_outcome_allowed": false,
+    "manual_prefix_target_available_to_prediction": false,
+    "held_v8_access_allowed": false,
+    "pokeflex_target_access_allowed": false
+  },
+  "forbidden": [
+    "running prediction before the source artifact hashes and locked status replace the prelock placeholders",
+    "using any RGB, depth, manual track, point cloud, or simulator outcome at or after frame 121",
+    "changing tracker, checkpoint, cameras, depth handling, normalization, query identities, visibility threshold, or gates after prediction",
+    "describing a competence pass as Bayesian-PhysTwin improvement or state-of-the-art evidence",
+    "opening or modifying any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
