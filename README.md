@@ -234,9 +234,11 @@ records pass `causal4d-rest-geometry-protocol-result`. Audit acquisition with
 `causal4d-rest-geometry-protocol`. Before collection,
 `causal4d-build-phystwin-canonical-graph` freezes the object-only graph and
 `causal4d-rest-geometry-register-graph` locks it into the dataset; material
-nodes/topology must stay fixed while controller attachments may vary. The notes
-and exact development artifacts live in the
-[Bayesian-PhysTwin paper repository](https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper/blob/main/paper_notes/causal4d_rest_geometry_v1.md).
+nodes/topology must stay fixed while controller attachments may vary. The exact
+development artifact remains in the
+[archival paper notebook](https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper/blob/main/paper_notes/causal4d_rest_geometry_v1.md),
+while current project status and migration policy are tracked in the
+[canonical Bayesian PhysTwin project notes](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper).
 
 The follow-up structural milestone now has a separate opt-in path. It fits a
 hierarchical MAP decomposition of object-persistent rest geometry, session
@@ -541,6 +543,7 @@ See [docs/compute.md](docs/compute.md) for the current run conventions.
 
 ## Paper Repository
 
-Notes, figures, and result artifacts are tracked separately in:
+Current project notes, evidence status, figures, and result artifacts are tracked
+separately in:
 
-<https://github.com/FlorianPfaff/2026-07-Bayesian-PhysTwin-Paper>
+<https://github.com/FlorianPfaff/BayesianPhysTwin-Paper>
