@@ -11,6 +11,7 @@ from bayesian_phystwin.observation_belief_gauge_adapter import (
     build_gauge_aware_batch_from_observation_belief,
 )
 from bayesian_phystwin.prob4d_causal_lineage import (
+    PROPAGATED_EXTERNAL_PRIOR,
     validate_prob4d_causal_observation_belief,
 )
 
@@ -69,22 +70,29 @@ def _metadata() -> dict[str, object]:
 def _joint_metadata() -> dict[str, object]:
     metadata = deepcopy(_metadata())
     anchor = metadata["metric_gauge_anchor"]
-    anchor.pop("world_frame_id")
-    anchor.pop("calibration_artifact_sha256")
     anchor.update(
         {
             "schema_name": "prob4d.metric-gauge-anchor",
             "schema_version": 1,
+            "case_id": "case",
             "coordinate_frame": "phystwin-world",
+            "world_frame_id": "phystwin-world",
             "metric_units": "m",
             "source_kind": "prefix_registration",
+            "covariance_treatment": PROPAGATED_EXTERNAL_PRIOR,
         }
     )
     metadata.update(
         {
             "prob4d_causal_stream_contract_version": 2,
             "gauge_mode": "sequential",
+            "factor_definition": "one shared joint gauge latent vector",
+            "factor_group_semantics": (
+                "all rows use one factor group; each window contributes its "
+                "block of the same joint gauge covariance root"
+            ),
             "joint_cross_window_gauge_covariance_represented": True,
+            "metric_anchor_covariance_in_joint_factor": True,
             "gauge_posterior": {
                 "model": "sequential_joint_spanning_tree_v1",
                 "window_count": 2,
@@ -188,9 +196,14 @@ def test_joint_prob4d_stream_contract_is_validated_before_adaptation() -> None:
     adapted = _adapt(belief)
 
     assert validation["stream_contract_version"] == 2
+    assert validation["stream_contract_version_inferred"] is False
     assert validation["gauge_covariance_semantics"] == (
         "joint_cross_window_sim3_gauge_covariance"
     )
+    assert validation["metric_anchor_covariance_treatment"] == (
+        PROPAGATED_EXTERNAL_PRIOR
+    )
+    assert validation["calibration_artifact_sha256"] == "b" * 64
     assert adapted.summary()["gauge_parameter_count"] == 5
     assert adapted.batch.metadata["prob4d_causal_lineage"] == validation
 
@@ -212,6 +225,24 @@ def test_joint_prob4d_stream_rejects_approximate_fixed_lag_covariance() -> None:
     ] = True
 
     with pytest.raises(ValueError, match="approximate fixed-lag"):
+        _adapt(replace(belief, metadata=metadata))
+
+
+def test_joint_prob4d_stream_rejects_missing_calibration_digest() -> None:
+    belief = _joint_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    del metadata["metric_gauge_anchor"]["calibration_artifact_sha256"]
+
+    with pytest.raises(ValueError, match="calibration_artifact_sha256"):
+        _adapt(replace(belief, metadata=metadata))
+
+
+def test_joint_prob4d_stream_rejects_untracked_anchor_covariance() -> None:
+    belief = _joint_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["metric_anchor_covariance_in_joint_factor"] = False
+
+    with pytest.raises(ValueError, match="include metric-anchor covariance"):
         _adapt(replace(belief, metadata=metadata))
 
 
