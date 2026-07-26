@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from bayesian_phystwin.rendered_alltracker_competence import (
     covariance_diagnostics,
     evaluate_competence_gates,
     shared_support_metrics,
     trajectory_metrics,
+    validate_cotracker_prefix_quality_shape,
 )
 
 
@@ -87,3 +89,22 @@ def test_competence_gate_is_a_conjunction() -> None:
         minimum_cotracker_improvement_fraction=0.2,
     )
     assert not failed["competence_gate_passed"]
+
+
+def test_prefix_quality_can_be_shorter_than_full_trajectory() -> None:
+    quality = np.ones((3, 121, 17), dtype=float)
+    validate_cotracker_prefix_quality_shape(
+        quality,
+        full_track_shape=(173, 17),
+        scored_frames=np.arange(114, 121),
+    )
+
+
+def test_prefix_quality_must_cover_scored_frames() -> None:
+    quality = np.ones((3, 120, 17), dtype=float)
+    with pytest.raises(ValueError, match="cover every scored prefix frame"):
+        validate_cotracker_prefix_quality_shape(
+            quality,
+            full_track_shape=(173, 17),
+            scored_frames=np.arange(114, 121),
+        )

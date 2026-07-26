@@ -19,6 +19,30 @@ def _rmse(vectors: np.ndarray) -> float | None:
     return float(np.sqrt(np.mean(np.sum(np.square(values), axis=-1))))
 
 
+def validate_cotracker_prefix_quality_shape(
+    quality_probability: np.ndarray,
+    *,
+    full_track_shape: tuple[int, int],
+    scored_frames: np.ndarray,
+) -> None:
+    """Accept a prefix-only quality tensor for a longer full trajectory."""
+
+    quality = np.asarray(quality_probability)
+    frames = np.asarray(scored_frames, dtype=np.int64)
+    _require(
+        quality.ndim == 3
+        and quality.shape[2] == full_track_shape[1],
+        "CoTracker3 quality must have shape (camera, prefix_frame, track)",
+    )
+    _require(
+        frames.ndim == 1
+        and len(frames) > 0
+        and np.all(frames >= 0)
+        and int(np.max(frames)) < quality.shape[1],
+        "CoTracker3 quality does not cover every scored prefix frame",
+    )
+
+
 def trajectory_metrics(
     prediction_world_m: np.ndarray,
     valid: np.ndarray,
@@ -201,4 +225,5 @@ __all__ = [
     "evaluate_competence_gates",
     "shared_support_metrics",
     "trajectory_metrics",
+    "validate_cotracker_prefix_quality_shape",
 ]

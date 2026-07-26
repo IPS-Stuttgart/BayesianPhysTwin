@@ -21,6 +21,7 @@ from bayesian_phystwin.rendered_alltracker_competence import (
     evaluate_competence_gates,
     shared_support_metrics,
     trajectory_metrics,
+    validate_cotracker_prefix_quality_shape,
 )
 
 
@@ -179,10 +180,10 @@ def _load_cotracker_comparator(
         "cycle error": cycle_error,
     }.items():
         _require(values.shape == track_shape, f"CoTracker3 {name} shape changed")
-    _require(
-        quality.ndim == 3
-        and quality.shape[1:] == track_shape,
-        "CoTracker3 quality must have shape (camera, frame, track)",
+    validate_cotracker_prefix_quality_shape(
+        quality,
+        full_track_shape=track_shape,
+        scored_frames=frames,
     )
     _require(int(np.max(frames)) < points.shape[0], "CoTracker3 prefix is too short")
     _require(
