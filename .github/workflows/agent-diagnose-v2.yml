@@ -3,12 +3,15 @@ name: Diagnose RunManifest V2
 on:
   push:
     branches: [agent/evidence-provenance-v2]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   diagnose:
+    if: github.head_ref == 'agent/evidence-provenance-v2' || github.ref_name == 'agent/evidence-provenance-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
