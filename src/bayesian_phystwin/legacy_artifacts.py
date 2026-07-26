@@ -12,10 +12,9 @@ import hashlib
 import hmac
 import pickle
 from collections.abc import Mapping, Sequence
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Literal
-
-import numpy as np
 
 LegacyPhysTwinArtifactKind = Literal["mapping", "sequence", "ndarray"]
 _VALID_ARTIFACT_KINDS = frozenset({"mapping", "sequence", "ndarray"})
@@ -90,8 +89,10 @@ def load_trusted_legacy_phystwin_pickle(
             value, Sequence
         ):
             raise TypeError("legacy PhysTwin artifact must contain a sequence")
-    elif not isinstance(value, np.ndarray):
-        raise TypeError("legacy PhysTwin artifact must contain a NumPy array")
+    else:
+        ndarray_type = getattr(import_module("numpy"), "ndarray")
+        if not isinstance(value, ndarray_type):
+            raise TypeError("legacy PhysTwin artifact must contain a NumPy array")
 
     return value
 
