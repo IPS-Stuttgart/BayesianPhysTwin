@@ -1,0 +1,63 @@
+{
+  "artifact_kind": "PhysTwinMVTrackerPrefixCompetenceResult",
+  "case": "single_lift_cloth",
+  "claim_boundary": "one-case prefix-only competence control on an already-open source interaction; not a Bayesian-PhysTwin gain or state-of-the-art result",
+  "competence_gate_passed": false,
+  "config": {
+    "case_name": "single_lift_cloth",
+    "depth_scale_to_m": 0.001,
+    "endpoint_frame_count": 6,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "normalization_target_camera_radius": 6.3,
+    "observation_std_floor_m": 0.005,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "source_frame_end_exclusive": 121,
+    "source_frame_start": 90,
+    "visibility_threshold": 0.5
+  },
+  "decision": "stop-mvtracker-phystwin-route",
+  "gates": {
+    "endpoint_rmse": false,
+    "identity_rmse": false,
+    "relative_gain_over_persistence": true,
+    "supported_fraction": true
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_scored": false,
+    "future_simulator_outcome_read": false,
+    "prediction_sealed_before_target_open": true,
+    "scored_numeric_frame_range_half_open": [
+      90,
+      121
+    ]
+  },
+  "inputs": {
+    "prediction_seal_sha256": "0a267706de0a23ebaccb3d858131e86c2354c9eb2c23f1d4e17029e7396ecb95",
+    "withheld_prefix_sha256": "a7657e40fd26811f0fff2b49e29b32b82fda251d616454f7dfc9c62620782488"
+  },
+  "metrics": {
+    "candidate_endpoint_rmse_m": 0.02340718383098576,
+    "candidate_identity_rmse_m": 0.018209013349598003,
+    "eligible_point_frame_count": 120,
+    "persistence_identity_rmse_m": 0.034516115751569,
+    "relative_gain_over_persistence": 0.47244894296165774,
+    "supported_fraction": 1.0,
+    "supported_point_frame_count": 120
+  },
+  "protocol_id": "phystwin-mvtracker-prefix-competence-v1",
+  "result_sha256": "6d16551aaca766eef98b02965036ea5e44bf391b08f52eaaa66c09aa0476955b",
+  "schema_version": 1
+}

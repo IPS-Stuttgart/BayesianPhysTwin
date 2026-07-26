@@ -1,0 +1,59 @@
+{
+  "artifact_kind": "PhysTwinMVTrackerCompetenceSourceArtifacts",
+  "case": "single_lift_cloth",
+  "config": {
+    "case_name": "single_lift_cloth",
+    "depth_scale_to_m": 0.001,
+    "endpoint_frame_count": 6,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "normalization_target_camera_radius": 6.3,
+    "observation_std_floor_m": 0.005,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "source_frame_end_exclusive": 121,
+    "source_frame_start": 90,
+    "visibility_threshold": 0.5
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_retained": false,
+    "manual_source_file_loaded_during_staging": true,
+    "prediction_input_retains_only_source_frame": 90,
+    "withheld_artifact_available_to_prediction": false,
+    "withheld_numeric_frame_range_half_open": [
+      90,
+      121
+    ]
+  },
+  "inputs": {
+    "manual_tracks_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "released_train_end_frame_exclusive": 121,
+    "split_sha256": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+  },
+  "prediction_input": {
+    "path": "/home/florianpfaff/bpt-phystwin-mvtracker-competence-v1/source-artifacts/prediction_input/query_input.npz",
+    "query_array_sha256": "72125afc49621f437e34d7ca426ae852f9708c35b11284181abab7bba7ee35df",
+    "query_count": 4,
+    "sha256": "1aafdb6074d6e53643e086a0ef4aea2caf28be8a2218fce9b315abf9fd621f11"
+  },
+  "protocol_id": "phystwin-mvtracker-prefix-competence-v1",
+  "result_sha256": "50b810a231d8c8bc013cc41d67457159dd6b3c1e7887c82807f74cde3501577e",
+  "schema_version": 1,
+  "withheld_evaluation": {
+    "frame_count": 31,
+    "path": "/home/florianpfaff/bpt-phystwin-mvtracker-competence-v1/source-artifacts/withheld_evaluation/withheld_prefix_target.npz",
+    "sha256": "a7657e40fd26811f0fff2b49e29b32b82fda251d616454f7dfc9c62620782488",
+    "target_array_sha256": "240fa7682b1188e5f9710d91b931988cfef01f50c0768c5fae88a25c52bd4b68"
+  }
+}
