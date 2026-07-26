@@ -38,18 +38,24 @@ jobs:
           src/bayesian_phystwin/run_manifest.py
           src/bayesian_phystwin/repository_provenance.py
           src/bayesian_phystwin/run_manifest_v2.py
+          src/bayesian_phystwin/_prior_aware_gauge_math.py
+          src/bayesian_phystwin/prior_aware_gauge_belief.py
           src/bayesian_phystwin/cli/main.py
           src/bayesian_phystwin/cli/run_manifest.py
           tests/test_cli_main.py
           tests/test_run_manifest.py
           tests/test_run_manifest_v2.py
           tests/test_run_manifest_cli.py
+          tests/test_prior_aware_and_linearization.py
+          tests/test_prior_aware_likelihood_conformance.py
       - name: Type-check stable interfaces
         run: >-
           python -m mypy
           src/bayesian_phystwin/run_manifest.py
           src/bayesian_phystwin/repository_provenance.py
           src/bayesian_phystwin/run_manifest_v2.py
+          src/bayesian_phystwin/_prior_aware_gauge_math.py
+          src/bayesian_phystwin/prior_aware_gauge_belief.py
           src/bayesian_phystwin/cli/main.py
           src/bayesian_phystwin/cli/run_manifest.py
 
@@ -87,6 +93,8 @@ jobs:
             tests/test_gauge_aware_belief.py \
             tests/test_observation_belief.py \
             tests/test_observation_belief_gauge_adapter.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_prior_aware_likelihood_conformance.py \
             tests/test_cli_main.py \
             tests/test_run_manifest.py \
             tests/test_run_manifest_v2.py \
