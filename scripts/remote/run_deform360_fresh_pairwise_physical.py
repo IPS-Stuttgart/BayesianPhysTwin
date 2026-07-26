@@ -335,7 +335,8 @@ def main() -> int:
     simulator_data = root / "simulator_final_data.pkl"
     state_path = root / "state_artifact.npz"
     twin_summary_path = root / "twin_summary.json"
-    python_path = args.python.resolve()
+    python_path = args.python.absolute()
+    _require(python_path.is_file(), "requested Python runtime is missing")
     common_env = dict(os.environ)
     common_env.update(
         {
@@ -346,7 +347,11 @@ def main() -> int:
     )
     automatic_env = dict(common_env)
     automatic_env["PYTHONPATH"] = os.pathsep.join(
-        (str(repo / "src"), str(args.deform360_repo.resolve()))
+        (
+            str(repo / "src"),
+            str(source_repo / "src"),
+            str(args.deform360_repo.resolve()),
+        )
     )
     twin_command = [
         str(python_path),
