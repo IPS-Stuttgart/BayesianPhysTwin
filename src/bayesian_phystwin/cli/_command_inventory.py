@@ -122,7 +122,7 @@ def owner(command_id: str) -> str:
         (("pgrd",), "phystwin-pgrd-v1"),
         (("nonlinear-residual", "triplane"), "phystwin-nonlinear-residual-v1"),
         (
-            ("topology", "spring-overlay", "part-pair"),
+            ("topology", "spring-overlay", "part-pair", "zero-order"),
             "phystwin-topology-experiments-v1",
         ),
         (("structure", "structural"), "phystwin-structural-calibration-v1"),
