@@ -1,0 +1,22 @@
+name: Agent source snapshot
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    if: github.head_ref == 'agent/causal4d-provider-api-v1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Package source snapshot
+        run: tar --exclude=.git -czf /tmp/bayesian-phystwin-source.tgz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bayesian-phystwin-source
+          path: /tmp/bayesian-phystwin-source.tgz
+          retention-days: 1
