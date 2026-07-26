@@ -6,7 +6,9 @@ opened cohort to answer one model-class question: can a causally selected
 MatPhys spring replay and a larger graph discrepancy posterior jointly cross
 the published MatPhys CD/track operating point? Manual prefix tracks are an
 explicit observation-quality upper bound and are never presented as a
-deployable input.
+deployable input. The opt-in disjoint protocol observes only a deterministic
+frame-zero subset and scores future track error only on the remaining
+identities.
 """
 
 from __future__ import annotations
@@ -75,6 +77,10 @@ from bayesian_phystwin.phystwin_residual_dynamics import (
     _clip_residual,
     _target_validity,
 )
+from bayesian_phystwin.phystwin_sparse_identity_split import (
+    DisjointSparseIdentityTracks,
+    split_sparse_identity_tracks,
+)
 
 
 @dataclass(frozen=True)
@@ -82,6 +88,7 @@ class HeadroomConfig:
     baseline_kind: str = "raw_matphys_replay"
     observation_source: str = "final_data"
     manual_prefix_override: bool = True
+    manual_observed_track_count: int | None = None
     cotracker_minimum_quality: float = 0.5
     cotracker_maximum_cycle_error_px: float = 5.0
     cotracker_maximum_reprojection_error_px: float = 3.0
@@ -778,10 +785,58 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     motion_valid = np.asarray(data["object_motions_valid"], dtype=bool)[
         : max(future_end - 1, 0)
     ]
-    manual_tracks = np.asarray(
+    manual_tracks_raw = np.asarray(
         _load_pickle(case_dir / "gt_track_3d.pkl"),
         dtype=float,
     )[:future_end]
+    manual_identity_split: DisjointSparseIdentityTracks | None = None
+    if config.manual_observed_track_count is not None:
+        manual_identity_split = split_sparse_identity_tracks(
+            manual_tracks_raw,
+            observed_count=config.manual_observed_track_count,
+            future_start_frame=train_end,
+        )
+        manual_observation_tracks = manual_identity_split.observation_tracks_m
+        manual_tracks = manual_identity_split.scoring_tracks_m
+    else:
+        manual_observation_tracks = manual_tracks_raw
+        manual_tracks = manual_tracks_raw
+    if manual_identity_split is None:
+        manual_identity_support = None
+    else:
+        observed_prefix_valid = np.all(
+            np.isfinite(
+                manual_identity_split.observation_tracks_m[
+                    :train_end, manual_identity_split.observed_indices
+                ]
+            ),
+            axis=2,
+        )
+        hidden_future_valid = np.all(
+            np.isfinite(
+                manual_tracks[
+                    train_end:, manual_identity_split.hidden_indices
+                ]
+            ),
+            axis=2,
+        )
+        manual_identity_support = {
+            "observed_prefix_point_frame_fraction": float(
+                np.mean(observed_prefix_valid)
+            ),
+            "observed_prefix_frame_fraction": float(
+                np.mean(np.any(observed_prefix_valid, axis=1))
+            ),
+            "hidden_future_point_frame_fraction": float(
+                np.mean(hidden_future_valid)
+            ),
+            "hidden_future_frame_fraction": float(
+                np.mean(np.any(hidden_future_valid, axis=1))
+            ),
+            "trackless_future_frame_count": int(
+                np.sum(~np.any(hidden_future_valid, axis=1))
+            ),
+        }
     original_count = observed_points.shape[1]
     surface_points = np.asarray(data["surface_points"], dtype=float)
     interior_points = np.asarray(data["interior_points"], dtype=float)
@@ -1269,13 +1324,17 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     )
 
     if config.manual_prefix_override:
-        manual_initial = np.isfinite(manual_tracks[0]).all(axis=1)
+        if manual_identity_split is None:
+            manual_initial = np.isfinite(manual_observation_tracks[0]).all(axis=1)
+        else:
+            manual_initial = np.zeros(manual_tracks.shape[1], dtype=bool)
+            manual_initial[manual_identity_split.observed_indices] = True
         initial_match_m, manual_indices = _nearest_distances(
             baseline[0],
-            manual_tracks[0, manual_initial],
+            manual_observation_tracks[0, manual_initial],
             p=2,
         )
-        manual_values = manual_tracks[:, manual_initial]
+        manual_values = manual_observation_tracks[:, manual_initial]
         manual_valid = np.isfinite(manual_values).all(axis=2)
         manual_residual = np.zeros_like(manual_values)
         baseline_at_manual = baseline[:, manual_indices]
@@ -2441,6 +2500,26 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         "fit_end_frame_exclusive": fit_end,
         "future_end_frame_exclusive": future_end,
         "manual_prefix_track_count": int(np.sum(manual_initial)),
+        "manual_hidden_score_track_count": (
+            0
+            if manual_identity_split is None
+            else int(len(manual_identity_split.hidden_indices))
+        ),
+        "manual_identity_split": (
+            None
+            if manual_identity_split is None
+            else {
+                "selection_evidence": "finite frame-zero geometry only",
+                "selection_rule": "deterministic farthest-point sampling",
+                "observed_indices": (
+                    manual_identity_split.observed_indices.tolist()
+                ),
+                "hidden_indices": manual_identity_split.hidden_indices.tolist(),
+                "prefix_track_metric": "observed identities only",
+                "future_track_metric": "disjoint hidden identities only",
+            }
+        ),
+        "manual_identity_support": manual_identity_support,
         "manual_initial_match_max_m": float(np.max(initial_match_m, initial=0.0)),
         "observation_source": config.observation_source,
         "cotracker_depth_lift": cotracker_summary,
@@ -2593,6 +2672,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cotracker-cues-root", type=Path)
     parser.add_argument("--raw-case-root", type=Path)
     parser.add_argument("--no-manual-prefix-override", action="store_true")
+    parser.add_argument(
+        "--manual-observed-track-count",
+        type=int,
+        help=(
+            "observe this many frame-zero-selected manual identities in the prefix "
+            "and score future track error only on the disjoint remainder"
+        ),
+    )
     parser.add_argument("--cotracker-minimum-quality", type=float, default=0.5)
     parser.add_argument(
         "--cotracker-maximum-cycle-error-px",
@@ -2719,10 +2806,23 @@ def main() -> None:
         )
     if args.multiview_tangent_neighbor_count < 3:
         raise ValueError("multiview tangent neighbor count must be at least three")
+    if (
+        args.manual_observed_track_count is not None
+        and args.manual_observed_track_count < 1
+    ):
+        raise ValueError("manual observed track count must be positive")
+    if (
+        args.manual_observed_track_count is not None
+        and args.no_manual_prefix_override
+    ):
+        raise ValueError(
+            "a disjoint manual identity split requires manual prefix observations"
+        )
     config = HeadroomConfig(
         baseline_kind=args.baseline_kind,
         observation_source=args.observation_source,
         manual_prefix_override=not args.no_manual_prefix_override,
+        manual_observed_track_count=args.manual_observed_track_count,
         cotracker_minimum_quality=args.cotracker_minimum_quality,
         cotracker_maximum_cycle_error_px=(
             args.cotracker_maximum_cycle_error_px
@@ -2846,9 +2946,22 @@ def main() -> None:
                 "before each train_end_frame"
             ),
             "manual_prefix_role": (
-                "label-assisted sparse-observation upper bound; not a deployable input"
+                (
+                    "label-assisted sparse sensor diagnostic with disjoint observed "
+                    "prefix and hidden future identities"
+                )
+                if config.manual_observed_track_count is not None
+                else (
+                    "label-assisted sparse-observation upper bound; not a "
+                    "deployable input"
+                )
                 if config.manual_prefix_override
                 else "disabled; manual tracks are evaluation-only"
+            ),
+            "manual_identity_scoring": (
+                "future manual-track error excludes every assimilated identity"
+                if config.manual_observed_track_count is not None
+                else "unchanged official manual-track metric"
             ),
             "observation_source": config.observation_source,
             "future_inputs_used_for_prediction": False,

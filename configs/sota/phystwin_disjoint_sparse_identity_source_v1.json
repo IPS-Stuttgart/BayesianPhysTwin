@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-disjoint-sparse-identity-source-v1",
+  "status": "locked_before_disjoint_source_execution",
+  "evidence_role": "post-open source mechanism diagnostic; not confirmation or an open-loop state-of-the-art claim",
+  "cohort": {
+    "name": "released PhysTwin 22",
+    "case_count": 22,
+    "outcome_status": "previously opened",
+    "baseline": "object-disjoint selected raw MatPhys/PhysTwin replay",
+    "dense_geometry_observation": "released prefix pseudo-tracks"
+  },
+  "sparse_identity_protocol": {
+    "selection_evidence": "finite manual-track positions at frame zero only",
+    "selection_rule": "deterministic farthest-point sampling",
+    "observed_identity_counts": [
+      1,
+      2,
+      4
+    ],
+    "primary_observed_identity_count": 4,
+    "observation_interval": "frames strictly before each released train_end_frame",
+    "future_scoring": "manual identities disjoint from every assimilated identity",
+    "required_hidden_identity_count": 1,
+    "required_hidden_future_frame_support": 1.0
+  },
+  "primary_candidate": "causal_selected_dense_relative_cap_temporal",
+  "candidate_origin": "fixed by the earlier open-cohort manual headroom audit; no candidate or hyperparameter is selected by hidden-identity outcomes",
+  "source_gates": {
+    "minimum_relative_chamfer_improvement_percent": 5.0,
+    "minimum_relative_hidden_track_improvement_percent": 5.0,
+    "minimum_joint_case_wins": 16,
+    "maximum_trackless_future_frames": 0
+  },
+  "published_context_only": {
+    "chamfer_distance_m": 0.008,
+    "manual_track_error_m": 0.015,
+    "warning": "The present method receives sparse prefix material observations and is not directly comparable to open-loop published methods."
+  },
+  "decision": {
+    "pass": "advance only to a separately registered observation-noise and dropout source gate",
+    "fail": "stop the disjoint sparse-identity route; do not tune counts, graph settings, caps, or temporal gain on these hidden outcomes"
+  },
+  "prohibited": [
+    "calling the manual-prefix result deployable",
+    "scoring an assimilated identity in the future track metric",
+    "selecting a candidate from hidden future outcomes",
+    "claiming open-loop state of the art",
+    "touching held-v8 artifacts or any sealed target"
+  ],
+  "parent_evidence": {
+    "open_headroom_protocol_sha256": "9dfbf7e4a3be9514a74dc33c99bcee755eac9d2a6230b20cf5b8f15c2babb816",
+    "family_selection_sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890",
+    "case_bundle_manifest_sha256": "454afe7bbf000f93fc1e0ac9a355963362139743f0638aa5b14e25e5733e52fe"
+  }
+}
