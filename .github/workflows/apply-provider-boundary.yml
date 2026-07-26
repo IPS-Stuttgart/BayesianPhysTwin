@@ -3,17 +3,20 @@ name: Apply typed Causal4D provider boundary
 on:
   push:
     branches: [agent/complete-causal4d-provider-boundary]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: ${{ !contains(github.event.head_commit.message, '[provider-boundary-applied]') }}
+    if: ${{ !contains(github.event.pull_request.head.sha || github.event.after, '') && !contains(github.event.head_commit.message || '', '[provider-boundary-applied]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: agent/complete-causal4d-provider-boundary
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
