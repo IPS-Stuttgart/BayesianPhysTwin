@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ReleasedWarpPostgateShrinkageDiagnostic",
+  "status": "postgate-exploratory-non-authorizing",
+  "protocol_config_sha256": "b7d06929079fd97ad8e2b6dbe149946851321bb6dc23a92c44cc9b2a0409e0c0",
+  "prediction_result_sha256": "5b5934dbcf642fd4f6af7e0494760425269007ae69df389622953714d9319fd3",
+  "score_result_sha256": "4a73cb34b3d61356b6dc57406588f77a245405d7a356cb9e848fd50bc283cd1b",
+  "response_definition": "persistence + alpha * (locked_loo_finite_velocity_rotated_offset - persistence)",
+  "alpha_grid": [0.0, 0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0],
+  "per_episode_oracle": [
+    {
+      "episode_id": 0,
+      "best_chamfer_alpha": 0.05,
+      "best_chamfer_m": 0.0013446308077957848,
+      "persistence_chamfer_m": 0.0013749897435769414,
+      "best_identity_alpha": 0.05,
+      "best_identity_error_m": 0.0020530918209903416,
+      "persistence_identity_error_m": 0.002122721679851148,
+      "least_squares_alpha": 0.07548883543375878,
+      "direction_cosine": 0.23742762568679218
+    },
+    {
+      "episode_id": 3,
+      "best_chamfer_alpha": 0.2,
+      "best_chamfer_m": 0.003280102564179037,
+      "persistence_chamfer_m": 0.003916833650256735,
+      "best_identity_alpha": 0.1,
+      "best_identity_error_m": 0.008772567702013432,
+      "persistence_identity_error_m": 0.009192039680923124,
+      "least_squares_alpha": 0.14733522067080276,
+      "direction_cosine": 0.35518407108104444
+    },
+    {
+      "episode_id": 4,
+      "best_chamfer_alpha": 0.8,
+      "best_chamfer_m": 0.008183739192613117,
+      "persistence_chamfer_m": 0.008858897835979856,
+      "best_identity_alpha": 0.4,
+      "best_identity_error_m": 0.02058649990091001,
+      "persistence_identity_error_m": 0.021052134337539302,
+      "least_squares_alpha": 0.342814341805951,
+      "direction_cosine": 0.19169503409101007
+    },
+    {
+      "episode_id": 5,
+      "best_chamfer_alpha": 0.2,
+      "best_chamfer_m": 0.0037249710077410384,
+      "persistence_chamfer_m": 0.005349548259251035,
+      "best_identity_alpha": 0.2,
+      "best_identity_error_m": 0.009955972021039164,
+      "persistence_identity_error_m": 0.011317108632124704,
+      "least_squares_alpha": 0.1771658049277893,
+      "direction_cosine": 0.5000788290694335
+    },
+    {
+      "episode_id": 8,
+      "best_chamfer_alpha": 0.025,
+      "best_chamfer_m": 0.0013557717519303806,
+      "persistence_chamfer_m": 0.0014902030464688126,
+      "best_identity_alpha": 0.025,
+      "best_identity_error_m": 0.0023926257203412227,
+      "persistence_identity_error_m": 0.002927016363890716,
+      "least_squares_alpha": 0.02983864946266614,
+      "direction_cosine": 0.529121246572455
+    }
+  ],
+  "pooled_oracle": {
+    "chamfer": {
+      "selected_alpha": 0.1,
+      "chamfer_m": 0.003938713758819794,
+      "persistence_m": 0.004198094507106676,
+      "relative_improvement": 0.06178535234206706
+    },
+    "identity": {
+      "selected_alpha": 0.05,
+      "identity_error_m": 0.009024074771653434,
+      "persistence_m": 0.009322204138865798,
+      "relative_improvement": 0.031980566266449184
+    }
+  },
+  "leave_one_episode_out": {
+    "rows": [
+      {
+        "held_episode_id": 0,
+        "selected_alpha": 0.1,
+        "held_chamfer_m": 0.0013622548014686064,
+        "persistence_chamfer_m": 0.0013749897435769414
+      },
+      {
+        "held_episode_id": 3,
+        "selected_alpha": 0.1,
+        "held_chamfer_m": 0.0034489796429692113,
+        "persistence_chamfer_m": 0.003916833650256735
+      },
+      {
+        "held_episode_id": 4,
+        "selected_alpha": 0.1,
+        "held_chamfer_m": 0.00880502688996736,
+        "persistence_chamfer_m": 0.008858897835979856
+      },
+      {
+        "held_episode_id": 5,
+        "selected_alpha": 0.05,
+        "held_chamfer_m": 0.00472520800426136,
+        "persistence_chamfer_m": 0.005349548259251035
+      },
+      {
+        "held_episode_id": 8,
+        "selected_alpha": 0.2,
+        "held_chamfer_m": 0.0029244862937526026,
+        "persistence_chamfer_m": 0.0014902030464688126
+      }
+    ],
+    "mean_chamfer_m": 0.0042531911264838285,
+    "persistence_mean_chamfer_m": 0.004198094507106676,
+    "relative_improvement": -0.013124197009829697
+  },
+  "interpretation": {
+    "physical_direction_contains_oracle_headroom_in_all_five_episodes": true,
+    "response_scale_is_not_transferable": true,
+    "best_chamfer_alpha_range": [0.025, 0.8],
+    "fixed_alpha_or_leave_one_episode_selection_is_not_safe": true,
+    "next_method_implication": "Use source-calibrated baseline-relative regret control and exact fallback; do not reopen this failed readout route."
+  },
+  "information_boundary": {
+    "computed_after_primary_transfer_gate_failed": true,
+    "source_outcomes_only": true,
+    "may_change_primary_gate": false,
+    "may_authorize_fresh_evaluation": false,
+    "held_v8_access": false,
+    "forbidden_episode_access": false
+  },
+  "result_sha256": "2a29bf310ed6a1f18e90e787acde8d11a00f062d65cee2192eb693d8b4b9a393"
+}

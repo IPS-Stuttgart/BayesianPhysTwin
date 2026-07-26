@@ -193,6 +193,11 @@ def test_frozen_released_warp_readout_milestone_validates() -> None:
             artifact_root / "deform360_released_warp_readout_score_v1.json"
         ).read_text(encoding="utf-8")
     )
+    postgate = json.loads(
+        (artifact_root / "postgate_shrinkage_diagnostic_v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
     manifest = json.loads(
         (milestone / "artifact-manifest.json").read_text(encoding="utf-8")
     )
@@ -211,6 +216,19 @@ def test_frozen_released_warp_readout_milestone_validates() -> None:
     assert score_validation["passed"] is True
     assert score_validation["transfer_gate_passed"] is False
     assert manifest["decision"] == "stop_released_particle_readout_route"
+    postgate_canonical = dict(postgate)
+    postgate_canonical.pop("result_sha256")
+    postgate_sha = hashlib.sha256(
+        json.dumps(
+            postgate_canonical,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    assert postgate_sha == postgate["result_sha256"]
+    assert postgate["status"] == "postgate-exploratory-non-authorizing"
+    assert postgate["leave_one_episode_out"]["relative_improvement"] < 0.0
     for record in manifest["files"]:
         path = milestone / record["path"]
         assert path.stat().st_size == record["bytes"]

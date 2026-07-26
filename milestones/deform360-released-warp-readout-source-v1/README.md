@@ -77,6 +77,25 @@ Changing offset transport or initial velocity does not rescue the route.
 Accordingly, this milestone stops the sparse-Warp dense-readout path. It does
 not justify a fresh-object preregistered evaluation.
 
+## Post-Gate Shrinkage Diagnostic
+
+After the primary gate failed, a non-authorizing diagnostic evaluated
+
+```text
+persistence + alpha * (primary Warp readout - persistence)
+```
+
+on the fixed grid `{0, 0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1}`. Every
+episode has some oracle Chamfer headroom, but its best scale ranges from 0.025
+to 0.8. A pooled alpha of 0.1 improves mean Chamfer by 6.18%; leave-one-episode
+selection instead degrades mean Chamfer by 1.31%, because the alpha selected
+without episode 8 over-transmits that episode's response.
+
+Thus the physical direction occasionally carries useful information, while its
+magnitude is not safely transferable. This supports a separate
+baseline-relative regret guard with exact fallback. It does not alter the
+failed gate or authorize a fresh run of this readout method.
+
 ## Claim Boundary
 
 All five `001-rope` source episodes were already open. This is exploratory
