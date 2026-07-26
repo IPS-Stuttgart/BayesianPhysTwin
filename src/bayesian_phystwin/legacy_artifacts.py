@@ -90,8 +90,8 @@ def load_trusted_legacy_phystwin_pickle(
         ):
             raise TypeError("legacy PhysTwin artifact must contain a sequence")
     else:
-        ndarray_type = getattr(import_module("numpy"), "ndarray")
-        if not isinstance(value, ndarray_type):
+        numpy_module = import_module("numpy")
+        if not isinstance(value, numpy_module.ndarray):
             raise TypeError("legacy PhysTwin artifact must contain a NumPy array")
 
     return value
