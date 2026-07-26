@@ -1,0 +1,86 @@
+import hashlib
+import json
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PROTOCOL_PATH = (
+    ROOT / "configs" / "sota" / "phystwin_prior_aware_sparse_identity_source_v2.json"
+)
+FAILURE_PATH = (
+    ROOT
+    / "results"
+    / "sota"
+    / "phystwin_prior_aware_sparse_identity_source_v1"
+    / "technical_failure.json"
+)
+
+
+def _load(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_v2_lock_binds_every_runtime_implementation_dependency() -> None:
+    protocol = _load(PROTOCOL_PATH)
+    implementation = protocol["implementation"]
+    paths = {
+        "runner_sha256": (
+            ROOT / "scripts" / "remote" / "run_phystwin_sparse_state_update_source.py"
+        ),
+        "state_update_module_sha256": (
+            ROOT / "src" / "bayesian_phystwin" / "phystwin_sparse_state_update.py"
+        ),
+        "propagated_state_module_sha256": (
+            ROOT / "src" / "bayesian_phystwin" / "propagated_state_correction.py"
+        ),
+        "state_injection_module_sha256": (
+            ROOT / "src" / "bayesian_phystwin" / "phystwin_state_injection.py"
+        ),
+    }
+
+    assert protocol["schema_version"] == 2
+    assert protocol["protocol_id"] == (
+        "phystwin-prior-aware-sparse-identity-source-v2"
+    )
+    for field, path in paths.items():
+        assert implementation[field] == _sha256(path)
+
+
+def test_v2_lock_preserves_hidden_identity_and_exact_fallback_boundaries() -> None:
+    protocol = _load(PROTOCOL_PATH)
+    source_qa = protocol["source_qa"]
+
+    assert set(source_qa["observed_identity_indices"]).isdisjoint(
+        source_qa["hidden_identity_indices"]
+    )
+    assert protocol["state_update"]["fit_frame_count"] < (
+        protocol["state_update"]["response_frame_count"]
+    )
+    assert protocol["simulator"]["maximum_replay_vector_rmse_m"] == 0.0
+    assert protocol["simulator"]["maximum_replay_norm_m"] == 0.0
+    assert protocol["prediction_and_scoring"]["rejection_policy"] == (
+        "return the sealed persistence trajectory byte-for-byte"
+    )
+    assert protocol["predecessor"]["future_identity_outcomes_used_or_scored"] is False
+
+
+def test_v1_failure_is_archived_as_pre_outcome_technical_evidence() -> None:
+    failure = _load(FAILURE_PATH)
+
+    assert failure["registered_attempt"]["prediction_manifest_written"] is False
+    assert failure["registered_attempt"]["score_written"] is False
+    assert failure["information_boundary"]["state_fit_started"] is False
+    assert (
+        failure["information_boundary"][
+            "future_manual_identity_values_used_for_fit_selection_or_diagnosis"
+        ]
+        is False
+    )
+    assert failure["target_free_diagnosis"]["fixed_helper_vector_rmse_m"] == 0.0
+    assert failure["disposition"]["replacement_protocol"] == (
+        "phystwin-prior-aware-sparse-identity-source-v2"
+    )
