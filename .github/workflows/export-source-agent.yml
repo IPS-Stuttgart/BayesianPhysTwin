@@ -36,11 +36,9 @@ jobs:
             tests/test_phystwin_state_injection.py \
             tools/check_changed_python_format.py
       - name: Create source archive
-        run: git archive --format=tar.gz --output=bayesian-phystwin-source.tar.gz HEAD
-      - name: Add Ruff-fixed working tree to archive
-        run: tar --append --file=bayesian-phystwin-source.tar $(git diff --name-only --diff-filter=ACMRT) || true
-      - name: Compress source archive
-        run: gzip -f bayesian-phystwin-source.tar
+        run: >-
+          tar --exclude=.git --exclude=bayesian-phystwin-source.tar.gz
+          -czf bayesian-phystwin-source.tar.gz .
       - uses: actions/upload-artifact@v7
         with:
           name: bayesian-phystwin-source
