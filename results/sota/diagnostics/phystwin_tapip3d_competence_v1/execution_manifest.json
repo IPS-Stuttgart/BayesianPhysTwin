@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "PhysTwinTapip3dCompetenceExecutionV1",
+  "status": "complete_negative_source_control",
+  "case": "single_lift_cloth",
+  "implementation_commit": "d98cbafe9cd2b5cab4af492730c17045a8dfdf14",
+  "protocol_lock_commit": "57a5976f09e16ddd8375c9c3b073b68a32f9e43d",
+  "protocol_sha256": "8bec2b936306a8dac5ef9e4f6216f1430f20d508e4fe57b8b756d922f21ffddb",
+  "tapip3d": {
+    "commit": "4cb7e69a1687f67d56ec3e506768f51f2c581b46",
+    "checkpoint_sha256": "3a9514d526559838e6158360af2b857da596d064b06a94fae7fd3b85134b2b1e",
+    "source_result_sha256": "4e8538b2d8f4abf1fdf573b7dff84805bd3e29ca443625fd08ad949435bbc5d3",
+    "source_result_bytes": 380661245,
+    "settings": {
+      "resolution_factor": 1,
+      "num_iters": 6,
+      "support_grid_size": 16,
+      "visibility_threshold": 0.9,
+      "bidirectional": true,
+      "gpu": "gpuserver4090 GPU 0"
+    }
+  },
+  "artifacts": {
+    "prediction_npz": {
+      "path": "prediction.npz",
+      "sha256": "f491da4ed3bb4e418b594b3d5404306e03db214455b50703160f4423bcd5cc7d",
+      "bytes": 14551
+    },
+    "prediction_manifest": {
+      "path": "prediction_manifest.json",
+      "sha256": "939287b2eadcb154c1a8dd4bee03a6bc2213b70d719efa9728e2769640347744",
+      "bytes": 1367
+    },
+    "result": {
+      "path": "result.json",
+      "sha256": "44833b68ffd56742f3a020dd711e86c879be37a11145ebe6929f11da5f72eb8b",
+      "bytes": 8995
+    }
+  },
+  "outcome": {
+    "competence_gate_passed": false,
+    "tapip3d_support_fraction": 0.8548571428571429,
+    "cotracker3_support_fraction": 0.18171428571428572,
+    "shared_displacement_rmse_improvement_fraction": 0.011077812013923993,
+    "tapip3d_displacement_rmse_m": 0.010167630230242268,
+    "tapip3d_frame_zero_anchor_rmse_m": 0.00011619710543061786,
+    "tapip3d_late_support_fraction": 0.65625,
+    "tapip3d_late_displacement_rmse_m": 0.01377062945589898
+  },
+  "decision": "Stop the off-the-shelf TAPIP3D sparse-identity feeder without tuning on this opened source result.",
+  "future_after_prefix_used": false,
+  "held_v8_access": false
+}

@@ -1,6 +1,8 @@
 # TAPIP3D persistent-identity competence control v1
 
-Status: locked before model inference or trajectory scoring.
+Status: completed negative one-case source control. TAPIP3D passed the support
+and anchoring gates but failed all three displacement-accuracy gates. The exact
+feeder is stopped. See `docs/phystwin_tapip3d_competence_v1_result.md`.
 
 ## Motivation
 

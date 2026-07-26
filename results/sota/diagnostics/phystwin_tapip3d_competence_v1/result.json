@@ -1,0 +1,317 @@
+{
+  "case": "single_lift_cloth",
+  "frame_zero_association": {
+    "distance_m": [
+      0.003546923957838477,
+      0.0029667583818279108,
+      0.0038175279688296548,
+      0.0015976039498540526,
+      0.0034828708025553905,
+      0.0011684933028964898,
+      0.0020121917752789053,
+      0.0030141665009392193,
+      0.0015423721493721609
+    ],
+    "maximum_distance_m": 0.0038175279688296548,
+    "mean_distance_m": 0.00257210097659914,
+    "node_indices": [
+      6732,
+      6284,
+      5289,
+      4821,
+      3860,
+      2606,
+      2849,
+      1821,
+      1496
+    ]
+  },
+  "gates": {
+    "competence_gate_passed": false,
+    "displacement_rmse_at_most_maximum": false,
+    "frame_zero_anchor_rmse_at_most_maximum": true,
+    "late_displacement_rmse_at_most_maximum": false,
+    "late_support_at_least_minimum": true,
+    "prefix_support_at_least_minimum": true,
+    "shared_rmse_improvement_at_least_minimum": false
+  },
+  "information_boundary": {
+    "future_after_prefix_used": false,
+    "held_v8_access": false,
+    "manual_identity_role": "frame-zero coordinates are prediction queries; the sealed source prefix trajectory is score-only",
+    "rgbd_frames_used_by_prediction": [
+      0,
+      121
+    ]
+  },
+  "prediction_manifest": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/outputs/sealed/prediction_manifest.json",
+    "sha256": "939287b2eadcb154c1a8dd4bee03a6bc2213b70d719efa9728e2769640347744"
+  },
+  "protocol": {
+    "path": "/home/florianpfaff/tapip3d-phystwin-source-v1/protocol.json",
+    "sha256": "8bec2b936306a8dac5ef9e4f6216f1430f20d508e4fe57b8b756d922f21ffddb"
+  },
+  "query_frame_zero_match_max_m": 1.2598789271057058e-08,
+  "recommendation": "Stop TAPIP3D as the PhysTwin sparse-identity feeder without tuning on this opened source trajectory.",
+  "schema_version": 1,
+  "scored_at_utc": "2026-07-26T18:31:35.722372+00:00",
+  "shared_support_comparison": {
+    "first_displacement_rmse_m": 0.008233009428396741,
+    "first_relative_improvement_fraction": 0.011077812013923993,
+    "frame_range": [
+      0,
+      121
+    ],
+    "second_displacement_rmse_m": 0.008325234814645156,
+    "shared_count": 159
+  },
+  "status": "opened one-case association-oracle observation competence control; not prediction, transfer, confirmation, or SOTA evidence",
+  "strict_three_view_cotracker3": {
+    "displacement_rmse_m": 0.008325234814645156,
+    "frame_range": [
+      0,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 7.1731646418167985e-09,
+    "per_identity": [
+      {
+        "displacement_rmse_m": 0.010986900145577993,
+        "identity_index": 0,
+        "support_fraction": 0.9848484848484849,
+        "supported_count": 65,
+        "target_count": 66
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 1,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 81
+      },
+      {
+        "displacement_rmse_m": 0.005452001668621653,
+        "identity_index": 2,
+        "support_fraction": 1.0,
+        "supported_count": 51,
+        "target_count": 51
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 3,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 112
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 4,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 5,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 6,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 121
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 7,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 83
+      },
+      {
+        "displacement_rmse_m": 0.006209514877901519,
+        "identity_index": 8,
+        "support_fraction": 0.35537190082644626,
+        "supported_count": 43,
+        "target_count": 121
+      }
+    ],
+    "position_rmse_m": 0.008325232059042648,
+    "support_fraction": 0.18171428571428572,
+    "supported_count": 159,
+    "target_count": 875,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.00924599094990159,
+      "frame_count": 66,
+      "translation_removed_rmse_m": 0.004927553578725234
+    }
+  },
+  "study_id": "phystwin-tapip3d-competence-v1",
+  "tapip3d": {
+    "displacement_rmse_m": 0.010167630230242268,
+    "frame_range": [
+      0,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 0.00011619710543061786,
+    "per_identity": [
+      {
+        "displacement_rmse_m": 0.01057026994183366,
+        "identity_index": 0,
+        "support_fraction": 1.0,
+        "supported_count": 66,
+        "target_count": 66
+      },
+      {
+        "displacement_rmse_m": 0.011207642027276936,
+        "identity_index": 1,
+        "support_fraction": 0.9012345679012346,
+        "supported_count": 73,
+        "target_count": 81
+      },
+      {
+        "displacement_rmse_m": 0.005099752850834781,
+        "identity_index": 2,
+        "support_fraction": 1.0,
+        "supported_count": 51,
+        "target_count": 51
+      },
+      {
+        "displacement_rmse_m": 0.006576385397719215,
+        "identity_index": 3,
+        "support_fraction": 0.36607142857142855,
+        "supported_count": 41,
+        "target_count": 112
+      },
+      {
+        "displacement_rmse_m": 0.016184614645389683,
+        "identity_index": 4,
+        "support_fraction": 0.85,
+        "supported_count": 102,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": 0.006456435406498461,
+        "identity_index": 5,
+        "support_fraction": 0.75,
+        "supported_count": 90,
+        "target_count": 120
+      },
+      {
+        "displacement_rmse_m": 0.009170387224542728,
+        "identity_index": 6,
+        "support_fraction": 1.0,
+        "supported_count": 121,
+        "target_count": 121
+      },
+      {
+        "displacement_rmse_m": 0.006577130137102338,
+        "identity_index": 7,
+        "support_fraction": 1.0,
+        "supported_count": 83,
+        "target_count": 83
+      },
+      {
+        "displacement_rmse_m": 0.010542907243866445,
+        "identity_index": 8,
+        "support_fraction": 1.0,
+        "supported_count": 121,
+        "target_count": 121
+      }
+    ],
+    "position_rmse_m": 0.0101823464262826,
+    "support_fraction": 0.8548571428571429,
+    "supported_count": 748,
+    "target_count": 875,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.004423250310888125,
+      "frame_count": 121,
+      "translation_removed_rmse_m": 0.009419624836105445
+    }
+  },
+  "tapip3d_late_third": {
+    "displacement_rmse_m": 0.01377062945589898,
+    "frame_range": [
+      80,
+      121
+    ],
+    "frame_zero_anchor_rmse_m": 0.00011619710543061786,
+    "per_identity": [
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 0,
+        "support_fraction": null,
+        "supported_count": 0,
+        "target_count": 0
+      },
+      {
+        "displacement_rmse_m": 0.014067204755645466,
+        "identity_index": 1,
+        "support_fraction": 0.6666666666666666,
+        "supported_count": 12,
+        "target_count": 18
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 2,
+        "support_fraction": null,
+        "supported_count": 0,
+        "target_count": 0
+      },
+      {
+        "displacement_rmse_m": null,
+        "identity_index": 3,
+        "support_fraction": 0.0,
+        "supported_count": 0,
+        "target_count": 41
+      },
+      {
+        "displacement_rmse_m": 0.015472512308719955,
+        "identity_index": 4,
+        "support_fraction": 1.0,
+        "supported_count": 40,
+        "target_count": 40
+      },
+      {
+        "displacement_rmse_m": 0.00707990559741341,
+        "identity_index": 5,
+        "support_fraction": 0.25,
+        "supported_count": 10,
+        "target_count": 40
+      },
+      {
+        "displacement_rmse_m": 0.01401260893056408,
+        "identity_index": 6,
+        "support_fraction": 1.0,
+        "supported_count": 41,
+        "target_count": 41
+      },
+      {
+        "displacement_rmse_m": 0.010975855776317954,
+        "identity_index": 7,
+        "support_fraction": 1.0,
+        "supported_count": 3,
+        "target_count": 3
+      },
+      {
+        "displacement_rmse_m": 0.013077558249098245,
+        "identity_index": 8,
+        "support_fraction": 1.0,
+        "supported_count": 41,
+        "target_count": 41
+      }
+    ],
+    "position_rmse_m": 0.013756239737329387,
+    "support_fraction": 0.65625,
+    "supported_count": 147,
+    "target_count": 224,
+    "translation_diagnostics": {
+      "common_translation_rmse_m": 0.005904570272640243,
+      "frame_count": 41,
+      "translation_removed_rmse_m": 0.012338813694275504
+    }
+  }
+}
