@@ -57,20 +57,43 @@ jobs:
       - name: Install development tools
         run: python -m pip install -e ".[dev]"
       - name: Lint owned provider modules
-        run: >-
-          python -m ruff check
-          src/bayesian_phystwin/contracts
-          src/bayesian_phystwin/phystwin
-          src/bayesian_phystwin/causal4d_provider_v1.py
-          src/bayesian_phystwin/causal4d_provider_v2.py
-          tests/test_causal4d_provider_v2.py
+        id: ruff
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m ruff check \
+            src/bayesian_phystwin/contracts \
+            src/bayesian_phystwin/phystwin \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/causal4d_provider_v2.py \
+            tests/test_causal4d_provider_v2.py \
+            2>&1 | tee ruff-output.txt
       - name: Type-check owned provider modules
-        run: >-
-          python -m mypy
-          src/bayesian_phystwin/contracts
-          src/bayesian_phystwin/phystwin
-          src/bayesian_phystwin/causal4d_provider_v1.py
-          src/bayesian_phystwin/causal4d_provider_v2.py
+        id: mypy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m mypy \
+            src/bayesian_phystwin/contracts \
+            src/bayesian_phystwin/phystwin \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/causal4d_provider_v2.py \
+            2>&1 | tee mypy-output.txt
+      - name: Upload provider quality diagnostics
+        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: provider-quality-diagnostics
+          path: |
+            ruff-output.txt
+            mypy-output.txt
+          if-no-files-found: error
+          retention-days: 3
+      - name: Fail on provider quality diagnostics
+        if: steps.ruff.outcome == 'failure' || steps.mypy.outcome == 'failure'
+        run: exit 1
 
   compatibility:
     runs-on: ubuntu-latest
