@@ -171,6 +171,23 @@ def _verify_official_repo(protocol: dict[str, Any]) -> Path:
     return repository
 
 
+def _verify_runtime(protocol: dict[str, Any]) -> dict[str, str]:
+    import scipy
+    import torch
+    import warp
+
+    actual = {
+        "python": ".".join(str(value) for value in sys.version_info[:3]),
+        "numpy": str(np.__version__),
+        "scipy": str(scipy.__version__),
+        "torch": str(torch.__version__),
+        "torch_cuda": str(torch.version.cuda),
+        "warp": str(warp.__version__),
+    }
+    _require(actual == protocol["runtime"], "numerical runtime changed")
+    return actual
+
+
 def _sanitize_simulator_observations(
     data: dict[str, Any],
     *,
@@ -269,6 +286,7 @@ def _predict(protocol_path: Path, output: Path) -> None:
     protocol = _load_protocol(protocol_path)
     _verify_implementation(protocol)
     official_repo = _verify_official_repo(protocol)
+    runtime = _verify_runtime(protocol)
     paths = _input_paths(protocol)
     _require(not output.exists(), "prediction output already exists")
     output.mkdir(parents=True)
@@ -641,6 +659,7 @@ def _predict(protocol_path: Path, output: Path) -> None:
         "implementation": {
             "repository_commit": _git_commit(REPO_ROOT),
             "runner_sha256": _sha256(Path(__file__).resolve()),
+            "runtime": runtime,
         },
         "information_boundary": correction.information_boundary,
         "diagnostics": correction.diagnostics,
