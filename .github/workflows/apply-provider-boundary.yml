@@ -26,6 +26,8 @@ jobs:
         run: |
           cat .github/provider-boundary-patch/payload00 \
               .github/provider-boundary-patch/payload01 \
+              .github/provider-boundary-patch/payload02 \
+              .github/provider-boundary-patch/payload03 \
             | base64 --decode | gzip --decompress > /tmp/apply-provider-boundary.py
           set +e
           python /tmp/apply-provider-boundary.py > /tmp/provider-boundary.log 2>&1
