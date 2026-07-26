@@ -184,8 +184,6 @@ export THREE_REPO_SOURCE_ROOTS="$({
   printf '%s' "${PROB4D_ROOT}"
   printf ':'
   printf '%s' "${CAUSAL4D_ROOT}"
-  printf ':'
-  printf '%s' "${SOURCE_ROOT}"
 })"
 
 cd "${RUN_ROOT}"
