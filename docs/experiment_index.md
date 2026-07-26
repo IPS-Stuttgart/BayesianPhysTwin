@@ -5,9 +5,10 @@ The root README documents only the stable project identity, interfaces, and
 onboarding path. Claim-bearing numbers belong in frozen evidence reports, and
 current project status belongs in the canonical paper repository.
 
-Legacy `bpt-*` entry points remain available for compatibility, but they are not
-all stable API promises. Prefer the grouped `bpt` commands for reusable
-workflows.
+Only the grouped `bpt` executable is installed. Stable workflows use the routes
+below; non-stable research commands are discovered with `bpt experiment list`
+and invoked with `bpt experiment run ID`. See the
+[command-line interface](command_line.md) for migration details.
 
 ## Stable workflows
 
@@ -17,6 +18,7 @@ workflows.
 | Observation-belief validation | `bpt observation validate` | [ObservationBeliefV1](observation_belief_contract.md) |
 | Robust residual replay | `bpt residual replay` | [Residual replay](residual_replay.md) |
 | Controlled synthetic benchmark | `bpt benchmark synthetic` | [Synthetic benchmark](synthetic_benchmark.md) |
+| Guarded evidence summary | `bpt evidence summarize` | [Decisive evidence protocol](decisive_evidence_protocol.md) |
 | Content-addressed run provenance | `bpt run manifest` | Run `bpt run manifest --help` for the current schema and operations. |
 
 The observation-to-state boundary is described in
