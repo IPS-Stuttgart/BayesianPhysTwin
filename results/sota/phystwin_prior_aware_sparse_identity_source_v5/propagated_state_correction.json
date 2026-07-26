@@ -1,0 +1,149 @@
+{
+  "accepted_state_update": false,
+  "arrays_path": "propagated_state_correction.npz",
+  "arrays_sha256": "e6d1d123efa934806aab9a5bf1d1ffcd6af72502b849248c852c59ce4ac50222",
+  "artifact_id": "42684de5248534c72bb16cf94ac76a090cccc0a75aea632d4f96312baca56b73",
+  "artifact_kind": "PropagatedStateCorrection",
+  "case_id": "single_lift_cloth",
+  "diagnostics": {
+    "graph": {
+      "eigenpair_residual_norms": [
+        5.408723822053113e-16,
+        7.849204535439704e-16,
+        9.6432114963766e-16,
+        9.42005097320932e-16
+      ],
+      "node_count": 7793,
+      "orthonormality_maximum_error": 7.993605777301127e-15,
+      "rank": 4,
+      "solver": "sparse_eigsh",
+      "spring_count": 105361
+    },
+    "identity_association": {
+      "association_uses_frame_zero_only": true,
+      "identity_count": 4,
+      "maximum_initial_distance_m": 0.003482868378231501,
+      "mean_initial_distance_m": 0.0019478340209690913,
+      "unique_node_count": 4
+    },
+    "nonlinear_closure": null,
+    "nonlinear_closure_passed": false,
+    "persistence": {
+      "field_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": true,
+        "maximum_node_norm_after": 0.009999999999999998,
+        "maximum_node_norm_before": 0.3025918239944188,
+        "radial_scale": 0.0330478195609953
+      },
+      "fit_frame_count": 7,
+      "projection_ridge": 1e-05
+    },
+    "replay_parity": {
+      "all_frames": {
+        "coordinate_rmse_m": 0.0,
+        "maximum_norm_m": 0.0,
+        "mean_norm_m": 0.0,
+        "vector_rmse_m": 0.0
+      },
+      "future": {
+        "coordinate_rmse_m": 0.0,
+        "maximum_norm_m": 0.0,
+        "mean_norm_m": 0.0,
+        "vector_rmse_m": 0.0
+      },
+      "passed": true,
+      "prefix_endpoint": {
+        "coordinate_rmse_m": 0.0,
+        "maximum_norm_m": 0.0,
+        "mean_norm_m": 0.0,
+        "vector_rmse_m": 0.0
+      }
+    },
+    "selection": {
+      "development_gate_not_source_calibrated": true,
+      "fit_belief_diagnostics": {
+        "active_frame_count": 4,
+        "condition_number": 2508.224678484542,
+        "correlation_treatment": "effective node samples within each frame and capped effective frame count across the prefix",
+        "frame_count": 4,
+        "innovation_likelihood_count": 1,
+        "iterations": 8,
+        "mean_robust_weight": 0.06895251126845581,
+        "posterior_covariance_is_raw_not_calibrated": true,
+        "prefix_rmse_m": 0.039087467498272896,
+        "prior_reliability_uses_innovation": false,
+        "shared_bias_mode_count": 4,
+        "shared_bias_rms_m": 0.0016348284742824257,
+        "state_bias_subspace_cosine": 0.998327428683351,
+        "state_parameter_count": 24,
+        "state_weight_norm": 2.3234925565082607,
+        "usable_node_frame_count": 16
+      },
+      "fit_frame_count": 4,
+      "fit_shared_bias_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": false,
+        "maximum_node_norm_after": 0.00018566337839142724,
+        "maximum_node_norm_before": 0.00018566337839142724,
+        "radial_scale": 1.0
+      },
+      "fit_state_limits": {
+        "position": {
+          "declared_maximum_node_norm": 0.01,
+          "limit_applied": true,
+          "maximum_node_norm_after": 0.01,
+          "maximum_node_norm_before": 0.016544224767268027,
+          "radial_scale": 0.6044405307998796
+        },
+        "velocity": {
+          "declared_maximum_node_norm": 0.1,
+          "limit_applied": false,
+          "maximum_node_norm_after": 0.050387657162364013,
+          "maximum_node_norm_before": 0.050387657162364013,
+          "radial_scale": 1.0
+        }
+      },
+      "joint_validation_rmse_m": 0.0385901348724909,
+      "minimum_validation_improvement_fraction": 0.05,
+      "minimum_validation_improvement_m": 0.00025,
+      "persistence_fit_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": true,
+        "maximum_node_norm_after": 0.01,
+        "maximum_node_norm_before": 0.10236072385891842,
+        "radial_scale": 0.09769372101923375
+      },
+      "persistence_validation_rmse_m": 0.03568482179802916,
+      "selection_uses_forecast_frames": false,
+      "validation_frame_count": 3,
+      "validation_improvement_fraction": -0.08141593338774067,
+      "validation_improvement_m": -0.002905313074461735
+    },
+    "selection_accepted_before_closure": false
+  },
+  "fit_frame_stop": 118,
+  "information_boundary": {
+    "forecast_frames_used_for_fit_or_selection": false,
+    "future_controller_action_is_given": true,
+    "future_manual_identities_used_for_fit_or_selection": false,
+    "future_object_observations_removed_before_simulator_initialization": true,
+    "hidden_identity_count": 5,
+    "observed_identity_count": 4,
+    "observed_identity_selection_uses_prefix_availability_only": true,
+    "released_case_role": "opened_source_development_smoke_only"
+  },
+  "prefix_frame_start": 114,
+  "prefix_frame_stop": 121,
+  "schema_version": 1,
+  "selection_reason": "prefix-validation-regret-guard",
+  "source_checksums": {
+    "baseline_trajectory": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72",
+    "checkpoint": "339343444aca9d9fecb119093c5d87f3e509af91837f8d3578a98701404bca43",
+    "final_data": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+    "manual_tracks": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "optimal_params": "d926c3dd7471363616bb67bd1dbad96b01be5a487c151bbae37769c68064fc48",
+    "source_replay_summary": "3039e959a547b4791907c454925dbeeddd22256214a5ef2cf9fc36fe884525a1",
+    "split": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+  }
+}

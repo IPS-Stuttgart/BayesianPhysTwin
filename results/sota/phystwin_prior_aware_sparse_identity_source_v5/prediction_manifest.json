@@ -1,0 +1,170 @@
+{
+  "accepted_state_update": false,
+  "case_id": "single_lift_cloth",
+  "completed_at_utc": "2026-07-26T20:58:55.214920+00:00",
+  "correction_artifact": {
+    "arrays_path": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v5/run/single_lift_cloth/propagated_state_correction.npz",
+    "arrays_sha256": "e6d1d123efa934806aab9a5bf1d1ffcd6af72502b849248c852c59ce4ac50222",
+    "artifact_id": "42684de5248534c72bb16cf94ac76a090cccc0a75aea632d4f96312baca56b73",
+    "manifest_path": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v5/run/single_lift_cloth/propagated_state_correction.json",
+    "manifest_sha256": "4ad2bf2adfb9e3ed0bd2a5405fdbac2a8c1781ccd4dadb1a57d3eef9632f3904"
+  },
+  "diagnostics": {
+    "graph": {
+      "eigenpair_residual_norms": [
+        5.408723822053113e-16,
+        7.849204535439704e-16,
+        9.6432114963766e-16,
+        9.42005097320932e-16
+      ],
+      "node_count": 7793,
+      "orthonormality_maximum_error": 7.993605777301127e-15,
+      "rank": 4,
+      "solver": "sparse_eigsh",
+      "spring_count": 105361
+    },
+    "identity_association": {
+      "association_uses_frame_zero_only": true,
+      "identity_count": 4,
+      "maximum_initial_distance_m": 0.003482868378231501,
+      "mean_initial_distance_m": 0.0019478340209690913,
+      "unique_node_count": 4
+    },
+    "nonlinear_closure": null,
+    "nonlinear_closure_passed": false,
+    "persistence": {
+      "field_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": true,
+        "maximum_node_norm_after": 0.009999999999999998,
+        "maximum_node_norm_before": 0.3025918239944188,
+        "radial_scale": 0.0330478195609953
+      },
+      "fit_frame_count": 7,
+      "projection_ridge": 1e-05
+    },
+    "replay_parity": {
+      "all_frames": {
+        "coordinate_rmse_m": 0.0,
+        "maximum_norm_m": 0.0,
+        "mean_norm_m": 0.0,
+        "vector_rmse_m": 0.0
+      },
+      "future": {
+        "coordinate_rmse_m": 0.0,
+        "maximum_norm_m": 0.0,
+        "mean_norm_m": 0.0,
+        "vector_rmse_m": 0.0
+      },
+      "passed": true,
+      "prefix_endpoint": {
+        "coordinate_rmse_m": 0.0,
+        "maximum_norm_m": 0.0,
+        "mean_norm_m": 0.0,
+        "vector_rmse_m": 0.0
+      }
+    },
+    "selection": {
+      "development_gate_not_source_calibrated": true,
+      "fit_belief_diagnostics": {
+        "active_frame_count": 4,
+        "condition_number": 2508.224678484542,
+        "correlation_treatment": "effective node samples within each frame and capped effective frame count across the prefix",
+        "frame_count": 4,
+        "innovation_likelihood_count": 1,
+        "iterations": 8,
+        "mean_robust_weight": 0.06895251126845581,
+        "posterior_covariance_is_raw_not_calibrated": true,
+        "prefix_rmse_m": 0.039087467498272896,
+        "prior_reliability_uses_innovation": false,
+        "shared_bias_mode_count": 4,
+        "shared_bias_rms_m": 0.0016348284742824257,
+        "state_bias_subspace_cosine": 0.998327428683351,
+        "state_parameter_count": 24,
+        "state_weight_norm": 2.3234925565082607,
+        "usable_node_frame_count": 16
+      },
+      "fit_frame_count": 4,
+      "fit_shared_bias_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": false,
+        "maximum_node_norm_after": 0.00018566337839142724,
+        "maximum_node_norm_before": 0.00018566337839142724,
+        "radial_scale": 1.0
+      },
+      "fit_state_limits": {
+        "position": {
+          "declared_maximum_node_norm": 0.01,
+          "limit_applied": true,
+          "maximum_node_norm_after": 0.01,
+          "maximum_node_norm_before": 0.016544224767268027,
+          "radial_scale": 0.6044405307998796
+        },
+        "velocity": {
+          "declared_maximum_node_norm": 0.1,
+          "limit_applied": false,
+          "maximum_node_norm_after": 0.050387657162364013,
+          "maximum_node_norm_before": 0.050387657162364013,
+          "radial_scale": 1.0
+        }
+      },
+      "joint_validation_rmse_m": 0.0385901348724909,
+      "minimum_validation_improvement_fraction": 0.05,
+      "minimum_validation_improvement_m": 0.00025,
+      "persistence_fit_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": true,
+        "maximum_node_norm_after": 0.01,
+        "maximum_node_norm_before": 0.10236072385891842,
+        "radial_scale": 0.09769372101923375
+      },
+      "persistence_validation_rmse_m": 0.03568482179802916,
+      "selection_uses_forecast_frames": false,
+      "validation_frame_count": 3,
+      "validation_improvement_fraction": -0.08141593338774067,
+      "validation_improvement_m": -0.002905313074461735
+    },
+    "selection_accepted_before_closure": false
+  },
+  "implementation": {
+    "repository_commit": "d7c743561b58af116e0be8dcaf0b066c9d89bf78",
+    "runner_sha256": "e3ba3305735e2f6a22402df83773abfd3dc9f34a23828786b8b6ffa8ff6a1706",
+    "runtime": {
+      "numpy": "2.4.4",
+      "python": "3.12.3",
+      "scipy": "1.18.0",
+      "torch": "2.9.1+cu128",
+      "torch_cuda": "12.8",
+      "warp": "1.11.1"
+    }
+  },
+  "information_boundary": {
+    "forecast_frames_used_for_fit_or_selection": false,
+    "future_controller_action_is_given": true,
+    "future_manual_identities_used_for_fit_or_selection": false,
+    "future_object_observations_removed_before_simulator_initialization": true,
+    "hidden_identity_count": 5,
+    "observed_identity_count": 4,
+    "observed_identity_selection_uses_prefix_availability_only": true,
+    "released_case_role": "opened_source_development_smoke_only"
+  },
+  "outcomes": null,
+  "prediction_array_sha256": {
+    "baseline_trajectory": "16d18c7c8246684a1fa1a6defda1db3d26f8a24153140854c53a47f84cf363d1",
+    "candidate_trajectory": "e976ab9eecda41b2bd4d0ecfb18843ec101e31bc75e23cfd65207d3a06110d2a",
+    "persistence_trajectory": "e976ab9eecda41b2bd4d0ecfb18843ec101e31bc75e23cfd65207d3a06110d2a",
+    "state_only_trajectory": "e976ab9eecda41b2bd4d0ecfb18843ec101e31bc75e23cfd65207d3a06110d2a"
+  },
+  "prediction_path": "prediction.npz",
+  "prediction_sha256": "318ab8da40c8f06098136c7b3441a6002b17da327b4b1604babaf2edcf43971d",
+  "protocol_id": "phystwin-prior-aware-sparse-identity-source-v5",
+  "protocol_path": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v5/repo/configs/sota/phystwin_prior_aware_sparse_identity_source_v5.json",
+  "protocol_sha256": "26ce055eb2ca8817b748f453632515450ffbd86093d35969a6474728879850fd",
+  "replay_parity_path": "replay_parity.json",
+  "replay_parity_sha256": "6380a111e412f5da15540e5c74295b8fe2ac47dfb41a59620c8752d44df43223",
+  "replay_state_carrier_path": "replay_state_carrier.npz",
+  "replay_state_carrier_sha256": "211fb927ec1c89d4179f375779163c145e61331303cec8082f4902e3b20b5de6",
+  "schema_version": 1,
+  "selection_reason": "prefix-validation-regret-guard",
+  "status": "prediction_sealed"
+}

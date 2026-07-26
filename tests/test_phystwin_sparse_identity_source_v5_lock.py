@@ -35,6 +35,12 @@ V4_FAILURE_PATH = (
     / "phystwin_prior_aware_sparse_identity_source_v4"
     / "technical_failure.json"
 )
+RESULT_ROOT = (
+    ROOT
+    / "results"
+    / "sota"
+    / "phystwin_prior_aware_sparse_identity_source_v5"
+)
 
 
 def _load(path: Path) -> dict:
@@ -157,3 +163,19 @@ def test_v4_failure_preserves_exact_state_carrier_before_source_redesign() -> No
     assert failure["disposition"]["replacement_protocol"] == (
         "phystwin-prior-aware-sparse-identity-source-v5"
     )
+
+
+def test_v5_result_binds_exact_fallback_and_failed_advancement_gate() -> None:
+    prediction = _load(RESULT_ROOT / "prediction_manifest.json")
+    score = _load(RESULT_ROOT / "score.json")
+    summary = _load(RESULT_ROOT / "summary.json")
+
+    hashes = prediction["prediction_array_sha256"]
+    assert hashes["candidate_trajectory"] == hashes["persistence_trajectory"]
+    assert hashes["state_only_trajectory"] == hashes["persistence_trajectory"]
+    assert prediction["accepted_state_update"] is False
+    assert score["accepted_state_update"] is False
+    assert summary["advancement_gate"]["passed"] is False
+    assert summary["advancement_gate"]["future_chamfer_improves"] is True
+    assert summary["advancement_gate"]["future_hidden_identity_track_improves"] is False
+    assert summary["artifacts"]["score_sha256"] == _sha256(RESULT_ROOT / "score.json")

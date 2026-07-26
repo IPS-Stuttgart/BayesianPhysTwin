@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-prior-aware-sparse-identity-source-v5",
+  "protocol_sha256": "26ce055eb2ca8817b748f453632515450ffbd86093d35969a6474728879850fd",
+  "implementation_commit": "d7c743561b58af116e0be8dcaf0b066c9d89bf78",
+  "case_id": "single_lift_cloth",
+  "status": "opened_source_development_gate_failed",
+  "identity_boundary": {
+    "observed_prefix_identity_indices": [
+      3,
+      4,
+      8,
+      5
+    ],
+    "hidden_future_identity_indices": [
+      0,
+      1,
+      2,
+      6,
+      7
+    ],
+    "sets_are_disjoint": true,
+    "selection_uses_future_frames_or_errors": false
+  },
+  "prediction": {
+    "exact_replay_parity_passed": true,
+    "accepted_state_update": false,
+    "selection_reason": "prefix-validation-regret-guard",
+    "persistence_validation_rmse_mm": 35.68482179802916,
+    "state_plus_bias_validation_rmse_mm": 38.5901348724909,
+    "state_plus_bias_validation_difference_mm": 2.905313074461735,
+    "state_plus_bias_validation_improvement_percent": -8.141593338774067,
+    "nonlinear_closure_run": false,
+    "fallback_is_byte_identical_to_persistence": true
+  },
+  "future_scores_mm": {
+    "baseline": {
+      "chamfer": 24.62536679421701,
+      "hidden_identity_track": 40.60872463202025
+    },
+    "sealed_candidate": {
+      "chamfer": 24.29347531677334,
+      "hidden_identity_track": 41.43340972550227
+    },
+    "difference_candidate_minus_baseline": {
+      "chamfer": -0.33189147744366876,
+      "hidden_identity_track": 0.8246850934820263
+    },
+    "improvement_percent": {
+      "chamfer": 1.3477625743288812,
+      "hidden_identity_track": -2.030807667453205
+    }
+  },
+  "future_hidden_track_horizon_mm": {
+    "baseline": {
+      "early": 45.90305060155106,
+      "middle": 34.29537690440287,
+      "late": 41.57113407021313
+    },
+    "sealed_candidate": {
+      "early": 44.44923665957888,
+      "middle": 35.72309474044725,
+      "late": 43.97820399587075
+    }
+  },
+  "advancement_gate": {
+    "passed": false,
+    "exact_replay": true,
+    "held_out_prefix_improvement": false,
+    "nonlinear_closure": false,
+    "future_chamfer_improves": true,
+    "future_hidden_identity_track_improves": false,
+    "candidate_beats_persistence_hidden_identity_track": false,
+    "decision": "Stop this propagated rank-four state-plus-bias parameterization; do not expand to a source panel or independent cohort."
+  },
+  "artifacts": {
+    "prediction_manifest_sha256": "cb1642420746c3a609959ecdca691a2b1526d1348553b4fa6284375b1f7341c4",
+    "prediction_npz_sha256": "318ab8da40c8f06098136c7b3441a6002b17da327b4b1604babaf2edcf43971d",
+    "score_sha256": "8ab206798a5c9b6df5a98d08733c0ddde3b58cce0604722ff3352e4b12977a80",
+    "replay_parity_sha256": "6380a111e412f5da15540e5c74295b8fe2ac47dfb41a59620c8752d44df43223",
+    "replay_state_carrier_sha256": "211fb927ec1c89d4179f375779163c145e61331303cec8082f4902e3b20b5de6",
+    "correction_manifest_sha256": "4ad2bf2adfb9e3ed0bd2a5405fdbac2a8c1781ccd4dadb1a57d3eef9632f3904"
+  },
+  "verification": {
+    "exact_runtime_focused_tests": "42 passed",
+    "native_full_suite": "873 passed, 3 skipped, 1 unrelated pre-existing NumPy-1 private-namespace failure",
+    "ruff": "passed"
+  },
+  "claim_boundary": "One previously opened source interaction with four manual prefix identities. This is online-supervised development evidence, not an open-loop, independent, confirmatory, or SOTA result."
+}
