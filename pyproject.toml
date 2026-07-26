@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,8 +8,28 @@ version = "0.4.0"
 description = "Reliability-aware Bayesian estimation utilities for PhysTwin-style deformable digital twins."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [
     { name = "Florian Pfaff" },
+]
+keywords = [
+    "bayesian-estimation",
+    "deformable-objects",
+    "digital-twins",
+    "robotics",
+    "uncertainty-quantification",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
     "numpy>=1.23",
@@ -19,6 +39,10 @@ dependencies = [
 Repository = "https://github.com/FlorianPfaff/Bayesian-PhysTwin"
 Documentation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/tree/main/docs"
 Issues = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/issues"
+Changelog = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/CHANGELOG.md"
+Citation = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/CITATION.cff"
+License = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/LICENSE"
+Support = "https://github.com/FlorianPfaff/Bayesian-PhysTwin/blob/main/SUPPORT.md"
 
 [project.scripts]
 bpt = "bayesian_phystwin.cli.main:main"
