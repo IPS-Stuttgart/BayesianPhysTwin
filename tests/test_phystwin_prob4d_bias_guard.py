@@ -98,6 +98,7 @@ def test_physical_mode_update_passes_disjoint_prefix_gate() -> None:
 
     assert report["candidate_available"] is True
     assert report["candidate_accepted"] is True
+    assert report["bit_exact_selected_baseline_fallback"] is False
     assert report["validation"]["no_primary_regression"] is True
     assert not np.array_equal(candidate, inputs["selected"])
     assert not np.array_equal(guarded, inputs["selected"])
