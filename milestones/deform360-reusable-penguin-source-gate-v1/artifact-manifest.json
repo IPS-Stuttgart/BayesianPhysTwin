@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "milestone": "deform360-reusable-penguin-source-gate-v1",
+  "created_at": "2026-07-26",
+  "branch": "deform360-contact-conditioned-reusable-v1",
+  "claim_boundary": "source-only negative transfer result; no held evaluation or SOTA claim authorized",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "1820dcd8cb3590c1cf18d910d251ac8c81fc6de7fea6d2a1eadb4ac6c84c2e67"
+    },
+    {
+      "path": "artifacts/source_summary.json",
+      "sha256": "e86b6441e0636f251083003b867ec8704ad2fee7da31977645f0024f6e08033d"
+    }
+  ],
+  "remote_evidence": {
+    "host": "gpuserver6000",
+    "root": "/mnt/corsair/florianpfaff/deform360-penguin-source-selection-v1",
+    "physical_selection_path": "/mnt/corsair/florianpfaff/deform360-penguin-source-selection-v1/physical_selection.json",
+    "physical_selection_file_sha256": "61b79be77230f774732a7bf629c4d514de33d936813b453ad493bcbfce3be9b6",
+    "alpha_oracle_path": "/mnt/corsair/florianpfaff/deform360-penguin-source-selection-v1/alpha_oracle_diagnostic.json",
+    "alpha_oracle_file_sha256": "cc1844b17f2b78021feeabe50693de4060d198e5e0a73ae5ed90f8efef3dd80b"
+  },
+  "verification": {
+    "json_parse": "passed",
+    "summary_assertions": "passed",
+    "git_diff_check": "passed"
+  }
+}

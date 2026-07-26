@@ -1,0 +1,208 @@
+{
+  "artifact_kind": "Deform360ReusablePenguinSourceGateSummary",
+  "schema_version": 1,
+  "object_id": "171-penguin",
+  "decision": "source_gate_failed",
+  "claim_boundary": "source-only negative transfer result; no held evaluation or SOTA claim authorized",
+  "information_boundary": {
+    "source_episode_ids": [
+      1,
+      3,
+      4,
+      6,
+      7,
+      9
+    ],
+    "held_episode_ids": [
+      0,
+      2,
+      5,
+      8
+    ],
+    "held_initial_geometry_read": false,
+    "held_media_read": false,
+    "held_predictions_generated": false,
+    "held_outcomes_read": false,
+    "source_future_outcomes_used": true,
+    "alpha_oracle_is_deployable": false,
+    "alpha_oracle_used_for_physical_selection": false,
+    "alpha_oracle_used_for_trust_refit": false
+  },
+  "provenance": {
+    "bayesian_phystwin_commit": "3b7aff11d4cc08355884a023857c05468de95c80",
+    "deform360_commit": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "motion_checkpoint_sha256": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834",
+    "selection_operator_sha256": "4d19c6c6413096a2498430088031cb4d3dc2a0aa2355b9f3cb19235d7ec7a097",
+    "outcome_operator_sha256": "7d955d3d702d175e8d875a5e8118e42093dd48c61cd717270ad5274e38ca60f7",
+    "observation_consensus_lock_sha256": "fb2c5366971c27369500d8e04d811234ff8daebfce5ff43a41f1da78d63e5521",
+    "physical_selection_result_sha256": "013956eae2caa89afe2d4cd4bfdd3b149798857329f6995647871601e43ff0a9",
+    "physical_selection_file_sha256": "61b79be77230f774732a7bf629c4d514de33d936813b453ad493bcbfce3be9b6",
+    "alpha_oracle_result_sha256": "341b69f48a1ba57b8dd179574d00c58f837160792d1ceae3a537165a6a9ca189",
+    "alpha_oracle_file_sha256": "cc1844b17f2b78021feeabe50693de4060d198e5e0a73ae5ed90f8efef3dd80b"
+  },
+  "source_outcomes": {
+    "1": {
+      "result_sha256": "c4963004ca3b6a05da87573195f74eb60e99c3eca44adc9f9f34c2d1d3a619fb",
+      "point_shape": [
+        76,
+        1143,
+        3
+      ]
+    },
+    "3": {
+      "result_sha256": "b34c4d555aa0920a81b7f794ce7181a10359c83d9d0d385285cae0ea934ea6d0",
+      "point_shape": [
+        76,
+        1225,
+        3
+      ]
+    },
+    "4": {
+      "result_sha256": "6f77527f3f458c3765e6025cc6c66b5f5bc3899f9a042cdf7a7d2900aa69179c",
+      "point_shape": [
+        76,
+        505,
+        3
+      ]
+    },
+    "6": {
+      "result_sha256": "c9ec4c5d6a1e994655a866b87ebffd9e95b1b2e5deeaf9f4ec073cb3d8fd8d00",
+      "point_shape": [
+        76,
+        827,
+        3
+      ]
+    },
+    "7": {
+      "result_sha256": "e44932e1fe733cfe2d7570cb4eae542fb1ff9634fdefa7f0a276c1e16308215f",
+      "point_shape": [
+        76,
+        995,
+        3
+      ]
+    },
+    "9": {
+      "result_sha256": "ee93cd4e6a12805081022287be9a6a511db781634992e43c7920eec662e61eff",
+      "point_shape": [
+        76,
+        306,
+        3
+      ]
+    }
+  },
+  "frozen_selection": {
+    "candidate_count": 18,
+    "selected_candidate_index": 3,
+    "selected_physical_parameters": {
+      "init_spring_y": 10000.0,
+      "drag_damping": 3.0,
+      "dashpot_damping": 100.0
+    },
+    "selected_pooled_relative_score_vs_persistence": 1.5058828336374948,
+    "trust_alpha_by_episode": {
+      "1": 1.2,
+      "3": 1.2,
+      "4": 0.23652305395676454,
+      "6": 1.2,
+      "7": 1.2,
+      "9": 0.0
+    },
+    "pooled_source": {
+      "track_rmse_m": 0.007274869533098803,
+      "persistence_track_rmse_m": 0.005203471223452543,
+      "track_improvement_pct": -39.80800932097537,
+      "chamfer_m": 0.006027228112062941,
+      "persistence_chamfer_m": 0.004408628769730456,
+      "chamfer_improvement_pct": -36.714348766350014,
+      "wins": 0,
+      "exact_fallback_ties": 1
+    },
+    "leave_one_action_out": {
+      "track_rmse_m": 0.00836345509610898,
+      "persistence_track_rmse_m": 0.005203471223452543,
+      "track_improvement_pct": -60.728381823542854,
+      "chamfer_m": 0.0068849001716135404,
+      "persistence_chamfer_m": 0.004408628769730456,
+      "chamfer_improvement_pct": -56.16874387077241,
+      "wins": 0,
+      "exact_fallback_ties": 1
+    },
+    "per_episode_candidate_oracle": {
+      "track_rmse_m": 0.006877634306773967,
+      "persistence_track_rmse_m": 0.005203471223452543,
+      "track_improvement_pct": -32.17396640488393,
+      "chamfer_m": 0.005495915713513735,
+      "persistence_chamfer_m": 0.004408628769730456,
+      "chamfer_improvement_pct": -24.662701274567866,
+      "wins": 0,
+      "exact_fallback_ties": 1,
+      "relative_score_by_episode": {
+        "1": 1.76609359592146,
+        "3": 1.187155010026638,
+        "4": 1.1761925848589616,
+        "6": 1.5335667979970473,
+        "7": 1.670725639783265,
+        "9": 1.0
+      }
+    }
+  },
+  "post_gate_alpha_oracle": {
+    "alpha_grid": [
+      0.0,
+      0.025,
+      0.05,
+      0.1,
+      0.2,
+      0.4,
+      0.8,
+      1.2
+    ],
+    "track_rmse_m": 0.004922598087924786,
+    "persistence_track_rmse_m": 0.005203471223452543,
+    "track_improvement_pct": 5.397803186877163,
+    "chamfer_m": 0.004285344599209644,
+    "persistence_chamfer_m": 0.004408628769730456,
+    "chamfer_improvement_pct": 2.7964289342590734,
+    "wins": 5,
+    "exact_fallbacks": 1,
+    "best_by_episode": {
+      "1": {
+        "candidate_index": 15,
+        "alpha": 0.1,
+        "relative_score_vs_persistence": 0.9713349650033182
+      },
+      "3": {
+        "candidate_index": 13,
+        "alpha": 0.2,
+        "relative_score_vs_persistence": 0.9363255465606327
+      },
+      "4": {
+        "candidate_index": 0,
+        "alpha": 0.025,
+        "relative_score_vs_persistence": 0.9943481776277907
+      },
+      "6": {
+        "candidate_index": 5,
+        "alpha": 0.2,
+        "relative_score_vs_persistence": 0.9685627431525388
+      },
+      "7": {
+        "candidate_index": 0,
+        "alpha": 0.0,
+        "relative_score_vs_persistence": 1.0
+      },
+      "9": {
+        "candidate_index": 16,
+        "alpha": 0.4,
+        "relative_score_vs_persistence": 0.9508606210193438
+      }
+    }
+  },
+  "interpretation": {
+    "physical_grid_expansion_supported": false,
+    "frozen_trust_transfer_supported": false,
+    "cross_action_pooling_supported": false,
+    "guarded_baseline_relative_update_has_source_oracle_headroom": true,
+    "held_evaluation_authorized": false
+  }
+}
