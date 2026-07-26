@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-prior-aware-sparse-identity-source-v1",
+  "case_id": "single_lift_cloth",
+  "status": "locked opened-source development smoke; not independent or SOTA evidence",
+  "claim_boundary": "This experiment tests whether four sparse material identities observed only in an allowed response prefix can identify an action-propagated PhysTwin state update that generalizes within the prefix and improves five disjoint hidden identities in the future. The sparse identities are manual sensors, so this is online-supervised capacity evidence rather than an open-loop perception result.",
+  "inputs": {
+    "final_data": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/data/single_lift_cloth/final_data.pkl",
+      "sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b"
+    },
+    "manual_tracks": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/data/single_lift_cloth/gt_track_3d.pkl",
+      "sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e"
+    },
+    "optimal_params": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/data/single_lift_cloth/optimal_params.pkl",
+      "sha256": "d926c3dd7471363616bb67bd1dbad96b01be5a487c151bbae37769c68064fc48"
+    },
+    "split": {
+      "path": "/home/florianpfaff/bpt-hidden-identity-source-v1/data/single_lift_cloth/split.json",
+      "sha256": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+    },
+    "baseline_trajectory": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v2/selected_raw/single_lift_cloth.pkl",
+      "sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72"
+    },
+    "checkpoint": {
+      "path": "/home/florianpfaff/bayesian-phystwin-confirmatory-data/single_lift_cloth/checkpoint.pth",
+      "sha256": "9ff3af25db531b879fe1f3a18991d0cdc27a3e693b8844edab74afe28245edb2"
+    }
+  },
+  "official_simulator": {
+    "repository": "/home/florianpfaff/PhysTwin-upstream",
+    "commit": "2b6630528141b9cba5a7677c8b88b2129b4a8390",
+    "source_sha256": "7deab9a25f4b8b8772f7df45c35571caf3767d014dd353cad151fe8eddceca1c"
+  },
+  "implementation": {
+    "implementation_commit": "c14d8894633e9026b339d33f4cd4cbf3239152e3",
+    "runner_sha256": "8ef24d369143fc5b3a5656a6e0dc2a24132a12ad0c6422c9fd5b75c2a354bf64",
+    "state_update_module_sha256": "1d4766f1dcedee2f7e0745aed32c1d60ac7ebc1935fe9d4bb8236baf1fed1002",
+    "propagated_state_module_sha256": "9bf96dfb6139be466e0afa58ba90b1eee8916ca6509046c38c547a0947211bc9"
+  },
+  "runtime": {
+    "python": "3.10.12",
+    "numpy": "1.26.4",
+    "scipy": "1.13.1",
+    "torch": "2.4.0+cu121",
+    "torch_cuda": "12.1",
+    "warp": "1.15.0"
+  },
+  "frames": {
+    "future_start_exclusive": 121,
+    "future_end_exclusive": 173,
+    "future_action_status": "given controller trajectory",
+    "future_object_observation_policy": "overwrite all future object observations and visibility before simulator initialization"
+  },
+  "source_qa": {
+    "state_node_count": 7793,
+    "object_spring_count": 105361,
+    "graph_eigenvalues": [
+      0.0,
+      0.0011620380936569015,
+      0.0015718799363242087,
+      0.002762466351265619
+    ],
+    "observed_identity_indices": [
+      0,
+      8,
+      1,
+      7
+    ],
+    "hidden_identity_indices": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "association_node_indices": [
+      6732,
+      1496,
+      6284,
+      1821
+    ],
+    "maximum_frame_zero_association_distance_m": 0.003546921846842421
+  },
+  "state_update": {
+    "observed_identity_count": 4,
+    "graph_rank": 4,
+    "response_frame_count": 7,
+    "fit_frame_count": 4,
+    "position_step_m": 0.005,
+    "velocity_step_mps": 0.05,
+    "maximum_position_update_m": 0.01,
+    "maximum_velocity_update_mps": 0.1,
+    "maximum_shared_bias_m": 0.01,
+    "maximum_initial_association_distance_m": 0.005,
+    "observation_std_m": 0.005,
+    "state_weight_prior_std": 1.0,
+    "shared_bias_prior_std_m": 0.02,
+    "effective_samples_per_frame": 4.0,
+    "effective_frame_count": 4.0,
+    "degrees_of_freedom": 4.0,
+    "minimum_robust_weight": 0.02,
+    "maximum_iterations": 8,
+    "convergence_tolerance": 1e-09,
+    "maximum_condition_number": 1000000000000.0,
+    "ambiguous_subspace_cosine": 0.999,
+    "reject_unidentifiable_state": true,
+    "projection_ridge": 1e-05,
+    "minimum_validation_improvement_fraction": 0.05,
+    "minimum_validation_improvement_m": 0.00025,
+    "maximum_closure_vector_rmse_m": 0.002,
+    "maximum_closure_relative_vector_rmse": 0.3
+  },
+  "simulator": {
+    "dt_s": 5e-05,
+    "num_substeps": 667,
+    "deterministic_spring_forces": true,
+    "device": "cuda:0",
+    "maximum_replay_vector_rmse_m": 0.002,
+    "maximum_replay_norm_m": 0.01
+  },
+  "prediction_and_scoring": {
+    "prediction_output": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v1/run/single_lift_cloth",
+    "prediction_must_be_sealed_before_scoring": true,
+    "primary_comparators": [
+      "unchanged selected raw MatPhys physical trajectory",
+      "information-matched persistent graph readout fitted from the same sparse prefix"
+    ],
+    "candidate": "nonlinear Warp state rerun plus separately bounded persistent bias",
+    "rejection_policy": "return the sealed persistence trajectory byte-for-byte",
+    "metrics": [
+      "future Chamfer distance",
+      "future disjoint hidden-identity track error",
+      "early/middle/late horizon breakdown"
+    ]
+  },
+  "advancement_gate": {
+    "scope": "development decision only",
+    "requirements": [
+      "official Warp replay parity passes",
+      "state-plus-bias beats persistence by at least 5 percent and 0.25 mm on the three held-out prefix frames",
+      "nonlinear prefix closure passes both the 2 mm absolute and 30 percent relative gates",
+      "the sealed candidate improves both future Chamfer and disjoint hidden-identity track error over the unchanged physical baseline",
+      "the sealed candidate improves hidden-identity track error over the information-matched persistence comparator"
+    ],
+    "positive_decision": "lock a small already-open source panel without changing this method",
+    "negative_decision": "archive the result and stop this state-update parameterization"
+  },
+  "prohibited": [
+    "using future manual identities for fitting, selection, closure, or prediction",
+    "using future object observations in the simulator",
+    "changing thresholds after Warp execution",
+    "opening or touching held-v8 artifacts",
+    "calling this one-case manual-sensor smoke an independent or SOTA result"
+  ]
+}
