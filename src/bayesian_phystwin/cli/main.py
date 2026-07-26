@@ -29,6 +29,11 @@ _ROUTES: Final[dict[Route, tuple[str, str, str]]] = {
         "main",
         "run the controlled synthetic benchmark",
     ),
+    ("evidence", "summarize"): (
+        "bayesian_phystwin.cli.decisive_evidence",
+        "main",
+        "summarize matched guarded prospective evidence",
+    ),
     ("run", "manifest"): (
         "bayesian_phystwin.cli.run_manifest",
         "main",
@@ -98,7 +103,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(_render_help(help_namespace), end="")
                 return 0
             break
-
     resolved = _resolve(arguments)
     if resolved is None:
         matched_namespace: list[str] = []
