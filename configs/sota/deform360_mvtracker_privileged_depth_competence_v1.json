@@ -1,0 +1,55 @@
+{
+  "protocol_id": "deform360-mvtracker-privileged-depth-competence-v1",
+  "status": "frozen one-case outcome-open source competence control",
+  "source_case_selection": {
+    "eligible_panel": "27 already-open Deform360 source episodes",
+    "rule": "maximum 95th-percentile sealed physical displacement at frame 19",
+    "target_or_outcome_used": false,
+    "selected_case": "092-squirrel-ep0008",
+    "selected_q95_displacement_m": 0.041542125,
+    "selected_center_count": 16,
+    "selected_centers_with_at_least_5mm_predicted_motion": 6
+  },
+  "observation": {
+    "tracker": "MVTracker",
+    "tracker_repository": "https://github.com/ethz-vlg/mvtracker",
+    "tracker_revision": "ceea8ad2af77ed9b44148ef8e9eeba4ea3c3f072",
+    "checkpoint_sha256": "a7fa86f2a7223e3e0aa4c1d3eff0dec5fe8a9227a48572ce943b8e49d8a4f8e6",
+    "prefix_frame_range_half_open": [
+      0,
+      20
+    ],
+    "query_frame": 0,
+    "query_identity_source": "frozen open-27 frame-zero observation plan",
+    "camera_source": "all eight cameras in the frozen open-27 observation plan",
+    "depth_source": "released full-sequence splat rendered depth",
+    "depth_status": "privileged reconstruction evidence; invalid for a causal predictive arm",
+    "frame_zero_policy": "subtract the raw query-frame offset from every predicted frame so frame-zero identities are exact",
+    "uncertainty_policy": "metric variance from visibility and query-anchor correction only; no physical-state innovation in prior reliability"
+  },
+  "source_sha256": {
+    "physical_prediction_archive": "89fba98a6bfbe3314ccfc133089a8d56a4eade3b471b8a447e8a87f20aef900f",
+    "physical_prediction_seal": "639b54c5d8e14281745f6afbf11238535b9baffb38d3d1e75768e2aac8632d35",
+    "open27_observation_plan": "3d87bd665f578cd63bfe355a1592bd2bd103528a1a85fe514be2117e99484d09",
+    "intrinsics": "c161e7b2ebc72da57f666706066203b2b5936ab3d6a8a16ab395fc1d34691d0f",
+    "extrinsics": "3cdfe824b3b4dd0b48f993c0b1961e8a5a67ffb25e4414483afae6f77cf1566b"
+  },
+  "competence_gate": {
+    "scored_frames": "1 through 19",
+    "support": "common target-valid and MVTracker-visible material identity-frames",
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_best_of_physical_and_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.01,
+    "pass_action": "authorize a separate prefix-only learned-depth source study",
+    "fail_action": "stop the MVTracker-to-Deform360 route"
+  },
+  "information_boundary": {
+    "prediction_and_seal_before_target_loading": true,
+    "fresh_or_held_target_allowed": false,
+    "held_v8_access_allowed": false,
+    "causal_prediction_claim_allowed": false,
+    "bayesian_phystwin_gain_claim_allowed": false,
+    "state_of_the_art_claim_allowed": false
+  },
+  "claim_boundary": "This is a privileged-depth tracker competence control on one already-open source case. A positive result only justifies building a causal prefix-only depth path."
+}
