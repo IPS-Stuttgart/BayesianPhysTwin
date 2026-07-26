@@ -66,6 +66,41 @@ def _metadata() -> dict[str, object]:
     }
 
 
+def _joint_metadata() -> dict[str, object]:
+    metadata = deepcopy(_metadata())
+    anchor = metadata["metric_gauge_anchor"]
+    anchor.pop("world_frame_id")
+    anchor.pop("calibration_artifact_sha256")
+    anchor.update(
+        {
+            "schema_name": "prob4d.metric-gauge-anchor",
+            "schema_version": 1,
+            "coordinate_frame": "phystwin-world",
+            "metric_units": "m",
+            "source_kind": "prefix_registration",
+        }
+    )
+    metadata.update(
+        {
+            "prob4d_causal_stream_contract_version": 2,
+            "gauge_mode": "sequential",
+            "joint_cross_window_gauge_covariance_represented": True,
+            "gauge_posterior": {
+                "model": "sequential_joint_spanning_tree_v1",
+                "window_count": 2,
+                "full_dimension": 14,
+                "exported_factor_rank": 5,
+                "retained_covariance_trace_fraction": 1.0,
+                "minimum_retained_gauge_trace": 0.999,
+                "cross_window_covariance_preserved": True,
+                "fixed_lag_boundary_covariance_is_approximate": False,
+                "parent_window_ids": [None, "window-0"],
+            },
+        }
+    )
+    return metadata
+
+
 def _belief() -> ObservationBeliefV1:
     local = np.repeat(np.eye(3)[None], 4, axis=0) * 1e-5
     factors = np.zeros((4, 3, 7))
@@ -109,6 +144,21 @@ def _belief() -> ObservationBeliefV1:
     )
 
 
+def _joint_belief() -> ObservationBeliefV1:
+    factors = np.zeros((4, 3, 5))
+    factors[:2, 0, 0] = 0.002
+    factors[2:, 1, 1] = 0.003
+    return replace(
+        _belief(),
+        factor_names=tuple(
+            f"joint_gauge_latent_{index:04d}" for index in range(5)
+        ),
+        factor_group_ids=np.zeros(4, dtype=np.int64),
+        low_rank_factor_m=factors,
+        metadata=_joint_metadata(),
+    )
+
+
 def _adapt(belief: ObservationBeliefV1):
     state = np.zeros((belief.observation_count, 3, 1))
     state[:, 0, 0] = 1.0
@@ -130,6 +180,39 @@ def test_valid_prob4d_causal_lineage_is_bound_before_adaptation() -> None:
     assert validation["window_count"] == 2
     assert adapted.summary()["prob4d_causal_lineage_validated"] is True
     assert adapted.batch.metadata["prob4d_causal_lineage"] == validation
+
+
+def test_joint_prob4d_stream_contract_is_validated_before_adaptation() -> None:
+    belief = _joint_belief()
+    validation = validate_prob4d_causal_observation_belief(belief)
+    adapted = _adapt(belief)
+
+    assert validation["stream_contract_version"] == 2
+    assert validation["gauge_covariance_semantics"] == (
+        "joint_cross_window_sim3_gauge_covariance"
+    )
+    assert adapted.summary()["gauge_parameter_count"] == 5
+    assert adapted.batch.metadata["prob4d_causal_lineage"] == validation
+
+
+def test_joint_prob4d_stream_rejects_noncanonical_factor_names() -> None:
+    belief = _joint_belief()
+    names = list(belief.factor_names)
+    names[-1] = "joint_gauge_latent_wrong"
+
+    with pytest.raises(ValueError, match="factor names are not canonical"):
+        _adapt(replace(belief, factor_names=tuple(names)))
+
+
+def test_joint_prob4d_stream_rejects_approximate_fixed_lag_covariance() -> None:
+    belief = _joint_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["gauge_posterior"][
+        "fixed_lag_boundary_covariance_is_approximate"
+    ] = True
+
+    with pytest.raises(ValueError, match="rejects approximate fixed-lag"):
+        _adapt(replace(belief, metadata=metadata))
 
 
 def test_prob4d_causal_lineage_rejects_changed_cutoff() -> None:
