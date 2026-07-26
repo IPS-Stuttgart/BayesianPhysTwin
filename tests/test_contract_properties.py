@@ -2,9 +2,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from hypothesis import given, strategies as st
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st
 
 from bayesian_phystwin._gauge_aware_solver import _correlation_group_weights
 from bayesian_phystwin.gauge_aware_belief import (
@@ -19,11 +19,14 @@ from bayesian_phystwin.observation_belief import (
 
 
 def _belief() -> ObservationBeliefV1:
-    local_covariance = np.repeat(
-        np.eye(3, dtype=np.float64)[None],
-        4,
-        axis=0,
-    ) * 1e-4
+    local_covariance = (
+        np.repeat(
+            np.eye(3, dtype=np.float64)[None],
+            4,
+            axis=0,
+        )
+        * 1e-4
+    )
     factors = np.zeros((4, 3, 2), dtype=np.float64)
     factors[:2, 0, 0] = 0.002
     factors[2:, 1, 1] = 0.003
@@ -284,9 +287,7 @@ def test_similarity_transform_preserves_covariance_contract(
         transformed.local_covariance_m2,
         scale**2 * belief.local_covariance_m2,
     )
-    assert np.all(
-        np.linalg.eigvalsh(transformed.local_covariance_m2) > 0.0
-    )
+    assert np.all(np.linalg.eigvalsh(transformed.local_covariance_m2) > 0.0)
     assert transformed.local_covariance_m2.flags.writeable is False
     assert transformed.low_rank_factor_m.flags.writeable is False
     assert transformed.artifact_id != belief.artifact_id
