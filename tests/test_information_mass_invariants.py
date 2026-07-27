@@ -17,7 +17,8 @@ def test_information_mass_multiplies_prior_terms_before_group_capping(
     rng = np.random.default_rng(seed + 4_000)
     row_count = int(rng.integers(4, 25))
     group_ids = tuple(
-        f"group-{group_id}" for group_id in rng.integers(0, 5, size=row_count)
+        f"group-{group_id}"
+        for group_id in rng.integers(0, 5, size=row_count)
     )
     reliability = rng.uniform(0.0, 1.0, size=row_count)
     nominal_probability = rng.uniform(0.0, 1.0, size=row_count)
@@ -66,6 +67,7 @@ def test_zero_prior_term_contributes_zero_information_mass(zero_term: str) -> No
 
     assert counts == {"shared": 3}
     assert actual[1] == 0.0
+
 
 
 def test_provider_final_per_row_power_is_not_capped_twice() -> None:
