@@ -71,6 +71,26 @@ jobs:
           if stale not in source:
               raise SystemExit("stale changelog replacement was not found in patch source")
           source = source.replace(stale, current, 1)
+          source = source.replace("from types import MappingProxyType\n", "", 1)
+          old_freeze = base64.b64decode(
+              "ZGVmIF9mcmVlemVfanNvbih2YWx1ZTogQW55KSAtPiBBbnk6CiAgICBpZiBpc2luc3RhbmNlKHZhbHVlLCBkaWN0KToKICAgICAgICByZXR1cm4gTWFwcGluZ1Byb3h5VHlwZSgKICAgICAgICAgICAge2tleTogX2ZyZWV6ZV9qc29uKGl0ZW0pIGZvciBrZXksIGl0ZW0gaW4gdmFsdWUuaXRlbXMoKX0KICAgICAgICApCiAgICBpZiBpc2luc3RhbmNlKHZhbHVlLCBsaXN0KToKICAgICAgICByZXR1cm4gdHVwbGUoX2ZyZWV6ZV9qc29uKGl0ZW0pIGZvciBpdGVtIGluIHZhbHVlKQogICAgcmV0dXJuIHZhbHVlCg=="
+          ).decode("utf-8")
+          new_freeze = base64.b64decode(
+              "Y2xhc3MgX0Zyb3plbkRpY3QoZGljdCk6CiAgICBfX3Nsb3RzX18gPSAoKQogICAgX01VVEFUT1JTID0gZnJvemVuc2V0KHsiY2xlYXIiLCAicG9wIiwgInBvcGl0ZW0iLCAic2V0ZGVmYXVsdCIsICJ1cGRhdGUifSkKCiAgICBkZWYgX19nZXRhdHRyaWJ1dGVfXyhzZWxmLCBuYW1lOiBzdHIpIC0+IEFueToKICAgICAgICBpZiBuYW1lIGluIHR5cGUoc2VsZikuX01VVEFUT1JTOgogICAgICAgICAgICByZXR1cm4gc2VsZi5faW1tdXRhYmxlCiAgICAgICAgcmV0dXJuIHN1cGVyKCkuX19nZXRhdHRyaWJ1dGVfXyhuYW1lKQoKICAgIEBzdGF0aWNtZXRob2QKICAgIGRlZiBfaW1tdXRhYmxlKCphcmdzOiBvYmplY3QsICoqa3dhcmdzOiBvYmplY3QpIC0+IE5vbmU6CiAgICAgICAgcmFpc2UgVHlwZUVycm9yKCJtZXRhZGF0YSBpcyBpbW11dGFibGUiKQoKICAgIGRlZiBfX3NldGl0ZW1fXyhzZWxmLCBrZXksIHZhbHVlKToKICAgICAgICBzZWxmLl9pbW11dGFibGUoa2V5LCB2YWx1ZSkKCiAgICBkZWYgX19kZWxpdGVtX18oc2VsZiwga2V5KToKICAgICAgICBzZWxmLl9pbW11dGFibGUoa2V5KQoKICAgIGRlZiBfX2lvcl9fKHNlbGYsIG90aGVyKToKICAgICAgICBzZWxmLl9pbW11dGFibGUob3RoZXIpCgogICAgZGVmIF9fY29weV9fKHNlbGYpIC0+IGRpY3Rbc3RyLCBBbnldOgogICAgICAgIHJldHVybiBfcGxhaW5fanNvbihzZWxmKQoKICAgIGRlZiBfX2RlZXBjb3B5X18oc2VsZiwgbWVtbzogZGljdFtpbnQsIEFueV0pIC0+IGRpY3Rbc3RyLCBBbnldOgogICAgICAgIGRlbCBtZW1vCiAgICAgICAgcmV0dXJuIF9wbGFpbl9qc29uKHNlbGYpCgoKY2xhc3MgX0Zyb3plbkxpc3QobGlzdCk6CiAgICBfX3Nsb3RzX18gPSAoKQogICAgX01VVEFUT1JTID0gZnJvemVuc2V0KAogICAgICAgIHsiYXBwZW5kIiwgImNsZWFyIiwgImV4dGVuZCIsICJpbnNlcnQiLCAicG9wIiwgInJlbW92ZSIsICJyZXZlcnNlIiwgInNvcnQifQogICAgKQoKICAgIGRlZiBfX2dldGF0dHJpYnV0ZV9fKHNlbGYsIG5hbWU6IHN0cikgLT4gQW55OgogICAgICAgIGlmIG5hbWUgaW4gdHlwZShzZWxmKS5fTVVUQVRPUlM6CiAgICAgICAgICAgIHJldHVybiBzZWxmLl9pbW11dGFibGUKICAgICAgICByZXR1cm4gc3VwZXIoKS5fX2dldGF0dHJpYnV0ZV9fKG5hbWUpCgogICAgQHN0YXRpY21ldGhvZAogICAgZGVmIF9pbW11dGFibGUoKmFyZ3M6IG9iamVjdCwgKiprd2FyZ3M6IG9iamVjdCkgLT4gTm9uZToKICAgICAgICByYWlzZSBUeXBlRXJyb3IoIm1ldGFkYXRhIGlzIGltbXV0YWJsZSIpCgogICAgZGVmIF9fc2V0aXRlbV9fKHNlbGYsIGtleSwgdmFsdWUpOgogICAgICAgIHNlbGYuX2ltbXV0YWJsZShrZXksIHZhbHVlKQoKICAgIGRlZiBfX2RlbGl0ZW1fXyhzZWxmLCBrZXkpOgogICAgICAgIHNlbGYuX2ltbXV0YWJsZShrZXkpCgogICAgZGVmIF9faWFkZF9fKHNlbGYsIG90aGVyKToKICAgICAgICBzZWxmLl9pbW11dGFibGUob3RoZXIpCgogICAgZGVmIF9faW11bF9fKHNlbGYsIG90aGVyKToKICAgICAgICBzZWxmLl9pbW11dGFibGUob3RoZXIpCgogICAgZGVmIF9fY29weV9fKHNlbGYpIC0+IGxpc3RbQW55XToKICAgICAgICByZXR1cm4gX3BsYWluX2pzb24oc2VsZikKCiAgICBkZWYgX19kZWVwY29weV9fKHNlbGYsIG1lbW86IGRpY3RbaW50LCBBbnldKSAtPiBsaXN0W0FueV06CiAgICAgICAgZGVsIG1lbW8KICAgICAgICByZXR1cm4gX3BsYWluX2pzb24oc2VsZikKCgpkZWYgX2ZyZWV6ZV9qc29uKHZhbHVlOiBBbnkpIC0+IEFueToKICAgIGlmIGlzaW5zdGFuY2UodmFsdWUsIGRpY3QpOgogICAgICAgIHJldHVybiBfRnJvemVuRGljdCgKICAgICAgICAgICAge2tleTogX2ZyZWV6ZV9qc29uKGl0ZW0pIGZvciBrZXksIGl0ZW0gaW4gdmFsdWUuaXRlbXMoKX0KICAgICAgICApCiAgICBpZiBpc2luc3RhbmNlKHZhbHVlLCBsaXN0KToKICAgICAgICByZXR1cm4gX0Zyb3plbkxpc3QoX2ZyZWV6ZV9qc29uKGl0ZW0pIGZvciBpdGVtIGluIHZhbHVlKQogICAgcmV0dXJuIHZhbHVlCg=="
+          ).decode("utf-8")
+          if old_freeze not in source:
+              raise SystemExit("mapping-proxy freeze block was not found in patch source")
+          source = source.replace(old_freeze, new_freeze, 1)
+          source = source.replace(
+              "with pytest.raises(AttributeError):",
+              "with pytest.raises(TypeError):",
+              1,
+          )
+          source = source.replace(
+              "recursively immutable mappings and tuples.",
+              "recursively immutable dict/list-compatible containers.",
+              1,
+          )
           exec(compile(source, "bpt-contract-numerics-patch.py", "exec"))
           PY
           patch_status=$?
