@@ -21,11 +21,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Build source snapshot
+      - name: Apply candidate and build source snapshot
         run: |
           set -euo pipefail
+          python .github/agent_bpt_quality_repair.py
+          python .github/agent_bpt_strict_quality_repair.py
           mkdir -p /tmp/bpt-source
           git archive --format=tar HEAD | tar -xf - -C /tmp/bpt-source
+          cp -a src tests /tmp/bpt-source/
           rm -f /tmp/bpt-source/.github/agent_bpt_quality_repair.py
           rm -f /tmp/bpt-source/.github/agent_bpt_strict_quality_repair.py
           rm -f /tmp/bpt-source/.github/workflows/agent-bpt-quality-repair.yml
@@ -35,7 +38,7 @@ jobs:
       - name: Upload source snapshot
         uses: actions/upload-artifact@v7
         with:
-          name: bpt-source
+          name: bpt-source-patched
           path: bpt-source.tar.gz
           if-no-files-found: error
           retention-days: 1
