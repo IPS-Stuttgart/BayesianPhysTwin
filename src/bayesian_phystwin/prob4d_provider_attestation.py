@@ -200,9 +200,7 @@ def _validate_manifest(
         "Prob4D provider-v2 manifest must not default to uncalibrated export",
     )
     _require(
-        limitations.get(
-            "deployment_environment_revision_is_independent_vcs_evidence"
-        )
+        limitations.get("deployment_environment_revision_is_independent_vcs_evidence")
         is False,
         "Prob4D provider manifest misstates deployment revision evidence",
     )
@@ -217,8 +215,7 @@ def _validate_manifest(
         "Prob4D provider manifest source repository changed",
     )
     _require(
-        metadata.get("python_import_boundary")
-        == PROB4D_PROVIDER_IMPORT_BOUNDARY,
+        metadata.get("python_import_boundary") == PROB4D_PROVIDER_IMPORT_BOUNDARY,
         "Prob4D provider manifest import boundary changed",
     )
     return manifest
@@ -379,8 +376,7 @@ def validate_prob4d_provider_attestation(
         "Prob4D provider-attestation revision differs from observation source revision",
     )
     _require(
-        normalized.get("python_import_boundary")
-        == PROB4D_PROVIDER_IMPORT_BOUNDARY,
+        normalized.get("python_import_boundary") == PROB4D_PROVIDER_IMPORT_BOUNDARY,
         "Prob4D provider-attestation import boundary changed",
     )
 
