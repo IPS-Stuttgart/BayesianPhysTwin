@@ -109,11 +109,15 @@ jobs:
           python -m pip install -e "./bayesian-phystwin[dev]"
           python -m pip install -e "./causal4d[dev]"
 
-      - name: Validate the checked-in producer-neutral fixture
+      - name: Validate the Bayesian-PhysTwin consumer fixture
         run: |
           python -m pytest -q \
             bayesian-phystwin/tests/test_prob4d_joint_contract_fixture.py \
-            bayesian-phystwin/tests/test_prob4d_causal_lineage.py \
+            bayesian-phystwin/tests/test_prob4d_causal_lineage.py
+
+      - name: Validate the Causal4D consumer fixture
+        run: |
+          python -m pytest -q \
             causal4d/tests/test_prob4d_joint_contract_fixture.py \
             causal4d/tests/test_observation_contract_bundle.py \
             causal4d/tests/test_observation_lineage.py
