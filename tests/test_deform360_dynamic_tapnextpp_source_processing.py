@@ -89,7 +89,7 @@ def test_dynamic_processing_protocol_is_locked() -> None:
     assert protocol["failure_accounting"]["minimum_final_admissions"] == 20
     assert (
         protocol["parent_mask_protocol"]["implementation_commit"]
-        == "266ef5154a42976f242bba514485cf37571ce410"
+        == "2f731eef2c637977bf5cf4010760a8014bbe4161"
     )
 
 

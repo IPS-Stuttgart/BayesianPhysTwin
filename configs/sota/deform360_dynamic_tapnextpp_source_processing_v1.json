@@ -5,10 +5,18 @@
   "status": "locked_before_fresh_source_geometry_reconstruction",
   "parent_mask_protocol": {
     "protocol_id": "deform360-dynamic-tapnextpp-source-masks-v1",
-    "config_sha256": "18e5ed260e1d0d250a1341dc32f9342cfc6bae720665b96e0f24cc0da1050455",
-    "file_sha256": "8a508c7826887daf063bc120b19eed0b32c5f17462bfd894165715eab71f92c3",
-    "implementation_commit": "266ef5154a42976f242bba514485cf37571ce410"
+    "config_sha256": "9250aa8c0ceea91c24c3facdfab10391745266f7d173ac95306ceb78c7033b25",
+    "file_sha256": "93aa6829a6dd764ee01e8ffd493f44710ecc377e06abd2b66b6b919cd9f170c1",
+    "implementation_commit": "2f731eef2c637977bf5cf4010760a8014bbe4161"
   },
+  "amendments": [
+    {
+      "amendment_id": "bimanual-provenance-key-disambiguation-1",
+      "parent_mask_protocol_rebound_before_mask_generation": true,
+      "geometry_reconstruction_or_tracker_opened_before_amendment": false,
+      "processing_method_or_admission_changed": false
+    }
+  ],
   "deform360": {
     "repository": "https://github.com/lhy0807/deform360",
     "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
@@ -93,5 +101,5 @@
     "sealed_window_and_mask_artifacts_mutated": false,
     "derived_processing_workspace_only": true
   },
-  "config_sha256": "3e4df14bfe7f1fd43b7aecb574e6a85bc9efe12ed200c02951f1d6447bb3d2a6"
+  "config_sha256": "fd396d2dcd2f3eab8a209b6d2041da16f56991edea794e8fdded1bb33cc25721"
 }
