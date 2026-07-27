@@ -26,6 +26,7 @@ class CommandSpec:
 
     command_id: str
     route: tuple[str, ...]
+    previous_routes: tuple[tuple[str, ...], ...]
     module: str
     function: str
     description: str
@@ -46,15 +47,23 @@ class CommandSpec:
     def canonical_command(self) -> str:
         return self.grouped_command
 
+    @property
+    def previous_grouped_commands(self) -> tuple[str, ...]:
+        """Return grouped invocations that were canonical in an earlier release."""
+
+        return tuple("bpt " + " ".join(route) for route in self.previous_routes)
+
     def to_dict(self) -> dict[str, object]:
         """Return JSON-compatible registry metadata."""
 
         payload = asdict(self)
         payload["route"] = list(self.route)
+        payload["previous_routes"] = [list(route) for route in self.previous_routes]
         payload["status"] = self.status.value
         payload["optional_dependencies"] = list(self.optional_dependencies)
         payload["target"] = self.target
         payload["grouped_command"] = self.grouped_command
+        payload["previous_grouped_commands"] = list(self.previous_grouped_commands)
         return payload
 
 
@@ -62,6 +71,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
     CommandSpec(
         command_id="provider-manifest",
         route=("provider", "manifest"),
+        previous_routes=(),
         module="bayesian_phystwin.cli.provider_manifest",
         function="main",
         description="print the Causal4D provider capability manifest",
@@ -73,6 +83,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
     CommandSpec(
         command_id="validate-observation-belief",
         route=("observation", "validate"),
+        previous_routes=(),
         module="bayesian_phystwin.cli.observation_belief",
         function="main",
         description="validate or summarize an ObservationBeliefV1 artifact",
@@ -84,6 +95,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
     CommandSpec(
         command_id="replay-residuals",
         route=("residual", "replay"),
+        previous_routes=(),
         module="bayesian_phystwin.cli.residual_replay",
         function="main",
         description="replay exported residuals through the robust likelihood",
@@ -95,6 +107,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
     CommandSpec(
         command_id="synthetic-benchmark",
         route=("benchmark", "synthetic"),
+        previous_routes=(),
         module="bayesian_phystwin.cli.synthetic_benchmark",
         function="main",
         description="run the controlled synthetic benchmark",
@@ -106,6 +119,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
     CommandSpec(
         command_id="decisive-evidence",
         route=("evidence", "summarize"),
+        previous_routes=(),
         module="bayesian_phystwin.cli.decisive_evidence",
         function="main",
         description="summarize matched guarded prospective evidence",
@@ -117,6 +131,7 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
     CommandSpec(
         command_id="run-manifest",
         route=("run", "manifest"),
+        previous_routes=(),
         module="bayesian_phystwin.cli.run_manifest",
         function="main",
         description="create or validate a content-addressed run manifest",
@@ -138,10 +153,16 @@ def _build_research_commands() -> tuple[CommandSpec, ...]:
     commands: list[CommandSpec] = []
     for command_id, experiment in sorted(EXPERIMENTS.items()):
         status = CommandStatus(status_name(command_id))
+        previous_routes = (
+            ()
+            if status is CommandStatus.EXPERIMENT
+            else (("experiment", "run", command_id),)
+        )
         commands.append(
             CommandSpec(
                 command_id=command_id,
                 route=(_STATUS_NAMESPACE[status], "run", command_id),
+                previous_routes=previous_routes,
                 module=experiment.module,
                 function=experiment.function_name,
                 description=description(command_id),
@@ -165,6 +186,7 @@ def validate_registry(commands: Iterable[CommandSpec] = COMMANDS) -> None:
 
     command_ids: set[str] = set()
     routes: set[tuple[str, ...]] = set()
+    previous_routes: set[tuple[str, ...]] = set()
     aliases: set[str] = set()
     supported_dependencies = {"data", "graph", "pyrecest", "vision"}
     for command in commands:
@@ -176,6 +198,13 @@ def validate_registry(commands: Iterable[CommandSpec] = COMMANDS) -> None:
             raise ValueError(
                 "duplicate or empty grouped route: " + " ".join(command.route)
             )
+        for previous_route in command.previous_routes:
+            if not previous_route or previous_route in previous_routes:
+                raise ValueError(
+                    "duplicate or empty previous grouped route: "
+                    + " ".join(previous_route)
+                )
+            previous_routes.add(previous_route)
         if not command.module.startswith("bayesian_phystwin.cli."):
             raise ValueError(f"invalid command module: {command.module}")
         if not command.owner:
@@ -192,11 +221,20 @@ def validate_registry(commands: Iterable[CommandSpec] = COMMANDS) -> None:
             aliases.add(command.legacy_alias)
         command_ids.add(command.command_id)
         routes.add(command.route)
+    collisions = routes & previous_routes
+    if collisions:
+        rendered = sorted(" ".join(route) for route in collisions)
+        raise ValueError(
+            "previous grouped route collides with current route: " + str(rendered)
+        )
 
 
 validate_registry()
 COMMANDS_BY_ID: Final = {command.command_id: command for command in COMMANDS}
 COMMANDS_BY_ROUTE: Final = {command.route: command for command in COMMANDS}
+COMMANDS_BY_PREVIOUS_ROUTE: Final = {
+    route: command for command in COMMANDS for route in command.previous_routes
+}
 COMMANDS_BY_LEGACY_ALIAS: Final = {
     command.legacy_alias: command
     for command in COMMANDS
@@ -222,16 +260,18 @@ def find_command(
     command = COMMANDS_BY_ID.get(normalized)
     if command is None and status is None:
         command = COMMANDS_BY_LEGACY_ALIAS.get(normalized)
+    route = tuple(normalized.removeprefix("bpt ").split())
     if command is None:
-        route = tuple(normalized.removeprefix("bpt ").split())
         command = COMMANDS_BY_ROUTE.get(route)
+    if command is None and status is None:
+        command = COMMANDS_BY_PREVIOUS_ROUTE.get(route)
     if command is not None and (status is None or command.status is status):
         return command
     return None
 
 
 def find_command_metadata(selector: str) -> CommandSpec | None:
-    """Resolve a command id, grouped route, or removed alias for inspection."""
+    """Resolve an id, current/previous grouped route, or removed alias."""
 
     return find_command(selector)
 
