@@ -25,8 +25,6 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - A frozen full-22 Bayesian-anchor reproduction capsule that binds the exact
   historical source revision, data manifest, protocol, expected metrics,
   two-stage source command, and `RunManifestV2` evidence bundle.
-- An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
-  cross-repository observation and lineage boundary.
 
 ### Changed
 
@@ -35,19 +33,12 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - Command help, documentation, and installed-artifact tests now distinguish
   stable interfaces, current experiments, non-promotable diagnostics, and
   archived reproduction paths.
-- Missing private-Prob4D credentials now fail authoritative `main`, scheduled,
-  and manual three-repository runs instead of producing a green skip. Pull
-  requests still run the producer-neutral consumer fixture and clearly report
-  that no current-Prob4D evidence was admitted.
 
 ### Removed
 
 - The 79 top-level `bpt-*` console scripts. Frozen releases and historical
   manifests retain their original command strings; `bpt commands migrate`
   reports the current grouped invocation.
-- The duplicate standalone gauge-aware workflow; the main test matrix already
-  runs the same gauge-aware and prior-aware tests across its core and full-suite
-  jobs.
 
 ## Historical development
 
