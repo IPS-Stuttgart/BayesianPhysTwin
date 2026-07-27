@@ -1,5 +1,6 @@
 name: Reconcile CLI consolidation with current main
 
+# This second branch push intentionally triggers the already-present workflow.
 on:
   push:
     branches: [agent/consolidate-cli-entrypoints-v3]
