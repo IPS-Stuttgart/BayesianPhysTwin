@@ -1,0 +1,68 @@
+{
+  "alltracker": {
+    "checkpoint_sha256": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "inference_iterations": 4,
+    "max_side": 512,
+    "source_sha256": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "window_length": 16
+  },
+  "artifact_kind": "PhysTwinRenderedAllTrackerPrefixPrediction",
+  "camera_names": [
+    "cam0",
+    "cam1",
+    "cam2"
+  ],
+  "claim_boundary": "Opened-source association-oracle competence prediction only. This is unscored until the prediction seal is written.",
+  "cotracker_comparator_read": false,
+  "frames": [
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120
+  ],
+  "future_frame_after_120_read": false,
+  "held_v8_read": false,
+  "inputs": {
+    "camera_json_sha256": "99b80635489980b814f9abd4fbc663a2677df2b13ae901f9512a6e2901f8e970",
+    "mask_sha256": {
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/114.png": "6d4b9c54abdd4d81bb322e9d5e0d0cc53a3eb36cc7989b62d49cb51a3f4d41b6",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/115.png": "21e22ed15a5110f54970967d387ab80c1758a324e0e5b4a6b3bc4432666448cf",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/116.png": "843cb471c4c71ce8fddce91e3ae4e631bea1f3ea336b4ca4ccb3478e35d86c21",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/117.png": "fe77cd41219e89fba49cae1f3618c7b7481156708b013c94c95bbfae106e0bfc",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/118.png": "d3c76d66def5ed22563e59ef63cb1f13be63a229ef3452b236d4aa3d00c026fc",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/119.png": "7d75fe5e85f50db1d20954121fd6130830934d3a819785c91b1962b82624360e",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/0/0/120.png": "b7ba657c6a83c272b598f0ee8ceafc85a6c1899500905467b34198c0b6b5e4e3",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/114.png": "714e286667b34ca34a274aae765f3b5d29e1bcb1b1b57fe862c378335874fc73",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/115.png": "f3d56f69ac0f5b484522ec33457753ff56bb08c6bc083c23cbcf1e8a073be9b7",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/116.png": "edbda230a40f980cac30d8f16342767563f716f592798f44c6c44290dceab47c",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/117.png": "fdccff9bec200f46f033a6d2cae42b926c7909c992a23fe97c53bfcb9a809e96",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/118.png": "56dca23c03b064696b66621cd05a81ffe1f43aa5927132a8221bb277ba506fd4",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/119.png": "ef18f775b82b62c618511187c1b702643d15f8ec6fa004274b7fda0ffb88e8fa",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/1/0/120.png": "b14e4956fdcee7fdaeb0318ea7611f8934a5e0c008f5ebdf423b7709ba60c55a",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/114.png": "65c2602f3da49d917d549b4ddc938f37807655b8a7fb5cd067fd3627615671a4",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/115.png": "f20f3b20a4cf3458f6260cb04757a341b8641ce06dc11f5893e0513902d69434",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/116.png": "ec4ad73d1ae4569d71ed52617177d6f8ffc9c5167bb8b682e55a5003bd35948b",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/117.png": "24d45c5a262a97beb42f95813783296f9a2ed648366fd30a1bd7a35abdf39313",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/118.png": "eccdb04515601e954c01f13b760283ae36ba37b181661727b9a846a660f449ad",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/119.png": "964189d4fb0e0df0c62df3a3352c143d86e0ae8a6ee80b0b85df44a455a7cd5a",
+      "/home/florianpfaff/bpt-photometric-state-source-v1/assets/extracted/data/different_types/single_lift_cloth/mask/2/0/120.png": "4e97b7b6c135385f1ad6c5f56f93ce258d705df7d52088a9537353f551a44c32"
+    },
+    "photometric_carrier_sha256": "0cee8708a80811b898c5bd34530b696888adab72d145336a5b696085822c44e7",
+    "query_input_sha256": "1cb9735cc27b04d664428c0c9abb94954c836c84dfb3db702b73519ef33e3dcc",
+    "trajectory_sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72"
+  },
+  "later_manual_identity_trajectory_read": false,
+  "maximum_association_distance_m": 0.003817527695101262,
+  "prediction_points_sha256": "b0c5ef86da3ac143cd4eed7e7db0e82e81e5820f65e60b5613496ff3e72d1fa2",
+  "prediction_sha256": "61ab6c7ae07d96cb104cb4211a07b6f5eb08222be502755edd98654c47ff637f",
+  "prediction_valid_sha256": "6215dc8cca8f48057a2001ec2d4c4dfda68c68392efac58a95d5912896a17478",
+  "query_count": 9,
+  "schema_version": 1,
+  "status": "prediction_complete_unscored",
+  "two_view_fallback_count": 0,
+  "valid_count": 5,
+  "valid_fraction": 0.07936507936507936
+}

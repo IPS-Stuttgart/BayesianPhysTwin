@@ -1,0 +1,236 @@
+{
+  "artifact_kind": "PhysTwinRenderedAllTrackerPrefixCompetenceResult",
+  "candidate": {
+    "per_frame": [
+      {
+        "frame_position": 0,
+        "position_rmse_m": 0.07249865905185901,
+        "supported_count": 1,
+        "target_count": 5
+      },
+      {
+        "frame_position": 1,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 6
+      },
+      {
+        "frame_position": 2,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 6
+      },
+      {
+        "frame_position": 3,
+        "position_rmse_m": 0.0694522204251612,
+        "supported_count": 1,
+        "target_count": 5
+      },
+      {
+        "frame_position": 4,
+        "position_rmse_m": 0.06720613394545462,
+        "supported_count": 1,
+        "target_count": 5
+      },
+      {
+        "frame_position": 5,
+        "position_rmse_m": 0.06466249429369123,
+        "supported_count": 1,
+        "target_count": 5
+      },
+      {
+        "frame_position": 6,
+        "position_rmse_m": 0.06289847625408435,
+        "supported_count": 1,
+        "target_count": 6
+      }
+    ],
+    "position_rmse_m": 0.06742964838936139,
+    "support_fraction": 0.13157894736842105,
+    "supported_count": 5,
+    "target_count": 38
+  },
+  "candidate_covariance_conditional_diagnostic": {
+    "count": 5,
+    "coverage_90": 0.0,
+    "mean_nees": 7.570644064614308
+  },
+  "candidate_final_frame": {
+    "per_frame": [
+      {
+        "frame_position": 0,
+        "position_rmse_m": 0.06289847625408435,
+        "supported_count": 1,
+        "target_count": 6
+      }
+    ],
+    "position_rmse_m": 0.06289847625408435,
+    "support_fraction": 0.16666666666666666,
+    "supported_count": 1,
+    "target_count": 6
+  },
+  "candidate_vs_cotracker_shared_support": {
+    "candidate_relative_improvement_fraction": null,
+    "candidate_rmse_m": null,
+    "comparator_rmse_m": null,
+    "shared_count": 0
+  },
+  "candidate_vs_physical_shared_support": {
+    "candidate_relative_improvement_fraction": -1.0609864154184518,
+    "candidate_rmse_m": 0.06742964838936139,
+    "comparator_rmse_m": 0.032717172653304864,
+    "shared_count": 5
+  },
+  "case": "single_lift_cloth",
+  "claim_boundary": "Opened-source, nine-identity frame-zero association-oracle competence control. It is neither deployable nor a SOTA result.",
+  "cotracker_comparator": {
+    "per_frame": [
+      {
+        "frame_position": 0,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 5
+      },
+      {
+        "frame_position": 1,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 6
+      },
+      {
+        "frame_position": 2,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 6
+      },
+      {
+        "frame_position": 3,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 5
+      },
+      {
+        "frame_position": 4,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 5
+      },
+      {
+        "frame_position": 5,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 5
+      },
+      {
+        "frame_position": 6,
+        "position_rmse_m": null,
+        "supported_count": 0,
+        "target_count": 6
+      }
+    ],
+    "position_rmse_m": null,
+    "support_fraction": 0.0,
+    "supported_count": 0,
+    "target_count": 38
+  },
+  "cotracker_strict_support": {
+    "initial_supported_identity_count": 3,
+    "supported_count": 0
+  },
+  "frames": [
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120
+  ],
+  "gates": {
+    "competence_gate_passed": false,
+    "cotracker_improvement_at_least_minimum": false,
+    "final_frame_rmse_at_most_maximum": false,
+    "physical_improvement_at_least_minimum": false,
+    "position_rmse_at_most_maximum": false,
+    "support_at_least_minimum": false
+  },
+  "information_boundary": {
+    "cotracker_comparator_opened_by_scorer": true,
+    "future_rgb_after_prefix_read": false,
+    "held_v8_read": false,
+    "latest_rgb_frame": 120,
+    "manual_identity_trajectory_opened_by_scorer": true,
+    "prediction_validated_before_outcome_open": true
+  },
+  "inputs_sha256": {
+    "cotracker_cues": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56",
+    "manual_track": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "prediction_archive_sha256": "61ab6c7ae07d96cb104cb4211a07b6f5eb08222be502755edd98654c47ff637f",
+    "prediction_report_sha256": "4d8424d2f9e62ddfd768852d5511265892ee1fe58204c1ec881cac0f1953b516",
+    "prediction_seal_sha256": "339bfff37115d2aacc7633726b18f6b88178158ca32395510abc30495e7fc552",
+    "trajectory": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72"
+  },
+  "physical_comparator": {
+    "per_frame": [
+      {
+        "frame_position": 0,
+        "position_rmse_m": 0.06322710796195219,
+        "supported_count": 5,
+        "target_count": 5
+      },
+      {
+        "frame_position": 1,
+        "position_rmse_m": 0.06411176290141249,
+        "supported_count": 6,
+        "target_count": 6
+      },
+      {
+        "frame_position": 2,
+        "position_rmse_m": 0.06446220746405662,
+        "supported_count": 6,
+        "target_count": 6
+      },
+      {
+        "frame_position": 3,
+        "position_rmse_m": 0.06340753922716891,
+        "supported_count": 5,
+        "target_count": 5
+      },
+      {
+        "frame_position": 4,
+        "position_rmse_m": 0.06298242640677827,
+        "supported_count": 5,
+        "target_count": 5
+      },
+      {
+        "frame_position": 5,
+        "position_rmse_m": 0.061931017578938444,
+        "supported_count": 5,
+        "target_count": 5
+      },
+      {
+        "frame_position": 6,
+        "position_rmse_m": 0.06309516110714374,
+        "supported_count": 6,
+        "target_count": 6
+      }
+    ],
+    "position_rmse_m": 0.06336657409247305,
+    "support_fraction": 1.0,
+    "supported_count": 38,
+    "target_count": 38
+  },
+  "schema_version": 1,
+  "status": "source_competence_gate_failed",
+  "thresholds": {
+    "maximum_cycle_error_px": 5.0,
+    "maximum_final_frame_rmse_m": 0.008,
+    "maximum_position_rmse_m": 0.005,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_camera_count": 3,
+    "minimum_cotracker_improvement_fraction": 0.2,
+    "minimum_physical_improvement_fraction": 0.1,
+    "minimum_support_fraction": 0.5,
+    "minimum_view_quality": 0.5
+  }
+}
