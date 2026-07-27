@@ -53,6 +53,22 @@ def repair_json_mapping(path: str, import_old: str | None = None) -> None:
     )
 
 
+def compact_run_manifest_v2_mapping() -> None:
+    path = "src/bayesian_phystwin/run_manifest_v2.py"
+    replace_once(
+        path,
+        "        return cast(\n"
+        "            dict[str, Any],\n"
+        "            json.loads(\n"
+        "                json.dumps(dict(value), sort_keys=True, allow_nan=False)\n"
+        "            ),\n"
+        "        )\n",
+        "        result = json.loads(json.dumps(dict(value), sort_keys=True, allow_nan=False))\n"
+        "        # The JSON round-trip produces a string-keyed mapping.\n"
+        "        return cast(dict[str, Any], result)\n",
+    )
+
+
 def main() -> None:
     repair_cli_dispatch()
     repair_json_mapping(
@@ -64,6 +80,7 @@ def main() -> None:
         "from typing import Any, Literal\n",
     )
     repair_json_mapping("src/bayesian_phystwin/run_manifest_v2.py")
+    compact_run_manifest_v2_mapping()
 
 
 if __name__ == "__main__":
