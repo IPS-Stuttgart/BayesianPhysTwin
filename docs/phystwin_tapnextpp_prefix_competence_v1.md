@@ -74,10 +74,20 @@ art. Even a competence pass would not resolve coherent camera bias; that risk
 belongs to the later physical/action-supported regret guard with exact whole-
 belief fallback.
 
-## Prelock
+## Prediction Lock
 
 The method, source-window rule, public checkpoint hash, multiview thresholds,
-uncertainty treatment, acceptance gates, and stopping rule are frozen before
-source staging. The protocol remains
-`prelocked-awaiting-source-staging` until prediction-visible and withheld
-artifacts have been created, hashed, and bound by a separate commit.
+uncertainty treatment, acceptance gates, and stopping rule were frozen at
+commit `cd66090ff271764c8ea7d5c23cbfab5f19b85d97` before source staging.
+
+The prediction-visible archive is locked at SHA-256
+`8eb6f31c3908f65ddecd741eef32ad2f0fd4a3bac797fc91007f5610dd653039`.
+It contains only the four frame-68 query positions and object masks on
+`[68, 88)`. The separately withheld manual prefix target is locked at SHA-256
+`77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143`.
+The source artifact report is bound at SHA-256
+`bc40c374d19b54054abaccf1d41089dbc2babf637acc9724717ea693db5cd4f0`.
+
+The protocol status is now `locked-before-tapnextpp-prediction`. Prediction
+may proceed from the prediction-visible archive, but manual scoring remains
+forbidden until the prediction archive has been sealed.

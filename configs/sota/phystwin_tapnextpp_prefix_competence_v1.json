@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "protocol_id": "phystwin-tapnextpp-prefix-competence-v1",
-  "status": "prelocked-awaiting-source-staging",
+  "status": "locked-before-tapnextpp-prediction",
   "claim_boundary": "One-case prefix-only competence control on the already-open single_lift_cloth source interaction. It cannot establish Bayesian-PhysTwin improvement, calibration, independent transfer, or state of the art.",
   "question": "Can frozen causal TAPNext++ tracks, conservatively lifted through released calibrated RGB-D views, recover benchmark material identities accurately enough to justify a separately locked guarded Bayesian assimilation smoke?",
   "method_config": {
@@ -64,20 +64,20 @@
     "fallback": "Unsupported rows retain the exact query position and zero update support."
   },
   "source_artifacts": {
-    "source_staging_commit": "__PRELOCK_SOURCE_STAGING_COMMIT__",
-    "source_report_sha256": "__PRELOCK_SOURCE_REPORT_SHA256__",
-    "prediction_input_sha256": "__PRELOCK_PREDICTION_INPUT_SHA256__",
-    "query_array_sha256": "__PRELOCK_QUERY_ARRAY_SHA256__",
-    "object_mask_array_sha256": "__PRELOCK_OBJECT_MASK_ARRAY_SHA256__",
-    "withheld_prefix_sha256": "__PRELOCK_WITHHELD_PREFIX_SHA256__",
-    "withheld_target_array_sha256": "__PRELOCK_WITHHELD_TARGET_ARRAY_SHA256__",
+    "source_staging_commit": "cd66090ff271764c8ea7d5c23cbfab5f19b85d97",
+    "source_report_sha256": "bc40c374d19b54054abaccf1d41089dbc2babf637acc9724717ea693db5cd4f0",
+    "prediction_input_sha256": "8eb6f31c3908f65ddecd741eef32ad2f0fd4a3bac797fc91007f5610dd653039",
+    "query_array_sha256": "a57acec1755f06d03153a84f36a59af0d9692685b7b8a348b27dc4a87e6b7d75",
+    "object_mask_array_sha256": "0391a42f719a505082e3217296c1532ee97f10ed40c3a3d8d0beeaf03dd524f3",
+    "withheld_prefix_sha256": "77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143",
+    "withheld_target_array_sha256": "7e7de8686dc623dcf1169e6e6fb28ed3dd96ac0207cd64a815ae91a6691ebf83",
     "query_source": "Only benchmark identities 3, 4, 6, and 8 at source frame 68.",
     "withheld_source": "Manual identity trajectories on frames [68, 88), inaccessible to prediction and opened only after prediction sealing."
   },
   "implementation": {
-    "adapter_sha256": "__PRELOCK_ADAPTER_SHA256__",
-    "multiview_sha256": "__PRELOCK_MULTIVIEW_SHA256__",
-    "runner_sha256": "__PRELOCK_RUNNER_SHA256__"
+    "adapter_sha256": "3b27594fddfa00871947e365540a77db604c3d662a253e89c68f5921eed6375b",
+    "multiview_sha256": "9aea434c29f1720a6e938d7c8ded9d5671080b4fb829ebe14fd715036a90db2b",
+    "runner_sha256": "9067e5f4062af61ff189922a0707902605df5ae5f45cc6c4a9fc921ddd80e001"
   },
   "competence_gate": {
     "minimum_supported_fraction": 0.75,
