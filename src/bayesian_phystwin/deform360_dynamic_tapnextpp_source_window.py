@@ -22,6 +22,7 @@ from .deform360_selective_virtual_sensing_staging import (
 PROTOCOL_KIND = "Deform360DynamicTapNextppSourceWindowProtocol"
 PROTOCOL_ID = "deform360-dynamic-tapnextpp-source-window-v1"
 SELECTION_KIND = "Deform360DynamicTapNextppSourceWindowSelection"
+PREPARATION_KIND = "Deform360DynamicTapNextppSourcePreparation"
 STAGE_KIND = "Deform360DynamicTapNextppSourceWindowStage"
 MASK_PROTOCOL_KIND = "Deform360DynamicTapNextppSourceMaskProtocol"
 MASK_PROTOCOL_ID = "deform360-dynamic-tapnextpp-source-masks-v1"
@@ -345,6 +346,34 @@ def dynamic_source_case(
     return dict(matches[0])
 
 
+def validate_dynamic_source_preparation(
+    manifest: Mapping[str, Any],
+    *,
+    window_protocol: Mapping[str, Any],
+    case: Mapping[str, Any],
+    expected_code_revision: str,
+) -> None:
+    """Validate alignment provenance despite the legacy bimanual key collision."""
+
+    identity = {key: value for key, value in case.items() if key != "bimanual"}
+    _require(
+        manifest.get("artifact_kind") == PREPARATION_KIND
+        and manifest.get("protocol_config_sha256") == window_protocol["config_sha256"]
+        and manifest.get("code_revision") == expected_code_revision
+        and manifest.get("result_sha256")
+        == canonical_sha256(manifest, digest_key="result_sha256")
+        and all(manifest.get(key) == value for key, value in identity.items()),
+        "dynamic TAPNext++ source preparation is incompatible",
+    )
+    queued_bimanual = case.get("bimanual")
+    if queued_bimanual is not None:
+        _require(
+            queued_bimanual in {"yes", "no"}
+            and manifest.get("bimanual") == (queued_bimanual == "yes"),
+            "dynamic TAPNext++ bimanual preparation differs from the queue",
+        )
+
+
 def select_fresh_source_window(
     actions: np.ndarray,
     openings: np.ndarray,
@@ -525,6 +554,7 @@ __all__ = [
     "MASK_ARTIFACT_KIND",
     "MASK_PROTOCOL_ID",
     "PREDICTION_FRAME_COUNT",
+    "PREPARATION_KIND",
     "PROTOCOL_ID",
     "RAW_FRAME_COUNT",
     "SCORE_STEP_RANGE",
@@ -538,5 +568,6 @@ __all__ = [
     "seal_dynamic_source_window_selection",
     "select_fresh_source_window",
     "validate_dynamic_source_window_stage",
+    "validate_dynamic_source_preparation",
     "validate_dynamic_window_sources",
 ]

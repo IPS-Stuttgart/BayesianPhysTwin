@@ -26,6 +26,7 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_source_window import (
     file_sha256,
     seal_dynamic_source_window_selection,
     select_fresh_source_window,
+    validate_dynamic_source_preparation,
     validate_dynamic_window_sources,
 )
 from deform360.robot import RobotState, load_robot_state, save_robot_state
@@ -34,6 +35,7 @@ from deform360.robot import RobotState, load_robot_state, save_robot_state
 SOURCE_PREPARATION_FILENAME = "dynamic_tapnextpp_source_preparation.json"
 WINDOW_SELECTION_FILENAME = "dynamic_tapnextpp_source_window_selection.json"
 WINDOW_STAGE_FILENAME = "dynamic_tapnextpp_source_window_stage.json"
+SOURCE_PREPARATION_IMPLEMENTATION_COMMIT = "d66b8e595cc18e1f0fd033bea7752314dc319191"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -91,19 +93,15 @@ def _validate_source_preparation(
     *,
     protocol: Mapping[str, Any],
     case: Mapping[str, Any],
-    code_revision: str,
 ) -> tuple[dict[str, Any], Path]:
     path = source_episode / SOURCE_PREPARATION_FILENAME
     _require(path.is_file(), "fresh source preparation manifest is missing")
     manifest = json.loads(path.read_text(encoding="utf-8"))
-    _require(
-        manifest.get("artifact_kind") == "Deform360DynamicTapNextppSourcePreparation"
-        and manifest.get("protocol_config_sha256") == protocol["config_sha256"]
-        and manifest.get("code_revision") == code_revision
-        and manifest.get("result_sha256")
-        == canonical_sha256(manifest, digest_key="result_sha256")
-        and all(manifest.get(key) == value for key, value in case.items()),
-        "fresh source preparation is incompatible",
+    validate_dynamic_source_preparation(
+        manifest,
+        window_protocol=protocol,
+        case=case,
+        expected_code_revision=SOURCE_PREPARATION_IMPLEMENTATION_COMMIT,
     )
     outputs = manifest.get("outputs_sha256")
     _require(isinstance(outputs, Mapping), "source output hashes are missing")
@@ -155,7 +153,6 @@ def main() -> int:
         source_episode,
         protocol=protocol,
         case=case,
-        code_revision=code_revision,
     )
     robot_path = source_episode / "robot" / "robot.npz"
     robot = load_robot_state(robot_path)

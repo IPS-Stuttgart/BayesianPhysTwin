@@ -15,6 +15,7 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_source_window import (
     load_dynamic_source_mask_protocol,
     load_dynamic_source_window_protocol,
     select_fresh_source_window,
+    validate_dynamic_source_preparation,
     validate_dynamic_source_window_stage,
     validate_dynamic_window_sources,
 )
@@ -157,4 +158,50 @@ def test_dynamic_window_stage_binds_execution_commit(tmp_path: Path) -> None:
             window_protocol=protocol,
             case=case,
             expected_code_revision="d" * 40,
+        )
+
+
+def test_preparation_accepts_legacy_boolean_bimanual_field() -> None:
+    protocol = load_dynamic_source_window_protocol(PROTOCOL)
+    case = {
+        "queue_rank": 1,
+        "object_id": "025-bag-small-cloth",
+        "catalog_oid": "a" * 40,
+        "episode_id": 0,
+        "category": "sheet",
+        "metadata_sha256": "b" * 64,
+        "bimanual": "no",
+    }
+    revision = "c" * 40
+    manifest = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360DynamicTapNextppSourcePreparation",
+        "protocol_config_sha256": protocol["config_sha256"],
+        **case,
+        "bimanual": False,
+        "code_revision": revision,
+    }
+    manifest["result_sha256"] = canonical_sha256(
+        manifest,
+        digest_key="result_sha256",
+    )
+
+    validate_dynamic_source_preparation(
+        manifest,
+        window_protocol=protocol,
+        case=case,
+        expected_code_revision=revision,
+    )
+
+    manifest["bimanual"] = True
+    manifest["result_sha256"] = canonical_sha256(
+        manifest,
+        digest_key="result_sha256",
+    )
+    with pytest.raises(ValueError, match="bimanual preparation"):
+        validate_dynamic_source_preparation(
+            manifest,
+            window_protocol=protocol,
+            case=case,
+            expected_code_revision=revision,
         )
