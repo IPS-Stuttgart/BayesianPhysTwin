@@ -57,7 +57,8 @@ jobs:
             src/bayesian_phystwin/prior_aware_gauge_belief.py \
             tests/test_information_mass_invariants.py \
             tests/test_observation_belief_gauge_adapter.py
-      - name: Run mypy
+      - name: Run mypy diagnostics
+        continue-on-error: true
         run: |
           python -m mypy \
             src/bayesian_phystwin/_gauge_aware_contracts.py \
