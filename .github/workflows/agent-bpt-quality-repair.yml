@@ -42,15 +42,21 @@ jobs:
         run: |
           set -euo pipefail
           python .github/agent_bpt_quality_repair.py
+          python .github/agent_bpt_strict_quality_repair.py
           files=(
             .github/agent_bpt_quality_repair.py
+            .github/agent_bpt_strict_quality_repair.py
             src/bayesian_phystwin/_gauge_aware_contracts.py
             src/bayesian_phystwin/_gauge_aware_solver.py
             src/bayesian_phystwin/_prior_aware_gauge_math.py
+            src/bayesian_phystwin/cli/main.py
             src/bayesian_phystwin/observation_belief_gauge_adapter.py
-            src/bayesian_phystwin/prior_aware_gauge_belief.py
             src/bayesian_phystwin/phystwin/geometry.py
             src/bayesian_phystwin/phystwin/replay.py
+            src/bayesian_phystwin/prior_aware_gauge_belief.py
+            src/bayesian_phystwin/repository_provenance.py
+            src/bayesian_phystwin/run_manifest.py
+            src/bayesian_phystwin/run_manifest_v2.py
             tests/test_observation_belief_gauge_adapter.py
           )
           python -m ruff format -- "${files[@]}"
@@ -85,69 +91,106 @@ jobs:
         run: exit 1
 
       - name: Run stable-core coverage ratchet
+        id: coverage
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          set -o pipefail
           base_sha=$(git rev-parse origin/main)
-          python -m coverage erase
-          python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
-            tests/test_causal4d_graph_provider_v1.py \
-            tests/test_causal4d_provider_v1.py \
-            tests/test_gauge_aware_belief.py \
-            tests/test_observation_belief.py \
-            tests/test_observation_belief_gauge_adapter.py \
-            tests/test_prior_aware_and_linearization.py \
-            tests/test_prior_aware_likelihood_conformance.py \
-            tests/test_prob4d_causal_lineage.py \
-            tests/test_prob4d_joint_contract_fixture.py \
-            tests/test_cli_main.py \
-            tests/test_run_manifest.py \
-            tests/test_run_manifest_v2.py \
-            tests/test_run_manifest_cli.py \
-            tests/test_phystwin_profile.py \
-            tests/test_information_mass_invariants.py \
-            tests/test_quality_invariants.py
-          python -m coverage json -o package-coverage.json
-          stable_files=(
-            src/bayesian_phystwin/_gauge_aware_contracts.py
-            src/bayesian_phystwin/_gauge_aware_solver.py
-            src/bayesian_phystwin/causal4d_provider_v1.py
-            src/bayesian_phystwin/cli/main.py
-            src/bayesian_phystwin/cli/run_manifest.py
-            src/bayesian_phystwin/gauge_aware_belief.py
-            src/bayesian_phystwin/observation_belief.py
-            src/bayesian_phystwin/observation_belief_gauge_adapter.py
-            src/bayesian_phystwin/phystwin_profile.py
-            src/bayesian_phystwin/prob4d_causal_lineage.py
-            src/bayesian_phystwin/prob4d_observation_contract.py
-            src/bayesian_phystwin/repository_provenance.py
-            src/bayesian_phystwin/run_manifest.py
-            src/bayesian_phystwin/run_manifest_v2.py
-          )
-          stable_include=$(IFS=,; echo "${stable_files[*]}")
-          python -m coverage json \
-            --include="$stable_include" \
-            -o stable-core-coverage.json
-          python tools/quality/check_coverage_floors.py \
-            stable-core-coverage.json \
-            .github/quality/stable-core-coverage-floors.json \
-            --changed-coverage-json package-coverage.json \
-            --base "$base_sha" \
-            --head HEAD
+          {
+            python -m coverage erase
+            python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
+              tests/test_causal4d_graph_provider_v1.py \
+              tests/test_causal4d_provider_v1.py \
+              tests/test_gauge_aware_belief.py \
+              tests/test_observation_belief.py \
+              tests/test_observation_belief_gauge_adapter.py \
+              tests/test_prior_aware_and_linearization.py \
+              tests/test_prior_aware_likelihood_conformance.py \
+              tests/test_prob4d_causal_lineage.py \
+              tests/test_prob4d_joint_contract_fixture.py \
+              tests/test_cli_main.py \
+              tests/test_run_manifest.py \
+              tests/test_run_manifest_v2.py \
+              tests/test_run_manifest_cli.py \
+              tests/test_phystwin_profile.py \
+              tests/test_information_mass_invariants.py \
+              tests/test_quality_invariants.py
+            python -m coverage json -o package-coverage.json
+            stable_files=(
+              src/bayesian_phystwin/_gauge_aware_contracts.py
+              src/bayesian_phystwin/_gauge_aware_solver.py
+              src/bayesian_phystwin/causal4d_provider_v1.py
+              src/bayesian_phystwin/cli/main.py
+              src/bayesian_phystwin/cli/run_manifest.py
+              src/bayesian_phystwin/gauge_aware_belief.py
+              src/bayesian_phystwin/observation_belief.py
+              src/bayesian_phystwin/observation_belief_gauge_adapter.py
+              src/bayesian_phystwin/phystwin_profile.py
+              src/bayesian_phystwin/prob4d_causal_lineage.py
+              src/bayesian_phystwin/prob4d_observation_contract.py
+              src/bayesian_phystwin/repository_provenance.py
+              src/bayesian_phystwin/run_manifest.py
+              src/bayesian_phystwin/run_manifest_v2.py
+            )
+            stable_include=$(IFS=,; echo "${stable_files[*]}")
+            python -m coverage json \
+              --include="$stable_include" \
+              -o stable-core-coverage.json
+            python tools/quality/check_coverage_floors.py \
+              stable-core-coverage.json \
+              .github/quality/stable-core-coverage-floors.json \
+              --changed-coverage-json package-coverage.json \
+              --base "$base_sha" \
+              --head HEAD
+          } 2>&1 | tee coverage-ratchet.txt
+
+      - name: Upload coverage diagnostics
+        if: steps.coverage.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: agent-bpt-coverage-diagnostics
+          path: |
+            coverage-ratchet.txt
+            package-coverage.json
+            stable-core-coverage.json
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Stop after coverage failure
+        if: steps.coverage.outcome == 'failure'
+        run: exit 1
 
       - name: Run provider quality and contract tests
+        id: provider
+        continue-on-error: true
         run: |
-          set -euo pipefail
-          python -m mypy --python-version 3.12 \
-            src/bayesian_phystwin/contracts \
-            src/bayesian_phystwin/phystwin \
-            src/bayesian_phystwin/causal4d_provider_v1.py \
-            src/bayesian_phystwin/causal4d_provider_v2.py
-          python -m pytest -q \
-            tests/test_causal4d_provider_v1.py \
-            tests/test_causal4d_provider_v2.py \
-            tests/test_observation_belief_gauge_adapter.py \
-            tests/test_information_mass_invariants.py \
-            tests/test_provider_composite_weight_semantics.py
+          set -o pipefail
+          {
+            python -m mypy --python-version 3.12 \
+              src/bayesian_phystwin/contracts \
+              src/bayesian_phystwin/phystwin \
+              src/bayesian_phystwin/causal4d_provider_v1.py \
+              src/bayesian_phystwin/causal4d_provider_v2.py
+            python -m pytest -q \
+              tests/test_causal4d_provider_v1.py \
+              tests/test_causal4d_provider_v2.py \
+              tests/test_observation_belief_gauge_adapter.py \
+              tests/test_information_mass_invariants.py \
+              tests/test_provider_composite_weight_semantics.py
+          } 2>&1 | tee provider-gates.txt
+
+      - name: Upload provider diagnostics
+        if: steps.provider.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: agent-bpt-provider-diagnostics
+          path: provider-gates.txt
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Stop after provider failure
+        if: steps.provider.outcome == 'failure'
+        run: exit 1
 
       - name: Publish product-only branch
         env:
@@ -156,6 +199,7 @@ jobs:
           set -euo pipefail
           exclusions=(
             ':(exclude).github/agent_bpt_quality_repair.py'
+            ':(exclude).github/agent_bpt_strict_quality_repair.py'
             ':(exclude).github/workflows/agent-bpt-quality-repair.yml'
           )
           git diff --binary origin/main...HEAD -- . "${exclusions[@]}" > /tmp/product.patch
