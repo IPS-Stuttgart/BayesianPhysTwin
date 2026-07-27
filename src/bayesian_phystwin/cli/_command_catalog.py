@@ -104,7 +104,9 @@ def _print_command(command: CommandSpec, *, json_output: bool) -> None:
     previous = ", ".join(command.previous_grouped_commands) or "none"
     print(f"previous grouped commands: {previous}")
     print(f"owner: {command.owner}")
-    print("optional dependencies: " + (", ".join(command.optional_dependencies) or "none"))
+    print(
+        "optional dependencies: " + (", ".join(command.optional_dependencies) or "none")
+    )
     print(f"target: {command.target}")
     print(f"description: {command.description}")
 
