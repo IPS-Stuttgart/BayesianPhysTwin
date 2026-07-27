@@ -314,20 +314,36 @@ def _manifest_command(
     ]
 
 
+def _validate_output_path(output: Path, protected_roots: Sequence[Path]) -> None:
+    if output.exists() and not output.is_dir():
+        raise NotADirectoryError(output)
+    for protected in protected_roots:
+        root = protected.resolve()
+        if output == root or output in root.parents or root in output.parents:
+            raise ValueError(
+                "output directory must not overlap a source, data, or repository "
+                f"root: {root}"
+            )
+
+
 def reproduce(args: argparse.Namespace) -> None:
     source_checkout = args.source_checkout.resolve()
     data_root = args.data_root.resolve()
     output = args.output_dir.resolve()
+    _validate_output_path(
+        output,
+        (source_checkout, data_root, REPOSITORY_ROOT),
+    )
     if output.exists() and any(output.iterdir()) and not args.force:
         raise FileExistsError(
             f"output directory is not empty: {output}; pass --force to replace it"
         )
-    if output.exists() and args.force:
-        shutil.rmtree(output)
-    output.mkdir(parents=True, exist_ok=True)
 
     validate_source_checkout(source_checkout)
     data_manifest = validate_data_root(data_root)
+    if output.exists() and args.force:
+        shutil.rmtree(output)
+    output.mkdir(parents=True, exist_ok=True)
     expected = json.loads(EXPECTED_PATH.read_text(encoding="utf-8"))
     if expected.get("source_revision") != EXPECTED_SOURCE_REVISION:
         raise ValueError("expected metrics source revision changed")

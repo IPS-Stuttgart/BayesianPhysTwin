@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -123,3 +123,63 @@ def test_manifest_command_binds_claim_protocol_and_outputs(tmp_path: Path) -> No
     assert capsule.EXPECTED_PROTOCOL_ID in command
     assert "full22_comparison=full22_comparison.json" in command
     assert "verification=verification.json" in command
+
+
+@pytest.mark.parametrize("relation", ("same", "ancestor", "descendant"))
+def test_output_path_rejects_protected_overlaps(
+    tmp_path: Path,
+    relation: str,
+) -> None:
+    capsule = _load_capsule()
+    protected = tmp_path / "protected"
+    protected.mkdir()
+    output = {
+        "same": protected,
+        "ancestor": tmp_path,
+        "descendant": protected / "bundle",
+    }[relation]
+
+    with pytest.raises(ValueError, match="must not overlap"):
+        capsule._validate_output_path(output, (protected,))
+
+
+def test_output_path_rejects_existing_file(tmp_path: Path) -> None:
+    capsule = _load_capsule()
+    protected = tmp_path / "protected"
+    protected.mkdir()
+    output = tmp_path / "bundle"
+    output.write_text("not a directory", encoding="utf-8")
+
+    with pytest.raises(NotADirectoryError):
+        capsule._validate_output_path(output, (protected,))
+
+
+def test_force_preserves_output_when_source_validation_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capsule = _load_capsule()
+    source = tmp_path / "source"
+    data = tmp_path / "data"
+    output = tmp_path / "output"
+    source.mkdir()
+    data.mkdir()
+    output.mkdir()
+    marker_path = output / "must-survive.txt"
+    marker_path.write_text("evidence", encoding="utf-8")
+
+    def reject_source(_source: Path) -> None:
+        raise ValueError("invalid source")
+
+    monkeypatch.setattr(capsule, "validate_source_checkout", reject_source)
+    args = SimpleNamespace(
+        source_checkout=source,
+        data_root=data,
+        output_dir=output,
+        workers=1,
+        force=True,
+    )
+
+    with pytest.raises(ValueError, match="invalid source"):
+        capsule.reproduce(args)
+    assert marker_path.read_text(encoding="utf-8") == "evidence"
