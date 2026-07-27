@@ -1,0 +1,64 @@
+name: Resolve PR 71 against current main
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/fixed-anchor-provider-v1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Merge current main and resolve the changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if ! git merge --no-ff --no-commit origin/main; then
+            mapfile -t unresolved < <(git diff --name-only --diff-filter=U)
+            if [[ "${#unresolved[@]}" -ne 1 || "${unresolved[0]}" != "CHANGELOG.md" ]]; then
+              printf 'Unexpected unresolved paths:\n%s\n' "${unresolved[*]}" >&2
+              exit 1
+            fi
+            git checkout --theirs CHANGELOG.md
+            python - <<'PY'
+          from pathlib import Path
+
+          path = Path("CHANGELOG.md")
+          text = path.read_text(encoding="utf-8")
+          bullet = (
+              "- A NumPy-only, versioned Causal4D belief-provider surface for immutable robust\n"
+              "  Bayesian endpoint inference without downstream experiment-module imports.\n"
+          )
+          if bullet not in text:
+              anchor = "### Added\n\n"
+              if text.count(anchor) != 1:
+                  raise SystemExit("unexpected changelog structure")
+              text = text.replace(anchor, anchor + bullet, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+            git add CHANGELOG.md
+          fi
+          if git diff --name-only --diff-filter=U | grep -q .; then
+            git diff --name-only --diff-filter=U >&2
+            exit 1
+          fi
+          rm .github/workflows/agent-resolve-pr71-main.yml
+          git add -A
+          git diff --cached --check
+          git commit -m "Merge current main into fixed-anchor provider"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
