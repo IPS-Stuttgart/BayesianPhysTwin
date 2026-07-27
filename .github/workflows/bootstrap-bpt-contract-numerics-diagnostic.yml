@@ -1,0 +1,53 @@
+name: Diagnose BPT contract patch
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Reproduce and publish the exact patch diagnostic
+        shell: bash
+        env:
+          DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
+        run: |
+          set -euo pipefail
+          git fetch origin "${GITHUB_HEAD_REF}"
+          git show FETCH_HEAD:.github/workflows/bootstrap-bpt-contract-numerics-hardening.yml \
+            > /tmp/bootstrap.yml
+          python - <<'PY' > /tmp/patch-diagnostic.txt 2>&1 || true
+          import base64
+          import gzip
+          import re
+          from pathlib import Path
+
+          workflow = Path('/tmp/bootstrap.yml').read_text(encoding='utf-8')
+          match = re.search(r'payload = "([A-Za-z0-9+/=]+)"', workflow)
+          if match is None:
+              raise SystemExit('embedded patch payload was not found')
+          source = gzip.decompress(base64.b64decode(match.group(1))).decode('utf-8')
+          exec(compile(source, 'bpt-contract-numerics-patch.py', 'exec'))
+          print('patch completed without an exception')
+          PY
+          cat /tmp/patch-diagnostic.txt
+          git reset --hard main
+          git switch -C "${DIAGNOSTIC_BRANCH}"
+          cp /tmp/patch-diagnostic.txt patch-diagnostic.txt
+          git config user.name "OpenAI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add patch-diagnostic.txt
+          git commit -m "Record BPT patch diagnostic"
+          git push --force origin "HEAD:refs/heads/${DIAGNOSTIC_BRANCH}"
