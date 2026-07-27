@@ -62,9 +62,10 @@ exit.
 
 `FlorianPfaff/Prob4D` is private. Configure a Bayesian-PhysTwin repository secret
 named `PROB4D_READ_TOKEN` whose token has read-only contents access to that
-repository. The workflow deliberately fails rather than silently skipping the
-integration gate when this credential is absent.
+repository. Without the credential, the workflow emits an explicit warning and
+records in the job summary that the cross-repository gate was not executed; it
+does not admit or claim any three-repository evidence.
 
 Manual runs may select specific Prob4D and Causal4D refs. Pull-request and
-scheduled runs use their `main` branches, so the weekly run also detects
-cross-repository contract drift.
+scheduled runs use their `main` branches, so a credentialed weekly run also
+detects cross-repository contract drift.
