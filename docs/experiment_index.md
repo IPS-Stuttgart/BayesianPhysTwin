@@ -59,6 +59,13 @@ It supports improvement over released PhysTwin under the recorded protocol; it
 does not support an overall state-of-the-art claim or calibrated raw posterior
 covariance.
 
+The
+[frozen full-22 reproduction capsule](../reproductions/full22_anchor_v1/README.md)
+records the exact source revision, protocol and data identities, two-stage
+source command, expected paper-facing metrics, fail-closed verification, and a
+strict `RunManifestV2` bundle. Executing that capsule is the remaining action
+before the paper registry may remove its source-command promotion blocker.
+
 ### Deform360 prospective validation
 
 The

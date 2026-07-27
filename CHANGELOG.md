@@ -24,6 +24,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   and removed-alias metadata.
 - Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
   lookup for historical `bpt-*` command names.
+- A frozen full-22 Bayesian-anchor reproduction capsule that binds the exact
+  historical source revision, data manifest, protocol, expected metrics,
+  two-stage source command, and `RunManifestV2` evidence bundle.
 
 ### Changed
 
