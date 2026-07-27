@@ -616,8 +616,7 @@ def plan_physics_guided_queries(
     def append_event(scored: _ScoredNode, frame: int, replaces: int) -> None:
         node_id = scored.node_id
         mask = (
-            predicted_support[:, frame, node_id]
-            >= cfg.support_probability_threshold
+            predicted_support[:, frame, node_id] >= cfg.support_probability_threshold
         ) & np.all(np.isfinite(pixels[:, frame, node_id]), axis=1)
         _require(
             int(np.sum(mask)) >= cfg.minimum_camera_support,
