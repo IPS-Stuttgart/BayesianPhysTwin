@@ -93,6 +93,18 @@ _STABLE_COMMANDS: Final[tuple[CommandSpec, ...]] = (
         owner="observation-belief-v1",
     ),
     CommandSpec(
+        command_id="merge-deform360-exclusions",
+        route=("cohort", "merge-exclusions"),
+        previous_routes=(),
+        module="bayesian_phystwin.cli.deform360_object_exclusion",
+        function="main",
+        description="merge hash-only Deform360 object-exclusion manifests",
+        legacy_alias=None,
+        status=CommandStatus.STABLE,
+        optional_dependencies=(),
+        owner="deform360-fresh-object-exclusion-v1",
+    ),
+    CommandSpec(
         command_id="replay-residuals",
         route=("residual", "replay"),
         previous_routes=(),
