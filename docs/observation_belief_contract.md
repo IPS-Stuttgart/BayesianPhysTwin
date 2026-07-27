@@ -108,13 +108,13 @@ provider-specific claims are never inferred from its repository name alone.
 Validate an artifact:
 
 ```bash
-bpt-validate-observation-belief observation_belief.npz
+bpt observation validate observation_belief.npz
 ```
 
 Score a prediction aligned row-for-row with the artifact:
 
 ```bash
-bpt-validate-observation-belief observation_belief.npz \
+bpt observation validate observation_belief.npz \
   --predicted-npz physical_prediction.npz \
   --predicted-key predicted_xyz_m \
   --summary-json outputs/observation_score.json
