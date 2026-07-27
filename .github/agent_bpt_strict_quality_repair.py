@@ -60,9 +60,9 @@ def repair_run_manifest_v2_mapping() -> None:
         "        return json.loads(\n"
         "            json.dumps(dict(value), sort_keys=True, allow_nan=False)\n"
         "        )\n",
-        "        return json.loads(  # type: ignore[no-any-return]\n"
-        "            json.dumps(dict(value), sort_keys=True, allow_nan=False)\n"
-        "        )\n",
+        "        payload = json.dumps(dict(value), sort_keys=True, allow_nan=False)\n"
+        "        result = json.loads(payload)\n"
+        "        return cast(dict[str, Any], result)\n",
     )
 
 
