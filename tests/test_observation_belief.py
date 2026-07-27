@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -72,6 +73,7 @@ def test_observation_metadata_is_deeply_immutable_and_digest_stable(
     metadata_input = {
         "nested": {
             "items": [1, {"accepted": True}],
+            "tuple_items": (2, 3),
         }
     }
     belief = ObservationBeliefV1(
@@ -86,18 +88,63 @@ def test_observation_metadata_is_deeply_immutable_and_digest_stable(
     assert belief.metadata["nested"]["items"][1]["accepted"] is True
     assert belief.artifact_id == artifact_id
 
+    frozen_items = belief.metadata["nested"]["items"]
+    assert isinstance(belief.metadata, dict)
+    assert isinstance(frozen_items, list)
+    assert frozen_items.count(1) == 1
+    assert set(belief.metadata.keys()) == {"nested"}
+
+    shallow = copy.copy(belief.metadata)
+    deep = copy.deepcopy(belief.metadata)
+    assert type(shallow) is dict
+    assert type(deep) is dict
+    assert type(deep["nested"]["items"]) is list
+    deep["nested"]["items"].append("copy-only")
+    assert "copy-only" not in frozen_items
+
     with pytest.raises(TypeError):
         belief.metadata["new"] = "mutated"
     with pytest.raises(TypeError):
         belief.metadata["nested"]["items"][1]["accepted"] = False
     with pytest.raises(TypeError):
-        belief.metadata["nested"]["items"].append("mutated")
+        del belief.metadata["nested"]
+    with pytest.raises(TypeError):
+        belief.metadata.update({"new": "mutated"})
+    with pytest.raises(TypeError):
+        belief.metadata |= {"new": "mutated"}
+    with pytest.raises(TypeError):
+        frozen_items.append("mutated")
+    with pytest.raises(TypeError):
+        frozen_items[0] = 9
+    with pytest.raises(TypeError):
+        del frozen_items[0]
+    with pytest.raises(TypeError):
+        frozen_items += ["mutated"]
+    with pytest.raises(TypeError):
+        frozen_items *= 2
 
     path = tmp_path / "nested-belief.npz"
     save_observation_belief(path, belief)
     restored = load_observation_belief(path)
     assert restored.artifact_id == artifact_id
     assert restored.metadata == belief.metadata
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    (
+        {"unsupported": object()},
+        {"nonfinite": float("nan")},
+    ),
+)
+def test_observation_metadata_rejects_non_json_values(metadata: object) -> None:
+    with pytest.raises(ValueError, match="finite JSON"):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                "metadata": metadata,
+            }
+        )
 
 
 def test_observation_belief_rejects_future_frame() -> None:
