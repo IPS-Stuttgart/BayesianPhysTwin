@@ -78,9 +78,7 @@ def _adapt(
     return build_gauge_aware_batch_from_observation_belief(
         belief,
         physical_prediction_xyz_m=(
-            np.zeros_like(belief.mean_xyz_m)
-            if predicted is None
-            else predicted
+            np.zeros_like(belief.mean_xyz_m) if predicted is None else predicted
         ),
         state_jacobian=state,
         query_state_jacobian=state[:2],
@@ -141,9 +139,7 @@ def test_adapter_keeps_association_separate_from_all_reliability_inputs() -> Non
     )
     assert np.all(first.association_probability == 0.0)
     assert np.all(second.association_probability == 1.0)
-    assert (
-        first.summary()["association_used_as_prior_reliability"] is False
-    )
+    assert first.summary()["association_used_as_prior_reliability"] is False
 
 
 def test_default_bias_design_is_full_rank_without_mean_duplication() -> None:
@@ -188,8 +184,7 @@ def test_group_weights_cap_duplicate_correlated_evidence() -> None:
             query_state_jacobian=state,
             gauge_prior_covariance=np.zeros((0, 0)),
             correlation_group_ids=tuple(
-                "one-correlated-window"
-                for _ in range(count * repetitions)
+                "one-correlated-window" for _ in range(count * repetitions)
             ),
             prior_reliability=np.ones(count * repetitions),
             prior_nominal_probability=np.full(
@@ -209,12 +204,8 @@ def test_group_weights_cap_duplicate_correlated_evidence() -> None:
     original = run(1)
     duplicated = run(2)
     assert original.accepted and duplicated.accepted
-    assert original.diagnostics[
-        "effective_observation_information_mass"
-    ] == 2.0
-    assert duplicated.diagnostics[
-        "effective_observation_information_mass"
-    ] == 2.0
+    assert original.diagnostics["effective_observation_information_mass"] == 2.0
+    assert duplicated.diagnostics["effective_observation_information_mass"] == 2.0
     np.testing.assert_allclose(
         original.posterior_covariance,
         duplicated.posterior_covariance,
@@ -238,7 +229,6 @@ def test_unanchored_global_state_translation_abstains() -> None:
 
     assert not result.accepted
     assert result.reason == "no-identifiable-query-state"
-
 
 
 def test_adapter_respects_explicit_prob4d_final_group_power() -> None:
@@ -266,9 +256,7 @@ def test_adapter_respects_explicit_prob4d_final_group_power() -> None:
 
 
 def test_adapter_recognizes_legacy_prob4d_effective_sample_metadata() -> None:
-    adapted = _adapt(
-        _belief(metadata={"effective_samples_per_group": 64.0})
-    )
+    adapted = _adapt(_belief(metadata={"effective_samples_per_group": 64.0}))
 
     assert (
         adapted.batch.composite_weight_mode
