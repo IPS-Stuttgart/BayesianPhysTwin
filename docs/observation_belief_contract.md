@@ -6,9 +6,10 @@ NPZ artifact. The same schema is emitted by Prob4D and can be validated by
 Causal4D without importing either provider.
 
 Descriptor metadata is copied, normalized through finite canonical JSON, and
-exposed as recursively immutable dict/list-compatible containers. Mutating caller-owned
-containers after construction, or attempting nested mutation through the
-belief, therefore cannot change an existing artifact content address.
+exposed as recursively immutable dict/list-compatible containers. Mutating
+caller-owned containers after construction, or attempting nested mutation
+through the belief, therefore cannot change an existing artifact content
+address.
 
 ## Information boundary
 
