@@ -18,6 +18,19 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   changelog.
 - Distribution manifests and regression checks that keep release metadata
   present and version-consistent.
+- A lazy `bpt experiment list|describe|run` registry for non-stable research
+  commands.
+- Wheel and source-distribution checks that enforce the single executable
+  boundary.
+
+### Changed
+
+- Stable command-line operations now use grouped `bpt` routes exclusively.
+
+### Removed
+
+- All 79 legacy `bpt-*` console-script entry points. Historical command strings
+  remain valid provenance records but are no longer executable aliases.
 
 ## Historical development
 
