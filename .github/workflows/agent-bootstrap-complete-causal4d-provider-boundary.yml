@@ -80,7 +80,25 @@ jobs:
             tests/test_legacy_artifacts.py
 
       - name: Run complete NumPy suite
-        run: python -m pytest -q
+        id: full_suite
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -q 2>&1 | tee full-suite.log
+
+      - name: Upload complete-suite diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: provider-boundary-full-suite
+          path: full-suite.log
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Fail on complete-suite regression
+        if: steps.full_suite.outcome == 'failure'
+        run: exit 1
 
       - name: Publish reviewed product branch
         shell: bash
