@@ -1,5 +1,6 @@
 name: Resolve PR 39 against current main
 
+# Second push intentionally triggers the already-present branch workflow.
 on:
   push:
     branches: [agent/audit-student-t-mixture-v2]
