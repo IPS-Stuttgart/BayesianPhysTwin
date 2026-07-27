@@ -1,0 +1,1711 @@
+{
+  "artifact_kind": "PhysTwinConditionedDinoPrefixPrediction",
+  "case": "single_lift_cloth",
+  "claim_boundary": "one already-open source competence control for material correspondence; not simulator assimilation, confirmation, calibration, or state-of-the-art evidence",
+  "config": {
+    "case_name": "single_lift_cloth",
+    "endpoint_frame_count": 2,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_supported_rmse_m": 0.015,
+    "minimum_overall_gain_over_physical": 0.0,
+    "minimum_supported_fraction": 0.5,
+    "minimum_supported_gain_over_physical": 0.1,
+    "reference_frame": 114,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "source_frame_end_exclusive": 121
+  },
+  "diagnostics": {
+    "accepted_fraction_after_reference": 0.4583333333333333,
+    "accepted_view_count_max": 2,
+    "accepted_view_count_min": 0,
+    "prior_reliability_mean": 0.15293624997138977
+  },
+  "implementation_sha256": {
+    "competence": "5bfa22ee1cf054da2fd58dbd6eb161315182cc5f42e0301566a472a4ff429a11",
+    "correspondence": "70447da6122912156e26da1dd97cdb6083d53bad941d5373e7ca6920b4aa9b7d",
+    "protocol": "fd1b1e3ed74940a09b72475e8af94039890d5291e56ec6cfc44d3a69bdee5813",
+    "runner": "cf38105d0fc82e250d2cba7772da4bdb68b24ea9a242d6548b5834ed086df2f3"
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_read": false,
+    "manual_identity_frames_read": [
+      114
+    ],
+    "rejected_rows_use_exact_physical_fallback": true,
+    "rgb_depth_frame_range_half_open": [
+      114,
+      121
+    ],
+    "state_innovation_used_in_prior_reliability": false,
+    "withheld_prefix_target_read": false
+  },
+  "inputs": {
+    "calibration_sha256": "160962e646f60bdfd70a71793e11c8152a0d05543762999213d489ef50849f1d",
+    "cameras": {
+      "0": {
+        "decoded_rgb_prefix_sha256": "f9bc12213f4f6576da121154de148d423f205c46a702bb2d6a9eac64f9056015",
+        "frame_files": [
+          {
+            "depth_sha256": "aa280f61dd34e0fe8d19e2fe085386917fa72df12167373d58324cd5fa74e36c",
+            "frame": 114,
+            "object_mask_sha256": "6d4b9c54abdd4d81bb322e9d5e0d0cc53a3eb36cc7989b62d49cb51a3f4d41b6",
+            "rgb_sha256": "161f639cd3c1c50e08c33e79cded1f5d92bd27177b3a9ea87d11c94b46721129"
+          },
+          {
+            "depth_sha256": "9d42469ac4af9642ac4de8d0518f5695fad37c97284cb3cca0c631cffe1bf859",
+            "frame": 115,
+            "object_mask_sha256": "21e22ed15a5110f54970967d387ab80c1758a324e0e5b4a6b3bc4432666448cf",
+            "rgb_sha256": "223ad68c0e6a926f2094223690712a8a856791cbb38ca1b44a7ff87a2cdf501e"
+          },
+          {
+            "depth_sha256": "a334cb4d749768fcdd7b28daea0d5d1fa49307d32ac4cbe77d228bf7ac5c5708",
+            "frame": 116,
+            "object_mask_sha256": "843cb471c4c71ce8fddce91e3ae4e631bea1f3ea336b4ca4ccb3478e35d86c21",
+            "rgb_sha256": "c0a3209004f2342c1d1ff574215743bf3e1b730d6f4ff9c461300d22f3f6214a"
+          },
+          {
+            "depth_sha256": "08d4d2643f7be3595b644e8db999b9521378bb9d750e08d47609e6e7b5856f04",
+            "frame": 117,
+            "object_mask_sha256": "fe77cd41219e89fba49cae1f3618c7b7481156708b013c94c95bbfae106e0bfc",
+            "rgb_sha256": "dc93d296c2bd3b73641b72842f928f3fa0c8f73da98a004cc896041563151475"
+          },
+          {
+            "depth_sha256": "07ccf2778ae80bd016d497114847f2b14080a93b669a189a6d5d2d51f1feb94a",
+            "frame": 118,
+            "object_mask_sha256": "d3c76d66def5ed22563e59ef63cb1f13be63a229ef3452b236d4aa3d00c026fc",
+            "rgb_sha256": "6be7fd8f4a5a3cc178c46366315197e6f8d8c858d052abbf3561b85b2d7f2992"
+          },
+          {
+            "depth_sha256": "07b3b4a98dd57edcb14d25f956877a9387f2969a69c695b251d8a1e72ff862fd",
+            "frame": 119,
+            "object_mask_sha256": "7d75fe5e85f50db1d20954121fd6130830934d3a819785c91b1962b82624360e",
+            "rgb_sha256": "498889ac5c6f5c83fe904be15b3b4c601fd96ec1acd8cfbfeba416f2514d16f4"
+          },
+          {
+            "depth_sha256": "c7fcc59a9f90c6b718b0c6bd688554c13e5674e498083de5e100ee3ca174f3fb",
+            "frame": 120,
+            "object_mask_sha256": "b7ba657c6a83c272b598f0ee8ceafc85a6c1899500905467b34198c0b6b5e4e3",
+            "rgb_sha256": "673676b669572068b005e7175ca5883d0e01f47f893311d7ff63c2370a7ac5ce"
+          }
+        ],
+        "metric_depth_prefix_sha256": "69f5aa7ddd0694037a7c096615a6c17d613d4ca7977a03f87e3903ce9e86fbdf",
+        "object_mask_prefix_sha256": "2dd92cf9211b3da0cd82a39c5cf35d5e1966579750eac5dcaaef119ecc42adde"
+      },
+      "1": {
+        "decoded_rgb_prefix_sha256": "ff41877506f9e7dd5061459f087ed57a5313aa7e70b5412b437cb2e41f8ed73b",
+        "frame_files": [
+          {
+            "depth_sha256": "72f90b28e8ed070c941e4092d9b01004c6d7b27aa18e7f59c4ed37c72650abd0",
+            "frame": 114,
+            "object_mask_sha256": "714e286667b34ca34a274aae765f3b5d29e1bcb1b1b57fe862c378335874fc73",
+            "rgb_sha256": "07c2bb66f7dd2dac804e7f45f995b75a7a217f3f332b21a23b6d00b3be344401"
+          },
+          {
+            "depth_sha256": "462f53feb7f9700ba85d7c90b89a71229b7393901a4d8f01647bca5507cf113f",
+            "frame": 115,
+            "object_mask_sha256": "f3d56f69ac0f5b484522ec33457753ff56bb08c6bc083c23cbcf1e8a073be9b7",
+            "rgb_sha256": "ee24746381965c1792e47a3cfeb4f69f441f90f488193d6ec2c5d5a4d76bfe98"
+          },
+          {
+            "depth_sha256": "113127c6ebb8b071ce3565c42acaf78d646ee798a81487f5e05456e7d1e43854",
+            "frame": 116,
+            "object_mask_sha256": "edbda230a40f980cac30d8f16342767563f716f592798f44c6c44290dceab47c",
+            "rgb_sha256": "ddb9fc2aef3a358833fdd9d468bc91539a0b76dda4f4f54b65e3e41e46303b7e"
+          },
+          {
+            "depth_sha256": "af8fe52fab181c001d43627ca3791ca164fb21db4d4a595ad592ec51ac01417b",
+            "frame": 117,
+            "object_mask_sha256": "fdccff9bec200f46f033a6d2cae42b926c7909c992a23fe97c53bfcb9a809e96",
+            "rgb_sha256": "1286ecddd2b26079ab78486eb65e74d4fded4a970a9c02a02c732f176cb8e1b1"
+          },
+          {
+            "depth_sha256": "8b995a1244822ebad6c34c2b8193f7834cf494f4393bb8f1fc83d840a0067b0b",
+            "frame": 118,
+            "object_mask_sha256": "56dca23c03b064696b66621cd05a81ffe1f43aa5927132a8221bb277ba506fd4",
+            "rgb_sha256": "3349419a1011f8507564e35d7368b0334ba95269ae122a1ea14b43ed37c5855b"
+          },
+          {
+            "depth_sha256": "0239d1bfe36dcd8acfac90d9c42dcf7cad1442995b1fa73e1ec01a1fa822f16e",
+            "frame": 119,
+            "object_mask_sha256": "ef18f775b82b62c618511187c1b702643d15f8ec6fa004274b7fda0ffb88e8fa",
+            "rgb_sha256": "043fb9fc55714d5f51753e7736f3488b4363a6c8740aa8502ae8094b6b729e3c"
+          },
+          {
+            "depth_sha256": "efb1f39dfb58342968fa0de435ab79703e75aad543e69b6edb95267b4f786eb4",
+            "frame": 120,
+            "object_mask_sha256": "b14e4956fdcee7fdaeb0318ea7611f8934a5e0c008f5ebdf423b7709ba60c55a",
+            "rgb_sha256": "ea16064374933918fd441a292b1c4978ec454ade816441d9f15580fe8504d607"
+          }
+        ],
+        "metric_depth_prefix_sha256": "769789f792c668272f90caf6b4079f75640588214e8d2473d9d8e4074ce0899e",
+        "object_mask_prefix_sha256": "fab59709eb1a3ab7e87e7b9c9688c1a1a15e34a719f5dcb430dd4230d15d6377"
+      },
+      "2": {
+        "decoded_rgb_prefix_sha256": "4d798c45d249c4e711bc448954d15a3bb2114f4cfdcb5129a40eb019d67f6b92",
+        "frame_files": [
+          {
+            "depth_sha256": "7a846e3edfd83c78b15c425124ec363ebcb3397eec8f6f4edb362c4966a78539",
+            "frame": 114,
+            "object_mask_sha256": "65c2602f3da49d917d549b4ddc938f37807655b8a7fb5cd067fd3627615671a4",
+            "rgb_sha256": "13cacd445fe8454888ac81ecc54c2a4ab69205189c57bf3ada69b76b321b7a8c"
+          },
+          {
+            "depth_sha256": "42484385fd92912825ff79d44e468c3a945122d8063f44a6826d47e4bcde9101",
+            "frame": 115,
+            "object_mask_sha256": "f20f3b20a4cf3458f6260cb04757a341b8641ce06dc11f5893e0513902d69434",
+            "rgb_sha256": "1495b679b9d47cbf04cc480e95b2c7c65824a32fc1590d0eb5bb5c835fdd088e"
+          },
+          {
+            "depth_sha256": "b81bc083b2e74f303c7ac11c215b1d7eed4bf326b2aeebcdd199c0dd3810204f",
+            "frame": 116,
+            "object_mask_sha256": "ec4ad73d1ae4569d71ed52617177d6f8ffc9c5167bb8b682e55a5003bd35948b",
+            "rgb_sha256": "c7c8527861ef7b7a0f903d9ec3e7ede2d21f6ba6375fd2ab4ec641161ae2b1f8"
+          },
+          {
+            "depth_sha256": "bd1df25cc16092aebab57aefbad2827fb2156017f7fa9d2e0766de45307f8ed4",
+            "frame": 117,
+            "object_mask_sha256": "24d45c5a262a97beb42f95813783296f9a2ed648366fd30a1bd7a35abdf39313",
+            "rgb_sha256": "5d58b03d70f27e0a58e2e8a6481a32550534e2e0e7fce864fe04160409567d8f"
+          },
+          {
+            "depth_sha256": "1426c0bd246e6ee0da5477de22225fd3b03d78bfe055bc5a30fc57283ab197a7",
+            "frame": 118,
+            "object_mask_sha256": "eccdb04515601e954c01f13b760283ae36ba37b181661727b9a846a660f449ad",
+            "rgb_sha256": "4ad89db44da58a8e1c6a5e629b4ec7bb57062fc197e872244693c041a195ef99"
+          },
+          {
+            "depth_sha256": "8561eda4cd9296aeead19fe35e6bdf6fc13a5acfdfb96d10c8add98ce1826ae5",
+            "frame": 119,
+            "object_mask_sha256": "964189d4fb0e0df0c62df3a3352c143d86e0ae8a6ee80b0b85df44a455a7cd5a",
+            "rgb_sha256": "f38708b1ae208822311a0ef77ef2c28ac10f9aafb6badb0f028fffb64a9d483e"
+          },
+          {
+            "depth_sha256": "f7e14c6a5e790ea390d9f636267386407caa9086ea374e54455b925023261db4",
+            "frame": 120,
+            "object_mask_sha256": "4e97b7b6c135385f1ad6c5f56f93ce258d705df7d52088a9537353f551a44c32",
+            "rgb_sha256": "00cf3cc9822ddfb17c54195389033da885b0d936e2a6416cf0ce8c9e4d5971bb"
+          }
+        ],
+        "metric_depth_prefix_sha256": "d8d355e0914ea19322d061acae0c0edfcac5a4f96e7f9d8b53534a6118134471",
+        "object_mask_prefix_sha256": "75f0e7074c5d07429efa9914cb34bf2e17f14725fbf8dbfcbc097eed9fa4dd73"
+      }
+    },
+    "depth_source": "released causal RGB-D sensor depth",
+    "dino_checkpoint_sha256": "f433177089a681826f849f194ece3bb48f4d63fb38d32fc837e3dc7a4e5641fb",
+    "metadata_sha256": "37b6926c2ff037e8e03ea93258db4884e99e154c666b7142ede63e724de83142",
+    "object_mask_source": "released causal object mask class 0",
+    "prediction_input_sha256": "423c56b27307bb133e7df9b859ebba063756dacd1bbafdf8068ec04acb7edf41",
+    "protocol_sha256": "fd1b1e3ed74940a09b72475e8af94039890d5291e56ec6cfc44d3a69bdee5813",
+    "raw_case_dir": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-data/extracted/data/different_types/single_lift_cloth"
+  },
+  "output": {
+    "archive": "/home/florianpfaff/bpt-conditioned-dino-v1/prediction-ac1c8d5/conditioned_dino_prediction.npz",
+    "archive_sha256": "a174f7fcaacfeaa6e0bf9deded8f8e27fa34179b0126a8dd84a461389e18bec7"
+  },
+  "protocol_id": "phystwin-conditioned-dino-prefix-competence-v1",
+  "result_sha256": "10d982e898232aa9ce8335ff5d1629ebb63b2be209d57aac6519533aafe1b782",
+  "runtime": {
+    "depth_patch_radius_px": 2,
+    "device": "cuda:0",
+    "dino_checkpoint_sha256": "f433177089a681826f849f194ece3bb48f4d63fb38d32fc837e3dc7a4e5641fb",
+    "dino_model_name": "dinov2_vits14_reg",
+    "dino_resize": [
+      476,
+      840
+    ],
+    "dino_revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "elapsed_seconds": 1.6940098493359983,
+    "mask_distance_full_support_px": 8.0,
+    "minimum_fused_reliability": 0.05,
+    "peak_gpu_memory_gib": 0.1650686264038086,
+    "per_identity_frame_diagnostics": [
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 115,
+        "fused_prior_reliability": 0.1550017068402429,
+        "identity_id": 3,
+        "maximum_pair_disagreement_m": 0.0019513462306775056,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4390000104904175,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8536760850552235,
+            "descriptor_probability": 0.1486538110753485,
+            "descriptor_similarity": 0.9757761027707481,
+            "matched_uv_px": [
+              516.0,
+              186.0
+            ],
+            "patch_correlation": 0.8978364324558027,
+            "patch_entropy": 0.4480383908429461,
+            "patch_probability": 0.3012799799956557,
+            "prior_reliability": 0.4922664054088603
+          },
+          {
+            "camera": 1,
+            "decision": "reference_identity_not_visible"
+          },
+          {
+            "boundary_support": 0.3996124863624573,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6899999976158142,
+            "depth_spread_m": 0.0022238713681697843,
+            "descriptor_entropy": 0.8303285147988334,
+            "descriptor_probability": 0.20224938009258908,
+            "descriptor_similarity": 0.9690987108301659,
+            "matched_uv_px": [
+              396.0,
+              118.0
+            ],
+            "patch_correlation": 0.9799923818538941,
+            "patch_entropy": 0.8367803112805073,
+            "patch_probability": 0.07682951394029267,
+            "prior_reliability": 0.1550017068402429
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 115,
+        "fused_prior_reliability": 0.2755476840900231,
+        "identity_id": 4,
+        "maximum_pair_disagreement_m": 0.012035088657878069,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4560000002384186,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8613818007045498,
+            "descriptor_probability": 0.11851701673257037,
+            "descriptor_similarity": 0.9540902485921818,
+            "matched_uv_px": [
+              365.0,
+              200.0
+            ],
+            "patch_correlation": 0.9006068730931688,
+            "patch_entropy": 0.24729313840679862,
+            "patch_probability": 0.7578089571627253,
+            "prior_reliability": 0.5173689338168554
+          },
+          {
+            "boundary_support": 0.6246124505996704,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7084999978542328,
+            "depth_spread_m": 0.0022238713681697843,
+            "descriptor_entropy": 0.7265286871090675,
+            "descriptor_probability": 0.2065471909049809,
+            "descriptor_similarity": 0.9207236049638057,
+            "matched_uv_px": [
+              466.0,
+              171.0
+            ],
+            "patch_correlation": 0.9840297409877004,
+            "patch_entropy": 0.8186316514538968,
+            "patch_probability": 0.10327510816429965,
+            "prior_reliability": 0.2755476840900231
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6639999747276306,
+            "depth_spread_m": 0.0014826692819595337,
+            "descriptor_entropy": 0.7932388946588154,
+            "descriptor_probability": 0.23474501258402095,
+            "descriptor_similarity": 0.9735256397666607,
+            "matched_uv_px": [
+              451.0,
+              107.0
+            ],
+            "patch_correlation": 0.8910521321151271,
+            "patch_entropy": 0.3354807570469604,
+            "patch_probability": 0.4297603418843754,
+            "prior_reliability": 0.5664531351141224
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 115,
+        "fused_prior_reliability": 0.4666770141297404,
+        "identity_id": 6,
+        "maximum_pair_disagreement_m": 0.0174271998554776,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.46399998664855957,
+            "depth_spread_m": 0.0014826250970363616,
+            "descriptor_entropy": 0.7363397362431414,
+            "descriptor_probability": 0.1645226753625053,
+            "descriptor_similarity": 0.9667981664327634,
+            "matched_uv_px": [
+              512.0,
+              215.0
+            ],
+            "patch_correlation": 0.8507281289789768,
+            "patch_entropy": 0.3888627163919753,
+            "patch_probability": 0.33095478453813926,
+            "prior_reliability": 0.5816745644028
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7229999899864197,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7364349187985798,
+            "descriptor_probability": 0.22173696242948415,
+            "descriptor_similarity": 0.9482626696527887,
+            "matched_uv_px": [
+              436.0,
+              162.0
+            ],
+            "patch_correlation": 0.4116808371606762,
+            "patch_entropy": 0.8582215572106137,
+            "patch_probability": 0.06173723759230807,
+            "prior_reliability": 0.30139562857855856
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6970000267028809,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.818898972235929,
+            "descriptor_probability": 0.1286213715183261,
+            "descriptor_similarity": 0.9787822844754092,
+            "matched_uv_px": [
+              393.0,
+              138.0
+            ],
+            "patch_correlation": 0.9442741155977787,
+            "patch_entropy": 0.6745186127497443,
+            "patch_probability": 0.11134438227455834,
+            "prior_reliability": 0.4666770141297404
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 115,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 8,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.5450000166893005,
+            "depth_spread_m": 0.0029651618242263794,
+            "descriptor_entropy": 0.8218992865002896,
+            "descriptor_probability": 0.22626627532892765,
+            "descriptor_similarity": 0.9859279343023865,
+            "matched_uv_px": [
+              480.0,
+              221.0
+            ],
+            "patch_correlation": 0.961150651250531,
+            "patch_entropy": 0.7288552271759713,
+            "patch_probability": 0.15251917434699344,
+            "prior_reliability": 0.44809794598817154
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7409999966621399,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7606453056954477,
+            "descriptor_probability": 0.17677510077715664,
+            "descriptor_similarity": 0.9739911490615214,
+            "matched_uv_px": [
+              414.0,
+              195.0
+            ],
+            "patch_correlation": 0.9503695938032084,
+            "patch_entropy": 0.2547586430635845,
+            "patch_probability": 0.5626100263148383,
+            "prior_reliability": 0.6196362695086478
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6449999809265137,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.613034136547937,
+            "descriptor_probability": 0.16605359052557284,
+            "descriptor_similarity": 0.9808102152652712,
+            "matched_uv_px": [
+              424.0,
+              177.0
+            ],
+            "patch_correlation": 0.8781489553613969,
+            "patch_entropy": 0.1623393134590458,
+            "patch_probability": 0.8139337563978387,
+            "prior_reliability": 0.7103037021940046
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 116,
+        "fused_prior_reliability": 0.1865150010417187,
+        "identity_id": 3,
+        "maximum_pair_disagreement_m": 0.0028360542682151872,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4399999976158142,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8448432859759012,
+            "descriptor_probability": 0.16893808198850527,
+            "descriptor_similarity": 0.9783180543896985,
+            "matched_uv_px": [
+              516.0,
+              186.0
+            ],
+            "patch_correlation": 0.9110710750498971,
+            "patch_entropy": 0.45500949753186926,
+            "patch_probability": 0.34075903631964394,
+            "prior_reliability": 0.5021625765289398
+          },
+          {
+            "camera": 1,
+            "decision": "reference_identity_not_visible"
+          },
+          {
+            "boundary_support": 0.44961249828338623,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6880000233650208,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7971503215819977,
+            "descriptor_probability": 0.23637545295738524,
+            "descriptor_similarity": 0.9764377582973052,
+            "matched_uv_px": [
+              397.0,
+              118.0
+            ],
+            "patch_correlation": 0.9845592156446935,
+            "patch_entropy": 0.8292130970714174,
+            "patch_probability": 0.08862681320767127,
+            "prior_reliability": 0.1865150010417187
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 116,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 4,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 0.9746124744415283,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.45399999618530273,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8557671090689821,
+            "descriptor_probability": 0.1235105902843889,
+            "descriptor_similarity": 0.9523356775848927,
+            "matched_uv_px": [
+              353.0,
+              199.0
+            ],
+            "patch_correlation": 0.4862352075739855,
+            "patch_entropy": 0.8561676818316637,
+            "patch_probability": 0.018455329350977122,
+            "prior_reliability": 0.26934008261923686
+          },
+          {
+            "boundary_support": 0.5249999761581421,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.6990000009536743,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7165849830840141,
+            "descriptor_probability": 0.20601361705913843,
+            "descriptor_similarity": 0.9177748253920464,
+            "matched_uv_px": [
+              495.0,
+              194.0
+            ],
+            "patch_correlation": 0.8543060992791639,
+            "patch_entropy": 0.8225790001855059,
+            "patch_probability": 0.02617214574281972,
+            "prior_reliability": 0.221834592013352
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6710000038146973,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7624500023768116,
+            "descriptor_probability": 0.2631132356160374,
+            "descriptor_similarity": 0.9750873773096094,
+            "matched_uv_px": [
+              439.0,
+              103.0
+            ],
+            "patch_correlation": 0.2810877369638456,
+            "patch_entropy": 0.7088267205410476,
+            "patch_probability": 0.05898466560071673,
+            "prior_reliability": 0.2804812623544051
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 116,
+        "fused_prior_reliability": 0.46490472200142663,
+        "identity_id": 6,
+        "maximum_pair_disagreement_m": 0.01621599667512909,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4650000035762787,
+            "depth_spread_m": 0.0014826250970363616,
+            "descriptor_entropy": 0.7059769809023035,
+            "descriptor_probability": 0.18121459155803446,
+            "descriptor_similarity": 0.9754817968594869,
+            "matched_uv_px": [
+              511.0,
+              214.0
+            ],
+            "patch_correlation": 0.8446894120593617,
+            "patch_entropy": 0.4396374519324223,
+            "patch_probability": 0.29154763595490624,
+            "prior_reliability": 0.5878137943922862
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.722000002861023,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7094955867741308,
+            "descriptor_probability": 0.26265437265745095,
+            "descriptor_similarity": 0.9557400377872988,
+            "matched_uv_px": [
+              436.0,
+              162.0
+            ],
+            "patch_correlation": 0.44759878885285664,
+            "patch_entropy": 0.8470451457686068,
+            "patch_probability": 0.09708804306413468,
+            "prior_reliability": 0.32945898495334963
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6980000138282776,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8262118996064659,
+            "descriptor_probability": 0.13539511560466322,
+            "descriptor_similarity": 0.9778253715128684,
+            "matched_uv_px": [
+              394.0,
+              138.0
+            ],
+            "patch_correlation": 0.9274548024321193,
+            "patch_entropy": 0.6556586944848357,
+            "patch_probability": 0.11314399736322403,
+            "prior_reliability": 0.46490472200142663
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 116,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 8,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.5450000166893005,
+            "depth_spread_m": 0.0029651618242263794,
+            "descriptor_entropy": 0.8540053609350148,
+            "descriptor_probability": 0.18283455615470215,
+            "descriptor_similarity": 0.9767027443005613,
+            "matched_uv_px": [
+              480.0,
+              221.0
+            ],
+            "patch_correlation": 0.9600496284253441,
+            "patch_entropy": 0.7230001195990372,
+            "patch_probability": 0.14923810280636746,
+            "prior_reliability": 0.42322139535029296
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7400000095367432,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7390850663295161,
+            "descriptor_probability": 0.19260743739751346,
+            "descriptor_similarity": 0.9760886986964135,
+            "matched_uv_px": [
+              414.0,
+              195.0
+            ],
+            "patch_correlation": 0.8978592120724662,
+            "patch_entropy": 0.31779088603615036,
+            "patch_probability": 0.348012912456488,
+            "prior_reliability": 0.6100706379133887
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6449999809265137,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.6400351069906652,
+            "descriptor_probability": 0.15051216817310548,
+            "descriptor_similarity": 0.9806969946611677,
+            "matched_uv_px": [
+              425.0,
+              177.0
+            ],
+            "patch_correlation": 0.8383670114647467,
+            "patch_entropy": 0.2657298003817307,
+            "patch_probability": 0.6417188160549058,
+            "prior_reliability": 0.6641266665739409
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 117,
+        "fused_prior_reliability": 0.1522174699526525,
+        "identity_id": 3,
+        "maximum_pair_disagreement_m": 0.0024880551475900655,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4399999976158142,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8538365514091883,
+            "descriptor_probability": 0.16414979305142105,
+            "descriptor_similarity": 0.9741918265425024,
+            "matched_uv_px": [
+              515.0,
+              186.0
+            ],
+            "patch_correlation": 0.8806292605611664,
+            "patch_entropy": 0.472658358689349,
+            "patch_probability": 0.24179659003261422,
+            "prior_reliability": 0.48305044706581635
+          },
+          {
+            "camera": 1,
+            "decision": "reference_identity_not_visible"
+          },
+          {
+            "boundary_support": 0.375,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6890000104904175,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8043703831364191,
+            "descriptor_probability": 0.22511618707787814,
+            "descriptor_similarity": 0.9698844401340236,
+            "matched_uv_px": [
+              397.0,
+              118.0
+            ],
+            "patch_correlation": 0.9740638068971013,
+            "patch_entropy": 0.8322134262912111,
+            "patch_probability": 0.07404967363637004,
+            "prior_reliability": 0.1522174699526525
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 117,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 4,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4569999873638153,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8312809833664137,
+            "descriptor_probability": 0.19052254591932977,
+            "descriptor_similarity": 0.9798307446234189,
+            "matched_uv_px": [
+              364.0,
+              200.0
+            ],
+            "patch_correlation": 0.8856204165147283,
+            "patch_entropy": 0.30606000432112773,
+            "patch_probability": 0.4094817627538378,
+            "prior_reliability": 0.5418577213779754
+          },
+          {
+            "boundary_support": 0.7996124625205994,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7200000286102295,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7449855829341872,
+            "descriptor_probability": 0.18020637349542207,
+            "descriptor_similarity": 0.9113382950179172,
+            "matched_uv_px": [
+              437.0,
+              153.0
+            ],
+            "patch_correlation": 0.8003410370321675,
+            "patch_entropy": 0.8186460415065653,
+            "patch_probability": 0.040414518976866286,
+            "prior_reliability": 0.3217220311126539
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6650000214576721,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7809378816343842,
+            "descriptor_probability": 0.2162389624579074,
+            "descriptor_similarity": 0.9722376629623969,
+            "matched_uv_px": [
+              452.0,
+              108.0
+            ],
+            "patch_correlation": 0.9018808929080886,
+            "patch_entropy": 0.2955509583992574,
+            "patch_probability": 0.546335325847549,
+            "prior_reliability": 0.5858446984178268
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 117,
+        "fused_prior_reliability": 0.47249379848513934,
+        "identity_id": 6,
+        "maximum_pair_disagreement_m": 0.017945374587018035,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.46299999952316284,
+            "depth_spread_m": 0.002965206009149551,
+            "descriptor_entropy": 0.7834954584503419,
+            "descriptor_probability": 0.16030956377831504,
+            "descriptor_similarity": 0.9667709089170599,
+            "matched_uv_px": [
+              511.0,
+              214.0
+            ],
+            "patch_correlation": 0.8504641010260731,
+            "patch_entropy": 0.4233283262925343,
+            "patch_probability": 0.337706168962126,
+            "prior_reliability": 0.5432169855959947
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.722000002861023,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7481356261631504,
+            "descriptor_probability": 0.21566648158759838,
+            "descriptor_similarity": 0.944520175055981,
+            "matched_uv_px": [
+              436.0,
+              163.0
+            ],
+            "patch_correlation": 0.405400707142022,
+            "patch_entropy": 0.8585695378241592,
+            "patch_probability": 0.05703311619082347,
+            "prior_reliability": 0.294598064991152
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6970000267028809,
+            "depth_spread_m": 0.0014826692819595337,
+            "descriptor_entropy": 0.8176597899844331,
+            "descriptor_probability": 0.16209203827805374,
+            "descriptor_similarity": 0.9821736100215985,
+            "matched_uv_px": [
+              394.0,
+              138.0
+            ],
+            "patch_correlation": 0.9515418666325022,
+            "patch_entropy": 0.6665156168994161,
+            "patch_probability": 0.12234063669487012,
+            "prior_reliability": 0.47249379848513934
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 117,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 8,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.5460000038146973,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8552798421943203,
+            "descriptor_probability": 0.1732514532619686,
+            "descriptor_similarity": 0.9790087414950326,
+            "matched_uv_px": [
+              480.0,
+              221.0
+            ],
+            "patch_correlation": 0.9548175213851943,
+            "patch_entropy": 0.7329203591638305,
+            "patch_probability": 0.12531513563001137,
+            "prior_reliability": 0.4181568766847867
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7400000095367432,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.767298345779905,
+            "descriptor_probability": 0.23419728998569347,
+            "descriptor_similarity": 0.9744355216251568,
+            "matched_uv_px": [
+              414.0,
+              196.0
+            ],
+            "patch_correlation": 0.9236811659261897,
+            "patch_entropy": 0.3091141982065787,
+            "patch_probability": 0.46547204237137096,
+            "prior_reliability": 0.5980698208710844
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6449999809265137,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.6009446815937747,
+            "descriptor_probability": 0.18211670177801528,
+            "descriptor_similarity": 0.9797410517255501,
+            "matched_uv_px": [
+              425.0,
+              177.0
+            ],
+            "patch_correlation": 0.8441852076316553,
+            "patch_entropy": 0.2519700724846976,
+            "patch_probability": 0.567601584365709,
+            "prior_reliability": 0.6867958234982436
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 118,
+        "fused_prior_reliability": 0.17423790581696671,
+        "identity_id": 3,
+        "maximum_pair_disagreement_m": 0.0040152504485374794,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4410000145435333,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8408650701289548,
+            "descriptor_probability": 0.1752902414523927,
+            "descriptor_similarity": 0.9799052047326209,
+            "matched_uv_px": [
+              515.0,
+              187.0
+            ],
+            "patch_correlation": 0.9096059513887665,
+            "patch_entropy": 0.4604177443037449,
+            "patch_probability": 0.3316901295063765,
+            "prior_reliability": 0.504764498479635
+          },
+          {
+            "camera": 1,
+            "decision": "reference_identity_not_visible"
+          },
+          {
+            "boundary_support": 0.3996124863624573,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6890000104904175,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.811234993781566,
+            "descriptor_probability": 0.1456149462835351,
+            "descriptor_similarity": 0.9465625408174978,
+            "matched_uv_px": [
+              398.0,
+              119.0
+            ],
+            "patch_correlation": 0.9647737799712093,
+            "patch_entropy": 0.7508758272439408,
+            "patch_probability": 0.06897654531681106,
+            "prior_reliability": 0.17423790581696671
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 118,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 4,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.45899999141693115,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.842079641313384,
+            "descriptor_probability": 0.1897865527498753,
+            "descriptor_similarity": 0.979830376632357,
+            "matched_uv_px": [
+              364.0,
+              201.0
+            ],
+            "patch_correlation": 0.9396778185420664,
+            "patch_entropy": 0.2494879226768605,
+            "patch_probability": 0.6820083015899638,
+            "prior_reliability": 0.5526488830528927
+          },
+          {
+            "boundary_support": 0.699999988079071,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7200000286102295,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.6959611362984175,
+            "descriptor_probability": 0.276257116496834,
+            "descriptor_similarity": 0.9166287372372003,
+            "matched_uv_px": [
+              438.0,
+              154.0
+            ],
+            "patch_correlation": 0.8412659844154158,
+            "patch_entropy": 0.7977063184000565,
+            "patch_probability": 0.05663901040555703,
+            "prior_reliability": 0.3096507144506517
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6650000214576721,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8047373447528536,
+            "descriptor_probability": 0.21391100564456825,
+            "descriptor_similarity": 0.969188866078496,
+            "matched_uv_px": [
+              453.0,
+              108.0
+            ],
+            "patch_correlation": 0.8740483965254551,
+            "patch_entropy": 0.3326269912295839,
+            "patch_probability": 0.40412001547232884,
+            "prior_reliability": 0.5532323494082908
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 118,
+        "fused_prior_reliability": 0.4046410345185838,
+        "identity_id": 6,
+        "maximum_pair_disagreement_m": 0.020935245923466607,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.45899999141693115,
+            "depth_spread_m": 0.002965206009149551,
+            "descriptor_entropy": 0.7587741249555369,
+            "descriptor_probability": 0.16109249794327724,
+            "descriptor_similarity": 0.9688744692725816,
+            "matched_uv_px": [
+              521.0,
+              220.0
+            ],
+            "patch_correlation": 0.593682746083006,
+            "patch_entropy": 0.7407360865352647,
+            "patch_probability": 0.06980584761072413,
+            "prior_reliability": 0.4046410345185838
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7329999804496765,
+            "depth_spread_m": 0.0029651618242263794,
+            "descriptor_entropy": 0.735143622176352,
+            "descriptor_probability": 0.21137742431425727,
+            "descriptor_similarity": 0.9278331398058834,
+            "matched_uv_px": [
+              415.0,
+              143.0
+            ],
+            "patch_correlation": 0.5193607748433103,
+            "patch_entropy": 0.6981510972276235,
+            "patch_probability": 0.09353729546465686,
+            "prior_reliability": 0.39873881749254914
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6990000009536743,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8259472830465541,
+            "descriptor_probability": 0.17687975096338182,
+            "descriptor_similarity": 0.9804761080593773,
+            "matched_uv_px": [
+              395.0,
+              139.0
+            ],
+            "patch_correlation": 0.9189366642532013,
+            "patch_entropy": 0.6794171925951071,
+            "patch_probability": 0.09803253124103709,
+            "prior_reliability": 0.4562261500170816
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 118,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 8,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.546999990940094,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8729744245333948,
+            "descriptor_probability": 0.11811951853328886,
+            "descriptor_similarity": 0.961028202095018,
+            "matched_uv_px": [
+              479.0,
+              221.0
+            ],
+            "patch_correlation": 0.9604013925038416,
+            "patch_entropy": 0.7435188981794152,
+            "patch_probability": 0.13750914408708573,
+            "prior_reliability": 0.3948955344649055
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7400000095367432,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8137684317487134,
+            "descriptor_probability": 0.14836638072641675,
+            "descriptor_similarity": 0.9583330255592317,
+            "matched_uv_px": [
+              414.0,
+              196.0
+            ],
+            "patch_correlation": 0.8944779932914777,
+            "patch_entropy": 0.3206277808680256,
+            "patch_probability": 0.31986921155068965,
+            "prior_reliability": 0.5488977190634777
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6460000276565552,
+            "depth_spread_m": 0.0014826692819595337,
+            "descriptor_entropy": 0.6385291987174966,
+            "descriptor_probability": 0.16042203844212605,
+            "descriptor_similarity": 0.9783201513255186,
+            "matched_uv_px": [
+              426.0,
+              178.0
+            ],
+            "patch_correlation": 0.8153225212317426,
+            "patch_entropy": 0.2910437503489291,
+            "patch_probability": 0.6311005048675731,
+            "prior_reliability": 0.6521221288883734
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 119,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 3,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.44200000166893005,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.842273866757432,
+            "descriptor_probability": 0.16160006913487096,
+            "descriptor_similarity": 0.9793566221210297,
+            "matched_uv_px": [
+              514.0,
+              187.0
+            ],
+            "patch_correlation": 0.9178102913455405,
+            "patch_entropy": 0.43071861103468634,
+            "patch_probability": 0.3358192253388904,
+            "prior_reliability": 0.5115765780228808
+          },
+          {
+            "camera": 1,
+            "decision": "reference_identity_not_visible"
+          },
+          {
+            "boundary_support": 0.3996124863624573,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.675000011920929,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8283346543363401,
+            "descriptor_probability": 0.13451857246093568,
+            "descriptor_similarity": 0.9406704874274351,
+            "matched_uv_px": [
+              439.0,
+              96.0
+            ],
+            "patch_correlation": 0.8324874834991804,
+            "patch_entropy": 0.5137337682023163,
+            "patch_probability": 0.10814140316648482,
+            "prior_reliability": 0.1905077546369544
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 119,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 4,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 0.44961249828338623,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.45899999141693115,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8601857360814356,
+            "descriptor_probability": 0.1567060951848663,
+            "descriptor_similarity": 0.9628896801487341,
+            "matched_uv_px": [
+              337.0,
+              210.0
+            ],
+            "patch_correlation": 0.4621266190762227,
+            "patch_entropy": 0.7582931832042855,
+            "patch_probability": 0.05390999244663863,
+            "prior_reliability": 0.1380358441016613
+          },
+          {
+            "boundary_support": 0.699999988079071,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.722000002861023,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7557517921634879,
+            "descriptor_probability": 0.25850170706951053,
+            "descriptor_similarity": 0.9105265630657892,
+            "matched_uv_px": [
+              436.0,
+              153.0
+            ],
+            "patch_correlation": 0.8584141162407131,
+            "patch_entropy": 0.7845095820954646,
+            "patch_probability": 0.05418046257804389,
+            "prior_reliability": 0.29724477210076594
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6650000214576721,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7878730877514583,
+            "descriptor_probability": 0.23094466370142464,
+            "descriptor_similarity": 0.971753918885116,
+            "matched_uv_px": [
+              453.0,
+              109.0
+            ],
+            "patch_correlation": 0.9130394380528579,
+            "patch_entropy": 0.27741800939127276,
+            "patch_probability": 0.6191777391134284,
+            "prior_reliability": 0.586515993759126
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 119,
+        "fused_prior_reliability": 0.45558010559422246,
+        "identity_id": 6,
+        "maximum_pair_disagreement_m": 0.0175223295109414,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4659999907016754,
+            "depth_spread_m": 0.0014826250970363616,
+            "descriptor_entropy": 0.7713322955225625,
+            "descriptor_probability": 0.1599538925502881,
+            "descriptor_similarity": 0.9639452865447283,
+            "matched_uv_px": [
+              510.0,
+              215.0
+            ],
+            "patch_correlation": 0.9198580631346227,
+            "patch_entropy": 0.25661763924351677,
+            "patch_probability": 0.6283079218468977,
+            "prior_reliability": 0.6016337379332258
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7260000109672546,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7481752313337328,
+            "descriptor_probability": 0.16633402020149343,
+            "descriptor_similarity": 0.9198060508633619,
+            "matched_uv_px": [
+              430.0,
+              158.0
+            ],
+            "patch_correlation": 0.8133072358559171,
+            "patch_entropy": 0.32915381761892815,
+            "patch_probability": 0.5781427525877587,
+            "prior_reliability": 0.5623109985418037
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6990000009536743,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8249256645823501,
+            "descriptor_probability": 0.15446891499196458,
+            "descriptor_similarity": 0.9728815404314755,
+            "matched_uv_px": [
+              395.0,
+              140.0
+            ],
+            "patch_correlation": 0.9447188202872712,
+            "patch_entropy": 0.6888021453390938,
+            "patch_probability": 0.10897863786200808,
+            "prior_reliability": 0.45558010559422246
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 119,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 8,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.546999990940094,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8843664771103886,
+            "descriptor_probability": 0.12870713366336348,
+            "descriptor_similarity": 0.9660658670302555,
+            "matched_uv_px": [
+              479.0,
+              221.0
+            ],
+            "patch_correlation": 0.9410071264176979,
+            "patch_entropy": 0.7463057775929851,
+            "patch_probability": 0.11154241044300564,
+            "prior_reliability": 0.3815875152527261
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7400000095367432,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8102961213477173,
+            "descriptor_probability": 0.10526319153439649,
+            "descriptor_similarity": 0.9424182812228048,
+            "matched_uv_px": [
+              414.0,
+              197.0
+            ],
+            "patch_correlation": 0.9241089150202927,
+            "patch_entropy": 0.27271425343300315,
+            "patch_probability": 0.567001251085206,
+            "prior_reliability": 0.5615072246290431
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6470000147819519,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.6228486752632342,
+            "descriptor_probability": 0.18223996844201756,
+            "descriptor_similarity": 0.9745648945551368,
+            "matched_uv_px": [
+              426.0,
+              179.0
+            ],
+            "patch_correlation": 0.8964819829705357,
+            "patch_entropy": 0.16670136369148197,
+            "patch_probability": 0.846885819486209,
+            "prior_reliability": 0.7067154436233568
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 120,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 3,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.4440000057220459,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8440390327197508,
+            "descriptor_probability": 0.16574940340716207,
+            "descriptor_similarity": 0.9803040286902333,
+            "matched_uv_px": [
+              513.0,
+              188.0
+            ],
+            "patch_correlation": 0.8328465017843304,
+            "patch_entropy": 0.5555654214444974,
+            "patch_probability": 0.23985174744018084,
+            "prior_reliability": 0.4647204955606621
+          },
+          {
+            "camera": 1,
+            "decision": "reference_identity_not_visible"
+          },
+          {
+            "boundary_support": 0.3996124863624573,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.699999988079071,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8199128976027406,
+            "descriptor_probability": 0.1568300601891939,
+            "descriptor_similarity": 0.91951352634508,
+            "matched_uv_px": [
+              369.0,
+              137.0
+            ],
+            "patch_correlation": 0.8898905420541516,
+            "patch_entropy": 0.850005512005819,
+            "patch_probability": 0.021199461774284507,
+            "prior_reliability": 0.14503320677117001
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 120,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 4,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.460999995470047,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8314160911107197,
+            "descriptor_probability": 0.2133367465294608,
+            "descriptor_similarity": 0.979518897465155,
+            "matched_uv_px": [
+              364.0,
+              202.0
+            ],
+            "patch_correlation": 0.9300879711403662,
+            "patch_entropy": 0.2785503533698625,
+            "patch_probability": 0.6643257862050488,
+            "prior_reliability": 0.5555864870643119
+          },
+          {
+            "boundary_support": 0.699999988079071,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7210000157356262,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.7650315642129655,
+            "descriptor_probability": 0.25740489708512826,
+            "descriptor_similarity": 0.9074058848878422,
+            "matched_uv_px": [
+              437.0,
+              155.0
+            ],
+            "patch_correlation": 0.8312096807216038,
+            "patch_entropy": 0.8166388735992351,
+            "patch_probability": 0.0383834417041722,
+            "prior_reliability": 0.2789139377455934
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6660000085830688,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.7675243346207925,
+            "descriptor_probability": 0.23640667899016088,
+            "descriptor_similarity": 0.9473394587419991,
+            "matched_uv_px": [
+              453.0,
+              110.0
+            ],
+            "patch_correlation": 0.901416846412012,
+            "patch_entropy": 0.3150308065717619,
+            "patch_probability": 0.5272869221494173,
+            "prior_reliability": 0.5823008007204713
+          }
+        ]
+      },
+      {
+        "accepted": true,
+        "accepted_view_count": 2,
+        "decision": "accepted",
+        "frame": 120,
+        "fused_prior_reliability": 0.4626534363863735,
+        "identity_id": 6,
+        "maximum_pair_disagreement_m": 0.01819157763578335,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.46700000762939453,
+            "depth_spread_m": 0.0014826250970363616,
+            "descriptor_entropy": 0.7530570678328766,
+            "descriptor_probability": 0.1586882488921241,
+            "descriptor_similarity": 0.9677042202036528,
+            "matched_uv_px": [
+              509.0,
+              215.0
+            ],
+            "patch_correlation": 0.7314064324888683,
+            "patch_entropy": 0.5449876760774627,
+            "patch_probability": 0.261722120230306,
+            "prior_reliability": 0.5048667027134919
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.734000027179718,
+            "depth_spread_m": 0.0014826692819595337,
+            "descriptor_entropy": 0.7342881844391462,
+            "descriptor_probability": 0.20174501672608208,
+            "descriptor_similarity": 0.9258083736366304,
+            "matched_uv_px": [
+              415.0,
+              144.0
+            ],
+            "patch_correlation": 0.49968146103228744,
+            "patch_entropy": 0.7177484486763385,
+            "patch_probability": 0.07741769948222026,
+            "prior_reliability": 0.3857358760033528
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.699999988079071,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8117950604407153,
+            "descriptor_probability": 0.155121561087166,
+            "descriptor_similarity": 0.955347467091052,
+            "matched_uv_px": [
+              395.0,
+              142.0
+            ],
+            "patch_correlation": 0.937531911644134,
+            "patch_entropy": 0.6785564464904131,
+            "patch_probability": 0.10366879251518314,
+            "prior_reliability": 0.4626534363863735
+          }
+        ]
+      },
+      {
+        "accepted": false,
+        "accepted_view_count": 0,
+        "decision": "insufficient_cross_view_consensus",
+        "frame": 120,
+        "fused_prior_reliability": 0.0,
+        "identity_id": 8,
+        "maximum_pair_disagreement_m": null,
+        "views": [
+          {
+            "boundary_support": 1.0,
+            "camera": 0,
+            "decision": "accepted",
+            "depth_m": 0.5550000071525574,
+            "depth_spread_m": 0.0014825809121131897,
+            "descriptor_entropy": 0.8804903124249405,
+            "descriptor_probability": 0.09934851152180199,
+            "descriptor_similarity": 0.9567674301772213,
+            "matched_uv_px": [
+              469.0,
+              214.0
+            ],
+            "patch_correlation": 0.79208534299043,
+            "patch_entropy": 0.7975811237826694,
+            "patch_probability": 0.03845697745675563,
+            "prior_reliability": 0.3424361214430169
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 1,
+            "decision": "accepted",
+            "depth_m": 0.7400000095367432,
+            "depth_spread_m": 0.0,
+            "descriptor_entropy": 0.8052420435339367,
+            "descriptor_probability": 0.129637970384024,
+            "descriptor_similarity": 0.9491070949696029,
+            "matched_uv_px": [
+              414.0,
+              198.0
+            ],
+            "patch_correlation": 0.9249463393808128,
+            "patch_entropy": 0.28014507379718195,
+            "patch_probability": 0.4212291685882754,
+            "prior_reliability": 0.566744309157445
+          },
+          {
+            "boundary_support": 1.0,
+            "camera": 2,
+            "decision": "accepted",
+            "depth_m": 0.6480000019073486,
+            "depth_spread_m": 0.0029651618242263794,
+            "descriptor_entropy": 0.6634555517131256,
+            "descriptor_probability": 0.19876263335899658,
+            "descriptor_similarity": 0.918076177836651,
+            "matched_uv_px": [
+              427.0,
+              180.0
+            ],
+            "patch_correlation": 0.8066416390983223,
+            "patch_entropy": 0.30346036696638945,
+            "patch_probability": 0.5471603292856941,
+            "prior_reliability": 0.6111959546152089
+          }
+        ]
+      }
+    ]
+  },
+  "schema_version": 1
+}

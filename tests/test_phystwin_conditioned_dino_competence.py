@@ -183,9 +183,7 @@ def _write_withheld(
         target_tracks_world_m=target,
         identity_ids=np.arange(target.shape[1]),
         reference_frame=np.asarray(config.reference_frame),
-        source_frame_end_exclusive=np.asarray(
-            config.source_frame_end_exclusive
-        ),
+        source_frame_end_exclusive=np.asarray(config.source_frame_end_exclusive),
     )
 
 

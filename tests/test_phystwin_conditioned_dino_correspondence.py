@@ -91,7 +91,9 @@ def test_state_residual_does_not_enter_prior_perception_reliability() -> None:
         close_prediction.association_probability
         == far_prediction.association_probability
     )
-    np.testing.assert_array_equal(close_prediction.covariance_px2, far_prediction.covariance_px2)
+    np.testing.assert_array_equal(
+        close_prediction.covariance_px2, far_prediction.covariance_px2
+    )
 
 
 def test_assignment_ambiguity_increases_observation_covariance() -> None:

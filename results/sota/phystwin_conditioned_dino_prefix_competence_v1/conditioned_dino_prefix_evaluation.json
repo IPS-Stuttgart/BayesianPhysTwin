@@ -1,0 +1,65 @@
+{
+  "artifact_kind": "PhysTwinConditionedDinoPrefixCompetenceResult",
+  "case": "single_lift_cloth",
+  "claim_boundary": "one prefix-only competence control on an already-open source interaction; not a Bayesian-PhysTwin gain or state-of-the-art result",
+  "competence_gate_passed": false,
+  "config": {
+    "case_name": "single_lift_cloth",
+    "endpoint_frame_count": 2,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_supported_rmse_m": 0.015,
+    "minimum_overall_gain_over_physical": 0.0,
+    "minimum_supported_fraction": 0.5,
+    "minimum_supported_gain_over_physical": 0.1,
+    "reference_frame": 114,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "source_frame_end_exclusive": 121
+  },
+  "decision": "stop-conditioned-dino-correspondence-route",
+  "gates": {
+    "endpoint_rmse": true,
+    "overall_nonregression": true,
+    "supported_fraction": false,
+    "supported_gain_over_physical": true,
+    "supported_identity_rmse": true
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_scored": false,
+    "future_simulator_outcome_read": false,
+    "prediction_sealed_before_target_open": true,
+    "scored_manual_frame_range_half_open": [
+      115,
+      121
+    ]
+  },
+  "inputs": {
+    "prediction_seal_sha256": "233abe6c560b52ef3a9b040fea6111fa877da5a0ff16398f72f85131368d4840",
+    "withheld_prefix_sha256": "04e20c03869f73d79d9c40623747368c790f63e7284cf2bcdc16c7e881ae52a9"
+  },
+  "metrics": {
+    "candidate_endpoint_rmse_m": 0.013076927739363711,
+    "candidate_identity_rmse_m": 0.012470631146442646,
+    "eligible_point_frame_count": 24,
+    "overall_gain_over_physical": 0.16710228210815267,
+    "persistence_identity_rmse_m": 0.0026116050993590183,
+    "physical_identity_rmse_m": 0.014972584122342343,
+    "supported_candidate_identity_rmse_m": 0.011926652709021322,
+    "supported_fraction": 0.4583333333333333,
+    "supported_gain_over_physical": 0.30210787526595223,
+    "supported_physical_identity_rmse_m": 0.017089536170889336,
+    "supported_point_frame_count": 11
+  },
+  "protocol_id": "phystwin-conditioned-dino-prefix-competence-v1",
+  "result_sha256": "702b8957fcc41578ff0cbd0f99161241c8747428ff3843b1d26e7989c6bd1b27",
+  "schema_version": 1
+}

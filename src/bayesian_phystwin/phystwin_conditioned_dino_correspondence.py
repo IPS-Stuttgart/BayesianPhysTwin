@@ -487,9 +487,7 @@ def refine_patch_correlation(
                 continue
             positions.append(uv.astype(np.float64))
             correlation = np.sum(reference_centered * centered) / denominator
-            scores.append(
-                float(np.clip(correlation, -1.0, 1.0))
-            )
+            scores.append(float(np.clip(correlation, -1.0, 1.0)))
     candidate_count = len(scores)
     if candidate_count == 0:
         return PatchMatch(
@@ -559,7 +557,9 @@ def unproject_rgbd_observation(
         or transform.shape != (4, 4)
     ):
         raise ValueError("unprojection geometry is invalid")
-    _require_finite("unprojection inputs", np.concatenate((uv, pixel_covariance.ravel())))
+    _require_finite(
+        "unprojection inputs", np.concatenate((uv, pixel_covariance.ravel()))
+    )
     if not np.isfinite(depth_m) or depth_m <= 0.0:
         raise ValueError("depth_m must be positive")
     if depth_standard_deviation_m <= 0.0:
@@ -624,7 +624,9 @@ def covariance_intersection(
         or second_covariance.shape != expected_covariance_shape
     ):
         raise ValueError("covariance-intersection shapes differ")
-    _require_finite("covariance-intersection means", np.concatenate((first_mean, second_mean)))
+    _require_finite(
+        "covariance-intersection means", np.concatenate((first_mean, second_mean))
+    )
     _require_finite(
         "covariance-intersection covariances",
         np.concatenate((first_covariance.ravel(), second_covariance.ravel())),
@@ -677,8 +679,7 @@ def _maximum_consensus_indices(
                 continue
             spread = float(np.max(distance[np.ix_(selected, selected)]))
             if len(subset) > len(best) or (
-                len(subset) == len(best)
-                and (spread, subset) < (best_spread, best)
+                len(subset) == len(best) and (spread, subset) < (best_spread, best)
             ):
                 best = subset
                 best_spread = spread
@@ -750,9 +751,7 @@ def fuse_unknown_correlation(
             observation.mean_world_m,
             observation.covariance_world_m2,
         )
-    covariance = covariance + (
-        cfg.shared_bias_standard_deviation_m**2 * np.eye(3)
-    )
+    covariance = covariance + (cfg.shared_bias_standard_deviation_m**2 * np.eye(3))
     selected_points = np.asarray(
         [observations[int(index)].mean_world_m for index in consensus]
     )

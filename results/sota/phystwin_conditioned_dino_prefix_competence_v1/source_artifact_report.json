@@ -1,0 +1,63 @@
+{
+  "artifact_kind": "PhysTwinConditionedDinoCompetenceSourceArtifacts",
+  "case": "single_lift_cloth",
+  "config": {
+    "case_name": "single_lift_cloth",
+    "endpoint_frame_count": 2,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_supported_rmse_m": 0.015,
+    "minimum_overall_gain_over_physical": 0.0,
+    "minimum_supported_fraction": 0.5,
+    "minimum_supported_gain_over_physical": 0.1,
+    "reference_frame": 114,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "source_frame_end_exclusive": 121
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_retained": false,
+    "manual_source_file_loaded_during_staging": true,
+    "prediction_input_manual_frames": [
+      114
+    ],
+    "prediction_input_physical_frame_range_half_open": [
+      114,
+      121
+    ],
+    "withheld_artifact_available_to_prediction": false,
+    "withheld_manual_frame_range_half_open": [
+      114,
+      121
+    ]
+  },
+  "inputs": {
+    "manual_tracks_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "physical_trajectory_sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949",
+    "released_train_end_frame_exclusive": 121,
+    "split_sha256": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+  },
+  "prediction_input": {
+    "maximum_query_to_vertex_distance_m": 0.021777983977938755,
+    "path": "/home/florianpfaff/bpt-conditioned-dino-v1/source-86e6dd7/prediction_input/prediction_input.npz",
+    "physical_array_sha256": "47e5016ac006caec156236167634f754c89711809cc9fe375a0a2055cd990866",
+    "query_array_sha256": "e8174ecee4812da037ec1f65056dda4a5e91155e68704f66d55c963080f062ae",
+    "sha256": "423c56b27307bb133e7df9b859ebba063756dacd1bbafdf8068ec04acb7edf41"
+  },
+  "protocol_id": "phystwin-conditioned-dino-prefix-competence-v1",
+  "result_sha256": "b655689afd331acac411619685e0a3edf466a1ba6020d1301327406a4c594da4",
+  "schema_version": 1,
+  "withheld_evaluation": {
+    "path": "/home/florianpfaff/bpt-conditioned-dino-v1/source-86e6dd7/withheld_evaluation/withheld_prefix_target.npz",
+    "sha256": "04e20c03869f73d79d9c40623747368c790f63e7284cf2bcdc16c7e881ae52a9",
+    "target_array_sha256": "fbe15415425b676a036d73b4817c70f1bff479968eb76dc0beea761cc496b84d"
+  }
+}

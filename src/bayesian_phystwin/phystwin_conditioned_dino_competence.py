@@ -94,8 +94,7 @@ class PhysTwinConditionedDinoCompetenceConfig:
         )
         _require(
             len(self.selected_identity_ids) >= 3
-            and len(set(self.selected_identity_ids))
-            == len(self.selected_identity_ids),
+            and len(set(self.selected_identity_ids)) == len(self.selected_identity_ids),
             "selected identities must be unique and contain at least three rows",
         )
         _require(
@@ -120,8 +119,7 @@ class PhysTwinConditionedDinoCompetenceConfig:
             "overall gain threshold must lie in [0, 1)",
         )
         _require(
-            self.maximum_supported_rmse_m > 0.0
-            and self.maximum_endpoint_rmse_m > 0.0,
+            self.maximum_supported_rmse_m > 0.0 and self.maximum_endpoint_rmse_m > 0.0,
             "RMSE thresholds must be positive",
         )
         _require(
@@ -138,10 +136,13 @@ def _nearest_vertex_indices(
     vertices: np.ndarray,
     query_points: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    delta = np.asarray(vertices, dtype=np.float64)[None] - np.asarray(
-        query_points,
-        dtype=np.float64,
-    )[:, None]
+    delta = (
+        np.asarray(vertices, dtype=np.float64)[None]
+        - np.asarray(
+            query_points,
+            dtype=np.float64,
+        )[:, None]
+    )
     distance = np.linalg.norm(delta, axis=2)
     indices = np.argmin(distance, axis=1).astype(np.int64)
     return indices, distance[np.arange(len(indices)), indices]
@@ -249,21 +250,15 @@ def prepare_source_artifacts(
         "inputs": {
             "manual_tracks_sha256": file_sha256(manual_tracks_path),
             "split_sha256": file_sha256(split_path),
-            "physical_trajectory_sha256": file_sha256(
-                physical_trajectory_path
-            ),
+            "physical_trajectory_sha256": file_sha256(physical_trajectory_path),
             "released_train_end_frame_exclusive": train_end,
         },
         "prediction_input": {
             "path": str(input_path),
             "sha256": file_sha256(input_path),
             "query_array_sha256": array_sha256(query.astype(np.float32)),
-            "physical_array_sha256": array_sha256(
-                physical_window.astype(np.float32)
-            ),
-            "maximum_query_to_vertex_distance_m": float(
-                np.max(initial_distance)
-            ),
+            "physical_array_sha256": array_sha256(physical_window.astype(np.float32)),
+            "maximum_query_to_vertex_distance_m": float(np.max(initial_distance)),
         },
         "withheld_evaluation": {
             "path": str(withheld_path),
@@ -436,15 +431,9 @@ def write_prediction_artifact(
             "accepted_fraction_after_reference": float(
                 np.mean(accepted_mask[scored_rows])
             ),
-            "accepted_view_count_min": int(
-                np.min(view_count[scored_rows])
-            ),
-            "accepted_view_count_max": int(
-                np.max(view_count[scored_rows])
-            ),
-            "prior_reliability_mean": float(
-                np.mean(reliability[scored_rows])
-            ),
+            "accepted_view_count_min": int(np.min(view_count[scored_rows])),
+            "accepted_view_count_max": int(np.max(view_count[scored_rows])),
+            "prior_reliability_mean": float(np.mean(reliability[scored_rows])),
         },
         "output": {
             "archive": str(archive_path),
@@ -536,8 +525,7 @@ def evaluate_competence(
     seal_path = prediction / PREDICTION_SEAL_FILENAME
     seal = json.loads(seal_path.read_text(encoding="utf-8"))
     _require(
-        seal.get("artifact_kind")
-        == "PhysTwinConditionedDinoPrefixPredictionSeal",
+        seal.get("artifact_kind") == "PhysTwinConditionedDinoPrefixPredictionSeal",
         "prediction seal kind is invalid",
     )
     _require(
@@ -571,7 +559,10 @@ def evaluate_competence(
         3,
     )
     _require(
-        observed.shape == candidate.shape == physical.shape == target.shape
+        observed.shape
+        == candidate.shape
+        == physical.shape
+        == target.shape
         == expected_shape,
         "prediction and target geometry differs from the protocol",
     )
@@ -609,8 +600,7 @@ def evaluate_competence(
         supported,
     )
     supported_gain = (
-        (supported_physical_rmse - supported_candidate_rmse)
-        / supported_physical_rmse
+        (supported_physical_rmse - supported_candidate_rmse) / supported_physical_rmse
         if supported_physical_rmse is not None
         and supported_candidate_rmse is not None
         and supported_physical_rmse > 0.0
@@ -627,9 +617,7 @@ def evaluate_competence(
     endpoint_mask = target_valid & endpoint_rows[:, None]
     endpoint_rmse = _radial_rmse_m(candidate, target, endpoint_mask)
     gates = {
-        "supported_fraction": (
-            supported_fraction >= cfg.minimum_supported_fraction
-        ),
+        "supported_fraction": (supported_fraction >= cfg.minimum_supported_fraction),
         "supported_gain_over_physical": (
             supported_gain >= cfg.minimum_supported_gain_over_physical
         ),

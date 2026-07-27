@@ -117,9 +117,7 @@ def _metric_depth(path: Path) -> np.ndarray:
 def _camera_data(case_dir: Path) -> tuple[np.ndarray, np.ndarray]:
     with (case_dir / "calibrate.pkl").open("rb") as stream:
         camera_to_world = np.asarray(pickle.load(stream), dtype=np.float64)
-    metadata = json.loads(
-        (case_dir / "metadata.json").read_text(encoding="utf-8")
-    )
+    metadata = json.loads((case_dir / "metadata.json").read_text(encoding="utf-8"))
     intrinsics = np.asarray(metadata["intrinsics"], dtype=np.float64)
     if camera_to_world.ndim != 3 or camera_to_world.shape[1:] != (4, 4):
         raise ValueError("camera calibration must have shape (C, 4, 4)")
@@ -185,15 +183,9 @@ def _load_prefix(
         depths[camera] = camera_depths
         masks[camera] = camera_masks
         camera_records[str(camera)] = {
-            "decoded_rgb_prefix_sha256": array_sha256(
-                np.stack(camera_rgbs)
-            ),
-            "metric_depth_prefix_sha256": array_sha256(
-                np.stack(camera_depths)
-            ),
-            "object_mask_prefix_sha256": array_sha256(
-                np.stack(camera_masks)
-            ),
+            "decoded_rgb_prefix_sha256": array_sha256(np.stack(camera_rgbs)),
+            "metric_depth_prefix_sha256": array_sha256(np.stack(camera_depths)),
+            "object_mask_prefix_sha256": array_sha256(np.stack(camera_masks)),
             "frame_files": frame_records,
         }
     provenance: dict[str, object] = {
@@ -286,10 +278,13 @@ def _extract_feature_map(model, image: np.ndarray, *, device: str) -> np.ndarray
     )
     mean = torch.tensor([0.485, 0.456, 0.406], device=device)[None, :, None, None]
     std = torch.tensor([0.229, 0.224, 0.225], device=device)[None, :, None, None]
-    with torch.no_grad(), torch.amp.autocast(
-        device_type="cuda",
-        dtype=torch.bfloat16,
-        enabled=str(device).startswith("cuda"),
+    with (
+        torch.no_grad(),
+        torch.amp.autocast(
+            device_type="cuda",
+            dtype=torch.bfloat16,
+            enabled=str(device).startswith("cuda"),
+        ),
     ):
         output = model.forward_features((tensor - mean) / std)
     tokens = output.get("x_norm_patchtokens")
@@ -299,14 +294,7 @@ def _extract_feature_map(model, image: np.ndarray, *, device: str) -> np.ndarray
     columns = DINO_RESIZE_WIDTH // 14
     if tokens.shape[1] != rows * columns:
         raise RuntimeError("DINO patch-token shape differs from the frozen resize")
-    return (
-        tokens[0]
-        .reshape(rows, columns, -1)
-        .detach()
-        .float()
-        .cpu()
-        .numpy()
-    )
+    return tokens[0].reshape(rows, columns, -1).detach().float().cpu().numpy()
 
 
 def _sample_feature(feature_map: np.ndarray, uv_px: np.ndarray, shape) -> np.ndarray:
@@ -324,14 +312,12 @@ def _sample_feature(feature_map: np.ndarray, uv_px: np.ndarray, shape) -> np.nda
     lower[0] = np.clip(lower[0], 0, columns - 1)
     lower[1] = np.clip(lower[1], 0, rows - 1)
     upper = np.minimum(lower + 1, [columns - 1, rows - 1])
-    top = (
-        (1.0 - fraction[0]) * feature_map[lower[1], lower[0]]
-        + fraction[0] * feature_map[lower[1], upper[0]]
-    )
-    bottom = (
-        (1.0 - fraction[0]) * feature_map[upper[1], lower[0]]
-        + fraction[0] * feature_map[upper[1], upper[0]]
-    )
+    top = (1.0 - fraction[0]) * feature_map[lower[1], lower[0]] + fraction[
+        0
+    ] * feature_map[lower[1], upper[0]]
+    bottom = (1.0 - fraction[0]) * feature_map[upper[1], lower[0]] + fraction[
+        0
+    ] * feature_map[upper[1], upper[0]]
     descriptor = (1.0 - fraction[1]) * top + fraction[1] * bottom
     norm = np.linalg.norm(descriptor)
     if norm <= 1e-12:
@@ -387,9 +373,7 @@ def _depth_at_match(
     if len(selected) < 3:
         return None
     median = float(np.median(selected))
-    robust_standard_deviation = 1.4826 * float(
-        np.median(np.abs(selected - median))
-    )
+    robust_standard_deviation = 1.4826 * float(np.median(np.abs(selected - median)))
     return median, robust_standard_deviation
 
 
@@ -473,9 +457,8 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
     accepted = np.zeros(shape, dtype=bool)
     accepted_view_count = np.zeros(shape, dtype=np.int16)
     observed[0] = query
-    covariance[0] = (
-        correspondence_config.shared_bias_standard_deviation_m**2
-        * np.eye(3, dtype=np.float32)
+    covariance[0] = correspondence_config.shared_bias_standard_deviation_m**2 * np.eye(
+        3, dtype=np.float32
     )
     reliability[0] = 1.0
     accepted[0] = True
@@ -581,8 +564,7 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
                     image,
                     reference_uvs[camera, identity_index],
                     descriptor.uv_px,
-                    masks[camera][local_frame]
-                    & (depths[camera][local_frame] > 0.0),
+                    masks[camera][local_frame] & (depths[camera][local_frame] > 0.0),
                     config=correspondence_config,
                 )
                 depth_result = _depth_at_match(
@@ -610,22 +592,16 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
                 distance = _mask_distance(masks[camera][local_frame])
                 boundary_support = float(
                     np.clip(
-                        distance[pixel[1], pixel[0]]
-                        / MASK_DISTANCE_FULL_SUPPORT_PX,
+                        distance[pixel[1], pixel[0]] / MASK_DISTANCE_FULL_SUPPORT_PX,
                         0.0,
                         1.0,
                     )
                 )
                 prior_reliability = float(
-                    np.sqrt(
-                        descriptor.prior_reliability
-                        * patch.prior_reliability
-                    )
+                    np.sqrt(descriptor.prior_reliability * patch.prior_reliability)
                     * boundary_support
                 )
-                pixel_covariance = (
-                    descriptor.covariance_px2 + patch.covariance_px2
-                )
+                pixel_covariance = descriptor.covariance_px2 + patch.covariance_px2
                 metric = unproject_rgbd_observation(
                     patch.uv_px,
                     pixel_covariance,
@@ -646,9 +622,7 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
                         "decision": "accepted",
                         "descriptor_similarity": descriptor.cosine_similarity,
                         "descriptor_entropy": descriptor.normalized_entropy,
-                        "descriptor_probability": (
-                            descriptor.association_probability
-                        ),
+                        "descriptor_probability": (descriptor.association_probability),
                         "patch_correlation": patch.correlation,
                         "patch_entropy": patch.normalized_entropy,
                         "patch_probability": patch.association_probability,
@@ -664,17 +638,12 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
                 config=correspondence_config,
             )
             row_accepted = bool(
-                fused.accepted
-                and fused.prior_reliability >= MINIMUM_FUSED_RELIABILITY
+                fused.accepted and fused.prior_reliability >= MINIMUM_FUSED_RELIABILITY
             )
             if row_accepted:
                 observed[local_frame, identity_index] = fused.mean_world_m
-                covariance[local_frame, identity_index] = (
-                    fused.covariance_world_m2
-                )
-                reliability[local_frame, identity_index] = (
-                    fused.prior_reliability
-                )
+                covariance[local_frame, identity_index] = fused.covariance_world_m2
+                reliability[local_frame, identity_index] = fused.prior_reliability
                 accepted[local_frame, identity_index] = True
             accepted_view_count[local_frame, identity_index] = int(
                 np.sum(fused.accepted_view_mask)
@@ -686,12 +655,8 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
                     "accepted": row_accepted,
                     "decision": fused.decision,
                     "fused_prior_reliability": fused.prior_reliability,
-                    "accepted_view_count": int(
-                        np.sum(fused.accepted_view_mask)
-                    ),
-                    "maximum_pair_disagreement_m": (
-                        fused.maximum_pair_disagreement_m
-                    ),
+                    "accepted_view_count": int(np.sum(fused.accepted_view_mask)),
+                    "maximum_pair_disagreement_m": (fused.maximum_pair_disagreement_m),
                     "views": view_diagnostics,
                 }
             )
@@ -702,8 +667,7 @@ def _predict(args: argparse.Namespace) -> dict[str, object]:
         "device": args.device,
         "elapsed_seconds": elapsed,
         "peak_gpu_memory_gib": (
-            torch.cuda.max_memory_allocated(torch.device(args.device))
-            / (1024**3)
+            torch.cuda.max_memory_allocated(torch.device(args.device)) / (1024**3)
             if str(args.device).startswith("cuda")
             else 0.0
         ),
