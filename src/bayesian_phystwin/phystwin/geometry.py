@@ -129,7 +129,7 @@ def lift_residual(
         if not np.allclose(np.sum(neighbor_weights, axis=1), 1.0):
             raise ValueError("lift weights must sum to one")
 
-    lifted = np.zeros((len(tracked), state_count, 3), dtype=float)
+    lifted: np.ndarray = np.zeros((len(tracked), state_count, 3), dtype=float)
     lifted[:, :original_count] = tracked
     if extra_count:
         lifted[:, original_count:] = np.sum(
