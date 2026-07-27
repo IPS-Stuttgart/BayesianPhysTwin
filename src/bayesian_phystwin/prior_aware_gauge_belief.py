@@ -34,10 +34,7 @@ def update_prior_aware_gauge_belief(
     """Infer state while conditioning identifiability on nuisance priors."""
 
     cfg = config or PriorAwareGaugeConfigV1()
-    if (
-        batch.prior_nominal_probability is None
-        or batch.composite_weight is None
-    ):
+    if batch.prior_nominal_probability is None or batch.composite_weight is None:
         raise ValueError("validated observation mixture metadata is missing")
     observation_nominal = np.asarray(batch.prior_nominal_probability)
     observation_composite = np.asarray(batch.composite_weight)
@@ -61,9 +58,7 @@ def update_prior_aware_gauge_belief(
     )
 
     anchor_count = (
-        0
-        if batch.anchor_innovation_m is None
-        else len(batch.anchor_innovation_m)
+        0 if batch.anchor_innovation_m is None else len(batch.anchor_innovation_m)
     )
     if anchor_count:
         if (
@@ -139,6 +134,7 @@ def update_prior_aware_gauge_belief(
         observation_nominal,
         observation_composite,
         cfg.effective_samples_per_correlation_group,
+        composite_weight_mode=batch.composite_weight_mode,
     )
     if anchor_count:
         (
@@ -153,6 +149,7 @@ def update_prior_aware_gauge_belief(
             anchor_nominal,
             anchor_composite,
             cfg.effective_samples_per_anchor_correlation_group,
+            composite_weight_mode=batch.anchor_composite_weight_mode,
         )
     else:
         anchor_groups, anchor_indices = (), ()
@@ -160,31 +157,30 @@ def update_prior_aware_gauge_belief(
         anchor_prior = np.zeros(0)
         anchor_group_power = np.zeros(0)
     state_prior, nuisance_prior, full_prior = _prior_covariances(batch, cfg)
-    expected_observation = observation_prior + (
-        1.0 - observation_prior
-    ) / cfg.outlier_covariance_multiplier
-    expected_anchor = anchor_prior + (
-        1.0 - anchor_prior
-    ) / cfg.outlier_covariance_multiplier
+    expected_observation = (
+        observation_prior
+        + (1.0 - observation_prior) / cfg.outlier_covariance_multiplier
+    )
+    expected_anchor = (
+        anchor_prior + (1.0 - anchor_prior) / cfg.outlier_covariance_multiplier
+    )
     identification_weight = observation_base.copy()
     for position, selected in enumerate(observation_indices):
         identification_weight[selected] *= expected_observation[position]
     anchor_identification_weight = anchor_base.copy()
     for position, selected in enumerate(anchor_indices):
         anchor_identification_weight[selected] *= expected_anchor[position]
-    state_mapping, identifiable, query_fraction, basis_diagnostics = (
-        _prior_aware_basis(
-            state_white,
-            nuisance_white,
-            anchor_state_white,
-            anchor_nuisance_white,
-            state_prior,
-            nuisance_prior,
-            identification_weight,
-            anchor_identification_weight,
-            batch.query_state_jacobian,
-            cfg,
-        )
+    state_mapping, identifiable, query_fraction, basis_diagnostics = _prior_aware_basis(
+        state_white,
+        nuisance_white,
+        anchor_state_white,
+        anchor_nuisance_white,
+        state_prior,
+        nuisance_prior,
+        identification_weight,
+        anchor_identification_weight,
+        batch.query_state_jacobian,
+        cfg,
     )
     exact_mixture = cfg.minimum_robust_precision == 0.0
     diagnostics: dict[str, Any] = {
@@ -203,6 +199,8 @@ def update_prior_aware_gauge_belief(
         "association_probability_used_as_reliability": False,
         "row_reliability_semantics": "conditional-covariance-precision-scaling",
         "group_composite_weight_semantics": "generalized-Bayes likelihood power",
+        "observation_composite_weight_mode": batch.composite_weight_mode,
+        "anchor_composite_weight_mode": batch.anchor_composite_weight_mode,
         **basis_diagnostics,
     }
     if not state_mapping.shape[1]:
@@ -242,9 +240,7 @@ def update_prior_aware_gauge_belief(
         axis=2,
     )
     reduced_prior = _block_diagonal(
-        [np.eye(retained), nuisance_prior]
-        if nuisance_count
-        else [np.eye(retained)]
+        [np.eye(retained), nuisance_prior] if nuisance_count else [np.eye(retained)]
     )
     prior_precision = _regularized_precision(
         reduced_prior,
@@ -287,9 +283,7 @@ def update_prior_aware_gauge_belief(
             observation_design,
             observation_design,
         )
-        right += np.einsum(
-            "m,mci,mc->i", ordinary_weight, observation_design, target
-        )
+        right += np.einsum("m,mci,mc->i", ordinary_weight, observation_design, target)
         if anchor_count:
             normal += np.einsum(
                 "a,aci,acj->ij",
@@ -382,9 +376,7 @@ def update_prior_aware_gauge_belief(
             anchor_precision_derivative[position] = (
                 statistics.expected_precision_derivative
             )
-            anchor_responsibility[position] = (
-                statistics.posterior_nominal_probability
-            )
+            anchor_responsibility[position] = statistics.posterior_nominal_probability
             anchor_floor_active[position] = statistics.precision_floor_active
         return white_residual, white_anchor_residual
 
@@ -424,8 +416,8 @@ def update_prior_aware_gauge_belief(
             )
         solution_delta = float(np.linalg.norm(candidate - solution))
         solution = candidate
-        final_white_residual, final_white_anchor_residual = (
-            refresh_mixture_statistics(solution)
+        final_white_residual, final_white_anchor_residual = refresh_mixture_statistics(
+            solution
         )
         normal, right = system()
         stationarity_norm = float(np.linalg.norm(normal @ solution - right))
@@ -433,8 +425,7 @@ def update_prior_aware_gauge_belief(
         stationarity_scale = 1.0 + float(np.linalg.norm(right))
         if (
             solution_delta <= cfg.convergence_tolerance * solution_scale
-            and stationarity_norm
-            <= cfg.convergence_tolerance * stationarity_scale
+            and stationarity_norm <= cfg.convergence_tolerance * stationarity_scale
         ):
             fixed_point_converged = True
             break
@@ -505,12 +496,9 @@ def update_prior_aware_gauge_belief(
     query_update = np.einsum(
         "qcs,s->qc", batch.query_state_jacobian, state_coefficients
     )
-    maximum_update = float(
-        np.max(np.linalg.norm(query_update, axis=1), initial=0.0)
-    )
+    maximum_update = float(np.max(np.linalg.norm(query_update, axis=1), initial=0.0))
     relative_limit = (
-        cfg.maximum_update_to_physical_response_ratio
-        * batch.physical_response_scale_m
+        cfg.maximum_update_to_physical_response_ratio * batch.physical_response_scale_m
     )
     update_limit = min(cfg.maximum_state_update_m, relative_limit)
     diagnostics.update(

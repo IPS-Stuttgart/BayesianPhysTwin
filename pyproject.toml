@@ -50,6 +50,7 @@ bpt = "bayesian_phystwin.cli.main:main"
 [project.optional-dependencies]
 dev = [
     "mypy>=1.11",
+    "numpy>=1.23,<2.3; python_version < '3.14'",
     "pytest>=8.0",
     "ruff>=0.6",
 ]
