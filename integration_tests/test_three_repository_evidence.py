@@ -2,32 +2,16 @@
 
 from __future__ import annotations
 
+import json
+import os
+import platform
 from copy import deepcopy
 from dataclasses import replace
 from importlib import metadata as importlib_metadata
-import json
-import os
 from pathlib import Path
-import platform
 
 import numpy as np
 import pytest
-
-from prob4d.provider_v1 import save_observation_belief_export
-
-from bayesian_phystwin import (
-    load_observation_belief,
-    validate_prob4d_causal_observation_belief,
-)
-from bayesian_phystwin.evidence_policy import require_promotable_run_manifest
-from bayesian_phystwin.repository_provenance import RepositoryState
-from bayesian_phystwin.run_manifest import artifact_digest
-from bayesian_phystwin.run_manifest_v2 import (
-    RunManifestV2,
-    load_run_manifest_v2,
-    write_run_manifest,
-)
-
 from causal4d.bpt_belief import (
     BPTBeliefExportConfig,
     build_twin_belief_from_replays,
@@ -49,7 +33,7 @@ from causal4d.observation_lineage import (
 from causal4d.phystwin_backend import BayesianPhysTwinParticles
 from causal4d.provider_contract import require_bayesian_phystwin_provider
 from causal4d.rollout_bank import JointRolloutBank
-
+from prob4d.provider_v1 import save_observation_belief_export
 from test_three_repository_golden_path import (
     DeterministicReplayProvider,
     _producer_artifact,
@@ -57,6 +41,18 @@ from test_three_repository_golden_path import (
     _run_bpt_update,
 )
 
+from bayesian_phystwin import (
+    load_observation_belief,
+    validate_prob4d_causal_observation_belief,
+)
+from bayesian_phystwin.evidence_policy import require_promotable_run_manifest
+from bayesian_phystwin.repository_provenance import RepositoryState
+from bayesian_phystwin.run_manifest import artifact_digest
+from bayesian_phystwin.run_manifest_v2 import (
+    RunManifestV2,
+    load_run_manifest_v2,
+    write_run_manifest,
+)
 
 CAUSAL_FRAME_STOP = 6
 INTERVENTION_FRAME = CAUSAL_FRAME_STOP

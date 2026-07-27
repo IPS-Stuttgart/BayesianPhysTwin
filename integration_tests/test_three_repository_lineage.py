@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-
 from causal4d.contracts import (
     TwinBelief,
     build_causal_context,
@@ -18,7 +17,6 @@ from causal4d.observation_lineage import (
     validate_twin_belief_observation_lineage,
 )
 from prob4d.provider_v1 import save_observation_belief_export
-
 from test_three_repository_golden_path import (
     EXPECTED_OBSERVATION_ARTIFACT_ID,
     _producer_artifact,

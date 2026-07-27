@@ -7,34 +7,17 @@ expected decisions cross repository boundaries.
 
 from __future__ import annotations
 
-from copy import deepcopy
-from dataclasses import replace
-from importlib import import_module, metadata as importlib_metadata
 import json
 import os
+from copy import deepcopy
+from dataclasses import replace
+from importlib import import_module
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pytest
-
-from prob4d.provider_v1 import (
-    MetricGaugeAnchor,
-    ObservationBeliefExportV1,
-    bind_causal_stream_contract_v2,
-    save_observation_belief_export,
-)
-from prob4d.sim3 import Sim3
-
-from bayesian_phystwin import (
-    GaugeAwareBeliefConfig,
-    build_gauge_aware_batch_from_observation_belief,
-    load_observation_belief,
-    update_gauge_aware_belief,
-    validate_prob4d_causal_observation_belief,
-)
-from bayesian_phystwin.causal4d_provider_v1 import PhysTwinReplayProvider
-
 from causal4d.bpt_belief import (
     BPTBeliefExportConfig,
     build_twin_belief_from_replays,
@@ -51,7 +34,22 @@ from causal4d.counterfactual import apply_counterfactual_operator
 from causal4d.phystwin_backend import load_bayesian_phystwin_particles
 from causal4d.provider_contract import require_bayesian_phystwin_provider
 from causal4d.rollout_bank import JointRolloutBank
+from prob4d.provider_v1 import (
+    MetricGaugeAnchor,
+    ObservationBeliefExportV1,
+    bind_causal_stream_contract_v2,
+    save_observation_belief_export,
+)
+from prob4d.sim3 import Sim3
 
+from bayesian_phystwin import (
+    GaugeAwareBeliefConfig,
+    build_gauge_aware_batch_from_observation_belief,
+    load_observation_belief,
+    update_gauge_aware_belief,
+    validate_prob4d_causal_observation_belief,
+)
+from bayesian_phystwin.causal4d_provider_v1 import PhysTwinReplayProvider
 
 EXPECTED_OBSERVATION_ARTIFACT_ID = (
     "142e5fd52a5d7d99247f6bcf89b1521cec233f9d280f28cdf1060e004343522c"
