@@ -5,9 +5,9 @@ The root README documents only the stable project identity, interfaces, and
 onboarding path. Claim-bearing numbers belong in frozen evidence reports, and
 current project status belongs in the canonical paper repository.
 
-Legacy `bpt-*` entry points remain available for compatibility, but they are not
-all stable API promises. Prefer the grouped `bpt` commands for reusable
-workflows.
+The package installs only `bpt`. Stable operations use direct grouped routes;
+research workflows are classified as current experiments, diagnostics, or
+archived reproduction paths in the command registry.
 
 ## Stable workflows
 
@@ -17,13 +17,36 @@ workflows.
 | Observation-belief validation | `bpt observation validate` | [ObservationBeliefV1](observation_belief_contract.md) |
 | Robust residual replay | `bpt residual replay` | [Residual replay](residual_replay.md) |
 | Controlled synthetic benchmark | `bpt benchmark synthetic` | [Synthetic benchmark](synthetic_benchmark.md) |
-| Content-addressed run provenance | `bpt run manifest` | Run `bpt run manifest --help` for the current schema and operations. |
+| Matched guarded evidence analysis | `bpt evidence summarize` | [Decisive evidence protocol](decisive_evidence_protocol.md) |
+| Content-addressed run provenance | `bpt run manifest` | [Reproducible runs](reproducible_runs.md) |
 
 The observation-to-state boundary is described in
 [gauge-aware observation update](gauge_aware_observation_update.md) and
 [prior-aware guarded update](prior_aware_guarded_update.md). These documents
 state the identifiability, covariance, causal-cutoff, and exact-fallback rules
 that apply independently of any one experiment.
+
+## Command lifecycle
+
+Use the registry rather than maintaining a static list here:
+
+```bash
+bpt experiment list
+bpt diagnostic list
+bpt archive list
+bpt commands list --json
+```
+
+- `experiment` contains active research protocols.
+- `diagnostic` contains audits and analyses that are not promotable methods by
+  themselves.
+- `archived` contains frozen historical and negative-result paths.
+- `stable` contains reusable operational interfaces.
+
+Each entry records an owner, optional dependency extras, and the removed
+historical `bpt-*` name when one existed. Historical aliases are inspection and
+migration metadata only; use `bpt commands migrate LEGACY_ALIAS` to obtain the
+current grouped route.
 
 ## Frozen and claim-bearing evidence
 
@@ -38,8 +61,10 @@ covariance.
 
 ### Deform360 prospective validation
 
-The [Deform360 bias-aware prospective v2 protocol](deform360_bias_aware_prospective_v2.md)
-and its [frozen result](deform360_bias_aware_prospective_v2_result.md) record a
+The
+[Deform360 bias-aware prospective v2 protocol](deform360_bias_aware_prospective_v2.md)
+and its
+[frozen result](deform360_bias_aware_prospective_v2_result.md) record a
 prospective calibration gate. The target-free support gate passed, the fresh
 accuracy gate failed, and reserved targets remained unopened. This is a
 negative prospective result, not a target evaluation.
@@ -55,9 +80,9 @@ negative prospective result, not a target evaluation.
 | Legacy MatPhys backbone experiments | [Causal MatPhys backbone](matphys_causal_backbone_v1.md) | Engineering history only; the original causal audit was invalidated by a frame-ordering defect. |
 | Bias-aware guarded updates | [Bias-aware guarded belief](bias_aware_guarded_belief_v1.md) | Generic guarded-update method and source-only acceptance logic. |
 
-Detailed commands live with the protocol they implement. New experiment
-commands should be documented in their dedicated report rather than appended
-to the root README.
+Detailed commands live with the protocol they implement. New commands should be
+registered under `bpt` and documented in their dedicated report rather than
+appended to the root README.
 
 ## Cross-repository interfaces
 
