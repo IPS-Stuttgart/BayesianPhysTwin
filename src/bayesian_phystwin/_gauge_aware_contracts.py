@@ -263,13 +263,9 @@ class GaugeAwareObservationBatch:
         )
         state = _finite_array(self.state_jacobian, "state_jacobian", 3)
         gauge = _finite_array(self.gauge_jacobian, "gauge_jacobian", 3)
-        shared = _finite_array(
-            self.shared_bias_jacobian, "shared_bias_jacobian", 3
-        )
+        shared = _finite_array(self.shared_bias_jacobian, "shared_bias_jacobian", 3)
         view = _finite_array(self.view_bias_jacobian, "view_bias_jacobian", 3)
-        query = _finite_array(
-            self.query_state_jacobian, "query_state_jacobian", 3
-        )
+        query = _finite_array(self.query_state_jacobian, "query_state_jacobian", 3)
         count = len(innovation)
         _require(innovation.shape == (count, 3), "innovation_m must have shape (M, 3)")
         _require(
@@ -599,9 +595,7 @@ class GaugeAwareBeliefResult:
         covariance = np.asarray(self.posterior_covariance, dtype=np.float64)
         transform = np.asarray(self.identifiable_state_transform, dtype=np.float64)
         fractions = np.asarray(self.identifiable_fractions, dtype=np.float64)
-        query_fractions = np.asarray(
-            self.query_sensitivity_fractions, dtype=np.float64
-        )
+        query_fractions = np.asarray(self.query_sensitivity_fractions, dtype=np.float64)
         robust = np.asarray(self.robust_weights, dtype=np.float64)
         anchor_robust = np.asarray(self.anchor_robust_weights, dtype=np.float64)
         _require(
@@ -613,13 +607,7 @@ class GaugeAwareBeliefResult:
             == 1,
             "coefficient arrays must be vectors",
         )
-        dimension = (
-            len(state)
-            + len(gauge)
-            + len(shared)
-            + len(view)
-            + len(anchor_bias)
-        )
+        dimension = len(state) + len(gauge) + len(shared) + len(view) + len(anchor_bias)
         _require(
             covariance.shape == (dimension, dimension),
             "posterior covariance has changed shape",
