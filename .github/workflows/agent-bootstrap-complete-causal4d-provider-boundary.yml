@@ -1,0 +1,98 @@
+name: Bootstrap complete Causal4D provider boundary
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/bootstrap-complete-causal4d-provider-boundary'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out bootstrap head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Materialize product-only branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/agent-complete-causal4d-provider-boundary.patch.gz.b64 /tmp/provider-boundary.patch.gz.b64
+          git fetch origin main
+          git switch -C agent/complete-causal4d-provider-boundary origin/main
+          base64 --decode /tmp/provider-boundary.patch.gz.b64 | gzip --decompress > /tmp/provider-boundary.patch
+          git apply --index --whitespace=nowarn /tmp/provider-boundary.patch
+          test ! -e .github/workflows/agent-bootstrap-complete-causal4d-provider-boundary.yml
+          test ! -e .github/agent-complete-causal4d-provider-boundary.patch.gz.b64
+
+      - name: Install development and graph dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,graph]"
+
+      - name: Format and lint provider boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff format \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
+            src/bayesian_phystwin/causal4d_public_provider_v1.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_causal4d_public_provider_v1.py \
+            tests/test_legacy_artifacts.py
+          python -m ruff check \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
+            src/bayesian_phystwin/causal4d_public_provider_v1.py \
+            tests/test_causal4d_public_provider_v1.py \
+            tests/test_legacy_artifacts.py
+          python -m ruff check --ignore I001 \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py
+
+      - name: Type-check stable provider surfaces
+        run: |
+          python -m mypy --python-version 3.12 \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
+            src/bayesian_phystwin/causal4d_public_provider_v1.py
+
+      - name: Run focused provider tests
+        run: |
+          python -m pytest -q \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_causal4d_public_provider_v1.py \
+            tests/test_legacy_artifacts.py
+
+      - name: Run complete NumPy suite
+        run: python -m pytest -q
+
+      - name: Publish reviewed product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/workflows/agent-bootstrap-complete-causal4d-provider-boundary.yml
+          test ! -e .github/agent-complete-causal4d-provider-boundary.patch.gz.b64
+          git diff --check
+          git diff --cached --check
+          git status --short
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete the Causal4D provider-only boundary"
+          git push --force origin HEAD:refs/heads/agent/complete-causal4d-provider-boundary
