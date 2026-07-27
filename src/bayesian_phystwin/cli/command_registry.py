@@ -204,9 +204,7 @@ COMMANDS_BY_LEGACY_ALIAS: Final = {
 }
 
 
-def iter_commands(
-    *, status: CommandStatus | None = None
-) -> tuple[CommandSpec, ...]:
+def iter_commands(*, status: CommandStatus | None = None) -> tuple[CommandSpec, ...]:
     """Return registry entries in deterministic command-id order."""
 
     selected = (
