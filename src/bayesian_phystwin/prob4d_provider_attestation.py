@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 PROB4D_PROVIDER_ATTESTATION_SCHEMA = "prob4d.provider-attestation"
 PROB4D_PROVIDER_ATTESTATION_VERSION = 1
@@ -167,34 +167,37 @@ def _validate_manifest(
         "Prob4D provider manifest is not API version 2",
     )
 
-    capabilities = manifest.get("capabilities")
+    capabilities_value = manifest.get("capabilities")
     _require(
-        isinstance(capabilities, list)
-        and all(isinstance(item, str) and item for item in capabilities)
-        and len(capabilities) == len(set(capabilities)),
+        isinstance(capabilities_value, list)
+        and all(isinstance(item, str) and item for item in capabilities_value)
+        and len(capabilities_value) == len(set(capabilities_value)),
         "Prob4D provider capabilities must be unique nonempty strings",
     )
+    capabilities = cast(list[str], capabilities_value)
     _require(
         _REQUIRED_CAPABILITIES.issubset(capabilities),
         "Prob4D provider manifest lacks required claim-bearing capabilities",
     )
 
-    schemas = manifest.get("artifact_schema_versions")
+    schemas_value = manifest.get("artifact_schema_versions")
     _require(
-        isinstance(schemas, Mapping),
+        isinstance(schemas_value, Mapping),
         "Prob4D provider artifact schemas must be a mapping",
     )
+    schemas = cast(Mapping[str, Any], schemas_value)
     _require(
         schemas.get("ObservationBeliefV1") == 1
         and schemas.get("Prob4DCausalObservationStream") == 2,
         "Prob4D provider manifest declares unsupported observation schemas",
     )
 
-    limitations = manifest.get("limitations")
+    limitations_value = manifest.get("limitations")
     _require(
-        isinstance(limitations, Mapping),
+        isinstance(limitations_value, Mapping),
         "Prob4D provider limitations must be a mapping",
     )
+    limitations = cast(Mapping[str, Any], limitations_value)
     _require(
         limitations.get("uncalibrated_export_is_default") is False,
         "Prob4D provider-v2 manifest must not default to uncalibrated export",
@@ -205,11 +208,12 @@ def _validate_manifest(
         "Prob4D provider manifest misstates deployment revision evidence",
     )
 
-    metadata = manifest.get("metadata")
+    metadata_value = manifest.get("metadata")
     _require(
-        isinstance(metadata, Mapping),
+        isinstance(metadata_value, Mapping),
         "Prob4D provider metadata must be a mapping",
     )
+    metadata = cast(Mapping[str, Any], metadata_value)
     _require(
         metadata.get("source_repository") == PROB4D_PROVIDER_SOURCE_REPOSITORY,
         "Prob4D provider manifest source repository changed",
@@ -266,13 +270,18 @@ def _validate_runtime(
         clean is None or isinstance(clean, bool),
         "Prob4D runtime clean_checkout must be Boolean or null",
     )
-    matched = runtime.get("matched")
-    independent = runtime.get("independently_verified")
-    _require(isinstance(matched, bool), "Prob4D runtime matched must be Boolean")
+    matched_value = runtime.get("matched")
+    independent_value = runtime.get("independently_verified")
     _require(
-        isinstance(independent, bool),
+        isinstance(matched_value, bool),
+        "Prob4D runtime matched must be Boolean",
+    )
+    _require(
+        isinstance(independent_value, bool),
         "Prob4D runtime independently_verified must be Boolean",
     )
+    matched = cast(bool, matched_value)
+    independent = cast(bool, independent_value)
     _require(
         matched is (observed == expected),
         "Prob4D runtime matched flag disagrees with its revisions",
@@ -398,20 +407,22 @@ def validate_prob4d_provider_attestation(
         export_mode in {"calibrated", "exploratory"},
         "Prob4D provider export mode is unsupported",
     )
-    claim_bearing = normalized.get("claim_bearing")
+    claim_bearing_value = normalized.get("claim_bearing")
     _require(
-        isinstance(claim_bearing, bool),
+        isinstance(claim_bearing_value, bool),
         "Prob4D claim_bearing must be Boolean",
     )
+    claim_bearing = cast(bool, claim_bearing_value)
     _require(
         claim_bearing is (export_mode == "calibrated"),
         "Prob4D claim-bearing flag disagrees with export mode",
     )
-    compatibility = normalized.get("calibration_compatibility_validated")
+    compatibility_value = normalized.get("calibration_compatibility_validated")
     _require(
-        isinstance(compatibility, bool),
+        isinstance(compatibility_value, bool),
         "Prob4D calibration compatibility flag must be Boolean",
     )
+    compatibility = cast(bool, compatibility_value)
     _require(
         compatibility is claim_bearing,
         "Prob4D calibration compatibility flag disagrees with export mode",
