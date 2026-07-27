@@ -34,19 +34,23 @@ jobs:
           python tools/agent_apply_threshold_risk.py
           rm tools/agent_apply_threshold_risk.py
           rm .github/workflows/agent-apply-threshold-risk.yml
-      - name: Format and validate focused changes
+      - name: Format focused changes
         run: |
           python -m ruff format \
-            src/bayesian_phystwin/decisive_evidence.py \
-            tests/test_decisive_evidence.py
-          python -m ruff check \
             src/bayesian_phystwin/decisive_evidence.py \
             tests/test_decisive_evidence.py
           python -m ruff format --check \
             src/bayesian_phystwin/decisive_evidence.py \
             tests/test_decisive_evidence.py
-          python -m mypy src/bayesian_phystwin/decisive_evidence.py
-          python -m pytest -q tests/test_decisive_evidence.py
+      - name: Lint focused changes
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/decisive_evidence.py \
+            tests/test_decisive_evidence.py
+      - name: Type-check decisive evidence
+        run: python -m mypy src/bayesian_phystwin/decisive_evidence.py
+      - name: Run focused decisive-evidence tests
+        run: python -m pytest -q tests/test_decisive_evidence.py
       - name: Commit implementation
         shell: bash
         run: |
