@@ -2,15 +2,21 @@
 
 ## Status
 
-This protocol is locked before implementation, cohort selection, tracker
+This protocol was locked before implementation, cohort selection, tracker
 execution, or outcome opening. It defines a new experiment; it does not modify
 the failed one-case TAPNext++ competence result or authorize reuse of any
 held-v8, Prob4D, or MolmoMotion object.
 
 The complete method contract is
 `configs/sota/deform360_dynamic_tapnextpp_provider_v1.json`. The hash-only
-exclusion union contains 82 physical objects and has canonical SHA-256
-`5454f86c6b434c1f10b7762c3ed00e887b6184f03b0e61ce9b02651d2fed0e66`.
+exclusion union contains 94 physical objects and has canonical SHA-256
+`fc7e24379f65a6162e8908716f214f92fbffae34407ddd752599368c768413bb`.
+
+Before cohort selection, a separately owned source campaign reported 12 newly
+opened physical objects that were absent from the original 82-object union.
+Exclusion amendment 1 adds those objects by hash only. No source or target
+outcome from this protocol had been opened, and no method, threshold, or gate
+changed.
 
 ## Hypothesis
 
@@ -87,7 +93,7 @@ The source and target object partitions are locked together from metadata and
 frame-zero admission before source outcomes:
 
 ```text
-82-object hash exclusion union
+94-object hash exclusion union
 -> source-only admission
 -> locked 8-source / 12-target object split
 -> implementation and environment lock
@@ -121,3 +127,25 @@ requires all of:
 
 Without evaluator parity, the strongest permitted statement is transfer under
 the explicitly declared hidden-identity metrics.
+
+## Implemented Boundaries
+
+The opt-in implementation keeps four quantities distinct:
+
+- birth association probability from local mask/depth geometry;
+- residual-independent perception reliability;
+- local metric covariance using independent camera clusters and an
+  equal-weight covariance-intersection approximation; and
+- one coherent 3-D camera-bias factor per update interval.
+
+Exact or near-exact duplicate camera poses form one information cluster. Two
+independent views can preserve a tracker proposal but cannot create a
+claim-bearing likelihood row. Assignment ambiguity contributes metric
+covariance, while the PhysTwin innovation is formed once downstream and enters
+only the robust likelihood.
+
+Pre-lock admission now rejects malformed metadata enums, incomplete streams,
+short episodes, camera panels below eight eligible views, and physical
+geometry below the 128-node backend minimum. Ordinary prediction seals and
+retained technical failures are separate artifact kinds and are counted
+separately by the source completeness barrier.

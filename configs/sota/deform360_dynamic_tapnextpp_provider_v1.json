@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "protocol_id": "deform360-dynamic-tapnextpp-provider-v1",
-  "status": "protocol-prelocked-before-implementation-and-cohort-selection",
+  "status": "protocol-amended-before-cohort-selection-or-provider-outcomes",
   "question": "Can physics-guided causal query births turn precise but incomplete TAPNext++ tracks into a bias-aware sparse state update that improves disjoint hidden Deform360 identities without regressing below the unchanged physical/persistence backbone?",
   "claim_boundary": "The source phase may establish provider competence and source transfer only. A state-of-the-art claim additionally requires a passed source gate, an untouched object-disjoint target cohort, authoritative evaluator parity, local reproduction of the strongest eligible baseline, and improvement on both primary metrics.",
   "prelock": {
@@ -11,11 +11,27 @@
     "implementation_status": "not yet implemented",
     "outcome_opened_by_this_protocol": false
   },
+  "amendments": [
+    {
+      "amendment_id": "fresh-object-exclusion-amendment-1",
+      "reason": "A separately owned source-only campaign opened 12 physical objects after the original 82-object exclusion union was frozen. None overlapped the original union, so all 12 were added before this protocol selected a source or target cohort.",
+      "source_branch": "deform360-fresh-source-lock-v1",
+      "source_commit": "fac103b",
+      "previous_exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v1.json",
+      "previous_exclusion_sha256": "5454f86c6b434c1f10b7762c3ed00e887b6184f03b0e61ce9b02651d2fed0e66",
+      "previous_excluded_physical_object_count": 82,
+      "newly_excluded_physical_object_count": 12,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_or_gate_changed": false
+    }
+  ],
   "fresh_object_boundary": {
-    "exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v1.json",
-    "exclusion_sha256": "5454f86c6b434c1f10b7762c3ed00e887b6184f03b0e61ce9b02651d2fed0e66",
-    "exclusion_file_sha256": "59bcc9e3b38b70c7919c30a30a1bcc52f0f65247ec3ff8a6ab90b549164594df",
-    "excluded_physical_object_count": 82,
+    "exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v2.json",
+    "exclusion_sha256": "fc7e24379f65a6162e8908716f214f92fbffae34407ddd752599368c768413bb",
+    "exclusion_file_sha256": "8c40a4c0f45973015295c70d6c3890876aea19346760354ff79106313b41558b",
+    "excluded_physical_object_count": 94,
     "source_object_count": 8,
     "sealed_target_object_count": 12,
     "selection_unit": "physical object",
