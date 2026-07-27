@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import bayesian_phystwin.causal4d_provider_v1 as provider_api
+import bayesian_phystwin.phystwin.replay as replay_v2
 from bayesian_phystwin.causal4d_belief_provider_v1 import (
     CAUSAL4D_BELIEF_PROVIDER_API_VERSION,
     DEFAULT_FIXED_BAYESIAN_ANCHOR_CONFIG_V1,
@@ -31,6 +32,8 @@ from bayesian_phystwin.causal4d_provider_v1 import (
     sha256_file,
     target_validity,
 )
+from bayesian_phystwin.contracts.replay import InitialReplayRequestV1
+from bayesian_phystwin.phystwin.replay import OfficialPhysTwinReplayProviderV2
 from bayesian_phystwin.phystwin_bayesian_anchor import robust_random_walk_endpoint
 
 
@@ -207,6 +210,71 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
     assert torch.cuda.empty_cache_calls == 1
     with pytest.raises(RuntimeError, match="closed"):
         adapter.replay_initial(frame_count=1)
+
+
+def test_v2_adapter_executes_explicit_initial_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    simulator = _FakeSimulator()
+    torch = _FakeTorch()
+    warp = _FakeWarp()
+    adapter = OfficialPhysTwinReplayProviderV2(
+        simulator,
+        torch,
+        warp,
+        device="cpu",
+        frame_dt_s=0.03,
+        simulator_configuration_id="config-v1",
+        released_initial_state_id="released-v1",
+    )
+    monkeypatch.setattr(
+        replay_v2,
+        "_rollout_initial_trajectory",
+        lambda simulator_arg, wp_arg, *, frame_count: (
+            np.zeros((frame_count, 2, 3), dtype=np.float32),
+            np.ones((frame_count, 2, 3), dtype=np.float32),
+        ),
+    )
+    controls = np.arange(12, dtype=np.float32).reshape(4, 1, 3)
+    common = {
+        "request_id": "request-v1",
+        "simulator_configuration_id": "config-v1",
+        "group_log_scales": np.asarray((0.2, -0.1)),
+        "controller_points_m": controls,
+        "frame_count": 3,
+    }
+
+    with pytest.raises(ValueError, match="released state"):
+        adapter.replay(
+            InitialReplayRequestV1(
+                initial_state_id="wrong-state",
+                **common,
+            )
+        )
+
+    trajectory = adapter.replay(
+        InitialReplayRequestV1(
+            initial_state_id="released-v1",
+            **common,
+        )
+    )
+    np.testing.assert_allclose(
+        simulator.group_log_scale_tensor.values,
+        (0.2, -0.1),
+    )
+    np.testing.assert_allclose(simulator.controller_points.values, controls)
+    np.testing.assert_array_equal(trajectory.frame_ids, np.arange(3))
+    assert (
+        trajectory.positions_m.shape
+        == trajectory.velocities_mps.shape
+        == (
+            3,
+            2,
+            3,
+        )
+    )
+    assert warp.synchronize_calls == 2
+    adapter.close()
 
 
 def test_factory_hides_simulator_initialization(monkeypatch, tmp_path: Path) -> None:
