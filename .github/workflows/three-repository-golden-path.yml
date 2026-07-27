@@ -78,27 +78,52 @@ jobs:
     env:
       PROB4D_READ_TOKEN: ${{ secrets.PROB4D_READ_TOKEN }}
     steps:
-      - name: Report unavailable Prob4D credential
-        if: env.PROB4D_READ_TOKEN == ''
+      - name: Classify private-repository access
+        id: access
         shell: bash
+        env:
+          IS_FORK_PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
-          echo "::warning title=Three-repository gate not executed::Configure PROB4D_READ_TOKEN with contents-read access to FlorianPfaff/Prob4D."
-          {
-            echo "### Three-repository gate not executed"
-            echo
-            echo "The private Prob4D checkout requires the repository secret \`PROB4D_READ_TOKEN\`."
-            echo "No cross-repository evidence is admitted when the credential is absent."
-          } >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          if [[ -n "${PROB4D_READ_TOKEN}" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "required=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${IS_FORK_PULL_REQUEST}" == "true" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "required=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Private compatibility unavailable on fork::The fork pull request cannot access PROB4D_READ_TOKEN, so it cannot admit three-repository evidence."
+            {
+              echo "### Three-repository gate unavailable on fork"
+              echo
+              echo "GitHub does not expose the private \`PROB4D_READ_TOKEN\` secret to fork pull requests."
+              echo "The private installed-wheel gate is therefore unavailable and no cross-repository evidence is admitted by this run."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "required=true" >> "$GITHUB_OUTPUT"
+            echo "::error title=Required three-repository gate not executed::Configure PROB4D_READ_TOKEN with contents-read access to FlorianPfaff/Prob4D."
+            {
+              echo "### Required three-repository gate not executed"
+              echo
+              echo "The trusted event requires the repository secret \`PROB4D_READ_TOKEN\`."
+              echo "Missing credentials are a failing configuration error, not a successful compatibility result."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Require private credential on trusted events
+        if: steps.access.outputs.required == 'true' && steps.access.outputs.enabled != 'true'
+        shell: bash
+        run: exit 1
 
       - name: Check out Bayesian-PhysTwin
-        if: env.PROB4D_READ_TOKEN != ''
+        if: steps.access.outputs.enabled == 'true'
         uses: actions/checkout@v7
         with:
           path: bayesian-phystwin
           persist-credentials: false
 
       - name: Check out Prob4D
-        if: env.PROB4D_READ_TOKEN != ''
+        if: steps.access.outputs.enabled == 'true'
         uses: actions/checkout@v7
         with:
           repository: FlorianPfaff/Prob4D
@@ -108,7 +133,7 @@ jobs:
           persist-credentials: false
 
       - name: Check out Causal4D
-        if: env.PROB4D_READ_TOKEN != ''
+        if: steps.access.outputs.enabled == 'true'
         uses: actions/checkout@v7
         with:
           repository: FlorianPfaff/Causal4D
@@ -117,7 +142,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        if: env.PROB4D_READ_TOKEN != ''
+        if: steps.access.outputs.enabled == 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -128,9 +153,28 @@ jobs:
             causal4d/pyproject.toml
 
       - name: Build, install, and execute the isolated golden path
-        if: env.PROB4D_READ_TOKEN != ''
+        id: golden_path
+        if: steps.access.outputs.enabled == 'true'
+        shell: bash
         run: |
+          set -euo pipefail
           bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
             bayesian-phystwin \
             prob4d \
             causal4d
+          touch "$RUNNER_TEMP/three-repository-golden-path.executed"
+
+      - name: Assert trusted gate execution
+        if: always() && steps.access.outputs.required == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.access.outputs.enabled }}" != "true" ]]; then
+            echo "::error title=Three-repository gate unavailable::The required private credential was not configured."
+            exit 1
+          fi
+          test -f "$RUNNER_TEMP/three-repository-golden-path.executed"
+          if [[ "${{ steps.golden_path.outcome }}" != "success" ]]; then
+            echo "::error title=Three-repository gate failed::The installed-wheel golden path did not complete successfully."
+            exit 1
+          fi
