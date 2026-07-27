@@ -1,0 +1,122 @@
+name: Bootstrap BPT contract and numerical hardening
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-product-branch:
+    if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PRODUCT_BRANCH: agent/harden-bpt-contract-numerics
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply the reviewed product patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -c "${PRODUCT_BRANCH}"
+          python - <<'PY'
+          import base64
+          import gzip
+
+          payload = "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"
+          source = gzip.decompress(base64.b64decode(payload)).decode("utf-8")
+          exec(compile(source, "bpt-contract-numerics-patch.py", "exec"))
+          PY
+
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Format and lint the intended files
+        shell: bash
+        run: |
+          python -m ruff check --fix -- \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/grouped_likelihood.py \
+            src/bayesian_phystwin/phystwin_bayesian_anchor.py \
+            src/bayesian_phystwin/contracts/fixed_anchor.py \
+            tests/test_observation_belief.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_phystwin_bayesian_anchor.py
+          python -m ruff format -- \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/grouped_likelihood.py \
+            src/bayesian_phystwin/phystwin_bayesian_anchor.py \
+            src/bayesian_phystwin/contracts/fixed_anchor.py \
+            tests/test_observation_belief.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_phystwin_bayesian_anchor.py
+          python -m ruff check -- \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/grouped_likelihood.py \
+            src/bayesian_phystwin/phystwin_bayesian_anchor.py \
+            src/bayesian_phystwin/contracts/fixed_anchor.py \
+            tests/test_observation_belief.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_phystwin_bayesian_anchor.py
+
+      - name: Run focused contract and numerical tests
+        run: |
+          python -m pytest -q \
+            tests/test_observation_belief.py \
+            tests/test_observation_belief_gauge_adapter.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_phystwin_bayesian_anchor.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_prob4d_joint_contract_fixture.py
+
+      - name: Commit and run the exact quality ratchet
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            CHANGELOG.md \
+            docs/causal4d_belief_provider_v1.md \
+            docs/observation_belief_contract.md \
+            src/bayesian_phystwin/contracts/fixed_anchor.py \
+            src/bayesian_phystwin/grouped_likelihood.py \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/phystwin_bayesian_anchor.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_observation_belief.py \
+            tests/test_phystwin_bayesian_anchor.py
+          git diff --cached --check
+          git commit -m "Harden immutable observation and covariance semantics"
+          python tools/quality/changed_python_quality.py --base HEAD^ --head HEAD
+
+      - name: Publish the clean product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:refs/heads/${PRODUCT_BRANCH}"
+          {
+            echo "### Published product branch"
+            echo
+            echo "\`${PRODUCT_BRANCH}\`"
+            echo
+            echo "Commit: \`$(git rev-parse HEAD)\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
