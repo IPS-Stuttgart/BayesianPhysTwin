@@ -45,9 +45,7 @@ def test_registry_covers_all_lifecycle_states() -> None:
 
 def test_removed_aliases_are_metadata_not_runnable_selectors() -> None:
     assert (
-        find_runnable_command(
-            "bpt-phystwin-refit", status=CommandStatus.EXPERIMENT
-        )
+        find_runnable_command("bpt-phystwin-refit", status=CommandStatus.EXPERIMENT)
         is None
     )
     metadata = find_command_metadata("bpt-phystwin-refit")
@@ -58,9 +56,7 @@ def test_removed_aliases_are_metadata_not_runnable_selectors() -> None:
 
 
 def test_previous_grouped_routes_resolve_to_new_lifecycle_namespaces() -> None:
-    diagnostic = find_command_metadata(
-        "bpt experiment run audit-phystwin-calibration"
-    )
+    diagnostic = find_command_metadata("bpt experiment run audit-phystwin-calibration")
     assert diagnostic is not None
     assert diagnostic.status is CommandStatus.DIAGNOSTIC
     assert diagnostic.canonical_command == (
