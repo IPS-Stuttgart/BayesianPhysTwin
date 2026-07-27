@@ -1,7 +1,10 @@
 import numpy as np
+import pytest
 
 from bayesian_phystwin.grouped_likelihood import (
     GroupedStudentTLikelihoodConfig,
+    GroupedStudentTLikelihoodResult,
+    _covariance_statistics,
     grouped_student_t_mixture_likelihood,
 )
 from bayesian_phystwin.observation_belief import ObservationBeliefV1
@@ -64,6 +67,7 @@ def test_prior_reliability_is_not_recomputed_from_residual() -> None:
     assert np.all(
         shifted.posterior_nominal_probability < clean.posterior_nominal_probability
     )
+    assert 0.0 < clean.mean_posterior_nominal_probability <= 1.0
 
 
 def test_low_rank_factor_increases_coherent_uncertainty() -> None:
@@ -165,3 +169,100 @@ def test_blockwise_woodbury_matches_dense_covariance() -> None:
         rtol=1e-10,
         atol=1e-12,
     )
+
+
+@pytest.mark.parametrize(
+    ("settings", "message"),
+    (
+        ({"degrees_of_freedom": 2.0}, "degrees_of_freedom"),
+        ({"outlier_covariance_multiplier": 1.0}, "outlier_covariance_multiplier"),
+        ({"model_discrepancy_variance_m2": -1.0}, "model_discrepancy"),
+        ({"probability_floor": 0.0}, "probability_floor"),
+        ({"covariance_jitter_m2": 0.0}, "covariance_jitter"),
+    ),
+)
+def test_grouped_likelihood_config_rejects_invalid_values(
+    settings: dict[str, float],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        GroupedStudentTLikelihoodConfig(**settings)
+
+
+def test_grouped_likelihood_rejects_invalid_prediction() -> None:
+    belief = _belief()
+    with pytest.raises(ValueError, match="match the observation mean"):
+        grouped_student_t_mixture_likelihood(belief, np.zeros((3, 3)))
+
+    nonfinite = belief.mean_xyz_m.copy()
+    nonfinite[0, 0] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        grouped_student_t_mixture_likelihood(belief, nonfinite)
+
+
+def test_covariance_statistics_rejects_non_spd_blocks() -> None:
+    with pytest.raises(ValueError, match="local covariance"):
+        _covariance_statistics(
+            np.zeros((1, 3)),
+            -np.eye(3)[None],
+            np.zeros((1, 3, 0)),
+            np.zeros(1, dtype=np.int64),
+            model_discrepancy_variance_m2=0.0,
+            covariance_jitter_m2=1e-12,
+        )
+
+
+def test_covariance_statistics_reports_defensive_gram_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real_cholesky = np.linalg.cholesky
+    call_count = 0
+
+    def fail_second_cholesky(matrix: np.ndarray) -> np.ndarray:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise np.linalg.LinAlgError("forced Gram failure")
+        return real_cholesky(matrix)
+
+    monkeypatch.setattr(np.linalg, "cholesky", fail_second_cholesky)
+    with pytest.raises(ValueError, match="low-rank covariance update"):
+        _covariance_statistics(
+            np.zeros((1, 3)),
+            np.eye(3)[None],
+            np.ones((1, 3, 1)),
+            np.zeros(1, dtype=np.int64),
+            model_discrepancy_variance_m2=0.0,
+            covariance_jitter_m2=1e-12,
+        )
+
+
+def test_grouped_likelihood_result_rejects_invalid_vectors() -> None:
+    base = {
+        "group_ids": np.asarray([0]),
+        "dimensions": np.asarray([3]),
+        "negative_log_likelihood": np.asarray([1.0]),
+        "weighted_negative_log_likelihood": np.asarray([1.0]),
+        "posterior_nominal_probability": np.asarray([0.8]),
+        "prior_nominal_probability": np.asarray([0.9]),
+        "composite_weight": np.asarray([1.0]),
+        "log_nominal_density": np.asarray([-1.0]),
+        "log_outlier_density": np.asarray([-2.0]),
+        "mean_association_probability": np.asarray([1.0]),
+        "covariance_log_determinant_m2": np.asarray([-3.0]),
+        "covariance_mahalanobis_squared": np.asarray([0.5]),
+    }
+    with pytest.raises(ValueError, match="dimensions"):
+        GroupedStudentTLikelihoodResult(
+            **{
+                **base,
+                "dimensions": np.asarray([0]),
+            }
+        )
+    with pytest.raises(ValueError, match="finite group vector"):
+        GroupedStudentTLikelihoodResult(
+            **{
+                **base,
+                "negative_log_likelihood": np.asarray([np.nan]),
+            }
+        )
