@@ -7,10 +7,15 @@ on:
       - "src/bayesian_phystwin/phystwin/**"
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_public_provider_v1.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
+      - "tests/test_causal4d_public_provider_v1.py"
+      - "tests/test_legacy_artifacts.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
+      - "docs/causal4d_public_provider_v1.md"
       - "pyproject.toml"
       - ".github/workflows/causal4d-provider-compatibility.yml"
   push:
@@ -20,10 +25,15 @@ on:
       - "src/bayesian_phystwin/phystwin/**"
       - "src/bayesian_phystwin/causal4d_provider_v1.py"
       - "src/bayesian_phystwin/causal4d_provider_v2.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_public_provider_v1.py"
       - "tests/test_causal4d_provider_v1.py"
       - "tests/test_causal4d_provider_v2.py"
+      - "tests/test_causal4d_public_provider_v1.py"
+      - "tests/test_legacy_artifacts.py"
       - "docs/causal4d_provider_v1.md"
       - "docs/causal4d_provider_v2.md"
+      - "docs/causal4d_public_provider_v1.md"
       - "pyproject.toml"
       - ".github/workflows/causal4d-provider-compatibility.yml"
   workflow_dispatch:
@@ -86,12 +96,17 @@ jobs:
             python -m ruff check \
               src/bayesian_phystwin/contracts \
               src/bayesian_phystwin/phystwin \
+              src/bayesian_phystwin/causal4d_artifacts_v1.py \
               src/bayesian_phystwin/causal4d_provider_v2.py \
+              src/bayesian_phystwin/causal4d_public_provider_v1.py \
+              tests/test_causal4d_public_provider_v1.py \
+              tests/test_legacy_artifacts.py \
               tests/test_causal4d_provider_v2.py
             # v1 is a frozen compatibility facade; retain its historical import
             # grouping while enforcing every non-import-order Ruff diagnostic.
             python -m ruff check --ignore I001 \
-              src/bayesian_phystwin/causal4d_provider_v1.py
+              src/bayesian_phystwin/causal4d_provider_v1.py \
+              tests/test_causal4d_provider_v1.py
           } 2>&1 | tee ruff-output.txt
 
       - name: Type-check owned provider modules
@@ -104,8 +119,10 @@ jobs:
           python -m mypy --python-version 3.12 \
             src/bayesian_phystwin/contracts \
             src/bayesian_phystwin/phystwin \
+            src/bayesian_phystwin/causal4d_artifacts_v1.py \
             src/bayesian_phystwin/causal4d_provider_v1.py \
             src/bayesian_phystwin/causal4d_provider_v2.py \
+            src/bayesian_phystwin/causal4d_public_provider_v1.py \
             2>&1 | tee mypy-output.txt
 
       - name: Upload provider quality diagnostics
@@ -127,6 +144,8 @@ jobs:
           tests=(
             bayesian-phystwin/tests/test_causal4d_provider_v1.py
             bayesian-phystwin/tests/test_causal4d_provider_v2.py
+            bayesian-phystwin/tests/test_causal4d_public_provider_v1.py
+            bayesian-phystwin/tests/test_legacy_artifacts.py
             causal4d/tests/test_causal4d_provider_contract.py
             causal4d/tests/test_causal4d_bpt_belief.py
             causal4d/tests/test_causal4d_phystwin_backend.py
@@ -136,6 +155,9 @@ jobs:
           fi
           if [[ -f causal4d/tests/test_bpt_provider_integration.py ]]; then
             tests+=(causal4d/tests/test_bpt_provider_integration.py)
+          fi
+          if [[ -f causal4d/tests/test_causal4d_molmo_adapter.py ]]; then
+            tests+=(causal4d/tests/test_causal4d_molmo_adapter.py)
           fi
           python -m pytest -q "${tests[@]}"
 
