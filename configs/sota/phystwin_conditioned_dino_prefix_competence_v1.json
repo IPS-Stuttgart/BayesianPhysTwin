@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-conditioned-dino-prefix-competence-v1",
+  "status": "locked-before-conditioned-dino-prediction",
+  "claim_boundary": "One prefix-only material-correspondence competence control on the already-open single_lift_cloth source interaction. It cannot establish Bayesian-PhysTwin improvement, calibration, independent transfer, or state of the art.",
+  "question": "Can appearance-conditioned material correspondence, searched only near the released PhysTwin prediction and guarded by causal RGB-D evidence, improve sparse identity estimates enough to justify a separately locked source-panel assimilation study?",
+  "method_config": {
+    "case_name": "single_lift_cloth",
+    "reference_frame": 114,
+    "source_frame_end_exclusive": 121,
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "minimum_supported_fraction": 0.5,
+    "minimum_supported_gain_over_physical": 0.1,
+    "minimum_overall_gain_over_physical": 0.0,
+    "maximum_supported_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 2
+  },
+  "correspondence_config": {
+    "search_radius_px": 56.0,
+    "descriptor_temperature": 0.04,
+    "minimum_cosine_similarity": 0.55,
+    "maximum_normalized_entropy": 0.98,
+    "minimum_candidate_count": 3,
+    "pixel_standard_deviation_floor": 1.5,
+    "patch_radius_px": 5,
+    "patch_search_radius_px": 10,
+    "patch_temperature": 0.08,
+    "minimum_patch_correlation": 0.2,
+    "minimum_patch_standard_deviation": 0.00784313725490196,
+    "minimum_views": 2,
+    "maximum_cross_view_disagreement_m": 0.03,
+    "depth_standard_deviation_m": 0.005,
+    "shared_bias_standard_deviation_m": 0.005
+  },
+  "dino": {
+    "name": "DINOv2 ViT-S/14 with registers",
+    "repository": "https://github.com/facebookresearch/dinov2",
+    "revision": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "model_name": "dinov2_vits14_reg",
+    "checkpoint_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_reg4_pretrain.pth",
+    "checkpoint_sha256": "f433177089a681826f849f194ece3bb48f4d63fb38d32fc837e3dc7a4e5641fb",
+    "resize_height": 476,
+    "resize_width": 840,
+    "runtime_choices": "Official architecture and checkpoint, no fine-tuning, bfloat16 inference, seed 72, deterministic cuDNN, 56 px physical search radius, and raw-image normalized patch correlation refinement."
+  },
+  "source_artifacts": {
+    "source_staging_commit": "86e6dd76a34f1e91ffcb1c6b46a5b62631382949",
+    "source_report_sha256": "6febc949c24bda7708dcc1f67bfc996f1d7d562e5bb28125de5346138629b19a",
+    "source_result_sha256": "b655689afd331acac411619685e0a3edf466a1ba6020d1301327406a4c594da4",
+    "prediction_input_sha256": "423c56b27307bb133e7df9b859ebba063756dacd1bbafdf8068ec04acb7edf41",
+    "query_array_sha256": "e8174ecee4812da037ec1f65056dda4a5e91155e68704f66d55c963080f062ae",
+    "physical_array_sha256": "47e5016ac006caec156236167634f754c89711809cc9fe375a0a2055cd990866",
+    "withheld_prefix_sha256": "04e20c03869f73d79d9c40623747368c790f63e7284cf2bcdc16c7e881ae52a9",
+    "withheld_target_array_sha256": "fbe15415425b676a036d73b4817c70f1bff479968eb76dc0beea761cc496b84d",
+    "query_source": "Only identities 3, 4, 6, and 8 at frame 114 are visible to prediction.",
+    "physical_source": "Released PhysTwin nodes selected by frame-114 nearest-neighbor association and retained over frames [114, 121).",
+    "withheld_source": "Manual identities on frames [114, 121), inaccessible to prediction and opened only after the prediction seal."
+  },
+  "implementation": {
+    "correspondence_sha256": "70447da6122912156e26da1dd97cdb6083d53bad941d5373e7ca6920b4aa9b7d",
+    "competence_sha256": "5bfa22ee1cf054da2fd58dbd6eb161315182cc5f42e0301566a472a4ff429a11",
+    "runner_sha256": "cf38105d0fc82e250d2cba7772da4bdb68b24ea9a242d6548b5834ed086df2f3"
+  },
+  "competence_gate": {
+    "minimum_supported_fraction": 0.5,
+    "minimum_supported_gain_over_physical": 0.1,
+    "minimum_overall_gain_over_physical": 0.0,
+    "maximum_supported_identity_rmse_m": 0.015,
+    "maximum_last_two_frame_rmse_m": 0.015,
+    "pass_action": "Freeze a separate multi-case source-panel assimilation method before reading another case outcome.",
+    "fail_action": "Stop this conditioned-DINO correspondence route without changing descriptor, patch, depth, camera, covariance, support, or gate choices."
+  },
+  "causal_and_calibration_boundary": {
+    "physical_prediction_role": "Restricts the descriptor candidate set only; distance or innovation against the state cannot change prior perception reliability.",
+    "reliability_inputs": "DINO assignment uniqueness, patch correlation, object-mask distance, metric-depth validity, and cross-view consistency.",
+    "state_innovation": "May be processed once only by the later robust mixture likelihood; this competence control does not assimilate it.",
+    "metric_covariance": "Includes descriptor and patch assignment-mixture spread, depth spread, covariance-intersection fusion under unknown cross-view correlation, and one shared 5 mm bias floor.",
+    "fallback": "Every rejected identity-frame is byte-exact released PhysTwin output.",
+    "calibration_claim": "None. Covariance is conservative mechanism output and has not been calibrated on independent cases."
+  },
+  "information_boundary": {
+    "prediction_rgb_depth_frame_range_half_open": [
+      114,
+      121
+    ],
+    "manual_identity_frames_available_to_prediction": [
+      114
+    ],
+    "future_frame_at_or_after_121_allowed": false,
+    "withheld_manual_prefix_target_available_to_prediction": false,
+    "held_v8_access_allowed": false,
+    "pokeflex_target_access_allowed": false
+  },
+  "forbidden": [
+    "running prediction before this locked protocol commit is pushed and deployed",
+    "using any RGB, depth, manual track, point cloud, or simulator outcome at or after frame 121",
+    "using distance to the PhysTwin state or its innovation as prior perception reliability",
+    "changing DINO model, checkpoint, resize, cameras, descriptor, patch, depth, covariance, support, or gate choices after prediction",
+    "describing a competence pass as Bayesian-PhysTwin improvement or state-of-the-art evidence",
+    "opening or modifying any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
