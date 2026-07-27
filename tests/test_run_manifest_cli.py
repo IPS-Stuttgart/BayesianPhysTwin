@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bayesian_phystwin.cli import run_manifest as run_manifest_cli
 from bayesian_phystwin.cli.run_manifest import main
 from bayesian_phystwin.run_manifest import (
     RunManifestV1,
@@ -15,6 +16,11 @@ from bayesian_phystwin.run_manifest_v2 import (
     RunManifestV2,
     load_run_manifest,
 )
+
+
+def test_run_manifest_optional_inputs_default_empty() -> None:
+    assert run_manifest_cli._load_json_mapping(None, name="configuration") == {}
+    assert run_manifest_cli._load_repository_states(None) == ()
 
 
 def test_run_manifest_cli_creates_v2_and_validates_both_versions(
