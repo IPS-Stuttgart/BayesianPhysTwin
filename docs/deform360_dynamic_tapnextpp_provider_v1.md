@@ -33,6 +33,18 @@ strata and interleaves them. The three strata are sheet-like names containing
 above 138. This amendment was made before episode payload download or cohort
 selection and does not change the tracker, updater, or gates.
 
+The resulting metadata preflight contains 90 non-excluded public objects: 89
+pass the metadata contract and one fails its exact enum check. Its canonical
+SHA-256 is
+`c80b3db5057c3c24bdd8f6e9dd7b2b8eeb529d980cdc8f4245fec3052d87a939`.
+The 36-object staging queue contains 12 objects per stratum and is locked at
+canonical SHA-256
+`8afcfe64fe62af36a303e376a8c2f1fb78fc855446eadcd6687c13e12a650bdc`.
+It is bound to implementation commit
+`a41a581f27097ed04a2a0ec4d58cffcb6963a2b6`. At queue creation, no queued
+episode media, processed geometry, future trajectory, or evaluation metric had
+been read.
+
 ## Hypothesis
 
 The first TAPNext++ control was accurate on admitted observations but supported
