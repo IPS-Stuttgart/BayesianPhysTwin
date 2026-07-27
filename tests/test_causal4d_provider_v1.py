@@ -1,26 +1,37 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
 import hashlib
 import pickle
+import subprocess
+import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 import bayesian_phystwin.causal4d_provider_v1 as provider_api
+from bayesian_phystwin.causal4d_belief_provider_v1 import (
+    CAUSAL4D_BELIEF_PROVIDER_API_VERSION,
+    DEFAULT_FIXED_BAYESIAN_ANCHOR_CONFIG_V1,
+    FixedBayesianAnchorConfigV1,
+    RobustEndpointPosteriorV1,
+    causal4d_belief_provider_manifest,
+    infer_fixed_bayesian_anchor_endpoint,
+)
 from bayesian_phystwin.causal4d_provider_v1 import (
     CAUSAL4D_PROVIDER_API_VERSION,
     OfficialPhysTwinReplayProvider,
     PhysTwinReplayProvider,
     build_lift_map,
-    create_official_replay_provider,
     causal4d_provider_manifest,
+    create_official_replay_provider,
     lift_residual,
     load_pickle,
     sha256_file,
     target_validity,
 )
+from bayesian_phystwin.phystwin_bayesian_anchor import robust_random_walk_endpoint
 
 
 class _FakeArray:
@@ -166,7 +177,11 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
         provider_api,
         "rollout_restart",
         lambda simulator_arg, torch_arg, wp_arg, position, velocity, **kwargs: (
-            np.repeat(position[None], kwargs["stop_frame"] - kwargs["start_frame"], axis=0)
+            np.repeat(
+                position[None],
+                kwargs["stop_frame"] - kwargs["start_frame"],
+                axis=0,
+            )
         ),
     )
 
@@ -193,7 +208,6 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
     assert torch.cuda.empty_cache_calls == 1
     with pytest.raises(RuntimeError, match="closed"):
         adapter.replay_initial(frame_count=1)
-
 
 
 def test_factory_hides_simulator_initialization(monkeypatch, tmp_path: Path) -> None:
@@ -246,3 +260,243 @@ def test_adapter_rejects_mismatched_public_inputs() -> None:
             start_frame=0,
             stop_frame=1,
         )
+
+
+def _fixed_anchor_inputs() -> tuple[np.ndarray, np.ndarray]:
+    residual = np.zeros((7, 3, 3), dtype=np.float64)
+    residual[:, 0, 0] = np.linspace(0.0, 0.006, len(residual))
+    residual[:, 1, 1] = 0.002
+    residual[-1, 1] = 0.08
+    residual[:, 2, 2] = -0.003
+    valid = np.ones((7, 3), dtype=bool)
+    valid[2:5, 2] = False
+    return residual, valid
+
+
+def test_fixed_anchor_provider_manifest_is_explicit_and_versioned(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = causal4d_belief_provider_manifest(provider_revision="belief-abc")
+    assert manifest["provider_revision"] == "belief-abc"
+    assert manifest["schema_version"] == CAUSAL4D_BELIEF_PROVIDER_API_VERSION == 1
+    assert manifest["artifact_schema_versions"] == {
+        "FixedBayesianAnchorConfig": 1,
+        "RobustEndpointPosterior": 1,
+    }
+    assert {
+        "causal_prefix_endpoint_inference",
+        "fixed_bayesian_anchor_endpoint",
+        "immutable_endpoint_posterior",
+        "numpy_only_endpoint_inference",
+        "residual_finite_preflight",
+    }.issubset(set(manifest["capabilities"]))
+    assert manifest["metadata"] == {
+        "provider_api": "bayesian_phystwin.causal4d_belief_provider_v1",
+        "provider_api_version": 1,
+        "inference_role": "fixed robust readout-discrepancy endpoint",
+    }
+
+    monkeypatch.setenv("BAYESIAN_PHYSTWIN_REVISION", "belief-env")
+    assert causal4d_belief_provider_manifest()["provider_revision"] == "belief-env"
+    monkeypatch.delenv("BAYESIAN_PHYSTWIN_REVISION")
+    assert causal4d_belief_provider_manifest()["provider_revision"]
+
+
+def test_fixed_anchor_defaults_match_the_frozen_additional_protocol() -> None:
+    assert DEFAULT_FIXED_BAYESIAN_ANCHOR_CONFIG_V1 == FixedBayesianAnchorConfigV1(
+        process_std_m=0.005,
+        observation_std_m=0.001,
+        initial_std_m=0.01,
+        inlier_prior=0.95,
+        outlier_variance_multiplier=100.0,
+    )
+
+
+def test_fixed_anchor_provider_matches_historical_endpoint_inference() -> None:
+    residual, valid = _fixed_anchor_inputs()
+    config = FixedBayesianAnchorConfigV1(
+        process_std_m=0.0015,
+        observation_std_m=0.002,
+        initial_std_m=0.008,
+        inlier_prior=0.9,
+        outlier_variance_multiplier=75.0,
+    )
+
+    actual = infer_fixed_bayesian_anchor_endpoint(
+        residual,
+        valid,
+        end_frame=6,
+        config=config,
+    )
+    expected = robust_random_walk_endpoint(
+        residual,
+        valid,
+        end_frame=6,
+        process_variance=config.process_std_m**2,
+        observation_variance=config.observation_std_m**2,
+        initial_variance=config.initial_std_m**2,
+        inlier_prior=config.inlier_prior,
+        outlier_variance_multiplier=config.outlier_variance_multiplier,
+    )
+
+    np.testing.assert_array_equal(actual.mean_m, expected.mean)
+    np.testing.assert_array_equal(actual.variance_m2, expected.variance)
+    np.testing.assert_array_equal(
+        actual.final_nominal_probability,
+        expected.final_inlier_probability,
+    )
+    np.testing.assert_array_equal(actual.update_count, expected.update_count)
+
+
+def test_fixed_anchor_posterior_copies_freezes_and_keeps_compatibility_aliases() -> None:
+    residual, valid = _fixed_anchor_inputs()
+    posterior = infer_fixed_bayesian_anchor_endpoint(
+        residual,
+        valid,
+        end_frame=len(residual),
+    )
+    snapshot = posterior.mean_m.copy()
+    residual[:] = 10.0
+
+    np.testing.assert_array_equal(posterior.mean_m, snapshot)
+    assert posterior.mean is posterior.mean_m
+    assert posterior.variance is posterior.variance_m2
+    assert posterior.final_inlier_probability is posterior.final_nominal_probability
+    for values in (
+        posterior.mean_m,
+        posterior.variance_m2,
+        posterior.final_nominal_probability,
+        posterior.update_count,
+    ):
+        assert not values.flags.writeable
+    with pytest.raises(ValueError):
+        posterior.mean_m[0, 0] = 1.0
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("process_std_m", -1.0, "process_std_m"),
+        ("process_std_m", np.inf, "process_std_m"),
+        ("observation_std_m", 0.0, "observation_std_m"),
+        ("initial_std_m", np.nan, "initial_std_m"),
+        ("inlier_prior", 1.0, "inlier_prior"),
+        ("outlier_variance_multiplier", 1.0, "outlier_variance_multiplier"),
+    ),
+)
+def test_fixed_anchor_config_rejects_invalid_values(
+    field: str,
+    value: float,
+    message: str,
+) -> None:
+    values = {
+        "process_std_m": 0.005,
+        "observation_std_m": 0.001,
+        "initial_std_m": 0.01,
+        "inlier_prior": 0.95,
+        "outlier_variance_multiplier": 100.0,
+    }
+    values[field] = value
+    with pytest.raises(ValueError, match=message):
+        FixedBayesianAnchorConfigV1(**values)
+
+
+@pytest.mark.parametrize(
+    ("residual", "valid", "end_frame", "message"),
+    (
+        (np.zeros((3, 2)), np.ones((3, 2), dtype=bool), 3, "residual_m"),
+        (
+            np.zeros((3, 2, 3)),
+            np.ones((3, 1), dtype=bool),
+            3,
+            "valid",
+        ),
+        (
+            np.full((3, 2, 3), np.nan),
+            np.ones((3, 2), dtype=bool),
+            3,
+            "finite",
+        ),
+        (
+            np.zeros((3, 2, 3)),
+            np.ones((3, 2), dtype=bool),
+            0,
+            "inside",
+        ),
+        (
+            np.zeros((3, 2, 3)),
+            np.ones((3, 2), dtype=bool),
+            1.5,
+            "integer",
+        ),
+    ),
+)
+def test_fixed_anchor_provider_rejects_invalid_inputs(
+    residual: np.ndarray,
+    valid: np.ndarray,
+    end_frame: int,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        infer_fixed_bayesian_anchor_endpoint(
+            residual,
+            valid,
+            end_frame=end_frame,
+        )
+
+
+def test_fixed_anchor_provider_rejects_wrong_config_type() -> None:
+    residual, valid = _fixed_anchor_inputs()
+    with pytest.raises(TypeError, match="FixedBayesianAnchorConfigV1"):
+        infer_fixed_bayesian_anchor_endpoint(
+            residual,
+            valid,
+            end_frame=2,
+            config=object(),  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    (
+        ({"mean_m": np.zeros((0, 3))}, "mean_m"),
+        ({"variance_m2": np.asarray((0.1,))}, "variance_m2"),
+        (
+            {"final_nominal_probability": np.asarray((0.5, 1.5))},
+            "final_nominal_probability",
+        ),
+        ({"update_count": np.asarray((1.0, 2.0))}, "integers"),
+        ({"update_count": np.asarray((1, -1))}, "nonnegative"),
+    ),
+)
+def test_fixed_anchor_posterior_contract_rejects_invalid_arrays(
+    kwargs: dict[str, np.ndarray],
+    message: str,
+) -> None:
+    values = {
+        "mean_m": np.zeros((2, 3)),
+        "variance_m2": np.asarray((0.1, 0.2)),
+        "final_nominal_probability": np.asarray((0.5, 0.8)),
+        "update_count": np.asarray((1, 2), dtype=np.int64),
+    }
+    values.update(kwargs)
+    with pytest.raises(ValueError, match=message):
+        RobustEndpointPosteriorV1(**values)
+
+
+def test_fixed_anchor_provider_import_does_not_load_optional_stacks() -> None:
+    code = """
+import sys
+import bayesian_phystwin.causal4d_belief_provider_v1
+forbidden = ('cv2', 'scipy', 'torch', 'warp')
+loaded = [name for name in forbidden if name in sys.modules]
+if loaded:
+    raise SystemExit(f'optional modules loaded: {loaded}')
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
