@@ -300,7 +300,9 @@ def _write_validation_inputs(
     baseline_point_count: int = 2,
     track_frame_count: int = 12,
 ) -> dict[str, Path]:
-    observed = np.zeros((observed_frame_count, observed_point_count, 3), dtype=np.float32)
+    observed = np.zeros(
+        (observed_frame_count, observed_point_count, 3), dtype=np.float32
+    )
     data = {
         "object_points": observed,
         "object_visibilities": np.ones(observed.shape[:2], dtype=bool),
