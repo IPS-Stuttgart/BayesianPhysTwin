@@ -1,95 +1,130 @@
-# Bayesian PhysTwin
+# Bayesian-PhysTwin
 
-Reliability-aware Bayesian belief estimation for PhysTwin-style deformable
-digital twins.
+Reliability-aware Bayesian state and parameter estimation for PhysTwin-style
+deformable digital twins.
 
-Bayesian-PhysTwin treats learned tracks, depth points, masks, flow, and related
-4-D perception outputs as noisy pseudo-measurements. It combines them with a
-PhysTwin physical prior while keeping observation reliability, structured
-covariance, physical-parameter uncertainty, and simulator discrepancy
-explicit. When an update is not identifiable or fails a prospective guard, the
-library retains the physical baseline instead of silently applying an unsafe
-correction.
+Bayesian-PhysTwin treats learned tracks, masks, depth points, scene flow, and
+point-cloud residuals as uncertain pseudo-measurements rather than
+deterministic state. The package provides robust likelihoods, recursive
+beliefs, explicit causal lineage, gauge-aware observation updates, guarded
+fallback, and content-addressed evidence manifests.
 
-## Scientific scope
-
-This repository owns:
-
-- versioned observation, physical-linearization, belief, provider, and run
-  provenance contracts;
-- reliability-aware and structured robust likelihoods;
-- recursive, gauge-aware, and prior-aware Bayesian updates;
-- guarded predictive-discrepancy and fallback logic;
-- adapters and evaluation utilities for official PhysTwin artifacts.
-
-A predictive readout-discrepancy belief is not automatically a corrected latent
-physical state. Released trajectories also do not identify a unique physical
-cause. Experiments and papers should preserve that distinction explicitly.
-
-## Current evidence
-
-On the official ordered 22-case PhysTwin cohort, the frozen Bayesian anchor
-improves equal-case Chamfer distance by **12.09%** and track error by **12.78%**
-relative to re-evaluated released `inference.pkl` trajectories. The result is
-better than released PhysTwin under that protocol, but it is not overall state
-of the art against later published methods. A simple last-residual comparator
-is also marginally better on deterministic track error, and raw posterior
-covariance is not calibrated.
-
-See the [full-22 evidence report](docs/phystwin_sota_22_v1.md) for the frozen
-cohort, uncertainty intervals, render metrics, provenance, and permitted claim
-boundary.
-
-## Architecture
+## Project scope
 
 ```text
-Prob4D or another 4-D perception feeder
-                │
-                ▼
-       ObservationBeliefV1 ───────────────┐
-                                          │
-       PhysTwin physical prior ───────────┼──► robust likelihood
-                                          │    + guarded Bayesian update
-                                          │
-                                          └──► predictive belief
-                                               or exact fallback
-                                                        │
-                                                        ▼
-                                           Causal4D provider artifacts
+learned perception observations
++ spring-mass physical prior
++ Bayesian reliability and uncertainty
+= guarded deformable-object state and parameter estimation
 ```
 
-[Prob4D](https://github.com/FlorianPfaff/Prob4D) can export the portable
-`ObservationBeliefV1` contract. Bayesian-PhysTwin owns the reliability-aware
-belief update and PhysTwin provider boundary. [Causal4D](https://github.com/FlorianPfaff/Causal4D)
-separately owns abduction, intervention, and counterfactual prediction.
+The reusable package covers:
+
+- reliability-conditioned Gaussian/outlier and Student-t likelihoods;
+- per-track reliability and drift-bias models;
+- gauge-aware Prob4D observation contracts;
+- prior-aware guarded state and parameter updates;
+- low-rank graph-discrepancy beliefs;
+- exact physical fallback when evidence is inadmissible;
+- versioned Causal4D provider and belief artifacts; and
+- reproducible run manifests binding repositories, runtime, inputs, and outputs.
+
+This repository owns the Bayesian-PhysTwin package and its stable provider and
+observation boundaries. It does not own Causal4D intervention semantics or
+paper-level claim management.
 
 ## Installation
 
+Bayesian-PhysTwin requires Python 3.10 or later.
+
 ```bash
-python3 -m pip install -e ".[dev,data,graph]"
-bash scripts/local_smoke_test.sh
-bpt --help
+python3 -m pip install -e .
 ```
 
-The base package requires only NumPy. Optional dependency groups add development
-tools, selective data retrieval, sparse graph routines, vision utilities, or
-the pinned PyRecEst integration.
+For development:
+
+```bash
+python3 -m pip install -e ".[dev]"
+```
+
+Optional capabilities are installed explicitly:
+
+```bash
+python3 -m pip install -e ".[data]"       # remote ZIP data retrieval
+python3 -m pip install -e ".[graph]"      # SciPy graph solvers
+python3 -m pip install -e ".[vision]"     # OpenCV camera and cue workflows
+python3 -m pip install -e ".[pyrecrest]"  # pinned downstream Bayesian filtering
+```
+
+A full local smoke run is available through:
+
+```bash
+bash scripts/local_smoke_test.sh
+```
+
+## Architecture
+
+The reusable package is organized around four layers:
+
+| Layer | Responsibility |
+| --- | --- |
+| Observation contracts | Validate causal timing, covariance, gauge factors, metric anchors, identity, and content hashes. |
+| Bayesian inference | Convert observations into robust, reliability-aware state and parameter updates. |
+| PhysTwin integration | Restore released physical artifacts, replay trajectories, and expose versioned provider operations. |
+| Evidence and commands | Run stable workflows through the grouped CLI and bind outputs to reproducible manifests. |
+
+Main source areas:
+
+```text
+src/bayesian_phystwin/
+    observation_belief.py              versioned observation artifact
+    observation_belief_gauge_adapter.py
+    gauge_aware_belief.py              joint state/nuisance update
+    phystwin_belief.py                 recursive guarded belief
+    causal4d_provider_v1.py            versioned downstream provider
+    run_manifest_v2.py                 content-addressed run provenance
+    cli/                               grouped and compatibility commands
+```
 
 ## Stable command surface
 
-The grouped `bpt` interface is the only installed executable. Stable operations
-use the routes below; non-stable research commands are discovered with
-`bpt experiment list` and invoked with `bpt experiment run ID`.
+`bpt` is the supported command namespace. The 79 historical `bpt-*` console
+scripts remain installed only as frozen compatibility aliases for published
+scripts and result manifests. New commands are grouped-only registry entries
+and must not add another top-level executable.
+
+```bash
+bpt --help
+bpt commands
+bpt commands --all
+bpt experiment list
+bpt experiment run <id> --help
+bpt diagnostic list
+bpt archived list
+```
+
+The default help and command listing expose stable interfaces and current
+experiments only. Diagnostics and archived commands remain directly queryable
+without being promoted in the primary workflow.
+
+Stable workflows:
 
 | Command | Purpose |
 | --- | --- |
-| `bpt provider manifest` | Print the versioned Causal4D provider capability manifest. |
+| `bpt provider manifest` | Emit the versioned Causal4D provider capability manifest. |
 | `bpt observation validate` | Validate or summarize an `ObservationBeliefV1` artifact. |
 | `bpt residual replay` | Replay exported residuals through the robust likelihood. |
-| `bpt benchmark synthetic` | Run the controlled synthetic benchmark. |
+| `bpt benchmark synthetic` | Run the controlled fixed-graph benchmark. |
 | `bpt run manifest` | Create or validate content-addressed run provenance. |
+| `bpt evidence summarize` | Summarize matched guarded prospective evidence. |
 
-Replay the bundled residual example:
+The declarative registry records each grouped route, lifecycle status,
+implementation target, optional dependency extras, owning milestone, and frozen
+compatibility alias. See [Command surface](docs/command_surface.md).
+
+## Minimal examples
+
+Replay an exported residual table:
 
 ```bash
 bpt residual replay examples/residuals_demo.csv \
@@ -97,78 +132,74 @@ bpt residual replay examples/residuals_demo.csv \
   --scored-csv outputs/residuals_demo/scored.csv
 ```
 
-See [residual replay](docs/residual_replay.md) for the export schema,
-statistical model, and output metrics.
-
-## Reproduce the controlled benchmark
-
-The following command runs the documented fixed-graph benchmark used for
-parameter recovery, calibration, corruption, and action-informativeness
-controls:
+Run the controlled synthetic benchmark:
 
 ```bash
 bpt benchmark synthetic \
   --seeds 1000:1020 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
-  --bias-process-variance 1e-5 \
-  --bias-initial-variance 1e-7 \
-  --bias-cue-persistence 0.85 \
-  --bias-cue-threshold 0.20 \
-  --bias-minimum-run-length 5 \
   --output-json runs/synthetic_v3/results.json \
   --output-csv runs/synthetic_v3/aggregate.csv \
   --output-reliability-csv runs/synthetic_v3/reliability.csv
 ```
 
-The complete frozen protocol and baseline definitions are in the
-[synthetic benchmark documentation](docs/synthetic_benchmark.md).
+Create a reproducible run manifest after outputs are immutable:
 
-## Python API
-
-Loading an observation belief revalidates its schema, content address,
-covariance, identities, and exclusive causal cutoff:
-
-```python
-from bayesian_phystwin import load_observation_belief
-
-belief = load_observation_belief("observation_belief.npz")
-print(belief.summary())
+```bash
+bpt run manifest create runs/example/manifest.json \
+  --run-id phystwin-example-v1 \
+  --classification confirmatory \
+  --statistical-unit interaction \
+  --repository-root . \
+  --artifact-root runs/example \
+  --output-artifact metrics=metrics.json
 ```
 
-The portable contract is documented in
-[ObservationBeliefV1](docs/observation_belief_contract.md). The
-[gauge-aware adapter](docs/gauge_aware_observation_update.md) and
-[prior-aware guarded update](docs/prior_aware_guarded_update.md) describe the
-state-update and exact-fallback boundaries.
+## Cross-repository interfaces
+
+[Prob4D](https://github.com/FlorianPfaff/Prob4D) produces versioned
+probabilistic observations with causal lineage, retained gauge uncertainty, and
+metric-anchor provenance. Bayesian-PhysTwin independently validates those
+artifacts before any state or parameter update.
+
+[Causal4D](https://github.com/FlorianPfaff/Causal4D) consumes versioned
+Bayesian-PhysTwin belief and replay-provider artifacts. Causal abduction,
+intervention semantics, language-conditioned evidence, and physical acquisition
+protocols remain owned by Causal4D.
+
+[BayesianPhysTwin-Paper](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper)
+is the canonical source for current project status, claim language, figures,
+and paper-facing evidence. The historical
+`2026-07-Causal4D-BPT-Paper` repository is not an operational source of truth.
 
 ## Documentation map
 
-- [Experiment and evidence index](docs/experiment_index.md): frozen reports,
-  negative results, experimental command families, and placement policy.
-- [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
-  surface and provenance boundary.
-- [PhysTwin integration](docs/phystwin_integration.md): upstream artifacts,
-  residual export, cue sidecars, and likelihood ownership.
-- [Compute conventions](docs/compute.md): GPU-host and remote-run policy.
-- [Canonical project notes](https://github.com/FlorianPfaff/BayesianPhysTwin-Paper):
-  current scope, evidence status, figures, result artifacts, and paper claims.
+- [Experiment and evidence index](docs/experiment_index.md)
+- [Command surface and compatibility policy](docs/command_surface.md)
+- [Observation-belief contract](docs/observation_belief_contract.md)
+- [Gauge-aware observation update](docs/gauge_aware_observation_update.md)
+- [Prior-aware guarded update](docs/prior_aware_guarded_update.md)
+- [Causal4D provider API v1](docs/causal4d_provider_v1.md)
+- [Reproducible run manifests](docs/reproducible_runs.md)
+- [Compute and remote-run policy](docs/compute.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Support and security](SUPPORT.md)
 
-## Repository layout
+The experiment index links frozen positive and negative results without turning
+the root README into a live laboratory notebook.
 
-```text
-src/bayesian_phystwin/   reusable Python package and versioned contracts
-tests/                   unit, conformance, and integration tests
-examples/                small synthetic inputs and demos
-configs/                 frozen experiment and compute configurations
-scripts/                 local and remote execution helpers
-docs/                    contracts, protocols, evidence, and experiment index
-results/                 compact frozen evidence and audit artifacts
+## Development
+
+```bash
+python3 -m pytest
+python3 -m ruff check src tests
+python3 -m mypy src/bayesian_phystwin/run_manifest.py \
+  src/bayesian_phystwin/repository_provenance.py \
+  src/bayesian_phystwin/run_manifest_v2.py \
+  src/bayesian_phystwin/cli/main.py \
+  src/bayesian_phystwin/cli/run_manifest.py
 ```
 
-Large datasets, checkpoints, rendered videos, and raw runs should remain outside
-git in ignored paths such as `data/`, `checkpoints/`, `runs/`, and `outputs/`.
-
-New experiment narratives and status updates should be added to a dedicated
-protocol or evidence document and linked from the experiment index, rather than
-expanding the root README.
+Large datasets, checkpoints, rendered videos, and raw runs belong outside git
+under ignored paths such as `data/`, `checkpoints/`, `runs/`, and `outputs/`.
