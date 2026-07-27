@@ -7,12 +7,8 @@ from types import ModuleType
 
 import pytest
 
-
 SCRIPT_PATH = (
-    Path(__file__).parents[1]
-    / "reproductions"
-    / "full22_anchor_v1"
-    / "reproduce.py"
+    Path(__file__).parents[1] / "reproductions" / "full22_anchor_v1" / "reproduce.py"
 )
 EXPECTED_PATH = SCRIPT_PATH.with_name("expected_metrics.json")
 
@@ -66,9 +62,9 @@ def test_full22_metric_drift_fails_closed() -> None:
     capsule = _load_capsule()
     expected = json.loads(EXPECTED_PATH.read_text(encoding="utf-8"))
     comparison = _comparison(expected)
-    comparison["methods"]["bayesian_anchor"]["cohorts"][
-        "all_22_table_compatible"
-    ]["track_error_m"]["equal_case_mean_m"] += 1e-4
+    comparison["methods"]["bayesian_anchor"]["cohorts"]["all_22_table_compatible"][
+        "track_error_m"
+    ]["equal_case_mean_m"] += 1e-4
 
     with pytest.raises(ValueError, match="metric verification failed"):
         capsule.verify_comparison(comparison, expected)

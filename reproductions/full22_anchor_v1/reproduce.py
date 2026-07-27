@@ -13,8 +13,9 @@ import shlex
 import shutil
 import subprocess
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 CAPSULE_DIR = Path(__file__).resolve().parent
 REPOSITORY_ROOT = CAPSULE_DIR.parents[1]
