@@ -36,7 +36,7 @@ def registry_help() -> str:
         "commands:\n"
         "  list                    list entries [--status STATUS] [--json]\n"
         "  describe SELECTOR       show metadata by id, route, or legacy alias\n"
-        "  migrate LEGACY_ALIAS    print the current grouped invocation\n\n"
+        "  migrate SELECTOR        print the current grouped invocation\n\n"
         "statuses: stable, experiment, diagnostic, archived\n"
     )
 
@@ -101,10 +101,24 @@ def _print_command(command: CommandSpec, *, json_output: bool) -> None:
     print(f"status: {command.status.value}")
     print(f"command: {command.canonical_command}")
     print(f"legacy alias: {command.legacy_alias or 'none'}")
+    previous = ", ".join(command.previous_grouped_commands) or "none"
+    print(f"previous grouped commands: {previous}")
     print(f"owner: {command.owner}")
-    print("optional dependencies: " + (", ".join(command.optional_dependencies) or "none"))
+    print(
+        "optional dependencies: "
+        + (", ".join(command.optional_dependencies) or "none")
+    )
     print(f"target: {command.target}")
     print(f"description: {command.description}")
+
+
+def _migration_source(command: CommandSpec, selector: str) -> str | None:
+    if command.legacy_alias == selector:
+        return "legacy_alias"
+    route = tuple(selector.removeprefix("bpt ").split())
+    if route in command.previous_routes:
+        return "previous_grouped_route"
+    return None
 
 
 def commands_main(arguments: Sequence[str]) -> int:
@@ -147,19 +161,21 @@ def commands_main(arguments: Sequence[str]) -> int:
         return 0
     if action == "migrate":
         parsed = _json_flag(arguments[1:])
-        if parsed is None or len(parsed[0]) != 1:
+        if parsed is None or not parsed[0]:
             print(registry_help(), file=sys.stderr, end="")
             return 2
-        alias = parsed[0][0]
-        command = find_command_metadata(alias)
-        if command is None or command.legacy_alias != alias:
-            print(f"unknown legacy alias: {alias}", file=sys.stderr)
+        selector = " ".join(parsed[0])
+        command = find_command_metadata(selector)
+        source_kind = None if command is None else _migration_source(command, selector)
+        if command is None or source_kind is None:
+            print(f"unknown previous command selector: {selector}", file=sys.stderr)
             return 2
         if parsed[1]:
             print(
                 json.dumps(
                     {
-                        "legacy_alias": alias,
+                        "source_selector": selector,
+                        "source_kind": source_kind,
                         "canonical_command": command.canonical_command,
                         "command_id": command.command_id,
                         "status": command.status.value,
