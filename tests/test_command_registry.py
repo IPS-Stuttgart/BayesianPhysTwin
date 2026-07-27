@@ -25,9 +25,7 @@ def test_registry_is_complete_and_unambiguous() -> None:
 
 
 def test_registry_covers_all_lifecycle_states() -> None:
-    counts = {
-        status: len(iter_commands(status=status)) for status in CommandStatus
-    }
+    counts = {status: len(iter_commands(status=status)) for status in CommandStatus}
     assert counts == {
         CommandStatus.STABLE: 6,
         CommandStatus.EXPERIMENT: 32,
@@ -39,9 +37,7 @@ def test_registry_covers_all_lifecycle_states() -> None:
 
 def test_removed_aliases_are_metadata_not_runnable_selectors() -> None:
     assert (
-        find_runnable_command(
-            "bpt-phystwin-refit", status=CommandStatus.EXPERIMENT
-        )
+        find_runnable_command("bpt-phystwin-refit", status=CommandStatus.EXPERIMENT)
         is None
     )
     metadata = find_command_metadata("bpt-phystwin-refit")
