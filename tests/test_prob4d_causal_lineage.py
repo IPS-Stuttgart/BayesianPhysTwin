@@ -18,6 +18,7 @@ from bayesian_phystwin.prob4d_causal_lineage import (
 )
 from bayesian_phystwin.prob4d_provider_attestation import (
     compute_prob4d_provider_manifest_id,
+    validate_prob4d_provider_attestation,
 )
 
 
@@ -38,16 +39,10 @@ def _metadata() -> dict[str, object]:
             "schema_version": 1,
             "producer": "Prob4D",
             "motioncrafter_lineage_schema_version": 1,
-            "motioncrafter_windowing_model": (
-                "motioncrafter_sliding_window_v1"
-            ),
-            "source_product": (
-                "independently_decoded_overlap_windows"
-            ),
+            "motioncrafter_windowing_model": ("motioncrafter_sliding_window_v1"),
+            "source_product": ("independently_decoded_overlap_windows"),
             "causal_frame_stop_exclusive": 6,
-            "admissibility_rule": (
-                "source_frame_max < causal_frame_stop_exclusive"
-            ),
+            "admissibility_rule": ("source_frame_max < causal_frame_stop_exclusive"),
             "future_prediction_payloads_opened": 0,
             "source_artifact_sha256": "c" * 64,
             "selected_windows": [
@@ -151,9 +146,7 @@ def _belief() -> ObservationBeliefV1:
         causal_frame_stop=6,
         view_names=("camera-0",),
         window_names=("window-0", "window-1"),
-        factor_names=tuple(
-            f"gauge_latent_{index}" for index in range(7)
-        ),
+        factor_names=tuple(f"gauge_latent_{index}" for index in range(7)),
         source_repository="FlorianPfaff/Prob4D",
         source_revision="d" * 40,
         source_artifact_sha256="c" * 64,
@@ -238,9 +231,9 @@ def test_strict_provider_v2_validation_rejects_frozen_provider_v1_artifact() -> 
 def test_provider_manifest_payload_tampering_is_rejected_before_adaptation() -> None:
     belief = _attested_belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["prob4d_provider_attestation"]["provider_manifest"][
-        "provider_version"
-    ] = "999"
+    metadata["prob4d_provider_attestation"]["provider_manifest"]["provider_version"] = (
+        "999"
+    )
 
     with pytest.raises(ValueError, match="manifest ID does not match"):
         _adapt(replace(belief, metadata=metadata))
@@ -256,17 +249,13 @@ def test_rehashed_provider_capability_removal_is_rejected() -> None:
     attestation["provider_manifest_id"] = manifest["manifest_id"]
 
     with pytest.raises(ValueError, match="required claim-bearing capabilities"):
-        validate_prob4d_causal_observation_belief(
-            replace(belief, metadata=metadata)
-        )
+        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
 
 
 def test_prob4d_causal_lineage_rejects_changed_cutoff() -> None:
     belief = _belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["causal_source_lineage"][
-        "causal_frame_stop_exclusive"
-    ] = 7
+    metadata["causal_source_lineage"]["causal_frame_stop_exclusive"] = 7
 
     with pytest.raises(ValueError, match="cutoff differs"):
         _adapt(replace(belief, metadata=metadata))
@@ -275,9 +264,7 @@ def test_prob4d_causal_lineage_rejects_changed_cutoff() -> None:
 def test_prob4d_causal_lineage_rejects_future_payload_access() -> None:
     belief = _belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["causal_source_lineage"][
-        "future_prediction_payloads_opened"
-    ] = 1
+    metadata["causal_source_lineage"]["future_prediction_payloads_opened"] = 1
 
     with pytest.raises(ValueError, match="opening future payloads"):
         _adapt(replace(belief, metadata=metadata))
@@ -286,9 +273,9 @@ def test_prob4d_causal_lineage_rejects_future_payload_access() -> None:
 def test_prob4d_causal_lineage_rejects_window_mismatch() -> None:
     belief = _belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["causal_source_lineage"]["selected_windows"][1][
-        "window_id"
-    ] = "another-window"
+    metadata["causal_source_lineage"]["selected_windows"][1]["window_id"] = (
+        "another-window"
+    )
 
     with pytest.raises(ValueError, match="window order differs"):
         _adapt(replace(belief, metadata=metadata))
@@ -308,9 +295,62 @@ def test_prob4d_causal_lineage_rejects_uncertain_anchor_claim() -> None:
 def test_prob4d_causal_lineage_rejects_source_digest_mismatch() -> None:
     belief = _belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["causal_source_lineage"][
-        "source_artifact_sha256"
-    ] = "e" * 64
+    metadata["causal_source_lineage"]["source_artifact_sha256"] = "e" * 64
 
     with pytest.raises(ValueError, match="differs from the descriptor"):
         _adapt(replace(belief, metadata=metadata))
+
+
+def test_exploratory_provider_v2_attestation_is_valid_but_not_claim_bearing() -> None:
+    attestation = _provider_attestation()
+    attestation.update(
+        export_mode="exploratory",
+        claim_bearing=False,
+        calibration_compatibility_validated=False,
+        calibration_artifact_ids={
+            "gauge_artifact_id": None,
+            "point_artifact_id": None,
+        },
+        covariance_root_mode="legacy_eigenvectors",
+        composition_jacobian_mode="legacy_finite_difference",
+        runtime_revision={
+            "expected_revision": "d" * 40,
+            "observed_revision": None,
+            "source": "unavailable",
+            "clean_checkout": None,
+            "matched": False,
+            "independently_verified": False,
+        },
+    )
+
+    validated = validate_prob4d_provider_attestation(
+        attestation,
+        source_revision="d" * 40,
+    )
+
+    assert validated["claim_bearing"] is False
+    assert validated["calibration_artifact_ids"] == {
+        "gauge_artifact_id": None,
+        "point_artifact_id": None,
+    }
+    assert validated["runtime_revision"]["source"] == "unavailable"
+
+
+def test_provider_attestation_rejects_nonfinite_json() -> None:
+    attestation = _provider_attestation()
+    attestation["provider_manifest"]["metadata"]["nonfinite"] = float("nan")
+
+    with pytest.raises(ValueError, match="finite JSON data"):
+        validate_prob4d_provider_attestation(
+            attestation,
+            source_revision="d" * 40,
+        )
+
+
+def test_prob4d_causal_lineage_rejects_nonmapping_attestation() -> None:
+    belief = _belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["prob4d_provider_attestation"] = "not-a-mapping"
+
+    with pytest.raises(ValueError, match="attestation must be a mapping"):
+        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))

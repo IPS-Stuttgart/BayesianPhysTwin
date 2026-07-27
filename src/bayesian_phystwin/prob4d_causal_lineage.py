@@ -24,6 +24,8 @@ from .prob4d_observation_contract import (
     PROB4D_SOURCE_REPOSITORY,
     PROPAGATED_EXTERNAL_PRIOR,
     is_prob4d_causal_observation_belief,
+)
+from .prob4d_observation_contract import (
     validate_prob4d_causal_observation_belief as _validate_prob4d_semantics,
 )
 from .prob4d_provider_attestation import validate_prob4d_provider_attestation
@@ -48,17 +50,13 @@ def _resolved_stream_contract(
         # an uncertainty-preserving strict causal stream contract.
         expected = None
     else:
-        raise ValueError(
-            "Prob4D validation returned unknown covariance semantics"
-        )
+        raise ValueError("Prob4D validation returned unknown covariance semantics")
 
     declared = metadata.get("prob4d_causal_stream_contract_version")
     if declared is None:
         return expected, expected is not None
     if isinstance(declared, bool) or not isinstance(declared, int):
-        raise ValueError(
-            "Prob4D causal stream contract version must be an integer"
-        )
+        raise ValueError("Prob4D causal stream contract version must be an integer")
     if expected is None:
         raise ValueError(
             "approximate fixed-lag covariance cannot declare a strict Prob4D "
@@ -66,8 +64,7 @@ def _resolved_stream_contract(
         )
     if declared != expected:
         raise ValueError(
-            "Prob4D causal stream contract version disagrees with covariance "
-            "semantics"
+            "Prob4D causal stream contract version disagrees with covariance semantics"
         )
     return expected, False
 
@@ -106,9 +103,7 @@ def _provider_attestation_summary(
         "covariance_root_mode": validated["covariance_root_mode"],
         "composition_jacobian_mode": validated["composition_jacobian_mode"],
         "runtime_revision_source": runtime["source"],
-        "runtime_revision_independently_verified": runtime[
-            "independently_verified"
-        ],
+        "runtime_revision_independently_verified": runtime["independently_verified"],
     }
 
 
