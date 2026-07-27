@@ -1,0 +1,73 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPPrefixCompetenceResult",
+  "case": "single_lift_cloth",
+  "claim_boundary": "one-case prefix-only competence control on an already-open source interaction; not a Bayesian-PhysTwin gain or state-of-the-art result",
+  "competence_gate_passed": false,
+  "config": {
+    "case_name": "single_lift_cloth",
+    "depth_scale_to_m": 0.001,
+    "endpoint_frame_count": 5,
+    "input_resolution": 512,
+    "mask_patch_radius_px": 2,
+    "maximum_depth_residual_m": 0.03,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_object_mask_fraction": 0.2,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "minimum_triangulation_views": 2,
+    "pixel_standard_deviation_px": 1.5,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "shared_bias_standard_deviation_m": 0.005,
+    "source_frame_end_exclusive": 88,
+    "source_frame_start": 68,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "two_view_covariance_inflation": 4.0,
+    "visibility_threshold": 0.5
+  },
+  "decision": "stop-tapnextpp-phystwin-route",
+  "gates": {
+    "endpoint_rmse": true,
+    "identity_rmse": true,
+    "relative_gain_over_persistence": true,
+    "supported_fraction": false
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_scored": false,
+    "future_simulator_outcome_read": false,
+    "held_v8_accessed": false,
+    "prediction_sealed_before_target_open": true,
+    "scored_numeric_frame_range_half_open": [
+      68,
+      88
+    ]
+  },
+  "inputs": {
+    "prediction_seal_sha256": "a89dd9692719953996c800ac9cce90b1f974ea43de6a9270cb483a7def28c509",
+    "withheld_prefix_sha256": "77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143"
+  },
+  "metrics": {
+    "candidate_endpoint_rmse_m": 0.006277507835602015,
+    "candidate_identity_rmse_m": 0.005090260805882252,
+    "eligible_point_frame_count": 76,
+    "persistence_identity_rmse_m": 0.03510334883713728,
+    "relative_gain_over_persistence": 0.8549921595942706,
+    "supported_fraction": 0.6842105263157895,
+    "supported_point_frame_count": 52
+  },
+  "protocol_id": "phystwin-tapnextpp-prefix-competence-v1",
+  "result_sha256": "240da82c5343dec803cd5d2f92e58d4bf540f39e1648ec42a0607a33cbadd34c",
+  "schema_version": 1
+}

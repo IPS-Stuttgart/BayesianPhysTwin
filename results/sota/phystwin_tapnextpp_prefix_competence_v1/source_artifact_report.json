@@ -1,0 +1,79 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPCompetenceSourceArtifacts",
+  "case": "single_lift_cloth",
+  "config": {
+    "case_name": "single_lift_cloth",
+    "depth_scale_to_m": 0.001,
+    "endpoint_frame_count": 5,
+    "input_resolution": 512,
+    "mask_patch_radius_px": 2,
+    "maximum_depth_residual_m": 0.03,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_object_mask_fraction": 0.2,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "minimum_triangulation_views": 2,
+    "pixel_standard_deviation_px": 1.5,
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "shared_bias_standard_deviation_m": 0.005,
+    "source_frame_end_exclusive": 88,
+    "source_frame_start": 68,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "two_view_covariance_inflation": 4.0,
+    "visibility_threshold": 0.5
+  },
+  "information_boundary": {
+    "frame_at_or_after_train_end_retained": false,
+    "prediction_input_retains_manual_rows": [
+      68
+    ],
+    "prediction_input_retains_mask_frame_range_half_open": [
+      68,
+      88
+    ],
+    "source_files_loaded_during_staging": [
+      "manual material tracks",
+      "processed object masks"
+    ],
+    "withheld_artifact_available_to_prediction": false,
+    "withheld_numeric_frame_range_half_open": [
+      68,
+      88
+    ]
+  },
+  "inputs": {
+    "manual_tracks_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "processed_masks_sha256": "c9c1df09845f759e6bed69348d785233d55db402dbd2c5f6ddfc91364bac4bdd",
+    "released_train_end_frame_exclusive": 121,
+    "split_sha256": "022f68291b65616796802390e156c576cfdbce7bb8888aaf93fdb2db41d52b6d"
+  },
+  "prediction_input": {
+    "object_mask_array_sha256": "0391a42f719a505082e3217296c1532ee97f10ed40c3a3d8d0beeaf03dd524f3",
+    "path": "/home/florianpfaff/bpt-tapnextpp-source-v1/prediction_input/prediction_input.npz",
+    "query_array_sha256": "a57acec1755f06d03153a84f36a59af0d9692685b7b8a348b27dc4a87e6b7d75",
+    "query_count": 4,
+    "sha256": "8eb6f31c3908f65ddecd741eef32ad2f0fd4a3bac797fc91007f5610dd653039"
+  },
+  "protocol_id": "phystwin-tapnextpp-prefix-competence-v1",
+  "result_sha256": "7282a6a80c609d6795996a00288cd9080eb7751a71fda5ed9aa226b5df88d66b",
+  "schema_version": 1,
+  "withheld_evaluation": {
+    "frame_count": 20,
+    "path": "/home/florianpfaff/bpt-tapnextpp-source-v1/withheld_evaluation/withheld_prefix_target.npz",
+    "sha256": "77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143",
+    "target_array_sha256": "7e7de8686dc623dcf1169e6e6fb28ed3dd96ac0207cd64a815ae91a6691ebf83"
+  }
+}
