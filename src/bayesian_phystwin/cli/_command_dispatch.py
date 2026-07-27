@@ -46,14 +46,10 @@ def _invocation_mode(function: Callable[..., Any]) -> InvocationMode:
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
     }:
         return "positional"
-    if (
-        parameter.kind is inspect.Parameter.KEYWORD_ONLY
-        and parameter.name == "argv"
-    ):
+    if parameter.kind is inspect.Parameter.KEYWORD_ONLY and parameter.name == "argv":
         return "keyword"
     raise TypeError(
-        "registered command target must expose main(), main(argv), "
-        "or main(*, argv=...)"
+        "registered command target must expose main(), main(argv), or main(*, argv=...)"
     )
 
 
