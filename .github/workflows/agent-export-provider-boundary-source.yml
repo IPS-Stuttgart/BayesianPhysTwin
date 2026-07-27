@@ -1,0 +1,39 @@
+name: Agent provider-boundary source export
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/export-provider-boundary-source-20260727'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Build source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/bpt-source
+          git archive --format=tar HEAD | tar -xf - -C /tmp/bpt-source
+          rm -f /tmp/bpt-source/.github/workflows/agent-export-provider-boundary-source.yml
+          tar -C /tmp -czf bpt-source.tar.gz bpt-source
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v7
+        with:
+          name: bpt-provider-boundary-source
+          path: bpt-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
