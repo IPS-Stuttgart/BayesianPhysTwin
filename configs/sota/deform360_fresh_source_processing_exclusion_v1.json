@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshObjectExclusionManifest",
+  "hash_namespace": "deform360-fresh-object-exclusion-v1",
+  "owner": "deform360-fresh-source-processing-campaign-v1-owner",
+  "object_hashes": [
+    "15f9983344ebbb5e310e1d5dd626f0c65f0271aadc72f4120748e8c042f9cd46",
+    "19579b3afb9aa18db749fa3726661c67ff3f69954fe9385927ad165c10010851",
+    "212cfde27e8683fefdd90c4ba74ce9db412ce764e0a22c9bdbdda6cfc4022300",
+    "35baf8fc2e3eb1e38ee98aa12262b09e9941038615b27ba4a9db80ea2dda8adb",
+    "3cc95108a2e19dc4bab6d49cdc0b064d423eba9644136af2b7cab44029b1b23f",
+    "58ad6b3c3895a1ebee347cfb3eb7d3a2d954749b30c910f28de8345cd7725bb3",
+    "6ab6332e0d5118d6b9999e3b2447c2f9b74c23b2b60bea26ff16c26aa7275979",
+    "9079d36bb424c4a2c0c337521fbdc4a6dde296d0934ee051e40f8b54a85543a5",
+    "c682aa602835f6887580bd9f622fc7e4df63cf3b1003c17d43d2c0ce55754ebd",
+    "cd442ac7feae292e68eca179a54d43c673b2c0e5adecae6a10198c16cb1e32d7",
+    "cfd424172bd3d9169b65aa746a41697cc58f1a5ca7c0a8d62f4ccde9f98e820b",
+    "db42dd4170ad1c481855f297be1e6ee31fc02c227b40a31d8cecd3a654f85374",
+    "dbb3511de07b7d0b07b7f1cf4ee4feec2a7433f93ab0a5f32697ebd98289ab20",
+    "e1f4dab1141e90beabbe5fbcc4f2a95cdc68dda73126ae02b31810a4c0ccf7d4",
+    "e590648f9b1721671200b0619922e17c0707d8ec0d8ef1f36ae85bb73be08f61",
+    "ec9a6072ec8092943ee829bd10ba021fc8b6b34c69c835e2958c6ecdcf2faa51",
+    "f63d90cfba3f1e7a1e508c925e776600fe678b418ea7654b5c80249dfc725003",
+    "f92fa65ee0cfa91a8c5b45757b0548b2c36c9bb402c0e677bbff24cc46c4c0e1"
+  ],
+  "source_artifact_sha256s": [
+    "00b90c7aa2d6afb418160b875969f4f5c979ea1763b6d12b41512672d11d08ca",
+    "4f31de5f2a4300916bff0b78c29796adffb60b84aad94b0d4895c1615831c372",
+    "b9afb60fe00269c78684b1a44b7e28e2cbf449023b7591b5d59c54a1859cb5d3"
+  ],
+  "scope": {
+    "candidate_count": 18,
+    "admitted_count": 14,
+    "technical_failure_count": 4,
+    "rule": "exclude every queued object because all 18 had source RGB opened or were technically dispositioned"
+  },
+  "information_boundary": {
+    "target_artifact_read": false,
+    "object_ids_emitted": false,
+    "source_only_campaign_artifacts_read": true
+  },
+  "exclusion_sha256": "f8437ecb01d327ef08403de9bcb0f8155b85e8308db2cd7067397f8d0538f02b"
+}

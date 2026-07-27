@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360DynamicTapNextppSourceWindowProtocol",
+  "protocol_id": "deform360-dynamic-tapnextpp-source-window-v1",
+  "status": "locked_before_source_rgb_decode",
+  "frozen_provider": {
+    "repository": "FlorianPfaff/Bayesian-PhysTwin",
+    "commit": "31e55bf18f26363969411ebf2741be8fc3a8e7d8",
+    "protocol_id": "deform360-dynamic-tapnextpp-provider-v1",
+    "protocol_file_sha256": "fccc272ae472a4f7f08341617ce16a4be8f1b4635ce0be1a0eb45fb16a8c31e1"
+  },
+  "source_bindings": {
+    "queue": {
+      "artifact": "configs/sota/deform360_dynamic_tapnextpp_staging_queue_v1.json",
+      "queue_sha256": "8afcfe64fe62af36a303e376a8c2f1fb78fc855446eadcd6687c13e12a650bdc",
+      "file_sha256": "8dbe094990b9e4bd23c614f50ca6a8b62eef4178e6895d30275f52328d3a1203",
+      "candidate_count": 36
+    },
+    "download": {
+      "artifact": "results/sota/deform360_dynamic_tapnextpp_provider_v1/source_download_manifest_v1.json",
+      "manifest_sha256": "0160df4204c484ae5906ff1258ec623b7745e574cc0330af74e4ecd3db224d15",
+      "file_sha256": "0567f05c6e68d532de699c0434ea9ffba5851dd01eb120fe5f4cd60431f6d7fe",
+      "object_count": 36,
+      "file_count": 2820,
+      "total_bytes": 3192349000
+    }
+  },
+  "window_selection": {
+    "raw_window_frame_count": 81,
+    "prediction_frame_count": 76,
+    "first_update_frame": 19,
+    "candidate_first_frame": 8,
+    "candidate_stride_frames": 6,
+    "action_position_field": "robot.actions[...,0,:]",
+    "closure_weight": "minimum adjacent robust q10-q90 closure confidence",
+    "score_step_range_half_open": [
+      19,
+      75
+    ],
+    "score": "mean over grippers of closure-weighted end-effector translation path after the first update",
+    "tie_break": "earliest candidate start"
+  },
+  "camera_panel": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-006_cam0",
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam0",
+    "brics-odroid-010_cam0",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "cohort_boundary": {
+    "window_selection_is_not_source_admission": true,
+    "required_final_admissions": 20,
+    "source_partition_count": 8,
+    "sealed_target_partition_count": 12,
+    "motion_or_response_threshold_used_for_cohort_membership": false,
+    "insufficient_source_admissions": "stop without opening tracker or target outcomes"
+  },
+  "information_boundary": {
+    "compressed_episode_media_downloaded_before_lock": true,
+    "source_rgb_decoded_before_lock": false,
+    "known_future_action_used_for_window_selection": true,
+    "action_is_a_conditioning_input": true,
+    "object_geometry_used_for_window_selection": false,
+    "object_tracks_used_for_window_selection": false,
+    "object_response_used_for_window_selection": false,
+    "tactile_used_for_window_selection": false,
+    "target_metric_used_for_window_selection": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false,
+    "selection_sealed_before_object_processing_and_prediction": true
+  },
+  "config_sha256": "66c063cf037ecc03a9e1204ea4560cd163b7e2040740fcfa0f09d80a1792dc76"
+}

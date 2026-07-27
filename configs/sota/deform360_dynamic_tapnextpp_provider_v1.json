@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-dynamic-tapnextpp-provider-v1",
+  "status": "protocol-amended-before-cohort-selection-or-provider-outcomes",
+  "question": "Can physics-guided causal query births turn precise but incomplete TAPNext++ tracks into a bias-aware sparse state update that improves disjoint hidden Deform360 identities without regressing below the unchanged physical/persistence backbone?",
+  "claim_boundary": "The source phase may establish provider competence and source transfer only. A state-of-the-art claim additionally requires a passed source gate, an untouched object-disjoint target cohort, authoritative evaluator parity, local reproduction of the strongest eligible baseline, and improvement on both primary metrics.",
+  "prelock": {
+    "repository": "FlorianPfaff/Bayesian-PhysTwin",
+    "base_commit": "fa0055e6b1acb81419ff74d01e7d57b194a20fcb",
+    "prior_open_tapnextpp_result_commit": "4678a0bfc8ff39b721807eb6866d685790de2389",
+    "implementation_status": "not yet implemented",
+    "outcome_opened_by_this_protocol": false
+  },
+  "amendments": [
+    {
+      "amendment_id": "fresh-object-exclusion-amendment-1",
+      "reason": "A separately owned source-only campaign opened 12 physical objects after the original 82-object exclusion union was frozen. None overlapped the original union, so all 12 were added before this protocol selected a source or target cohort.",
+      "source_branch": "deform360-fresh-source-lock-v1",
+      "source_commit": "fac103b",
+      "previous_exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v1.json",
+      "previous_exclusion_sha256": "5454f86c6b434c1f10b7762c3ed00e887b6184f03b0e61ce9b02651d2fed0e66",
+      "previous_excluded_physical_object_count": 82,
+      "newly_excluded_physical_object_count": 12,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_or_gate_changed": false
+    },
+    {
+      "amendment_id": "fresh-object-exclusion-amendment-2",
+      "reason": "The source campaign opened or technically dispositioned all 18 queued physical objects, not only the 12 objects retained in its final cohort. Six queued objects were absent from the 94-object union and were added before this protocol selected a source or target cohort.",
+      "source_branch": "deform360-fresh-source-lock-v1",
+      "source_commit": "fac103b",
+      "previous_exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v2.json",
+      "previous_exclusion_sha256": "fc7e24379f65a6162e8908716f214f92fbffae34407ddd752599368c768413bb",
+      "previous_excluded_physical_object_count": 94,
+      "source_campaign_queued_physical_object_count": 18,
+      "newly_excluded_physical_object_count": 6,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_or_gate_changed": false
+    },
+    {
+      "amendment_id": "dataset-revision-and-queue-rule-amendment-3",
+      "reason": "The initial protocol named Deform360 but omitted an immutable dataset revision and an executable metadata-only candidate rule. The exact public snapshot and deterministic 36-object staging rule were bound before cohort selection, episode payload download, tracker execution, or provider outcomes.",
+      "dataset_payload_opened_before_amendment": false,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_or_gate_changed": false
+    }
+  ],
+  "data_source": {
+    "repository": "brownu/deform360",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "public_catalog_artifact": "results/sota/deform360_fresh_source_lock_v1/public_object_catalog_2026-07-26.json",
+    "public_catalog_sha256": "0e01a6eef92b5e3e8a6a02c75bc0bc4eeb0472a22ed042699cd8c4b411115a28",
+    "public_catalog_file_sha256": "88e9f733fc8e5c24e281e3bb81fb72914cd3ba0f160c7193085594a41989e74c",
+    "candidate_metadata_rule": "After the 100-object hash exclusion, retain objects whose pinned metadata has at least one sequence and only yes/no bimanual values. Choose the numerically first 12 in each fixed public-name stratum: name contains cloth; name does not contain cloth and numeric prefix is below 138; name does not contain cloth and numeric prefix is at least 138. Interleave the three strata by rank.",
+    "staged_candidate_count": 36,
+    "candidate_episode_rule": "episode zero, which is the lowest metadata-listed episode for every staged candidate",
+    "episode_payload_read_before_queue_lock": false,
+    "target_metric_read_before_queue_lock": false
+  },
+  "fresh_object_boundary": {
+    "exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v3.json",
+    "exclusion_sha256": "cf472da17400ce2191d0af9b0b25788fd27b5e5c9976293e2814d2604d8da684",
+    "exclusion_file_sha256": "9ac5516e250c8df3f07b270a999a64f74502f731e523157651bfa633913f7f41",
+    "excluded_physical_object_count": 100,
+    "source_object_count": 8,
+    "sealed_target_object_count": 12,
+    "selection_unit": "physical object",
+    "episode_rule": "lowest source-admissible episode ID per selected object",
+    "partition_rule": "deterministic category-stratified round robin after hash exclusion and source admission; source and target partitions are locked together before source outcomes are opened",
+    "technical_failure_policy": "retain in denominator without retry, replacement, or target-informed substitution"
+  },
+  "deform360_contract": {
+    "required_frame_count": 76,
+    "update_frames_inclusive": [
+      19,
+      38,
+      57
+    ],
+    "prediction_ranges_half_open": [
+      [
+        20,
+        38
+      ],
+      [
+        39,
+        57
+      ],
+      [
+        58,
+        76
+      ]
+    ],
+    "query_birth_frames": [
+      [
+        0,
+        6,
+        12
+      ],
+      [
+        20,
+        26,
+        32
+      ],
+      [
+        39,
+        45,
+        51
+      ]
+    ],
+    "maximum_rgb_depth_mask_frame_by_update": [
+      19,
+      38,
+      57
+    ],
+    "future_geometry_available_to_prediction": false,
+    "future_tactile_available_to_prediction": false
+  },
+  "tracker": {
+    "name": "TAPNext++",
+    "repository": "https://github.com/google-deepmind/tapnet",
+    "revision": "c2cbab81cc06092b5f05bfe2da7bfec54e2079c9",
+    "checkpoint_sha256": "6cd0e793fdcface3063d63f8ed3819bcf74c2c0468fe1fef85acee4de2f3609f",
+    "input_resolution": 512,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "causal_recurrent_execution": true,
+    "queries_per_birth": 8,
+    "query_reuse_across_births": false
+  },
+  "camera_panel": {
+    "selected_camera_count": 8,
+    "minimum_eligible_camera_count": 8,
+    "eligibility": "calibration, causal RGB, depth, and object mask are present and frame-zero projected candidate support is nonzero",
+    "selection": "deterministic greedy coverage-plus-angular-diversity score using only frame-zero geometry and calibration; ties use lexical camera name",
+    "coverage_weight": 1.0,
+    "angular_diversity_weight": 0.25
+  },
+  "query_schedule": {
+    "candidate_source": "frame-zero material identities deterministically attached to the physical graph before outcomes are opened",
+    "graph_basis_rank": 8,
+    "minimum_predicted_birth_to_update_motion_m": 0.005,
+    "minimum_predicted_visible_views": 3,
+    "minimum_spatial_separation_m": 0.015,
+    "selection_objective": "greedy D-optimal graph-mode information gain multiplied by clipped predicted motion, subject to multiview visibility and spatial-separation constraints",
+    "tie_break": "ascending canonical material identity",
+    "measurement_identities_permanently_excluded_from_scoring": true,
+    "all_birth_wave_measurement_identities_excluded": true
+  },
+  "birth_association": {
+    "search_radius_px": 12,
+    "candidate_source": "current causal object-mask pixels with valid depth near the physical projection",
+    "association_score": "pixel displacement plus camera-depth agreement with the physical proposal",
+    "association_probability": "normalized candidate geometry score",
+    "assignment_mixture_spread_in_covariance": true,
+    "physical_innovation_used_as_prior_reliability": false
+  },
+  "claim_bearing_observation": {
+    "minimum_inlier_views": 3,
+    "two_view_role": "tracking continuity and association proposal only; never a claim-bearing state likelihood row",
+    "visibility_threshold": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_depth_residual_m": 0.03,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_standard_deviation_px": 1.5,
+    "shared_bias_standard_deviation_m": 0.005,
+    "shared_bias_representation": "one coherent 3-D low-rank factor per update interval, not an independent per-row variance floor",
+    "correlation_group": "one material-identity trajectory within one birth wave",
+    "maximum_effective_samples_per_group": 3.0,
+    "prior_reliability": "TAPNext++ visibility, mask support, depth support, reprojection consistency, view redundancy, and association entropy only",
+    "innovation_processing": "exactly once through the grouped robust Student-t mixture likelihood"
+  },
+  "state_update": {
+    "physical_backbone": "strongest source-selected physical or exact-persistence backbone, selected without future outcomes",
+    "state_coordinates": "graph-mode position and velocity at each update frame",
+    "shared_camera_bias": "explicit nuisance state",
+    "contact_action_anchor": "measured robot trajectory and registered contact support constrain global state modes",
+    "unidentifiable_modes": "retain the physical prior exactly",
+    "readout_discrepancy": "kept separate from physical state",
+    "exact_fallback": "byte-identical selected backbone whenever observation, identifiability, or regret admission fails"
+  },
+  "source_provider_gate": {
+    "unit": "physical object",
+    "minimum_object_balanced_supported_fraction": 0.75,
+    "minimum_cases_meeting_support_gate": 6,
+    "maximum_supported_identity_rmse_m": 0.015,
+    "maximum_supported_last_five_rmse_m": 0.015,
+    "minimum_relative_gain_over_exact_persistence": 0.1,
+    "minimum_case_wins_over_persistence": 6,
+    "covariance_calibration": "leave-one-object-out scalar conformal inflation fitted on the other source objects",
+    "minimum_out_of_fold_90pct_ellipsoid_coverage": 0.8,
+    "maximum_out_of_fold_90pct_ellipsoid_coverage": 1.0,
+    "minimum_worst_object_coverage": 0.7,
+    "pass_action": "freeze the state-update and baseline-relative regret gate before opening any sealed target object",
+    "fail_action": "stop this provider version without changing queries, births, cameras, thresholds, covariance, or gates on the opened source cohort"
+  },
+  "source_assimilation_gate": {
+    "evaluation": "only future material identities disjoint from every measurement identity",
+    "cross_fitting": "leave-two-physical-objects-out",
+    "comparators": [
+      "physical prior",
+      "exact persistence",
+      "source-selected physical/persistence backbone"
+    ],
+    "minimum_object_balanced_relative_improvement": 0.05,
+    "minimum_joint_object_wins": 6,
+    "maximum_single_object_regression": 0.1,
+    "object_cluster_95pct_upper_bound_below_zero": true,
+    "co_primary_metrics": [
+      "hidden identity RMSE",
+      "hidden symmetric Chamfer"
+    ],
+    "required_secondary_improvements": [
+      "late hidden identity RMSE",
+      "hidden one-sided Chamfer"
+    ],
+    "regret_guard": "source-cross-fitted upper confidence bound on candidate loss minus unchanged-backbone loss; nonnegative or unavailable bounds select exact fallback"
+  },
+  "sealed_target_gate": {
+    "minimum_joint_object_wins": 8,
+    "maximum_single_object_regression": 0.1,
+    "object_cluster_95pct_upper_bound_below_zero": true,
+    "must_improve_both_official_primary_metrics": true,
+    "requires_authoritative_evaluator_parity": true,
+    "requires_local_strongest_baseline_reproduction": true,
+    "claim_if_all_pass": "better than the locally reproduced state of the art on the locked fresh-object Deform360 cohort under the authoritative evaluator"
+  },
+  "forbidden": [
+    "opening held-v8 target, query, score, barrier, or outcome artifacts",
+    "selecting target episodes from future object motion or target errors",
+    "weakening the prior TAPNext++ 75% support gate on its opened case",
+    "using two-view triangulations as claim-bearing state updates",
+    "using state innovation to manufacture prior perception reliability",
+    "scoring any material identity used by any query birth wave",
+    "tuning tracker, queries, camera panel, covariance, likelihood, or gates after source outcomes",
+    "opening sealed target outcomes when either source gate fails",
+    "calling fixed candidate metrics official Deform360 parity without the authoritative evaluator"
+  ]
+}
