@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from copy import deepcopy
 from dataclasses import replace
 
@@ -11,7 +13,11 @@ from bayesian_phystwin.observation_belief_gauge_adapter import (
     build_gauge_aware_batch_from_observation_belief,
 )
 from bayesian_phystwin.prob4d_causal_lineage import (
+    validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
+)
+from bayesian_phystwin.prob4d_provider_attestation import (
+    compute_prob4d_provider_manifest_id,
 )
 
 
@@ -66,6 +72,74 @@ def _metadata() -> dict[str, object]:
     }
 
 
+def _provider_manifest() -> dict[str, object]:
+    descriptor: dict[str, object] = {
+        "provider_name": "prob4d",
+        "provider_version": "0.2.0",
+        "provider_revision": "d" * 40,
+        "provider_api_version": 2,
+        "capabilities": [
+            "analytic_sim3_composition_jacobians",
+            "canonical_repeated_eigenspace_covariance_root",
+            "explicit_exploratory_and_claim_bearing_exports",
+            "provider_attested_observation_artifacts",
+            "runtime_revision_attestation",
+            "strict_prediction_calibration_compatibility",
+        ],
+        "artifact_schema_versions": {
+            "ObservationBeliefV1": 1,
+            "Prob4DCausalObservationStream": 2,
+        },
+        "limitations": {
+            "uncalibrated_export_is_default": False,
+            "deployment_environment_revision_is_independent_vcs_evidence": False,
+        },
+        "metadata": {
+            "source_repository": "FlorianPfaff/Prob4D",
+            "python_import_boundary": "prob4d.provider_v2",
+        },
+    }
+    manifest_id = hashlib.sha256(
+        json.dumps(
+            descriptor,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {"manifest_id": manifest_id, **descriptor}
+
+
+def _provider_attestation() -> dict[str, object]:
+    manifest = _provider_manifest()
+    return {
+        "schema_name": "prob4d.provider-attestation",
+        "schema_version": 1,
+        "provider_api_version": 2,
+        "provider_manifest_id": manifest["manifest_id"],
+        "provider_manifest": manifest,
+        "provider_revision": "d" * 40,
+        "python_import_boundary": "prob4d.provider_v2",
+        "export_mode": "calibrated",
+        "claim_bearing": True,
+        "calibration_compatibility_validated": True,
+        "calibration_artifact_ids": {
+            "gauge_artifact_id": "5" * 64,
+            "point_artifact_id": "6" * 64,
+        },
+        "covariance_root_mode": "canonical_eigenspaces",
+        "composition_jacobian_mode": "analytic",
+        "runtime_revision": {
+            "expected_revision": "d" * 40,
+            "observed_revision": "d" * 40,
+            "source": "source_checkout",
+            "clean_checkout": True,
+            "matched": True,
+            "independently_verified": True,
+        },
+    }
+
+
 def _belief() -> ObservationBeliefV1:
     local = np.repeat(np.eye(3)[None], 4, axis=0) * 1e-5
     factors = np.zeros((4, 3, 7))
@@ -109,6 +183,13 @@ def _belief() -> ObservationBeliefV1:
     )
 
 
+def _attested_belief() -> ObservationBeliefV1:
+    belief = _belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["prob4d_provider_attestation"] = _provider_attestation()
+    return replace(belief, metadata=metadata)
+
+
 def _adapt(belief: ObservationBeliefV1):
     state = np.zeros((belief.observation_count, 3, 1))
     state[:, 0, 0] = 1.0
@@ -128,8 +209,56 @@ def test_valid_prob4d_causal_lineage_is_bound_before_adaptation() -> None:
 
     assert validation["validated"] is True
     assert validation["window_count"] == 2
+    assert validation["provider_attestation_present"] is False
     assert adapted.summary()["prob4d_causal_lineage_validated"] is True
     assert adapted.batch.metadata["prob4d_causal_lineage"] == validation
+
+
+def test_claim_bearing_provider_v2_attestation_is_independently_validated() -> None:
+    belief = _attested_belief()
+    validation = validate_claim_bearing_prob4d_observation_belief(belief)
+    provider = validation["provider_attestation"]
+
+    assert validation["provider_attestation_present"] is True
+    assert validation["provider_attestation_validated"] is True
+    assert provider["claim_bearing"] is True
+    assert provider["provider_api_version"] == 2
+    assert provider["runtime_revision_independently_verified"] is True
+    assert provider["calibration_artifact_ids"] == {
+        "gauge_artifact_id": "5" * 64,
+        "point_artifact_id": "6" * 64,
+    }
+
+
+def test_strict_provider_v2_validation_rejects_frozen_provider_v1_artifact() -> None:
+    with pytest.raises(ValueError, match="provider-v2 attestation is required"):
+        validate_claim_bearing_prob4d_observation_belief(_belief())
+
+
+def test_provider_manifest_payload_tampering_is_rejected_before_adaptation() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["prob4d_provider_attestation"]["provider_manifest"][
+        "provider_version"
+    ] = "999"
+
+    with pytest.raises(ValueError, match="manifest ID does not match"):
+        _adapt(replace(belief, metadata=metadata))
+
+
+def test_rehashed_provider_capability_removal_is_rejected() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    attestation = metadata["prob4d_provider_attestation"]
+    manifest = attestation["provider_manifest"]
+    manifest["capabilities"].remove("runtime_revision_attestation")
+    manifest["manifest_id"] = compute_prob4d_provider_manifest_id(manifest)
+    attestation["provider_manifest_id"] = manifest["manifest_id"]
+
+    with pytest.raises(ValueError, match="required claim-bearing capabilities"):
+        validate_prob4d_causal_observation_belief(
+            replace(belief, metadata=metadata)
+        )
 
 
 def test_prob4d_causal_lineage_rejects_changed_cutoff() -> None:
