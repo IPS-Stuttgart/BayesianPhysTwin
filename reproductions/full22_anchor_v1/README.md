@@ -35,6 +35,10 @@ python reproductions/full22_anchor_v1/reproduce.py \
   --workers 8
 ```
 
+The output directory must be new or empty. Use `--force` only when intentionally
+discarding a previous, unadmitted bundle; the command removes that directory
+before starting rather than mixing artifacts from two executions.
+
 The frozen source checkout executes the historical confirmation and absolute
 22-case comparison modules through `PYTHONPATH`. The current checkout is used
 only to create and validate the strict `RunManifestV2` evidence record.
