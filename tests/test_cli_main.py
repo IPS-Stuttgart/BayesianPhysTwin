@@ -11,12 +11,10 @@ import pytest
 from bayesian_phystwin.cli import _command_catalog as catalog
 from bayesian_phystwin.cli import _command_dispatch as dispatch
 from bayesian_phystwin.cli import main as main_module
-from bayesian_phystwin.cli import run_manifest as run_manifest_cli
 from bayesian_phystwin.cli.command_registry import (
     COMMANDS_BY_ID,
     validate_registry,
 )
-from bayesian_phystwin.repository_provenance import RepositoryState
 
 main = main_module.main
 
@@ -68,6 +66,8 @@ def test_registry_json_contains_ownership_and_migration_metadata(capsys) -> None
         item for item in payload if item["command_id"] == "provider-manifest"
     )
     assert provider["route"] == ["provider", "manifest"]
+    assert provider["previous_routes"] == []
+    assert provider["previous_grouped_commands"] == []
     assert provider["legacy_alias"] == "bpt-provider-manifest"
     assert provider["owner"] == "causal4d-provider-v1"
     assert provider["optional_dependencies"] == []
@@ -92,6 +92,48 @@ def test_registry_inspects_and_migrates_removed_alias_without_running_it(
 
     assert main(["experiment", "run", "bpt-phystwin-refit"]) == 2
     assert "unknown experiment command" in capsys.readouterr().err
+
+
+def test_registry_migrates_previous_grouped_routes(capsys) -> None:
+    previous = [
+        "commands",
+        "migrate",
+        "bpt",
+        "experiment",
+        "run",
+        "audit-phystwin-calibration",
+    ]
+    assert main(previous) == 0
+    assert capsys.readouterr().out.strip() == (
+        "bpt diagnostic run audit-phystwin-calibration"
+    )
+
+    assert main([*previous, "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {
+        "canonical_command": "bpt diagnostic run audit-phystwin-calibration",
+        "command_id": "audit-phystwin-calibration",
+        "source_kind": "previous_grouped_route",
+        "source_selector": "bpt experiment run audit-phystwin-calibration",
+        "status": "diagnostic",
+    }
+
+    assert (
+        main(
+            [
+                "commands",
+                "describe",
+                "bpt",
+                "experiment",
+                "run",
+                "evaluate-phystwin-state-injection",
+            ]
+        )
+        == 0
+    )
+    described = capsys.readouterr().out
+    assert "status: archived" in described
+    assert "previous grouped commands:" in described
 
 
 def test_grouped_cli_dispatches_argv_aware_command(monkeypatch) -> None:
@@ -171,28 +213,6 @@ def test_distribution_installs_only_grouped_console_script() -> None:
     assert scripts == {"bpt": "bayesian_phystwin.cli.main:main"}
 
 
-def test_run_manifest_discovers_clean_primary_repository(monkeypatch, tmp_path) -> None:
-    expected = RepositoryState(
-        repository="FlorianPfaff/Bayesian-PhysTwin",
-        revision="a" * 40,
-        dirty=False,
-        role="primary",
-    )
-    monkeypatch.setattr(
-        run_manifest_cli,
-        "discover_git_repository_state",
-        lambda root, repository: expected,
-    )
-    arguments = SimpleNamespace(
-        revision=None,
-        dirty=False,
-        repository_root=tmp_path,
-        repository=None,
-        allow_dirty=False,
-    )
-    assert run_manifest_cli._primary_repository_state(arguments) == expected
-
-
 def test_catalog_help_json_and_error_paths(capsys) -> None:
     assert main(["commands"]) == 0
     assert "migrate" in capsys.readouterr().out
@@ -238,8 +258,11 @@ def test_main_group_help_and_unknown_paths(capsys) -> None:
     assert "manifest" in capsys.readouterr().out
     assert main(["provider", "unknown"]) == 2
     assert "usage: bpt provider" in capsys.readouterr().err
+    assert main(["provider", "unknown", "extra"]) == 2
+    assert "usage: bpt provider" in capsys.readouterr().err
     assert main(["unknown"]) == 2
     assert "usage: bpt" in capsys.readouterr().err
+    assert main_module._resolve(["unknown"]) is None
 
 
 def test_dispatch_keyword_signature_and_failure_modes(monkeypatch) -> None:
