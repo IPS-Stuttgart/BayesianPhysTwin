@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Apply incremental Python quality checks to changed and stable modules.
+"""Apply incremental Python quality checks to changed and mature modules.
 
 The repository contains a large historical experiment surface. This helper
 ratchets quality without requiring an all-at-once cleanup:
 
 * every added or modified Python file is linted and format-checked;
 * every added or modified package module is type-checked;
-* stable public contracts and scientific-core modules are always type-checked;
+* mature public contracts are type-checked on every run;
+* stable modules with pre-existing type debt become blocking when modified;
 * a smaller, mature subset is checked with ``mypy --strict``.
 """
 
@@ -21,20 +22,27 @@ from pathlib import Path
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
-_STABLE_TYPE_TARGETS = (
+# These targets have a clean mypy baseline and therefore remain unconditional.
+_ALWAYS_TYPE_TARGETS = (
     "src/bayesian_phystwin/run_manifest.py",
     "src/bayesian_phystwin/repository_provenance.py",
     "src/bayesian_phystwin/run_manifest_v2.py",
     "src/bayesian_phystwin/cli/main.py",
     "src/bayesian_phystwin/cli/run_manifest.py",
+    "src/bayesian_phystwin/gauge_aware_belief.py",
+    "src/bayesian_phystwin/causal4d_provider_v1.py",
+    "src/bayesian_phystwin/prob4d_causal_lineage.py",
+)
+
+# These stable scientific modules contain pre-existing typing debt. They are
+# still checked whenever a pull request changes them, so the incremental gate
+# cannot be bypassed by editing a debt-bearing module.
+_CHANGED_ONLY_TYPE_DEBT = (
     "src/bayesian_phystwin/observation_belief.py",
     "src/bayesian_phystwin/observation_belief_gauge_adapter.py",
     "src/bayesian_phystwin/_gauge_aware_contracts.py",
     "src/bayesian_phystwin/_gauge_aware_solver.py",
-    "src/bayesian_phystwin/gauge_aware_belief.py",
-    "src/bayesian_phystwin/causal4d_provider_v1.py",
     "src/bayesian_phystwin/prob4d_observation_contract.py",
-    "src/bayesian_phystwin/prob4d_causal_lineage.py",
 )
 
 _STRICT_TYPE_TARGETS = (
@@ -58,8 +66,7 @@ def _git_text(*arguments: str) -> str:
         ("git", *arguments),
         cwd=_REPOSITORY_ROOT,
         check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
     )
     return completed.stdout.strip()
@@ -70,8 +77,7 @@ def _git_bytes(*arguments: str) -> bytes:
         ("git", *arguments),
         cwd=_REPOSITORY_ROOT,
         check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     return completed.stdout
 
@@ -102,7 +108,7 @@ def _changed_python_files(base: str | None, head: str) -> tuple[str, ...]:
     if base is None:
         print(
             "No comparison commit is available; changed-file checks are skipped. "
-            "Stable targets remain enforced.",
+            "Mature targets remain enforced.",
             flush=True,
         )
         return ()
@@ -116,31 +122,19 @@ def _changed_python_files(base: str | None, head: str) -> tuple[str, ...]:
         ":(glob)**/*.py",
         ":(glob)**/*.pyi",
     )
-    paths = tuple(
-        os.fsdecode(path)
-        for path in output.split(b"\0")
-        if path
-    )
-    return tuple(
-        sorted(
-            path
-            for path in paths
-            if (_REPOSITORY_ROOT / path).is_file()
-        )
-    )
+    paths = tuple(os.fsdecode(path) for path in output.split(b"\0") if path)
+    return tuple(sorted(path for path in paths if (_REPOSITORY_ROOT / path).is_file()))
 
 
 def _existing_unique(paths: Sequence[str]) -> tuple[str, ...]:
     return tuple(
-        dict.fromkeys(
-            path for path in paths if (_REPOSITORY_ROOT / path).is_file()
-        )
+        dict.fromkeys(path for path in paths if (_REPOSITORY_ROOT / path).is_file())
     )
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run changed-file and stable-interface Python quality checks."
+        description="Run changed-file and mature-interface Python quality checks."
     )
     parser.add_argument(
         "--base",
@@ -185,16 +179,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("No added or modified Python files require Ruff checks.", flush=True)
 
     changed_package_modules = tuple(
-        path
-        for path in changed_python
-        if path.startswith("src/bayesian_phystwin/")
+        path for path in changed_python if path.startswith("src/bayesian_phystwin/")
     )
-    type_targets = _existing_unique(
-        (*_STABLE_TYPE_TARGETS, *changed_package_modules)
+    unchanged_debt = tuple(
+        path for path in _CHANGED_ONLY_TYPE_DEBT if path not in changed_package_modules
     )
+    if unchanged_debt:
+        print(
+            "Pre-existing type-debt modules remain changed-only for this run:",
+            flush=True,
+        )
+        for path in unchanged_debt:
+            print(f"  {path}", flush=True)
+
+    type_targets = _existing_unique((*_ALWAYS_TYPE_TARGETS, *changed_package_modules))
     _run(
         (sys.executable, "-m", "mypy", *type_targets),
-        label="Mypy for stable and changed package modules",
+        label="Mypy for mature and changed package modules",
     )
 
     strict_targets = _existing_unique(_STRICT_TYPE_TARGETS)

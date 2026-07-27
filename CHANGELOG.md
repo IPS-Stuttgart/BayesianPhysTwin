@@ -18,6 +18,24 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   changelog.
 - Distribution manifests and regression checks that keep release metadata
   present and version-consistent.
+- A typed `bpt` command registry with lifecycle, optional-dependency, ownership,
+  and removed-alias metadata.
+- Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
+  lookup for historical `bpt-*` command names.
+
+### Changed
+
+- The package now installs exactly one executable, `bpt`. Stable operations and
+  research workflows are reached through grouped routes and lazy dispatch.
+- Command help, documentation, and installed-artifact tests now distinguish
+  stable interfaces, current experiments, non-promotable diagnostics, and
+  archived reproduction paths.
+
+### Removed
+
+- The 79 top-level `bpt-*` console scripts. Frozen releases and historical
+  manifests retain their original command strings; `bpt commands migrate`
+  reports the current grouped invocation.
 
 ## Historical development
 
