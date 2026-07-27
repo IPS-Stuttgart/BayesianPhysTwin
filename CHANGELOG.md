@@ -25,6 +25,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - A frozen full-22 Bayesian-anchor reproduction capsule that binds the exact
   historical source revision, data manifest, protocol, expected metrics,
   two-stage source command, and `RunManifestV2` evidence bundle.
+- A NumPy-only, versioned Causal4D belief-provider surface for immutable robust
+  Bayesian endpoint inference without downstream experiment-module imports.
 
 ### Changed
 
