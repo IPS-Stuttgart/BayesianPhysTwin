@@ -56,7 +56,10 @@ not formed.
 
 The posterior nominal responsibility may depend on the residual. The supplied
 prior nominal probability never does. Association support is reported as a
-separate diagnostic.
+separate diagnostic. The prior-aware solver is checked against this density in
+[the likelihood conformance suite](likelihood_conformance.md). The strict
+minimax solver intentionally retains a different rowwise Student-t power
+objective and reports that distinction in its diagnostics.
 
 ## Gauge-aware state adapter
 
