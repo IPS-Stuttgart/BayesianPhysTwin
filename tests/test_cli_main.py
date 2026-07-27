@@ -53,7 +53,9 @@ def test_experiment_registry_rejects_removed_executable_name(capsys) -> None:
 
 def test_experiment_registry_covers_every_nonstable_command_module() -> None:
     assert len(experiments.EXPERIMENTS) == 74
-    assert experiments.experiment_ids() == tuple(sorted(experiments.EXPERIMENTS))
+    assert experiments.experiment_ids() == tuple(
+        sorted(experiments.EXPERIMENTS)
+    )
     for spec in experiments.EXPERIMENTS.values():
         assert not spec.experiment_id.startswith("bpt-")
         assert util.find_spec(spec.module) is not None
@@ -69,7 +71,10 @@ def test_experiment_registry_forwards_to_argv_aware_main(monkeypatch) -> None:
     module = SimpleNamespace(main=entrypoint)
     monkeypatch.setattr(experiments.importlib, "import_module", lambda _: module)
 
-    assert experiments.main(["run", "build-phystwin-cues", "--flag", "value"]) == 7
+    result = experiments.main(
+        ["run", "build-phystwin-cues", "--flag", "value"]
+    )
+    assert result == 7
     assert received == [["--flag", "value"]]
 
 
