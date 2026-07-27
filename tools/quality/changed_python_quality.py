@@ -123,20 +123,12 @@ def _changed_python_files(base: str | None, head: str) -> tuple[str, ...]:
         ":(glob)**/*.pyi",
     )
     paths = tuple(os.fsdecode(path) for path in output.split(b"\0") if path)
-    return tuple(
-        sorted(
-            path
-            for path in paths
-            if (_REPOSITORY_ROOT / path).is_file()
-        )
-    )
+    return tuple(sorted(path for path in paths if (_REPOSITORY_ROOT / path).is_file()))
 
 
 def _existing_unique(paths: Sequence[str]) -> tuple[str, ...]:
     return tuple(
-        dict.fromkeys(
-            path for path in paths if (_REPOSITORY_ROOT / path).is_file()
-        )
+        dict.fromkeys(path for path in paths if (_REPOSITORY_ROOT / path).is_file())
     )
 
 
@@ -187,9 +179,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("No added or modified Python files require Ruff checks.", flush=True)
 
     changed_package_modules = tuple(
-        path
-        for path in changed_python
-        if path.startswith("src/bayesian_phystwin/")
+        path for path in changed_python if path.startswith("src/bayesian_phystwin/")
     )
     unchanged_debt = tuple(
         path for path in _CHANGED_ONLY_TYPE_DEBT if path not in changed_package_modules
@@ -202,9 +192,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         for path in unchanged_debt:
             print(f"  {path}", flush=True)
 
-    type_targets = _existing_unique(
-        (*_ALWAYS_TYPE_TARGETS, *changed_package_modules)
-    )
+    type_targets = _existing_unique((*_ALWAYS_TYPE_TARGETS, *changed_package_modules))
     _run(
         (sys.executable, "-m", "mypy", *type_targets),
         label="Mypy for mature and changed package modules",
