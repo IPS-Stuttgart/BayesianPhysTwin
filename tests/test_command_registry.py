@@ -5,9 +5,11 @@ from importlib import util
 
 import pytest
 
+from bayesian_phystwin.cli._command_inventory import STABLE_ROUTES
 from bayesian_phystwin.cli.command_registry import (
     COMMANDS,
     COMMANDS_BY_LEGACY_ALIAS,
+    COMMANDS_BY_PREVIOUS_ROUTE,
     CommandStatus,
     find_command_metadata,
     find_runnable_command,
@@ -22,6 +24,12 @@ def test_registry_is_complete_and_unambiguous() -> None:
     assert len(COMMANDS) == len({command.command_id for command in COMMANDS})
     assert len(COMMANDS) == len({command.route for command in COMMANDS})
     assert len(COMMANDS_BY_LEGACY_ALIAS) == 79
+    assert len(COMMANDS_BY_PREVIOUS_ROUTE) == 42
+    assert set(STABLE_ROUTES) == {
+        command.command_id
+        for command in COMMANDS
+        if command.status is CommandStatus.STABLE
+    }
 
 
 def test_registry_covers_all_lifecycle_states() -> None:
@@ -37,7 +45,9 @@ def test_registry_covers_all_lifecycle_states() -> None:
 
 def test_removed_aliases_are_metadata_not_runnable_selectors() -> None:
     assert (
-        find_runnable_command("bpt-phystwin-refit", status=CommandStatus.EXPERIMENT)
+        find_runnable_command(
+            "bpt-phystwin-refit", status=CommandStatus.EXPERIMENT
+        )
         is None
     )
     metadata = find_command_metadata("bpt-phystwin-refit")
@@ -45,6 +55,29 @@ def test_removed_aliases_are_metadata_not_runnable_selectors() -> None:
     assert metadata.command_id == "phystwin-refit"
     assert find_command_metadata("bpt experiment run phystwin-refit") == metadata
     assert find_command_metadata("does-not-exist") is None
+
+
+def test_previous_grouped_routes_resolve_to_new_lifecycle_namespaces() -> None:
+    diagnostic = find_command_metadata(
+        "bpt experiment run audit-phystwin-calibration"
+    )
+    assert diagnostic is not None
+    assert diagnostic.status is CommandStatus.DIAGNOSTIC
+    assert diagnostic.canonical_command == (
+        "bpt diagnostic run audit-phystwin-calibration"
+    )
+    assert diagnostic.previous_grouped_commands == (
+        "bpt experiment run audit-phystwin-calibration",
+    )
+
+    archived = find_command_metadata(
+        "bpt experiment run evaluate-phystwin-state-injection"
+    )
+    assert archived is not None
+    assert archived.status is CommandStatus.ARCHIVED
+    assert archived.canonical_command == (
+        "bpt archive run evaluate-phystwin-state-injection"
+    )
 
 
 def test_nonstable_routes_match_lifecycle_namespace() -> None:
@@ -55,12 +88,19 @@ def test_nonstable_routes_match_lifecycle_namespace() -> None:
     }
     for command in COMMANDS:
         if command.status is CommandStatus.STABLE:
+            assert command.previous_routes == ()
             continue
         assert command.route == (
             namespaces[command.status],
             "run",
             command.command_id,
         )
+        expected_previous = (
+            ()
+            if command.status is CommandStatus.EXPERIMENT
+            else (("experiment", "run", command.command_id),)
+        )
+        assert command.previous_routes == expected_previous
 
 
 def test_every_registered_target_module_exists() -> None:
@@ -129,3 +169,31 @@ def test_registry_rejects_duplicate_legacy_aliases() -> None:
     )
     with pytest.raises(ValueError, match="duplicate legacy alias"):
         validate_registry((first, second))
+
+
+def test_registry_rejects_invalid_previous_routes() -> None:
+    first = COMMANDS[0]
+    empty_previous = replace(first, previous_routes=((),))
+    with pytest.raises(ValueError, match="duplicate or empty previous grouped route"):
+        validate_registry((empty_previous,))
+
+    duplicate_previous = replace(
+        COMMANDS[1],
+        previous_routes=(("experiment", "run", "old"),),
+    )
+    first_previous = replace(
+        first,
+        previous_routes=(("experiment", "run", "old"),),
+    )
+    with pytest.raises(ValueError, match="duplicate or empty previous grouped route"):
+        validate_registry((first_previous, duplicate_previous))
+
+
+def test_registry_rejects_previous_route_collision_with_current_route() -> None:
+    first = COMMANDS[0]
+    colliding = replace(
+        COMMANDS[1],
+        previous_routes=(first.route,),
+    )
+    with pytest.raises(ValueError, match="collides with current route"):
+        validate_registry((first, colliding))
