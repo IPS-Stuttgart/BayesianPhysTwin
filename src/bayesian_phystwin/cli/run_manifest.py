@@ -9,6 +9,12 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
+from bayesian_phystwin.paper_evidence_v1 import (
+    PAPER_EVIDENCE_PROFILE_KEY,
+    embed_paper_evidence_bindings,
+    load_paper_evidence_bindings,
+    validate_paper_evidence_manifest,
+)
 from bayesian_phystwin.repository_provenance import (
     RepositoryRole,
     RepositoryState,
@@ -169,6 +175,14 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--command-line", required=True)
     create.add_argument("--configuration-json", type=Path)
     create.add_argument("--information-boundary-json", type=Path)
+    create.add_argument(
+        "--paper-evidence-json",
+        type=Path,
+        help=(
+            "strict paper-evidence profile binding provider, stream, "
+            "artifact, and distribution identities"
+        ),
+    )
     create.add_argument("--runtime-json", type=Path)
     create.add_argument(
         "--environment-variable",
@@ -200,6 +214,11 @@ def build_parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate", help="validate a saved manifest")
     validate.add_argument("manifest", type=Path)
     validate.add_argument("--artifact-root", type=Path)
+    validate.add_argument(
+        "--require-paper-evidence",
+        action="store_true",
+        help="fail unless the manifest has a valid paper-evidence profile",
+    )
     return parser
 
 
@@ -224,6 +243,17 @@ def _create(args: argparse.Namespace) -> int:
         )
         for name, path in args.output_artifact
     )
+    information_boundary = _load_json_mapping(
+        args.information_boundary_json,
+        name="information boundary",
+    )
+    paper_evidence_requested = args.paper_evidence_json is not None
+    if paper_evidence_requested:
+        information_boundary = embed_paper_evidence_bindings(
+            information_boundary,
+            load_paper_evidence_bindings(args.paper_evidence_json),
+        )
+
     manifest = RunManifestV2(
         run_id=args.run_id,
         repository=primary.repository,
@@ -235,10 +265,7 @@ def _create(args: argparse.Namespace) -> int:
         command=tuple(shlex.split(args.command_line)),
         classification=args.classification,
         statistical_unit=args.statistical_unit,
-        information_boundary=_load_json_mapping(
-            args.information_boundary_json,
-            name="information boundary",
-        ),
+        information_boundary=information_boundary,
         configuration=_load_json_mapping(
             args.configuration_json,
             name="configuration",
@@ -258,6 +285,8 @@ def _create(args: argparse.Namespace) -> int:
         baseline_id=args.baseline_id,
         notes=args.notes,
     )
+    if paper_evidence_requested:
+        validate_paper_evidence_manifest(manifest)
     write_run_manifest(args.manifest, manifest)
     print(
         json.dumps(
@@ -291,7 +320,19 @@ def _validate(args: argparse.Namespace) -> int:
     if isinstance(manifest, RunManifestV2):
         summary["schema_version"] = 2
         summary["evidence_fingerprint"] = manifest.evidence_fingerprint
+        paper_evidence_present = (
+            PAPER_EVIDENCE_PROFILE_KEY in manifest.information_boundary
+        )
+        if paper_evidence_present:
+            validate_paper_evidence_manifest(manifest)
+        elif args.require_paper_evidence:
+            raise ValueError("run manifest has no paper-evidence profile")
+        summary["paper_evidence_profile"] = (
+            "valid" if paper_evidence_present else "absent"
+        )
     else:
+        if args.require_paper_evidence:
+            raise ValueError("paper-evidence profile requires RunManifestV2")
         summary["schema_version"] = 1
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

@@ -39,6 +39,11 @@ _ROUTES: Final[dict[Route, tuple[str, str, str]]] = {
         "main",
         "create or validate a content-addressed run manifest",
     ),
+    ("experiment",): (
+        "bayesian_phystwin.cli.experiments",
+        "main",
+        "list, inspect, or run registered research commands",
+    ),
 }
 
 
@@ -66,12 +71,14 @@ def _render_help(prefix: Route = ()) -> str:
         route = _ROUTES.get(candidate)
         description = route[2] if route is not None else f"{child} commands"
         lines.append(f"  {child:<14} {description}")
-    lines.extend(
-        [
-            "",
-            "Legacy bpt-* entry points remain available for compatibility.",
-        ]
-    )
+    if not prefix:
+        lines.extend(
+            [
+                "",
+                "Use `bpt experiment list` for non-stable research commands.",
+                "No legacy `bpt-*` executables are installed.",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
