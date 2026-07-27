@@ -1,0 +1,27 @@
+tive_samples_per_correlation_group,\n        apply_effective_sample_cap=not provider_owned_observation_cap,\n    )\n    if batch.anchor_innovation_m is None:\n        anchor_base_weight = np.zeros(0, dtype=np.float64)\n        anchor_group_counts: dict[str, int] = {}\n        provider_owned_anchor_cap = False''',
+)
+replace_once(
+    "src/bayesian_phystwin/_gauge_aware_solver.py",
+    '''        anchor_base_weight, anchor_group_counts = _correlation_group_weights(\n            batch.anchor_correlation_group_ids,\n            batch.anchor_prior_reliability,\n            batch.anchor_prior_nominal_probability,\n            batch.anchor_composite_weight,\n            cfg.effective_samples_per_anchor_correlation_group,\n        )''',
+    '''        provider_owned_anchor_cap = provider_owns_effective_sample_cap(\n            batch.metadata,\n            anchor=True,\n        )\n        anchor_base_weight, anchor_group_counts = _correlation_group_weights(\n            batch.anchor_correlation_group_ids,\n            batch.anchor_prior_reliability,\n            batch.anchor_prior_nominal_probability,\n            batch.anchor_composite_weight,\n            cfg.effective_samples_per_anchor_correlation_group,\n            apply_effective_sample_cap=not provider_owned_anchor_cap,\n        )''',
+)
+replace_once(
+    "src/bayesian_phystwin/_gauge_aware_solver.py",
+    '''        "correlation_treatment": (\n            "separate effective-sample caps for observation and anchor groups"\n        ),\n        "state_subspace_coordinates": "prior-whitened",''',
+    '''        "correlation_treatment": (\n            "provider-final observation group power with consumer-capped anchors"\n            if provider_owned_observation_cap and not provider_owned_anchor_cap\n            else "provider-final observation and anchor group power"\n            if provider_owned_observation_cap and provider_owned_anchor_cap\n            else "consumer effective-sample caps for observation and anchor groups"\n        ),\n        "provider_owns_observation_effective_sample_cap": (\n            provider_owned_observation_cap\n        ),\n        "provider_owns_anchor_effective_sample_cap": provider_owned_anchor_cap,\n        "state_subspace_coordinates": "prior-whitened",''',
+)
+
+replace_once(
+    "src/bayesian_phystwin/observation_belief_gauge_adapter.py",
+    '''import numpy as np\n\nfrom .gauge_aware_belief import GaugeAwareObservationBatch''',
+    '''import numpy as np\n\nfrom ._information_mass import PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS\nfrom .gauge_aware_belief import GaugeAwareObservationBatch''',
+)
+replace_once(
+    "src/bayesian_phystwin/observation_belief_gauge_adapter.py",
+    '''            "causal_frame_stop_convention": "exclusive",\n            "prob4d_causal_lineage_validated": self.batch.metadata.get(''',
+    '''            "causal_frame_stop_convention": "exclusive",\n            "provider_owns_effective_sample_cap": self.batch.metadata.get(\n                "provider_owns_effective_sample_cap",\n                False,\n            ),\n            "prob4d_causal_lineage_validated": self.batch.metadata.get(''',
+)
+replace_once(
+    "src/bayesian_phystwin/observation_belief_gauge_adapter.py",
+    '''    correlation_groups = tuple(\n        f"{belief.stream_id}:correlation-group-{int(group_id)}"\n        for group_id in belief.correlation_group_ids\n    )\n    metadata: dict[str, object] = {''',
+    '''    correlation_groups = tuple(\n        f"{belief.stream_id}:correlation-group-{int(group_id)}"\n        for group_id in belief.correlation_group_ids\n    )\n    declared_group_weight_semantics = belief.metadata.get(\n        "group_composite_weight_semantics"\n    )\n    declared_provider_owner = belief.metadata.get(\n        "provider_owns_effective_sample_cap"\n    )\n    if declared_provider_owner is not None and not isinstance(\n        declared_provider_owner, bool\n    ):\n        raise ValueError("provider_owns_effective_sample_cap must be boolean")\n    provider_owns_group_cap = (\n        declared_group_weight_semantics\n        == PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS\n        and declared_provider_owner is not False\n    )\n    if declared_provider_owner is True:\n        _require(\n            provider_owns_group_cap,\n            "provider-owned group weight has unknown semantics",\n        )\n    nested_group_information = belief.metadata.get("correlation_group_information")\n    if isinstance(nested_group_information, 

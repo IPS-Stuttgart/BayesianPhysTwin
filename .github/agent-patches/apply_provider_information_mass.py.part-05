@@ -1,0 +1,27 @@
+cs/provider_information_mass.md",
+    '''# Provider-owned correlation-group information mass
+
+Prob4D can export `group_composite_weight` as a final per-row generalized-Bayes
+likelihood power. For a correlation group with `n_g` rows and provider-declared
+effective count `m_g`, every row receives `m_g / n_g`. Summing the row powers
+therefore recovers `m_g`.
+
+Bayesian-PhysTwin recognizes this contract only through the explicit versioned
+metadata value
+
+```text
+provider-final-per-row-information-weight-v1
+```
+
+When the provider also declares `provider_owns_effective_sample_cap=true`, both
+the standard and prior-aware gauge solvers use the supplied row power directly.
+They continue to multiply by source reliability and nominal-component evidence,
+but do not apply a second row-count cap. Legacy and provider-neutral batches
+retain the existing consumer-side effective-sample cap.
+
+This distinction makes the update invariant to duplicating dependent rows while
+preserving backward compatibility. Unknown provider-owned semantics fail closed.
+The observation adapter records the normalized ownership decision in its batch
+metadata and summary so posterior lineage remains auditable.
+''',
+)

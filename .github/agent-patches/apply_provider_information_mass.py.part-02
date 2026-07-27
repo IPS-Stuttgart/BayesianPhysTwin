@@ -1,0 +1,43 @@
+dict):\n        nested_semantics = nested_group_information.get("semantics")\n        nested_owner = nested_group_information.get(\n            "provider_owns_effective_sample_cap"\n        )\n        if nested_owner is not None and not isinstance(nested_owner, bool):\n            raise ValueError("provider_owns_effective_sample_cap must be boolean")\n        if nested_owner is True:\n            _require(\n                nested_semantics == PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS,\n                "provider-owned group weight has unknown semantics",\n            )\n            provider_owns_group_cap = True\n            declared_group_weight_semantics = nested_semantics\n\n    metadata: dict[str, object] = {''',
+)
+replace_once(
+    "src/bayesian_phystwin/observation_belief_gauge_adapter.py",
+    '''        "causal_frame_stop_convention": "exclusive",\n        "prob4d_causal_lineage_validated": prob4d_lineage is not None,\n    }''',
+    '''        "causal_frame_stop_convention": "exclusive",\n        "prob4d_causal_lineage_validated": prob4d_lineage is not None,\n        "group_composite_weight_semantics": (\n            declared_group_weight_semantics\n            if provider_owns_group_cap\n            else "consumer-effective-sample-cap-v1"\n        ),\n        "provider_owns_effective_sample_cap": provider_owns_group_cap,\n    }''',
+)
+
+replace_once(
+    "src/bayesian_phystwin/_prior_aware_gauge_math.py",
+    '''    composite: np.ndarray,\n    cap: float,\n) -> tuple[''',
+    '''    composite: np.ndarray,\n    cap: float,\n    *,\n    apply_effective_sample_cap: bool = True,\n) -> tuple[''',
+)
+replace_once(
+    "src/bayesian_phystwin/_prior_aware_gauge_math.py",
+    '''        if len(active):\n            group_power[position] = (\n                float(composite[selected[0]])\n                * min(cap, float(len(active)))\n                / len(active)\n            )\n            base[active] = reliability[active] * group_power[position]''',
+    '''        if len(active):\n            group_power[position] = float(composite[selected[0]])\n            if apply_effective_sample_cap:\n                group_power[position] *= min(cap, float(len(active))) / len(active)\n            base[active] = reliability[active] * group_power[position]''',
+)
+
+replace_once(
+    "src/bayesian_phystwin/prior_aware_gauge_belief.py",
+    '''from ._prior_aware_gauge_math import (''',
+    '''from ._information_mass import provider_owns_effective_sample_cap\nfrom ._prior_aware_gauge_math import (''',
+)
+replace_once(
+    "src/bayesian_phystwin/prior_aware_gauge_belief.py",
+    '''    observation_nominal = np.asarray(batch.prior_nominal_probability)\n    observation_composite = np.asarray(batch.composite_weight)\n\n    state_count''',
+    '''    observation_nominal = np.asarray(batch.prior_nominal_probability)\n    observation_composite = np.asarray(batch.composite_weight)\n    provider_owned_observation_cap = provider_owns_effective_sample_cap(\n        batch.metadata\n    )\n    provider_owned_anchor_cap = provider_owns_effective_sample_cap(\n        batch.metadata,\n        anchor=True,\n    )\n\n    state_count''',
+)
+replace_once(
+    "src/bayesian_phystwin/prior_aware_gauge_belief.py",
+    '''        observation_composite,\n        cfg.effective_samples_per_correlation_group,\n    )''',
+    '''        observation_composite,\n        cfg.effective_samples_per_correlation_group,\n        apply_effective_sample_cap=not provider_owned_observation_cap,\n    )''',
+)
+replace_once(
+    "src/bayesian_phystwin/prior_aware_gauge_belief.py",
+    '''            anchor_composite,\n            cfg.effective_samples_per_anchor_correlation_group,\n        )''',
+    '''            anchor_composite,\n            cfg.effective_samples_per_anchor_correlation_group,\n            apply_effective_sample_cap=not provider_owned_anchor_cap,\n        )''',
+)
+replace_once(
+    "src/bayesian_phystwin/prior_aware_gauge_belief.py",
+    '''        "group_composite_weight_semantics": "generalized-Bayes likelihood power",\n        **basis_diagnostics,''',
+    '''        "group_composite_weight_semantics": "generalized-Bayes likelihood power",\n        "provider_owns_observation_effective_sample_cap": (\n            provider_owned_observation_cap\n        ),\n        "provider_owns_anchor_effective_sample_cap": provider_owned_anchor_cap,\n        "correlation_treatment": (\n            "provider-final observation group power with consumer-capped anchors"\n            

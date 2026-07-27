@@ -1,0 +1,129 @@
+ if provider_owned_observation_cap and not provider_owned_anchor_cap\n            else "provider-final observation and anchor group power"\n            if provider_owned_observation_cap and provider_owned_anchor_cap\n            else "consumer effective-sample caps for observation and anchor groups"\n        ),\n        **basis_diagnostics,''',
+)
+
+write(
+    "tests/test_provider_owned_information_mass.py",
+    '''from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from bayesian_phystwin._gauge_aware_solver import _correlation_group_weights
+from bayesian_phystwin._information_mass import (
+    PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS,
+    provider_owns_effective_sample_cap,
+)
+from bayesian_phystwin._prior_aware_gauge_math import (
+    PriorAwareGaugeConfigV1,
+    _group_layout,
+)
+from bayesian_phystwin.gauge_aware_belief import (
+    GaugeAwareBeliefConfig,
+    GaugeAwareObservationBatch,
+    update_gauge_aware_belief,
+)
+from bayesian_phystwin.observation_belief import ObservationBeliefV1
+from bayesian_phystwin.observation_belief_gauge_adapter import (
+    build_gauge_aware_batch_from_observation_belief,
+)
+from bayesian_phystwin.prior_aware_gauge_belief import (
+    update_prior_aware_gauge_belief,
+)
+
+
+def _empty_design(count: int) -> np.ndarray:
+    return np.zeros((count, 3, 0), dtype=np.float64)
+
+
+def _provider_batch(row_count: int, effective_count: float) -> GaugeAwareObservationBatch:
+    if row_count % 100:
+        raise ValueError("test row count must be a multiple of 100")
+    mode = np.tile(np.linspace(-1.0, 1.0, 100), row_count // 100)
+    innovation = np.zeros((row_count, 3), dtype=np.float64)
+    innovation[:, 0] = 0.01 * mode
+    state = np.zeros((row_count, 3, 1), dtype=np.float64)
+    state[:, 0, 0] = mode
+    return GaugeAwareObservationBatch(
+        innovation_m=innovation,
+        observation_covariance_m2=np.tile(
+            np.eye(3, dtype=np.float64) * 1e-5,
+            (row_count, 1, 1),
+        ),
+        state_jacobian=state,
+        gauge_jacobian=_empty_design(row_count),
+        shared_bias_jacobian=_empty_design(row_count),
+        view_bias_jacobian=_empty_design(row_count),
+        query_state_jacobian=state.copy(),
+        gauge_prior_covariance=np.zeros((0, 0), dtype=np.float64),
+        correlation_group_ids=("prob4d-frame-0",) * row_count,
+        prior_reliability=np.ones(row_count),
+        prior_nominal_probability=np.ones(row_count),
+        composite_weight=np.full(row_count, effective_count / row_count),
+        physical_response_scale_m=1.0,
+        state_prior_covariance_m2=np.asarray([[0.01]]),
+        metadata={
+            "group_composite_weight_semantics": (
+                PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS
+            ),
+            "provider_owns_effective_sample_cap": True,
+        },
+    )
+
+
+def test_provider_final_weight_is_not_capped_a_second_time() -> None:
+    batch = _provider_batch(100, 64.0)
+    result = update_gauge_aware_belief(
+        batch,
+        config=GaugeAwareBeliefConfig(
+            effective_samples_per_correlation_group=64.0,
+        ),
+    )
+
+    assert result.inference_admissible
+    assert result.diagnostics[
+        "provider_owns_observation_effective_sample_cap"
+    ] is True
+    assert result.diagnostics[
+        "effective_observation_information_mass"
+    ] == pytest.approx(64.0)
+
+
+def test_provider_weight_preserves_posterior_under_row_duplication() -> None:
+    base = update_gauge_aware_belief(_provider_batch(100, 64.0))
+    duplicated = update_gauge_aware_belief(_provider_batch(1000, 64.0))
+
+    assert base.inference_admissible
+    assert duplicated.inference_admissible
+    assert duplicated.diagnostics[
+        "effective_observation_information_mass"
+    ] == pytest.approx(64.0)
+    np.testing.assert_allclose(
+        duplicated.state_coefficients,
+        base.state_coefficients,
+        rtol=2e-4,
+        atol=2e-7,
+    )
+    np.testing.assert_allclose(
+        duplicated.posterior_covariance,
+        base.posterior_covariance,
+        rtol=3e-3,
+        atol=1e-9,
+    )
+
+
+def test_legacy_batches_keep_the_consumer_cap() -> None:
+    count = 100
+    weight, _ = _correlation_group_weights(
+        ("group",) * count,
+        np.ones(count),
+        np.ones(count),
+        np.full(count, 0.64),
+        64.0,
+    )
+    provider_weight, _ = _correlation_group_weights(
+        ("group",) * count,
+        np.ones(count),
+        np.ones(count),
+        np.full(count, 0.64),
+        64.0,
+        apply_effectiv

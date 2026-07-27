@@ -1,0 +1,59 @@
+name: Apply provider information-mass semantics
+
+on:
+  push:
+    branches: [agent/provider-information-mass]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-provider-information-mass-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/provider-information-mass
+          fetch-depth: 0
+      - name: Reconstruct and apply deterministic source transformations
+        shell: bash
+        run: |
+          cat .github/agent-patches/apply_provider_information_mass.py.part-* > /tmp/apply_provider_information_mass.py.b64
+          base64 --decode /tmp/apply_provider_information_mass.py.b64 > .github/agent-patches/apply_provider_information_mass.py
+          python .github/agent-patches/apply_provider_information_mass.py
+      - name: Remove staging machinery
+        run: |
+          rm -f .github/agent-patches/apply_provider_information_mass.py
+          rm -f .github/agent-patches/apply_provider_information_mass.py.part-*
+          rm -f .github/workflows/agent-apply-provider-information-mass.yml
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Validate provider and consumer semantics
+        run: |
+          python -m pip install -e '.[dev]'
+          python -m ruff check src tests
+          python -m pytest -q \
+            tests/test_gauge_aware_belief.py \
+            tests/test_observation_belief_gauge_adapter.py \
+            tests/test_prior_aware_and_linearization.py \
+            tests/test_prior_aware_likelihood_conformance.py \
+            tests/test_provider_owned_information_mass.py
+          git diff --check
+      - name: Commit implementation
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Honor provider-owned observation information mass'
+          git push origin HEAD:agent/provider-information-mass

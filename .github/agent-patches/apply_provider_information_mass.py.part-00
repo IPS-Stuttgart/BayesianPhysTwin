@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def replace_once(relative: str, old: str, new: str) -> None:
+    path = ROOT / relative
+    text = path.read_text(encoding="utf-8")
+    count = text.count(old)
+    if count != 1:
+        raise RuntimeError(f"{relative}: expected one match, found {count}: {old[:80]!r}")
+    path.write_text(text.replace(old, new), encoding="utf-8")
+
+
+def replace_count(relative: str, old: str, new: str, expected: int) -> None:
+    path = ROOT / relative
+    text = path.read_text(encoding="utf-8")
+    count = text.count(old)
+    if count != expected:
+        raise RuntimeError(f"{relative}: expected {expected} matches, found {count}: {old[:80]!r}")
+    path.write_text(text.replace(old, new), encoding="utf-8")
+
+
+def write(relative: str, content: str) -> None:
+    path = ROOT / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+write(
+    "src/bayesian_phystwin/_information_mass.py",
+    '''"""Cross-provider semantics for dependence-capped information mass."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
+
+PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS = (
+    "provider-final-per-row-information-weight-v1"
+)
+
+
+def provider_owns_effective_sample_cap(
+    metadata: Mapping[str, Any] | None,
+    *,
+    anchor: bool = False,
+) -> bool:
+    """Return whether a provider supplied the final per-row group power.
+
+    Legacy and provider-neutral batches keep the consumer-side cap. A cap is
+    skipped only after an explicit, versioned declaration; repository identity
+    alone is never sufficient.
+    """
+
+    values = {} if metadata is None else metadata
+    prefix = "anchor_" if anchor else ""
+    semantics = values.get(f"{prefix}group_composite_weight_semantics")
+    declared_owner = values.get(f"{prefix}provider_owns_effective_sample_cap")
+    if declared_owner is not None and not isinstance(declared_owner, bool):
+        raise ValueError("effective-sample-cap ownership metadata must be boolean")
+    if declared_owner is True and semantics != PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS:
+        raise ValueError("provider-owned group weight has unknown semantics")
+    if semantics != PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS:
+        return False
+    return declared_owner is not False
+
+
+__all__ = [
+    "PROVIDER_FINAL_COMPOSITE_WEIGHT_SEMANTICS",
+    "provider_owns_effective_sample_cap",
+]
+''',
+)
+
+replace_once(
+    "src/bayesian_phystwin/_gauge_aware_solver.py",
+    '''    _student_t_weights,\n    _subspace_overlap,\n)\n\n\nclass _RegretDecision''',
+    '''    _student_t_weights,\n    _subspace_overlap,\n)\nfrom ._information_mass import provider_owns_effective_sample_cap\n\n\nclass _RegretDecision''',
+)
+replace_once(
+    "src/bayesian_phystwin/_gauge_aware_solver.py",
+    '''    composite_weight: np.ndarray,\n    effective_samples_per_group: float,\n) -> tuple[np.ndarray, dict[str, int]]:''',
+    '''    composite_weight: np.ndarray,\n    effective_samples_per_group: float,\n    *,\n    apply_effective_sample_cap: bool = True,\n) -> tuple[np.ndarray, dict[str, int]]:''',
+)
+replace_once(
+    "src/bayesian_phystwin/_gauge_aware_solver.py",
+    '''        count = counts[group_id]\n        group_scale = min(effective_samples_per_group, float(count)) / count\n        weights[index] = (''',
+    '''        count = counts[group_id]\n        group_scale = (\n            min(effective_samples_per_group, float(count)) / count\n            if apply_effective_sample_cap\n            else 1.0\n        )\n        weights[index] = (''',
+)
+replace_once(
+    "src/bayesian_phystwin/_gauge_aware_solver.py",
+    '''    base_weight, group_counts = _correlation_group_weights(\n        batch.correlation_group_ids,\n        batch.prior_reliability,\n        batch.prior_nominal_probability,\n        batch.composite_weight,\n        cfg.effective_samples_per_correlation_group,\n    )\n    if batch.anchor_innovation_m is None:\n        anchor_base_weight = np.zeros(0, dtype=np.float64)\n        anchor_group_counts: dict[str, int] = {}''',
+    '''    provider_owned_observation_cap = provider_owns_effective_sample_cap(\n        batch.metadata\n    )\n    base_weight, group_counts = _correlation_group_weights(\n        batch.correlation_group_ids,\n        batch.prior_reliability,\n        batch.prior_nominal_probability,\n        batch.composite_weight,\n        cfg.effec
