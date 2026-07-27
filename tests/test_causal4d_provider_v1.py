@@ -122,9 +122,10 @@ def test_artifact_helpers_are_public_and_stable(tmp_path: Path) -> None:
 
     loaded = load_pickle(artifact_path)
     np.testing.assert_array_equal(loaded["x"], value["x"])
-    assert sha256_file(artifact_path) == hashlib.sha256(
-        artifact_path.read_bytes()
-    ).hexdigest()
+    assert (
+        sha256_file(artifact_path)
+        == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    )
 
 
 def test_validity_and_lifting_helpers_match_expected_geometry() -> None:
@@ -135,9 +136,7 @@ def test_validity_and_lifting_helpers_match_expected_geometry() -> None:
         np.asarray(((True, False), (False, True), (True, False))),
     )
 
-    vertices = np.asarray(
-        ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 0.0, 0.0))
-    )
+    vertices = np.asarray(((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 0.0, 0.0)))
     indices, weights = build_lift_map(vertices, original_count=2, neighbors=2)
     np.testing.assert_array_equal(indices.shape, (1, 2))
     np.testing.assert_allclose(np.sum(weights, axis=1), 1.0)
@@ -348,7 +347,9 @@ def test_fixed_anchor_provider_matches_historical_endpoint_inference() -> None:
     np.testing.assert_array_equal(actual.update_count, expected.update_count)
 
 
-def test_fixed_anchor_posterior_copies_freezes_and_keeps_compatibility_aliases() -> None:
+def test_fixed_anchor_posterior_copies_freezes_and_keeps_compatibility_aliases() -> (
+    None
+):
     residual, valid = _fixed_anchor_inputs()
     posterior = infer_fixed_bayesian_anchor_endpoint(
         residual,

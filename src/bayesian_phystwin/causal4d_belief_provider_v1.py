@@ -69,9 +69,7 @@ def infer_fixed_bayesian_anchor_endpoint(
         valid,
         end_frame=end_frame,
     )
-    settings = (
-        DEFAULT_FIXED_BAYESIAN_ANCHOR_CONFIG_V1 if config is None else config
-    )
+    settings = DEFAULT_FIXED_BAYESIAN_ANCHOR_CONFIG_V1 if config is None else config
     if not isinstance(settings, FixedBayesianAnchorConfigV1):
         raise TypeError("config must be a FixedBayesianAnchorConfigV1")
     posterior = robust_random_walk_endpoint(
@@ -113,9 +111,7 @@ def causal4d_belief_provider_manifest(
         "provider_revision": revision,
         "schema_version": CAUSAL4D_BELIEF_PROVIDER_API_VERSION,
         "capabilities": list(CAUSAL4D_BELIEF_PROVIDER_CAPABILITIES),
-        "artifact_schema_versions": dict(
-            CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS
-        ),
+        "artifact_schema_versions": dict(CAUSAL4D_BELIEF_ARTIFACT_SCHEMA_VERSIONS),
         "metadata": {
             "provider_api": "bayesian_phystwin.causal4d_belief_provider_v1",
             "provider_api_version": CAUSAL4D_BELIEF_PROVIDER_API_VERSION,

@@ -223,16 +223,17 @@ class OfficialPhysTwinReplayProviderV2:
             isinstance(request, InitialReplayRequestV1)
             and request.initial_state_id != self._released_initial_state_id
         ):
-            raise ValueError("initial replay request does not identify the released state")
+            raise ValueError(
+                "initial replay request does not identify the released state"
+            )
 
-        group_log_scales = self._validate_group_log_scales(
-            request.group_log_scales
-        )
+        group_log_scales = self._validate_group_log_scales(request.group_log_scales)
         controller_points = self._validate_controller_points(
             request.controller_points_m
         )
         self._apply_group_log_scales(group_log_scales)
         self._apply_controller_points(controller_points)
+        frame_ids: np.ndarray
         if isinstance(request, InitialReplayRequestV1):
             positions, velocities = _rollout_initial_trajectory(
                 self._simulator,
