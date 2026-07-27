@@ -1,25 +1,33 @@
 """Stable Bayesian-PhysTwin compatibility surface for Causal4D.
 
-The module owns the dependency on implementation-private PhysTwin helpers.  Downstream
-projects should import artifacts and execution primitives from here rather than from
-underscore-prefixed implementation modules.
+The module preserves the provider-v1 import path while forwarding owned replay,
+geometry, hashing, and metadata operations to stable core modules.  Historical
+diagnostic helpers remain isolated here for frozen Causal4D consumers.
 """
 
 from __future__ import annotations
 
 import gc
-import json
 import os
+from collections.abc import Mapping
 from importlib import import_module
-from importlib.metadata import (
-    PackageNotFoundError,
-    distribution,
-    version as distribution_version,
-)
 from pathlib import Path
-from typing import Any, Mapping, Protocol, runtime_checkable
+from typing import Any
 
 import numpy as np
+
+from .contracts.provider import (
+    installed_distribution_revision,
+    installed_distribution_version,
+)
+from .contracts.replay import PhysTwinReplayProviderV1 as PhysTwinReplayProvider
+from .phystwin.artifacts import sha256_file
+from .phystwin.geometry import build_lift_map, lift_residual, target_validity
+from .phystwin.replay import (
+    _rollout_initial_trajectory,
+    _rollout_restart_trajectory,
+    _state_numpy as _owned_state_numpy,
+)
 
 CAUSAL4D_PROVIDER_API_VERSION = 1
 CAUSAL4D_PROVIDER_PACKAGE_VERSION = "0.4.0"
@@ -39,28 +47,6 @@ CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS = {
 }
 
 
-def _installed_provider_version() -> str:
-    try:
-        return distribution_version("bayesian-phystwin")
-    except PackageNotFoundError:
-        return CAUSAL4D_PROVIDER_PACKAGE_VERSION
-
-
-def _installed_provider_revision() -> str | None:
-    try:
-        direct_url = distribution("bayesian-phystwin").read_text("direct_url.json")
-    except PackageNotFoundError:
-        return None
-    if not direct_url:
-        return None
-    try:
-        payload = json.loads(direct_url)
-    except (TypeError, json.JSONDecodeError):
-        return None
-    commit_id = payload.get("vcs_info", {}).get("commit_id")
-    return str(commit_id) if commit_id else None
-
-
 def causal4d_provider_manifest(
     *,
     provider_revision: str | None = None,
@@ -75,12 +61,15 @@ def causal4d_provider_manifest(
     revision = (
         provider_revision
         or os.environ.get("BAYESIAN_PHYSTWIN_REVISION")
-        or _installed_provider_revision()
+        or installed_distribution_revision("bayesian-phystwin")
         or "unversioned-install"
     )
     return {
         "provider_name": "bayesian-phystwin",
-        "provider_version": _installed_provider_version(),
+        "provider_version": installed_distribution_version(
+            "bayesian-phystwin",
+            fallback=CAUSAL4D_PROVIDER_PACKAGE_VERSION,
+        ),
         "provider_revision": revision,
         "schema_version": CAUSAL4D_PROVIDER_API_VERSION,
         "capabilities": list(CAUSAL4D_PROVIDER_CAPABILITIES),
@@ -92,39 +81,8 @@ def causal4d_provider_manifest(
     }
 
 
-@runtime_checkable
-class PhysTwinReplayProvider(Protocol):
-    """Execution boundary required by Causal4D's official PhysTwin backend."""
-
-    @property
-    def device(self) -> str:
-        """Torch device used by the provider."""
-
-    def set_group_log_scales(self, values: np.ndarray) -> None:
-        """Set the grouped object/controller spring log-scales."""
-
-    def set_controller_points(self, values: np.ndarray) -> None:
-        """Replace the controller trajectory used by subsequent replays."""
-
-    def replay_initial(self, *, frame_count: int) -> tuple[np.ndarray, np.ndarray]:
-        """Replay from the released initial state and return position/velocity histories."""
-
-    def replay_restart(
-        self,
-        position_m: np.ndarray,
-        velocity_mps: np.ndarray,
-        *,
-        start_frame: int,
-        stop_frame: int,
-    ) -> np.ndarray:
-        """Replay from an explicit endpoint state and return future positions."""
-
-    def close(self) -> None:
-        """Release simulator and accelerator resources."""
-
-
 class OfficialPhysTwinReplayProvider:
-    """Adapter around the released Warp simulator implementing the public protocol."""
+    """Adapter around the released Warp simulator implementing provider API v1."""
 
     def __init__(self, simulator: Any, torch: Any, wp: Any, *, device: str) -> None:
         self._simulator = simulator
@@ -227,7 +185,7 @@ class OfficialPhysTwinReplayProvider:
         if cuda is not None and hasattr(cuda, "empty_cache"):
             cuda.empty_cache()
 
-    def __enter__(self) -> "OfficialPhysTwinReplayProvider":
+    def __enter__(self) -> OfficialPhysTwinReplayProvider:
         self._require_open()
         return self
 
@@ -276,56 +234,9 @@ def _delegate(module: str, name: str, *args: Any, **kwargs: Any) -> Any:
     return function(*args, **kwargs)
 
 
-# Artifact and geometry primitives.
+# Legacy artifact compatibility. New code should use the hash-locked artifact API.
 def load_pickle(path: str | Path) -> Any:
     return _delegate("phystwin_residual_dynamics", "_load_pickle", path)
-
-
-def sha256_file(path: str | Path) -> str:
-    return str(_delegate("phystwin_residual_dynamics", "_sha256", path))
-
-
-def target_validity(visible: np.ndarray, motion_valid: np.ndarray) -> np.ndarray:
-    return np.asarray(
-        _delegate("phystwin_residual_dynamics", "_target_validity", visible, motion_valid),
-        dtype=bool,
-    )
-
-
-def build_lift_map(
-    initial_vertices: np.ndarray,
-    original_count: int,
-    neighbors: int,
-) -> tuple[np.ndarray, np.ndarray]:
-    indices, weights = _delegate(
-        "phystwin_residual_dynamics",
-        "_lift_map",
-        initial_vertices,
-        original_count,
-        neighbors,
-    )
-    return np.asarray(indices, dtype=np.int64), np.asarray(weights, dtype=float)
-
-
-def lift_residual(
-    tracked_residual: np.ndarray,
-    state_count: int,
-    indices: np.ndarray,
-    weights: np.ndarray,
-    *,
-    maximum_norm: float,
-) -> np.ndarray:
-    return np.asarray(
-        _delegate(
-            "phystwin_residual_dynamics",
-            "_lift_residual",
-            tracked_residual,
-            state_count,
-            indices,
-            weights,
-            maximum_norm=maximum_norm,
-        )
-    )
 
 
 # Publicly named compatibility operations for advanced Causal4D diagnostics.
@@ -359,11 +270,12 @@ def released_self_collision_for_case(*args: Any, **kwargs: Any) -> Any:
 
 
 def _rollout_initial(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_state_injection", "_rollout_initial", *args, **kwargs)
+    return _rollout_initial_trajectory(*args, **kwargs)
 
 
 def rollout_restart(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_state_injection", "_rollout_restart", *args, **kwargs)
+    positions, _ = _rollout_restart_trajectory(*args, **kwargs)
+    return positions
 
 
 def simulator_runtime(*args: Any, **kwargs: Any) -> Any:
@@ -371,7 +283,7 @@ def simulator_runtime(*args: Any, **kwargs: Any) -> Any:
 
 
 def state_numpy(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_state_injection", "_state_numpy", *args, **kwargs)
+    return _owned_state_numpy(*args, **kwargs)
 
 
 def load_official_spring_mass_module(*args: Any, **kwargs: Any) -> Any:
@@ -403,7 +315,10 @@ def measurement_target_audit(*args: Any, **kwargs: Any) -> Any:
 
 def attachment_support_nodes(*args: Any, **kwargs: Any) -> Any:
     return _delegate(
-        "phystwin_structural_diagnostic", "_attachment_support_nodes", *args, **kwargs
+        "phystwin_structural_diagnostic",
+        "_attachment_support_nodes",
+        *args,
+        **kwargs,
     )
 
 
@@ -426,13 +341,19 @@ def horizon_summary(*args: Any, **kwargs: Any) -> Any:
 
 def object_rest_lengths(*args: Any, **kwargs: Any) -> Any:
     return _delegate(
-        "phystwin_structural_diagnostic", "_object_rest_lengths", *args, **kwargs
+        "phystwin_structural_diagnostic",
+        "_object_rest_lengths",
+        *args,
+        **kwargs,
     )
 
 
 def set_simulator_arrays(*args: Any, **kwargs: Any) -> Any:
     return _delegate(
-        "phystwin_structural_diagnostic", "_set_simulator_arrays", *args, **kwargs
+        "phystwin_structural_diagnostic",
+        "_set_simulator_arrays",
+        *args,
+        **kwargs,
     )
 
 
