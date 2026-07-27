@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: finalize-student-t-mixture-audit
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   apply:
@@ -45,27 +45,15 @@ jobs:
               file_path.write_text(text.replace(old, new), encoding="utf-8")
 
 
+          def insert_before_once(path: str, marker: str, addition: str) -> None:
+              replace_once(path, marker, addition + marker)
+
+
           solver = "src/bayesian_phystwin/prior_aware_gauge_belief.py"
-          replace_once(
+          insert_before_once(
               solver,
-              '''        if (
-                      solution_delta <= cfg.convergence_tolerance * solution_scale
-                      and stationarity_norm
-                      <= cfg.convergence_tolerance * stationarity_scale
-                  ):
-                      fixed_point_converged = True
-                      break
-
-              condition_number = float(np.linalg.cond(normal))
-          ''',
-              '''        if (
-                      solution_delta <= cfg.convergence_tolerance * solution_scale
-                      and stationarity_norm
-                      <= cfg.convergence_tolerance * stationarity_scale
-                  ):
-                      fixed_point_converged = True
-                      break
-
+              "\n    condition_number = float(np.linalg.cond(normal))\n",
+              """
               if not fixed_point_converged:
                   diagnostics.update(
                       {
@@ -82,62 +70,46 @@ jobs:
                       diagnostics,
                       prior_covariance=full_prior,
                   )
-
-              condition_number = float(np.linalg.cond(normal))
-          ''',
+          """,
           )
-          replace_once(
+          insert_before_once(
               solver,
-              '''    covariance = _full_covariance(
-                  state_prior, state_mapping, reduced_covariance, nuisance_count
-              )
-              query_update = np.einsum(
-          ''',
-              '''    covariance = _full_covariance(
-                  state_prior, state_mapping, reduced_covariance, nuisance_count
-              )
-              covariance_symmetry_error = float(
+              "    query_update = np.einsum(\n",
+              """    covariance_symmetry_error = float(
                   np.max(np.abs(covariance - covariance.T), initial=0.0)
               )
               covariance_eigenvalues = np.linalg.eigvalsh(covariance)
               covariance_minimum_eigenvalue = float(np.min(covariance_eigenvalues))
-              query_update = np.einsum(
-          ''',
+          """,
           )
           replace_once(
               solver,
-              '''            "condition_number": condition_number,
-                          "maximum_query_state_update_m": maximum_update,
-          ''',
-              '''            "condition_number": condition_number,
-                          "posterior_covariance_symmetry_error": (
-                              covariance_symmetry_error
-                          ),
-                          "posterior_covariance_minimum_eigenvalue": (
-                              covariance_minimum_eigenvalue
-                          ),
-                          "posterior_covariance_positive_definite": bool(
-                              covariance_minimum_eigenvalue > 0.0
-                          ),
-                          "maximum_query_state_update_m": maximum_update,
-          ''',
+              '            "condition_number": condition_number,\n'
+              '            "maximum_query_state_update_m": maximum_update,',
+              '            "condition_number": condition_number,\n'
+              '            "posterior_covariance_symmetry_error": (\n'
+              '                covariance_symmetry_error\n'
+              '            ),\n'
+              '            "posterior_covariance_minimum_eigenvalue": (\n'
+              '                covariance_minimum_eigenvalue\n'
+              '            ),\n'
+              '            "posterior_covariance_positive_definite": bool(\n'
+              '                covariance_minimum_eigenvalue > 0.0\n'
+              '            ),\n'
+              '            "maximum_query_state_update_m": maximum_update,',
           )
 
           tests = "tests/test_prior_aware_likelihood_conformance.py"
           replace_once(
               tests,
-              '''import math
-
-              import numpy as np
-          ''',
-              '''import math
-              from dataclasses import replace
-
-              import numpy as np
-          ''',
+              "import math\n\nimport numpy as np\n",
+              "import math\nfrom dataclasses import replace\n\nimport numpy as np\n",
           )
           test_path = Path(tests)
           test_text = test_path.read_text(encoding="utf-8")
+          marker = "def test_nonconverged_mixture_fixed_point_falls_back() -> None:"
+          if marker in test_text:
+              raise SystemExit("convergence hardening tests already present")
           addition = r'''
 
 
@@ -178,105 +150,109 @@ def test_posterior_covariance_diagnostics_match_returned_matrix() -> None:
     ] == pytest.approx(minimum_eigenvalue, rel=1e-13)
     assert result.diagnostics["posterior_covariance_positive_definite"]
 '''
-          marker = "def test_nonconverged_mixture_fixed_point_falls_back() -> None:"
-          if marker in test_text:
-              raise SystemExit("convergence hardening tests already present")
           test_path.write_text(test_text.rstrip() + addition + "\n", encoding="utf-8")
 
           likelihood_doc = "docs/likelihood_conformance.md"
           replace_once(
               likelihood_doc,
-              '''`grouped_student_t_mixture_likelihood` and
-              `update_prior_aware_gauge_belief` use one latent nominal/outlier state per
-              declared correlation group. For active row `i`, let
-          ''',
-              '''`update_prior_aware_gauge_belief` uses one latent nominal/outlier state per
-              declared correlation group. For active row `i`, let
-          ''',
+              (
+                  "`grouped_student_t_mixture_likelihood` and\n"
+                  "`update_prior_aware_gauge_belief` use one latent nominal/outlier state per\n"
+                  "declared correlation group. For active row `i`, let\n"
+              ),
+              (
+                  "`update_prior_aware_gauge_belief` uses one latent nominal/outlier state per\n"
+                  "declared correlation group. For active row `i`, let\n"
+              ),
           )
           replace_once(
               likelihood_doc,
-              '''input matrices are component covariances rather than raw Student-t scale
-              matrices.
-
-              The posterior nominal responsibility is
-          ''',
-              '''input matrices are component covariances rather than raw Student-t scale
-              matrices.
-
-              The neutral artifact scorer `grouped_student_t_mixture_likelihood` is a
-              separate diagnostic: it evaluates the full structured covariance, including
-              retained low-rank cross-row factors. The prior-aware solver conditions on the
-              local covariance while representing those factors as explicit nuisance
-              variables. Both use the same covariance-parameterized nominal/outlier
-              component convention, but their objectives are not asserted to be numerically
-              identical without an explicit marginalization proof.
-
-              The posterior nominal responsibility is
-          ''',
+              (
+                  "input matrices are component covariances rather than raw Student-t scale\n"
+                  "matrices.\n\n"
+                  "The posterior nominal responsibility is\n"
+              ),
+              (
+                  "input matrices are component covariances rather than raw Student-t scale\n"
+                  "matrices.\n\n"
+                  "The neutral artifact scorer `grouped_student_t_mixture_likelihood` is a\n"
+                  "separate diagnostic: it evaluates the full structured covariance, including\n"
+                  "retained low-rank cross-row factors. The prior-aware solver conditions on the\n"
+                  "local covariance while representing those factors as explicit nuisance\n"
+                  "variables. Both use the same covariance-parameterized nominal/outlier\n"
+                  "component convention, but their objectives are not asserted to be numerically\n"
+                  "identical without an explicit marginalization proof.\n\n"
+                  "The posterior nominal responsibility is\n"
+              ),
           )
           replace_once(
               likelihood_doc,
-              '''responsibilities and Student-t precisions vary with the residual.
-
-              The working covariance is formed from a symmetric Cholesky factor and
-          ''',
-              '''responsibilities and Student-t precisions vary with the residual. If the
-              parameter step and score stationarity conditions do not both converge within
-              `maximum_iterations`, inference fails closed to the exact prior rather than
-              returning a partially converged candidate.
-
-              The working covariance is formed from a symmetric Cholesky factor and
-          ''',
+              (
+                  "responsibilities and Student-t precisions vary with the residual.\n\n"
+                  "The working covariance is formed from a symmetric Cholesky factor and\n"
+              ),
+              (
+                  "responsibilities and Student-t precisions vary with the residual. If the\n"
+                  "parameter step and score stationarity conditions do not both converge within\n"
+                  "`maximum_iterations`, inference fails closed to the exact prior rather than\n"
+                  "returning a partially converged candidate.\n\n"
+                  "The working covariance is formed from a symmetric Cholesky factor and\n"
+              ),
           )
           replace_once(
               likelihood_doc,
-              '''`np.linalg.inv(normal)`. Prospective coverage evaluation remains required
-              before treating this covariance as calibrated uncertainty.
-          ''',
-              '''`np.linalg.inv(normal)`. Solver diagnostics record the returned covariance's
-              symmetry error, minimum eigenvalue, and positive-definiteness decision.
-              Prospective coverage evaluation remains required before treating this
-              covariance as calibrated uncertainty.
-          ''',
+              (
+                  "`np.linalg.inv(normal)`. Prospective coverage evaluation remains required\n"
+                  "before treating this covariance as calibrated uncertainty.\n"
+              ),
+              (
+                  "`np.linalg.inv(normal)`. Solver diagnostics record the returned covariance's\n"
+                  "symmetry error, minimum eigenvalue, and positive-definiteness decision.\n"
+                  "Prospective coverage evaluation remains required before treating this\n"
+                  "covariance as calibrated uncertainty.\n"
+              ),
           )
 
           observation_doc = "docs/observation_belief_contract.md"
           replace_once(
               observation_doc,
-              '''prior nominal probability never does. Association support is reported as a
-              separate diagnostic. The prior-aware solver is checked against this density in
-              [the likelihood conformance suite](likelihood_conformance.md). The strict
-              minimax solver intentionally retains a different rowwise Student-t power
-              objective and reports that distinction in its diagnostics.
-          ''',
-              '''prior nominal probability never does. Association support is reported as a
-              separate diagnostic. The artifact scorer evaluates the full structured
-              covariance. The prior-aware solver instead conditions on local covariance and
-              represents retained low-rank factors as explicit nuisance variables; its own
-              conditional objective is checked in
-              [the likelihood conformance suite](likelihood_conformance.md). The strict
-              minimax solver intentionally retains a different rowwise Student-t power
-              objective and reports that distinction in its diagnostics.
-          ''',
+              (
+                  "prior nominal probability never does. Association support is reported as a\n"
+                  "separate diagnostic. The prior-aware solver is checked against this density in\n"
+                  "[the likelihood conformance suite](likelihood_conformance.md). The strict\n"
+                  "minimax solver intentionally retains a different rowwise Student-t power\n"
+                  "objective and reports that distinction in its diagnostics.\n"
+              ),
+              (
+                  "prior nominal probability never does. Association support is reported as a\n"
+                  "separate diagnostic. The artifact scorer evaluates the full structured\n"
+                  "covariance. The prior-aware solver instead conditions on local covariance and\n"
+                  "represents retained low-rank factors as explicit nuisance variables; its own\n"
+                  "conditional objective is checked in\n"
+                  "[the likelihood conformance suite](likelihood_conformance.md). The strict\n"
+                  "minimax solver intentionally retains a different rowwise Student-t power\n"
+                  "objective and reports that distinction in its diagnostics.\n"
+              ),
           )
 
           prior_doc = "docs/prior_aware_guarded_update.md"
           replace_once(
               prior_doc,
-              '''returned covariance is a working Gauss-Newton/IRLS covariance rather than the
-              exact mixture Hessian and still requires prospective coverage evaluation. See
-              [the executable likelihood audit](likelihood_conformance.md) for the equations,
-              strict-solver distinction, and conformance tests.
-          ''',
-              '''returned covariance is a working Gauss-Newton/IRLS covariance rather than the
-              exact mixture Hessian and still requires prospective coverage evaluation. Both
-              the parameter step and score stationarity residual must converge; exhausting
-              the iteration budget returns the exact fallback. Diagnostics report covariance
-              symmetry, its minimum eigenvalue, and positive definiteness. See
-              [the executable likelihood audit](likelihood_conformance.md) for the equations,
-              strict-solver distinction, and conformance tests.
-          ''',
+              (
+                  "returned covariance is a working Gauss-Newton/IRLS covariance rather than the\n"
+                  "exact mixture Hessian and still requires prospective coverage evaluation. See\n"
+                  "[the executable likelihood audit](likelihood_conformance.md) for the equations,\n"
+                  "strict-solver distinction, and conformance tests.\n"
+              ),
+              (
+                  "returned covariance is a working Gauss-Newton/IRLS covariance rather than the\n"
+                  "exact mixture Hessian and still requires prospective coverage evaluation. Both\n"
+                  "the parameter step and score stationarity residual must converge; exhausting\n"
+                  "the iteration budget returns the exact fallback. Diagnostics report covariance\n"
+                  "symmetry, its minimum eigenvalue, and positive definiteness. See\n"
+                  "[the executable likelihood audit](likelihood_conformance.md) for the equations,\n"
+                  "strict-solver distinction, and conformance tests.\n"
+              ),
           )
           PY
       - name: Install validation dependencies
