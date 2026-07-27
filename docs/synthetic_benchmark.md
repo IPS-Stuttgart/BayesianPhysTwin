@@ -57,7 +57,7 @@ Bias hyperparameters and the duration gate were selected on development seeds
 settings and uses untouched seeds `1000:1020`:
 
 ```bash
-bpt-synthetic-benchmark \
+bpt benchmark synthetic \
   --seeds 1000:1020 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
