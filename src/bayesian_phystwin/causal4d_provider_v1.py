@@ -16,6 +16,7 @@ from typing import Any
 
 import numpy as np
 
+from . import causal4d_scientific_provider_v1 as _scientific_provider
 from .contracts.provider import (
     installed_distribution_revision,
     installed_distribution_version,
@@ -26,6 +27,8 @@ from .phystwin.geometry import build_lift_map, lift_residual, target_validity
 from .phystwin.replay import (
     _rollout_initial_trajectory,
     _rollout_restart_trajectory,
+)
+from .phystwin.replay import (
     _state_numpy as _owned_state_numpy,
 )
 
@@ -33,6 +36,12 @@ CAUSAL4D_PROVIDER_API_VERSION = 1
 CAUSAL4D_PROVIDER_PACKAGE_VERSION = "0.4.0"
 CAUSAL4D_PROVIDER_CAPABILITIES = (
     "artifact_checksums",
+    "bayesian_anchor_endpoint",
+    "diagnostic_comparison",
+    "diagnostic_discrepancy",
+    "diagnostic_observation_audit",
+    "diagnostic_propagated_state",
+    "diagnostic_rest_geometry",
     "diagnostic_compatibility",
     "particle_endpoint_position",
     "particle_endpoint_velocity",
@@ -156,7 +165,11 @@ class OfficialPhysTwinReplayProvider:
         self._require_open()
         position = np.asarray(position_m, dtype=np.float32)
         velocity = np.asarray(velocity_mps, dtype=np.float32)
-        if position.ndim != 2 or position.shape[1] != 3 or velocity.shape != position.shape:
+        if (
+            position.ndim != 2
+            or position.shape[1] != 3
+            or velocity.shape != position.shape
+        ):
             raise ValueError("restart position and velocity must have shape (N, 3)")
         if not np.all(np.isfinite(position)) or not np.all(np.isfinite(velocity)):
             raise ValueError("restart state must be finite")
@@ -241,7 +254,9 @@ def load_pickle(path: str | Path) -> Any:
 
 # Publicly named compatibility operations for advanced Causal4D diagnostics.
 def chamfer_by_frame(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_additional_confirmation", "_chamfer_by_frame", *args, **kwargs)
+    return _delegate(
+        "phystwin_additional_confirmation", "_chamfer_by_frame", *args, **kwargs
+    )
 
 
 def lock_protocol(*args: Any, **kwargs: Any) -> Any:
@@ -253,7 +268,9 @@ def git_commit(*args: Any, **kwargs: Any) -> Any:
 
 
 def initialize_simulator(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_state_injection", "_initialize_simulator", *args, **kwargs)
+    return _delegate(
+        "phystwin_state_injection", "_initialize_simulator", *args, **kwargs
+    )
 
 
 def metric_summary(*args: Any, **kwargs: Any) -> Any:
@@ -332,11 +349,15 @@ def far_graph_observation_error(*args: Any, **kwargs: Any) -> Any:
 
 
 def graph_distance(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_structural_diagnostic", "_graph_distance", *args, **kwargs)
+    return _delegate(
+        "phystwin_structural_diagnostic", "_graph_distance", *args, **kwargs
+    )
 
 
 def horizon_summary(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_structural_diagnostic", "_horizon_summary", *args, **kwargs)
+    return _delegate(
+        "phystwin_structural_diagnostic", "_horizon_summary", *args, **kwargs
+    )
 
 
 def object_rest_lengths(*args: Any, **kwargs: Any) -> Any:
@@ -390,3 +411,24 @@ __all__ = [
     "state_numpy",
     "target_validity",
 ]
+
+# Compatibility bridge for historical Causal4D imports. New code should import
+# causal4d_scientific_provider_v1 directly; provider v1 retains these names only
+# so frozen and staged downstream migrations do not depend on implementation
+# modules. The scientific facade remains the sole export registry.
+_SCIENTIFIC_COMPATIBILITY_EXPORTS = frozenset(_scientific_provider.__all__)
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _SCIENTIFIC_COMPATIBILITY_EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    value = getattr(_scientific_provider, name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_SCIENTIFIC_COMPATIBILITY_EXPORTS))
+
+
+__all__ = sorted(set(__all__) | set(_SCIENTIFIC_COMPATIBILITY_EXPORTS))
