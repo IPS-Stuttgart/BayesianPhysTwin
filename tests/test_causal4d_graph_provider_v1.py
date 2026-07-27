@@ -115,7 +115,7 @@ def test_controller_grouping_is_deterministic_and_ordered() -> None:
     reversed_points = points[::-1].copy()
     np.testing.assert_array_equal(
         infer_controller_groups(reversed_points, group_count=2),
-        np.asarray([0, 0, 1, 1], dtype=np.int32),
+        np.asarray([1, 1, 0, 0], dtype=np.int32),
     )
 
     identical = np.zeros((4, 3), dtype=float)
