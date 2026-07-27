@@ -29,10 +29,20 @@ _ROUTES: Final[dict[Route, tuple[str, str, str]]] = {
         "main",
         "run the controlled synthetic benchmark",
     ),
+    ("evidence", "summarize"): (
+        "bayesian_phystwin.cli.decisive_evidence",
+        "main",
+        "summarize matched guarded prospective evidence",
+    ),
     ("run", "manifest"): (
         "bayesian_phystwin.cli.run_manifest",
         "main",
         "create or validate a content-addressed run manifest",
+    ),
+    ("experiment",): (
+        "bayesian_phystwin.cli.experiments",
+        "main",
+        "list, inspect, or run registered research commands",
     ),
 }
 
@@ -61,12 +71,14 @@ def _render_help(prefix: Route = ()) -> str:
         route = _ROUTES.get(candidate)
         description = route[2] if route is not None else f"{child} commands"
         lines.append(f"  {child:<14} {description}")
-    lines.extend(
-        [
-            "",
-            "Legacy bpt-* entry points remain available for compatibility.",
-        ]
-    )
+    if not prefix:
+        lines.extend(
+            [
+                "",
+                "Use `bpt experiment list` for non-stable research commands.",
+                "No legacy `bpt-*` executables are installed.",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -98,7 +110,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(_render_help(help_namespace), end="")
                 return 0
             break
-
     resolved = _resolve(arguments)
     if resolved is None:
         matched_namespace: list[str] = []
