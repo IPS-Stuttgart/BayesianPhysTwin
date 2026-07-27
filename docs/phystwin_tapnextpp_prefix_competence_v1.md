@@ -91,3 +91,13 @@ The source artifact report is bound at SHA-256
 The protocol status is now `locked-before-tapnextpp-prediction`. Prediction
 may proceed from the prediction-visible archive, but manual scoring remains
 forbidden until the prediction archive has been sealed.
+
+### Runtime Amendment
+
+The first invocation stopped before model loading and before any prediction
+output was created because PyTorch 2.4 rejected peak-memory reset on an
+uninitialized CUDA context. Commit
+`dc30eb7c3e370a65f4dba50e8eb1695a784cdb03` explicitly selects the already
+frozen CUDA device before the memory audit. It does not change the tracker,
+inputs, multiview method, uncertainty treatment, gates, or stopping rule. The
+withheld target remained unopened.

@@ -77,7 +77,15 @@
   "implementation": {
     "adapter_sha256": "3b27594fddfa00871947e365540a77db604c3d662a253e89c68f5921eed6375b",
     "multiview_sha256": "9aea434c29f1720a6e938d7c8ded9d5671080b4fb829ebe14fd715036a90db2b",
-    "runner_sha256": "9067e5f4062af61ff189922a0707902605df5ae5f45cc6c4a9fc921ddd80e001"
+    "runner_sha256": "03cc7e35d85da911ad373bb6ba64a52d8767134c84539f4decaa75e8af9df2ab"
+  },
+  "runtime_amendments": {
+    "dc30eb7c3e370a65f4dba50e8eb1695a784cdb03": {
+      "reason": "The first invocation stopped before model loading and before output creation because PyTorch 2.4 rejected peak-memory reset on an uninitialized CUDA context.",
+      "change": "Select and initialize the already-frozen CUDA device immediately before resetting peak-memory statistics.",
+      "method_or_gate_changed": false,
+      "withheld_target_opened": false
+    }
   },
   "competence_gate": {
     "minimum_supported_fraction": 0.75,
