@@ -153,7 +153,7 @@ alongside point-estimate transfer.
 
 ## Published comparison boundary
 
-These are external paper values as of 2026-07-18, not locally reproduced
+These are external paper values as of 2026-07-26, not locally reproduced
 measurements.
 
 | Method | Status | CD (m) | Track error (m) |
@@ -179,6 +179,15 @@ scores the configured fitted range. Its paper value remains the best published
 claim, but the public path does not provide a clean local reproduction of the
 stated held-out result. This caveat does not make the present method SOTA:
 NeuSpring also reports lower values on both metrics.
+
+The dated [frontier audit](phystwin_sota_frontier_20260726.md) also checks
+PGRD, DeformMaster, EgoPhys, and the current NeuSpring repository against the
+local source-gated experiments. DeformMaster reports `0.0114` m CD and
+`0.0240` m track error on a 20-case subset, but its released checkpoint bundle
+does not encode a reproducible observation/future split and its full training
+code is not public. PGRD uses a different benchmark and its current public
+commit is exactly the one already tested locally. Neither result is inserted
+into the matched full-22 table above.
 
 ## Original versus ours
 
