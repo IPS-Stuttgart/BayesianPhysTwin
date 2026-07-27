@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360DynamicTapNextppSourceMaskProtocol",
+  "protocol_id": "deform360-dynamic-tapnextpp-source-masks-v1",
+  "status": "locked_before_source_mask_generation",
+  "parent_window_protocol": {
+    "protocol_id": "deform360-dynamic-tapnextpp-source-window-v1",
+    "config_sha256": "66c063cf037ecc03a9e1204ea4560cd163b7e2040740fcfa0f09d80a1792dc76",
+    "file_sha256": "db1a284cb5b109bf45cf2eee45a366166ba54f91ce085fa6a5c06eb028fdd8d6",
+    "implementation_commit": "d66b8e595cc18e1f0fd033bea7752314dc319191"
+  },
+  "generic_selector": {
+    "object_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
+    "base_source_sha256": "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184",
+    "initialization": "object-agnostic automatic SAM2 candidate on exact staged frame zero",
+    "propagation": "causal SAM2 video propagation from the selected initial mask",
+    "manual_prompting": false
+  },
+  "sam2": {
+    "commit": "2b90b9f5ceec907a1c18123530e92e794ad901a4",
+    "checkpoint_sha256": "6d1aa6f30de5c92224f8172114de081d104bbd23dd9dc5c58996f0cad5dc4d38",
+    "model_config": "configs/sam2.1/sam2.1_hiera_s.yaml"
+  },
+  "mask_contract": {
+    "input_camera_count": 12,
+    "frame_count": 81,
+    "minimum_successful_cameras": 8,
+    "camera_failures": "preserve diagnostics and classify as a technical failure when fewer than eight cameras succeed",
+    "implicit_replacement": false,
+    "source_admission_effect": "technical mask failures are reported; no new object enters the frozen queue"
+  },
+  "information_boundary": {
+    "source_rgb_read": true,
+    "all_81_frames_used_to_create_observation_assets": true,
+    "manual_mask_selection": false,
+    "object_geometry_read": false,
+    "particle_tracks_read": false,
+    "target_metric_read": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false,
+    "prediction_method_may_receive_only_its_separately_authorized_prefix": true
+  },
+  "config_sha256": "18e5ed260e1d0d250a1341dc32f9342cfc6bae720665b96e0f24cc0da1050455"
+}

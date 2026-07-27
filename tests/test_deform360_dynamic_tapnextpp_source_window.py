@@ -12,6 +12,7 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_source_window import (
     RAW_FRAME_COUNT,
     STAGE_KIND,
     canonical_sha256,
+    load_dynamic_source_mask_protocol,
     load_dynamic_source_window_protocol,
     select_fresh_source_window,
     validate_dynamic_source_window_stage,
@@ -33,6 +34,9 @@ DOWNLOAD = (
     / "sota"
     / "deform360_dynamic_tapnextpp_provider_v1"
     / "source_download_manifest_v1.json"
+)
+MASK_PROTOCOL = (
+    ROOT / "configs" / "sota" / "deform360_dynamic_tapnextpp_source_masks_v1.json"
 )
 
 
@@ -77,6 +81,19 @@ def test_dynamic_window_protocol_rejects_recomputed_tampering(
 
     with pytest.raises(ValueError, match="download binding changed"):
         load_dynamic_source_window_protocol(path)
+
+
+def test_dynamic_mask_protocol_binds_window_execution_commit() -> None:
+    window = load_dynamic_source_window_protocol(PROTOCOL)
+    mask = load_dynamic_source_mask_protocol(MASK_PROTOCOL)
+
+    assert mask["parent_window_protocol"]["config_sha256"] == window["config_sha256"]
+    assert (
+        mask["parent_window_protocol"]["implementation_commit"]
+        == "d66b8e595cc18e1f0fd033bea7752314dc319191"
+    )
+    assert mask["mask_contract"]["minimum_successful_cameras"] == 8
+    assert mask["generic_selector"]["manual_prompting"] is False
 
 
 def test_dynamic_window_stage_binds_execution_commit(tmp_path: Path) -> None:
