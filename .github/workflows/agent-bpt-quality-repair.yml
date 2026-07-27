@@ -61,12 +61,28 @@ jobs:
           git commit -m "Apply BPT quality repair candidate"
 
       - name: Run Python quality ratchet
+        id: quality
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          set -o pipefail
           base_sha=$(git rev-parse origin/main)
           python tools/quality/changed_python_quality.py \
             --base "$base_sha" \
-            --head HEAD
+            --head HEAD \
+            2>&1 | tee quality-ratchet.txt
+
+      - name: Upload quality diagnostics
+        if: steps.quality.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: agent-bpt-quality-diagnostics
+          path: quality-ratchet.txt
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Stop after quality failure
+        if: steps.quality.outcome == 'failure'
+        run: exit 1
 
       - name: Run stable-core coverage ratchet
         run: |
