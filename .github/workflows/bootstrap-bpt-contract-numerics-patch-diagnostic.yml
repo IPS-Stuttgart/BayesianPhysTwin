@@ -1,0 +1,86 @@
+name: Diagnose deterministic BPT product patch
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose-patch:
+    if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Capture patch exception
+        shell: bash
+        run: |
+          set -uo pipefail
+          git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}"
+          set +e
+          python - <<'PY' > /tmp/patch-diagnostic.txt 2>&1
+          import os
+          import re
+          import subprocess
+          import textwrap
+
+          head_ref = os.environ["GITHUB_HEAD_REF"]
+          workflow = subprocess.check_output(
+              [
+                  "git",
+                  "show",
+                  f"origin/{head_ref}:"
+                  ".github/workflows/bootstrap-bpt-contract-numerics-hardening-v2.yml",
+              ],
+              text=True,
+          )
+          match = re.search(
+              r"python - <<'PY' > /tmp/bpt-patch-output.txt 2>&1\n"
+              r"(?P<body>.*?)\n          PY",
+              workflow,
+              re.DOTALL,
+          )
+          if match is None:
+              raise SystemExit("v2 product patch body was not found")
+          source = textwrap.dedent(match.group("body"))
+          typefix = subprocess.check_output(
+              [
+                  "git",
+                  "show",
+                  f"origin/{head_ref}:.github/bootstrap/bpt_typefix_append.py",
+              ],
+              text=True,
+          )
+          needle = 'exec(compile(source, "bpt-contract-numerics-patch.py", "exec"))'
+          if source.count(needle) != 1:
+              raise SystemExit("product patch execution point changed")
+          source = source.replace(
+              needle,
+              f"source += {typefix!r}\n{needle}",
+              1,
+          )
+          exec(compile(source, "bpt-product-patch.py", "exec"))
+          print("patch completed")
+          PY
+          status=$?
+          set -e
+          {
+            echo "exit_status=${status}"
+            cat /tmp/patch-diagnostic.txt
+          } > /tmp/published-diagnostic.txt
+          cat /tmp/published-diagnostic.txt
+          git reset --hard main
+          git switch -C "${DIAGNOSTIC_BRANCH}" main
+          cp /tmp/published-diagnostic.txt patch-diagnostic.txt
+          git config user.name "OpenAI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add patch-diagnostic.txt
+          git commit -m "Record deterministic BPT patch failure"
+          git push --force origin "HEAD:refs/heads/${DIAGNOSTIC_BRANCH}"
