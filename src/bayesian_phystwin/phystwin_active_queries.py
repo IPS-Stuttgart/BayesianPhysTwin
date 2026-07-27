@@ -13,8 +13,8 @@ from dataclasses import dataclass
 import numpy as np
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
+def _require(condition: bool | np.bool_, message: str) -> None:
+    if not bool(condition):
         raise ValueError(message)
 
 
@@ -573,6 +573,7 @@ def plan_physics_guided_queries(
         )
         tracker_support = np.where(np.isfinite(tracker_support), tracker_support, 0.0)
     normalized_basis = _normalized_mode_basis(mode_basis, node_count)
+    candidates: np.ndarray
     if candidate_ids is None:
         candidates = np.arange(node_count, dtype=np.int64)
     else:
