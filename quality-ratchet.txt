@@ -1,0 +1,40 @@
+Changed Python files:
+  src/bayesian_phystwin/contracts/fixed_anchor.py
+  src/bayesian_phystwin/grouped_likelihood.py
+  src/bayesian_phystwin/observation_belief.py
+  src/bayesian_phystwin/phystwin_bayesian_anchor.py
+  tests/test_causal4d_provider_v1.py
+  tests/test_grouped_likelihood.py
+  tests/test_observation_belief.py
+  tests/test_phystwin_bayesian_anchor.py
+
+==> Ruff lint for changed Python files
+$ /opt/hostedtoolcache/Python/3.12.13/x64/bin/python -m ruff check -- src/bayesian_phystwin/contracts/fixed_anchor.py src/bayesian_phystwin/grouped_likelihood.py src/bayesian_phystwin/observation_belief.py src/bayesian_phystwin/phystwin_bayesian_anchor.py tests/test_causal4d_provider_v1.py tests/test_grouped_likelihood.py tests/test_observation_belief.py tests/test_phystwin_bayesian_anchor.py
+All checks passed!
+
+==> Ruff format for changed Python files
+$ /opt/hostedtoolcache/Python/3.12.13/x64/bin/python -m ruff format --check -- src/bayesian_phystwin/contracts/fixed_anchor.py src/bayesian_phystwin/grouped_likelihood.py src/bayesian_phystwin/observation_belief.py src/bayesian_phystwin/phystwin_bayesian_anchor.py tests/test_causal4d_provider_v1.py tests/test_grouped_likelihood.py tests/test_observation_belief.py tests/test_phystwin_bayesian_anchor.py
+8 files already formatted
+Pre-existing type-debt modules remain changed-only for this run:
+  src/bayesian_phystwin/observation_belief_gauge_adapter.py
+  src/bayesian_phystwin/_gauge_aware_contracts.py
+  src/bayesian_phystwin/_gauge_aware_solver.py
+  src/bayesian_phystwin/prob4d_observation_contract.py
+
+==> Mypy for mature and changed package modules
+$ /opt/hostedtoolcache/Python/3.12.13/x64/bin/python -m mypy src/bayesian_phystwin/run_manifest.py src/bayesian_phystwin/repository_provenance.py src/bayesian_phystwin/run_manifest_v2.py src/bayesian_phystwin/cli/main.py src/bayesian_phystwin/cli/run_manifest.py src/bayesian_phystwin/gauge_aware_belief.py src/bayesian_phystwin/causal4d_provider_v1.py src/bayesian_phystwin/prob4d_causal_lineage.py src/bayesian_phystwin/contracts/fixed_anchor.py src/bayesian_phystwin/grouped_likelihood.py src/bayesian_phystwin/observation_belief.py src/bayesian_phystwin/phystwin_bayesian_anchor.py
+src/bayesian_phystwin/observation_belief.py:82: error: Signatures of "__ior__" and "__or__" are incompatible  [misc]
+src/bayesian_phystwin/observation_belief.py:115: error: Signatures of "__iadd__" and "__add__" are incompatible  [misc]
+src/bayesian_phystwin/observation_belief.py:119: error: Signatures of "__imul__" and "__mul__" are incompatible  [misc]
+Found 3 errors in 1 file (checked 12 source files)
+Traceback (most recent call last):
+  File "/home/runner/work/Bayesian-PhysTwin/Bayesian-PhysTwin/tools/quality/changed_python_quality.py", line 210, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/Bayesian-PhysTwin/Bayesian-PhysTwin/tools/quality/changed_python_quality.py", line 196, in main
+    _run(
+  File "/home/runner/work/Bayesian-PhysTwin/Bayesian-PhysTwin/tools/quality/changed_python_quality.py", line 61, in _run
+    subprocess.run(command, cwd=_REPOSITORY_ROOT, check=True)
+  File "/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('/opt/hostedtoolcache/Python/3.12.13/x64/bin/python', '-m', 'mypy', 'src/bayesian_phystwin/run_manifest.py', 'src/bayesian_phystwin/repository_provenance.py', 'src/bayesian_phystwin/run_manifest_v2.py', 'src/bayesian_phystwin/cli/main.py', 'src/bayesian_phystwin/cli/run_manifest.py', 'src/bayesian_phystwin/gauge_aware_belief.py', 'src/bayesian_phystwin/causal4d_provider_v1.py', 'src/bayesian_phystwin/prob4d_causal_lineage.py', 'src/bayesian_phystwin/contracts/fixed_anchor.py', 'src/bayesian_phystwin/grouped_likelihood.py', 'src/bayesian_phystwin/observation_belief.py', 'src/bayesian_phystwin/phystwin_bayesian_anchor.py')' returned non-zero exit status 1.
