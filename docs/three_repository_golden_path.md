@@ -1,20 +1,48 @@
-# Three-repository installed-wheel golden path
+# Three-Repository Compatibility Gates
 
-This integration gate executes the released package boundary
+The cross-repository CI has two deliberately different layers:
+
+```text
+checked-in producer-neutral fixture -> Bayesian-PhysTwin + Causal4D consumers
+current Prob4D wheel -> Bayesian-PhysTwin wheel -> Causal4D wheel
+```
+
+The first layer always executes. The second layer is the evidence-bearing
+installed-wheel golden path and requires read access to the private Prob4D
+repository.
+
+## Always-Executed Consumer Fixture
+
+Every relevant pull request checks out Bayesian-PhysTwin and the public Causal4D
+repository, installs both packages, and runs their independent observation
+contract, causal-lineage, and joint-gauge fixture tests. This gate detects:
+
+- schema or content-address drift;
+- disagreement over strict causal-stream-v2 semantics;
+- missing metric-anchor provenance;
+- invalid joint cross-window gauge covariance claims;
+- consumer-side lineage or artifact validation regressions.
+
+The fixture gate does not execute the current Prob4D implementation. It is a
+producer-neutral compatibility check and cannot by itself admit
+three-repository evidence.
+
+## Credentialed Installed-Wheel Golden Path
+
+The evidence-bearing gate executes the released package boundary
 
 ```text
 Prob4D -> Bayesian-PhysTwin -> Causal4D
 ```
 
-without importing any repository from its source checkout.
+without importing any repository from its source checkout. The runner requires
+three clean Git checkouts, records their exact commits, creates immutable
+`git archive` source snapshots, builds one wheel from each snapshot, and
+installs only those wheels in a fresh virtual environment. It copies the
+integration test outside every source tree, clears `PYTHONPATH`, and starts
+Python in isolated mode.
 
-## What the gate proves
-
-The runner requires three clean Git checkouts, records their exact commits,
-creates immutable `git archive` source snapshots, builds one wheel from each
-snapshot, and installs only those wheels in a fresh virtual environment. It
-copies the integration test outside every source tree, clears `PYTHONPATH`, and
-starts Python in isolated mode. The test then verifies:
+The test then verifies:
 
 1. Prob4D emits a deterministic, content-addressed strict causal-stream-v2
    observation with joint cross-window gauge covariance, complete metric-anchor
@@ -42,7 +70,7 @@ starts Python in isolated mode. The test then verifies:
 Validators remain implemented in their owning repositories. The integration
 test shares only immutable artifacts and expected accept/reject decisions.
 
-## Local execution
+## Local Execution
 
 From any directory with clean checkouts of all three repositories:
 
@@ -58,13 +86,17 @@ The script requires a normal Linux or macOS Python installation with `venv`,
 removes all temporary source snapshots, wheels, and virtual environments on
 exit.
 
-## GitHub Actions credential
+## GitHub Actions Credential Policy
 
 `FlorianPfaff/Prob4D` is private. Configure a Bayesian-PhysTwin repository secret
 named `PROB4D_READ_TOKEN` whose token has read-only contents access to that
-repository. Without the credential, the workflow emits an explicit warning and
-records in the job summary that the cross-repository gate was not executed; it
-does not admit or claim any three-repository evidence.
+repository.
+
+On pull requests without the credential, the always-executed fixture still runs
+and the credentialed job records an explicit non-evidence warning. On `main`,
+scheduled, and manual runs, a missing credential is a failure rather than a
+green skip. An authoritative compatibility result therefore always means the
+current private producer was actually checked out, built, installed, and run.
 
 Manual runs may select specific Prob4D and Causal4D refs. Pull-request and
 scheduled runs use their `main` branches, so a credentialed weekly run also
