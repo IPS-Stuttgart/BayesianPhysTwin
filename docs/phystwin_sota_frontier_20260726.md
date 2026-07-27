@@ -2,6 +2,8 @@
 
 Audit date: 2026-07-26
 
+Latest public-release recheck: 2026-07-27
+
 Status: source-only research decision. No held-v8 barrier, query, target,
 outcome, or score artifact was opened or modified.
 
@@ -21,6 +23,7 @@ matched source competence test.
 | [DeformMaster](https://github.com/CAN-Lee/DeformMaster) | Inference/playground code at `c7b3510a38b3fccbfe12cc6557aaf58d9ea823dc`; 20 PhysTwin checkpoints in the official asset bundle; full training code is explicitly pending | Do not score the released checkpoints as causal predictors. The public artifact does not encode a reproducible train/test boundary. |
 | [NeuSpring](https://github.com/GhiXu/NeuSpring) | Repository `main` at `51d94f67ed1e2557fca29c1e86b418506e3d51ca`, containing only a two-line README | No executable reproduction or checkpoint overlay is available. |
 | [EgoPhys](https://hjhyunjinkim.github.io/EgoPhys/) | Project page labels both code and dataset as coming soon | Revisit only after a versioned implementation and data release. |
+| [BoxTwin](https://arxiv.org/abs/2607.17132) | Paper released 2026-07-19; no public implementation or matched PhysTwin benchmark artifact was found | Adjacent mechanism evidence only. Its nonlinear hinge elasticity, plastic rest-angle state, and damage evolution target elastoplastic articulated objects rather than the elastic rope, cloth, package, and stuffed-object full-22 contract. |
 
 The DeformMaster artifact deserves a precise boundary. Its official
 `playground_assets.zip` has SHA-256
@@ -37,6 +40,14 @@ DeformMaster reports `0.0114` m Chamfer and `0.0240` m track error over a
 20-case PhysTwin subset. Those values use a different cohort from the
 published full-22 MatPhys point (`0.0080` m / `0.0150` m) and do not constitute
 a new matched numerical target for the present 22-case ledger.
+
+BoxTwin is scientifically relevant because it makes internal material state
+explicit instead of forcing every persistent error into a static spring field.
+It does not currently authorize a PhysTwin experiment: its public evaluation
+uses articulated hinge coordinates and elastoplastic objects, not the full-22
+node-trajectory metrics, and no released code or checkpoint provides a
+future-blind adapter. A future release would justify a mechanism study only on
+cases with independently observable yielding, hysteresis, or permanent set.
 
 ## Closed local families
 
@@ -92,6 +103,9 @@ Reopen an external family only when at least one concrete boundary changes:
   observation/future split, or future trajectories with equivalent provenance.
 - NeuSpring releases its implementation, checkpoints, and evaluation split.
 - EgoPhys releases code and data with a transferable PhysTwin interface.
+- BoxTwin releases code and a constitutive-state interface applicable to
+  non-articulated PhysTwin graphs, together with a reproducible observation and
+  prediction split.
 - PGRD releases a materially different checkpoint or graph/action interface,
   rather than a new wrapper around commit `e294d967`.
 - A genuinely independent modality, such as sparse depth, LiDAR, or tactile
