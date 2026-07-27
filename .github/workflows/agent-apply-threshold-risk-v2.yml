@@ -36,25 +36,8 @@ jobs:
         run: |
           set -o pipefail
           {
-            git show 10f32d9ee15043b5267b77a8d655779f1f839253:tools/agent_apply_threshold_risk.py > tools/agent_apply_threshold_risk.py
-            python - <<'PY'
-          from pathlib import Path
-
-          path = Path("tools/agent_apply_threshold_risk.py")
-          text = path.read_text(encoding="utf-8")
-          old = "    '''\n\n\ndef test_summary_reports_horizon_calibration_reliability_and_rank() -> None:\n"
-          new = "    '''\n\ndef test_summary_reports_horizon_calibration_reliability_and_rank() -> None:\n"
-          if text.count(old) != 1:
-              raise SystemExit("threshold test insertion anchor is missing or ambiguous")
-          text = text.replace(old, new, 1)
-          obsolete = '\npyproject_path = root / "pyproject.toml"\n'
-          if text.count(obsolete) != 1:
-              raise SystemExit("obsolete mypy workaround boundary is missing or ambiguous")
-          text = text[: text.index(obsolete)].rstrip() + "\n"
-          path.write_text(text, encoding="utf-8")
-          PY
-            python tools/agent_apply_threshold_risk.py
-            rm tools/agent_apply_threshold_risk.py
+            python tools/agent_apply_threshold_risk_v2.py
+            rm tools/agent_apply_threshold_risk_v2.py
             rm .github/workflows/agent-apply-threshold-risk-v2.yml
           } 2>&1 | tee /tmp/apply.log
       - name: Upload patch diagnostics
