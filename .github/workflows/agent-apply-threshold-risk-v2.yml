@@ -60,7 +60,13 @@ jobs:
             tests/test_decisive_evidence.py
       - name: Lint focused changes
         run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/decisive_evidence.py \
+            tests/test_decisive_evidence.py
           python -m ruff check \
+            src/bayesian_phystwin/decisive_evidence.py \
+            tests/test_decisive_evidence.py
+          python -m ruff format --check \
             src/bayesian_phystwin/decisive_evidence.py \
             tests/test_decisive_evidence.py
       - name: Type-check decisive evidence
