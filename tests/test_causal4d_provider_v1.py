@@ -11,13 +11,18 @@ import pytest
 import bayesian_phystwin.causal4d_provider_v1 as provider_api
 from bayesian_phystwin.causal4d_provider_v1 import (
     CAUSAL4D_PROVIDER_API_VERSION,
+    BayesianAnchorEndpointV1,
+    FIXED_BAYESIAN_ANCHOR_CONFIG_V1,
+    FixedBayesianAnchorConfigV1,
     OfficialPhysTwinReplayProvider,
     PhysTwinReplayProvider,
     build_lift_map,
     create_official_replay_provider,
     causal4d_provider_manifest,
+    infer_fixed_bayesian_anchor_endpoint,
     lift_residual,
     load_pickle,
+    robust_random_walk_endpoint,
     sha256_file,
     target_validity,
 )
@@ -92,6 +97,7 @@ def test_manifest_exposes_versioned_causal4d_contract() -> None:
     }
     assert {
         "artifact_checksums",
+        "bayesian_anchor_endpoint",
         "particle_endpoint_position",
         "particle_endpoint_velocity",
         "physical_parameter_particles",
@@ -111,9 +117,10 @@ def test_artifact_helpers_are_public_and_stable(tmp_path: Path) -> None:
 
     loaded = load_pickle(artifact_path)
     np.testing.assert_array_equal(loaded["x"], value["x"])
-    assert sha256_file(artifact_path) == hashlib.sha256(
-        artifact_path.read_bytes()
-    ).hexdigest()
+    assert (
+        sha256_file(artifact_path)
+        == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    )
 
 
 def test_validity_and_lifting_helpers_match_expected_geometry() -> None:
@@ -124,9 +131,7 @@ def test_validity_and_lifting_helpers_match_expected_geometry() -> None:
         np.asarray(((True, False), (False, True), (True, False))),
     )
 
-    vertices = np.asarray(
-        ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 0.0, 0.0))
-    )
+    vertices = np.asarray(((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 0.0, 0.0)))
     indices, weights = build_lift_map(vertices, original_count=2, neighbors=2)
     np.testing.assert_array_equal(indices.shape, (1, 2))
     np.testing.assert_allclose(np.sum(weights, axis=1), 1.0)
@@ -166,7 +171,9 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
         provider_api,
         "rollout_restart",
         lambda simulator_arg, torch_arg, wp_arg, position, velocity, **kwargs: (
-            np.repeat(position[None], kwargs["stop_frame"] - kwargs["start_frame"], axis=0)
+            np.repeat(
+                position[None], kwargs["stop_frame"] - kwargs["start_frame"], axis=0
+            )
         ),
     )
 
@@ -193,7 +200,6 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
     assert torch.cuda.empty_cache_calls == 1
     with pytest.raises(RuntimeError, match="closed"):
         adapter.replay_initial(frame_count=1)
-
 
 
 def test_factory_hides_simulator_initialization(monkeypatch, tmp_path: Path) -> None:
@@ -246,3 +252,134 @@ def test_adapter_rejects_mismatched_public_inputs() -> None:
             start_frame=0,
             stop_frame=1,
         )
+
+
+def test_fixed_bayesian_anchor_provider_matches_internal_filter() -> None:
+    from bayesian_phystwin.phystwin_additional_bayesian_confirmation import (
+        FIXED_INITIAL_STD_M as INTERNAL_INITIAL_STD_M,
+        FIXED_INLIER_PRIOR as INTERNAL_INLIER_PRIOR,
+        FIXED_OBSERVATION_STD_M as INTERNAL_OBSERVATION_STD_M,
+        FIXED_OUTLIER_VARIANCE_MULTIPLIER as INTERNAL_OUTLIER_MULTIPLIER,
+        FIXED_PROCESS_STD_M as INTERNAL_PROCESS_STD_M,
+    )
+    from bayesian_phystwin.phystwin_bayesian_anchor import (
+        robust_random_walk_endpoint as internal_filter,
+    )
+
+    config = FIXED_BAYESIAN_ANCHOR_CONFIG_V1
+    assert config == FixedBayesianAnchorConfigV1()
+    assert config.process_std_m == INTERNAL_PROCESS_STD_M
+    assert config.observation_std_m == INTERNAL_OBSERVATION_STD_M
+    assert config.initial_std_m == INTERNAL_INITIAL_STD_M
+    assert config.inlier_prior == INTERNAL_INLIER_PRIOR
+    assert config.outlier_variance_multiplier == INTERNAL_OUTLIER_MULTIPLIER
+
+    residual = np.zeros((4, 2, 3), dtype=float)
+    residual[1:, 0, 0] = (0.001, 0.002, 0.0015)
+    residual[2:, 1, 1] = (0.2, 0.0)
+    valid = np.ones((4, 2), dtype=bool)
+    expected = internal_filter(
+        residual,
+        valid,
+        end_frame=4,
+        process_variance=config.process_std_m**2,
+        observation_variance=config.observation_std_m**2,
+        initial_variance=config.initial_std_m**2,
+        inlier_prior=config.inlier_prior,
+        outlier_variance_multiplier=config.outlier_variance_multiplier,
+    )
+    actual = infer_fixed_bayesian_anchor_endpoint(
+        residual,
+        valid,
+        end_frame=4,
+    )
+    explicit = robust_random_walk_endpoint(
+        residual,
+        valid,
+        end_frame=4,
+        process_variance=config.process_std_m**2,
+        observation_variance=config.observation_std_m**2,
+        initial_variance=config.initial_std_m**2,
+        inlier_prior=config.inlier_prior,
+        outlier_variance_multiplier=config.outlier_variance_multiplier,
+    )
+
+    assert isinstance(actual, BayesianAnchorEndpointV1)
+    for provider_value in (actual, explicit):
+        np.testing.assert_allclose(provider_value.mean, expected.mean)
+        np.testing.assert_allclose(provider_value.variance, expected.variance)
+        np.testing.assert_allclose(
+            provider_value.final_inlier_probability,
+            expected.final_inlier_probability,
+        )
+        np.testing.assert_array_equal(
+            provider_value.update_count, expected.update_count
+        )
+        assert not provider_value.mean.flags.writeable
+        assert not provider_value.variance.flags.writeable
+        assert not provider_value.final_inlier_probability.flags.writeable
+        assert not provider_value.update_count.flags.writeable
+
+
+def test_fixed_bayesian_anchor_config_rejects_invalid_values() -> None:
+    with pytest.raises(ValueError, match="process_std_m"):
+        FixedBayesianAnchorConfigV1(process_std_m=-1.0)
+    with pytest.raises(ValueError, match="inlier_prior"):
+        FixedBayesianAnchorConfigV1(inlier_prior=1.0)
+
+
+def test_registered_diagnostic_exports_resolve_through_provider() -> None:
+    assert provider_api.LOCALIZATION_GRAPH_RANK == 4
+    assert callable(provider_api.official_metrics_by_frame)
+    assert callable(provider_api.graph_smoothed_discrepancy_posterior)
+    assert callable(provider_api.infer_propagated_state_belief)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    (
+        ({"observation_std_m": 0.0}, "observation and initial scales"),
+        ({"initial_std_m": 0.0}, "observation and initial scales"),
+        ({"outlier_variance_multiplier": 1.0}, "outlier_variance_multiplier"),
+    ),
+)
+def test_fixed_bayesian_anchor_config_rejects_other_invalid_values(
+    kwargs: dict[str, float],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        FixedBayesianAnchorConfigV1(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    (
+        ({"mean": np.zeros((2, 2))}, "mean must have shape"),
+        ({"variance": np.zeros(3)}, "variance and inlier probability"),
+        ({"final_inlier_probability": np.zeros(3)}, "variance and inlier probability"),
+        ({"update_count": np.zeros(3, dtype=int)}, "update_count"),
+        ({"mean": np.asarray([[np.nan, 0.0, 0.0], [0.0, 0.0, 0.0]])}, "finite"),
+        ({"variance": np.asarray((-1.0, 0.0))}, "nonnegative"),
+        ({"final_inlier_probability": np.asarray((1.1, 0.5))}, r"\[0, 1\]"),
+        ({"update_count": np.asarray((-1, 0))}, "nonnegative"),
+    ),
+)
+def test_bayesian_anchor_endpoint_rejects_invalid_arrays(
+    kwargs: dict[str, np.ndarray],
+    message: str,
+) -> None:
+    values = {
+        "mean": np.zeros((2, 3)),
+        "variance": np.zeros(2),
+        "final_inlier_probability": np.full(2, 0.5),
+        "update_count": np.zeros(2, dtype=int),
+    }
+    values.update(kwargs)
+    with pytest.raises(ValueError, match=message):
+        BayesianAnchorEndpointV1(**values)
+
+
+def test_provider_lazy_registry_rejects_unknown_name_and_lists_exports() -> None:
+    assert "LOCALIZATION_GRAPH_RANK" in dir(provider_api)
+    with pytest.raises(AttributeError, match="no attribute"):
+        provider_api.__getattr__("not_a_provider_operation")

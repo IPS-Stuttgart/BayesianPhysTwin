@@ -14,10 +14,12 @@ previously imported directly by the downstream repository.
 - `TwinBelief` and `GraphBelief` artifact schema version 1.
 
 The module also exposes stable names for artifact loading and hashing, target
-validity, residual lifting, and the diagnostic operations currently consumed
-by Causal4D. These functions deliberately delegate to BPT's internal
-implementations so those implementations can move without changing the
-cross-repository import path.
+validity, residual lifting, the immutable fixed Bayesian-anchor endpoint, and
+the diagnostic operations currently consumed by Causal4D. Diagnostic symbols
+are resolved through an explicit lazy registry, so importing the provider or
+rendering CLI help does not eagerly load every historical experiment module.
+The registry is a closed compatibility surface rather than a generic helper
+namespace.
 
 ## Trusted legacy artifacts
 
@@ -40,6 +42,12 @@ Digest verification does not sandbox pickle. A caller must never trust a digest
 provided alongside an otherwise untrusted pickle. The digest establishes byte
 identity only when its source is already trusted. All newly generated
 cross-repository artifacts remain JSON/NPZ-only.
+
+The artifact module also exposes an immutable released raw-track map. It
+requires a trusted digest for the processed `final_data.pkl` before delegating
+to the historical correspondence implementation. This keeps legacy pickle
+identity checks ahead of deserialization while preserving the exact released
+track semantics.
 
 The separate module keeps this compatibility exception out of the normal
 replay protocol and can be retired independently when legacy PhysTwin inputs no
@@ -73,5 +81,6 @@ version range is for upgradeable development environments; it does not replace
 experiment locks.
 
 Both repositories contain cross-repository tests. They validate the manifest,
-verify every facade name imported by Causal4D, and prevent new imports from
-underscore-prefixed BPT modules or functions.
+verify endpoint parity and immutable arrays, exercise every versioned facade,
+and require Causal4D source and scripts to import only the explicit provider,
+graph-provider, public-study-provider, and legacy-artifact modules.

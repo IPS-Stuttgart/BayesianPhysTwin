@@ -10,6 +10,7 @@ from __future__ import annotations
 import gc
 import os
 from collections.abc import Mapping
+from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -33,7 +34,13 @@ CAUSAL4D_PROVIDER_API_VERSION = 1
 CAUSAL4D_PROVIDER_PACKAGE_VERSION = "0.4.0"
 CAUSAL4D_PROVIDER_CAPABILITIES = (
     "artifact_checksums",
+    "bayesian_anchor_endpoint",
+    "diagnostic_comparison",
     "diagnostic_compatibility",
+    "diagnostic_discrepancy",
+    "diagnostic_observation_audit",
+    "diagnostic_propagated_state",
+    "diagnostic_rest_geometry",
     "particle_endpoint_position",
     "particle_endpoint_velocity",
     "physical_parameter_particles",
@@ -44,6 +51,185 @@ CAUSAL4D_PROVIDER_CAPABILITIES = (
 CAUSAL4D_ARTIFACT_SCHEMA_VERSIONS = {
     "GraphBelief": 1,
     "TwinBelief": 1,
+}
+
+
+@dataclass(frozen=True)
+class FixedBayesianAnchorConfigV1:
+    """Immutable fixed-anchor hyperparameters consumed by Causal4D."""
+
+    process_std_m: float = 0.005
+    observation_std_m: float = 0.001
+    initial_std_m: float = 0.01
+    inlier_prior: float = 0.95
+    outlier_variance_multiplier: float = 100.0
+
+    def __post_init__(self) -> None:
+        if self.process_std_m < 0.0:
+            raise ValueError("process_std_m must be nonnegative")
+        if self.observation_std_m <= 0.0 or self.initial_std_m <= 0.0:
+            raise ValueError("observation and initial scales must be positive")
+        if not 0.0 < self.inlier_prior < 1.0:
+            raise ValueError("inlier_prior must lie in (0, 1)")
+        if self.outlier_variance_multiplier <= 1.0:
+            raise ValueError("outlier_variance_multiplier must exceed one")
+
+
+FIXED_BAYESIAN_ANCHOR_CONFIG_V1 = FixedBayesianAnchorConfigV1()
+FIXED_PROCESS_STD_M = FIXED_BAYESIAN_ANCHOR_CONFIG_V1.process_std_m
+FIXED_OBSERVATION_STD_M = FIXED_BAYESIAN_ANCHOR_CONFIG_V1.observation_std_m
+FIXED_INITIAL_STD_M = FIXED_BAYESIAN_ANCHOR_CONFIG_V1.initial_std_m
+FIXED_INLIER_PRIOR = FIXED_BAYESIAN_ANCHOR_CONFIG_V1.inlier_prior
+FIXED_OUTLIER_VARIANCE_MULTIPLIER = (
+    FIXED_BAYESIAN_ANCHOR_CONFIG_V1.outlier_variance_multiplier
+)
+
+
+def _readonly_array(values: np.ndarray, *, dtype: Any) -> np.ndarray:
+    array = np.asarray(values, dtype=dtype).copy()
+    array.setflags(write=False)
+    return array
+
+
+@dataclass(frozen=True)
+class BayesianAnchorEndpointV1:
+    """Immutable robust random-walk endpoint posterior."""
+
+    mean: np.ndarray
+    variance: np.ndarray
+    final_inlier_probability: np.ndarray
+    update_count: np.ndarray
+
+    def __post_init__(self) -> None:
+        mean = _readonly_array(self.mean, dtype=float)
+        variance = _readonly_array(self.variance, dtype=float)
+        probability = _readonly_array(self.final_inlier_probability, dtype=float)
+        update_count = _readonly_array(self.update_count, dtype=np.int64)
+        if mean.ndim != 2 or mean.shape[1] != 3:
+            raise ValueError("mean must have shape (N, 3)")
+        expected = (len(mean),)
+        if variance.shape != expected or probability.shape != expected:
+            raise ValueError("variance and inlier probability must have shape (N,)")
+        if update_count.shape != expected:
+            raise ValueError("update_count must have shape (N,)")
+        if (
+            not np.all(np.isfinite(mean))
+            or not np.all(np.isfinite(variance))
+            or not np.all(np.isfinite(probability))
+        ):
+            raise ValueError("endpoint posterior arrays must be finite")
+        if np.any(variance < 0.0):
+            raise ValueError("endpoint variances must be nonnegative")
+        if np.any((probability < 0.0) | (probability > 1.0)):
+            raise ValueError("inlier probabilities must lie in [0, 1]")
+        if np.any(update_count < 0):
+            raise ValueError("update counts must be nonnegative")
+        object.__setattr__(self, "mean", mean)
+        object.__setattr__(self, "variance", variance)
+        object.__setattr__(self, "final_inlier_probability", probability)
+        object.__setattr__(self, "update_count", update_count)
+
+
+_LAZY_DIAGNOSTIC_EXPORTS: dict[str, tuple[str, str]] = {
+    "DEVELOPMENT_CASES": ("phystwin_confirmatory", "DEVELOPMENT_CASES"),
+    "DynamicDiscrepancyCorrection": (
+        "dynamic_discrepancy",
+        "DynamicDiscrepancyCorrection",
+    ),
+    "LOCALIZATION_GRAPH_RANK": ("dynamic_discrepancy", "LOCALIZATION_GRAPH_RANK"),
+    "PropagatedStateBeliefConfig": (
+        "propagated_state_belief",
+        "PropagatedStateBeliefConfig",
+    ),
+    "PropagatedStateCorrection": (
+        "propagated_state_correction",
+        "PropagatedStateCorrection",
+    ),
+    "PropagatedStateSelectionConfig": (
+        "propagated_state_correction",
+        "PropagatedStateSelectionConfig",
+    ),
+    "cross_view_residual_audit": (
+        "observation_model_audit",
+        "cross_view_residual_audit",
+    ),
+    "decode_limited_state_weights": (
+        "propagated_state_correction",
+        "decode_limited_state_weights",
+    ),
+    "estimate_endpoint_velocity_delta": (
+        "phystwin_state_injection",
+        "estimate_endpoint_velocity_delta",
+    ),
+    "fit_dimensionless_linearized_correction": (
+        "dynamic_discrepancy",
+        "fit_dimensionless_linearized_correction",
+    ),
+    "graph_discrepancy_diagnostics": (
+        "phystwin_graph_discrepancy",
+        "graph_discrepancy_diagnostics",
+    ),
+    "graph_smoothed_discrepancy_posterior": (
+        "phystwin_graph_discrepancy",
+        "graph_smoothed_discrepancy_posterior",
+    ),
+    "infer_propagated_state_belief": (
+        "propagated_state_belief",
+        "infer_propagated_state_belief",
+    ),
+    "load_dynamic_discrepancy_correction": (
+        "dynamic_discrepancy",
+        "load_dynamic_discrepancy_correction",
+    ),
+    "metric_agreement_audit": (
+        "observation_model_audit",
+        "metric_agreement_audit",
+    ),
+    "modal_state_parameter_fields": (
+        "propagated_state_correction",
+        "modal_state_parameter_fields",
+    ),
+    "normalized_spring_laplacian": (
+        "phystwin_graph_discrepancy",
+        "normalized_spring_laplacian",
+    ),
+    "official_metrics_by_frame": (
+        "phystwin_comparison",
+        "official_metrics_by_frame",
+    ),
+    "paired_block_bootstrap": ("phystwin_comparison", "paired_block_bootstrap"),
+    "phystwin_physical_object_cluster": (
+        "phystwin_comparison",
+        "phystwin_physical_object_cluster",
+    ),
+    "prefix_position_velocity_coefficients": (
+        "dynamic_discrepancy",
+        "prefix_position_velocity_coefficients",
+    ),
+    "released_observation_capability_audit": (
+        "observation_model_audit",
+        "released_observation_capability_audit",
+    ),
+    "scale_coefficients_to_field_limit": (
+        "dynamic_discrepancy",
+        "scale_coefficients_to_field_limit",
+    ),
+    "scale_posterior_covariance_for_state_limits": (
+        "propagated_state_correction",
+        "scale_posterior_covariance_for_state_limits",
+    ),
+    "select_propagated_state_update": (
+        "propagated_state_correction",
+        "select_propagated_state_update",
+    ),
+    "write_dynamic_discrepancy_correction": (
+        "dynamic_discrepancy",
+        "write_dynamic_discrepancy_correction",
+    ),
+    "write_propagated_state_correction": (
+        "propagated_state_correction",
+        "write_propagated_state_correction",
+    ),
 }
 
 
@@ -156,7 +342,11 @@ class OfficialPhysTwinReplayProvider:
         self._require_open()
         position = np.asarray(position_m, dtype=np.float32)
         velocity = np.asarray(velocity_mps, dtype=np.float32)
-        if position.ndim != 2 or position.shape[1] != 3 or velocity.shape != position.shape:
+        if (
+            position.ndim != 2
+            or position.shape[1] != 3
+            or velocity.shape != position.shape
+        ):
             raise ValueError("restart position and velocity must have shape (N, 3)")
         if not np.all(np.isfinite(position)) or not np.all(np.isfinite(velocity)):
             raise ValueError("restart state must be finite")
@@ -234,6 +424,76 @@ def _delegate(module: str, name: str, *args: Any, **kwargs: Any) -> Any:
     return function(*args, **kwargs)
 
 
+def __getattr__(name: str) -> Any:
+    """Resolve explicitly registered diagnostic compatibility names lazily."""
+
+    target = _LAZY_DIAGNOSTIC_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute_name = target
+    value = getattr(import_module(f"bayesian_phystwin.{module_name}"), attribute_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_LAZY_DIAGNOSTIC_EXPORTS))
+
+
+def robust_random_walk_endpoint(
+    residual: np.ndarray,
+    valid: np.ndarray,
+    *,
+    end_frame: int,
+    process_variance: float,
+    observation_variance: float,
+    initial_variance: float,
+    inlier_prior: float,
+    outlier_variance_multiplier: float,
+) -> BayesianAnchorEndpointV1:
+    """Run the historical robust endpoint filter behind an immutable DTO."""
+
+    posterior = _delegate(
+        "phystwin_bayesian_anchor",
+        "robust_random_walk_endpoint",
+        residual,
+        valid,
+        end_frame=end_frame,
+        process_variance=process_variance,
+        observation_variance=observation_variance,
+        initial_variance=initial_variance,
+        inlier_prior=inlier_prior,
+        outlier_variance_multiplier=outlier_variance_multiplier,
+    )
+    return BayesianAnchorEndpointV1(
+        mean=posterior.mean,
+        variance=posterior.variance,
+        final_inlier_probability=posterior.final_inlier_probability,
+        update_count=posterior.update_count,
+    )
+
+
+def infer_fixed_bayesian_anchor_endpoint(
+    residual: np.ndarray,
+    valid: np.ndarray,
+    *,
+    end_frame: int,
+    config: FixedBayesianAnchorConfigV1 = FIXED_BAYESIAN_ANCHOR_CONFIG_V1,
+) -> BayesianAnchorEndpointV1:
+    """Run the frozen Bayesian-anchor endpoint contract."""
+
+    return robust_random_walk_endpoint(
+        residual,
+        valid,
+        end_frame=end_frame,
+        process_variance=config.process_std_m**2,
+        observation_variance=config.observation_std_m**2,
+        initial_variance=config.initial_std_m**2,
+        inlier_prior=config.inlier_prior,
+        outlier_variance_multiplier=config.outlier_variance_multiplier,
+    )
+
+
 # Legacy artifact compatibility. New code should use the hash-locked artifact API.
 def load_pickle(path: str | Path) -> Any:
     return _delegate("phystwin_residual_dynamics", "_load_pickle", path)
@@ -241,7 +501,9 @@ def load_pickle(path: str | Path) -> Any:
 
 # Publicly named compatibility operations for advanced Causal4D diagnostics.
 def chamfer_by_frame(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_additional_confirmation", "_chamfer_by_frame", *args, **kwargs)
+    return _delegate(
+        "phystwin_additional_confirmation", "_chamfer_by_frame", *args, **kwargs
+    )
 
 
 def lock_protocol(*args: Any, **kwargs: Any) -> Any:
@@ -253,7 +515,9 @@ def git_commit(*args: Any, **kwargs: Any) -> Any:
 
 
 def initialize_simulator(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_state_injection", "_initialize_simulator", *args, **kwargs)
+    return _delegate(
+        "phystwin_state_injection", "_initialize_simulator", *args, **kwargs
+    )
 
 
 def metric_summary(*args: Any, **kwargs: Any) -> Any:
@@ -332,11 +596,15 @@ def far_graph_observation_error(*args: Any, **kwargs: Any) -> Any:
 
 
 def graph_distance(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_structural_diagnostic", "_graph_distance", *args, **kwargs)
+    return _delegate(
+        "phystwin_structural_diagnostic", "_graph_distance", *args, **kwargs
+    )
 
 
 def horizon_summary(*args: Any, **kwargs: Any) -> Any:
-    return _delegate("phystwin_structural_diagnostic", "_horizon_summary", *args, **kwargs)
+    return _delegate(
+        "phystwin_structural_diagnostic", "_horizon_summary", *args, **kwargs
+    )
 
 
 def object_rest_lengths(*args: Any, **kwargs: Any) -> Any:
@@ -362,6 +630,14 @@ __all__ = [
     "CAUSAL4D_PROVIDER_API_VERSION",
     "CAUSAL4D_PROVIDER_CAPABILITIES",
     "CAUSAL4D_PROVIDER_PACKAGE_VERSION",
+    "BayesianAnchorEndpointV1",
+    "FIXED_BAYESIAN_ANCHOR_CONFIG_V1",
+    "FIXED_INITIAL_STD_M",
+    "FIXED_INLIER_PRIOR",
+    "FIXED_OBSERVATION_STD_M",
+    "FIXED_OUTLIER_VARIANCE_MULTIPLIER",
+    "FIXED_PROCESS_STD_M",
+    "FixedBayesianAnchorConfigV1",
     "OfficialPhysTwinReplayProvider",
     "PhysTwinReplayProvider",
     "attachment_support_nodes",
@@ -373,6 +649,7 @@ __all__ = [
     "git_commit",
     "graph_distance",
     "horizon_summary",
+    "infer_fixed_bayesian_anchor_endpoint",
     "initialize_simulator",
     "lift_residual",
     "load_official_spring_mass_module",
@@ -383,6 +660,7 @@ __all__ = [
     "metric_summary",
     "object_rest_lengths",
     "released_self_collision_for_case",
+    "robust_random_walk_endpoint",
     "rollout_restart",
     "set_simulator_arrays",
     "sha256_file",
@@ -390,3 +668,5 @@ __all__ = [
     "state_numpy",
     "target_validity",
 ]
+
+__all__ += sorted(_LAZY_DIAGNOSTIC_EXPORTS)

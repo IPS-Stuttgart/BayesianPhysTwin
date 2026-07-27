@@ -9,6 +9,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 
 ### Added
 
+- A complete versioned Causal4D import boundary for fixed Bayesian-anchor,
+  diagnostic, public-data, graph, replay, and trusted legacy-artifact
+  operations, including immutable endpoint and raw-track DTOs.
 - An MIT license for project-authored source code and documentation.
 - Machine-readable software citation metadata in `CITATION.cff`.
 - A Python and Causal4D provider compatibility policy in `SUPPORT.md`.
