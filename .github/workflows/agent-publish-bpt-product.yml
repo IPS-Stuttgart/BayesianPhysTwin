@@ -1,0 +1,82 @@
+name: Publish validated BPT product branch
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-publish-bpt-product
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/bootstrap-bpt-quality-repair-20260727'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out bootstrap branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Materialize the validated product tree
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff>=0.15.22,<0.17"
+          python .github/agent_bpt_quality_repair.py
+          python .github/agent_bpt_strict_quality_repair.py
+          python .github/agent_bpt_boundary_repair.py
+          files=(
+            src/bayesian_phystwin/_gauge_aware_contracts.py
+            src/bayesian_phystwin/_gauge_aware_solver.py
+            src/bayesian_phystwin/_prior_aware_gauge_math.py
+            src/bayesian_phystwin/causal4d_scientific_provider_v1.py
+            src/bayesian_phystwin/cli/main.py
+            src/bayesian_phystwin/observation_belief_gauge_adapter.py
+            src/bayesian_phystwin/phystwin/geometry.py
+            src/bayesian_phystwin/phystwin/replay.py
+            src/bayesian_phystwin/prior_aware_gauge_belief.py
+            src/bayesian_phystwin/repository_provenance.py
+            src/bayesian_phystwin/run_manifest.py
+            src/bayesian_phystwin/run_manifest_v2.py
+            tests/test_causal4d_provider_v1.py
+            tests/test_causal4d_scientific_provider_v1.py
+            tests/test_observation_belief_gauge_adapter.py
+            tests/test_run_manifest_cli.py
+            tests/test_run_manifest_v2.py
+          )
+          python -m ruff format -- "${files[@]}"
+          python -m ruff check --fix -- "${files[@]}"
+          git diff --check -- "${files[@]}"
+          tar -cf /tmp/bpt-product.tar "${files[@]}"
+          printf '%s\n' "${files[@]}" > /tmp/bpt-product-files.txt
+
+      - name: Publish clean product-only branch
+        env:
+          PRODUCT_BRANCH: fix/bpt-quality-provider-gates-20260727
+        run: |
+          set -euo pipefail
+          git reset --hard HEAD
+          git clean -fd
+          git switch -C "$PRODUCT_BRANCH" origin/main
+          tar -xf /tmp/bpt-product.tar
+          mapfile -t files < /tmp/bpt-product-files.txt
+          git add -- "${files[@]}"
+          test -n "$(git status --porcelain=v1)"
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Repair BPT quality and provider gates"
+          git push --force origin "HEAD:refs/heads/$PRODUCT_BRANCH"
+          echo "Published product-only branch: $PRODUCT_BRANCH" >> "$GITHUB_STEP_SUMMARY"
