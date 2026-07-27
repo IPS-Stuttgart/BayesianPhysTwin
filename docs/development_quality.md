@@ -42,6 +42,21 @@ Coverage floors are a ratchet. They may be raised when tests improve. Lowering
 a floor requires an explicit review explanation; it must not be used merely to
 make an unrelated pull request pass.
 
+## Workflow topology
+
+The main `Tests` workflow owns the gauge-aware, prior-aware, provider,
+observation, manifest, quality, coverage, distribution, and installed-artifact
+matrices. Focused tests may appear in more than one job inside that workflow when
+they enforce different dependency or Python-version boundaries, but they should
+not be repeated in a second unconditional workflow. The former standalone
+gauge-aware workflow was removed because its four tests are already exercised
+by the core-contract and full-suite jobs.
+
+Cross-repository checks remain separate because they exercise independently
+versioned package boundaries. Their always-executed fixture gate is distinct
+from the credentialed installed-wheel evidence gate; a skipped private producer
+must never be reported as executed evidence.
+
 ## Randomized invariants
 
 `tests/test_quality_invariants.py` uses deterministic random seeds and runs on

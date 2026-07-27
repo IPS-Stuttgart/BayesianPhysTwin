@@ -32,6 +32,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   revision evidence.
 - A strict claim-bearing Prob4D validation entry point for new prospective
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
+- An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
+  cross-repository observation and lineage boundary.
 
 ### Changed
 
@@ -42,12 +44,20 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   archived reproduction paths.
 - Prob4D causal-lineage validation now fails closed on any present but malformed
   provider-v2 attestation and reports a compact validated provider summary.
+- Missing private-Prob4D credentials now fail trusted pull requests, `main`,
+  scheduled, and manual three-repository runs instead of producing a green skip.
+  External-fork pull requests still run the producer-neutral consumer fixture and
+  explicitly report that the secret-backed producer gate was unavailable and no
+  current-Prob4D evidence was admitted.
 
 ### Removed
 
 - The 79 top-level `bpt-*` console scripts. Frozen releases and historical
   manifests retain their original command strings; `bpt commands migrate`
   reports the current grouped invocation.
+- The duplicate standalone gauge-aware workflow; the main test matrix already
+  runs the same gauge-aware and prior-aware tests across its core and full-suite
+  jobs.
 
 ## Historical development
 
