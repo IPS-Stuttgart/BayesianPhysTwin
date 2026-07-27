@@ -4,9 +4,10 @@
 surface for graph construction and released controller grouping used by
 Causal4D.
 
-It exists separately from `causal4d_provider_v1` so that graph and controller
-geometry can be imported without loading Torch, Warp, the official PhysTwin
-checkout, or experiment-specific analysis modules.
+It complements the immutable replay contract in `causal4d_provider_v2` so graph
+and controller geometry can be imported without loading Torch, Warp, the
+official PhysTwin checkout, or experiment-specific analysis modules. Provider
+v1 remains available only for frozen compatibility paths.
 
 ## Public operations
 
@@ -23,6 +24,19 @@ module rather than from `phystwin_graph` or
 `phystwin_controller_sensitivity` directly. This lets the underlying graph and
 experiment modules move while preserving the cross-repository contract.
 
+## Provider-v2 relationship
+
+The graph provider uses the canonical metadata helpers from
+`bayesian_phystwin.contracts.provider`, inherits the package-version fallback
+from `causal4d_provider_v2`, and declares the v2 provider as its parent API in
+the manifest. It does not create another replay protocol or reinterpret the
+immutable v2 replay requests and trajectories.
+
+The replay and graph manifests are validated independently because they evolve
+at different rates. A frozen run records both exact identities; an upgradeable
+environment requires the expected parent-provider metadata as well as graph
+capabilities and artifact schemas.
+
 ## Manifest and compatibility
 
 The graph-provider manifest records the Bayesian-PhysTwin package version,
@@ -37,15 +51,16 @@ provider in an upgradeable environment.
 
 Frozen experiments continue to bind an exact Bayesian-PhysTwin revision.
 Upgradeable development environments may use the package version and graph API
-version, but must fail closed when the required provider module, capability, or
-artifact schema is absent.
+version, but must fail closed when the required provider module, parent API,
+capability, or artifact schema is absent.
 
 ## Dependency boundary
 
 The module is NumPy-only. Constructing a graph does not initialize PhysTwin or
-Warp. Simulator construction and replay remain owned by
-`bayesian_phystwin.causal4d_provider_v1` and its `PhysTwinReplayProvider`
-protocol.
+Warp. New simulator construction and replay use
+`bayesian_phystwin.causal4d_provider_v2` and its immutable
+`PhysTwinReplayProviderV2` request/result contract. Historical provider-v1
+execution remains unchanged for exact frozen revisions.
 
 Graph construction preserves PhysTwin's object-then-controller spring ordering,
 float32 radius-neighbor semantics, rest lengths, masses, and explicit object
@@ -55,5 +70,6 @@ case convention and deterministic spatial partition.
 ## Versioning policy
 
 Backward-compatible operations may be added to this module during the BPT 0.4
-line. Removing or changing graph ordering, controller grouping, array units, or
-return types requires a new versioned provider module.
+line. Removing or changing graph ordering, controller grouping, array units,
+return types, or the declared provider-v2 parent requires a new versioned graph
+provider module.
