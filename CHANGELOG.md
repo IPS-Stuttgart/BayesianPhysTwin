@@ -22,6 +22,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   and removed-alias metadata.
 - Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
   lookup for historical `bpt-*` command names.
+- A NumPy-only, versioned Causal4D belief-provider surface for immutable robust
+  Bayesian endpoint inference without downstream experiment-module imports.
 
 ### Changed
 
