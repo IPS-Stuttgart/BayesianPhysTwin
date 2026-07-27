@@ -54,6 +54,12 @@ def _belief() -> ObservationBeliefV1:
     )
 
 
+def _asymmetric_covariance() -> np.ndarray:
+    covariance = _belief().local_covariance_m2.copy()
+    covariance[0, 0, 1] = 1e-3
+    return covariance
+
+
 def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     belief = _belief()
     path = tmp_path / "belief.npz"
@@ -88,30 +94,36 @@ def test_observation_metadata_is_deeply_immutable_and_digest_stable(
     assert belief.metadata["nested"]["items"][1]["accepted"] is True
     assert belief.artifact_id == artifact_id
 
-    frozen_items = belief.metadata["nested"]["items"]
-    assert isinstance(belief.metadata, dict)
+    frozen_metadata = belief.metadata
+    frozen_items = frozen_metadata["nested"]["items"]
+    assert isinstance(frozen_metadata, dict)
     assert isinstance(frozen_items, list)
     assert frozen_items.count(1) == 1
-    assert set(belief.metadata.keys()) == {"nested"}
+    assert set(frozen_metadata.keys()) == {"nested"}
 
-    shallow = copy.copy(belief.metadata)
-    deep = copy.deepcopy(belief.metadata)
+    shallow = copy.copy(frozen_metadata)
+    deep = copy.deepcopy(frozen_metadata)
+    shallow_items = copy.copy(frozen_items)
+    deep_items = copy.deepcopy(frozen_items)
     assert type(shallow) is dict
     assert type(deep) is dict
+    assert type(shallow_items) is list
+    assert type(deep_items) is list
     assert type(deep["nested"]["items"]) is list
     deep["nested"]["items"].append("copy-only")
+    deep_items.append("copy-only")
     assert "copy-only" not in frozen_items
 
     with pytest.raises(TypeError):
-        belief.metadata["new"] = "mutated"
+        frozen_metadata["new"] = "mutated"
     with pytest.raises(TypeError):
-        belief.metadata["nested"]["items"][1]["accepted"] = False
+        frozen_metadata["nested"]["items"][1]["accepted"] = False
     with pytest.raises(TypeError):
-        del belief.metadata["nested"]
+        del frozen_metadata["nested"]
     with pytest.raises(TypeError):
-        belief.metadata.update({"new": "mutated"})
+        frozen_metadata.update({"new": "mutated"})
     with pytest.raises(TypeError):
-        belief.metadata |= {"new": "mutated"}
+        frozen_metadata.__ior__({"new": "mutated"})
     with pytest.raises(TypeError):
         frozen_items.append("mutated")
     with pytest.raises(TypeError):
@@ -119,9 +131,9 @@ def test_observation_metadata_is_deeply_immutable_and_digest_stable(
     with pytest.raises(TypeError):
         del frozen_items[0]
     with pytest.raises(TypeError):
-        frozen_items += ["mutated"]
+        frozen_items.__iadd__(["mutated"])
     with pytest.raises(TypeError):
-        frozen_items *= 2
+        frozen_items.__imul__(2)
 
     path = tmp_path / "nested-belief.npz"
     save_observation_belief(path, belief)
@@ -143,6 +155,59 @@ def test_observation_metadata_rejects_non_json_values(metadata: object) -> None:
             **{
                 **_belief().__dict__,
                 "metadata": metadata,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    (
+        (
+            {"declared_frame_ids": np.asarray([8, 12])},
+            "declared frames must lie before",
+        ),
+        ({"frame_ids": np.asarray([8, 8, 9])}, "frame_ids must have shape"),
+        (
+            {"local_covariance_m2": np.zeros((4, 2, 2))},
+            "local_covariance_m2 must have shape",
+        ),
+        (
+            {"low_rank_factor_m": np.zeros((4, 3, 1))},
+            "low_rank_factor_m must have shape",
+        ),
+        (
+            {"frame_ids": np.asarray([8, 8, 10, 10])},
+            "frame_ids must be contained",
+        ),
+        (
+            {"view_indices": np.asarray([0, 0, 0, 1])},
+            "view_indices reference unavailable",
+        ),
+        ({"local_covariance_m2": _asymmetric_covariance()}, "must be symmetric"),
+        ({"group_ids": np.asarray([0])}, "group_ids must equal"),
+        (
+            {"group_prior_nominal_probability": np.asarray([0.85])},
+            "group prior and composite weight",
+        ),
+        (
+            {"group_prior_nominal_probability": np.asarray([0.85, 1.1])},
+            "group prior nominal probabilities",
+        ),
+        (
+            {"group_composite_weight": np.asarray([0.5, 0.0])},
+            "group composite weights",
+        ),
+    ),
+)
+def test_observation_belief_validates_reformatted_schema_guards(
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                **changes,
             }
         )
 
