@@ -56,14 +56,18 @@ jobs:
           if match is None:
               raise SystemExit("embedded patch payload was not found")
           source = gzip.decompress(base64.b64decode(match.group(1))).decode("utf-8")
-          stale = '''    scheduled, and manual three-repository runs instead of producing a green skip.
-    External-fork pull requests still run the producer-neutral consumer fixture and
-    explicitly report that the secret-backed producer gate was unavailable and no
-    current-Prob4D evidence was admitted.'''
-          current = '''  scheduled, and manual three-repository runs instead of producing a green skip.
-  External-fork pull requests still run the producer-neutral consumer fixture and
-  explicitly report that the secret-backed producer gate was unavailable and no
-  current-Prob4D evidence was admitted.'''
+          stale = (
+              "    scheduled, and manual three-repository runs instead of producing a green skip.\n"
+              "    External-fork pull requests still run the producer-neutral consumer fixture and\n"
+              "    explicitly report that the secret-backed producer gate was unavailable and no\n"
+              "    current-Prob4D evidence was admitted."
+          )
+          current = (
+              "  scheduled, and manual three-repository runs instead of producing a green skip.\n"
+              "  External-fork pull requests still run the producer-neutral consumer fixture and\n"
+              "  explicitly report that the secret-backed producer gate was unavailable and no\n"
+              "  current-Prob4D evidence was admitted."
+          )
           if stale not in source:
               raise SystemExit("stale changelog replacement was not found in patch source")
           source = source.replace(stale, current, 1)
