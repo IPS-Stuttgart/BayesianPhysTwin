@@ -47,6 +47,15 @@ jobs:
             tests/test_observation_belief_gauge_adapter.py
       - name: Run Ruff
         run: |
+          python -m ruff check --fix \
+            src/bayesian_phystwin/_gauge_aware_contracts.py \
+            src/bayesian_phystwin/_gauge_aware_solver.py \
+            src/bayesian_phystwin/_prior_aware_gauge_math.py \
+            src/bayesian_phystwin/gauge_aware_belief.py \
+            src/bayesian_phystwin/observation_belief_gauge_adapter.py \
+            src/bayesian_phystwin/prior_aware_gauge_belief.py \
+            tests/test_information_mass_invariants.py \
+            tests/test_observation_belief_gauge_adapter.py
           python -m ruff check \
             src/bayesian_phystwin/_gauge_aware_contracts.py \
             src/bayesian_phystwin/_gauge_aware_solver.py \
