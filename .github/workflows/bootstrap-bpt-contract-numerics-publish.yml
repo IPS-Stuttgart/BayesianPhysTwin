@@ -14,6 +14,7 @@ jobs:
     timeout-minutes: 35
     env:
       PRODUCT_BRANCH: agent/harden-bpt-contract-numerics
+      QUALITY_DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-quality-diagnostic-v2
     steps:
       - name: Check out current main
         uses: actions/checkout@v7
@@ -130,7 +131,20 @@ jobs:
             tests/test_phystwin_bayesian_anchor.py
           git diff --cached --check
           git commit -m "Harden immutable observation and covariance semantics"
-          python tools/quality/changed_python_quality.py --base HEAD^ --head HEAD
+          set +e
+          python tools/quality/changed_python_quality.py --base HEAD^ --head HEAD \
+            2>&1 | tee /tmp/quality-ratchet.txt
+          quality_status=${PIPESTATUS[0]}
+          set -e
+          if [[ ${quality_status} -ne 0 ]]; then
+            git reset --hard main
+            git switch -C "${QUALITY_DIAGNOSTIC_BRANCH}" main
+            cp /tmp/quality-ratchet.txt quality-ratchet.txt
+            git add quality-ratchet.txt
+            git commit -m "Record BPT quality-ratchet failure"
+            git push --force origin "HEAD:refs/heads/${QUALITY_DIAGNOSTIC_BRANCH}"
+            exit "${quality_status}"
+          fi
 
       - name: Publish product branch
         shell: bash
