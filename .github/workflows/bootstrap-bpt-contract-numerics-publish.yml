@@ -70,12 +70,21 @@ jobs:
               ],
               text=True,
           )
+          cleanup = subprocess.check_output(
+              [
+                  "git",
+                  "show",
+                  f"origin/{head_ref}:.github/bootstrap/bpt_cleanup_append.py",
+              ],
+              text=True,
+          )
+          appendix = typefix + "\n" + cleanup
           needle = 'exec(compile(source, "bpt-contract-numerics-patch.py", "exec"))'
           if source.count(needle) != 1:
               raise SystemExit("product patch execution point changed")
           source = source.replace(
               needle,
-              f"source += '\\n' + {typefix!r}\n{needle}",
+              f"source += '\\n' + {appendix!r}\n{needle}",
               1,
           )
           exec(compile(source, "bpt-product-patch.py", "exec"))
