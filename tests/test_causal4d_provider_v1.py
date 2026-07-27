@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
+import builtins
 import hashlib
 import pickle
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -14,8 +15,8 @@ from bayesian_phystwin.causal4d_provider_v1 import (
     OfficialPhysTwinReplayProvider,
     PhysTwinReplayProvider,
     build_lift_map,
-    create_official_replay_provider,
     causal4d_provider_manifest,
+    create_official_replay_provider,
     lift_residual,
     load_pickle,
     sha256_file,
@@ -111,9 +112,10 @@ def test_artifact_helpers_are_public_and_stable(tmp_path: Path) -> None:
 
     loaded = load_pickle(artifact_path)
     np.testing.assert_array_equal(loaded["x"], value["x"])
-    assert sha256_file(artifact_path) == hashlib.sha256(
-        artifact_path.read_bytes()
-    ).hexdigest()
+    assert (
+        sha256_file(artifact_path)
+        == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+    )
 
 
 def test_validity_and_lifting_helpers_match_expected_geometry() -> None:
@@ -124,9 +126,7 @@ def test_validity_and_lifting_helpers_match_expected_geometry() -> None:
         np.asarray(((True, False), (False, True), (True, False))),
     )
 
-    vertices = np.asarray(
-        ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 0.0, 0.0))
-    )
+    vertices = np.asarray(((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.5, 0.0, 0.0)))
     indices, weights = build_lift_map(vertices, original_count=2, neighbors=2)
     np.testing.assert_array_equal(indices.shape, (1, 2))
     np.testing.assert_allclose(np.sum(weights, axis=1), 1.0)
@@ -166,7 +166,9 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
         provider_api,
         "rollout_restart",
         lambda simulator_arg, torch_arg, wp_arg, position, velocity, **kwargs: (
-            np.repeat(position[None], kwargs["stop_frame"] - kwargs["start_frame"], axis=0)
+            np.repeat(
+                position[None], kwargs["stop_frame"] - kwargs["start_frame"], axis=0
+            )
         ),
     )
 
@@ -193,7 +195,6 @@ def test_official_adapter_implements_replay_protocol(monkeypatch) -> None:
     assert torch.cuda.empty_cache_calls == 1
     with pytest.raises(RuntimeError, match="closed"):
         adapter.replay_initial(frame_count=1)
-
 
 
 def test_factory_hides_simulator_initialization(monkeypatch, tmp_path: Path) -> None:
@@ -246,3 +247,28 @@ def test_adapter_rejects_mismatched_public_inputs() -> None:
             start_frame=0,
             stop_frame=1,
         )
+
+
+def test_lift_map_uses_numpy_fallback_when_scipy_is_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_import = builtins.__import__
+
+    def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "scipy.spatial":
+            raise ImportError("forced SciPy absence")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+    vertices = np.asarray(
+        (
+            (0.0, 0.0, 0.0),
+            (1.0, 0.0, 0.0),
+            (0.5, 0.0, 0.0),
+        )
+    )
+
+    indices, weights = build_lift_map(vertices, original_count=2, neighbors=2)
+
+    np.testing.assert_array_equal(indices.shape, (1, 2))
+    np.testing.assert_allclose(np.sum(weights, axis=1), 1.0)
