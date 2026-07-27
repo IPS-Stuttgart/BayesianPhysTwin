@@ -413,6 +413,7 @@ def _run_prediction(args: argparse.Namespace) -> dict[str, object]:
     torch.cuda.manual_seed_all(72)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    torch.cuda.set_device(device)
     torch.cuda.reset_peak_memory_stats(device)
     model = TAPNextPP.from_checkpoint(
         checkpoint,
