@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Sequence
-from typing import Final
+from typing import Final, cast
 
 from ._command_catalog import (
     CATALOGS,
@@ -92,9 +92,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     namespace = arguments[0]
     if namespace == "commands":
-        return commands_main(arguments[1:])
+        return cast(int, commands_main(arguments[1:]))
     if namespace in CATALOGS:
-        return catalog_main(namespace, arguments[1:])
+        return cast(int, catalog_main(namespace, arguments[1:]))
 
     if arguments[-1] in HELP_FLAGS and _children(tuple(arguments[:-1])):
         print(_stable_help(tuple(arguments[:-1])), end="")
@@ -105,7 +105,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     resolved = _resolve(arguments)
     if resolved is not None:
-        return invoke(*resolved)
+        return cast(int, invoke(*resolved))
 
     prefix: list[str] = []
     for token in arguments:

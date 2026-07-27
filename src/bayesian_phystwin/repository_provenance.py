@@ -10,7 +10,7 @@ import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 RepositoryRole = Literal[
     "primary",
@@ -36,8 +36,9 @@ _VALID_REPOSITORY_ROLES = frozenset(
 
 def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
     try:
-        return json.loads(
-            json.dumps(dict(value), sort_keys=True, allow_nan=False)
+        return cast(
+            dict[str, Any],
+            json.loads(json.dumps(dict(value), sort_keys=True, allow_nan=False)),
         )
     except (TypeError, ValueError) as error:
         raise ValueError(f"{name} must contain finite JSON data") from error

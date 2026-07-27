@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as package_version
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 RUN_MANIFEST_SCHEMA = "bayesian_phystwin.run_manifest"
 RUN_MANIFEST_VERSION = 1
@@ -66,8 +66,9 @@ def _canonical_json(value: Mapping[str, Any]) -> bytes:
 
 def _json_mapping(value: Mapping[str, Any], *, name: str) -> dict[str, Any]:
     try:
-        return json.loads(
-            json.dumps(dict(value), sort_keys=True, allow_nan=False)
+        return cast(
+            dict[str, Any],
+            json.loads(json.dumps(dict(value), sort_keys=True, allow_nan=False)),
         )
     except (TypeError, ValueError) as error:
         raise ValueError(f"{name} must contain finite JSON data") from error
@@ -203,7 +204,9 @@ class RunManifestV1:
         if any(artifact.role != "output" for artifact in output_artifacts):
             raise ValueError("outputs must contain only output artifacts")
 
-        versions = {str(name): str(value) for name, value in self.package_versions.items()}
+        versions = {
+            str(name): str(value) for name, value in self.package_versions.items()
+        }
         if any(not name or not value for name, value in versions.items()):
             raise ValueError("package version entries must be nonempty")
 
