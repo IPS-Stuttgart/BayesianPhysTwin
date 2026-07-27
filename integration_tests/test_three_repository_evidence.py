@@ -90,7 +90,8 @@ def _bound_counterfactual_artifacts(
     bpt_result,
 ):
     provider = DeterministicReplayProvider(FULL_FRAME_COUNT)
-    particles, mass_accounting = _profile_particles(tmp_path / "profile-bound.npz")
+    profile_path = tmp_path / "profile-bound.npz"
+    particles, mass_accounting = _profile_particles(profile_path)
 
     replay_positions = []
     replay_velocities = []
@@ -321,12 +322,20 @@ def _bound_counterfactual_artifacts(
     posterior_path = tmp_path / "lineage-bound-physical-posterior.npz"
     save_contract(posterior_path, first)
     assert load_contract(posterior_path).artifact_id == first.artifact_id
-    return twin_belief, first, twin_path, posterior_path, provider_manifest
+    return (
+        twin_belief,
+        first,
+        profile_path,
+        twin_path,
+        posterior_path,
+        provider_manifest,
+    )
 
 
 def _manifest(
     tmp_path: Path,
     observation_path: Path,
+    profile_path: Path,
     twin_path: Path,
     posterior_path: Path,
     *,
@@ -380,6 +389,12 @@ def _manifest(
             artifact_digest(
                 observation_path,
                 name="prob4d-observation",
+                role="input",
+                root=tmp_path,
+            ),
+            artifact_digest(
+                profile_path,
+                name="bpt-parameter-support-profile",
                 role="input",
                 root=tmp_path,
             ),
@@ -442,12 +457,18 @@ def test_bound_counterfactual_and_promotable_evidence(tmp_path: Path) -> None:
     assert lineage.artifact_id == observation.artifact_id
     bpt_result = _run_bpt_update(observation)
 
-    twin, posterior, twin_path, posterior_path, provider_manifest = (
-        _bound_counterfactual_artifacts(tmp_path, lineage, bpt_result)
-    )
+    (
+        twin,
+        posterior,
+        profile_path,
+        twin_path,
+        posterior_path,
+        provider_manifest,
+    ) = _bound_counterfactual_artifacts(tmp_path, lineage, bpt_result)
     manifest = _manifest(
         tmp_path,
         observation_path,
+        profile_path,
         twin_path,
         posterior_path,
         observation_id=observation.artifact_id,
@@ -458,6 +479,7 @@ def test_bound_counterfactual_and_promotable_evidence(tmp_path: Path) -> None:
     admission = require_promotable_run_manifest(manifest, root=tmp_path)
     assert admission["status"] == "promotable"
     assert admission["evidence_fingerprint"] == manifest.evidence_fingerprint
+    assert admission["input_artifact_count"] == 2
 
     with pytest.raises(ValueError, match="clean repositories"):
         require_promotable_run_manifest(replace(manifest, dirty=True))
