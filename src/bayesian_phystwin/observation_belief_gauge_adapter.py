@@ -6,7 +6,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .gauge_aware_belief import GaugeAwareObservationBatch
+from .gauge_aware_belief import (
+    COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
+    COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
+    GaugeAwareObservationBatch,
+)
 from .observation_belief import ObservationBeliefV1
 from .prob4d_causal_lineage import (
     is_prob4d_causal_observation_belief,
@@ -27,6 +31,28 @@ def _readonly(
     result = np.asarray(values, dtype=dtype).copy()
     result.setflags(write=False)
     return result
+
+
+PROB4D_FINAL_COMPOSITE_WEIGHT_SEMANTICS = "final-per-row-effective-sample-cap-v1"
+
+
+def _observation_composite_weight_mode(
+    belief: ObservationBeliefV1,
+) -> tuple[str, str]:
+    semantics = belief.metadata.get("group_composite_weight_semantics")
+    if semantics == PROB4D_FINAL_COMPOSITE_WEIGHT_SEMANTICS:
+        return COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL, "artifact-metadata"
+    if belief.source_repository == "FlorianPfaff/Prob4D":
+        if semantics is not None:
+            raise ValueError(
+                f"unsupported Prob4D group_composite_weight_semantics {semantics!r}"
+            )
+        if "effective_samples_per_group" in belief.metadata:
+            return (
+                COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
+                "legacy-prob4d-export-metadata",
+            )
+    return COMPOSITE_WEIGHT_MODE_CONSUMER_CAP, "consumer-default"
 
 
 def global_translation_bias_jacobian(
@@ -73,9 +99,7 @@ def centered_view_translation_bias_jacobian(
     for row, view in enumerate(views):
         for contrast in range(contrasts.shape[1]):
             start = 3 * contrast
-            result[row, :, start : start + 3] = (
-                contrasts[view, contrast] * identity
-            )
+            result[row, :, start : start + 3] = contrasts[view, contrast] * identity
     return result
 
 
@@ -99,9 +123,7 @@ def _expanded_gauge_design(
     for group_position, group_id in enumerate(factor_groups):
         selected = belief.factor_group_ids == group_id
         start = group_position * rank
-        design[selected, :, start : start + rank] = (
-            belief.low_rank_factor_m[selected]
-        )
+        design[selected, :, start : start + rank] = belief.low_rank_factor_m[selected]
         names.extend(
             f"factor-group-{int(group_id)}:{factor_name}"
             for factor_name in belief.factor_names
@@ -114,14 +136,10 @@ def _row_group_values(
     values: np.ndarray,
 ) -> np.ndarray:
     positions = {
-        int(group_id): position
-        for position, group_id in enumerate(belief.group_ids)
+        int(group_id): position for position, group_id in enumerate(belief.group_ids)
     }
     return np.asarray(
-        [
-            values[positions[int(group_id)]]
-            for group_id in belief.correlation_group_ids
-        ],
+        [values[positions[int(group_id)]] for group_id in belief.correlation_group_ids],
         dtype=np.float64,
     )
 
@@ -169,12 +187,8 @@ class ObservationBeliefGaugeAdapterResult:
             "observation_count": len(self.batch.innovation_m),
             "state_mode_count": self.batch.state_jacobian.shape[2],
             "gauge_parameter_count": len(self.gauge_parameter_names),
-            "shared_bias_parameter_count": (
-                self.batch.shared_bias_jacobian.shape[2]
-            ),
-            "view_bias_parameter_count": (
-                self.batch.view_bias_jacobian.shape[2]
-            ),
+            "shared_bias_parameter_count": (self.batch.shared_bias_jacobian.shape[2]),
+            "view_bias_parameter_count": (self.batch.view_bias_jacobian.shape[2]),
             "anchor_bias_parameter_count": (
                 0
                 if self.batch.anchor_bias_jacobian is None
@@ -185,6 +199,7 @@ class ObservationBeliefGaugeAdapterResult:
                 "explicit standard-normal nuisance parameters"
             ),
             "causal_frame_stop_convention": "exclusive",
+            "composite_weight_mode": self.batch.composite_weight_mode,
             "prob4d_causal_lineage_validated": self.batch.metadata.get(
                 "prob4d_causal_lineage_validated",
                 False,
@@ -248,9 +263,7 @@ def build_gauge_aware_batch_from_observation_belief(
         "state_jacobian must have shape (N, 3, S) with S >= 1",
     )
     _require(
-        query.ndim == 3
-        and query.shape[1:] == (3, state.shape[2])
-        and len(query),
+        query.ndim == 3 and query.shape[1:] == (3, state.shape[2]) and len(query),
         "query_state_jacobian must have shape (Q, 3, S)",
     )
     _require(
@@ -284,6 +297,9 @@ def build_gauge_aware_batch_from_observation_belief(
         f"{belief.stream_id}:correlation-group-{int(group_id)}"
         for group_id in belief.correlation_group_ids
     )
+    composite_weight_mode, composite_weight_mode_source = (
+        _observation_composite_weight_mode(belief)
+    )
     metadata: dict[str, object] = {
         "observation_artifact_id": belief.artifact_id,
         "observation_schema": "phys4d.observation_belief",
@@ -297,6 +313,8 @@ def build_gauge_aware_batch_from_observation_belief(
         "association_used_as_prior_reliability": False,
         "innovation_formed_once": True,
         "low_rank_covariance_double_counted": False,
+        "composite_weight_mode": composite_weight_mode,
+        "composite_weight_mode_source": composite_weight_mode_source,
         "causal_frame_stop_convention": "exclusive",
         "prob4d_causal_lineage_validated": prob4d_lineage is not None,
     }
@@ -316,6 +334,7 @@ def build_gauge_aware_batch_from_observation_belief(
         prior_nominal_probability=row_nominal_probability,
         composite_weight=row_composite_weight,
         physical_response_scale_m=physical_response_scale_m,
+        composite_weight_mode=composite_weight_mode,
         state_prior_covariance_m2=state_prior_covariance_m2,
         anchor_innovation_m=anchor_innovation_m,
         anchor_covariance_m2=anchor_covariance_m2,

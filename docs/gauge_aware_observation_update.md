@@ -79,7 +79,12 @@ result = update_gauge_aware_belief(adapted.batch)
 
 The adapter maps every shared low-rank covariance factor to an explicit
 standard-normal nuisance coefficient. It does not add the same factor to the
-conditional point covariance. Association probability remains available in
+conditional point covariance. When a provider declares
+`group_composite_weight_semantics = final-per-row-effective-sample-cap-v1`, that
+weight is treated as the final generalized-Bayes row power: Bayesian-PhysTwin
+does not apply a second effective-sample cap. Batches from providers without
+that declaration retain the consumer-side cap for backward compatibility.
+Association probability remains available in
 `adapted.association_probability` for reporting and is not substituted for
 prior reliability. The adapter records the exact input artifact ID, producer
 revision, source digest, case, stream, and exclusive causal frame stop in the
