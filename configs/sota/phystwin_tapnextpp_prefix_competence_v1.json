@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapnextpp-prefix-competence-v1",
+  "status": "prelocked-awaiting-source-staging",
+  "claim_boundary": "One-case prefix-only competence control on the already-open single_lift_cloth source interaction. It cannot establish Bayesian-PhysTwin improvement, calibration, independent transfer, or state of the art.",
+  "question": "Can frozen causal TAPNext++ tracks, conservatively lifted through released calibrated RGB-D views, recover benchmark material identities accurately enough to justify a separately locked guarded Bayesian assimilation smoke?",
+  "method_config": {
+    "case_name": "single_lift_cloth",
+    "source_frame_start": 68,
+    "source_frame_end_exclusive": 88,
+    "selected_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "selected_cameras": [
+      0,
+      1,
+      2
+    ],
+    "depth_scale_to_m": 0.001,
+    "input_resolution": 512,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0,
+    "visibility_threshold": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_depth_residual_m": 0.03,
+    "minimum_triangulation_views": 2,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_standard_deviation_px": 1.5,
+    "shared_bias_standard_deviation_m": 0.005,
+    "two_view_covariance_inflation": 4.0,
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "endpoint_frame_count": 5
+  },
+  "window_selection": {
+    "source": "released selected PhysTwin node trajectory only; no manual material target was used",
+    "physical_trajectory_sha256": "abc823170ed06bce3d5cc3fe35f55b8213481e51587af25d746ab656b375b949",
+    "rule": "Among all 20-frame intervals wholly inside the released training prefix, maximize RMS physical-node displacement from the first to the last included frame.",
+    "selected_frame_range_half_open": [
+      68,
+      88
+    ],
+    "selected_rms_displacement_m": 0.06256459649631986
+  },
+  "tracker": {
+    "name": "TAPNext++",
+    "repository": "https://github.com/google-deepmind/tapnet",
+    "revision": "c2cbab81cc06092b5f05bfe2da7bfec54e2079c9",
+    "checkpoint_url": "https://storage.googleapis.com/gresearch/tapnextpp/tapnextpp_512.ckpt",
+    "checkpoint_sha256": "6cd0e793fdcface3063d63f8ed3819bcf74c2c0468fe1fef85acee4de2f3609f",
+    "runtime_choices": "Official 512-pixel public checkpoint; recurrent frame-by-frame causal inference; 64 official-style local support points per real query at 32 model pixels; seed 72; deterministic cuDNN; continuous visibility logits retained."
+  },
+  "multiview_observation": {
+    "point_estimate": "Robust DLT triangulation from two or three depth-consistent object-mask-supported views.",
+    "prior_reliability": "TAPNext++ visibility, object-mask support, reprojection agreement, and RGB-D depth agreement only.",
+    "state_innovation_used_in_prior_reliability": false,
+    "correlation_treatment": "A 5 mm shared-bias covariance floor is applied once, two-view estimates receive fourfold geometric covariance inflation, and alternative association spread is added to metric covariance.",
+    "fallback": "Unsupported rows retain the exact query position and zero update support."
+  },
+  "source_artifacts": {
+    "source_staging_commit": "__PRELOCK_SOURCE_STAGING_COMMIT__",
+    "source_report_sha256": "__PRELOCK_SOURCE_REPORT_SHA256__",
+    "prediction_input_sha256": "__PRELOCK_PREDICTION_INPUT_SHA256__",
+    "query_array_sha256": "__PRELOCK_QUERY_ARRAY_SHA256__",
+    "object_mask_array_sha256": "__PRELOCK_OBJECT_MASK_ARRAY_SHA256__",
+    "withheld_prefix_sha256": "__PRELOCK_WITHHELD_PREFIX_SHA256__",
+    "withheld_target_array_sha256": "__PRELOCK_WITHHELD_TARGET_ARRAY_SHA256__",
+    "query_source": "Only benchmark identities 3, 4, 6, and 8 at source frame 68.",
+    "withheld_source": "Manual identity trajectories on frames [68, 88), inaccessible to prediction and opened only after prediction sealing."
+  },
+  "implementation": {
+    "adapter_sha256": "__PRELOCK_ADAPTER_SHA256__",
+    "multiview_sha256": "__PRELOCK_MULTIVIEW_SHA256__",
+    "runner_sha256": "__PRELOCK_RUNNER_SHA256__"
+  },
+  "competence_gate": {
+    "minimum_supported_fraction": 0.75,
+    "minimum_relative_gain_over_exact_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_last_five_frame_rmse_m": 0.015,
+    "pass_action": "Freeze a separate baseline-relative guarded assimilation method before reading any PhysTwin future score.",
+    "fail_action": "Stop the TAPNext++-to-PhysTwin route without tuning tracker, camera, mask, depth, multiview, visibility, anchoring, or gate choices."
+  },
+  "information_boundary": {
+    "prediction_rgb_depth_mask_frame_range_half_open": [
+      68,
+      88
+    ],
+    "manual_query_frame": 68,
+    "future_frame_at_or_after_121_allowed": false,
+    "simulator_future_outcome_allowed": false,
+    "manual_prefix_target_available_to_prediction": false,
+    "held_v8_access_allowed": false,
+    "pokeflex_target_access_allowed": false
+  },
+  "forbidden": [
+    "running prediction before source artifact hashes and locked status replace every prelock placeholder",
+    "using any RGB, depth, mask, manual track, point cloud, or simulator outcome outside the frozen prefix",
+    "changing tracker, checkpoint, support points, cameras, masks, depth checks, triangulation, covariance, visibility, identities, or gates after prediction",
+    "using a PhysTwin residual to define prior perception reliability",
+    "describing a competence pass as Bayesian-PhysTwin improvement or state-of-the-art evidence",
+    "opening or modifying any held-v8 target, query, score, barrier, or outcome artifact"
+  ]
+}
