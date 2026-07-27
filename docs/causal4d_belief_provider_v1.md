@@ -67,6 +67,18 @@ This posterior is a readout/model-discrepancy belief. It is not automatically a
 physically admissible position/velocity state correction and does not bypass
 Bayesian-PhysTwin's nonlinear-closure or prospective-regret guards.
 
+## Causal4D migration
+
+Causal4D should construct `FixedBayesianAnchorConfigV1` from its already recorded
+belief-export settings, call `infer_fixed_bayesian_anchor_endpoint`, and consume
+`mean_m`, `variance_m2`, `final_nominal_probability`, and `update_count`. It
+should validate the provider manifest's capability and artifact-schema versions
+at runtime and bind that manifest into the exported belief provenance.
+
+Frozen historical runs may retain an exact Bayesian-PhysTwin revision and their
+original direct-import stack. New development must use this provider boundary so
+experiment-module names and file layout are not part of the downstream API.
+
 ## Compatibility policy
 
 The provider depends only on NumPy at import and execution time. It does not
