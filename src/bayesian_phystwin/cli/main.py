@@ -2,48 +2,24 @@
 
 from __future__ import annotations
 
-import importlib
 import sys
 from collections.abc import Sequence
 from typing import Final
 
+from ._command_catalog import (
+    CATALOGS,
+    HELP_FLAGS,
+    NAMESPACE_DESCRIPTIONS,
+    catalog_main,
+    commands_main,
+)
+from ._command_dispatch import invoke
+from .command_registry import CommandSpec, CommandStatus, iter_commands
+
 Route = tuple[str, ...]
-_ROUTES: Final[dict[Route, tuple[str, str, str]]] = {
-    ("provider", "manifest"): (
-        "bayesian_phystwin.cli.provider_manifest",
-        "main",
-        "print the Causal4D provider manifest",
-    ),
-    ("observation", "validate"): (
-        "bayesian_phystwin.cli.observation_belief",
-        "main",
-        "validate or score an ObservationBeliefV1 artifact",
-    ),
-    ("residual", "replay"): (
-        "bayesian_phystwin.cli.residual_replay",
-        "main",
-        "replay exported residuals through the robust likelihood",
-    ),
-    ("benchmark", "synthetic"): (
-        "bayesian_phystwin.cli.synthetic_benchmark",
-        "main",
-        "run the controlled synthetic benchmark",
-    ),
-    ("evidence", "summarize"): (
-        "bayesian_phystwin.cli.decisive_evidence",
-        "main",
-        "summarize matched guarded prospective evidence",
-    ),
-    ("run", "manifest"): (
-        "bayesian_phystwin.cli.run_manifest",
-        "main",
-        "create or validate a content-addressed run manifest",
-    ),
-    ("experiment",): (
-        "bayesian_phystwin.cli.experiments",
-        "main",
-        "list, inspect, or run registered research commands",
-    ),
+_STABLE_COMMANDS: Final = iter_commands(status=CommandStatus.STABLE)
+_STABLE_ROUTES: Final[dict[Route, CommandSpec]] = {
+    command.route: command for command in _STABLE_COMMANDS
 }
 
 
@@ -52,83 +28,94 @@ def _children(prefix: Route) -> list[str]:
     return sorted(
         {
             route[position]
-            for route in _ROUTES
+            for route in _STABLE_ROUTES
             if route[:position] == prefix and len(route) > position
         }
     )
 
 
-def _render_help(prefix: Route = ()) -> str:
-    command = "bpt" + (" " + " ".join(prefix) if prefix else "")
-    children = _children(prefix)
-    lines = [f"usage: {command} <command> [arguments]", ""]
-    if not prefix:
-        lines.append("Grouped access to stable Bayesian-PhysTwin commands.")
-        lines.append("")
-    lines.append("commands:")
+def _root_help() -> str:
+    stable = {route[0] for route in _STABLE_ROUTES}
+    children = sorted(stable | set(NAMESPACE_DESCRIPTIONS))
+    lines = [
+        "usage: bpt <command> [arguments]",
+        "",
+        "Grouped access to stable interfaces and registered research commands.",
+        "",
+        "commands:",
+    ]
     for child in children:
-        candidate = (*prefix, child)
-        route = _ROUTES.get(candidate)
-        description = route[2] if route is not None else f"{child} commands"
+        description = NAMESPACE_DESCRIPTIONS.get(child, f"{child} commands")
         lines.append(f"  {child:<14} {description}")
-    if not prefix:
-        lines.extend(
-            [
-                "",
-                "Use `bpt experiment list` for non-stable research commands.",
-                "No legacy `bpt-*` executables are installed.",
-            ]
-        )
+    lines.extend(
+        [
+            "",
+            "Exactly one executable is installed: bpt.",
+            "Use `bpt commands migrate LEGACY_ALIAS` for removed bpt-* names.",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
-def _resolve(tokens: Sequence[str]) -> tuple[Route, list[str]] | None:
-    prefix: list[str] = []
-    for index, token in enumerate(tokens):
-        if token.startswith("-"):
-            break
-        prefix.append(token)
-        candidate = tuple(prefix)
-        if candidate in _ROUTES:
-            return candidate, list(tokens[index + 1 :])
-        if not _children(candidate):
+def _stable_help(prefix: Route) -> str:
+    lines = [
+        f"usage: bpt {' '.join(prefix)} <command> [arguments]",
+        "",
+        "commands:",
+    ]
+    for child in _children(prefix):
+        route = (*prefix, child)
+        command = _STABLE_ROUTES.get(route)
+        description = (
+            command.description if command is not None else f"{child} commands"
+        )
+        lines.append(f"  {child:<14} {description}")
+    return "\n".join(lines) + "\n"
+
+
+def _resolve(arguments: Sequence[str]) -> tuple[CommandSpec, list[str]] | None:
+    for length in range(1, len(arguments) + 1):
+        route = tuple(arguments[:length])
+        command = _STABLE_ROUTES.get(route)
+        if command is not None:
+            return command, list(arguments[length:])
+        if not _children(route):
             return None
     return None
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
-    if not arguments or arguments[0] in {"-h", "--help"}:
-        print(_render_help(), end="")
+    if not arguments or arguments[0] in HELP_FLAGS:
+        print(_root_help(), end="")
         return 0
 
-    for length in range(1, len(arguments) + 1):
-        prefix = tuple(arguments[:length])
-        if arguments[length - 1] in {"-h", "--help"}:
-            help_namespace = prefix[:-1]
-            if help_namespace == () or _children(help_namespace):
-                print(_render_help(help_namespace), end="")
-                return 0
-            break
-    resolved = _resolve(arguments)
-    if resolved is None:
-        matched_namespace: list[str] = []
-        for token in arguments:
-            candidate = (*matched_namespace, token)
-            if _children(candidate):
-                matched_namespace.append(token)
-            else:
-                break
-        if matched_namespace and len(matched_namespace) == len(arguments):
-            print(_render_help(tuple(matched_namespace)), end="")
-            return 0
-        print(_render_help(tuple(matched_namespace)), file=sys.stderr, end="")
-        return 2
+    namespace = arguments[0]
+    if namespace == "commands":
+        return commands_main(arguments[1:])
+    if namespace in CATALOGS:
+        return catalog_main(namespace, arguments[1:])
 
-    route, remaining = resolved
-    module_name, function_name, _ = _ROUTES[route]
-    function = getattr(importlib.import_module(module_name), function_name)
-    return int(function(remaining))
+    if arguments[-1] in HELP_FLAGS and _children(tuple(arguments[:-1])):
+        print(_stable_help(tuple(arguments[:-1])), end="")
+        return 0
+    if _children(tuple(arguments)):
+        print(_stable_help(tuple(arguments)), end="")
+        return 0
+
+    resolved = _resolve(arguments)
+    if resolved is not None:
+        return invoke(*resolved)
+
+    prefix: list[str] = []
+    for token in arguments:
+        candidate = (*prefix, token)
+        if not _children(candidate):
+            break
+        prefix.append(token)
+    help_text = _stable_help(tuple(prefix)) if prefix else _root_help()
+    print(help_text, file=sys.stderr, end="")
+    return 2
 
 
 if __name__ == "__main__":

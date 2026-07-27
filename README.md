@@ -60,8 +60,9 @@ Prob4D or another 4-D perception feeder
 
 [Prob4D](https://github.com/FlorianPfaff/Prob4D) can export the portable
 `ObservationBeliefV1` contract. Bayesian-PhysTwin owns the reliability-aware
-belief update and PhysTwin provider boundary. [Causal4D](https://github.com/FlorianPfaff/Causal4D)
-separately owns abduction, intervention, and counterfactual prediction.
+belief update and PhysTwin provider boundary.
+[Causal4D](https://github.com/FlorianPfaff/Causal4D) separately owns abduction,
+intervention, and counterfactual prediction.
 
 ## Installation
 
@@ -77,9 +78,7 @@ the pinned PyRecEst integration.
 
 ## Stable command surface
 
-The grouped `bpt` interface is the only installed executable. Stable operations
-use the routes below; non-stable research commands are discovered with
-`bpt experiment list` and invoked with `bpt experiment run ID`.
+The package installs exactly one executable: `bpt`.
 
 | Command | Purpose |
 | --- | --- |
@@ -87,7 +86,50 @@ use the routes below; non-stable research commands are discovered with
 | `bpt observation validate` | Validate or summarize an `ObservationBeliefV1` artifact. |
 | `bpt residual replay` | Replay exported residuals through the robust likelihood. |
 | `bpt benchmark synthetic` | Run the controlled synthetic benchmark. |
+| `bpt evidence summarize` | Summarize matched guarded prospective evidence. |
 | `bpt run manifest` | Create or validate content-addressed run provenance. |
+
+The dispatcher imports only the selected command module. Rendering help,
+listing commands, and inspecting metadata therefore do not require optional
+graph, vision, data, or experiment-only dependencies.
+
+## Research command registry
+
+The former `bpt-*` executable surface is represented by a typed registry rather
+than installed as dozens of console scripts. Each entry records its grouped
+route, removed legacy alias, lifecycle status, optional dependency extras, and
+owning protocol or milestone.
+
+```bash
+# Current research protocols
+bpt experiment list
+bpt experiment describe confirm-phystwin-bayesian-anchor
+bpt experiment run confirm-phystwin-bayesian-anchor --help
+
+# Audits and analyses that are not promotable methods by themselves
+bpt diagnostic list
+bpt diagnostic describe audit-phystwin-calibration
+
+# Frozen historical or negative-result paths
+bpt archive list
+bpt archive describe evaluate-phystwin-state-injection
+
+# Complete machine-readable registry
+bpt commands list --json
+bpt commands describe bpt-phystwin-refit --json
+bpt commands migrate bpt-phystwin-refit
+```
+
+Removed executable names are inspection and migration metadata, not runnable
+aliases. Frozen releases and tags retain their original command surface, and
+historical manifests keep their original command strings unchanged. New
+commands must be added to the grouped registry and must not add another
+`[project.scripts]` entry.
+
+See [command-line interface](docs/command_line.md) for lifecycle definitions,
+migration rules, and the contribution procedure.
+
+## Common stable workflows
 
 Replay the bundled residual example:
 
@@ -97,32 +139,25 @@ bpt residual replay examples/residuals_demo.csv \
   --scored-csv outputs/residuals_demo/scored.csv
 ```
 
-See [residual replay](docs/residual_replay.md) for the export schema,
-statistical model, and output metrics.
+Summarize matched guarded evidence with common fallback treatment:
 
-## Reproduce the controlled benchmark
+```bash
+bpt evidence summarize \
+  runs/prospective/evidence.json \
+  runs/prospective/summary.json \
+  --reference-method last_residual
+```
 
-The following command runs the documented fixed-graph benchmark used for
-parameter recovery, calibration, corruption, and action-informativeness
-controls:
+Run the controlled fixed-graph benchmark:
 
 ```bash
 bpt benchmark synthetic \
   --seeds 1000:1020 \
   --conditions clean,iid,correlated \
   --action-modes dynamic,quasi_static \
-  --bias-process-variance 1e-5 \
-  --bias-initial-variance 1e-7 \
-  --bias-cue-persistence 0.85 \
-  --bias-cue-threshold 0.20 \
-  --bias-minimum-run-length 5 \
   --output-json runs/synthetic_v3/results.json \
-  --output-csv runs/synthetic_v3/aggregate.csv \
-  --output-reliability-csv runs/synthetic_v3/reliability.csv
+  --output-csv runs/synthetic_v3/aggregate.csv
 ```
-
-The complete frozen protocol and baseline definitions are in the
-[synthetic benchmark documentation](docs/synthetic_benchmark.md).
 
 ## Python API
 
@@ -144,8 +179,12 @@ state-update and exact-fallback boundaries.
 
 ## Documentation map
 
+- [Command-line interface](docs/command_line.md): grouped routes, lifecycle
+  registry, migration, and contribution policy.
 - [Experiment and evidence index](docs/experiment_index.md): frozen reports,
   negative results, experimental command families, and placement policy.
+- [Decisive evidence protocol](docs/decisive_evidence_protocol.md): matched
+  risk–coverage, exact fallback, tail regressions, and calibration summaries.
 - [Causal4D provider v1](docs/causal4d_provider_v1.md): supported provider
   surface and provenance boundary.
 - [PhysTwin integration](docs/phystwin_integration.md): upstream artifacts,
