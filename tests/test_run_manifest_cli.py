@@ -178,3 +178,18 @@ def test_run_manifest_cli_creates_v2_and_validates_both_versions(
     legacy_output = capsys.readouterr().out
     assert '"schema_version": 1' in legacy_output
     assert '"status": "valid"' in legacy_output
+
+
+def test_run_manifest_v2_rejects_empty_run_id() -> None:
+    with pytest.raises(ValueError, match="run ID must be nonempty"):
+        RunManifestV2(
+            run_id="",
+            repository="FlorianPfaff/Bayesian-PhysTwin",
+            revision="a" * 40,
+            dirty=False,
+            command=("bpt", "provider", "manifest"),
+            classification="infrastructure",
+            statistical_unit="test case",
+            information_boundary={},
+            configuration={},
+        )
