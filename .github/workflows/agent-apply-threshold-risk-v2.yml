@@ -1,0 +1,78 @@
+name: Apply threshold-native evidence implementation v2
+
+on:
+  pull_request:
+    branches: ["agent/threshold-risk-run-base"]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-threshold-native-evidence-v2
+  cancel-in-progress: true
+
+jobs:
+  implement:
+    if: github.head_ref == 'agent/tie-preserving-threshold-risk-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/tie-preserving-threshold-risk-v2
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Apply implementation
+        run: |
+          git show 10f32d9ee15043b5267b77a8d655779f1f839253:tools/agent_apply_threshold_risk.py > tools/agent_apply_threshold_risk.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tools/agent_apply_threshold_risk.py")
+          text = path.read_text(encoding="utf-8")
+          old = "    '''\n\n\ndef test_summary_reports_horizon_calibration_reliability_and_rank() -> None:\n"
+          new = "    '''\n\ndef test_summary_reports_horizon_calibration_reliability_and_rank() -> None:\n"
+          if text.count(old) != 1:
+              raise SystemExit("threshold test insertion anchor is missing or ambiguous")
+          text = text.replace(old, new, 1)
+          obsolete = '\npyproject_path = root / "pyproject.toml"\n'
+          if text.count(obsolete) != 1:
+              raise SystemExit("obsolete mypy workaround boundary is missing or ambiguous")
+          text = text[: text.index(obsolete)].rstrip() + "\n"
+          path.write_text(text, encoding="utf-8")
+          PY
+          python tools/agent_apply_threshold_risk.py
+          rm tools/agent_apply_threshold_risk.py
+          rm .github/workflows/agent-apply-threshold-risk-v2.yml
+      - name: Format focused changes
+        run: |
+          python -m ruff format \
+            src/bayesian_phystwin/decisive_evidence.py \
+            tests/test_decisive_evidence.py
+          python -m ruff format --check \
+            src/bayesian_phystwin/decisive_evidence.py \
+            tests/test_decisive_evidence.py
+      - name: Lint focused changes
+        run: |
+          python -m ruff check \
+            src/bayesian_phystwin/decisive_evidence.py \
+            tests/test_decisive_evidence.py
+      - name: Type-check decisive evidence
+        run: python -m mypy src/bayesian_phystwin/decisive_evidence.py
+      - name: Run focused decisive-evidence tests
+        run: python -m pytest -q tests/test_decisive_evidence.py
+      - name: Commit implementation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add tie-preserving threshold risk coverage"
+          git push origin HEAD:agent/tie-preserving-threshold-risk-v2
