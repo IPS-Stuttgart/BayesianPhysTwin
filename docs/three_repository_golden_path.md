@@ -62,9 +62,20 @@ exit.
 
 `FlorianPfaff/Prob4D` is private. Configure a Bayesian-PhysTwin repository secret
 named `PROB4D_READ_TOKEN` whose token has read-only contents access to that
-repository. Without the credential, the workflow emits an explicit warning and
-records in the job summary that the cross-repository gate was not executed; it
-does not admit or claim any three-repository evidence.
+repository.
+
+For trusted events—same-repository pull requests, pushes to `main`, scheduled
+runs, and manual dispatches—the credential is mandatory. An absent credential
+fails the job, so branch protection cannot treat a green skip as
+cross-repository compatibility evidence. The job also writes a completion
+sentinel and fails unless the isolated installed-wheel runner actually finishes
+successfully.
+
+GitHub does not expose repository secrets to pull requests from forks. Those
+runs receive an explicit unavailable warning, skip the private checkout, and
+cannot admit or claim three-repository evidence. They rely on the repository's
+ordinary public unit and contract checks until a maintainer runs the trusted
+gate on a same-repository branch.
 
 Manual runs may select specific Prob4D and Causal4D refs. Pull-request and
 scheduled runs use their `main` branches, so a credentialed weekly run also
