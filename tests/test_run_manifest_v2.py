@@ -318,8 +318,6 @@ def test_normalize_github_repository_accepts_https_and_ssh() -> None:
         == expected
     )
     assert (
-        normalize_github_repository(
-            "git@github.com:FlorianPfaff/Bayesian-PhysTwin.git"
-        )
+        normalize_github_repository("git@github.com:FlorianPfaff/Bayesian-PhysTwin.git")
         == expected
     )
