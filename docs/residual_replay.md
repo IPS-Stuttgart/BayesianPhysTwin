@@ -62,7 +62,7 @@ or run identifiers, are preserved in the scored CSV.
 ## Run
 
 ```bash
-bpt-replay-residuals examples/residuals_demo.csv \
+bpt residual replay examples/residuals_demo.csv \
   --summary-json outputs/residuals_demo/summary.json \
   --scored-csv outputs/residuals_demo/scored.csv
 ```
