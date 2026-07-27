@@ -12,6 +12,9 @@ jobs:
     if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      PRODUCT_BRANCH: agent/harden-bpt-contract-numerics
+      DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
     steps:
       - name: Check out current main
         uses: actions/checkout@v7
@@ -26,17 +29,15 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Publish exact focused-test and quality diagnostic
+      - name: Validate and publish the clean product branch
         shell: bash
-        env:
-          DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
         run: |
           set -uo pipefail
           git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}"
           set +e
           (
             set -euo pipefail
-            echo '== apply exact v2 patch =='
+            echo '== apply exact patch plus typing repair =='
             python - <<'PY'
           import os
           import re
@@ -61,6 +62,15 @@ jobs:
           if match is None:
               raise SystemExit('v2 patch body was not found')
           source = textwrap.dedent(match.group('body'))
+          needle = 'exec(compile(source, "bpt-contract-numerics-patch.py", "exec"))'
+          typefix = 'CnJlcGxhY2Vfb25jZSgKICAgICJzcmMvYmF5ZXNpYW5fcGh5c3R3aW4vb2JzZXJ2YXRpb25fYmVsaWVmLnB5IiwKICAgICcnJyAgICBkZWYgX19pb3JfXyhzZWxmLCBvdGhlcik6CiAgICAgICAgc2VsZi5faW1tdXRhYmxlKG90aGVyKQonJycsCiAgICAnJycgICAgZGVmIF9faW9yX18oc2VsZiwgb3RoZXIpIC0+IF9Gcm96ZW5EaWN0OgogICAgICAgIHNlbGYuX2ltbXV0YWJsZShvdGhlcikKICAgICAgICByZXR1cm4gc2VsZgonJycsCikKcmVwbGFjZV9vbmNlKAogICAgInNyYy9iYXllc2lhbl9waHlzdHdpbi9vYnNlcnZhdGlvbl9iZWxpZWYucHkiLAogICAgJycnICAgIGRlZiBfX2lhZGRfXyhzZWxmLCBvdGhlcik6CiAgICAgICAgc2VsZi5faW1tdXRhYmxlKG90aGVyKQoKICAgIGRlZiBfX2ltdWxfXyhzZWxmLCBvdGhlcik6CiAgICAgICAgc2VsZi5faW1tdXRhYmxlKG90aGVyKQonJycsCiAgICAnJycgICAgZGVmIF9faWFkZF9fKHNlbGYsIG90aGVyKSAtPiBfRnJvemVuTGlzdDoKICAgICAgICBzZWxmLl9pbW11dGFibGUob3RoZXIpCiAgICAgICAgcmV0dXJuIHNlbGYKCiAgICBkZWYgX19pbXVsX18oc2VsZiwgb3RoZXIpIC0+IF9Gcm96ZW5MaXN0OgogICAgICAgIHNlbGYuX2ltbXV0YWJsZShvdGhlcikKICAgICAgICByZXR1cm4gc2VsZgonJycsCikKcmVwbGFjZV9vbmNlKAogICAgInNyYy9iYXllc2lhbl9waHlzdHdpbi9vYnNlcnZhdGlvbl9iZWxpZWYucHkiLAogICAgJycnICAgIG5wLnNhdmV6X2NvbXByZXNzZWQoCiAgICAgICAgdGFyZ2V0LAogICAgICAgIGRlc2NyaXB0b3JfanNvbj1ucC5hc2FycmF5KAogICAgICAgICAgICBqc29uLmR1bXBzKAogICAgICAgICAgICAgICAgZGVzY3JpcHRvciwKICAgICAgICAgICAgICAgIHNvcnRfa2V5cz1UcnVlLAogICAgICAgICAgICAgICAgc2VwYXJhdG9ycz0oIiwiLCAiOiIpLAogICAgICAgICAgICAgICAgYWxsb3dfbmFuPUZhbHNlLAogICAgICAgICAgICApCiAgICAgICAgKSwKICAgICAgICAqKmJlbGllZi5fYXJyYXlzKCksCiAgICApCicnJywKICAgICcnJyAgICBhcmNoaXZlX3BheWxvYWQ6IGRpY3Rbc3RyLCBBbnldID0gewogICAgICAgICJkZXNjcmlwdG9yX2pzb24iOiBucC5hc2FycmF5KAogICAgICAgICAgICBqc29uLmR1bXBzKAogICAgICAgICAgICAgICAgZGVzY3JpcHRvciwKICAgICAgICAgICAgICAgIHNvcnRfa2V5cz1UcnVlLAogICAgICAgICAgICAgICAgc2VwYXJhdG9ycz0oIiwiLCAiOiIpLAogICAgICAgICAgICAgICAgYWxsb3dfbmFuPUZhbHNlLAogICAgICAgICAgICApCiAgICAgICAgKQogICAgfQogICAgYXJjaGl2ZV9wYXlsb2FkLnVwZGF0ZShiZWxpZWYuX2FycmF5cygpKQogICAgbnAuc2F2ZXpfY29tcHJlc3NlZCh0YXJnZXQsICoqYXJjaGl2ZV9wYXlsb2FkKQonJycsCikKCnJlcGxhY2Vfb25jZSgKICAgICJzcmMvYmF5ZXNpYW5fcGh5c3R3aW4vZ3JvdXBlZF9saWtlbGlob29kLnB5IiwKICAgICcnJ2ltcG9ydCBudW1weSBhcyBucAoKZnJvbSAub2JzZXJ2YXRpb25fYmVsaWVmIGltcG9ydCBPYnNlcnZhdGlvbkJlbGllZlYxCicnJywKICAgICcnJ2ltcG9ydCBudW1weSBhcyBucApmcm9tIG51bXB5LnR5cGluZyBpbXBvcnQgTkRBcnJheQoKZnJvbSAub2JzZXJ2YXRpb25fYmVsaWVmIGltcG9ydCBPYnNlcnZhdGlvbkJlbGllZlYxCicnJywKKQpyZXBsYWNlX29uY2UoCiAgICAic3JjL2JheWVzaWFuX3BoeXN0d2luL2dyb3VwZWRfbGlrZWxpaG9vZC5weSIsCiAgICAnJycgICAgZGltZW5zaW9uID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmludDY0KQogICAgbmxsID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmZsb2F0NjQpCiAgICB3ZWlnaHRlZF9ubGwgPSBucC5lbXB0eShncm91cF9jb3VudCwgZHR5cGU9bnAuZmxvYXQ2NCkKICAgIHBvc3Rlcmlvcl9ub21pbmFsID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmZsb2F0NjQpCiAgICBsb2dfbm9taW5hbCA9IG5wLmVtcHR5KGdyb3VwX2NvdW50LCBkdHlwZT1ucC5mbG9hdDY0KQogICAgbG9nX291dGxpZXIgPSBucC5lbXB0eShncm91cF9jb3VudCwgZHR5cGU9bnAuZmxvYXQ2NCkKICAgIG1lYW5fYXNzb2NpYXRpb24gPSBucC5lbXB0eShncm91cF9jb3VudCwgZHR5cGU9bnAuZmxvYXQ2NCkKICAgIGNvdmFyaWFuY2VfbG9nZGV0ID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmZsb2F0NjQpCiAgICBjb3ZhcmlhbmNlX21haGFsYW5vYmlzID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmZsb2F0NjQpCicnJywKICAgICcnJyAgICBkaW1lbnNpb246IE5EQXJyYXlbbnAuaW50NjRdID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmludDY0KQogICAgbmxsOiBOREFycmF5W25wLmZsb2F0NjRdID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmZsb2F0NjQpCiAgICB3ZWlnaHRlZF9ubGw6IE5EQXJyYXlbbnAuZmxvYXQ2NF0gPSBucC5lbXB0eShncm91cF9jb3VudCwgZHR5cGU9bnAuZmxvYXQ2NCkKICAgIHBvc3Rlcmlvcl9ub21pbmFsOiBOREFycmF5W25wLmZsb2F0NjRdID0gbnAuZW1wdHkoCiAgICAgICAgZ3JvdXBfY291bnQsCiAgICAgICAgZHR5cGU9bnAuZmxvYXQ2NCwKICAgICkKICAgIGxvZ19ub21pbmFsOiBOREFycmF5W25wLmZsb2F0NjRdID0gbnAuZW1wdHkoZ3JvdXBfY291bnQsIGR0eXBlPW5wLmZsb2F0NjQpCiAgICBsb2dfb3V0bGllcjogTkRBcnJheVtucC5mbG9hdDY0XSA9IG5wLmVtcHR5KGdyb3VwX2NvdW50LCBkdHlwZT1ucC5mbG9hdDY0KQogICAgbWVhbl9hc3NvY2lhdGlvbjogTkRBcnJheVtucC5mbG9hdDY0XSA9IG5wLmVtcHR5KAogICAgICAgIGdyb3VwX2NvdW50LAogICAgICAgIGR0eXBlPW5wLmZsb2F0NjQsCiAgICApCiAgICBjb3ZhcmlhbmNlX2xvZ2RldDogTkRBcnJheVtucC5mbG9hdDY0XSA9IG5wLmVtcHR5KAogICAgICAgIGdyb3VwX2NvdW50LAogICAgICAgIGR0eXBlPW5wLmZsb2F0NjQsCiAgICApCiAgICBjb3ZhcmlhbmNlX21haGFsYW5vYmlzOiBOREFycmF5W25wLmZsb2F0NjRdID0gbnAuZW1wdHkoCiAgICAgICAgZ3JvdXBfY291bnQsCiAgICAgICAgZHR5cGU9bnAuZmxvYXQ2NCwKICAgICkKJycnLAopCnJlcGxhY2Vfb25jZSgKICAgICJzcmMvYmF5ZXNpYW5fcGh5c3R3aW4vZ3JvdXBlZF9saWtlbGlob29kLnB5IiwKICAgICcnJyAgICAgICAgICAgIGNvdmFyaWFuY2VfbG9nX2RldGVybWluYW50PWNvdmFyaWFuY2VfbG9nZGV0W3Bvc2l0aW9uXSwKICAgICAgICAgICAgY292YXJpYW5jZV9tYWhhbGFub2Jpc19zcXVhcmVkPSgKICAgICAgICAgICAgICAgIGNvdmFyaWFuY2VfbWFoYWxhbm9iaXNbcG9zaXRpb25dCiAgICAgICAgICAgICksCicnJywKICAgICcnJyAgICAgICAgICAgIGNvdmFyaWFuY2VfbG9nX2RldGVybWluYW50PWZsb2F0KGNvdmFyaWFuY2VfbG9nZGV0W3Bvc2l0aW9uXSksCiAgICAgICAgICAgIGNvdmFyaWFuY2VfbWFoYWxhbm9iaXNfc3F1YXJlZD1mbG9hdCgKICAgICAgICAgICAgICAgIGNvdmFyaWFuY2VfbWFoYWxhbm9iaXNbcG9zaXRpb25dCiAgICAgICAgICAgICksCicnJywKKQpyZXBsYWNlX29uY2UoCiAgICAic3JjL2JheWVzaWFuX3BoeXN0d2luL2dyb3VwZWRfbGlrZWxpaG9vZC5weSIsCiAgICAnJycgICAgICAgICAgICBjb3ZhcmlhbmNlX2xvZ19kZXRlcm1pbmFudD1jb3ZhcmlhbmNlX2xvZ2RldFtwb3NpdGlvbl0sCiAgICAgICAgICAgIGNvdmFyaWFuY2VfbWFoYWxhbm9iaXNfc3F1YXJlZD0oCiAgICAgICAgICAgICAgICBjb3ZhcmlhbmNlX21haGFsYW5vYmlzW3Bvc2l0aW9uXQogICAgICAgICAgICApLAonJycsCiAgICAnJycgICAgICAgICAgICBjb3ZhcmlhbmNlX2xvZ19kZXRlcm1pbmFudD1mbG9hdChjb3ZhcmlhbmNlX2xvZ2RldFtwb3NpdGlvbl0pLAogICAgICAgICAgICBjb3ZhcmlhbmNlX21haGFsYW5vYmlzX3NxdWFyZWQ9ZmxvYXQoCiAgICAgICAgICAgICAgICBjb3ZhcmlhbmNlX21haGFsYW5vYmlzW3Bvc2l0aW9uXQogICAgICAgICAgICApLAonJycsCikKCnJlcGxhY2Vfb25jZSgKICAgICJzcmMvYmF5ZXNpYW5fcGh5c3R3aW4vcGh5c3R3aW5fYmF5ZXNpYW5fYW5jaG9yLnB5IiwKICAgICcnJ2Zyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKaW1wb3J0IG51bXB5IGFzIG5wCicnJywKICAgICcnJ2Zyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApmcm9tIHR5cGluZyBpbXBvcnQgY2FzdAoKaW1wb3J0IG51bXB5IGFzIG5wCicnJywKKQpyZXBsYWNlX29uY2UoCiAgICAic3JjL2JheWVzaWFuX3BoeXN0d2luL3BoeXN0d2luX2JheWVzaWFuX2FuY2hvci5weSIsCiAgICAnJycgICAgdmFsaWRhdGlvbl9pbXByb3ZlbWVudCA9IDEuMCAtIGZsb2F0KHNlbGVjdGVkX2NhbmRpZGF0ZVsic2VsZWN0aW9uX3Njb3JlIl0pCiAgICBhY2NlcHRlZCA9IHZhbGlkYXRpb25faW1wcm92ZW1lbnQgPiBjb25maWcubWluaW11bV92YWxpZGF0aW9uX2ltcHJvdmVtZW50CiAgICBwcm9jZXNzX3N0ZCA9IGZsb2F0KHNlbGVjdGVkX2NhbmRpZGF0ZVsicHJvY2Vzc19zdGRfbSJdKQogICAgb2JzZXJ2YXRpb25fc3RkID0gZmxvYXQoc2VsZWN0ZWRfY2FuZGlkYXRlWyJvYnNlcnZhdGlvbl9zdGRfbSJdKQonJycsCiAgICAnJycgICAgdmFsaWRhdGlvbl9pbXByb3ZlbWVudCA9IDEuMCAtIGNhc3QoCiAgICAgICAgZmxvYXQsCiAgICAgICAgc2VsZWN0ZWRfY2FuZGlkYXRlWyJzZWxlY3Rpb25fc2NvcmUiXSwKICAgICkKICAgIGFjY2VwdGVkID0gdmFsaWRhdGlvbl9pbXByb3ZlbWVudCA+IGNvbmZpZy5taW5pbXVtX3ZhbGlkYXRpb25faW1wcm92ZW1lbnQKICAgIHByb2Nlc3Nfc3RkID0gY2FzdChmbG9hdCwgc2VsZWN0ZWRfY2FuZGlkYXRlWyJwcm9jZXNzX3N0ZF9tIl0pCiAgICBvYnNlcnZhdGlvbl9zdGQgPSBjYXN0KGZsb2F0LCBzZWxlY3RlZF9jYW5kaWRhdGVbIm9ic2VydmF0aW9uX3N0ZF9tIl0pCicnJywKKQpyZXBsYWNlX29uY2UoCiAgICAic3JjL2JheWVzaWFuX3BoeXN0d2luL3BoeXN0d2luX2JheWVzaWFuX2FuY2hvci5weSIsCiAgICAnJycgICAgc3VtbWFyeVsib3V0cHV0cyJdWyJzdW1tYXJ5Il0gPSBzdHIoc3VtbWFyeV9wYXRoLnJlc29sdmUoKSkKICAgIHJldHVybiBzdW1tYXJ5CicnJywKICAgICcnJyAgICBzdW1tYXJ5X291dHB1dHMgPSBjYXN0KGRpY3Rbc3RyLCBzdHJdLCBzdW1tYXJ5WyJvdXRwdXRzIl0pCiAgICBzdW1tYXJ5X291dHB1dHNbInN1bW1hcnkiXSA9IHN0cihzdW1tYXJ5X3BhdGgucmVzb2x2ZSgpKQogICAgcmV0dXJuIHN1bW1hcnkKJycnLAopCg=='
+          if needle not in source:
+              raise SystemExit('v2 patch execution point was not found')
+          source = source.replace(
+              needle,
+              "source += base64.b64decode(" + repr(typefix) + ").decode('utf-8')\n" + needle,
+              1,
+          )
           exec(compile(source, 'v2-product-patch.py', 'exec'))
           PY
             echo '== install =='
@@ -109,6 +119,18 @@ jobs:
           ) > /tmp/diagnostic-body.txt 2>&1
           diagnostic_status=$?
           set -e
+          if [[ ${diagnostic_status} -eq 0 ]]; then
+            cat /tmp/diagnostic-body.txt
+            git push --force-with-lease origin "HEAD:refs/heads/${PRODUCT_BRANCH}"
+            {
+              echo "### Published product branch"
+              echo
+              echo "\`${PRODUCT_BRANCH}\`"
+              echo
+              echo "Commit: \`$(git rev-parse HEAD)\`"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
           {
             echo "exit_status=${diagnostic_status}"
             cat /tmp/diagnostic-body.txt
