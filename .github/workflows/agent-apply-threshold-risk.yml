@@ -30,6 +30,17 @@ jobs:
       - name: Apply implementation
         run: |
           git show 10f32d9ee15043b5267b77a8d655779f1f839253:tools/agent_apply_threshold_risk.py > tools/agent_apply_threshold_risk.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tools/agent_apply_threshold_risk.py")
+          text = path.read_text(encoding="utf-8")
+          old = "    '''\n\n\ndef test_summary_reports_horizon_calibration_reliability_and_rank() -> None:\n"
+          new = "    '''\n\ndef test_summary_reports_horizon_calibration_reliability_and_rank() -> None:\n"
+          if text.count(old) != 1:
+              raise SystemExit("threshold test insertion anchor is missing or ambiguous")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
           python tools/agent_apply_threshold_risk.py
           rm tools/agent_apply_threshold_risk.py
           rm .github/workflows/agent-apply-threshold-risk.yml
