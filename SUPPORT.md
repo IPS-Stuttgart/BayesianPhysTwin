@@ -22,6 +22,15 @@ change. Adding a newly released Python minor version is not complete until the
 core contracts, full test suite, wheel build, source-distribution build, and
 installed-artifact smoke tests pass for it.
 
+### Development type-checking environment
+
+The runtime requirement remains `numpy>=1.23` and is not upper-bounded. The
+`dev` extra additionally constrains NumPy to `<2.5`: NumPy 2.5 requires Python
+3.12 and its stubs use Python-3.12 type-alias syntax, whereas Bayesian PhysTwin
+intentionally runs mypy with `python_version = 3.10` to preserve the public
+Python-3.10 contract. This development-only constraint keeps the type-checking
+environment compatible without narrowing ordinary runtime installations.
+
 ## Causal4D provider compatibility
 
 `bayesian_phystwin.causal4d_provider_v1` is the supported integration surface
