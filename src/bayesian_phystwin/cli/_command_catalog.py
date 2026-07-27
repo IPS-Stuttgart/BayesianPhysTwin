@@ -102,10 +102,7 @@ def _print_command(command: CommandSpec, *, json_output: bool) -> None:
     print(f"command: {command.canonical_command}")
     print(f"legacy alias: {command.legacy_alias or 'none'}")
     print(f"owner: {command.owner}")
-    print(
-        "optional dependencies: "
-        + (", ".join(command.optional_dependencies) or "none")
-    )
+    print("optional dependencies: " + (", ".join(command.optional_dependencies) or "none"))
     print(f"target: {command.target}")
     print(f"description: {command.description}")
 
