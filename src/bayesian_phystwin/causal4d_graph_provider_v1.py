@@ -13,8 +13,6 @@ import numpy as np
 
 from .causal4d_provider_v2 import (
     CAUSAL4D_PROVIDER_API_VERSION as PARENT_PROVIDER_API_VERSION,
-)
-from .causal4d_provider_v2 import (
     CAUSAL4D_PROVIDER_PACKAGE_VERSION as CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION,
 )
 from .contracts.provider import (
