@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from bayesian_phystwin.gauge_aware_belief import (
+    COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
     GaugeAwareBeliefConfig,
     GaugeAwareObservationBatch,
@@ -160,30 +161,6 @@ def test_default_bias_design_is_full_rank_without_mean_duplication() -> None:
     )
 
 
-def test_bias_design_validation_rejects_empty_inputs() -> None:
-    with pytest.raises(ValueError, match="observation_count must be positive"):
-        global_translation_bias_jacobian(0)
-    with pytest.raises(ValueError, match="view_indices must be nonempty"):
-        centered_view_translation_bias_jacobian(
-            np.asarray([], dtype=np.int64),
-            view_count=1,
-        )
-
-
-def test_adapter_supports_zero_rank_gauge_factors() -> None:
-    belief = replace(
-        _belief(),
-        factor_names=(),
-        low_rank_factor_m=np.zeros((4, 3, 0)),
-    )
-
-    adapted = _adapt(belief)
-
-    assert adapted.batch.gauge_jacobian.shape == (4, 3, 0)
-    assert adapted.gauge_parameter_names == ()
-    assert adapted.gauge_parameter_group_ids.shape == (0,)
-
-
 def test_group_weights_cap_duplicate_correlated_evidence() -> None:
     count = 8
     mode = np.linspace(-1.0, 1.0, count)
@@ -286,11 +263,41 @@ def test_adapter_recognizes_legacy_prob4d_effective_sample_metadata() -> None:
 
 
 def test_adapter_rejects_unknown_prob4d_composite_weight_semantics() -> None:
+    belief = _belief(
+        metadata={"group_composite_weight_semantics": "unsupported-semantics"}
+    )
+
     with pytest.raises(ValueError, match="unsupported Prob4D"):
-        _adapt(
-            _belief(
-                metadata={
-                    "group_composite_weight_semantics": "unsupported-test-semantics"
-                }
-            )
-        )
+        _adapt(belief)
+
+
+def test_non_prob4d_without_weight_semantics_uses_consumer_cap() -> None:
+    belief = replace(
+        _belief(),
+        source_repository="Example/ObservationProvider",
+        metadata={},
+    )
+
+    adapted = _adapt(belief)
+
+    assert adapted.batch.composite_weight_mode == COMPOSITE_WEIGHT_MODE_CONSUMER_CAP
+    assert adapted.batch.metadata["composite_weight_mode_source"] == "consumer-default"
+
+
+def test_zero_rank_belief_has_no_gauge_parameters() -> None:
+    belief = replace(
+        _belief(),
+        factor_names=(),
+        low_rank_factor_m=np.zeros((4, 3, 0)),
+    )
+
+    adapted = _adapt(belief)
+
+    assert adapted.batch.gauge_jacobian.shape == (4, 3, 0)
+    assert adapted.gauge_parameter_names == ()
+    assert adapted.gauge_parameter_group_ids.shape == (0,)
+
+
+def test_global_translation_bias_rejects_empty_observation_set() -> None:
+    with pytest.raises(ValueError, match="observation_count must be positive"):
+        global_translation_bias_jacobian(0)

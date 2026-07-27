@@ -263,8 +263,8 @@ def update_prior_aware_gauge_belief(
         cfg.probability_floor,
         1.0 - cfg.probability_floor,
     )
-    observation_floor_active = np.zeros(len(observation_groups), dtype=bool)
-    anchor_floor_active = np.zeros(len(anchor_groups), dtype=bool)
+    observation_floor_active: np.ndarray = np.zeros(len(observation_groups), dtype=bool)
+    anchor_floor_active: np.ndarray = np.zeros(len(anchor_groups), dtype=bool)
 
     def system() -> tuple[np.ndarray, np.ndarray]:
         row_precision = np.zeros(len(observation_base))
@@ -326,7 +326,7 @@ def update_prior_aware_gauge_belief(
             statistics = _student_t_mixture_statistics(
                 squared_mahalanobis,
                 3 * len(active),
-                observation_prior[position],
+                float(observation_prior[position]),
                 cfg,
             )
             observation_precision[position] = statistics.expected_precision
@@ -369,7 +369,7 @@ def update_prior_aware_gauge_belief(
             statistics = _student_t_mixture_statistics(
                 squared_mahalanobis,
                 3 * len(active),
-                anchor_prior[position],
+                float(anchor_prior[position]),
                 cfg,
             )
             anchor_precision[position] = statistics.expected_precision

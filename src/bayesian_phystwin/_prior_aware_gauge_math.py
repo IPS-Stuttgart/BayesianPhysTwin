@@ -154,9 +154,9 @@ def _group_layout(
     indices = tuple(
         np.flatnonzero(np.asarray(labels, dtype=object) == group) for group in ordered
     )
-    base = np.zeros(len(labels), dtype=np.float64)
-    prior = np.empty(len(ordered), dtype=np.float64)
-    group_power = np.zeros(len(ordered), dtype=np.float64)
+    base: np.ndarray = np.zeros(len(labels), dtype=np.float64)
+    prior: np.ndarray = np.empty(len(ordered), dtype=np.float64)
+    group_power: np.ndarray = np.zeros(len(ordered), dtype=np.float64)
     for position, selected in enumerate(indices):
         _require(
             np.allclose(nominal[selected], nominal[selected[0]], atol=1e-12),
