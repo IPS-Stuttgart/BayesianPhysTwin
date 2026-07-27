@@ -32,13 +32,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp .github/agent-complete-causal4d-provider-boundary.patch.gz.b64 /tmp/provider-boundary.patch.gz.b64
+          cat .github/agent-provider-boundary-patch/part* \
+            | tr -d '\n' \
+            > /tmp/provider-boundary.patch.gz.b64
+          test "$(wc -c < /tmp/provider-boundary.patch.gz.b64)" -eq 12824
+          echo "947a69482c1a9ce2d386320c6499ec3803734f06559af2f716107f29930ece1d  /tmp/provider-boundary.patch.gz.b64" \
+            | sha256sum --check
           git fetch origin main
           git switch -C agent/complete-causal4d-provider-boundary origin/main
-          base64 --decode /tmp/provider-boundary.patch.gz.b64 | gzip --decompress > /tmp/provider-boundary.patch
+          base64 --decode /tmp/provider-boundary.patch.gz.b64 \
+            | gzip --decompress \
+            > /tmp/provider-boundary.patch
+          echo "be0ca15bccac6402b278947fe915f6582a58eaf72b2b9c18388ea9cbb82e3018  /tmp/provider-boundary.patch" \
+            | sha256sum --check
           git apply --index --whitespace=nowarn /tmp/provider-boundary.patch
           test ! -e .github/workflows/agent-bootstrap-complete-causal4d-provider-boundary.yml
           test ! -e .github/agent-complete-causal4d-provider-boundary.patch.gz.b64
+          test ! -e .github/agent-provider-boundary-patch
 
       - name: Install development, graph, and vision dependencies
         run: |
@@ -106,6 +116,7 @@ jobs:
           set -euo pipefail
           test ! -e .github/workflows/agent-bootstrap-complete-causal4d-provider-boundary.yml
           test ! -e .github/agent-complete-causal4d-provider-boundary.patch.gz.b64
+          test ! -e .github/agent-provider-boundary-patch
           git diff --check
           git diff --cached --check
           git status --short
