@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from bayesian_phystwin.decisive_evidence import analyze_decisive_evidence
 from bayesian_phystwin.repository_provenance import (
     RepositoryState,
     discover_git_repository_state,
@@ -173,6 +174,94 @@ def test_v2_requires_nonempty_run_id_and_owner_name_repository(tmp_path: Path) -
         replace(manifest, run_id="")
     with pytest.raises(ValueError, match="repository must use owner/name"):
         replace(manifest, repository="Bayesian-PhysTwin")
+
+
+def test_stable_core_exercises_threshold_risk_coverage_contract() -> None:
+    units = (
+        (
+            "u1",
+            "object-a",
+            "early",
+            (8.0, 0.10, True, 0.90, 2, True, 2.0),
+            (9.0, 0.15, True, 0.70, 1, True, 3.0),
+        ),
+        (
+            "u2",
+            "object-a",
+            "early",
+            (12.0, 0.30, False, 0.40, 1, False, 4.0),
+            (11.0, 0.25, True, 0.60, 1, False, 5.0),
+        ),
+        (
+            "u3",
+            "object-b",
+            "late",
+            (7.0, 0.30, True, 0.80, 2, True, 2.5),
+            (8.0, 0.35, False, 0.30, 0, True, 4.0),
+        ),
+    )
+    records: list[dict[str, object]] = []
+    for unit_id, group_id, horizon, bayesian, reference in units:
+        for method, values in (
+            ("bayesian", bayesian),
+            ("reference", reference),
+        ):
+            loss, risk, accepted, reliability, rank, covered, width = values
+            records.append(
+                {
+                    "unit_id": unit_id,
+                    "group_id": group_id,
+                    "metric": "track_error_m",
+                    "method": method,
+                    "loss": loss,
+                    "fallback_loss": 10.0,
+                    "risk_score": risk,
+                    "accepted": accepted,
+                    "deployed_loss": loss if accepted else 10.0,
+                    "horizon": horizon,
+                    "reliability": reliability,
+                    "identifiable_rank": rank,
+                    "intervals": [
+                        {
+                            "nominal_coverage": 0.9,
+                            "covered": covered,
+                            "width": width,
+                        }
+                    ],
+                }
+            )
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "contract": "bayesian-phystwin-decisive-evidence-v1",
+        "protocol_id": "stable-core-threshold-risk-test-v1",
+        "statistical_unit": "case-horizon",
+        "claim_boundary": "synthetic stable-core coverage test",
+        "reference_method": "reference",
+        "records": records,
+    }
+
+    summary = analyze_decisive_evidence(
+        payload,
+        target_coverages=(0.0, 0.5, 1.0),
+        regression_quantiles=(0.5, 0.95),
+        reliability_edges=(0.0, 0.5, 1.0),
+    )
+    metric = summary["metrics"]["track_error_m"]
+    threshold_view = metric["threshold_risk_coverage"]
+    curve = threshold_view["methods"]["bayesian"]
+
+    assert threshold_view["contract"] == (
+        "bayesian-phystwin-threshold-risk-coverage-v1"
+    )
+    assert [point["accepted_count"] for point in curve] == [0, 1, 3]
+    assert curve[-1]["boundary_tie_count"] == 2
+    assert curve[-1]["boundary_tie_split"] is False
+    assert metric["matched_count_risk_coverage"]["contract"] == (
+        "bayesian-phystwin-matched-count-risk-coverage-v1"
+    )
+
+    with pytest.raises(ValueError, match="reference method .* is absent"):
+        analyze_decisive_evidence({**payload, "reference_method": "missing"})
 
 
 def test_discover_git_repository_state_tracks_uncommitted_files(
