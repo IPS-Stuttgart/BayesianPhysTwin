@@ -7,7 +7,7 @@ import inspect
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Final, cast
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,95 +20,102 @@ class ExperimentSpec:
     stability: str = "experimental"
 
     @property
-    def summary(self) -> str:
-        return self.experiment_id.replace("-", " ")
-
-    @property
     def canonical_command(self) -> str:
         return f"bpt experiment run {self.experiment_id}"
 
 
-_EXPERIMENT_MODULES: Final[dict[str, str]] = {
-    "build-phystwin-cues": "bayesian_phystwin.cli.phystwin_cues",
-    "calibrate-phystwin-discrepancy": "bayesian_phystwin.cli.phystwin_discrepancy",
-    "export-phystwin-residuals": "bayesian_phystwin.cli.phystwin_export",
-    "phystwin-refit": "bayesian_phystwin.cli.phystwin_refit",
-    "build-phystwin-prefix": "bayesian_phystwin.cli.phystwin_prefix_artifact",
-    "evaluate-phystwin-official": "bayesian_phystwin.cli.phystwin_official_evaluation",
-    "evaluate-phystwin-priors": "bayesian_phystwin.cli.phystwin_prior_evaluation",
-    "combine-phystwin-profiles": "bayesian_phystwin.cli.phystwin_joint_profile",
-    "confirm-phystwin-residual": "bayesian_phystwin.cli.phystwin_confirmatory",
-    "confirm-phystwin-residual-baselines": "bayesian_phystwin.cli.phystwin_baseline_confirmation",
-    "confirm-phystwin-bayesian-anchor": "bayesian_phystwin.cli.phystwin_bayesian_confirmation",
-    "audit-phystwin-calibration": "bayesian_phystwin.cli.phystwin_calibration",
-    "confirm-phystwin-combined": "bayesian_phystwin.cli.phystwin_combined_confirmation",
-    "confirm-phystwin-additional-anchor": "bayesian_phystwin.cli.phystwin_additional_confirmation",
-    "confirm-phystwin-additional-bayesian": "bayesian_phystwin.cli.phystwin_additional_bayesian_confirmation",
-    "compare-phystwin-additional-controls": "bayesian_phystwin.cli.phystwin_additional_control_comparison",
-    "analyze-phystwin-horizon": "bayesian_phystwin.cli.phystwin_horizon_analysis",
-    "analyze-phystwin-controller-sensitivity": "bayesian_phystwin.cli.phystwin_controller_sensitivity",
-    "infer-phystwin-controller-bias": "bayesian_phystwin.cli.phystwin_controller_inference",
-    "analyze-phystwin-spatial-modes": "bayesian_phystwin.cli.phystwin_spatial_mode_analysis",
-    "compare-phystwin-graph-anchors": "bayesian_phystwin.cli.phystwin_graph_anchor_comparison",
-    "evaluate-phystwin-state-injection": "bayesian_phystwin.cli.phystwin_state_injection",
-    "fit-phystwin-residual-dynamics": "bayesian_phystwin.cli.phystwin_residual_dynamics",
-    "fit-phystwin-residual-velocity": "bayesian_phystwin.cli.phystwin_residual_velocity",
-    "fit-phystwin-shared-residual-velocity": "bayesian_phystwin.cli.phystwin_shared_residual_velocity",
-    "evaluate-phystwin-pgrd": "bayesian_phystwin.cli.phystwin_pgrd_adapter",
-    "calibrate-phystwin-pgrd": "bayesian_phystwin.cli.phystwin_pgrd_calibrated",
-    "train-phystwin-pgrd": "bayesian_phystwin.cli.phystwin_pgrd_native",
-    "train-phystwin-pgrd-unrolled": "bayesian_phystwin.cli.phystwin_pgrd_unrolled",
-    "fit-phystwin-hierarchical-residual": "bayesian_phystwin.cli.phystwin_residual_shrinkage",
-    "compare-phystwin-residual-scales": "bayesian_phystwin.cli.phystwin_residual_scale_comparison",
-    "fit-phystwin-residual-baselines": "bayesian_phystwin.cli.phystwin_residual_baselines",
-    "build-phystwin-raw-cues": "bayesian_phystwin.cli.phystwin_raw_cues",
-    "build-phystwin-cotracker3-cues": "bayesian_phystwin.cli.phystwin_cotracker3_cues",
-    "evaluate-phystwin-perception-cues": "bayesian_phystwin.cli.phystwin_perception_evaluation",
-    "associate-phystwin-motioncrafter": "bayesian_phystwin.cli.phystwin_motioncrafter_association",
-    "assimilate-phystwin-motioncrafter": "bayesian_phystwin.cli.phystwin_motioncrafter_assimilation",
-    "evaluate-phystwin-motioncrafter-assimilation": "bayesian_phystwin.cli.phystwin_motioncrafter_assimilation_evaluation",
-    "select-phystwin-motioncrafter-view": "bayesian_phystwin.cli.phystwin_motioncrafter_selection",
-    "fit-phystwin-bayesian-anchor": "bayesian_phystwin.cli.phystwin_bayesian_anchor",
-    "compare-phystwin-trajectories": "bayesian_phystwin.cli.phystwin_comparison",
-    "compare-phystwin-sota": "bayesian_phystwin.cli.phystwin_sota_comparison",
-    "overlay-phystwin-external-backbone": "bayesian_phystwin.cli.phystwin_external_backbone",
-    "gate-phystwin-backbone-family": "bayesian_phystwin.cli.phystwin_backbone_family_gate",
-    "open-phystwin-backbone-family-future": "bayesian_phystwin.cli.phystwin_backbone_family_future",
-    "report-matphys-loo-sota": "bayesian_phystwin.cli.matphys_loo_sota_report",
-    "gate-matphys-part-family": "bayesian_phystwin.cli.matphys_part_family_gate",
-    "open-matphys-part-family-future": "bayesian_phystwin.cli.matphys_part_family_future",
-    "gate-phystwin-shared-nonlinear-residual": "bayesian_phystwin.cli.phystwin_shared_nonlinear_residual",
-    "gate-phystwin-canonical-triplane-residual": "bayesian_phystwin.cli.phystwin_canonical_triplane_residual",
-    "build-phystwin-spring-overlay": "bayesian_phystwin.cli.phystwin_spring_overlay",
-    "gate-phystwin-part-pair-source": "bayesian_phystwin.cli.phystwin_part_pair_source_gate",
-    "build-phystwin-piecewise-topology": "bayesian_phystwin.cli.phystwin_piecewise_topology",
-    "gate-phystwin-sparse-topology-source": "bayesian_phystwin.cli.phystwin_sparse_topology_source_gate",
-    "search-phystwin-topology-field": "bayesian_phystwin.cli.phystwin_zero_order_topology",
-    "gate-phystwin-zero-order-source": "bayesian_phystwin.cli.phystwin_zero_order_source_gate",
-    "diagnose-phystwin-bias": "bayesian_phystwin.cli.phystwin_bias_diagnostic",
-    "evaluate-deform360-online-belief": "bayesian_phystwin.cli.deform360_online_belief",
-    "build-deform360-raw-camera": "bayesian_phystwin.cli.deform360_raw_camera_observation",
-    "build-deform360-crossview-supplement": "bayesian_phystwin.cli.deform360_crossview_observation",
-    "predict-deform360-crossview-guard": "bayesian_phystwin.cli.deform360_crossview_guard",
-    "diagnose-deform360-raw-pairwise": "bayesian_phystwin.cli.deform360_raw_pairwise_correspondence_diagnostic",
-    "download-deform360-selective-virtual-sensing": "bayesian_phystwin.cli.deform360_selective_virtual_sensing_download",
-    "benchmark-bias-aware-belief": "bayesian_phystwin.cli.bias_aware_belief_benchmark",
-    "develop-deform360-bias-aware-belief": "bayesian_phystwin.cli.deform360_bias_aware_belief_development",
-    "deform360-bias-aware-prospective": "bayesian_phystwin.cli.deform360_bias_aware_prospective",
-    "deform360-bias-aware-result": "bayesian_phystwin.cli.deform360_bias_aware_prospective_result",
-    "fetch-phystwin-eval-data": "bayesian_phystwin.cli.phystwin_data",
-    "structural-recovery-benchmark": "bayesian_phystwin.cli.structural_benchmark",
-    "diagnose-phystwin-structure": "bayesian_phystwin.cli.phystwin_structural_diagnostic",
-    "aggregate-phystwin-structure": "bayesian_phystwin.cli.structural_diagnostic_aggregate",
-    "audit-phystwin-state-decay": "bayesian_phystwin.cli.phystwin_state_decay",
-    "audit-phystwin-state-modes": "bayesian_phystwin.cli.phystwin_state_modes",
-    "aggregate-phystwin-state-modes": "bayesian_phystwin.cli.phystwin_state_mode_aggregate",
-}
+_EXPERIMENT_TARGETS: Final[str] = """
+build-phystwin-cues phystwin_cues
+calibrate-phystwin-discrepancy phystwin_discrepancy
+export-phystwin-residuals phystwin_export
+phystwin-refit phystwin_refit
+build-phystwin-prefix phystwin_prefix_artifact
+evaluate-phystwin-official phystwin_official_evaluation
+evaluate-phystwin-priors phystwin_prior_evaluation
+combine-phystwin-profiles phystwin_joint_profile
+confirm-phystwin-residual phystwin_confirmatory
+confirm-phystwin-residual-baselines phystwin_baseline_confirmation
+confirm-phystwin-bayesian-anchor phystwin_bayesian_confirmation
+audit-phystwin-calibration phystwin_calibration
+confirm-phystwin-combined phystwin_combined_confirmation
+confirm-phystwin-additional-anchor phystwin_additional_confirmation
+confirm-phystwin-additional-bayesian phystwin_additional_bayesian_confirmation
+compare-phystwin-additional-controls phystwin_additional_control_comparison
+analyze-phystwin-horizon phystwin_horizon_analysis
+analyze-phystwin-controller-sensitivity phystwin_controller_sensitivity
+infer-phystwin-controller-bias phystwin_controller_inference
+analyze-phystwin-spatial-modes phystwin_spatial_mode_analysis
+compare-phystwin-graph-anchors phystwin_graph_anchor_comparison
+evaluate-phystwin-state-injection phystwin_state_injection
+fit-phystwin-residual-dynamics phystwin_residual_dynamics
+fit-phystwin-residual-velocity phystwin_residual_velocity
+fit-phystwin-shared-residual-velocity phystwin_shared_residual_velocity
+evaluate-phystwin-pgrd phystwin_pgrd_adapter
+calibrate-phystwin-pgrd phystwin_pgrd_calibrated
+train-phystwin-pgrd phystwin_pgrd_native
+train-phystwin-pgrd-unrolled phystwin_pgrd_unrolled
+fit-phystwin-hierarchical-residual phystwin_residual_shrinkage
+compare-phystwin-residual-scales phystwin_residual_scale_comparison
+fit-phystwin-residual-baselines phystwin_residual_baselines
+build-phystwin-raw-cues phystwin_raw_cues
+build-phystwin-cotracker3-cues phystwin_cotracker3_cues
+evaluate-phystwin-perception-cues phystwin_perception_evaluation
+associate-phystwin-motioncrafter phystwin_motioncrafter_association
+assimilate-phystwin-motioncrafter phystwin_motioncrafter_assimilation
+evaluate-phystwin-motioncrafter-assimilation phystwin_motioncrafter_assimilation_evaluation
+select-phystwin-motioncrafter-view phystwin_motioncrafter_selection
+fit-phystwin-bayesian-anchor phystwin_bayesian_anchor
+compare-phystwin-trajectories phystwin_comparison
+compare-phystwin-sota phystwin_sota_comparison
+overlay-phystwin-external-backbone phystwin_external_backbone
+gate-phystwin-backbone-family phystwin_backbone_family_gate
+open-phystwin-backbone-family-future phystwin_backbone_family_future
+report-matphys-loo-sota matphys_loo_sota_report
+gate-matphys-part-family matphys_part_family_gate
+open-matphys-part-family-future matphys_part_family_future
+gate-phystwin-shared-nonlinear-residual phystwin_shared_nonlinear_residual
+gate-phystwin-canonical-triplane-residual phystwin_canonical_triplane_residual
+build-phystwin-spring-overlay phystwin_spring_overlay
+gate-phystwin-part-pair-source phystwin_part_pair_source_gate
+build-phystwin-piecewise-topology phystwin_piecewise_topology
+gate-phystwin-sparse-topology-source phystwin_sparse_topology_source_gate
+search-phystwin-topology-field phystwin_zero_order_topology
+gate-phystwin-zero-order-source phystwin_zero_order_source_gate
+diagnose-phystwin-bias phystwin_bias_diagnostic
+evaluate-deform360-online-belief deform360_online_belief
+build-deform360-raw-camera deform360_raw_camera_observation
+build-deform360-crossview-supplement deform360_crossview_observation
+predict-deform360-crossview-guard deform360_crossview_guard
+diagnose-deform360-raw-pairwise deform360_raw_pairwise_correspondence_diagnostic
+download-deform360-selective-virtual-sensing deform360_selective_virtual_sensing_download
+benchmark-bias-aware-belief bias_aware_belief_benchmark
+develop-deform360-bias-aware-belief deform360_bias_aware_belief_development
+deform360-bias-aware-prospective deform360_bias_aware_prospective
+deform360-bias-aware-result deform360_bias_aware_prospective_result
+fetch-phystwin-eval-data phystwin_data
+structural-recovery-benchmark structural_benchmark
+diagnose-phystwin-structure phystwin_structural_diagnostic
+aggregate-phystwin-structure structural_diagnostic_aggregate
+audit-phystwin-state-decay phystwin_state_decay
+audit-phystwin-state-modes phystwin_state_modes
+aggregate-phystwin-state-modes phystwin_state_mode_aggregate
+""".strip()
 
-EXPERIMENTS: Final[dict[str, ExperimentSpec]] = {
-    experiment_id: ExperimentSpec(experiment_id, module)
-    for experiment_id, module in _EXPERIMENT_MODULES.items()
-}
+
+def _build_experiment_registry() -> dict[str, ExperimentSpec]:
+    registry: dict[str, ExperimentSpec] = {}
+    for line in _EXPERIMENT_TARGETS.splitlines():
+        experiment_id, module_suffix = line.split()
+        if experiment_id in registry:
+            raise RuntimeError(f"duplicate experiment identifier: {experiment_id}")
+        registry[experiment_id] = ExperimentSpec(
+            experiment_id=experiment_id,
+            module=f"bayesian_phystwin.cli.{module_suffix}",
+        )
+    return registry
+
+
+EXPERIMENTS: Final[dict[str, ExperimentSpec]] = _build_experiment_registry()
 
 
 def experiment_ids() -> tuple[str, ...]:
@@ -161,7 +168,7 @@ def _resolve(experiment_id: str) -> ExperimentSpec | None:
     return EXPERIMENTS.get(experiment_id)
 
 
-def _load_function(spec: ExperimentSpec) -> Callable[..., Any]:
+def _load_function(spec: ExperimentSpec) -> Callable[..., object]:
     module = importlib.import_module(spec.module)
     function = getattr(module, spec.function_name)
     if not callable(function):
@@ -169,32 +176,49 @@ def _load_function(spec: ExperimentSpec) -> Callable[..., Any]:
             f"registered experiment target is not callable: "
             f"{spec.module}:{spec.function_name}"
         )
-    return function
+    return cast(Callable[..., object], function)
+
+
+def _exit_code(result: object) -> int:
+    if result is None:
+        return 0
+    if isinstance(result, int):
+        return result
+    raise TypeError(
+        "registered experiment target must return int or None, "
+        f"received {type(result).__name__}"
+    )
 
 
 def _invoke(spec: ExperimentSpec, arguments: Sequence[str]) -> int:
     function = _load_function(spec)
-    parameters = inspect.signature(function).parameters
+    parameters = tuple(inspect.signature(function).parameters.values())
     if not parameters:
         previous_argv = sys.argv
         sys.argv = [spec.canonical_command, *arguments]
         try:
-            result = function()
+            return _exit_code(function())
         finally:
             sys.argv = previous_argv
-    elif len(parameters) == 1:
-        result = function(list(arguments))
-    else:
-        raise TypeError(
-            f"registered experiment target has unsupported signature: "
-            f"{spec.module}:{spec.function_name}"
-        )
-    return 0 if result is None else int(result)
+
+    if len(parameters) == 1 and parameters[0].kind in {
+        inspect.Parameter.POSITIONAL_ONLY,
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+    }:
+        return _exit_code(function(list(arguments)))
+
+    raise TypeError(
+        f"registered experiment target has unsupported signature: "
+        f"{spec.module}:{spec.function_name}"
+    )
 
 
 def _unknown_experiment(experiment_id: str) -> int:
     print(f"unknown experiment: {experiment_id}", file=sys.stderr)
-    print("run `bpt experiment list` to inspect registered identifiers", file=sys.stderr)
+    print(
+        "run `bpt experiment list` to inspect registered identifiers",
+        file=sys.stderr,
+    )
     return 2
 
 
