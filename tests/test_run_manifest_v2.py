@@ -166,6 +166,15 @@ def test_repository_states_require_exact_unique_revisions(tmp_path: Path) -> Non
         )
 
 
+def test_v2_requires_nonempty_run_id_and_owner_name_repository(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+
+    with pytest.raises(ValueError, match="run ID must be nonempty"):
+        replace(manifest, run_id="")
+    with pytest.raises(ValueError, match="repository must use owner/name"):
+        replace(manifest, repository="Bayesian-PhysTwin")
+
+
 def test_discover_git_repository_state_tracks_uncommitted_files(
     tmp_path: Path,
 ) -> None:
