@@ -78,19 +78,27 @@ jobs:
     env:
       PROB4D_READ_TOKEN: ${{ secrets.PROB4D_READ_TOKEN }}
     steps:
-      - name: Require Prob4D private-repository token
+      - name: Report unavailable Prob4D credential
         if: env.PROB4D_READ_TOKEN == ''
+        shell: bash
         run: |
-          echo "::error title=Missing PROB4D_READ_TOKEN::Configure a contents-read token for FlorianPfaff/Prob4D."
-          exit 1
+          echo "::warning title=Three-repository gate not executed::Configure PROB4D_READ_TOKEN with contents-read access to FlorianPfaff/Prob4D."
+          {
+            echo "### Three-repository gate not executed"
+            echo
+            echo "The private Prob4D checkout requires the repository secret \`PROB4D_READ_TOKEN\`."
+            echo "No cross-repository evidence is admitted when the credential is absent."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check out Bayesian-PhysTwin
+        if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
           path: bayesian-phystwin
           persist-credentials: false
 
       - name: Check out Prob4D
+        if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
           repository: FlorianPfaff/Prob4D
@@ -100,6 +108,7 @@ jobs:
           persist-credentials: false
 
       - name: Check out Causal4D
+        if: env.PROB4D_READ_TOKEN != ''
         uses: actions/checkout@v7
         with:
           repository: FlorianPfaff/Causal4D
@@ -108,6 +117,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
+        if: env.PROB4D_READ_TOKEN != ''
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -118,6 +128,7 @@ jobs:
             causal4d/pyproject.toml
 
       - name: Build, install, and execute the isolated golden path
+        if: env.PROB4D_READ_TOKEN != ''
         run: |
           bash bayesian-phystwin/scripts/run_three_repository_golden_path.sh \
             bayesian-phystwin \
