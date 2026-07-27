@@ -7,12 +7,20 @@ surface rather than from experiment modules.
 
 from __future__ import annotations
 
-import json
 import os
-from importlib.metadata import PackageNotFoundError, distribution, version
 
 import numpy as np
 
+from .causal4d_provider_v2 import (
+    CAUSAL4D_PROVIDER_API_VERSION as PARENT_PROVIDER_API_VERSION,
+)
+from .causal4d_provider_v2 import (
+    CAUSAL4D_PROVIDER_PACKAGE_VERSION as CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION,
+)
+from .contracts.provider import (
+    installed_distribution_revision,
+    installed_distribution_version,
+)
 from .phystwin_graph import (
     PhysTwinSpringGraph,
     PhysTwinSpringGraphConfig,
@@ -20,7 +28,6 @@ from .phystwin_graph import (
 )
 
 CAUSAL4D_GRAPH_PROVIDER_API_VERSION = 1
-CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION = "0.4.0"
 CAUSAL4D_GRAPH_PROVIDER_CAPABILITIES = (
     "controller_grouping",
     "phystwin_spring_graph",
@@ -28,28 +35,6 @@ CAUSAL4D_GRAPH_PROVIDER_CAPABILITIES = (
 CAUSAL4D_GRAPH_ARTIFACT_SCHEMA_VERSIONS = {
     "PhysTwinSpringGraph": 1,
 }
-
-
-def _installed_provider_version() -> str:
-    try:
-        return version("bayesian-phystwin")
-    except PackageNotFoundError:
-        return CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION
-
-
-def _installed_provider_revision() -> str | None:
-    try:
-        direct_url = distribution("bayesian-phystwin").read_text("direct_url.json")
-    except PackageNotFoundError:
-        return None
-    if not direct_url:
-        return None
-    try:
-        payload = json.loads(direct_url)
-    except (TypeError, json.JSONDecodeError):
-        return None
-    commit_id = payload.get("vcs_info", {}).get("commit_id")
-    return str(commit_id) if commit_id else None
 
 
 def causal4d_graph_provider_manifest(
@@ -61,12 +46,15 @@ def causal4d_graph_provider_manifest(
     revision = (
         provider_revision
         or os.environ.get("BAYESIAN_PHYSTWIN_REVISION")
-        or _installed_provider_revision()
+        or installed_distribution_revision("bayesian-phystwin")
         or "unversioned-install"
     )
     return {
         "provider_name": "bayesian-phystwin",
-        "provider_version": _installed_provider_version(),
+        "provider_version": installed_distribution_version(
+            "bayesian-phystwin",
+            fallback=CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION,
+        ),
         "provider_revision": revision,
         "schema_version": CAUSAL4D_GRAPH_PROVIDER_API_VERSION,
         "capabilities": list(CAUSAL4D_GRAPH_PROVIDER_CAPABILITIES),
@@ -74,6 +62,8 @@ def causal4d_graph_provider_manifest(
         "metadata": {
             "provider_api": "bayesian_phystwin.causal4d_graph_provider_v1",
             "provider_api_version": CAUSAL4D_GRAPH_PROVIDER_API_VERSION,
+            "parent_provider_api": "bayesian_phystwin.causal4d_provider_v2",
+            "parent_provider_api_version": PARENT_PROVIDER_API_VERSION,
         },
     }
 
@@ -154,6 +144,7 @@ __all__ = [
     "CAUSAL4D_GRAPH_PROVIDER_API_VERSION",
     "CAUSAL4D_GRAPH_PROVIDER_CAPABILITIES",
     "CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION",
+    "PARENT_PROVIDER_API_VERSION",
     "PhysTwinSpringGraph",
     "PhysTwinSpringGraphConfig",
     "build_phystwin_spring_graph",
