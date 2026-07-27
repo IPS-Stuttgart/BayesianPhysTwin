@@ -82,6 +82,7 @@ jobs:
       - name: Run stable-core coverage suite
         run: |
           python -m coverage run --branch --source=bayesian_phystwin -m pytest -q \
+            tests/test_causal4d_graph_provider_v1.py \
             tests/test_causal4d_provider_v1.py \
             tests/test_gauge_aware_belief.py \
             tests/test_observation_belief.py \
@@ -177,6 +178,7 @@ jobs:
       - name: Run core contract suite
         run: |
           python -m pytest -q \
+            tests/test_causal4d_graph_provider_v1.py \
             tests/test_causal4d_provider_v1.py \
             tests/test_gauge_aware_belief.py \
             tests/test_observation_belief.py \
@@ -240,6 +242,8 @@ jobs:
       - name: Validate provider and observation boundaries
         run: |
           python -m pytest -q \
+            tests/test_causal4d_graph_provider_v1.py \
+            tests/test_causal4d_graph_provider_parity.py \
             tests/test_causal4d_provider_v1.py \
             tests/test_gauge_aware_belief.py \
             tests/test_observation_belief_gauge_adapter.py \
@@ -249,7 +253,12 @@ jobs:
             --output provider-manifest.json
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
+
+          from bayesian_phystwin.causal4d_graph_provider_v1 import (
+              causal4d_graph_provider_manifest,
+          )
 
           payload = json.loads(Path("provider-manifest.json").read_text())
           required = {
@@ -261,11 +270,31 @@ jobs:
           missing = required - set(payload["capabilities"])
           if missing:
               raise SystemExit(f"missing provider capabilities: {sorted(missing)}")
+
+          graph_payload = causal4d_graph_provider_manifest(
+              provider_revision=os.environ["GITHUB_SHA"]
+          )
+          graph_required = {"controller_grouping", "phystwin_spring_graph"}
+          graph_missing = graph_required - set(graph_payload["capabilities"])
+          if graph_missing:
+              raise SystemExit(
+                  f"missing graph-provider capabilities: {sorted(graph_missing)}"
+              )
+          if graph_payload["artifact_schema_versions"] != {
+              "PhysTwinSpringGraph": 1
+          }:
+              raise SystemExit("unexpected graph-provider artifact schema")
+          Path("graph-provider-manifest.json").write_text(
+              json.dumps(graph_payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
           PY
       - uses: actions/upload-artifact@v7
         with:
-          name: provider-manifest
-          path: provider-manifest.json
+          name: provider-manifests
+          path: |
+            provider-manifest.json
+            graph-provider-manifest.json
           retention-days: 14
 
   build:
