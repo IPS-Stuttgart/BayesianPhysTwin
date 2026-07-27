@@ -44,11 +44,16 @@ The normative provider details are maintained in
 
 ## Public and experimental interfaces
 
-Versioned artifact schemas, the Causal4D provider module, and commands exercised
-by installed-artifact CI are supported interfaces. Underscore-prefixed modules,
-research scripts, unregistered experiment entry points, and undocumented
+Versioned artifact schemas, the Causal4D provider module, and the six stable
+routes documented in [`docs/command_line.md`](docs/command_line.md) are
+supported interfaces. The `bpt experiment` dispatcher and registry format are
+supported infrastructure, but individual experiment identifiers and their
+arguments remain non-stable research interfaces.
+
+Underscore-prefixed modules, unregistered research scripts, and undocumented
 implementation details are internal and may change without compatibility
-promises.
+promises. Legacy `bpt-*` executables are not supported aliases; frozen command
+strings remain provenance only.
 
 Because the project is pre-1.0, broader APIs may still evolve. Where practical,
 a supported interface is deprecated for at least one compatibility line before
