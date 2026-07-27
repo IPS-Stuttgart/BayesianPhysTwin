@@ -100,6 +100,14 @@ class RobustEndpointPosteriorV1:
         object.__setattr__(self, "update_count", count)
 
     @property
+    def updated_mask(self) -> np.ndarray:
+        """Return read-only tracks that received at least one update."""
+
+        updated = self.update_count > 0
+        updated.setflags(write=False)
+        return updated
+
+    @property
     def mean(self) -> np.ndarray:
         """Compatibility alias for the historical endpoint posterior."""
 

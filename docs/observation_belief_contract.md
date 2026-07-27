@@ -5,6 +5,11 @@ perception feeder and Bayesian-PhysTwin. It is a content-addressed, non-pickled
 NPZ artifact. The same schema is emitted by Prob4D and can be validated by
 Causal4D without importing either provider.
 
+Descriptor metadata is copied, normalized through finite canonical JSON, and
+exposed as recursively immutable dict/list-compatible containers. Mutating caller-owned
+containers after construction, or attempting nested mutation through the
+belief, therefore cannot change an existing artifact content address.
+
 ## Information boundary
 
 Every row carries an absolute source-frame ID, and the descriptor declares an
@@ -51,8 +56,9 @@ rho_g t_nu(r_g; 0, Psi_g)
 
 where `Psi_g = (nu-2)/nu C_g`, so `C_g` is the covariance of the nominal
 Student-t component. Block-diagonal local covariance plus shared low-rank
-factors are evaluated with the Woodbury identity; a dense covariance matrix is
-not formed.
+factors are evaluated with Cholesky solves and the Woodbury identity. Independent
+factor groups are accumulated as separate rank-sized systems, so neither a dense
+covariance matrix nor a dense all-groups factor matrix is formed.
 
 The posterior nominal responsibility may depend on the residual. The supplied
 prior nominal probability never does. Association support is reported as a

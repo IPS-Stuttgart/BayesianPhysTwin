@@ -51,9 +51,7 @@ def _belief() -> ObservationBeliefV1:
 def test_prior_reliability_is_not_recomputed_from_residual() -> None:
     belief = _belief()
     clean = grouped_student_t_mixture_likelihood(belief, belief.mean_xyz_m)
-    shifted = grouped_student_t_mixture_likelihood(
-        belief, belief.mean_xyz_m + 0.2
-    )
+    shifted = grouped_student_t_mixture_likelihood(belief, belief.mean_xyz_m + 0.2)
 
     np.testing.assert_array_equal(
         clean.prior_nominal_probability,
@@ -64,8 +62,7 @@ def test_prior_reliability_is_not_recomputed_from_residual() -> None:
         belief.group_prior_nominal_probability,
     )
     assert np.all(
-        shifted.posterior_nominal_probability
-        < clean.posterior_nominal_probability
+        shifted.posterior_nominal_probability < clean.posterior_nominal_probability
     )
 
 
@@ -79,9 +76,7 @@ def test_low_rank_factor_increases_coherent_uncertainty() -> None:
         type(belief)(
             **{
                 **belief.__dict__,
-                "low_rank_factor_m": np.zeros_like(
-                    belief.low_rank_factor_m
-                ),
+                "low_rank_factor_m": np.zeros_like(belief.low_rank_factor_m),
             }
         ),
         shifted,
@@ -108,4 +103,65 @@ def test_composite_weight_scales_group_log_evidence() -> None:
     )
     assert result.total_negative_log_likelihood == np.sum(
         result.weighted_negative_log_likelihood
+    )
+
+
+def test_blockwise_woodbury_matches_dense_covariance() -> None:
+    original = _belief()
+    belief = ObservationBeliefV1(
+        **{
+            **original.__dict__,
+            "correlation_group_ids": np.zeros(4, dtype=np.int64),
+            "group_ids": np.asarray([0], dtype=np.int64),
+            "group_prior_nominal_probability": np.asarray([0.8]),
+            "group_composite_weight": np.asarray([1.0]),
+        }
+    )
+    predicted = belief.mean_xyz_m.copy()
+    predicted[:, 0] += np.asarray([0.010, -0.004, 0.006, -0.002])
+    config = GroupedStudentTLikelihoodConfig(
+        degrees_of_freedom=7.0,
+        model_discrepancy_variance_m2=2e-6,
+        covariance_jitter_m2=1e-10,
+    )
+    result = grouped_student_t_mixture_likelihood(
+        belief,
+        predicted,
+        config=config,
+    )
+
+    count = belief.observation_count
+    dimension = 3 * count
+    covariance = np.zeros((dimension, dimension), dtype=np.float64)
+    diagonal_addition = (
+        config.model_discrepancy_variance_m2 + config.covariance_jitter_m2
+    ) * np.eye(3)
+    for row, local in enumerate(belief.local_covariance_m2):
+        row_slice = slice(3 * row, 3 * row + 3)
+        covariance[row_slice, row_slice] = local + diagonal_addition
+
+    rank = belief.factor_rank
+    for factor_group in np.unique(belief.factor_group_ids):
+        selected = belief.factor_group_ids == factor_group
+        factor_matrix = np.zeros((dimension, rank), dtype=np.float64)
+        factor_blocks = factor_matrix.reshape(count, 3, rank)
+        factor_blocks[selected] = belief.low_rank_factor_m[selected]
+        covariance += factor_matrix @ factor_matrix.T
+
+    residual = (belief.mean_xyz_m - predicted).reshape(dimension)
+    sign, expected_log_determinant = np.linalg.slogdet(covariance)
+    assert sign > 0.0
+    expected_mahalanobis = float(residual @ np.linalg.solve(covariance, residual))
+
+    np.testing.assert_allclose(
+        result.covariance_log_determinant_m2,
+        [expected_log_determinant],
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.covariance_mahalanobis_squared,
+        [expected_mahalanobis],
+        rtol=1e-10,
+        atol=1e-12,
     )

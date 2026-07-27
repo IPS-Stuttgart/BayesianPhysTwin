@@ -55,13 +55,17 @@ The endpoint posterior contains:
 
 - a 3-D discrepancy mean per tracked material point;
 - one isotropic scalar variance per point;
-- the final nominal-mixture responsibility; and
-- the number of valid recursive updates.
+- the final nominal-mixture responsibility;
+- the number of valid recursive updates; and
+- `updated_mask`, a read-only Boolean view derived from `update_count > 0`.
 
 Every returned array is a defensive, C-contiguous, read-only copy. The historical
 `mean`, `variance`, and `final_inlier_probability` names remain read-only
 properties for compatibility; new consumers should use the unit-bearing v1
-field names.
+field names. The historical kernel leaves final nominal probability at zero for
+tracks that never receive an update. Consumers must use `updated_mask` before
+interpreting that probability; zero is not evidence against the nominal component
+when the mask is false.
 
 This posterior is a readout/model-discrepancy belief. It is not automatically a
 physically admissible position/velocity state correction and does not bypass

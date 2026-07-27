@@ -9,9 +9,7 @@ from bayesian_phystwin.observation_belief import (
     save_observation_belief,
 )
 
-GOLDEN_ARTIFACT_ID = (
-    "9c02e638f60424cca7738d347d1258acd208eb562f422efacd077db4edb2fe80"
-)
+GOLDEN_ARTIFACT_ID = "9c02e638f60424cca7738d347d1258acd208eb562f422efacd077db4edb2fe80"
 
 
 def _belief() -> ObservationBeliefV1:
@@ -68,6 +66,40 @@ def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     np.testing.assert_array_equal(restored.mean_xyz_m, belief.mean_xyz_m)
 
 
+def test_observation_metadata_is_deeply_immutable_and_digest_stable(
+    tmp_path: Path,
+) -> None:
+    metadata_input = {
+        "nested": {
+            "items": [1, {"accepted": True}],
+        }
+    }
+    belief = ObservationBeliefV1(
+        **{
+            **_belief().__dict__,
+            "metadata": metadata_input,
+        }
+    )
+    artifact_id = belief.artifact_id
+
+    metadata_input["nested"]["items"][1]["accepted"] = False
+    assert belief.metadata["nested"]["items"][1]["accepted"] is True
+    assert belief.artifact_id == artifact_id
+
+    with pytest.raises(TypeError):
+        belief.metadata["new"] = "mutated"
+    with pytest.raises(TypeError):
+        belief.metadata["nested"]["items"][1]["accepted"] = False
+    with pytest.raises(TypeError):
+        belief.metadata["nested"]["items"].append("mutated")
+
+    path = tmp_path / "nested-belief.npz"
+    save_observation_belief(path, belief)
+    restored = load_observation_belief(path)
+    assert restored.artifact_id == artifact_id
+    assert restored.metadata == belief.metadata
+
+
 def test_observation_belief_rejects_future_frame() -> None:
     belief = _belief()
     with pytest.raises(ValueError, match="causal boundary"):
@@ -92,9 +124,7 @@ def test_observation_belief_rejects_duplicate_identity() -> None:
 
 def test_sim3_transform_moves_covariance_and_factors() -> None:
     belief = _belief()
-    rotation = np.asarray(
-        [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
-    )
+    rotation = np.asarray([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
     transformed = belief.transformed(
         rotation=rotation,
         translation_m=np.asarray([1.0, 2.0, 3.0]),
@@ -102,9 +132,7 @@ def test_sim3_transform_moves_covariance_and_factors() -> None:
         stream_id="world",
     )
 
-    expected = 2.0 * (rotation @ belief.mean_xyz_m[0]) + np.asarray(
-        [1.0, 2.0, 3.0]
-    )
+    expected = 2.0 * (rotation @ belief.mean_xyz_m[0]) + np.asarray([1.0, 2.0, 3.0])
     np.testing.assert_allclose(transformed.mean_xyz_m[0], expected)
     np.testing.assert_allclose(
         transformed.local_covariance_m2[0], 4.0 * belief.local_covariance_m2[0]

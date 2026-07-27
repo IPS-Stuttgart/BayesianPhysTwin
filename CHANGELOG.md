@@ -49,6 +49,12 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   External-fork pull requests still run the producer-neutral consumer fixture and
   explicitly report that the secret-backed producer gate was unavailable and no
   current-Prob4D evidence was admitted.
+- Observation-belief metadata is now recursively immutable after canonical JSON
+  validation, preventing nested mutation from changing an existing artifact digest.
+- Grouped low-rank covariance statistics now use blockwise Cholesky/Woodbury solves
+  without explicit covariance inverses or a dense all-factor-groups matrix.
+- Fixed endpoint posteriors expose an explicit read-only `updated_mask`, and
+  no-support summaries serialize JSON `null` rather than non-finite statistics.
 
 ### Removed
 
