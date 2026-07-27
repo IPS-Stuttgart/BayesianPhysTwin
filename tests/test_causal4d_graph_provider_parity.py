@@ -8,8 +8,6 @@ from bayesian_phystwin.causal4d_graph_provider_v1 import (
 )
 from bayesian_phystwin.phystwin_controller_sensitivity import (
     controller_hand_count as legacy_controller_hand_count,
-)
-from bayesian_phystwin.phystwin_controller_sensitivity import (
     infer_controller_groups as legacy_infer_controller_groups,
 )
 
