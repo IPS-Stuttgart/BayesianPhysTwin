@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from bayesian_phystwin.cli import run_manifest as run_manifest_cli
 from bayesian_phystwin.cli.run_manifest import main
 from bayesian_phystwin.run_manifest import (
@@ -21,6 +23,25 @@ from bayesian_phystwin.run_manifest_v2 import (
 def test_run_manifest_optional_inputs_default_empty() -> None:
     assert run_manifest_cli._load_json_mapping(None, name="configuration") == {}
     assert run_manifest_cli._load_repository_states(None) == ()
+
+
+def test_run_manifest_helpers_reject_invalid_json_shapes(tmp_path: Path) -> None:
+    configuration_path = tmp_path / "configuration.json"
+    configuration_path.write_text("[]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="configuration JSON must contain an object"):
+        run_manifest_cli._load_json_mapping(
+            configuration_path,
+            name="configuration",
+        )
+
+    repositories_path = tmp_path / "repositories.json"
+    repositories_path.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="must contain an array"):
+        run_manifest_cli._load_repository_states(repositories_path)
+
+    repositories_path.write_text("[1]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="record 0 must contain an object"):
+        run_manifest_cli._load_repository_states(repositories_path)
 
 
 def test_run_manifest_cli_creates_v2_and_validates_both_versions(
