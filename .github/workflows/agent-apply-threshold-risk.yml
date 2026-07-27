@@ -1,8 +1,9 @@
 name: Apply threshold-native evidence implementation
 
 on:
-  push:
-    branches: ["agent/tie-preserving-threshold-risk"]
+  pull_request:
+    branches: ["agent/threshold-risk-run-base"]
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
@@ -13,6 +14,7 @@ concurrency:
 
 jobs:
   implement:
+    if: github.head_ref == 'agent/tie-preserving-threshold-risk'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
