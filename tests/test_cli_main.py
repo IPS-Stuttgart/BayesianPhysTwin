@@ -11,10 +11,12 @@ import pytest
 from bayesian_phystwin.cli import _command_catalog as catalog
 from bayesian_phystwin.cli import _command_dispatch as dispatch
 from bayesian_phystwin.cli import main as main_module
+from bayesian_phystwin.cli import run_manifest as run_manifest_cli
 from bayesian_phystwin.cli.command_registry import (
     COMMANDS_BY_ID,
     validate_registry,
 )
+from bayesian_phystwin.repository_provenance import RepositoryState
 
 main = main_module.main
 
@@ -145,10 +147,7 @@ def test_grouped_cli_reports_only_declared_missing_optional_dependency(
         raise ModuleNotFoundError("No module named 'scipy'", name="scipy")
 
     monkeypatch.setattr(dispatch.importlib, "import_module", missing_scipy)
-    assert (
-        main(["experiment", "run", "confirm-phystwin-bayesian-anchor"])
-        == 1
-    )
+    assert main(["experiment", "run", "confirm-phystwin-bayesian-anchor"]) == 1
     assert "install bayesian-phystwin[graph]" in capsys.readouterr().err
 
     def missing_internal(_: str):
@@ -170,6 +169,28 @@ def test_distribution_installs_only_grouped_console_script() -> None:
         if entry_point.group == "console_scripts"
     }
     assert scripts == {"bpt": "bayesian_phystwin.cli.main:main"}
+
+
+def test_run_manifest_discovers_clean_primary_repository(monkeypatch, tmp_path) -> None:
+    expected = RepositoryState(
+        repository="FlorianPfaff/Bayesian-PhysTwin",
+        revision="a" * 40,
+        dirty=False,
+        role="primary",
+    )
+    monkeypatch.setattr(
+        run_manifest_cli,
+        "discover_git_repository_state",
+        lambda root, repository: expected,
+    )
+    arguments = SimpleNamespace(
+        revision=None,
+        dirty=False,
+        repository_root=tmp_path,
+        repository=None,
+        allow_dirty=False,
+    )
+    assert run_manifest_cli._primary_repository_state(arguments) == expected
 
 
 def test_catalog_help_json_and_error_paths(capsys) -> None:
@@ -278,6 +299,7 @@ def test_dispatch_keyword_signature_and_failure_modes(monkeypatch) -> None:
     )
     with pytest.raises(TypeError, match="cannot inspect"):
         main(["provider", "manifest"])
+
 
 def test_dispatch_restores_sys_argv_when_legacy_main_fails(monkeypatch) -> None:
     original_argv = sys.argv
