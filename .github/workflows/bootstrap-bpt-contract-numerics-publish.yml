@@ -1,0 +1,146 @@
+name: Publish BPT contract and numerical hardening
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-product-branch:
+    if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PRODUCT_BRANCH: agent/harden-bpt-contract-numerics
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch bootstrap source
+        run: git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Apply reviewed product patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -c "${PRODUCT_BRANCH}" main
+          python - <<'PY'
+          import os
+          import re
+          import subprocess
+          import textwrap
+
+          head_ref = os.environ["GITHUB_HEAD_REF"]
+          workflow = subprocess.check_output(
+              [
+                  "git",
+                  "show",
+                  f"origin/{head_ref}:"
+                  ".github/workflows/bootstrap-bpt-contract-numerics-hardening-v2.yml",
+              ],
+              text=True,
+          )
+          match = re.search(
+              r"python - <<'PY' > /tmp/bpt-patch-output.txt 2>&1\n"
+              r"(?P<body>.*?)\n          PY",
+              workflow,
+              re.DOTALL,
+          )
+          if match is None:
+              raise SystemExit("v2 product patch body was not found")
+          source = textwrap.dedent(match.group("body"))
+          typefix = subprocess.check_output(
+              [
+                  "git",
+                  "show",
+                  f"origin/{head_ref}:.github/bootstrap/bpt_typefix_append.py",
+              ],
+              text=True,
+          )
+          needle = 'exec(compile(source, "bpt-contract-numerics-patch.py", "exec"))'
+          if source.count(needle) != 1:
+              raise SystemExit("product patch execution point changed")
+          source = source.replace(
+              needle,
+              f"source += {typefix!r}\n{needle}",
+              1,
+          )
+          exec(compile(source, "bpt-product-patch.py", "exec"))
+          PY
+
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Format and lint changed Python files
+        shell: bash
+        run: |
+          files=(
+            src/bayesian_phystwin/observation_belief.py
+            src/bayesian_phystwin/grouped_likelihood.py
+            src/bayesian_phystwin/phystwin_bayesian_anchor.py
+            src/bayesian_phystwin/contracts/fixed_anchor.py
+            tests/test_observation_belief.py
+            tests/test_grouped_likelihood.py
+            tests/test_causal4d_provider_v1.py
+            tests/test_phystwin_bayesian_anchor.py
+          )
+          python -m ruff check --fix -- "${files[@]}"
+          python -m ruff format -- "${files[@]}"
+          python -m ruff check -- "${files[@]}"
+
+      - name: Run focused contract and numerical tests
+        run: |
+          python -m pytest -q \
+            tests/test_observation_belief.py \
+            tests/test_observation_belief_gauge_adapter.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_phystwin_bayesian_anchor.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_prob4d_joint_contract_fixture.py
+
+      - name: Commit and run exact quality ratchet
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "OpenAI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            CHANGELOG.md \
+            docs/causal4d_belief_provider_v1.md \
+            docs/observation_belief_contract.md \
+            src/bayesian_phystwin/contracts/fixed_anchor.py \
+            src/bayesian_phystwin/grouped_likelihood.py \
+            src/bayesian_phystwin/observation_belief.py \
+            src/bayesian_phystwin/phystwin_bayesian_anchor.py \
+            tests/test_causal4d_provider_v1.py \
+            tests/test_grouped_likelihood.py \
+            tests/test_observation_belief.py \
+            tests/test_phystwin_bayesian_anchor.py
+          git diff --cached --check
+          git commit -m "Harden immutable observation and covariance semantics"
+          python tools/quality/changed_python_quality.py --base HEAD^ --head HEAD
+
+      - name: Publish product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push --force origin "HEAD:refs/heads/${PRODUCT_BRANCH}"
+          {
+            echo "### Published product branch"
+            echo
+            echo "\`${PRODUCT_BRANCH}\`"
+            echo
+            echo "Commit: \`$(git rev-parse HEAD)\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
