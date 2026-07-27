@@ -30,9 +30,14 @@ jobs:
       - name: Install development dependencies
         run: python -m pip install -e ".[dev]"
       - name: Apply implementation
+        id: apply
+        continue-on-error: true
+        shell: bash
         run: |
-          git show 10f32d9ee15043b5267b77a8d655779f1f839253:tools/agent_apply_threshold_risk.py > tools/agent_apply_threshold_risk.py
-          python - <<'PY'
+          set -o pipefail
+          {
+            git show 10f32d9ee15043b5267b77a8d655779f1f839253:tools/agent_apply_threshold_risk.py > tools/agent_apply_threshold_risk.py
+            python - <<'PY'
           from pathlib import Path
 
           path = Path("tools/agent_apply_threshold_risk.py")
@@ -48,9 +53,20 @@ jobs:
           text = text[: text.index(obsolete)].rstrip() + "\n"
           path.write_text(text, encoding="utf-8")
           PY
-          python tools/agent_apply_threshold_risk.py
-          rm tools/agent_apply_threshold_risk.py
-          rm .github/workflows/agent-apply-threshold-risk-v2.yml
+            python tools/agent_apply_threshold_risk.py
+            rm tools/agent_apply_threshold_risk.py
+            rm .github/workflows/agent-apply-threshold-risk-v2.yml
+          } 2>&1 | tee /tmp/apply.log
+      - name: Upload patch diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: threshold-risk-apply-diagnostics
+          path: /tmp/apply.log
+          if-no-files-found: error
+      - name: Require successful patch application
+        if: steps.apply.outcome != 'success'
+        run: exit 1
       - name: Format focused changes
         run: |
           python -m ruff format \
