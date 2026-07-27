@@ -294,7 +294,7 @@ def test_bayesian_anchor_rejects_invalid_selection_config(
 def _write_validation_inputs(
     root: Path,
     *,
-    observed_frame_count: int = 9,
+    observed_frame_count: int = 12,
     baseline_frame_count: int = 12,
     observed_point_count: int = 2,
     baseline_point_count: int = 2,
