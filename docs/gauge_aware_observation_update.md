@@ -84,6 +84,14 @@ conditional point covariance. When a provider declares
 weight is treated as the final generalized-Bayes row power: Bayesian-PhysTwin
 does not apply a second effective-sample cap. Batches from providers without
 that declaration retain the consumer-side cap for backward compatibility.
+
+Provider-final mode removes only the additional group-size factor. Row prior
+reliability, the fixed nominal-component prior, and the exported composite
+weight remain separate multiplicative quantities. Unknown explicitly declared
+Prob4D semantics fail closed rather than being guessed. The observation-row and
+independent-anchor modes are also separate: a provider-final observation export
+does not silently disable the consumer cap for anchor rows.
+
 Association probability remains available in
 `adapted.association_probability` for reporting and is not substituted for
 prior reliability. The adapter records the exact input artifact ID, producer
