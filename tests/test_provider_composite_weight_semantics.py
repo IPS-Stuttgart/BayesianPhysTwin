@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
@@ -6,13 +7,17 @@ from bayesian_phystwin.gauge_aware_belief import (
     COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
     COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL,
 )
+from bayesian_phystwin.observation_belief import ObservationBeliefV1
 from bayesian_phystwin.observation_belief_gauge_adapter import (
     _observation_composite_weight_mode,
 )
 
 
-def _belief(*, repository: str, metadata: dict[str, object]):
-    return SimpleNamespace(source_repository=repository, metadata=metadata)
+def _belief(*, repository: str, metadata: dict[str, object]) -> ObservationBeliefV1:
+    return cast(
+        ObservationBeliefV1,
+        SimpleNamespace(source_repository=repository, metadata=metadata),
+    )
 
 
 def test_explicit_provider_final_semantics_take_precedence() -> None:
