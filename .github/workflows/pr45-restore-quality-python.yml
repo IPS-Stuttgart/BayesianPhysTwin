@@ -1,0 +1,54 @@
+name: PR 45 restore quality Python
+
+on:
+  push:
+    branches: ["agent/classify-command-registry"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr45-restore-quality-python
+  cancel-in-progress: true
+
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: agent/classify-command-registry
+          fetch-depth: 0
+      - name: Restore the established type-check environment
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/tests.yml')
+          text = path.read_text(encoding='utf-8')
+          quality_start = text.index('  quality:\n')
+          coverage_start = text.index('  stable-core-coverage:\n')
+          quality = text[quality_start:coverage_start]
+          old = '          python-version: "3.10"\n'
+          new = '          python-version: "3.12"\n'
+          if quality.count(old) != 1:
+              raise SystemExit('quality Python 3.10 marker is missing or ambiguous')
+          quality = quality.replace(old, new, 1)
+          path.write_text(
+              text[:quality_start] + quality + text[coverage_start:],
+              encoding='utf-8',
+          )
+          PY
+          rm .github/workflows/pr45-restore-quality-python.yml
+          git diff --check
+      - name: Publish the isolated workflow repair
+        shell: bash
+        run: |
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Restore Python 3.12 quality checks"
+          git push origin HEAD:agent/classify-command-registry
