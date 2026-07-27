@@ -1,9 +1,9 @@
 # Headless PhysTwin Refit
 
-`bpt-phystwin-refit` runs a fixed-correspondence reliability objective inside
-the released PhysTwin Warp simulator without importing its rendering, Open3D,
-Gaussian-splatting, or GUI stack. The integration is pinned to official commit
-`2b6630528141b9cba5a7677c8b88b2129b4a8390`.
+`bpt experiment run phystwin-refit` runs a fixed-correspondence reliability
+objective inside the released PhysTwin Warp simulator without importing its
+rendering, Open3D, Gaussian-splatting, or GUI stack. The integration is pinned
+to official commit `2b6630528141b9cba5a7677c8b88b2129b4a8390`.
 
 ## Reconstructed Contract
 
@@ -49,7 +49,8 @@ future cues or simulator residuals.
 Audit static and Markov priors on the exact target-visible refit support:
 
 ```bash
-bpt-evaluate-phystwin-priors final_data.pkl cues.npz prior_evaluation.json \
+bpt experiment run evaluate-phystwin-priors \
+  final_data.pkl cues.npz prior_evaluation.json \
   --flow-scale 0.005 \
   --inlier-persistence 0.98 \
   --outlier-persistence 0.90
@@ -67,7 +68,7 @@ installation. PhysTwin's pinned source sets `cuda:0` during import; use
 
 ```bash
 PYTHONPATH=/path/to/torch-warp-runtime:src \
-bpt-phystwin-refit \
+bpt experiment run phystwin-refit \
   /path/to/PhysTwin \
   /path/to/final_data.pkl \
   /path/to/optimal_params.pkl \
@@ -127,7 +128,7 @@ A zero-update grouped run can evaluate a two-dimensional profile posterior over
 object- and controller-spring log scales:
 
 ```bash
-bpt-phystwin-refit ... \
+bpt experiment run phystwin-refit ... \
   --variant mixture \
   --fit-end-frame 48 \
   --train-end-frame 64 \
@@ -158,7 +159,7 @@ unstable extreme grid corners.
 Calibrate a saved profile without rerunning the simulator:
 
 ```bash
-bpt-calibrate-phystwin-discrepancy \
+bpt experiment run calibrate-phystwin-discrepancy \
   final_data.pkl parameter_profile.npz runs/CASE/discrepancy.json \
   --fit-end-frame 48 \
   --test-start-frame 64 \
