@@ -104,10 +104,15 @@ def test_protocol_uses_amended_hash_only_exclusion() -> None:
     exclusion_path = REPOSITORY_ROOT / boundary["exclusion_artifact"]
     exclusion = load_object_exclusion_manifest(exclusion_path)
 
-    assert len(exclusion["object_hashes"]) == 94
+    assert len(exclusion["object_hashes"]) == 100
     assert exclusion["exclusion_sha256"] == boundary["exclusion_sha256"]
     assert file_sha256(exclusion_path) == boundary["exclusion_file_sha256"]
     assert protocol["amendments"][0]["cohort_selected_before_amendment"] is False
+    assert protocol["amendments"][1]["cohort_selected_before_amendment"] is False
+    assert (
+        protocol["amendments"][1]["provider_source_outcomes_opened_before_amendment"]
+        is False
+    )
 
 
 def test_admission_rejects_54_nodes_before_backend_runtime(tmp_path: Path) -> None:

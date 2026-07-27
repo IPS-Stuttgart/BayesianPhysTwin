@@ -9,14 +9,20 @@ held-v8, Prob4D, or MolmoMotion object.
 
 The complete method contract is
 `configs/sota/deform360_dynamic_tapnextpp_provider_v1.json`. The hash-only
-exclusion union contains 94 physical objects and has canonical SHA-256
-`fc7e24379f65a6162e8908716f214f92fbffae34407ddd752599368c768413bb`.
+exclusion union contains 100 physical objects and has canonical SHA-256
+`cf472da17400ce2191d0af9b0b25788fd27b5e5c9976293e2814d2604d8da684`.
 
 Before cohort selection, a separately owned source campaign reported 12 newly
 opened physical objects that were absent from the original 82-object union.
 Exclusion amendment 1 adds those objects by hash only. No source or target
 outcome from this protocol had been opened, and no method, threshold, or gate
 changed.
+
+A second pre-cohort audit found that the same campaign had opened or
+technically dispositioned 18 queued objects, whereas amendment 1 covered only
+the 12 retained cohort objects. Amendment 2 adds the six remaining objects.
+Again, no provider outcome, cohort choice, method, threshold, or gate had been
+opened or changed.
 
 ## Hypothesis
 
@@ -93,7 +99,7 @@ The source and target object partitions are locked together from metadata and
 frame-zero admission before source outcomes:
 
 ```text
-94-object hash exclusion union
+100-object hash exclusion union
 -> source-only admission
 -> locked 8-source / 12-target object split
 -> implementation and environment lock

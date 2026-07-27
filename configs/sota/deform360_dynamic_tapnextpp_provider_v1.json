@@ -25,13 +25,28 @@
       "provider_target_outcomes_opened_before_amendment": false,
       "cohort_selected_before_amendment": false,
       "method_or_gate_changed": false
+    },
+    {
+      "amendment_id": "fresh-object-exclusion-amendment-2",
+      "reason": "The source campaign opened or technically dispositioned all 18 queued physical objects, not only the 12 objects retained in its final cohort. Six queued objects were absent from the 94-object union and were added before this protocol selected a source or target cohort.",
+      "source_branch": "deform360-fresh-source-lock-v1",
+      "source_commit": "fac103b",
+      "previous_exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v2.json",
+      "previous_exclusion_sha256": "fc7e24379f65a6162e8908716f214f92fbffae34407ddd752599368c768413bb",
+      "previous_excluded_physical_object_count": 94,
+      "source_campaign_queued_physical_object_count": 18,
+      "newly_excluded_physical_object_count": 6,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_or_gate_changed": false
     }
   ],
   "fresh_object_boundary": {
-    "exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v2.json",
-    "exclusion_sha256": "fc7e24379f65a6162e8908716f214f92fbffae34407ddd752599368c768413bb",
-    "exclusion_file_sha256": "8c40a4c0f45973015295c70d6c3890876aea19346760354ff79106313b41558b",
-    "excluded_physical_object_count": 94,
+    "exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v3.json",
+    "exclusion_sha256": "cf472da17400ce2191d0af9b0b25788fd27b5e5c9976293e2814d2604d8da684",
+    "exclusion_file_sha256": "9ac5516e250c8df3f07b270a999a64f74502f731e523157651bfa633913f7f41",
+    "excluded_physical_object_count": 100,
     "source_object_count": 8,
     "sealed_target_object_count": 12,
     "selection_unit": "physical object",
