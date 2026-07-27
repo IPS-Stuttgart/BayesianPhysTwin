@@ -61,8 +61,7 @@ class PriorAwareGaugeConfigV1:
             "prior-aware configuration scales must be positive",
         )
         _require(
-            np.isfinite(self.degrees_of_freedom)
-            and self.degrees_of_freedom > 2.0,
+            np.isfinite(self.degrees_of_freedom) and self.degrees_of_freedom > 2.0,
             "degrees_of_freedom must exceed two when inputs are covariances",
         )
         _require(
@@ -204,15 +203,11 @@ def _student_t_mixture_statistics(
             1.0 - config.probability_floor,
         )
     )
-    covariance_to_scale = (
-        config.degrees_of_freedom - 2.0
-    ) / config.degrees_of_freedom
+    covariance_to_scale = (config.degrees_of_freedom - 2.0) / config.degrees_of_freedom
     common_log_normalizer = (
         math.lgamma(0.5 * (config.degrees_of_freedom + dimension))
         - math.lgamma(0.5 * config.degrees_of_freedom)
-        - 0.5
-        * dimension
-        * math.log(config.degrees_of_freedom * math.pi)
+        - 0.5 * dimension * math.log(config.degrees_of_freedom * math.pi)
     )
 
     def component(multiplier: float) -> tuple[float, float]:
@@ -222,36 +217,25 @@ def _student_t_mixture_statistics(
             - 0.5 * dimension * math.log(scale)
             - 0.5
             * (config.degrees_of_freedom + dimension)
-            * math.log1p(
-                squared_mahalanobis
-                / (config.degrees_of_freedom * scale)
-            )
+            * math.log1p(squared_mahalanobis / (config.degrees_of_freedom * scale))
         )
-        precision = (
-            config.degrees_of_freedom + dimension
-        ) / (
+        precision = (config.degrees_of_freedom + dimension) / (
             config.degrees_of_freedom * scale + squared_mahalanobis
         )
         return log_density, precision
 
     log_nominal, precision_nominal = component(1.0)
-    log_outlier, precision_outlier = component(
-        config.outlier_covariance_multiplier
-    )
+    log_outlier, precision_outlier = component(config.outlier_covariance_multiplier)
     weighted_nominal = math.log(rho) + log_nominal
     weighted_outlier = math.log1p(-rho) + log_outlier
     log_mixture = float(np.logaddexp(weighted_nominal, weighted_outlier))
     responsibility = math.exp(weighted_nominal - log_mixture)
     unfloored_precision = (
-        responsibility * precision_nominal
-        + (1.0 - responsibility) * precision_outlier
+        responsibility * precision_nominal + (1.0 - responsibility) * precision_outlier
     )
     precision_difference = precision_nominal - precision_outlier
     responsibility_derivative = (
-        -0.5
-        * responsibility
-        * (1.0 - responsibility)
-        * precision_difference
+        -0.5 * responsibility * (1.0 - responsibility) * precision_difference
     )
     unfloored_precision_derivative = (
         responsibility_derivative * precision_difference
@@ -261,18 +245,14 @@ def _student_t_mixture_statistics(
         )
         / (config.degrees_of_freedom + dimension)
     )
-    precision_floor_active = (
-        config.minimum_robust_precision > unfloored_precision
-    )
+    precision_floor_active = config.minimum_robust_precision > unfloored_precision
     precision = (
         config.minimum_robust_precision
         if precision_floor_active
         else unfloored_precision
     )
     precision_derivative = (
-        0.0
-        if precision_floor_active
-        else unfloored_precision_derivative
+        0.0 if precision_floor_active else unfloored_precision_derivative
     )
     return _StudentTMixtureStatistics(
         log_mixture_density=log_mixture,
@@ -280,9 +260,7 @@ def _student_t_mixture_statistics(
         expected_precision=precision,
         expected_precision_derivative=precision_derivative,
         unfloored_expected_precision=unfloored_precision,
-        unfloored_expected_precision_derivative=(
-            unfloored_precision_derivative
-        ),
+        unfloored_expected_precision_derivative=(unfloored_precision_derivative),
         nominal_precision=precision_nominal,
         outlier_precision=precision_outlier,
         log_nominal_density=log_nominal,
@@ -416,11 +394,14 @@ def _prior_aware_basis(
     known = hx.T @ hx
     if hn.shape[1]:
         cross = hx.T @ hn
-        nuisance_information = _regularized_precision(
-            nuisance_prior,
-            "nuisance prior covariance",
-            eigenvalue_floor=config.prior_eigenvalue_floor,
-        ) + hn.T @ hn
+        nuisance_information = (
+            _regularized_precision(
+                nuisance_prior,
+                "nuisance prior covariance",
+                eigenvalue_floor=config.prior_eigenvalue_floor,
+            )
+            + hn.T @ hn
+        )
         conditional = known - cross @ np.linalg.solve(nuisance_information, cross.T)
     else:
         conditional = known
@@ -459,8 +440,7 @@ def _prior_aware_basis(
         )
         query_fraction = query_norm / maximum_query if maximum_query else 0.0
         if (
-            information_fraction
-            >= config.minimum_conditional_information_fraction
+            information_fraction >= config.minimum_conditional_information_fraction
             and identifiable >= config.minimum_identifiable_fraction
             and query_fraction >= config.minimum_query_sensitivity_fraction
         ):
@@ -468,9 +448,7 @@ def _prior_aware_basis(
             identifiable_fractions.append(min(1.0, max(0.0, identifiable)))
             query_fractions.append(min(1.0, max(0.0, query_fraction)))
     mapping = (
-        np.column_stack(retained)
-        if retained
-        else np.zeros((state_design.shape[2], 0))
+        np.column_stack(retained) if retained else np.zeros((state_design.shape[2], 0))
     )
     return (
         mapping,
@@ -493,9 +471,11 @@ def _full_covariance(
     state_count = len(state_prior)
     result = np.zeros((state_count + nuisance_count,) * 2)
     result[:state_count, :state_count] = state_prior
-    result[:state_count, :state_count] += state_mapping @ (
-        reduced[:retained, :retained] - np.eye(retained)
-    ) @ state_mapping.T
+    result[:state_count, :state_count] += (
+        state_mapping
+        @ (reduced[:retained, :retained] - np.eye(retained))
+        @ state_mapping.T
+    )
     if nuisance_count:
         cross = state_mapping @ reduced[:retained, retained:]
         result[:state_count, state_count:] = cross

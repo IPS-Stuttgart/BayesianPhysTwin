@@ -124,9 +124,7 @@ def _query_identifiable_transform(
                 "projected_state_design_norm": projected_norm,
             },
         )
-    _, singular_values, right_transpose = np.linalg.svd(
-        projected, full_matrices=False
-    )
+    _, singular_values, right_transpose = np.linalg.svd(projected, full_matrices=False)
     tolerance = max(projected.shape) * np.finfo(np.float64).eps * singular_values[0]
     candidate_count = int(np.sum(singular_values > tolerance))
     candidates = right_transpose[:candidate_count].T
@@ -149,9 +147,7 @@ def _query_identifiable_transform(
             np.linalg.norm(projected @ direction) / total_norm
         )
         query_fraction = (
-            query_norms[index] / maximum_query_norm
-            if maximum_query_norm > 0.0
-            else 0.0
+            query_norms[index] / maximum_query_norm if maximum_query_norm > 0.0 else 0.0
         )
         if (
             identifiable_fraction >= minimum_identifiable_fraction
@@ -244,13 +240,13 @@ def _assemble_full_posterior(
     ]
 
     whitened_state_covariance = np.eye(state_count, dtype=np.float64)
-    whitened_state_covariance += state_transform @ (
-        reduced_state_covariance - np.eye(reduced_state_count)
-    ) @ state_transform.T
+    whitened_state_covariance += (
+        state_transform
+        @ (reduced_state_covariance - np.eye(reduced_state_count))
+        @ state_transform.T
+    )
     state_covariance = (
-        state_prior_square_root
-        @ whitened_state_covariance
-        @ state_prior_square_root.T
+        state_prior_square_root @ whitened_state_covariance @ state_prior_square_root.T
     )
     state_covariance = 0.5 * (state_covariance + state_covariance.T)
 
@@ -261,9 +257,7 @@ def _assemble_full_posterior(
     full_covariance[:state_count, :state_count] = state_covariance
     if nuisance_count:
         state_nuisance = (
-            state_prior_square_root
-            @ state_transform
-            @ reduced_state_nuisance
+            state_prior_square_root @ state_transform @ reduced_state_nuisance
         )
         full_covariance[:state_count, state_count:] = state_nuisance
         full_covariance[state_count:, :state_count] = state_nuisance.T
@@ -359,8 +353,7 @@ def update_gauge_aware_belief(
         "anchor_composite_weight_mode": batch.anchor_composite_weight_mode,
         "correlation_treatment": (
             "provider-final per-row observation power; no consumer recap"
-            if batch.composite_weight_mode
-            == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
+            if batch.composite_weight_mode == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
             else "consumer effective-sample cap after composite weighting"
         ),
         "state_subspace_coordinates": "prior-whitened",
@@ -472,9 +465,7 @@ def update_gauge_aware_belief(
             identifiability_nuisance,
             query_state_whitened,
             minimum_identifiable_fraction=cfg.minimum_identifiable_fraction,
-            minimum_query_sensitivity_fraction=(
-                cfg.minimum_query_sensitivity_fraction
-            ),
+            minimum_query_sensitivity_fraction=(cfg.minimum_query_sensitivity_fraction),
         )
     )
     diagnostics.update(identifiability)
@@ -619,9 +610,7 @@ def update_gauge_aware_belief(
         residual = batch.innovation_m - np.einsum(
             "mci,i->mc", raw_observation_design, solution, optimize=True
         )
-        whitened_residual = np.einsum(
-            "mij,mj->mi", whiteners, residual, optimize=True
-        )
+        whitened_residual = np.einsum("mij,mj->mi", whiteners, residual, optimize=True)
         robust = _student_t_weights(
             np.sum(np.square(whitened_residual), axis=1),
             dimension=3,
@@ -674,9 +663,7 @@ def update_gauge_aware_belief(
     gauge_slice = slice(0, gauge_count)
     shared_slice = slice(gauge_slice.stop, gauge_slice.stop + shared_count)
     view_slice = slice(shared_slice.stop, shared_slice.stop + view_count)
-    anchor_bias_slice = slice(
-        view_slice.stop, view_slice.stop + anchor_bias_count
-    )
+    anchor_bias_slice = slice(view_slice.stop, view_slice.stop + anchor_bias_count)
     query_update = np.einsum(
         "qcs,s->qc",
         batch.query_state_jacobian,
@@ -686,8 +673,7 @@ def update_gauge_aware_belief(
     query_update_norm = np.linalg.norm(query_update, axis=1)
     maximum_query_update = float(np.max(query_update_norm, initial=0.0))
     relative_limit = (
-        cfg.maximum_update_to_physical_response_ratio
-        * batch.physical_response_scale_m
+        cfg.maximum_update_to_physical_response_ratio * batch.physical_response_scale_m
     )
     update_limit = min(cfg.maximum_state_update_m, relative_limit)
     diagnostics.update(
@@ -745,15 +731,9 @@ def update_gauge_aware_belief(
 
     if nuisance_count:
         cross = full_covariance[:state_count, state_count:]
-        state_variance = np.diag(
-            full_covariance[:state_count, :state_count]
-        )[:, None]
-        nuisance_variance = np.diag(
-            full_covariance[state_count:, state_count:]
-        )[None]
-        denominator = np.sqrt(
-            np.maximum(state_variance * nuisance_variance, 1e-30)
-        )
+        state_variance = np.diag(full_covariance[:state_count, :state_count])[:, None]
+        nuisance_variance = np.diag(full_covariance[state_count:, state_count:])[None]
+        denominator = np.sqrt(np.maximum(state_variance * nuisance_variance, 1e-30))
         diagnostics["maximum_state_nuisance_posterior_correlation"] = float(
             np.max(np.abs(cross / denominator), initial=0.0)
         )
@@ -791,9 +771,7 @@ def decode_gauge_aware_query(
     )
     if not result.inference_admissible:
         return np.zeros(query.shape[:2], dtype=np.float64)
-    return np.einsum(
-        "qcs,s->qc", query, result.state_coefficients, optimize=True
-    )
+    return np.einsum("qcs,s->qc", query, result.state_coefficients, optimize=True)
 
 
 def _same_array_bytes(first: np.ndarray, second: np.ndarray) -> bool:
@@ -819,8 +797,7 @@ def select_gauge_aware_candidate(
     candidate_input = np.asarray(candidate)
     _require(candidate_input.shape == baseline_input.shape, "candidate shape changed")
     _require(
-        np.all(np.isfinite(baseline_input))
-        and np.all(np.isfinite(candidate_input)),
+        np.all(np.isfinite(baseline_input)) and np.all(np.isfinite(candidate_input)),
         "candidate values must be finite",
     )
 

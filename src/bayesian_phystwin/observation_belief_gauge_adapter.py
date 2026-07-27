@@ -33,9 +33,7 @@ def _readonly(
     return result
 
 
-PROB4D_FINAL_COMPOSITE_WEIGHT_SEMANTICS = (
-    "final-per-row-effective-sample-cap-v1"
-)
+PROB4D_FINAL_COMPOSITE_WEIGHT_SEMANTICS = "final-per-row-effective-sample-cap-v1"
 
 
 def _observation_composite_weight_mode(
@@ -47,8 +45,7 @@ def _observation_composite_weight_mode(
     if belief.source_repository == "FlorianPfaff/Prob4D":
         if semantics is not None:
             raise ValueError(
-                "unsupported Prob4D group_composite_weight_semantics "
-                f"{semantics!r}"
+                f"unsupported Prob4D group_composite_weight_semantics {semantics!r}"
             )
         if "effective_samples_per_group" in belief.metadata:
             return (
@@ -102,9 +99,7 @@ def centered_view_translation_bias_jacobian(
     for row, view in enumerate(views):
         for contrast in range(contrasts.shape[1]):
             start = 3 * contrast
-            result[row, :, start : start + 3] = (
-                contrasts[view, contrast] * identity
-            )
+            result[row, :, start : start + 3] = contrasts[view, contrast] * identity
     return result
 
 
@@ -128,9 +123,7 @@ def _expanded_gauge_design(
     for group_position, group_id in enumerate(factor_groups):
         selected = belief.factor_group_ids == group_id
         start = group_position * rank
-        design[selected, :, start : start + rank] = (
-            belief.low_rank_factor_m[selected]
-        )
+        design[selected, :, start : start + rank] = belief.low_rank_factor_m[selected]
         names.extend(
             f"factor-group-{int(group_id)}:{factor_name}"
             for factor_name in belief.factor_names
@@ -143,14 +136,10 @@ def _row_group_values(
     values: np.ndarray,
 ) -> np.ndarray:
     positions = {
-        int(group_id): position
-        for position, group_id in enumerate(belief.group_ids)
+        int(group_id): position for position, group_id in enumerate(belief.group_ids)
     }
     return np.asarray(
-        [
-            values[positions[int(group_id)]]
-            for group_id in belief.correlation_group_ids
-        ],
+        [values[positions[int(group_id)]] for group_id in belief.correlation_group_ids],
         dtype=np.float64,
     )
 
@@ -198,12 +187,8 @@ class ObservationBeliefGaugeAdapterResult:
             "observation_count": len(self.batch.innovation_m),
             "state_mode_count": self.batch.state_jacobian.shape[2],
             "gauge_parameter_count": len(self.gauge_parameter_names),
-            "shared_bias_parameter_count": (
-                self.batch.shared_bias_jacobian.shape[2]
-            ),
-            "view_bias_parameter_count": (
-                self.batch.view_bias_jacobian.shape[2]
-            ),
+            "shared_bias_parameter_count": (self.batch.shared_bias_jacobian.shape[2]),
+            "view_bias_parameter_count": (self.batch.view_bias_jacobian.shape[2]),
             "anchor_bias_parameter_count": (
                 0
                 if self.batch.anchor_bias_jacobian is None
@@ -278,9 +263,7 @@ def build_gauge_aware_batch_from_observation_belief(
         "state_jacobian must have shape (N, 3, S) with S >= 1",
     )
     _require(
-        query.ndim == 3
-        and query.shape[1:] == (3, state.shape[2])
-        and len(query),
+        query.ndim == 3 and query.shape[1:] == (3, state.shape[2]) and len(query),
         "query_state_jacobian must have shape (Q, 3, S)",
     )
     _require(
