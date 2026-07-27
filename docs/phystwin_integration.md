@@ -33,7 +33,7 @@ PhysTwin writes `inference.pkl` as a NumPy trajectory with shape `(T, M, 3)`.
 ## Export and Replay
 
 ```bash
-bpt-export-phystwin-residuals \
+bpt experiment run export-phystwin-residuals \
   data/different_types/CASE/final_data.pkl \
   experiments/CASE/inference.pkl \
   runs/CASE/residuals.csv \
@@ -60,7 +60,7 @@ Build a simulator-independent continuous motion-consistency sidecar directly
 from the tracked geometry:
 
 ```bash
-bpt-build-phystwin-cues \
+bpt experiment run build-phystwin-cues \
   data/different_types/CASE/final_data.pkl \
   runs/CASE/cues.npz \
   --summary-json runs/CASE/cues.json
@@ -74,7 +74,7 @@ a fixed material-neighborhood ablation. Use a meter-scale replay decay
 appropriate for the case, for example:
 
 ```bash
-bpt-export-phystwin-residuals \
+bpt experiment run export-phystwin-residuals \
   data/different_types/CASE/final_data.pkl \
   experiments/CASE/inference.pkl \
   runs/CASE/residuals.csv \
