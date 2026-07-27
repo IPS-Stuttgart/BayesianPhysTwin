@@ -40,8 +40,29 @@
       "provider_target_outcomes_opened_before_amendment": false,
       "cohort_selected_before_amendment": false,
       "method_or_gate_changed": false
+    },
+    {
+      "amendment_id": "dataset-revision-and-queue-rule-amendment-3",
+      "reason": "The initial protocol named Deform360 but omitted an immutable dataset revision and an executable metadata-only candidate rule. The exact public snapshot and deterministic 36-object staging rule were bound before cohort selection, episode payload download, tracker execution, or provider outcomes.",
+      "dataset_payload_opened_before_amendment": false,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_or_gate_changed": false
     }
   ],
+  "data_source": {
+    "repository": "brownu/deform360",
+    "dataset_revision": "7fea8e20231a47641d1d2bc8791920ec4e62ec5e",
+    "public_catalog_artifact": "results/sota/deform360_fresh_source_lock_v1/public_object_catalog_2026-07-26.json",
+    "public_catalog_sha256": "0e01a6eef92b5e3e8a6a02c75bc0bc4eeb0472a22ed042699cd8c4b411115a28",
+    "public_catalog_file_sha256": "88e9f733fc8e5c24e281e3bb81fb72914cd3ba0f160c7193085594a41989e74c",
+    "candidate_metadata_rule": "After the 100-object hash exclusion, retain objects whose pinned metadata has at least one sequence and only yes/no bimanual values. Choose the numerically first 12 in each fixed public-name stratum: name contains cloth; name does not contain cloth and numeric prefix is below 138; name does not contain cloth and numeric prefix is at least 138. Interleave the three strata by rank.",
+    "staged_candidate_count": 36,
+    "candidate_episode_rule": "episode zero, which is the lowest metadata-listed episode for every staged candidate",
+    "episode_payload_read_before_queue_lock": false,
+    "target_metric_read_before_queue_lock": false
+  },
   "fresh_object_boundary": {
     "exclusion_artifact": "configs/sota/deform360_dynamic_tapnextpp_fresh_object_exclusion_v3.json",
     "exclusion_sha256": "cf472da17400ce2191d0af9b0b25788fd27b5e5c9976293e2814d2604d8da684",

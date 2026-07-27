@@ -24,6 +24,15 @@ the 12 retained cohort objects. Amendment 2 adds the six remaining objects.
 Again, no provider outcome, cohort choice, method, threshold, or gate had been
 opened or changed.
 
+A third pre-cohort amendment pins the public Deform360 dataset revision to
+`7fea8e20231a47641d1d2bc8791920ec4e62ec5e` and makes candidate selection
+executable. After hash exclusion and metadata enum validation, the staging queue
+takes the first 12 public identities in each of three name-only morphology
+strata and interleaves them. The three strata are sheet-like names containing
+`cloth`, non-`cloth` names below numeric prefix 138, and non-`cloth` names at or
+above 138. This amendment was made before episode payload download or cohort
+selection and does not change the tracker, updater, or gates.
+
 ## Hypothesis
 
 The first TAPNext++ control was accurate on admitted observations but supported
