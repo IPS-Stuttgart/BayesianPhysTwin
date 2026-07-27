@@ -91,7 +91,7 @@ def test_dynamic_mask_protocol_binds_window_execution_commit() -> None:
     assert mask["parent_window_protocol"]["config_sha256"] == window["config_sha256"]
     assert (
         mask["parent_window_protocol"]["implementation_commit"]
-        == "d66b8e595cc18e1f0fd033bea7752314dc319191"
+        == "a55739635514177871a3f64728e979a69e1ab5df"
     )
     assert mask["mask_contract"]["minimum_successful_cameras"] == 8
     assert mask["generic_selector"]["manual_prompting"] is False

@@ -7,8 +7,17 @@
     "protocol_id": "deform360-dynamic-tapnextpp-source-window-v1",
     "config_sha256": "66c063cf037ecc03a9e1204ea4560cd163b7e2040740fcfa0f09d80a1792dc76",
     "file_sha256": "db1a284cb5b109bf45cf2eee45a366166ba54f91ce085fa6a5c06eb028fdd8d6",
-    "implementation_commit": "d66b8e595cc18e1f0fd033bea7752314dc319191"
+    "implementation_commit": "a55739635514177871a3f64728e979a69e1ab5df"
   },
+  "amendments": [
+    {
+      "amendment_id": "bimanual-provenance-key-disambiguation-1",
+      "reason": "The queue stores bimanual as yes/no while the already sealed alignment manifest stores the derived robot mode as a Boolean under the same key. Staging now validates the two representations explicitly.",
+      "alignment_artifacts_regenerated": false,
+      "window_selection_or_method_changed": false,
+      "mask_geometry_tracker_or_metric_opened_before_amendment": false
+    }
+  ],
   "generic_selector": {
     "object_source_sha256": "79b161fa66489f75b5b078c7ae409387feed74c51a38b86e89800d0aa578b1df",
     "base_source_sha256": "419be2e98ab2b01627ea188c8658b43b39d8b3d4e34e8b33559f32ccdcd04184",
@@ -39,5 +48,5 @@
     "held_v8_target_query_score_barrier_or_outcome_access": false,
     "prediction_method_may_receive_only_its_separately_authorized_prefix": true
   },
-  "config_sha256": "18e5ed260e1d0d250a1341dc32f9342cfc6bae720665b96e0f24cc0da1050455"
+  "config_sha256": "9250aa8c0ceea91c24c3facdfab10391745266f7d173ac95306ceb78c7033b25"
 }
