@@ -233,6 +233,7 @@ class OfficialPhysTwinReplayProviderV2:
         )
         self._apply_group_log_scales(group_log_scales)
         self._apply_controller_points(controller_points)
+        frame_ids: np.ndarray
         if isinstance(request, InitialReplayRequestV1):
             positions, velocities = _rollout_initial_trajectory(
                 self._simulator,
