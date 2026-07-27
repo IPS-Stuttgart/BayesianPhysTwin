@@ -67,9 +67,7 @@ def build_lift_map(
             )
             local = np.argpartition(squared, neighbors - 1, axis=1)[:, :neighbors]
             indices[start:stop] = local
-            distances[start:stop] = np.sqrt(
-                np.take_along_axis(squared, local, axis=1)
-            )
+            distances[start:stop] = np.sqrt(np.take_along_axis(squared, local, axis=1))
     inverse = 1.0 / np.maximum(distances, 1e-6)
     weights = inverse / np.sum(inverse, axis=1, keepdims=True)
     return indices, weights
@@ -129,7 +127,7 @@ def lift_residual(
         if not np.allclose(np.sum(neighbor_weights, axis=1), 1.0):
             raise ValueError("lift weights must sum to one")
 
-    lifted = np.zeros((len(tracked), state_count, 3), dtype=float)
+    lifted: np.ndarray = np.zeros((len(tracked), state_count, 3), dtype=float)
     lifted[:, :original_count] = tracked
     if extra_count:
         lifted[:, original_count:] = np.sum(
