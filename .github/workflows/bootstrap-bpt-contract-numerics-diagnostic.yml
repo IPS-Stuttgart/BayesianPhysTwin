@@ -11,7 +11,7 @@ jobs:
   diagnose:
     if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out current main
         uses: actions/checkout@v7
@@ -26,7 +26,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
-      - name: Publish exact patch and focused-test diagnostic
+      - name: Publish exact focused-test and quality diagnostic
         shell: bash
         env:
           DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
@@ -36,41 +36,32 @@ jobs:
           set +e
           (
             set -euo pipefail
-            echo '== apply patch =='
+            echo '== apply exact v2 patch =='
             python - <<'PY'
-          import base64
-          import gzip
           import os
           import re
           import subprocess
+          import textwrap
 
           workflow = subprocess.check_output(
               [
                   'git',
                   'show',
                   f"origin/{os.environ['GITHUB_HEAD_REF']}:"
-                  '.github/workflows/bootstrap-bpt-contract-numerics-hardening.yml',
+                  '.github/workflows/bootstrap-bpt-contract-numerics-hardening-v2.yml',
               ],
               text=True,
           )
-          match = re.search(r'payload = "([A-Za-z0-9+/=]+)"', workflow)
+          match = re.search(
+              r"python - <<'PY' > /tmp/bpt-patch-output.txt 2>&1\n"
+              r"(?P<body>.*?)\n          PY",
+              workflow,
+              re.DOTALL,
+          )
           if match is None:
-              raise SystemExit('embedded patch payload was not found')
-          source = gzip.decompress(base64.b64decode(match.group(1))).decode('utf-8')
-          stale = (
-              '    scheduled, and manual three-repository runs instead of producing a green skip.\n'
-              '    External-fork pull requests still run the producer-neutral consumer fixture and\n'
-              '    explicitly report that the secret-backed producer gate was unavailable and no\n'
-              '    current-Prob4D evidence was admitted.'
-          )
-          current = (
-              '  scheduled, and manual three-repository runs instead of producing a green skip.\n'
-              '  External-fork pull requests still run the producer-neutral consumer fixture and\n'
-              '  explicitly report that the secret-backed producer gate was unavailable and no\n'
-              '  current-Prob4D evidence was admitted.'
-          )
-          source = source.replace(stale, current, 1)
-          exec(compile(source, 'bpt-contract-numerics-patch.py', 'exec'))
+              raise SystemExit('v2 patch body was not found')
+          source = textwrap.dedent(match.group('body'))
+          exec(compile(source, 'v2-product-patch.py', 'exec'))
           PY
             echo '== install =='
             python -m pip install -e ".[dev]"
@@ -96,6 +87,25 @@ jobs:
               tests/test_phystwin_bayesian_anchor.py \
               tests/test_causal4d_provider_v1.py \
               tests/test_prob4d_joint_contract_fixture.py
+            echo '== commit =='
+            git config user.name "OpenAI"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add \
+              CHANGELOG.md \
+              docs/causal4d_belief_provider_v1.md \
+              docs/observation_belief_contract.md \
+              src/bayesian_phystwin/contracts/fixed_anchor.py \
+              src/bayesian_phystwin/grouped_likelihood.py \
+              src/bayesian_phystwin/observation_belief.py \
+              src/bayesian_phystwin/phystwin_bayesian_anchor.py \
+              tests/test_causal4d_provider_v1.py \
+              tests/test_grouped_likelihood.py \
+              tests/test_observation_belief.py \
+              tests/test_phystwin_bayesian_anchor.py
+            git diff --cached --check
+            git commit -m "Harden immutable observation and covariance semantics"
+            echo '== exact quality ratchet =='
+            python tools/quality/changed_python_quality.py --base HEAD^ --head HEAD
           ) > /tmp/diagnostic-body.txt 2>&1
           diagnostic_status=$?
           set -e
@@ -110,5 +120,5 @@ jobs:
           git config user.name "OpenAI"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add patch-diagnostic.txt
-          git commit -m "Record BPT focused-test diagnostic"
+          git commit -m "Record BPT quality diagnostic"
           git push --force origin "HEAD:refs/heads/${DIAGNOSTIC_BRANCH}"
