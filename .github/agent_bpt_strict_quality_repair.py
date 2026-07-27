@@ -17,6 +17,14 @@ def replace_once(path: str, old: str, new: str) -> None:
     target.write_text(text.replace(old, new), encoding="utf-8")
 
 
+def append_once(path: str, marker: str, addition: str) -> None:
+    target = ROOT / path
+    text = target.read_text(encoding="utf-8")
+    if marker in text:
+        raise RuntimeError(f"{path}: repair marker already present")
+    target.write_text(text.rstrip() + "\n\n\n" + addition.strip() + "\n", encoding="utf-8")
+
+
 def repair_cli_dispatch() -> None:
     path = "src/bayesian_phystwin/cli/main.py"
     replace_once(
@@ -66,6 +74,18 @@ def repair_run_manifest_v2_mapping() -> None:
     )
 
 
+def repair_run_manifest_v2_tests() -> None:
+    append_once(
+        "tests/test_run_manifest_v2.py",
+        "test_v2_rejects_empty_run_id",
+        '''
+def test_v2_rejects_empty_run_id(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="run ID must be nonempty"):
+        replace(_manifest(tmp_path), run_id="")
+''',
+    )
+
+
 def main() -> None:
     repair_cli_dispatch()
     repair_json_mapping(
@@ -77,6 +97,7 @@ def main() -> None:
         "from typing import Any, Literal\n",
     )
     repair_run_manifest_v2_mapping()
+    repair_run_manifest_v2_tests()
 
 
 if __name__ == "__main__":
