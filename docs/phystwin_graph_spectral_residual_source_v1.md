@@ -1,5 +1,8 @@
 # Graph-spectral discrepancy source gate
 
+Status: frozen source gate failed; no target evaluation is authorized. See
+`docs/phystwin_graph_spectral_residual_source_v1_result.md`.
+
 ## Purpose
 
 This experiment tests the strongest low-capacity successor left after the
