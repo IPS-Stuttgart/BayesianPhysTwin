@@ -11,7 +11,7 @@ jobs:
   diagnose:
     if: github.head_ref == 'agent/bootstrap-bpt-contract-numerics-hardening-20260727'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Check out current main
         uses: actions/checkout@v7
@@ -19,35 +19,96 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Reproduce and publish the exact patch diagnostic
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Publish exact patch and focused-test diagnostic
         shell: bash
         env:
           DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
         run: |
-          set -euo pipefail
-          git fetch origin "${GITHUB_HEAD_REF}"
-          git show FETCH_HEAD:.github/workflows/bootstrap-bpt-contract-numerics-hardening.yml \
-            > /tmp/bootstrap.yml
-          python - <<'PY' > /tmp/patch-diagnostic.txt 2>&1 || true
+          set -uo pipefail
+          git fetch origin "${GITHUB_HEAD_REF}:refs/remotes/origin/${GITHUB_HEAD_REF}"
+          set +e
+          (
+            set -euo pipefail
+            echo '== apply patch =='
+            python - <<'PY'
           import base64
           import gzip
+          import os
           import re
-          from pathlib import Path
+          import subprocess
 
-          workflow = Path('/tmp/bootstrap.yml').read_text(encoding='utf-8')
+          workflow = subprocess.check_output(
+              [
+                  'git',
+                  'show',
+                  f"origin/{os.environ['GITHUB_HEAD_REF']}:"
+                  '.github/workflows/bootstrap-bpt-contract-numerics-hardening.yml',
+              ],
+              text=True,
+          )
           match = re.search(r'payload = "([A-Za-z0-9+/=]+)"', workflow)
           if match is None:
               raise SystemExit('embedded patch payload was not found')
           source = gzip.decompress(base64.b64decode(match.group(1))).decode('utf-8')
+          stale = (
+              '    scheduled, and manual three-repository runs instead of producing a green skip.\n'
+              '    External-fork pull requests still run the producer-neutral consumer fixture and\n'
+              '    explicitly report that the secret-backed producer gate was unavailable and no\n'
+              '    current-Prob4D evidence was admitted.'
+          )
+          current = (
+              '  scheduled, and manual three-repository runs instead of producing a green skip.\n'
+              '  External-fork pull requests still run the producer-neutral consumer fixture and\n'
+              '  explicitly report that the secret-backed producer gate was unavailable and no\n'
+              '  current-Prob4D evidence was admitted.'
+          )
+          source = source.replace(stale, current, 1)
           exec(compile(source, 'bpt-contract-numerics-patch.py', 'exec'))
-          print('patch completed without an exception')
           PY
+            echo '== install =='
+            python -m pip install -e ".[dev]"
+            files=(
+              src/bayesian_phystwin/observation_belief.py
+              src/bayesian_phystwin/grouped_likelihood.py
+              src/bayesian_phystwin/phystwin_bayesian_anchor.py
+              src/bayesian_phystwin/contracts/fixed_anchor.py
+              tests/test_observation_belief.py
+              tests/test_grouped_likelihood.py
+              tests/test_causal4d_provider_v1.py
+              tests/test_phystwin_bayesian_anchor.py
+            )
+            echo '== format and lint =='
+            python -m ruff check --fix -- "${files[@]}"
+            python -m ruff format -- "${files[@]}"
+            python -m ruff check -- "${files[@]}"
+            echo '== focused tests =='
+            python -m pytest -q \
+              tests/test_observation_belief.py \
+              tests/test_observation_belief_gauge_adapter.py \
+              tests/test_grouped_likelihood.py \
+              tests/test_phystwin_bayesian_anchor.py \
+              tests/test_causal4d_provider_v1.py \
+              tests/test_prob4d_joint_contract_fixture.py
+          ) > /tmp/diagnostic-body.txt 2>&1
+          diagnostic_status=$?
+          set -e
+          {
+            echo "exit_status=${diagnostic_status}"
+            cat /tmp/diagnostic-body.txt
+          } > /tmp/patch-diagnostic.txt
           cat /tmp/patch-diagnostic.txt
           git reset --hard main
-          git switch -C "${DIAGNOSTIC_BRANCH}"
+          git switch -C "${DIAGNOSTIC_BRANCH}" main
           cp /tmp/patch-diagnostic.txt patch-diagnostic.txt
           git config user.name "OpenAI"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add patch-diagnostic.txt
-          git commit -m "Record BPT patch diagnostic"
+          git commit -m "Record BPT focused-test diagnostic"
           git push --force origin "HEAD:refs/heads/${DIAGNOSTIC_BRANCH}"
