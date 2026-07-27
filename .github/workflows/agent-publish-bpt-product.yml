@@ -54,7 +54,6 @@ jobs:
             tests/test_causal4d_scientific_provider_v1.py
             tests/test_observation_belief_gauge_adapter.py
             tests/test_run_manifest_cli.py
-            tests/test_run_manifest_v2.py
           )
           python -m ruff format -- "${files[@]}"
           python -m ruff check --fix -- "${files[@]}"
