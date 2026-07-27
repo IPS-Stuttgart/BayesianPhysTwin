@@ -33,6 +33,7 @@ Every command is represented by a `CommandSpec` in
 | --- | --- |
 | `command_id` | Exact selector used by lifecycle runners. |
 | `route` | Complete grouped `bpt` route. |
+| `previous_routes` | Former grouped routes retained only for inspection and migration. |
 | `module` / `function` | Lazily imported Python target. |
 | `description` | Concise user-facing purpose. |
 | `legacy_alias` | Removed historical `bpt-*` name, or `None`. |
@@ -49,8 +50,9 @@ bpt commands describe confirm-phystwin-bayesian-anchor
 bpt commands describe bpt-phystwin-refit --json
 ```
 
-`commands describe` accepts a command ID, grouped route, or removed legacy alias
-for inspection. This does not make a removed alias executable.
+`commands describe` accepts a command ID, current or former grouped route, or
+removed legacy alias for inspection. This does not make a historical selector
+executable.
 
 ## Lifecycle catalogs
 
@@ -91,7 +93,7 @@ scientific preference.
 ## Migration from removed executables
 
 The current package does not install any `bpt-*` executable. Map a historical
-name to its grouped route with:
+name or former grouped route to its current route with:
 
 ```bash
 bpt commands migrate bpt-provider-manifest
@@ -99,10 +101,14 @@ bpt commands migrate bpt-provider-manifest
 
 bpt commands migrate bpt-phystwin-refit
 # bpt experiment run phystwin-refit
+
+bpt commands migrate bpt experiment run audit-phystwin-calibration
+# bpt diagnostic run audit-phystwin-calibration
 ```
 
-Removed names are rejected by `experiment run`, `diagnostic run`, and
-`archive run`; only exact registry IDs are executable.
+Removed names and former grouped routes are rejected by `experiment run`,
+`diagnostic run`, and `archive run`; only exact current registry IDs are
+executable.
 
 Frozen releases and tags retain their original entry points. Existing result
 artifacts and manifests may also retain old command strings as immutable
