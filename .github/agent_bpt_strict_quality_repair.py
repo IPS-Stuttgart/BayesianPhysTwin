@@ -76,12 +76,22 @@ def repair_run_manifest_v2_mapping() -> None:
 
 def repair_run_manifest_v2_tests() -> None:
     append_once(
-        "tests/test_run_manifest_v2.py",
-        "test_v2_rejects_empty_run_id",
+        "tests/test_run_manifest_cli.py",
+        "test_run_manifest_v2_rejects_empty_run_id",
         '''
-def test_v2_rejects_empty_run_id(tmp_path: Path) -> None:
+def test_run_manifest_v2_rejects_empty_run_id() -> None:
     with pytest.raises(ValueError, match="run ID must be nonempty"):
-        replace(_manifest(tmp_path), run_id="")
+        RunManifestV2(
+            run_id="",
+            repository="FlorianPfaff/Bayesian-PhysTwin",
+            revision="a" * 40,
+            dirty=False,
+            command=("bpt", "provider", "manifest"),
+            classification="infrastructure",
+            statistical_unit="test case",
+            information_boundary={},
+            configuration={},
+        )
 ''',
     )
 
