@@ -22,6 +22,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   and removed-alias metadata.
 - Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
   lookup for historical `bpt-*` command names.
+- Independent validation of self-contained Prob4D provider-v2 attestations,
+  including the embedded manifest, calibration IDs, numerical modes, and runtime
+  revision evidence.
+- A strict claim-bearing Prob4D validation entry point for new prospective
+  Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
 
 ### Changed
 
@@ -30,6 +35,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - Command help, documentation, and installed-artifact tests now distinguish
   stable interfaces, current experiments, non-promotable diagnostics, and
   archived reproduction paths.
+- Prob4D causal-lineage validation now fails closed on any present but malformed
+  provider-v2 attestation and reports a compact validated provider summary.
 
 ### Removed
 
