@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from importlib.metadata import PackageNotFoundError
-
 import numpy as np
 import pytest
 
@@ -9,6 +7,7 @@ import bayesian_phystwin.causal4d_graph_provider_v1 as provider
 from bayesian_phystwin.causal4d_graph_provider_v1 import (
     CAUSAL4D_GRAPH_PROVIDER_API_VERSION,
     CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION,
+    PARENT_PROVIDER_API_VERSION,
     PhysTwinSpringGraph,
     PhysTwinSpringGraphConfig,
     build_phystwin_spring_graph,
@@ -18,20 +17,20 @@ from bayesian_phystwin.causal4d_graph_provider_v1 import (
 )
 
 
-class _FakeDistribution:
-    def __init__(self, direct_url: str | None) -> None:
-        self.direct_url = direct_url
+def test_graph_provider_manifest_is_versioned_and_parented(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    version_calls: list[tuple[str, str]] = []
 
-    def read_text(self, name: str) -> str | None:
-        assert name == "direct_url.json"
-        return self.direct_url
+    def installed_version(name: str, *, fallback: str) -> str:
+        version_calls.append((name, fallback))
+        return "0.4.9"
 
-
-def test_graph_provider_manifest_is_versioned() -> None:
+    monkeypatch.setattr(provider, "installed_distribution_version", installed_version)
     manifest = causal4d_graph_provider_manifest(provider_revision="abc123")
     assert manifest == {
         "provider_name": "bayesian-phystwin",
-        "provider_version": manifest["provider_version"],
+        "provider_version": "0.4.9",
         "provider_revision": "abc123",
         "schema_version": CAUSAL4D_GRAPH_PROVIDER_API_VERSION,
         "capabilities": ["controller_grouping", "phystwin_spring_graph"],
@@ -39,74 +38,43 @@ def test_graph_provider_manifest_is_versioned() -> None:
         "metadata": {
             "provider_api": "bayesian_phystwin.causal4d_graph_provider_v1",
             "provider_api_version": 1,
+            "parent_provider_api": "bayesian_phystwin.causal4d_provider_v2",
+            "parent_provider_api_version": PARENT_PROVIDER_API_VERSION,
         },
     }
-
-
-def test_graph_provider_resolves_installed_version_and_revision(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(provider, "version", lambda name: "0.4.9")
-    assert provider._installed_provider_version() == "0.4.9"
-
-    def missing_version(name: str) -> str:
-        del name
-        raise PackageNotFoundError
-
-    monkeypatch.setattr(provider, "version", missing_version)
-    assert (
-        provider._installed_provider_version()
-        == CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION
-    )
-
-    revision = "a" * 40
-    monkeypatch.setattr(
-        provider,
-        "distribution",
-        lambda name: _FakeDistribution(
-            '{"vcs_info":{"commit_id":"' + revision + '"}}'
-        ),
-    )
-    assert provider._installed_provider_revision() == revision
-
-    monkeypatch.setattr(
-        provider,
-        "distribution",
-        lambda name: _FakeDistribution(None),
-    )
-    assert provider._installed_provider_revision() is None
-    monkeypatch.setattr(
-        provider,
-        "distribution",
-        lambda name: _FakeDistribution("not-json"),
-    )
-    assert provider._installed_provider_revision() is None
-    monkeypatch.setattr(
-        provider,
-        "distribution",
-        lambda name: _FakeDistribution("{}"),
-    )
-    assert provider._installed_provider_revision() is None
-
-    def missing_distribution(name: str) -> _FakeDistribution:
-        del name
-        raise PackageNotFoundError
-
-    monkeypatch.setattr(provider, "distribution", missing_distribution)
-    assert provider._installed_provider_revision() is None
+    assert version_calls == [
+        ("bayesian-phystwin", CAUSAL4D_GRAPH_PROVIDER_PACKAGE_VERSION)
+    ]
 
 
 def test_graph_provider_manifest_revision_precedence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(
+        provider,
+        "installed_distribution_version",
+        lambda name, *, fallback: fallback,
+    )
+    revision_calls: list[str] = []
+
+    def installed_revision(name: str) -> str | None:
+        revision_calls.append(name)
+        return "installed"
+
+    monkeypatch.setattr(provider, "installed_distribution_revision", installed_revision)
     monkeypatch.setenv("BAYESIAN_PHYSTWIN_REVISION", "environment")
-    monkeypatch.setattr(provider, "_installed_provider_revision", lambda: "installed")
     assert causal4d_graph_provider_manifest()["provider_revision"] == "environment"
+    assert revision_calls == []
 
     monkeypatch.delenv("BAYESIAN_PHYSTWIN_REVISION")
     assert causal4d_graph_provider_manifest()["provider_revision"] == "installed"
+    assert revision_calls == ["bayesian-phystwin"]
 
-    monkeypatch.setattr(provider, "_installed_provider_revision", lambda: None)
+    monkeypatch.setattr(
+        provider,
+        "installed_distribution_revision",
+        lambda name: None,
+    )
     assert (
         causal4d_graph_provider_manifest()["provider_revision"]
         == "unversioned-install"
