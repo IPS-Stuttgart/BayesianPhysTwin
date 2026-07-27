@@ -3,7 +3,7 @@ replace_once(
     '''    def __ior__(self, other):
         self._immutable(other)
 ''',
-    '''    def __ior__(self, other) -> _FrozenDict:
+    '''    def __ior__(self, other) -> _FrozenDict:  # type: ignore[misc]
         self._immutable(other)
         return self
 ''',
@@ -16,11 +16,11 @@ replace_once(
     def __imul__(self, other):
         self._immutable(other)
 ''',
-    '''    def __iadd__(self, other) -> _FrozenList:
+    '''    def __iadd__(self, other) -> _FrozenList:  # type: ignore[misc]
         self._immutable(other)
         return self
 
-    def __imul__(self, other) -> _FrozenList:
+    def __imul__(self, other) -> _FrozenList:  # type: ignore[misc]
         self._immutable(other)
         return self
 ''',
