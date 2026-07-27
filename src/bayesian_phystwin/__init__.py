@@ -1,6 +1,5 @@
 """Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
 
-from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
 from .bias_aware_belief import (
     BiasAwareStateUpdateConfig,
     BiasAwareStateUpdateResult,
@@ -18,6 +17,7 @@ from .bias_aware_belief import (
     restrict_state_basis_to_identifiable_subspace,
     update_bias_aware_state,
 )
+from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
 from .complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
     CompleteBeliefSelectionV1,
@@ -82,6 +82,7 @@ from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_STREAM_ID,
     PROB4D_SOURCE_REPOSITORY,
     is_prob4d_causal_observation_belief,
+    validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
 )
 from .pseudo_measurements import (
@@ -129,8 +130,8 @@ __all__ = [
     "NonlinearClosureV1",
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
-    "ObservationBeliefV1",
     "ObservationBeliefGaugeAdapterResult",
+    "ObservationBeliefV1",
     "PROB4D_CAUSAL_LINEAGE_VERSION",
     "PROB4D_CAUSAL_STREAM_ID",
     "PROB4D_SOURCE_REPOSITORY",
@@ -189,6 +190,7 @@ __all__ = [
     "update_bias_aware_state",
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",
+    "validate_claim_bearing_prob4d_observation_belief",
     "validate_observation_linearization_alignment",
     "validate_prob4d_causal_observation_belief",
     "write_export_summary",
