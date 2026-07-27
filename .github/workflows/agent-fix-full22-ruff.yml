@@ -1,0 +1,51 @@
+name: Agent fix full-22 Ruff
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/full22-reproduction-capsule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Fix and verify changed Python files
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff==0.16.0"
+          files=(
+            reproductions/full22_anchor_v1/reproduce.py
+            tests/test_full22_reproduction_capsule.py
+          )
+          python -m ruff check --fix -- "${files[@]}"
+          python -m ruff format -- "${files[@]}"
+          python -m ruff check -- "${files[@]}"
+          python -m ruff format --check -- "${files[@]}"
+
+      - name: Commit product-only fix
+        run: |
+          set -euo pipefail
+          rm .github/workflows/agent-fix-full22-ruff.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Fix full-22 capsule quality checks"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
