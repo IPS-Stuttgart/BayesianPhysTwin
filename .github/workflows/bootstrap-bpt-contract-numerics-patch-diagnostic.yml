@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-diagnostic
+      DIAGNOSTIC_BRANCH: agent/bootstrap-bpt-contract-numerics-patch-diagnostic-v2
     steps:
       - uses: actions/checkout@v7
         with:
