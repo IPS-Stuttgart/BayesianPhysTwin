@@ -101,7 +101,12 @@ def test_summary_reports_matched_selective_and_operational_risk() -> None:
     assert operational["deployed"]["mean_loss"] == 8.75
     assert operational["exact_fallback_verified"] is True
 
-    curve = metric["matched_risk_coverage"]["methods"]["bayesian"]
+    matched = metric["matched_count_risk_coverage"]
+    assert matched["contract"] == ("bayesian-phystwin-matched-count-risk-coverage-v1")
+    assert metric["matched_risk_coverage"]["deprecated_alias_for"] == (
+        "matched_count_risk_coverage"
+    )
+    curve = matched["methods"]["bayesian"]
     assert curve[0]["deployed"]["mean_loss"] == 10.0
     assert curve[1]["accepted_count"] == 2
     assert curve[1]["deployed"]["mean_loss"] == 8.75
@@ -113,6 +118,52 @@ def test_summary_reports_matched_selective_and_operational_risk() -> None:
     assert comparator["harmful_update_frequency_accepted"] == 0.5
 
 
+def test_threshold_risk_coverage_preserves_ties_and_identifiers() -> None:
+    payload = _payload()
+    for record in payload["records"]:
+        if record["method"] == "bayesian" and record["unit_id"] in {"u2", "u4"}:
+            record["risk_score"] = 0.3
+
+    summary = analyze_decisive_evidence(
+        payload,
+        target_coverages=(0.0, 0.5, 1.0),
+        regression_quantiles=(0.5, 0.95),
+    )
+    threshold_view = summary["metrics"]["track_error_m"]["threshold_risk_coverage"]
+    assert threshold_view["contract"] == (
+        "bayesian-phystwin-threshold-risk-coverage-v1"
+    )
+    assert threshold_view["role"] == "primary_threshold_native_view"
+    curve = threshold_view["methods"]["bayesian"]
+    assert [point["threshold"] for point in curve] == [None, 0.1, 0.2, 0.3]
+    assert [point["accepted_count"] for point in curve] == [0, 1, 2, 4]
+    assert [point["coverage"] for point in curve] == [0.0, 0.25, 0.5, 1.0]
+    assert curve[0]["deployed"]["mean_loss"] == 10.0
+    assert curve[-1]["boundary_tie_count"] == 2
+    assert curve[-1]["boundary_tie_split"] is False
+    assert all(point["exact_fallback_verified"] for point in curve)
+
+    renamed = json.loads(json.dumps(payload))
+    renamed_ids = {
+        "u1": "case-z",
+        "u2": "case-y",
+        "u3": "case-x",
+        "u4": "case-w",
+    }
+    for record in renamed["records"]:
+        record["unit_id"] = renamed_ids[record["unit_id"]]
+    renamed["records"].reverse()
+    renamed_summary = analyze_decisive_evidence(
+        renamed,
+        target_coverages=(0.0, 0.5, 1.0),
+        regression_quantiles=(0.5, 0.95),
+    )
+    renamed_curve = renamed_summary["metrics"]["track_error_m"][
+        "threshold_risk_coverage"
+    ]["methods"]["bayesian"]
+    assert renamed_curve == curve
+
+
 def test_summary_reports_horizon_calibration_reliability_and_rank() -> None:
     summary = analyze_decisive_evidence(
         _payload(),
@@ -120,9 +171,7 @@ def test_summary_reports_horizon_calibration_reliability_and_rank() -> None:
         reliability_edges=(0.0, 0.5, 1.0),
     )
     bayesian = summary["metrics"]["track_error_m"]["methods"]["bayesian"]
-    horizons = {
-        entry["horizon"]: entry for entry in bayesian["performance_by_horizon"]
-    }
+    horizons = {entry["horizon"]: entry for entry in bayesian["performance_by_horizon"]}
     early = horizons["early"]["interval_calibration"]["by_nominal_coverage"][0]
     assert early["nominal_coverage"] == 0.9
     assert early["empirical_coverage"] == 0.5
@@ -192,6 +241,15 @@ def test_cli_writes_checksummed_summary_and_grouped_route(
     written = json.loads(output_path.read_text(encoding="utf-8"))
     assert written["input_artifact"]["sha256"]
     assert written["analysis_configuration"]["matched_fallback"] is True
+    assert written["analysis_configuration"]["primary_risk_coverage_contract"] == (
+        "bayesian-phystwin-threshold-risk-coverage-v1"
+    )
+    assert (
+        written["analysis_configuration"][
+            "confirmatory_thresholds_must_be_source_or_calibration_frozen"
+        ]
+        is True
+    )
     assert written["reference_method"] == "last_residual"
 
     with pytest.raises(FileExistsError):
