@@ -42,6 +42,29 @@ for Causal4D.
 The normative provider details are maintained in
 [`docs/causal4d_provider_v1.md`](docs/causal4d_provider_v1.md).
 
+## Command-line compatibility
+
+The current package installs one executable, `bpt`. Direct grouped routes are
+the supported operational interface. Research commands remain available only
+through their lifecycle catalogs:
+
+```text
+bpt experiment ...
+bpt diagnostic ...
+bpt archive ...
+```
+
+Historical `bpt-*` executable names are retained as registry metadata, not as
+installed aliases. Use `bpt commands migrate LEGACY_ALIAS` to obtain the current
+grouped invocation. Frozen releases and tags preserve the executable surface
+with which their artifacts were created, and historical manifest command
+strings remain immutable provenance.
+
+Adding a command must not add another `[project.scripts]` entry. A new stable
+route requires installed wheel and source-distribution coverage. Reclassifying
+an experiment, diagnostic, or archived command requires an explicit owner and
+documentation update.
+
 ## Public and experimental interfaces
 
 Versioned artifact schemas, the Causal4D provider module, and commands exercised

@@ -5,17 +5,33 @@ on:
     branches: [main]
     paths:
       - "pyproject.toml"
-      - "src/bayesian_phystwin/cli/main.py"
+      - "README.md"
+      - "docs/command_line.md"
+      - "docs/experiment_index.md"
+      - "src/bayesian_phystwin/cli/_command_catalog.py"
+      - "src/bayesian_phystwin/cli/_command_dispatch.py"
+      - "src/bayesian_phystwin/cli/_command_inventory.py"
+      - "src/bayesian_phystwin/cli/command_registry.py"
       - "src/bayesian_phystwin/cli/experiments.py"
+      - "src/bayesian_phystwin/cli/main.py"
       - "tests/test_cli_main.py"
+      - "tests/test_command_registry.py"
       - ".github/workflows/cli-entrypoints.yml"
   pull_request:
     branches: [main]
     paths:
       - "pyproject.toml"
-      - "src/bayesian_phystwin/cli/main.py"
+      - "README.md"
+      - "docs/command_line.md"
+      - "docs/experiment_index.md"
+      - "src/bayesian_phystwin/cli/_command_catalog.py"
+      - "src/bayesian_phystwin/cli/_command_dispatch.py"
+      - "src/bayesian_phystwin/cli/_command_inventory.py"
+      - "src/bayesian_phystwin/cli/command_registry.py"
       - "src/bayesian_phystwin/cli/experiments.py"
+      - "src/bayesian_phystwin/cli/main.py"
       - "tests/test_cli_main.py"
+      - "tests/test_command_registry.py"
       - ".github/workflows/cli-entrypoints.yml"
   workflow_dispatch:
 
@@ -48,21 +64,33 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install package and development tools
         run: python -m pip install -e ".[dev]"
-      - name: Run focused tests
-        run: python -m pytest -q tests/test_cli_main.py
+      - name: Run focused command tests
+        run: >-
+          python -m pytest -q
+          tests/test_cli_main.py
+          tests/test_command_registry.py
       - name: Lint the command surface
         if: matrix.python-version == '3.12'
         run: >-
           python -m ruff check
-          src/bayesian_phystwin/cli/main.py
+          src/bayesian_phystwin/cli/_command_catalog.py
+          src/bayesian_phystwin/cli/_command_dispatch.py
+          src/bayesian_phystwin/cli/_command_inventory.py
+          src/bayesian_phystwin/cli/command_registry.py
           src/bayesian_phystwin/cli/experiments.py
+          src/bayesian_phystwin/cli/main.py
           tests/test_cli_main.py
+          tests/test_command_registry.py
       - name: Type-check the command surface
         if: matrix.python-version == '3.12'
         run: >-
           python -m mypy
-          src/bayesian_phystwin/cli/main.py
+          src/bayesian_phystwin/cli/_command_catalog.py
+          src/bayesian_phystwin/cli/_command_dispatch.py
+          src/bayesian_phystwin/cli/_command_inventory.py
+          src/bayesian_phystwin/cli/command_registry.py
           src/bayesian_phystwin/cli/experiments.py
+          src/bayesian_phystwin/cli/main.py
 
   installed-artifacts:
     name: Installed ${{ matrix.kind }} command surface
@@ -96,18 +124,23 @@ jobs:
           test -n "$artifact"
           "$python_bin" -m pip install "$artifact"
           "$python_bin" -m pip check
-      - name: Reject every legacy console script
+      - name: Exercise the installed registry
         shell: bash
         run: |
           bin="$RUNNER_TEMP/bpt-cli-smoke/bin"
           "$bin/bpt" --help
           "$bin/bpt" provider manifest --help
           "$bin/bpt" observation validate --help
+          "$bin/bpt" evidence summarize --help
           "$bin/bpt" run manifest --help
+          "$bin/bpt" commands list --status stable --json
+          "$bin/bpt" commands describe bpt-phystwin-refit --json
+          "$bin/bpt" commands migrate bpt-phystwin-refit
           "$bin/bpt" experiment list >/dev/null
-          "$bin/bpt" experiment describe phystwin-refit
-          if "$bin/bpt" experiment describe bpt-phystwin-refit >/dev/null 2>&1; then
-            echo "removed executable name is still accepted as an alias" >&2
+          "$bin/bpt" diagnostic describe audit-phystwin-calibration
+          "$bin/bpt" archive describe evaluate-phystwin-state-injection
+          if "$bin/bpt" experiment run bpt-phystwin-refit >/dev/null 2>&1; then
+            echo "removed executable name is still accepted as a runner alias" >&2
             exit 1
           fi
           if compgen -G "$bin/bpt-*" >/dev/null; then

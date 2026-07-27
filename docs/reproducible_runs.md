@@ -106,9 +106,9 @@ Every V2 manifest binds:
 `manifest_id` covers the complete finalized record, including `created_utc` and
 free-form notes.
 
-`evidence_fingerprint` excludes only the creation timestamp and notes. It remains
-stable when the same scientific record is copied into a paper bundle with
-different archival commentary. It still covers repositories, command,
+`evidence_fingerprint` excludes only the creation timestamp and notes. It
+remains stable when the same scientific record is copied into a paper bundle
+with different archival commentary. It still covers repositories, command,
 configuration, information boundary, artifacts, runtime, claims, and protocol
 identifiers.
 
@@ -133,10 +133,11 @@ claim/runtime records.
 A manifest does not turn a run into scientific evidence by itself. Method
 freezing, split integrity, target-data sealing, negative controls, statistical
 analysis, and claim review remain separate requirements. Paper-promotable
-entries in the canonical `BayesianPhysTwin-Paper` claim registry should cite the
-validated manifest ID, evidence fingerprint, and compact result-artifact
+entries in the canonical `BayesianPhysTwin-Paper` claim registry should cite
+the validated manifest ID, evidence fingerprint, and compact result-artifact
 digests.
 
-Only the grouped `bpt run manifest` command is installed. Historical manifests
-may retain removed `bpt-*` command strings as immutable provenance, while current
-non-stable commands are invoked through `bpt experiment run ID`.
+Only `bpt` is installed. Historical manifests may retain removed `bpt-*`
+command strings as immutable provenance, while current non-stable commands use
+the `experiment`, `diagnostic`, or `archive` lifecycle runner selected by the
+registry.
