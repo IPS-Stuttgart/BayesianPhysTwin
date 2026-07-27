@@ -1,9 +1,14 @@
 replace_once(
     "src/bayesian_phystwin/observation_belief.py",
-    '''from collections.abc import Mapping
-from collections.abc import Mapping as MappingABC
+    '''from collections.abc import Mapping as MappingABC
+from dataclasses import dataclass, field, replace
+from pathlib import Path
+from typing import Any, Mapping
 ''',
     '''from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
+from pathlib import Path
+from typing import Any
 ''',
 )
 replace_once(
