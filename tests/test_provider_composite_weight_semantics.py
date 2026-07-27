@@ -36,6 +36,18 @@ def test_explicit_provider_final_semantics_take_precedence() -> None:
     assert source == "artifact-metadata"
 
 
+def test_legacy_prob4d_effective_sample_metadata_is_provider_final() -> None:
+    mode, source = _observation_composite_weight_mode(
+        _belief(
+            repository="FlorianPfaff/Prob4D",
+            metadata={"effective_samples_per_group": 64.0},
+        )
+    )
+
+    assert mode == COMPOSITE_WEIGHT_MODE_PROVIDER_FINAL
+    assert source == "legacy-prob4d-export-metadata"
+
+
 def test_unknown_prob4d_semantics_fail_closed() -> None:
     with pytest.raises(ValueError, match="unsupported Prob4D"):
         _observation_composite_weight_mode(
