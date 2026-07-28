@@ -9,7 +9,10 @@ from bayesian_phystwin.observation_belief import (
 )
 from bayesian_phystwin.robust_likelihood import robust_mixture_likelihood
 from bayesian_phystwin.tapnextpp_dynamic_multiview import (
+    COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY,
+    LEGACY_ENTROPY_RELIABILITY,
     TAPNEXT_CHECKPOINT_SHA256,
+    DynamicMultiviewConfig,
     build_dynamic_tapnextpp_observation_belief,
     camera_projection_matrix,
     fuse_dynamic_tapnextpp_multiview,
@@ -88,8 +91,12 @@ def _synthetic_input(
     }
 
 
-def _fuse(values: dict[str, np.ndarray]):
-    return fuse_dynamic_tapnextpp_multiview(**values)
+def _fuse(
+    values: dict[str, np.ndarray],
+    *,
+    config: DynamicMultiviewConfig | None = None,
+):
+    return fuse_dynamic_tapnextpp_multiview(**values, config=config)
 
 
 def test_two_views_are_proposals_but_not_claim_bearing() -> None:
@@ -232,3 +239,41 @@ def test_assignment_ambiguity_increases_metric_covariance() -> None:
     assert np.trace(
         ambiguous.assignment_mixture_spread_m2[0, 0]
     ) > np.trace(unambiguous.assignment_mixture_spread_m2[0, 0])
+
+
+def test_set_valued_assignment_entropy_is_not_counted_twice() -> None:
+    low_entropy_input = _synthetic_input(3)
+    high_entropy_input = _synthetic_input(3)
+    high_entropy_input["association_entropy"][:] = 0.99
+    covariance_only = DynamicMultiviewConfig(
+        assignment_uncertainty_mode=(
+            COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY
+        )
+    )
+    low_entropy = _fuse(low_entropy_input, config=covariance_only)
+    high_entropy = _fuse(high_entropy_input, config=covariance_only)
+    np.testing.assert_array_equal(
+        high_entropy.prior_reliability,
+        low_entropy.prior_reliability,
+    )
+    np.testing.assert_array_equal(
+        high_entropy.local_covariance_m2,
+        low_entropy.local_covariance_m2,
+    )
+
+    legacy_low = _fuse(
+        low_entropy_input,
+        config=DynamicMultiviewConfig(
+            assignment_uncertainty_mode=LEGACY_ENTROPY_RELIABILITY
+        ),
+    )
+    legacy_high = _fuse(
+        high_entropy_input,
+        config=DynamicMultiviewConfig(
+            assignment_uncertainty_mode=LEGACY_ENTROPY_RELIABILITY
+        ),
+    )
+    assert np.all(
+        legacy_high.prior_reliability
+        < legacy_low.prior_reliability
+    )

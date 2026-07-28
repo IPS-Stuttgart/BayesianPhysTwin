@@ -8,7 +8,9 @@ separate low-rank factor rather than copied into every local covariance block.
 
 No PhysTwin innovation enters this module. Physical geometry may propose the
 query association, but reliability is formed only from tracker visibility,
-mask/depth support, multiview consistency, redundancy, and association entropy.
+mask/depth support, multiview consistency, and redundancy. The legacy path
+also uses assignment entropy; the set-valued path represents that ambiguity
+once through metric covariance instead.
 """
 
 from __future__ import annotations
@@ -30,6 +32,16 @@ TAPNEXT_CHECKPOINT_SHA256 = (
     "6cd0e793fdcface3063d63f8ed3819bcf74c2c0468fe1fef85acee4de2f3609f"
 )
 _PROVIDER_FINAL_WEIGHT_SEMANTICS = "final-per-row-effective-sample-cap-v1"
+LEGACY_ENTROPY_RELIABILITY = "legacy-entropy-reliability-v1"
+COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY = (
+    "covariance-only-assignment-uncertainty-v1"
+)
+_ASSIGNMENT_UNCERTAINTY_MODES = frozenset(
+    {
+        LEGACY_ENTROPY_RELIABILITY,
+        COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY,
+    }
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -66,6 +78,7 @@ class DynamicMultiviewConfig:
     camera_cluster_translation_tolerance_m: float = 1e-7
     camera_cluster_rotation_tolerance: float = 1e-7
     covariance_eigenvalue_floor_m2: float = 1e-12
+    assignment_uncertainty_mode: str = LEGACY_ENTROPY_RELIABILITY
 
     def __post_init__(self) -> None:
         _require(
@@ -112,6 +125,11 @@ class DynamicMultiviewConfig:
                 np.isfinite(getattr(self, name)) and getattr(self, name) > 0.0,
                 f"{name} must be finite and positive",
             )
+        _require(
+            self.assignment_uncertainty_mode
+            in _ASSIGNMENT_UNCERTAINTY_MODES,
+            "unsupported assignment uncertainty mode",
+        )
 
 
 @dataclass(frozen=True)
@@ -952,6 +970,12 @@ def fuse_dynamic_tapnextpp_multiview(
             fused_association[frame, entity] = (
                 _geometric_mean_probability(selected_association)
             )
+            assignment_reliability = (
+                entropy_score
+                if cfg.assignment_uncertainty_mode
+                == LEGACY_ENTROPY_RELIABILITY
+                else 1.0
+            )
             reliability[frame, entity] = float(
                 np.clip(
                     visibility_score
@@ -959,7 +983,7 @@ def fuse_dynamic_tapnextpp_multiview(
                     * reprojection_score
                     * depth_score
                     * redundancy_score
-                    * entropy_score,
+                    * assignment_reliability,
                     0.0,
                     1.0,
                 )
@@ -1238,7 +1262,8 @@ def build_dynamic_tapnextpp_observation_belief(
         "association_probability_used_as_prior_reliability": False,
         "prior_reliability_definition": (
             "tracker visibility, mask/depth support, reprojection consistency, "
-            "independent-view redundancy, and association entropy only"
+            "and independent-view redundancy; assignment entropy is included "
+            "only in the legacy mode"
         ),
         "innovation_processing": (
             "formed once downstream and processed by the robust likelihood"
@@ -1246,6 +1271,9 @@ def build_dynamic_tapnextpp_observation_belief(
         "local_covariance_definition": (
             "equal-weight covariance-intersection geometry plus assignment "
             "mixture spread; excludes coherent camera bias"
+        ),
+        "assignment_uncertainty_semantics": (
+            result.config.assignment_uncertainty_mode
         ),
         "shared_bias_definition": (
             "one coherent 3-D low-rank factor per update interval"
@@ -1315,8 +1343,10 @@ def build_dynamic_tapnextpp_observation_belief(
 
 
 __all__ = [
+    "COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY",
     "DynamicMultiviewConfig",
     "DynamicMultiviewResult",
+    "LEGACY_ENTROPY_RELIABILITY",
     "PROTOCOL_ID",
     "TAPNEXT_CHECKPOINT_SHA256",
     "TAPNEXT_REPOSITORY",

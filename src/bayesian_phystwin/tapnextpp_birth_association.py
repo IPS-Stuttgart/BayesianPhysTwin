@@ -13,6 +13,15 @@ import numpy as np
 
 from .deform360_dynamic_query import project_visibility
 
+LEGACY_EXACT_PIXEL_ASSOCIATION = "legacy-exact-pixel-entropy-v1"
+SET_VALUED_COVARIANCE_ASSOCIATION = "set-valued-covariance-v1"
+_ASSOCIATION_MODES = frozenset(
+    {
+        LEGACY_EXACT_PIXEL_ASSOCIATION,
+        SET_VALUED_COVARIANCE_ASSOCIATION,
+    }
+)
+
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
@@ -26,6 +35,7 @@ class BirthAssociationConfig:
     search_radius_px: int = 12
     depth_scale_m: float = 0.03
     minimum_candidate_count: int = 1
+    association_mode: str = LEGACY_EXACT_PIXEL_ASSOCIATION
 
     def __post_init__(self) -> None:
         _require(self.search_radius_px >= 1, "search radius must be positive")
@@ -33,6 +43,10 @@ class BirthAssociationConfig:
         _require(
             self.minimum_candidate_count >= 1,
             "minimum candidate count must be positive",
+        )
+        _require(
+            self.association_mode in _ASSOCIATION_MODES,
+            f"unsupported association mode {self.association_mode!r}",
         )
 
 
@@ -95,13 +109,19 @@ def _candidate_distribution(
         entropy = -float(np.sum(weights * np.log(np.maximum(weights, 1e-300))))
         normalized_entropy = entropy / np.log(len(weights))
     geometry_evidence = float(np.exp(-0.5 * minimum))
-    association_probability = float(
-        np.clip(
-            geometry_evidence * (1.0 - normalized_entropy),
-            0.0,
-            1.0,
+    if config.association_mode == LEGACY_EXACT_PIXEL_ASSOCIATION:
+        association_probability = float(
+            np.clip(
+                geometry_evidence * (1.0 - normalized_entropy),
+                0.0,
+                1.0,
+            )
         )
-    )
+    else:
+        # The latent event is that the material projection lies in this
+        # depth-supported patch. Pixel ambiguity is represented by the
+        # assignment covariance below and must not also collapse that event.
+        association_probability = float(np.clip(geometry_evidence, 0.0, 1.0))
     return (
         query_xy,
         association_probability,
@@ -206,5 +226,7 @@ def propose_birth_query_pixels(
 
 __all__ = [
     "BirthAssociationConfig",
+    "LEGACY_EXACT_PIXEL_ASSOCIATION",
+    "SET_VALUED_COVARIANCE_ASSOCIATION",
     "propose_birth_query_pixels",
 ]

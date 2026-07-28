@@ -7,7 +7,9 @@ from bayesian_phystwin.deform360_dynamic_query import (
 )
 from bayesian_phystwin.deform360_dynamic_tapnextpp_assimilation import (
     CANDIDATE_ARM,
+    LEGACY_RELIABILITY_ASSIMILATION,
     SELECTED_BACKBONE_ARM,
+    SET_VALUED_MIXTURE_ASSIMILATION,
     build_birth_anchored_measurements,
     predict_dynamic_tapnextpp_candidate,
 )
@@ -73,6 +75,7 @@ def _result(
     *,
     covariance_scale: float = 1.0,
     support_count: int = 27,
+    association_probability: float = 0.8,
 ) -> DynamicMultiviewResult:
     frame_count = 58
     entity_count = len(schedule.entity_ids)
@@ -105,7 +108,11 @@ def _result(
         proposal_available=accepted.copy(),
         accepted_support=accepted,
         prior_reliability=np.where(accepted, 0.9, 0.0),
-        association_probability=np.where(accepted, 0.8, 0.0),
+        association_probability=np.where(
+            accepted,
+            association_probability,
+            0.0,
+        ),
         local_covariance_m2=covariance,
         naive_independent_covariance_m2=covariance * 0.5,
         assignment_mixture_spread_m2=np.zeros_like(covariance),
@@ -238,3 +245,91 @@ def test_insufficient_pairwise_support_is_bit_exact_fallback() -> None:
         arrays[CANDIDATE_ARM],
         arrays[SELECTED_BACKBONE_ARM],
     )
+
+
+def test_default_assimilation_remains_explicit_v2_behavior() -> None:
+    physical = _physical().astype(np.float32)
+    persistence = np.repeat(physical[:1], 76, axis=0)
+    measurements = build_birth_anchored_measurements(
+        _result(physical, _schedule()),
+        _schedule(),
+        physical,
+    )
+
+    default_report, default_arrays = predict_dynamic_tapnextpp_candidate(
+        physical,
+        persistence,
+        measurements,
+    )
+    explicit_report, explicit_arrays = predict_dynamic_tapnextpp_candidate(
+        physical,
+        persistence,
+        measurements,
+        assimilation_mode=LEGACY_RELIABILITY_ASSIMILATION,
+    )
+
+    assert default_report == explicit_report
+    for name in default_arrays:
+        np.testing.assert_array_equal(
+            default_arrays[name],
+            explicit_arrays[name],
+        )
+
+
+def test_set_valued_association_probability_controls_mixture_not_reliability() -> None:
+    physical = _physical().astype(np.float32)
+    persistence = np.repeat(physical[:1], 76, axis=0)
+    schedule = _schedule()
+    high = build_birth_anchored_measurements(
+        _result(
+            physical,
+            schedule,
+            association_probability=0.95,
+        ),
+        schedule,
+        physical,
+    )
+    low = build_birth_anchored_measurements(
+        _result(
+            physical,
+            schedule,
+            association_probability=0.05,
+        ),
+        schedule,
+        physical,
+    )
+    np.testing.assert_array_equal(
+        high.prior_reliability,
+        low.prior_reliability,
+    )
+
+    high_report, high_arrays = predict_dynamic_tapnextpp_candidate(
+        physical,
+        persistence,
+        high,
+        assimilation_mode=SET_VALUED_MIXTURE_ASSIMILATION,
+    )
+    low_report, low_arrays = predict_dynamic_tapnextpp_candidate(
+        physical,
+        persistence,
+        low,
+        assimilation_mode=SET_VALUED_MIXTURE_ASSIMILATION,
+    )
+    assert high_report["updates"][0][
+        "mean_posterior_robust_reliability"
+    ] > low_report["updates"][0]["mean_posterior_robust_reliability"]
+    assert np.any(
+        high_arrays[CANDIDATE_ARM]
+        != high_arrays[SELECTED_BACKBONE_ARM]
+    )
+    assert np.any(
+        low_arrays[CANDIDATE_ARM]
+        != low_arrays[SELECTED_BACKBONE_ARM]
+    )
+    assert high_report["method_contract"][
+        "association_probability_used_as_prior_reliability"
+    ] is False
+    assert high_report["assimilation_mode"] == (
+        SET_VALUED_MIXTURE_ASSIMILATION
+    )
+    assert low_report["updates"][0]["available_center_count"] == 9

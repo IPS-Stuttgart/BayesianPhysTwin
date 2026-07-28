@@ -4,6 +4,8 @@ import numpy as np
 
 from bayesian_phystwin.deform360_dynamic_query import projection_matrices
 from bayesian_phystwin.tapnextpp_birth_association import (
+    LEGACY_EXACT_PIXEL_ASSOCIATION,
+    SET_VALUED_COVARIANCE_ASSOCIATION,
     BirthAssociationConfig,
     propose_birth_query_pixels,
 )
@@ -89,3 +91,71 @@ def test_birth_association_rejects_pixels_outside_object_mask() -> None:
     assert not np.any(result["valid"])
     assert np.all(result["association_probability"] == 0.0)
     assert np.all(result["association_entropy"] == 1.0)
+
+
+def test_set_valued_mode_moves_pixel_ambiguity_into_covariance() -> None:
+    points, projections, poses, depth, masks = _scene()
+    legacy = propose_birth_query_pixels(
+        points,
+        projections,
+        poses,
+        depth,
+        masks,
+        config=BirthAssociationConfig(
+            search_radius_px=12,
+            association_mode=LEGACY_EXACT_PIXEL_ASSOCIATION,
+        ),
+    )
+    set_valued = propose_birth_query_pixels(
+        points,
+        projections,
+        poses,
+        depth,
+        masks,
+        config=BirthAssociationConfig(
+            search_radius_px=12,
+            association_mode=SET_VALUED_COVARIANCE_ASSOCIATION,
+        ),
+    )
+
+    np.testing.assert_array_equal(
+        set_valued["query_points_xy"],
+        legacy["query_points_xy"],
+    )
+    np.testing.assert_array_equal(
+        set_valued["candidate_pixel_covariance_px2"],
+        legacy["candidate_pixel_covariance_px2"],
+    )
+    np.testing.assert_array_equal(
+        set_valued["association_entropy"],
+        legacy["association_entropy"],
+    )
+    assert np.all(
+        set_valued["association_probability"]
+        >= legacy["association_probability"]
+    )
+    assert np.max(set_valued["association_probability"]) > 0.9
+    assert np.max(legacy["association_probability"]) < 0.1
+
+
+def test_default_birth_association_remains_explicit_legacy_behavior() -> None:
+    points, projections, poses, depth, masks = _scene()
+    default = propose_birth_query_pixels(
+        points,
+        projections,
+        poses,
+        depth,
+        masks,
+    )
+    explicit = propose_birth_query_pixels(
+        points,
+        projections,
+        poses,
+        depth,
+        masks,
+        config=BirthAssociationConfig(
+            association_mode=LEGACY_EXACT_PIXEL_ASSOCIATION
+        ),
+    )
+    for name in default:
+        np.testing.assert_array_equal(default[name], explicit[name])

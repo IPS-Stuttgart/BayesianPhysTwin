@@ -23,6 +23,8 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_admission_v2 import (
     load_selected_complete_causal_inputs,
 )
 from bayesian_phystwin.deform360_dynamic_tapnextpp_assimilation import (
+    LEGACY_RELIABILITY_ASSIMILATION,
+    SET_VALUED_MIXTURE_ASSIMILATION,
     build_birth_anchored_measurements,
     predict_dynamic_tapnextpp_candidate,
 )
@@ -32,9 +34,17 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_physical import (
     validate_dynamic_physical_artifacts,
 )
 from bayesian_phystwin.observation_belief import array_sha256, file_sha256
+from bayesian_phystwin.tapnextpp_birth_association import (
+    LEGACY_EXACT_PIXEL_ASSOCIATION,
+    SET_VALUED_COVARIANCE_ASSOCIATION,
+    BirthAssociationConfig,
+)
 from bayesian_phystwin.tapnextpp_dynamic_multiview import (
+    COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY,
+    LEGACY_ENTROPY_RELIABILITY,
     TAPNEXT_CHECKPOINT_SHA256,
     TAPNEXT_REVISION,
+    DynamicMultiviewConfig,
     dynamic_multiview_result_sha256,
     fuse_dynamic_tapnextpp_multiview,
 )
@@ -44,6 +54,11 @@ from bayesian_phystwin.tapnextpp_dynamic_runtime import (
 )
 
 PROTOCOL_ID = "deform360-dynamic-tapnextpp-provider-v2-source-development"
+V3_PROTOCOL_ID = (
+    "deform360-dynamic-tapnextpp-set-valued-provider-v3-source-development"
+)
+LEGACY_SEMANTICS = "legacy-v2"
+SET_VALUED_SEMANTICS = "set-valued-v3"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -90,6 +105,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--tapnet-root", type=Path, required=True)
     parser.add_argument("--tapnextpp-checkpoint", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument(
+        "--association-semantics",
+        choices=(LEGACY_SEMANTICS, SET_VALUED_SEMANTICS),
+        default=LEGACY_SEMANTICS,
+    )
     return parser.parse_args()
 
 
@@ -188,6 +208,13 @@ def main() -> int:
         camera_inputs.depths_m,
         camera_inputs.object_masks,
         input_camera_indices=camera_inputs.camera_indices,
+        config=BirthAssociationConfig(
+            association_mode=(
+                SET_VALUED_COVARIANCE_ASSOCIATION
+                if args.association_semantics == SET_VALUED_SEMANTICS
+                else LEGACY_EXACT_PIXEL_ASSOCIATION
+            )
+        ),
     )
 
     model, tapnext_utils, runtime_provenance = _load_model(
@@ -230,6 +257,13 @@ def main() -> int:
         assignment_pixel_covariance_px2=(
             associations.candidate_pixel_covariance_px2
         ),
+        config=DynamicMultiviewConfig(
+            assignment_uncertainty_mode=(
+                COVARIANCE_ONLY_ASSIGNMENT_UNCERTAINTY
+                if args.association_semantics == SET_VALUED_SEMANTICS
+                else LEGACY_ENTROPY_RELIABILITY
+            )
+        ),
     )
     measurements = build_birth_anchored_measurements(
         result,
@@ -241,6 +275,11 @@ def main() -> int:
             physical["physical_prediction_m"],
             physical["persistence_prediction_m"],
             measurements,
+            assimilation_mode=(
+                SET_VALUED_MIXTURE_ASSIMILATION
+                if args.association_semantics == SET_VALUED_SEMANTICS
+                else LEGACY_RELIABILITY_ASSIMILATION
+            ),
         )
     )
 
@@ -300,11 +339,16 @@ def main() -> int:
     report: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": "Deform360DynamicTAPNextPPV2SourceDevelopment",
-        "protocol_id": PROTOCOL_ID,
+        "protocol_id": (
+            V3_PROTOCOL_ID
+            if args.association_semantics == SET_VALUED_SEMANTICS
+            else PROTOCOL_ID
+        ),
         "status": "post_open_source_development_not_confirmation",
         "case": args.case,
         "case_hash": manifest["case_hash"],
         "repository_revision": revision,
+        "association_semantics": args.association_semantics,
         "environment": {
             "python": platform.python_version(),
             "numpy": np.__version__,

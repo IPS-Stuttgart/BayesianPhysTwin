@@ -27,6 +27,8 @@ from .phystwin_online_belief import (
     decode_recursive_rbf_belief,
     initialize_recursive_rbf_belief,
 )
+from .pseudo_measurements import PseudoMeasurementBatch
+from .robust_likelihood import robust_mixture_likelihood
 from .tapnextpp_dynamic_multiview import DynamicMultiviewResult
 
 UPDATE_FRAMES = (19, 38, 57)
@@ -35,6 +37,14 @@ PHYSICAL_ARM = "physical_prior"
 PERSISTENCE_ARM = "persistence"
 SELECTED_BACKBONE_ARM = "selected_physical_or_persistence"
 CANDIDATE_ARM = "dynamic_birth_anchored_covariance_aware_rbf"
+LEGACY_RELIABILITY_ASSIMILATION = "legacy-reliability-only-v2"
+SET_VALUED_MIXTURE_ASSIMILATION = "set-valued-association-mixture-v3"
+_ASSIMILATION_MODES = frozenset(
+    {
+        LEGACY_RELIABILITY_ASSIMILATION,
+        SET_VALUED_MIXTURE_ASSIMILATION,
+    }
+)
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -221,6 +231,7 @@ def _update_covariance_aware_rbf_belief(
     prior_reliability: np.ndarray,
     *,
     config: RecursiveRbfBeliefConfig,
+    association_probability: np.ndarray | None = None,
 ) -> tuple[RecursiveRbfBeliefSnapshot, np.ndarray]:
     """Apply one residual-independent-reliability, robust metric update."""
 
@@ -229,6 +240,11 @@ def _update_covariance_aware_rbf_belief(
     mask = np.asarray(available, dtype=bool).copy()
     covariance = np.asarray(observation_covariance_m2, dtype=np.float64)
     reliability_prior = np.asarray(prior_reliability, dtype=np.float64)
+    association = (
+        None
+        if association_probability is None
+        else np.asarray(association_probability, dtype=np.float64)
+    )
     center_count = len(prior.center_ids)
     _require(
         frame_index >= 0
@@ -249,6 +265,14 @@ def _update_covariance_aware_rbf_belief(
         and np.all((reliability_prior >= 0.0) & (reliability_prior <= 1.0)),
         "prior reliability must lie in [0, 1]",
     )
+    if association is not None:
+        _require(
+            association.shape == (center_count,)
+            and np.all(np.isfinite(association))
+            and np.all((association >= 0.0) & (association <= 1.0)),
+            "association probability must lie in [0, 1]",
+        )
+        mask &= association > 0.0
     mask &= np.all(np.isfinite(positions), axis=1)
     mask &= np.all(np.isfinite(residual), axis=1)
     mask &= np.all(np.isfinite(covariance), axis=(1, 2))
@@ -281,10 +305,39 @@ def _update_covariance_aware_rbf_belief(
             1.4826 * np.median(absolute_deviation, axis=0),
             config.observation_std_m,
         )
-        effective_count = max(
-            config.minimum_reliability,
-            float(np.sum(selected_prior_reliability)),
-        )
+        if association is None:
+            posterior_inlier = None
+            effective_count = max(
+                config.minimum_reliability,
+                float(np.sum(selected_prior_reliability)),
+            )
+        else:
+            selected_association = association[mask]
+            nominal_inlier = np.clip(
+                selected_prior_reliability * selected_association,
+                0.0,
+                1.0,
+            )
+            mixture = robust_mixture_likelihood(
+                PseudoMeasurementBatch(
+                    observed=selected,
+                    predicted=np.repeat(
+                        robust_location[None],
+                        len(selected),
+                        axis=0,
+                    ),
+                    variance=(
+                        covariance_bound[:, None]
+                        + np.square(robust_scale)[None]
+                    ),
+                ),
+                prior_reliability=nominal_inlier,
+            )
+            posterior_inlier = mixture.posterior_inlier_probability
+            effective_count = max(
+                1e-6,
+                float(np.sum(posterior_inlier)),
+            )
         global_observation_variance = (
             np.square(robust_scale) + np.median(covariance_bound)
         ) / effective_count
@@ -295,31 +348,34 @@ def _update_covariance_aware_rbf_belief(
         global_variance *= 1.0 - global_gain
 
         local_observation = selected - global_mean
-        squared_radius = np.sum(
-            np.square(local_observation)
-            / (
-                covariance_bound[:, None]
-                + np.square(robust_scale)[None]
-            ),
-            axis=1,
-        )
-        robust_reliability = np.clip(
-            (config.degrees_of_freedom + 3.0)
-            / (config.degrees_of_freedom + squared_radius),
-            config.minimum_reliability,
-            1.0,
-        )
-        combined_reliability = np.clip(
-            selected_prior_reliability * robust_reliability,
-            config.minimum_reliability,
-            1.0,
-        )
+        if posterior_inlier is None:
+            squared_radius = np.sum(
+                np.square(local_observation)
+                / (
+                    covariance_bound[:, None]
+                    + np.square(robust_scale)[None]
+                ),
+                axis=1,
+            )
+            robust_reliability = np.clip(
+                (config.degrees_of_freedom + 3.0)
+                / (config.degrees_of_freedom + squared_radius),
+                config.minimum_reliability,
+                1.0,
+            )
+            combined_reliability = np.clip(
+                selected_prior_reliability * robust_reliability,
+                config.minimum_reliability,
+                1.0,
+            )
+        else:
+            combined_reliability = posterior_inlier
         selected_ids = np.flatnonzero(mask)
         posterior_reliability[selected_ids] = combined_reliability
         for local_index, center_index in enumerate(selected_ids):
             observation_variance = (
                 covariance_bound[local_index]
-                / combined_reliability[local_index]
+                / max(combined_reliability[local_index], 1e-6)
             )
             gain = local_variance[center_index] / (
                 local_variance[center_index] + observation_variance
@@ -358,6 +414,7 @@ def predict_dynamic_tapnextpp_candidate(
     update_frames: Sequence[int] = UPDATE_FRAMES,
     gate_config: PairwiseCorrespondenceGateConfig | None = None,
     belief_config: RecursiveRbfBeliefConfig | None = None,
+    assimilation_mode: str = LEGACY_RELIABILITY_ASSIMILATION,
 ) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
     """Produce a complete target-free candidate with exact rejection fallback."""
 
@@ -381,6 +438,10 @@ def predict_dynamic_tapnextpp_candidate(
     _require(
         updates == UPDATE_FRAMES and updates[-1] < len(physical),
         "dynamic update frames changed",
+    )
+    _require(
+        assimilation_mode in _ASSIMILATION_MODES,
+        f"unsupported assimilation mode {assimilation_mode!r}",
     )
     centers = measurements.entity_ids
     gate_cfg = gate_config or PairwiseCorrespondenceGateConfig()
@@ -416,6 +477,10 @@ def predict_dynamic_tapnextpp_candidate(
             measurements.prior_reliability[update, centers]
             >= belief_cfg.minimum_reliability
         )
+        if assimilation_mode == SET_VALUED_MIXTURE_ASSIMILATION:
+            available &= (
+                measurements.association_probability[update, centers] > 0.0
+            )
         available_ids = centers[available]
         observed = measurements.measurement_m[update, available_ids]
         selector_support = len(available_ids) >= MINIMUM_SELECTOR_SUPPORT
@@ -481,6 +546,12 @@ def predict_dynamic_tapnextpp_candidate(
                     covariance,
                     measurements.prior_reliability[update, centers],
                     config=belief_cfg,
+                    association_probability=(
+                        measurements.association_probability[update, centers]
+                        if assimilation_mode
+                        == SET_VALUED_MIXTURE_ASSIMILATION
+                        else None
+                    ),
                 )
             )
             for frame in range(update + 1, stop):
@@ -560,6 +631,7 @@ def predict_dynamic_tapnextpp_candidate(
         "update_frames": list(updates),
         "gate_config": asdict(gate_cfg),
         "belief_config": asdict(belief_cfg),
+        "assimilation_mode": assimilation_mode,
         "updates": update_records,
         "method_contract": {
             "absolute_multiview_position_used_as_state_innovation": False,
@@ -569,6 +641,12 @@ def predict_dynamic_tapnextpp_candidate(
             ),
             "metric_covariance_propagated_into_rbf_update": True,
             "prior_reliability_uses_physical_innovation": False,
+            "association_probability_used_as_prior_reliability": False,
+            "association_probability_role": (
+                "separate nominal assignment event inside robust mixture"
+                if assimilation_mode == SET_VALUED_MIXTURE_ASSIMILATION
+                else "recorded but unused by frozen v2"
+            ),
             "innovation_robustified_once_inside_rbf_update": True,
             "pairwise_gate_role": "identity-consistency admission",
             "rejection": "bit-exact selected physical-or-persistence backbone",
@@ -588,9 +666,11 @@ def predict_dynamic_tapnextpp_candidate(
 __all__ = [
     "BirthAnchoredMeasurements",
     "CANDIDATE_ARM",
+    "LEGACY_RELIABILITY_ASSIMILATION",
     "PHYSICAL_ARM",
     "PERSISTENCE_ARM",
     "SELECTED_BACKBONE_ARM",
+    "SET_VALUED_MIXTURE_ASSIMILATION",
     "UPDATE_FRAMES",
     "build_birth_anchored_measurements",
     "predict_dynamic_tapnextpp_candidate",
