@@ -161,7 +161,9 @@ class NuisanceAwareInformationState:
                 self.nuisance_precision,
                 self.state_nuisance_precision.T,
             )
-            marginal = self.state_precision - self.state_nuisance_precision @ nuisance_solution
+            marginal = (
+                self.state_precision - self.state_nuisance_precision @ nuisance_solution
+            )
             marginal = 0.5 * (marginal + marginal.T)
         _symmetric_positive_definite(
             marginal,
