@@ -48,6 +48,59 @@ Eligible identities are selected greedily using a deterministic combination of:
 Ties are resolved by the smallest graph identity. Candidate array ordering
 therefore cannot change a frozen plan.
 
+## Nuisance-Aware Information
+
+`bayesian_phystwin.nuisance_aware_information` provides the stronger information
+criterion for experiments that have explicit state and nuisance Jacobians. It
+maintains the joint Gaussian precision blocks
+
+```text
+[ Lambda_xx  Lambda_xb ]
+[ Lambda_bx  Lambda_bb ]
+```
+
+and scores a candidate after marginalizing nuisance coefficients with the Schur
+complement
+
+```text
+Lambda_x|b = Lambda_xx - Lambda_xb Lambda_bb^-1 Lambda_bx.
+```
+
+This distinguishes a physically informative observation from one that can be
+explained by camera, gauge, or shared spatial bias. Candidate covariance is
+handled with Cholesky whitening; no explicit covariance inverse is formed.
+Reliability weights are applied after whitening so zero reliability gives exact
+information fallback.
+
+```python
+import numpy as np
+
+from bayesian_phystwin import (
+    NuisanceAwareInformationState,
+    greedy_nuisance_aware_selection,
+)
+
+prior = NuisanceAwareInformationState.from_independent_priors(
+    state_precision=np.eye(state_rank),
+    nuisance_precision=np.eye(nuisance_rank),
+)
+selection = greedy_nuisance_aware_selection(
+    prior,
+    candidate_state_jacobians,
+    candidate_nuisance_jacobians,
+    candidate_observation_covariances,
+    reliabilities=candidate_reliabilities,
+    count=8,
+)
+```
+
+The returned gain is conditional mutual information in nats. Selection is
+sequential, so redundant candidates have diminishing returns, and exact ties are
+resolved by the lowest original candidate index. The current graph-query planner
+keeps its frozen heuristic mode score; registered nuisance-aware experiments can
+use this module to audit or replace that term without changing the planner's
+causal eligibility and reseeding rules.
+
 ## Dynamic Seeding and Reseeding
 
 The planner monitors active-query support causally. After
@@ -97,6 +150,7 @@ A complete guarded path is therefore:
 action + PhysTwin rollout
         -> physics-guided query plan
         -> causal multiview tracker observations
+        -> nuisance-aware information audit
         -> bias-aware identifiable-state update
         -> source-calibrated regret guard
         -> updated rollout or exact baseline
