@@ -16,6 +16,8 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   boundary in `THIRD_PARTY_NOTICES.md`.
 - Package metadata and project links for licensing, citation, support, and this
   changelog.
+- Distribution manifests and regression checks that keep release metadata
+  present and version-consistent.
 - A typed `bpt` command registry with lifecycle, optional-dependency, ownership,
   and removed-alias metadata.
 - Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
