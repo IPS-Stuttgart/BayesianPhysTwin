@@ -34,6 +34,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
+- Nuisance-aware marginalized information gain and deterministic greedy candidate
+  selection for active observations with explicit camera, gauge, or shared-bias
+  coefficients, covariance whitening, reliability weighting, and exact fallback.
 
 ### Changed
 
@@ -49,6 +52,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   External-fork pull requests still run the producer-neutral consumer fixture and
   explicitly report that the secret-backed producer gate was unavailable and no
   current-Prob4D evidence was admitted.
+- Propagated-state robust inference now recomputes the final posterior from the
+  returned IRLS weights and uses Cholesky solves for positive-definite prior and
+  posterior systems instead of generic matrix inversion.
 - Observation-belief metadata is now recursively immutable after canonical JSON
   validation, preventing nested mutation from changing an existing artifact digest.
 - Grouped low-rank covariance statistics now use blockwise Cholesky/Woodbury solves
