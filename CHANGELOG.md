@@ -16,8 +16,6 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   boundary in `THIRD_PARTY_NOTICES.md`.
 - Package metadata and project links for licensing, citation, support, and this
   changelog.
-- Distribution manifests and regression checks that keep release metadata
-  present and version-consistent.
 - A typed `bpt` command registry with lifecycle, optional-dependency, ownership,
   and removed-alias metadata.
 - Grouped `experiment`, `diagnostic`, and `archive` catalogs plus a migration
@@ -34,6 +32,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
+- Nuisance-aware conditional information gain and deterministic greedy candidate
+  selection for active observations with explicit camera, gauge, or shared-bias
+  coefficients, covariance whitening, reliability weighting, and exact fallback.
 
 ### Changed
 
