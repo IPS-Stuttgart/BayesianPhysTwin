@@ -6,6 +6,7 @@ import json
 import pickle
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 
@@ -45,6 +46,14 @@ class RobustEndpointPosterior:
     final_inlier_probability: np.ndarray
     update_count: np.ndarray
 
+    @property
+    def updated_mask(self) -> np.ndarray:
+        """Return read-only tracks that received at least one update."""
+
+        updated = self.update_count > 0
+        updated.setflags(write=False)
+        return updated
+
 
 def robust_random_walk_endpoint(
     residual: np.ndarray,
@@ -68,7 +77,9 @@ def robust_random_walk_endpoint(
     if not 0 < end_frame <= len(values):
         raise ValueError("end_frame must lie inside the residual sequence")
     if process_variance < 0.0 or observation_variance <= 0.0:
-        raise ValueError("process variance must be nonnegative and observation positive")
+        raise ValueError(
+            "process variance must be nonnegative and observation positive"
+        )
     if initial_variance <= 0.0:
         raise ValueError("initial_variance must be positive")
     if not 0.0 < inlier_prior < 1.0:
@@ -171,7 +182,9 @@ def fit_bayesian_residual_anchor(
         raise ValueError("tracks do not cover the selection interval")
     if evaluate_future and gt_track.shape[0] < frame_count:
         raise ValueError("future evaluation requires complete tracks")
-    usable_observation_count = frame_count if evaluate_future else config.train_end_frame
+    usable_observation_count = (
+        frame_count if evaluate_future else config.train_end_frame
+    )
     observed = observed[:usable_observation_count]
     observation_frame_count = len(observed)
     visible = visible[:observation_frame_count]
@@ -248,10 +261,13 @@ def fit_bayesian_residual_anchor(
                 best = (ranking, candidate)
     assert best is not None
     selected_candidate = best[1]
-    validation_improvement = 1.0 - float(selected_candidate["selection_score"])
+    validation_improvement = 1.0 - cast(
+        float,
+        selected_candidate["selection_score"],
+    )
     accepted = validation_improvement > config.minimum_validation_improvement
-    process_std = float(selected_candidate["process_std_m"])
-    observation_std = float(selected_candidate["observation_std_m"])
+    process_std = cast(float, selected_candidate["process_std_m"])
+    observation_std = cast(float, selected_candidate["observation_std_m"])
     posterior = robust_random_walk_endpoint(
         residual,
         valid,
@@ -294,7 +310,9 @@ def fit_bayesian_residual_anchor(
     output.mkdir(parents=True, exist_ok=True)
     trajectory_path = output / "trajectory.pkl"
     with trajectory_path.open("wb") as handle:
-        pickle.dump(corrected.astype(np.float32), handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(
+            corrected.astype(np.float32), handle, protocol=pickle.HIGHEST_PROTOCOL
+        )
     posterior_path = output / "posterior.npz"
     np.savez_compressed(
         posterior_path,
@@ -307,10 +325,17 @@ def fit_bayesian_residual_anchor(
     )
     correction_norm = np.linalg.norm(correction, axis=2)
     posterior_std = np.sqrt(posterior.variance)
-    final_predictive_std = np.sqrt(
-        posterior.variance + future_count * process_std**2
-    )
-    updated = posterior.update_count > 0
+    final_predictive_std = np.sqrt(posterior.variance + future_count * process_std**2)
+    updated = posterior.updated_mask
+
+    def updated_quantile(
+        values: np.ndarray,
+        quantile: float,
+    ) -> float | None:
+        if not np.any(updated):
+            return None
+        return float(np.quantile(values[updated], quantile))
+
     summary: dict[str, object] = {
         "schema_version": 1,
         "config": asdict(config),
@@ -351,13 +376,15 @@ def fit_bayesian_residual_anchor(
         },
         "posterior": {
             "updated_track_count": int(np.sum(updated)),
-            "median_std_m": float(np.median(posterior_std[updated])),
-            "upper_95_std_m": float(np.quantile(posterior_std[updated], 0.95)),
-            "median_final_inlier_probability": float(
-                np.median(posterior.final_inlier_probability[updated])
+            "median_std_m": updated_quantile(posterior_std, 0.5),
+            "upper_95_std_m": updated_quantile(posterior_std, 0.95),
+            "median_final_inlier_probability": updated_quantile(
+                posterior.final_inlier_probability,
+                0.5,
             ),
-            "median_final_future_predictive_std_m": float(
-                np.median(final_predictive_std[updated])
+            "median_final_future_predictive_std_m": updated_quantile(
+                final_predictive_std,
+                0.5,
             ),
         },
         "outputs": {
@@ -379,5 +406,6 @@ def fit_bayesian_residual_anchor(
         json.dumps(summary, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    summary["outputs"]["summary"] = str(summary_path.resolve())
+    summary_outputs = cast(dict[str, str], summary["outputs"])
+    summary_outputs["summary"] = str(summary_path.resolve())
     return summary
