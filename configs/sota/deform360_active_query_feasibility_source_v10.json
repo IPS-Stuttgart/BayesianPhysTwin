@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-active-query-feasibility-v10-source",
+  "purpose": "Determine whether a target-free physics-guided planner can supply eight moving graph identities with independently depth-supported frame-zero query locations before any tracker or state update is run.",
+  "minimum_complete_camera_count": 8,
+  "depth_scale_to_m": 0.001,
+  "feasibility": {
+    "selected_camera_count": 4,
+    "minimum_eligible_camera_count": 4,
+    "coverage_weight": 1.0,
+    "angular_diversity_weight": 0.25,
+    "query_count": 8,
+    "maximum_reseeds": 0,
+    "minimum_motion_m": 0.002,
+    "minimum_camera_support": 2,
+    "support_probability_threshold": 0.5,
+    "graph_basis_rank": 8,
+    "association_search_radius_px": 12,
+    "association_depth_scale_m": 0.03,
+    "association_minimum_candidate_count": 1
+  },
+  "source_gate": {
+    "locked_case_count": 8,
+    "minimum_admitted_case_count": 6,
+    "tracker_execution_allowed_during_gate": false,
+    "candidate_state_updates_allowed_during_gate": false,
+    "future_metrics_allowed_during_gate": false,
+    "advancement": "Freeze a separate tracker-provider protocol only if at least 6 of 8 cases meet the complete frame-zero query budget."
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "physical_archive_sha256": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "physical_archive_sha256": "89eae3e6a3bcb9c5912f1f68926ed6996b7847f634880c24e4976545978c19bf"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "physical_archive_sha256": "4f221933a8dfe4a27e2a70de889e7b0c2a4247b9026daca6b738aafd34fa24e9"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "physical_archive_sha256": "19055cebe30b4fbc303507888fc3e824e43b7c28e9b7aa2908e613fc78a6519b"
+    },
+    {
+      "case": "059-shoe-ep0000",
+      "physical_archive_sha256": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "physical_archive_sha256": "143ffa5323b303e5b9cadf537511727b1fa923b6b824a433a9bbb8899942bcee"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "physical_archive_sha256": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "physical_archive_sha256": "420f74615af97dc5a8f681bbc99cb3688dfd108d887fea975eb3b9cfc4cbee37"
+    }
+  ],
+  "information_boundary": {
+    "source_only": true,
+    "object_observation_frames_used": [0],
+    "known_future_robot_action_read": true,
+    "maximum_physical_frame_read": 57,
+    "future_object_rgb_read": false,
+    "future_object_depth_or_mask_read": false,
+    "tracker_output_read": false,
+    "candidate_state_update_constructed": false,
+    "future_identity_read": false,
+    "future_metric_read": false,
+    "v1_sealed_target_read": false,
+    "held_v8_read": false
+  }
+}
