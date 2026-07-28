@@ -13,7 +13,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-
 _NUMERICAL_TOLERANCE = 1e-10
 
 
