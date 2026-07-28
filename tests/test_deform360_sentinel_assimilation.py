@@ -4,7 +4,10 @@ import numpy as np
 
 from bayesian_phystwin.deform360_dynamic_query import CameraPanel
 from bayesian_phystwin.deform360_dynamic_tapnextpp_assimilation import (
+    CANDIDATE_ARM,
+    PERSISTENCE_ARM,
     BirthAnchoredMeasurements,
+    predict_dynamic_tapnextpp_candidate,
 )
 from bayesian_phystwin.deform360_sentinel_assimilation import (
     build_sentinel_debiased_measurements,
@@ -62,7 +65,7 @@ def _inputs(
     missing_sentinel: bool = False,
     inconsistent_sentinels: bool = False,
 ) -> tuple[np.ndarray, BirthAnchoredMeasurements]:
-    physical = np.zeros((76, 6, 3), dtype=np.float64)
+    physical: np.ndarray = np.zeros((76, 6, 3), dtype=np.float64)
     physical[PREFIX_END_FRAME:, 0, 0] = 0.02
     physical[PREFIX_END_FRAME:, 1, 1] = 0.03
     physical[PREFIX_END_FRAME:, 2, 2] = 0.0002
@@ -154,3 +157,24 @@ def test_inconsistent_sentinel_bias_forces_exact_persistence() -> None:
     assert not result.applied
     assert result.estimate.decision == "sentinel-common-mode-inconsistent"
     assert not np.any(result.measurements.available)
+
+
+def test_rejected_sentinel_arm_is_exact_future_persistence() -> None:
+    physical, measurements = _inputs(missing_sentinel=True)
+    persistence = np.repeat(physical[0][None], len(physical), axis=0)
+    result = build_sentinel_debiased_measurements(
+        measurements,
+        _schedule(),
+        physical,
+    )
+    _, arrays = predict_dynamic_tapnextpp_candidate(
+        physical,
+        persistence,
+        result.measurements,
+    )
+
+    assert not result.applied
+    assert np.array_equal(
+        arrays[CANDIDATE_ARM][PREFIX_END_FRAME + 1 :],
+        arrays[PERSISTENCE_ARM][PREFIX_END_FRAME + 1 :],
+    )

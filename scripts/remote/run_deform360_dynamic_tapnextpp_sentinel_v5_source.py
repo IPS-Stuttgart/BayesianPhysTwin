@@ -271,10 +271,14 @@ def main() -> int:
     if not debias.applied:
         _require(
             np.array_equal(
-                assimilation_arrays[CANDIDATE_ARM],
-                assimilation_arrays[PERSISTENCE_ARM],
+                assimilation_arrays[CANDIDATE_ARM][
+                    PREFIX_END_FRAME + 1 :
+                ],
+                assimilation_arrays[PERSISTENCE_ARM][
+                    PREFIX_END_FRAME + 1 :
+                ],
             ),
-            "sentinel rejection did not retain bit-exact persistence",
+            "sentinel rejection did not retain bit-exact future persistence",
         )
 
     provider_arrays = {

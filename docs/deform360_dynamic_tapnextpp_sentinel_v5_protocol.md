@@ -79,3 +79,14 @@ claim that TAPNext++ alone beats the physical model. A rejection would show
 that three low-motion sentinels are insufficient under this query budget or
 that the remaining error is not well represented by one shared displacement
 bias. Either outcome leaves the historical V3 and V4 evidence unchanged.
+
+## Runtime Amendment 1
+
+The first source execution reached the rejection assertion before writing any
+result artifact or reading any hidden-identity outcome. The assertion compared
+the full candidate trajectory with persistence. The unchanged assimilation
+backend intentionally preserves its physical prefix and guarantees exact
+persistence only after the causal branch frame. The assertion was therefore
+narrowed to frames after frame 57, and a regression test now verifies that
+forecast-only identity. No query, covariance, support, bias, assimilation, or
+evaluation setting changed.
