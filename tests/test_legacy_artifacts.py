@@ -256,19 +256,20 @@ def _visual_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, str]]:
         tracks=np.zeros((3, 2, 2)),
         visibility=np.ones((3, 2), dtype=bool),
     )
-    return final_path, raw_case, {
-        "final_data_sha256": final_digest,
-        "metadata_sha256": _sha256(metadata_path),
-        "pcd_sha256": _sha256(pcd_path),
-        "calibration_sha256": calibration_digest,
-        "cotracker/camera0.npz": _sha256(track_path),
-    }
+    return (
+        final_path,
+        raw_case,
+        {
+            "final_data_sha256": final_digest,
+            "metadata_sha256": _sha256(metadata_path),
+            "pcd_sha256": _sha256(pcd_path),
+            "calibration_sha256": calibration_digest,
+            "cotracker/camera0.npz": _sha256(track_path),
+        },
+    )
 
 
 def _fake_visual_module(final_path: Path, raw_case: Path):
-    final_points = np.zeros((3, 2, 3), dtype=float)
-    final_visible = np.ones((3, 2), dtype=bool)
-
     class FakeConfig:
         def __init__(self, *, initial_match_tolerance_m: float) -> None:
             assert initial_match_tolerance_m == 1e-5
@@ -281,8 +282,8 @@ def _fake_visual_module(final_path: Path, raw_case: Path):
         source_track = np.asarray((0, 1))
         source_world_points = np.zeros((2, 3))
         initial_match_distance_m = np.asarray((0.0, 1e-7))
-        final_points = final_points
-        final_visible = final_visible
+        final_points = np.zeros((3, 2, 3), dtype=float)
+        final_visible = np.ones((3, 2), dtype=bool)
 
     class FakeModule:
         PhysTwinRawCueConfig = FakeConfig
@@ -315,9 +316,7 @@ def test_visual_inputs_v2_verifies_every_identity_and_returns_immutable_artifact
         metadata_sha256=digests["metadata_sha256"],
         pcd_sha256=digests["pcd_sha256"],
         calibration_sha256=digests["calibration_sha256"],
-        cotracker_sha256={
-            "cotracker/camera0.npz": digests["cotracker/camera0.npz"]
-        },
+        cotracker_sha256={"cotracker/camera0.npz": digests["cotracker/camera0.npz"]},
         initial_match_tolerance_m=1e-5,
     )
 
@@ -340,7 +339,9 @@ def test_visual_inputs_v2_rejects_track_tamper_before_internal_loader(
     monkeypatch.setattr(
         artifact_api_v2,
         "import_module",
-        lambda name: pytest.fail("internal mapping must not load after preflight failure"),
+        lambda name: pytest.fail(
+            "internal mapping must not load after preflight failure"
+        ),
     )
 
     with pytest.raises(ValueError, match="cotracker/camera0.npz SHA-256 mismatch"):
@@ -406,7 +407,5 @@ def test_visual_inputs_v2_manifest_is_narrow_and_versioned() -> None:
     manifest = artifact_api_v2.causal4d_artifact_provider_manifest()
     assert manifest["provider_api"] == "bayesian_phystwin.causal4d_artifacts_v2"
     assert manifest["provider_api_version"] == 2
-    assert manifest["artifact_schema_versions"] == {
-        "ReleasedPhysTwinVisualInputs": 2
-    }
+    assert manifest["artifact_schema_versions"] == {"ReleasedPhysTwinVisualInputs": 2}
     assert "postload_digest_revalidation" in manifest["capabilities"]
