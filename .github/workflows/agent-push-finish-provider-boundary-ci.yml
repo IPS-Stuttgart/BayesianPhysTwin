@@ -1,0 +1,60 @@
+name: Push final provider-boundary CI repair
+
+on:
+  push:
+    branches:
+      - agent/bootstrap-finish-provider-boundary-ci-20260728
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out bootstrap branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/bootstrap-finish-provider-boundary-ci-20260728
+          fetch-depth: 0
+
+      - name: Copy repair script and switch to product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/agent_finish_provider_boundary_ci.py /tmp/agent_finish_provider_boundary_ci.py
+          git fetch origin agent/complete-causal4d-provider-boundary
+          git switch -C agent/complete-causal4d-provider-boundary \
+            origin/agent/complete-causal4d-provider-boundary
+
+      - name: Apply quality and coverage repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install "ruff>=0.15.22,<0.17"
+          python -m ruff check --fix \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py
+          python -m ruff format \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py
+          python /tmp/agent_finish_provider_boundary_ci.py
+          python -m ruff check \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py
+          git diff --check
+
+      - name: Publish product branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/tests.yml \
+            src/bayesian_phystwin/causal4d_provider_v1.py \
+            tests/test_causal4d_provider_v1.py
+          git commit -m "Finish provider-boundary quality and coverage gates"
+          git push --force-with-lease \
+            origin HEAD:refs/heads/agent/complete-causal4d-provider-boundary
