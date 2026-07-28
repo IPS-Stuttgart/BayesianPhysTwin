@@ -23,8 +23,8 @@ _ASSOCIATION_MODES = frozenset(
 )
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
+def _require(condition: bool | np.bool_, message: str) -> None:
+    if not bool(condition):
         raise ValueError(message)
 
 
@@ -65,7 +65,19 @@ def _candidate_distribution(
     depth_m: np.ndarray,
     object_mask: np.ndarray,
     config: BirthAssociationConfig,
-) -> tuple[np.ndarray, float, float, np.ndarray, int] | None:
+) -> (
+    tuple[
+        np.ndarray,
+        float,
+        float,
+        np.ndarray,
+        int,
+        np.ndarray,
+        float,
+        np.ndarray,
+    ]
+    | None
+):
     height, width = depth_m.shape
     center_x, center_y = np.asarray(center_xy, dtype=np.float64)
     if not np.isfinite(center_x) or not np.isfinite(center_y):
@@ -92,17 +104,23 @@ def _candidate_distribution(
     candidates = pixels[valid]
     candidate_depth = patch_depth[valid]
     pixel_term = radius2[valid] / (config.search_radius_px**2)
-    depth_term = (
-        (candidate_depth - expected_depth_m) / config.depth_scale_m
-    ) ** 2
+    depth_term = ((candidate_depth - expected_depth_m) / config.depth_scale_m) ** 2
     cost = pixel_term + depth_term
     minimum = float(np.min(cost))
     weights = np.exp(-0.5 * (cost - minimum))
     weights /= np.sum(weights)
     best = int(np.argmax(weights))
     query_xy = candidates[best]
-    centered = candidates - np.sum(weights[:, None] * candidates, axis=0)
-    covariance = np.einsum("n,ni,nj->ij", weights, centered, centered)
+    candidate_xyd = np.column_stack((candidates, candidate_depth))
+    mixture_mean = np.sum(weights[:, None] * candidate_xyd, axis=0)
+    centered = candidate_xyd - mixture_mean
+    mixture_covariance = np.einsum(
+        "n,ni,nj->ij",
+        weights,
+        centered,
+        centered,
+    )
+    covariance = mixture_covariance[:2, :2]
     if len(weights) == 1:
         normalized_entropy = 0.0
     else:
@@ -128,6 +146,9 @@ def _candidate_distribution(
         normalized_entropy,
         covariance,
         len(weights),
+        mixture_mean[:2],
+        float(mixture_mean[2]),
+        mixture_covariance,
     )
 
 
@@ -179,16 +200,44 @@ def propose_birth_query_pixels(
     projected, _, visible = project_visibility(points, projections, shapes)
 
     point_count = len(points)
-    query_xy = np.full((camera_count, point_count, 2), np.nan, dtype=np.float64)
-    valid = np.zeros((camera_count, point_count), dtype=bool)
-    probability = np.zeros((camera_count, point_count), dtype=np.float64)
-    entropy = np.ones((camera_count, point_count), dtype=np.float64)
-    covariance = np.full(
+    query_xy: np.ndarray = np.full(
+        (camera_count, point_count, 2),
+        np.nan,
+        dtype=np.float64,
+    )
+    valid: np.ndarray = np.zeros((camera_count, point_count), dtype=bool)
+    probability: np.ndarray = np.zeros(
+        (camera_count, point_count),
+        dtype=np.float64,
+    )
+    entropy: np.ndarray = np.ones(
+        (camera_count, point_count),
+        dtype=np.float64,
+    )
+    covariance: np.ndarray = np.full(
         (camera_count, point_count, 2, 2),
         np.nan,
         dtype=np.float64,
     )
-    candidate_count = np.zeros((camera_count, point_count), dtype=np.int64)
+    candidate_count: np.ndarray = np.zeros(
+        (camera_count, point_count),
+        dtype=np.int64,
+    )
+    candidate_mean_xy: np.ndarray = np.full(
+        (camera_count, point_count, 2),
+        np.nan,
+        dtype=np.float64,
+    )
+    candidate_mean_depth_m: np.ndarray = np.full(
+        (camera_count, point_count),
+        np.nan,
+        dtype=np.float64,
+    )
+    candidate_xyd_covariance: np.ndarray = np.full(
+        (camera_count, point_count, 3, 3),
+        np.nan,
+        dtype=np.float64,
+    )
     for camera in range(camera_count):
         for entity in range(point_count):
             if not visible[camera, entity]:
@@ -211,6 +260,9 @@ def propose_birth_query_pixels(
                 entropy[camera, entity],
                 covariance[camera, entity],
                 candidate_count[camera, entity],
+                candidate_mean_xy[camera, entity],
+                candidate_mean_depth_m[camera, entity],
+                candidate_xyd_covariance[camera, entity],
             ) = proposal
             valid[camera, entity] = True
 
@@ -221,6 +273,9 @@ def propose_birth_query_pixels(
         "association_entropy": entropy,
         "candidate_pixel_covariance_px2": covariance,
         "candidate_count": candidate_count,
+        "candidate_mean_xy": candidate_mean_xy,
+        "candidate_mean_depth_m": candidate_mean_depth_m,
+        "candidate_xyd_covariance": candidate_xyd_covariance,
     }
 
 

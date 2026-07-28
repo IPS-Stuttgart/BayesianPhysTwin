@@ -34,6 +34,9 @@ SHORT_HORIZON_PROTOCOL_ID = (
 PREFIX_SUPPORT_PROTOCOL_ID = (
     "deform360-dynamic-tapnextpp-prefix-support-sentinel-v7-source-development"
 )
+DIRECT_DEPTH_PROTOCOL_ID = (
+    "deform360-direct-depth-sentinel-v8-source-development"
+)
 PREFIX_END_FRAME = max(UPDATE_FRAMES)
 
 
@@ -132,6 +135,7 @@ class Deform360SentinelQueryConfig:
                 PROTOCOL_ID,
                 SHORT_HORIZON_PROTOCOL_ID,
                 PREFIX_SUPPORT_PROTOCOL_ID,
+                DIRECT_DEPTH_PROTOCOL_ID,
             },
             "sentinel protocol ID is not registered",
         )
@@ -482,6 +486,7 @@ def build_deform360_sentinel_query_schedule(
 
 
 __all__ = [
+    "DIRECT_DEPTH_PROTOCOL_ID",
     "PREFIX_END_FRAME",
     "PREFIX_SUPPORT_PROTOCOL_ID",
     "PROTOCOL_ID",

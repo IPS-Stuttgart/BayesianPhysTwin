@@ -48,7 +48,13 @@ def test_birth_association_has_no_reliability_channel() -> None:
     assert "prior_reliability" not in result
     assert "observation_reliability" not in result
     assert result["query_points_xy"].shape == (3, 2, 2)
+    assert result["candidate_mean_xy"].shape == (3, 2, 2)
+    assert result["candidate_mean_depth_m"].shape == (3, 2)
+    assert result["candidate_xyd_covariance"].shape == (3, 2, 3, 3)
     assert np.all(result["valid"])
+    assert np.all(np.isfinite(result["candidate_mean_xy"]))
+    assert np.all(np.isfinite(result["candidate_mean_depth_m"]))
+    assert np.all(np.isfinite(result["candidate_xyd_covariance"]))
     assert np.all(
         (result["association_probability"] >= 0.0)
         & (result["association_probability"] <= 1.0)
@@ -131,8 +137,7 @@ def test_set_valued_mode_moves_pixel_ambiguity_into_covariance() -> None:
         legacy["association_entropy"],
     )
     assert np.all(
-        set_valued["association_probability"]
-        >= legacy["association_probability"]
+        set_valued["association_probability"] >= legacy["association_probability"]
     )
     assert np.max(set_valued["association_probability"]) > 0.9
     assert np.max(legacy["association_probability"]) < 0.1
@@ -153,9 +158,7 @@ def test_default_birth_association_remains_explicit_legacy_behavior() -> None:
         poses,
         depth,
         masks,
-        config=BirthAssociationConfig(
-            association_mode=LEGACY_EXACT_PIXEL_ASSOCIATION
-        ),
+        config=BirthAssociationConfig(association_mode=LEGACY_EXACT_PIXEL_ASSOCIATION),
     )
     for name in default:
         np.testing.assert_array_equal(default[name], explicit[name])

@@ -37,6 +37,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - An opt-in motion-stratified query planner that reserves a fixed budget for
   predicted-static sentinel identities, plus correlation-conservative shared
   displacement-bias estimation for guarded online belief updates.
+- An opt-in direct RGB-D endpoint provider with full assignment-mixture
+  covariance, covariance-intersection view fusion, sentinel common-bias
+  removal, and exact guarded fallback for source-only Deform360 development.
 
 ### Changed
 
