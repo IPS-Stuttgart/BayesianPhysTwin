@@ -124,6 +124,39 @@ def _eligible_prefix_calibration(
     )
 
 
+def _group_frame_zero_support_counts(
+    support: np.ndarray,
+    center_ids: np.ndarray,
+    cameras: tuple[str, ...],
+    camera_groups: tuple[tuple[str, ...], ...],
+    *,
+    minimum_cameras_per_group: int,
+) -> list[int]:
+    support_array = np.asarray(support, dtype=bool)
+    centers = np.asarray(center_ids, dtype=np.int64)
+    camera_index = {camera: index for index, camera in enumerate(cameras)}
+    return [
+        int(
+            np.sum(
+                np.sum(
+                    support_array[
+                        np.ix_(
+                            centers,
+                            np.asarray(
+                                [camera_index[camera] for camera in group],
+                                dtype=np.int64,
+                            ),
+                        )
+                    ],
+                    axis=1,
+                )
+                >= minimum_cameras_per_group
+            )
+        )
+        for group in camera_groups
+    ]
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     physical_dir = Path(args.physical_dir).resolve()
     processed_dir = Path(args.processed_dir).resolve()
@@ -422,24 +455,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "eligible_prefix_cameras": list(eligible_cameras),
         "camera_groups": [list(group) for group in camera_groups],
-        "frame_zero_group_support": [
-            int(
-                np.sum(
-                    np.sum(
-                        support[
-                            centers,
-                            [
-                                cameras.index(camera)
-                                for camera in group
-                            ],
-                        ],
-                        axis=1,
-                    )
-                    >= grouped_config.minimum_cameras_per_group
-                )
-            )
-            for group in camera_groups
-        ],
+        "frame_zero_group_support": _group_frame_zero_support_counts(
+            support,
+            centers,
+            cameras,
+            camera_groups,
+            minimum_cameras_per_group=(
+                grouped_config.minimum_cameras_per_group
+            ),
+        ),
         "response_support_definition": (
             "legacy physical-provider action_support"
             if planner == LEGACY_PLANNER

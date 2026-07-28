@@ -4,6 +4,8 @@ import importlib.util
 from pathlib import Path
 from types import ModuleType
 
+import numpy as np
+
 
 def _load_runner() -> ModuleType:
     script = (
@@ -79,3 +81,25 @@ def test_legacy_planner_remains_the_default() -> None:
     )
 
     assert parsed.planner == module.LEGACY_PLANNER
+
+
+def test_group_support_count_uses_cartesian_node_camera_indexing() -> None:
+    module = _load_runner()
+    support = np.asarray(
+        [
+            [True, True, False, False],
+            [True, True, True, True],
+            [False, False, True, True],
+        ],
+        dtype=bool,
+    )
+
+    counts = module._group_frame_zero_support_counts(
+        support,
+        np.asarray([0, 1, 2]),
+        ("a", "b", "c", "d"),
+        (("a", "b"), ("c", "d")),
+        minimum_cameras_per_group=2,
+    )
+
+    assert counts == [2, 2]
