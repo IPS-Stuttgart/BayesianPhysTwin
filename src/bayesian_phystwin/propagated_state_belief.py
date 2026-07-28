@@ -15,8 +15,8 @@ from dataclasses import dataclass
 import numpy as np
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
+def _require(condition: bool | np.bool_, message: str) -> None:
+    if not bool(condition):
         raise ValueError(message)
 
 
@@ -194,6 +194,7 @@ def _state_prior(
     covariance: np.ndarray | None,
     default_std: float,
 ) -> tuple[np.ndarray, np.ndarray]:
+    prior_mean: np.ndarray
     if mean is None:
         prior_mean = np.zeros(state_count, dtype=np.float64)
     else:
@@ -300,9 +301,9 @@ def infer_propagated_state_belief(
     node_rows = np.argwhere(usable)
     dimension = state_count + 3 * bias_count
     design = np.zeros((3 * len(node_rows), dimension), dtype=np.float64)
-    target = np.zeros(3 * len(node_rows), dtype=np.float64)
-    row_variance = np.zeros(3 * len(node_rows), dtype=np.float64)
-    node_base_weight = np.zeros(len(node_rows), dtype=np.float64)
+    target: np.ndarray = np.zeros(3 * len(node_rows), dtype=np.float64)
+    row_variance: np.ndarray = np.zeros(3 * len(node_rows), dtype=np.float64)
+    node_base_weight: np.ndarray = np.zeros(len(node_rows), dtype=np.float64)
     frame_factor = min(cfg.effective_frame_count, float(len(active_frames))) / len(
         active_frames
     )
@@ -379,7 +380,7 @@ def infer_propagated_state_belief(
 
     solution = np.zeros(dimension, dtype=np.float64)
     solution[:state_count] = prior_mean
-    robust = np.ones(len(node_rows), dtype=np.float64)
+    robust: np.ndarray = np.ones(len(node_rows), dtype=np.float64)
     normal = prior_precision.copy()
     for iteration in range(cfg.maximum_iterations):
         iterations = iteration + 1
