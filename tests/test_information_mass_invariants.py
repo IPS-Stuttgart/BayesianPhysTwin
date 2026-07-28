@@ -124,7 +124,7 @@ def test_nuisance_free_gain_matches_scalar_gaussian_information() -> None:
     )
 
     np.testing.assert_allclose(
-        update.updated_state.conditional_state_precision(),
+        update.updated_state.marginal_state_precision(),
         np.asarray([[2.0]]),
     )
     assert update.mutual_information_nats == pytest.approx(0.5 * np.log(2.0))
@@ -251,3 +251,19 @@ def test_nuisance_information_rejects_invalid_covariance_and_counts() -> None:
             (np.asarray([[1.0]]),),
             count=1,
         )
+
+
+def test_greedy_information_selection_abstains_on_zero_gain() -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(np.eye(1))
+
+    selection = greedy_nuisance_aware_selection(
+        prior,
+        (np.asarray([[1.0]]),),
+        (None,),
+        (np.asarray([[1.0]]),),
+        reliabilities=(0.0,),
+        count=1,
+    )
+
+    assert len(selection.selected_indices) == 0
+    assert len(selection.mutual_information_nats) == 0
