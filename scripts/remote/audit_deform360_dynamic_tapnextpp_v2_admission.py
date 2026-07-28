@@ -65,7 +65,12 @@ def _audit_case(
     case: str,
     config: AdaptiveDynamicQueryConfig,
 ) -> dict[str, Any]:
-    physical_dir = physical_root / case
+    physical_case_dir = physical_root / case
+    physical_dir = (
+        physical_case_dir
+        if (physical_case_dir / PHYSICAL_MANIFEST_FILENAME).is_file()
+        else physical_case_dir / "sealed_physical"
+    )
     processed_dir = _processed_case_dir(processed_root, case)
     _require(physical_dir.is_dir(), f"physical source case is missing: {case}")
     _require(processed_dir.is_dir(), f"processed source case is missing: {case}")
