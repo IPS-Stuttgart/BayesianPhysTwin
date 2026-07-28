@@ -30,10 +30,15 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_physical import (
     PHYSICAL_MANIFEST_FILENAME,
     validate_dynamic_physical_artifacts,
 )
+from bayesian_phystwin.deform360_prefix_support_screen import (
+    PrefixAssociationSupportConfig,
+    build_prefix_association_support_screen,
+)
 from bayesian_phystwin.deform360_sentinel_assimilation import (
     build_sentinel_debiased_measurements,
 )
 from bayesian_phystwin.deform360_sentinel_query_schedule import (
+    PREFIX_SUPPORT_PROTOCOL_ID,
     PROTOCOL_ID,
     SHORT_HORIZON_PROTOCOL_ID,
     Deform360SentinelQueryConfig,
@@ -107,6 +112,10 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         choices=(0, 51),
         default=0,
+    )
+    parser.add_argument(
+        "--prefix-support-conditioned",
+        action="store_true",
     )
     return parser.parse_args()
 
@@ -184,12 +193,18 @@ def main() -> int:
 
     processed = args.processed_episode_dir.resolve()
     geometry = load_complete_camera_geometry(processed)
-    protocol_id = (
-        SHORT_HORIZON_PROTOCOL_ID
-        if args.query_birth_frame == 51
-        else PROTOCOL_ID
+    _require(
+        not args.prefix_support_conditioned
+        or args.query_birth_frame == 51,
+        "prefix-support conditioning is registered only for birth frame 51",
     )
-    schedule = build_deform360_sentinel_query_schedule(
+    if args.prefix_support_conditioned:
+        protocol_id = PREFIX_SUPPORT_PROTOCOL_ID
+    elif args.query_birth_frame == 51:
+        protocol_id = SHORT_HORIZON_PROTOCOL_ID
+    else:
+        protocol_id = PROTOCOL_ID
+    provisional_schedule = build_deform360_sentinel_query_schedule(
         physical["physical_prediction_m"],
         physical["graph_basis"],
         geometry.intrinsics,
@@ -204,8 +219,46 @@ def main() -> int:
     camera_inputs = load_selected_complete_causal_inputs(
         processed,
         geometry,
-        schedule.camera_panel.camera_indices,
+        provisional_schedule.camera_panel.camera_indices,
     )
+    prefix_support = None
+    if args.prefix_support_conditioned:
+        prefix_support = build_prefix_association_support_screen(
+            physical["physical_prediction_m"],
+            camera_inputs.intrinsics,
+            camera_inputs.camera_to_world,
+            camera_inputs.depths_m,
+            camera_inputs.object_masks,
+            config=PrefixAssociationSupportConfig(
+                birth_frame=args.query_birth_frame,
+                update_frame=provisional_schedule.config.query_update_frame,
+                minimum_camera_support=(
+                    provisional_schedule.config.minimum_camera_support
+                ),
+            ),
+        )
+        schedule = build_deform360_sentinel_query_schedule(
+            physical["physical_prediction_m"],
+            physical["graph_basis"],
+            geometry.intrinsics,
+            geometry.camera_to_world,
+            geometry.image_shapes_hw,
+            geometry.camera_names,
+            candidate_entity_ids=prefix_support.eligible_entity_ids,
+            config=Deform360SentinelQueryConfig(
+                query_birth_frame=args.query_birth_frame,
+                protocol_id=protocol_id,
+            ),
+        )
+        _require(
+            np.array_equal(
+                schedule.camera_panel.camera_indices,
+                provisional_schedule.camera_panel.camera_indices,
+            ),
+            "prefix support changed the target-free camera panel",
+        )
+    else:
+        schedule = provisional_schedule
     associations = build_dynamic_birth_associations(
         schedule,
         physical["physical_prediction_m"],
@@ -347,6 +400,23 @@ def main() -> int:
         + "\n",
         encoding="utf-8",
     )
+    prefix_support_path = None
+    if prefix_support is not None:
+        prefix_support_payload = prefix_support.descriptor()
+        prefix_support_payload["artifact_sha256"] = (
+            prefix_support.artifact_sha256
+        )
+        prefix_support_path = output / "prefix_support_screen.json"
+        prefix_support_path.write_text(
+            json.dumps(
+                prefix_support_payload,
+                indent=2,
+                sort_keys=True,
+                allow_nan=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     endpoint_supported = (
         provider.accepted_support[
             schedule.birth_frames,
@@ -360,9 +430,13 @@ def main() -> int:
     report: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": (
-            "Deform360DynamicTAPNextPPShortSentinelV6SourceDevelopment"
-            if protocol_id == SHORT_HORIZON_PROTOCOL_ID
-            else "Deform360DynamicTAPNextPPSentinelV5SourceDevelopment"
+            "Deform360DynamicTAPNextPPPrefixSupportSentinelV7SourceDevelopment"
+            if protocol_id == PREFIX_SUPPORT_PROTOCOL_ID
+            else (
+                "Deform360DynamicTAPNextPPShortSentinelV6SourceDevelopment"
+                if protocol_id == SHORT_HORIZON_PROTOCOL_ID
+                else "Deform360DynamicTAPNextPPSentinelV5SourceDevelopment"
+            )
         ),
         "protocol_id": protocol_id,
         "status": "post_open_source_development_not_confirmation",
@@ -383,6 +457,11 @@ def main() -> int:
             ),
             "camera_certificate": geometry.artifact_sha256,
             "query_schedule": schedule.artifact_sha256,
+            "prefix_support_screen": (
+                None
+                if prefix_support is None
+                else prefix_support.artifact_sha256
+            ),
         },
         "support": {
             "complete_camera_count": len(geometry.camera_names),
@@ -395,6 +474,19 @@ def main() -> int:
             ),
             "birth_and_update_supported_fraction": float(
                 np.mean(endpoint_supported)
+            ),
+            "prefix_support_screen": (
+                None
+                if prefix_support is None
+                else {
+                    "candidate_count": len(prefix_support.entity_ids),
+                    "eligible_count": int(
+                        np.sum(prefix_support.eligible)
+                    ),
+                    "minimum_camera_support": (
+                        prefix_support.config.minimum_camera_support
+                    ),
+                }
             ),
         },
         "sentinel_debias": debias.report(),
@@ -420,6 +512,11 @@ def main() -> int:
                 name: array_sha256(values)
                 for name, values in sorted(assimilation_arrays.items())
             },
+            "prefix_support_screen_file_sha256": (
+                None
+                if prefix_support_path is None
+                else file_sha256(prefix_support_path)
+            ),
         },
         "information_boundary": {
             "tracker_frame_interval_consumed": [
