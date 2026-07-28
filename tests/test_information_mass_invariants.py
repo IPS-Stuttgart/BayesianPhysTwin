@@ -113,9 +113,7 @@ def test_prior_aware_provider_power_is_duplication_invariant() -> None:
 
 
 def test_nuisance_free_gain_matches_scalar_gaussian_information() -> None:
-    prior = NuisanceAwareInformationState.from_independent_priors(
-        np.asarray([[1.0]])
-    )
+    prior = NuisanceAwareInformationState.from_independent_priors(np.asarray([[1.0]]))
 
     update = prior.observation_information_gain(
         np.asarray([[1.0]]),
