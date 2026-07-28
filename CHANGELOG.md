@@ -34,6 +34,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
+- An opt-in motion-stratified query planner that reserves a fixed budget for
+  predicted-static sentinel identities, plus correlation-conservative shared
+  displacement-bias estimation for guarded online belief updates.
 
 ### Changed
 
