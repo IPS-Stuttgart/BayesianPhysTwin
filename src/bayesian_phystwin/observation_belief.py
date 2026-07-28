@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 
@@ -202,8 +203,19 @@ class ObservationBeliefV1:
             raise ValueError(
                 "declared frames must lie before causal_frame_stop"
             )
-        if mean.ndim != 2 or mean.shape[1] != 3 or len(mean) == 0:
-            raise ValueError("mean_xyz_m must have nonempty shape (N, 3)")
+        prior_only_fallback = (
+            isinstance(self.metadata, Mapping)
+            and self.metadata.get("prior_only_fallback") is True
+        )
+        if (
+            mean.ndim != 2
+            or mean.shape[1] != 3
+            or (len(mean) == 0 and not prior_only_fallback)
+        ):
+            raise ValueError(
+                "mean_xyz_m must have shape (N, 3); N may be zero only "
+                "for an explicit prior-only fallback"
+            )
         observation_count = len(mean)
         vectors = {
             "frame_ids": frame_ids,
@@ -270,9 +282,13 @@ class ObservationBeliefV1:
             local_covariance, symmetric, atol=1e-12, rtol=1e-10
         ):
             raise ValueError("local covariance must be symmetric")
-        minimum_eigenvalue = np.min(np.linalg.eigvalsh(symmetric), axis=1)
-        if np.any(minimum_eigenvalue <= 0.0):
-            raise ValueError("local covariance must be positive definite")
+        if observation_count:
+            minimum_eigenvalue = np.min(
+                np.linalg.eigvalsh(symmetric),
+                axis=1,
+            )
+            if np.any(minimum_eigenvalue <= 0.0):
+                raise ValueError("local covariance must be positive definite")
 
         expected_groups = np.unique(correlation_groups)
         if (

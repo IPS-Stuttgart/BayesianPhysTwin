@@ -2,7 +2,7 @@
   "schema_version": 1,
   "protocol_id": "deform360-dynamic-tapnextpp-provider-v1",
   "status": "protocol-amended-before-cohort-selection-or-provider-outcomes",
-  "question": "Can physics-guided causal query births turn precise but incomplete TAPNext++ tracks into a bias-aware sparse state update that improves disjoint hidden Deform360 identities without regressing below the unchanged physical/persistence backbone?",
+  "question": "Can physics-guided causal query births turn precise but incomplete TAPNext++ tracks into a bias-aware recursive discrepancy belief that improves disjoint hidden Deform360 identities without regressing below the unchanged physical/persistence backbone?",
   "claim_boundary": "The source phase may establish provider competence and source transfer only. A state-of-the-art claim additionally requires a passed source gate, an untouched object-disjoint target cohort, authoritative evaluator parity, local reproduction of the strongest eligible baseline, and improvement on both primary metrics.",
   "prelock": {
     "repository": "FlorianPfaff/Bayesian-PhysTwin",
@@ -49,6 +49,15 @@
       "provider_target_outcomes_opened_before_amendment": false,
       "cohort_selected_before_amendment": false,
       "method_or_gate_changed": false
+    },
+    {
+      "amendment_id": "candidate-state-scope-amendment-4",
+      "reason": "Implementation review found that the preregistered graph-mode position/velocity wording exceeded the source-supported candidate. Before cohort locking or provider outcomes, V1 was narrowed to the already source-motivated recursive readout-discrepancy belief: birth-relative motion cancels a static birth-wave gauge, metric covariance controls the update, and the physical and persistence backbones remain unchanged. A dynamically admissible simulator-state update remains a separate future arm.",
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "cohort_selected_before_amendment": false,
+      "method_implementation_changed_before_outcomes": true,
+      "source_and_target_gates_changed": false
     }
   ],
   "data_source": {
@@ -162,7 +171,7 @@
   },
   "claim_bearing_observation": {
     "minimum_inlier_views": 3,
-    "two_view_role": "tracking continuity and association proposal only; never a claim-bearing state likelihood row",
+    "two_view_role": "tracking continuity and association proposal only; never a claim-bearing discrepancy-likelihood row",
     "visibility_threshold": 0.5,
     "maximum_reprojection_error_px": 3.0,
     "maximum_depth_residual_m": 0.03,
@@ -174,16 +183,44 @@
     "correlation_group": "one material-identity trajectory within one birth wave",
     "maximum_effective_samples_per_group": 3.0,
     "prior_reliability": "TAPNext++ visibility, mask support, depth support, reprojection consistency, view redundancy, and association entropy only",
-    "innovation_processing": "exactly once through the grouped robust Student-t mixture likelihood"
+    "innovation_processing": "exactly once through the covariance-aware Student-t robust discrepancy update"
   },
   "state_update": {
     "physical_backbone": "strongest source-selected physical or exact-persistence backbone, selected without future outcomes",
-    "state_coordinates": "graph-mode position and velocity at each update frame",
-    "shared_camera_bias": "explicit nuisance state",
-    "contact_action_anchor": "measured robot trajectory and registered contact support constrain global state modes",
-    "unidentifiable_modes": "retain the physical prior exactly",
-    "readout_discrepancy": "kept separate from physical state",
+    "candidate_coordinates": "recursive global-plus-local RBF readout-discrepancy belief centered on dynamically scheduled material identities",
+    "physical_state_update": "not performed in V1; physical and persistence trajectories remain immutable candidate backbones",
+    "shared_camera_bias": "a static bias common to a birth wave is canceled by birth-relative displacement; unresolved coherent bias remains represented by the observation belief and conservative covariance rather than being relabeled as physical state",
+    "contact_action_anchor": "the known action and physical rollout determine query motion support and scheduling but do not manufacture perception reliability",
+    "unidentifiable_modes": "retain the selected physical or persistence backbone exactly",
+    "readout_discrepancy": "applied additively only after the pairwise correspondence and robust covariance-aware update",
     "exact_fallback": "byte-identical selected backbone whenever observation, identifiability, or regret admission fails"
+  },
+  "candidate_update": {
+    "measurement": "physical position at query birth plus observed multiview displacement from birth to update",
+    "unknown_temporal_correlation_covariance": "2*(Sigma_birth+Sigma_update)",
+    "minimum_selector_support": 3,
+    "backbone_selector": "minimum current sparse symmetric Chamfer between physical and persistence, with physical winning an exact tie; insufficient support selects persistence",
+    "pairwise_correspondence_gate": {
+      "absolute_pair_strain_m": 0.03,
+      "relative_pair_strain": 0.1,
+      "minimum_inlier_count": 9,
+      "minimum_inlier_fraction": 0.7,
+      "maximum_exact_center_count": 24
+    },
+    "recursive_rbf_belief": {
+      "length_scale_fraction": 0.1,
+      "local_blend": 1.0,
+      "observation_std_m": 0.005,
+      "process_std_m_per_sqrt_frame": 0.003,
+      "global_prior_std_m": 0.1,
+      "local_prior_std_m": 0.02,
+      "degrees_of_freedom": 4.0,
+      "minimum_reliability": 0.02,
+      "maximum_correction_m": 0.1,
+      "minimum_length_scale_m": 0.0001
+    },
+    "innovation_use": "processed exactly once by the covariance-aware Student-t robust update",
+    "future_application": "the posterior discrepancy mean is added to the selected readout over the next interval; its marginal variance is retained separately"
   },
   "source_provider_gate": {
     "unit": "physical object",
@@ -197,7 +234,7 @@
     "minimum_out_of_fold_90pct_ellipsoid_coverage": 0.8,
     "maximum_out_of_fold_90pct_ellipsoid_coverage": 1.0,
     "minimum_worst_object_coverage": 0.7,
-    "pass_action": "freeze the state-update and baseline-relative regret gate before opening any sealed target object",
+    "pass_action": "freeze the discrepancy update and baseline-relative regret gate before opening any sealed target object",
     "fail_action": "stop this provider version without changing queries, births, cameras, thresholds, covariance, or gates on the opened source cohort"
   },
   "source_assimilation_gate": {
@@ -235,7 +272,7 @@
     "opening held-v8 target, query, score, barrier, or outcome artifacts",
     "selecting target episodes from future object motion or target errors",
     "weakening the prior TAPNext++ 75% support gate on its opened case",
-    "using two-view triangulations as claim-bearing state updates",
+    "using two-view triangulations as claim-bearing discrepancy updates",
     "using state innovation to manufacture prior perception reliability",
     "scoring any material identity used by any query birth wave",
     "tuning tracker, queries, camera panel, covariance, likelihood, or gates after source outcomes",

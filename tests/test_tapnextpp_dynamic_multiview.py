@@ -99,6 +99,30 @@ def test_two_views_are_proposals_but_not_claim_bearing() -> None:
     assert np.all(result.independent_support_count == 2)
 
 
+def test_no_claim_bearing_rows_seal_as_prior_only_fallback(
+    tmp_path: Path,
+) -> None:
+    result = _fuse(_synthetic_input(2))
+    belief = build_dynamic_tapnextpp_observation_belief(
+        result,
+        case_id="synthetic-prior-only",
+        frame_ids=np.asarray([0, 1, 2, 3]),
+        entity_ids=np.asarray([7]),
+        entity_birth_frames=np.asarray([0]),
+        entity_update_frames=np.asarray([3]),
+        camera_names=("camera-0", "camera-1"),
+        query_schedule_sha256="a" * 64,
+        tracker_checkpoint_sha256=TAPNEXT_CHECKPOINT_SHA256,
+    )
+
+    assert belief.observation_count == 0
+    assert belief.metadata["prior_only_fallback"] is True
+    path = tmp_path / "prior-only-belief.npz"
+    save_observation_belief(path, belief)
+    restored = load_observation_belief(path)
+    assert restored.artifact_id == belief.artifact_id
+
+
 def test_three_independent_views_are_claim_bearing() -> None:
     result = _fuse(_synthetic_input(3))
     assert np.all(result.proposal_available)

@@ -11,6 +11,9 @@ The complete method contract is
 `configs/sota/deform360_dynamic_tapnextpp_provider_v1.json`. The hash-only
 exclusion union contains 100 physical objects and has canonical SHA-256
 `cf472da17400ce2191d0af9b0b25788fd27b5e5c9976293e2814d2604d8da684`.
+The separately hashed source scorer is
+`configs/sota/deform360_dynamic_tapnextpp_source_evaluation_v1.json`; the
+cohort lock binds both files before any provider outcome.
 
 Before cohort selection, a separately owned source campaign reported 12 newly
 opened physical objects that were absent from the original 82-object union.
@@ -44,6 +47,14 @@ It is bound to implementation commit
 `a41a581f27097ed04a2a0ec4d58cffcb6963a2b6`. At queue creation, no queued
 episode media, processed geometry, future trajectory, or evaluation metric had
 been read.
+
+A fourth pre-cohort amendment narrows the candidate from a graph position and
+velocity update to a recursive readout-discrepancy belief. Implementation review
+showed that the former wording exceeded the source-supported method: the
+available open evidence supports a guarded spatial discrepancy update, but not
+yet a dynamically admissible Warp state update. This amendment was made before
+cohort locking, provider execution, or any source or target outcome. The
+physical and persistence trajectories remain immutable backbones in V1.
 
 ## Hypothesis
 
@@ -91,9 +102,9 @@ update has no defensible headroom.
 
 ## Observation Contract
 
-Only triangulations with at least three inlier cameras enter the state
+Only triangulations with at least three inlier cameras enter the discrepancy
 likelihood. Two-view estimates may preserve tracker continuity and association
-hypotheses, but cannot update the physical state.
+hypotheses, but cannot update the physical prediction.
 
 Each accepted observation is exported as `ObservationBeliefV1` with:
 
@@ -106,15 +117,36 @@ Each accepted observation is exported as `ObservationBeliefV1` with:
 - residual-independent reliability from tracker visibility, masks, depth,
   reprojection, view redundancy, and association entropy.
 
-The physical innovation is evaluated exactly once by the grouped robust
-Student-t mixture likelihood.
+The physical innovation is evaluated exactly once by the covariance-aware
+Student-t robust update. If no claim-bearing row survives, the observation
+artifact is explicitly marked as prior-only and the candidate returns the
+selected backbone exactly.
 
-## State And Safety
+## Discrepancy And Safety
 
-The updater estimates graph-mode position and velocity at the causal endpoint.
-Measured robot motion and registered contact support anchor global modes, while
-camera bias remains an explicit nuisance variable. Modes that cannot be
-separated from bias retain their physical prior.
+For identity \(i\), born at frame \(b\) and revisited at causal update \(t\),
+the candidate constructs
+
+\[
+\hat y_{i,t}
+= x^{\mathrm{phys}}_{i,b}
++ \left(\hat o_{i,t}-\hat o_{i,b}\right).
+\]
+
+This birth-relative displacement cancels a camera/world offset that is constant
+within the birth wave. Its covariance is conservatively bounded as
+\(2(\Sigma_{i,b}+\Sigma_{i,t})\), rather than treating the two observations as
+independent. A pairwise-distance consensus gate first checks whether the
+accepted identities describe one coherent deformable correspondence set. The
+innovation relative to the selected physical or persistence backbone is then
+processed once by a covariance-aware robust update and decoded through a
+global-plus-local RBF discrepancy field.
+
+The resulting mean is added in readout space over the following interval. It
+does not modify graph positions, velocities, physical parameters, contact, or
+the Warp rollout. The physical/action model determines where observations are
+worth seeking, but it does not manufacture their perception reliability.
+Unidentifiable or rejected updates retain the selected backbone exactly.
 
 The candidate is compared with the unchanged physical/persistence backbone
 using a source-cross-fitted upper confidence bound on regret. A nonnegative,
@@ -144,6 +176,16 @@ frame-zero admission before source outcomes:
 Either source gate failing stops the protocol before target outcomes. Technical
 failures remain in the denominator and are never replaced.
 
+Provider competence is evaluated on identities with claim-bearing
+triangulations at both birth and update. Its persistence comparator holds the
+provider's own birth triangulation fixed, and covariance is calibrated
+leave-one-object-out. Downstream assimilation is scored only on identities that
+were never queried. Four deterministic leave-two-object folds fit a
+baseline-relative regret certificate from target-free support, correspondence,
+reliability, and correction-scale features. An interval is admitted only when
+its upper regret bound is strictly negative; otherwise it is the selected
+backbone byte-for-byte.
+
 The executable post-admission lock requires exactly one source-only disposition
 for every one of the 36 queued objects before it selects a cohort. It takes the
 first admitted 7 sheet, 7 compact, and 6 complex objects in frozen queue order,
@@ -151,6 +193,12 @@ interleaves the strata, assigns the first 8 objects to source, and seals the
 remaining 12 as target. This yields a 3/3/2 source split and a 4/4/4 target
 split. If any stratum lacks its quota, this provider version stops; a technical
 failure cannot be silently replaced by a later object.
+
+Each ordinary prediction seal binds the query schedule, provider archive,
+observation belief, assimilation archive, narrow hidden-identity prediction
+input, runtime report, exact code revision, and environment digest. A tracker
+or backend runtime failure is therefore a registered technical disposition,
+not a model prediction.
 
 ## Claim Boundary
 

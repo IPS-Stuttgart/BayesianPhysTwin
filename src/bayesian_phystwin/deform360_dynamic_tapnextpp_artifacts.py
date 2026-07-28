@@ -16,6 +16,13 @@ from typing import Any
 
 import numpy as np
 
+from .deform360_fresh_source_lock import (
+    ADMISSION_KIND as FRESH_SOURCE_ADMISSION_KIND,
+)
+from .deform360_fresh_source_lock import (
+    FreshSourceAdmissionConfig,
+    validate_fresh_source_admission,
+)
 from .observation_belief import (
     file_sha256,
     load_observation_belief,
@@ -51,7 +58,7 @@ _ALLOWED_FAILURE_STAGES = frozenset(
         "tapnextpp-runtime",
         "multiview-lift",
         "observation-belief",
-        "state-update",
+        "discrepancy-update",
         "prediction-seal",
     }
 )
@@ -71,6 +78,14 @@ _FORBIDDEN_KEY_TOKENS = (
     "ground_truth",
     "future_observation",
     "target_score",
+)
+_FRESH_SOURCE_ADMISSION_CONFIG = FreshSourceAdmissionConfig(
+    minimum_camera_count=MINIMUM_CAMERA_COUNT,
+    minimum_point_count=MINIMUM_PHYSICAL_NODE_COUNT,
+    maximum_point_count=10_000,
+    required_frame_count=EXPECTED_FRAME_COUNT,
+    update_frames=EXPECTED_UPDATE_FRAMES,
+    minimum_test_frame_count=8,
 )
 
 
@@ -275,13 +290,49 @@ def build_source_admission(
 def validate_source_admission(
     artifact: Mapping[str, Any] | str | Path,
 ) -> dict[str, Any]:
-    """Validate a source-admission artifact and its information boundary."""
+    """Validate and normalize either registered source-admission schema."""
 
     payload = (
         _read_json(artifact)
         if isinstance(artifact, (str, Path))
         else dict(artifact)
     )
+    if payload.get("artifact_kind") == FRESH_SOURCE_ADMISSION_KIND:
+        validate_fresh_source_admission(
+            payload,
+            expected_config=_FRESH_SOURCE_ADMISSION_CONFIG,
+        )
+        boundary = payload["information_boundary"]
+        normalized = {
+            "schema_version": 1,
+            "artifact_kind": ADMISSION_ARTIFACT_KIND,
+            "source_artifact_kind": FRESH_SOURCE_ADMISSION_KIND,
+            "protocol_id": PROTOCOL_ID,
+            "object_hash": deform360_object_hash(str(payload["object_id"])),
+            "case_hash": deform360_case_hash(
+                str(payload["object_id"]),
+                int(payload["episode_id"]),
+            ),
+            "category": str(payload["category"]),
+            "admitted": bool(payload["accepted"]),
+            "rejection_reasons": list(payload["rejection_reasons"]),
+            "source_admission_sha256": _validate_digest(
+                str(payload["admission_sha256"]),
+                name="source_admission_sha256",
+            ),
+            "information_boundary": {
+                "future_payload_deserialized": boundary[
+                    "future_object_positions_deserialized"
+                ],
+                "score_read": boundary["future_metrics_read"],
+                "identity_removed_after_validation": True,
+            },
+        }
+        _reject_forbidden_keys(normalized)
+        encoded = json.dumps(normalized, sort_keys=True, allow_nan=False)
+        _require("object_id" not in encoded, "plaintext object identity leaked")
+        _require("episode_id" not in encoded, "plaintext episode identity leaked")
+        return normalized
     _require(
         payload.get("artifact_kind") == ADMISSION_ARTIFACT_KIND,
         "wrong admission artifact kind",
@@ -380,6 +431,7 @@ def build_prediction_seal(
     prediction_archive_path: str | Path,
     code_revision: str,
     environment_sha256: str,
+    additional_input_paths: Mapping[str, str | Path] | None = None,
 ) -> dict[str, Any]:
     """Seal an ordinary prediction before any future identity is read."""
 
@@ -416,6 +468,28 @@ def build_prediction_seal(
         environment_sha256,
         name="environment_sha256",
     )
+    auxiliary = dict(additional_input_paths or {})
+    _require(
+        not (
+            {
+                "protocol",
+                "admission",
+                "query_schedule",
+                "observation_belief",
+            }
+            & set(auxiliary)
+        ),
+        "additional prediction-seal input uses a reserved name",
+    )
+    _require(
+        all(
+            isinstance(name, str)
+            and bool(name)
+            and all(character.isalnum() or character in "-_" for character in name)
+            for name in auxiliary
+        ),
+        "additional prediction-seal input name is invalid",
+    )
     output.mkdir(parents=True, exist_ok=True)
     archive_target = output / PREDICTION_ARCHIVE_FILENAME
     archive_bytes = Path(prediction_archive_path).read_bytes()
@@ -435,6 +509,10 @@ def build_prediction_seal(
             "admission": file_sha256(admission_path),
             "query_schedule": file_sha256(query_schedule_path),
             "observation_belief": file_sha256(observation_belief_path),
+            **{
+                name: file_sha256(path)
+                for name, path in sorted(auxiliary.items())
+            },
         },
         "prediction_archive": {
             "filename": PREDICTION_ARCHIVE_FILENAME,
@@ -476,6 +554,7 @@ def build_prediction_seal(
         query_schedule_path=query_schedule_path,
         observation_belief_path=observation_belief_path,
         prediction_dir=output,
+        additional_input_paths=auxiliary,
     )
     return seal
 
@@ -488,6 +567,7 @@ def validate_prediction_seal(
     query_schedule_path: str | Path,
     observation_belief_path: str | Path,
     prediction_dir: str | Path,
+    additional_input_paths: Mapping[str, str | Path] | None = None,
 ) -> dict[str, Any]:
     """Validate an ordinary prediction seal and every bound file."""
 
@@ -506,11 +586,16 @@ def validate_prediction_seal(
         == _canonical_sha256(payload, digest_key="result_sha256"),
         "prediction seal content checksum changed",
     )
+    auxiliary = dict(additional_input_paths or {})
     expected_inputs = {
         "protocol": file_sha256(protocol_path),
         "admission": file_sha256(admission_path),
         "query_schedule": file_sha256(query_schedule_path),
         "observation_belief": file_sha256(observation_belief_path),
+        **{
+            name: file_sha256(path)
+            for name, path in sorted(auxiliary.items())
+        },
     }
     _require(
         payload.get("inputs_sha256") == expected_inputs,

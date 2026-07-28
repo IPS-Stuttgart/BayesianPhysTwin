@@ -802,6 +802,7 @@ def build_dynamic_provider_cohort_lock(
     output_path: str | Path,
     *,
     protocol_path: str | Path,
+    source_evaluation_protocol_path: str | Path,
     queue_path: str | Path,
     processing_protocol_path: str | Path,
     runtime_amendment_path: str | Path,
@@ -825,6 +826,16 @@ def build_dynamic_provider_cohort_lock(
     protocol_source = Path(protocol_path)
     protocol = _read_json(protocol_source)
     _require(protocol.get("protocol_id") == PROTOCOL_ID, "protocol ID changed")
+    source_evaluation_source = Path(source_evaluation_protocol_path)
+    source_evaluation = _read_json(source_evaluation_source)
+    _require(
+        source_evaluation.get("artifact_kind")
+        == "Deform360DynamicTAPNextPPSourceEvaluationProtocol"
+        and source_evaluation.get("protocol_id") == PROTOCOL_ID
+        and source_evaluation.get("status")
+        == "locked-before-cohort-and-provider-outcomes",
+        "source evaluation protocol is incompatible",
+    )
     queue_source = Path(queue_path)
     queue = load_staging_queue(queue_source)
     processing_source = Path(processing_protocol_path)
@@ -935,6 +946,9 @@ def build_dynamic_provider_cohort_lock(
         ),
         "bindings": {
             "provider_protocol_file_sha256": file_sha256(protocol_source),
+            "source_evaluation_protocol_file_sha256": file_sha256(
+                source_evaluation_source
+            ),
             "staging_queue_sha256": queue["queue_sha256"],
             "staging_queue_file_sha256": file_sha256(queue_source),
             "source_processing_protocol_sha256": processing["config_sha256"],
@@ -1051,6 +1065,7 @@ def validate_dynamic_provider_cohort_lock(
             _valid_digest(bindings.get(key))
             for key in (
                 "provider_protocol_file_sha256",
+                "source_evaluation_protocol_file_sha256",
                 "runtime_amendment_file_sha256",
                 "runtime_amendment_sha256",
                 "source_processing_protocol_file_sha256",
@@ -1090,6 +1105,27 @@ def load_dynamic_provider_cohort_lock(path: str | Path) -> dict[str, Any]:
     return validate_dynamic_provider_cohort_lock(_read_json(path))
 
 
+def dynamic_provider_case_record(
+    cohort: Mapping[str, Any],
+    *,
+    object_id: str,
+    episode_id: int,
+    partition: str,
+) -> dict[str, Any]:
+    """Return one explicitly authorized source or sealed-target case."""
+
+    validated = validate_dynamic_provider_cohort_lock(cohort)
+    _require(partition in {"source", "target"}, "cohort partition is invalid")
+    key = "source_cases" if partition == "source" else "sealed_target_cases"
+    matches = [
+        row
+        for row in validated[key]
+        if row["object_id"] == object_id and row["episode_id"] == episode_id
+    ]
+    _require(len(matches) == 1, "case is absent from the requested cohort partition")
+    return dict(matches[0])
+
+
 __all__ = [
     "COHORT_LOCK_KIND",
     "DATASET_REPOSITORY",
@@ -1107,6 +1143,7 @@ __all__ = [
     "build_metadata_preflight",
     "build_staging_queue",
     "build_terminal_disposition",
+    "dynamic_provider_case_record",
     "load_dynamic_provider_cohort_lock",
     "load_metadata_preflight",
     "load_staging_queue",

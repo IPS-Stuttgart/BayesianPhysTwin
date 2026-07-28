@@ -271,6 +271,7 @@ def build_dynamic_birth_associations(
     depths_m: np.ndarray,
     object_masks: np.ndarray,
     *,
+    input_camera_indices: np.ndarray | None = None,
     config: BirthAssociationConfig | None = None,
 ) -> DynamicBirthAssociations:
     """Associate each birth using only that frame's causal depth and mask."""
@@ -278,7 +279,9 @@ def build_dynamic_birth_associations(
     positions = np.asarray(physical_positions_m, dtype=np.float64)
     matrices = np.asarray(intrinsics, dtype=np.float64)
     poses = np.asarray(camera_to_world, dtype=np.float64)
-    depths = np.asarray(depths_m, dtype=np.float64)
+    # Keep the dense camera volume in its source precision. Individual patches
+    # are promoted to float64 inside the association calculation.
+    depths = np.asarray(depths_m)
     masks = np.asarray(object_masks, dtype=bool)
     _require(
         positions.ndim == 3 and positions.shape[2] == 3,
@@ -297,6 +300,17 @@ def build_dynamic_birth_associations(
         "depths must have shape (C, T, H, W)",
     )
     _require(masks.shape == depths.shape, "object masks differ from depths")
+    source_camera_indices = (
+        np.arange(len(matrices), dtype=np.int64)
+        if input_camera_indices is None
+        else np.asarray(input_camera_indices, dtype=np.int64)
+    )
+    _require(
+        source_camera_indices.shape == (len(matrices),)
+        and len(np.unique(source_camera_indices)) == len(source_camera_indices)
+        and np.all(source_camera_indices >= 0),
+        "input camera identities are invalid",
+    )
     entities = np.asarray(schedule.entity_ids, dtype=np.int64)
     births = np.asarray(schedule.birth_frames, dtype=np.int64)
     _require(
@@ -311,12 +325,20 @@ def build_dynamic_birth_associations(
         schedule.camera_panel.camera_indices,
         dtype=np.int64,
     )
+    camera_positions = {
+        int(camera): position
+        for position, camera in enumerate(source_camera_indices)
+    }
     _require(
-        np.all((camera_indices >= 0) & (camera_indices < len(matrices))),
-        "selected camera exceeds the causal inputs",
+        all(int(camera) in camera_positions for camera in camera_indices),
+        "selected camera is absent from the causal inputs",
     )
-    selected_intrinsics = matrices[camera_indices]
-    selected_poses = poses[camera_indices]
+    local_camera_indices = np.asarray(
+        [camera_positions[int(camera)] for camera in camera_indices],
+        dtype=np.int64,
+    )
+    selected_intrinsics = matrices[local_camera_indices]
+    selected_poses = poses[local_camera_indices]
     selected_projections = projection_matrices(
         selected_intrinsics,
         selected_poses,
@@ -336,8 +358,8 @@ def build_dynamic_birth_associations(
             query_world[rows],
             selected_projections,
             selected_poses,
-            depths[camera_indices, birth],
-            masks[camera_indices, birth],
+            depths[local_camera_indices, birth],
+            masks[local_camera_indices, birth],
             config=config,
         )
         query_xy[:, rows] = proposal["query_points_xy"]

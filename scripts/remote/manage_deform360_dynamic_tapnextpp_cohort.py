@@ -33,6 +33,7 @@ def _parser() -> argparse.ArgumentParser:
     lock = commands.add_parser("lock")
     lock.add_argument("--output", type=Path, required=True)
     lock.add_argument("--protocol", type=Path, required=True)
+    lock.add_argument("--source-evaluation-protocol", type=Path, required=True)
     lock.add_argument("--queue", type=Path, required=True)
     lock.add_argument("--processing-protocol", type=Path, required=True)
     lock.add_argument("--runtime-amendment", type=Path, required=True)
@@ -60,6 +61,7 @@ def main() -> int:
         result = build_dynamic_provider_cohort_lock(
             args.output,
             protocol_path=args.protocol,
+            source_evaluation_protocol_path=args.source_evaluation_protocol,
             queue_path=args.queue,
             processing_protocol_path=args.processing_protocol,
             runtime_amendment_path=args.runtime_amendment,

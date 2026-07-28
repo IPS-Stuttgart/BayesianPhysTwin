@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360DynamicTAPNextPPSourceEvaluationProtocol",
+  "protocol_id": "deform360-dynamic-tapnextpp-provider-v1",
+  "status": "locked-before-cohort-and-provider-outcomes",
+  "provider_competence": {
+    "support_unit": "scheduled identity with claim-bearing triangulations at both birth and update",
+    "primary_error": "coordinate RMSE at the registered update",
+    "late_error": "coordinate RMSE over the final five frames ending at each registered update",
+    "persistence_comparator": "the provider's own claim-bearing birth triangulation held fixed",
+    "shared_bias_covariance": "local covariance plus the squared registered shared-bias scale times I",
+    "calibration": {
+      "method": "leave-one-object-out scalar ellipsoid threshold",
+      "within_object_score_quantile": 0.9,
+      "finite_sample_rule": "maximum within-object score over the other seven source objects",
+      "coverage_unit": "supported identity at a registered update"
+    }
+  },
+  "assimilation": {
+    "scored_ranges_half_open": [
+      [20, 38],
+      [39, 57],
+      [58, 76]
+    ],
+    "late_ranges_half_open": [
+      [32, 38],
+      [51, 57],
+      [70, 76]
+    ],
+    "identity_boundary": "exclude every material identity used by any query birth from every future metric",
+    "primary_metrics": [
+      "hidden_identity_rmse_m",
+      "hidden_symmetric_chamfer_m"
+    ],
+    "secondary_metrics": [
+      "late_hidden_identity_rmse_m",
+      "hidden_target_to_prediction_chamfer_m"
+    ],
+    "regret_target": "maximum of candidate-minus-selected-backbone interval identity RMSE and symmetric Chamfer",
+    "regret_features": [
+      "available_measurement_fraction",
+      "pairwise_inlier_fraction",
+      "mean_prior_reliability",
+      "candidate_correction_to_backbone_motion_ratio"
+    ],
+    "cross_fitting": {
+      "method": "four deterministic contiguous leave-two-source-object folds in locked source order",
+      "ridge_penalty": 10.0,
+      "nominal_upper_coverage": 0.9,
+      "within_object_coverage": 1.0,
+      "support_margin_standard_deviations": 0.0,
+      "acceptance": "strictly negative upper regret; otherwise bit-exact selected-backbone fallback"
+    }
+  },
+  "aggregation": {
+    "replicate_unit": "physical object",
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 720,
+    "technical_failure_contribution": "zero improvement and no win; never replaced",
+    "confidence_interval": 0.95
+  },
+  "information_boundary": {
+    "source_barrier_required_before_future_deserialization": true,
+    "all_prediction_seals_validated_before_first_future_deserialization": true,
+    "target_artifacts_opened": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false
+  }
+}

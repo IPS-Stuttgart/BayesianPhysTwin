@@ -627,7 +627,10 @@ def fuse_dynamic_tapnextpp_multiview(
     cfg = config or DynamicMultiviewConfig()
     tracks = np.asarray(tracks_xy, dtype=np.float64)
     visibility = np.asarray(visibility_probability, dtype=np.float64)
-    depth = np.asarray(depths_m, dtype=np.float64)
+    # A real eight-camera Deform360 prefix is several gigabytes in float64.
+    # Sampling promotes the small per-track patches, so retaining the source
+    # precision here avoids an unnecessary full-volume copy.
+    depth = np.asarray(depths_m)
     masks = np.asarray(object_masks, dtype=bool)
     matrices = np.asarray(intrinsics, dtype=np.float64)
     poses = np.asarray(camera_to_world, dtype=np.float64)
@@ -1107,7 +1110,67 @@ def build_dynamic_tapnextpp_observation_belief(
         & (frames[:, None] <= updates[None])
     )
     row_frame, row_entity_position = np.nonzero(active)
-    _require(len(row_frame) > 0, "provider has no claim-bearing rows")
+    provider_sha256 = dynamic_multiview_result_sha256(result)
+    source_digest = hashlib.sha256(
+        (
+            f"{provider_sha256}\0{query_schedule_sha256}\0"
+            f"{tracker_revision}\0{tracker_checkpoint_sha256}"
+        ).encode("ascii")
+    ).hexdigest()
+    if not len(row_frame):
+        return ObservationBeliefV1(
+            case_id=case_id,
+            stream_id="tapnextpp:dynamic-causal-multiview",
+            causal_frame_stop=int(np.max(updates)) + 1,
+            view_names=("fused-multiview",),
+            window_names=("prior-only",),
+            factor_names=(
+                "shared_camera_bias_x",
+                "shared_camera_bias_y",
+                "shared_camera_bias_z",
+            ),
+            source_repository=TAPNEXT_REPOSITORY,
+            source_revision=tracker_revision,
+            source_artifact_sha256=source_digest,
+            declared_frame_ids=np.unique(
+                np.concatenate((births, updates))
+            ),
+            mean_xyz_m=np.empty((0, 3), dtype=np.float64),
+            frame_ids=np.empty(0, dtype=np.int64),
+            entity_ids=np.empty(0, dtype=np.int64),
+            view_indices=np.empty(0, dtype=np.int64),
+            window_indices=np.empty(0, dtype=np.int64),
+            correlation_group_ids=np.empty(0, dtype=np.int64),
+            factor_group_ids=np.empty(0, dtype=np.int64),
+            prior_reliability=np.empty(0, dtype=np.float64),
+            association_probability=np.empty(0, dtype=np.float64),
+            local_covariance_m2=np.empty((0, 3, 3), dtype=np.float64),
+            low_rank_factor_m=np.empty((0, 3, 3), dtype=np.float64),
+            group_ids=np.empty(0, dtype=np.int64),
+            group_prior_nominal_probability=np.empty(
+                0,
+                dtype=np.float64,
+            ),
+            group_composite_weight=np.empty(0, dtype=np.float64),
+            metadata={
+                "protocol_id": PROTOCOL_ID,
+                "provider": (
+                    "physics-guided-dynamic-tapnextpp-multiview-v1"
+                ),
+                "provider_result_sha256": provider_sha256,
+                "query_schedule_sha256": query_schedule_sha256,
+                "tracker_checkpoint_sha256": tracker_checkpoint_sha256,
+                "tracker_revision": tracker_revision,
+                "prior_only_fallback": True,
+                "fallback_reason": "no-claim-bearing-observation-row",
+                "future_prediction_payloads_opened": 0,
+                "physical_innovation_used_as_prior_reliability": False,
+                "association_probability_used_as_prior_reliability": False,
+                "raw_camera_count": len(camera_names),
+                "camera_names": list(camera_names),
+                "configuration": asdict(result.config),
+            },
+        )
     row_frames = frames[row_frame]
     row_entities = entities[row_entity_position]
     row_births = births[row_entity_position]
@@ -1161,13 +1224,6 @@ def build_dynamic_tapnextpp_observation_belief(
         result.shared_bias_standard_deviation_m
         * np.repeat(np.eye(3)[None], len(row_frame), axis=0)
     )
-    provider_sha256 = dynamic_multiview_result_sha256(result)
-    source_digest = hashlib.sha256(
-        (
-            f"{provider_sha256}\0{query_schedule_sha256}\0"
-            f"{tracker_revision}\0{tracker_checkpoint_sha256}"
-        ).encode("ascii")
-    ).hexdigest()
     metadata = {
         "protocol_id": PROTOCOL_ID,
         "provider": "physics-guided-dynamic-tapnextpp-multiview-v1",

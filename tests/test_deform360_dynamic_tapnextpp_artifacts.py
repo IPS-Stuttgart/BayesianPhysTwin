@@ -1,5 +1,7 @@
+import hashlib
 import inspect
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -17,6 +19,10 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_artifacts import (
     record_technical_failure,
     validate_prediction_seal,
     validate_source_admission,
+)
+from bayesian_phystwin.deform360_fresh_source_lock import (
+    UPSTREAM_BINDING,
+    FreshSourceAdmissionConfig,
 )
 from bayesian_phystwin.deform360_object_exclusion import (
     file_sha256,
@@ -56,6 +62,84 @@ def _camera_records(count: int = 8) -> list[dict[str, object]]:
         }
         for index in range(count)
     ]
+
+
+def _canonical_sha256(
+    payload: dict[str, object],
+    *,
+    digest_key: str,
+) -> str:
+    canonical = dict(payload)
+    canonical.pop(digest_key, None)
+    encoded = json.dumps(
+        canonical,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _fresh_source_admission(path: Path) -> dict[str, object]:
+    config = FreshSourceAdmissionConfig(minimum_camera_count=8)
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": "Deform360FreshSourceAdmission",
+        "upstream_binding": UPSTREAM_BINDING,
+        "case": "200-test-cloth-ep0000",
+        "object_id": "200-test-cloth",
+        "episode_id": 0,
+        "category": "cloth",
+        "accepted": True,
+        "rejection_reasons": [],
+        "config": json.loads(json.dumps(asdict(config))),
+        "observed_source_contract": {
+            "metadata_parent": "200-test-cloth",
+            "metadata_object": "test-cloth",
+            "bimanual": False,
+            "camera_count": 8,
+            "cameras": [f"camera-{index}" for index in range(8)],
+            "frame_zero_point_count": 128,
+            "split_frame_count": 76,
+            "active_frame_count": 76,
+            "contact_start_frame": 0,
+            "contact_end_frame": 75,
+            "train_fraction": 0.8,
+            "stage_inputs_valid": True,
+            "train": [0, 60],
+            "test": [60, 76],
+        },
+        "source_files": {
+            name: {
+                "basename": f"{name}.bin",
+                "sha256": character * 64,
+            }
+            for name, character in zip(
+                (
+                    "metadata",
+                    "control_meta",
+                    "split",
+                    "calibrate",
+                    "frame_zero",
+                    "future_payload",
+                ),
+                "abcdef",
+                strict=True,
+            )
+        },
+        "information_boundary": {
+            "future_object_positions_deserialized": False,
+            "future_payload_bytes_hashed": True,
+            "future_metrics_read": False,
+            "selection_inputs": "source-only contract",
+        },
+    }
+    payload["admission_sha256"] = _canonical_sha256(
+        payload,
+        digest_key="admission_sha256",
+    )
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return payload
 
 
 def _admission(
@@ -146,12 +230,34 @@ def test_admission_is_hash_only_and_tamper_evident(tmp_path: Path) -> None:
         validate_source_admission(admission)
 
 
-def _prediction_inputs(tmp_path: Path) -> dict[str, Path | str]:
+def test_registered_fresh_source_admission_normalizes_to_hashes(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "fresh-admission.json"
+    source = _fresh_source_admission(path)
+    normalized = validate_source_admission(path)
+
+    assert normalized["admitted"] is True
+    assert normalized["source_admission_sha256"] == source["admission_sha256"]
+    assert normalized["case_hash"] == deform360_case_hash("200-test-cloth", 0)
+    assert "200-test-cloth" not in json.dumps(normalized)
+    assert "episode_id" not in json.dumps(normalized)
+
+
+def _prediction_inputs(
+    tmp_path: Path,
+    *,
+    fresh_source_admission: bool = False,
+) -> dict[str, Path | str]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     protocol = tmp_path / "protocol.json"
     _protocol(protocol)
     admission_path = tmp_path / "admission.json"
-    admission = _admission(admission_path)
+    if fresh_source_admission:
+        _fresh_source_admission(admission_path)
+        admission = validate_source_admission(admission_path)
+    else:
+        admission = _admission(admission_path)
     schedule = tmp_path / "schedule.json"
     schedule.write_text(
         json.dumps(
@@ -232,6 +338,43 @@ def test_prediction_seal_binds_disjoint_prediction_before_scoring(
             query_schedule_path=inputs["query_schedule_path"],
             observation_belief_path=inputs["observation_belief_path"],
             prediction_dir=output,
+        )
+
+
+def test_prediction_seal_accepts_registered_fresh_source_admission(
+    tmp_path: Path,
+) -> None:
+    inputs = _prediction_inputs(tmp_path, fresh_source_admission=True)
+    output = tmp_path / "sealed"
+    seal = build_prediction_seal(output, **inputs)
+
+    assert seal["case_hash"] == deform360_case_hash("200-test-cloth", 0)
+    assert seal["information_boundary"]["future_identity_read"] is False
+
+
+def test_prediction_seal_binds_additional_provider_artifacts(
+    tmp_path: Path,
+) -> None:
+    inputs = _prediction_inputs(tmp_path)
+    provider = tmp_path / "provider.npz"
+    provider.write_bytes(b"sealed-provider")
+    inputs["additional_input_paths"] = {"provider_archive": provider}
+    output = tmp_path / "sealed"
+    seal = build_prediction_seal(output, **inputs)
+
+    assert seal["inputs_sha256"]["provider_archive"] == hashlib.sha256(
+        b"sealed-provider"
+    ).hexdigest()
+    provider.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="input checksum changed"):
+        validate_prediction_seal(
+            seal,
+            protocol_path=inputs["protocol_path"],
+            admission_path=inputs["admission_path"],
+            query_schedule_path=inputs["query_schedule_path"],
+            observation_belief_path=inputs["observation_belief_path"],
+            prediction_dir=output,
+            additional_input_paths={"provider_archive": provider},
         )
 
 

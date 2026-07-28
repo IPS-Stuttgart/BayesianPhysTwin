@@ -21,20 +21,27 @@ def _digest(character: str) -> str:
     return character * 64
 
 
-def _schedule() -> DynamicQuerySchedule:
+def _schedule(
+    camera_indices: np.ndarray | None = None,
+) -> DynamicQuerySchedule:
+    indices = (
+        np.asarray([0, 1, 2])
+        if camera_indices is None
+        else np.asarray(camera_indices, dtype=np.int64)
+    )
     config = DynamicQueryConfig(
-        selected_camera_count=3,
-        minimum_eligible_camera_count=3,
+        selected_camera_count=len(indices),
+        minimum_eligible_camera_count=len(indices),
         queries_per_birth=1,
         graph_basis_rank=1,
         minimum_predicted_visible_views=3,
         minimum_spatial_separation_m=0.0,
     )
     panel = CameraPanel(
-        camera_indices=np.asarray([0, 1, 2]),
-        camera_names=("camera-a", "camera-b", "camera-c"),
-        frame_zero_coverage=np.ones(3),
-        selection_scores=np.ones(3),
+        camera_indices=indices,
+        camera_names=tuple(f"camera-{index}" for index in indices),
+        frame_zero_coverage=np.ones(len(indices)),
+        selection_scores=np.ones(len(indices)),
     )
     return DynamicQuerySchedule(
         update_frames=np.asarray([2, 5]),
@@ -224,3 +231,30 @@ def test_birth_association_is_independent_of_future_depth() -> None:
         first.association_probability,
         second.association_probability,
     )
+
+
+def test_birth_association_preserves_original_ids_for_loaded_camera_subset() -> None:
+    schedule = _schedule(np.asarray([1, 3, 4]))
+    positions = np.zeros((6, 2, 3), dtype=np.float64)
+    positions[..., 2] = 1.0
+    intrinsics = np.repeat(np.eye(3)[None], 3, axis=0)
+    camera_to_world = np.repeat(np.eye(4)[None], 3, axis=0)
+    depths = np.ones((3, 6, 8, 8), dtype=np.float64)
+    masks = np.ones_like(depths, dtype=bool)
+
+    associations = build_dynamic_birth_associations(
+        schedule,
+        positions,
+        intrinsics,
+        camera_to_world,
+        depths,
+        masks,
+        input_camera_indices=np.asarray([4, 1, 3]),
+    )
+
+    np.testing.assert_array_equal(
+        associations.camera_indices,
+        np.asarray([1, 3, 4]),
+    )
+    assert associations.camera_names == ("camera-1", "camera-3", "camera-4")
+    assert np.all(associations.valid)

@@ -10,6 +10,7 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_cohort import (
     build_metadata_preflight,
     build_staging_queue,
     build_terminal_disposition,
+    dynamic_provider_case_record,
     load_dynamic_provider_cohort_lock,
     load_metadata_preflight,
     load_staging_queue,
@@ -29,6 +30,12 @@ from bayesian_phystwin.deform360_object_exclusion import (
 ROOT = Path(__file__).resolve().parents[1]
 PROVIDER_PROTOCOL = (
     ROOT / "configs" / "sota" / "deform360_dynamic_tapnextpp_provider_v1.json"
+)
+SOURCE_EVALUATION_PROTOCOL = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform360_dynamic_tapnextpp_source_evaluation_v1.json"
 )
 STAGING_QUEUE = (
     ROOT
@@ -349,6 +356,7 @@ def test_complete_disposition_lock_is_balanced_and_outcome_blind(
     cohort = build_dynamic_provider_cohort_lock(
         output,
         protocol_path=PROVIDER_PROTOCOL,
+        source_evaluation_protocol_path=SOURCE_EVALUATION_PROTOCOL,
         queue_path=STAGING_QUEUE,
         processing_protocol_path=PROCESSING_PROTOCOL,
         runtime_amendment_path=RUNTIME_AMENDMENT,
@@ -380,7 +388,24 @@ def test_complete_disposition_lock_is_balanced_and_outcome_blind(
         "selected_target": 12,
     }
     assert cohort["information_boundary"]["provider_outcome_or_metric_read"] is False
+    assert cohort["bindings"]["source_evaluation_protocol_file_sha256"] == (
+        file_sha256(SOURCE_EVALUATION_PROTOCOL)
+    )
     load_dynamic_provider_cohort_lock(output)
+    source = dynamic_provider_case_record(
+        cohort,
+        object_id=cohort["source_cases"][0]["object_id"],
+        episode_id=0,
+        partition="source",
+    )
+    assert source == cohort["source_cases"][0]
+    with pytest.raises(ValueError, match="requested cohort partition"):
+        dynamic_provider_case_record(
+            cohort,
+            object_id=source["object_id"],
+            episode_id=0,
+            partition="target",
+        )
 
 
 def test_cohort_lock_rejects_incomplete_disposition_ledger(
@@ -391,6 +416,7 @@ def test_cohort_lock_rejects_incomplete_disposition_ledger(
         build_dynamic_provider_cohort_lock(
             tmp_path / "incomplete.json",
             protocol_path=PROVIDER_PROTOCOL,
+            source_evaluation_protocol_path=SOURCE_EVALUATION_PROTOCOL,
             queue_path=STAGING_QUEUE,
             processing_protocol_path=PROCESSING_PROTOCOL,
             runtime_amendment_path=RUNTIME_AMENDMENT,
@@ -408,6 +434,7 @@ def test_cohort_lock_tampering_is_detected(tmp_path: Path) -> None:
     cohort = build_dynamic_provider_cohort_lock(
         output,
         protocol_path=PROVIDER_PROTOCOL,
+        source_evaluation_protocol_path=SOURCE_EVALUATION_PROTOCOL,
         queue_path=STAGING_QUEUE,
         processing_protocol_path=PROCESSING_PROTOCOL,
         runtime_amendment_path=RUNTIME_AMENDMENT,
