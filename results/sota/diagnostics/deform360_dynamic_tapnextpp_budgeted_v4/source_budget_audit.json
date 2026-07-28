@@ -1,0 +1,933 @@
+{
+  "artifact_kind": "DynamicTAPNextPPBudgetedHiddenTransferAudit",
+  "assimilation_file_sha256": "2f7ec4a9d1427aa56690f0f12f3e2ea25394bbf2e2d13e92572de22b5b23031a",
+  "budgets": [
+    {
+      "budget": 1,
+      "candidate_report": {
+        "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+        "assimilation_mode": "set-valued-association-mixture-v3",
+        "belief_config": {
+          "degrees_of_freedom": 4.0,
+          "global_prior_std_m": 0.1,
+          "length_scale_fraction": 0.1,
+          "local_blend": 1.0,
+          "local_prior_std_m": 0.02,
+          "maximum_correction_m": 0.1,
+          "minimum_length_scale_m": 0.0001,
+          "minimum_reliability": 0.02,
+          "observation_std_m": 0.005,
+          "process_std_m_per_sqrt_frame": 0.003
+        },
+        "center_ids": [
+          101
+        ],
+        "gate_config": {
+          "absolute_pair_strain_m": 0.03,
+          "maximum_exact_center_count": 24,
+          "minimum_inlier_count": 9,
+          "minimum_inlier_fraction": 0.7,
+          "relative_pair_strain": 0.1
+        },
+        "information_boundary": {
+          "future_object_geometry_read": false,
+          "future_target_read": false,
+          "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+        },
+        "method_contract": {
+          "absolute_multiview_position_used_as_state_innovation": false,
+          "association_probability_role": "separate nominal assignment event inside robust mixture",
+          "association_probability_used_as_prior_reliability": false,
+          "birth_anchored_displacement_innovation": true,
+          "innovation_robustified_once_inside_rbf_update": true,
+          "metric_covariance_propagated_into_rbf_update": true,
+          "pairwise_gate_role": "identity-consistency admission",
+          "prior_reliability_uses_physical_innovation": false,
+          "rejection": "bit-exact selected physical-or-persistence backbone",
+          "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+        },
+        "schema_version": 1,
+        "update_frames": [
+          19,
+          38,
+          57
+        ],
+        "updates": [
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 1,
+            "current_observation_chamfer_m": {
+              "persistence": 0.015254732513321385,
+              "physical_prior": 0.012686439992668611
+            },
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.8977048927702753,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          }
+        ]
+      },
+      "distance_bands": {
+        "far": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 7.781684808885668e-05,
+            "hidden_symmetric_chamfer_m": 3.456616976509449e-05,
+            "hidden_target_to_prediction_chamfer_m": 3.456616976509449e-05,
+            "late_hidden_identity_rmse_m": 7.821119930649362e-05
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 7.781684808885668e-05,
+            "hidden_symmetric_chamfer_m": 3.456616976509449e-05,
+            "hidden_target_to_prediction_chamfer_m": 3.456616976509449e-05,
+            "late_hidden_identity_rmse_m": 7.821119930649362e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 7.781684808885668e-05,
+            "hidden_symmetric_chamfer_m": 3.456616976509449e-05,
+            "hidden_target_to_prediction_chamfer_m": 3.456616976509449e-05,
+            "late_hidden_identity_rmse_m": 7.821119930649362e-05
+          }
+        },
+        "middle": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.00011942741978384577,
+            "hidden_symmetric_chamfer_m": 8.921903568212718e-05,
+            "hidden_target_to_prediction_chamfer_m": 8.921903568212718e-05,
+            "late_hidden_identity_rmse_m": 0.00012292304484017505
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 0.00011942741978384577,
+            "hidden_symmetric_chamfer_m": 8.921903568212718e-05,
+            "hidden_target_to_prediction_chamfer_m": 8.921903568212718e-05,
+            "late_hidden_identity_rmse_m": 0.00012292304484017505
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.00011942741978384577,
+            "hidden_symmetric_chamfer_m": 8.921903568212718e-05,
+            "hidden_target_to_prediction_chamfer_m": 8.921903568212718e-05,
+            "late_hidden_identity_rmse_m": 0.00012292304484017505
+          }
+        },
+        "near": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 5.652575112714981e-05,
+            "hidden_symmetric_chamfer_m": 4.9188012253710556e-05,
+            "hidden_target_to_prediction_chamfer_m": 4.9188012253710556e-05,
+            "late_hidden_identity_rmse_m": 6.3955834927501e-05
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 5.652575112714981e-05,
+            "hidden_symmetric_chamfer_m": 4.9188012253710556e-05,
+            "hidden_target_to_prediction_chamfer_m": 4.9188012253710556e-05,
+            "late_hidden_identity_rmse_m": 6.3955834927501e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 5.652575112714981e-05,
+            "hidden_symmetric_chamfer_m": 4.9188012253710556e-05,
+            "hidden_target_to_prediction_chamfer_m": 4.9188012253710556e-05,
+            "late_hidden_identity_rmse_m": 6.3955834927501e-05
+          }
+        }
+      },
+      "per_identity_oracle": {
+        "counts": {
+          "persistence_identity_count": 451,
+          "physical_identity_count": 0
+        },
+        "score": {
+          "hidden_identity_rmse_m": 8.910910274644596e-05,
+          "hidden_symmetric_chamfer_m": 5.7638959351205206e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.7638959351205206e-05,
+          "late_hidden_identity_rmse_m": 9.209153663557785e-05
+        },
+        "selection_uses_target": true
+      },
+      "scores": {
+        "dynamic_birth_anchored_covariance_aware_rbf": {
+          "hidden_identity_rmse_m": 8.910910274644596e-05,
+          "hidden_symmetric_chamfer_m": 5.7638959351205206e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.7638959351205206e-05,
+          "late_hidden_identity_rmse_m": 9.209153663557785e-05
+        },
+        "persistence": {
+          "hidden_identity_rmse_m": 8.910910274644596e-05,
+          "hidden_symmetric_chamfer_m": 5.7638959351205206e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.7638959351205206e-05,
+          "late_hidden_identity_rmse_m": 9.209153663557785e-05
+        },
+        "physical_prior": {
+          "hidden_identity_rmse_m": 0.01096527523647721,
+          "hidden_symmetric_chamfer_m": 0.00833006582946663,
+          "hidden_target_to_prediction_chamfer_m": 0.008506672914609867,
+          "late_hidden_identity_rmse_m": 0.015296213258386331
+        },
+        "selected_physical_or_persistence": {
+          "hidden_identity_rmse_m": 8.910910274644596e-05,
+          "hidden_symmetric_chamfer_m": 5.7638959351205206e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.7638959351205206e-05,
+          "late_hidden_identity_rmse_m": 9.209153663557785e-05
+        }
+      },
+      "selected_ids": [
+        101
+      ],
+      "selection_uses_target": false
+    },
+    {
+      "budget": 2,
+      "candidate_report": {
+        "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+        "assimilation_mode": "set-valued-association-mixture-v3",
+        "belief_config": {
+          "degrees_of_freedom": 4.0,
+          "global_prior_std_m": 0.1,
+          "length_scale_fraction": 0.1,
+          "local_blend": 1.0,
+          "local_prior_std_m": 0.02,
+          "maximum_correction_m": 0.1,
+          "minimum_length_scale_m": 0.0001,
+          "minimum_reliability": 0.02,
+          "observation_std_m": 0.005,
+          "process_std_m_per_sqrt_frame": 0.003
+        },
+        "center_ids": [
+          101,
+          416
+        ],
+        "gate_config": {
+          "absolute_pair_strain_m": 0.03,
+          "maximum_exact_center_count": 24,
+          "minimum_inlier_count": 9,
+          "minimum_inlier_fraction": 0.7,
+          "relative_pair_strain": 0.1
+        },
+        "information_boundary": {
+          "future_object_geometry_read": false,
+          "future_target_read": false,
+          "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+        },
+        "method_contract": {
+          "absolute_multiview_position_used_as_state_innovation": false,
+          "association_probability_role": "separate nominal assignment event inside robust mixture",
+          "association_probability_used_as_prior_reliability": false,
+          "birth_anchored_displacement_innovation": true,
+          "innovation_robustified_once_inside_rbf_update": true,
+          "metric_covariance_propagated_into_rbf_update": true,
+          "pairwise_gate_role": "identity-consistency admission",
+          "prior_reliability_uses_physical_innovation": false,
+          "rejection": "bit-exact selected physical-or-persistence backbone",
+          "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+        },
+        "schema_version": 1,
+        "update_frames": [
+          19,
+          38,
+          57
+        ],
+        "updates": [
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 2,
+            "current_observation_chamfer_m": {
+              "persistence": 0.012009530026236535,
+              "physical_prior": 0.01112789569967639
+            },
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.8232005769209869,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          }
+        ]
+      },
+      "distance_bands": {
+        "far": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 3.578741745675805e-05,
+            "hidden_symmetric_chamfer_m": 2.0310211153896512e-05,
+            "hidden_target_to_prediction_chamfer_m": 2.0310211153896512e-05,
+            "late_hidden_identity_rmse_m": 4.006230431053991e-05
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 3.578741745675805e-05,
+            "hidden_symmetric_chamfer_m": 2.0310211153896512e-05,
+            "hidden_target_to_prediction_chamfer_m": 2.0310211153896512e-05,
+            "late_hidden_identity_rmse_m": 4.006230431053991e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 3.578741745675805e-05,
+            "hidden_symmetric_chamfer_m": 2.0310211153896512e-05,
+            "hidden_target_to_prediction_chamfer_m": 2.0310211153896512e-05,
+            "late_hidden_identity_rmse_m": 4.006230431053991e-05
+          }
+        },
+        "middle": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.0001098923076263702,
+            "hidden_symmetric_chamfer_m": 8.033168024182714e-05,
+            "hidden_target_to_prediction_chamfer_m": 8.033168024182714e-05,
+            "late_hidden_identity_rmse_m": 0.00011335138150475921
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 0.0001098923076263702,
+            "hidden_symmetric_chamfer_m": 8.033168024182714e-05,
+            "hidden_target_to_prediction_chamfer_m": 8.033168024182714e-05,
+            "late_hidden_identity_rmse_m": 0.00011335138150475921
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.0001098923076263702,
+            "hidden_symmetric_chamfer_m": 8.033168024182714e-05,
+            "hidden_target_to_prediction_chamfer_m": 8.033168024182714e-05,
+            "late_hidden_identity_rmse_m": 0.00011335138150475921
+          }
+        },
+        "near": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.00010213778635354807,
+            "hidden_symmetric_chamfer_m": 7.265924638689996e-05,
+            "hidden_target_to_prediction_chamfer_m": 7.265924638689996e-05,
+            "late_hidden_identity_rmse_m": 0.00010483078779773454
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 0.00010213778635354807,
+            "hidden_symmetric_chamfer_m": 7.265924638689996e-05,
+            "hidden_target_to_prediction_chamfer_m": 7.265924638689996e-05,
+            "late_hidden_identity_rmse_m": 0.00010483078779773454
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.00010213778635354807,
+            "hidden_symmetric_chamfer_m": 7.265924638689996e-05,
+            "hidden_target_to_prediction_chamfer_m": 7.265924638689996e-05,
+            "late_hidden_identity_rmse_m": 0.00010483078779773454
+          }
+        }
+      },
+      "per_identity_oracle": {
+        "counts": {
+          "persistence_identity_count": 450,
+          "physical_identity_count": 0
+        },
+        "score": {
+          "hidden_identity_rmse_m": 8.920805791602231e-05,
+          "hidden_symmetric_chamfer_m": 5.776704592754121e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.776704592754121e-05,
+          "late_hidden_identity_rmse_m": 9.21938037816207e-05
+        },
+        "selection_uses_target": true
+      },
+      "scores": {
+        "dynamic_birth_anchored_covariance_aware_rbf": {
+          "hidden_identity_rmse_m": 8.920805791602231e-05,
+          "hidden_symmetric_chamfer_m": 5.776704592754121e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.776704592754121e-05,
+          "late_hidden_identity_rmse_m": 9.21938037816207e-05
+        },
+        "persistence": {
+          "hidden_identity_rmse_m": 8.920805791602231e-05,
+          "hidden_symmetric_chamfer_m": 5.776704592754121e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.776704592754121e-05,
+          "late_hidden_identity_rmse_m": 9.21938037816207e-05
+        },
+        "physical_prior": {
+          "hidden_identity_rmse_m": 0.010964940014711854,
+          "hidden_symmetric_chamfer_m": 0.008334875911201826,
+          "hidden_target_to_prediction_chamfer_m": 0.008515424865056385,
+          "late_hidden_identity_rmse_m": 0.015296775551152239
+        },
+        "selected_physical_or_persistence": {
+          "hidden_identity_rmse_m": 8.920805791602231e-05,
+          "hidden_symmetric_chamfer_m": 5.776704592754121e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.776704592754121e-05,
+          "late_hidden_identity_rmse_m": 9.21938037816207e-05
+        }
+      },
+      "selected_ids": [
+        101,
+        416
+      ],
+      "selection_uses_target": false
+    },
+    {
+      "budget": 4,
+      "candidate_report": {
+        "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+        "assimilation_mode": "set-valued-association-mixture-v3",
+        "belief_config": {
+          "degrees_of_freedom": 4.0,
+          "global_prior_std_m": 0.1,
+          "length_scale_fraction": 0.1,
+          "local_blend": 1.0,
+          "local_prior_std_m": 0.02,
+          "maximum_correction_m": 0.1,
+          "minimum_length_scale_m": 0.0001,
+          "minimum_reliability": 0.02,
+          "observation_std_m": 0.005,
+          "process_std_m_per_sqrt_frame": 0.003
+        },
+        "center_ids": [
+          101,
+          335,
+          416,
+          180
+        ],
+        "gate_config": {
+          "absolute_pair_strain_m": 0.03,
+          "maximum_exact_center_count": 24,
+          "minimum_inlier_count": 9,
+          "minimum_inlier_fraction": 0.7,
+          "relative_pair_strain": 0.1
+        },
+        "information_boundary": {
+          "future_object_geometry_read": false,
+          "future_target_read": false,
+          "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+        },
+        "method_contract": {
+          "absolute_multiview_position_used_as_state_innovation": false,
+          "association_probability_role": "separate nominal assignment event inside robust mixture",
+          "association_probability_used_as_prior_reliability": false,
+          "birth_anchored_displacement_innovation": true,
+          "innovation_robustified_once_inside_rbf_update": true,
+          "metric_covariance_propagated_into_rbf_update": true,
+          "pairwise_gate_role": "identity-consistency admission",
+          "prior_reliability_uses_physical_innovation": false,
+          "rejection": "bit-exact selected physical-or-persistence backbone",
+          "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+        },
+        "schema_version": 1,
+        "update_frames": [
+          19,
+          38,
+          57
+        ],
+        "updates": [
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 4,
+            "current_observation_chamfer_m": {
+              "persistence": 0.01154746638610538,
+              "physical_prior": 0.010453934826377272
+            },
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.8470869897865702,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient_available_support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "physical_prior",
+            "selector_support_sufficient": true
+          }
+        ]
+      },
+      "distance_bands": {
+        "far": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.002882624553417388,
+            "hidden_symmetric_chamfer_m": 0.0017336664071160664,
+            "hidden_target_to_prediction_chamfer_m": 0.0017919026724993205,
+            "late_hidden_identity_rmse_m": 0.0038777868891744665
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 2.7574801827024445e-05,
+            "hidden_symmetric_chamfer_m": 1.3644161820499898e-05,
+            "hidden_target_to_prediction_chamfer_m": 1.3644161820499898e-05,
+            "late_hidden_identity_rmse_m": 3.152227842570731e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.002882624553417388,
+            "hidden_symmetric_chamfer_m": 0.0017336664071160664,
+            "hidden_target_to_prediction_chamfer_m": 0.0017919026724993205,
+            "late_hidden_identity_rmse_m": 0.0038777868891744665
+          }
+        },
+        "middle": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.007443174737550927,
+            "hidden_symmetric_chamfer_m": 0.006901341488715122,
+            "hidden_target_to_prediction_chamfer_m": 0.007406746662803102,
+            "late_hidden_identity_rmse_m": 0.012817128415871086
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 6.747898038922998e-05,
+            "hidden_symmetric_chamfer_m": 6.868249509012487e-05,
+            "hidden_target_to_prediction_chamfer_m": 6.868249509012487e-05,
+            "late_hidden_identity_rmse_m": 7.499503678010458e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.007443174737550927,
+            "hidden_symmetric_chamfer_m": 0.006901341488715122,
+            "hidden_target_to_prediction_chamfer_m": 0.007406746662803102,
+            "late_hidden_identity_rmse_m": 0.012817128415871086
+          }
+        },
+        "near": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.007874223573553883,
+            "hidden_symmetric_chamfer_m": 0.00792292330986127,
+            "hidden_target_to_prediction_chamfer_m": 0.007917796726209417,
+            "late_hidden_identity_rmse_m": 0.013100851617098286
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 0.00013479975107051097,
+            "hidden_symmetric_chamfer_m": 9.053062931882409e-05,
+            "hidden_target_to_prediction_chamfer_m": 9.053062931882409e-05,
+            "late_hidden_identity_rmse_m": 0.00013648062409502186
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.007874223573553883,
+            "hidden_symmetric_chamfer_m": 0.00792292330986127,
+            "hidden_target_to_prediction_chamfer_m": 0.007917796726209417,
+            "late_hidden_identity_rmse_m": 0.013100851617098286
+          }
+        }
+      },
+      "per_identity_oracle": {
+        "counts": {
+          "persistence_identity_count": 448,
+          "physical_identity_count": 0
+        },
+        "score": {
+          "hidden_identity_rmse_m": 8.931986912740258e-05,
+          "hidden_symmetric_chamfer_m": 5.76925586551489e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.76925586551489e-05,
+          "late_hidden_identity_rmse_m": 9.230299725708243e-05
+        },
+        "selection_uses_target": true
+      },
+      "scores": {
+        "dynamic_birth_anchored_covariance_aware_rbf": {
+          "hidden_identity_rmse_m": 0.006537764889500465,
+          "hidden_symmetric_chamfer_m": 0.0048920130462041115,
+          "hidden_target_to_prediction_chamfer_m": 0.005067631696436641,
+          "late_hidden_identity_rmse_m": 0.01082514951228168
+        },
+        "persistence": {
+          "hidden_identity_rmse_m": 8.931986912740258e-05,
+          "hidden_symmetric_chamfer_m": 5.76925586551489e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.76925586551489e-05,
+          "late_hidden_identity_rmse_m": 9.230299725708243e-05
+        },
+        "physical_prior": {
+          "hidden_identity_rmse_m": 0.010959853112844807,
+          "hidden_symmetric_chamfer_m": 0.008324555807615848,
+          "hidden_target_to_prediction_chamfer_m": 0.00850581491912151,
+          "late_hidden_identity_rmse_m": 0.015286929124049272
+        },
+        "selected_physical_or_persistence": {
+          "hidden_identity_rmse_m": 0.006537764889500465,
+          "hidden_symmetric_chamfer_m": 0.0048920130462041115,
+          "hidden_target_to_prediction_chamfer_m": 0.005067631696436641,
+          "late_hidden_identity_rmse_m": 0.01082514951228168
+        }
+      },
+      "selected_ids": [
+        101,
+        416,
+        335,
+        180
+      ],
+      "selection_uses_target": false
+    },
+    {
+      "budget": 8,
+      "candidate_report": {
+        "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+        "assimilation_mode": "set-valued-association-mixture-v3",
+        "belief_config": {
+          "degrees_of_freedom": 4.0,
+          "global_prior_std_m": 0.1,
+          "length_scale_fraction": 0.1,
+          "local_blend": 1.0,
+          "local_prior_std_m": 0.02,
+          "maximum_correction_m": 0.1,
+          "minimum_length_scale_m": 0.0001,
+          "minimum_reliability": 0.02,
+          "observation_std_m": 0.005,
+          "process_std_m_per_sqrt_frame": 0.003
+        },
+        "center_ids": [
+          101,
+          335,
+          150,
+          416,
+          404,
+          380,
+          180,
+          359
+        ],
+        "gate_config": {
+          "absolute_pair_strain_m": 0.03,
+          "maximum_exact_center_count": 24,
+          "minimum_inlier_count": 9,
+          "minimum_inlier_fraction": 0.7,
+          "relative_pair_strain": 0.1
+        },
+        "information_boundary": {
+          "future_object_geometry_read": false,
+          "future_target_read": false,
+          "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+        },
+        "method_contract": {
+          "absolute_multiview_position_used_as_state_innovation": false,
+          "association_probability_role": "separate nominal assignment event inside robust mixture",
+          "association_probability_used_as_prior_reliability": false,
+          "birth_anchored_displacement_innovation": true,
+          "innovation_robustified_once_inside_rbf_update": true,
+          "metric_covariance_propagated_into_rbf_update": true,
+          "pairwise_gate_role": "identity-consistency admission",
+          "prior_reliability_uses_physical_innovation": false,
+          "rejection": "bit-exact selected physical-or-persistence backbone",
+          "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+        },
+        "schema_version": 1,
+        "update_frames": [
+          19,
+          38,
+          57
+        ],
+        "updates": [
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 0,
+            "current_observation_chamfer_m": {
+              "persistence": null,
+              "physical_prior": null
+            },
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.0,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient-selector-support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "persistence",
+            "selector_support_sufficient": false
+          },
+          {
+            "available_center_count": 8,
+            "current_observation_chamfer_m": {
+              "persistence": 0.010869835020404828,
+              "physical_prior": 0.009912026340783649
+            },
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "mean_posterior_robust_reliability": 0.0,
+            "mean_prior_reliability": 0.8725130252462863,
+            "pairwise_gate": {
+              "accepted": false,
+              "bit_exact_fallback": true,
+              "compatible_pair_fraction": 0.0,
+              "decision": "insufficient_available_support",
+              "inlier_count": 0,
+              "inlier_fraction": 0.0
+            },
+            "selected_backbone": "physical_prior",
+            "selector_support_sufficient": true
+          }
+        ]
+      },
+      "distance_bands": {
+        "far": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.0028180594270302314,
+            "hidden_symmetric_chamfer_m": 0.0016936202284318995,
+            "hidden_target_to_prediction_chamfer_m": 0.0017461006064308884,
+            "late_hidden_identity_rmse_m": 0.003742671389601459
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 2.721801522968688e-05,
+            "hidden_symmetric_chamfer_m": 1.3066923485427763e-05,
+            "hidden_target_to_prediction_chamfer_m": 1.3066923485427763e-05,
+            "late_hidden_identity_rmse_m": 3.08660880460584e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.0028180594270302314,
+            "hidden_symmetric_chamfer_m": 0.0016936202284318995,
+            "hidden_target_to_prediction_chamfer_m": 0.0017461006064308884,
+            "late_hidden_identity_rmse_m": 0.003742671389601459
+          }
+        },
+        "middle": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.007397222731371609,
+            "hidden_symmetric_chamfer_m": 0.006746813399385187,
+            "hidden_target_to_prediction_chamfer_m": 0.007011947596900814,
+            "late_hidden_identity_rmse_m": 0.012827025065464624
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 6.503748540129583e-05,
+            "hidden_symmetric_chamfer_m": 6.420033004430329e-05,
+            "hidden_target_to_prediction_chamfer_m": 6.420033004430329e-05,
+            "late_hidden_identity_rmse_m": 7.264448967458866e-05
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.007397222731371609,
+            "hidden_symmetric_chamfer_m": 0.006746813399385187,
+            "hidden_target_to_prediction_chamfer_m": 0.007011947596900814,
+            "late_hidden_identity_rmse_m": 0.012827025065464624
+          }
+        },
+        "near": {
+          "dynamic_birth_anchored_covariance_aware_rbf": {
+            "hidden_identity_rmse_m": 0.007902652099952888,
+            "hidden_symmetric_chamfer_m": 0.007904440647335772,
+            "hidden_target_to_prediction_chamfer_m": 0.007961422944930466,
+            "late_hidden_identity_rmse_m": 0.013088059410273311
+          },
+          "persistence": {
+            "hidden_identity_rmse_m": 0.00013675565887793468,
+            "hidden_symmetric_chamfer_m": 9.555624774462576e-05,
+            "hidden_target_to_prediction_chamfer_m": 9.555624774462576e-05,
+            "late_hidden_identity_rmse_m": 0.000138624808685286
+          },
+          "selected_physical_or_persistence": {
+            "hidden_identity_rmse_m": 0.007902652099952888,
+            "hidden_symmetric_chamfer_m": 0.007904440647335772,
+            "hidden_target_to_prediction_chamfer_m": 0.007961422944930466,
+            "late_hidden_identity_rmse_m": 0.013088059410273311
+          }
+        }
+      },
+      "per_identity_oracle": {
+        "counts": {
+          "persistence_identity_count": 444,
+          "physical_identity_count": 0
+        },
+        "score": {
+          "hidden_identity_rmse_m": 8.953343895292378e-05,
+          "hidden_symmetric_chamfer_m": 5.760783375811894e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.760783375811894e-05,
+          "late_hidden_identity_rmse_m": 9.251363197772041e-05
+        },
+        "selection_uses_target": true
+      },
+      "scores": {
+        "dynamic_birth_anchored_covariance_aware_rbf": {
+          "hidden_identity_rmse_m": 0.006523048363281111,
+          "hidden_symmetric_chamfer_m": 0.0048672032622801694,
+          "hidden_target_to_prediction_chamfer_m": 0.0050423303089407005,
+          "late_hidden_identity_rmse_m": 0.010802993989342417
+        },
+        "persistence": {
+          "hidden_identity_rmse_m": 8.953343895292378e-05,
+          "hidden_symmetric_chamfer_m": 5.760783375811894e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.760783375811894e-05,
+          "late_hidden_identity_rmse_m": 9.251363197772041e-05
+        },
+        "physical_prior": {
+          "hidden_identity_rmse_m": 0.010947872319897634,
+          "hidden_symmetric_chamfer_m": 0.008304339790475583,
+          "hidden_target_to_prediction_chamfer_m": 0.008476521001144679,
+          "late_hidden_identity_rmse_m": 0.015269278962324476
+        },
+        "selected_physical_or_persistence": {
+          "hidden_identity_rmse_m": 0.006523048363281111,
+          "hidden_symmetric_chamfer_m": 0.0048672032622801694,
+          "hidden_target_to_prediction_chamfer_m": 0.0050423303089407005,
+          "late_hidden_identity_rmse_m": 0.010802993989342417
+        }
+      },
+      "selected_ids": [
+        101,
+        416,
+        335,
+        180,
+        404,
+        359,
+        380,
+        150
+      ],
+      "selection_uses_target": false
+    }
+  ],
+  "claim_boundary": "Post-open capacity and localization audit on one source case; not method selection evidence for any opened or sealed cohort.",
+  "information_boundary": {
+    "already_open_source_target_read": true,
+    "fresh_target_read": false,
+    "held_v8_artifact_read": false,
+    "per_identity_oracle_uses_target": true,
+    "subset_selection_uses_target": false,
+    "v1_sealed_target_cohort_read": false
+  },
+  "provider_file_sha256": "1a1a3fb13eb32e94a196e11557f4a7494d9919c29addd8368ece297f68db2fe3",
+  "result_sha256": "cfdd167490e4e159f50e03223ee2c90489a040cb128b6a9419d2d7b9188189f4",
+  "schema_version": 1,
+  "source_case_hash": "ba3f2b6f4908732dbaf6dea8e1b1d30ebdd933ca1de0e944b4545c454e2b7751",
+  "source_report_file_sha256": "cbb46a2338946c1090c21d2ae52a39813d16bff0061e9e8c0dffc38d97ad83d8",
+  "status": "post_open_source_diagnostic_not_confirmation",
+  "supported_identity_count": 15,
+  "target_file_sha256": "0ed403521fe34655eff9426796d178b1c0b7c10dcda3c0aa93a14fb6472834ab"
+}
