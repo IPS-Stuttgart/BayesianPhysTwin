@@ -32,7 +32,7 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
-- Nuisance-aware conditional information gain and deterministic greedy candidate
+- Nuisance-aware marginalized information gain and deterministic greedy candidate
   selection for active observations with explicit camera, gauge, or shared-bias
   coefficients, covariance whitening, reliability weighting, and exact fallback.
 
