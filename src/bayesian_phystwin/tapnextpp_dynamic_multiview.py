@@ -78,6 +78,7 @@ class DynamicMultiviewConfig:
     camera_cluster_translation_tolerance_m: float = 1e-7
     camera_cluster_rotation_tolerance: float = 1e-7
     covariance_eigenvalue_floor_m2: float = 1e-12
+    two_view_covariance_inflation: float = 2.0
     assignment_uncertainty_mode: str = LEGACY_ENTROPY_RELIABILITY
 
     def __post_init__(self) -> None:
@@ -98,8 +99,8 @@ class DynamicMultiviewConfig:
             "proposal lifting requires two views",
         )
         _require(
-            self.minimum_claim_view_count >= 3,
-            "claim-bearing lifting requires three views",
+            self.minimum_claim_view_count >= 2,
+            "claim-bearing lifting requires at least two views",
         )
         _require(
             self.minimum_claim_view_count >= self.minimum_proposal_view_count,
@@ -120,11 +121,21 @@ class DynamicMultiviewConfig:
             "camera_cluster_translation_tolerance_m",
             "camera_cluster_rotation_tolerance",
             "covariance_eigenvalue_floor_m2",
+            "two_view_covariance_inflation",
         ):
             _require(
                 np.isfinite(getattr(self, name)) and getattr(self, name) > 0.0,
                 f"{name} must be finite and positive",
             )
+        _require(
+            self.two_view_covariance_inflation >= 2.0,
+            "two-view covariance inflation must preserve covariance intersection",
+        )
+        _require(
+            self.minimum_claim_view_count >= 3
+            or self.two_view_covariance_inflation >= 4.0,
+            "two-view claim support requires at least fourfold inflation",
+        )
         _require(
             self.assignment_uncertainty_mode
             in _ASSIGNMENT_UNCERTAINTY_MODES,
@@ -612,8 +623,14 @@ def conservative_triangulation_covariance_m2(
         "candidate spread must be positive semidefinite",
     )
     naive = geometry + assignment_metric + candidate_spread
-    spread = count * assignment_metric + candidate_spread
-    conservative = count * geometry + spread
+    correlation_multiplier = float(count)
+    if count == 2:
+        correlation_multiplier = max(
+            correlation_multiplier,
+            cfg.two_view_covariance_inflation,
+        )
+    spread = correlation_multiplier * assignment_metric + candidate_spread
+    conservative = correlation_multiplier * geometry + spread
     naive = _positive_definite(
         naive,
         floor=cfg.covariance_eigenvalue_floor_m2,
@@ -952,7 +969,7 @@ def fuse_dynamic_tapnextpp_multiview(
             )
             redundancy_score = min(
                 1.0,
-                len(selected) / cfg.minimum_claim_view_count,
+                len(selected) / max(3, cfg.minimum_claim_view_count),
             )
             trajectory[frame, entity] = refined
             proposal[frame, entity] = True

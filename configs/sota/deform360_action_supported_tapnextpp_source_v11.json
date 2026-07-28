@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-action-supported-tapnextpp-v11-source",
+  "status": "locked-before-source-tracker-outcomes",
+  "purpose": "Test whether a sparse TAPNext++ provider selected by sealed graph action support, rather than predicted displacement, is competent enough to justify a separately locked guarded state-update experiment.",
+  "claim_boundary": "Opened-source prefix-only provider competence. This protocol cannot establish a Bayesian-PhysTwin gain, future prediction, transfer, confirmation, or state of the art.",
+  "minimum_complete_camera_count": 8,
+  "depth_scale_to_m": 0.001,
+  "query": {
+    "prefix_frame_count": 58,
+    "update_frame": 57,
+    "query_count": 8,
+    "graph_basis_rank": 8,
+    "action_support_threshold": 0.1,
+    "minimum_camera_support": 2,
+    "support_probability_threshold": 0.5,
+    "visibility_weight": 0.5,
+    "mode_information_weight": 1.0,
+    "spatial_diversity_weight": 1.0
+  },
+  "tracker_runtime": {
+    "input_resolution": 512,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0
+  },
+  "multiview": {
+    "visibility_threshold": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_depth_residual_m": 0.03,
+    "minimum_proposal_view_count": 2,
+    "minimum_claim_view_count": 2,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_standard_deviation_px": 1.5,
+    "shared_bias_standard_deviation_m": 0.005,
+    "maximum_effective_samples_per_group": 3.0,
+    "camera_cluster_translation_tolerance_m": 1e-7,
+    "camera_cluster_rotation_tolerance": 1e-7,
+    "covariance_eigenvalue_floor_m2": 1e-12,
+    "two_view_covariance_inflation": 4.0,
+    "assignment_uncertainty_mode": "covariance-only-assignment-uncertainty-v1"
+  },
+  "source_gate": {
+    "locked_case_count": 8,
+    "minimum_provider_prediction_count": 6,
+    "minimum_pooled_supported_fraction": 0.75,
+    "minimum_case_supported_fraction": 0.5,
+    "minimum_case_support_pass_count": 6,
+    "minimum_scored_case_count": 6,
+    "maximum_object_balanced_rmse_m": 0.015,
+    "maximum_object_balanced_late_rmse_m": 0.015,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_provider_case_wins": 5,
+    "pass_action": "Freeze a separate baseline-relative guarded state-update protocol before reading any future prediction metric.",
+    "fail_action": "Stop the action-supported TAPNext++ route without tuning query selection, tracker, lifting, covariance, cameras, or gates."
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "physical_archive_sha256": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717",
+      "v10_result_sha256": "1f339a7139af49170ad09d3ffc5f164f5c1d91af09bc8cf9ab6d73d3c5156639"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "physical_archive_sha256": "89eae3e6a3bcb9c5912f1f68926ed6996b7847f634880c24e4976545978c19bf",
+      "v10_result_sha256": "b8350b1b26b2475a3974511147628be606237cbca4752ef169ea5f09382a51c3"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "physical_archive_sha256": "4f221933a8dfe4a27e2a70de889e7b0c2a4247b9026daca6b738aafd34fa24e9",
+      "v10_result_sha256": "432d842d0870ff535b6ae3b16024be3ed4a6b7257bf909c65f65d0d005f32722"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "physical_archive_sha256": "19055cebe30b4fbc303507888fc3e824e43b7c28e9b7aa2908e613fc78a6519b",
+      "v10_result_sha256": "6f81b9a2c7ff6fd4680ece762af885a02b37a4725e62be43dcd3f71b1d1cbf43"
+    },
+    {
+      "case": "059-shoe-ep0000",
+      "physical_archive_sha256": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215",
+      "v10_result_sha256": "a9d692fa6616fffc2e40b827d1b6804a7ad2b2117541eaa7ab2037aa2cb151e5"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "physical_archive_sha256": "143ffa5323b303e5b9cadf537511727b1fa923b6b824a433a9bbb8899942bcee",
+      "v10_result_sha256": "4ce59473d61b9bdb38fdb2f5f81015919068cc648651dc9adf0ce74a5af74621"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "physical_archive_sha256": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a",
+      "v10_result_sha256": "e53adf34911a1c2a21b8e6efc69ce6bc8788fd5fc5d399cf8a8e698fb2207379"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "physical_archive_sha256": "420f74615af97dc5a8f681bbc99cb3688dfd108d887fea975eb3b9cfc4cbee37",
+      "v10_result_sha256": "bba5fdc227a19809e689a195eaff9320643cea98f875c03861974c09c4be5077"
+    }
+  ],
+  "information_boundary": {
+    "query_selection_object_observation_frames": [
+      0
+    ],
+    "query_selection_physical_frames": [
+      0
+    ],
+    "action_support_is_physical_localization_not_perception_reliability": true,
+    "tracker_rgb_depth_mask_frame_range_half_open": [
+      0,
+      58
+    ],
+    "identity_target_available_to_prediction": false,
+    "state_update_allowed": false,
+    "future_prediction_metric_allowed": false,
+    "v1_sealed_target_allowed": false,
+    "held_v8_access_allowed": false
+  },
+  "forbidden": [
+    "using predicted displacement in V11 query selection",
+    "using the PhysTwin innovation to define perception reliability",
+    "opening an identity target before all eight source dispositions and provider predictions are sealed",
+    "constructing or scoring a state update under this protocol",
+    "weakening the two-view covariance inflation, shared bias term, support gate, or source advancement rule after tracker outcomes",
+    "opening or modifying any held-v8 target, query, score, barrier, outcome, or process"
+  ]
+}
