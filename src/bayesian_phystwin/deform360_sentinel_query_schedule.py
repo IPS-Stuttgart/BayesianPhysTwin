@@ -37,6 +37,10 @@ PREFIX_SUPPORT_PROTOCOL_ID = (
 DIRECT_DEPTH_PROTOCOL_ID = (
     "deform360-direct-depth-sentinel-v8-source-development"
 )
+DYNAMIC_DEPTH_ADMISSION_PROTOCOL_ID = (
+    "deform360-dynamic-direct-depth-admission-v9-source-development"
+)
+DYNAMIC_DEPTH_ENDPOINT_PAIRS = ((13, 19), (32, 38), (51, 57))
 PREFIX_END_FRAME = max(UPDATE_FRAMES)
 
 
@@ -125,10 +129,17 @@ class Deform360SentinelQueryConfig:
             0 <= self.query_birth_frame < self.query_update_frame,
             "query birth must precede its update",
         )
-        _require(
-            self.query_update_frame == PREFIX_END_FRAME,
-            "sentinel update frame changed",
-        )
+        if self.protocol_id == DYNAMIC_DEPTH_ADMISSION_PROTOCOL_ID:
+            _require(
+                (self.query_birth_frame, self.query_update_frame)
+                in DYNAMIC_DEPTH_ENDPOINT_PAIRS,
+                "dynamic-depth endpoint pair is not registered",
+            )
+        else:
+            _require(
+                self.query_update_frame == PREFIX_END_FRAME,
+                "sentinel update frame changed",
+            )
         _require(
             self.protocol_id
             in {
@@ -136,6 +147,7 @@ class Deform360SentinelQueryConfig:
                 SHORT_HORIZON_PROTOCOL_ID,
                 PREFIX_SUPPORT_PROTOCOL_ID,
                 DIRECT_DEPTH_PROTOCOL_ID,
+                DYNAMIC_DEPTH_ADMISSION_PROTOCOL_ID,
             },
             "sentinel protocol ID is not registered",
         )
@@ -487,6 +499,8 @@ def build_deform360_sentinel_query_schedule(
 
 __all__ = [
     "DIRECT_DEPTH_PROTOCOL_ID",
+    "DYNAMIC_DEPTH_ADMISSION_PROTOCOL_ID",
+    "DYNAMIC_DEPTH_ENDPOINT_PAIRS",
     "PREFIX_END_FRAME",
     "PREFIX_SUPPORT_PROTOCOL_ID",
     "PROTOCOL_ID",

@@ -86,7 +86,7 @@ def _valid_digest(value: Any) -> bool:
 
 @dataclass(frozen=True)
 class CausalCameraInputs:
-    """Eight selected camera streams truncated at the final update."""
+    """Eight selected camera streams truncated at a declared causal update."""
 
     camera_indices: np.ndarray
     camera_names: tuple[str, ...]
@@ -123,10 +123,10 @@ class CausalCameraInputs:
         )
         _require(
             rgbs.ndim == 5
-            and rgbs.shape[:2]
-            == (camera_count, CAUSAL_FRAME_STOP_EXCLUSIVE)
+            and rgbs.shape[0] == camera_count
+            and 1 <= rgbs.shape[1] <= CAUSAL_FRAME_STOP_EXCLUSIVE
             and rgbs.shape[-1] == 3,
-            "causal RGB array must have shape (8, 58, H, W, 3)",
+            "causal RGB array must have shape (8, T<=58, H, W, 3)",
         )
         _require(
             depths.shape == masks.shape == rgbs.shape[:-1],
@@ -144,8 +144,8 @@ class CausalCameraInputs:
             "causal depth is invalid",
         )
         _require(
-            self.provenance.get("maximum_frame_read") == 57,
-            "causal input provenance crosses the final update",
+            self.provenance.get("maximum_frame_read") == rgbs.shape[1] - 1,
+            "causal input provenance differs from its truncated update",
         )
         for values in (indices, rgbs, depths, masks, intrinsics, poses):
             values.setflags(write=False)

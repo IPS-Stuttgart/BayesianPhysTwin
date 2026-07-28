@@ -45,7 +45,7 @@ def _episode(tmp_path: Path, camera_count: int = 9) -> tuple[Path, tuple[str, ..
 
 
 def _probe(camera_dir: Path, frame_count: int) -> CameraPrefixEvidence:
-    assert frame_count == CAUSAL_FRAME_COUNT
+    assert frame_count in {20, CAUSAL_FRAME_COUNT}
     index = int(camera_dir.name.rsplit("-", maxsplit=1)[-1])
     token = format(index % 16, "x")
     return CameraPrefixEvidence(
@@ -95,6 +95,22 @@ def test_loader_rejects_fewer_than_eight_complete_cameras(tmp_path: Path) -> Non
         )
 
 
+def test_geometry_certificate_can_stop_at_an_earlier_update(tmp_path: Path) -> None:
+    episode, names = _episode(tmp_path)
+    geometry = load_complete_camera_geometry(
+        episode,
+        candidate_camera_names=names,
+        prefix_probe=_probe,
+        frame_count=20,
+    )
+
+    assert geometry.causal_frame_count == 20
+    assert geometry.descriptor()["causal_frame_range_half_open"] == [0, 20]
+    assert geometry.descriptor()["information_boundary"][
+        "maximum_rgb_depth_mask_frame_read"
+    ] == 19
+
+
 def test_loader_records_invalid_prefix_without_using_future_frames(
     tmp_path: Path,
 ) -> None:
@@ -132,12 +148,12 @@ def test_selected_inputs_decode_only_certified_cameras(
 
     def decode_rgb(path: Path, frame_count: int) -> np.ndarray:
         assert path.parent.name in geometry.camera_names
-        assert frame_count == CAUSAL_FRAME_COUNT
+        assert frame_count in {20, CAUSAL_FRAME_COUNT}
         return np.zeros((frame_count, 4, 5, 3), dtype=np.uint8)
 
     def read_h5(path: Path, frame_count: int) -> np.ndarray:
         assert path.parent.name in geometry.camera_names
-        assert frame_count == CAUSAL_FRAME_COUNT
+        assert frame_count in {20, CAUSAL_FRAME_COUNT}
         return np.ones((frame_count, 4, 5), dtype=np.uint16)
 
     monkeypatch.setattr(provider, "_decode_rgb_prefix", decode_rgb)
@@ -156,3 +172,13 @@ def test_selected_inputs_decode_only_certified_cameras(
         inputs.provenance["complete_camera_certificate_sha256"]
         == geometry.artifact_sha256
     )
+
+    short_inputs = load_selected_complete_causal_inputs(
+        episode,
+        geometry,
+        np.arange(8),
+        frame_count=20,
+    )
+    assert short_inputs.rgbs.shape == (8, 20, 4, 5, 3)
+    assert short_inputs.depths_m.shape == (8, 20, 4, 5)
+    assert short_inputs.provenance["maximum_frame_read"] == 19

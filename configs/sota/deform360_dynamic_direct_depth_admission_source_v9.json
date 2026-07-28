@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-dynamic-direct-depth-admission-v9-source-development",
+  "purpose": "Select a causal dynamic endpoint using direct metric-depth associations, sentinel common-bias removal, and action-aligned response evidence before any state update or future outcome is available.",
+  "endpoint_pairs": [
+    [13, 19],
+    [32, 38],
+    [51, 57]
+  ],
+  "selection_rule": "Evaluate endpoint pairs in chronological order and stop at the first admitted pair. A rejected pair authorizes waiting for the next pair but not reading beyond that next update.",
+  "query_schedule": {
+    "selected_camera_count": 8,
+    "minimum_eligible_camera_count": 8,
+    "total_query_count": 12,
+    "sentinel_query_count": 3,
+    "active_minimum_motion_m": 0.002,
+    "sentinel_maximum_motion_m": 0.0005,
+    "minimum_camera_support": 3,
+    "graph_basis_rank": 8
+  },
+  "direct_depth": {
+    "minimum_camera_support": 3,
+    "search_radius_px": 12,
+    "depth_scale_m": 0.03,
+    "minimum_candidate_count": 1,
+    "depth_standard_deviation_m": 0.005,
+    "pixel_quantization_variance_px2": 0.25,
+    "covariance_floor_m2": 1e-10,
+    "temporal_covariance_multiplier": 2.0,
+    "unknown_cross_view_correlation": "covariance_intersection_with_between_view_scatter"
+  },
+  "admission": {
+    "spatial_group_count": 3,
+    "minimum_supported_active_count": 6,
+    "minimum_supported_per_group": 2,
+    "minimum_passing_group_count": 2,
+    "minimum_actuator_displacement_m": 0.002,
+    "minimum_physical_response_rms_m": 0.002,
+    "minimum_observed_response_rms_m": 0.001,
+    "minimum_association_probability": 0.5,
+    "minimum_prior_reliability": 0.05,
+    "minimum_response_gain": 0.1,
+    "maximum_response_gain": 3.0,
+    "minimum_response_gain_lower": 0.05,
+    "minimum_direction_cosine": 0.5,
+    "minimum_positive_fraction": 0.6666666666666666,
+    "confidence_z": 1.645,
+    "maximum_effective_count": 3.0,
+    "variance_floor_m2": 1e-10
+  },
+  "source_gate": {
+    "locked_case_count": 7,
+    "minimum_admitted_case_count": 4,
+    "candidate_state_updates_allowed_during_gate": false,
+    "future_metrics_allowed_during_gate": false
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "physical_archive_sha256": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "physical_archive_sha256": "89eae3e6a3bcb9c5912f1f68926ed6996b7847f634880c24e4976545978c19bf"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "physical_archive_sha256": "4f221933a8dfe4a27e2a70de889e7b0c2a4247b9026daca6b738aafd34fa24e9"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "physical_archive_sha256": "19055cebe30b4fbc303507888fc3e824e43b7c28e9b7aa2908e613fc78a6519b"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "physical_archive_sha256": "143ffa5323b303e5b9cadf537511727b1fa923b6b824a433a9bbb8899942bcee"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "physical_archive_sha256": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "physical_archive_sha256": "420f74615af97dc5a8f681bbc99cb3688dfd108d887fea975eb3b9cfc4cbee37"
+    }
+  ],
+  "information_boundary": {
+    "source_only": true,
+    "sequential_prefix_depth_and_masks_only": true,
+    "maximum_possible_observation_frame": 57,
+    "future_identity_read": false,
+    "future_object_observation_read": false,
+    "future_metric_read": false,
+    "candidate_state_update_read": false,
+    "v1_sealed_target_read": false,
+    "held_v8_read": false
+  }
+}

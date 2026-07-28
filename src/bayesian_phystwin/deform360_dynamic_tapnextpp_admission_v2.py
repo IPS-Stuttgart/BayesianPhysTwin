@@ -93,7 +93,10 @@ def probe_camera_prefix(
     import cv2
     import h5py
 
-    _require(frame_count == CAUSAL_FRAME_COUNT, "causal frame count changed")
+    _require(
+        1 <= frame_count <= CAUSAL_FRAME_COUNT,
+        "causal frame count is outside the certified prefix",
+    )
     video_path = camera_dir / "undistorted.mp4"
     capture = cv2.VideoCapture(str(video_path))
     rgb_frames: list[np.ndarray] = []
@@ -145,6 +148,7 @@ class CompleteCameraGeometry:
     camera_to_world: np.ndarray
     image_shapes_hw: np.ndarray
     prefix_evidence: tuple[CameraPrefixEvidence, ...]
+    causal_frame_count: int
     rejected_cameras: Mapping[str, str]
     calibration_prefix_sha256: str
     artifact_sha256: str
@@ -163,6 +167,10 @@ class CompleteCameraGeometry:
             np.asarray(self.image_shapes_hw, dtype=np.int64)
         )
         count = len(self.camera_names)
+        _require(
+            1 <= self.causal_frame_count <= CAUSAL_FRAME_COUNT,
+            "complete-camera causal frame count is invalid",
+        )
         _require(count >= 8, "fewer than eight complete cameras")
         _require(
             indices.shape == (count,)
@@ -205,7 +213,7 @@ class CompleteCameraGeometry:
             "schema_version": 1,
             "artifact_kind": "Deform360DynamicTAPNextPPCompleteCameraGeometry",
             "protocol_id": PROTOCOL_ID,
-            "causal_frame_range_half_open": [0, CAUSAL_FRAME_COUNT],
+            "causal_frame_range_half_open": [0, self.causal_frame_count],
             "camera_names": list(self.camera_names),
             "frozen_panel_indices": self.frozen_panel_indices.tolist(),
             "intrinsics_sha256": array_sha256(self.intrinsics),
@@ -227,7 +235,7 @@ class CompleteCameraGeometry:
             "rejected_cameras": dict(self.rejected_cameras),
             "calibration_prefix_sha256": self.calibration_prefix_sha256,
             "information_boundary": {
-                "maximum_rgb_depth_mask_frame_read": CAUSAL_FRAME_COUNT - 1,
+                "maximum_rgb_depth_mask_frame_read": self.causal_frame_count - 1,
                 "future_object_observation_read": False,
                 "target_metric_read": False,
             },
@@ -240,6 +248,7 @@ def load_complete_camera_geometry(
     candidate_camera_names: Sequence[str] = FROZEN_CAMERA_PANEL,
     minimum_complete_camera_count: int = 8,
     prefix_probe: PrefixProbe = probe_camera_prefix,
+    frame_count: int | None = None,
 ) -> CompleteCameraGeometry:
     """Load only cameras whose calibration and causal streams are complete."""
 
@@ -252,6 +261,13 @@ def load_complete_camera_geometry(
     _require(
         minimum_complete_camera_count >= 8,
         "claim-bearing camera minimum is below eight",
+    )
+    requested_frame_count = (
+        CAUSAL_FRAME_COUNT if frame_count is None else int(frame_count)
+    )
+    _require(
+        1 <= requested_frame_count <= CAUSAL_FRAME_COUNT,
+        "requested camera certificate exceeds the causal prefix",
     )
     intrinsics_path = root / "undistorted_intrinsics.npy"
     extrinsics_path = root / "extrinsics.npy"
@@ -289,7 +305,7 @@ def load_complete_camera_geometry(
             rejected[camera] = "missing_causal_stream"
             continue
         try:
-            evidence = prefix_probe(camera_dir, CAUSAL_FRAME_COUNT)
+            evidence = prefix_probe(camera_dir, requested_frame_count)
         except (OSError, RuntimeError, ValueError) as error:
             rejected[camera] = f"invalid_causal_prefix:{type(error).__name__}"
             continue
@@ -321,6 +337,7 @@ def load_complete_camera_geometry(
         camera_to_world=poses_array,
         image_shapes_hw=shapes_array,
         prefix_evidence=tuple(evidence_rows),
+        causal_frame_count=requested_frame_count,
         rejected_cameras=rejected,
         calibration_prefix_sha256=calibration_prefix_sha256,
         artifact_sha256="0" * 64,
@@ -336,6 +353,7 @@ def load_complete_camera_geometry(
         camera_to_world=provisional.camera_to_world,
         image_shapes_hw=provisional.image_shapes_hw,
         prefix_evidence=provisional.prefix_evidence,
+        causal_frame_count=provisional.causal_frame_count,
         rejected_cameras=provisional.rejected_cameras,
         calibration_prefix_sha256=provisional.calibration_prefix_sha256,
         artifact_sha256=artifact_sha256,
@@ -357,6 +375,7 @@ def load_selected_complete_causal_inputs(
     camera_indices: Sequence[int],
     *,
     depth_scale_to_m: float = 0.001,
+    frame_count: int | None = None,
 ) -> Any:
     """Decode the causal prefix from cameras admitted by the V2 certificate."""
 
@@ -378,6 +397,13 @@ def load_selected_complete_causal_inputs(
         np.isfinite(depth_scale_to_m) and depth_scale_to_m > 0.0,
         "depth scale must be finite and positive",
     )
+    requested_frame_count = (
+        CAUSAL_FRAME_COUNT if frame_count is None else int(frame_count)
+    )
+    _require(
+        1 <= requested_frame_count <= geometry.causal_frame_count,
+        "requested causal frame count is outside the certified prefix",
+    )
     selected_names = tuple(
         geometry.camera_names[int(index)] for index in indices
     )
@@ -389,15 +415,15 @@ def load_selected_complete_causal_inputs(
         directory = root / camera
         rgb = _decode_rgb_prefix(
             directory / "undistorted.mp4",
-            CAUSAL_FRAME_COUNT,
+            requested_frame_count,
         )
         encoded_depth = _read_h5_prefix(
             directory / "rendered_depth.h5",
-            CAUSAL_FRAME_COUNT,
+            requested_frame_count,
         )
         mask = _read_h5_prefix(
             directory / "mask_refined.h5",
-            CAUSAL_FRAME_COUNT,
+            requested_frame_count,
         ).astype(bool, copy=False)
         depth = encoded_depth.astype(np.float32) * depth_scale_to_m
         _require(
@@ -424,7 +450,7 @@ def load_selected_complete_causal_inputs(
             "complete_camera_certificate_sha256": geometry.artifact_sha256,
             "selected_complete_camera_indices": indices.tolist(),
             "selected_camera_names": list(selected_names),
-            "maximum_frame_read": CAUSAL_FRAME_COUNT - 1,
+            "maximum_frame_read": requested_frame_count - 1,
             "future_frame_read": False,
             "decoded_prefix_sha256": prefix_hashes,
         },
