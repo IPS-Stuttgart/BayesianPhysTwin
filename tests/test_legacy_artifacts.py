@@ -400,6 +400,7 @@ def test_visual_inputs_v2_revalidates_after_internal_loading(
             cotracker_sha256={
                 "cotracker/camera0.npz": digests["cotracker/camera0.npz"]
             },
+            initial_match_tolerance_m=1e-5,
         )
 
 
