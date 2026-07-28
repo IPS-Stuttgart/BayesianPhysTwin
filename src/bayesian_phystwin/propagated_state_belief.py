@@ -382,6 +382,7 @@ def infer_propagated_state_belief(
     robust = np.ones(len(node_rows), dtype=np.float64)
     normal = prior_precision.copy()
     for iteration in range(cfg.maximum_iterations):
+        iterations = iteration + 1
         previous = solution.copy()
         normal, right = posterior_system(robust)
         solved, _, condition_number, failure = solve_posterior(normal, right)
@@ -432,7 +433,7 @@ def infer_propagated_state_belief(
     diagnostics.update(
         {
             "condition_number": condition_number,
-            "iterations": iteration + 1,
+            "iterations": iterations,
             "prefix_rmse_m": float(np.sqrt(np.mean(np.square(predicted - observed)))),
             "state_weight_norm": float(np.linalg.norm(solution[:state_count])),
             "shared_bias_rms_m": float(
