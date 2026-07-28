@@ -8,6 +8,10 @@ from bayesian_phystwin._gauge_aware_contracts import (
 )
 from bayesian_phystwin._gauge_aware_solver import _correlation_group_weights
 from bayesian_phystwin._prior_aware_gauge_math import _group_layout
+from bayesian_phystwin.nuisance_aware_information import (
+    NuisanceAwareInformationState,
+    greedy_nuisance_aware_selection,
+)
 
 
 @pytest.mark.parametrize("seed", range(16))
@@ -106,3 +110,144 @@ def test_prior_aware_provider_power_is_duplication_invariant() -> None:
     assert float(np.sum(base_large)) == pytest.approx(effective)
     assert power_small[0] == pytest.approx(effective / 64)
     assert power_large[0] == pytest.approx(effective / 640)
+
+
+def test_nuisance_free_gain_matches_scalar_gaussian_information() -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(
+        np.asarray([[1.0]])
+    )
+
+    update = prior.observation_information_gain(
+        np.asarray([[1.0]]),
+        None,
+        np.asarray([[1.0]]),
+    )
+
+    np.testing.assert_allclose(
+        update.updated_state.conditional_state_precision(),
+        np.asarray([[2.0]]),
+    )
+    assert update.mutual_information_nats == pytest.approx(0.5 * np.log(2.0))
+
+
+def test_unanchored_nuisance_suppresses_candidate_information() -> None:
+    weak_nuisance_prior = NuisanceAwareInformationState.from_independent_priors(
+        np.asarray([[1.0]]),
+        np.asarray([[1e-9]]),
+    )
+    covariance = np.asarray([[1e-4]])
+
+    confounded = weak_nuisance_prior.observation_information_gain(
+        np.asarray([[1.0]]),
+        np.asarray([[1.0]]),
+        covariance,
+    )
+    direct = weak_nuisance_prior.observation_information_gain(
+        np.asarray([[1.0]]),
+        np.asarray([[0.0]]),
+        covariance,
+    )
+
+    assert confounded.mutual_information_nats < 1e-6
+    assert direct.mutual_information_nats > 4.0
+
+
+def test_nuisance_anchor_increases_confounded_candidate_value() -> None:
+    weak = NuisanceAwareInformationState.from_independent_priors(
+        np.asarray([[1.0]]),
+        np.asarray([[1e-6]]),
+    )
+    anchored = NuisanceAwareInformationState.from_independent_priors(
+        np.asarray([[1.0]]),
+        np.asarray([[1e3]]),
+    )
+    state_jacobian = np.asarray([[1.0]])
+    nuisance_jacobian = np.asarray([[1.0]])
+    covariance = np.asarray([[1e-2]])
+
+    weak_gain = weak.observation_information_gain(
+        state_jacobian,
+        nuisance_jacobian,
+        covariance,
+    ).mutual_information_nats
+    anchored_gain = anchored.observation_information_gain(
+        state_jacobian,
+        nuisance_jacobian,
+        covariance,
+    ).mutual_information_nats
+
+    assert anchored_gain > weak_gain + 1.0
+
+
+def test_zero_reliability_preserves_exact_information_fallback() -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(
+        np.eye(2),
+        np.eye(1),
+    )
+
+    update = prior.observation_information_gain(
+        np.asarray([[1.0, 0.0], [0.0, 1.0]]),
+        np.asarray([[1.0], [1.0]]),
+        np.eye(2),
+        reliability=0.0,
+    )
+
+    assert update.mutual_information_nats == 0.0
+    np.testing.assert_array_equal(
+        update.updated_state.state_precision,
+        prior.state_precision,
+    )
+    np.testing.assert_array_equal(
+        update.updated_state.nuisance_precision,
+        prior.nuisance_precision,
+    )
+
+
+def test_greedy_information_selection_avoids_confounded_candidate() -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(
+        np.eye(2),
+        np.asarray([[1e-6]]),
+    )
+    state_jacobians = (
+        np.asarray([[1.0, 0.0]]),
+        np.asarray([[0.0, 1.0]]),
+        np.asarray([[0.0, 1.0]]),
+    )
+    nuisance_jacobians = (
+        np.asarray([[1.0]]),
+        np.asarray([[0.0]]),
+        np.asarray([[0.0]]),
+    )
+    covariances = (np.asarray([[0.01]]),) * 3
+
+    selection = greedy_nuisance_aware_selection(
+        prior,
+        state_jacobians,
+        nuisance_jacobians,
+        covariances,
+        count=2,
+    )
+
+    np.testing.assert_array_equal(selection.selected_indices, np.asarray([1, 2]))
+    assert selection.mutual_information_nats[1] < selection.mutual_information_nats[0]
+    assert not selection.selected_indices.flags.writeable
+    assert not selection.mutual_information_nats.flags.writeable
+
+
+def test_nuisance_information_rejects_invalid_covariance_and_counts() -> None:
+    prior = NuisanceAwareInformationState.from_independent_priors(np.eye(1))
+
+    with pytest.raises(ValueError, match="positive definite"):
+        prior.add_observation(
+            np.asarray([[1.0]]),
+            None,
+            np.asarray([[0.0]]),
+        )
+    with pytest.raises(ValueError, match="counts differ"):
+        greedy_nuisance_aware_selection(
+            prior,
+            (np.asarray([[1.0]]),),
+            (),
+            (np.asarray([[1.0]]),),
+            count=1,
+        )
