@@ -1,0 +1,179 @@
+{
+  "archive": {
+    "array_sha256": {
+      "association_candidate_count": "e2855ede9ae62c84973e287419202f8968e9e0faf2c128d37ea46f3a3bc3d32a",
+      "association_covariance_px2": "0d9529c614957ccc00ec22481800ccb8e5d61587196f6876481353e1a6448031",
+      "association_entropy": "f8d714bc03ef05477a6b411f4ef7cfd3db55c434d3b4e6f01809d8a51ce2391b",
+      "association_probability": "e805ecb3636c1a6afb18655d675216796998f03e2c35871332db0bcd9f5741e2",
+      "association_query_points_xy": "2b623ce1c61b6bcded5b68ffd5809122aa47241be9013486318f4930fae18faf",
+      "association_valid": "9015ab8caa2125540672e1ccb755a50cc3c398fce9769b3c3455c182d422fe69",
+      "birth_frames": "f887e1161a7d021b1cfe52d2dc50a277d50ce183c8a2feea644dc424ca4bcfc2",
+      "contact_distance_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "entity_ids": "f24d4a9c344a78bc97746e9bdc1bca5d64aafc685aa07e592723d9b81c3f3a83",
+      "mode_information_gain": "5332b5d50c6fb4c726a5dd358e60d6f157ceaf6f92f117be94e494c5d5be6828",
+      "motion_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "query_camera_mask": "feb7f5b85497d4b46233b70fe8ad6a7d2f0a26bfce99fccecdb0c7d39d1838c4",
+      "query_pixels_xy": "81fffcd248efb7da004a3c4fb5d724816186dd29d45b2db62f51dc267445c6e0",
+      "query_points_world_m": "225deab08f1027b4025e372495f1ec8c9bbd3e8b28a76308dedf1ff5d80c73ca",
+      "replaces_entity_ids": "d72d1fb5201a7f1931c16d2499e5d8677673cb655f04d1a454d6053b19038b6c",
+      "selected_action_support": "e66d41d5bd3e23d7ff525e0ecfdc4154a6c8bdb48699765a94795236da9a5047",
+      "spatial_diversity_score": "f19786896df33fa9228d5ebfa07c59628e88e6369998f75f7013f0d09a2aade8",
+      "total_score": "f960ca21832339294663d6d87863a22468d91d367e00d5b718089548e423a6a9",
+      "update_frames": "34b1eec4973dd19bba14da27cdb34a4354f62a1f5c8184a4ca1c07e3d86c40ba",
+      "visibility_score": "f5ea7a3b03ff329c07d0d4b46a5c016902465a886aba5774ab1bff21d7083ca4"
+    },
+    "file_sha256": "74a4de2e066139e435e8e2293ee173a65e8ebaa925c3553b78f44ec329fab1bb",
+    "filename": "action_supported_queries.npz"
+  },
+  "artifact_kind": "Deform360ActionSupportedTAPNextPPQuerySchedule",
+  "case": "028-ziplog-cloth-ep0000",
+  "information_boundary": {
+    "action_support_used": true,
+    "action_support_weighted_mode_basis": true,
+    "held_v8_artifact_or_process_access": false,
+    "identity_target_read": false,
+    "object_observation_frames_used_for_selection": [
+      0
+    ],
+    "physical_frames_used_for_selection": [
+      0
+    ],
+    "predicted_displacement_used": false,
+    "state_update_constructed": false,
+    "tracker_output_read": false,
+    "v1_sealed_target_access": false
+  },
+  "inputs_sha256": {
+    "physical_archive": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717",
+    "physical_manifest": "3e18ae7bed82a50f5a7b36baa1457163308b173f2f905d2bbc7fdd5e1ea84f22",
+    "protocol": "7287309ee4b7bac0b24120d7bc62fefa32b1f22c3306b082221b8167d7a49a92",
+    "v10_report": "94fe2fc5925b8d9acc39207cf5874a266fecb8238cc4cb810e724a821805b70a"
+  },
+  "protocol_id": "deform360-action-supported-tapnextpp-v11-source",
+  "repository_revision": "e1640bdf58306420f9ee6489c1a2c80eb3e49d3d",
+  "result_sha256": "7e27b4108ac461c7e93f73d5c632f0f0120f3331607a81f86edb79a2aa452b15",
+  "schedule": {
+    "admitted": true,
+    "artifact_kind": "Deform360ActionSupportedTAPNextPPQuerySchedule",
+    "artifact_sha256": "457547410f3f63e90a379b834d2b4dd1da0170a67f10ea95498caefe435930a7",
+    "camera_panel": {
+      "camera_indices": [
+        1,
+        6,
+        2,
+        7
+      ],
+      "camera_names": [
+        "brics-odroid-006_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-007_cam0",
+        "brics-odroid-015_cam1"
+      ],
+      "frame_zero_coverage": [
+        1.0,
+        1.0,
+        1.0,
+        0.9290780141843972
+      ],
+      "selection_scores": [
+        1.0,
+        1.1672346592471547,
+        1.076790386816804,
+        0.9674745683398973
+      ]
+    },
+    "config": {
+      "action_support_threshold": 0.1,
+      "graph_basis_rank": 8,
+      "minimum_camera_support": 2,
+      "mode_information_weight": 1.0,
+      "prefix_frame_count": 58,
+      "query_count": 8,
+      "spatial_diversity_weight": 1.0,
+      "support_probability_threshold": 0.5,
+      "update_frame": 57,
+      "visibility_weight": 0.5
+    },
+    "eligible_entity_count": 9,
+    "information_boundary": {
+      "action_support_used": true,
+      "action_support_weighted_mode_basis": true,
+      "held_v8_artifact_or_process_access": false,
+      "identity_target_read": false,
+      "object_observation_frames_used_for_selection": [
+        0
+      ],
+      "physical_frames_used_for_selection": [
+        0
+      ],
+      "predicted_displacement_used": false,
+      "state_update_constructed": false,
+      "tracker_output_read": false,
+      "v1_sealed_target_access": false
+    },
+    "initial_query_count": 8,
+    "input_array_sha256": {
+      "action_support": "46cc2e60b8bcb569532f8494fb735a9f25e05a58bae40c6e0bc987335120079b",
+      "graph_basis": "efab953a7820fe9690b8e63f5382e603d8fba39ba468b82beb7b20c2b654a16c",
+      "physical_frame_zero_m": "1ec0036222697071ab956a673c33401ed7d3716962333523b251c953f98853ad",
+      "v10_archive": "5727b518db16717cf39878a70fa35989645389a3f27a87cba1e920f76b9c2932"
+    },
+    "output_array_sha256": {
+      "association_candidate_count": "e2855ede9ae62c84973e287419202f8968e9e0faf2c128d37ea46f3a3bc3d32a",
+      "association_covariance_px2": "0d9529c614957ccc00ec22481800ccb8e5d61587196f6876481353e1a6448031",
+      "association_entropy": "f8d714bc03ef05477a6b411f4ef7cfd3db55c434d3b4e6f01809d8a51ce2391b",
+      "association_probability": "e805ecb3636c1a6afb18655d675216796998f03e2c35871332db0bcd9f5741e2",
+      "association_query_points_xy": "2b623ce1c61b6bcded5b68ffd5809122aa47241be9013486318f4930fae18faf",
+      "association_valid": "9015ab8caa2125540672e1ccb755a50cc3c398fce9769b3c3455c182d422fe69",
+      "birth_frames": "f887e1161a7d021b1cfe52d2dc50a277d50ce183c8a2feea644dc424ca4bcfc2",
+      "contact_distance_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "entity_ids": "f24d4a9c344a78bc97746e9bdc1bca5d64aafc685aa07e592723d9b81c3f3a83",
+      "mode_information_gain": "5332b5d50c6fb4c726a5dd358e60d6f157ceaf6f92f117be94e494c5d5be6828",
+      "motion_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "query_camera_mask": "feb7f5b85497d4b46233b70fe8ad6a7d2f0a26bfce99fccecdb0c7d39d1838c4",
+      "query_pixels_xy": "81fffcd248efb7da004a3c4fb5d724816186dd29d45b2db62f51dc267445c6e0",
+      "query_points_world_m": "225deab08f1027b4025e372495f1ec8c9bbd3e8b28a76308dedf1ff5d80c73ca",
+      "replaces_entity_ids": "d72d1fb5201a7f1931c16d2499e5d8677673cb655f04d1a454d6053b19038b6c",
+      "selected_action_support": "e66d41d5bd3e23d7ff525e0ecfdc4154a6c8bdb48699765a94795236da9a5047",
+      "spatial_diversity_score": "f19786896df33fa9228d5ebfa07c59628e88e6369998f75f7013f0d09a2aade8",
+      "total_score": "f960ca21832339294663d6d87863a22468d91d367e00d5b718089548e423a6a9",
+      "update_frames": "34b1eec4973dd19bba14da27cdb34a4354f62a1f5c8184a4ca1c07e3d86c40ba",
+      "visibility_score": "f5ea7a3b03ff329c07d0d4b46a5c016902465a886aba5774ab1bff21d7083ca4"
+    },
+    "protocol_id": "deform360-action-supported-tapnextpp-v11-source",
+    "schema_version": 1,
+    "selected_action_support": [
+      0.11226542294025421,
+      0.10086004436016083,
+      0.10112640261650085,
+      0.10563246160745621,
+      0.10705744475126266,
+      0.10514259338378906,
+      0.10429366677999496,
+      0.10464946180582047
+    ],
+    "selected_camera_support_count": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "selected_entity_ids": [
+      478,
+      475,
+      483,
+      487,
+      476,
+      477,
+      486,
+      485
+    ],
+    "v10_result_sha256": "1f339a7139af49170ad09d3ffc5f164f5c1d91af09bc8cf9ab6d73d3c5156639"
+  },
+  "schema_version": 1,
+  "status": "admitted"
+}

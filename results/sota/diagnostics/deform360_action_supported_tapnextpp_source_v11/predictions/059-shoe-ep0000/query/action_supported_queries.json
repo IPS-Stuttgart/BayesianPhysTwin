@@ -1,0 +1,179 @@
+{
+  "archive": {
+    "array_sha256": {
+      "association_candidate_count": "cd83e5cb9c949a0133419f10e02a3da4aee99669d4b0c9e8d16b0c390a3dc7a2",
+      "association_covariance_px2": "e96a8bbcf64765ad17dcbe26eba5dda7d92c940b8dc0c377f58bf0d8f2ba868f",
+      "association_entropy": "d68f475cbdbe6b7bb1a516297ac6dcde4b8602e01c4b811e8ecc7a61b1013b1e",
+      "association_probability": "88f567e8b3d7d2d1ed1e7752127537f9680cada09833b5661b9dd446468bef2d",
+      "association_query_points_xy": "a404b483c83254d999e7da61ded2e40e3e74672718937439f73807cbf463aca7",
+      "association_valid": "fd51196b57dd98554e26d1fd0f804c04931165a3641530b6b29c3cfd943baab2",
+      "birth_frames": "f887e1161a7d021b1cfe52d2dc50a277d50ce183c8a2feea644dc424ca4bcfc2",
+      "contact_distance_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "entity_ids": "2273510251796a139b01e77d32b104c587c92291cdb81240245652103deb783c",
+      "mode_information_gain": "6092678e5ddf71fe42843d7a581614952a3ba3b52619db35a33e5928363c7be2",
+      "motion_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "query_camera_mask": "ba95efd441c976679a289c414f1b0814a1ed1a06af44c2b3b8fb5805316cbd60",
+      "query_pixels_xy": "f12cd0b1ee4797ddf64dd387ea98a583d081d17ef5a2c43d097854e47b76e6db",
+      "query_points_world_m": "39c2e6e6ea75521c47d4e691ea239a72e9f55f00857c2a82dc25c1090a6902e8",
+      "replaces_entity_ids": "d72d1fb5201a7f1931c16d2499e5d8677673cb655f04d1a454d6053b19038b6c",
+      "selected_action_support": "3b2d3a9607a558e08a69bb367ddbcb866b8cef79c465b9cf8ac0950990494a8c",
+      "spatial_diversity_score": "f57125a6725645004c89825f99e88c620925b39c314236c1b7b0b5d66e9fdaf1",
+      "total_score": "006452508ba35271839c1a4399e2549394b308edb077593b17e07156724ddcff",
+      "update_frames": "34b1eec4973dd19bba14da27cdb34a4354f62a1f5c8184a4ca1c07e3d86c40ba",
+      "visibility_score": "579a44afe94ff16b1791e522b182198536df7568d985ad1e454c7e2fdfa5615a"
+    },
+    "file_sha256": "7f22b3d84a15d2309540c20b9af5fbb0032f054d106f80eb527540e2de719b45",
+    "filename": "action_supported_queries.npz"
+  },
+  "artifact_kind": "Deform360ActionSupportedTAPNextPPQuerySchedule",
+  "case": "059-shoe-ep0000",
+  "information_boundary": {
+    "action_support_used": true,
+    "action_support_weighted_mode_basis": true,
+    "held_v8_artifact_or_process_access": false,
+    "identity_target_read": false,
+    "object_observation_frames_used_for_selection": [
+      0
+    ],
+    "physical_frames_used_for_selection": [
+      0
+    ],
+    "predicted_displacement_used": false,
+    "state_update_constructed": false,
+    "tracker_output_read": false,
+    "v1_sealed_target_access": false
+  },
+  "inputs_sha256": {
+    "physical_archive": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215",
+    "physical_manifest": "e7f380d2b43b3abc493846b19ef528da20ace2e8bffdf078cc06ef598fa5997a",
+    "protocol": "7287309ee4b7bac0b24120d7bc62fefa32b1f22c3306b082221b8167d7a49a92",
+    "v10_report": "8507734bd9db379dfefcbd1efa8f20e9feab3d7d669083332025a000647f0f0a"
+  },
+  "protocol_id": "deform360-action-supported-tapnextpp-v11-source",
+  "repository_revision": "e1640bdf58306420f9ee6489c1a2c80eb3e49d3d",
+  "result_sha256": "20983b6fe78c120f09b395fa9ab866a1c94fee066dc59be8a9b3960247084a89",
+  "schedule": {
+    "admitted": true,
+    "artifact_kind": "Deform360ActionSupportedTAPNextPPQuerySchedule",
+    "artifact_sha256": "e5a39d374da8acc01bb9d51ad37734855aa1760ea05cf09646bec4f041fded1e",
+    "camera_panel": {
+      "camera_indices": [
+        0,
+        7,
+        1,
+        6
+      ],
+      "camera_names": [
+        "brics-odroid-007_cam0",
+        "brics-odroid-027_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-021_cam1"
+      ],
+      "frame_zero_coverage": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "selection_scores": [
+        1.0,
+        1.149646201836234,
+        1.1062305401228876,
+        1.0891476903456585
+      ]
+    },
+    "config": {
+      "action_support_threshold": 0.1,
+      "graph_basis_rank": 8,
+      "minimum_camera_support": 2,
+      "mode_information_weight": 1.0,
+      "prefix_frame_count": 58,
+      "query_count": 8,
+      "spatial_diversity_weight": 1.0,
+      "support_probability_threshold": 0.5,
+      "update_frame": 57,
+      "visibility_weight": 0.5
+    },
+    "eligible_entity_count": 330,
+    "information_boundary": {
+      "action_support_used": true,
+      "action_support_weighted_mode_basis": true,
+      "held_v8_artifact_or_process_access": false,
+      "identity_target_read": false,
+      "object_observation_frames_used_for_selection": [
+        0
+      ],
+      "physical_frames_used_for_selection": [
+        0
+      ],
+      "predicted_displacement_used": false,
+      "state_update_constructed": false,
+      "tracker_output_read": false,
+      "v1_sealed_target_access": false
+    },
+    "initial_query_count": 8,
+    "input_array_sha256": {
+      "action_support": "d548ff2d4fd8f10d453573f393ecee2227aba844958a8ea00575ab817395893d",
+      "graph_basis": "0d3975fd7f9f079d6f18fce4193a519eecf3a563c9aee8c9ee89f722d485f838",
+      "physical_frame_zero_m": "05e18bb2a6aad38bd03fd39d1dfaeba0af446ec291b3479446afa8452ffdd9bd",
+      "v10_archive": "ae5462125c70eb62db10da28d26266f989b38e9e54831899309316763fed3456"
+    },
+    "output_array_sha256": {
+      "association_candidate_count": "cd83e5cb9c949a0133419f10e02a3da4aee99669d4b0c9e8d16b0c390a3dc7a2",
+      "association_covariance_px2": "e96a8bbcf64765ad17dcbe26eba5dda7d92c940b8dc0c377f58bf0d8f2ba868f",
+      "association_entropy": "d68f475cbdbe6b7bb1a516297ac6dcde4b8602e01c4b811e8ecc7a61b1013b1e",
+      "association_probability": "88f567e8b3d7d2d1ed1e7752127537f9680cada09833b5661b9dd446468bef2d",
+      "association_query_points_xy": "a404b483c83254d999e7da61ded2e40e3e74672718937439f73807cbf463aca7",
+      "association_valid": "fd51196b57dd98554e26d1fd0f804c04931165a3641530b6b29c3cfd943baab2",
+      "birth_frames": "f887e1161a7d021b1cfe52d2dc50a277d50ce183c8a2feea644dc424ca4bcfc2",
+      "contact_distance_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "entity_ids": "2273510251796a139b01e77d32b104c587c92291cdb81240245652103deb783c",
+      "mode_information_gain": "6092678e5ddf71fe42843d7a581614952a3ba3b52619db35a33e5928363c7be2",
+      "motion_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "query_camera_mask": "ba95efd441c976679a289c414f1b0814a1ed1a06af44c2b3b8fb5805316cbd60",
+      "query_pixels_xy": "f12cd0b1ee4797ddf64dd387ea98a583d081d17ef5a2c43d097854e47b76e6db",
+      "query_points_world_m": "39c2e6e6ea75521c47d4e691ea239a72e9f55f00857c2a82dc25c1090a6902e8",
+      "replaces_entity_ids": "d72d1fb5201a7f1931c16d2499e5d8677673cb655f04d1a454d6053b19038b6c",
+      "selected_action_support": "3b2d3a9607a558e08a69bb367ddbcb866b8cef79c465b9cf8ac0950990494a8c",
+      "spatial_diversity_score": "f57125a6725645004c89825f99e88c620925b39c314236c1b7b0b5d66e9fdaf1",
+      "total_score": "006452508ba35271839c1a4399e2549394b308edb077593b17e07156724ddcff",
+      "update_frames": "34b1eec4973dd19bba14da27cdb34a4354f62a1f5c8184a4ca1c07e3d86c40ba",
+      "visibility_score": "579a44afe94ff16b1791e522b182198536df7568d985ad1e454c7e2fdfa5615a"
+    },
+    "protocol_id": "deform360-action-supported-tapnextpp-v11-source",
+    "schema_version": 1,
+    "selected_action_support": [
+      0.8284486532211304,
+      0.44717109203338623,
+      0.7471066117286682,
+      0.6688141822814941,
+      0.9379383325576782,
+      0.7704721689224243,
+      0.7907112240791321,
+      0.8514313697814941
+    ],
+    "selected_camera_support_count": [
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "selected_entity_ids": [
+      149,
+      369,
+      40,
+      145,
+      101,
+      107,
+      100,
+      99
+    ],
+    "v10_result_sha256": "a9d692fa6616fffc2e40b827d1b6804a7ad2b2117541eaa7ab2037aa2cb151e5"
+  },
+  "schema_version": 1,
+  "status": "admitted"
+}
