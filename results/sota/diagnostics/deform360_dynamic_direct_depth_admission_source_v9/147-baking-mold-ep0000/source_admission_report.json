@@ -1,0 +1,276 @@
+{
+  "artifact_kind": "Deform360DynamicDirectDepthAdmissionV9Source",
+  "branches": [
+    {
+      "action_response": {
+        "actuator_displacement_m": 0.05384777227325311,
+        "admitted": false,
+        "artifact_kind": "Deform360DirectDepthActionResponseAdmission",
+        "artifact_sha256": "7613605bd5627f5639b6ad73fff243bddb667548c94adfe448c84e13be313ea3",
+        "birth_frame": 13,
+        "case_id": "147-baking-mold-ep0000",
+        "config": {
+          "confidence_z": 1.645,
+          "maximum_effective_count": 3.0,
+          "maximum_response_gain": 3.0,
+          "minimum_actuator_displacement_m": 0.002,
+          "minimum_association_probability": 0.5,
+          "minimum_direction_cosine": 0.5,
+          "minimum_observed_response_rms_m": 0.001,
+          "minimum_passing_group_count": 2,
+          "minimum_physical_response_rms_m": 0.002,
+          "minimum_positive_fraction": 0.6666666666666666,
+          "minimum_prior_reliability": 0.05,
+          "minimum_response_gain": 0.1,
+          "minimum_response_gain_lower": 0.05,
+          "minimum_supported_active_count": 6,
+          "minimum_supported_per_group": 2,
+          "spatial_group_count": 3,
+          "variance_floor_m2": 1e-10
+        },
+        "contract": "deform360-direct-depth-action-response-admission-v9",
+        "group_assignments": [
+          2,
+          0,
+          1,
+          2,
+          0,
+          0,
+          2,
+          1,
+          1
+        ],
+        "groups": [
+          {
+            "direction_cosine": 0.0,
+            "effective_count": 0.0,
+            "entity_ids": [
+              494,
+              421,
+              364
+            ],
+            "group_index": 0,
+            "observed_response_rms_m": 0.0,
+            "passing": false,
+            "physical_response_rms_m": 0.0,
+            "positive_fraction": 0.0,
+            "response_gain": 0.0,
+            "response_gain_lower": -1.645,
+            "response_gain_std": 1.0,
+            "supported_count": 0
+          },
+          {
+            "direction_cosine": 0.0,
+            "effective_count": 0.0,
+            "entity_ids": [
+              391,
+              355,
+              394
+            ],
+            "group_index": 1,
+            "observed_response_rms_m": 0.0,
+            "passing": false,
+            "physical_response_rms_m": 0.0,
+            "positive_fraction": 0.0,
+            "response_gain": 0.0,
+            "response_gain_lower": -1.645,
+            "response_gain_std": 1.0,
+            "supported_count": 0
+          },
+          {
+            "direction_cosine": 0.0,
+            "effective_count": 0.0,
+            "entity_ids": [
+              353,
+              461,
+              354
+            ],
+            "group_index": 2,
+            "observed_response_rms_m": 0.0,
+            "passing": false,
+            "physical_response_rms_m": 0.0,
+            "positive_fraction": 0.0,
+            "response_gain": 0.0,
+            "response_gain_lower": -1.645,
+            "response_gain_std": 1.0,
+            "supported_count": 0
+          }
+        ],
+        "information_boundary": {
+          "candidate_state_update_read": false,
+          "final_baseline_relative_regret_guard_required": true,
+          "future_identity_read": false,
+          "future_metric_read": false,
+          "future_observation_read": false,
+          "maximum_observation_frame": 19,
+          "sentinel_common_bias_removed_before_admission": true,
+          "state_innovation_changes_prior_reliability": false
+        },
+        "measurement_prefix_sha256": "9ef1916048bfca6872a0e3eedfd3e205203f5cf77695a6d89f15049a6be52433",
+        "passing_group_count": 0,
+        "physical_prefix_sha256": "10951dd3eb5632d336f641b92e448f7a53fe9ec19465b7ed834fa8f70f614822",
+        "reason": "insufficient-active-support",
+        "schedule_sha256": "bee1e41d2d2b357a21a72287e94b01817cd7b311e4e9bf404d787efdbf6d0b7f",
+        "schema_version": 1,
+        "sentinel_applied": true,
+        "supported_active_count": 0,
+        "update_frame": 19
+      },
+      "actuator_displacement_m": 0.05384777227325311,
+      "admitted": false,
+      "birth_frame": 13,
+      "inputs_sha256": {
+        "camera_certificate": "f692a3fa956ecccf82c7b151bfb67361a9ed17a43eba9c40a8edca32cc013c2f",
+        "prefix_support_screen": "622aae6abef71ca63f13e9d7999aadd80044c2a90bfeaf80c9eb406ef66264e1",
+        "query_schedule": "bee1e41d2d2b357a21a72287e94b01817cd7b311e4e9bf404d787efdbf6d0b7f"
+      },
+      "outputs_sha256": {
+        "action_response_admission_file": "0df80b72b876b8205496b761167b91be4377c577c8fd39aab00a2d6360850803",
+        "prefix_support_screen_file": "134b88fb8c6b6e7d3290163bf49ba2f9cc488d7ac75d902f434d10d6017d96f2",
+        "provider_arrays": {
+          "accepted_support": "3ae005acae820cabe30343e7a622b80c195942d3725ac27404b15d550cfa5c7c",
+          "association_probability": "e70b87235358aedb80ba5400363dbe02d772c2ef02267b9277a9724bca84250c",
+          "covariance_m2": "8961ba4fb7e7b79bf82d3b0fb3eb727c784b817d444830ddb81cfc04a4187d70",
+          "endpoint_frames": "bdf97152e7729f8b67da782f4cecb36c4e0b5e2ca8f4656268b31ec3ce790f17",
+          "entity_ids": "64b425c76fc04427a5ec08a6ea5aa8e070ced65bf14809864b9dd63eaa589c88",
+          "maximum_view_scatter_m": "7f72d784bb639f34bacb228fc204b9f9a347e1c34c04d4874b25cf6b3392dc55",
+          "point_world_m": "0e74d67900205cb2e50c3dc8f653dedf20da071c22ed5574ee28d43b80ae6902",
+          "support_count": "edef69181596f6ceb3e3058a2dddcb97eff766f99032f7a1d0d462438012c0b4"
+        },
+        "provider_arrays_file": "19772026344eaeb257104c7b273c43410fe1db3cd7593f552abad2b420b3349e",
+        "query_schedule_file": "773a59da5f037ecb7cddb895c98d58eb53d13da29c5a4c42e7f1a3df50fa1d89",
+        "sentinel_measurements": {
+          "association_probability": "505acd942df643432b75b93ed764a2a03c642f35a6e737ed41d5894b06f2aa09",
+          "available": "8e0a1724b2702433e38b096cc6cf8f426f84842e31ef4b05640a4c1351d51e3d",
+          "covariance_m2": "13f7aaeb7f9200879be274fe742444ba40ba678f24cd10f1b89f2676adee1737",
+          "entity_ids": "753a05b7cd69e14b411d72aa9bd9b01d8a3b91047374ea1406c76151ad617ff5",
+          "measurement_m": "1bb2e94de147b4e23112fd498d2a752ce3c1c9f1efbd54426cdcc995ed712d9f",
+          "prior_reliability": "1db59dd800a320e22aa2502f161d5b428abb75548c38b41f5b3811b711842bab"
+        },
+        "sentinel_measurements_file": "e43d91de2eeee909c93818cde83b0c97949b1311e05788ce50ce10398f38c3b8"
+      },
+      "reason": "insufficient-active-support",
+      "sentinel_debias": {
+        "active_entity_ids": [
+          353,
+          494,
+          391,
+          461,
+          421,
+          364,
+          354,
+          355,
+          394
+        ],
+        "applied": true,
+        "artifact_kind": "Deform360SentinelDebiasAdmission",
+        "bias_estimate": {
+          "bias_m": [
+            -6.223404376033258e-05,
+            -0.013864756381561483,
+            -0.004186637235039431
+          ],
+          "correlation_group_count": 1,
+          "covariance_m2": [
+            [
+              0.26756746404765164,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.26756746404765164,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.26756746404765164
+            ]
+          ],
+          "decision": "sentinel-common-mode-estimated",
+          "maximum_inconsistency_sigma": 0.1323429317018314,
+          "observation_count": 3,
+          "usable": true
+        },
+        "decision": "sentinel-common-mode-debiased",
+        "method_contract": {
+          "active_measurement_debiased": true,
+          "bias_covariance_added_to_active_covariance": true,
+          "rejection": "bit-exact persistence",
+          "sentinel_residual": "observed displacement minus physical-prefix displacement",
+          "sentinels_used_as_state_measurements": false,
+          "within_panel_cross_identity_correlation": "one shared unknown-correlation group"
+        },
+        "schema_version": 1,
+        "sentinel_entity_ids": [
+          91,
+          930,
+          716
+        ],
+        "supported_active_count": 9,
+        "supported_sentinel_count": 3
+      },
+      "status": "rejected",
+      "support": {
+        "active_endpoint_supported_count": 9,
+        "complete_camera_count": 10,
+        "prefix_screen_eligible_count": 519,
+        "scheduled_identity_count": 12,
+        "selected_camera_count": 8,
+        "sentinel_endpoint_supported_count": 3
+      },
+      "update_frame": 19
+    },
+    {
+      "admitted": false,
+      "birth_frame": 32,
+      "reason": "ValueError:motion-stratified frame-zero query budget is incomplete",
+      "status": "target-free-prefix-rejection",
+      "update_frame": 38
+    },
+    {
+      "admitted": false,
+      "birth_frame": 51,
+      "reason": "ValueError:motion-stratified frame-zero query budget is incomplete",
+      "status": "target-free-prefix-rejection",
+      "update_frame": 57
+    }
+  ],
+  "case": "147-baking-mold-ep0000",
+  "case_hash": "77bfae325777a12a3e6f4df2ccc85236478b7f76d1f15a1ea33f5075ccda35f2",
+  "environment": {
+    "numpy": "1.26.4",
+    "python": "3.10.12"
+  },
+  "information_boundary": {
+    "candidate_state_update_read": false,
+    "future_identity_read": false,
+    "future_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_read": false,
+    "maximum_rgb_depth_mask_frame_read": 57,
+    "v1_sealed_target_read": false
+  },
+  "inputs_sha256": {
+    "physical_archive": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a",
+    "physical_manifest": "6492a602f16b417bb85666e5cfb0ceba9a849e659241462fb33ee856597575ee",
+    "prediction_only_input": "a128d938cec79b89e369738865a6b377cc87bd15363a0247e451791b8dbbc65d"
+  },
+  "method_contract": {
+    "action_aligned_spatial_group_gate": true,
+    "candidate_state_update_constructed": false,
+    "direct_depth_mask_endpoint_association": true,
+    "rejection": "no candidate; unchanged physical baseline required",
+    "sentinel_common_bias_removed_before_admission": true,
+    "sequential_stopping_rule": true,
+    "unknown_cross_view_correlation": "covariance_intersection"
+  },
+  "protocol_config_sha256": "4d746521878af293370e1bb978c7fba911490608b166094cdb93c6fc33e9f8e2",
+  "protocol_id": "deform360-dynamic-direct-depth-admission-v9-source-development",
+  "repository_revision": "019ca9b3dc0143c7cba963025a9280f170ebfa37",
+  "result_sha256": "f0012b7700bdada6d2368a0efb07e499bc2de735cefe1a25c8bd36ecd701d0b7",
+  "schema_version": 1,
+  "selected_endpoint_pair": null,
+  "status": "source_rejected"
+}

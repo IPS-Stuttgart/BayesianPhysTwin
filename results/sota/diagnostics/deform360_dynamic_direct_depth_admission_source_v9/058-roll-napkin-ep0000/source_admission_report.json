@@ -1,0 +1,62 @@
+{
+  "artifact_kind": "Deform360DynamicDirectDepthAdmissionV9Source",
+  "branches": [
+    {
+      "admitted": false,
+      "birth_frame": 13,
+      "reason": "ValueError:motion-stratified frame-zero query budget is incomplete",
+      "status": "target-free-prefix-rejection",
+      "update_frame": 19
+    },
+    {
+      "admitted": false,
+      "birth_frame": 32,
+      "reason": "ValueError:motion-stratified frame-zero query budget is incomplete",
+      "status": "target-free-prefix-rejection",
+      "update_frame": 38
+    },
+    {
+      "admitted": false,
+      "birth_frame": 51,
+      "reason": "ValueError:motion-stratified frame-zero query budget is incomplete",
+      "status": "target-free-prefix-rejection",
+      "update_frame": 57
+    }
+  ],
+  "case": "058-roll-napkin-ep0000",
+  "case_hash": "4f03007cff3f4c0874e5982b08db405436dee6a9659254fd05712bceee975666",
+  "environment": {
+    "numpy": "1.26.4",
+    "python": "3.10.12"
+  },
+  "information_boundary": {
+    "candidate_state_update_read": false,
+    "future_identity_read": false,
+    "future_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_read": false,
+    "maximum_rgb_depth_mask_frame_read": 57,
+    "v1_sealed_target_read": false
+  },
+  "inputs_sha256": {
+    "physical_archive": "19055cebe30b4fbc303507888fc3e824e43b7c28e9b7aa2908e613fc78a6519b",
+    "physical_manifest": "c6a1d99d797c91e75642b46f4350d01b897748305333f088a9c0568981c7e2f4",
+    "prediction_only_input": "ec2fc2d45918c2b2b353f2002862d96755a1fc9efcf382890a52c3576b32324d"
+  },
+  "method_contract": {
+    "action_aligned_spatial_group_gate": true,
+    "candidate_state_update_constructed": false,
+    "direct_depth_mask_endpoint_association": true,
+    "rejection": "no candidate; unchanged physical baseline required",
+    "sentinel_common_bias_removed_before_admission": true,
+    "sequential_stopping_rule": true,
+    "unknown_cross_view_correlation": "covariance_intersection"
+  },
+  "protocol_config_sha256": "4d746521878af293370e1bb978c7fba911490608b166094cdb93c6fc33e9f8e2",
+  "protocol_id": "deform360-dynamic-direct-depth-admission-v9-source-development",
+  "repository_revision": "019ca9b3dc0143c7cba963025a9280f170ebfa37",
+  "result_sha256": "bd49920e585e65a0472969ba41d3b401412cd3d0799afe8cc5d1b99338d802c0",
+  "schema_version": 1,
+  "selected_endpoint_pair": null,
+  "status": "source_rejected"
+}

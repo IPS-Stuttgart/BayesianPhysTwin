@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360DynamicDirectDepthAdmissionV9SourceSummary",
+  "protocol_id": "deform360-dynamic-direct-depth-admission-v9-source-development",
+  "repository_revision": "019ca9b3dc0143c7cba963025a9280f170ebfa37",
+  "protocol_config_sha256": "4d746521878af293370e1bb978c7fba911490608b166094cdb93c6fc33e9f8e2",
+  "decision": "source_gate_failed",
+  "locked_case_count": 7,
+  "admitted_case_count": 0,
+  "minimum_admitted_case_count": 4,
+  "branch_count": 21,
+  "branch_reason_counts": {
+    "motion_stratified_frame_zero_query_budget_incomplete": 20,
+    "insufficient_active_support": 1
+  },
+  "information_boundary": {
+    "candidate_state_update_constructed": false,
+    "future_identity_read": false,
+    "future_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_read": false,
+    "v1_sealed_target_read": false,
+    "maximum_rgb_depth_mask_frame_read": 57
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "87bbb848a108c16afddb6dc284fa029c4602608678a088920ec174d51d5fff60",
+      "report_file_sha256": "dc6440e4d814219b4c6c78508c567ccc7539fdec1c6fb8c2d19be254cd943e55"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "7a7948fb5a5714453413f4942d0c329b507479eb8d87c72c1cdafdfa8da2dc41",
+      "report_file_sha256": "72e5049b6ab4a76763dc4ab7d321836dd4551c45063547622e879e1c2b3cff14"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "af46694bc68080d0783f3b593078dd83a8a753cf8be14b8295a586d48ad2f741",
+      "report_file_sha256": "18c2dc589a485438549ada12442f92632f8bd9eb5bca31d8e42b057d28dec41a"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "bd49920e585e65a0472969ba41d3b401412cd3d0799afe8cc5d1b99338d802c0",
+      "report_file_sha256": "d941eb4def7211d38a90ccf549abe8694501de6eacc7bf0626bcb2b767fcf148"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "549a52dda277118f1378f1b4d9a5b588fbe6880a101306ca51af18a676d5e825",
+      "report_file_sha256": "7455b70037f0e0f09709c968b59eef957e5b08eca36a74e78f8ff8500f47a800"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "f0012b7700bdada6d2368a0efb07e499bc2de735cefe1a25c8bd36ecd701d0b7",
+      "report_file_sha256": "567d489b7ba5ee118ad501a30330770d4978be2904b683974f1f4d7ca1c23197"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "status": "source_rejected",
+      "selected_endpoint_pair": null,
+      "result_sha256": "9cc3821b79c2df3c90f6ff8eda9b1d9eb5ae8f9d5f90a86484a65cdcbc4a8863",
+      "report_file_sha256": "37cd0cd8d6ee4775a336ec89a226b143f10f314f98aeba4b315367b272e56a28"
+    }
+  ]
+}
