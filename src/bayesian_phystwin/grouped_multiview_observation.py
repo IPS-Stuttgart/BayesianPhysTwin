@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from itertools import product
 from typing import Any
 
 import numpy as np
+
+from .phystwin_online_belief import deterministic_farthest_point_ids
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -204,6 +207,248 @@ def partition_disjoint_camera_groups(
     return groups
 
 
+def partition_supported_disjoint_camera_groups(
+    camera_names: Sequence[str],
+    camera_origins_m: Mapping[str, np.ndarray],
+    reference_points_m: np.ndarray,
+    frame_zero_support: np.ndarray,
+    eligible_point_mask: np.ndarray,
+    *,
+    config: GroupedMultiviewConfig | None = None,
+) -> tuple[tuple[str, ...], ...]:
+    """Choose disjoint camera panels with balanced material-point support.
+
+    The exhaustive search is practical for the small Deform360 camera panels
+    and uses only frame-zero visibility plus a candidate-independent physical
+    response mask. Outcome tracks and future losses are not inputs.
+    """
+
+    cfg = config or GroupedMultiviewConfig()
+    names = tuple(sorted(str(name) for name in camera_names))
+    _require(len(names) == len(set(names)), "camera names must be unique")
+    _require(
+        len(names) >= cfg.group_count * cfg.minimum_cameras_per_group,
+        "too few cameras for the requested disjoint groups",
+    )
+    points = np.asarray(reference_points_m, dtype=np.float64)
+    support = np.asarray(frame_zero_support, dtype=bool)
+    eligible = np.asarray(eligible_point_mask, dtype=bool)
+    _require(
+        points.ndim == 2
+        and points.shape[1] == 3
+        and np.all(np.isfinite(points)),
+        "reference_points_m must have shape (N, 3)",
+    )
+    _require(
+        support.shape == (len(points), len(names)),
+        "frame_zero_support shape changed",
+    )
+    _require(
+        eligible.shape == (len(points),),
+        "eligible_point_mask shape changed",
+    )
+    _require(np.any(eligible), "eligible_point_mask is empty")
+    centroid = np.mean(points[eligible], axis=0)
+    azimuth: dict[str, float] = {}
+    for name in names:
+        _require(name in camera_origins_m, f"missing camera origin for {name}")
+        origin = np.asarray(camera_origins_m[name], dtype=np.float64)
+        _require(
+            origin.shape == (3,) and np.all(np.isfinite(origin)),
+            f"invalid camera origin for {name}",
+        )
+        delta = origin - centroid
+        azimuth[name] = float(np.arctan2(delta[1], delta[0]))
+
+    partitions: set[tuple[tuple[str, ...], ...]] = set()
+    for assignment in product(range(cfg.group_count), repeat=len(names)):
+        groups = tuple(
+            sorted(
+                tuple(
+                    names[index]
+                    for index, group_index in enumerate(assignment)
+                    if group_index == label
+                )
+                for label in range(cfg.group_count)
+            )
+        )
+        if min(len(group) for group in groups) < cfg.minimum_cameras_per_group:
+            continue
+        partitions.add(groups)
+    _require(bool(partitions), "no admissible disjoint camera partition")
+
+    camera_index = {name: index for index, name in enumerate(names)}
+
+    def group_support_count(group: tuple[str, ...]) -> int:
+        columns = [camera_index[name] for name in group]
+        shared = (
+            np.sum(support[:, columns], axis=1)
+            >= cfg.minimum_cameras_per_group
+        )
+        return int(np.sum(eligible & shared))
+
+    def group_azimuth_span(group: tuple[str, ...]) -> float:
+        angles = [azimuth[name] for name in group]
+        return max(
+            min(abs(first - second), 2.0 * np.pi - abs(first - second))
+            for first in angles
+            for second in angles
+        )
+
+    best_groups: tuple[tuple[str, ...], ...] | None = None
+    best_score: tuple[int, int, float, float] | None = None
+    for groups in sorted(partitions):
+        counts = tuple(group_support_count(group) for group in groups)
+        spans = tuple(group_azimuth_span(group) for group in groups)
+        score = (
+            min(counts),
+            sum(counts),
+            min(spans),
+            sum(spans),
+        )
+        if best_score is None or score > best_score:
+            best_score = score
+            best_groups = groups
+    if best_groups is None:
+        raise AssertionError("camera partition search did not return a result")
+    return best_groups
+
+
+def select_balanced_group_point_ids(
+    positions_m: np.ndarray,
+    camera_names: Sequence[str],
+    frame_zero_support: np.ndarray,
+    camera_groups: Sequence[Sequence[str]],
+    eligible_point_mask: np.ndarray,
+    *,
+    count: int,
+    minimum_per_group: int,
+    minimum_cameras_per_group: int = 2,
+) -> np.ndarray:
+    """Select unique material identities with support in every camera panel."""
+
+    positions = np.asarray(positions_m, dtype=np.float64)
+    names = tuple(str(name) for name in camera_names)
+    support = np.asarray(frame_zero_support, dtype=bool)
+    eligible = np.asarray(eligible_point_mask, dtype=bool)
+    groups = tuple(tuple(str(name) for name in group) for group in camera_groups)
+    _require(
+        positions.ndim == 2
+        and positions.shape[1] == 3
+        and np.all(np.isfinite(positions)),
+        "positions_m must have shape (N, 3)",
+    )
+    _require(len(names) == len(set(names)), "camera names must be unique")
+    _require(
+        support.shape == (len(positions), len(names)),
+        "frame_zero_support shape changed",
+    )
+    _require(eligible.shape == (len(positions),), "eligible mask shape changed")
+    _require(count >= 1, "count must be positive")
+    _require(minimum_per_group >= 1, "minimum_per_group must be positive")
+    _require(
+        count >= minimum_per_group * len(groups),
+        "count is too small for conservative per-group support",
+    )
+    _require(
+        minimum_cameras_per_group >= 2,
+        "minimum_cameras_per_group must be at least two",
+    )
+    flattened = [camera for group in groups for camera in group]
+    _require(
+        len(flattened) == len(set(flattened)),
+        "camera groups must be disjoint",
+    )
+    camera_index = {name: index for index, name in enumerate(names)}
+    _require(
+        all(camera in camera_index for camera in flattened),
+        "camera group contains an unknown camera",
+    )
+    candidates_by_group: dict[tuple[str, ...], np.ndarray] = {}
+    for group in groups:
+        columns = [camera_index[camera] for camera in group]
+        supported = (
+            np.sum(support[:, columns], axis=1)
+            >= minimum_cameras_per_group
+        )
+        candidates = np.flatnonzero(eligible & supported)
+        _require(
+            len(candidates) >= minimum_per_group,
+            "camera group has too few eligible material identities",
+        )
+        candidates_by_group[group] = candidates
+
+    selected: list[int] = []
+    selected_set: set[int] = set()
+    ordered_groups = sorted(
+        groups,
+        key=lambda group: (len(candidates_by_group[group]), group),
+    )
+    for group in ordered_groups:
+        candidates = candidates_by_group[group]
+        covered = sum(int(point_id) in selected_set for point_id in candidates)
+        needed = max(0, minimum_per_group - covered)
+        available = np.asarray(
+            [
+                int(point_id)
+                for point_id in candidates
+                if int(point_id) not in selected_set
+            ],
+            dtype=np.int64,
+        )
+        _require(len(available) >= needed, "balanced point selection is infeasible")
+        if needed:
+            additions = deterministic_farthest_point_ids(
+                positions,
+                available,
+                needed,
+            )
+            selected.extend(int(point_id) for point_id in additions)
+            selected_set.update(int(point_id) for point_id in additions)
+
+    candidate_union = np.unique(
+        np.concatenate(tuple(candidates_by_group.values()))
+    )
+    _require(len(candidate_union) >= count, "too few unique eligible identities")
+    ranking = deterministic_farthest_point_ids(
+        positions,
+        candidate_union,
+        len(candidate_union),
+    )
+    group_coverage = {
+        int(point_id): sum(
+            int(point_id) in set(candidates_by_group[group])
+            for group in groups
+        )
+        for point_id in candidate_union
+    }
+    rank = {int(point_id): index for index, point_id in enumerate(ranking)}
+    remaining = sorted(
+        (
+            int(point_id)
+            for point_id in candidate_union
+            if int(point_id) not in selected_set
+        ),
+        key=lambda point_id: (
+            -group_coverage[point_id],
+            rank[point_id],
+            point_id,
+        ),
+    )
+    selected.extend(remaining[: max(0, count - len(selected))])
+    result = np.asarray(selected[:count], dtype=np.int64)
+    _require(len(result) == count, "balanced point selection returned too few IDs")
+    _require(len(np.unique(result)) == len(result), "selected point IDs repeat")
+    for group, candidates in candidates_by_group.items():
+        del group
+        _require(
+            int(np.sum(np.isin(result, candidates))) >= minimum_per_group,
+            "selected identities lost group support",
+        )
+    result.setflags(write=False)
+    return result
+
+
 def triangulation_covariance_m2(
     point_m: np.ndarray,
     inlier_cameras: Sequence[str],
@@ -377,6 +622,8 @@ __all__ = [
     "GroupedMultiviewConfig",
     "GroupedMultiviewObservation",
     "partition_disjoint_camera_groups",
+    "partition_supported_disjoint_camera_groups",
+    "select_balanced_group_point_ids",
     "triangulate_disjoint_camera_groups",
     "triangulation_covariance_m2",
 ]

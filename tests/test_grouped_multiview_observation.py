@@ -5,6 +5,8 @@ import pytest
 
 from bayesian_phystwin.grouped_multiview_observation import (
     partition_disjoint_camera_groups,
+    partition_supported_disjoint_camera_groups,
+    select_balanced_group_point_ids,
     triangulate_disjoint_camera_groups,
     triangulation_covariance_m2,
 )
@@ -66,6 +68,54 @@ def test_metric_covariance_is_finite_symmetric_and_positive() -> None:
 
     np.testing.assert_allclose(covariance, covariance.T)
     assert np.all(np.linalg.eigvalsh(covariance) > 0.0)
+
+
+def test_supported_partition_and_balanced_points_preserve_every_panel() -> None:
+    names, origins, _ = _camera_geometry()
+    points = np.column_stack(
+        (
+            np.linspace(0.0, 0.17, 18),
+            np.zeros(18),
+            np.zeros(18),
+        )
+    )
+    support = np.zeros((len(points), len(names)), dtype=bool)
+    expected_pairs = (
+        (names[0], names[1]),
+        (names[2], names[3]),
+        (names[4], names[5]),
+    )
+    for block, pair in enumerate(expected_pairs):
+        rows = slice(6 * block, 6 * (block + 1))
+        for camera in pair:
+            support[rows, names.index(camera)] = True
+
+    groups = partition_supported_disjoint_camera_groups(
+        names,
+        origins,
+        points,
+        support,
+        np.ones(len(points), dtype=bool),
+    )
+    selected = select_balanced_group_point_ids(
+        points,
+        names,
+        support,
+        groups,
+        np.ones(len(points), dtype=bool),
+        count=12,
+        minimum_per_group=4,
+    )
+
+    assert {frozenset(group) for group in groups} == {
+        frozenset(pair) for pair in expected_pairs
+    }
+    for group in groups:
+        columns = [names.index(camera) for camera in group]
+        shared = np.sum(support[selected][:, columns], axis=1) >= 2
+        assert int(np.sum(shared)) >= 4
+    assert len(np.unique(selected)) == 12
+    assert not selected.flags.writeable
 
 
 def test_grouped_triangulation_keeps_independent_camera_panels() -> None:

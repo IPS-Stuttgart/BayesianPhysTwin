@@ -33,10 +33,17 @@ from bayesian_phystwin.deform360_raw_camera_observation import (
 from bayesian_phystwin.grouped_multiview_observation import (
     GroupedMultiviewConfig,
     partition_disjoint_camera_groups,
+    partition_supported_disjoint_camera_groups,
+    select_balanced_group_point_ids,
     triangulate_disjoint_camera_groups,
 )
 
-PROTOCOL_ID = "deform360-action-response-source-v1"
+LEGACY_PLANNER = "legacy-global-centers-v1"
+BALANCED_PLANNER = "balanced-physical-response-v2"
+PROTOCOL_IDS = {
+    LEGACY_PLANNER: "deform360-action-response-source-v1",
+    BALANCED_PLANNER: "deform360-action-response-source-v2",
+}
 EXPECTED_CASE = "059-shoe-ep0000"
 UPDATE_FRAMES = (19, 38, 57)
 
@@ -122,8 +129,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     processed_dir = Path(args.processed_dir).resolve()
     output_dir = Path(args.output_dir).resolve()
     case = str(args.case)
+    planner = str(args.planner)
     if case != EXPECTED_CASE:
         raise ValueError("case differs from the frozen source smoke")
+    if planner not in PROTOCOL_IDS:
+        raise ValueError("unknown frame-zero planner")
     if output_dir.exists():
         raise FileExistsError(output_dir)
     physical_manifest_path = (
@@ -193,31 +203,85 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         extrinsics,
         depth_tolerance_m=raw_config.frame_zero_depth_tolerance_m,
     )
-    plan = select_frame_zero_observation_plan(
-        frame_zero,
-        cameras,
-        support,
-        projected,
-        extrinsics,
-        config=raw_config,
-    )
-    centers = np.asarray(plan["center_ids"], dtype=np.int64)
-    selected_cameras = tuple(plan["selected_cameras"])
+    sampled_frames = np.asarray((0, *UPDATE_FRAMES), dtype=np.int64)
+    camera_origins = {
+        camera: np.asarray(extrinsics[camera], dtype=np.float64)[:3, 3]
+        for camera in cameras
+    }
+    if planner == LEGACY_PLANNER:
+        plan = select_frame_zero_observation_plan(
+            frame_zero,
+            cameras,
+            support,
+            projected,
+            extrinsics,
+            config=raw_config,
+        )
+        centers = np.asarray(plan["center_ids"], dtype=np.int64)
+        selected_cameras = tuple(plan["selected_cameras"])
+        selected_camera_origins = {
+            camera: camera_origins[camera] for camera in selected_cameras
+        }
+        camera_groups = partition_disjoint_camera_groups(
+            selected_cameras,
+            selected_camera_origins,
+            frame_zero[centers],
+            config=grouped_config,
+        )
+        response_support = action_support[centers]
+    else:
+        maximum_physical_response = np.max(
+            np.linalg.norm(
+                physical[sampled_frames] - physical[sampled_frames[:1]],
+                axis=2,
+            ),
+            axis=0,
+        )
+        eligible_response = (
+            maximum_physical_response
+            >= admission_config.minimum_identifiable_physical_rms_m
+        )
+        camera_groups = partition_supported_disjoint_camera_groups(
+            cameras,
+            camera_origins,
+            frame_zero,
+            support,
+            eligible_response,
+            config=grouped_config,
+        )
+        centers = select_balanced_group_point_ids(
+            frame_zero,
+            cameras,
+            support,
+            camera_groups,
+            eligible_response,
+            count=raw_config.center_count,
+            minimum_per_group=admission_config.minimum_supported_cluster_count,
+            minimum_cameras_per_group=grouped_config.minimum_cameras_per_group,
+        )
+        selected_cameras = tuple(
+            camera for group in camera_groups for camera in group
+        )
+        camera_index = {
+            camera: index for index, camera in enumerate(cameras)
+        }
+        plan = {
+            "query_ids": {
+                camera: centers[support[centers, camera_index[camera]]]
+                for camera in selected_cameras
+            },
+            "query_pixels": {
+                camera: projected[camera][
+                    centers[support[centers, camera_index[camera]]]
+                ]
+                for camera in selected_cameras
+            },
+        }
+        response_support = np.ones(len(centers), dtype=np.float64)
     projection_matrices = {
         camera: _projection_matrix(intrinsics[camera], extrinsics[camera])
         for camera in selected_cameras
     }
-    camera_origins = {
-        camera: np.asarray(extrinsics[camera], dtype=np.float64)[:3, 3]
-        for camera in selected_cameras
-    }
-    camera_groups = partition_disjoint_camera_groups(
-        selected_cameras,
-        camera_origins,
-        frame_zero[centers],
-        config=grouped_config,
-    )
-    sampled_frames = np.asarray((0, *UPDATE_FRAMES), dtype=np.int64)
     grouped_shape = (
         grouped_config.group_count,
         len(sampled_frames),
@@ -274,7 +338,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             return triangulate_observation_ransac(
                 observations,
                 projection_matrices,
-                camera_origins,
+                {
+                    camera: camera_origins[camera]
+                    for camera in selected_cameras
+                },
                 initial_point,
                 config=raw_config,
             )
@@ -313,7 +380,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         controller[sampled_frames],
         tuple(f"disjoint-camera-group-{index}" for index in range(len(camera_groups))),
         tuple(f"node-{int(center)}" for center in centers),
-        action_support[centers],
+        response_support,
         physical_prefix_id=physical_manifest["physical_archive"]["array_sha256"][
             "physical_prediction_m"
         ],
@@ -334,7 +401,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         prior_reliability=grouped_reliability,
         association_probability=grouped_association,
         actuator_positions_m=controller[sampled_frames],
-        action_support=action_support[centers],
+        action_support=response_support,
         sensor_group_ids=np.asarray(
             [
                 f"disjoint-camera-group-{index}"
@@ -344,9 +411,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     report: dict[str, Any] = {
         "schema_version": 1,
-        "protocol_id": PROTOCOL_ID,
+        "protocol_id": PROTOCOL_IDS[planner],
         "case": case,
         "repository_revision": args.repository_revision,
+        "frame_zero_planner": planner,
         "configs": {
             "raw_camera": asdict(raw_config),
             "grouped_multiview": asdict(grouped_config),
@@ -354,6 +422,32 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "eligible_prefix_cameras": list(eligible_cameras),
         "camera_groups": [list(group) for group in camera_groups],
+        "frame_zero_group_support": [
+            int(
+                np.sum(
+                    np.sum(
+                        support[
+                            centers,
+                            [
+                                cameras.index(camera)
+                                for camera in group
+                            ],
+                        ],
+                        axis=1,
+                    )
+                    >= grouped_config.minimum_cameras_per_group
+                )
+            )
+            for group in camera_groups
+        ],
+        "response_support_definition": (
+            "legacy physical-provider action_support"
+            if planner == LEGACY_PLANNER
+            else (
+                "binary selected-node support after sealed physical response "
+                f">= {admission_config.minimum_identifiable_physical_rms_m} m"
+            )
+        ),
         "group_support_by_update": group_support,
         "admission": admission.to_dict(),
         "tracker_records": tracker_records,
@@ -406,6 +500,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument(
+        "--planner",
+        choices=tuple(PROTOCOL_IDS),
+        default=LEGACY_PLANNER,
+    )
     parser.add_argument("--repository-revision", required=True)
     return parser
 

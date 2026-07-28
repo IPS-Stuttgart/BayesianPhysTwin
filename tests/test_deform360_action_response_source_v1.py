@@ -56,3 +56,26 @@ def test_prefix_calibration_excludes_incomplete_camera_assets(
     assert cameras == ("complete-a", "complete-b")
     assert tuple(filtered_intrinsics) == cameras
     assert tuple(filtered_extrinsics) == cameras
+
+
+def test_legacy_planner_remains_the_default() -> None:
+    module = _load_runner()
+
+    parsed = module._parser().parse_args(
+        [
+            "--physical-dir",
+            "physical",
+            "--processed-dir",
+            "processed",
+            "--alltracker-source",
+            "alltracker",
+            "--checkpoint",
+            "checkpoint",
+            "--output-dir",
+            "output",
+            "--repository-revision",
+            "revision",
+        ]
+    )
+
+    assert parsed.planner == module.LEGACY_PLANNER
