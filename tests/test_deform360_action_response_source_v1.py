@@ -109,6 +109,72 @@ def test_projected_view_planner_is_explicitly_opt_in() -> None:
     assert module.PROTOCOL_IDS[parsed.planner].endswith("-v3")
 
 
+def test_projected_observability_panel_is_opt_in_and_excludes_v3_case() -> None:
+    module = _load_runner()
+    case = module.PROJECTED_SOURCE_PANEL_CASES[0]
+
+    parsed = module._parser().parse_args(
+        [
+            "--case",
+            case,
+            "--physical-dir",
+            "physical",
+            "--processed-dir",
+            "processed",
+            "--alltracker-source",
+            "alltracker",
+            "--checkpoint",
+            "checkpoint",
+            "--output-dir",
+            "output",
+            "--repository-revision",
+            "revision",
+            "--planner",
+            module.PROJECTED_OBSERVABILITY_PLANNER,
+        ]
+    )
+
+    assert parsed.case == case
+    assert parsed.planner == module.PROJECTED_OBSERVABILITY_PLANNER
+    assert module.EXPECTED_CASE not in module.PROJECTED_SOURCE_PANEL_CASES
+    assert len(module.PROJECTED_SOURCE_PANEL_CASES) == 7
+    assert len(set(module.PROJECTED_SOURCE_PANEL_CASES)) == 7
+    lock_path, lock = module._load_projected_source_lock()
+    assert lock_path.is_file()
+    assert tuple(
+        entry["case"] for entry in lock["source_cases"]
+    ) == module.PROJECTED_SOURCE_PANEL_CASES
+
+
+def test_project_physical_prefix_preserves_metric_depth_and_shape() -> None:
+    module = _load_runner()
+    physical = np.asarray(
+        [
+            [[0.0, 0.0, 2.0], [0.2, 0.0, 2.0]],
+            [[0.0, 0.1, 2.0], [0.2, 0.1, 2.0]],
+            [[0.0, 0.2, 2.0], [0.2, 0.2, 2.0]],
+        ]
+    )
+    intrinsic = np.asarray(
+        [[500.0, 0.0, 320.0], [0.0, 400.0, 240.0], [0.0, 0.0, 1.0]]
+    )
+    extrinsic = np.eye(4)
+
+    pixels, depth, focal = module._project_physical_prefix(
+        physical,
+        np.asarray([0, 1, 2]),
+        ("camera",),
+        {"camera": intrinsic},
+        {"camera": extrinsic},
+        minimum_initial_depth_m=0.05,
+    )
+
+    assert pixels.shape == (1, 3, 2, 2)
+    np.testing.assert_allclose(depth, 2.0)
+    np.testing.assert_allclose(focal, [[500.0, 400.0]])
+    np.testing.assert_allclose(pixels[0, :, 0, 1], [240.0, 260.0, 280.0])
+
+
 def test_named_array_digest_binds_values_and_labels() -> None:
     module = _load_runner()
     first = module._named_arrays_sha256(

@@ -38,6 +38,11 @@ from bayesian_phystwin.grouped_multiview_observation import (
     select_balanced_group_point_ids,
     triangulate_disjoint_camera_groups,
 )
+from bayesian_phystwin.projected_observability_planner import (
+    ProjectedObservabilityConfig,
+    ProjectedObservabilityPlan,
+    plan_projected_observability,
+)
 from bayesian_phystwin.projected_view_response import (
     ProjectedViewResponseConfig,
     build_projected_view_response,
@@ -46,12 +51,28 @@ from bayesian_phystwin.projected_view_response import (
 LEGACY_PLANNER = "legacy-global-centers-v1"
 BALANCED_PLANNER = "balanced-physical-response-v2"
 PROJECTED_VIEW_PLANNER = "projected-view-response-v3"
+PROJECTED_OBSERVABILITY_PLANNER = "projected-observability-v4"
 PROTOCOL_IDS = {
     LEGACY_PLANNER: "deform360-action-response-source-v1",
     BALANCED_PLANNER: "deform360-action-response-source-v2",
     PROJECTED_VIEW_PLANNER: "deform360-action-response-source-v3",
+    PROJECTED_OBSERVABILITY_PLANNER: (
+        "deform360-projected-observability-source-v4"
+    ),
 }
 EXPECTED_CASE = "059-shoe-ep0000"
+PROJECTED_SOURCE_PANEL_CASES = (
+    "028-ziplog-cloth-ep0000",
+    "029-foam-cloth-ep0000",
+    "030-foam-flat-cloth-ep0000",
+    "058-roll-napkin-ep0000",
+    "061-cup-ep0000",
+    "147-baking-mold-ep0000",
+    "152-slime-ep0000",
+)
+PROJECTED_SOURCE_LOCK_RELATIVE_PATH = Path(
+    "configs/sota/deform360_projected_observability_source_v4.json"
+)
 UPDATE_FRAMES = (19, 38, 57)
 
 
@@ -79,6 +100,22 @@ def _named_arrays_sha256(arrays: Mapping[str, np.ndarray]) -> str:
     return digest.hexdigest()
 
 
+def _load_projected_source_lock() -> tuple[Path, dict[str, Any]]:
+    repository_root = Path(__file__).resolve().parents[2]
+    path = repository_root / PROJECTED_SOURCE_LOCK_RELATIVE_PATH
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("protocol_id") != (
+        "deform360-projected-observability-source-v4"
+    ):
+        raise ValueError("projected source-lock protocol changed")
+    cases = tuple(
+        str(entry["case"]) for entry in payload.get("source_cases", ())
+    )
+    if cases != PROJECTED_SOURCE_PANEL_CASES or len(set(cases)) != len(cases):
+        raise ValueError("projected source-lock case panel changed")
+    return path, payload
+
+
 def _controller_centroid_m(controller_points_m: np.ndarray) -> np.ndarray:
     controller = np.asarray(controller_points_m, dtype=np.float64)
     if controller.ndim != 3 or controller.shape[2] != 3:
@@ -94,6 +131,54 @@ def _controller_centroid_m(controller_points_m: np.ndarray) -> np.ndarray:
     if not np.all(np.isfinite(centroid)):
         raise ValueError("controller trajectory has an empty frame")
     return centroid[:, None, :]
+
+
+def _project_physical_prefix(
+    physical_positions_m: np.ndarray,
+    sampled_frames: np.ndarray,
+    camera_names: tuple[str, ...],
+    intrinsics: Mapping[str, Any],
+    extrinsics: Mapping[str, Any],
+    *,
+    minimum_initial_depth_m: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    physical = np.asarray(physical_positions_m, dtype=np.float64)
+    frames = np.asarray(sampled_frames, dtype=np.int64)
+    pixels: np.ndarray = np.full(
+        (len(camera_names), len(frames), len(physical[0]), 2),
+        np.nan,
+        dtype=np.float64,
+    )
+    depth: np.ndarray = np.full(
+        (len(camera_names), len(physical[0])),
+        minimum_initial_depth_m,
+        dtype=np.float64,
+    )
+    focal: np.ndarray = np.zeros(
+        (len(camera_names), 2),
+        dtype=np.float64,
+    )
+    for camera_index, camera in enumerate(camera_names):
+        intrinsic = np.asarray(intrinsics[camera], dtype=np.float64)
+        extrinsic = np.asarray(extrinsics[camera], dtype=np.float64)
+        focal[camera_index] = (intrinsic[0, 0], intrinsic[1, 1])
+        for sample_index, frame in enumerate(frames):
+            projected_pixels, projected_depth = project_world_points(
+                physical[int(frame)],
+                intrinsic,
+                extrinsic,
+            )
+            pixels[camera_index, sample_index] = projected_pixels
+            if sample_index == 0:
+                depth[camera_index] = np.where(
+                    np.isfinite(projected_depth),
+                    np.maximum(
+                        projected_depth,
+                        minimum_initial_depth_m,
+                    ),
+                    minimum_initial_depth_m,
+                )
+    return pixels, depth, focal
 
 
 def _validate_physical_manifest(manifest: dict[str, Any], case: str) -> None:
@@ -183,10 +268,19 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output_dir = Path(args.output_dir).resolve()
     case = str(args.case)
     planner = str(args.planner)
-    if case != EXPECTED_CASE:
-        raise ValueError("case differs from the frozen source smoke")
+    projected_source_lock_path: Path | None = None
+    projected_source_lock: dict[str, Any] | None = None
     if planner not in PROTOCOL_IDS:
         raise ValueError("unknown frame-zero planner")
+    if planner == PROJECTED_OBSERVABILITY_PLANNER:
+        (
+            projected_source_lock_path,
+            projected_source_lock,
+        ) = _load_projected_source_lock()
+        if case not in PROJECTED_SOURCE_PANEL_CASES:
+            raise ValueError("case is outside the frozen projected source panel")
+    elif case != EXPECTED_CASE:
+        raise ValueError("case differs from the frozen source smoke")
     if output_dir.exists():
         raise FileExistsError(output_dir)
     physical_manifest_path = (
@@ -210,11 +304,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "object_observation_frames_used": [0],
     }:
         raise ValueError("prediction-only carrier crossed the object boundary")
-    if (
-        _sha256(physical_archive_path)
-        != physical_manifest["physical_archive"]["file_sha256"]
-    ):
+    physical_archive_sha256 = _sha256(physical_archive_path)
+    if physical_archive_sha256 != physical_manifest["physical_archive"][
+        "file_sha256"
+    ]:
         raise ValueError("physical archive digest changed")
+    if projected_source_lock is not None:
+        expected_archive_sha256 = {
+            str(entry["case"]): str(entry["physical_archive_sha256"])
+            for entry in projected_source_lock["source_cases"]
+        }[case]
+        if physical_archive_sha256 != expected_archive_sha256:
+            raise ValueError("physical archive differs from projected source lock")
     if (
         _sha256(prediction_only_path)
         != physical_manifest["inputs_sha256"]["prediction_only_input"]
@@ -238,6 +339,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     grouped_config = GroupedMultiviewConfig()
     projected_config = ProjectedViewResponseConfig()
     admission_config = ActionResponseAdmissionConfig()
+    observability_config = ProjectedObservabilityConfig(
+        center_count=raw_config.center_count,
+        minimum_camera_count=admission_config.minimum_independent_group_count,
+        minimum_points_per_camera=(
+            admission_config.minimum_supported_cluster_count
+        ),
+        minimum_projected_response_rms_m=(
+            admission_config.minimum_identifiable_physical_rms_m
+        ),
+    )
     runtime = AllTrackerPrefixRuntime(
         args.alltracker_source,
         args.checkpoint,
@@ -262,6 +373,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         camera: np.asarray(extrinsics[camera], dtype=np.float64)[:3, 3]
         for camera in cameras
     }
+    projected_observability_plan: ProjectedObservabilityPlan | None = None
     if planner == LEGACY_PLANNER:
         plan = select_frame_zero_observation_plan(
             frame_zero,
@@ -304,22 +416,85 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             eligible_response,
             config=grouped_config,
         )
-        centers = select_balanced_group_point_ids(
-            frame_zero,
-            cameras,
-            support,
-            planning_camera_groups,
-            eligible_response,
-            count=raw_config.center_count,
-            minimum_per_group=admission_config.minimum_supported_cluster_count,
-            minimum_cameras_per_group=grouped_config.minimum_cameras_per_group,
-        )
         camera_index = {
             camera: index for index, camera in enumerate(cameras)
         }
         planned_cameras = tuple(
             camera for group in planning_camera_groups for camera in group
         )
+        if planner == PROJECTED_OBSERVABILITY_PLANNER:
+            (
+                planned_physical_pixels,
+                planned_initial_depth,
+                planned_focal_lengths,
+            ) = _project_physical_prefix(
+                physical,
+                sampled_frames,
+                planned_cameras,
+                intrinsics,
+                extrinsics,
+                minimum_initial_depth_m=(
+                    projected_config.minimum_initial_depth_m
+                ),
+            )
+            planning_group_by_camera = {
+                camera: f"planning-camera-group-{group_index}"
+                for group_index, group in enumerate(planning_camera_groups)
+                for camera in group
+            }
+            projected_observability_plan = plan_projected_observability(
+                frame_zero,
+                planned_cameras,
+                tuple(
+                    planning_group_by_camera[camera]
+                    for camera in planned_cameras
+                ),
+                planned_physical_pixels,
+                planned_initial_depth,
+                planned_focal_lengths,
+                support[
+                    :,
+                    np.asarray(
+                        [camera_index[camera] for camera in planned_cameras],
+                        dtype=np.int64,
+                    ),
+                ],
+                config=observability_config,
+            )
+            centers = projected_observability_plan.center_ids
+            selected_cameras = (
+                projected_observability_plan.selected_camera_names
+            )
+            camera_groups = tuple(
+                (camera,) for camera in selected_cameras
+            )
+            plan = {
+                "query_ids": {
+                    camera: projected_observability_plan.query_ids(camera)
+                    for camera in selected_cameras
+                },
+                "query_pixels": {
+                    camera: projected[camera][
+                        projected_observability_plan.query_ids(camera)
+                    ]
+                    for camera in selected_cameras
+                },
+            }
+        else:
+            centers = select_balanced_group_point_ids(
+                frame_zero,
+                cameras,
+                support,
+                planning_camera_groups,
+                eligible_response,
+                count=raw_config.center_count,
+                minimum_per_group=(
+                    admission_config.minimum_supported_cluster_count
+                ),
+                minimum_cameras_per_group=(
+                    grouped_config.minimum_cameras_per_group
+                ),
+            )
         if planner == PROJECTED_VIEW_PLANNER:
             selected_cameras = tuple(
                 camera
@@ -337,27 +512,33 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             camera_groups = tuple(
                 (camera,) for camera in selected_cameras
             )
-        else:
+        elif planner != PROJECTED_OBSERVABILITY_PLANNER:
             selected_cameras = planned_cameras
             camera_groups = planning_camera_groups
-        plan = {
-            "query_ids": {
-                camera: centers[support[centers, camera_index[camera]]]
-                for camera in selected_cameras
-            },
-            "query_pixels": {
-                camera: projected[camera][
-                    centers[support[centers, camera_index[camera]]]
-                ]
-                for camera in selected_cameras
-            },
-        }
+        if planner != PROJECTED_OBSERVABILITY_PLANNER:
+            plan = {
+                "query_ids": {
+                    camera: centers[
+                        support[centers, camera_index[camera]]
+                    ]
+                    for camera in selected_cameras
+                },
+                "query_pixels": {
+                    camera: projected[camera][
+                        centers[support[centers, camera_index[camera]]]
+                    ]
+                    for camera in selected_cameras
+                },
+            }
         response_support = np.ones(len(centers), dtype=np.float64)
     projection_matrices = {
         camera: _projection_matrix(intrinsics[camera], extrinsics[camera])
         for camera in selected_cameras
     }
-    projected_mode = planner == PROJECTED_VIEW_PLANNER
+    projected_mode = planner in (
+        PROJECTED_VIEW_PLANNER,
+        PROJECTED_OBSERVABILITY_PLANNER,
+    )
     grouped_points: np.ndarray | None = None
     grouped_valid: np.ndarray | None = None
     grouped_covariance: np.ndarray | None = None
@@ -769,23 +950,37 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "eligible_prefix_cameras": list(eligible_cameras),
         "camera_groups": [list(group) for group in camera_groups],
-        "frame_zero_group_support": _group_frame_zero_support_counts(
-            support,
-            centers,
-            cameras,
-            camera_groups,
-            minimum_cameras_per_group=(
-                1
-                if projected_mode
-                else grouped_config.minimum_cameras_per_group
-            ),
+        "frame_zero_group_support": (
+            [
+                len(np.asarray(plan["query_ids"][group[0]]))
+                for group in camera_groups
+            ]
+            if projected_mode
+            else _group_frame_zero_support_counts(
+                support,
+                centers,
+                cameras,
+                camera_groups,
+                minimum_cameras_per_group=(
+                    grouped_config.minimum_cameras_per_group
+                ),
+            )
         ),
         "response_support_definition": (
             "legacy physical-provider action_support"
             if planner == LEGACY_PLANNER
             else (
-                "binary selected-node support after sealed physical response "
-                f">= {admission_config.minimum_identifiable_physical_rms_m} m"
+                (
+                    "camera-specific translation-invariant projected physical "
+                    "response"
+                    if planner == PROJECTED_OBSERVABILITY_PLANNER
+                    else "binary selected-node support after sealed physical response"
+                )
+                + " >= "
+                + str(
+                    admission_config.minimum_identifiable_physical_rms_m
+                )
+                + " m"
             )
         ),
         "group_support_by_update": group_support,
@@ -849,6 +1044,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "physical_prefix_id": admission.physical_prefix_id,
             "observation_prefix_id": admission.observation_prefix_id,
         }
+    if projected_observability_plan is not None:
+        report["configs"]["projected_observability"] = asdict(
+            observability_config
+        )
+        report["projected_observability_plan"] = (
+            projected_observability_plan.to_dict()
+        )
+        if projected_source_lock_path is None:
+            raise AssertionError("projected source lock path is missing")
+        report["inputs_sha256"]["projected_source_lock"] = _sha256(
+            projected_source_lock_path
+        )
     report["result_sha256"] = _canonical_sha256(report)
     report_path = output_dir / "source_admission_report.json"
     report_path.write_text(

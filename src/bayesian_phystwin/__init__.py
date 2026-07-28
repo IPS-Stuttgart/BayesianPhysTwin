@@ -100,11 +100,6 @@ from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
 )
-from .projected_view_response import (
-    ProjectedViewResponse,
-    ProjectedViewResponseConfig,
-    build_projected_view_response,
-)
 from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_LINEAGE_VERSION,
     PROB4D_CAUSAL_STREAM_ID,
@@ -112,6 +107,16 @@ from .prob4d_causal_lineage import (
     is_prob4d_causal_observation_belief,
     validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
+)
+from .projected_observability_planner import (
+    ProjectedObservabilityConfig,
+    ProjectedObservabilityPlan,
+    plan_projected_observability,
+)
+from .projected_view_response import (
+    ProjectedViewResponse,
+    ProjectedViewResponseConfig,
+    build_projected_view_response,
 )
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
@@ -178,6 +183,8 @@ __all__ = [
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
     "PriorAwareGaugeConfigV1",
+    "ProjectedObservabilityConfig",
+    "ProjectedObservabilityPlan",
     "ProjectedViewResponse",
     "ProjectedViewResponseConfig",
     "PseudoMeasurementBatch",
@@ -219,6 +226,7 @@ __all__ = [
     "measurement_variance",
     "partition_disjoint_camera_groups",
     "partition_supported_disjoint_camera_groups",
+    "plan_projected_observability",
     "reliability_weighted_loss",
     "replay_residual_csv",
     "restrict_state_basis_to_identifiable_subspace",
