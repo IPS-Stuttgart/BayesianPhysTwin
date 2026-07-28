@@ -77,6 +77,38 @@ def test_provider_gate_accepts_precise_supported_calibrated_tracks() -> None:
     assert gate["calibration"]["worst_object_coverage"] == 1.0
 
 
+def test_provider_score_accepts_explicit_variable_query_count() -> None:
+    entities = np.arange(4, dtype=np.int64)
+    births = np.asarray([0, 6, 20, 39])
+    updates = np.asarray([19, 19, 38, 57])
+    target = np.zeros((76, 8, 3), dtype=np.float64)
+    target[:, :, 0] = np.arange(76)[:, None] * 0.001
+    trajectory = target[:58, entities].copy()
+    covariance = np.repeat(
+        (np.eye(3) * 1e-6)[None, None],
+        58,
+        axis=0,
+    )
+    covariance = np.repeat(covariance, len(entities), axis=1)
+
+    score = score_provider_case_arrays(
+        trajectory_world_m=trajectory,
+        accepted_support=np.ones((58, len(entities)), dtype=bool),
+        local_covariance_m2=covariance,
+        shared_bias_standard_deviation_m=0.005,
+        target_m=target,
+        target_visibility=np.ones((76, 8), dtype=bool),
+        target_validity=np.ones((76, 8), dtype=bool),
+        entity_ids=entities,
+        birth_frames=births,
+        update_frames=updates,
+        expected_query_count=None,
+    )
+
+    assert score["scheduled_identity_count"] == len(entities)
+    assert score["supported_fraction"] == 1.0
+
+
 def _assimilation_case(index: int) -> dict:
     frame_zero = np.zeros((80, 3), dtype=np.float32)
     frame_zero[:, 1] = np.arange(80, dtype=np.float32) * 0.02

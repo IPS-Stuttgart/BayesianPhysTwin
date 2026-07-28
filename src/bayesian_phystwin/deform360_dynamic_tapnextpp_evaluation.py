@@ -236,6 +236,7 @@ def score_provider_case_arrays(
     entity_ids: np.ndarray,
     birth_frames: np.ndarray,
     update_frames: np.ndarray,
+    expected_query_count: int | None = EXPECTED_QUERY_COUNT,
 ) -> dict[str, Any]:
     """Score one provider without consuming queried identities downstream."""
 
@@ -265,7 +266,10 @@ def score_provider_case_arrays(
     _require(
         entities.shape == births.shape == updates.shape
         == (trajectory.shape[1],)
-        and len(entities) == EXPECTED_QUERY_COUNT
+        and (
+            expected_query_count is None
+            or len(entities) == expected_query_count
+        )
         and len(np.unique(entities)) == len(entities)
         and np.all((entities >= 0) & (entities < target.shape[1]))
         and np.all((births >= 0) & (births <= updates))
