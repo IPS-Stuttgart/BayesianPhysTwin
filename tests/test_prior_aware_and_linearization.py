@@ -93,9 +93,7 @@ def test_group_mixture_downweights_corrupted_group() -> None:
             minimum_identifiable_fraction=0.01,
         ),
     )
-    posterior = result.diagnostics[
-        "observation_group_posterior_nominal_probability"
-    ]
+    posterior = result.diagnostics["observation_group_posterior_nominal_probability"]
     assert posterior[1] < posterior[0]
     assert result.diagnostics["prior_nominal_probability_used_inside_mixture"]
 
@@ -180,9 +178,7 @@ def test_complete_belief_fallback_reuses_exact_baseline_object() -> None:
         regret_guard_accepted=False,
         reason="source certificate rejected",
     )
-    selected, manifest = select_complete_belief(
-        baseline, candidate, decision
-    )
+    selected, manifest = select_complete_belief(baseline, candidate, decision)
     assert selected is baseline
     assert manifest.selected_belief_id == baseline.artifact_id
     assert not manifest.selected_candidate
