@@ -14,6 +14,8 @@ import numpy as np
 
 from bayesian_phystwin.deform360_dynamic_tapnextpp_assimilation import (
     CANDIDATE_ARM,
+    PERSISTENCE_ARM,
+    PHYSICAL_ARM,
     SELECTED_BACKBONE_ARM,
 )
 from bayesian_phystwin.deform360_dynamic_tapnextpp_evaluation import (
@@ -23,6 +25,13 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_evaluation import (
 from bayesian_phystwin.observation_belief import file_sha256
 from bayesian_phystwin.tapnextpp_dynamic_multiview import (
     DynamicMultiviewConfig,
+)
+
+LEGACY_SEMANTICS = "legacy-v2"
+SET_VALUED_SEMANTICS = "set-valued-v3"
+V2_PROTOCOL_ID = "deform360-dynamic-tapnextpp-provider-v2-source-development"
+V3_PROTOCOL_ID = (
+    "deform360-dynamic-tapnextpp-set-valued-provider-v3-source-development"
 )
 
 
@@ -50,6 +59,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--processed-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--case", action="append", required=True)
+    parser.add_argument(
+        "--association-semantics",
+        choices=(LEGACY_SEMANTICS, SET_VALUED_SEMANTICS),
+        default=LEGACY_SEMANTICS,
+    )
     return parser.parse_args()
 
 
@@ -70,7 +84,13 @@ def _load_target(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return target, visibility, validity
 
 
-def _score_case(run_root: Path, processed_root: Path, case: str) -> dict[str, Any]:
+def _score_case(
+    run_root: Path,
+    processed_root: Path,
+    case: str,
+    *,
+    association_semantics: str,
+) -> dict[str, Any]:
     run = run_root / case
     report_path = run / "source_development_report.json"
     provider_path = run / "provider_arrays.npz"
@@ -81,6 +101,14 @@ def _score_case(run_root: Path, processed_root: Path, case: str) -> dict[str, An
     _require(
         report.get("status") == "post_open_source_development_not_confirmation"
         and report.get("case") == case
+        and report.get("association_semantics", LEGACY_SEMANTICS)
+        == association_semantics
+        and report.get("protocol_id")
+        == (
+            V3_PROTOCOL_ID
+            if association_semantics == SET_VALUED_SEMANTICS
+            else V2_PROTOCOL_ID
+        )
         and report.get("result_sha256") == _canonical_sha256(report),
         f"development report is invalid: {case}",
     )
@@ -145,6 +173,20 @@ def _score_case(run_root: Path, processed_root: Path, case: str) -> dict[str, An
         validity,
         hidden,
     )
+    physical = score_assimilation_trajectory(
+        assimilation[PHYSICAL_ARM],
+        target,
+        visibility,
+        validity,
+        hidden,
+    )
+    persistence = score_assimilation_trajectory(
+        assimilation[PERSISTENCE_ARM],
+        target,
+        visibility,
+        validity,
+        hidden,
+    )
     return {
         "case": case,
         "case_hash": report["case_hash"],
@@ -154,6 +196,8 @@ def _score_case(run_root: Path, processed_root: Path, case: str) -> dict[str, An
             "measurement_identity_count": len(measured),
             "hidden_identity_count": len(hidden),
             "selected_backbone": baseline,
+            "physical_prior": physical,
+            "persistence": persistence,
             "candidate": candidate,
             "candidate_minus_selected_identity_rmse_m": (
                 candidate["hidden_identity_rmse_m"]
@@ -184,6 +228,7 @@ def main() -> int:
             args.run_root.resolve(),
             args.processed_root.resolve(),
             case,
+            association_semantics=args.association_semantics,
         )
         for case in cases
     ]
@@ -192,12 +237,62 @@ def main() -> int:
         for row in rows
         if row["provider"]["provider_rmse_m"] is not None
     ]
+    nonregressing = [
+        row["assimilation"]["candidate_minus_selected_identity_rmse_m"] <= 0.0
+        and row["assimilation"]["candidate_minus_selected_chamfer_m"] <= 0.0
+        for row in rows
+    ]
+    nonzero_rows = [
+        row
+        for row in rows
+        if row["assimilation"]["maximum_absolute_prediction_difference_m"] > 0.0
+    ]
+    joint_improvement = [
+        row["assimilation"]["candidate"]["hidden_identity_rmse_m"]
+        < row["assimilation"]["selected_backbone"]["hidden_identity_rmse_m"]
+        and row["assimilation"]["candidate"]["hidden_symmetric_chamfer_m"]
+        < row["assimilation"]["selected_backbone"][
+            "hidden_symmetric_chamfer_m"
+        ]
+        and row["assimilation"]["candidate"]["hidden_identity_rmse_m"]
+        < row["assimilation"]["persistence"]["hidden_identity_rmse_m"]
+        and row["assimilation"]["candidate"]["hidden_symmetric_chamfer_m"]
+        < row["assimilation"]["persistence"]["hidden_symmetric_chamfer_m"]
+        for row in nonzero_rows
+    ]
+    advancement = {
+        "nonzero_guarded_update": bool(nonzero_rows),
+        "all_cases_complete": len(rows) == len(cases),
+        "all_cases_nonregressing_vs_selected": all(nonregressing),
+        "all_nonzero_cases_jointly_improve_vs_selected_and_persistence": (
+            bool(nonzero_rows) and all(joint_improvement)
+        ),
+        "thresholds_or_gates_lowered": False,
+    }
+    advancement["advance_to_broader_source_panel"] = all(
+        (
+            advancement["nonzero_guarded_update"],
+            advancement["all_cases_complete"],
+            advancement["all_cases_nonregressing_vs_selected"],
+            advancement[
+                "all_nonzero_cases_jointly_improve_vs_selected_and_persistence"
+            ],
+            not advancement["thresholds_or_gates_lowered"],
+        )
+    )
     payload: dict[str, Any] = {
         "schema_version": 1,
-        "artifact_kind": "Deform360DynamicTAPNextPPV2SourceDevelopmentResult",
-        "protocol_id": (
-            "deform360-dynamic-tapnextpp-provider-v2-source-development"
+        "artifact_kind": (
+            "Deform360DynamicTAPNextPPV3SourceDevelopmentResult"
+            if args.association_semantics == SET_VALUED_SEMANTICS
+            else "Deform360DynamicTAPNextPPV2SourceDevelopmentResult"
         ),
+        "protocol_id": (
+            V3_PROTOCOL_ID
+            if args.association_semantics == SET_VALUED_SEMANTICS
+            else V2_PROTOCOL_ID
+        ),
+        "association_semantics": args.association_semantics,
         "status": "post_open_two_case_source_development_not_confirmation",
         "counts": {
             "complete_development_cases": len(rows),
@@ -235,6 +330,7 @@ def main() -> int:
                 for row in rows
             ),
         },
+        "advancement": advancement,
         "information_boundary": {
             "all_two_development_outputs_complete_before_future_open": True,
             "already_open_source_futures_read": True,
