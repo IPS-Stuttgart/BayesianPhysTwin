@@ -5,10 +5,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from bayesian_phystwin import deform360_dynamic_tapnextpp_provider as provider
 from bayesian_phystwin.deform360_dynamic_tapnextpp_admission_v2 import (
     CAUSAL_FRAME_COUNT,
     CameraPrefixEvidence,
     load_complete_camera_geometry,
+    load_selected_complete_causal_inputs,
 )
 
 
@@ -115,3 +117,42 @@ def test_loader_records_invalid_prefix_without_using_future_frames(
         names[0]: "invalid_causal_prefix:ValueError"
     }
     assert names[0] not in geometry.camera_names
+
+
+def test_selected_inputs_decode_only_certified_cameras(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    episode, names = _episode(tmp_path)
+    geometry = load_complete_camera_geometry(
+        episode,
+        candidate_camera_names=names,
+        prefix_probe=_probe,
+    )
+
+    def decode_rgb(path: Path, frame_count: int) -> np.ndarray:
+        assert path.parent.name in geometry.camera_names
+        assert frame_count == CAUSAL_FRAME_COUNT
+        return np.zeros((frame_count, 4, 5, 3), dtype=np.uint8)
+
+    def read_h5(path: Path, frame_count: int) -> np.ndarray:
+        assert path.parent.name in geometry.camera_names
+        assert frame_count == CAUSAL_FRAME_COUNT
+        return np.ones((frame_count, 4, 5), dtype=np.uint16)
+
+    monkeypatch.setattr(provider, "_decode_rgb_prefix", decode_rgb)
+    monkeypatch.setattr(provider, "_read_h5_prefix", read_h5)
+    inputs = load_selected_complete_causal_inputs(
+        episode,
+        geometry,
+        np.arange(8),
+    )
+
+    assert inputs.camera_names == geometry.camera_names[:8]
+    assert inputs.rgbs.shape == (8, 58, 4, 5, 3)
+    assert inputs.depths_m.shape == (8, 58, 4, 5)
+    assert inputs.provenance["maximum_frame_read"] == 57
+    assert (
+        inputs.provenance["complete_camera_certificate_sha256"]
+        == geometry.artifact_sha256
+    )

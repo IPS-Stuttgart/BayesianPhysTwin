@@ -351,11 +351,92 @@ def load_complete_camera_geometry(
     return result
 
 
+def load_selected_complete_causal_inputs(
+    processed_episode_dir: str | Path,
+    geometry: CompleteCameraGeometry,
+    camera_indices: Sequence[int],
+    *,
+    depth_scale_to_m: float = 0.001,
+) -> Any:
+    """Decode the causal prefix from cameras admitted by the V2 certificate."""
+
+    from .deform360_dynamic_tapnextpp_provider import (
+        CausalCameraInputs,
+        _decode_rgb_prefix,
+        _read_h5_prefix,
+    )
+
+    root = Path(processed_episode_dir).resolve()
+    indices = np.asarray(camera_indices, dtype=np.int64)
+    _require(
+        indices.shape == (8,)
+        and len(np.unique(indices)) == 8
+        and np.all((indices >= 0) & (indices < len(geometry.camera_names))),
+        "selected complete-camera indices are invalid",
+    )
+    _require(
+        np.isfinite(depth_scale_to_m) and depth_scale_to_m > 0.0,
+        "depth scale must be finite and positive",
+    )
+    selected_names = tuple(
+        geometry.camera_names[int(index)] for index in indices
+    )
+    rgbs: list[np.ndarray] = []
+    depths: list[np.ndarray] = []
+    masks: list[np.ndarray] = []
+    prefix_hashes: dict[str, Any] = {}
+    for camera in selected_names:
+        directory = root / camera
+        rgb = _decode_rgb_prefix(
+            directory / "undistorted.mp4",
+            CAUSAL_FRAME_COUNT,
+        )
+        encoded_depth = _read_h5_prefix(
+            directory / "rendered_depth.h5",
+            CAUSAL_FRAME_COUNT,
+        )
+        mask = _read_h5_prefix(
+            directory / "mask_refined.h5",
+            CAUSAL_FRAME_COUNT,
+        ).astype(bool, copy=False)
+        depth = encoded_depth.astype(np.float32) * depth_scale_to_m
+        _require(
+            rgb.shape[:-1] == depth.shape == mask.shape,
+            f"selected causal camera shapes differ: {camera}",
+        )
+        rgbs.append(rgb)
+        depths.append(depth)
+        masks.append(mask)
+        prefix_hashes[camera] = {
+            "decoded_rgb_sha256": array_sha256(rgb),
+            "decoded_depth_m_sha256": array_sha256(depth),
+            "decoded_mask_sha256": array_sha256(mask),
+        }
+    return CausalCameraInputs(
+        camera_indices=indices,
+        camera_names=selected_names,
+        rgbs=np.stack(rgbs),
+        depths_m=np.stack(depths),
+        object_masks=np.stack(masks),
+        intrinsics=geometry.intrinsics[indices],
+        camera_to_world=geometry.camera_to_world[indices],
+        provenance={
+            "complete_camera_certificate_sha256": geometry.artifact_sha256,
+            "selected_complete_camera_indices": indices.tolist(),
+            "selected_camera_names": list(selected_names),
+            "maximum_frame_read": CAUSAL_FRAME_COUNT - 1,
+            "future_frame_read": False,
+            "decoded_prefix_sha256": prefix_hashes,
+        },
+    )
+
+
 __all__ = [
     "CAUSAL_FRAME_COUNT",
     "PROTOCOL_ID",
     "CameraPrefixEvidence",
     "CompleteCameraGeometry",
     "load_complete_camera_geometry",
+    "load_selected_complete_causal_inputs",
     "probe_camera_prefix",
 ]
