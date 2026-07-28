@@ -34,7 +34,9 @@ It does not score a candidate or inspect any future material identity.
   16 deterministic frame-zero physical identities.
 - Camera evidence:
   eight selected cameras partitioned into three disjoint azimuth-spread
-  groups.
+  groups. The eligible panel is the deterministic intersection of calibration
+  entries with cameras carrying all three prefix assets
+  (`undistorted.mp4`, `mask_refined.h5`, and `rendered_depth.h5`).
 - Admission:
   the default `ActionResponseAdmissionConfig` committed with this protocol.
 
@@ -56,3 +58,12 @@ A larger source study is justified only after this run validates artifact
 construction and the complete-belief exact-fallback path. A fresh-object
 evaluation still requires source-object transfer and a frozen
 baseline-relative regret certificate.
+
+## Technical amendment
+
+The pre-outcome run at commit `93bbb83` stopped before tracking or artifact
+creation because the released calibration listed cameras without source-side
+mask/depth products. The standalone runner now filters to the complete
+prefix-asset intersection described above. This changes neither the selected
+source case nor any outcome, threshold, observation value, or frozen legacy
+builder.

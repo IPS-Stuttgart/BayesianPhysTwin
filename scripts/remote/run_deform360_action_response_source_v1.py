@@ -88,6 +88,35 @@ def _validate_physical_manifest(manifest: dict[str, Any], case: str) -> None:
         raise ValueError("physical manifest crossed the source information boundary")
 
 
+def _eligible_prefix_calibration(
+    processed_dir: Path,
+    intrinsics: Mapping[str, Any],
+    extrinsics: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any], tuple[str, ...]]:
+    required_files = (
+        "undistorted.mp4",
+        "mask_refined.h5",
+        "rendered_depth.h5",
+    )
+    cameras = tuple(
+        sorted(
+            camera
+            for camera in set(intrinsics) & set(extrinsics)
+            if all(
+                (processed_dir / camera / filename).is_file()
+                for filename in required_files
+            )
+        )
+    )
+    if len(cameras) < 2:
+        raise ValueError("fewer than two cameras have complete prefix assets")
+    return (
+        {camera: intrinsics[camera] for camera in cameras},
+        {camera: extrinsics[camera] for camera in cameras},
+        cameras,
+    )
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     physical_dir = Path(args.physical_dir).resolve()
     processed_dir = Path(args.processed_dir).resolve()
@@ -152,6 +181,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         config=raw_config,
     )
     intrinsics, extrinsics = _load_calibration(processed_dir)
+    intrinsics, extrinsics, eligible_cameras = _eligible_prefix_calibration(
+        processed_dir,
+        intrinsics,
+        extrinsics,
+    )
     cameras, support, projected = frame_zero_camera_support(
         frame_zero,
         processed_dir,
@@ -318,6 +352,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "grouped_multiview": asdict(grouped_config),
             "action_response_admission": asdict(admission_config),
         },
+        "eligible_prefix_cameras": list(eligible_cameras),
         "camera_groups": [list(group) for group in camera_groups],
         "group_support_by_update": group_support,
         "admission": admission.to_dict(),
