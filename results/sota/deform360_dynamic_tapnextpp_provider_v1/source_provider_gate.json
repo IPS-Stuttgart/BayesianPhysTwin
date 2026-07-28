@@ -1,0 +1,105 @@
+{
+  "artifact_kind": "Deform360DynamicTAPNextPPSourceProviderResult",
+  "case_reports": [
+    {
+      "case_hash": "f1ff54245f712f20dd2c5d56b55faf15e2c4d9cdc44e2c9774839acb21eea0ca",
+      "object_hash": "bc1d27a3de1ac8d99f9b85dd4320ebb51ea4eecb22b7d017d6373708b532a62f",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "4f03007cff3f4c0874e5982b08db405436dee6a9659254fd05712bceee975666",
+      "object_hash": "5aa4a01823faf6a4f145d54ccbd5f43e5979969c64e30e5bee3b32a3b987589e",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "77bfae325777a12a3e6f4df2ccc85236478b7f76d1f15a1ea33f5075ccda35f2",
+      "object_hash": "2517ced202f60e31e10dd41ed02cd9a32ce468d3ed61ab5924045772d9dbac45",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "7e22d50074163a531dd397181b368326e4b1d97b995eec1d8844cf7caecd4e9b",
+      "object_hash": "22b009ce18161e6d783b256ec52a164b6ab2537d6f0dc6e83205a8c7eadcf065",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "ba3f2b6f4908732dbaf6dea8e1b1d30ebdd933ca1de0e944b4545c454e2b7751",
+      "object_hash": "1635df37a85aa264d7409d211fd93c33cf5180446cc69b898dc27dc171754964",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "811a601f78d64394e6117ceb77bd2199b6c132767f7b687f95a177cdf51eb391",
+      "object_hash": "0321772fe5592dedc12de4fe8f7a73165abf0c28cfbb1c61019b8ddde2a1725e",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "5ca84c9aa81970432f18eda0555836ffb4d030018c965fb2c2109789daa24945",
+      "object_hash": "cf359ca57894284f95ab2a683f9bae5889ee12a758fae5f1482900f77ac428f1",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    },
+    {
+      "case_hash": "f005270e7da5f2df7f636a188092c03a5a5bb4039e0ca932091d69561e79af5a",
+      "object_hash": "e60d64217ea47086e88c1cc9b3fae315d0197b7c8b00dafd9358c2cde6098364",
+      "provider_rmse_m": null,
+      "supported_fraction": 0.0,
+      "technical_failure": true
+    }
+  ],
+  "cohort_lock_sha256": "adbe734f62f6be5dbbd091e0587f969a25c63815b9ac1619dc5b4a80aaa38221",
+  "gate": {
+    "calibration": {
+      "finite_sample_threshold_rule": "maximum other-object within-object 90% score",
+      "frozen_target_ellipsoid_threshold": null,
+      "out_of_fold_coverage": 0.0,
+      "records": [],
+      "worst_object_coverage": 0.0
+    },
+    "case_wins": 0,
+    "cases_meeting_support_gate": 0,
+    "checks": {
+      "case_wins": false,
+      "cases_meeting_support_gate": false,
+      "late_provider_rmse": false,
+      "object_balanced_supported_fraction": false,
+      "out_of_fold_90pct_coverage": false,
+      "provider_rmse": false,
+      "relative_gain_over_persistence": false,
+      "worst_object_coverage": false
+    },
+    "expected_source_count": 8,
+    "late_provider_rmse_m": null,
+    "object_balanced_supported_fraction": 0.0,
+    "ordinary_scored_count": 0,
+    "passed": false,
+    "persistence_rmse_m": 0.0,
+    "provider_rmse_m": null,
+    "relative_gain_over_persistence": null,
+    "technical_failure_count": 8
+  },
+  "information_boundary": {
+    "all_source_predictions_validated_before_first_future": true,
+    "assimilation_outcome_opened": false,
+    "held_v8_access": false,
+    "source_futures_opened_for_provider_scoring": true,
+    "target_artifact_opened": false
+  },
+  "protocol_id": "deform360-dynamic-tapnextpp-provider-v1",
+  "repository_revision": "c57dc7f80f0c20b37a0372a9e61ff132a3789ef0",
+  "result_sha256": "1d9e459137b39515775e67ae12d6feaad948051cf766f2190a0201090c1cebc5",
+  "schema_version": 1,
+  "source_barrier_sha256": "fa90f4896f7a997e8d51945b660b8e7c6655baf221b098e1f43e6148ab7e802c",
+  "source_evaluation_protocol_file_sha256": "32288d57d0414e57d973ecc9010571c5d6081e0c598c5baf965256c769694dcd"
+}

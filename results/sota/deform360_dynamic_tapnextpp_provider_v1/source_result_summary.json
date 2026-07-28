@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "study_id": "deform360-dynamic-tapnextpp-provider-v1",
+  "status": "source_provider_gate_failed",
+  "repository_revision": "c57dc7f80f0c20b37a0372a9e61ff132a3789ef0",
+  "protocol_file_sha256": "bcec7323e04da955fc033ab2d5b6a7865560c1cf2aebefe0bddc99f41eca17e7",
+  "cohort_lock_sha256": "adbe734f62f6be5dbbd091e0587f969a25c63815b9ac1619dc5b4a80aaa38221",
+  "counts": {
+    "locked_source_objects": 8,
+    "ordinary_provider_predictions": 0,
+    "retained_technical_failures": 8,
+    "insufficient_active_multiview_query_candidates": 5,
+    "selected_camera_missing_rendered_depth": 3,
+    "tapnextpp_executions": 0
+  },
+  "provider_gate": {
+    "passed": false,
+    "cases_meeting_support_gate": 0,
+    "case_wins": 0,
+    "object_balanced_supported_fraction": 0.0,
+    "all_registered_checks_passed": false
+  },
+  "decision": {
+    "run_source_assimilation_gate": false,
+    "open_sealed_target_cohort": false,
+    "advance_provider_v1": false
+  },
+  "diagnosis": "The frozen provider failed before tracker inference. Dynamic-query and selected-camera stream admissibility must move before cohort locking in any successor protocol; this result does not measure TAPNext++ accuracy or Bayesian assimilation quality.",
+  "information_boundary": {
+    "all_source_dispositions_validated_before_source_scoring": true,
+    "source_futures_opened_only_after_complete_barrier": true,
+    "source_assimilation_outcome_opened": false,
+    "target_artifact_opened": false,
+    "held_v8_access": false
+  },
+  "artifacts": {
+    "source_barrier": {
+      "path": "results/sota/deform360_dynamic_tapnextpp_provider_v1/source_barrier.json",
+      "file_sha256": "a2309f84ca701a597eea3fa9b55ba84ca4f13a1457e73096c128e8fdabf72d27",
+      "result_sha256": "fa90f4896f7a997e8d51945b660b8e7c6655baf221b098e1f43e6148ab7e802c"
+    },
+    "source_provider_gate": {
+      "path": "results/sota/deform360_dynamic_tapnextpp_provider_v1/source_provider_gate.json",
+      "file_sha256": "b6791f81f660bdd3ef22cf11cfca0ee00d78b72dbab1e965923cf0128973c937",
+      "result_sha256": "1d9e459137b39515775e67ae12d6feaad948051cf766f2190a0201090c1cebc5"
+    }
+  },
+  "claim_boundary": "Fresh source-provider admission failure only. This is not an observation-accuracy result, an assimilation result, a target result, or state-of-the-art evidence."
+}
