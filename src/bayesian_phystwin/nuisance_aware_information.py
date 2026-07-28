@@ -71,7 +71,7 @@ class NuisanceAwareInformationState:
 
     ``state_precision`` is the physical-state block, ``nuisance_precision`` is
     the nuisance block, and ``state_nuisance_precision`` is their cross block.
-    The conditional state precision is the Schur complement after nuisance
+    The marginal state precision is the Schur complement after nuisance
     marginalization.
     """
 
@@ -152,34 +152,34 @@ class NuisanceAwareInformationState:
 
         return int(self.nuisance_precision.shape[0])
 
-    def conditional_state_precision(self) -> np.ndarray:
+    def marginal_state_precision(self) -> np.ndarray:
         """Return state precision after marginalizing nuisance coefficients."""
 
         if not self.nuisance_dimension:
-            conditional = self.state_precision.copy()
+            marginal = self.state_precision.copy()
         else:
             nuisance_solution = np.linalg.solve(
                 self.nuisance_precision,
                 self.state_nuisance_precision.T,
             )
-            conditional = (
+            marginal = (
                 self.state_precision
                 - self.state_nuisance_precision @ nuisance_solution
             )
-            conditional = 0.5 * (conditional + conditional.T)
+            marginal = 0.5 * (marginal + marginal.T)
         _symmetric_positive_definite(
-            conditional,
-            name="conditional state precision",
+            marginal,
+            name="marginal state precision",
         )
-        conditional.setflags(write=False)
-        return conditional
+        marginal.setflags(write=False)
+        return marginal
 
-    def conditional_log_determinant(self) -> float:
+    def marginal_log_determinant(self) -> float:
         """Return the log determinant of marginalized state precision."""
 
         return _log_determinant_spd(
-            self.conditional_state_precision(),
-            name="conditional state precision",
+            self.marginal_state_precision(),
+            name="marginal state precision",
         )
 
     def add_observation(
@@ -267,17 +267,17 @@ class NuisanceAwareInformationState:
             reliability=reliability,
         )
         log_gain = (
-            updated.conditional_log_determinant()
-            - self.conditional_log_determinant()
+            updated.marginal_log_determinant()
+            - self.marginal_log_determinant()
         )
         if log_gain < -_NUMERICAL_TOLERANCE:
             raise RuntimeError(
-                "conditional state information decreased after an observation"
+                "marginal state information decreased after an observation"
             )
         log_gain = max(log_gain, 0.0)
         return NuisanceAwareInformationUpdate(
             updated_state=updated,
-            conditional_log_determinant_gain=log_gain,
+            marginal_log_determinant_gain=log_gain,
             mutual_information_nats=0.5 * log_gain,
         )
 
@@ -287,14 +287,14 @@ class NuisanceAwareInformationUpdate:
     """One candidate observation and its marginalized information gain."""
 
     updated_state: NuisanceAwareInformationState
-    conditional_log_determinant_gain: float
+    marginal_log_determinant_gain: float
     mutual_information_nats: float
 
     def __post_init__(self) -> None:
         _require(
-            np.isfinite(self.conditional_log_determinant_gain)
-            and self.conditional_log_determinant_gain >= 0.0,
-            "conditional_log_determinant_gain must be finite and nonnegative",
+            np.isfinite(self.marginal_log_determinant_gain)
+            and self.marginal_log_determinant_gain >= 0.0,
+            "marginal_log_determinant_gain must be finite and nonnegative",
         )
         _require(
             np.isfinite(self.mutual_information_nats)
@@ -304,7 +304,7 @@ class NuisanceAwareInformationUpdate:
         _require(
             np.isclose(
                 self.mutual_information_nats,
-                0.5 * self.conditional_log_determinant_gain,
+                0.5 * self.marginal_log_determinant_gain,
             ),
             "mutual-information and log-determinant gains are inconsistent",
         )
@@ -312,7 +312,7 @@ class NuisanceAwareInformationUpdate:
 
 @dataclass(frozen=True)
 class GreedyNuisanceAwareSelection:
-    """Deterministic greedy selection under marginalized information gain."""
+    """Deterministic greedy selection under nuisance-marginalized information gain."""
 
     selected_indices: np.ndarray
     mutual_information_nats: np.ndarray
@@ -348,7 +348,7 @@ def greedy_nuisance_aware_selection(
     count: int,
     minimum_gain_nats: float = 0.0,
 ) -> GreedyNuisanceAwareSelection:
-    """Greedily choose candidate blocks by conditional mutual information.
+    """Greedily choose candidates by nuisance-marginalized mutual information.
 
     Ties are broken by the lowest original candidate index. Each selected block
     updates the joint state before the next candidate is scored, so redundant
@@ -404,7 +404,7 @@ def greedy_nuisance_aware_selection(
         ]
         chosen = min(tied)
         chosen_evaluation = evaluations[chosen]
-        if chosen_evaluation.mutual_information_nats < minimum_gain_nats:
+        if chosen_evaluation.mutual_information_nats <= minimum_gain_nats:
             break
         selected.append(chosen)
         gains.append(chosen_evaluation.mutual_information_nats)
