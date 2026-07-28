@@ -63,7 +63,7 @@ and scores a candidate after marginalizing nuisance coefficients with the Schur
 complement
 
 ```text
-Lambda_x|b = Lambda_xx - Lambda_xb Lambda_bb^-1 Lambda_bx.
+Lambda_x^marg = Lambda_xx - Lambda_xb Lambda_bb^-1 Lambda_bx.
 ```
 
 This distinguishes a physically informative observation from one that can be
@@ -94,12 +94,13 @@ selection = greedy_nuisance_aware_selection(
 )
 ```
 
-The returned gain is conditional mutual information in nats. Selection is
-sequential, so redundant candidates have diminishing returns, and exact ties are
-resolved by the lowest original candidate index. The current graph-query planner
-keeps its frozen heuristic mode score; registered nuisance-aware experiments can
-use this module to audit or replace that term without changing the planner's
-causal eligibility and reseeding rules.
+The returned gain is nuisance-marginalized mutual information in nats. Selection
+is sequential, so redundant candidates have diminishing returns, zero-gain
+candidates are not selected, and exact ties are resolved by the lowest original
+candidate index. The current graph-query planner keeps its frozen heuristic mode
+score; registered nuisance-aware experiments can use this module to audit or
+replace that term without changing the planner's causal eligibility and
+reseeding rules.
 
 ## Dynamic Seeding and Reseeding
 
