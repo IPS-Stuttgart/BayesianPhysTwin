@@ -1,0 +1,153 @@
+{
+  "advancement": {
+    "advance_to_broader_source_panel": false,
+    "all_cases_complete": true,
+    "all_cases_nonregressing_vs_selected": true,
+    "all_nonzero_cases_jointly_improve_vs_selected_and_persistence": false,
+    "nonzero_guarded_update": true,
+    "thresholds_or_gates_lowered": false
+  },
+  "aggregate": {
+    "assimilation_nonzero_case_count": 1,
+    "mean_persistence_rmse_m": 0.006525464645057859,
+    "mean_provider_rmse_m": 0.006493516017398343,
+    "mean_provider_supported_fraction": 0.16304347826086957,
+    "provider_joint_win_count": 1
+  },
+  "artifact_kind": "Deform360DynamicTAPNextPPV3SourceDevelopmentResult",
+  "association_semantics": "set-valued-v3",
+  "cases": [
+    {
+      "assimilation": {
+        "candidate": {
+          "hidden_identity_rmse_m": 0.00557467550594553,
+          "hidden_symmetric_chamfer_m": 0.004317510951296478,
+          "hidden_target_to_prediction_chamfer_m": 0.004383697657580249,
+          "late_hidden_identity_rmse_m": 0.009266158999100516
+        },
+        "candidate_minus_selected_chamfer_m": -0.0003484141405360802,
+        "candidate_minus_selected_identity_rmse_m": -0.000807054319970359,
+        "hidden_identity_count": 406,
+        "maximum_absolute_prediction_difference_m": 0.008471572771668434,
+        "measurement_identity_count": 46,
+        "persistence": {
+          "hidden_identity_rmse_m": 8.794630699674866e-05,
+          "hidden_symmetric_chamfer_m": 5.624818523062067e-05,
+          "hidden_target_to_prediction_chamfer_m": 5.624818523062067e-05,
+          "late_hidden_identity_rmse_m": 9.115795790878758e-05
+        },
+        "physical_prior": {
+          "hidden_identity_rmse_m": 0.010638751359837597,
+          "hidden_symmetric_chamfer_m": 0.00794403210268428,
+          "hidden_target_to_prediction_chamfer_m": 0.008113437024156157,
+          "late_hidden_identity_rmse_m": 0.01490086088113495
+        },
+        "selected_backbone": {
+          "hidden_identity_rmse_m": 0.006381729825915889,
+          "hidden_symmetric_chamfer_m": 0.0046659250918325585,
+          "hidden_target_to_prediction_chamfer_m": 0.004871136051607992,
+          "late_hidden_identity_rmse_m": 0.010598881877873011
+        }
+      },
+      "case": "059-shoe-ep0000",
+      "case_hash": "ba3f2b6f4908732dbaf6dea8e1b1d30ebdd933ca1de0e944b4545c454e2b7751",
+      "development_report_file_sha256": "cbb46a2338946c1090c21d2ae52a39813d16bff0061e9e8c0dffc38d97ad83d8",
+      "provider": {
+        "late_persistence_rmse_m": 0.006379428497853716,
+        "late_provider_rmse_m": 0.006298637036022757,
+        "mahalanobis_squared": [
+          3.820157927068498,
+          3.005252148293496,
+          2.8256229430184012,
+          2.5733622727052894,
+          5.373477502587309,
+          3.2225786716751696,
+          4.425638283954232,
+          2.186670786093167,
+          5.550890948127743,
+          2.0591074364195885,
+          2.7614358964816703,
+          2.443300688514283,
+          3.915489943170504,
+          2.0543345365390233,
+          1.6756742399959508
+        ],
+        "persistence_rmse_m": 0.006525464645057859,
+        "provider_rmse_m": 0.006493516017398343,
+        "provider_wins": true,
+        "relative_gain_over_persistence": 0.004895992760256984,
+        "scheduled_identity_count": 46,
+        "supported_fraction": 0.32608695652173914,
+        "supported_identity_count": 15,
+        "within_object_90pct_score": 5.550890948127743,
+        "within_object_quantile_rank": 15
+      }
+    },
+    {
+      "assimilation": {
+        "candidate": {
+          "hidden_identity_rmse_m": 0.0,
+          "hidden_symmetric_chamfer_m": 0.0,
+          "hidden_target_to_prediction_chamfer_m": 0.0,
+          "late_hidden_identity_rmse_m": 0.0
+        },
+        "candidate_minus_selected_chamfer_m": 0.0,
+        "candidate_minus_selected_identity_rmse_m": 0.0,
+        "hidden_identity_count": 949,
+        "maximum_absolute_prediction_difference_m": 0.0,
+        "measurement_identity_count": 22,
+        "persistence": {
+          "hidden_identity_rmse_m": 0.0,
+          "hidden_symmetric_chamfer_m": 0.0,
+          "hidden_target_to_prediction_chamfer_m": 0.0,
+          "late_hidden_identity_rmse_m": 0.0
+        },
+        "physical_prior": {
+          "hidden_identity_rmse_m": 0.002581496060460518,
+          "hidden_symmetric_chamfer_m": 0.0022429029528671794,
+          "hidden_target_to_prediction_chamfer_m": 0.0023362699723711365,
+          "late_hidden_identity_rmse_m": 0.0025571960267674037
+        },
+        "selected_backbone": {
+          "hidden_identity_rmse_m": 0.0,
+          "hidden_symmetric_chamfer_m": 0.0,
+          "hidden_target_to_prediction_chamfer_m": 0.0,
+          "late_hidden_identity_rmse_m": 0.0
+        }
+      },
+      "case": "147-baking-mold-ep0000",
+      "case_hash": "77bfae325777a12a3e6f4df2ccc85236478b7f76d1f15a1ea33f5075ccda35f2",
+      "development_report_file_sha256": "5a7c9be73e4856a8362a459dd316280ea35372576b212ab5b9fa9549708e7b84",
+      "provider": {
+        "late_persistence_rmse_m": null,
+        "late_provider_rmse_m": null,
+        "mahalanobis_squared": [],
+        "persistence_rmse_m": null,
+        "provider_rmse_m": null,
+        "provider_wins": false,
+        "relative_gain_over_persistence": null,
+        "scheduled_identity_count": 22,
+        "supported_fraction": 0.0,
+        "supported_identity_count": 0,
+        "within_object_90pct_score": null,
+        "within_object_quantile_rank": null
+      }
+    }
+  ],
+  "claim_boundary": "Mechanics and competence development on two already-open source objects only; not a transfer, confirmation, or SOTA result.",
+  "counts": {
+    "complete_development_cases": 2,
+    "provider_scored_cases": 1
+  },
+  "information_boundary": {
+    "all_two_development_outputs_complete_before_future_open": true,
+    "already_open_source_futures_read": true,
+    "fresh_target_read": false,
+    "held_v8_artifact_read": false,
+    "v1_sealed_target_cohort_read": false
+  },
+  "protocol_id": "deform360-dynamic-tapnextpp-set-valued-provider-v3-source-development",
+  "result_sha256": "0afa1ca157bb439d97a421bbbfc29b919cc55a8003620dc21b4646438acb7481",
+  "schema_version": 1,
+  "status": "post_open_two_case_source_development_not_confirmation"
+}

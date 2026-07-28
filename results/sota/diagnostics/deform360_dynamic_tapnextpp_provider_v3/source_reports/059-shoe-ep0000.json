@@ -1,0 +1,236 @@
+{
+  "artifact_kind": "Deform360DynamicTAPNextPPV2SourceDevelopment",
+  "assimilation_report": {
+    "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+    "assimilation_mode": "set-valued-association-mixture-v3",
+    "belief_config": {
+      "degrees_of_freedom": 4.0,
+      "global_prior_std_m": 0.1,
+      "length_scale_fraction": 0.1,
+      "local_blend": 1.0,
+      "local_prior_std_m": 0.02,
+      "maximum_correction_m": 0.1,
+      "minimum_length_scale_m": 0.0001,
+      "minimum_reliability": 0.02,
+      "observation_std_m": 0.005,
+      "process_std_m_per_sqrt_frame": 0.003
+    },
+    "center_ids": [
+      149,
+      11,
+      13,
+      14,
+      49,
+      17,
+      86,
+      420,
+      369,
+      191,
+      269,
+      152,
+      406,
+      334,
+      179,
+      290,
+      125,
+      59,
+      74,
+      100,
+      107,
+      192,
+      121,
+      419,
+      407,
+      398,
+      102,
+      339,
+      238,
+      326,
+      101,
+      418,
+      405,
+      146,
+      403,
+      193,
+      335,
+      360,
+      150,
+      416,
+      404,
+      380,
+      180,
+      368,
+      239,
+      359
+    ],
+    "gate_config": {
+      "absolute_pair_strain_m": 0.03,
+      "maximum_exact_center_count": 24,
+      "minimum_inlier_count": 9,
+      "minimum_inlier_fraction": 0.7,
+      "relative_pair_strain": 0.1
+    },
+    "information_boundary": {
+      "future_object_geometry_read": false,
+      "future_target_read": false,
+      "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+    },
+    "method_contract": {
+      "absolute_multiview_position_used_as_state_innovation": false,
+      "association_probability_role": "separate nominal assignment event inside robust mixture",
+      "association_probability_used_as_prior_reliability": false,
+      "birth_anchored_displacement_innovation": true,
+      "innovation_robustified_once_inside_rbf_update": true,
+      "metric_covariance_propagated_into_rbf_update": true,
+      "pairwise_gate_role": "identity-consistency admission",
+      "prior_reliability_uses_physical_innovation": false,
+      "rejection": "bit-exact selected physical-or-persistence backbone",
+      "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+    },
+    "schema_version": 1,
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "updates": [
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 19,
+        "interval_end_exclusive": 38,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      },
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 38,
+        "interval_end_exclusive": 57,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      },
+      {
+        "available_center_count": 15,
+        "current_observation_chamfer_m": {
+          "persistence": 0.009578580101247217,
+          "physical_prior": 0.008021232033292962
+        },
+        "frame": 57,
+        "interval_end_exclusive": 76,
+        "mean_posterior_robust_reliability": 0.9998269507671299,
+        "mean_prior_reliability": 0.8926367010533163,
+        "pairwise_gate": {
+          "accepted": true,
+          "bit_exact_fallback": false,
+          "compatible_pair_fraction": 1.0,
+          "decision": "accepted",
+          "inlier_count": 15,
+          "inlier_fraction": 1.0
+        },
+        "selected_backbone": "physical_prior",
+        "selector_support_sufficient": true
+      }
+    ]
+  },
+  "association_semantics": "set-valued-v3",
+  "case": "059-shoe-ep0000",
+  "case_hash": "ba3f2b6f4908732dbaf6dea8e1b1d30ebdd933ca1de0e944b4545c454e2b7751",
+  "environment": {
+    "cuda_version": "12.1",
+    "device": "cuda:0",
+    "elapsed_seconds": 18.112182257231325,
+    "model_frame_count": 368,
+    "numpy": "1.26.4",
+    "peak_gpu_memory_gib": 2.566498279571533,
+    "python": "3.10.12",
+    "rollout_count": 24,
+    "tapnet_revision": "c2cbab81cc06092b5f05bfe2da7bfec54e2079c9",
+    "tapnextpp_checkpoint_sha256": "6cd0e793fdcface3063d63f8ed3819bcf74c2c0468fe1fef85acee4de2f3609f",
+    "torch_version": "2.4.0+cu121"
+  },
+  "information_boundary": {
+    "future_identity_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_read": false,
+    "maximum_physical_frame_read": 57,
+    "maximum_rgb_depth_mask_frame_read": 57,
+    "target_metric_read": false,
+    "v1_sealed_target_cohort_read": false
+  },
+  "inputs_sha256": {
+    "camera_certificate": "2c574786c17fb94e4ad7354da5c5f0fec79aeea60085b9b96587289ce9706d85",
+    "physical_archive": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215",
+    "physical_manifest": "e7f380d2b43b3abc493846b19ef528da20ace2e8bffdf078cc06ef598fa5997a",
+    "query_schedule": "ca330cc143b7562221e6c9c1ff0e6a5a7681bb225b4b18d3f5d2fa824ad07f78"
+  },
+  "outputs": {
+    "assimilation_array_sha256": {
+      "candidate_correction_variance_m2": "f2b4070325801295f79cf0b29deb0b30d33e6e2c5db57541e1b7a7847ac13386",
+      "dynamic_birth_anchored_covariance_aware_rbf": "16dc18b880462d0fe749d5deefd4b506e62874fef568aca01f369c340b60e993",
+      "persistence": "79d3e0257d59e97f163dc444d55bb92f3ca104ea7a39578843905f3f57f042d3",
+      "physical_prior": "4b1f2652c263dc3b38d2a1d965591317a2846f6737307ed292b4d26092f34a68",
+      "selected_physical_or_persistence": "091e8b34b013ce9e39ebe870a49d26042b7d22a144bea45b19bef7636c5e8e89"
+    },
+    "assimilation_arrays_file_sha256": "2f7ec4a9d1427aa56690f0f12f3e2ea25394bbf2e2d13e92572de22b5b23031a",
+    "provider_array_sha256": {
+      "accepted_support": "6bcd01fa9d12fe49dac49cba332cd3e95c684786fb47369f99bc52512f024f7a",
+      "assignment_mixture_spread_m2": "54a3f9b6c1e877ea38f92b97eaa0bbfde6a88a74cbffd556336f80ed71b5a49b",
+      "association_probability": "cd6fae2a4a6e4b50a020a7cc8bb92fa92f84c3f7820305dbba2a2c924483c97f",
+      "birth_frames": "9c99c7f245dd2aa1d5fee9d7327317f33c5a603a6db811b7e678bab5b26eb672",
+      "depth_residual_rmse_m": "7817eb8ad05a24d89c88b22fb48debefb360b925849405da5f139d24f7cd5d87",
+      "entity_ids": "659294488b8afca07d26de95e1d48c9a73f175ec61a4e6f15e9dd7cfbcac9cbe",
+      "independent_support_count": "30ee1e9d8e5b9794163a0c214a847cf4395090da8e7e3243e9f7f66046531402",
+      "local_covariance_m2": "616b454f542f66b581e0a0427a3dd1f334d661d6dce3584ba3fb1e6b38b48563",
+      "naive_independent_covariance_m2": "6451174b291d0fbeca73ed4220cd0f812508fa1b787cdd6091f600d321477977",
+      "prior_reliability": "a709478453a1ba72cd6cfdcd84d834c9cebc7f08eee3679e8a14714d54e57f67",
+      "proposal_available": "fddec289655e4d85e7000677c8cb5b955b107e1206cd16acad6f7df95c253901",
+      "raw_support_count": "30ee1e9d8e5b9794163a0c214a847cf4395090da8e7e3243e9f7f66046531402",
+      "reprojection_rmse_px": "6e8d73cdd506dfc57590aedf9ba78be5c5420e4c87faeea4ba725a2f1d3c9c2c",
+      "trajectory_world_m": "3b9c86d08ab82c8b747f60e1241deb88a198568b19b11f6b40da27937519d53e",
+      "update_frames": "7c6487be3d809fb42785b7d6add2e26019bde369673f436db7496a6331a6b72b"
+    },
+    "provider_arrays_file_sha256": "1a1a3fb13eb32e94a196e11557f4a7494d9919c29addd8368ece297f68db2fe3"
+  },
+  "protocol_id": "deform360-dynamic-tapnextpp-set-valued-provider-v3-source-development",
+  "provider_result_sha256": "fa1919d8e2df73a54dd9f2c92be3903de716b65b780dfb3e75e99e46d8766b46",
+  "repository_revision": "4b8be3010924c62177b4e61e3133ee36b9db0474",
+  "result_sha256": "cba783141161a8f054adeeb5be30b984e0b7a82d52df3bb526d61fde9f712c38",
+  "schema_version": 1,
+  "status": "post_open_source_development_not_confirmation",
+  "support": {
+    "active_birth_wave_count": 6,
+    "birth_and_update_supported_count": 15,
+    "birth_and_update_supported_fraction": 0.32608695652173914,
+    "claim_bearing_fraction": 0.4498567335243553,
+    "complete_camera_count": 8,
+    "scheduled_identity_count": 46,
+    "selected_camera_count": 8
+  }
+}

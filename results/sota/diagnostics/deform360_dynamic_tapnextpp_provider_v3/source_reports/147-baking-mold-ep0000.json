@@ -1,0 +1,212 @@
+{
+  "artifact_kind": "Deform360DynamicTAPNextPPV2SourceDevelopment",
+  "assimilation_report": {
+    "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+    "assimilation_mode": "set-valued-association-mixture-v3",
+    "belief_config": {
+      "degrees_of_freedom": 4.0,
+      "global_prior_std_m": 0.1,
+      "length_scale_fraction": 0.1,
+      "local_blend": 1.0,
+      "local_prior_std_m": 0.02,
+      "maximum_correction_m": 0.1,
+      "minimum_length_scale_m": 0.0001,
+      "minimum_reliability": 0.02,
+      "observation_std_m": 0.005,
+      "process_std_m_per_sqrt_frame": 0.003
+    },
+    "center_ids": [
+      0,
+      83,
+      1,
+      417,
+      7,
+      306,
+      55,
+      37,
+      3,
+      154,
+      22,
+      24,
+      290,
+      30,
+      57,
+      70,
+      6,
+      4,
+      56,
+      123,
+      78,
+      36
+    ],
+    "gate_config": {
+      "absolute_pair_strain_m": 0.03,
+      "maximum_exact_center_count": 24,
+      "minimum_inlier_count": 9,
+      "minimum_inlier_fraction": 0.7,
+      "relative_pair_strain": 0.1
+    },
+    "information_boundary": {
+      "future_object_geometry_read": false,
+      "future_target_read": false,
+      "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+    },
+    "method_contract": {
+      "absolute_multiview_position_used_as_state_innovation": false,
+      "association_probability_role": "separate nominal assignment event inside robust mixture",
+      "association_probability_used_as_prior_reliability": false,
+      "birth_anchored_displacement_innovation": true,
+      "innovation_robustified_once_inside_rbf_update": true,
+      "metric_covariance_propagated_into_rbf_update": true,
+      "pairwise_gate_role": "identity-consistency admission",
+      "prior_reliability_uses_physical_innovation": false,
+      "rejection": "bit-exact selected physical-or-persistence backbone",
+      "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+    },
+    "schema_version": 1,
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "updates": [
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 19,
+        "interval_end_exclusive": 38,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      },
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 38,
+        "interval_end_exclusive": 57,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      },
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 57,
+        "interval_end_exclusive": 76,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      }
+    ]
+  },
+  "association_semantics": "set-valued-v3",
+  "case": "147-baking-mold-ep0000",
+  "case_hash": "77bfae325777a12a3e6f4df2ccc85236478b7f76d1f15a1ea33f5075ccda35f2",
+  "environment": {
+    "cuda_version": "12.1",
+    "device": "cuda:0",
+    "elapsed_seconds": 5.211668320931494,
+    "model_frame_count": 104,
+    "numpy": "1.26.4",
+    "peak_gpu_memory_gib": 2.5623745918273926,
+    "python": "3.10.12",
+    "rollout_count": 7,
+    "tapnet_revision": "c2cbab81cc06092b5f05bfe2da7bfec54e2079c9",
+    "tapnextpp_checkpoint_sha256": "6cd0e793fdcface3063d63f8ed3819bcf74c2c0468fe1fef85acee4de2f3609f",
+    "torch_version": "2.4.0+cu121"
+  },
+  "information_boundary": {
+    "future_identity_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_read": false,
+    "maximum_physical_frame_read": 57,
+    "maximum_rgb_depth_mask_frame_read": 57,
+    "target_metric_read": false,
+    "v1_sealed_target_cohort_read": false
+  },
+  "inputs_sha256": {
+    "camera_certificate": "c24c2b92fa2c0293f5aecfd6495b4a1ac3ae0c52398de90c95009275dc86d7a9",
+    "physical_archive": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a",
+    "physical_manifest": "6492a602f16b417bb85666e5cfb0ceba9a849e659241462fb33ee856597575ee",
+    "query_schedule": "f074ab1ea179c39b72ee324f58989697bd405d2a96896b234c138cac80882d15"
+  },
+  "outputs": {
+    "assimilation_array_sha256": {
+      "candidate_correction_variance_m2": "5ca9723c3b7ad6f8b39bea2efe9bb415481fde9c1b92c3b44372d845cfc47be9",
+      "dynamic_birth_anchored_covariance_aware_rbf": "be1f75af034aface3fbec5117e6a7043bc20130e99827302464ca63065bdb71e",
+      "persistence": "76ca8c928a56e85d17e17033e178ef41b86a070d9a2df561c0c00aac1f3cbc22",
+      "physical_prior": "0c0c8b9efc6f05d3751d40b2305653a5bcbbcf23d5e26b5e1b541662963c47d2",
+      "selected_physical_or_persistence": "be1f75af034aface3fbec5117e6a7043bc20130e99827302464ca63065bdb71e"
+    },
+    "assimilation_arrays_file_sha256": "6d1954f1ae545a4760502910df74648f2c29f8ead292d3bbb9cf5b47f61f42be",
+    "provider_array_sha256": {
+      "accepted_support": "4ccb1ca5ecae0e7c95090a6575e3a7173e8f96bcd744c71cd3f19fda605a3b00",
+      "assignment_mixture_spread_m2": "cc393bc5ce356627e4a859768523c363ad8c76cddbb5d2a67e3de2d536c16cbb",
+      "association_probability": "a90b2a1a1931a904fd2f97b02b1f943d53b01ebca118cd5bc9015695a1401221",
+      "birth_frames": "81e534151217eaf07c7df96cbf2213cfbb72a51cbd80266bfd7b5e40e720860a",
+      "depth_residual_rmse_m": "3946308694bdfdf175ef04eee94194a8fd62e96b7d7f4f65a60a115700caf6f8",
+      "entity_ids": "69d5109715d137e123455601ba9268dbf88c91b8579b0ecc86c9bef839dd8583",
+      "independent_support_count": "c6faf1a3d1c057346ea1082bf6c291eeb43a1f887cd77b14aad359b49774192d",
+      "local_covariance_m2": "7514d1b1eec6e8c6d07cb08c74ea818385f0548de0d14d179230ab91366e511c",
+      "naive_independent_covariance_m2": "aa1bdb47913448b198a78bd7d91a88f3025f9aa57a7d8e95d543b9984286b38f",
+      "prior_reliability": "f42c3eda875553db45cc3ef5df19771cf9d590e7c7c72cf20708879dc9a952ab",
+      "proposal_available": "bfb81073476da0383bd41adf3402bd9a0a47a8a371c35fe1495109ea9fb5a2e5",
+      "raw_support_count": "c6faf1a3d1c057346ea1082bf6c291eeb43a1f887cd77b14aad359b49774192d",
+      "reprojection_rmse_px": "baac21be22c4c3374fa35eb7741588132f85556f3900297e574e60053a49bcb6",
+      "trajectory_world_m": "186bb30e5070287a4d2b14e838cf2b31d85be1e79ddea6a267c7dfe4630d3e2b",
+      "update_frames": "ab039d1996251f6141cf2c8aaf02fb10592cb6be6c2ca124e7a8e32f3490375a"
+    },
+    "provider_arrays_file_sha256": "961de4fbf0a861e914547a0994c442fbd32738b5a6207249619b0cfe08375e20"
+  },
+  "protocol_id": "deform360-dynamic-tapnextpp-set-valued-provider-v3-source-development",
+  "provider_result_sha256": "89ae842a16d0166fc934aa542e48ae355be6b74c7e85d7f6f891493512bfd0f4",
+  "repository_revision": "4b8be3010924c62177b4e61e3133ee36b9db0474",
+  "result_sha256": "7f73d54719167dad6fa61b7dcd2d36a5a6f481483ab762464b553d19194c7ded",
+  "schema_version": 1,
+  "status": "post_open_source_development_not_confirmation",
+  "support": {
+    "active_birth_wave_count": 3,
+    "birth_and_update_supported_count": 0,
+    "birth_and_update_supported_fraction": 0.0,
+    "claim_bearing_fraction": 0.0,
+    "complete_camera_count": 10,
+    "scheduled_identity_count": 22,
+    "selected_camera_count": 8
+  }
+}
