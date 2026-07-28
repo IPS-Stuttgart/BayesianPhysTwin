@@ -1,0 +1,65 @@
+name: Resolve PR 81 Against Main
+
+on:
+  push:
+    branches:
+      - agent/harden-bpt-contract-numerics
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resolve-pr81-main
+  cancel-in-progress: false
+
+jobs:
+  merge-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: agent/harden-bpt-contract-numerics
+      - name: Merge current main and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+
+          set +e
+          git merge --no-ff --no-commit origin/main
+          merge_status=$?
+          set -e
+
+          if [[ ${merge_status} -ne 0 ]]; then
+            conflicts=$(git diff --name-only --diff-filter=U)
+            unexpected=$(
+              printf '%s\n' "${conflicts}" \
+                | grep -v -E '^(\.github/workflows/tests\.yml|CHANGELOG\.md)$' \
+                || true
+            )
+            if [[ -n "${unexpected}" ]]; then
+              echo "Unexpected merge conflicts:"
+              printf '%s\n' "${unexpected}"
+              exit 1
+            fi
+            while IFS= read -r path; do
+              [[ -z "${path}" ]] && continue
+              git checkout --ours -- "${path}"
+              git add "${path}"
+            done <<< "${conflicts}"
+          fi
+
+          if [[ -n "$(git diff --name-only --diff-filter=U)" ]]; then
+            echo "Unresolved merge conflicts remain"
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
+
+          git rm .github/workflows/resolve-pr81-main.yml
+          git add -A
+          git commit -m "Merge main into PR #81"
+          git push origin HEAD:agent/harden-bpt-contract-numerics
