@@ -1,0 +1,169 @@
+{
+  "archive": {
+    "array_sha256": {
+      "association_candidate_count": "02652f0dcc95f31e55062f19f436776743cbfed68a4b822f214151a8215e481a",
+      "association_covariance_px2": "4df917e4cdd345445bc6055dae4b588c4da979f365f84d2b566e7011755d88d5",
+      "association_entropy": "e663a7efaf3d0e86caf23479e3c41c162d519921fc5b0bbe854de37cbb963e24",
+      "association_probability": "d17cbc32c849b8503ab8e447b3d232ba576591ceda25850114c669e522e79c1b",
+      "association_query_points_xy": "8961ebbff8f4e200c8756c093983c64c50e5a5a9e068c299a38be6d1888282ba",
+      "association_valid": "ee08f8eca74a166b77660e3631de8e0831bb777aba9f7c293a50ea972dbd1b76",
+      "candidate_entity_ids": "63fdf43bf37dd030bba77f415cd7c2c9d27085b229bd93c23e0bb5f03905702f",
+      "candidate_support_count": "eef5afbcbe56822a45e6ac81f4776ddad56b1c729971b288d4108b5910176caf",
+      "plan_camera_mask": "d23e62f99dfc9271943bf80bd0932bdefb11f22fa3043a21994645219c8a123b",
+      "plan_contact_distance_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "plan_mode_information_gain": "8fac9fd3cf081329f7da27457cc052f45771d614bda770adf8390008d71edafd",
+      "plan_motion_score": "75d606fbd337362ff65fa9af90e18f76683ded1adde6f7c21e4e61a3551bab5f",
+      "plan_node_ids": "07f37e985be8a1357a68a1d76bf0e09e9d0851d3d156d9b535331d588eb0d49d",
+      "plan_replaces_node_ids": "d72d1fb5201a7f1931c16d2499e5d8677673cb655f04d1a454d6053b19038b6c",
+      "plan_seed_frames": "f887e1161a7d021b1cfe52d2dc50a277d50ce183c8a2feea644dc424ca4bcfc2",
+      "plan_seed_pixels_xy": "f4994d8e42d66df3543352ead8310fc29e8fe8282205f10a92e58b871ea3c864",
+      "plan_spatial_diversity_score": "be43886860d2f819fb13618f018c70a92a2c1a17515ddf97e8216e414e027a84",
+      "plan_total_score": "09c7c0d337b4662e2756a0eea4d176543ee483f5106772f5abf41c16793bca5e",
+      "plan_visibility_score": "cb1df175a1c7f84a10b8924fff056a1c2a49de423132c7eb76b51c25af3ee7c8"
+    },
+    "file_sha256": "2bda2937d08847a857e0cf2d97191738b8c709a5e4b7fcfc3ca3cd453f54685d",
+    "filename": "active_query_feasibility.npz"
+  },
+  "artifact_kind": "Deform360ActiveQueryFeasibilityAudit",
+  "audit": {
+    "admitted": true,
+    "artifact_kind": "Deform360ActiveQueryFeasibilityAudit",
+    "artifact_sha256": "0360fc3f6629007e83d6113058ab722cd1e2c5f0cad93b8a24ff09c5f81dd3ef",
+    "camera_panel": {
+      "camera_indices": [
+        1,
+        4,
+        2,
+        3
+      ],
+      "camera_names": [
+        "brics-odroid-007_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-008_cam0",
+        "brics-odroid-013_cam0"
+      ],
+      "frame_zero_coverage": [
+        1.0,
+        1.0,
+        0.9660144181256437,
+        1.0
+      ],
+      "selection_scores": [
+        1.0,
+        1.0847851114180254,
+        1.0681351944229396,
+        1.044521013974641
+      ]
+    },
+    "candidate_entity_count": 405,
+    "config": {
+      "angular_diversity_weight": 0.25,
+      "association_depth_scale_m": 0.03,
+      "association_minimum_candidate_count": 1,
+      "association_search_radius_px": 12,
+      "coverage_weight": 1.0,
+      "graph_basis_rank": 8,
+      "maximum_reseeds": 0,
+      "minimum_camera_support": 2,
+      "minimum_eligible_camera_count": 4,
+      "minimum_motion_m": 0.002,
+      "query_count": 8,
+      "selected_camera_count": 4,
+      "support_probability_threshold": 0.5
+    },
+    "information_boundary": {
+      "candidate_state_update_constructed": false,
+      "future_identity_or_metric_read": false,
+      "future_object_depth_or_mask_read": false,
+      "future_object_rgb_read": false,
+      "held_v8_artifact_or_process_access": false,
+      "known_future_robot_action_read": true,
+      "maximum_physical_frame_read": 57,
+      "object_observation_frames_used": [
+        0
+      ],
+      "tracker_output_read": false,
+      "v1_sealed_target_access": false
+    },
+    "initial_query_count": 8,
+    "input_array_sha256": {
+      "camera_to_world": "81a6c575b1298d28b33570ea871842beef42527bbf0741401a01fbfd8c1994f8",
+      "frame_zero_depths_m": "b400f7c9f64f187dffaa427986185b01e5d8d5ffe574a44130ab0a35eaf6dd2b",
+      "frame_zero_object_masks": "35c054cbc608fec40417c18397cb4ee12e2f9dab3a70fc7e659b4fe38e608e08",
+      "graph_basis": "6048baa19b6547a86963527498256ec87359d5a129a08447a75cbf3c1e0e4251",
+      "image_shapes_hw": "54593b80e4aa876d42e34695bb9bdeebc18c1e489d5dc900956974ad1a2f0a30",
+      "intrinsics": "fb349b9001a148b054cde307cd60f3625bf94298b91cba6bcb8c9fd7b6d61df5",
+      "physical_rollout_m": "4c4018e63f0fa08209f11d8e4f81d9833f8cf2a134a2a470a9550dcc3e09cc15"
+    },
+    "output_array_sha256": {
+      "association_candidate_count": "02652f0dcc95f31e55062f19f436776743cbfed68a4b822f214151a8215e481a",
+      "association_covariance_px2": "4df917e4cdd345445bc6055dae4b588c4da979f365f84d2b566e7011755d88d5",
+      "association_entropy": "e663a7efaf3d0e86caf23479e3c41c162d519921fc5b0bbe854de37cbb963e24",
+      "association_probability": "d17cbc32c849b8503ab8e447b3d232ba576591ceda25850114c669e522e79c1b",
+      "association_query_points_xy": "8961ebbff8f4e200c8756c093983c64c50e5a5a9e068c299a38be6d1888282ba",
+      "association_valid": "ee08f8eca74a166b77660e3631de8e0831bb777aba9f7c293a50ea972dbd1b76",
+      "candidate_entity_ids": "63fdf43bf37dd030bba77f415cd7c2c9d27085b229bd93c23e0bb5f03905702f",
+      "candidate_support_count": "eef5afbcbe56822a45e6ac81f4776ddad56b1c729971b288d4108b5910176caf",
+      "plan_camera_mask": "d23e62f99dfc9271943bf80bd0932bdefb11f22fa3043a21994645219c8a123b",
+      "plan_contact_distance_score": "9e3d280ffaa082613a33673e693ae8fc9a1a9a6f035f650e2aa3bb825b30a0e4",
+      "plan_mode_information_gain": "8fac9fd3cf081329f7da27457cc052f45771d614bda770adf8390008d71edafd",
+      "plan_motion_score": "75d606fbd337362ff65fa9af90e18f76683ded1adde6f7c21e4e61a3551bab5f",
+      "plan_node_ids": "07f37e985be8a1357a68a1d76bf0e09e9d0851d3d156d9b535331d588eb0d49d",
+      "plan_replaces_node_ids": "d72d1fb5201a7f1931c16d2499e5d8677673cb655f04d1a454d6053b19038b6c",
+      "plan_seed_frames": "f887e1161a7d021b1cfe52d2dc50a277d50ce183c8a2feea644dc424ca4bcfc2",
+      "plan_seed_pixels_xy": "f4994d8e42d66df3543352ead8310fc29e8fe8282205f10a92e58b871ea3c864",
+      "plan_spatial_diversity_score": "be43886860d2f819fb13618f018c70a92a2c1a17515ddf97e8216e414e027a84",
+      "plan_total_score": "09c7c0d337b4662e2756a0eea4d176543ee483f5106772f5abf41c16793bca5e",
+      "plan_visibility_score": "cb1df175a1c7f84a10b8924fff056a1c2a49de423132c7eb76b51c25af3ee7c8"
+    },
+    "protocol_id": "deform360-active-query-feasibility-v10-source",
+    "requested_query_count": 8,
+    "schema_version": 1,
+    "selected_camera_support_count": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "selected_entity_ids": [
+      455,
+      633,
+      419,
+      828,
+      420,
+      564,
+      494,
+      595
+    ]
+  },
+  "case": "147-baking-mold-ep0000",
+  "information_boundary": {
+    "candidate_state_update_constructed": false,
+    "future_identity_or_metric_read": false,
+    "future_object_depth_or_mask_read": false,
+    "future_object_rgb_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "known_future_robot_action_read": true,
+    "maximum_physical_frame_read": 57,
+    "object_observation_frames_used": [
+      0
+    ],
+    "tracker_output_read": false,
+    "v1_sealed_target_access": false
+  },
+  "inputs_sha256": {
+    "camera_certificate": "2765f8248c76988c8d48aaade786d6c81fe2d08513fe2846f5063b4f65d55ff7",
+    "physical_archive": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a",
+    "physical_manifest": "6492a602f16b417bb85666e5cfb0ceba9a849e659241462fb33ee856597575ee",
+    "protocol": "1c58340a29cc4f9e19583192bb94342cde2abae919ab548f652860ac2103e0c7"
+  },
+  "protocol_id": "deform360-active-query-feasibility-v10-source",
+  "repository_revision": "73246013099541abb953af4aa9fe780e385fbf94",
+  "result_sha256": "e53adf34911a1c2a21b8e6efc69ce6bc8788fd5fc5d399cf8a8e698fb2207379",
+  "schema_version": 1,
+  "status": "admitted"
+}

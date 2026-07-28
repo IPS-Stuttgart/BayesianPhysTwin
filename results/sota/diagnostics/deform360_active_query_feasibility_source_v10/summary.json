@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360ActiveQueryFeasibilitySourceGateSummary",
+  "protocol_id": "deform360-active-query-feasibility-v10-source",
+  "pre_outcome_revision": "73246013099541abb953af4aa9fe780e385fbf94",
+  "status": "source_gate_failed",
+  "decision": "do_not_run_tracker_stage",
+  "gate": {
+    "locked_case_count": 8,
+    "minimum_admitted_case_count": 6,
+    "admitted_case_count": 4,
+    "abstained_case_count": 4,
+    "admitted_fraction": 0.5,
+    "passed": false
+  },
+  "aggregate": {
+    "candidate_entity_count_minimum": 69,
+    "candidate_entity_count_median": 340.5,
+    "candidate_entity_count_maximum": 595,
+    "complete_initial_budget_size": 8
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "status": "abstained",
+      "candidate_entity_count": 351,
+      "initial_query_count": 0,
+      "result_sha256": "1f339a7139af49170ad09d3ffc5f164f5c1d91af09bc8cf9ab6d73d3c5156639",
+      "report_file_sha256": "94fe2fc5925b8d9acc39207cf5874a266fecb8238cc4cb810e724a821805b70a"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "status": "admitted",
+      "candidate_entity_count": 69,
+      "initial_query_count": 8,
+      "result_sha256": "b8350b1b26b2475a3974511147628be606237cbca4752ef169ea5f09382a51c3",
+      "report_file_sha256": "cd85c223aba716ee810b7537f3fc7a9c587dcb1c5b932abbb8eddbb2941f19a6"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "status": "abstained",
+      "candidate_entity_count": 274,
+      "initial_query_count": 0,
+      "result_sha256": "432d842d0870ff535b6ae3b16024be3ed4a6b7257bf909c65f65d0d005f32722",
+      "report_file_sha256": "9312372ee3402cef6e3669cddfe271b3da79be9aeeeb682a6c7148df035e3e79"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "status": "admitted",
+      "candidate_entity_count": 499,
+      "initial_query_count": 8,
+      "result_sha256": "6f81b9a2c7ff6fd4680ece762af885a02b37a4725e62be43dcd3f71b1d1cbf43",
+      "report_file_sha256": "2432785c88586d6579deaec53a8838faa578a70ce0c17db674d221fa1b8e1def"
+    },
+    {
+      "case": "059-shoe-ep0000",
+      "status": "admitted",
+      "candidate_entity_count": 330,
+      "initial_query_count": 8,
+      "result_sha256": "a9d692fa6616fffc2e40b827d1b6804a7ad2b2117541eaa7ab2037aa2cb151e5",
+      "report_file_sha256": "8507734bd9db379dfefcbd1efa8f20e9feab3d7d669083332025a000647f0f0a"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "status": "abstained",
+      "candidate_entity_count": 595,
+      "initial_query_count": 0,
+      "result_sha256": "4ce59473d61b9bdb38fdb2f5f81015919068cc648651dc9adf0ce74a5af74621",
+      "report_file_sha256": "d61ac7d65de8da7bd9af8a402e8b9fe37c45d82ff9de77bce28b38001748c300"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "status": "admitted",
+      "candidate_entity_count": 405,
+      "initial_query_count": 8,
+      "result_sha256": "e53adf34911a1c2a21b8e6efc69ce6bc8788fd5fc5d399cf8a8e698fb2207379",
+      "report_file_sha256": "c4afb216bb6d45b4dc351f04aa4c28645944d08fcd43e4bf6b1f6c397eba6ead"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "status": "abstained",
+      "candidate_entity_count": 256,
+      "initial_query_count": 0,
+      "result_sha256": "bba5fdc227a19809e689a195eaff9320643cea98f875c03861974c09c4be5077",
+      "report_file_sha256": "bd19d1fb5bab86a542870431c46e89bad6259d309373b7e19afe599b1ab4db65"
+    }
+  ],
+  "interpretation": {
+    "frame_zero_association_was_the_dominant_failure": false,
+    "physical_motion_gate_was_the_dominant_failure": true,
+    "tracker_stage_authorized": false,
+    "threshold_relaxation_authorized": false
+  },
+  "information_boundary": {
+    "source_only": true,
+    "object_observation_frames_used": [
+      0
+    ],
+    "maximum_physical_frame_read": 57,
+    "future_object_observation_read": false,
+    "tracker_output_read": false,
+    "candidate_state_update_constructed": false,
+    "future_identity_or_metric_read": false,
+    "v1_sealed_target_read": false,
+    "held_v8_read": false
+  },
+  "summary_sha256": "f9817077127d0d0b58f0e4a777141720921ef701e068a8adc9971604705bbf66"
+}

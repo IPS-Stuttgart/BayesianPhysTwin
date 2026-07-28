@@ -1,0 +1,151 @@
+{
+  "archive": {
+    "array_sha256": {
+      "association_candidate_count": "f169e9d5c407a4d91e8eb8e41fc769b1492aebf4efd4644921ebc04605f7e6a0",
+      "association_covariance_px2": "fc1bebed17a682840f8d855d28b4eb46a8a22611684909021013495b8c26f9ec",
+      "association_entropy": "b29c51a91dbf407fa0f117d91f65d39a02fcef7f146907ef3cd6e364665819fe",
+      "association_probability": "81f80f94dd9b0b1545e25f80b4ac782bcdf318c69c8c595d8ccd703c877960c5",
+      "association_query_points_xy": "7d556195fe2b03e870e23499f7a69166236dacb8943b15cc5024c154da0f54c5",
+      "association_valid": "2dfe254e2b75303f4bd4adb5d469ed7df6ce8887ec0b78943f9555e036285aeb",
+      "candidate_entity_ids": "7c1b481692d039b01d82534be19534d6e070bc95bf1550f09178665c1f29efd7",
+      "candidate_support_count": "3dab9d042ea5206042a0c56335fa1265f2c3eb15932dbe1f032a230c7720af87",
+      "plan_camera_mask": "1f452265b28cea43ddd14c50059eaedf75bfc764ba0363e7538c7badc75b18a5",
+      "plan_contact_distance_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_mode_information_gain": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_motion_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_node_ids": "c19bf8aaa184a847cceed6722ac8c6086f916b027a4a9e9378ad0b3dfb219777",
+      "plan_replaces_node_ids": "c19bf8aaa184a847cceed6722ac8c6086f916b027a4a9e9378ad0b3dfb219777",
+      "plan_seed_frames": "c19bf8aaa184a847cceed6722ac8c6086f916b027a4a9e9378ad0b3dfb219777",
+      "plan_seed_pixels_xy": "b65be2065cbfa7b547eee8dc10776cf7893596e5a3faaf0ebbdedef1450a136c",
+      "plan_spatial_diversity_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_total_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_visibility_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513"
+    },
+    "file_sha256": "5727b518db16717cf39878a70fa35989645389a3f27a87cba1e920f76b9c2932",
+    "filename": "active_query_feasibility.npz"
+  },
+  "artifact_kind": "Deform360ActiveQueryFeasibilityAudit",
+  "audit": {
+    "admitted": false,
+    "artifact_kind": "Deform360ActiveQueryFeasibilityAudit",
+    "artifact_sha256": "65f22ef1aa74847bcb67ace2230c519c996151499c527e865175e1daf0b73a60",
+    "camera_panel": {
+      "camera_indices": [
+        1,
+        6,
+        2,
+        7
+      ],
+      "camera_names": [
+        "brics-odroid-006_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-007_cam0",
+        "brics-odroid-015_cam1"
+      ],
+      "frame_zero_coverage": [
+        1.0,
+        1.0,
+        1.0,
+        0.9290780141843972
+      ],
+      "selection_scores": [
+        1.0,
+        1.1672346592471547,
+        1.076790386816804,
+        0.9674745683398973
+      ]
+    },
+    "candidate_entity_count": 351,
+    "config": {
+      "angular_diversity_weight": 0.25,
+      "association_depth_scale_m": 0.03,
+      "association_minimum_candidate_count": 1,
+      "association_search_radius_px": 12,
+      "coverage_weight": 1.0,
+      "graph_basis_rank": 8,
+      "maximum_reseeds": 0,
+      "minimum_camera_support": 2,
+      "minimum_eligible_camera_count": 4,
+      "minimum_motion_m": 0.002,
+      "query_count": 8,
+      "selected_camera_count": 4,
+      "support_probability_threshold": 0.5
+    },
+    "information_boundary": {
+      "candidate_state_update_constructed": false,
+      "future_identity_or_metric_read": false,
+      "future_object_depth_or_mask_read": false,
+      "future_object_rgb_read": false,
+      "held_v8_artifact_or_process_access": false,
+      "known_future_robot_action_read": true,
+      "maximum_physical_frame_read": 57,
+      "object_observation_frames_used": [
+        0
+      ],
+      "tracker_output_read": false,
+      "v1_sealed_target_access": false
+    },
+    "initial_query_count": 0,
+    "input_array_sha256": {
+      "camera_to_world": "58a9a2c1c0060f701f6c83bb57d0092706f17cc8cb0e35ef8b9ccb7782751660",
+      "frame_zero_depths_m": "8460395b51bf0bf759ba1bb9b8fe61394a66f58971ef04fa627909347cbf7fe2",
+      "frame_zero_object_masks": "61e79f565318190c5fe9e329f68f4f373c483e46e794a470d4ef214057889cc4",
+      "graph_basis": "efab953a7820fe9690b8e63f5382e603d8fba39ba468b82beb7b20c2b654a16c",
+      "image_shapes_hw": "98ab36e73f4a85250934b227e25af1481fcc54c62a7a1523313c81618e92d64b",
+      "intrinsics": "f96bb92a8aaccfc5992fa67f584d49292273f4757b19aa83ea54b60801b7f898",
+      "physical_rollout_m": "46b055c15d0e373001a5cb457edf80e4871b2d699f801246daf41630f3802e5f"
+    },
+    "output_array_sha256": {
+      "association_candidate_count": "f169e9d5c407a4d91e8eb8e41fc769b1492aebf4efd4644921ebc04605f7e6a0",
+      "association_covariance_px2": "fc1bebed17a682840f8d855d28b4eb46a8a22611684909021013495b8c26f9ec",
+      "association_entropy": "b29c51a91dbf407fa0f117d91f65d39a02fcef7f146907ef3cd6e364665819fe",
+      "association_probability": "81f80f94dd9b0b1545e25f80b4ac782bcdf318c69c8c595d8ccd703c877960c5",
+      "association_query_points_xy": "7d556195fe2b03e870e23499f7a69166236dacb8943b15cc5024c154da0f54c5",
+      "association_valid": "2dfe254e2b75303f4bd4adb5d469ed7df6ce8887ec0b78943f9555e036285aeb",
+      "candidate_entity_ids": "7c1b481692d039b01d82534be19534d6e070bc95bf1550f09178665c1f29efd7",
+      "candidate_support_count": "3dab9d042ea5206042a0c56335fa1265f2c3eb15932dbe1f032a230c7720af87",
+      "plan_camera_mask": "1f452265b28cea43ddd14c50059eaedf75bfc764ba0363e7538c7badc75b18a5",
+      "plan_contact_distance_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_mode_information_gain": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_motion_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_node_ids": "c19bf8aaa184a847cceed6722ac8c6086f916b027a4a9e9378ad0b3dfb219777",
+      "plan_replaces_node_ids": "c19bf8aaa184a847cceed6722ac8c6086f916b027a4a9e9378ad0b3dfb219777",
+      "plan_seed_frames": "c19bf8aaa184a847cceed6722ac8c6086f916b027a4a9e9378ad0b3dfb219777",
+      "plan_seed_pixels_xy": "b65be2065cbfa7b547eee8dc10776cf7893596e5a3faaf0ebbdedef1450a136c",
+      "plan_spatial_diversity_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_total_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513",
+      "plan_visibility_score": "38610e0022fe7aa627c8384bc3e34614f24e102d34318737272568b282b2b513"
+    },
+    "protocol_id": "deform360-active-query-feasibility-v10-source",
+    "requested_query_count": 8,
+    "schema_version": 1,
+    "selected_camera_support_count": [],
+    "selected_entity_ids": []
+  },
+  "case": "028-ziplog-cloth-ep0000",
+  "information_boundary": {
+    "candidate_state_update_constructed": false,
+    "future_identity_or_metric_read": false,
+    "future_object_depth_or_mask_read": false,
+    "future_object_rgb_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "known_future_robot_action_read": true,
+    "maximum_physical_frame_read": 57,
+    "object_observation_frames_used": [
+      0
+    ],
+    "tracker_output_read": false,
+    "v1_sealed_target_access": false
+  },
+  "inputs_sha256": {
+    "camera_certificate": "ae79b643f622b2c6fb9a0a64a7a11b9d47f72b428ce29c005ddc9b76d3ac625e",
+    "physical_archive": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717",
+    "physical_manifest": "3e18ae7bed82a50f5a7b36baa1457163308b173f2f905d2bbc7fdd5e1ea84f22",
+    "protocol": "1c58340a29cc4f9e19583192bb94342cde2abae919ab548f652860ac2103e0c7"
+  },
+  "protocol_id": "deform360-active-query-feasibility-v10-source",
+  "repository_revision": "73246013099541abb953af4aa9fe780e385fbf94",
+  "result_sha256": "1f339a7139af49170ad09d3ffc5f164f5c1d91af09bc8cf9ab6d73d3c5156639",
+  "schema_version": 1,
+  "status": "abstained"
+}
