@@ -161,10 +161,7 @@ class NuisanceAwareInformationState:
                 self.nuisance_precision,
                 self.state_nuisance_precision.T,
             )
-            marginal = (
-                self.state_precision
-                - self.state_nuisance_precision @ nuisance_solution
-            )
+            marginal = self.state_precision - self.state_nuisance_precision @ nuisance_solution
             marginal = 0.5 * (marginal + marginal.T)
         _symmetric_positive_definite(
             marginal,
@@ -217,8 +214,7 @@ class NuisanceAwareInformationState:
                 name="nuisance_jacobian",
             )
         _require(
-            nuisance_jacobian_array.shape
-            == (row_count, self.nuisance_dimension),
+            nuisance_jacobian_array.shape == (row_count, self.nuisance_dimension),
             "nuisance_jacobian nuisance dimension changed",
         )
         covariance = _symmetric_positive_definite(
@@ -244,9 +240,7 @@ class NuisanceAwareInformationState:
         return NuisanceAwareInformationState(
             state_precision=self.state_precision + state_increment,
             nuisance_precision=self.nuisance_precision + nuisance_increment,
-            state_nuisance_precision=(
-                self.state_nuisance_precision + cross_increment
-            ),
+            state_nuisance_precision=(self.state_nuisance_precision + cross_increment),
         )
 
     def observation_information_gain(
@@ -265,10 +259,7 @@ class NuisanceAwareInformationState:
             observation_covariance,
             reliability=reliability,
         )
-        log_gain = (
-            updated.marginal_log_determinant()
-            - self.marginal_log_determinant()
-        )
+        log_gain = updated.marginal_log_determinant() - self.marginal_log_determinant()
         if log_gain < -_NUMERICAL_TOLERANCE:
             raise RuntimeError(
                 "marginal state information decreased after an observation"
@@ -388,8 +379,7 @@ def greedy_nuisance_aware_selection(
                 reliability=reliability_values[candidate],
             )
         best_gain = max(
-            evaluation.mutual_information_nats
-            for evaluation in evaluations.values()
+            evaluation.mutual_information_nats for evaluation in evaluations.values()
         )
         tied = [
             candidate
