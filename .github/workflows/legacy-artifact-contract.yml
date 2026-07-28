@@ -1,4 +1,4 @@
-name: Export V2 coverage repair
+name: Publish V2 coverage repair
 
 on:
   pull_request:
@@ -10,14 +10,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: export-v2-coverage-${{ github.ref }}
+  group: publish-v2-coverage-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  export:
+  publish:
     if: >-
       github.event_name != 'pull_request' ||
       (github.event.pull_request.head.repo.full_name == github.repository &&
@@ -51,7 +51,7 @@ jobs:
           python -m coverage run --branch \
             --source=bayesian_phystwin.causal4d_artifacts_v2 \
             -m pytest -q tests/test_causal4d_artifacts_v2.py
-          python -m coverage report --show-missing | tee v2-coverage.txt
+          python -m coverage report --show-missing
       - name: Prepare permanent workflow files
         shell: bash
         run: |
@@ -71,7 +71,7 @@ jobs:
           tests_path.write_text(tests.replace(anchor, addition), encoding='utf-8')
 
           permanent = subprocess.run(
-              ['git', 'show', 'HEAD^^:.github/workflows/legacy-artifact-contract.yml'],
+              ['git', 'show', 'HEAD^^^:.github/workflows/legacy-artifact-contract.yml'],
               check=True,
               capture_output=True,
               text=True,
@@ -107,14 +107,15 @@ jobs:
           )
           PY
           git diff --check
-      - name: Upload exact cleaned files
-        uses: actions/upload-artifact@v7
-        with:
-          name: released-visual-inputs-v2-coverage-repair
-          path: |
-            .github/workflows/tests.yml
-            .github/workflows/legacy-artifact-contract.yml
+      - name: Commit exact cleaned files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/tests.yml \
+            .github/workflows/legacy-artifact-contract.yml \
             tests/test_causal4d_artifacts_v2.py
-            v2-coverage.txt
-          if-no-files-found: error
-          retention-days: 3
+          git commit -m "Cover every released visual-input validation branch"
+          git push origin HEAD:refs/heads/agent/hash-lock-released-visual-inputs-v2
