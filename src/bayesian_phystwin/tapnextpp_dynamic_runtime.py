@@ -283,6 +283,8 @@ def build_dynamic_birth_associations(
     # are promoted to float64 inside the association calculation.
     depths = np.asarray(depths_m)
     masks = np.asarray(object_masks, dtype=bool)
+    entities = np.asarray(schedule.entity_ids, dtype=np.int64)
+    births = np.asarray(schedule.birth_frames, dtype=np.int64)
     _require(
         positions.ndim == 3 and positions.shape[2] == 3,
         "physical positions must have shape (T, N, 3)",
@@ -296,7 +298,10 @@ def build_dynamic_birth_associations(
         "camera poses must have shape (C, 4, 4)",
     )
     _require(
-        depths.ndim == 4 and depths.shape[:2] == (len(matrices), len(positions)),
+        depths.ndim == 4
+        and depths.shape[0] == len(matrices)
+        and len(births) > 0
+        and depths.shape[1] > int(np.max(births)),
         "depths must have shape (C, T, H, W)",
     )
     _require(masks.shape == depths.shape, "object masks differ from depths")
@@ -311,8 +316,6 @@ def build_dynamic_birth_associations(
         and np.all(source_camera_indices >= 0),
         "input camera identities are invalid",
     )
-    entities = np.asarray(schedule.entity_ids, dtype=np.int64)
-    births = np.asarray(schedule.birth_frames, dtype=np.int64)
     _require(
         np.all((entities >= 0) & (entities < positions.shape[1])),
         "scheduled entity exceeds the physical state",

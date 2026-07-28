@@ -199,6 +199,28 @@ def test_birth_association_reads_each_entity_at_its_birth() -> None:
     assert np.all(associations.candidate_count > 0)
 
 
+def test_birth_association_requires_depth_only_through_latest_birth() -> None:
+    schedule = _schedule()
+    positions = np.zeros((10, 2, 3), dtype=np.float64)
+    positions[..., 2] = 1.0
+    intrinsics = np.repeat(np.eye(3)[None], 3, axis=0)
+    camera_to_world = np.repeat(np.eye(4)[None], 3, axis=0)
+    depths = np.ones((3, 4, 8, 8), dtype=np.float64)
+    masks = np.ones_like(depths, dtype=bool)
+
+    associations = build_dynamic_birth_associations(
+        schedule,
+        positions,
+        intrinsics,
+        camera_to_world,
+        depths,
+        masks,
+    )
+
+    assert associations.valid.shape == (3, 2)
+    assert np.all(associations.valid)
+
+
 def test_birth_association_is_independent_of_future_depth() -> None:
     schedule = _schedule()
     positions = np.zeros((6, 2, 3), dtype=np.float64)
