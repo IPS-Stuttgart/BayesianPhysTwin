@@ -47,7 +47,7 @@ def _canonical_sha256(payload: dict[str, Any]) -> str:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-root", type=Path, required=True)
-    parser.add_argument("--physical-root", type=Path, required=True)
+    parser.add_argument("--processed-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--case", action="append", required=True)
     return parser.parse_args()
@@ -70,7 +70,7 @@ def _load_target(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return target, visibility, validity
 
 
-def _score_case(run_root: Path, physical_root: Path, case: str) -> dict[str, Any]:
+def _score_case(run_root: Path, processed_root: Path, case: str) -> dict[str, Any]:
     run = run_root / case
     report_path = run / "source_development_report.json"
     provider_path = run / "provider_arrays.npz"
@@ -97,7 +97,17 @@ def _score_case(run_root: Path, physical_root: Path, case: str) -> dict[str, Any
         assimilation = {
             name: np.asarray(stored[name]).copy() for name in stored.files
         }
-    target_path = physical_root / case / "prediction_only_input.pkl"
+    object_id, episode_token = case.rsplit("-ep", maxsplit=1)
+    _require(
+        len(episode_token) == 4 and episode_token.isdigit(),
+        f"development case identity is invalid: {case}",
+    )
+    target_path = (
+        processed_root
+        / object_id
+        / f"episode_{episode_token}"
+        / "final_data.pkl"
+    )
     target, visibility, validity = _load_target(target_path)
     provider_score = score_provider_case_arrays(
         trajectory_world_m=provider["trajectory_world_m"],
@@ -172,7 +182,7 @@ def main() -> int:
     rows = [
         _score_case(
             args.run_root.resolve(),
-            args.physical_root.resolve(),
+            args.processed_root.resolve(),
             case,
         )
         for case in cases
