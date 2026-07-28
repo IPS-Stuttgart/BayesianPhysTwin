@@ -9,7 +9,9 @@ from bayesian_phystwin.propagated_state_belief import (
 )
 
 
-def _one_step_outlier_problem() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _one_step_outlier_problem() -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray
+]:
     innovation = np.zeros((1, 3, 3), dtype=np.float64)
     innovation[0, :, 0] = np.asarray([1.0, 1.0, 10.0])
     available = np.ones((1, 3), dtype=bool)
