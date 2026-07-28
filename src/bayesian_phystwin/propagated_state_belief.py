@@ -27,7 +27,7 @@ def _readonly(value: np.ndarray, *, dtype: object = np.float64) -> np.ndarray:
     return result
 
 
-def _positive_definite_inverse(value: np.ndarray, name: str) -> np.ndarray:
+def _positive_definite_cholesky(value: np.ndarray, name: str) -> np.ndarray:
     matrix = np.asarray(value, dtype=np.float64)
     _require(
         matrix.ndim == 2 and matrix.shape[0] == matrix.shape[1],
@@ -36,10 +36,20 @@ def _positive_definite_inverse(value: np.ndarray, name: str) -> np.ndarray:
     _require(np.all(np.isfinite(matrix)), f"{name} contains non-finite values")
     _require(np.allclose(matrix, matrix.T), f"{name} must be symmetric")
     try:
-        np.linalg.cholesky(matrix)
+        return np.linalg.cholesky(matrix)
     except np.linalg.LinAlgError as error:
         raise ValueError(f"{name} must be positive definite") from error
-    return np.linalg.inv(matrix)
+
+
+def _cholesky_solve(cholesky: np.ndarray, right: np.ndarray) -> np.ndarray:
+    return np.linalg.solve(cholesky.T, np.linalg.solve(cholesky, right))
+
+
+def _positive_definite_inverse(value: np.ndarray, name: str) -> np.ndarray:
+    matrix = np.asarray(value, dtype=np.float64)
+    cholesky = _positive_definite_cholesky(matrix, name)
+    inverse = _cholesky_solve(cholesky, np.eye(len(matrix), dtype=np.float64))
+    return 0.5 * (inverse + inverse.T)
 
 
 def _orthonormal_column_space(value: np.ndarray) -> np.ndarray:
@@ -343,38 +353,48 @@ def infer_propagated_state_belief(
     prior_right = np.zeros(dimension, dtype=np.float64)
     prior_right[:state_count] = state_precision @ prior_mean
 
+    def posterior_system(node_robust: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        coordinate_weight = (
+            coordinate_base_weight * np.repeat(node_robust, 3) / row_variance
+        )
+        normal = prior_precision + design.T @ (coordinate_weight[:, None] * design)
+        normal = 0.5 * (normal + normal.T)
+        right = prior_right + design.T @ (coordinate_weight * target)
+        return normal, right
+
+    def solve_posterior(
+        normal: np.ndarray,
+        right: np.ndarray,
+    ) -> tuple[np.ndarray | None, np.ndarray | None, float, str | None]:
+        condition_number = float(np.linalg.cond(normal))
+        if not np.isfinite(condition_number) or condition_number > (
+            cfg.maximum_condition_number
+        ):
+            return None, None, condition_number, "ill-conditioned-posterior"
+        try:
+            cholesky = np.linalg.cholesky(normal)
+        except np.linalg.LinAlgError:
+            return None, None, condition_number, "singular-posterior"
+        return _cholesky_solve(cholesky, right), cholesky, condition_number, None
+
     solution = np.zeros(dimension, dtype=np.float64)
     solution[:state_count] = prior_mean
     robust = np.ones(len(node_rows), dtype=np.float64)
     normal = prior_precision.copy()
     for iteration in range(cfg.maximum_iterations):
         previous = solution.copy()
-        coordinate_weight = coordinate_base_weight * np.repeat(robust, 3) / row_variance
-        normal = prior_precision + design.T @ (coordinate_weight[:, None] * design)
-        right = prior_right + design.T @ (coordinate_weight * target)
-        condition_number = float(np.linalg.cond(normal))
-        if (
-            not np.isfinite(condition_number)
-            or condition_number > cfg.maximum_condition_number
-        ):
+        normal, right = posterior_system(robust)
+        solved, _, condition_number, failure = solve_posterior(normal, right)
+        if failure is not None or solved is None:
             diagnostics["condition_number"] = condition_number
             return _fallback(
                 state_count,
                 bias_count,
                 reliability,
-                "ill-conditioned-posterior",
+                failure or "singular-posterior",
                 diagnostics,
             )
-        try:
-            solution = np.linalg.solve(normal, right)
-        except np.linalg.LinAlgError:
-            return _fallback(
-                state_count,
-                bias_count,
-                reliability,
-                "singular-posterior",
-                diagnostics,
-            )
+        solution = solved
         residual = (target - design @ solution).reshape(-1, 3)
         squared_radius = np.sum(np.square(residual), axis=1) / np.asarray(
             [variance[frame, point] for frame, point in node_rows]
@@ -390,12 +410,28 @@ def infer_propagated_state_belief(
         ):
             break
 
-    posterior_covariance = np.linalg.inv(normal)
+    normal, right = posterior_system(robust)
+    solved, cholesky, condition_number, failure = solve_posterior(normal, right)
+    if failure is not None or solved is None or cholesky is None:
+        diagnostics["condition_number"] = condition_number
+        return _fallback(
+            state_count,
+            bias_count,
+            reliability,
+            failure or "singular-posterior",
+            diagnostics,
+        )
+    solution = solved
+    posterior_covariance = _cholesky_solve(
+        cholesky,
+        np.eye(dimension, dtype=np.float64),
+    )
+    posterior_covariance = 0.5 * (posterior_covariance + posterior_covariance.T)
     predicted = (design @ solution).reshape(-1, 3)
     observed = target.reshape(-1, 3)
     diagnostics.update(
         {
-            "condition_number": float(np.linalg.cond(normal)),
+            "condition_number": condition_number,
             "iterations": iteration + 1,
             "prefix_rmse_m": float(np.sqrt(np.mean(np.square(predicted - observed)))),
             "state_weight_norm": float(np.linalg.norm(solution[:state_count])),
@@ -405,6 +441,8 @@ def infer_propagated_state_belief(
                 else 0.0
             ),
             "mean_robust_weight": float(np.mean(robust)),
+            "posterior_solver": "cholesky",
+            "final_system_uses_returned_robust_weights": True,
             "posterior_covariance_is_raw_not_calibrated": True,
         }
     )
