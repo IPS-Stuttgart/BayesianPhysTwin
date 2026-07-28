@@ -6,15 +6,47 @@ import pytest
 
 from bayesian_phystwin.deform360_dynamic_tapnextpp_cohort import (
     DATASET_REVISION,
+    build_dynamic_provider_cohort_lock,
     build_metadata_preflight,
     build_staging_queue,
+    build_terminal_disposition,
+    load_dynamic_provider_cohort_lock,
     load_metadata_preflight,
     load_staging_queue,
     morphology_stratum,
+    validate_dynamic_provider_cohort_lock,
+)
+from bayesian_phystwin.deform360_fresh_source_lock import (
+    ADMISSION_KIND,
+    UPSTREAM_BINDING,
+    FreshSourceAdmissionConfig,
 )
 from bayesian_phystwin.deform360_object_exclusion import (
     canonical_sha256,
     file_sha256,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+PROVIDER_PROTOCOL = (
+    ROOT / "configs" / "sota" / "deform360_dynamic_tapnextpp_provider_v1.json"
+)
+STAGING_QUEUE = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform360_dynamic_tapnextpp_staging_queue_v1.json"
+)
+PROCESSING_PROTOCOL = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform360_dynamic_tapnextpp_source_processing_v1.json"
+)
+RUNTIME_AMENDMENT = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform360_dynamic_tapnextpp_source_processing_runtime_amendment_v1.json"
 )
 
 
@@ -200,3 +232,191 @@ def test_queue_tampering_is_detected(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="checksum"):
         load_staging_queue(queue_path, preflight_path=preflight_path)
+
+
+def _seal(payload: dict[str, object], key: str) -> dict[str, object]:
+    canonical = dict(payload)
+    canonical.pop(key, None)
+    payload[key] = hashlib.sha256(
+        json.dumps(
+            canonical,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode()
+    ).hexdigest()
+    return payload
+
+
+def _dynamic_admission(path: Path, row: dict[str, object]) -> None:
+    config = FreshSourceAdmissionConfig(minimum_camera_count=8)
+    object_id = str(row["object_id"])
+    episode_id = int(row["episode_id"])
+    cameras = [f"camera-{index}" for index in range(8)]
+    digest = "d" * 64
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_kind": ADMISSION_KIND,
+        "upstream_binding": UPSTREAM_BINDING,
+        "case": f"{object_id}-ep{episode_id:04d}",
+        "object_id": object_id,
+        "episode_id": episode_id,
+        "category": row["category"],
+        "accepted": True,
+        "rejection_reasons": [],
+        "config": {
+            "minimum_camera_count": config.minimum_camera_count,
+            "minimum_point_count": config.minimum_point_count,
+            "maximum_point_count": config.maximum_point_count,
+            "required_frame_count": config.required_frame_count,
+            "update_frames": list(config.update_frames),
+            "minimum_test_frame_count": config.minimum_test_frame_count,
+        },
+        "observed_source_contract": {
+            "metadata_parent": object_id,
+            "metadata_object": object_id,
+            "bimanual": False,
+            "camera_count": len(cameras),
+            "cameras": cameras,
+            "frame_zero_point_count": 128,
+            "split_frame_count": 76,
+            "active_frame_count": 76,
+            "contact_start_frame": 0,
+            "contact_end_frame": 75,
+            "train_fraction": 0.8,
+            "stage_inputs_valid": True,
+            "train": [0, 60],
+            "test": [60, 76],
+        },
+        "source_files": {
+            name: {"basename": f"{name}.bin", "sha256": digest}
+            for name in (
+                "metadata",
+                "control_meta",
+                "split",
+                "calibrate",
+                "frame_zero",
+                "future_payload",
+            )
+        },
+        "information_boundary": {
+            "future_object_positions_deserialized": False,
+            "future_payload_bytes_hashed": True,
+            "future_metrics_read": False,
+            "selection_inputs": "unit source contracts only",
+        },
+    }
+    _write_json(path, _seal(payload, "admission_sha256"))
+
+
+def _complete_dispositions(
+    tmp_path: Path,
+) -> tuple[list[Path], list[Path]]:
+    queue = load_staging_queue(STAGING_QUEUE)
+    per_stratum = {name: 0 for name in ("sheet", "compact", "complex")}
+    admissions: list[Path] = []
+    terminals: list[Path] = []
+    for row in queue["candidates"]:
+        category = str(row["category"])
+        per_stratum[category] += 1
+        if per_stratum[category] <= 8:
+            path = tmp_path / "admissions" / f"{row['queue_rank']:02d}.json"
+            _dynamic_admission(path, row)
+            admissions.append(path)
+            continue
+        evidence = tmp_path / "evidence" / f"{row['queue_rank']:02d}.log"
+        evidence.parent.mkdir(parents=True, exist_ok=True)
+        evidence.write_text("source-only terminal failure\n", encoding="utf-8")
+        path = tmp_path / "terminals" / f"{row['queue_rank']:02d}.json"
+        build_terminal_disposition(
+            path,
+            queue_path=STAGING_QUEUE,
+            queue_rank=int(row["queue_rank"]),
+            stage="window_stage",
+            reason_code="window-stage-failure",
+            evidence_path=evidence,
+            producer_commit="c" * 40,
+        )
+        terminals.append(path)
+    return admissions, terminals
+
+
+def test_complete_disposition_lock_is_balanced_and_outcome_blind(
+    tmp_path: Path,
+) -> None:
+    admissions, terminals = _complete_dispositions(tmp_path)
+    output = tmp_path / "cohort.json"
+    cohort = build_dynamic_provider_cohort_lock(
+        output,
+        protocol_path=PROVIDER_PROTOCOL,
+        queue_path=STAGING_QUEUE,
+        processing_protocol_path=PROCESSING_PROTOCOL,
+        runtime_amendment_path=RUNTIME_AMENDMENT,
+        admission_paths=admissions,
+        terminal_disposition_paths=terminals,
+        provider_commit="a" * 40,
+        source_processing_commit="b" * 40,
+        cohort_lock_builder_commit="e" * 40,
+    )
+
+    assert len(cohort["source_cases"]) == 8
+    assert len(cohort["sealed_target_cases"]) == 12
+    assert cohort["stratum_counts"]["source"] == {
+        "sheet": 3,
+        "compact": 3,
+        "complex": 2,
+    }
+    assert cohort["stratum_counts"]["target"] == {
+        "sheet": 4,
+        "compact": 4,
+        "complex": 4,
+    }
+    assert cohort["counts"] == {
+        "queued": 36,
+        "admitted": 24,
+        "source_rejected": 0,
+        "technical_failure": 12,
+        "selected_source": 8,
+        "selected_target": 12,
+    }
+    assert cohort["information_boundary"]["provider_outcome_or_metric_read"] is False
+    load_dynamic_provider_cohort_lock(output)
+
+
+def test_cohort_lock_rejects_incomplete_disposition_ledger(
+    tmp_path: Path,
+) -> None:
+    admissions, terminals = _complete_dispositions(tmp_path)
+    with pytest.raises(ValueError, match="incomplete"):
+        build_dynamic_provider_cohort_lock(
+            tmp_path / "incomplete.json",
+            protocol_path=PROVIDER_PROTOCOL,
+            queue_path=STAGING_QUEUE,
+            processing_protocol_path=PROCESSING_PROTOCOL,
+            runtime_amendment_path=RUNTIME_AMENDMENT,
+            admission_paths=admissions,
+            terminal_disposition_paths=terminals[:-1],
+            provider_commit="a" * 40,
+            source_processing_commit="b" * 40,
+            cohort_lock_builder_commit="e" * 40,
+        )
+
+
+def test_cohort_lock_tampering_is_detected(tmp_path: Path) -> None:
+    admissions, terminals = _complete_dispositions(tmp_path)
+    output = tmp_path / "cohort.json"
+    cohort = build_dynamic_provider_cohort_lock(
+        output,
+        protocol_path=PROVIDER_PROTOCOL,
+        queue_path=STAGING_QUEUE,
+        processing_protocol_path=PROCESSING_PROTOCOL,
+        runtime_amendment_path=RUNTIME_AMENDMENT,
+        admission_paths=admissions,
+        terminal_disposition_paths=terminals,
+        provider_commit="a" * 40,
+        source_processing_commit="b" * 40,
+        cohort_lock_builder_commit="e" * 40,
+    )
+    cohort["source_cases"][0]["queue_rank"] = 36
+    with pytest.raises(ValueError, match="partitions"):
+        validate_dynamic_provider_cohort_lock(cohort)

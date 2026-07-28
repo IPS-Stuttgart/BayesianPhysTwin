@@ -7,15 +7,15 @@ positions cannot influence cohort selection.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import hashlib
 import json
-from pathlib import Path
 import re
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
 
 from .deform360_official_parity import audit_parity_contract
-
 
 SCHEMA_VERSION = 1
 ADMISSION_KIND = "Deform360FreshSourceAdmission"
@@ -368,7 +368,12 @@ def build_fresh_source_admission(
     return _seal(artifact, digest_key="admission_sha256")
 
 
-def validate_fresh_source_admission(artifact: Mapping[str, Any]) -> None:
+def validate_fresh_source_admission(
+    artifact: Mapping[str, Any],
+    *,
+    expected_config: FreshSourceAdmissionConfig | None = None,
+) -> None:
+    cfg = expected_config or FreshSourceAdmissionConfig()
     _require(artifact.get("schema_version") == SCHEMA_VERSION, "wrong schema")
     _require(artifact.get("artifact_kind") == ADMISSION_KIND, "wrong artifact kind")
     _require(
@@ -449,7 +454,7 @@ def validate_fresh_source_admission(artifact: Mapping[str, Any]) -> None:
     if accepted:
         config = artifact.get("config")
         frozen_config = json.loads(
-            json.dumps(asdict(FreshSourceAdmissionConfig()), allow_nan=False)
+            json.dumps(asdict(cfg), allow_nan=False)
         )
         _require(
             config == frozen_config, "accepted admission changed the frozen config"
@@ -478,7 +483,7 @@ def validate_fresh_source_admission(artifact: Mapping[str, Any]) -> None:
             and all(isinstance(camera, str) and bool(camera) for camera in cameras)
             and len(cameras) == len(set(cameras))
             and observed.get("camera_count") == len(cameras)
-            and len(cameras) >= FreshSourceAdmissionConfig().minimum_camera_count,
+            and len(cameras) >= cfg.minimum_camera_count,
             "accepted admission camera panel violates the frozen contract",
         )
         point_count = observed.get("frame_zero_point_count")

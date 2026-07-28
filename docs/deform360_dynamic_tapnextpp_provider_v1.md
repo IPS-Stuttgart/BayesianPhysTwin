@@ -144,6 +144,14 @@ frame-zero admission before source outcomes:
 Either source gate failing stops the protocol before target outcomes. Technical
 failures remain in the denominator and are never replaced.
 
+The executable post-admission lock requires exactly one source-only disposition
+for every one of the 36 queued objects before it selects a cohort. It takes the
+first admitted 7 sheet, 7 compact, and 6 complex objects in frozen queue order,
+interleaves the strata, assigns the first 8 objects to source, and seals the
+remaining 12 as target. This yields a 3/3/2 source split and a 4/4/4 target
+split. If any stratum lacks its quota, this provider version stops; a technical
+failure cannot be silently replaced by a later object.
+
 ## Claim Boundary
 
 Provider competence does not establish a better digital twin. Source
