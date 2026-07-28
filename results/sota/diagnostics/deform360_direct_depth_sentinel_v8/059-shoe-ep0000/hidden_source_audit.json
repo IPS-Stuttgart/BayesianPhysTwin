@@ -1,0 +1,71 @@
+{
+  "advancement_gate_passed": false,
+  "artifact_kind": "Deform360DirectDepthSentinelV8HiddenSourceAudit",
+  "assimilation_file_sha256": "fdb79c166904d4e238ae5cf0da58cc5f601bc0f9d5af6fa8f8317596315e42bd",
+  "claim_boundary": "One already-open source smoke case; not transfer, confirmation, calibration, or state-of-the-art evidence.",
+  "comparison": {
+    "persistence": {
+      "joint_improvement": false,
+      "relative_identity_rmse_change": 13.977389699147581,
+      "relative_symmetric_chamfer_change": 30.761504208724727
+    },
+    "selected_physical_or_persistence": {
+      "joint_improvement": false,
+      "relative_identity_rmse_change": 13.977389699147581,
+      "relative_symmetric_chamfer_change": 30.761504208724727
+    }
+  },
+  "decision": "close-direct-depth-sentinel-v8",
+  "frozen_provider_revision": "e776afc74804909dd2c7126e1e0069337f4b7d2c",
+  "hidden_identity_count": 440,
+  "information_boundary": {
+    "already_open_source_target_read": true,
+    "fresh_target_read": false,
+    "held_v8_artifact_read": false,
+    "query_identities_excluded_from_all_scores": true,
+    "v1_sealed_target_cohort_read": false
+  },
+  "late_future_range_half_open": [
+    70,
+    76
+  ],
+  "protocol_id": "deform360-direct-depth-sentinel-v8-source-development",
+  "query_identity_count": 12,
+  "query_schedule_file_sha256": "7ca3b7de18cb7f20c82167769af27894b74a1e98c37df87920ee661c4cb2e44a",
+  "result_sha256": "4c4a584df7c830dd2d4b2f30bfc590eb350294f6d57767780e7b976aaabf94a2",
+  "schema_version": 1,
+  "scored_future_range_half_open": [
+    58,
+    76
+  ],
+  "scores": {
+    "dynamic_birth_anchored_covariance_aware_rbf": {
+      "future_hidden_identity_rmse_m": 0.0015047812888432186,
+      "future_hidden_symmetric_chamfer_m": 0.0025523649375880034,
+      "future_hidden_target_to_prediction_chamfer_m": 0.0025531639682331224,
+      "late_future_hidden_identity_rmse_m": 0.0015031736210803588
+    },
+    "persistence": {
+      "future_hidden_identity_rmse_m": 0.00010047019668112537,
+      "future_hidden_symmetric_chamfer_m": 8.036032930980899e-05,
+      "future_hidden_target_to_prediction_chamfer_m": 8.036032930980899e-05,
+      "late_future_hidden_identity_rmse_m": 0.0001023926178169587
+    },
+    "physical_prior": {
+      "future_hidden_identity_rmse_m": 0.019444324678766868,
+      "future_hidden_symmetric_chamfer_m": 0.014567641904362256,
+      "future_hidden_target_to_prediction_chamfer_m": 0.015067701425522446,
+      "late_future_hidden_identity_rmse_m": 0.032303427758675035
+    },
+    "selected_physical_or_persistence": {
+      "future_hidden_identity_rmse_m": 0.00010047019668112537,
+      "future_hidden_symmetric_chamfer_m": 8.036032930980899e-05,
+      "future_hidden_target_to_prediction_chamfer_m": 8.036032930980899e-05,
+      "late_future_hidden_identity_rmse_m": 0.0001023926178169587
+    }
+  },
+  "source_case_hash": "ba3f2b6f4908732dbaf6dea8e1b1d30ebdd933ca1de0e944b4545c454e2b7751",
+  "source_report_file_sha256": "69a7b403072f81df8fc13c810d2ce11f6f7f0e37e729a9af4a92c4ecc75d9134",
+  "status": "post_open_source_diagnostic_not_confirmation",
+  "target_file_sha256": "0ed403521fe34655eff9426796d178b1c0b7c10dcda3c0aa93a14fb6472834ab"
+}
