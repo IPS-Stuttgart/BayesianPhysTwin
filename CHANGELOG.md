@@ -52,6 +52,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   External-fork pull requests still run the producer-neutral consumer fixture and
   explicitly report that the secret-backed producer gate was unavailable and no
   current-Prob4D evidence was admitted.
+- Propagated-state robust inference now recomputes the final posterior from the
+  returned IRLS weights and uses Cholesky solves for positive-definite prior and
+  posterior systems instead of generic matrix inversion.
 
 ### Removed
 
