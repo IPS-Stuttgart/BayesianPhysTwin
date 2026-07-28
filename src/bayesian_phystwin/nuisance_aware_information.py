@@ -123,6 +123,7 @@ class NuisanceAwareInformationState:
         """Build a state with independent state and nuisance priors."""
 
         state = _finite_matrix(state_precision, name="state_precision")
+        nuisance: np.ndarray
         if nuisance_precision is None:
             nuisance = np.empty((0, 0), dtype=np.float64)
         else:
