@@ -1,0 +1,98 @@
+{
+  "accepted": true,
+  "admission_sha256": "a1b3483945e555fef983dbee1ab2f9de643046149c23dfe36b673f025161acd7",
+  "artifact_kind": "Deform360FreshSourceAdmission",
+  "case": "014-glove-vinyl-cloth-ep0000",
+  "category": "sheet",
+  "config": {
+    "maximum_point_count": 10000,
+    "minimum_camera_count": 3,
+    "minimum_point_count": 128,
+    "minimum_test_frame_count": 8,
+    "required_frame_count": 76,
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "episode_id": 0,
+  "information_boundary": {
+    "future_metrics_read": false,
+    "future_object_positions_deserialized": false,
+    "future_payload_bytes_hashed": true,
+    "selection_inputs": "raw object/episode identity and enums, stage input/output provenance hashes/counts, contact-window and split indices, camera names, and frame-zero PLY vertex count only"
+  },
+  "object_id": "014-glove-vinyl-cloth",
+  "observed_source_contract": {
+    "active_frame_count": 76,
+    "bimanual": false,
+    "camera_count": 11,
+    "cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "contact_end_frame": 75,
+    "contact_start_frame": 0,
+    "frame_zero_point_count": 288,
+    "metadata_object": "014-glove-vinyl-cloth",
+    "metadata_parent": "014-glove-vinyl-cloth",
+    "split_frame_count": 76,
+    "stage_inputs_valid": true,
+    "test": [
+      60,
+      76
+    ],
+    "train": [
+      0,
+      60
+    ],
+    "train_fraction": 0.8
+  },
+  "rejection_reasons": [],
+  "schema_version": 1,
+  "source_files": {
+    "calibrate": {
+      "basename": "calibrate.pkl",
+      "sha256": "473cbcc3a615cf6534f41684cca437d53277402aeee085b453faae37ca6721e2"
+    },
+    "control_meta": {
+      "basename": "control_points.meta.json",
+      "sha256": "86e728364f8c56c21f0b8932f00ead9d7b90d953f8f074f8b2d50ec57a1d99d1"
+    },
+    "frame_zero": {
+      "basename": "start_obj_pcd.ply",
+      "sha256": "ac442e1fe5ae5db097df7b3517a94a5be074776f60c88d4bee6b54118e16c8ca"
+    },
+    "future_payload": {
+      "basename": "final_data.pkl",
+      "sha256": "e4693f5f4e114f91176e3800be5fa7c6f17c481d84eea93211c5b5301b7f284a"
+    },
+    "metadata": {
+      "basename": "metadata.json",
+      "sha256": "6e4580d8d28850700bbc54834c0b35600d195fe864b38d45f109e4471bd1f46b"
+    },
+    "split": {
+      "basename": "split.json",
+      "sha256": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92"
+    }
+  },
+  "upstream_binding": {
+    "bound_files": {
+      "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+      "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+      "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+    },
+    "repository": "https://github.com/lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  }
+}

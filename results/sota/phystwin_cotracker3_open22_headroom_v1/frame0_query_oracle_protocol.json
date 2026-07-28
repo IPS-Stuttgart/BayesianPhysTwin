@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "study_id": "phystwin_cotracker3_frame0_query_oracle_open22_v1",
+  "status": "specified_before_full_22_case_oracle_outcomes",
+  "evidence_role": "post_open_association_and_support_oracle",
+  "motivation": "A post-open factorial localized Chamfer accuracy to the released dense observation field and manual-track accuracy to sparse material-identity anchors. This control asks whether frame-zero query association plus causal CoTracker3 motion can replace later manual anchor observations.",
+  "claim_boundary": [
+    "The 22 cases and the one-case single_lift_sloth smoke outcome were already open before this protocol.",
+    "Frame-zero manual query coordinates are label input, so this is not a label-free or deployable Bayesian-PhysTwin result.",
+    "No manual position after frame zero may enter association, fitting, selection, or prediction.",
+    "Released manual trajectories after frame zero are evaluation-only.",
+    "No full-cohort outcome may select thresholds, change the candidate grid, or support confirmation or a state-of-the-art claim."
+  ],
+  "evaluator": {
+    "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin.git",
+    "commit": "b3aa832c1b826836d286801614fc80f7ce053c80",
+    "script": "scripts/remote/run_matphys_sparse_prefix_headroom.py",
+    "observation_source": "final_data_cotracker3_frame0_query_oracle",
+    "manual_prefix_override": false,
+    "baseline_kind": "raw_matphys_replay",
+    "workers": 2
+  },
+  "inputs": {
+    "case_count": 22,
+    "case_bundle_required_file_manifest_sha256": "454afe7bbf000f93fc1e0ac9a355963362139743f0638aa5b14e25e5733e52fe",
+    "family_selection_sha256": "5eedb6cb5a747b856c0af696c5029038a8022f00828f43295f201578a4494890",
+    "cotracker3_cue_manifest_sha256": "899fadb41531bfe27d7743d8ba055e16fab3521259d1e3b7cbf945059ca82175"
+  },
+  "fixed_semantics": [
+    "Associate each finite frame-zero query to its nearest original PhysTwin node using frame-zero geometry only.",
+    "Use the corresponding CoTracker3 multiview trajectory for every later sparse-anchor update.",
+    "Use the released dense pseudo-tracks for the dense discrepancy channel.",
+    "Process CoTracker innovations once through the existing robust mixture endpoint.",
+    "Use exact baseline fallback when the causal prefix selector rejects an update."
+  ],
+  "decision": {
+    "crosses_8mm_15mm": "Evidence that causal automatic tracking is adequate once query association is supplied; automatic query discovery remains unresolved.",
+    "misses_track_threshold": "CoTracker support or endpoint accuracy remains inadequate even with oracle frame-zero association.",
+    "misses_chamfer_threshold": "The sparse anchor path interferes with the dense geometry channel and requires a decoupled readout or covariance-aware merge."
+  }
+}

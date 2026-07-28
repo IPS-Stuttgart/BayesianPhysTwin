@@ -1,0 +1,81 @@
+{
+  "baseline": {
+    "chamfer_distance_m": 0.02462536679421701,
+    "track_error_m": 0.06009776418956369
+  },
+  "candidate": {
+    "chamfer_distance_m": 0.012146114073667546,
+    "track_error_m": 0.06121531155941874
+  },
+  "candidate_relative_to_frozen_released_dense": {
+    "chamfer_distance_fraction": 0.015313940285298804,
+    "track_error_fraction": 0.15553302578499686
+  },
+  "case": "single_lift_cloth",
+  "frozen_released_dense": {
+    "chamfer_distance_m": 0.011962914712127896,
+    "track_error_m": 0.05297582171468694
+  },
+  "gates": {
+    "automatic_identity_support": true,
+    "both_metrics_no_worse_than_physical_baseline": false,
+    "cd_regression_within_tolerance": false,
+    "innovation_enters_once": true,
+    "prefix_selector_accepts_primary_arm": true,
+    "prior_reliability_is_residual_independent": true,
+    "track_improvement_over_frozen_dense": false
+  },
+  "inputs": {
+    "candidate": {
+      "path": "/mnt/corsair/florianpfaff/bpt-sparse-identity-smoke-v1/outputs/candidate_broad_sealed.json",
+      "sha256": "7c38b67195e57035bd405b077498e3a8fa0e16a15f9872fac9ea802e80d27c01"
+    },
+    "comparator": {
+      "path": "results/sota/phystwin_cotracker3_open22_headroom_v1/released_dense_without_manual.json",
+      "sha256": "1e9167865be45142b34d1b56b1ffa4c18b41cba4e316679ba58370eca9492889"
+    },
+    "cue": {
+      "path": "/mnt/corsair/florianpfaff/matphys-loo-sota-v2/cotracker3_cues_v3_open22/cues/single_lift_cloth/cues.npz",
+      "sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56"
+    },
+    "protocol": {
+      "path": "configs/sota/phystwin_sparse_identity_smoke_v1.json",
+      "sha256": "108fff7e5e38a01cfbc232ccfe8c4dfce4ce7668fab9230cef92651a94ef4394"
+    }
+  },
+  "observation_diagnostics": {
+    "identity_count": 2920,
+    "innovation_likelihood_count": 1,
+    "mean_prior_reliability": 0.00022750309473040396,
+    "median_observation_std_m": 0.022967090229549077,
+    "reliability_uses_phystwin_innovation": false,
+    "two_view_fraction_of_valid": 0.6356966551998912,
+    "valid_fraction": 0.21826326444690244
+  },
+  "primary_arm": "causal_selected_dense_relative_cap_temporal",
+  "protocol_id": "phystwin-sparse-identity-smoke-v1",
+  "recommendation": "Stop this exact sparse-identity arm without tuning covariance, support, reliability, cap, or temporal settings against this future.",
+  "schema_version": 1,
+  "selected_prefix_settings": {
+    "base_relative_candidate": {
+      "correction_scale": 1.0,
+      "fit_cap_m": 0.1333905285806711,
+      "metrics": {
+        "chamfer_distance_m": 0.012100049698254732,
+        "track_error_m": 0.06442586527822877
+      },
+      "relative_cap_multiplier": 1.0,
+      "selection_score": 0.7461068054310744
+    },
+    "selected_temporal_candidate": {
+      "gamma": 0.25,
+      "metrics": {
+        "chamfer_distance_m": 0.011956215355679986,
+        "track_error_m": 0.06484656787951387
+      },
+      "selection_score": 0.41615075366116155
+    }
+  },
+  "smoke_gate_passed": false,
+  "status": "post-open one-case development smoke; not independent evidence"
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshSourceWindowProtocol",
+  "protocol_id": "deform360-fresh-object-pairwise-belief-window-v1",
+  "status": "locked_before_source_rgb_decode",
+  "frozen_method": {
+    "commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
+    "arm": "raw_selected_backbone_full_blend_rbf_pairwise_clique"
+  },
+  "source_bindings": {
+    "queue": {
+      "artifact": "configs/sota/deform360_fresh_source_staging_queue_v1.json",
+      "queue_sha256": "f80fed80ca2b9f1857539834bd92c6acb1b45a88eefbcae16e35cddaf9185d0e",
+      "file_sha256": "4f31de5f2a4300916bff0b78c29796adffb60b84aad94b0d4895c1615831c372",
+      "candidate_count": 18
+    },
+    "download": {
+      "manifest_sha256": "a7774030848e2df5d4f33de37d8b6292b79665914053d690eff37b0f56f958ff",
+      "file_sha256": "04651369f533398bac976aa50ef96a6b513c4d4fc7db80545e30b2ecddbb3bde",
+      "object_count": 18,
+      "file_count": 1452,
+      "total_bytes": 1834930956
+    }
+  },
+  "window_selection": {
+    "raw_window_frame_count": 81,
+    "prediction_frame_count": 76,
+    "first_update_frame": 19,
+    "candidate_first_frame": 8,
+    "candidate_stride_frames": 6,
+    "action_position_field": "robot.actions[...,0,:]",
+    "closure_weight": "minimum adjacent robust q10-q90 closure confidence",
+    "score_step_range_half_open": [
+      19,
+      75
+    ],
+    "score": "mean over grippers of closure-weighted end-effector translation path after the first update",
+    "tie_break": "earliest candidate start"
+  },
+  "camera_panel": [
+    "brics-odroid-001_cam0",
+    "brics-odroid-006_cam0",
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam0",
+    "brics-odroid-010_cam0",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-024_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "cohort_boundary": {
+    "window_selection_is_not_source_admission": true,
+    "source_admission_contract": "configs/sota/deform360_fresh_object_source_lock_v1.json",
+    "motion_or_response_threshold_used_for_cohort_membership": false,
+    "insufficient_source_admissions": "stop and separately lock a reserve queue before reading new payload"
+  },
+  "information_boundary": {
+    "known_future_action_used_for_window_selection": true,
+    "action_is_a_conditioning_input": true,
+    "object_geometry_used_for_window_selection": false,
+    "object_tracks_used_for_window_selection": false,
+    "object_response_used_for_window_selection": false,
+    "tactile_used_for_window_selection": false,
+    "target_metric_used_for_window_selection": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false,
+    "selection_sealed_before_object_processing_and_prediction": true
+  },
+  "config_sha256": "015305926274bda59ae0b03390a86ac321e615b598001961fc70f13ee9f69511"
+}

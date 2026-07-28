@@ -1,0 +1,423 @@
+{
+  "artifact_kind": "Deform360HeldV8SourceAuthorizationHistoryAudit",
+  "audit_sha256": "b0a824f3d07fbfdc5666357fea557954c86a1c7012695a0d3b9537db9dde7675",
+  "audited_refs": {
+    "origin/online-belief-v82-process-isolation": "7a3d2beaf45e5068f114ea9dd20ebbce16e5b4b8",
+    "origin/online-belief-v83-gsplat-child-runtime": "45ad3a558d674c72221ec4d17fe575f8b3ef77bb",
+    "origin/online-partial-belief-v1": "8287a3b916ca38641cde5acf1b3b6da319786a7d"
+  },
+  "audited_source_paths": [
+    "src/bayesian_phystwin/deform360_held_v8_protocol.py",
+    "scripts/held/prepare_deform360_v8_lock.py",
+    "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py",
+    "src/bayesian_phystwin/deform360_held_v8_replacement_source.py"
+  ],
+  "coverage_statement": "All production-source revisions that changed the held-v8 authorization, lock-preparation, confirmation-source, or replacement-source paths across the published v8, v8.1, v8.2, and v8.3 lineage refs.",
+  "information_boundary": {
+    "committed_source_paths_only": true,
+    "held_campaign_root_accessed": false,
+    "plaintext_case_ids_emitted": false,
+    "plaintext_object_ids_emitted": false,
+    "target_query_score_barrier_or_outcome_artifact_read": false
+  },
+  "owner": "deform360-held-v8-source-authorization-history-v1",
+  "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+  "schema_version": 1,
+  "source_history_records": [
+    {
+      "case_identity_count": 22,
+      "commit": "430bcdbe9a28cb2e83e10cfc9cbb8d8d2a2c2a38",
+      "commit_time_unix": 1784713619,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "d065b4ab4ebaa4542a99ae224c10c1145847ff90f0b855ba1f1a48571b27827c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "8048c711214f9ac43c021422d0ae9fc79409fa52cc9829a40dd69bf3fb3e493e"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "978b4c3f783d3939a108717209af3781c3cca3ed",
+      "commit_time_unix": 1784717230,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "d065b4ab4ebaa4542a99ae224c10c1145847ff90f0b855ba1f1a48571b27827c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "ffeecbc585309406ac7a6f9cf950b62d5b64da4355f31e5084cd33a730e1da4f"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "4c678157445549f5931101ab617d6e711911ddeb",
+      "commit_time_unix": 1784717727,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "1c4231b2a1cf22f858dc20dc4afcf33a1e6edccb5dcfc27fc2beddf39b288400",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "d065b4ab4ebaa4542a99ae224c10c1145847ff90f0b855ba1f1a48571b27827c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "ffeecbc585309406ac7a6f9cf950b62d5b64da4355f31e5084cd33a730e1da4f"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "3442c985910683201137f9e5b5795168f856a7c9",
+      "commit_time_unix": 1784719945,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "7e25b86397d5900bba150ebbef876efb8789d78207639504afeabdb8c42ef97d",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "d065b4ab4ebaa4542a99ae224c10c1145847ff90f0b855ba1f1a48571b27827c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "2df2206a03b7298bcc6466b1d03134668dbf7406407329436c0740fbdd354c31"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "fe33177630672772717361e55a3e3dbe99489081",
+      "commit_time_unix": 1784724200,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "2dec89186b02cfbd726019e221d2ae6842a6c01fb44d62a1652391ee34a0b655",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "2fb843708f982b348b5a846190b47ad9a49e5ca2d695ae08d30ba0c9f4eb3f4c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "2df2206a03b7298bcc6466b1d03134668dbf7406407329436c0740fbdd354c31"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "d92906705fd8da9a372faef89a7a36524196cc3a",
+      "commit_time_unix": 1784725574,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "ad3b6292ccbb6c030ba848f0b0393e144a2d9ac8cc31708e54b633c8501709f6",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "2fb843708f982b348b5a846190b47ad9a49e5ca2d695ae08d30ba0c9f4eb3f4c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "2df2206a03b7298bcc6466b1d03134668dbf7406407329436c0740fbdd354c31"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "334a70bd2c6353df0c391f47e9644533ac154ad9",
+      "commit_time_unix": 1784728759,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "ad3b6292ccbb6c030ba848f0b0393e144a2d9ac8cc31708e54b633c8501709f6",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "5c12409a7412dcc88a934917358f920066844e805bffb2be59a2485dc24099dc",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "2df2206a03b7298bcc6466b1d03134668dbf7406407329436c0740fbdd354c31"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "bb5eec10fa51b804e40926dc21b00c5d774200f9",
+      "commit_time_unix": 1784729971,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "f516fc9d57ee517765863e091d3353740ed3a48002246e93642afa12d8813d66",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "9a04aacd1f69df9fe67eeaa2c051b5ec205d7c9119e314590d0c04bbedf8276e",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "e8f36cd35a0c6027943cb78d2f5fc92947224bd1",
+      "commit_time_unix": 1784730066,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "f516fc9d57ee517765863e091d3353740ed3a48002246e93642afa12d8813d66",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "5ecc2b148294569c100e9ccb8ae9527e85b54caae79f376e6372a0fa2c6e4663",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 22,
+      "commit": "cf797320326cff9dcc6f30f0320a85fc84565fdb",
+      "commit_time_unix": 1784730506,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "e4578670b44a9d0b6008033d57248850569a6bca2be7f866e5b9d53a41079551",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "5ecc2b148294569c100e9ccb8ae9527e85b54caae79f376e6372a0fa2c6e4663",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "45b171de9c934aaff60af61cc78f101920e3d917",
+      "commit_time_unix": 1784732941,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "9227da027ee0f59eb2dfda0b4bf777be97c7c3d8202cb2ebe1b99b7110950668",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "beff53e4d96a4c74d5d2ba5c718807985086e527b71a8efa4aab23495d27ba10",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "c7f20ebc1ff313088cc7e4f740c9402b3f781a93",
+      "commit_time_unix": 1784733296,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "a6b90b6f6afc319cfe3c5d73efc0fe5fe60f3bb2fcc7bee56054328743ab57aa",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "beff53e4d96a4c74d5d2ba5c718807985086e527b71a8efa4aab23495d27ba10",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "c88168cd88be37aa403929c5323da7a29eafa20a",
+      "commit_time_unix": 1784733555,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "865e95cc73d6411d132e3bb123f427197efb69efe97c0d3a630f1406fb46190b",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "beff53e4d96a4c74d5d2ba5c718807985086e527b71a8efa4aab23495d27ba10",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "756a57733d3710f7cf211231947d56dec1832859",
+      "commit_time_unix": 1784767367,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "c0910e5433674d1656cfd0791447024984e893c68232b0ca3b59ef44960338cf",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "17a99180050a4472a855d76bd9cb4dcc46be4c2912e96cea3f416abef3c4869f",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "3a23946ab3d647be7c836f92551e264258042325",
+      "commit_time_unix": 1784780704,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "ac4be58273e7f74dc18d84c0d240099628a9ab9c426bc00ffe3dde1441422821",
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py": "ae6498b63c8331dbffd0ee6917dc0fb35e811967eb49adb29f2281fd7db7f70d",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "624e9310dc9be08152b0ef1549820cadb528ac2f9a3fa731971777e6c4b957c8",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "d8a415bcc2e8094c3130dc1f808f43f4971ca163",
+      "commit_time_unix": 1784996715,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "1beae4375dc7c1f2e1e20bff8c9b4c30e35645a18937b34b5e8aadb430280ed9",
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py": "3ea5eedcab6a16680e2eb8afe8a76c16f7cda54e558266cf82e3bf82076dfd32",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "624e9310dc9be08152b0ef1549820cadb528ac2f9a3fa731971777e6c4b957c8",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "d74ece5a4b7f58bf82ce47ac656137446f763c65f67633a699aaa3bd45bd9c74"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "3a092ea1da555a261125e244c27b275619f91d1a",
+      "commit_time_unix": 1785000037,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "1beae4375dc7c1f2e1e20bff8c9b4c30e35645a18937b34b5e8aadb430280ed9",
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py": "530d9f0b6786ee9a2eefb17ff37bb641f3e144c05d0ffa34ffb827f4bdd6186f",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "00c4e77a39f1620ed19223c7a19cf953e964d082cbcada8444026a8170dda22c",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "4aab9b8d12e53741cfe5431556145f105005ed4da000b6d228d87cc4f0e95b26"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "7a3d2beaf45e5068f114ea9dd20ebbce16e5b4b8",
+      "commit_time_unix": 1785001494,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "1beae4375dc7c1f2e1e20bff8c9b4c30e35645a18937b34b5e8aadb430280ed9",
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py": "530d9f0b6786ee9a2eefb17ff37bb641f3e144c05d0ffa34ffb827f4bdd6186f",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "27ab1a46a02e42acc802de3ca027f1642a05fa12606449dab3a7dc77e65e2467",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "4aab9b8d12e53741cfe5431556145f105005ed4da000b6d228d87cc4f0e95b26"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "3439038816922dedfe20d03598870686082a4dfe",
+      "commit_time_unix": 1785007805,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "1beae4375dc7c1f2e1e20bff8c9b4c30e35645a18937b34b5e8aadb430280ed9",
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py": "f7318c88449b6bd636fea4eeaf58900d688b7e1e13bd9cb2b2de55b021052b65",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "e9388a7cd5e45c23a035c2ad25ae1ef8a5eb6d216fa817663599ea1d18e2c2a9",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "1aeeed6578f3854a6aae8f20656becdcdd2076f06ca1034c787176b468bb2603"
+      }
+    },
+    {
+      "case_identity_count": 23,
+      "commit": "67e53cafb5bbefdde9edad171942b3ab5360bd5e",
+      "commit_time_unix": 1785008339,
+      "physical_object_hashes": [
+        "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+        "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+        "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+        "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+        "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+        "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+        "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+      ],
+      "source_file_sha256s": {
+        "scripts/held/prepare_deform360_v8_lock.py": "1beae4375dc7c1f2e1e20bff8c9b4c30e35645a18937b34b5e8aadb430280ed9",
+        "src/bayesian_phystwin/deform360_held_v8_confirmation_source.py": "f7318c88449b6bd636fea4eeaf58900d688b7e1e13bd9cb2b2de55b021052b65",
+        "src/bayesian_phystwin/deform360_held_v8_protocol.py": "570bde6ed73165897c831679c4c4f6f3d10a9ad2ca196326dc2f8fd660574077",
+        "src/bayesian_phystwin/deform360_held_v8_replacement_source.py": "1aeeed6578f3854a6aae8f20656becdcdd2076f06ca1034c787176b468bb2603"
+      }
+    }
+  ],
+  "union_case_identity_count": 23,
+  "union_physical_object_count": 7,
+  "union_physical_object_hashes": [
+    "1aa8c49c3a8147afa1f71ca78f1ce5ce83955abd12570dc3da1f40ad55079b17",
+    "4d2f30a7897514fb74661890817ae7823cafa7675c2c897544d9108fdcff338b",
+    "589ba40084a1c42453b6aab6c5e388d463c37b9d2ce3c59b0d0febac198851d9",
+    "9f47b85c9750493e87e0e54a62a0c412e7fee20ed7de4a0b4000ab7102e7a1e1",
+    "c9e179c2a210efecf37cb925b3b731a8c93a67894bd041215e11035c4f7d228e",
+    "e2e12d520d927ee3a3fd780cd783ee1e5cd37add30d7e009a6b439794db30318",
+    "e856d618231060566526f80cd99c3bc2ef9ac4cb56781cdcc4c4aea7c5d5a05a"
+  ]
+}

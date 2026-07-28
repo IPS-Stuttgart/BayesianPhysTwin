@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshSourceProcessingProtocol",
+  "protocol_id": "deform360-fresh-object-pairwise-belief-processing-v1",
+  "status": "locked_before_fresh_source_geometry_reconstruction",
+  "parent_mask_protocol": {
+    "protocol_id": "deform360-fresh-object-pairwise-belief-masks-v1",
+    "config_sha256": "1c530153e693149e3defc54d20c153dbaff2aa26009006f7c7a805ca7db0f67c",
+    "file_sha256": "441c3b62d80c3d041f9183d0735e807a1fc69b5ec82c6cb8f37d045d95bb6860",
+    "implementation_commit": "c2c0346606eb09a8171a28c22305eed0239427ad"
+  },
+  "deform360": {
+    "repository": "https://github.com/lhy0807/deform360",
+    "revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "source_sha256": {
+      "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+      "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467",
+      "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+      "tracking_stage": "04533cd9cd900ae2f5bd139568ed1a2442661f14ceda009dd7bb85e4fbd83ec2",
+      "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+      "control_points_stage": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373"
+    }
+  },
+  "camera_policy": {
+    "selection": "all successful frozen-panel cameras in lexical order",
+    "minimum_camera_count": 8,
+    "outcome_dependent_selection": false,
+    "repair_or_replacement_after_failure": false
+  },
+  "reconstruction": {
+    "raw_frame_count": 81,
+    "minimum_visual_hull_points": 512,
+    "voxel_resolution": 120,
+    "cube_half_extent_m": 0.5,
+    "first_frame_iterations": 500,
+    "warm_start_iterations": 250,
+    "warm_start_from_previous_frame": true
+  },
+  "depth": {
+    "expected_depth": true,
+    "object_mask_applied": true,
+    "gripper_urdf_mask_applied": true,
+    "preview_video": false
+  },
+  "tracking": {
+    "model": "facebook/cotracker3-scaled-offline",
+    "repository_revision": "82e02e8029753ad4ef13cf06be7f4fc5facdda4d",
+    "repository_tree": "f0296ad047b50c1530063b67e575908257478cab",
+    "predictor_source_sha256": "783536d6c77790fa6c8e005f2df1d6bd4f0d8955c2c67d464bfb4e64d366375f",
+    "checkpoint_sha256": "2670d4562ed69326dda775a26e54883925cd11b6fc9b24cb7aa9f8078bce7834"
+  },
+  "point_cloud": {
+    "seed_point_count": 10000,
+    "crop_half_extent_m": 0.5,
+    "radius_neighbors": 30,
+    "radius_m": 0.02,
+    "statistical_neighbors": 30,
+    "statistical_std_ratio": 3.5,
+    "fusion_ransac_threshold_m_per_s": 0.01,
+    "fusion_minimum_inliers": 4,
+    "rng_seed": 0,
+    "output_frame_count": 76,
+    "tracking_tail_frames_skipped": 5,
+    "frame_rate_hz": 30.0
+  },
+  "source_admission": {
+    "minimum_camera_count": 3,
+    "minimum_point_count": 128,
+    "maximum_point_count": 10000,
+    "required_frame_count": 76,
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "minimum_test_frame_count": 8,
+    "future_geometry_deserialized_for_admission": false
+  },
+  "failure_accounting": {
+    "mask_technical_failure_is_terminal_for_queue_entry": true,
+    "processing_failure_is_preserved_as_technical_failure": true,
+    "source_rejection_is_not_a_model_prediction": true,
+    "implicit_replacement": false,
+    "minimum_final_admissions": 12,
+    "fewer_than_minimum_requires_a_new_locked_reserve_queue": true
+  },
+  "information_boundary": {
+    "all_81_source_rgb_and_masks_used_for_source_processing": true,
+    "known_action_used_as_a_conditioning_input": true,
+    "tactile_read": false,
+    "target_metric_read": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false,
+    "sealed_window_and_mask_artifacts_mutated": false,
+    "derived_processing_workspace_only": true
+  },
+  "config_sha256": "3ba3931816d6cca5e9e25f82c7aee222972c4b2ad29cfd392bdd8225affcdad3"
+}

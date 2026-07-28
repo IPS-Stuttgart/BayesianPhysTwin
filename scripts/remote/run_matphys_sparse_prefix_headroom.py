@@ -58,6 +58,9 @@ from bayesian_phystwin.phystwin_graph_discrepancy import (
     graph_smoothed_discrepancy_posterior,
     normalized_spring_laplacian,
 )
+from bayesian_phystwin.phystwin_frame_zero_query import (
+    associate_frame_zero_queries,
+)
 from bayesian_phystwin.phystwin_multiview_tangent_fusion import (
     fuse_source_normal_multiview_tangent,
     local_surface_tangent_projectors,
@@ -77,6 +80,11 @@ from bayesian_phystwin.phystwin_residual_dynamics import (
     _clip_residual,
     _target_validity,
 )
+from bayesian_phystwin.phystwin_sparse_identity_observation import (
+    SparseIdentityObservationConfig,
+    load_cotracker3_sparse_identity_observations,
+    sparse_identity_endpoint,
+)
 from bayesian_phystwin.phystwin_sparse_identity_split import (
     DisjointSparseIdentityTracks,
     split_sparse_identity_tracks,
@@ -94,6 +102,15 @@ class HeadroomConfig:
     cotracker_maximum_reprojection_error_px: float = 3.0
     cotracker_maximum_view_disagreement_m: float = 0.01
     cotracker_minimum_camera_count: int = 3
+    sparse_identity_minimum_camera_count: int = 2
+    sparse_identity_redundant_camera_count: int = 3
+    sparse_identity_pixel_noise_std: float = 2.0
+    sparse_identity_prior_std_m: float = 0.10
+    sparse_identity_shared_bias_std_m: float = 0.005
+    sparse_identity_two_view_extra_std_m: float = 0.010
+    sparse_identity_boundary_scale_px: float = 8.0
+    sparse_identity_two_view_reliability_multiplier: float = 0.5
+    sparse_identity_minimum_ray_angle_degrees: float = 0.5
     multiview_priority_minimum_availability_fraction: float = 0.10
     multiview_tangent_neighbor_count: int = 16
     ray_window_frames: int = 31
@@ -870,6 +887,9 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     laplacian = normalized_spring_laplacian(len(structure_points), springs)
 
     cotracker_summary = None
+    frame_zero_query_points = None
+    frame_zero_query_valid = None
+    sparse_identity_observations = None
     directional_endpoint_inputs = None
     ray_bias_aware = (
         config.observation_source
@@ -877,6 +897,122 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
     )
     ray_endpoint_diagnostics: dict[int, dict[str, Any]] = {}
     if config.observation_source == "final_data":
+        inference_points = observed_points
+        dense_valid = _target_validity(visible, motion_valid)
+    elif (
+        config.observation_source
+        == "final_data_plus_cotracker3_sparse_identity"
+    ):
+        inference_points = observed_points
+        dense_valid = _target_validity(visible, motion_valid)
+        sparse_identity_observations = (
+            load_cotracker3_sparse_identity_observations(
+                Path(cues_path),
+                observed_points[0],
+                train_end_frame=train_end,
+                config=SparseIdentityObservationConfig(
+                    minimum_view_quality=config.cotracker_minimum_quality,
+                    maximum_cycle_error_px=(
+                        config.cotracker_maximum_cycle_error_px
+                    ),
+                    maximum_reprojection_error_px=(
+                        config.cotracker_maximum_reprojection_error_px
+                    ),
+                    minimum_camera_count=(
+                        config.sparse_identity_minimum_camera_count
+                    ),
+                    redundant_camera_count=(
+                        config.sparse_identity_redundant_camera_count
+                    ),
+                    pixel_noise_std=config.sparse_identity_pixel_noise_std,
+                    prior_std_m=config.sparse_identity_prior_std_m,
+                    shared_bias_std_m=(
+                        config.sparse_identity_shared_bias_std_m
+                    ),
+                    two_view_extra_std_m=(
+                        config.sparse_identity_two_view_extra_std_m
+                    ),
+                    boundary_scale_px=(
+                        config.sparse_identity_boundary_scale_px
+                    ),
+                    two_view_reliability_multiplier=(
+                        config.sparse_identity_two_view_reliability_multiplier
+                    ),
+                    minimum_ray_angle_degrees=(
+                        config.sparse_identity_minimum_ray_angle_degrees
+                    ),
+                ),
+            )
+        )
+        sparse_valid = sparse_identity_observations.valid
+        cotracker_summary = {
+            "method": (
+                "released dense pseudo-tracks plus a separate CoTracker3 "
+                "material-identity channel with metric covariance"
+            ),
+            "valid_fraction": float(np.mean(sparse_valid)),
+            "identity_count": int(np.sum(np.any(sparse_valid, axis=0))),
+            "two_view_fraction_of_valid": (
+                0.0
+                if not np.any(sparse_valid)
+                else float(
+                    np.mean(
+                        sparse_identity_observations.two_view_fallback[
+                            sparse_valid
+                        ]
+                    )
+                )
+            ),
+            "mean_prior_reliability": (
+                0.0
+                if not np.any(sparse_valid)
+                else float(
+                    np.mean(
+                        sparse_identity_observations.prior_reliability[
+                            sparse_valid
+                        ]
+                    )
+                )
+            ),
+            "median_observation_std_m": (
+                None
+                if not np.any(sparse_valid)
+                else float(
+                    np.median(
+                        np.sqrt(
+                            sparse_identity_observations.observation_variance_m2[
+                                sparse_valid
+                            ]
+                        )
+                    )
+                )
+            ),
+            "reliability_uses_phystwin_innovation": False,
+            "innovation_likelihood_count": 1,
+            "cross_view_correlation": (
+                "pose-duplicate collapse plus normalized ray information; "
+                "shared bias and two-view uncertainty remain in metric covariance"
+            ),
+        }
+    elif (
+        config.observation_source
+        == "final_data_cotracker3_frame0_query_oracle"
+    ):
+        frame_zero_query_points, frame_zero_query_valid, cotracker_summary = (
+            _load_cotracker_multiview(
+                Path(cues_path),
+                observed_points[0],
+                train_end=train_end,
+                minimum_quality=config.cotracker_minimum_quality,
+                maximum_cycle_error_px=(
+                    config.cotracker_maximum_cycle_error_px
+                ),
+                maximum_reprojection_error_px=(
+                    config.cotracker_maximum_reprojection_error_px
+                ),
+                minimum_camera_count=config.cotracker_minimum_camera_count,
+            )
+        )
         inference_points = observed_points
         dense_valid = _target_validity(visible, motion_valid)
     elif config.observation_source in {
@@ -1328,6 +1464,8 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         initial_variance=config.initial_std_m**2,
     )
 
+    frame_zero_query_count = 0
+    sparse_anchor_source = "none"
     if config.manual_prefix_override:
         if manual_identity_split is None:
             manual_initial = np.isfinite(manual_observation_tracks[0]).all(axis=1)
@@ -1346,24 +1484,77 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         manual_residual[manual_valid] = (
             manual_values[manual_valid] - baseline_at_manual[manual_valid]
         )
+        sparse_anchor_source = "manual_prefix_trajectory"
+    elif frame_zero_query_points is not None:
+        manual_initial = np.zeros(manual_tracks.shape[1], dtype=bool)
+        query_initial = np.isfinite(manual_tracks[0]).all(axis=1)
+        association = associate_frame_zero_queries(
+            baseline[0, :original_count],
+            manual_tracks[0, query_initial],
+        )
+        initial_match_m = association.distance_m
+        manual_indices = association.node_indices
+        tracker_values = frame_zero_query_points[:, manual_indices]
+        manual_valid = frame_zero_query_valid[:, manual_indices]
+        manual_residual = np.zeros_like(tracker_values)
+        baseline_at_manual = baseline[:train_end, manual_indices]
+        manual_residual[manual_valid] = (
+            tracker_values[manual_valid] - baseline_at_manual[manual_valid]
+        )
+        frame_zero_query_count = int(np.sum(query_initial))
+        sparse_anchor_source = "frame_zero_query_plus_cotracker3"
+    elif sparse_identity_observations is not None:
+        manual_initial = np.zeros(manual_tracks.shape[1], dtype=bool)
+        initial_match_m = np.zeros(original_count, dtype=float)
+        manual_indices = np.arange(original_count, dtype=np.int64)
+        manual_values = sparse_identity_observations.points_world_m
+        manual_valid = sparse_identity_observations.valid
+        manual_residual = np.zeros_like(manual_values)
+        baseline_at_manual = baseline[:train_end, :original_count]
+        manual_residual[manual_valid] = (
+            manual_values[manual_valid] - baseline_at_manual[manual_valid]
+        )
+        sparse_anchor_source = "cotracker3_covariance_identity"
     else:
         manual_initial = np.zeros(manual_tracks.shape[1], dtype=bool)
         initial_match_m = np.empty(0, dtype=float)
         manual_indices = np.empty(0, dtype=np.int64)
         manual_valid = np.zeros((future_end, 0), dtype=bool)
         manual_residual = np.zeros((future_end, 0, 3), dtype=float)
-    manual_endpoint = _endpoint(
-        manual_residual,
-        manual_valid,
-        end_frame=train_end,
-        config=config,
-    )
-    fit_manual_endpoint = _endpoint(
-        manual_residual,
-        manual_valid,
-        end_frame=fit_end,
-        config=config,
-    )
+    if sparse_identity_observations is None:
+        manual_endpoint = _endpoint(
+            manual_residual,
+            manual_valid,
+            end_frame=train_end,
+            config=config,
+        )
+        fit_manual_endpoint = _endpoint(
+            manual_residual,
+            manual_valid,
+            end_frame=fit_end,
+            config=config,
+        )
+    else:
+        endpoint_arguments = {
+            "process_variance": config.process_std_m**2,
+            "initial_variance": config.initial_std_m**2,
+            "inlier_prior": config.inlier_prior,
+            "outlier_variance_multiplier": (
+                config.outlier_variance_multiplier
+            ),
+        }
+        manual_endpoint = sparse_identity_endpoint(
+            sparse_identity_observations,
+            baseline[:train_end, :original_count],
+            end_frame=train_end,
+            **endpoint_arguments,
+        )
+        fit_manual_endpoint = sparse_identity_endpoint(
+            sparse_identity_observations,
+            baseline[:train_end, :original_count],
+            end_frame=fit_end,
+            **endpoint_arguments,
+        )
 
     combined_mean = full_mean.copy()
     combined_variance = full_variance.copy()
@@ -2526,6 +2717,9 @@ def _run_case(job: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
         ),
         "manual_identity_support": manual_identity_support,
         "manual_initial_match_max_m": float(np.max(initial_match_m, initial=0.0)),
+        "frame_zero_query_count": frame_zero_query_count,
+        "sparse_anchor_source": sparse_anchor_source,
+        "sparse_anchor_count": int(len(manual_indices)),
         "observation_source": config.observation_source,
         "cotracker_depth_lift": cotracker_summary,
         "baseline": baseline_metrics,
@@ -2665,6 +2859,7 @@ def parse_args() -> argparse.Namespace:
         "--observation-source",
         choices=(
             "final_data",
+            "final_data_cotracker3_frame0_query_oracle",
             "cotracker3_source_depth",
             "alltracker_source_depth",
             "cotracker3_multiview",
@@ -2673,6 +2868,7 @@ def parse_args() -> argparse.Namespace:
             "cotracker3_multiview_priority",
             "cotracker3_multiview_tangent_priority",
             "cotracker3_multiview_directional_priority",
+            "final_data_plus_cotracker3_sparse_identity",
             "alltracker_multiview_ray_bias_aware",
         ),
         default="final_data",
@@ -2703,6 +2899,53 @@ def parse_args() -> argparse.Namespace:
         "--cotracker-minimum-camera-count",
         type=int,
         default=3,
+    )
+    parser.add_argument(
+        "--sparse-identity-minimum-camera-count",
+        type=int,
+        default=HeadroomConfig.sparse_identity_minimum_camera_count,
+    )
+    parser.add_argument(
+        "--sparse-identity-redundant-camera-count",
+        type=int,
+        default=HeadroomConfig.sparse_identity_redundant_camera_count,
+    )
+    parser.add_argument(
+        "--sparse-identity-pixel-noise-std",
+        type=float,
+        default=HeadroomConfig.sparse_identity_pixel_noise_std,
+    )
+    parser.add_argument(
+        "--sparse-identity-prior-std-m",
+        type=float,
+        default=HeadroomConfig.sparse_identity_prior_std_m,
+    )
+    parser.add_argument(
+        "--sparse-identity-shared-bias-std-m",
+        type=float,
+        default=HeadroomConfig.sparse_identity_shared_bias_std_m,
+    )
+    parser.add_argument(
+        "--sparse-identity-two-view-extra-std-m",
+        type=float,
+        default=HeadroomConfig.sparse_identity_two_view_extra_std_m,
+    )
+    parser.add_argument(
+        "--sparse-identity-boundary-scale-px",
+        type=float,
+        default=HeadroomConfig.sparse_identity_boundary_scale_px,
+    )
+    parser.add_argument(
+        "--sparse-identity-two-view-reliability-multiplier",
+        type=float,
+        default=(
+            HeadroomConfig.sparse_identity_two_view_reliability_multiplier
+        ),
+    )
+    parser.add_argument(
+        "--sparse-identity-minimum-ray-angle-degrees",
+        type=float,
+        default=HeadroomConfig.sparse_identity_minimum_ray_angle_degrees,
     )
     parser.add_argument(
         "--cotracker-maximum-view-disagreement-m",
@@ -2839,6 +3082,31 @@ def main() -> None:
             args.cotracker_maximum_reprojection_error_px
         ),
         cotracker_minimum_camera_count=args.cotracker_minimum_camera_count,
+        sparse_identity_minimum_camera_count=(
+            args.sparse_identity_minimum_camera_count
+        ),
+        sparse_identity_redundant_camera_count=(
+            args.sparse_identity_redundant_camera_count
+        ),
+        sparse_identity_pixel_noise_std=(
+            args.sparse_identity_pixel_noise_std
+        ),
+        sparse_identity_prior_std_m=args.sparse_identity_prior_std_m,
+        sparse_identity_shared_bias_std_m=(
+            args.sparse_identity_shared_bias_std_m
+        ),
+        sparse_identity_two_view_extra_std_m=(
+            args.sparse_identity_two_view_extra_std_m
+        ),
+        sparse_identity_boundary_scale_px=(
+            args.sparse_identity_boundary_scale_px
+        ),
+        sparse_identity_two_view_reliability_multiplier=(
+            args.sparse_identity_two_view_reliability_multiplier
+        ),
+        sparse_identity_minimum_ray_angle_degrees=(
+            args.sparse_identity_minimum_ray_angle_degrees
+        ),
         cotracker_maximum_view_disagreement_m=(
             args.cotracker_maximum_view_disagreement_m
         ),
@@ -2964,7 +3232,13 @@ def main() -> None:
                     "deployable input"
                 )
                 if config.manual_prefix_override
-                else "disabled; manual tracks are evaluation-only"
+                else (
+                    "frame-zero query coordinates only; CoTracker3 supplies every "
+                    "later anchor observation; not label-free"
+                    if config.observation_source
+                    == "final_data_cotracker3_frame0_query_oracle"
+                    else "disabled; manual tracks are evaluation-only"
+                )
             ),
             "manual_identity_scoring": (
                 "future manual-track error excludes every assimilated identity"

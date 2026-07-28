@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360FreshSourceLockSmokeSummary",
+  "purpose": "source_only_implementation_smoke",
+  "implementation": {
+    "repository": "https://github.com/FlorianPfaff/Bayesian-PhysTwin",
+    "commit": "ee9c93edcef8a7ac7631f12c4c201977793f7cde",
+    "branch": "deform360-fresh-source-lock-v1",
+    "server_alias": "gpuserver6000",
+    "server_hostname": "workstation2",
+    "clean_checkout_before_run": true
+  },
+  "source_case": {
+    "case": "081-stripe-rope-ep0003",
+    "category": "rope",
+    "previously_opened_source_object": true,
+    "eligible_as_fresh_evaluation_evidence": false
+  },
+  "admission": {
+    "artifact": "081-stripe-rope-ep0003.admission.json",
+    "file_sha256": "f8849ae8d659421b90cde0202c2f6f398c370964b544a236b9173e63c381783a",
+    "admission_sha256": "6e6e31e39b8dd8d28f9bccce2ccb4a85c34dded385ddb98b32103ea7c99045ec",
+    "accepted": true,
+    "rejection_reasons": []
+  },
+  "observed_source_contract": {
+    "camera_count": 12,
+    "frame_zero_point_count": 654,
+    "canonical_object_directory": "081-stripe-rope",
+    "descriptive_metadata_object_label": "081-stripe",
+    "split_frame_count": 76,
+    "active_frame_count": 76,
+    "train": [
+      0,
+      60
+    ],
+    "test": [
+      60,
+      76
+    ],
+    "stage_inputs_valid": true
+  },
+  "verification": {
+    "command": "PYTHONPATH=src python -m pytest -q -s",
+    "passed": 775,
+    "skipped": 28,
+    "duration_seconds": 337.02,
+    "implementation_files_modified_after_commit": false
+  },
+  "information_boundary": {
+    "future_payload_bytes_hashed": true,
+    "future_object_positions_deserialized": false,
+    "future_metrics_read": false,
+    "held_v8_artifacts_accessed": false
+  },
+  "conclusion": "The exact committed source-lock implementation accepts one real, already-open source bundle without crossing the future-outcome boundary. This validates operation only and is not accuracy, calibration, prospective, or SOTA evidence."
+}

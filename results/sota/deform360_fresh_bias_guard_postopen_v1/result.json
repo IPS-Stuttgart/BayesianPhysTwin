@@ -1,0 +1,3208 @@
+{
+  "accepted_interval_count": 4,
+  "aggregate": {
+    "guarded_source_v4": {
+      "post_update_hidden_identity_rmse_m": 0.0009447269720555917,
+      "post_update_hidden_symmetric_chamfer_m": 0.0008360812477372321
+    },
+    "selected_raw_baseline": {
+      "post_update_hidden_identity_rmse_m": 0.0008991155403916305,
+      "post_update_hidden_symmetric_chamfer_m": 0.0007720829200019764
+    }
+  },
+  "artifact_kind": "Deform360FreshBiasGuardPostOpenResult",
+  "candidate_available_interval_count": 4,
+  "case_count": 12,
+  "cases": [
+    {
+      "case": "007-feather-ep0000",
+      "category": "filament",
+      "input_sha256": {
+        "measurement_archive": "ad4de3bdf76a60ee87dfa8fefe754a84a59734040119e3180c2e24eb52368941",
+        "measurement_manifest": "7d98142282676581a31d302cb7425a2ca309e69b7e643cf1818e44e51c797723",
+        "opened_report": "414132399152ca465d282c9d9dba6e2f38c154505f33b5efbe49d4139bd06725",
+        "opened_target": "a266435c3520f8f6a8ae8fac7fde2517fb460552014e211a7f8eadf9eb4c434b",
+        "prediction_archive": "22174b572dc836c82b30a86e826a5dcf35f52409e95cd02b790ddfaf3ecc80b2",
+        "prediction_report": "b904b22a793a8b851a373ba46c8e7fc3422d1e4ad604d7d2bfc436e7bd41135c",
+        "prediction_seal": "7427c6fa84a9a6ebfb3a55cda81092cc4a3e851ec2d029b97670e32b1e796a98"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "007-feather",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.0004185454650526512,
+          "post_update_hidden_symmetric_chamfer_m": 0.00024986972924884014
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0004185454650526512,
+          "post_update_hidden_symmetric_chamfer_m": 0.00024986972924884014
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 1211,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            0,
+            466,
+            1209,
+            531,
+            576,
+            190,
+            15,
+            695,
+            1059,
+            1192,
+            180,
+            221,
+            1031,
+            890,
+            377,
+            281
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 12,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.2846883501197491,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 12,
+              "observed_motion_rms_m": 0.010252537562484667,
+              "physical_response_rms_m": 0.00214577264590619
+            },
+            {
+              "available_center_count": 12,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 12,
+              "observed_motion_rms_m": 0.004225807297879587,
+              "physical_response_rms_m": 7.344002097625447e-05
+            },
+            {
+              "available_center_count": 11,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 9,
+              "observed_motion_rms_m": 0.004031857502736514,
+              "physical_response_rms_m": 2.367107395063124e-05
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.012702914985636428,
+        "physical_response_rms_m": 0.001970650601423126,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "012-hat-cloth-ep0000",
+      "category": "sheet",
+      "input_sha256": {
+        "measurement_archive": "4a7b353643240c473451f92731917a554617c9f653bb3e09d13df1ff64d77cb3",
+        "measurement_manifest": "72e89849326114c9757d273dc4ca2d0674ddc2707660be7a79c2fb77e0f6eb63",
+        "opened_report": "8790c164544b9b4c3cd4d1e645d4cce48c665fb6bd0c04365b1312061e089198",
+        "opened_target": "2e41b3b47cc7250f265ad3799472140c614026101b8562705add76b4e8e450ad",
+        "prediction_archive": "a9ccf48622c6ee07551808ee148d67b34e4f1c4e842f1d37f6912197a4d4b5d9",
+        "prediction_report": "98e7f032c2a141a925d2fb6ae08ee222152cc6e11aff17b9668e84a72d9b8dec",
+        "prediction_seal": "b42b3ebe31658afe52ae280cb03bd30829b75270ec05b438b50b9abf5ae4185e"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": true,
+          "frame": 19,
+          "harmful_on_any_primary_metric": true,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0002632590885618771,
+            "post_update_hidden_symmetric_chamfer_m": 0.00035833949484047247
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "012-hat-cloth",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.002202223499910148,
+          "post_update_hidden_symmetric_chamfer_m": 0.0025338754951490486
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0021144704703895223,
+          "post_update_hidden_symmetric_chamfer_m": 0.0024144289968688914
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 1,
+        "action_support_count": 788,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 1,
+          "center_ids": [
+            0,
+            783,
+            269,
+            482,
+            26,
+            696,
+            683,
+            249,
+            677,
+            256,
+            553,
+            61,
+            158,
+            704,
+            749,
+            504
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": false,
+              "candidate_available": true,
+              "causal_physical_agreement_gain": 0.6559474331822126,
+              "decision": "bias-aware-candidate-available",
+              "dynamic_window_selected": true,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": [
+                0.018443600012929353,
+                0.049161511124789274,
+                0.041499517036893155,
+                0.007283243633283536,
+                0.4428899298568878,
+                0.6559474331822126,
+                0.9709612646750602,
+                0.8257758641542945
+              ],
+              "frame": 19,
+              "identifiable_basis_rank": 3,
+              "interval_end_exclusive": 38,
+              "maximum_correction_m": 0.005137289185549418,
+              "minimum_identifiable_fraction": 0.24564532213235102,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.00990955595905995,
+              "physical_basis_rank": 4,
+              "physical_response_rms_m": 0.0037177027766846465,
+              "state_update_diagnostics": {
+                "active_view_count": 1,
+                "condition_number": 91.3389506878591,
+                "correlation_treatment": "effective samples within view and equal-weight covariance intersection across views",
+                "downweighted_camera_fraction": 0.0625,
+                "effective_camera_information_mass": 7.086238877710205,
+                "independent_anchor_count": 0,
+                "iterations": 8,
+                "maximum_state_bias_posterior_correlation": 0.8257758641542945,
+                "maximum_state_update_m": 0.006461002848755677,
+                "minimum_camera_robust_weight": 0.5519529547851506,
+                "per_camera_bias_prior_ci_scaled": true,
+                "prior_reliability_uses_innovation": false,
+                "shared_bias_mode_count": 3,
+                "state_bias_subspace_cosine": 0.9709612646750602,
+                "state_mode_count": 3,
+                "usable_camera_observation_count": 16,
+                "view_count": 1
+              }
+            },
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.162031774665704,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.00447273141001212,
+              "physical_response_rms_m": 0.005506310736883059
+            },
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.002498181832117108,
+              "physical_response_rms_m": 0.02109731188979458
+            }
+          ]
+        },
+        "candidate_available_count": 1,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": true,
+            "candidate_available": true,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "unchanged-source-v4-lock-accepted"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 2,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.12615735472152553,
+        "physical_response_rms_m": 0.023847642823777625,
+        "selected_bit_exact_baseline": false,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "048-butter-sponge-ep0000",
+      "category": "volumetric",
+      "input_sha256": {
+        "measurement_archive": "8b6b0630c27d5130f9212cf331052a5b5356904ec0cd0ea38a5caee391eab2f8",
+        "measurement_manifest": "8c40de68ebc5bf60c34354fe7313cf10536c823169feaa5a61731c1a892b4cae",
+        "opened_report": "baaf45d8bb04b6ec727e8f021476d94762fdc80ba656e14770eb5b9012be70e2",
+        "opened_target": "6e9f7bd4eb0bc6ebdc6391e9605cf3a2d93b5a213659468106f39194ce01e846",
+        "prediction_archive": "b54eff46c462ce76d338003b85e61fb9d63ecc95ac57c505b0bf37171c4675c1",
+        "prediction_report": "6c7ef563e4647636961edc03fd61c6210fcff3ef68ac015d216a03a91005aa75",
+        "prediction_seal": "25b4585e9930cc0da4456c81abf13adc59c87647b7ca4dadeed0248b9b2ca362"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "048-butter-sponge",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.0005478932742474746,
+          "post_update_hidden_symmetric_chamfer_m": 0.00030814169084710663
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.0005478932742474746,
+          "post_update_hidden_symmetric_chamfer_m": 0.00030814169084710663
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 767,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            2,
+            709,
+            439,
+            194,
+            239,
+            750,
+            205,
+            123,
+            458,
+            465,
+            125,
+            303,
+            142,
+            551,
+            555,
+            65
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 11,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 11,
+              "observed_motion_rms_m": 0.0012900222703636798,
+              "physical_response_rms_m": 0.0014992961599490171
+            },
+            {
+              "available_center_count": 12,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 11,
+              "observed_motion_rms_m": 0.002177968766436495,
+              "physical_response_rms_m": 5.1196261103401814e-05
+            },
+            {
+              "available_center_count": 10,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 10,
+              "observed_motion_rms_m": 0.0022042125239376685,
+              "physical_response_rms_m": 6.0890076403081495e-05
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.017827855180106496,
+        "physical_response_rms_m": 0.0014303781983922,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "162-straw-ep0000",
+      "category": "filament",
+      "input_sha256": {
+        "measurement_archive": "33a805033b7bc1f727f2c181d3b161d95253a0b075f7163638c1efd83e136601",
+        "measurement_manifest": "a62cfcbe3974820e48801330d6478ebae121f24c4f60adb622a4c2318d5e63d2",
+        "opened_report": "5a07aac31b65c0e711fdba321386bc5e51b1ec4703ce246c44db75ecfc9e103b",
+        "opened_target": "6a16521741ccb187501282e64ea3402f01382f9380343615d0bed5f9cd2b98e8",
+        "prediction_archive": "9a0988e8d4cd9cd443bc253614150b79c0cbd7eea0a0ca8558baf5c4f2c84f27",
+        "prediction_report": "83a354b795f878025ef78b4ad3c0fb172b5fa8a15b0d84b32ce65386ebf99310",
+        "prediction_seal": "623d9a7a82a975d408d9765c24b2817da913b01072db9039cebebe951c925d52"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "162-straw",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 2.175765345127037e-05,
+          "post_update_hidden_symmetric_chamfer_m": 2.663850630434951e-05
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 2.175765345127037e-05,
+          "post_update_hidden_symmetric_chamfer_m": 2.663850630434951e-05
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 463,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            5,
+            461,
+            130,
+            336,
+            364,
+            80,
+            307,
+            94,
+            394,
+            210,
+            49,
+            459,
+            159,
+            95,
+            283,
+            166
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 10,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 1.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 10,
+              "observed_motion_rms_m": 0.007270246430253643,
+              "physical_response_rms_m": 2.2592174135086572e-05
+            },
+            {
+              "available_center_count": 10,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 10,
+              "observed_motion_rms_m": 0.009949249536064367,
+              "physical_response_rms_m": 1.240580163999131e-05
+            },
+            {
+              "available_center_count": 8,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 8,
+              "observed_motion_rms_m": 0.019488127241290617,
+              "physical_response_rms_m": 5.305207103759196e-06
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 9.73454004778921e-05,
+        "physical_response_rms_m": 2.5236161003201247e-05,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "014-glove-vinyl-cloth-ep0000",
+      "category": "sheet",
+      "input_sha256": {
+        "measurement_archive": "c763d22dd874c0a8a59cb91eddbf449c0b78f35bad683da83b19cfea6c392088",
+        "measurement_manifest": "5b8d24312961e5060afaf004109da7f586ebea2db42e18de032feef5f55b94c7",
+        "opened_report": "8f2d9ba8f97783da0da1ec1a868f497a0165915ce4635bc056201de4a5341abd",
+        "opened_target": "e4693f5f4e114f91176e3800be5fa7c6f17c481d84eea93211c5b5301b7f284a",
+        "prediction_archive": "cee3e1d49e825ec157063c6f2cb0950c78a1a52c720a6dd4c1b4a93934e33d7b",
+        "prediction_report": "6a9d8de8a3aa4df758623b546aa1a02a43d2c15efe9e0aa03c16d8201b80c1c0",
+        "prediction_seal": "bd10839e05313e438942870298d25b8cd07bee3a89610f3fbd5aa28f5eb73f7f"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "014-glove-vinyl-cloth",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 4.1118855690282054e-05,
+          "post_update_hidden_symmetric_chamfer_m": 4.2779274829588535e-05
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 4.1118855690282054e-05,
+          "post_update_hidden_symmetric_chamfer_m": 4.2779274829588535e-05
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 288,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            0,
+            284,
+            85,
+            243,
+            225,
+            122,
+            73,
+            266,
+            23,
+            220,
+            98,
+            13,
+            179,
+            61,
+            267,
+            254
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 13,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.8212386927680757,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 13,
+              "observed_motion_rms_m": 0.0014212545074579629,
+              "physical_response_rms_m": 0.00010886535952886045
+            },
+            {
+              "available_center_count": 5,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 5,
+              "observed_motion_rms_m": 0.0017270916040830792,
+              "physical_response_rms_m": 6.855212765585444e-07
+            },
+            {
+              "available_center_count": 0,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 0,
+              "observed_motion_rms_m": 0.0,
+              "physical_response_rms_m": 5.284759839623976e-08
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.005041968763885019,
+        "physical_response_rms_m": 0.00037291613629903054,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "050-boxing-ep0000",
+      "category": "volumetric",
+      "input_sha256": {
+        "measurement_archive": "700703cb0f6a4a7e581c72a956b2e21fd10802416c262ba685e00f6f76fdb5d6",
+        "measurement_manifest": "30beff0c637706ce85588ba56ab6175fc715b8395661e9ba87146f1d81415f21",
+        "opened_report": "adce858c4146e7cc7f5576f5ad7d9dc2406d9bf324fafda249dc46eaae9e85a1",
+        "opened_target": "6a14b42b8ced457704c841534837949bf8183a7990ebcd36b12a83eb00ee4ef6",
+        "prediction_archive": "1e45510861c1c8ff6ef51e07a338acc83807c0658566850bed93e7b81ef16e51",
+        "prediction_report": "1558917754f31c6a0c96dd5a0f0b9aea54bf1db626bd2113a384db1ea943325f",
+        "prediction_seal": "3a8e1d42af320b4a3c53dfe3a2f12dae3940a26104ea63f5a6f8217dde293cae"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": true,
+          "frame": 19,
+          "harmful_on_any_primary_metric": true,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 9.114692603827174e-05,
+            "post_update_hidden_symmetric_chamfer_m": 0.00015250370756292471
+          }
+        },
+        {
+          "candidate_accepted": true,
+          "frame": 38,
+          "harmful_on_any_primary_metric": true,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0007814919737202755,
+            "post_update_hidden_symmetric_chamfer_m": 0.001087061813158984
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "050-boxing",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.001970865481323456,
+          "post_update_hidden_symmetric_chamfer_m": 0.002498008114277255
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.001679985848070607,
+          "post_update_hidden_symmetric_chamfer_m": 0.0020848196073699533
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 2,
+        "action_support_count": 693,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 2,
+          "center_ids": [
+            0,
+            691,
+            270,
+            398,
+            451,
+            83,
+            368,
+            180,
+            650,
+            440,
+            274,
+            326,
+            47,
+            622,
+            135,
+            387
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 14,
+              "bit_exact_baseline_fallback": false,
+              "candidate_available": true,
+              "causal_physical_agreement_gain": 1.0,
+              "decision": "bias-aware-candidate-available",
+              "dynamic_window_selected": true,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": [
+                0.003833699378184155,
+                0.01945504205970622,
+                0.01825727972995329,
+                0.004600524982285806,
+                0.21221062558937906,
+                1.0,
+                0.9707712750550952,
+                0.8126249606282616
+              ],
+              "frame": 19,
+              "identifiable_basis_rank": 3,
+              "interval_end_exclusive": 38,
+              "maximum_correction_m": 0.0032028315105238373,
+              "minimum_identifiable_fraction": 0.26087995950801374,
+              "motion_center_count": 14,
+              "observed_motion_rms_m": 0.003960161286332236,
+              "physical_basis_rank": 4,
+              "physical_response_rms_m": 0.0007803667457684289,
+              "state_update_diagnostics": {
+                "active_view_count": 1,
+                "condition_number": 42.83636873659148,
+                "correlation_treatment": "effective samples within view and equal-weight covariance intersection across views",
+                "downweighted_camera_fraction": 0.0,
+                "effective_camera_information_mass": 2.970948758251307,
+                "independent_anchor_count": 0,
+                "iterations": 2,
+                "maximum_state_bias_posterior_correlation": 0.8126249606282616,
+                "maximum_state_update_m": 0.0017121057262271216,
+                "minimum_camera_robust_weight": 1.0,
+                "per_camera_bias_prior_ci_scaled": true,
+                "prior_reliability_uses_innovation": false,
+                "shared_bias_mode_count": 3,
+                "state_bias_subspace_cosine": 0.9707712750550952,
+                "state_mode_count": 3,
+                "usable_camera_observation_count": 14,
+                "view_count": 1
+              }
+            },
+            {
+              "available_center_count": 12,
+              "bit_exact_baseline_fallback": false,
+              "candidate_available": true,
+              "causal_physical_agreement_gain": 1.0,
+              "decision": "bias-aware-candidate-available",
+              "dynamic_window_selected": true,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": [
+                0.02128399126622167,
+                0.08098996290000503,
+                0.08520941110115282,
+                0.014669280511923054,
+                0.14382917437101136,
+                1.0,
+                0.9815758527582121,
+                0.7647637652543624
+              ],
+              "frame": 38,
+              "identifiable_basis_rank": 3,
+              "interval_end_exclusive": 57,
+              "maximum_correction_m": 0.009149229666480855,
+              "minimum_identifiable_fraction": 0.2175183927132704,
+              "motion_center_count": 12,
+              "observed_motion_rms_m": 0.016485871100857807,
+              "physical_basis_rank": 4,
+              "physical_response_rms_m": 0.004332452120763868,
+              "state_update_diagnostics": {
+                "active_view_count": 1,
+                "condition_number": 31.88152761357591,
+                "correlation_treatment": "effective samples within view and equal-weight covariance intersection across views",
+                "downweighted_camera_fraction": 0.25,
+                "effective_camera_information_mass": 1.7259500924521363,
+                "independent_anchor_count": 0,
+                "iterations": 8,
+                "maximum_state_bias_posterior_correlation": 0.7647637652543624,
+                "maximum_state_update_m": 0.008671671788148025,
+                "minimum_camera_robust_weight": 0.712226262816473,
+                "per_camera_bias_prior_ci_scaled": true,
+                "prior_reliability_uses_innovation": false,
+                "shared_bias_mode_count": 3,
+                "state_bias_subspace_cosine": 0.9815758527582121,
+                "state_mode_count": 3,
+                "usable_camera_observation_count": 12,
+                "view_count": 1
+              }
+            },
+            {
+              "available_center_count": 9,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 8,
+              "observed_motion_rms_m": 0.01666933823551776,
+              "physical_response_rms_m": 0.0004121724146370302
+            }
+          ]
+        },
+        "candidate_available_count": 2,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": true,
+            "candidate_available": true,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "unchanged-source-v4-lock-accepted"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": true,
+            "candidate_available": true,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "unchanged-source-v4-lock-accepted"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 1,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.010316038963468518,
+        "physical_response_rms_m": 0.0033455890473813896,
+        "selected_bit_exact_baseline": false,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "200-watch-ep0000",
+      "category": "filament",
+      "input_sha256": {
+        "measurement_archive": "4008408ae45cd20c27b57adaf12e1af8de1afcf902c3692ae84198a8fbc06213",
+        "measurement_manifest": "5253178933e664a35c274be3b1f6bec098f7adfd773065596dd015103a307742",
+        "opened_report": "54a1bdc6a8c1ff0250c8e81b9c93d92627aecef0018007a81e5f23d14866bf8c",
+        "opened_target": "b66197036bc24ea7985167476357738cf7c9b1b0921fab8763869a378ba7a60c",
+        "prediction_archive": "1c287a12007007bc7ffb6cd4c99ddedc004e0fa648c2ce0c7b4a9a8888968ccc",
+        "prediction_report": "511d4c507c6eb634091d4ab7aa0d40d79bdfec7426e00f420298a0ea5d3cf4c1",
+        "prediction_seal": "abcb7a2f802b161caaf9bbbc0ab97117b6e113257dd137b6057b10f719f15d90"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": true,
+          "frame": 19,
+          "harmful_on_any_primary_metric": true,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0005061135515821749,
+            "post_update_hidden_symmetric_chamfer_m": 0.0007060347829068296
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "200-watch",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.005530226469936534,
+          "post_update_hidden_symmetric_chamfer_m": 0.00370996628586161
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.005361521952742475,
+          "post_update_hidden_symmetric_chamfer_m": 0.003474621358226
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 1,
+        "action_support_count": 385,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 1,
+          "center_ids": [
+            0,
+            384,
+            142,
+            196,
+            114,
+            278,
+            176,
+            295,
+            159,
+            341,
+            174,
+            227,
+            47,
+            48,
+            348,
+            253
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 15,
+              "bit_exact_baseline_fallback": false,
+              "candidate_available": true,
+              "causal_physical_agreement_gain": 0.5010329859036451,
+              "decision": "bias-aware-candidate-available",
+              "dynamic_window_selected": true,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": [
+                0.00889351546028924,
+                0.013665321516875788,
+                0.013609591444332172,
+                0.002597422665612284,
+                0.14691191142554758,
+                0.5010329859036451,
+                0.9914792904976769,
+                0.6416261412613454
+              ],
+              "frame": 19,
+              "identifiable_basis_rank": 4,
+              "interval_end_exclusive": 38,
+              "maximum_correction_m": 0.002454894754975524,
+              "minimum_identifiable_fraction": 0.15757640264350772,
+              "motion_center_count": 15,
+              "observed_motion_rms_m": 0.004726257756570719,
+              "physical_basis_rank": 4,
+              "physical_response_rms_m": 0.0030758915094288514,
+              "state_update_diagnostics": {
+                "active_view_count": 1,
+                "condition_number": 43.578544440651825,
+                "correlation_treatment": "effective samples within view and equal-weight covariance intersection across views",
+                "downweighted_camera_fraction": 0.0,
+                "effective_camera_information_mass": 2.2036786713832135,
+                "independent_anchor_count": 0,
+                "iterations": 2,
+                "maximum_state_bias_posterior_correlation": 0.6416261412613454,
+                "maximum_state_update_m": 0.004055834755555889,
+                "minimum_camera_robust_weight": 1.0,
+                "per_camera_bias_prior_ci_scaled": true,
+                "prior_reliability_uses_innovation": false,
+                "shared_bias_mode_count": 3,
+                "state_bias_subspace_cosine": 0.9914792904976769,
+                "state_mode_count": 4,
+                "usable_camera_observation_count": 15,
+                "view_count": 1
+              }
+            },
+            {
+              "available_center_count": 10,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 10,
+              "observed_motion_rms_m": 0.04739884211917899,
+              "physical_response_rms_m": 0.020070779834717695
+            },
+            {
+              "available_center_count": 8,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 8,
+              "observed_motion_rms_m": 0.040725127364916486,
+              "physical_response_rms_m": 0.009906604663650597
+            }
+          ]
+        },
+        "candidate_available_count": 1,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": true,
+            "candidate_available": true,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "unchanged-source-v4-lock-accepted"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 2,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.08146109536808842,
+        "physical_response_rms_m": 0.020933236712485065,
+        "selected_bit_exact_baseline": false,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "018-trashbag-cloth-ep0000",
+      "category": "sheet",
+      "input_sha256": {
+        "measurement_archive": "b5f4ae564fd46775b2c04b1b628d819558014e985adc0e5dd4b1d62aa4269f20",
+        "measurement_manifest": "5c506c79fbee19434733943f9b3eb914e345065cefc7280e88146d2ea0f2c622",
+        "opened_report": "ffd6715aec48165ccffdc902dbccc6f2f395bea661ed49168033dfb396fe4441",
+        "opened_target": "61723656bfab1c55ffe3fefb1edf080507cb17388fe7d950565b83645b4a94d1",
+        "prediction_archive": "4c93fbaf4494e8e77690b96f216ec857ca37bb6a4b66038301b144696e74bbbb",
+        "prediction_report": "81893c19e635ea5a8535b15a2819b62b1349acf61bdbc7901f92f989123fe495",
+        "prediction_seal": "9a413e78cc095e12acf75b66d8ea9f5bb060eac714cdd8852d45d940aa3a07a6"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "018-trashbag-cloth",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.00010683453758302128,
+          "post_update_hidden_symmetric_chamfer_m": 9.703224572166364e-05
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.00010683453758302128,
+          "post_update_hidden_symmetric_chamfer_m": 9.703224572166364e-05
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 1397,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            0,
+            1393,
+            1234,
+            494,
+            492,
+            1047,
+            1283,
+            187,
+            221,
+            1133,
+            179,
+            1060,
+            1361,
+            713,
+            1247,
+            817
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 1.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.0012531023289248195,
+              "physical_response_rms_m": 0.0001037678250682639
+            },
+            {
+              "available_center_count": 13,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 1.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 13,
+              "observed_motion_rms_m": 0.002286319252280914,
+              "physical_response_rms_m": 3.756815496512453e-05
+            },
+            {
+              "available_center_count": 12,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 1.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 12,
+              "observed_motion_rms_m": 0.004492363289520554,
+              "physical_response_rms_m": 1.3052389861991743e-05
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.0012957404555476297,
+        "physical_response_rms_m": 9.760581202566765e-05,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "051-cube-ep0000",
+      "category": "volumetric",
+      "input_sha256": {
+        "measurement_archive": "ca4c15db728a4443e118dd00da752c7b89c20996209c0f6813805409f8033d80",
+        "measurement_manifest": "d54cdac0b7af114ffad55029e376d9f2704f7b06ae7dd5cb31a68138fb823b6a",
+        "opened_report": "dcf23f2af38e3e85d5dec39ff39b0acd689e6e2d998f27c2540174ed41bc2ba3",
+        "opened_target": "9e81cc67d87fafd7247c09f9d76c9438d22e1b105fe099e88717c345f93ef6c4",
+        "prediction_archive": "ad57b3a325a3feff28030c5cbdd1529a8bf3c07118b3fe20286bb425396d0922",
+        "prediction_report": "3ef2775230be43a58c5df8181ccbc50e50e3cfe7e1f0b575ce1e4d14dde1f655",
+        "prediction_seal": "f9f184645b7786a4c996f7a3b9fa1ff6a2877880e9595b21034325dad5e9ae27"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "051-cube",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 0.00037510426727807914,
+          "post_update_hidden_symmetric_chamfer_m": 0.0004259646390619361
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 0.00037510426727807914,
+          "post_update_hidden_symmetric_chamfer_m": 0.0004259646390619361
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 1515,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            0,
+            1404,
+            422,
+            476,
+            1267,
+            598,
+            293,
+            1477,
+            1017,
+            1157,
+            1168,
+            689,
+            1127,
+            118,
+            1513,
+            336
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 10,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 10,
+              "observed_motion_rms_m": 0.007329814231453327,
+              "physical_response_rms_m": 0.0014015011114135033
+            },
+            {
+              "available_center_count": 9,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.04966135385208567,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 8,
+              "observed_motion_rms_m": 0.0022017473404312964,
+              "physical_response_rms_m": 0.00018087102770498193
+            },
+            {
+              "available_center_count": 7,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 7,
+              "observed_motion_rms_m": 0.004656119463540934,
+              "physical_response_rms_m": 8.752314970862781e-05
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.005746670049241851,
+        "physical_response_rms_m": 0.001418017542813008,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "019-trashbag-plastic-cloth-ep0000",
+      "category": "sheet",
+      "input_sha256": {
+        "measurement_archive": "49129fbd5477577ff0937d786d295e4a6c7296cf4c49dbcbe6ca20fbea1bd172",
+        "measurement_manifest": "c7b84e4ea06bbcf054c076d671efe8a12fffe49b2ed229491290d57c7da1fd6e",
+        "opened_report": "b57ee0a78827362d24f0fe34422584d754cb5fa838bcb6aea2acd5d4eaa14a56",
+        "opened_target": "f57d7a3f9c083647ca54106fc1810b450711384b92221cb3c4e2e5162bfe748a",
+        "prediction_archive": "a56dd5948e9ad8073379d19a8ec287b8c39f10b5238b55bc606991069bc9a5a9",
+        "prediction_report": "fe29a843d45a46e2045ba5ebfe918b6b6de1e3dcbc44180097f35bf877650fc7",
+        "prediction_seal": "0459694ff84afee60f1d460d0a68619cf93e960dd3df17dfdaff753cd93cefc0"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "019-trashbag-plastic-cloth",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 3.362188099168715e-05,
+          "post_update_hidden_symmetric_chamfer_m": 3.593352718360167e-05
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 3.362188099168715e-05,
+          "post_update_hidden_symmetric_chamfer_m": 3.593352718360167e-05
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 300,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            0,
+            297,
+            260,
+            107,
+            104,
+            68,
+            229,
+            212,
+            146,
+            49,
+            110,
+            208,
+            60,
+            292,
+            217,
+            21
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 13,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 13,
+              "observed_motion_rms_m": 0.005475313084254217,
+              "physical_response_rms_m": 0.00013767398500875427
+            },
+            {
+              "available_center_count": 12,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 12,
+              "observed_motion_rms_m": 0.0016180125537627757,
+              "physical_response_rms_m": 1.769346925963431e-05
+            },
+            {
+              "available_center_count": 13,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 10,
+              "observed_motion_rms_m": 0.01107284838163998,
+              "physical_response_rms_m": 2.6372406084736835e-06
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.0004792637618329938,
+        "physical_response_rms_m": 0.00012967742804574517,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "053-squeezer-ep0000",
+      "category": "volumetric",
+      "input_sha256": {
+        "measurement_archive": "b87eaa24c0efbb7a1906c3645fe15db7b96be6e1e382ce350acfd03b1fff43d7",
+        "measurement_manifest": "43fabddc597f269f78ea85b6654f3811010931beda9bc47c652cfab3b8e4b783",
+        "opened_report": "1fc7bfaf34da79ea1c9c11ce7765941789f922b230f58636e8b91ae9769a69e0",
+        "opened_target": "fc5cd302c2783ec9c70e7bb0c6ee2951d4883ef73e5e712373b02b76d36987cb",
+        "prediction_archive": "aed78c95f12e9c2bb2a42d1f93c8bed392fe05f50b9e2aa629e4f2f377a737cd",
+        "prediction_report": "caae693d1145ef8f157a7ec48796a41b8d7fb4337cd97b77012ff2b96fd7099f",
+        "prediction_seal": "ef76a3ad5b926057e0490d515649ef26376c356973f49e8136ab6ee02066d33e"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "053-squeezer",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 2.6027791649360863e-06,
+          "post_update_hidden_symmetric_chamfer_m": 2.5719742680682877e-07
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 2.6027791649360863e-06,
+          "post_update_hidden_symmetric_chamfer_m": 2.5719742680682877e-07
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 644,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            6,
+            582,
+            601,
+            103,
+            140,
+            263,
+            357,
+            314,
+            379,
+            604,
+            163,
+            174,
+            401,
+            421,
+            625,
+            556
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.0012015840822311348,
+              "physical_response_rms_m": 0.0004106047542667439
+            },
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.0003126673044079425,
+              "physical_response_rms_m": 3.449345456655544e-05
+            },
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.42113998759793253,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.0006961997137916704,
+              "physical_response_rms_m": 1.9242511986041873e-05
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 0.0023302261077846414,
+        "physical_response_rms_m": 0.000392726446817772,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    },
+    {
+      "case": "020-cutting-mat-cloth-ep0000",
+      "category": "sheet",
+      "input_sha256": {
+        "measurement_archive": "bafbb6773aefbd5767d5a7c1afd34ddca33fe4571ec3918371dcb2dfff90606e",
+        "measurement_manifest": "0647147391b369bd9f7a1111d902a71b0e79f537f4fc7f852e45961f659c4668",
+        "opened_report": "640bb3d6e9f67fa03fd0902365707f8c80367f969f0a60c840df66c9c6d99ddb",
+        "opened_target": "cfd9bd3b8a36665140a285deff186cdb013d65b46dc37a7a3865ef8294bfe9d8",
+        "prediction_archive": "8bebaffb943944fe95d560d90bec65c8105bc1cdb60cc129f0c9f413bb4ba5a5",
+        "prediction_report": "0fd5c6957de906fbd047ec0f6a74cdca84bee2b762646e43bdaf2b8abca184bd",
+        "prediction_seal": "e009f1ad42569352cf446e83167a3aced94be896029eddb85ab6620d189529e5"
+      },
+      "interval_outcomes": [
+        {
+          "candidate_accepted": false,
+          "frame": 19,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 38,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        },
+        {
+          "candidate_accepted": false,
+          "frame": 57,
+          "harmful_on_any_primary_metric": false,
+          "regret_m": {
+            "post_update_hidden_identity_rmse_m": 0.0,
+            "post_update_hidden_symmetric_chamfer_m": 0.0
+          }
+        }
+      ],
+      "object_id": "020-cutting-mat-cloth",
+      "scores": {
+        "guarded_source_v4": {
+          "post_update_hidden_identity_rmse_m": 8.592950003755898e-05,
+          "post_update_hidden_symmetric_chamfer_m": 0.00010450826693497737
+        },
+        "selected_raw_baseline": {
+          "post_update_hidden_identity_rmse_m": 8.592950003755898e-05,
+          "post_update_hidden_symmetric_chamfer_m": 0.00010450826693497737
+        }
+      },
+      "target_free_guard": {
+        "accepted_count": 0,
+        "action_support_count": 299,
+        "artifact_kind": "Deform360FreshPairwiseBiasGuardDiagnostic",
+        "candidate": {
+          "arm": "bias_aware_state_candidate_unguarded",
+          "candidate_update_count": 0,
+          "center_ids": [
+            0,
+            229,
+            294,
+            113,
+            52,
+            143,
+            107,
+            277,
+            59,
+            149,
+            178,
+            40,
+            168,
+            231,
+            131,
+            263
+          ],
+          "config": {
+            "minimum_available_center_count": 9,
+            "minimum_identifiable_fraction": 0.1,
+            "minimum_motion_center_count": 3,
+            "minimum_observed_motion_m": 0.0005,
+            "minimum_physical_agreement_gain": 0.4,
+            "minimum_physical_response_m": 0.0005,
+            "observation_variance_floor_m2": 2.5e-05,
+            "physical_response_rank": 4,
+            "regret_minimum_improvement_m": 5e-06,
+            "regret_nominal_coverage": 0.9,
+            "regret_ridge_penalty": 10.0,
+            "regret_support_margin_std": 0.0,
+            "reprojection_scale_px": 3.0,
+            "state_update": {
+              "ambiguous_subspace_cosine": 0.999,
+              "anchor_std_m": 0.002,
+              "camera_bias_prior_std_m": 0.01,
+              "convergence_tolerance": 1e-09,
+              "degrees_of_freedom": 4.0,
+              "effective_samples_per_view": 64.0,
+              "maximum_condition_number": 1000000000000.0,
+              "maximum_iterations": 8,
+              "maximum_state_update_m": 0.1,
+              "minimum_robust_weight": 0.02,
+              "observation_std_m": 0.005,
+              "reject_unanchored_ambiguity": true,
+              "shared_bias_prior_std_m": 0.02,
+              "state_prior_std_m": 0.02
+            },
+            "update_frames": [
+              19,
+              38,
+              57
+            ]
+          },
+          "feature_names": [
+            "physical_response_rms_over_scale",
+            "observed_motion_rms_over_scale",
+            "innovation_rms_over_scale",
+            "correction_rms_over_scale",
+            "mean_prior_reliability",
+            "causal_physical_agreement_gain",
+            "maximum_state_bias_subspace_cosine",
+            "maximum_state_bias_posterior_correlation"
+          ],
+          "information_boundary": {
+            "future_observation_read": false,
+            "physical_response_frames_by_update": "causal prefix [0, update] only",
+            "prior_reliability_uses_state_innovation": false,
+            "state_innovation_likelihood_count": 1,
+            "target_argument_accepted": false
+          },
+          "protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+          "updates": [
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 19,
+              "interval_end_exclusive": 38,
+              "motion_center_count": 16,
+              "observed_motion_rms_m": 0.0007512364084067437,
+              "physical_response_rms_m": 6.0096635113538215e-06
+            },
+            {
+              "available_center_count": 15,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 38,
+              "interval_end_exclusive": 57,
+              "motion_center_count": 15,
+              "observed_motion_rms_m": 0.00031116381619187807,
+              "physical_response_rms_m": 2.6499202036180696e-07
+            },
+            {
+              "available_center_count": 16,
+              "bit_exact_baseline_fallback": true,
+              "candidate_available": false,
+              "causal_physical_agreement_gain": 0.0,
+              "decision": "dynamic-evidence-exact-baseline-fallback",
+              "dynamic_window_selected": false,
+              "feature_names": [
+                "physical_response_rms_over_scale",
+                "observed_motion_rms_over_scale",
+                "innovation_rms_over_scale",
+                "correction_rms_over_scale",
+                "mean_prior_reliability",
+                "causal_physical_agreement_gain",
+                "maximum_state_bias_subspace_cosine",
+                "maximum_state_bias_posterior_correlation"
+              ],
+              "features": null,
+              "frame": 57,
+              "interval_end_exclusive": 76,
+              "motion_center_count": 15,
+              "observed_motion_rms_m": 0.0001735519713651949,
+              "physical_response_rms_m": 9.518410571213383e-09
+            }
+          ]
+        },
+        "candidate_available_count": 0,
+        "claim_boundary": "post-open mechanism diagnostic using unchanged source v4; not prospective confirmation, selector tuning, or SOTA evidence",
+        "decisions": [
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 19,
+            "interval_end_exclusive": 38,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 38,
+            "interval_end_exclusive": 57,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          },
+          {
+            "bit_exact_baseline_fallback": true,
+            "candidate_accepted": false,
+            "candidate_available": false,
+            "frame": 57,
+            "interval_end_exclusive": 76,
+            "reason": "candidate-unavailable-exact-baseline-fallback"
+          }
+        ],
+        "exact_fallback_interval_count": 3,
+        "information_boundary": {
+          "future_observation_read": false,
+          "missing_cycle_covariance_policy": "frozen source variance floor",
+          "physical_response_source": "sealed physical prior minus sealed persistence",
+          "prior_reliability_uses_state_innovation": false,
+          "source_v4_lock_changed": false,
+          "state_innovation_likelihood_count": 1,
+          "target_argument_accepted": false
+        },
+        "physical_response_maximum_m": 1.8465346755141616e-05,
+        "physical_response_rms_m": 5.820769462297414e-06,
+        "selected_bit_exact_baseline": true,
+        "source_candidate_certified": true,
+        "source_protocol_id": "deform360-bias-aware-guarded-belief-open27-v4-development",
+        "source_upper_regret_m": -8.871136285708119e-06
+      }
+    }
+  ],
+  "claim_boundary": "post-open stress test of unchanged source v4 on an exhausted fresh cohort; not prospective confirmation, selector tuning, calibration, or SOTA evidence",
+  "exact_fallback_interval_count": 32,
+  "fresh_outcome_summary_sha256": "95f2a84a22e3ac4052f1b5f4dacc9544a020ac3ae9a24d9b861b720471b93859",
+  "guarded_vs_selected_raw": {
+    "post_update_hidden_identity_rmse_m": {
+      "episode_mean_difference_m": 4.561143166396114e-05,
+      "object_balanced_mean_difference_m": 4.561143166396114e-05,
+      "object_cluster_lower_95_m": 0.0,
+      "object_cluster_probability_improved": 0.0,
+      "object_cluster_upper_95_m": 0.00010083732784555539,
+      "regressions": 3,
+      "relative_change": 0.050729221790665635,
+      "ties": 9,
+      "wins": 0
+    },
+    "post_update_hidden_symmetric_chamfer_m": {
+      "episode_mean_difference_m": 6.399832773525576e-05,
+      "object_balanced_mean_difference_m": 6.399832773525576e-05,
+      "object_cluster_lower_95_m": 0.0,
+      "object_cluster_probability_improved": 0.0,
+      "object_cluster_upper_95_m": 0.00014252128133276045,
+      "regressions": 3,
+      "relative_change": 0.08289048504672514,
+      "ties": 9,
+      "wins": 0
+    }
+  },
+  "harmful_accepted_interval_count": 4,
+  "information_boundary": {
+    "candidate_built_without_target_argument": true,
+    "cohort_already_exhausted_before_diagnostic": true,
+    "opened_outcomes_used_to_change_guard": false,
+    "source_v4_lock_changed": false
+  },
+  "object_count": 12,
+  "result_sha256": "6dceeb23dc4a766bb1e2fd84acf175b8bc822dcd20afe7dc122671ce54ea2a3f",
+  "schema_version": 1,
+  "source_v4_lock_sha256": "5f5672d35aa41e276f1dd5ace54b6694b0139ff2a562e3c3a24558fa555c9dd6"
+}

@@ -1,0 +1,98 @@
+{
+  "accepted": true,
+  "admission_sha256": "a6ebbfb857b1285bdbb8c31402a10c73d64def27e99a6b0f563c2f19da16e234",
+  "artifact_kind": "Deform360FreshSourceAdmission",
+  "case": "020-cutting-mat-cloth-ep0000",
+  "category": "sheet",
+  "config": {
+    "maximum_point_count": 10000,
+    "minimum_camera_count": 3,
+    "minimum_point_count": 128,
+    "minimum_test_frame_count": 8,
+    "required_frame_count": 76,
+    "update_frames": [
+      19,
+      38,
+      57
+    ]
+  },
+  "episode_id": 0,
+  "information_boundary": {
+    "future_metrics_read": false,
+    "future_object_positions_deserialized": false,
+    "future_payload_bytes_hashed": true,
+    "selection_inputs": "raw object/episode identity and enums, stage input/output provenance hashes/counts, contact-window and split indices, camera names, and frame-zero PLY vertex count only"
+  },
+  "object_id": "020-cutting-mat-cloth",
+  "observed_source_contract": {
+    "active_frame_count": 76,
+    "bimanual": false,
+    "camera_count": 11,
+    "cameras": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "contact_end_frame": 75,
+    "contact_start_frame": 0,
+    "frame_zero_point_count": 299,
+    "metadata_object": "020-cutting-mat",
+    "metadata_parent": "020-cutting-mat-cloth",
+    "split_frame_count": 76,
+    "stage_inputs_valid": true,
+    "test": [
+      60,
+      76
+    ],
+    "train": [
+      0,
+      60
+    ],
+    "train_fraction": 0.8
+  },
+  "rejection_reasons": [],
+  "schema_version": 1,
+  "source_files": {
+    "calibrate": {
+      "basename": "calibrate.pkl",
+      "sha256": "473cbcc3a615cf6534f41684cca437d53277402aeee085b453faae37ca6721e2"
+    },
+    "control_meta": {
+      "basename": "control_points.meta.json",
+      "sha256": "768fa76c4ba00ed31b018eadec3aeaa9fc01fa201729eecdb3dde9728d683565"
+    },
+    "frame_zero": {
+      "basename": "start_obj_pcd.ply",
+      "sha256": "aaddceed5a84d8ee1dee130da80ca1c06c9177ff5bffd96433792a23e532eeb9"
+    },
+    "future_payload": {
+      "basename": "final_data.pkl",
+      "sha256": "cfd9bd3b8a36665140a285deff186cdb013d65b46dc37a7a3865ef8294bfe9d8"
+    },
+    "metadata": {
+      "basename": "metadata.json",
+      "sha256": "0164e1e0b35de1d9e8552a6665c576e587149fb04b056665dc06a3dec98e3f07"
+    },
+    "split": {
+      "basename": "split.json",
+      "sha256": "7c1e875874d2d18dd03cb24d114f90eab310dcc1975aab7118d3a0b4a29efa92"
+    }
+  },
+  "upstream_binding": {
+    "bound_files": {
+      "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+      "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+      "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+    },
+    "repository": "https://github.com/lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  }
+}

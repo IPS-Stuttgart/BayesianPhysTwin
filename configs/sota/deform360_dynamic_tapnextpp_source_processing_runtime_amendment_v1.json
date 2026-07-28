@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360DynamicTapNextppSourceProcessingRuntimeAmendment",
+  "amendment_id": "deform360-dynamic-tapnextpp-source-processing-runtime-amendment-v1",
+  "status": "locked_after_eight_environment_failures_before_any_successful_reconstruction",
+  "parent_processing_protocol": {
+    "protocol_id": "deform360-dynamic-tapnextpp-source-processing-v1",
+    "config_sha256": "fd396d2dcd2f3eab8a209b6d2041da16f56991edea794e8fdded1bb33cc25721",
+    "file_sha256": "4cb4b31c7fdf8d34f0e96ec3f0d82b000a65401d2881c2b2d549f30bb26c930b",
+    "implementation_commit": "474b58fd0f12af640cbbe8ed6cfba394c299ad2a"
+  },
+  "trigger": {
+    "attempted_queue_entries": 8,
+    "technical_failure_count": 8,
+    "successful_reconstruction_count": 0,
+    "successful_tracker_count": 0,
+    "source_admission_count": 0,
+    "error_type": "AttributeError",
+    "error_message": "'NoneType' object has no attribute 'CameraModelType'",
+    "failure_result_sha256": [
+      "8bb42a03c7adf8f2d1a4a038df896eee7c0dcc54e98099f5fa34c9a1d0eacead",
+      "2ba0483c6e44d1d987ffe9c84eb9ddfab02769757c5f9c0202f72eadc6a305b0",
+      "e959a81e93a2c4ce4ccf948122ded6dfa3f8d733be7ca7b4d41a6dd0d3ac2",
+      "3b60edf2df1da81478cbc02b3a9b34c5a66e8447310cad6a9b6bfdc8152ce2b8",
+      "355a86d343afd2dbdded1865f335ae4dbea5f0c3802fe3946bcbdfe8b85b918d",
+      "6ecf1a03bdf667f53600658bc844f079b914fefd7a55cec5ed33a75048f173ca",
+      "11ba0fbf6240156ce67df86504139d1f25f9315c92bf0ed7a354907d6dcbf34c",
+      "12f08e7854c117af3523f4f9fd5a645f8c34cef16101539777a2013c0bf3cb36"
+    ],
+    "failure_file_sha256": [
+      "4976aa99f5d173f06b7a5372b2dfb19c2fc8172f500063be4fc3cc61a64cb52f",
+      "e2093a2d45c8a0412fcf4e85e5dd42896cd29dea34113d587dbbb3975ab4ea5c",
+      "f85609b1e50ecf10e8c922412601cbcb78421e36d5081203352f76ee9a419c68",
+      "24a603e02f2a31aa471bf3ab56f20de9432fa3506e9952d18461c823e34f03b1",
+      "4cb2be4e926a2f3f683aa799c4296a0c504fbbbc84b21a64200417524f6c2443",
+      "d08b1f61f6ea89ba5ba06a7f4130d5d2c4cd9896a37d17bb9f113bd1e3a573d9",
+      "4c8db3c6603e877b48550ee663541c0b2154329ca67c58e5c321264101385293",
+      "9fe1bf8bcbe83ddb73e9749310060f9c8462847e906953dd50e722a727bd98df"
+    ],
+    "derived_splat_artifact_count": 0,
+    "derived_point_cloud_artifact_count": 0,
+    "target_metric_read": false,
+    "provider_outcome_read": false
+  },
+  "runtime_contract": {
+    "required_path_prefix": "/usr/local/cuda/bin",
+    "nvcc_path": "/usr/local/cuda/bin/nvcc",
+    "nvcc_version_line": "Cuda compilation tools, release 12.6, V12.6.85",
+    "gsplat_version": "1.4.0",
+    "torch_version": "2.4.0+cu121",
+    "gsplat_extension_path": "/home/florianpfaff/.cache/torch_extensions/py310_cu121/gsplat_cuda/gsplat_cuda.so",
+    "gsplat_extension_sha256": "58c95816cdf011dbbd13a71f1d98312c9e661ef34c95592cc00ff93c72cab89b",
+    "required_backend_probe": "CameraModelType.PINHOLE"
+  },
+  "application_policy": {
+    "applies_only_to_unattempted_queue_entries": true,
+    "unattempted_queue_entry_count": 26,
+    "failed_entries_remain_terminal": true,
+    "retry_failed_entries": false,
+    "replace_failed_entries": false,
+    "camera_method_reconstruction_tracking_and_admission_unchanged": true,
+    "minimum_final_admissions_unchanged": 20
+  },
+  "information_boundary": {
+    "source_rgb_depth_mask_or_geometry_read_by_amendment": false,
+    "target_metric_read": false,
+    "held_v8_target_query_score_barrier_or_outcome_access": false
+  },
+  "config_sha256": "90e3953bde2f57ea2b364e99ae38a710cd5600f79401325ff99122a527edb82d"
+}

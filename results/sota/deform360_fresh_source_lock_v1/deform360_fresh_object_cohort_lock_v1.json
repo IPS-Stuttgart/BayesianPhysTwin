@@ -1,0 +1,123 @@
+{
+  "artifact_kind": "Deform360FreshObjectCohortLock",
+  "cases": [
+    {
+      "admission_sha256": "b3c72101963668a9ba1e829339cd6e77a269fc6a683153bfc21efda6c8282950",
+      "case": "007-feather-ep0000",
+      "category": "filament",
+      "episode_id": 0,
+      "object_id": "007-feather"
+    },
+    {
+      "admission_sha256": "446552796c74889f10efdeb1aa11ec70876995db94fcadc7af30624b5d4391b6",
+      "case": "012-hat-cloth-ep0000",
+      "category": "sheet",
+      "episode_id": 0,
+      "object_id": "012-hat-cloth"
+    },
+    {
+      "admission_sha256": "826ff9ef7decb38d4cc719de3346da4a3a8b396d627920251f37bcfba70cfb05",
+      "case": "048-butter-sponge-ep0000",
+      "category": "volumetric",
+      "episode_id": 0,
+      "object_id": "048-butter-sponge"
+    },
+    {
+      "admission_sha256": "40c9b15d5b0a56b97ba14ef100bee545446707039b41a3125e5f07fecb09f752",
+      "case": "162-straw-ep0000",
+      "category": "filament",
+      "episode_id": 0,
+      "object_id": "162-straw"
+    },
+    {
+      "admission_sha256": "a1b3483945e555fef983dbee1ab2f9de643046149c23dfe36b673f025161acd7",
+      "case": "014-glove-vinyl-cloth-ep0000",
+      "category": "sheet",
+      "episode_id": 0,
+      "object_id": "014-glove-vinyl-cloth"
+    },
+    {
+      "admission_sha256": "53ffa5917870a23e1aef760c257b560408d3e8caaebc6b2acf95522441f232d1",
+      "case": "050-boxing-ep0000",
+      "category": "volumetric",
+      "episode_id": 0,
+      "object_id": "050-boxing"
+    },
+    {
+      "admission_sha256": "e2c352727f4c1245baef46abe00e580b69a074417817980762cbb373b15c05f3",
+      "case": "200-watch-ep0000",
+      "category": "filament",
+      "episode_id": 0,
+      "object_id": "200-watch"
+    },
+    {
+      "admission_sha256": "ef16d3238d9dd7423206d71a0d63dfae33cf0b5bcbe69b6ded217b2eebb0a348",
+      "case": "018-trashbag-cloth-ep0000",
+      "category": "sheet",
+      "episode_id": 0,
+      "object_id": "018-trashbag-cloth"
+    },
+    {
+      "admission_sha256": "f1059ab8b19d47182d6f5f859454bf14f7b2beed232af25c8fa7ff3dbe590c5b",
+      "case": "051-cube-ep0000",
+      "category": "volumetric",
+      "episode_id": 0,
+      "object_id": "051-cube"
+    },
+    {
+      "admission_sha256": "d489b2a6f19eeb69371c1f75d6b99e47e46b9b647641c6dc5a988a83d043d4b4",
+      "case": "019-trashbag-plastic-cloth-ep0000",
+      "category": "sheet",
+      "episode_id": 0,
+      "object_id": "019-trashbag-plastic-cloth"
+    },
+    {
+      "admission_sha256": "f9496c01ef4fe650caa71ddf514d214aa04372ee8e4a907fd787d346da3e77d9",
+      "case": "053-squeezer-ep0000",
+      "category": "volumetric",
+      "episode_id": 0,
+      "object_id": "053-squeezer"
+    },
+    {
+      "admission_sha256": "a6ebbfb857b1285bdbb8c31402a10c73d64def27e99a6b0f563c2f19da16e234",
+      "case": "020-cutting-mat-cloth-ep0000",
+      "category": "sheet",
+      "episode_id": 0,
+      "object_id": "020-cutting-mat-cloth"
+    }
+  ],
+  "cohort_lock_sha256": "bafe26848ee83d8a4201e9d11d51af106370647f76ec702003e9ec51d3843729",
+  "cohort_size": 12,
+  "evaluation": {
+    "allowed_claim_label": "fresh_object_candidate_conventions_only",
+    "parity_contract_sha256": "a8e903060ac58bfabd13ab1b43f15296fd685a04294f45a1c6c3c022280c1f95",
+    "parity_ready": false
+  },
+  "exclusion_manifests": [
+    "18054955f5d8effb69eebc58aca2b3783e4e1fd0aa604f87bc2611f1f19a967c",
+    "181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff",
+    "562640ce93bcb6c230dce8c684888e2895cb31e6a6f06b8e52858c263e667635",
+    "c8b79a1f6b76853229a5877428252ab69fcaf5b655f901e00b60cc1325795730",
+    "fe62c0f3284c078ecc44e9c1fce28fecbd17223a29bf2a95762efc5e85b0fcd2"
+  ],
+  "information_boundary": {
+    "cohort_membership_uses_outcomes": false,
+    "future_metrics_read": false,
+    "future_object_positions_deserialized": false
+  },
+  "method": {
+    "commit": "e2f8d827bfd60df79eeffee511a5df7e2d53ea21",
+    "config_sha256": "fc8a68bd769a7b71d570e4c6879ea186b3ff4453457d29e4dc141a462a0038b7"
+  },
+  "schema_version": 1,
+  "selection_rule": "lowest admitted episode per non-excluded physical object, then deterministic category-sorted round robin and object-ID ordering",
+  "upstream_binding": {
+    "bound_files": {
+      "README.md": "52f2ebed1800eb8c1e6dde05fefaca15ebba4456f0756b1ca05cfc4380fc8f7a",
+      "deform360/processing/control_points_stage.py": "9ff82c86c22e38c56dd2ce5d872850afb6ffeb502da7338baf0b55108afb7373",
+      "deform360/processing/pcd_stage.py": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+    },
+    "repository": "https://github.com/lhy0807/deform360",
+    "revision": "d8522a4403b766aeb387510c04e89032a56fdf35"
+  }
+}
