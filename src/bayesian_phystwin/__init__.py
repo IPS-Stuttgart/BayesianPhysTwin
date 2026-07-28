@@ -1,5 +1,13 @@
 """Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
 
+from .action_response_admission import (
+    ACTION_RESPONSE_ADMISSION_CONTRACT,
+    ActionResponseAdmissionConfig,
+    ActionResponseAdmissionV1,
+    ActionResponseGroupEvidence,
+    build_action_response_guard_decision,
+    evaluate_action_response_admission,
+)
 from .bias_aware_belief import (
     BiasAwareStateUpdateConfig,
     BiasAwareStateUpdateResult,
@@ -42,6 +50,13 @@ from .grouped_likelihood import (
     GroupedStudentTLikelihoodConfig,
     GroupedStudentTLikelihoodResult,
     grouped_student_t_mixture_likelihood,
+)
+from .grouped_multiview_observation import (
+    GroupedMultiviewConfig,
+    GroupedMultiviewObservation,
+    partition_disjoint_camera_groups,
+    triangulate_disjoint_camera_groups,
+    triangulation_covariance_m2,
 )
 from .nuisance_aware_information import (
     GreedyNuisanceAwareSelection,
@@ -118,6 +133,10 @@ from .synthetic_benchmark import (
 )
 
 __all__ = [
+    "ACTION_RESPONSE_ADMISSION_CONTRACT",
+    "ActionResponseAdmissionConfig",
+    "ActionResponseAdmissionV1",
+    "ActionResponseGroupEvidence",
     "BinaryCalibrationMetrics",
     "BiasAwareStateUpdateConfig",
     "BiasAwareStateUpdateResult",
@@ -130,6 +149,8 @@ __all__ = [
     "GreedyNuisanceAwareSelection",
     "GroupedStudentTLikelihoodConfig",
     "GroupedStudentTLikelihoodResult",
+    "GroupedMultiviewConfig",
+    "GroupedMultiviewObservation",
     "GuardedUpdateDecision",
     "IdentifiableStateBasis",
     "MarkovReliabilityConfig",
@@ -166,11 +187,13 @@ __all__ = [
     "binary_calibration_metrics",
     "build_gauge_aware_batch_from_artifacts",
     "build_gauge_aware_batch_from_observation_belief",
+    "build_action_response_guard_decision",
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
     "centered_view_translation_bias_jacobian",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",
+    "evaluate_action_response_admission",
     "evaluate_nonlinear_closure",
     "export_phystwin_residuals",
     "filter_random_walk_bias",
@@ -184,6 +207,7 @@ __all__ = [
     "load_physical_linearization",
     "markov_log_evidence_batch",
     "measurement_variance",
+    "partition_disjoint_camera_groups",
     "reliability_weighted_loss",
     "replay_residual_csv",
     "restrict_state_basis_to_identifiable_subspace",
@@ -197,6 +221,8 @@ __all__ = [
     "select_complete_belief",
     "select_gauge_aware_candidate",
     "smooth_markov_reliability",
+    "triangulate_disjoint_camera_groups",
+    "triangulation_covariance_m2",
     "update_bias_aware_state",
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",

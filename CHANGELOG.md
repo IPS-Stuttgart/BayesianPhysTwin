@@ -1,5 +1,9 @@
 # Changelog
 
+- Add a provider-neutral, prefix-only action-response admission certificate
+  with shared-bias projection, correlation-aware evidence caps, and an explicit
+  boundary before candidate inference and baseline-relative regret selection.
+
 All notable user-visible changes to Bayesian PhysTwin are recorded here. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 version numbers follow [Semantic Versioning](https://semver.org/) where the
