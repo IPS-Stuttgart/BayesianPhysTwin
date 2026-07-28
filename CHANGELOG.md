@@ -56,7 +56,7 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   returned IRLS weights and uses Cholesky solves for positive-definite prior and
   posterior systems instead of generic matrix inversion.
 - Observation-belief metadata is now recursively immutable after canonical JSON
-  validation, preventing nested mutation from changing an existing artifact digest.
+  validation, so nested mutation cannot change an existing artifact digest.
 - Grouped low-rank covariance statistics now use blockwise Cholesky/Woodbury solves
   without explicit covariance inverses or a dense all-factor-groups matrix.
 - Fixed endpoint posteriors expose an explicit read-only `updated_mask`, and
