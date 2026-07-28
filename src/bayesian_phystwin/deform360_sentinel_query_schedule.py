@@ -28,6 +28,9 @@ from .phystwin_sentinel_queries import (
 )
 
 PROTOCOL_ID = "deform360-dynamic-tapnextpp-sentinel-v5-source-development"
+SHORT_HORIZON_PROTOCOL_ID = (
+    "deform360-dynamic-tapnextpp-short-sentinel-v6-source-development"
+)
 PREFIX_END_FRAME = max(UPDATE_FRAMES)
 
 
@@ -73,6 +76,9 @@ class Deform360SentinelQueryConfig:
     sentinel_maximum_motion_m: float = 0.0005
     minimum_camera_support: int = 3
     graph_basis_rank: int = 8
+    query_birth_frame: int = 0
+    query_update_frame: int = PREFIX_END_FRAME
+    protocol_id: str = PROTOCOL_ID
 
     def __post_init__(self) -> None:
         _require(self.selected_camera_count >= 3, "too few selected cameras")
@@ -109,6 +115,18 @@ class Deform360SentinelQueryConfig:
             "sentinel schedule requires three-view support",
         )
         _require(self.graph_basis_rank >= 1, "graph basis rank must be positive")
+        _require(
+            0 <= self.query_birth_frame < self.query_update_frame,
+            "query birth must precede its update",
+        )
+        _require(
+            self.query_update_frame == PREFIX_END_FRAME,
+            "sentinel update frame changed",
+        )
+        _require(
+            self.protocol_id in {PROTOCOL_ID, SHORT_HORIZON_PROTOCOL_ID},
+            "sentinel protocol ID is not registered",
+        )
 
     @property
     def active_query_count(self) -> int:
@@ -159,8 +177,9 @@ class Deform360SentinelQuerySchedule:
             "query identities repeat",
         )
         _require(
-            np.all(birth == 0) and np.all(update == PREFIX_END_FRAME),
-            "sentinel study must branch at frame zero and update at the prefix end",
+            np.all(birth == self.config.query_birth_frame)
+            and np.all(update == self.config.query_update_frame),
+            "sentinel schedule differs from its declared branch interval",
         )
         _require(
             set(map(str, roles)) == {ACTIVE_QUERY_ROLE, SENTINEL_QUERY_ROLE},
@@ -211,7 +230,7 @@ class Deform360SentinelQuerySchedule:
         return {
             "schema_version": 1,
             "artifact_kind": "Deform360SentinelQuerySchedule",
-            "protocol_id": PROTOCOL_ID,
+            "protocol_id": self.config.protocol_id,
             "config": asdict(self.config),
             "update_frames": self.update_frames.tolist(),
             "birth_frames": self.birth_frames.tolist(),
@@ -231,7 +250,11 @@ class Deform360SentinelQuerySchedule:
             "physical_prefix_sha256": self.physical_prefix_sha256,
             "graph_basis_sha256": self.graph_basis_sha256,
             "information_boundary": {
-                "maximum_physical_frame_read": PREFIX_END_FRAME,
+                "physical_frame_interval_read": [
+                    self.config.query_birth_frame,
+                    self.config.query_update_frame,
+                ],
+                "maximum_physical_frame_read": self.config.query_update_frame,
                 "maximum_observed_tracker_frame_used_for_planning": None,
                 "observed_object_trajectory_read": False,
                 "target_metric_read": False,
@@ -284,7 +307,9 @@ def build_deform360_sentinel_query_schedule(
         and len(positions) > PREFIX_END_FRAME,
         "physical positions must reach the prefix endpoint",
     )
-    prefix = positions[: PREFIX_END_FRAME + 1]
+    prefix = positions[
+        cfg.query_birth_frame : cfg.query_update_frame + 1
+    ]
     _require(np.all(np.isfinite(prefix)), "physical prefix is not finite")
     node_count = positions.shape[1]
     mode_basis = _node_mode_basis(
@@ -382,10 +407,10 @@ def build_deform360_sentinel_query_schedule(
     descriptor: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": "Deform360SentinelQuerySchedule",
-        "protocol_id": PROTOCOL_ID,
+        "protocol_id": cfg.protocol_id,
         "config": asdict(cfg),
-        "update_frames": [PREFIX_END_FRAME] * len(entity_ids),
-        "birth_frames": [0] * len(entity_ids),
+        "update_frames": [cfg.query_update_frame] * len(entity_ids),
+        "birth_frames": [cfg.query_birth_frame] * len(entity_ids),
         "entity_ids": entity_ids.tolist(),
         "query_roles": roles.tolist(),
         "predicted_motion_m": motion.tolist(),
@@ -400,7 +425,11 @@ def build_deform360_sentinel_query_schedule(
         "physical_prefix_sha256": array_sha256(prefix),
         "graph_basis_sha256": array_sha256(mode_basis),
         "information_boundary": {
-            "maximum_physical_frame_read": PREFIX_END_FRAME,
+            "physical_frame_interval_read": [
+                cfg.query_birth_frame,
+                cfg.query_update_frame,
+            ],
+            "maximum_physical_frame_read": cfg.query_update_frame,
             "maximum_observed_tracker_frame_used_for_planning": None,
             "observed_object_trajectory_read": False,
             "target_metric_read": False,
@@ -412,8 +441,16 @@ def build_deform360_sentinel_query_schedule(
         digest_key="artifact_sha256",
     )
     schedule = Deform360SentinelQuerySchedule(
-        update_frames=np.full(len(entity_ids), PREFIX_END_FRAME, dtype=np.int64),
-        birth_frames=np.zeros(len(entity_ids), dtype=np.int64),
+        update_frames=np.full(
+            len(entity_ids),
+            cfg.query_update_frame,
+            dtype=np.int64,
+        ),
+        birth_frames=np.full(
+            len(entity_ids),
+            cfg.query_birth_frame,
+            dtype=np.int64,
+        ),
         entity_ids=entity_ids,
         query_roles=roles,
         predicted_motion_m=motion,
@@ -439,6 +476,7 @@ def build_deform360_sentinel_query_schedule(
 __all__ = [
     "PREFIX_END_FRAME",
     "PROTOCOL_ID",
+    "SHORT_HORIZON_PROTOCOL_ID",
     "Deform360SentinelQueryConfig",
     "Deform360SentinelQuerySchedule",
     "build_deform360_sentinel_query_schedule",

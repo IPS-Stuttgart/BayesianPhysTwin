@@ -14,6 +14,8 @@ from bayesian_phystwin.deform360_sentinel_assimilation import (
 )
 from bayesian_phystwin.deform360_sentinel_query_schedule import (
     PREFIX_END_FRAME,
+    PROTOCOL_ID,
+    SHORT_HORIZON_PROTOCOL_ID,
     Deform360SentinelQueryConfig,
     Deform360SentinelQuerySchedule,
 )
@@ -23,7 +25,10 @@ from bayesian_phystwin.phystwin_sentinel_queries import (
 )
 
 
-def _schedule() -> Deform360SentinelQuerySchedule:
+def _schedule(
+    *,
+    birth_frame: int = 0,
+) -> Deform360SentinelQuerySchedule:
     config = Deform360SentinelQueryConfig(
         selected_camera_count=3,
         minimum_eligible_camera_count=3,
@@ -31,10 +36,16 @@ def _schedule() -> Deform360SentinelQuerySchedule:
         sentinel_query_count=2,
         minimum_camera_support=3,
         graph_basis_rank=2,
+        query_birth_frame=birth_frame,
+        protocol_id=(
+            SHORT_HORIZON_PROTOCOL_ID
+            if birth_frame
+            else PROTOCOL_ID
+        ),
     )
     return Deform360SentinelQuerySchedule(
         update_frames=np.full(4, PREFIX_END_FRAME, dtype=np.int64),
-        birth_frames=np.zeros(4, dtype=np.int64),
+        birth_frames=np.full(4, birth_frame, dtype=np.int64),
         entity_ids=np.arange(4, dtype=np.int64),
         query_roles=np.asarray(
             [
@@ -62,6 +73,7 @@ def _schedule() -> Deform360SentinelQuerySchedule:
 
 def _inputs(
     *,
+    birth_frame: int = 0,
     missing_sentinel: bool = False,
     inconsistent_sentinels: bool = False,
 ) -> tuple[np.ndarray, BirthAnchoredMeasurements]:
@@ -78,10 +90,11 @@ def _inputs(
     bias = np.asarray([0.01, -0.005, 0.002])
     for entity in range(4):
         displacement = (
-            physical[PREFIX_END_FRAME, entity] - physical[0, entity]
+            physical[PREFIX_END_FRAME, entity]
+            - physical[birth_frame, entity]
         )
         measurement[PREFIX_END_FRAME, entity] = (
-            physical[0, entity] + displacement + bias
+            physical[birth_frame, entity] + displacement + bias
         )
         covariance[PREFIX_END_FRAME, entity] = 1e-6 * np.eye(3)
         reliability[PREFIX_END_FRAME, entity] = 1.0
@@ -177,4 +190,40 @@ def test_rejected_sentinel_arm_is_exact_future_persistence() -> None:
     assert np.array_equal(
         arrays[CANDIDATE_ARM][PREFIX_END_FRAME + 1 :],
         arrays[PERSISTENCE_ARM][PREFIX_END_FRAME + 1 :],
+    )
+
+
+def test_short_horizon_debias_uses_the_declared_birth_state() -> None:
+    birth_frame = 51
+    physical, measurements = _inputs(birth_frame=birth_frame)
+    physical[birth_frame, :4] = np.asarray(
+        [
+            [0.10, 0.00, 0.00],
+            [0.00, 0.10, 0.00],
+            [0.00, 0.00, 0.10],
+            [0.10, 0.10, 0.00],
+        ]
+    )
+    bias = np.asarray([0.01, -0.005, 0.002])
+    for entity in range(4):
+        displacement = (
+            physical[PREFIX_END_FRAME, entity]
+            - physical[birth_frame, entity]
+        )
+        measurements.measurement_m.setflags(write=True)
+        measurements.measurement_m[PREFIX_END_FRAME, entity] = (
+            physical[birth_frame, entity] + displacement + bias
+        )
+        measurements.measurement_m.setflags(write=False)
+    result = build_sentinel_debiased_measurements(
+        measurements,
+        _schedule(birth_frame=birth_frame),
+        physical,
+    )
+
+    assert result.applied
+    np.testing.assert_allclose(
+        result.measurements.measurement_m[PREFIX_END_FRAME, :2],
+        physical[PREFIX_END_FRAME, :2],
+        atol=1e-12,
     )

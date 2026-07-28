@@ -11,7 +11,6 @@ from .deform360_dynamic_tapnextpp_assimilation import (
     BirthAnchoredMeasurements,
 )
 from .deform360_sentinel_query_schedule import (
-    PREFIX_END_FRAME,
     Deform360SentinelQuerySchedule,
 )
 from .phystwin_sentinel_queries import (
@@ -214,10 +213,16 @@ def build_sentinel_debiased_measurements(
         "measurement identities differ from the sentinel schedule",
     )
     _require(
-        np.all(schedule.birth_frames == 0)
-        and np.all(schedule.update_frames == PREFIX_END_FRAME),
+        np.all(
+            schedule.birth_frames == schedule.config.query_birth_frame
+        )
+        and np.all(
+            schedule.update_frames == schedule.config.query_update_frame
+        ),
         "sentinel schedule endpoint semantics changed",
     )
+    birth_frame = schedule.config.query_birth_frame
+    update_frame = schedule.config.query_update_frame
     active_ids = entities[roles == ACTIVE_QUERY_ROLE]
     sentinel_ids = entities[roles == SENTINEL_QUERY_ROLE]
     _require(
@@ -226,11 +231,11 @@ def build_sentinel_debiased_measurements(
         "sentinel schedule role count changed",
     )
     sentinel_available = measurements.available[
-        PREFIX_END_FRAME,
+        update_frame,
         sentinel_ids,
     ]
     active_available = measurements.available[
-        PREFIX_END_FRAME,
+        update_frame,
         active_ids,
     ]
     supported_sentinel_count = int(np.sum(sentinel_available))
@@ -261,24 +266,24 @@ def build_sentinel_debiased_measurements(
     selected_sentinels = sentinel_ids[sentinel_available]
     observed_sentinel_displacement = (
         measurements.measurement_m[
-            PREFIX_END_FRAME,
+            update_frame,
             selected_sentinels,
         ]
-        - physical[0, selected_sentinels]
+        - physical[birth_frame, selected_sentinels]
     )
     predicted_sentinel_displacement = (
-        physical[PREFIX_END_FRAME, selected_sentinels]
-        - physical[0, selected_sentinels]
+        physical[update_frame, selected_sentinels]
+        - physical[birth_frame, selected_sentinels]
     )
     estimate = estimate_sentinel_common_bias(
         observed_sentinel_displacement,
         predicted_sentinel_displacement,
         measurements.covariance_m2[
-            PREFIX_END_FRAME,
+            update_frame,
             selected_sentinels,
         ],
         measurements.prior_reliability[
-            PREFIX_END_FRAME,
+            update_frame,
             selected_sentinels,
         ],
         np.full(
@@ -308,36 +313,36 @@ def build_sentinel_debiased_measurements(
     selected_active = active_ids[active_available]
     if len(selected_active):
         observed_active_displacement = (
-            measurements.measurement_m[PREFIX_END_FRAME, selected_active]
-            - physical[0, selected_active]
+            measurements.measurement_m[update_frame, selected_active]
+            - physical[birth_frame, selected_active]
         )
         debiased_displacement, debiased_covariance = (
             debias_active_displacements(
                 observed_active_displacement,
                 measurements.covariance_m2[
-                    PREFIX_END_FRAME,
+                    update_frame,
                     selected_active,
                 ],
                 estimate,
             )
         )
-        measurement[PREFIX_END_FRAME, selected_active] = (
-            physical[0, selected_active] + debiased_displacement
+        measurement[update_frame, selected_active] = (
+            physical[birth_frame, selected_active] + debiased_displacement
         )
-        covariance[PREFIX_END_FRAME, selected_active] = debiased_covariance
-        reliability[PREFIX_END_FRAME, selected_active] = (
+        covariance[update_frame, selected_active] = debiased_covariance
+        reliability[update_frame, selected_active] = (
             measurements.prior_reliability[
-                PREFIX_END_FRAME,
+                update_frame,
                 selected_active,
             ]
         )
-        association[PREFIX_END_FRAME, selected_active] = (
+        association[update_frame, selected_active] = (
             measurements.association_probability[
-                PREFIX_END_FRAME,
+                update_frame,
                 selected_active,
             ]
         )
-        available[PREFIX_END_FRAME, selected_active] = True
+        available[update_frame, selected_active] = True
     debiased = BirthAnchoredMeasurements(
         measurement_m=measurement,
         covariance_m2=covariance,

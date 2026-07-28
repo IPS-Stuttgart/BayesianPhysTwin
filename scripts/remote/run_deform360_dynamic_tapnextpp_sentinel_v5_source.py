@@ -34,7 +34,9 @@ from bayesian_phystwin.deform360_sentinel_assimilation import (
     build_sentinel_debiased_measurements,
 )
 from bayesian_phystwin.deform360_sentinel_query_schedule import (
-    PREFIX_END_FRAME,
+    PROTOCOL_ID,
+    SHORT_HORIZON_PROTOCOL_ID,
+    Deform360SentinelQueryConfig,
     build_deform360_sentinel_query_schedule,
 )
 from bayesian_phystwin.observation_belief import array_sha256, file_sha256
@@ -54,8 +56,6 @@ from bayesian_phystwin.tapnextpp_dynamic_runtime import (
     build_dynamic_birth_associations,
     run_dynamic_tapnextpp_births,
 )
-
-PROTOCOL_ID = "deform360-dynamic-tapnextpp-sentinel-v5-source-development"
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -102,6 +102,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--tapnet-root", type=Path, required=True)
     parser.add_argument("--tapnextpp-checkpoint", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument(
+        "--query-birth-frame",
+        type=int,
+        choices=(0, 51),
+        default=0,
+    )
     return parser.parse_args()
 
 
@@ -178,6 +184,11 @@ def main() -> int:
 
     processed = args.processed_episode_dir.resolve()
     geometry = load_complete_camera_geometry(processed)
+    protocol_id = (
+        SHORT_HORIZON_PROTOCOL_ID
+        if args.query_birth_frame == 51
+        else PROTOCOL_ID
+    )
     schedule = build_deform360_sentinel_query_schedule(
         physical["physical_prediction_m"],
         physical["graph_basis"],
@@ -185,6 +196,10 @@ def main() -> int:
         geometry.camera_to_world,
         geometry.image_shapes_hw,
         geometry.camera_names,
+        config=Deform360SentinelQueryConfig(
+            query_birth_frame=args.query_birth_frame,
+            protocol_id=protocol_id,
+        ),
     )
     camera_inputs = load_selected_complete_causal_inputs(
         processed,
@@ -272,10 +287,10 @@ def main() -> int:
         _require(
             np.array_equal(
                 assimilation_arrays[CANDIDATE_ARM][
-                    PREFIX_END_FRAME + 1 :
+                    schedule.config.query_update_frame + 1 :
                 ],
                 assimilation_arrays[PERSISTENCE_ARM][
-                    PREFIX_END_FRAME + 1 :
+                    schedule.config.query_update_frame + 1 :
                 ],
             ),
             "sentinel rejection did not retain bit-exact future persistence",
@@ -345,9 +360,11 @@ def main() -> int:
     report: dict[str, Any] = {
         "schema_version": 1,
         "artifact_kind": (
-            "Deform360DynamicTAPNextPPSentinelV5SourceDevelopment"
+            "Deform360DynamicTAPNextPPShortSentinelV6SourceDevelopment"
+            if protocol_id == SHORT_HORIZON_PROTOCOL_ID
+            else "Deform360DynamicTAPNextPPSentinelV5SourceDevelopment"
         ),
-        "protocol_id": PROTOCOL_ID,
+        "protocol_id": protocol_id,
         "status": "post_open_source_development_not_confirmation",
         "case": args.case,
         "case_hash": manifest["case_hash"],
@@ -371,6 +388,8 @@ def main() -> int:
             "complete_camera_count": len(geometry.camera_names),
             "selected_camera_count": len(camera_inputs.camera_names),
             "scheduled_identity_count": len(schedule.entity_ids),
+            "query_birth_frame": schedule.config.query_birth_frame,
+            "query_update_frame": schedule.config.query_update_frame,
             "birth_and_update_supported_count": int(
                 np.sum(endpoint_supported)
             ),
@@ -403,8 +422,16 @@ def main() -> int:
             },
         },
         "information_boundary": {
-            "maximum_rgb_depth_mask_frame_read": PREFIX_END_FRAME,
-            "maximum_physical_frame_read": PREFIX_END_FRAME,
+            "tracker_frame_interval_consumed": [
+                schedule.config.query_birth_frame,
+                schedule.config.query_update_frame,
+            ],
+            "maximum_rgb_depth_mask_frame_read": (
+                schedule.config.query_update_frame
+            ),
+            "maximum_physical_frame_read": (
+                schedule.config.query_update_frame
+            ),
             "future_identity_read": False,
             "future_object_observation_read": False,
             "target_metric_read": False,

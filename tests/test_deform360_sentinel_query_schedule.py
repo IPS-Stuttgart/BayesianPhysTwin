@@ -7,6 +7,7 @@ import pytest
 
 from bayesian_phystwin.deform360_sentinel_query_schedule import (
     PREFIX_END_FRAME,
+    SHORT_HORIZON_PROTOCOL_ID,
     Deform360SentinelQueryConfig,
     build_deform360_sentinel_query_schedule,
 )
@@ -66,7 +67,10 @@ def _trajectory(
         positions[frame, :active_count, 1] += amplitude * phase
         positions[frame, active_count:, 2] += 0.0002 * phase
     rank = 8
-    basis = np.zeros((node_count, 3, rank), dtype=np.float64)
+    basis: np.ndarray = np.zeros(
+        (node_count, 3, rank),
+        dtype=np.float64,
+    )
     normalized = np.linspace(-1.0, 1.0, node_count)
     for mode in range(rank):
         basis[:, mode % 3, mode] = np.cos(
@@ -137,12 +141,63 @@ def test_schedule_is_future_blind_and_candidate_order_invariant() -> None:
     np.testing.assert_array_equal(first.query_roles, second.query_roles)
     assert first.artifact_sha256 == second.artifact_sha256
     assert first.descriptor()["information_boundary"] == {
+        "physical_frame_interval_read": [0, PREFIX_END_FRAME],
         "maximum_physical_frame_read": PREFIX_END_FRAME,
         "maximum_observed_tracker_frame_used_for_planning": None,
         "observed_object_trajectory_read": False,
         "target_metric_read": False,
         "future_frame_after_update_used_for_that_update": False,
     }
+
+
+def test_short_horizon_schedule_reads_only_frames_51_through_57() -> None:
+    positions, basis = _trajectory()
+    birth_frame = 51
+    active_count = 40
+    birth_positions = positions[birth_frame].copy()
+    active_amplitude = np.linspace(0.004, 0.012, active_count)
+    for frame in range(birth_frame, len(positions)):
+        phase = min(frame - birth_frame, 6) / 6.0
+        positions[frame, :active_count] = birth_positions[:active_count]
+        positions[frame, :active_count, 1] += active_amplitude * phase
+        positions[frame, active_count:] = birth_positions[active_count:]
+        positions[frame, active_count:, 2] += 0.0002 * phase
+    intrinsics, poses, shapes, names = _cameras()
+    config = replace(
+        Deform360SentinelQueryConfig(),
+        query_birth_frame=birth_frame,
+        protocol_id=SHORT_HORIZON_PROTOCOL_ID,
+    )
+    first = build_deform360_sentinel_query_schedule(
+        positions,
+        basis,
+        intrinsics,
+        poses,
+        shapes,
+        names,
+        config=config,
+    )
+    changed_outside = positions.copy()
+    changed_outside[:birth_frame] += 1000.0
+    changed_outside[PREFIX_END_FRAME + 1 :] -= 1000.0
+    second = build_deform360_sentinel_query_schedule(
+        changed_outside,
+        basis,
+        intrinsics,
+        poses,
+        shapes,
+        names,
+        config=config,
+    )
+
+    assert np.all(first.birth_frames == birth_frame)
+    assert np.all(first.update_frames == PREFIX_END_FRAME)
+    np.testing.assert_array_equal(first.entity_ids, second.entity_ids)
+    assert first.artifact_sha256 == second.artifact_sha256
+    assert first.descriptor()["protocol_id"] == SHORT_HORIZON_PROTOCOL_ID
+    assert first.descriptor()["information_boundary"][
+        "physical_frame_interval_read"
+    ] == [birth_frame, PREFIX_END_FRAME]
 
 
 @pytest.mark.parametrize(
