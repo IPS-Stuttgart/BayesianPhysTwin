@@ -78,6 +78,13 @@ uses only the physical rollout, action, frame-zero attachment, calibration, and
 causal images available by that birth. Every measured identity from every
 birth wave is permanently removed from future scoring.
 
+The pinned TAPNext++ implementation cannot append queries to an existing
+recurrent state. The provider therefore runs each camera/birth-wave pair as an
+independent causal rollout, initialized on the birth frame and stopped on the
+associated update frame. Pixels before birth and after update remain explicitly
+inactive. This is an execution constraint of the frozen tracker, not an
+outcome-selected reset policy.
+
 Low-motion episodes are not removed from the final benchmark. The physical and
 action support gates instead return the unchanged backbone exactly when an
 update has no defensible headroom.
