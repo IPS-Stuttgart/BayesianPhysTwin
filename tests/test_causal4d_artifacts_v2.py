@@ -209,13 +209,17 @@ def _loader_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, str]]:
         tracks=np.zeros((3, 2, 2)),
         visibility=np.ones((3, 2), dtype=bool),
     )
-    return final_path, raw, {
-        "final_data_sha256": final_digest,
-        "metadata_sha256": _sha256(metadata),
-        "pcd_sha256": _sha256(pcd),
-        "calibration_sha256": calibration_digest,
-        "cotracker/camera0.npz": _sha256(track),
-    }
+    return (
+        final_path,
+        raw,
+        {
+            "final_data_sha256": final_digest,
+            "metadata_sha256": _sha256(metadata),
+            "pcd_sha256": _sha256(pcd),
+            "calibration_sha256": calibration_digest,
+            "cotracker/camera0.npz": _sha256(track),
+        },
+    )
 
 
 def _fake_module(
@@ -269,9 +273,7 @@ def _load(
         "metadata_sha256": digests["metadata_sha256"],
         "pcd_sha256": digests["pcd_sha256"],
         "calibration_sha256": digests["calibration_sha256"],
-        "cotracker_sha256": {
-            "cotracker/camera0.npz": digests["cotracker/camera0.npz"]
-        },
+        "cotracker_sha256": {"cotracker/camera0.npz": digests["cotracker/camera0.npz"]},
         "initial_match_tolerance_m": 1e-5,
     }
     arguments.update(overrides)
