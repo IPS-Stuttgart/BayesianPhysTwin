@@ -110,6 +110,25 @@ def _load_protocol(path: Path, cohort: Mapping[str, Any]) -> dict[str, Any]:
     return protocol
 
 
+def _protocol_snapshot(protocol: Mapping[str, Any]) -> dict[str, str]:
+    state_update = protocol.get("state_update")
+    _require(isinstance(state_update, Mapping), "state-update protocol is missing")
+    physical_backbone = state_update.get("physical_backbone")
+    candidate_coordinates = state_update.get("candidate_coordinates")
+    _require(
+        isinstance(physical_backbone, str) and bool(physical_backbone),
+        "physical-backbone protocol is missing",
+    )
+    _require(
+        isinstance(candidate_coordinates, str) and bool(candidate_coordinates),
+        "candidate-coordinate protocol is missing",
+    )
+    return {
+        "physical_backbone": physical_backbone,
+        "candidate_coordinates": candidate_coordinates,
+    }
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-repo", type=Path, required=True)
@@ -361,10 +380,7 @@ def main() -> int:
             "automatic frame-zero twin under the frozen open-27 numerical "
             "contract, bound to the dynamic TAPNext++ cohort"
         ),
-        "protocol_snapshot": {
-            "physical_backbone": protocol["state_update"]["physical_backbone"],
-            "state_coordinates": protocol["state_update"]["state_coordinates"],
-        },
+        "protocol_snapshot": _protocol_snapshot(protocol),
     }
     summary["result_sha256"] = _canonical_sha256(
         summary,

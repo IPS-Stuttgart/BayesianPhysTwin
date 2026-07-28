@@ -69,6 +69,19 @@
       "future_object_payload_deserialized_before_amendment": false,
       "method_or_gate_changed": false,
       "compatibility_adapter_changed": true
+    },
+    {
+      "amendment_id": "automatic-twin-snapshot-amendment-6",
+      "reason": "The next target-free physical smoke passed admission and materialized permitted frame-zero graph/state files, then stopped before an accepted twin summary because its provenance snapshot requested the obsolete state_coordinates key. The wrapper now binds the already frozen candidate_coordinates field. No Warp rollout, tracker execution, provider result, future object payload, or metric was opened. Cohort membership, method, and gates remain unchanged.",
+      "initial_cohort_selected_before_amendment": true,
+      "frame_zero_graph_and_state_created_before_amendment": true,
+      "accepted_twin_summary_created_before_amendment": false,
+      "warp_rollout_created_before_amendment": false,
+      "provider_source_outcomes_opened_before_amendment": false,
+      "provider_target_outcomes_opened_before_amendment": false,
+      "future_object_payload_deserialized_before_amendment": false,
+      "method_or_gate_changed": false,
+      "compatibility_adapter_changed": true
     }
   ],
   "data_source": {

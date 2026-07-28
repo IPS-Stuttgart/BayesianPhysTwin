@@ -65,6 +65,14 @@ payload, or metric existed, and neither the method, gates, nor deterministic
 cohort membership changed. The cohort lock is regenerated solely to bind the
 corrected code and protocol hashes.
 
+The next target-free smoke passed admission and materialized only the permitted
+frame-zero graph/state files, then stopped before an accepted twin summary
+because its provenance snapshot still requested the obsolete
+`state_coordinates` key. Amendment 6 binds the already frozen
+`candidate_coordinates` field instead. No Warp rollout, tracker output, future
+object payload, or metric existed. Cohort membership, method, and gates remain
+unchanged, and the lock is regenerated again to bind this compatibility fix.
+
 ## Hypothesis
 
 The first TAPNext++ control was accurate on admitted observations but supported
