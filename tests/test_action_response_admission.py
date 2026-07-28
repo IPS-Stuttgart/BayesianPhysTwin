@@ -83,6 +83,22 @@ def test_true_shape_response_survives_shared_translation_bias() -> None:
     assert result.artifact_id.startswith("sha256:")
 
 
+def test_sensor_specific_physical_projections_are_supported() -> None:
+    inputs = _fixture()
+    shared = np.asarray(inputs["physical_positions_m"])
+    projected = np.repeat(shared[None], 3, axis=0)
+    projected[1] = projected[1][..., [1, 0, 2]]
+    projected[2, ..., 2] = projected[2, ..., 1]
+    projected[2, ..., 1] = 0.0
+    inputs["physical_positions_m"] = projected
+    inputs["observed_positions_m"] = projected.copy()
+
+    result = evaluate_action_response_admission(**inputs)
+
+    assert result.admitted
+    assert all(group.direction_cosine > 0.99 for group in result.groups)
+
+
 def test_static_object_with_coherent_translation_bias_is_rejected() -> None:
     inputs = _fixture(gain=0.0, shared_bias_m=np.asarray([0.0, 0.01, 0.0]))
 

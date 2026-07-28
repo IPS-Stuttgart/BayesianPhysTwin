@@ -100,6 +100,11 @@ from .prior_aware_gauge_belief import (
     PriorAwareGaugeConfigV1,
     update_prior_aware_gauge_belief,
 )
+from .projected_view_response import (
+    ProjectedViewResponse,
+    ProjectedViewResponseConfig,
+    build_projected_view_response,
+)
 from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_LINEAGE_VERSION,
     PROB4D_CAUSAL_STREAM_ID,
@@ -173,6 +178,8 @@ __all__ = [
     "PhysTwinExportConfig",
     "PhysTwinMotionCueConfig",
     "PriorAwareGaugeConfigV1",
+    "ProjectedViewResponse",
+    "ProjectedViewResponseConfig",
     "PseudoMeasurementBatch",
     "RandomWalkBiasConfig",
     "RandomWalkBiasResult",
@@ -192,6 +199,7 @@ __all__ = [
     "build_action_response_guard_decision",
     "build_physical_response_basis",
     "build_phystwin_motion_cues",
+    "build_projected_view_response",
     "centered_view_translation_bias_jacobian",
     "decode_bias_aware_state",
     "decode_gauge_aware_query",

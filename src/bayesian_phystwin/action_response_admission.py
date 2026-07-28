@@ -375,20 +375,25 @@ def _validate_inputs(
     action = np.asarray(actuator_positions_m, dtype=np.float64)
     support = np.asarray(action_support, dtype=np.float64)
     _require(
-        physical.ndim == 3 and physical.shape[2] == 3,
-        "physical_positions_m must have shape (T, N, 3)",
+        observed.ndim == 4 and observed.shape[3] == 3,
+        "observed_positions_m must have shape (S, T, N, 3)",
     )
-    frame_count, node_count, _ = physical.shape
+    sensor_count, frame_count, node_count, _ = observed.shape
     _require(
         frame_count >= config.minimum_prefix_frames,
         "physical prefix is too short",
     )
-    _require(
-        observed.ndim == 4
-        and observed.shape[1:] == physical.shape,
-        "observed_positions_m must have shape (S, T, N, 3)",
-    )
-    sensor_count = observed.shape[0]
+    if physical.ndim == 3:
+        _require(
+            physical.shape == (frame_count, node_count, 3),
+            "shared physical_positions_m shape changed",
+        )
+        physical = np.broadcast_to(physical, observed.shape).copy()
+    else:
+        _require(
+            physical.ndim == 4 and physical.shape == observed.shape,
+            "physical_positions_m must have shape (T, N, 3) or (S, T, N, 3)",
+        )
     expected = (sensor_count, frame_count, node_count)
     _require(valid.shape == expected, "observation_validity shape changed")
     _require(
@@ -806,7 +811,7 @@ def evaluate_action_response_admission(
         shared_bias_reference_mask,
         cfg,
     )
-    physical_response = physical - physical[0]
+    physical_response = physical - physical[:, :1]
     observed_response = observed - observed[:, :1]
     action_displacement = float(
         np.max(np.linalg.norm(action - action[0], axis=2))
@@ -819,7 +824,7 @@ def evaluate_action_response_admission(
     )
     for sensor_index, group_id in enumerate(sensor_groups):
         centered_physical, centered_observed, shared_bias_mode = _center_responses(
-            physical_response,
+            physical_response[sensor_index],
             observed_response[sensor_index],
             valid[sensor_index],
             reliability[sensor_index],
