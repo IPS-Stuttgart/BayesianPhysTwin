@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-projected-observability-source-v4",
+  "status": "source_gate_failed",
+  "repository_revision": "3401e1b05ed32a86804b95fed4f91f1bf2e67335",
+  "execution_host": "gpuserver4090",
+  "frozen_artifacts": {
+    "config_sha256": "39c6665bc148e0f5c05a2fec66a32f7ca35e81623ebdeaee090188a4f39c3ac0",
+    "protocol_note_sha256": "90deee1ff53076131ed22c4ce87c9f22f4f17e59f976dcc4535890d377d9e2e0",
+    "runner_sha256": "e7f89f243b27198f0ea3265d1a2a8629c884ac3b3b517e3b2baafe688baf5ca0",
+    "planner_sha256": "772a6d885fda0c7e66c264553b216e25a8a06b389c33335fcdb154ef154af9eb"
+  },
+  "counts": {
+    "locked_source_cases": 7,
+    "admitted_cases": 0,
+    "planning_rejections": 7,
+    "tracker_runs": 0,
+    "future_outcome_evaluations": 0
+  },
+  "advancement_gate": {
+    "minimum_admitted_cases": 5,
+    "observed_admitted_cases": 0,
+    "passed": false
+  },
+  "failure_counts": {
+    "projected_observability_multicover_infeasible": 4,
+    "too_few_cameras_with_projected_physical_response": 2,
+    "no_globally_eligible_physical_response_point": 1
+  },
+  "cases": [
+    {
+      "case_id": "028-ziplog-cloth-ep0000",
+      "status": "planning_rejection",
+      "reason": "projected_observability_multicover_infeasible"
+    },
+    {
+      "case_id": "029-foam-cloth-ep0000",
+      "status": "planning_rejection",
+      "reason": "too_few_cameras_with_projected_physical_response"
+    },
+    {
+      "case_id": "030-foam-flat-cloth-ep0000",
+      "status": "planning_rejection",
+      "reason": "projected_observability_multicover_infeasible"
+    },
+    {
+      "case_id": "058-roll-napkin-ep0000",
+      "status": "planning_rejection",
+      "reason": "projected_observability_multicover_infeasible"
+    },
+    {
+      "case_id": "061-cup-ep0000",
+      "status": "planning_rejection",
+      "reason": "no_globally_eligible_physical_response_point"
+    },
+    {
+      "case_id": "147-baking-mold-ep0000",
+      "status": "planning_rejection",
+      "reason": "projected_observability_multicover_infeasible"
+    },
+    {
+      "case_id": "152-slime-ep0000",
+      "status": "planning_rejection",
+      "reason": "too_few_cameras_with_projected_physical_response"
+    }
+  ],
+  "claim_boundary": {
+    "source_only": true,
+    "candidate_state_updates_run": false,
+    "hidden_identity_outcomes_read": false,
+    "future_prediction_metrics_read": false,
+    "held_v8_touched": false,
+    "sota_claim_authorized": false
+  },
+  "decision": "Stop the fixed-threshold projected-observability-v4 family. Do not relax its frozen support or admission thresholds after observing these rejections."
+}
