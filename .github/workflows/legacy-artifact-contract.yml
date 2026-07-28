@@ -6,16 +6,20 @@ on:
     paths:
       - "src/bayesian_phystwin/legacy_artifacts.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v2.py"
       - "tests/test_legacy_artifacts.py"
       - "docs/causal4d_provider_v1.md"
+      - "docs/causal4d_artifacts_v2.md"
       - ".github/workflows/legacy-artifact-contract.yml"
   pull_request:
     branches: [main]
     paths:
       - "src/bayesian_phystwin/legacy_artifacts.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v2.py"
       - "tests/test_legacy_artifacts.py"
       - "docs/causal4d_provider_v1.md"
+      - "docs/causal4d_artifacts_v2.md"
       - ".github/workflows/legacy-artifact-contract.yml"
   workflow_dispatch:
 
@@ -45,18 +49,21 @@ jobs:
           python -m ruff check
           src/bayesian_phystwin/legacy_artifacts.py
           src/bayesian_phystwin/causal4d_artifacts_v1.py
+          src/bayesian_phystwin/causal4d_artifacts_v2.py
           tests/test_legacy_artifacts.py
       - name: Check formatting
         run: >-
           python -m ruff format --check
           src/bayesian_phystwin/legacy_artifacts.py
           src/bayesian_phystwin/causal4d_artifacts_v1.py
+          src/bayesian_phystwin/causal4d_artifacts_v2.py
           tests/test_legacy_artifacts.py
       - name: Type-check the stable boundary
         run: >-
           python -m mypy --python-version 3.12
           src/bayesian_phystwin/legacy_artifacts.py
           src/bayesian_phystwin/causal4d_artifacts_v1.py
+          src/bayesian_phystwin/causal4d_artifacts_v2.py
 
   compatibility:
     name: Legacy artifact API / Python ${{ matrix.python-version }}
