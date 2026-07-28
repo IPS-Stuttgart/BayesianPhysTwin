@@ -34,6 +34,11 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
+- A frame-by-frame `PhysicsGuidedQueryPlannerV2` that cannot consume future
+  tracker support through its streaming interface while retaining the v1 planner.
+- A non-pickled, content-addressed `PhysicsGuidedQueryPlanV1` artifact binding
+  planner configuration, input identities, the consumed support stream, seed
+  events, scores, and replacement lineage.
 
 ### Changed
 
@@ -49,6 +54,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   External-fork pull requests still run the producer-neutral consumer fixture and
   explicitly report that the secret-backed producer gate was unavailable and no
   current-Prob4D evidence was admitted.
+- The v2 physics-guided query ranking uses expected physical-mode information
+  after Schur-complement marginalization of declared nuisance modes. Supported
+  views are conservatively averaged rather than counted as independent evidence.
 
 ### Removed
 
