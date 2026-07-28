@@ -1,0 +1,1049 @@
+{
+  "admission": {
+    "action_displacement_m": 0.03244058100201035,
+    "action_prefix_id": "513c05263da326c14f6ea4489fb522d8f2349aa0144b72c6f9050109c9b5b745",
+    "admitted": false,
+    "artifact_id": "sha256:f174a7b5145fc1131b1494be2574f6bb306e6bd1389a316e75f7471859cbbc95",
+    "config": {
+      "action_support_threshold": 0.5,
+      "common_bias_covariance_inflation": 2.0,
+      "confidence_z": 1.645,
+      "maximum_effective_cluster_count": 8.0,
+      "maximum_relative_group_gain_spread": 1.0,
+      "maximum_response_gain": 3.0,
+      "minimum_action_displacement_m": 0.002,
+      "minimum_association_probability": 0.5,
+      "minimum_direction_cosine": 0.5,
+      "minimum_identifiable_physical_rms_m": 0.0005,
+      "minimum_independent_group_count": 3,
+      "minimum_observed_response_rms_m": 0.0005,
+      "minimum_passing_group_fraction": 0.75,
+      "minimum_positive_cluster_fraction": 0.6,
+      "minimum_prefix_frames": 3,
+      "minimum_reference_node_count": 3,
+      "minimum_response_gain": 0.1,
+      "minimum_supported_cluster_count": 4,
+      "observation_variance_floor_m2": 1e-08
+    },
+    "contract": "bayesian-phystwin-action-response-admission-v1",
+    "groups": [
+      {
+        "direction_cosine": 0.9489577007633948,
+        "effective_cluster_count": 8.0,
+        "group_id": "disjoint-camera-group-0",
+        "mean_prior_reliability": 0.4917903852258479,
+        "observed_response_rms_m": 0.008206185721700473,
+        "passing": false,
+        "physical_response_rms_m": 0.029180896104401943,
+        "positive_cluster_fraction": 1.0,
+        "response_gain": 0.259373714838544,
+        "response_gain_lower": 0.07285584553090199,
+        "response_gain_std": 0.11338472298336899,
+        "sensor_count": 1,
+        "supported_cluster_count": 10
+      },
+      {
+        "direction_cosine": 0.11416352182925818,
+        "effective_cluster_count": 8.0,
+        "group_id": "disjoint-camera-group-1",
+        "mean_prior_reliability": 0.8012737124822205,
+        "observed_response_rms_m": 0.0013704183705004734,
+        "passing": false,
+        "physical_response_rms_m": 0.0022908430530504983,
+        "positive_cluster_fraction": 0.44263280385247666,
+        "response_gain": -0.007258100004244913,
+        "response_gain_lower": -1.3001289306613624,
+        "response_gain_std": 0.7859397146851778,
+        "sensor_count": 1,
+        "supported_cluster_count": 8
+      },
+      {
+        "direction_cosine": 0.0,
+        "effective_cluster_count": 0.0,
+        "group_id": "disjoint-camera-group-2",
+        "mean_prior_reliability": 0.0,
+        "observed_response_rms_m": 0.0,
+        "passing": false,
+        "physical_response_rms_m": 0.0,
+        "positive_cluster_fraction": 0.0,
+        "response_gain": 0.0,
+        "response_gain_lower": 0.0,
+        "response_gain_std": 0.0,
+        "sensor_count": 1,
+        "supported_cluster_count": 0
+      }
+    ],
+    "independent_group_count": 3,
+    "information_boundary": {
+      "candidate_update_read": false,
+      "final_regret_guard_required": true,
+      "future_observation_read": false,
+      "future_target_read": false,
+      "prefix_observations_only": true,
+      "shared_translation_is_treated_as_nuisance": true,
+      "state_innovation_changes_prior_reliability": false
+    },
+    "observation_prefix_id": "85046be6e6d552f85b6f20c3254cd035af971618f9d2425fb8441fe929523dda",
+    "passing_group_count": 0,
+    "physical_prefix_id": "4b1f2652c263dc3b38d2a1d965591317a2846f6737307ed292b4d26092f34a68",
+    "reason": "insufficient-action-aligned-response",
+    "relative_group_gain_spread": 2.0,
+    "required_passing_group_count": 3,
+    "schema_version": 1,
+    "shared_bias_mode": "translation-invariant"
+  },
+  "camera_groups": [
+    [
+      "brics-odroid-007_cam0",
+      "brics-odroid-021_cam1"
+    ],
+    [
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-027_cam0"
+    ],
+    [
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1"
+    ]
+  ],
+  "case": "059-shoe-ep0000",
+  "claim_boundary": "already-open source admission smoke only; no hidden outcome, accuracy, calibration, or state-of-the-art claim",
+  "configs": {
+    "action_response_admission": {
+      "action_support_threshold": 0.5,
+      "common_bias_covariance_inflation": 2.0,
+      "confidence_z": 1.645,
+      "maximum_effective_cluster_count": 8.0,
+      "maximum_relative_group_gain_spread": 1.0,
+      "maximum_response_gain": 3.0,
+      "minimum_action_displacement_m": 0.002,
+      "minimum_association_probability": 0.5,
+      "minimum_direction_cosine": 0.5,
+      "minimum_identifiable_physical_rms_m": 0.0005,
+      "minimum_independent_group_count": 3,
+      "minimum_observed_response_rms_m": 0.0005,
+      "minimum_passing_group_fraction": 0.75,
+      "minimum_positive_cluster_fraction": 0.6,
+      "minimum_prefix_frames": 3,
+      "minimum_reference_node_count": 3,
+      "minimum_response_gain": 0.1,
+      "minimum_supported_cluster_count": 4,
+      "observation_variance_floor_m2": 1e-08
+    },
+    "grouped_multiview": {
+      "covariance_floor_m2": 1e-08,
+      "covariance_inflation": 4.0,
+      "group_count": 3,
+      "maximum_condition_number": 10000000000.0,
+      "minimum_cameras_per_group": 2,
+      "pixel_standard_deviation": 1.5
+    },
+    "raw_camera": {
+      "alltracker_inference_iterations": 4,
+      "alltracker_max_side": 512,
+      "alltracker_window_length": 16,
+      "center_count": 16,
+      "frame_zero_depth_tolerance_m": 0.015,
+      "maximum_displacement_from_initial_m": 0.5,
+      "maximum_reprojection_median_px": 3.0,
+      "minimum_initial_view_count": 2,
+      "minimum_ray_angle_degrees": 2.0,
+      "minimum_triangulation_view_count": 2,
+      "reprojection_inlier_threshold_px": 3.0,
+      "selected_camera_count": 8,
+      "update_frames": [
+        19,
+        38,
+        57
+      ],
+      "visibility_threshold": 0.5
+    }
+  },
+  "eligible_prefix_cameras": [
+    "brics-odroid-007_cam0",
+    "brics-odroid-008_cam0",
+    "brics-odroid-013_cam0",
+    "brics-odroid-014_cam1",
+    "brics-odroid-015_cam1",
+    "brics-odroid-019_cam1",
+    "brics-odroid-021_cam1",
+    "brics-odroid-027_cam0"
+  ],
+  "environment": {
+    "device": "cuda:0",
+    "numpy": "1.26.4",
+    "python": "3.10.12"
+  },
+  "frame_zero_group_support": [
+    11,
+    13,
+    5
+  ],
+  "frame_zero_planner": "balanced-physical-response-v2",
+  "group_support_by_update": [
+    [
+      10,
+      7,
+      0
+    ],
+    [
+      8,
+      6,
+      0
+    ],
+    [
+      9,
+      6,
+      0
+    ]
+  ],
+  "information_boundary": {
+    "future_hidden_identity_read": false,
+    "future_object_observation_read": false,
+    "future_target_metric_read": false,
+    "held_v8_artifact_read": false,
+    "known_action_read": true,
+    "maximum_rgb_frame_read": 57,
+    "v1_sealed_target_read": false
+  },
+  "inputs_sha256": {
+    "alltracker_checkpoint": "ffd9ebcfb6d206d594b646999a150540f92c049cf9b2bf940facf7123f62aa1d",
+    "alltracker_source": "388b4b893ee5d206c5b396be5321fee05339d4d39efa74dc00fdea1a3f447817",
+    "physical_archive": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215",
+    "physical_manifest": "e7f380d2b43b3abc493846b19ef528da20ace2e8bffdf078cc06ef598fa5997a",
+    "prediction_only_carrier": "3d1b35e187109a2d26490764283d2269288605efed76e552fb8558578a855004",
+    "prediction_only_summary": "15fcf011d0ccd37faae77f7281a7bdfe79b026ac8ad2da615b7962459352460a"
+  },
+  "output": {
+    "grouped_observation": "/home/florianpfaff/deform360-action-response-source-v2-9c56029/059-shoe-ep0000/grouped_observation.npz",
+    "grouped_observation_sha256": "cc394da5756ab4cfdf09cdf559d46b5436dae79f83326d05edb244de700ceddf"
+  },
+  "protocol_id": "deform360-action-response-source-v2",
+  "repository_revision": "9c560298c997a5935433f1906967021443f70425",
+  "response_support_definition": "binary selected-node support after sealed physical response >= 0.0005 m",
+  "result_sha256": "95720e87cb19a1aa9e876d88a76dfccc3ad457c556eab800dddbfa2f208e53de",
+  "schema_version": 1,
+  "tracker_records": [
+    {
+      "tracker": [
+        {
+          "camera": "brics-odroid-007_cam0",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "0525b294cedf2e5bd20fa301ff118c648a336f84e06be1de5e4d0962b682e68a",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 11,
+          "query_ids": [
+            0,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.40294229285791516,
+          "visibility_confidence_maximum": 0.9999890327453613,
+          "visibility_confidence_median": 0.9999239444732666,
+          "visibility_confidence_minimum": 0.9981935620307922,
+          "visible_query_count": 11
+        },
+        {
+          "camera": "brics-odroid-021_cam1",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "63c9cb38b64d42b379d18a8559ed6430ad66ddc389bdf2195aecc091ed4de133",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 11,
+          "query_ids": [
+            0,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.21477456390857697,
+          "visibility_confidence_maximum": 0.9999467134475708,
+          "visibility_confidence_median": 0.9998724460601807,
+          "visibility_confidence_minimum": 0.9991886019706726,
+          "visible_query_count": 11
+        },
+        {
+          "camera": "brics-odroid-008_cam0",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "3ff89890ab04339ea2eb875bbabe42ac242620cfba25961100cd2b75debbd2d6",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 9,
+          "query_ids": [
+            0,
+            398,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.21637971699237823,
+          "visibility_confidence_maximum": 0.9984703660011292,
+          "visibility_confidence_median": 0.9910951852798462,
+          "visibility_confidence_minimum": 0.872673749923706,
+          "visible_query_count": 9
+        },
+        {
+          "camera": "brics-odroid-013_cam0",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "6de4dbbdd2db625d4093655d0438afc05f13fea3aa5495e45d883f6e86e8f3d1",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 15,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            445,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.21703595062717795,
+          "visibility_confidence_maximum": 0.9999392032623291,
+          "visibility_confidence_median": 0.9997840523719788,
+          "visibility_confidence_minimum": 0.9994211196899414,
+          "visible_query_count": 15
+        },
+        {
+          "camera": "brics-odroid-027_cam0",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "c2118042346877dae8a2d1f2779a78c202ceb4e0460b7f7dc36b3575c43563ed",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.21805419540032744,
+          "visibility_confidence_maximum": 0.9999728202819824,
+          "visibility_confidence_median": 0.9999057054519653,
+          "visibility_confidence_minimum": 0.9996373653411865,
+          "visible_query_count": 5
+        },
+        {
+          "camera": "brics-odroid-014_cam1",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "5ae847e6e90cf0ac6f725c3a6b579aa9699688ac8eefe8775f49f000a88e9062",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.21828409191221,
+          "visibility_confidence_maximum": 0.9998514652252197,
+          "visibility_confidence_median": 0.9997749924659729,
+          "visibility_confidence_minimum": 0.9997673630714417,
+          "visible_query_count": 5
+        },
+        {
+          "camera": "brics-odroid-015_cam1",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "fb37dc941059de8706614c6f6daa52d54fd2b7cd46b7671e32cd29febbee6dd5",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 0,
+          "query_ids": [],
+          "runtime_seconds": 0.21589268930256367,
+          "visibility_confidence_maximum": null,
+          "visibility_confidence_median": null,
+          "visibility_confidence_minimum": null,
+          "visible_query_count": 0
+        },
+        {
+          "camera": "brics-odroid-019_cam1",
+          "decoded_frame_count": 20,
+          "decoded_rgb_prefix_sha256": "7100411b806d36f421cc85b2b5b889a4d133ee596eea9164604642176ed94789",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 19,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            20
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.21817307407036424,
+          "visibility_confidence_maximum": 0.9999532699584961,
+          "visibility_confidence_median": 0.9997909665107727,
+          "visibility_confidence_minimum": 0.9997532963752747,
+          "visible_query_count": 5
+        }
+      ],
+      "update_frame": 19
+    },
+    {
+      "tracker": [
+        {
+          "camera": "brics-odroid-007_cam0",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "a4be8e11bf886c8d252ff219f498ca9ee05a51f652fe70680c0ebaa946da4a88",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 11,
+          "query_ids": [
+            0,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.4095364958047867,
+          "visibility_confidence_maximum": 0.9999891519546509,
+          "visibility_confidence_median": 0.9999023675918579,
+          "visibility_confidence_minimum": 0.9961109757423401,
+          "visible_query_count": 11
+        },
+        {
+          "camera": "brics-odroid-021_cam1",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "c558ec91599d9ed9b74e348deec6f86d6673e472afd111f2c201a377feeb0ddf",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 11,
+          "query_ids": [
+            0,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.40447928197681904,
+          "visibility_confidence_maximum": 0.9999723434448242,
+          "visibility_confidence_median": 0.9998968839645386,
+          "visibility_confidence_minimum": 0.996961772441864,
+          "visible_query_count": 11
+        },
+        {
+          "camera": "brics-odroid-008_cam0",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "d6278bf81819f0c43bd417a2fd95af63c6b9df2db9258da4d54947a16b7d4eef",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 9,
+          "query_ids": [
+            0,
+            398,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.40946458699181676,
+          "visibility_confidence_maximum": 0.9942785501480103,
+          "visibility_confidence_median": 0.9812507033348083,
+          "visibility_confidence_minimum": 0.7516133189201355,
+          "visible_query_count": 9
+        },
+        {
+          "camera": "brics-odroid-013_cam0",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "f3c1db954cb0f5f691886ed55f60fa749e26abf486c1b3f448de2b48dcdf6f05",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 15,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            445,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.40460330061614513,
+          "visibility_confidence_maximum": 0.9999539852142334,
+          "visibility_confidence_median": 0.9998600482940674,
+          "visibility_confidence_minimum": 0.9993436932563782,
+          "visible_query_count": 15
+        },
+        {
+          "camera": "brics-odroid-027_cam0",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "29f4ddf2f3197dcc40b3d1a26c45125f3b1bfcb9ea5bae26a439b729af92dfb0",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.40604906110093,
+          "visibility_confidence_maximum": 0.9999772310256958,
+          "visibility_confidence_median": 0.9999054670333862,
+          "visibility_confidence_minimum": 0.9996021389961243,
+          "visible_query_count": 5
+        },
+        {
+          "camera": "brics-odroid-014_cam1",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "d7a383faebf51bbec5e2ef2dcfea578fc0a76e348b09f44551f366bfa44420cb",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.4080716660246253,
+          "visibility_confidence_maximum": 0.9998583793640137,
+          "visibility_confidence_median": 0.9998270869255066,
+          "visibility_confidence_minimum": 0.99980229139328,
+          "visible_query_count": 5
+        },
+        {
+          "camera": "brics-odroid-015_cam1",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "9a59983b2cf2fa0c6270dd77c095f1d5ac744007e654f0698a34e9efd2300f67",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 0,
+          "query_ids": [],
+          "runtime_seconds": 0.40383380418643355,
+          "visibility_confidence_maximum": null,
+          "visibility_confidence_median": null,
+          "visibility_confidence_minimum": null,
+          "visible_query_count": 0
+        },
+        {
+          "camera": "brics-odroid-019_cam1",
+          "decoded_frame_count": 39,
+          "decoded_rgb_prefix_sha256": "79e21abdc27df9b63becaef5207e111f11b925f8bbb3abe894c6f7dbb9ed08c4",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 38,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            39
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.41000403417274356,
+          "visibility_confidence_maximum": 0.999951958656311,
+          "visibility_confidence_median": 0.9997912049293518,
+          "visibility_confidence_minimum": 0.9997217059135437,
+          "visible_query_count": 5
+        }
+      ],
+      "update_frame": 38
+    },
+    {
+      "tracker": [
+        {
+          "camera": "brics-odroid-007_cam0",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "2b69d06aa7b7ae16f826ec1c1c5c7cc04d599e6ea4073c89c2df390594cf27ec",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 11,
+          "query_ids": [
+            0,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.6935985083691776,
+          "visibility_confidence_maximum": 0.9999898672103882,
+          "visibility_confidence_median": 0.9999022483825684,
+          "visibility_confidence_minimum": 0.9917410612106323,
+          "visible_query_count": 11
+        },
+        {
+          "camera": "brics-odroid-021_cam1",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "689a420b129064bb76d1821c313485fc509a0d7e3920e990ccfb0110b19ffdda",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 11,
+          "query_ids": [
+            0,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.684853586833924,
+          "visibility_confidence_maximum": 0.9999669790267944,
+          "visibility_confidence_median": 0.9998791217803955,
+          "visibility_confidence_minimum": 0.9951260685920715,
+          "visible_query_count": 11
+        },
+        {
+          "camera": "brics-odroid-008_cam0",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "1352066c0e741fe1b25e560129798d52e21556b4f0e66789d491849793cf6ff4",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 9,
+          "query_ids": [
+            0,
+            398,
+            355,
+            230,
+            414,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.6829463872127235,
+          "visibility_confidence_maximum": 0.9954798221588135,
+          "visibility_confidence_median": 0.9883409142494202,
+          "visibility_confidence_minimum": 0.7327641844749451,
+          "visible_query_count": 9
+        },
+        {
+          "camera": "brics-odroid-013_cam0",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "6101dbd1ed3183447791def52ed13295505a0a231a9c196caf85676a6d7bcc27",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 15,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            398,
+            192,
+            43,
+            355,
+            230,
+            414,
+            445,
+            335,
+            420,
+            318,
+            358
+          ],
+          "runtime_seconds": 0.6838209629058838,
+          "visibility_confidence_maximum": 0.9999485015869141,
+          "visibility_confidence_median": 0.9998738765716553,
+          "visibility_confidence_minimum": 0.9992221593856812,
+          "visible_query_count": 15
+        },
+        {
+          "camera": "brics-odroid-027_cam0",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "13f2d94f9245315c08d783d98adac6c6ca9184b1d363386396438fdde7f671f9",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.6885342448949814,
+          "visibility_confidence_maximum": 0.9992929697036743,
+          "visibility_confidence_median": 0.9990181922912598,
+          "visibility_confidence_minimum": 0.9958080053329468,
+          "visible_query_count": 5
+        },
+        {
+          "camera": "brics-odroid-014_cam1",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "2070e2d614dc01513dc990ba6e4f2352ff0cdc34bfe1307646d96420dd63b59f",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.6829143287613988,
+          "visibility_confidence_maximum": 0.9998823404312134,
+          "visibility_confidence_median": 0.9998101592063904,
+          "visibility_confidence_minimum": 0.9997679591178894,
+          "visible_query_count": 5
+        },
+        {
+          "camera": "brics-odroid-015_cam1",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "eb18c7927b0c720ab52881496037ebe4410341cefd42868254469cf863ed9dd3",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 0,
+          "query_ids": [],
+          "runtime_seconds": 0.6850388078019023,
+          "visibility_confidence_maximum": null,
+          "visibility_confidence_median": null,
+          "visibility_confidence_minimum": null,
+          "visible_query_count": 0
+        },
+        {
+          "camera": "brics-odroid-019_cam1",
+          "decoded_frame_count": 58,
+          "decoded_rgb_prefix_sha256": "a030a87c287acd75d614780ba82ffac66f612bd07f05dc783969eafbf87ffef0",
+          "inference_image_shape": [
+            288,
+            512
+          ],
+          "maximum_video_frame_read": 57,
+          "original_image_shape": [
+            720,
+            1280
+          ],
+          "prefix_frame_range_half_open": [
+            0,
+            58
+          ],
+          "query_count": 5,
+          "query_ids": [
+            435,
+            446,
+            442,
+            447,
+            445
+          ],
+          "runtime_seconds": 0.684607454109937,
+          "visibility_confidence_maximum": 0.9998906850814819,
+          "visibility_confidence_median": 0.9996757507324219,
+          "visibility_confidence_minimum": 0.9994805455207825,
+          "visible_query_count": 5
+        }
+      ],
+      "update_frame": 57
+    }
+  ]
+}
