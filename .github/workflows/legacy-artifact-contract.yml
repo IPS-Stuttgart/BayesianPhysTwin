@@ -24,132 +24,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: legacy-artifacts-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  repair-v2-branch:
-    name: Repair V2 branch
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'agent/hash-lock-released-visual-inputs-v2'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - name: Install development tools
-        run: python -m pip install -e ".[dev]"
-      - name: Repair fixture and validate V2 contract
-        id: repair
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          {
-            python - <<'PY'
-          from pathlib import Path
-
-          path = Path('tests/test_legacy_artifacts.py')
-          text = path.read_text(encoding='utf-8')
-          replacements = {
-              '        final_points = final_points\n': (
-                  '        final_points = np.zeros((3, 2, 3), dtype=float)\n'
-              ),
-              '        final_visible = final_visible\n': (
-                  '        final_visible = np.ones((3, 2), dtype=bool)\n'
-              ),
-          }
-          for old, new in replacements.items():
-              if text.count(old) != 1:
-                  raise RuntimeError(f'expected one fixture anchor: {old!r}')
-              text = text.replace(old, new, 1)
-          path.write_text(text, encoding='utf-8')
-          PY
-            python -m ruff format \
-              src/bayesian_phystwin/causal4d_artifacts_v2.py \
-              tests/test_legacy_artifacts.py
-            python -m ruff check \
-              src/bayesian_phystwin/causal4d_artifacts_v2.py \
-              tests/test_legacy_artifacts.py
-            python -m mypy --python-version 3.12 \
-              src/bayesian_phystwin/causal4d_artifacts_v2.py
-            python -m pytest -q tests/test_legacy_artifacts.py
-          } 2>&1 | tee v2-repair.log
-      - name: Upload V2 repair diagnostics
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: released-visual-inputs-v2-repair
-          path: |
-            src/bayesian_phystwin/causal4d_artifacts_v2.py
-            tests/test_legacy_artifacts.py
-            v2-repair.log
-          if-no-files-found: error
-          retention-days: 3
-      - name: Fail when V2 validation fails
-        if: steps.repair.outcome == 'failure'
-        run: exit 1
-      - name: Restore permanent workflow and publish
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git show origin/main:.github/workflows/legacy-artifact-contract.yml \
-            > .github/workflows/legacy-artifact-contract.yml
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('.github/workflows/legacy-artifact-contract.yml')
-          text = path.read_text(encoding='utf-8')
-          text = text.replace(
-              '      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"\n',
-              '      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"\n'
-              '      - "src/bayesian_phystwin/causal4d_artifacts_v2.py"\n',
-          )
-          text = text.replace(
-              '      - "docs/causal4d_provider_v1.md"\n',
-              '      - "docs/causal4d_provider_v1.md"\n'
-              '      - "docs/causal4d_artifacts_v2.md"\n',
-          )
-          text = text.replace(
-              '          src/bayesian_phystwin/causal4d_artifacts_v1.py\n'
-              '          tests/test_legacy_artifacts.py\n',
-              '          src/bayesian_phystwin/causal4d_artifacts_v1.py\n'
-              '          src/bayesian_phystwin/causal4d_artifacts_v2.py\n'
-              '          tests/test_legacy_artifacts.py\n',
-          )
-          text = text.replace(
-              '          src/bayesian_phystwin/causal4d_artifacts_v1.py\n\n'
-              '  compatibility:',
-              '          src/bayesian_phystwin/causal4d_artifacts_v1.py\n'
-              '          src/bayesian_phystwin/causal4d_artifacts_v2.py\n\n'
-              '  compatibility:',
-          )
-          path.write_text(text, encoding='utf-8')
-          PY
-          rm -f \
-            .github/workflows/agent-fix-released-visual-inputs-v2.yml \
-            .github/agent-fix-released-visual-inputs-v2.trigger
-          git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Validate digest-complete released visual inputs"
-          git push --force-with-lease \
-            origin HEAD:refs/heads/agent/hash-lock-released-visual-inputs-v2
-
   quality:
     name: Legacy artifact API quality
     runs-on: ubuntu-latest
