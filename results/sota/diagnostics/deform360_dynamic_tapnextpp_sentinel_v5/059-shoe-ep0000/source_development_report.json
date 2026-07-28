@@ -1,0 +1,247 @@
+{
+  "artifact_kind": "Deform360DynamicTAPNextPPSentinelV5SourceDevelopment",
+  "assimilation_report": {
+    "artifact_kind": "Deform360DynamicTAPNextPPAssimilation",
+    "assimilation_mode": "set-valued-association-mixture-v3",
+    "belief_config": {
+      "degrees_of_freedom": 4.0,
+      "global_prior_std_m": 0.1,
+      "length_scale_fraction": 0.1,
+      "local_blend": 1.0,
+      "local_prior_std_m": 0.02,
+      "maximum_correction_m": 0.1,
+      "minimum_length_scale_m": 0.0001,
+      "minimum_reliability": 0.02,
+      "observation_std_m": 0.005,
+      "process_std_m_per_sqrt_frame": 0.003
+    },
+    "center_ids": [
+      149,
+      11,
+      398,
+      23,
+      7,
+      18,
+      355,
+      3,
+      0
+    ],
+    "gate_config": {
+      "absolute_pair_strain_m": 0.03,
+      "maximum_exact_center_count": 24,
+      "minimum_inlier_count": 9,
+      "minimum_inlier_fraction": 0.7,
+      "relative_pair_strain": 0.1
+    },
+    "information_boundary": {
+      "future_object_geometry_read": false,
+      "future_target_read": false,
+      "prediction_depends_on": "sealed physical/persistence backbones and causal RGB/depth/mask prefix observations through each registered update"
+    },
+    "method_contract": {
+      "absolute_multiview_position_used_as_state_innovation": false,
+      "association_probability_role": "separate nominal assignment event inside robust mixture",
+      "association_probability_used_as_prior_reliability": false,
+      "birth_anchored_displacement_innovation": true,
+      "innovation_robustified_once_inside_rbf_update": true,
+      "metric_covariance_propagated_into_rbf_update": true,
+      "pairwise_gate_role": "identity-consistency admission",
+      "prior_reliability_uses_physical_innovation": false,
+      "rejection": "bit-exact selected physical-or-persistence backbone",
+      "unknown_temporal_correlation_covariance_bound": "2*(Sigma_birth+Sigma_update)"
+    },
+    "schema_version": 1,
+    "update_frames": [
+      19,
+      38,
+      57
+    ],
+    "updates": [
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 19,
+        "interval_end_exclusive": 38,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      },
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 38,
+        "interval_end_exclusive": 57,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      },
+      {
+        "available_center_count": 0,
+        "current_observation_chamfer_m": {
+          "persistence": null,
+          "physical_prior": null
+        },
+        "frame": 57,
+        "interval_end_exclusive": 76,
+        "mean_posterior_robust_reliability": 0.0,
+        "mean_prior_reliability": 0.0,
+        "pairwise_gate": {
+          "accepted": false,
+          "bit_exact_fallback": true,
+          "compatible_pair_fraction": 0.0,
+          "decision": "insufficient-selector-support",
+          "inlier_count": 0,
+          "inlier_fraction": 0.0
+        },
+        "selected_backbone": "persistence",
+        "selector_support_sufficient": false
+      }
+    ]
+  },
+  "case": "059-shoe-ep0000",
+  "case_hash": "ba3f2b6f4908732dbaf6dea8e1b1d30ebdd933ca1de0e944b4545c454e2b7751",
+  "environment": {
+    "cuda_version": "12.1",
+    "device": "cuda:0",
+    "elapsed_seconds": 19.86094255466014,
+    "model_frame_count": 406,
+    "numpy": "1.26.4",
+    "peak_gpu_memory_gib": 2.642829418182373,
+    "python": "3.10.12",
+    "rollout_count": 7,
+    "tapnet_revision": "c2cbab81cc06092b5f05bfe2da7bfec54e2079c9",
+    "tapnextpp_checkpoint_sha256": "6cd0e793fdcface3063d63f8ed3819bcf74c2c0468fe1fef85acee4de2f3609f",
+    "torch_version": "2.4.0+cu121"
+  },
+  "information_boundary": {
+    "future_identity_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_read": false,
+    "maximum_physical_frame_read": 57,
+    "maximum_rgb_depth_mask_frame_read": 57,
+    "target_metric_read": false,
+    "v1_sealed_target_cohort_read": false
+  },
+  "inputs_sha256": {
+    "camera_certificate": "2c574786c17fb94e4ad7354da5c5f0fec79aeea60085b9b96587289ce9706d85",
+    "physical_archive": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215",
+    "physical_manifest": "e7f380d2b43b3abc493846b19ef528da20ace2e8bffdf078cc06ef598fa5997a",
+    "query_schedule": "36a2e07cef9e6ff5b5b82bc9cfa6bdfd07c3717978d515bac0160c3e782933dd"
+  },
+  "outputs": {
+    "assimilation_array_sha256": {
+      "candidate_correction_variance_m2": "3065e123fb55fce0d84ba176acb0decbaf9bb9120b6ece4ccb8d5545708c1fb9",
+      "dynamic_birth_anchored_covariance_aware_rbf": "45a49cd3be1af7c17a60e91ca899f89939aa3b547d14ff1260d8619a0276d39e",
+      "persistence": "79d3e0257d59e97f163dc444d55bb92f3ca104ea7a39578843905f3f57f042d3",
+      "physical_prior": "4b1f2652c263dc3b38d2a1d965591317a2846f6737307ed292b4d26092f34a68",
+      "selected_physical_or_persistence": "45a49cd3be1af7c17a60e91ca899f89939aa3b547d14ff1260d8619a0276d39e"
+    },
+    "assimilation_arrays_file_sha256": "d0c6e4f18354a234611cfb28b616a0b94652d675a4cc3764ce7bb53e73ddd4b3",
+    "provider_array_sha256": {
+      "accepted_support": "5163125512922b941d2fc81c0c1e32804873595b9aa577b0293cc73e859c5fd0",
+      "assignment_mixture_spread_m2": "d7b78c6df43a5946457646edb408b8d4c28abfcfd93a7764ac59cc51d5c9092a",
+      "association_probability": "89e6c08a196896f33edfdace418965848157b14e370b44b543e5d3da62c1c307",
+      "birth_frames": "4ca194272715f3dae0dbfc494d032ddd31e712164aeda1ab6965acf6c40ea242",
+      "depth_residual_rmse_m": "86c59f346cc9796945dbaa4c642c3353c1c66e8afc219d9ab01931882fde26e9",
+      "entity_ids": "64a6bc39f999338d2010b31a5e5cf015fe01845f88efeba57abc12964341081c",
+      "independent_support_count": "8c933b39f481a07dec18cff6c9e9b8f8495ee1fee2b1d5e186afd212b0d8b2a8",
+      "local_covariance_m2": "14bdfda46ca9cba7a377dd4f4478f6633af167b179b988a5dec2e0a3ef6e0d66",
+      "naive_independent_covariance_m2": "95f59af85b1a3caab85db9e3cab152cc5c687ae06135b911f1bcf4767e44fc50",
+      "prior_reliability": "9cf53a342a8dc1c26d1d8786a13483f4d95f8e574df1636fc1527e630d3beb26",
+      "proposal_available": "de1535356411a5cf0d897336e861d6c81983404625985a924482106d6d1dddc7",
+      "query_roles": "1eb35c8c49810d487c3be66d41713c87a3fb31982b2b78636e1b953ac589d2c7",
+      "raw_support_count": "8c933b39f481a07dec18cff6c9e9b8f8495ee1fee2b1d5e186afd212b0d8b2a8",
+      "reprojection_rmse_px": "7323ee525cfb28ecd4a3045461a4f3ba17ed7618fb64748262b39864b23fcab6",
+      "trajectory_world_m": "fa7e21144fb54a6dd51218e62fffdba84d419de9fe8bb9d4ab72163046878a74",
+      "update_frames": "d4cab5f0c081d702db2a9028a4fa4368cd1a510d103df85cd9841d7c70f14cf8"
+    },
+    "provider_arrays_file_sha256": "fb740b028b50b2e591d46577bf7cd910036c2a28142a44b4e078e2e3a2690acd",
+    "sentinel_measurement_array_sha256": {
+      "association_probability": "5406980553b5535555d2618dd5a4652ca39391e36b3e5dafba1251dcd536d0d2",
+      "available": "52429958bfe0889ec3fa9968969b5260c052691a0dd37ccf4cc69aea79bc5158",
+      "covariance_m2": "d374d57e2cc6fd3a3271e7dcf224fd7abe6cef595568c86ab8890eba2c0c286a",
+      "entity_ids": "282b1a05144e4591503203d670ecd5be97751361965510bd389af1412a0b6230",
+      "measurement_m": "4cc8a9e59155df81e9a858477ac9ef417ada7c79f34ff16bf1e7eaf1af5ae334",
+      "prior_reliability": "5406980553b5535555d2618dd5a4652ca39391e36b3e5dafba1251dcd536d0d2"
+    },
+    "sentinel_measurements_file_sha256": "8c0ff5af8e4789ba7d8ae06c200fc8354127a1580f972c59b66fc7f00dc8d1a4"
+  },
+  "protocol_id": "deform360-dynamic-tapnextpp-sentinel-v5-source-development",
+  "provider_result_sha256": "97556d6950d4a698fc3e13220fea1bd42aa77549a8591f8b8bb35bd53db594c4",
+  "repository_revision": "50e2c2c0e64e4c172c7534fb39fbaa0772b23618",
+  "result_sha256": "c8099e2b971f6376ae271afa2bbd7377f66f3ff89581e6a4f2f799779945ad8a",
+  "schema_version": 1,
+  "sentinel_debias": {
+    "active_entity_ids": [
+      149,
+      11,
+      398,
+      23,
+      7,
+      18,
+      355,
+      3,
+      0
+    ],
+    "applied": false,
+    "artifact_kind": "Deform360SentinelDebiasAdmission",
+    "bias_estimate": {
+      "bias_m": null,
+      "correlation_group_count": 0,
+      "covariance_m2": null,
+      "decision": "incomplete-sentinel-endpoint-support",
+      "maximum_inconsistency_sigma": null,
+      "observation_count": 0,
+      "usable": false
+    },
+    "decision": "exact-persistence-incomplete-sentinel-support",
+    "method_contract": {
+      "active_measurement_debiased": false,
+      "bias_covariance_added_to_active_covariance": false,
+      "rejection": "bit-exact persistence",
+      "sentinel_residual": "observed displacement minus physical-prefix displacement",
+      "sentinels_used_as_state_measurements": false,
+      "within_panel_cross_identity_correlation": "one shared unknown-correlation group"
+    },
+    "schema_version": 1,
+    "sentinel_entity_ids": [
+      342,
+      425,
+      388
+    ],
+    "supported_active_count": 0,
+    "supported_sentinel_count": 0
+  },
+  "status": "post_open_source_development_not_confirmation",
+  "support": {
+    "birth_and_update_supported_count": 0,
+    "birth_and_update_supported_fraction": 0.0,
+    "complete_camera_count": 8,
+    "scheduled_identity_count": 12,
+    "selected_camera_count": 8
+  }
+}
