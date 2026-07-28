@@ -15,6 +15,9 @@ from typing import Any
 
 import numpy as np
 
+from bayesian_phystwin.deform360_dynamic_tapnextpp_artifacts import (
+    validate_source_admission,
+)
 from bayesian_phystwin.deform360_dynamic_tapnextpp_cohort import (
     dynamic_provider_case_record,
     load_dynamic_provider_cohort_lock,
@@ -31,9 +34,6 @@ from bayesian_phystwin.deform360_fresh_pairwise_physical import (
     build_prediction_only_bundle,
     build_warp_backbone_arrays,
     load_frame_zero_ply,
-)
-from bayesian_phystwin.deform360_fresh_source_lock import (
-    validate_fresh_source_admission,
 )
 from bayesian_phystwin.deform360_object_exclusion import file_sha256
 from bayesian_phystwin.tapnextpp_dynamic_multiview import PROTOCOL_ID
@@ -223,8 +223,11 @@ def main() -> int:
     _load_protocol(protocol_path, cohort)
     admission_path = args.admission.resolve()
     admission = _load_json(admission_path)
-    validate_fresh_source_admission(admission)
-    _require(admission["accepted"] is True, "source admission did not pass")
+    normalized_admission = validate_source_admission(admission)
+    _require(
+        normalized_admission["admitted"] is True,
+        "source admission did not pass",
+    )
     record = dynamic_provider_case_record(
         cohort,
         object_id=str(admission["object_id"]),
@@ -232,7 +235,8 @@ def main() -> int:
         partition=args.partition,
     )
     _require(
-        admission["admission_sha256"] == record["admission_sha256"],
+        normalized_admission["source_admission_sha256"]
+        == record["admission_sha256"],
         "admission differs from cohort lock",
     )
     processed = args.processed_episode_dir.resolve()

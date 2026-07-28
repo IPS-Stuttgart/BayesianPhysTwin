@@ -56,6 +56,15 @@ yet a dynamically admissible Warp state update. This amendment was made before
 cohort locking, provider execution, or any source or target outcome. The
 physical and persistence trajectories remain immutable backbones in V1.
 
+After the initial cohort lock, the first target-free physical-backbone smoke
+stopped before simulation because that runner invoked the generic source
+validator without the dynamic protocol's exact admission configuration.
+Amendment 5 routes the physical runner through the same tested dynamic
+admission normalizer as the provider. No rollout, tracker result, future object
+payload, or metric existed, and neither the method, gates, nor deterministic
+cohort membership changed. The cohort lock is regenerated solely to bind the
+corrected code and protocol hashes.
+
 ## Hypothesis
 
 The first TAPNext++ control was accurate on admitted observations but supported
