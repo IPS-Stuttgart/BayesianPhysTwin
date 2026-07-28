@@ -7,6 +7,7 @@ import pytest
 
 from bayesian_phystwin.deform360_dynamic_tapnextpp_source_processing import (
     load_dynamic_source_processing_protocol,
+    load_dynamic_source_processing_runtime_amendment,
     validate_dynamic_source_mask_artifact,
 )
 from bayesian_phystwin.deform360_dynamic_tapnextpp_source_window import (
@@ -24,6 +25,12 @@ PROCESSING_PROTOCOL = (
 )
 MASK_PROTOCOL = (
     ROOT / "configs" / "sota" / "deform360_dynamic_tapnextpp_source_masks_v1.json"
+)
+RUNTIME_AMENDMENT = (
+    ROOT
+    / "configs"
+    / "sota"
+    / "deform360_dynamic_tapnextpp_source_processing_runtime_amendment_v1.json"
 )
 
 
@@ -107,6 +114,41 @@ def test_dynamic_processing_protocol_rejects_recomputed_change(
 
     with pytest.raises(ValueError, match="source-admission contract"):
         load_dynamic_source_processing_protocol(path)
+
+
+def test_dynamic_processing_runtime_amendment_is_locked() -> None:
+    amendment = load_dynamic_source_processing_runtime_amendment(
+        RUNTIME_AMENDMENT,
+        parent_protocol_path=PROCESSING_PROTOCOL,
+    )
+
+    assert amendment["trigger"]["technical_failure_count"] == 8
+    assert amendment["trigger"]["successful_reconstruction_count"] == 0
+    assert amendment["application_policy"]["unattempted_queue_entry_count"] == 26
+    assert amendment["application_policy"]["retry_failed_entries"] is False
+    assert (
+        amendment["runtime_contract"]["required_backend_probe"]
+        == "CameraModelType.PINHOLE"
+    )
+
+
+def test_dynamic_processing_runtime_amendment_rejects_retry(
+    tmp_path: Path,
+) -> None:
+    changed = json.loads(RUNTIME_AMENDMENT.read_text(encoding="utf-8"))
+    changed["application_policy"]["retry_failed_entries"] = True
+    changed["config_sha256"] = canonical_sha256(
+        changed,
+        digest_key="config_sha256",
+    )
+    path = tmp_path / "changed-runtime.json"
+    _write_json(path, changed)
+
+    with pytest.raises(ValueError, match="application policy"):
+        load_dynamic_source_processing_runtime_amendment(
+            path,
+            parent_protocol_path=PROCESSING_PROTOCOL,
+        )
 
 
 def test_dynamic_mask_artifact_binds_mask_execution_commit(

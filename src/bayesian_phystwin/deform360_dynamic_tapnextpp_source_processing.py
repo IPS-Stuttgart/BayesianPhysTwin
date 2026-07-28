@@ -20,6 +20,32 @@ from .deform360_dynamic_tapnextpp_source_window import (
 PROCESSING_PROTOCOL_KIND = "Deform360DynamicTapNextppSourceProcessingProtocol"
 PROCESSING_PROTOCOL_ID = "deform360-dynamic-tapnextpp-source-processing-v1"
 PROCESSING_ARTIFACT_KIND = "Deform360DynamicTapNextppSourceProcessing"
+RUNTIME_AMENDMENT_KIND = (
+    "Deform360DynamicTapNextppSourceProcessingRuntimeAmendment"
+)
+RUNTIME_AMENDMENT_ID = (
+    "deform360-dynamic-tapnextpp-source-processing-runtime-amendment-v1"
+)
+TERMINAL_FAILURE_RESULT_SHA256 = (
+    "8bb42a03c7adf8f2d1a4a038df896eee7c0dcc54e98099f5fa34c9a1d0eacead",
+    "2ba0483c6e44d1d987ffe9c84eb9ddfab02769757c5f9c0202f72eadc6a305b0",
+    "e959a81e93a2c4ce4ccf948122ded6dfa3f8d733be7ca7b4d41a6dd0d3ac2",
+    "3b60edf2df1da81478cbc02b3a9b34c5a66e8447310cad6a9b6bfdc8152ce2b8",
+    "355a86d343afd2dbdded1865f335ae4dbea5f0c3802fe3946bcbdfe8b85b918d",
+    "6ecf1a03bdf667f53600658bc844f079b914fefd7a55cec5ed33a75048f173ca",
+    "11ba0fbf6240156ce67df86504139d1f25f9315c92bf0ed7a354907d6dcbf34c",
+    "12f08e7854c117af3523f4f9fd5a645f8c34cef16101539777a2013c0bf3cb36",
+)
+TERMINAL_FAILURE_FILE_SHA256 = (
+    "4976aa99f5d173f06b7a5372b2dfb19c2fc8172f500063be4fc3cc61a64cb52f",
+    "e2093a2d45c8a0412fcf4e85e5dd42896cd29dea34113d587dbbb3975ab4ea5c",
+    "f85609b1e50ecf10e8c922412601cbcb78421e36d5081203352f76ee9a419c68",
+    "24a603e02f2a31aa471bf3ab56f20de9432fa3506e9952d18461c823e34f03b1",
+    "4cb2be4e926a2f3f683aa799c4296a0c504fbbbc84b21a64200417524f6c2443",
+    "d08b1f61f6ea89ba5ba06a7f4130d5d2c4cd9896a37d17bb9f113bd1e3a573d9",
+    "4c8db3c6603e877b48550ee663541c0b2154329ca67c58e5c321264101385293",
+    "9fe1bf8bcbe83ddb73e9749310060f9c8462847e906953dd50e722a727bd98df",
+)
 DEFORM360_REVISION = "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317"
 DEFORM360_SOURCE_SHA256 = {
     "reconstruct_stage": (
@@ -213,6 +239,119 @@ def load_dynamic_source_processing_protocol(path: str | Path) -> dict[str, Any]:
     return protocol
 
 
+def load_dynamic_source_processing_runtime_amendment(
+    path: str | Path,
+    *,
+    parent_protocol_path: str | Path,
+) -> dict[str, Any]:
+    """Load the runtime-only amendment for untouched source entries."""
+
+    amendment = _load_json(path)
+    _require(
+        amendment.get("schema_version") == 1,
+        "runtime amendment schema changed",
+    )
+    _require(
+        amendment.get("artifact_kind") == RUNTIME_AMENDMENT_KIND
+        and amendment.get("amendment_id") == RUNTIME_AMENDMENT_ID,
+        "wrong runtime amendment identity",
+    )
+    _require(
+        amendment.get("status")
+        == (
+            "locked_after_eight_environment_failures_before_any_"
+            "successful_reconstruction"
+        ),
+        "runtime amendment is not locked",
+    )
+    _require(
+        amendment.get("config_sha256")
+        == canonical_sha256(amendment, digest_key="config_sha256"),
+        "runtime amendment checksum changed",
+    )
+    parent_protocol = load_dynamic_source_processing_protocol(
+        parent_protocol_path
+    )
+    _require(
+        amendment.get("parent_processing_protocol")
+        == {
+            "protocol_id": PROCESSING_PROTOCOL_ID,
+            "config_sha256": parent_protocol["config_sha256"],
+            "file_sha256": file_sha256(parent_protocol_path),
+            "implementation_commit": (
+                "474b58fd0f12af640cbbe8ed6cfba394c299ad2a"
+            ),
+        },
+        "runtime amendment binds another processing protocol",
+    )
+    trigger = amendment.get("trigger")
+    _require(
+        isinstance(trigger, Mapping)
+        and trigger.get("attempted_queue_entries") == 8
+        and trigger.get("technical_failure_count") == 8
+        and trigger.get("successful_reconstruction_count") == 0
+        and trigger.get("successful_tracker_count") == 0
+        and trigger.get("source_admission_count") == 0
+        and trigger.get("error_type") == "AttributeError"
+        and trigger.get("error_message")
+        == "'NoneType' object has no attribute 'CameraModelType'"
+        and tuple(trigger.get("failure_result_sha256", ()))
+        == TERMINAL_FAILURE_RESULT_SHA256
+        and tuple(trigger.get("failure_file_sha256", ()))
+        == TERMINAL_FAILURE_FILE_SHA256
+        and trigger.get("derived_splat_artifact_count") == 0
+        and trigger.get("derived_point_cloud_artifact_count") == 0
+        and trigger.get("target_metric_read") is False
+        and trigger.get("provider_outcome_read") is False,
+        "runtime amendment trigger changed",
+    )
+    runtime = amendment.get("runtime_contract")
+    _require(
+        runtime
+        == {
+            "required_path_prefix": "/usr/local/cuda/bin",
+            "nvcc_path": "/usr/local/cuda/bin/nvcc",
+            "nvcc_version_line": (
+                "Cuda compilation tools, release 12.6, V12.6.85"
+            ),
+            "gsplat_version": "1.4.0",
+            "torch_version": "2.4.0+cu121",
+            "gsplat_extension_path": (
+                "/home/florianpfaff/.cache/torch_extensions/"
+                "py310_cu121/gsplat_cuda/gsplat_cuda.so"
+            ),
+            "gsplat_extension_sha256": (
+                "58c95816cdf011dbbd13a71f1d98312c9e661ef34c95592cc00ff93c72cab89b"
+            ),
+            "required_backend_probe": "CameraModelType.PINHOLE",
+        },
+        "runtime contract changed",
+    )
+    _require(
+        amendment.get("application_policy")
+        == {
+            "applies_only_to_unattempted_queue_entries": True,
+            "unattempted_queue_entry_count": 26,
+            "failed_entries_remain_terminal": True,
+            "retry_failed_entries": False,
+            "replace_failed_entries": False,
+            "camera_method_reconstruction_tracking_and_admission_unchanged": True,
+            "minimum_final_admissions_unchanged": 20,
+        },
+        "runtime amendment application policy changed",
+    )
+    _require(
+        amendment.get("information_boundary")
+        == {
+            "source_rgb_depth_mask_or_geometry_read_by_amendment": False,
+            "target_metric_read": False,
+            "held_v8_target_query_score_barrier_or_outcome_access": False,
+        },
+        "runtime amendment crossed the information boundary",
+    )
+    return amendment
+
+
 def validate_dynamic_source_mask_artifact(
     path: str | Path,
     *,
@@ -277,5 +416,6 @@ __all__ = [
     "PROCESSING_ARTIFACT_KIND",
     "PROCESSING_PROTOCOL_ID",
     "load_dynamic_source_processing_protocol",
+    "load_dynamic_source_processing_runtime_amendment",
     "validate_dynamic_source_mask_artifact",
 ]

@@ -27,6 +27,7 @@ from bayesian_phystwin.deform360_dynamic_tapnextpp_source_processing import (
     DEFORM360_SOURCE_SHA256,
     PROCESSING_ARTIFACT_KIND,
     load_dynamic_source_processing_protocol,
+    load_dynamic_source_processing_runtime_amendment,
     validate_dynamic_source_mask_artifact,
 )
 from bayesian_phystwin.deform360_dynamic_tapnextpp_source_window import (
@@ -88,6 +89,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--processing-protocol", type=Path, required=True)
+    parser.add_argument("--runtime-amendment", type=Path, required=True)
     parser.add_argument("--window-protocol", type=Path, required=True)
     parser.add_argument("--mask-protocol", type=Path, required=True)
     parser.add_argument("--queue", type=Path, required=True)
@@ -142,6 +144,60 @@ def _validate_runtime_constants(
     }
     changed = [name for name, (actual, frozen) in expected.items() if actual != frozen]
     _require(not changed, f"Deform360 runtime constants changed: {changed}")
+
+
+def _validate_gsplat_runtime(amendment: Mapping[str, Any]) -> dict[str, str]:
+    runtime = amendment["runtime_contract"]
+    path_entries = os.environ.get("PATH", "").split(os.pathsep)
+    _require(
+        bool(path_entries)
+        and Path(path_entries[0]).resolve()
+        == Path(runtime["required_path_prefix"]).resolve(),
+        "CUDA toolkit is not the first runtime PATH entry",
+    )
+    nvcc = shutil.which("nvcc")
+    _require(
+        nvcc is not None
+        and Path(nvcc).resolve() == Path(runtime["nvcc_path"]).resolve(),
+        "frozen nvcc is not available",
+    )
+    nvcc_output = subprocess.run(
+        [nvcc, "--version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    _require(
+        runtime["nvcc_version_line"] in nvcc_output,
+        "nvcc version changed",
+    )
+    import gsplat  # noqa: PLC0415
+    import torch  # noqa: PLC0415
+    from gsplat.cuda._backend import _C  # noqa: PLC0415
+
+    _require(
+        gsplat.__version__ == runtime["gsplat_version"]
+        and torch.__version__ == runtime["torch_version"],
+        "gsplat or torch version changed",
+    )
+    _require(_C is not None, "gsplat CUDA backend is disabled")
+    extension = Path(_C.__file__).resolve()
+    _require(
+        str(extension) == runtime["gsplat_extension_path"]
+        and file_sha256(extension) == runtime["gsplat_extension_sha256"],
+        "gsplat CUDA extension changed",
+    )
+    probe = str(_C.CameraModelType.PINHOLE)
+    _require(
+        probe == runtime["required_backend_probe"],
+        "gsplat camera-model probe changed",
+    )
+    return {
+        "nvcc_path": str(Path(nvcc).resolve()),
+        "gsplat_extension_path": str(extension),
+        "gsplat_extension_sha256": file_sha256(extension),
+        "backend_probe": probe,
+    }
 
 
 def _download_record(
@@ -225,6 +281,12 @@ def main() -> int:
     processing_protocol = load_dynamic_source_processing_protocol(
         processing_protocol_path
     )
+    runtime_amendment_path = args.runtime_amendment.resolve()
+    runtime_amendment = load_dynamic_source_processing_runtime_amendment(
+        runtime_amendment_path,
+        parent_protocol_path=processing_protocol_path,
+    )
+    runtime_probe = _validate_gsplat_runtime(runtime_amendment)
     window_protocol, queue, download = validate_dynamic_window_sources(
         args.window_protocol.resolve(),
         args.queue.resolve(),
@@ -328,6 +390,10 @@ def main() -> int:
                     "processing_protocol_config_sha256": processing_protocol[
                         "config_sha256"
                     ],
+                    "runtime_amendment_config_sha256": runtime_amendment[
+                        "config_sha256"
+                    ],
+                    "runtime_probe": runtime_probe,
                     "window_stage_result_sha256": stage["result_sha256"],
                     "mask_result_sha256": mask_manifest["result_sha256"],
                     "camera_count": len(cameras),
@@ -364,6 +430,7 @@ def main() -> int:
 
     inputs_sha256 = {
         "processing_protocol": file_sha256(processing_protocol_path),
+        "runtime_amendment": file_sha256(runtime_amendment_path),
         "window_stage": file_sha256(stage_path),
         "mask_protocol": file_sha256(mask_protocol_path),
         "mask_manifest": file_sha256(mask_manifest_path),
