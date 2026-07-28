@@ -1,121 +1,93 @@
-name: Publish V2 coverage repair
+name: Legacy artifact contract
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "src/bayesian_phystwin/legacy_artifacts.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v2.py"
+      - "tests/test_legacy_artifacts.py"
+      - "tests/test_causal4d_artifacts_v2.py"
+      - "docs/causal4d_provider_v1.md"
+      - "docs/causal4d_artifacts_v2.md"
+      - ".github/workflows/legacy-artifact-contract.yml"
   pull_request:
     branches: [main]
     paths:
+      - "src/bayesian_phystwin/legacy_artifacts.py"
+      - "src/bayesian_phystwin/causal4d_artifacts_v1.py"
       - "src/bayesian_phystwin/causal4d_artifacts_v2.py"
+      - "tests/test_legacy_artifacts.py"
       - "tests/test_causal4d_artifacts_v2.py"
+      - "docs/causal4d_provider_v1.md"
+      - "docs/causal4d_artifacts_v2.md"
       - ".github/workflows/legacy-artifact-contract.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: publish-v2-coverage-${{ github.ref }}
+  group: legacy-artifacts-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  publish:
-    if: >-
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.head.ref == 'agent/hash-lock-released-visual-inputs-v2')
+  quality:
+    name: Legacy artifact API quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - name: Install development and coverage tools
-        run: |
-          python -m pip install -e ".[dev]"
-          python -m pip install "coverage==7.13.3"
-      - name: Format and validate defensive V2 suite
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m ruff format tests/test_causal4d_artifacts_v2.py
-          python -m ruff check \
-            src/bayesian_phystwin/causal4d_artifacts_v2.py \
-            tests/test_causal4d_artifacts_v2.py
-          python -m pytest -q tests/test_causal4d_artifacts_v2.py
-          python -m coverage erase
-          python -m coverage run --branch \
-            --source=bayesian_phystwin.causal4d_artifacts_v2 \
-            -m pytest -q tests/test_causal4d_artifacts_v2.py
-          python -m coverage report --show-missing
-      - name: Prepare permanent workflow files
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import subprocess
+      - name: Install development tools
+        run: python -m pip install -e ".[dev]"
+      - name: Run Ruff
+        run: >-
+          python -m ruff check
+          src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/causal4d_artifacts_v1.py
+          src/bayesian_phystwin/causal4d_artifacts_v2.py
+          tests/test_legacy_artifacts.py
+          tests/test_causal4d_artifacts_v2.py
+      - name: Check formatting
+        run: >-
+          python -m ruff format --check
+          src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/causal4d_artifacts_v1.py
+          src/bayesian_phystwin/causal4d_artifacts_v2.py
+          tests/test_legacy_artifacts.py
+          tests/test_causal4d_artifacts_v2.py
+      - name: Type-check the stable boundary
+        run: >-
+          python -m mypy --python-version 3.12
+          src/bayesian_phystwin/legacy_artifacts.py
+          src/bayesian_phystwin/causal4d_artifacts_v1.py
+          src/bayesian_phystwin/causal4d_artifacts_v2.py
 
-          tests_path = Path('.github/workflows/tests.yml')
-          tests = tests_path.read_text(encoding='utf-8')
-          anchor = '            tests/test_legacy_artifacts.py \\\n'
-          addition = anchor + '            tests/test_causal4d_artifacts_v2.py \\\n'
-          if tests.count(anchor) != 3:
-              raise RuntimeError(
-                  f'expected three test-matrix anchors, found {tests.count(anchor)}'
-              )
-          tests_path.write_text(tests.replace(anchor, addition), encoding='utf-8')
-
-          permanent = subprocess.run(
-              ['git', 'show', 'HEAD^^^:.github/workflows/legacy-artifact-contract.yml'],
-              check=True,
-              capture_output=True,
-              text=True,
-          ).stdout
-          path_anchor = '      - "tests/test_legacy_artifacts.py"\n'
-          path_addition = (
-              path_anchor + '      - "tests/test_causal4d_artifacts_v2.py"\n'
-          )
-          if permanent.count(path_anchor) != 2:
-              raise RuntimeError('expected two permanent path anchors')
-          permanent = permanent.replace(path_anchor, path_addition)
-          command_anchor = '          tests/test_legacy_artifacts.py\n'
-          command_addition = (
-              command_anchor + '          tests/test_causal4d_artifacts_v2.py\n'
-          )
-          if permanent.count(command_anchor) != 2:
-              raise RuntimeError('expected two quality command anchors')
-          permanent = permanent.replace(command_anchor, command_addition)
-          pytest_anchor = (
-              '        run: python -m pytest -q tests/test_legacy_artifacts.py\n'
-          )
-          pytest_addition = (
-              '        run: >-\n'
-              '          python -m pytest -q\n'
-              '          tests/test_legacy_artifacts.py\n'
-              '          tests/test_causal4d_artifacts_v2.py\n'
-          )
-          if permanent.count(pytest_anchor) != 1:
-              raise RuntimeError('expected permanent pytest anchor')
-          Path('.github/workflows/legacy-artifact-contract.yml').write_text(
-              permanent.replace(pytest_anchor, pytest_addition),
-              encoding='utf-8',
-          )
-          PY
-          git diff --check
-      - name: Commit exact cleaned files
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            .github/workflows/tests.yml \
-            .github/workflows/legacy-artifact-contract.yml \
-            tests/test_causal4d_artifacts_v2.py
-          git commit -m "Cover every released visual-input validation branch"
-          git push origin HEAD:refs/heads/agent/hash-lock-released-visual-inputs-v2
+  compatibility:
+    name: Legacy artifact API / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install NumPy-only package and tests
+        run: python -m pip install -e ".[dev]"
+      - name: Run the digest and artifact-contract tests
+        run: >-
+          python -m pytest -q
+          tests/test_legacy_artifacts.py
+          tests/test_causal4d_artifacts_v2.py
