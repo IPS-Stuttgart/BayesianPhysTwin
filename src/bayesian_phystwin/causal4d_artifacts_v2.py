@@ -1,4 +1,4 @@
-"""Digest-complete released PhysTwin visual inputs for Causal4D.
+"""Digest-complete released PhysTwin visual-mapping inputs for Causal4D.
 
 The released visual preprocessing stack contains legacy pickle and NPZ files.
 This module verifies every declared byte identity before opening any payload,
@@ -68,7 +68,7 @@ def _canonical_artifact_id(payload: Mapping[str, object]) -> str:
 
 @dataclass(frozen=True)
 class ReleasedPhysTwinVisualInputsV2:
-    """Immutable visual input bundle with complete released-file provenance."""
+    """Immutable visual-mapping bundle with complete released-file provenance."""
 
     raw_case_dir: Path
     final_data_sha256: str
@@ -98,9 +98,7 @@ class ReleasedPhysTwinVisualInputsV2:
         final_digest = _digest(self.final_data_sha256, name="final_data_sha256")
         metadata_digest = _digest(self.metadata_sha256, name="metadata_sha256")
         pcd_digest = _digest(self.pcd_sha256, name="pcd_sha256")
-        calibration_digest = _digest(
-            self.calibration_sha256, name="calibration_sha256"
-        )
+        calibration_digest = _digest(self.calibration_sha256, name="calibration_sha256")
         track_digests = tuple(
             (str(name), _digest(value, name=name))
             for name, value in self.cotracker_sha256
@@ -108,9 +106,7 @@ class ReleasedPhysTwinVisualInputsV2:
         if not track_digests or len({name for name, _ in track_digests}) != len(
             track_digests
         ):
-            raise ValueError(
-                "cotracker_sha256 must identify unique nonempty archives"
-            )
+            raise ValueError("cotracker_sha256 must identify unique nonempty archives")
         if any(
             not name.startswith("cotracker/") or name.endswith("/")
             for name, _ in track_digests
@@ -122,9 +118,7 @@ class ReleasedPhysTwinVisualInputsV2:
             not np.isfinite(self.initial_match_tolerance_m)
             or self.initial_match_tolerance_m <= 0.0
         ):
-            raise ValueError(
-                "initial_match_tolerance_m must be positive and finite"
-            )
+            raise ValueError("initial_match_tolerance_m must be positive and finite")
 
         object_points = _readonly(self.object_points_m, dtype=float)
         visibility = _readonly(self.object_visibility, dtype=bool)
@@ -139,17 +133,11 @@ class ReleasedPhysTwinVisualInputsV2:
             raise ValueError("object_points_m must be finite")
 
         paths = tuple(Path(value) for value in self.track_paths)
-        tracks = tuple(
-            _readonly(value, dtype=float) for value in self.tracks_by_camera
-        )
+        tracks = tuple(_readonly(value, dtype=float) for value in self.tracks_by_camera)
         raw_visibility = tuple(
             _readonly(value, dtype=bool) for value in self.visibility_by_camera
         )
-        if (
-            not paths
-            or len(paths) != len(tracks)
-            or len(paths) != len(raw_visibility)
-        ):
+        if not paths or len(paths) != len(tracks) or len(paths) != len(raw_visibility):
             raise ValueError(
                 "track paths, tracks, and visibility must identify each camera"
             )
@@ -165,9 +153,7 @@ class ReleasedPhysTwinVisualInputsV2:
             zip(tracks, raw_visibility, strict=True)
         ):
             if camera_tracks.ndim != 3 or camera_tracks.shape[2] != 2:
-                raise ValueError(
-                    f"camera {camera} tracks must have shape (T, N, 2)"
-                )
+                raise ValueError(f"camera {camera} tracks must have shape (T, N, 2)")
             if len(camera_tracks) != frame_count:
                 raise ValueError("raw tracks must use the final-data frame count")
             if camera_visibility.shape != camera_tracks.shape[:2]:
@@ -182,9 +168,7 @@ class ReleasedPhysTwinVisualInputsV2:
         if source_camera.shape != (object_count,) or source_track.shape != (
             object_count,
         ):
-            raise ValueError(
-                "source camera and track must identify every object point"
-            )
+            raise ValueError("source camera and track must identify every object point")
         if source_world.shape != (object_count, 3):
             raise ValueError("source_world_points_m must have shape (N, 3)")
         if match_distance.shape != (object_count,):
@@ -192,15 +176,11 @@ class ReleasedPhysTwinVisualInputsV2:
         if not np.all(np.isfinite(source_world)) or not np.all(
             np.isfinite(match_distance)
         ):
-            raise ValueError(
-                "source-world points and match distances must be finite"
-            )
+            raise ValueError("source-world points and match distances must be finite")
         if np.any(match_distance < 0.0) or np.any(
             match_distance > self.initial_match_tolerance_m
         ):
-            raise ValueError(
-                "initial match distance exceeds the declared tolerance"
-            )
+            raise ValueError("initial match distance exceeds the declared tolerance")
         if np.any(source_camera < 0) or np.any(source_camera >= len(tracks)):
             raise ValueError("source_camera references an unavailable camera")
         for camera in range(len(tracks)):
@@ -208,9 +188,7 @@ class ReleasedPhysTwinVisualInputsV2:
             if np.any(source_track[selected] < 0) or np.any(
                 source_track[selected] >= tracks[camera].shape[1]
             ):
-                raise ValueError(
-                    "source_track references an unavailable raw track"
-                )
+                raise ValueError("source_track references an unavailable raw track")
 
         intrinsics = _readonly(self.intrinsics, dtype=float)
         camera_to_world = _readonly(self.camera_to_world, dtype=float)
@@ -288,7 +266,7 @@ def load_released_phystwin_visual_inputs(
     cotracker_sha256: Mapping[str, str],
     initial_match_tolerance_m: float = 1e-6,
 ) -> ReleasedPhysTwinVisualInputsV2:
-    """Verify, load, and postflight every released visual input used by Causal4D."""
+    """Verify all mapping/calibration inputs used by visual query preparation."""
 
     final_path = Path(final_data_path)
     raw_path = Path(raw_case_dir)
@@ -360,12 +338,8 @@ def load_released_phystwin_visual_inputs(
         _verify_identity(path, digest, name=name)
 
     object_points = np.asarray(final_data["object_points"], dtype=float)
-    object_visibility = np.asarray(
-        final_data["object_visibilities"], dtype=bool
-    )
-    object_motion_valid = np.asarray(
-        final_data["object_motions_valid"], dtype=bool
-    )
+    object_visibility = np.asarray(final_data["object_visibilities"], dtype=bool)
+    object_motion_valid = np.asarray(final_data["object_motions_valid"], dtype=bool)
     if not np.array_equal(np.asarray(mapping.final_points), object_points):
         raise ValueError(
             "raw-track mapping final points differ from the trusted final data"
@@ -408,7 +382,7 @@ def load_released_phystwin_visual_inputs(
 
 
 def causal4d_artifact_provider_manifest() -> dict[str, object]:
-    """Return the complete released-visual-input provider descriptor."""
+    """Return the complete released visual-mapping provider descriptor."""
 
     return {
         "provider_api": "bayesian_phystwin.causal4d_artifacts_v2",
