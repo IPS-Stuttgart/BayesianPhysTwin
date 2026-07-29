@@ -14,6 +14,7 @@ from bayesian_phystwin.deform360_causal_response_direct_depth_admission_v14 impo
     CARRIER_DIRECTORY,
     PREFLIGHT_FILENAME,
     aggregate_source_sha256,
+    load_v14_admission_prelock_protocol,
     validate_v14_admission_report,
     write_v14_admission_report,
 )
@@ -110,6 +111,20 @@ def test_v14_source_aggregate_is_order_invariant() -> None:
     )
 
     assert left == right
+
+
+def test_v14_admission_prelock_is_self_consistent() -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = load_v14_admission_prelock_protocol(
+        root
+        / "configs/sota/"
+        "deform360_causal_response_direct_depth_v14_admission_prelock.json"
+    )
+
+    assert protocol["config_sha256"] == (
+        "ccb5ac22ed87695c0d21562902d15ffe60e30218012a601c4bbbc9f593aa99cf"
+    )
+    assert len(protocol["implementation"]["file_sha256"]) == 3
 
 
 def test_v14_admission_artifacts_round_trip_without_plaintext(

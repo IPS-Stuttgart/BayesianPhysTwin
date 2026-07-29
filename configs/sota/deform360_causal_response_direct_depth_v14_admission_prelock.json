@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthAdmissionPrelockProtocolV14",
+  "contract": "deform360-causal-response-direct-depth-admission-prelock-v14",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-admission-prelock",
+  "status": "locked_before_first_source_admission",
+  "config_sha256": "ccb5ac22ed87695c0d21562902d15ffe60e30218012a601c4bbbc9f593aa99cf",
+  "parent_artifacts": {
+    "method_protocol": {
+      "config_or_queue_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "prefix_assets": {
+      "config_or_queue_sha256": "9fb919d9dae7b4257ad41499eec4d79882e95084d07c6d0c60b0b4f1b3528efc",
+      "file_sha256": "c17432287b585011ec86703124466f1724ca19f2a30f879b11083f5c5496f536"
+    },
+    "physical_prelock": {
+      "config_or_queue_sha256": "a96f5b62471b26693b11fc98a819df2ef288a71f4f664b04e158646ab8e1fc02",
+      "file_sha256": "92cb2f2e21f0b72a58b2ec33489a8739d1cdc95d6e135283df1dac304dc552cb"
+    },
+    "physical_runtime_v2": {
+      "config_or_queue_sha256": "f6310608f29d33820256c04c7b392af39a32ecb4ea0e482e289d7ac5c30ceb9d",
+      "file_sha256": "239bb23c413c5844c7c68758e70e4795b0b02952dda06edec65f08b811102eae"
+    },
+    "staging_queue": {
+      "config_or_queue_sha256": "e56dd42c07ce4aff0e3e0e2913e00a1e80d0727beef1884b1de93198f32bec75",
+      "file_sha256": "225ff37dd8ec2ff1ae12340ebfa3dc27fb6b045edee95d3b675832a72fa43d74"
+    }
+  },
+  "numerical_contract": {
+    "camera_prefix_frame_count": 58,
+    "physical_robot_tactile_frame_count": 76,
+    "depth_scale_to_m": 0.001,
+    "minimum_complete_camera_count": 8,
+    "camera_completeness_excludes_projected_support": true
+  },
+  "admission_contract": {
+    "camera_completeness": "A camera is complete when its exact 58-frame depth and mask streams and registered calibration are present.",
+    "projected_support": "Frame-zero projected support is recorded but is not reinterpreted as stream completeness; geometric support is judged only by the frozen adaptive-carrier schedule.",
+    "selection_inputs": "Frame-zero physical prediction, graph basis, action support, frame-zero depth and masks, calibration, metadata enum, source stream counts, and checksums.",
+    "plaintext_policy": "Plaintext source identity may locate public source files but is replaced by object and case hashes in every sealed carrier, preflight, and admission artifact.",
+    "replacement_policy": "A pre-lock rejection may advance to the next immutable queue rank. A selected prediction, retained failure, or outcome disposition may not be replaced."
+  },
+  "implementation": {
+    "parent_commit": "332f2b39739f474e914972b8d2fa8b907e5a13ec",
+    "file_sha256": {
+      "admission_module": "4c66e545176d6f91277706bd12d42d2bf0ff82dfc005fe679898e372996c2e98",
+      "admission_runner": "d8259080ee379c498a9424acff94fafad00d97e373c7b916e4a4bb5d05537773",
+      "preflight_module": "fdd3ee092f97d87470283ea7ee7280d307dc9425fc1c507968bab0955f73fb10"
+    }
+  },
+  "information_boundary": {
+    "frame_zero_object_observation_read": true,
+    "prefix_object_response_read": false,
+    "future_object_observation_read": false,
+    "future_identity_or_metric_read": false,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}
