@@ -124,9 +124,7 @@ def _provider_attestation_summary(
         "covariance_root_mode": validated["covariance_root_mode"],
         "composition_jacobian_mode": validated["composition_jacobian_mode"],
         "runtime_revision_source": runtime["source"],
-        "runtime_revision_independently_verified": runtime[
-            "independently_verified"
-        ],
+        "runtime_revision_independently_verified": runtime["independently_verified"],
     }
 
 
@@ -259,8 +257,7 @@ def validate_claim_bearing_prob4d_observation_belief(
             "claim-bearing Prob4D observation requires a strict causal stream contract"
         )
     if (
-        result.get("stream_contract_version")
-        != PROB4D_CAUSAL_STREAM_CONTRACT_VERSION
+        result.get("stream_contract_version") != PROB4D_CAUSAL_STREAM_CONTRACT_VERSION
         or result.get("stream_contract_version_inferred") is not False
     ):
         raise ValueError(
