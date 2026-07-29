@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-tapnextpp-cotracker-complement-v1",
+  "status": "implementation-locked-before-manual-prefix-rescoring",
+  "claim_boundary": "Post-open one-case source provider diagnostic on single_lift_cloth. A pass does not establish Bayesian-PhysTwin improvement, simulator assimilation, independent transfer, or state of the art.",
+  "hypothesis": "A second frozen visual tracker can safely bridge late TAPNext++ support loss when it is associated at the query frame and has already agreed with TAPNext++ on the same identity during earlier causal frames.",
+  "unchanged_tapnextpp": {
+    "prediction_sha256": "d368814ecad07d425f43a612de2630b1a1be6ffc8e639ade5c13ee00bba678ce",
+    "seal_sha256": "a89dd9692719953996c800ac9cce90b1f974ea43de6a9270cb483a7def28c509",
+    "accepted_rows_are_bit_identical": true,
+    "visibility_mask_depth_reprojection_and_camera_thresholds_changed": false
+  },
+  "cotracker3": {
+    "cues_sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56",
+    "frame_range_half_open": [
+      68,
+      88
+    ],
+    "minimum_camera_count": 2,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_quality_probability": 0.1,
+    "association_radius_m": 0.015,
+    "association_kernel_scale_m": 0.0075,
+    "maximum_association_neighbors": 32,
+    "minimum_neighbor_count": 3,
+    "robust_displacement_scale_m": 0.01,
+    "minimum_prior_overlap_rows": 5,
+    "maximum_prior_overlap_rmse_m": 0.01,
+    "maximum_bridge_gap_frames": 5,
+    "maximum_spatial_spread_m": 0.005,
+    "two_view_shared_bias_standard_deviation_m": 0.01
+  },
+  "bridge": {
+    "rule": "For an unsupported TAPNext++ row, use the latest prior TAPNext++/CoTracker3 overlap as a causal gauge anchor and propagate only the CoTracker3 displacement since that anchor.",
+    "identity_without_prior_tapnextpp_support": "exact unchanged fallback",
+    "fixed_blend_used": false,
+    "physical_state_residual_used_in_prior_reliability": false,
+    "dense_neighbors_counted_as_independent": false
+  },
+  "competence_gate": {
+    "minimum_supported_fraction": 0.75,
+    "minimum_added_row_gain_over_persistence": 0.1,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_endpoint_rmse_m": 0.015,
+    "tapnextpp_rows_must_be_bit_identical": true,
+    "pass_action": "Permit design of a separately locked disjoint-identity guarded-assimilation experiment.",
+    "fail_action": "Close this complementary provider without threshold tuning on the opened case."
+  },
+  "inputs": {
+    "query_sha256": "8eb6f31c3908f65ddecd741eef32ad2f0fd4a3bac797fc91007f5610dd653039",
+    "withheld_prefix_sha256": "77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143"
+  },
+  "forbidden": [
+    "using the withheld manual prefix before prediction and seal creation",
+    "using observations outside frames [68,88)",
+    "using a PhysTwin innovation to create perception reliability",
+    "weakening either frozen tracker threshold after scoring",
+    "opening or modifying held-v8 or PokeFlex target artifacts",
+    "describing a pass as state-of-the-art evidence"
+  ]
+}
