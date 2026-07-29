@@ -63,8 +63,8 @@ def _records() -> tuple[CausalResponseSourceCameraRecord, ...]:
     return tuple(
         CausalResponseSourceCameraRecord(
             camera_id=camera,
-            depth_frame_count=76 if index < 8 else 0,
-            mask_frame_count=76 if index < 8 else 0,
+            depth_frame_count=58 if index < 8 else 0,
+            mask_frame_count=58 if index < 8 else 0,
             calibration_valid=index < 8,
             frame_zero_projected_support_count=20 if index < 8 else 0,
         )
@@ -146,3 +146,23 @@ def test_v14_preflight_rejects_an_abstained_adaptive_carrier() -> None:
 
     assert not result.admitted
     assert "adaptive-carrier-abstained" in result.rejection_reasons
+
+
+def test_v14_preflight_does_not_claim_uncreated_future_camera_assets() -> None:
+    records = tuple(
+        CausalResponseSourceCameraRecord(
+            camera_id=record.camera_id,
+            depth_frame_count=76 if index < 8 else record.depth_frame_count,
+            mask_frame_count=76 if index < 8 else record.mask_frame_count,
+            calibration_valid=record.calibration_valid,
+            frame_zero_projected_support_count=(
+                record.frame_zero_projected_support_count
+            ),
+        )
+        for index, record in enumerate(_records())
+    )
+
+    result = _evaluate(camera_records=records)
+
+    assert not result.admitted
+    assert "insufficient-complete-camera-count" in result.rejection_reasons

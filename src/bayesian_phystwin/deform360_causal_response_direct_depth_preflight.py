@@ -266,8 +266,8 @@ def evaluate_adaptive_direct_depth_source_preflight_v14(
             f"calibration/{camera}",
         }
         if (
-            record.depth_frame_count == cfg.required_frame_count
-            and record.mask_frame_count == cfg.required_frame_count
+            record.depth_frame_count == cfg.prefix_frame_count
+            and record.mask_frame_count == cfg.prefix_frame_count
             and record.calibration_valid
             and record.frame_zero_projected_support_count > 0
             and camera_roles.issubset(sources)

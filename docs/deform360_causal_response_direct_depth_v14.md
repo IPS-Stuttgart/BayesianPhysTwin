@@ -84,7 +84,8 @@ Before a case can enter the source lock, an outcome-blind preflight must verify:
 - 76-frame episode, robot, and tactile streams;
 - the physical backend's 128-to-10,000-node contract;
 - all twelve registered camera records;
-- at least eight complete depth, mask, and calibration streams;
+- at least eight complete 58-frame causal-prefix depth and mask streams with
+  valid calibration;
 - complete source checksums; and
 - an admitted strict or inflated adaptive carrier.
 

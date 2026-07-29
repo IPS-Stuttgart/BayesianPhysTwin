@@ -26,6 +26,10 @@ from bayesian_phystwin.deform360_causal_response_direct_depth_physical import (
     v14_physical_case_record,
     write_v14_physical_artifacts,
 )
+from bayesian_phystwin.deform360_causal_response_direct_depth_physical_runtime_v2 import (
+    load_v14_physical_runtime_v2,
+    validate_v14_physical_action_v2,
+)
 from bayesian_phystwin.deform360_causal_response_prefix_geometry import (
     load_v14_prefix_geometry_protocol,
 )
@@ -257,6 +261,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--prelock-protocol", type=Path, required=True)
+    parser.add_argument("--physical-runtime-v2", type=Path, required=True)
     parser.add_argument("--queue", type=Path, required=True)
     parser.add_argument("--queue-rank", type=int, required=True)
     parser.add_argument("--geometry-protocol", type=Path, required=True)
@@ -268,6 +273,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--geometry-result", type=Path, required=True)
     parser.add_argument("--runtime-application", type=Path, required=True)
     parser.add_argument("--processed-episode-dir", type=Path, required=True)
+    parser.add_argument("--window-stage-result", type=Path, required=True)
+    parser.add_argument("--known-action-robot", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--source-repo", type=Path, required=True)
     parser.add_argument("--official-phystwin-repo", type=Path, required=True)
@@ -285,6 +292,11 @@ def main() -> int:
     code_revision = helpers._require_clean_repository(repo)
     prelock_path = args.prelock_protocol.resolve()
     protocol = load_v14_physical_prelock_protocol(prelock_path)
+    runtime_v2_path = args.physical_runtime_v2.resolve()
+    physical_runtime_v2 = load_v14_physical_runtime_v2(
+        runtime_v2_path,
+        parent_prelock_path=prelock_path,
+    )
     implementation_files = {
         "artifact_module": (
             repo / "src/bayesian_phystwin/"
@@ -294,14 +306,29 @@ def main() -> int:
             repo / "scripts/remote/"
             "build_deform360_causal_response_direct_depth_v14_automatic_twin.py"
         ),
-        "physical_runner": Path(__file__).resolve(),
     }
     _require(
         all(
             file_sha256(path) == protocol["implementation"]["file_sha256"][name]
             for name, path in implementation_files.items()
         ),
-        "V14 physical implementation differs from the pre-lock protocol",
+        "V14 parent physical implementation differs from the pre-lock protocol",
+    )
+    runtime_implementation = {
+        "physical_runner": Path(__file__).resolve(),
+        "runtime_module": (
+            repo
+            / "src/bayesian_phystwin/"
+            "deform360_causal_response_direct_depth_physical_runtime_v2.py"
+        ),
+    }
+    _require(
+        all(
+            file_sha256(path)
+            == physical_runtime_v2["implementation"]["file_sha256"][name]
+            for name, path in runtime_implementation.items()
+        ),
+        "V14 physical runtime-v2 implementation changed",
     )
     queue_path = args.queue.resolve()
     queue = validate_v14_staging_queue(queue_path)
@@ -342,10 +369,26 @@ def main() -> int:
         geometry_episode=processed,
     )
     frame_zero = processed / "start_obj_pcd.ply"
-    robot = processed / "robot/robot.npz"
+    prefix_robot = processed / "robot/robot.npz"
+    known_action = args.known_action_robot.resolve()
+    window_stage_result = args.window_stage_result.resolve()
     _require(
-        frame_zero.is_file() and robot.is_file(),
+        frame_zero.is_file()
+        and prefix_robot.is_file()
+        and known_action.is_file()
+        and window_stage_result.is_file(),
         "V14 physical frame-zero geometry or action is missing",
+    )
+    with np.load(known_action, allow_pickle=False) as robot_archive:
+        staged_frame_count = int(len(robot_archive["actions"]))
+    validate_v14_physical_action_v2(
+        physical_runtime_v2,
+        queue_rank=int(case_record["queue_rank"]),
+        object_hash=str(case_record["object_hash"]),
+        case_hash=str(case_record["case_hash"]),
+        window_stage_result_path=window_stage_result,
+        known_action_path=known_action,
+        staged_frame_count=staged_frame_count,
     )
 
     source_repo = args.source_repo.resolve()
@@ -364,6 +407,10 @@ def main() -> int:
     provenance.update(
         {
             "bayesian_phystwin_revision": code_revision,
+            "physical_runtime_v2_config_sha256": physical_runtime_v2[
+                "config_sha256"
+            ],
+            "physical_runtime_v2_file_sha256": file_sha256(runtime_v2_path),
             "physical_runner_sha256": file_sha256(Path(__file__).resolve()),
             "automatic_twin_wrapper_sha256": file_sha256(automatic_wrapper),
             "pairwise_runner_helpers_sha256": file_sha256(pairwise_helpers),
@@ -376,7 +423,7 @@ def main() -> int:
     prediction_data = root / "prediction_only_input.pkl"
     prediction_summary = build_v14_prediction_only_bundle(
         frame_zero,
-        robot,
+        known_action,
         prediction_data,
         case_record=case_record,
     )
@@ -440,6 +487,8 @@ def main() -> int:
     runtimes: dict[str, float] = {"automatic_twin": twin_runtime}
     common_inputs: dict[str, Path] = {
         "staging_queue": queue_path,
+        "physical_runtime_v2": runtime_v2_path,
+        "window_stage_result": window_stage_result,
         "geometry_protocol": parent_paths["geometry_protocol_file_sha256"],
         "runtime_v1": parent_paths["runtime_v1_file_sha256"],
         "validation_v1": parent_paths["validation_v1_file_sha256"],
@@ -449,7 +498,8 @@ def main() -> int:
         "geometry_result": result_path,
         "runtime_application": runtime_application_path,
         "frame_zero_ply": frame_zero,
-        "known_action": robot,
+        "prefix_geometry_robot": prefix_robot,
+        "known_action": known_action,
         "prediction_only_input": prediction_data,
         "prediction_only_summary": prediction_summary_path,
         "episode_graph": graph_path,

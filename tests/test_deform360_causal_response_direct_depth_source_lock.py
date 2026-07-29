@@ -70,8 +70,8 @@ def _records() -> tuple[CausalResponseSourceCameraRecord, ...]:
     return tuple(
         CausalResponseSourceCameraRecord(
             camera_id=camera,
-            depth_frame_count=76 if index < 8 else 0,
-            mask_frame_count=76 if index < 8 else 0,
+            depth_frame_count=58 if index < 8 else 0,
+            mask_frame_count=58 if index < 8 else 0,
             calibration_valid=index < 8,
             frame_zero_projected_support_count=20 if index < 8 else 0,
         )
