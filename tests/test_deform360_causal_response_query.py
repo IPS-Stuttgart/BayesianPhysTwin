@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from bayesian_phystwin.deform360_causal_response_query import (
+    QUERY_ARCHIVE_FILENAME,
+    QUERY_REPORT_FILENAME,
     CausalResponseQueryConfig,
     build_causal_response_query_schedule,
+    validate_causal_response_query_artifacts,
+    write_causal_response_query_artifacts,
 )
 
 
@@ -158,3 +165,65 @@ def test_query_schedule_rejects_overlapping_camera_panels() -> None:
 
     with pytest.raises(ValueError, match="disjoint"):
         _build(tuple(inputs))
+
+
+def test_query_artifacts_round_trip_and_bind_the_information_boundary(
+    tmp_path: Path,
+) -> None:
+    schedule = _build(_inputs())
+    protocol = tmp_path / "protocol.json"
+    physical_manifest = tmp_path / "physical.json"
+    physical_archive = tmp_path / "physical.npz"
+    for path, content in (
+        (protocol, "{}\n"),
+        (physical_manifest, "{}\n"),
+        (physical_archive, "physical"),
+    ):
+        path.write_text(content, encoding="utf-8")
+    output = tmp_path / "query"
+
+    report = write_causal_response_query_artifacts(
+        output,
+        schedule,
+        case_id="opened-source-case",
+        repository_revision="a" * 40,
+        protocol_path=protocol,
+        physical_manifest_path=physical_manifest,
+        physical_archive_path=physical_archive,
+        camera_certificate_sha256="b" * 64,
+    )
+    loaded, arrays = validate_causal_response_query_artifacts(output)
+
+    assert loaded == report
+    assert (output / QUERY_ARCHIVE_FILENAME).is_file()
+    assert (output / QUERY_REPORT_FILENAME).is_file()
+    np.testing.assert_array_equal(arrays["entity_ids"], schedule.entity_ids)
+    assert loaded["information_boundary"]["identity_target_read"] is False
+    assert loaded["information_boundary"]["state_update_constructed"] is False
+
+
+def test_query_artifact_validator_detects_tampering(tmp_path: Path) -> None:
+    schedule = _build(_inputs())
+    protocol = tmp_path / "protocol.json"
+    physical_manifest = tmp_path / "physical.json"
+    physical_archive = tmp_path / "physical.npz"
+    for path in (protocol, physical_manifest, physical_archive):
+        path.write_text("source", encoding="utf-8")
+    output = tmp_path / "query"
+    write_causal_response_query_artifacts(
+        output,
+        schedule,
+        case_id="opened-source-case",
+        repository_revision="a" * 40,
+        protocol_path=protocol,
+        physical_manifest_path=physical_manifest,
+        physical_archive_path=physical_archive,
+        camera_certificate_sha256="b" * 64,
+    )
+    report_path = output / QUERY_REPORT_FILENAME
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    payload["information_boundary"]["future_metric_read"] = True
+    report_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="invalid"):
+        validate_causal_response_query_artifacts(output)

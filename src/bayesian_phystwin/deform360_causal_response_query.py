@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from .deform360_active_query_feasibility import readout_modes_to_node_basis
 from .deform360_dynamic_query import projection_matrices
-from .observation_belief import array_sha256
+from .observation_belief import array_sha256, file_sha256
 from .phystwin_active_queries import (
     PhysicsGuidedQueryConfig,
     PhysicsGuidedQueryPlan,
@@ -24,6 +26,9 @@ from .tapnextpp_birth_association import (
 )
 
 CONTRACT = "deform360-causal-response-query-v12"
+QUERY_ARTIFACT_KIND = "Deform360CausalResponseQueryFeasibilityV12"
+QUERY_ARCHIVE_FILENAME = "causal_response_query_v12.npz"
+QUERY_REPORT_FILENAME = "causal_response_query_v12.json"
 
 
 def _require(condition: bool | np.bool_, message: str) -> None:
@@ -42,6 +47,20 @@ def _canonical_sha256(payload: dict[str, Any]) -> str:
     canonical.pop("artifact_sha256", None)
     return hashlib.sha256(
         b"deform360-causal-response-query-v12\0"
+        + json.dumps(
+            canonical,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _report_sha256(payload: Mapping[str, Any]) -> str:
+    canonical = dict(payload)
+    canonical.pop("result_sha256", None)
+    return hashlib.sha256(
+        b"deform360-causal-response-query-feasibility-v12\0"
         + json.dumps(
             canonical,
             sort_keys=True,
@@ -519,9 +538,147 @@ def build_causal_response_query_schedule(
     return result
 
 
+def write_causal_response_query_artifacts(
+    output_dir: str | Path,
+    schedule: CausalResponseQuerySchedule,
+    *,
+    case_id: str,
+    repository_revision: str,
+    protocol_path: str | Path,
+    physical_manifest_path: str | Path,
+    physical_archive_path: str | Path,
+    camera_certificate_sha256: str,
+) -> dict[str, Any]:
+    """Seal one target-free V12 frame-zero query disposition."""
+
+    _require(bool(case_id), "case ID is empty")
+    _require(
+        len(repository_revision) == 40
+        and all(character in "0123456789abcdef" for character in repository_revision),
+        "repository revision is invalid",
+    )
+    _require(
+        len(camera_certificate_sha256) == 64
+        and all(
+            character in "0123456789abcdef" for character in camera_certificate_sha256
+        ),
+        "camera certificate digest is invalid",
+    )
+    output = Path(output_dir).resolve()
+    _require(not output.exists(), "query output directory already exists")
+    output.mkdir(parents=True)
+    arrays = schedule.arrays()
+    archive_path = output / QUERY_ARCHIVE_FILENAME
+    np.savez_compressed(
+        archive_path,
+        **{
+            name: np.ascontiguousarray(np.asarray(values))
+            for name, values in arrays.items()
+        },
+    )
+    boundary = {
+        **schedule.descriptor()["information_boundary"],
+        "identity_target_read": False,
+        "state_update_constructed": False,
+        "future_metric_read": False,
+        "held_v8_artifact_or_process_access": False,
+    }
+    report: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_kind": QUERY_ARTIFACT_KIND,
+        "contract": CONTRACT,
+        "case": case_id,
+        "status": "admitted" if schedule.admitted else "abstained",
+        "repository_revision": repository_revision,
+        "schedule": schedule.descriptor(),
+        "inputs_sha256": {
+            "protocol": file_sha256(protocol_path),
+            "physical_manifest": file_sha256(physical_manifest_path),
+            "physical_archive": file_sha256(physical_archive_path),
+            "camera_certificate": camera_certificate_sha256,
+        },
+        "archive": {
+            "filename": QUERY_ARCHIVE_FILENAME,
+            "file_sha256": file_sha256(archive_path),
+            "array_sha256": {
+                name: array_sha256(values) for name, values in sorted(arrays.items())
+            },
+        },
+        "information_boundary": boundary,
+    }
+    report["result_sha256"] = _report_sha256(report)
+    (output / QUERY_REPORT_FILENAME).write_text(
+        json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+    validate_causal_response_query_artifacts(output)
+    return report
+
+
+def validate_causal_response_query_artifacts(
+    output_dir: str | Path,
+) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
+    """Validate one immutable V12 query-feasibility disposition."""
+
+    output = Path(output_dir).resolve()
+    report = json.loads((output / QUERY_REPORT_FILENAME).read_text(encoding="utf-8"))
+    _require(
+        report.get("artifact_kind") == QUERY_ARTIFACT_KIND
+        and report.get("contract") == CONTRACT
+        and report.get("status") in {"admitted", "abstained"}
+        and report.get("result_sha256") == _report_sha256(report),
+        "query report is invalid",
+    )
+    schedule = report["schedule"]
+    _require(
+        schedule.get("artifact_sha256") == _canonical_sha256(schedule),
+        "query schedule checksum changed",
+    )
+    boundary = report["information_boundary"]
+    _require(
+        boundary.get("object_observation_frames_used_for_selection") == [0]
+        and boundary.get("physical_frames_used_for_selection") == [0]
+        and boundary.get("predicted_displacement_used") is False
+        and boundary.get("tracker_output_read") is False
+        and boundary.get("state_innovation_read") is False
+        and boundary.get("future_object_observation_read") is False
+        and boundary.get("future_identity_or_metric_read") is False
+        and boundary.get("identity_target_read") is False
+        and boundary.get("state_update_constructed") is False
+        and boundary.get("future_metric_read") is False
+        and boundary.get("held_v8_artifact_or_process_access") is False,
+        "query report crossed its information boundary",
+    )
+    archive_path = output / QUERY_ARCHIVE_FILENAME
+    _require(
+        report["archive"]["filename"] == QUERY_ARCHIVE_FILENAME
+        and report["archive"]["file_sha256"] == file_sha256(archive_path),
+        "query archive checksum changed",
+    )
+    with np.load(archive_path, allow_pickle=False) as stored:
+        arrays = {name: np.asarray(stored[name]) for name in stored.files}
+    observed = {name: array_sha256(values) for name, values in sorted(arrays.items())}
+    _require(
+        observed
+        == report["archive"]["array_sha256"]
+        == schedule["output_array_sha256"],
+        "query array checksum changed",
+    )
+    _require(
+        report["status"] == ("admitted" if schedule["admitted"] else "abstained"),
+        "query status differs from its schedule",
+    )
+    return report, arrays
+
+
 __all__ = [
     "CONTRACT",
+    "QUERY_ARCHIVE_FILENAME",
+    "QUERY_ARTIFACT_KIND",
+    "QUERY_REPORT_FILENAME",
     "CausalResponseQueryConfig",
     "CausalResponseQuerySchedule",
     "build_causal_response_query_schedule",
+    "validate_causal_response_query_artifacts",
+    "write_causal_response_query_artifacts",
 ]

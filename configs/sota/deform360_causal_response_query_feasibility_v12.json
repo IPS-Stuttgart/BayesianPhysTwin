@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-causal-response-query-feasibility-v12-source",
+  "status": "locked-before-v12-source-query-dispositions",
+  "config_sha256": "631f8df95befdf7095c6acd791a2285dfe205480a1eb70ce728f8449dd534b5d",
+  "purpose": "Determine whether the frozen V12 frame-zero carrier can supply sixteen action-supported identities with independent three-plus-three-view support before staging tactile data or constructing a state update.",
+  "claim_boundary": "Opened-source, frame-zero, target-free carrier feasibility only. This protocol cannot establish prediction accuracy, transfer, calibration, confirmation, or state of the art.",
+  "parent_method_commit": "d5eab1b1dcf8bb77cd7a37f9716f5846559e930c",
+  "parent_method_config_sha256": "29d83083f3304c27e1ce5200dae09fffb9a8a6ef048cb1a6feeba4d93ca6986f",
+  "parent_method_config_file_sha256": "ee484f8f1d6d4f3e6e203532b8059fc30cec25c37353c4fa881d85fce921bdea",
+  "depth_scale_to_m": 0.001,
+  "query": {
+    "prefix_frame_count": 58,
+    "query_count": 16,
+    "graph_basis_rank": 8,
+    "action_support_threshold": 0.1,
+    "minimum_camera_support_per_panel": 3,
+    "association_support_probability": 0.5,
+    "association_search_radius_px": 12,
+    "association_depth_scale_m": 0.03,
+    "association_minimum_candidate_count": 1,
+    "visibility_weight": 0.5,
+    "mode_information_weight": 1.0,
+    "spatial_diversity_weight": 1.0
+  },
+  "source_feasibility_gate": {
+    "locked_case_count": 8,
+    "minimum_admitted_case_count": 6,
+    "maximum_technical_failure_count": 0,
+    "pass_action": "Stage released tactile streams and run the separately frozen V12 prefix event/admission path without changing the query method.",
+    "fail_action": "Stop V12 without weakening query count, panel support, association, action support, or source gate settings."
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "physical_archive_sha256": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "physical_archive_sha256": "89eae3e6a3bcb9c5912f1f68926ed6996b7847f634880c24e4976545978c19bf"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "physical_archive_sha256": "4f221933a8dfe4a27e2a70de889e7b0c2a4247b9026daca6b738aafd34fa24e9"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "physical_archive_sha256": "19055cebe30b4fbc303507888fc3e824e43b7c28e9b7aa2908e613fc78a6519b"
+    },
+    {
+      "case": "059-shoe-ep0000",
+      "physical_archive_sha256": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "physical_archive_sha256": "143ffa5323b303e5b9cadf537511727b1fa923b6b824a433a9bbb8899942bcee"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "physical_archive_sha256": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "physical_archive_sha256": "420f74615af97dc5a8f681bbc99cb3688dfd108d887fea975eb3b9cfc4cbee37"
+    }
+  ],
+  "information_boundary": {
+    "source_cases_previously_opened_by_v10_v11": true,
+    "maximum_object_observation_frame": 0,
+    "known_physical_action_support_used": true,
+    "tactile_read": false,
+    "tracker_read": false,
+    "future_identity_read": false,
+    "future_object_observation_read": false,
+    "future_metric_read": false,
+    "state_update_constructed": false,
+    "v1_sealed_target_allowed": false,
+    "held_v8_artifact_or_process_access_allowed": false
+  },
+  "forbidden": [
+    "changing V12 query settings after any source disposition",
+    "reading tactile, tracker output, future identities, future object observations, or future metrics",
+    "constructing or scoring a state update under this feasibility protocol",
+    "replacing a technical failure or an abstained source case",
+    "opening, inspecting, modifying, or rerunning held-v8 artifacts or processes"
+  ]
+}
