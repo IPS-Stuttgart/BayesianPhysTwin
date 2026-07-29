@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthMethodHashRuntimeV14V2",
+  "contract": "deform360-causal-response-direct-depth-method-hash-runtime-v14-v2",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-method-hash-runtime-v2",
+  "status": "locked_after_checksum_defect_discovery_before_first_source_admission",
+  "parent_artifacts": {
+    "method_protocol": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14.json",
+      "semantic_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "admission_prelock": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_admission_prelock.json",
+      "semantic_sha256": "ccb5ac22ed87695c0d21562902d15ffe60e30218012a601c4bbbc9f593aa99cf",
+      "file_sha256": "0f992f8407fca4426d732668079a3f87e9fa05cae2eab4f6e7e25e773b807e51"
+    },
+    "source_finalizer": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_source_finalizer.json",
+      "semantic_sha256": "75ef7482715b64d47c28680fb7ca904fa9f474798ed7d4f871894b4c82ffe57a",
+      "file_sha256": "0b57a5e103e5be63ea6709352009f74d68bf807b514e6e6f8e5948210cea72de"
+    }
+  },
+  "trigger": {
+    "registered_namespaced_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+    "correct_namespaced_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+    "legacy_unnamespaced_sha256": "23be9dfee79d1be42225d9d4c773e8137d24670a4ba5f0a6fe18f9e8d63994be",
+    "legacy_matches_registered": false,
+    "source_admission_artifact_created": false,
+    "source_lock_artifact_created": false,
+    "prefix_scan_started": false,
+    "source_outcome_read": false
+  },
+  "amendment": {
+    "patched_symbol": "_canonical_config_sha256",
+    "patched_parent_roles": [
+      "admission",
+      "source_finalizer"
+    ],
+    "method_protocol_bytes_changed": false,
+    "estimator_or_gate_changed": false,
+    "only_adds_registered_hash_namespace": true
+  },
+  "implementation": {
+    "parent_commit": "5e5e3c1bc10ccda13c65d1591801544ea0624d50",
+    "files": {
+      "runtime_module": {
+        "path": "src/bayesian_phystwin/deform360_causal_response_direct_depth_method_hash_runtime_v2.py",
+        "file_sha256": "4e407307406461d6b61e77871fdec0c3e621fcba271fb242be58be41f27cef9f"
+      },
+      "admission_wrapper": {
+        "path": "scripts/remote/run_deform360_causal_response_direct_depth_v14_admission_runtime_v2.py",
+        "file_sha256": "a97b457a550060c9ff124b7f9d7b746cd447834830b8369cb3b428e9672a9dfc"
+      },
+      "source_finalizer_wrapper": {
+        "path": "scripts/remote/finalize_deform360_causal_response_direct_depth_v14_source_runtime_v2.py",
+        "file_sha256": "88d230c296a7fac96691ceaae73c9b38ed25d1c8a49ca75c55a74ee707acf868"
+      },
+      "admission_parent": {
+        "path": "scripts/remote/run_deform360_causal_response_direct_depth_v14_admission.py",
+        "file_sha256": "d8259080ee379c498a9424acff94fafad00d97e373c7b916e4a4bb5d05537773"
+      },
+      "source_finalizer_parent": {
+        "path": "scripts/remote/finalize_deform360_causal_response_direct_depth_v14_source.py",
+        "file_sha256": "e6e8fee6af86e74b96aaa891c5429a8c7c19fa7f04fbb6fb7baadca422789366"
+      }
+    }
+  },
+  "information_boundary": {
+    "object_observation_read": false,
+    "tactile_or_robot_prefix_read": false,
+    "future_identity_or_metric_read": false,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  },
+  "config_sha256": "4d85b1df7412f37163f4b7d9695dc814e32b992c3bc12d21a38b2db4ea530fca"
+}
