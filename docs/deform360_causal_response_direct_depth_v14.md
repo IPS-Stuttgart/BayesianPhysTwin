@@ -125,6 +125,23 @@ point-cloud tail policy, leaving the registered 76-frame predictive episode.
 Full known action is permitted for window selection; object RGB and tactile
 values are not.
 
+The prefix-asset amendment at
+`configs/sota/deform360_causal_response_direct_depth_v14_assets.json` corrects
+an implementation mismatch found before source object decoding. The original
+preflight helper compared camera mask and depth assets to the 76-frame
+prediction trajectory, despite the method boundary permitting object
+observations only through frame 57. Prediction-facing RGB, masks, and depth
+are now exactly 58 frames; robot, tactile, and the physical prediction remain
+76 frames. No future camera asset is created before all source predictions or
+exact fallbacks are sealed. This changes neither a method threshold nor an
+advancement gate.
+
+Ranks 1 and 2 are preserved as pre-lock technical staging failures. Ranks 3
+through 14 produced complete 81-frame camera, robot, and tactile windows. They
+remain ordered preflight candidates rather than selected source cases; the
+source panel is still the first twelve accepted outcome-blind preflights in
+the immutable queue.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a
