@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalDirectDepthPrefixGeometryRuntimeV14",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-geometry-runtime",
+  "status": "locked_after_runtime_preflight_failure_before_geometry",
+  "parent_geometry_protocol": {
+    "path": "configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry.json",
+    "config_sha256": "3c4aa7d6dfe85e381c92804fe80ce81e45bf454838222d349e5ff0a313600ef6",
+    "file_sha256": "b94d3c1ea722f9be47b0ec34f7cd21e0bcb35bc535953557332f0062b5a75479",
+    "geometry_module_sha256": "5e13d871ba36b364622b12d778cd55a426cb96a37862dcbcfe5ecb4b6d4854bb",
+    "geometry_builder_sha256": "d71afb7e832c299d4f5c51b686d59d74dd3e6eb43f0877e4b5a95a3d3b3898f2"
+  },
+  "trigger": {
+    "preflight_code_revision": "a434bd9da9216f06aba21d9476845627703341ae",
+    "attempted_queue_rank": 3,
+    "failure_type": "ValueError",
+    "failure_message": "gsplat CUDA extension changed",
+    "failure_stage": "runtime validation before prefix input materialization and official reconstruction",
+    "geometry_artifact_created": false,
+    "result_artifact_created": false,
+    "candidate_remains_prelock_unattempted": true,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_access": false
+  },
+  "runtime_amendment": {
+    "reason": "Importing the pinned gsplat 1.4.0 backend rebuilt its JIT extension from the already pinned sources and compiler/runtime contract, changing only the compiled binary checksum.",
+    "extension_path": "/home/florianpfaff/.cache/torch_extensions/py310_cu121/gsplat_cuda/gsplat_cuda.so",
+    "parent_extension_sha256": "58c95816cdf011dbbd13a71f1d98312c9e661ef34c95592cc00ff93c72cab89b",
+    "rebuilt_extension_sha256": "99733266b0b679eef3e21ee748582266584d38c72921330f8118c3f5f4eddf63",
+    "rebuilt_extension_bytes": 10152280,
+    "repeat_import_sha256_stable": true,
+    "python_version": "3.10.12",
+    "torch_version": "2.4.0+cu121",
+    "torch_cuda_version": "12.1",
+    "gsplat_version": "1.4.0",
+    "nvcc_version_line": "Cuda compilation tools, release 12.6, V12.6.85",
+    "backend_probe": "CameraModelType.PINHOLE",
+    "deform360_source_hashes_changed": false,
+    "gsplat_package_or_version_changed": false,
+    "semantic_runtime_contract_changed": false
+  },
+  "application_policy": {
+    "applies_to_queue_ranks": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "rank_3_preflight_is_not_a_case_attempt": true,
+    "parent_geometry_protocol_unchanged": true,
+    "parent_geometry_builder_unchanged": true,
+    "every_geometry_result_requires_runtime_application_sidecar": true,
+    "no_method_threshold_or_advancement_gate_changed": true
+  },
+  "implementation_file_sha256": {
+    "runtime_wrapper": "d76f54cda1829559968cc1de24d9989b5a321f434f2e2e8cb4df155011eeeecd"
+  },
+  "information_boundary": {
+    "future_object_observation_read": false,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  },
+  "config_sha256": "0f5c973c1034a8a2a668a9ba3c7597e9ec058f0ea25aeefa06d8d4a2f836bedd"
+}

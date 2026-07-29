@@ -164,6 +164,19 @@ depth is recorded as a target-free diagnostic but is not an additional
 admission threshold. No tracker, future point-cloud trajectory, hidden
 identity, or outcome is available to this stage.
 
+The first server smoke stopped before prefix materialization or reconstruction
+because importing the pinned gsplat 1.4.0 backend rebuilt its JIT extension.
+The package, source, Python, Torch, CUDA, compiler, path, and backend probe were
+unchanged, but the compiled binary checksum changed. No geometry or result
+artifact existed, so the candidate remained pre-lock and unattempted.
+
+The separate runtime amendment at
+`configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry_runtime.json`
+records that failure and pins the exact rebuilt binary. It changes no geometry
+setting, method threshold, source ordering, or advancement gate. Every later
+geometry result must carry a checksummed runtime-application sidecar; the
+parent geometry protocol and builder remain unchanged.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a
