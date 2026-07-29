@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthSparseSpatialSupportRuntimeV14V2",
+  "contract": "deform360-causal-response-direct-depth-sparse-spatial-support-runtime-v14-v2",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-sparse-spatial-support-runtime-v2",
+  "status": "locked_after_first_prediction_technical_failure_before_first_prediction_seal",
+  "config_sha256": "ece5c155ba89d6df822b68dab402d99cad91fc9d1bb3c3baa1173c00b114ddcc",
+  "parent_artifacts": {
+    "method_protocol": {
+      "semantic_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "source_lock": {
+      "semantic_sha256": "b8ecb85cf6b6e1aa58dc21fadf1cd77b74998e69d57c8811244f59de75a7a5bc",
+      "file_sha256": "5f8ca829ec6ccebf4c7c31b66bc1b1d221226220baf4cd0ad79becf9734ba781"
+    }
+  },
+  "amendment": {
+    "relative_path": "src/bayesian_phystwin/deform360_causal_response_admission.py",
+    "old_file_sha256": "ff1feda3026a5fbc893181b4f7c4ba9d4df7076a9dee76531e2e58d17a626be5",
+    "new_file_sha256": "5976207fc98989a161b026238967bdfd2ac5ad248cc96f68a613219f1a56703e",
+    "adequately_supported_cases_numerically_changed": false,
+    "gate_threshold_changed": false,
+    "crash_becomes_registered_rejection": true
+  },
+  "implementation": {
+    "parent_commit": "bbf6d55edfd4463446e6a5e910a3178bbbb0931c",
+    "file_sha256": {
+      "reserve_prediction_module": "d65a9dc90b27b9d9bbb349fc1eb4cecf8f578e91800d9063a494564d402504ea",
+      "runtime_module": "fe1ae44d8e7b155f426d31a9aba757b221aee0eff36ae59b0e586967088cd164",
+      "runtime_wrapper": "26cefe32e926d9b3e7b6b7ecae01f45b65d88cdd6c1aa131e98e001dd89b344c"
+    }
+  },
+  "trigger": {
+    "queue_rank": 3,
+    "failure_stage": "admission_dataclass_before_prediction_artifact",
+    "exception": "selected entities or spatial groups are invalid",
+    "failed_runtime_config_sha256": "68fa550971d56de66070cb1841ecf7790c40268ac467c99c0216d13fbe94990f",
+    "failed_runtime_file_sha256": "3b68b04831083a048a9305c52836f8dbd5bcd4b54d4704e21bc0230d0febeb06",
+    "sealed_prefix_result_sha256": "1e64ca7dc23d1ea173dfbfaec87eef48ad0800b9225e06fbf811e3b5f83d8a85",
+    "sealed_prefix_report_file_sha256": "2e30a3cd08d88ebc941a1ea2f8b0a2a391b49d449d49971fdc501850b8b66a9d",
+    "prediction_artifact_created": false,
+    "source_outcome_read": false
+  },
+  "information_boundary": {
+    "permitted_prefix_read": true,
+    "future_object_observation_read": false,
+    "future_identity_or_metric_read": false,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}

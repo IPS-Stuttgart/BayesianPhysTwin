@@ -194,6 +194,42 @@ def test_tactile_contact_is_a_required_independent_causal_signal() -> None:
     assert result.reason == "insufficient-tactile-contact"
 
 
+def test_sparse_cross_panel_support_rejects_without_shape_failure() -> None:
+    physical = _physical()
+    proposal = _observation(physical, 1.0)
+    validation = _observation(physical, 1.0)
+    sparse = np.zeros_like(proposal.accepted_support)
+    sparse[:, :2] = True
+    points = np.asarray(proposal.point_world_m).copy()
+    covariance = np.asarray(proposal.covariance_m2).copy()
+    support_count = np.asarray(proposal.support_count).copy()
+    points[~sparse] = np.nan
+    covariance[~sparse] = np.nan
+    support_count[~sparse] = 0
+    proposal = replace(
+        proposal,
+        point_world_m=points,
+        covariance_m2=covariance,
+        accepted_support=sparse,
+        support_count=support_count,
+    )
+    validation = replace(
+        validation,
+        point_world_m=points,
+        covariance_m2=covariance,
+        accepted_support=sparse,
+        support_count=support_count,
+    )
+
+    result = _evaluate(proposal, validation, physical=physical)
+
+    assert not result.admitted
+    assert result.reason == "insufficient-cross-panel-support"
+    assert result.metrics.supported_count == 2
+    assert result.selected_entity_ids.shape == (2,)
+    assert result.spatial_group_assignments.shape == (2,)
+
+
 def test_persistence_baseline_can_use_separate_physical_action_support() -> None:
     action_conditioning = _physical()
     persistence = np.repeat(action_conditioning[:1], 2, axis=0)

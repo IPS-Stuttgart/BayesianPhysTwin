@@ -596,11 +596,11 @@ def evaluate_causal_response_admission(
     selected_local = np.flatnonzero(common_support)
     selected_entities = entities[selected_local]
     assignments = np.empty(0, dtype=np.int64)
-    if len(selected_entities) >= cfg.spatial_group_count:
+    if len(selected_entities):
         assignments = _balanced_spatial_groups(
             physical[birth, selected_entities],
             selected_entities,
-            cfg.spatial_group_count,
+            min(cfg.spatial_group_count, len(selected_entities)),
         )
     supported_groups = (
         0
