@@ -105,7 +105,9 @@ def _git_output(repository: Path, *arguments: str) -> str:
 def _require_clean_repository(repository: Path) -> str:
     revision = _git_output(repository, "rev-parse", "HEAD")
     _require(
-        not _git_output(repository, "status", "--porcelain", "--untracked-files=normal"),
+        not _git_output(
+            repository, "status", "--porcelain", "--untracked-files=normal"
+        ),
         "V14 prediction repository is dirty",
     )
     return revision
@@ -160,8 +162,7 @@ def _load_camera_prefix(
         mask_path = processed / camera / "mask_refined.h5"
         _require(
             file_sha256(depth_path) == preflight.source_sha256[f"depth/{camera}"]
-            and file_sha256(mask_path)
-            == preflight.source_sha256[f"mask/{camera}"],
+            and file_sha256(mask_path) == preflight.source_sha256[f"mask/{camera}"],
             f"V14 causal camera source changed: {camera}",
         )
         calibration_digest = aggregate_source_sha256(
@@ -172,8 +173,7 @@ def _load_camera_prefix(
             },
         )
         _require(
-            calibration_digest
-            == preflight.source_sha256[f"calibration/{camera}"],
+            calibration_digest == preflight.source_sha256[f"calibration/{camera}"],
             f"V14 causal camera calibration changed: {camera}",
         )
         encoded = _read_h5_prefix(depth_path, PREFIX_FRAME_COUNT)
@@ -187,9 +187,7 @@ def _load_camera_prefix(
         )
         depths.append(encoded.astype(np.float32) * depth_scale_to_m)
         masks.append(mask)
-        intrinsics.append(
-            np.asarray(intrinsics_by_camera[camera], dtype=np.float64)
-        )
+        intrinsics.append(np.asarray(intrinsics_by_camera[camera], dtype=np.float64))
         poses.append(np.asarray(poses_by_camera[camera], dtype=np.float64))
     _require(
         len({values.shape for values in depths}) == 1,
@@ -248,6 +246,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--prediction-runtime", type=Path, required=True)
     parser.add_argument("--method-protocol", type=Path, required=True)
     parser.add_argument("--source-lock", type=Path, required=True)
+    parser.add_argument("--admission-prelock", type=Path, required=True)
     parser.add_argument("--physical-prelock", type=Path, required=True)
     parser.add_argument("--queue-rank", type=int, required=True)
     parser.add_argument("--admission-dir", type=Path, required=True)
@@ -271,24 +270,27 @@ def main() -> int:
         runtime_path,
         method_protocol_path=method_path,
         source_lock_path=source_lock_path,
+        admission_prelock_path=args.admission_prelock.resolve(),
+        physical_prelock_path=args.physical_prelock.resolve(),
     )
     implementation_paths = {
         "prediction_module": (
-            repository
-            / "src/bayesian_phystwin/"
+            repository / "src/bayesian_phystwin/"
             "deform360_causal_response_direct_depth_prediction_v14.py"
         ),
         "prediction_runner": Path(__file__).resolve(),
         "preflight_module": (
-            repository
-            / "src/bayesian_phystwin/"
+            repository / "src/bayesian_phystwin/"
             "deform360_causal_response_direct_depth_preflight.py"
+        ),
+        "runtime_builder": (
+            repository / "scripts/remote/"
+            "prepare_deform360_causal_response_direct_depth_v14_prediction_runtime.py"
         ),
     }
     _require(
         all(
-            file_sha256(path)
-            == runtime["implementation"]["file_sha256"][name]
+            file_sha256(path) == runtime["implementation"]["file_sha256"][name]
             for name, path in implementation_paths.items()
         )
         and _git_output(
@@ -310,8 +312,7 @@ def main() -> int:
         "V14 prediction implementation or ancestry changed",
     )
     _require(
-        method.get("protocol_id")
-        == "deform360-causal-response-direct-depth-v14-source"
+        method.get("protocol_id") == "deform360-causal-response-direct-depth-v14-source"
         and method.get("config_sha256") == source_lock.method_config_sha256
         and all(
             file_sha256(repository / relative) == digest
@@ -336,8 +337,7 @@ def main() -> int:
         admission["queue_rank"] == args.queue_rank
         and admission["case_hash"] == locked_case.case_hash
         and admission["object_hash"] == locked_case.object_hash
-        and admission["artifact_sha256"]
-        == runtime_case["admission_artifact_sha256"]
+        and admission["artifact_sha256"] == runtime_case["admission_artifact_sha256"]
         and file_sha256(admission_dir / ADMISSION_REPORT_FILENAME)
         == runtime_case["admission_file_sha256"],
         "V14 prediction admission differs from the runtime ledger",
@@ -438,9 +438,7 @@ def main() -> int:
         physical["physical_prediction_m"],
         scan,
         persistence_prediction_m=physical["persistence_prediction_m"],
-        measurement_config=CausalResponseMeasurementConfig(
-            **method["measurement"]
-        ),
+        measurement_config=CausalResponseMeasurementConfig(**method["measurement"]),
         belief_config=RecursiveRbfBeliefConfig(**method["belief"]),
     )
     prediction_report = write_adaptive_direct_depth_v14_artifacts(
@@ -453,15 +451,9 @@ def main() -> int:
         repository_revision=revision,
         protocol_path=method_path,
         input_sha256={
-            "admission_report": file_sha256(
-                admission_dir / ADMISSION_REPORT_FILENAME
-            ),
-            "physical_archive": file_sha256(
-                physical_dir / PHYSICAL_ARCHIVE_FILENAME
-            ),
-            "physical_manifest": file_sha256(
-                physical_dir / PHYSICAL_MANIFEST_FILENAME
-            ),
+            "admission_report": file_sha256(admission_dir / ADMISSION_REPORT_FILENAME),
+            "physical_archive": file_sha256(physical_dir / PHYSICAL_ARCHIVE_FILENAME),
+            "physical_manifest": file_sha256(physical_dir / PHYSICAL_MANIFEST_FILENAME),
             "prediction_runtime": file_sha256(runtime_path),
             "prefix_archive": file_sha256(
                 scratch / PREFIX_DIRECTORY / PREFIX_ARCHIVE_FILENAME
@@ -518,9 +510,7 @@ def main() -> int:
                 "event_admitted": disposition["event_admitted"],
                 "selected_backbone": disposition["selected_backbone"],
                 "candidate_applied": disposition["candidate_applied"],
-                "prediction_result_sha256": disposition[
-                    "prediction_result_sha256"
-                ],
+                "prediction_result_sha256": disposition["prediction_result_sha256"],
             },
             sort_keys=True,
         )
