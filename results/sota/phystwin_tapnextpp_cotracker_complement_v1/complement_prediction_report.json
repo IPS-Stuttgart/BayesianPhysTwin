@@ -1,0 +1,59 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPCoTrackerComplementPrediction",
+  "case": "single_lift_cloth",
+  "claim_boundary": "post-open one-case source provider diagnostic; not simulator assimilation, independent confirmation, or state-of-the-art evidence",
+  "config": {
+    "association_kernel_scale_m": 0.0075,
+    "association_radius_m": 0.015,
+    "endpoint_frame_count": 5,
+    "maximum_association_neighbors": 32,
+    "maximum_bridge_gap_frames": 5,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_prior_overlap_rmse_m": 0.01,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_spatial_spread_m": 0.005,
+    "minimum_added_row_gain_over_persistence": 0.1,
+    "minimum_camera_count": 2,
+    "minimum_neighbor_count": 3,
+    "minimum_prior_overlap_rows": 5,
+    "minimum_quality_probability": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "robust_displacement_scale_m": 0.01,
+    "robust_reweight_iterations": 2,
+    "source_frame_end_exclusive": 88,
+    "source_frame_start": 68,
+    "two_view_shared_bias_standard_deviation_m": 0.01
+  },
+  "diagnostics": {
+    "added_point_frames": 5,
+    "eligible_point_frames": 76,
+    "tapnextpp_rows_bit_identical": true,
+    "tapnextpp_supported_point_frames": 52,
+    "union_supported_point_frames": 57
+  },
+  "information_boundary": {
+    "complement_requires_prior_cross_provider_agreement": true,
+    "cotracker_frame_range_half_open": [
+      68,
+      88
+    ],
+    "future_observation_read": false,
+    "manual_query_frame": 68,
+    "physical_state_innovation_used_in_prior_reliability": false,
+    "withheld_prefix_target_read": false
+  },
+  "inputs": {
+    "cotracker_cues_sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56",
+    "query_sha256": "8eb6f31c3908f65ddecd741eef32ad2f0fd4a3bac797fc91007f5610dd653039",
+    "tapnextpp_prediction_sha256": "d368814ecad07d425f43a612de2630b1a1be6ffc8e639ade5c13ee00bba678ce",
+    "tapnextpp_seal_sha256": "a89dd9692719953996c800ac9cce90b1f974ea43de6a9270cb483a7def28c509"
+  },
+  "output": {
+    "archive": "/home/florianpfaff/bpt-tapnextpp-cotracker-complement-v1/prediction/complement_prediction.npz",
+    "archive_sha256": "dbc5805150a2066b554b4fcc70fff7ec2eca5fb4e125034a6f6dac57ea91d1c7"
+  },
+  "protocol_id": "phystwin-tapnextpp-cotracker-complement-v1",
+  "result_sha256": "cda4dcae91d29d58d4a617b5b8f577144e94d31eb372628757c0960305d0441a",
+  "schema_version": 1
+}

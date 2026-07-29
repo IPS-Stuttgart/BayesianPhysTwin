@@ -1,0 +1,64 @@
+{
+  "artifact_kind": "PhysTwinTAPNextPPCoTrackerComplementEvaluation",
+  "case": "single_lift_cloth",
+  "claim_boundary": "post-open one-case source provider diagnostic; a pass is not Bayesian-PhysTwin improvement, independent transfer, or SOTA",
+  "competence_gate_passed": true,
+  "config": {
+    "association_kernel_scale_m": 0.0075,
+    "association_radius_m": 0.015,
+    "endpoint_frame_count": 5,
+    "maximum_association_neighbors": 32,
+    "maximum_bridge_gap_frames": 5,
+    "maximum_endpoint_rmse_m": 0.015,
+    "maximum_identity_rmse_m": 0.015,
+    "maximum_prior_overlap_rmse_m": 0.01,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_spatial_spread_m": 0.005,
+    "minimum_added_row_gain_over_persistence": 0.1,
+    "minimum_camera_count": 2,
+    "minimum_neighbor_count": 3,
+    "minimum_prior_overlap_rows": 5,
+    "minimum_quality_probability": 0.1,
+    "minimum_supported_fraction": 0.75,
+    "robust_displacement_scale_m": 0.01,
+    "robust_reweight_iterations": 2,
+    "source_frame_end_exclusive": 88,
+    "source_frame_start": 68,
+    "two_view_shared_bias_standard_deviation_m": 0.01
+  },
+  "decision": "provider competence rescued; a separately locked disjoint-identity assimilation study may be designed",
+  "gates": {
+    "added_row_gain": true,
+    "endpoint_rmse": true,
+    "identity_rmse": true,
+    "supported_fraction": true,
+    "tapnextpp_rows_bit_identical": true
+  },
+  "information_boundary": {
+    "already_open_source_prefix_only": true,
+    "held_v8_opened": false,
+    "simulator_future_opened": false
+  },
+  "metrics": {
+    "added_candidate_rmse_m": 0.01112638799466709,
+    "added_persistence_rmse_m": 0.04603011723355788,
+    "added_point_frame_count": 5,
+    "added_relative_gain_over_persistence": 0.7582802594611798,
+    "candidate_endpoint_rmse_m": 0.008218084104785035,
+    "candidate_identity_rmse_m": 0.005873433815544591,
+    "eligible_point_frame_count": 76,
+    "persistence_identity_rmse_m": 0.036194068439340844,
+    "supported_fraction": 0.75,
+    "supported_point_frame_count": 57,
+    "tapnextpp_point_frame_count": 52
+  },
+  "prediction": {
+    "archive_sha256": "dbc5805150a2066b554b4fcc70fff7ec2eca5fb4e125034a6f6dac57ea91d1c7",
+    "report_sha256": "a0e48c13e1d9533e31ee39d46dc2f91f1f11262eb390c71749424ed6203f1eee",
+    "seal_sha256": "1c6ed8e602c328a0f5a9ec4d9799f580457c87b8f2baeff1de41e644206c29c3"
+  },
+  "protocol_id": "phystwin-tapnextpp-cotracker-complement-v1",
+  "result_sha256": "affc78056961b2e4ff866b15426b3fa4458d72f55ef8f8a3f5c8b59f464a8796",
+  "schema_version": 1,
+  "withheld_prefix_sha256": "77f0a37b929bfc7e66020970a81cab1616078a566747ec511927e7841deaa143"
+}
