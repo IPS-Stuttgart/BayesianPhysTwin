@@ -54,6 +54,8 @@ class PairwiseBiasAwareDevelopmentConfig:
     minimum_observed_motion_m: float = 0.0005
     minimum_physical_agreement_gain: float = 0.40
     minimum_identifiable_fraction: float = 0.10
+    observation_variance_floor_m2: float = 0.005**2
+    reprojection_scale_px: float = 3.0
     information_effective_sample_cap: float = 8.0
     minimum_information_gain_nats: float = 0.0
     pairwise_gate: PairwiseCorrespondenceGateConfig = field(
@@ -78,6 +80,8 @@ class PairwiseBiasAwareDevelopmentConfig:
             self.minimum_physical_response_m,
             self.minimum_observed_motion_m,
             self.minimum_identifiable_fraction,
+            self.observation_variance_floor_m2,
+            self.reprojection_scale_px,
             self.information_effective_sample_cap,
         )
         if any(not np.isfinite(value) or value <= 0.0 for value in positive):

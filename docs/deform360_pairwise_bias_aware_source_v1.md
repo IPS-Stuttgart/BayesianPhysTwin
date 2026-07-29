@@ -116,3 +116,15 @@ must not be changed after source outcomes are computed.
 The implementation entry point is
 `predict_pairwise_bias_aware_candidate_arrays` in
 `bayesian_phystwin.deform360_pairwise_bias_aware_development`.
+
+Once the already-open roots are present on an authorized host, the frozen
+comparison is:
+
+```bash
+python -m bayesian_phystwin.cli.deform360_pairwise_bias_aware_source \
+  --source-root /path/to/independent-source-v1 \
+  --measurement-root /path/to/raw-camera-measurements \
+  --uncertainty-root /path/to/cycle-uncertainty \
+  --selected-baseline-root /path/to/selected-raw-baselines \
+  --output /new/path/to/source-v1-result
+```
