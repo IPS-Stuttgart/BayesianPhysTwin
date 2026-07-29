@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthReserveAdmissionMethodHashRuntimeV14V2",
+  "contract": "deform360-causal-response-direct-depth-reserve-admission-method-hash-runtime-v14-v2",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-reserve-admission-method-hash-runtime-v2",
+  "status": "locked_after_checksum_defect_discovery_before_first_reserve_source_admission",
+  "config_sha256": "5a1770fc4464e81c8e8a3f60f9abfc9637df0cbd82f2a6810be93187e360a27a",
+  "purpose": "Apply the already registered V14 method-hash namespace to the reserve-capable admission parent without changing its estimator, gate, or frozen inputs.",
+  "parent_artifacts": {
+    "method_protocol": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14.json",
+      "semantic_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "reserve_admission_prelock": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_reserve_admission_prelock_v1.json",
+      "semantic_sha256": "9b4532cff75dc33226188a1f3dffb73e7b797dadf99bee25441e3582eb0ca8a2",
+      "file_sha256": "dc3342600c43647dc2c583206765bdac89759d745a49baff7b7b8432cd563e31"
+    }
+  },
+  "implementation": {
+    "parent_commit": "45ff13ca258fc3544ed08cb90b2f02ec203333c7",
+    "files": {
+      "runtime_module": {
+        "path": "src/bayesian_phystwin/deform360_causal_response_direct_depth_reserve_admission_runtime_v2.py",
+        "file_sha256": "cc6f47eeab61b230d5ebf4270144a1d0f39a6d8595e864f8355e5510d85a3630"
+      },
+      "wrapper": {
+        "path": "scripts/remote/run_deform360_causal_response_direct_depth_v14_reserve_admission_runtime_v2.py",
+        "file_sha256": "e2179cc7b5e109d86381f39578f004b9d1f122d8ee47309a2d5b2206071da859"
+      },
+      "admission_parent": {
+        "path": "scripts/remote/run_deform360_causal_response_direct_depth_v14_admission.py",
+        "file_sha256": "bb21e0abac54805d2c6c470bdb909147c9e3469efd4ecf2e97f6a97b9e881f05"
+      }
+    }
+  },
+  "trigger": {
+    "registered_namespaced_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+    "correct_namespaced_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+    "legacy_unnamespaced_sha256": "23be9dfee79d1be42225d9d4c773e8137d24670a4ba5f0a6fe18f9e8d63994be",
+    "legacy_matches_registered": false,
+    "first_attempt_stage": "method_checksum_validation_before_output_directory_creation",
+    "reserve_source_admission_artifact_created": false,
+    "source_outcome_read": false
+  },
+  "amendment": {
+    "patched_symbol": "_canonical_config_sha256",
+    "method_protocol_bytes_changed": false,
+    "admission_prelock_bytes_changed": false,
+    "estimator_or_gate_changed": false,
+    "only_adds_registered_hash_namespace": true
+  },
+  "information_boundary": {
+    "object_observation_read": false,
+    "tactile_or_robot_prefix_read": false,
+    "future_identity_or_metric_read": false,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}
