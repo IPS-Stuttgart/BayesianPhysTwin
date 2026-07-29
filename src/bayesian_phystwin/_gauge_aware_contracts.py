@@ -5,13 +5,13 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
+def _require(condition: bool | np.bool_, message: str) -> None:
+    if not bool(condition):
         raise ValueError(message)
 
 
@@ -284,7 +284,7 @@ class GaugeAwareObservationBatch:
         ):
             _require(value.shape[:2] == (count, 3), f"{name} row shape changed")
         _require(
-            query.ndim == 3 and query.shape[1:] == (3, state_count) and len(query),
+            query.ndim == 3 and query.shape[1:] == (3, state_count) and len(query) > 0,
             "query_state_jacobian must have shape (Q, 3, S)",
         )
         gauge_count = gauge.shape[2]
@@ -371,24 +371,30 @@ class GaugeAwareObservationBatch:
             "anchor metadata requires anchor observations",
         )
 
-        anchor_innovation = None
-        anchor_covariance = None
-        anchor_state = None
+        anchor_innovation: np.ndarray | None = None
+        anchor_covariance: np.ndarray | None = None
+        anchor_state: np.ndarray | None = None
         anchor_groups: tuple[str, ...] | None = None
-        anchor_reliability = None
-        anchor_nominal_probability = None
-        anchor_composite_weight = None
-        anchor_bias = None
-        anchor_bias_prior = None
+        anchor_reliability: np.ndarray | None = None
+        anchor_nominal_probability: np.ndarray | None = None
+        anchor_composite_weight: np.ndarray | None = None
+        anchor_bias: np.ndarray | None = None
+        anchor_bias_prior: np.ndarray | None = None
         if has_anchor:
             anchor_innovation = _finite_array(
-                self.anchor_innovation_m, "anchor_innovation_m", 2
+                cast(np.ndarray, self.anchor_innovation_m),
+                "anchor_innovation_m",
+                2,
             )
             anchor_covariance = _finite_array(
-                self.anchor_covariance_m2, "anchor_covariance_m2", 3
+                cast(np.ndarray, self.anchor_covariance_m2),
+                "anchor_covariance_m2",
+                3,
             )
             anchor_state = _finite_array(
-                self.anchor_state_jacobian, "anchor_state_jacobian", 3
+                cast(np.ndarray, self.anchor_state_jacobian),
+                "anchor_state_jacobian",
+                3,
             )
             anchor_count = len(anchor_innovation)
             _require(
@@ -456,7 +462,7 @@ class GaugeAwareObservationBatch:
                     "anchor bias covariance is missing",
                 )
                 anchor_bias_prior = _finite_array(
-                    self.anchor_bias_prior_covariance,
+                    cast(np.ndarray, self.anchor_bias_prior_covariance),
                     "anchor_bias_prior_covariance",
                     2,
                 )
@@ -715,5 +721,5 @@ def _fallback_result(
         robust_weights=np.zeros(len(batch.innovation_m)),
         anchor_robust_weights=np.zeros(anchor_count),
         diagnostics=diagnostics,
-        input_lineage=batch.metadata,
+        input_lineage=batch.metadata or {},
     )

@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 
@@ -26,9 +27,7 @@ def array_sha256(values: np.ndarray) -> str:
     array = np.ascontiguousarray(np.asarray(values))
     digest = hashlib.sha256()
     digest.update(array.dtype.str.encode("ascii"))
-    digest.update(
-        json.dumps(array.shape, separators=(",", ":")).encode("ascii")
-    )
+    digest.update(json.dumps(array.shape, separators=(",", ":")).encode("ascii"))
     digest.update(array.view(np.uint8))
     return digest.hexdigest()
 
@@ -52,13 +51,98 @@ def _canonical_json(value: Mapping[str, Any]) -> bytes:
     ).encode("utf-8")
 
 
-def _validated_metadata(values: Mapping[str, Any]) -> dict[str, Any]:
+def _plain_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _plain_json(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain_json(item) for item in value]
+    return value
+
+
+class _FrozenDict(dict):
+    __slots__ = ()
+    _MUTATORS = frozenset({"clear", "pop", "popitem", "setdefault", "update"})
+
+    def __getattribute__(self, name: str) -> Any:
+        if name in type(self)._MUTATORS:
+            return self._immutable
+        return super().__getattribute__(name)
+
+    @staticmethod
+    def _immutable(*args: object, **kwargs: object) -> None:
+        raise TypeError("metadata is immutable")
+
+    def __setitem__(self, key, value):
+        self._immutable(key, value)
+
+    def __delitem__(self, key):
+        self._immutable(key)
+
+    def __ior__(self, other) -> _FrozenDict:  # type: ignore[misc]
+        self._immutable(other)
+        return self
+
+    def __copy__(self) -> dict[str, Any]:
+        return _plain_json(self)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> dict[str, Any]:
+        del memo
+        return _plain_json(self)
+
+
+class _FrozenList(list):
+    __slots__ = ()
+    _MUTATORS = frozenset(
+        {"append", "clear", "extend", "insert", "pop", "remove", "reverse", "sort"}
+    )
+
+    def __getattribute__(self, name: str) -> Any:
+        if name in type(self)._MUTATORS:
+            return self._immutable
+        return super().__getattribute__(name)
+
+    @staticmethod
+    def _immutable(*args: object, **kwargs: object) -> None:
+        raise TypeError("metadata is immutable")
+
+    def __setitem__(self, key, value):
+        self._immutable(key, value)
+
+    def __delitem__(self, key):
+        self._immutable(key)
+
+    def __iadd__(self, other) -> _FrozenList:  # type: ignore[misc]
+        self._immutable(other)
+        return self
+
+    def __imul__(self, other) -> _FrozenList:  # type: ignore[misc]
+        self._immutable(other)
+        return self
+
+    def __copy__(self) -> list[Any]:
+        return _plain_json(self)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> list[Any]:
+        del memo
+        return _plain_json(self)
+
+
+def _freeze_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        return _FrozenDict({key: _freeze_json(item) for key, item in value.items()})
+    if isinstance(value, list):
+        return _FrozenList(_freeze_json(item) for item in value)
+    return value
+
+
+def _validated_metadata(values: Mapping[str, Any]) -> Mapping[str, Any]:
     try:
-        return json.loads(
-            json.dumps(dict(values), sort_keys=True, allow_nan=False)
+        normalized = json.loads(
+            json.dumps(_plain_json(values), sort_keys=True, allow_nan=False)
         )
     except (TypeError, ValueError) as error:
         raise ValueError("metadata must be finite JSON data") from error
+    return _freeze_json(normalized)
 
 
 def _validate_sha256(value: str, *, name: str) -> None:
@@ -166,27 +250,17 @@ class ObservationBeliefV1:
         entity_ids = _readonly(self.entity_ids, dtype=np.int64)
         view_indices = _readonly(self.view_indices, dtype=np.int64)
         window_indices = _readonly(self.window_indices, dtype=np.int64)
-        correlation_groups = _readonly(
-            self.correlation_group_ids, dtype=np.int64
-        )
+        correlation_groups = _readonly(self.correlation_group_ids, dtype=np.int64)
         factor_groups = _readonly(self.factor_group_ids, dtype=np.int64)
-        prior_reliability = _readonly(
-            self.prior_reliability, dtype=np.float64
-        )
+        prior_reliability = _readonly(self.prior_reliability, dtype=np.float64)
         association_probability = _readonly(
             self.association_probability, dtype=np.float64
         )
-        local_covariance = _readonly(
-            self.local_covariance_m2, dtype=np.float64
-        )
+        local_covariance = _readonly(self.local_covariance_m2, dtype=np.float64)
         factors = _readonly(self.low_rank_factor_m, dtype=np.float64)
         group_ids = _readonly(self.group_ids, dtype=np.int64)
-        group_prior = _readonly(
-            self.group_prior_nominal_probability, dtype=np.float64
-        )
-        group_weight = _readonly(
-            self.group_composite_weight, dtype=np.float64
-        )
+        group_prior = _readonly(self.group_prior_nominal_probability, dtype=np.float64)
+        group_weight = _readonly(self.group_composite_weight, dtype=np.float64)
 
         if (
             declared_frames.ndim != 1
@@ -199,9 +273,7 @@ class ObservationBeliefV1:
                 "strictly increasing"
             )
         if np.any(declared_frames >= self.causal_frame_stop):
-            raise ValueError(
-                "declared frames must lie before causal_frame_stop"
-            )
+            raise ValueError("declared frames must lie before causal_frame_stop")
         if mean.ndim != 2 or mean.shape[1] != 3 or len(mean) == 0:
             raise ValueError("mean_xyz_m must have nonempty shape (N, 3)")
         observation_count = len(mean)
@@ -217,19 +289,12 @@ class ObservationBeliefV1:
         }
         for name, values in vectors.items():
             if values.shape != (observation_count,):
-                raise ValueError(
-                    f"{name} must have shape ({observation_count},)"
-                )
+                raise ValueError(f"{name} must have shape ({observation_count},)")
         if local_covariance.shape != (observation_count, 3, 3):
-            raise ValueError(
-                "local_covariance_m2 must have shape (N, 3, 3)"
-            )
+            raise ValueError("local_covariance_m2 must have shape (N, 3, 3)")
         factor_rank = len(self.factor_names)
         if factors.shape != (observation_count, 3, factor_rank):
-            raise ValueError(
-                "low_rank_factor_m must have shape "
-                f"(N, 3, {factor_rank})"
-            )
+            raise ValueError(f"low_rank_factor_m must have shape (N, 3, {factor_rank})")
         if not np.all(np.isfinite(mean)):
             raise ValueError("mean_xyz_m must be finite")
         if not np.all(np.isfinite(local_covariance)):
@@ -241,12 +306,8 @@ class ObservationBeliefV1:
         if np.any(frame_ids < 0) or np.any(frame_ids >= self.causal_frame_stop):
             raise ValueError("observation frames cross the causal boundary")
         if not np.all(np.isin(frame_ids, declared_frames)):
-            raise ValueError(
-                "frame_ids must be contained in declared_frame_ids"
-            )
-        if np.any(view_indices < 0) or np.any(
-            view_indices >= len(self.view_names)
-        ):
+            raise ValueError("frame_ids must be contained in declared_frame_ids")
+        if np.any(view_indices < 0) or np.any(view_indices >= len(self.view_names)):
             raise ValueError("view_indices reference unavailable views")
         if np.any(window_indices < 0) or np.any(
             window_indices >= len(self.window_names)
@@ -263,46 +324,31 @@ class ObservationBeliefV1:
             ):
                 raise ValueError(f"{name} must lie in [0, 1]")
 
-        symmetric = 0.5 * (
-            local_covariance + np.swapaxes(local_covariance, 1, 2)
-        )
-        if not np.allclose(
-            local_covariance, symmetric, atol=1e-12, rtol=1e-10
-        ):
+        symmetric = 0.5 * (local_covariance + np.swapaxes(local_covariance, 1, 2))
+        if not np.allclose(local_covariance, symmetric, atol=1e-12, rtol=1e-10):
             raise ValueError("local covariance must be symmetric")
         minimum_eigenvalue = np.min(np.linalg.eigvalsh(symmetric), axis=1)
         if np.any(minimum_eigenvalue <= 0.0):
             raise ValueError("local covariance must be positive definite")
 
         expected_groups = np.unique(correlation_groups)
-        if (
-            group_ids.ndim != 1
-            or not np.array_equal(group_ids, expected_groups)
-        ):
-            raise ValueError(
-                "group_ids must equal sorted unique correlation_group_ids"
-            )
+        if group_ids.ndim != 1 or not np.array_equal(group_ids, expected_groups):
+            raise ValueError("group_ids must equal sorted unique correlation_group_ids")
         group_count = len(group_ids)
-        if group_prior.shape != (group_count,) or group_weight.shape != (
-            group_count,
-        ):
+        if group_prior.shape != (group_count,) or group_weight.shape != (group_count,):
             raise ValueError(
                 "group prior and composite weight must identify every group"
             )
         if not np.all(np.isfinite(group_prior)) or np.any(
             (group_prior < 0.0) | (group_prior > 1.0)
         ):
-            raise ValueError(
-                "group prior nominal probabilities must lie in [0, 1]"
-            )
+            raise ValueError("group prior nominal probabilities must lie in [0, 1]")
         if not np.all(np.isfinite(group_weight)) or np.any(
             (group_weight <= 0.0) | (group_weight > 1.0)
         ):
             raise ValueError("group composite weights must lie in (0, 1]")
 
-        order = np.lexsort(
-            (window_indices, view_indices, entity_ids, frame_ids)
-        )
+        order = np.lexsort((window_indices, view_indices, entity_ids, frame_ids))
         sorted_keys = np.column_stack(
             (
                 frame_ids[order],
@@ -324,20 +370,14 @@ class ObservationBeliefV1:
         object.__setattr__(self, "entity_ids", entity_ids)
         object.__setattr__(self, "view_indices", view_indices)
         object.__setattr__(self, "window_indices", window_indices)
-        object.__setattr__(
-            self, "correlation_group_ids", correlation_groups
-        )
+        object.__setattr__(self, "correlation_group_ids", correlation_groups)
         object.__setattr__(self, "factor_group_ids", factor_groups)
         object.__setattr__(self, "prior_reliability", prior_reliability)
-        object.__setattr__(
-            self, "association_probability", association_probability
-        )
+        object.__setattr__(self, "association_probability", association_probability)
         object.__setattr__(self, "local_covariance_m2", local_covariance)
         object.__setattr__(self, "low_rank_factor_m", factors)
         object.__setattr__(self, "group_ids", group_ids)
-        object.__setattr__(
-            self, "group_prior_nominal_probability", group_prior
-        )
+        object.__setattr__(self, "group_prior_nominal_probability", group_prior)
         object.__setattr__(self, "group_composite_weight", group_weight)
         object.__setattr__(self, "metadata", _validated_metadata(self.metadata))
 
@@ -354,7 +394,7 @@ class ObservationBeliefV1:
             "source_repository": self.source_repository,
             "source_revision": self.source_revision,
             "source_artifact_sha256": self.source_artifact_sha256,
-            "metadata": self.metadata,
+            "metadata": _plain_json(self.metadata),
         }
 
     def _arrays(self) -> dict[str, np.ndarray]:
@@ -372,9 +412,7 @@ class ObservationBeliefV1:
             "local_covariance_m2": self.local_covariance_m2,
             "low_rank_factor_m": self.low_rank_factor_m,
             "group_ids": self.group_ids,
-            "group_prior_nominal_probability": (
-                self.group_prior_nominal_probability
-            ),
+            "group_prior_nominal_probability": (self.group_prior_nominal_probability),
             "group_composite_weight": self.group_composite_weight,
         }
 
@@ -422,10 +460,8 @@ class ObservationBeliefV1:
             self.local_covariance_m2,
             matrix,
         )
-        factors = scale * np.einsum(
-            "ij,njr->nir", matrix, self.low_rank_factor_m
-        )
-        metadata = dict(self.metadata)
+        factors = scale * np.einsum("ij,njr->nir", matrix, self.low_rank_factor_m)
+        metadata = _plain_json(self.metadata)
         metadata["metric_transform"] = {
             "rotation": matrix.tolist(),
             "translation_m": translation.tolist(),
@@ -468,27 +504,25 @@ class ObservationBeliefV1:
         }
 
 
-def save_observation_belief(
-    path: str | Path, belief: ObservationBeliefV1
-) -> None:
+def save_observation_belief(path: str | Path, belief: ObservationBeliefV1) -> None:
     """Write a non-pickled, content-addressed observation artifact."""
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor = belief._descriptor()
     descriptor["artifact_id"] = belief.artifact_id
-    np.savez_compressed(
-        target,
-        descriptor_json=np.asarray(
+    archive_payload: dict[str, Any] = {
+        "descriptor_json": np.asarray(
             json.dumps(
                 descriptor,
                 sort_keys=True,
                 separators=(",", ":"),
                 allow_nan=False,
             )
-        ),
-        **belief._arrays(),
-    )
+        )
+    }
+    archive_payload.update(belief._arrays())
+    np.savez_compressed(target, **archive_payload)
 
 
 def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
@@ -500,9 +534,7 @@ def load_observation_belief(path: str | Path) -> ObservationBeliefV1:
         descriptor = json.loads(str(archive["descriptor_json"]))
         if descriptor.get("schema_name") != OBSERVATION_BELIEF_SCHEMA:
             raise ValueError("unsupported observation-belief schema")
-        if int(descriptor.get("schema_version", -1)) != (
-            OBSERVATION_BELIEF_VERSION
-        ):
+        if int(descriptor.get("schema_version", -1)) != (OBSERVATION_BELIEF_VERSION):
             raise ValueError("unsupported observation-belief version")
         arrays = {
             name: np.asarray(archive[name])

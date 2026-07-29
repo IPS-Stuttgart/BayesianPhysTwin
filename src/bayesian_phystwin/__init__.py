@@ -1,6 +1,5 @@
 """Reliability-aware Bayesian utilities for PhysTwin-style experiments."""
 
-from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
 from .bias_aware_belief import (
     BiasAwareStateUpdateConfig,
     BiasAwareStateUpdateResult,
@@ -17,6 +16,11 @@ from .bias_aware_belief import (
     fit_source_regret_certificate,
     restrict_state_basis_to_identifiable_subspace,
     update_bias_aware_state,
+)
+from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
+from .claim_bearing_prob4d import (
+    build_claim_bearing_gauge_aware_batch_from_artifacts,
+    build_claim_bearing_gauge_aware_batch_from_observation_belief,
 )
 from .complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
@@ -42,6 +46,12 @@ from .grouped_likelihood import (
     GroupedStudentTLikelihoodConfig,
     GroupedStudentTLikelihoodResult,
     grouped_student_t_mixture_likelihood,
+)
+from .nuisance_aware_information import (
+    GreedyNuisanceAwareSelection,
+    NuisanceAwareInformationState,
+    NuisanceAwareInformationUpdate,
+    greedy_nuisance_aware_selection,
 )
 from .observation_belief import (
     OBSERVATION_BELIEF_SCHEMA,
@@ -82,6 +92,7 @@ from .prob4d_causal_lineage import (
     PROB4D_CAUSAL_STREAM_ID,
     PROB4D_SOURCE_REPOSITORY,
     is_prob4d_causal_observation_belief,
+    validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
 )
 from .pseudo_measurements import (
@@ -120,6 +131,7 @@ __all__ = [
     "GaugeAwareBeliefResult",
     "GaugeAwareObservationBatch",
     "GaugeAwareSelection",
+    "GreedyNuisanceAwareSelection",
     "GroupedStudentTLikelihoodConfig",
     "GroupedStudentTLikelihoodResult",
     "GuardedUpdateDecision",
@@ -127,10 +139,12 @@ __all__ = [
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "NonlinearClosureV1",
+    "NuisanceAwareInformationState",
+    "NuisanceAwareInformationUpdate",
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
-    "ObservationBeliefV1",
     "ObservationBeliefGaugeAdapterResult",
+    "ObservationBeliefV1",
     "PROB4D_CAUSAL_LINEAGE_VERSION",
     "PROB4D_CAUSAL_STREAM_ID",
     "PROB4D_SOURCE_REPOSITORY",
@@ -154,6 +168,8 @@ __all__ = [
     "apply_group_regret_bound",
     "apply_regret_guard",
     "binary_calibration_metrics",
+    "build_claim_bearing_gauge_aware_batch_from_artifacts",
+    "build_claim_bearing_gauge_aware_batch_from_observation_belief",
     "build_gauge_aware_batch_from_artifacts",
     "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
@@ -167,6 +183,7 @@ __all__ = [
     "fit_source_group_regret_bound",
     "fit_source_regret_certificate",
     "global_translation_bias_jacobian",
+    "greedy_nuisance_aware_selection",
     "grouped_student_t_mixture_likelihood",
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
@@ -189,6 +206,7 @@ __all__ = [
     "update_bias_aware_state",
     "update_gauge_aware_belief",
     "update_prior_aware_gauge_belief",
+    "validate_claim_bearing_prob4d_observation_belief",
     "validate_observation_linearization_alignment",
     "validate_prob4d_causal_observation_belief",
     "write_export_summary",

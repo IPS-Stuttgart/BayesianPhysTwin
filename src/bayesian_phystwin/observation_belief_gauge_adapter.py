@@ -18,8 +18,8 @@ from .prob4d_causal_lineage import (
 )
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
+def _require(condition: bool | np.bool_, message: str) -> None:
+    if not bool(condition):
         raise ValueError(message)
 
 
@@ -88,7 +88,10 @@ def centered_view_translation_bias_jacobian(
     """Return per-view translation contrasts without duplicating the mean."""
 
     views = np.asarray(view_indices, dtype=np.int64)
-    _require(views.ndim == 1 and len(views), "view_indices must be nonempty")
+    _require(
+        views.ndim == 1 and len(views) > 0,
+        "view_indices must be nonempty",
+    )
     _require(
         np.all((views >= 0) & (views < view_count)),
         "view index exceeds view_count",
@@ -155,9 +158,9 @@ class ObservationBeliefGaugeAdapterResult:
     association_probability: np.ndarray
 
     def __post_init__(self) -> None:
+        metadata = self.batch.metadata or {}
         _require(
-            self.observation_artifact_id
-            == self.batch.metadata.get("observation_artifact_id"),
+            self.observation_artifact_id == metadata.get("observation_artifact_id"),
             "observation artifact provenance changed",
         )
         groups = _readonly(self.gauge_parameter_group_ids, dtype=np.int64)
@@ -182,6 +185,7 @@ class ObservationBeliefGaugeAdapterResult:
         object.__setattr__(self, "association_probability", association)
 
     def summary(self) -> dict[str, object]:
+        metadata = self.batch.metadata or {}
         return {
             "observation_artifact_id": self.observation_artifact_id,
             "observation_count": len(self.batch.innovation_m),
@@ -200,7 +204,7 @@ class ObservationBeliefGaugeAdapterResult:
             ),
             "causal_frame_stop_convention": "exclusive",
             "composite_weight_mode": self.batch.composite_weight_mode,
-            "prob4d_causal_lineage_validated": self.batch.metadata.get(
+            "prob4d_causal_lineage_validated": metadata.get(
                 "prob4d_causal_lineage_validated",
                 False,
             ),
@@ -263,7 +267,7 @@ def build_gauge_aware_batch_from_observation_belief(
         "state_jacobian must have shape (N, 3, S) with S >= 1",
     )
     _require(
-        query.ndim == 3 and query.shape[1:] == (3, state.shape[2]) and len(query),
+        query.ndim == 3 and query.shape[1:] == (3, state.shape[2]) and len(query) > 0,
         "query_state_jacobian must have shape (Q, 3, S)",
     )
     _require(

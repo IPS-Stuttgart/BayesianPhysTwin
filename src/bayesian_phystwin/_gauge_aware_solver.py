@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import numpy as np
 
@@ -41,7 +41,7 @@ def _correlation_group_weights(
     *,
     composite_weight_mode: str = COMPOSITE_WEIGHT_MODE_CONSUMER_CAP,
 ) -> tuple[np.ndarray, dict[str, int]]:
-    weights = np.zeros(len(group_ids), dtype=np.float64)
+    weights: np.ndarray = np.zeros(len(group_ids), dtype=np.float64)
     counts: dict[str, int] = {}
     for group_id in group_ids:
         counts[group_id] = counts.get(group_id, 0) + 1
@@ -70,11 +70,11 @@ def _whiten_observations(
     name: str,
 ) -> tuple[np.ndarray, tuple[np.ndarray, ...], np.ndarray]:
     count = len(target)
-    whitened_target = np.empty((count, 3), dtype=np.float64)
+    whitened_target: np.ndarray = np.empty((count, 3), dtype=np.float64)
     whitened_designs = tuple(
         np.empty_like(design, dtype=np.float64) for design in designs
     )
-    whiteners = np.empty((count, 3, 3), dtype=np.float64)
+    whiteners: np.ndarray = np.empty((count, 3, 3), dtype=np.float64)
     for index in range(count):
         whitener = _positive_definite_whitener(
             covariance[index], f"{name} covariance {index}"
@@ -250,7 +250,7 @@ def _assemble_full_posterior(
     )
     state_covariance = 0.5 * (state_covariance + state_covariance.T)
 
-    full_covariance = np.zeros(
+    full_covariance: np.ndarray = np.zeros(
         (state_count + nuisance_count, state_count + nuisance_count),
         dtype=np.float64,
     )
@@ -297,11 +297,12 @@ def update_gauge_aware_belief(
     base_weight, group_counts = _correlation_group_weights(
         batch.correlation_group_ids,
         batch.prior_reliability,
-        batch.prior_nominal_probability,
-        batch.composite_weight,
+        cast(np.ndarray, batch.prior_nominal_probability),
+        cast(np.ndarray, batch.composite_weight),
         cfg.effective_samples_per_correlation_group,
         composite_weight_mode=batch.composite_weight_mode,
     )
+    anchor_base_weight: np.ndarray
     if batch.anchor_innovation_m is None:
         anchor_base_weight = np.zeros(0, dtype=np.float64)
         anchor_group_counts: dict[str, int] = {}
@@ -422,8 +423,8 @@ def update_gauge_aware_belief(
             anchor_whiteners,
         ) = _whiten_observations(
             batch.anchor_innovation_m,
-            batch.anchor_covariance_m2,
-            (batch.anchor_state_jacobian, raw_anchor_nuisance),
+            cast(np.ndarray, batch.anchor_covariance_m2),
+            (cast(np.ndarray, batch.anchor_state_jacobian), raw_anchor_nuisance),
             anchor_base_weight,
             name="anchor",
         )
@@ -755,7 +756,7 @@ def update_gauge_aware_belief(
         robust_weights=robust,
         anchor_robust_weights=anchor_robust,
         diagnostics=diagnostics,
-        input_lineage=batch.metadata,
+        input_lineage=batch.metadata or {},
     )
 
 

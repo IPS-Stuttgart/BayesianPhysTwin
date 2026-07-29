@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -9,9 +10,7 @@ from bayesian_phystwin.observation_belief import (
     save_observation_belief,
 )
 
-GOLDEN_ARTIFACT_ID = (
-    "9c02e638f60424cca7738d347d1258acd208eb562f422efacd077db4edb2fe80"
-)
+GOLDEN_ARTIFACT_ID = "9c02e638f60424cca7738d347d1258acd208eb562f422efacd077db4edb2fe80"
 
 
 def _belief() -> ObservationBeliefV1:
@@ -55,6 +54,12 @@ def _belief() -> ObservationBeliefV1:
     )
 
 
+def _asymmetric_covariance() -> np.ndarray:
+    covariance = _belief().local_covariance_m2.copy()
+    covariance[0, 0, 1] = 1e-3
+    return covariance
+
+
 def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     belief = _belief()
     path = tmp_path / "belief.npz"
@@ -66,6 +71,145 @@ def test_observation_belief_round_trip_and_digest(tmp_path: Path) -> None:
     assert restored.summary()["observation_count"] == 4
     assert restored.mean_xyz_m.flags.writeable is False
     np.testing.assert_array_equal(restored.mean_xyz_m, belief.mean_xyz_m)
+
+
+def test_observation_metadata_is_deeply_immutable_and_digest_stable(
+    tmp_path: Path,
+) -> None:
+    metadata_input = {
+        "nested": {
+            "items": [1, {"accepted": True}],
+            "tuple_items": (2, 3),
+        }
+    }
+    belief = ObservationBeliefV1(
+        **{
+            **_belief().__dict__,
+            "metadata": metadata_input,
+        }
+    )
+    artifact_id = belief.artifact_id
+
+    metadata_input["nested"]["items"][1]["accepted"] = False
+    assert belief.metadata["nested"]["items"][1]["accepted"] is True
+    assert belief.artifact_id == artifact_id
+
+    frozen_metadata = belief.metadata
+    frozen_items = frozen_metadata["nested"]["items"]
+    assert isinstance(frozen_metadata, dict)
+    assert isinstance(frozen_items, list)
+    assert frozen_items.count(1) == 1
+    assert set(frozen_metadata.keys()) == {"nested"}
+
+    shallow = copy.copy(frozen_metadata)
+    deep = copy.deepcopy(frozen_metadata)
+    shallow_items = copy.copy(frozen_items)
+    deep_items = copy.deepcopy(frozen_items)
+    assert type(shallow) is dict
+    assert type(deep) is dict
+    assert type(shallow_items) is list
+    assert type(deep_items) is list
+    assert type(deep["nested"]["items"]) is list
+    deep["nested"]["items"].append("copy-only")
+    deep_items.append("copy-only")
+    assert "copy-only" not in frozen_items
+
+    with pytest.raises(TypeError):
+        frozen_metadata["new"] = "mutated"
+    with pytest.raises(TypeError):
+        frozen_metadata["nested"]["items"][1]["accepted"] = False
+    with pytest.raises(TypeError):
+        del frozen_metadata["nested"]
+    with pytest.raises(TypeError):
+        frozen_metadata.update({"new": "mutated"})
+    with pytest.raises(TypeError):
+        frozen_metadata.__ior__({"new": "mutated"})
+    with pytest.raises(TypeError):
+        frozen_items.append("mutated")
+    with pytest.raises(TypeError):
+        frozen_items[0] = 9
+    with pytest.raises(TypeError):
+        del frozen_items[0]
+    with pytest.raises(TypeError):
+        frozen_items.__iadd__(["mutated"])
+    with pytest.raises(TypeError):
+        frozen_items.__imul__(2)
+
+    path = tmp_path / "nested-belief.npz"
+    save_observation_belief(path, belief)
+    restored = load_observation_belief(path)
+    assert restored.artifact_id == artifact_id
+    assert restored.metadata == belief.metadata
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    (
+        {"unsupported": object()},
+        {"nonfinite": float("nan")},
+    ),
+)
+def test_observation_metadata_rejects_non_json_values(metadata: object) -> None:
+    with pytest.raises(ValueError, match="finite JSON"):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                "metadata": metadata,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    (
+        (
+            {"declared_frame_ids": np.asarray([8, 12])},
+            "declared frames must lie before",
+        ),
+        ({"frame_ids": np.asarray([8, 8, 9])}, "frame_ids must have shape"),
+        (
+            {"local_covariance_m2": np.zeros((4, 2, 2))},
+            "local_covariance_m2 must have shape",
+        ),
+        (
+            {"low_rank_factor_m": np.zeros((4, 3, 1))},
+            "low_rank_factor_m must have shape",
+        ),
+        (
+            {"frame_ids": np.asarray([8, 8, 10, 10])},
+            "frame_ids must be contained",
+        ),
+        (
+            {"view_indices": np.asarray([0, 0, 0, 1])},
+            "view_indices reference unavailable",
+        ),
+        ({"local_covariance_m2": _asymmetric_covariance()}, "must be symmetric"),
+        ({"group_ids": np.asarray([0])}, "group_ids must equal"),
+        (
+            {"group_prior_nominal_probability": np.asarray([0.85])},
+            "group prior and composite weight",
+        ),
+        (
+            {"group_prior_nominal_probability": np.asarray([0.85, 1.1])},
+            "group prior nominal probabilities",
+        ),
+        (
+            {"group_composite_weight": np.asarray([0.5, 0.0])},
+            "group composite weights",
+        ),
+    ),
+)
+def test_observation_belief_validates_reformatted_schema_guards(
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        ObservationBeliefV1(
+            **{
+                **_belief().__dict__,
+                **changes,
+            }
+        )
 
 
 def test_observation_belief_rejects_future_frame() -> None:
@@ -92,9 +236,7 @@ def test_observation_belief_rejects_duplicate_identity() -> None:
 
 def test_sim3_transform_moves_covariance_and_factors() -> None:
     belief = _belief()
-    rotation = np.asarray(
-        [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
-    )
+    rotation = np.asarray([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
     transformed = belief.transformed(
         rotation=rotation,
         translation_m=np.asarray([1.0, 2.0, 3.0]),
@@ -102,9 +244,7 @@ def test_sim3_transform_moves_covariance_and_factors() -> None:
         stream_id="world",
     )
 
-    expected = 2.0 * (rotation @ belief.mean_xyz_m[0]) + np.asarray(
-        [1.0, 2.0, 3.0]
-    )
+    expected = 2.0 * (rotation @ belief.mean_xyz_m[0]) + np.asarray([1.0, 2.0, 3.0])
     np.testing.assert_allclose(transformed.mean_xyz_m[0], expected)
     np.testing.assert_allclose(
         transformed.local_covariance_m2[0], 4.0 * belief.local_covariance_m2[0]
