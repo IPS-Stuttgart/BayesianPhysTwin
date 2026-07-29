@@ -1,0 +1,46 @@
+{
+  "application_policy": {
+    "applies_to_queue_ranks": [
+      15,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22
+    ],
+    "method_or_gate_changed": false,
+    "parent_geometry_protocol_unchanged": true,
+    "parent_masks_unchanged": true
+  },
+  "artifact_kind": "Deform360CausalResponseDirectDepthReserveGeometryRuntimeV14V2",
+  "config_sha256": "bc94176e3d81bbed51654c5e6cd107223261e996f02ac4d7cf7d86e130b7298f",
+  "implementation_file_sha256": {
+    "geometry_builder": "d71afb7e832c299d4f5c51b686d59d74dd3e6eb43f0877e4b5a95a3d3b3898f2",
+    "reserve_module": "3f632cc1662e8b427cedd89d4053bca757d18235e1ab0c34c5085f7281988372",
+    "reserve_wrapper_v1": "7a4ced7299bbe2697fced2a22fd20d09145de5cdfd10aac3bdf7ab77acad0118",
+    "runtime_wrapper_v2": "246f77b34a4ace1fe189075994a722a2c7681e8f4cc13692a51fab4ec0fa7b88"
+  },
+  "information_boundary": {
+    "future_identity_or_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false
+  },
+  "parent_reserve_geometry": {
+    "config_sha256": "f7024e67c5c488a97570b661b3b4f0f706f9eb61b27e9e9f9cacff5eec013e91",
+    "file_sha256": "20f6e656b842c3683601e327916c3eec2b71bd3175083092585b95c8b5d1e9fc"
+  },
+  "protocol_id": "deform360-causal-response-direct-depth-v14-reserve-geometry-runtime-v2",
+  "schema_version": 1,
+  "status": "locked_after_parent_alias_failure_before_geometry",
+  "trigger": {
+    "failure_key": "parent_prefix_assets",
+    "failure_type": "KeyError",
+    "geometry_artifact_created": false,
+    "method_or_gate_changed": false,
+    "object_prefix_materialized": false,
+    "result_artifact_created": false
+  }
+}

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -23,6 +25,28 @@ GEOMETRY_CONFIG = (
     / "configs/sota/"
     "deform360_causal_response_direct_depth_v14_reserve_geometry_v1.json"
 )
+RUNTIME_CONFIG = (
+    ROOT
+    / "configs/sota/"
+    "deform360_causal_response_direct_depth_v14_reserve_geometry_runtime_v2.json"
+)
+RUNTIME_WRAPPER = (
+    ROOT
+    / "scripts/remote/"
+    "build_deform360_causal_response_direct_depth_v14_"
+    "prefix_geometry_reserve_runtime_v2.py"
+)
+
+
+def _load_runtime_wrapper() -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        "_v14_reserve_runtime_test",
+        RUNTIME_WRAPPER,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_v14_reserve_batch_binds_exact_parents_and_ranks() -> None:
@@ -86,3 +110,22 @@ def test_v14_reserve_geometry_rejects_mask_mutation(tmp_path: Path) -> None:
     mutated.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="checksum|mask ledger"):
         load_v14_reserve_geometry_protocol(mutated)
+
+
+def test_v14_reserve_runtime_v2_binds_failed_parent_adapter() -> None:
+    module = _load_runtime_wrapper()
+    runtime = module._load_runtime(
+        RUNTIME_CONFIG,
+        geometry_path=GEOMETRY_CONFIG,
+        wrapper_path=RUNTIME_WRAPPER,
+    )
+    assert runtime["trigger"]["failure_key"] == "parent_prefix_assets"
+    assert runtime["application_policy"]["applies_to_queue_ranks"] == [
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        22,
+    ]
