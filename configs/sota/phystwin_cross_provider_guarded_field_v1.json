@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "protocol_id": "phystwin-cross-provider-guarded-field-v1",
+  "status": "implementation-and-artifact-locked-before-prefix-guard-evaluation",
+  "claim_boundary": "Post-open one-case source capacity smoke on single_lift_cloth with manual disjoint prefix validation. A pass authorizes only a separately locked source panel; it is not deployable, independent, confirmatory, or state-of-the-art evidence.",
+  "hypothesis": "A causal sparse tracker can witness the relative gauge of a dense CoTracker3 displacement block, while disjoint prefix identities can safely decide whether a graph-smooth persistent readout field transfers beyond the witnessed identities.",
+  "method_config": {
+    "source_frame_start": 68,
+    "source_frame_end_exclusive": 88,
+    "apply_frame_start": 88,
+    "validation_frame_end_exclusive": 121,
+    "minimum_camera_count": 2,
+    "maximum_reprojection_error_px": 3.0,
+    "minimum_quality_probability": 0.1,
+    "minimum_dense_support_fraction": 0.1,
+    "minimum_provider_count": 3,
+    "bias_history_frames": 5,
+    "robust_scale_m": 0.01,
+    "robust_iterations": 4,
+    "projection_ridge": 1e-05,
+    "maximum_correction_m": 0.01,
+    "minimum_validation_improvement_fraction": 0.05,
+    "minimum_validation_improvement_m": 0.00025
+  },
+  "identity_boundary": {
+    "provider_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "prefix_validation_identity_ids": [
+      1,
+      5
+    ],
+    "future_scoring_identity_ids": [
+      0,
+      2,
+      7
+    ],
+    "selection_rule": "Provider identities are inherited from the frozen TAPNext++ competence control. Among all remaining identities, the two with greatest finite availability on frames [88,121) are validation identities, ties by identity id. Every other identity is assigned to future scoring. Future values and future availability are not used.",
+    "association_reference_frame": 0,
+    "maximum_association_distance_m": 0.005,
+    "sets_must_be_pairwise_disjoint": true
+  },
+  "dense_field": {
+    "observation": "CoTracker3 displacement from frame 68 to frame 87 minus selected physical-baseline displacement over the same frames.",
+    "relative_gauge": "Median dense-minus-primary-provider displacement over the last five prior common rows, after each provider is differenced from its first common row. Absolute gauge is not used.",
+    "basis": "Frozen rank-4 graph basis from the earlier sparse-state source diagnostic.",
+    "correlation": "All accepted dense rows form one correlated block. Reliability changes relative row weights, but total information mass is fixed to graph rank, so duplicating rows cannot increase confidence.",
+    "prior_reliability": "CoTracker3 source quality, multiview reprojection error, camera count, and validity only.",
+    "state_innovation_used_in_prior_reliability": false,
+    "innovation_processing": "The dense-versus-physical displacement innovation enters once through four robust graph-projection iterations.",
+    "application": "The accepted rank-4 field is held constant in readout space from frame 88 onward.",
+    "fallback": "Any support or validation failure returns the selected physical baseline byte-for-byte."
+  },
+  "prefix_gate": {
+    "validation_frame_range_half_open": [
+      88,
+      121
+    ],
+    "minimum_relative_gain_over_selected_physical_baseline": 0.05,
+    "minimum_absolute_gain_over_selected_physical_baseline_m": 0.00025,
+    "minimum_relative_gain_over_sparse_provider_only_comparator": 0.05,
+    "minimum_absolute_gain_over_sparse_provider_only_comparator_m": 0.00025,
+    "rejection_must_be_byte_exact_baseline": true
+  },
+  "future_gate": {
+    "frame_range_half_open": [
+      121,
+      173
+    ],
+    "candidate_must_have_passed_prefix_gate": true,
+    "chamfer_distance_must_improve_over_selected_physical_baseline": true,
+    "disjoint_hidden_identity_track_error_must_improve_over_selected_physical_baseline": true,
+    "pass_action": "Permit a separately frozen, fixed-method opened-source panel before any fresh-object evaluation.",
+    "fail_action": "Close this sparse-witness dense-field arm without threshold, identity, basis, cap, provider, or window tuning on this case."
+  },
+  "inputs": {
+    "baseline": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v2/selected_raw/single_lift_cloth.pkl",
+      "sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72"
+    },
+    "cotracker_cues": {
+      "path": "/home/florianpfaff/bpt-cotracker3-open22-v3/cues/single_lift_cloth/cues.npz",
+      "sha256": "713fd1ac124c72f9835d848f8c2f6e3622667936c8b5626b42f744a8f2347d56"
+    },
+    "complement_prediction": {
+      "path": "/home/florianpfaff/bpt-tapnextpp-cotracker-complement-v1/prediction/complement_prediction.npz",
+      "sha256": "dbc5805150a2066b554b4fcc70fff7ec2eca5fb4e125034a6f6dac57ea91d1c7"
+    },
+    "complement_seal": {
+      "path": "/home/florianpfaff/bpt-tapnextpp-cotracker-complement-v1/prediction/complement_prediction_seal.json",
+      "sha256": "1c6ed8e602c328a0f5a9ec4d9799f580457c87b8f2baeff1de41e644206c29c3"
+    },
+    "graph_basis": {
+      "path": "/home/florianpfaff/bpt-prior-aware-sparse-identity-v5/run/single_lift_cloth/propagated_state_correction.npz",
+      "sha256": "e6d1d123efa934806aab9a5bf1d1ffcd6af72502b849248c852c59ce4ac50222"
+    },
+    "prefix_validation": {
+      "path": "/home/florianpfaff/bpt-cross-provider-field-v1-artifacts/staging/prefix_validation.npz",
+      "sha256": "76a93092156853aedac98f8f51bb9c839cb6307075dfa82e58fb1416691e5eea"
+    },
+    "future_score": {
+      "path": "/home/florianpfaff/bpt-cross-provider-field-v1-artifacts/staging/future_score.npz",
+      "sha256": "3f4c381a9a3fc467f24ef62d0c5f04ce2b2c6f5ec6ae24c4c3c137ac7def7c3f"
+    }
+  },
+  "staging": {
+    "implementation_commit": "d235b456834c0634b0203063f2e61f18c4e7e1a4",
+    "report_sha256": "1c64fecd37409fdfb179d55f02ab86a960c37909249051b5b6163831d77ad5ba",
+    "report_result_sha256": "20e381128578eb1b0485f614c89c9e69affe7e4abe97fc5f9b9826a692b483a0",
+    "manual_tracks_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e",
+    "final_data_sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b"
+  },
+  "implementation": {
+    "implementation_commit": "d235b456834c0634b0203063f2e61f18c4e7e1a4",
+    "runner_sha256": "1282a53e210e87253ddde6debce0e3c5436fdd265aa67c27f88f037b788c820b",
+    "module_sha256": "71e14a0836aa927e51f6254ba1366d9c473bff681753bfb0fcf1b6d7e79871c0",
+    "focused_server_tests": "7 passed"
+  },
+  "information_boundary": {
+    "prediction_may_read_prefix_validation": true,
+    "prediction_may_read_future_score": false,
+    "score_requires_prediction_seal": true,
+    "future_object_observations_may_form_prediction": false,
+    "future_manual_identities_may_form_prediction": false,
+    "held_v8_access_allowed": false,
+    "pokeflex_access_allowed": false
+  },
+  "forbidden": [
+    "reading the future-score artifact before the prediction seal exists",
+    "using validation or future values to choose provider identities",
+    "using future availability to choose validation or scoring identities",
+    "using the PhysTwin innovation to create perception reliability",
+    "counting dense pixels as independent evidence",
+    "changing the graph rank, correction cap, identities, windows, or gates after prefix or future scoring",
+    "opening, inspecting, modifying, or rerunning held-v8 artifacts or processes",
+    "describing a one-case opened-source pass as deployable or state-of-the-art evidence"
+  ]
+}
