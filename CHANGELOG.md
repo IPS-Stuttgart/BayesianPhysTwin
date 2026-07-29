@@ -32,6 +32,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   revision evidence.
 - A strict claim-bearing Prob4D validation entry point for new prospective
   Prob4D-to-Bayesian-PhysTwin experiments while retaining provider-v1 reproduction.
+- Dedicated claim-bearing Prob4D observation and physical-linearization adapters
+  that validate explicit stream-v2 joint covariance, calibration provenance, and
+  runtime attestation before an innovation is formed.
 - An always-executed Bayesian-PhysTwin and Causal4D consumer fixture for the
   cross-repository observation and lineage boundary.
 - Nuisance-aware marginalized information gain and deterministic greedy candidate
@@ -47,6 +50,10 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   archived reproduction paths.
 - Prob4D causal-lineage validation now fails closed on any present but malformed
   provider-v2 attestation and reports a compact validated provider summary.
+- Claim-bearing Prob4D validation now requires an explicitly declared causal stream
+  contract v2, the full joint cross-window gauge covariance, matching calibration
+  IDs, calibration of every alignment, and zero covariance-fallback use. Attested
+  legacy stream-v1 marginals and inferred stream versions are no longer admissible.
 - Missing private-Prob4D credentials now fail trusted pull requests, `main`,
   scheduled, and manual three-repository runs instead of producing a green skip.
   External-fork pull requests still run the producer-neutral consumer fixture and
