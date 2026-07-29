@@ -305,7 +305,7 @@ def direct_depth_observation_sha256(
         array_sha256(observations.maximum_view_scatter_m),
         hashlib.sha256(
             json.dumps(
-                asdict(observations.config),
+                observations.config.evidence_descriptor(),
                 sort_keys=True,
                 separators=(",", ":"),
                 allow_nan=False,

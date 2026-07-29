@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
+from bayesian_phystwin.deform360_causal_response_admission import (
+    direct_depth_observation_sha256,
+)
 from bayesian_phystwin.deform360_direct_depth_provider import (
     DirectDepthEndpointConfig,
     DirectDepthEndpointObservations,
@@ -198,6 +202,44 @@ def test_unknown_correlation_is_not_naively_independent() -> None:
     naive_independent = observations.covariance_m2 / 3.0
 
     difference = observations.covariance_m2 - naive_independent
+    assert np.all(np.linalg.eigvalsh(difference) >= -1e-15)
+
+
+def test_default_direct_depth_observation_digest_remains_v12_compatible() -> None:
+    _, observations = _provider(camera_count=3)
+
+    assert direct_depth_observation_sha256(observations) == (
+        "efb8f4dfa6bcb6e52f296041975310896293fff0696435c3727417d154363176"
+    )
+
+
+def test_two_view_fallback_requires_and_applies_fourfold_inflation() -> None:
+    with pytest.raises(ValueError, match="fourfold"):
+        DirectDepthEndpointConfig(
+            minimum_camera_support=2,
+            search_radius_px=3,
+        )
+
+    physical, intrinsics, poses, depths, masks = _inputs(camera_count=2)
+    two_view = build_direct_depth_observations_for_entities(
+        physical,
+        _schedule().entity_ids,
+        np.asarray([51, 57]),
+        intrinsics,
+        poses,
+        depths,
+        masks,
+        config=DirectDepthEndpointConfig(
+            minimum_camera_support=2,
+            search_radius_px=3,
+            correlation_covariance_inflation=4.0,
+        ),
+    )
+    _, three_view = _provider(camera_count=3)
+
+    assert np.all(two_view.accepted_support)
+    assert np.all(two_view.support_count == 2)
+    difference = two_view.covariance_m2 - three_view.covariance_m2
     assert np.all(np.linalg.eigvalsh(difference) >= -1e-15)
 
 

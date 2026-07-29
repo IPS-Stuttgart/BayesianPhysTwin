@@ -52,11 +52,12 @@ class DirectDepthEndpointConfig:
     pixel_quantization_variance_px2: float = 0.25
     covariance_floor_m2: float = 1e-10
     temporal_covariance_multiplier: float = 2.0
+    correlation_covariance_inflation: float = 1.0
 
     def __post_init__(self) -> None:
         _require(
-            self.minimum_camera_support >= 3,
-            "direct depth requires at least three cameras",
+            self.minimum_camera_support >= 2,
+            "direct depth requires at least two cameras",
         )
         _require(self.search_radius_px >= 1, "search radius must be positive")
         for name, value in (
@@ -70,11 +71,26 @@ class DirectDepthEndpointConfig:
                 "temporal_covariance_multiplier",
                 self.temporal_covariance_multiplier,
             ),
+            (
+                "correlation_covariance_inflation",
+                self.correlation_covariance_inflation,
+            ),
         ):
             _require(
                 np.isfinite(value) and value > 0.0,
                 f"{name} must be positive",
             )
+        _require(
+            (
+                self.minimum_camera_support >= 3
+                and self.correlation_covariance_inflation >= 1.0
+            )
+            or (
+                self.minimum_camera_support == 2
+                and self.correlation_covariance_inflation >= 4.0
+            ),
+            "two-view direct depth requires at least fourfold covariance inflation",
+        )
         _require(
             self.minimum_candidate_count >= 1,
             "minimum candidate count must be positive",
@@ -92,6 +108,34 @@ class DirectDepthEndpointConfig:
             minimum_candidate_count=self.minimum_candidate_count,
             association_mode=SET_VALUED_COVARIANCE_ASSOCIATION,
         )
+
+    def evidence_descriptor(self) -> dict[str, Any]:
+        """Describe evidence settings while preserving the frozen V12 digest."""
+
+        descriptor = {
+            "minimum_camera_support": self.minimum_camera_support,
+            "search_radius_px": self.search_radius_px,
+            "depth_scale_m": self.depth_scale_m,
+            "minimum_candidate_count": self.minimum_candidate_count,
+            "depth_standard_deviation_m": self.depth_standard_deviation_m,
+            "pixel_quantization_variance_px2": (
+                self.pixel_quantization_variance_px2
+            ),
+            "covariance_floor_m2": self.covariance_floor_m2,
+            "temporal_covariance_multiplier": (
+                self.temporal_covariance_multiplier
+            ),
+        }
+        if not np.isclose(
+            self.correlation_covariance_inflation,
+            1.0,
+            rtol=0.0,
+            atol=0.0,
+        ):
+            descriptor["correlation_covariance_inflation"] = (
+                self.correlation_covariance_inflation
+            )
+        return descriptor
 
 
 @dataclass(frozen=True)
@@ -411,7 +455,9 @@ def build_direct_depth_observations_for_entities(
                 cfg.covariance_floor_m2,
             )
             points[endpoint_index, entity_index] = fused_mean
-            covariance[endpoint_index, entity_index] = fused_covariance
+            covariance[endpoint_index, entity_index] = (
+                cfg.correlation_covariance_inflation * fused_covariance
+            )
             accepted[endpoint_index, entity_index] = True
             association[endpoint_index, entity_index] = min(view_probabilities)
             scatter[endpoint_index, entity_index] = maximum_scatter
