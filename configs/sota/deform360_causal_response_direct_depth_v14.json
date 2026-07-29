@@ -1,0 +1,276 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-causal-response-direct-depth-v14-source",
+  "status": "implementation-locked-before-fresh-source-selection",
+  "config_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+  "purpose": "Test whether an event-triggered, tactile-supported, adaptive multiview direct-depth discrepancy update can safely improve a selected physical-or-persistence deformable-object forecast on fresh Deform360 objects.",
+  "claim_boundary": "Prospective source-development protocol only. Passing this protocol may authorize a separately locked independent target evaluation; it cannot itself establish confirmation or state of the art.",
+  "implementation_commit": "2af99480f42e028c2612e5fe7d863b2183704040",
+  "implementation_file_sha256": {
+    "scripts/run_deform360_causal_response_direct_depth_synthetic_v14.py": "2c09289285bab3928973c8e2da71cb794c025d498c30ab74337004601480fb94",
+    "src/bayesian_phystwin/deform360_causal_response_admission.py": "ff1feda3026a5fbc893181b4f7c4ba9d4df7076a9dee76531e2e58d17a626be5",
+    "src/bayesian_phystwin/deform360_causal_response_adaptive_query.py": "e3a6e376bd280e98d8ed7eaa4a25c8c4df75d5b0ad7460de34bbf71c3b1990b5",
+    "src/bayesian_phystwin/deform360_causal_response_direct_depth.py": "c8cc5d9f6bd40957735d2d28b71d352d6867770c3e22a0abdc64476f15d560f2",
+    "src/bayesian_phystwin/deform360_causal_response_direct_depth_preflight.py": "882821788de2d76861cedbb5efc70932ded63a5cbd74dcdd65056cc1ec1389b0",
+    "src/bayesian_phystwin/deform360_causal_response_direct_depth_source_lock.py": "a8e1b277eeffd6b40c00780a7cb5fe59089eb339dba2cea405640801285d69fd",
+    "src/bayesian_phystwin/deform360_causal_response_direct_depth_synthetic.py": "ced832523292bce2452ef549fe6becba5e59b0756b174f2751ad29276d03bd25",
+    "src/bayesian_phystwin/deform360_causal_response_event.py": "a09b93b97c731ff34b615992b1954eb9a6f89d0cf5dea474d90669a3b2fc828d",
+    "src/bayesian_phystwin/deform360_causal_response_update.py": "e7489f67fb72dcaca02f2f8782d479c02566ded3b3d3a78fd968f87d2a89e8dd",
+    "src/bayesian_phystwin/deform360_direct_depth_provider.py": "59d08a4bb72c050a0ddf4038f23770f16bcee4d8997a0bd25b5f730231309406",
+    "src/bayesian_phystwin/phystwin_online_belief.py": "ed0da8142d854433e7dbb5ffc60ce80570258d0fdf8d1e1ceb6ba0fa4123ae4e"
+  },
+  "parent_evidence": {
+    "v12_closed_result_commit": "cf2b532e01a3c92d1761f5bdea36a7c026e2c3b8",
+    "v12_lesson": "The exact twelve-camera carrier admitted only two of eight source cases, so the method closed before state inference.",
+    "v13_adaptive_carrier_result_sha256": "63a9ffde07de4e0378605b8574a8d4a8acfe6a382c65df2be185c47f6276239c",
+    "v13_adaptive_carrier_lesson": "The target-free adaptive carrier passed at six of eight cases: two strict 3+3, four covariance-inflated 2+2, two exact abstentions, and no technical failures.",
+    "v13_tracker_result_sha256": "cc8752943761a03c0992a47f65d150102e5b896cbc26284399a13c316b26c744",
+    "v13_tracker_lesson": "Fixed frame-zero TAPNext++ identities retained only 5 of 96 endpoint identities, so that provider is closed and is not reused by V14."
+  },
+  "freshness_boundary": {
+    "hash_namespace": "deform360-fresh-object-exclusion-v1",
+    "manifest_path": "configs/sota/deform360_fresh_object_exclusion_v14.json",
+    "manifest_owner": "bayesian-phystwin-v14-fresh-source-owner",
+    "manifest_exclusion_sha256": "03c7b42fbdd0a8d9427a1ca8ee7fa8564c7691aa8e63402efefc7d7db16777a6",
+    "manifest_file_sha256": "8ea6d4da5352872afc0a2f5bec180104779f6189810249c9808f85779d12e4dc",
+    "excluded_physical_object_count": 138,
+    "held_v8_all_attempt_component": {
+      "owner": "independent-held-v8-source-history-audit",
+      "object_hash_count": 10,
+      "exclusion_sha256": "36effc81b8c0c1dba07892c20d32cbb4ca250cc6fde7b3aed678e5cd57f6a40b",
+      "file_sha256": "3b081d480e15464fa5506e7d163823f9bc7c594b50c5f4b8522037c2e10982e4"
+    },
+    "fresh_source_selection_allowed_after_this_lock": true,
+    "plaintext_prior_object_identity_required": false,
+    "prior_target_outcome_access_allowed": false
+  },
+  "source_design": {
+    "fresh_physical_object_count": 12,
+    "episode_count_per_object": 1,
+    "cross_fit_fold_count": 3,
+    "objects_per_fold": 4,
+    "fit_objects_per_fold": 8,
+    "held_out_objects_per_fold": 4,
+    "selection_inputs": "released metadata, source checksums, outcome-blind preflight, and frame-zero adaptive-carrier admission",
+    "replacement_policy": "No replacement after a selected case has a prediction, retained technical failure, or outcome disposition. Pre-lock preflight rejection is not a selected case.",
+    "analysis_role": "source development and advancement gating, not confirmation"
+  },
+  "source_preflight": {
+    "required_frame_count": 76,
+    "prefix_frame_count": 58,
+    "minimum_physical_node_count": 128,
+    "maximum_physical_node_count": 10000,
+    "minimum_complete_camera_count": 8,
+    "registered_camera_ids": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ]
+  },
+  "adaptive_carrier": {
+    "prefix_frame_count": 58,
+    "query_count": 16,
+    "graph_basis_rank": 8,
+    "selected_camera_count": 8,
+    "panel_camera_count": 4,
+    "strict_minimum_support_per_panel": 3,
+    "fallback_minimum_support_per_panel": 2,
+    "fallback_covariance_inflation": 4.0,
+    "shared_bias_std_m": 0.005,
+    "action_support_threshold": 0.1,
+    "association_support_probability": 0.5,
+    "association_search_radius_px": 12,
+    "association_depth_scale_m": 0.03,
+    "association_minimum_candidate_count": 1,
+    "visibility_weight": 0.5,
+    "mode_information_weight": 1.0,
+    "spatial_diversity_weight": 1.0
+  },
+  "event": {
+    "endpoint_lag_frames": 6,
+    "first_candidate_update_frame": 8,
+    "last_candidate_update_frame": 57,
+    "baseline_selection_minimum_relative_margin": 0.05
+  },
+  "direct_depth_arms": {
+    "strict_3plus3": {
+      "minimum_camera_support": 3,
+      "search_radius_px": 12,
+      "depth_scale_m": 0.03,
+      "minimum_candidate_count": 1,
+      "depth_standard_deviation_m": 0.005,
+      "pixel_quantization_variance_px2": 0.25,
+      "covariance_floor_m2": 1e-10,
+      "temporal_covariance_multiplier": 2.0,
+      "correlation_covariance_inflation": 1.0
+    },
+    "inflated_2plus2": {
+      "minimum_camera_support": 2,
+      "search_radius_px": 12,
+      "depth_scale_m": 0.03,
+      "minimum_candidate_count": 1,
+      "depth_standard_deviation_m": 0.005,
+      "pixel_quantization_variance_px2": 0.25,
+      "covariance_floor_m2": 1e-10,
+      "temporal_covariance_multiplier": 2.0,
+      "correlation_covariance_inflation": 4.0
+    }
+  },
+  "admission": {
+    "spatial_group_count": 3,
+    "minimum_supported_count": 6,
+    "minimum_supported_per_group": 1,
+    "minimum_action_support": 0.1,
+    "minimum_tactile_contact_probability": 0.5,
+    "minimum_actuator_displacement_m": 0.001,
+    "minimum_physical_centered_rms_m": 0.0005,
+    "minimum_observed_centered_rms_m": 0.001,
+    "minimum_pairwise_residual_rms_m": 0.0005,
+    "minimum_physical_observed_cosine": 0.2,
+    "minimum_cross_panel_pairwise_cosine": 0.6,
+    "minimum_cross_panel_vector_cosine": 0.4,
+    "minimum_validation_improvement_fraction": 0.1,
+    "maximum_cross_panel_reduced_nis": 9.0,
+    "maximum_effective_count": 3.0,
+    "shared_bias_variance_m2": 2.5e-05,
+    "variance_floor_m2": 1e-10
+  },
+  "measurement": {
+    "maximum_translation_m": 0.05,
+    "maximum_rotation_degrees": 10.0,
+    "maximum_scale_deviation": 0.1,
+    "support_saturation_count": 4.0,
+    "scatter_scale_m": 0.01,
+    "temporal_covariance_multiplier": 2.0,
+    "shared_bias_variance_m2": 2.5e-05,
+    "covariance_floor_m2": 1e-10
+  },
+  "belief": {
+    "length_scale_fraction": 0.1,
+    "local_blend": 1.0,
+    "observation_std_m": 0.005,
+    "process_std_m_per_sqrt_frame": 0.003,
+    "global_prior_std_m": 0.1,
+    "local_prior_std_m": 0.02,
+    "degrees_of_freedom": 4.0,
+    "minimum_reliability": 0.02,
+    "maximum_correction_m": 0.1,
+    "minimum_length_scale_m": 0.0001
+  },
+  "tactile_and_actuation": {
+    "tactile_source": "released Deform360 per-gripper tactile stream through the candidate update frame",
+    "tactile_role": "independent causal contact support only; it supplies neither metric geometry nor observation reliability",
+    "measured_actuator_source": "released measured robot trajectory through the candidate update frame",
+    "future_tactile_or_actuation_read": false
+  },
+  "synthetic_control_gate": {
+    "trial_count_per_arm": 6,
+    "positive_controls": [
+      "strict 3+3 persistent nonrigid response",
+      "inflated 2+2 persistent nonrigid response"
+    ],
+    "placebo_controls": [
+      "rigid common-mode depth bias",
+      "cross-panel inconsistent nonrigid response",
+      "missing tactile support"
+    ],
+    "required_positive_detection_count": 12,
+    "maximum_placebo_admission_count": 0,
+    "required_exact_fallback_count": 12,
+    "minimum_mean_positive_continuation_improvement_fraction": 0.1,
+    "must_pass_before_source_lock": true,
+    "real_data_evidence": false
+  },
+  "synthetic_control_result": {
+    "path": "results/sota/deform360_causal_response_direct_depth_synthetic_v14/summary.json",
+    "artifact_sha256": "d1dd2ae10150e74939c643835dc073c60fcab7730f26c53761da7d7010f87f04",
+    "file_sha256": "4e9b3820f71ea7f93234deee3169d8466dc2302df2e054fca87ae0a4038f66bb",
+    "positive_detection_count": 12,
+    "positive_trial_count": 12,
+    "placebo_admission_count": 0,
+    "placebo_exact_fallback_count": 12,
+    "positive_improvement_fraction": 0.11640291597971619,
+    "gate_passed": true,
+    "real_data_evidence": false
+  },
+  "source_gate": {
+    "required_prediction_or_exact_fallback_count": 12,
+    "maximum_technical_failure_count": 0,
+    "minimum_event_admitted_object_count": 6,
+    "minimum_object_balanced_hidden_identity_improvement_fraction": 0.05,
+    "minimum_object_balanced_chamfer_improvement_fraction": 0.05,
+    "minimum_joint_object_win_count": 8,
+    "maximum_single_object_regression_fraction": 0.05,
+    "maximum_false_safe_rate": 0.1,
+    "minimum_source_calibrated_regret_coverage": 0.8,
+    "required_source_group_upper_regret_m": -5e-06,
+    "required_horizon_reports": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "required_uncertainty_reports": [
+      "NEES",
+      "coverage",
+      "interval width"
+    ],
+    "pass_action": "Freeze a disjoint fresh-object target protocol without changing the carrier, observation, event, update, fallback, or source-calibrated guard.",
+    "fail_action": "Close V14 without tuning thresholds, cameras, query schedules, covariance inflation, nuisance scales, belief settings, or gates on source outcomes."
+  },
+  "method_contract": {
+    "frame_zero_carrier_selection_only": true,
+    "metric_depth_reassociated_at_each_tested_causal_endpoint": true,
+    "fixed_identity_tracker_provider_reused": false,
+    "proposal_and_validation_camera_panels_disjoint": true,
+    "validation_panel_only_admits_or_rejects": true,
+    "two_view_rows_require_fourfold_covariance_inflation": true,
+    "shared_camera_bias_variance_retained": true,
+    "global_similarity_nuisance_removed_per_endpoint": true,
+    "association_probability_separate_from_prior_reliability": true,
+    "state_innovation_changes_prior_reliability": false,
+    "innovation_robustified_once": true,
+    "metric_covariance_m2_and_assignment_spread_propagated": true,
+    "prediction_baseline_separate_from_physical_action_conditioning": true,
+    "source_lock_requires_accepted_hash_only_preflights": true,
+    "candidate_is_readout_discrepancy_not_warp_state_injection": true,
+    "any_rejection_is_bit_exact_selected_baseline": true
+  },
+  "failure_accounting": {
+    "ordinary_successful_predictions_reported_separately": true,
+    "exact_model_abstentions_reported_separately": true,
+    "replay_valid_retained_technical_failures_reported_separately": true,
+    "unsealable_failures_reported_separately": true,
+    "all_twelve_locked_cases_remain_in_denominator": true
+  },
+  "information_boundary": {
+    "maximum_object_observation_frame": 57,
+    "future_object_observation_allowed": false,
+    "future_identity_allowed_before_all_prediction_seals": false,
+    "future_metric_allowed_before_all_prediction_seals": false,
+    "source_outcomes_allowed_before_all_prediction_seals": false,
+    "target_object_selection_or_outcome_allowed": false,
+    "v1_sealed_target_allowed": false,
+    "held_v8_target_query_score_barrier_outcome_or_process_access_allowed": false
+  },
+  "forbidden": [
+    "using an object listed by the 138-object hash-only exclusion union",
+    "using future tactile, RGB, depth, masks, identities, point clouds, or metrics",
+    "reusing the failed V13 fixed-identity TAPNext++ provider",
+    "using the state innovation to define association probability or prior perception reliability",
+    "counting pixels, cameras, panels, or pairwise distances as independent evidence",
+    "using validation-panel geometry to form the candidate update",
+    "treating a technical-failure carrier as a model prediction",
+    "replacing a selected case after any prediction or outcome disposition",
+    "changing any registered setting or gate after a source outcome is opened",
+    "opening, inspecting, modifying, or rerunning held-v8 artifacts or processes"
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "artifact_kind": "Deform360AdaptiveDirectDepthSyntheticResultV14",
+  "artifact_sha256": "d1dd2ae10150e74939c643835dc073c60fcab7730f26c53761da7d7010f87f04",
+  "config": {
+    "focal_length_px": 1600.0,
+    "frame_count": 14,
+    "image_size": 256,
+    "minimum_positive_improvement_fraction": 0.1,
+    "node_count": 16,
+    "prefix_frame_count": 11,
+    "response_start_frame": 7,
+    "trial_count_per_arm": 6
+  },
+  "contract": "deform360-causal-response-direct-depth-synthetic-v14",
+  "gate_passed": true,
+  "information_boundary": {
+    "held_v8_artifact_or_process_access": false,
+    "production_v14_scan_and_prediction_wrappers_used": true,
+    "real_identity_or_metric_read": false,
+    "real_object_observation_read": false,
+    "strict_and_inflated_carriers_exercised": true
+  },
+  "mean_positive_baseline_rmse_m": 0.0019867154823916206,
+  "mean_positive_candidate_rmse_m": 0.0017554560070191874,
+  "placebo_admission_count": 0,
+  "placebo_exact_fallback_count": 12,
+  "placebo_trial_count": 12,
+  "positive_detection_count": 12,
+  "positive_improvement_fraction": 0.11640291597971619,
+  "positive_trial_count": 12,
+  "schema_version": 1,
+  "trials": [
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001715611753773649,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 0
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001715611753773649,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 1
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001715611753773649,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 2
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001715611753773649,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 3
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001715611753773649,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 4
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001715611753773649,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 5
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "placebo-common-depth-bias",
+      "exact_baseline_fallback": true,
+      "trial_index": 0
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 1
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "placebo-no-contact",
+      "exact_baseline_fallback": true,
+      "trial_index": 2
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "placebo-common-depth-bias",
+      "exact_baseline_fallback": true,
+      "trial_index": 3
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 4
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "strict_3plus3",
+      "control_kind": "placebo-no-contact",
+      "exact_baseline_fallback": true,
+      "trial_index": 5
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0017953002602647252,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 0
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0017953002602647252,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 1
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0017953002602647252,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 2
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0017953002602647252,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 3
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0017953002602647252,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 4
+    },
+    {
+      "baseline_future_rmse_m": 0.001986715482391621,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0017953002602647252,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 5
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "placebo-common-depth-bias",
+      "exact_baseline_fallback": true,
+      "trial_index": 0
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 1
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "placebo-no-contact",
+      "exact_baseline_fallback": true,
+      "trial_index": 2
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "placebo-common-depth-bias",
+      "exact_baseline_fallback": true,
+      "trial_index": 3
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 4
+    },
+    {
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "carrier_arm": "inflated_2plus2",
+      "control_kind": "placebo-no-contact",
+      "exact_baseline_fallback": true,
+      "trial_index": 5
+    }
+  ]
+}
