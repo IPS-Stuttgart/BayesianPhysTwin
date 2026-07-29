@@ -12,6 +12,9 @@ from typing import Any
 import numpy as np
 
 from bayesian_phystwin.bias_aware_belief import fit_source_regret_certificate
+from bayesian_phystwin.deform360_cpd_diagnostic import (
+    _symmetric_set_chamfer_m,
+)
 from bayesian_phystwin.deform360_online_belief_evaluation import (
     _load_pickle,
     score_deform360_hidden_trajectory,
@@ -37,6 +40,9 @@ REGRET_NOMINAL_COVERAGE = 0.90
 REGRET_WITHIN_GROUP_COVERAGE = 1.0
 REGRET_MINIMUM_IMPROVEMENT_M = 0.000005
 REGRET_RIDGE_PENALTY = 10.0
+PRIVILEGED_DENSE_ACTION_GUARD_ARM = "privileged_dense_action_guard"
+PRIVILEGED_CURRENT_GAIN_M = 0.0001
+PRIVILEGED_FUTURE_COSINE = 0.0
 
 
 def _parse_args() -> argparse.Namespace:
@@ -88,6 +94,167 @@ def _metric_pair(score: dict[str, object]) -> tuple[float, float]:
         float(score["post_update_hidden_identity_rmse_m"]),
         float(score["post_update_hidden_symmetric_chamfer_m"]),
     )
+
+
+def _current_dense_chamfer_diagnostic(
+    baseline_m: np.ndarray,
+    candidate_m: np.ndarray,
+    target_m: np.ndarray,
+    target_visibility: np.ndarray,
+    target_validity: np.ndarray,
+    *,
+    update_frame: int,
+) -> dict[str, float | int | None]:
+    available = (
+        np.asarray(target_visibility[update_frame], dtype=bool)
+        & np.asarray(target_validity[update_frame], dtype=bool)
+        & np.all(np.isfinite(target_m[update_frame]), axis=1)
+    )
+    point_count = int(np.sum(available))
+    if not point_count:
+        return {
+            "available_point_count": 0,
+            "baseline_chamfer_m": None,
+            "candidate_chamfer_m": None,
+            "candidate_gain_m": None,
+        }
+    correction = candidate_m[update_frame + 1] - baseline_m[update_frame + 1]
+    baseline_current = baseline_m[update_frame]
+    candidate_current = baseline_current + correction
+    observed = target_m[update_frame, available]
+    baseline_chamfer = _symmetric_set_chamfer_m(baseline_current, observed)
+    candidate_chamfer = _symmetric_set_chamfer_m(candidate_current, observed)
+    return {
+        "available_point_count": point_count,
+        "baseline_chamfer_m": baseline_chamfer,
+        "candidate_chamfer_m": candidate_chamfer,
+        "candidate_gain_m": baseline_chamfer - candidate_chamfer,
+    }
+
+
+def _apply_privileged_dense_action_guard(
+    physical_prior_m: np.ndarray,
+    baseline_m: np.ndarray,
+    candidate_m: np.ndarray,
+    target_m: np.ndarray,
+    target_visibility: np.ndarray,
+    target_validity: np.ndarray,
+) -> tuple[np.ndarray, list[dict[str, Any]]]:
+    guarded = np.asarray(baseline_m).copy()
+    decisions = []
+    previous = 0
+    for update_index, update in enumerate(UPDATE_FRAMES):
+        stop = (
+            UPDATE_FRAMES[update_index + 1]
+            if update_index + 1 < len(UPDATE_FRAMES)
+            else len(guarded)
+        )
+        dense = _current_dense_chamfer_diagnostic(
+            baseline_m,
+            candidate_m,
+            target_m,
+            target_visibility,
+            target_validity,
+            update_frame=update,
+        )
+        context = _known_future_physical_context(
+            physical_prior_m,
+            baseline_m,
+            candidate_m,
+            previous_update_frame=previous,
+            update_frame=update,
+            interval_end_exclusive=stop,
+        )
+        current_gain = dense["candidate_gain_m"]
+        accepted = bool(
+            current_gain is not None
+            and current_gain > PRIVILEGED_CURRENT_GAIN_M
+            and context["correction_future_motion_cosine"]
+            > PRIVILEGED_FUTURE_COSINE
+        )
+        if accepted:
+            guarded[update + 1 : stop] = candidate_m[update + 1 : stop]
+        elif not np.array_equal(
+            guarded[update + 1 : stop],
+            baseline_m[update + 1 : stop],
+        ):
+            raise AssertionError("privileged rejection changed the exact baseline")
+        decisions.append(
+            {
+                "frame": update,
+                "interval_end_exclusive": stop,
+                "candidate_accepted": accepted,
+                "current_dense_shape": dense,
+                "known_future_physical_context": context,
+                "current_gain_threshold_m": PRIVILEGED_CURRENT_GAIN_M,
+                "future_cosine_threshold": PRIVILEGED_FUTURE_COSINE,
+                "bit_exact_baseline_fallback": bool(
+                    not accepted
+                    and np.array_equal(
+                        guarded[update + 1 : stop],
+                        baseline_m[update + 1 : stop],
+                    )
+                ),
+            }
+        )
+        previous = update
+    return guarded, decisions
+
+
+def _known_future_physical_context(
+    physical_prior_m: np.ndarray,
+    baseline_m: np.ndarray,
+    candidate_m: np.ndarray,
+    *,
+    previous_update_frame: int,
+    update_frame: int,
+    interval_end_exclusive: int,
+) -> dict[str, float]:
+    physical = np.asarray(physical_prior_m, dtype=np.float64)
+    baseline = np.asarray(baseline_m, dtype=np.float64)
+    candidate = np.asarray(candidate_m, dtype=np.float64)
+    center = np.median(physical[0], axis=0)
+    object_scale = max(
+        1e-6,
+        float(2.0 * np.max(np.linalg.norm(physical[0] - center, axis=1))),
+    )
+    past_delta = physical[update_frame] - physical[previous_update_frame]
+    future_delta = (
+        physical[interval_end_exclusive - 1] - physical[update_frame]
+    )
+    first_step = physical[update_frame + 1] - physical[update_frame]
+    correction = (
+        candidate[update_frame + 1] - baseline[update_frame + 1]
+    )
+
+    def radial_rms(value: np.ndarray) -> float:
+        return float(np.sqrt(np.mean(np.sum(np.square(value), axis=1))))
+
+    def cosine(left: np.ndarray, right: np.ndarray) -> float:
+        denominator = float(np.linalg.norm(left) * np.linalg.norm(right))
+        if denominator <= 1e-12:
+            return 0.0
+        return float(np.sum(left * right) / denominator)
+
+    step_rms = [
+        radial_rms(physical[frame] - physical[frame - 1])
+        for frame in range(update_frame + 1, interval_end_exclusive)
+    ]
+    return {
+        "future_net_motion_rms_over_object_scale": (
+            radial_rms(future_delta) / object_scale
+        ),
+        "future_path_length_rms_over_object_scale": (
+            float(np.sum(step_rms)) / object_scale
+        ),
+        "future_to_past_motion_ratio": (
+            radial_rms(future_delta) / max(radial_rms(past_delta), 1e-9)
+        ),
+        "past_future_motion_cosine": cosine(past_delta, future_delta),
+        "correction_future_motion_cosine": cosine(correction, future_delta),
+        "correction_first_step_cosine": cosine(correction, first_step),
+        "first_step_future_motion_cosine": cosine(first_step, future_delta),
+    }
 
 
 def _certificate_payload(certificate: Any) -> dict[str, Any]:
@@ -155,6 +322,14 @@ def _source_cases(bundle_root: Path) -> tuple[list[dict[str, Any]], str]:
             measurement["measurement_validity"],
             center_ids=center_ids,
             update_frames=UPDATE_FRAMES,
+        )
+        privileged, privileged_decisions = _apply_privileged_dense_action_guard(
+            prediction["prediction_m"],
+            arrays[SELECTED_BACKBONE_ARM],
+            arrays[DUAL_BACKBONE_ARM],
+            target,
+            visibility,
+            validity,
         )
         features = []
         interval_regret = []
@@ -227,6 +402,26 @@ def _source_cases(bundle_root: Path) -> tuple[list[dict[str, Any]], str]:
                     "candidate_hidden_identity_rmse_m": candidate_pair[0],
                     "candidate_hidden_symmetric_chamfer_m": candidate_pair[1],
                     "maximum_metric_regret_m": interval_regret[-1],
+                    "postopen_current_dense_shape": (
+                        _current_dense_chamfer_diagnostic(
+                            arrays[SELECTED_BACKBONE_ARM],
+                            arrays[DUAL_BACKBONE_ARM],
+                            target,
+                            visibility,
+                            validity,
+                            update_frame=update,
+                        )
+                    ),
+                    "known_future_physical_context": (
+                        _known_future_physical_context(
+                            prediction["prediction_m"],
+                            arrays[SELECTED_BACKBONE_ARM],
+                            arrays[DUAL_BACKBONE_ARM],
+                            previous_update_frame=previous,
+                            update_frame=update,
+                            interval_end_exclusive=stop,
+                        )
+                    ),
                 }
             )
             previous = update
@@ -243,6 +438,7 @@ def _source_cases(bundle_root: Path) -> tuple[list[dict[str, Any]], str]:
                 "interval_regret_m": np.asarray(interval_regret),
                 "interval_diagnostics": interval_diagnostics,
                 "candidate_report": report,
+                "privileged_dense_action_guard": privileged_decisions,
                 "scores": {
                     SELECTED_BACKBONE_ARM: _score(
                         arrays[SELECTED_BACKBONE_ARM],
@@ -254,6 +450,14 @@ def _source_cases(bundle_root: Path) -> tuple[list[dict[str, Any]], str]:
                     ),
                     DUAL_BACKBONE_ARM: _score(
                         arrays[DUAL_BACKBONE_ARM],
+                        target,
+                        visibility,
+                        validity,
+                        center_ids,
+                        scored_frames,
+                    ),
+                    PRIVILEGED_DENSE_ACTION_GUARD_ARM: _score(
+                        privileged,
                         target,
                         visibility,
                         validity,
@@ -357,8 +561,17 @@ def _opened_stress_cases(
         visibility = np.asarray(target_data["object_visibilities"], dtype=bool)
         validity = np.asarray(target_data["object_motions_valid"], dtype=bool)
         center_ids = np.asarray(prediction["center_ids"], dtype=np.int64)
+        privileged, privileged_decisions = _apply_privileged_dense_action_guard(
+            prediction["physical_prior_m"],
+            prediction["selected_raw_backbone_m"],
+            prediction["candidate_m"],
+            target,
+            visibility,
+            validity,
+        )
         features = []
         feature_diagnostics = []
+        interval_diagnostics = []
         previous = 0
         for update_index, update in enumerate(UPDATE_FRAMES):
             stop = (
@@ -392,6 +605,62 @@ def _opened_stress_cases(
             )
             features.append(vector)
             feature_diagnostics.append(diagnostics)
+            frames = tuple(range(update + 1, stop))
+            baseline_pair = _metric_pair(
+                _score(
+                    prediction["selected_raw_backbone_m"],
+                    target,
+                    visibility,
+                    validity,
+                    center_ids,
+                    frames,
+                )
+            )
+            candidate_pair = _metric_pair(
+                _score(
+                    prediction["candidate_m"],
+                    target,
+                    visibility,
+                    validity,
+                    center_ids,
+                    frames,
+                )
+            )
+            interval_diagnostics.append(
+                {
+                    "frame": update,
+                    "interval_end_exclusive": stop,
+                    "features": diagnostics,
+                    "baseline_hidden_identity_rmse_m": baseline_pair[0],
+                    "baseline_hidden_symmetric_chamfer_m": baseline_pair[1],
+                    "candidate_hidden_identity_rmse_m": candidate_pair[0],
+                    "candidate_hidden_symmetric_chamfer_m": candidate_pair[1],
+                    "maximum_metric_regret_m": max(
+                        candidate_pair[0] - baseline_pair[0],
+                        candidate_pair[1] - baseline_pair[1],
+                    ),
+                    "postopen_current_dense_shape": (
+                        _current_dense_chamfer_diagnostic(
+                            prediction["selected_raw_backbone_m"],
+                            prediction["candidate_m"],
+                            target,
+                            visibility,
+                            validity,
+                            update_frame=update,
+                        )
+                    ),
+                    "known_future_physical_context": (
+                        _known_future_physical_context(
+                            prediction["physical_prior_m"],
+                            prediction["selected_raw_backbone_m"],
+                            prediction["candidate_m"],
+                            previous_update_frame=previous,
+                            update_frame=update,
+                            interval_end_exclusive=stop,
+                        )
+                    ),
+                }
+            )
             previous = update
         guard_report, guarded = apply_pairwise_regret_certificate(
             prediction["selected_raw_backbone_m"],
@@ -412,6 +681,8 @@ def _opened_stress_cases(
                 "guard": guard_report,
                 "candidate_report": candidate_report,
                 "feature_diagnostics": feature_diagnostics,
+                "interval_diagnostics": interval_diagnostics,
+                "privileged_dense_action_guard": privileged_decisions,
                 "scores": {
                     SELECTED_BACKBONE_ARM: _score(
                         prediction["selected_raw_backbone_m"],
@@ -423,6 +694,14 @@ def _opened_stress_cases(
                     ),
                     DUAL_BACKBONE_ARM: _score(
                         prediction["candidate_m"],
+                        target,
+                        visibility,
+                        validity,
+                        center_ids,
+                        scored_frames,
+                    ),
+                    PRIVILEGED_DENSE_ACTION_GUARD_ARM: _score(
+                        privileged,
                         target,
                         visibility,
                         validity,
@@ -450,7 +729,12 @@ def main() -> None:
     certificate = _fit_certificate(cases)
     source_aggregate = {
         arm: _object_balanced(cases, arm)
-        for arm in (SELECTED_BACKBONE_ARM, DUAL_BACKBONE_ARM, GUARDED_ARM)
+        for arm in (
+            SELECTED_BACKBONE_ARM,
+            DUAL_BACKBONE_ARM,
+            GUARDED_ARM,
+            PRIVILEGED_DENSE_ACTION_GUARD_ARM,
+        )
     }
     payload: dict[str, Any] = {
         "artifact_kind": "Deform360PairwiseRegretGuardSourceDiagnostic",
@@ -467,22 +751,55 @@ def main() -> None:
             }
             for case in cases
         ],
+        "source_case_results": [
+            {
+                "case": case["case"],
+                "object_id": case["object_id"],
+                "privileged_dense_action_guard": case[
+                    "privileged_dense_action_guard"
+                ],
+                "scores": case["scores"],
+            }
+            for case in cases
+        ],
         "source_object_balanced": source_aggregate,
         "source_relative_to_selected_backbone": {
             arm: _relative(source_aggregate[arm], source_aggregate[SELECTED_BACKBONE_ARM])
-            for arm in (DUAL_BACKBONE_ARM, GUARDED_ARM)
+            for arm in (
+                DUAL_BACKBONE_ARM,
+                GUARDED_ARM,
+                PRIVILEGED_DENSE_ACTION_GUARD_ARM,
+            )
         },
         "full_source_certificate": _certificate_payload(certificate),
+        "privileged_capacity_control": {
+            "arm": PRIVILEGED_DENSE_ACTION_GUARD_ARM,
+            "current_gain_threshold_m": PRIVILEGED_CURRENT_GAIN_M,
+            "future_cosine_threshold": PRIVILEGED_FUTURE_COSINE,
+            "uses_score_family_current_material_identities": True,
+            "deployable_causal_observation": False,
+            "purpose": (
+                "Post-open capacity check for current material-state validation "
+                "plus known-action discrepancy transfer."
+            ),
+        },
         "claim_boundary": (
-            "Opened-source development diagnostic. The optional stress result is "
-            "post-open and cannot establish prospective accuracy or state of the art."
+            "Opened-source development diagnostic. The privileged control reads "
+            "score-family identities only at the current update and is not a "
+            "deployable predictor. The optional stress result is post-open. Neither "
+            "result can establish prospective accuracy or state of the art."
         ),
     }
     if args.opened_stress_root is not None:
         stress = _opened_stress_cases(args.opened_stress_root.resolve(), certificate)
         stress_aggregate = {
             arm: _object_balanced(stress, arm)
-            for arm in (SELECTED_BACKBONE_ARM, DUAL_BACKBONE_ARM, GUARDED_ARM)
+            for arm in (
+                SELECTED_BACKBONE_ARM,
+                DUAL_BACKBONE_ARM,
+                GUARDED_ARM,
+                PRIVILEGED_DENSE_ACTION_GUARD_ARM,
+            )
         }
         payload["opened_stress"] = {
             "case_count": len(stress),
@@ -494,7 +811,11 @@ def main() -> None:
                     stress_aggregate[arm],
                     stress_aggregate[SELECTED_BACKBONE_ARM],
                 )
-                for arm in (DUAL_BACKBONE_ARM, GUARDED_ARM)
+                for arm in (
+                    DUAL_BACKBONE_ARM,
+                    GUARDED_ARM,
+                    PRIVILEGED_DENSE_ACTION_GUARD_ARM,
+                )
             },
         }
     args.output.parent.mkdir(parents=True, exist_ok=True)
