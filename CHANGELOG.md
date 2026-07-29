@@ -40,6 +40,9 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
 - An opt-in direct RGB-D endpoint provider with full assignment-mixture
   covariance, covariance-intersection view fusion, sentinel common-bias
   removal, and exact guarded fallback for source-only Deform360 development.
+- Nuisance-aware marginalized information gain and deterministic greedy candidate
+  selection for active observations with explicit camera, gauge, or shared-bias
+  coefficients, covariance whitening, reliability weighting, and exact fallback.
 
 ### Changed
 
@@ -55,6 +58,15 @@ pre-1.0 compatibility rules in [SUPPORT.md](SUPPORT.md) apply.
   External-fork pull requests still run the producer-neutral consumer fixture and
   explicitly report that the secret-backed producer gate was unavailable and no
   current-Prob4D evidence was admitted.
+- Propagated-state robust inference now recomputes the final posterior from the
+  returned IRLS weights and uses Cholesky solves for positive-definite prior and
+  posterior systems instead of generic matrix inversion.
+- Observation-belief metadata is now recursively immutable after canonical JSON
+  validation, so nested mutation cannot change an existing artifact digest.
+- Grouped low-rank covariance statistics now use blockwise Cholesky/Woodbury solves
+  without explicit covariance inverses or a dense all-factor-groups matrix.
+- Fixed endpoint posteriors expose an explicit read-only `updated_mask`, and
+  no-support summaries serialize JSON `null` rather than non-finite statistics.
 
 ### Removed
 

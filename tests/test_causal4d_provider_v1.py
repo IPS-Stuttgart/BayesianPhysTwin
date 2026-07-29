@@ -431,15 +431,35 @@ def test_fixed_anchor_posterior_copies_freezes_and_keeps_compatibility_aliases()
     assert posterior.mean is posterior.mean_m
     assert posterior.variance is posterior.variance_m2
     assert posterior.final_inlier_probability is posterior.final_nominal_probability
+    np.testing.assert_array_equal(
+        posterior.updated_mask,
+        posterior.update_count > 0,
+    )
     for values in (
         posterior.mean_m,
         posterior.variance_m2,
         posterior.final_nominal_probability,
         posterior.update_count,
+        posterior.updated_mask,
     ):
         assert not values.flags.writeable
     with pytest.raises(ValueError):
         posterior.mean_m[0, 0] = 1.0
+
+
+def test_fixed_anchor_posterior_marks_never_observed_tracks() -> None:
+    residual, valid = _fixed_anchor_inputs()
+    valid[:, 1] = False
+    posterior = infer_fixed_bayesian_anchor_endpoint(
+        residual,
+        valid,
+        end_frame=len(residual),
+    )
+
+    assert posterior.update_count[1] == 0
+    assert not posterior.updated_mask[1]
+    assert posterior.final_nominal_probability[1] == 0.0
+    assert posterior.updated_mask.flags.writeable is False
 
 
 @pytest.mark.parametrize(

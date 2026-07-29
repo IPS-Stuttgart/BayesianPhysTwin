@@ -649,7 +649,7 @@ def plan_physics_guided_queries(
     for scored in initial:
         append_event(scored, 0, -1)
 
-    maximum_event_count = cfg.query_count + cfg.maximum_reseeds
+    maximum_event_count = len(initial) + cfg.maximum_reseeds
     for frame in range(1, frame_count):
         lost: list[int] = []
         for node_id in sorted(active):

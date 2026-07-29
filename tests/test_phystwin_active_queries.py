@@ -187,6 +187,37 @@ def test_delayed_reseed_retains_the_retired_identity_link() -> None:
     np.testing.assert_array_equal(plan.replaces_node_ids, np.asarray([-1, 0]))
 
 
+def test_reseed_budget_is_not_borrowed_from_missing_initial_queries() -> None:
+    rollout = np.zeros((4, 2, 3), dtype=float)
+    rollout[:, 0, 0] = np.linspace(0.0, 3.0, 4)
+    rollout[:, 1, 1] = np.linspace(0.0, 1.0, 4)
+    pixels = _projected_pixels(2, rollout)
+    predicted = np.ones((2, 4, 2), dtype=float)
+    predicted[:, 0, 1] = 0.0
+    tracker = np.ones_like(predicted)
+    tracker[:, 1:, 0] = 0.0
+    config = PhysicsGuidedQueryConfig(
+        query_count=2,
+        maximum_reseeds=0,
+        minimum_motion_m=0.1,
+        contact_exclusion_fraction=0.0,
+        reseed_patience_frames=1,
+        minimum_reseed_interval_frames=1,
+    )
+
+    plan = plan_physics_guided_queries(
+        rollout,
+        pixels,
+        predicted,
+        tracker_support_probability=tracker,
+        config=config,
+    )
+
+    np.testing.assert_array_equal(plan.node_ids, np.asarray([0]))
+    np.testing.assert_array_equal(plan.seed_frames, np.asarray([0]))
+    assert plan.reseed_count == 0
+
+
 def test_two_view_gate_is_not_weakened_when_support_is_insufficient() -> None:
     rollout = np.zeros((3, 2, 3), dtype=float)
     rollout[1:, :, 0] = 1.0

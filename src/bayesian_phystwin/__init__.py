@@ -43,6 +43,12 @@ from .grouped_likelihood import (
     GroupedStudentTLikelihoodResult,
     grouped_student_t_mixture_likelihood,
 )
+from .nuisance_aware_information import (
+    GreedyNuisanceAwareSelection,
+    NuisanceAwareInformationState,
+    NuisanceAwareInformationUpdate,
+    greedy_nuisance_aware_selection,
+)
 from .observation_belief import (
     OBSERVATION_BELIEF_SCHEMA,
     OBSERVATION_BELIEF_VERSION,
@@ -121,6 +127,7 @@ __all__ = [
     "GaugeAwareBeliefResult",
     "GaugeAwareObservationBatch",
     "GaugeAwareSelection",
+    "GreedyNuisanceAwareSelection",
     "GroupedStudentTLikelihoodConfig",
     "GroupedStudentTLikelihoodResult",
     "GuardedUpdateDecision",
@@ -128,6 +135,8 @@ __all__ = [
     "MarkovReliabilityConfig",
     "MarkovReliabilityResult",
     "NonlinearClosureV1",
+    "NuisanceAwareInformationState",
+    "NuisanceAwareInformationUpdate",
     "OBSERVATION_BELIEF_SCHEMA",
     "OBSERVATION_BELIEF_VERSION",
     "ObservationBeliefGaugeAdapterResult",
@@ -168,6 +177,7 @@ __all__ = [
     "fit_source_group_regret_bound",
     "fit_source_regret_certificate",
     "global_translation_bias_jacobian",
+    "greedy_nuisance_aware_selection",
     "grouped_student_t_mixture_likelihood",
     "is_prob4d_causal_observation_belief",
     "load_observation_belief",
