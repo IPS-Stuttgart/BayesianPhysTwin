@@ -24,6 +24,11 @@ from bayesian_phystwin.deform360_causal_response_direct_depth_physical import (
     load_v14_physical_prelock_protocol,
     v14_physical_case_record,
 )
+from bayesian_phystwin.deform360_causal_response_direct_depth_reserve_physical_v14 import (
+    RESERVE_PHYSICAL_PRELOCK_KIND,
+    load_v14_reserve_physical_prelock,
+    v14_reserve_physical_case_record,
+)
 from bayesian_phystwin.deform360_object_exclusion import file_sha256
 
 
@@ -94,6 +99,21 @@ def _load_pickle(path: Path) -> dict[str, Any]:
     return value
 
 
+def _load_physical_protocol(
+    path: Path,
+) -> tuple[dict[str, Any], Any]:
+    """Load either the frozen initial prelock or its reserve child."""
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    _require(isinstance(payload, dict), "V14 physical prelock is not an object")
+    if payload.get("artifact_kind") == RESERVE_PHYSICAL_PRELOCK_KIND:
+        return (
+            load_v14_reserve_physical_prelock(path),
+            v14_reserve_physical_case_record,
+        )
+    return load_v14_physical_prelock_protocol(path), v14_physical_case_record
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-repo", type=Path, required=True)
@@ -111,7 +131,9 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-    protocol = load_v14_physical_prelock_protocol(args.prelock_protocol)
+    protocol, case_record_builder = _load_physical_protocol(
+        args.prelock_protocol
+    )
     _require(
         file_sha256(Path(__file__).resolve())
         == protocol["implementation"]["file_sha256"]["automatic_twin"],
@@ -123,7 +145,7 @@ def main() -> int:
         == protocol["parent_artifacts"]["staging_queue_file_sha256"],
         "V14 physical queue file changed",
     )
-    record = v14_physical_case_record(
+    record = case_record_builder(
         protocol,
         queue,
         queue_rank=args.queue_rank,
