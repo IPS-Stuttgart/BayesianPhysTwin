@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-causal-response-depth-v12",
+  "status": "method-locked-awaiting-complete-hash-only-cohort-exclusion",
+  "config_sha256": "94305e11133012a18ed806f21bb95c970b066352f27d6290003493ea66c2e53e",
+  "purpose": "Test whether an event-triggered, tactile-supported, disjoint-camera direct-depth observation can safely improve a selected physical-or-persistence deformable-object forecast.",
+  "claim_boundary": "Method lock only. No fresh source cohort, prediction outcome, calibration result, target result, or state-of-the-art claim exists under this artifact.",
+  "parent_evidence": {
+    "v11_result_commit": "9bc56dfa08d1ccdffa58ce3bccaf60fc658f4f4d",
+    "v11_source_result_sha256": "9321bcc81e8833c6c80904f1e984dd89b44026540571764d78fb12a4ae39b0a6",
+    "v11_lesson": "Action support alone did not imply usable tracker support or motion headroom; endpoint support was 5/64 and the admitted provider regressed against persistence."
+  },
+  "freshness_boundary": {
+    "hash_namespace": "deform360-fresh-object-exclusion-v1",
+    "cohort_selection_allowed": false,
+    "required_before_selection": [
+      "one validated composite manifest covering every held-v8 object and attempt disposition",
+      "Prob4D exclusion manifest with canonical digest 181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff",
+      "MolmoMotion-Field exclusion manifest with content digest d25cc3044080459cef47851d292410def8a592aa95478dabeb1db9fa513e925a",
+      "all Bayesian-PhysTwin opened, reserved, selected, and technically dispositioned objects through V11"
+    ],
+    "missing_at_method_lock": [
+      "independently supplied held-v8 all-attempt hash-only exclusion manifest"
+    ],
+    "object_ids_or_outcomes_may_be_read_to_complete_exclusions": false
+  },
+  "event_scan": {
+    "prediction_prefix_frame_range_half_open": [
+      0,
+      58
+    ],
+    "endpoint_lag_frames": 6,
+    "first_candidate_update_frame": 8,
+    "last_candidate_update_frame": 57,
+    "selection_rule": "earliest prefix endpoint whose complete causal-response admission artifact passes",
+    "selection_uses_future_observation": false,
+    "selection_uses_future_metric": false,
+    "no_passing_event_policy": "bit-exact selected-baseline fallback"
+  },
+  "query_provider": {
+    "query_count": 16,
+    "graph_basis_rank": 16,
+    "action_support_threshold": 0.1,
+    "selection_cues": [
+      "frame-zero association probability",
+      "action-support-weighted graph-mode information",
+      "spatial diversity"
+    ],
+    "predicted_displacement_used_for_query_selection": false,
+    "state_innovation_used_for_prior_reliability": false
+  },
+  "camera_panels": {
+    "full_panel": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "proposal_panel_indices": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10
+    ],
+    "validation_panel_indices": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      11
+    ],
+    "panels_are_disjoint": true,
+    "validation_panel_forms_state_update": false,
+    "unknown_correlation_rule": "each panel is one evidence group; no precision multiplication across panels"
+  },
+  "direct_depth": {
+    "minimum_camera_support_per_panel": 3,
+    "search_radius_px": 12,
+    "depth_scale_m": 0.03,
+    "minimum_candidate_count": 1,
+    "depth_standard_deviation_m": 0.005,
+    "pixel_quantization_variance_px2": 0.25,
+    "covariance_floor_m2": 1e-10,
+    "temporal_covariance_multiplier": 2.0,
+    "view_fusion": "covariance intersection plus maximum view-scatter inflation",
+    "assignment_mixture_spread_propagated_in_m2": true
+  },
+  "admission": {
+    "spatial_group_count": 3,
+    "minimum_supported_count": 6,
+    "minimum_supported_per_group": 1,
+    "minimum_action_support": 0.1,
+    "minimum_tactile_contact_probability": 0.5,
+    "minimum_actuator_displacement_m": 0.001,
+    "minimum_physical_centered_rms_m": 0.0005,
+    "minimum_observed_centered_rms_m": 0.001,
+    "minimum_pairwise_residual_rms_m": 0.0005,
+    "minimum_physical_observed_cosine": 0.2,
+    "minimum_cross_panel_pairwise_cosine": 0.6,
+    "minimum_cross_panel_vector_cosine": 0.4,
+    "minimum_validation_improvement_fraction": 0.1,
+    "maximum_cross_panel_reduced_nis": 9.0,
+    "maximum_effective_count": 3.0,
+    "shared_bias_variance_m2": 2.5e-05,
+    "variance_floor_m2": 1e-10
+  },
+  "measurement": {
+    "maximum_translation_m": 0.05,
+    "maximum_rotation_degrees": 10.0,
+    "maximum_scale_deviation": 0.1,
+    "support_saturation_count": 4.0,
+    "scatter_scale_m": 0.01,
+    "temporal_covariance_multiplier": 2.0,
+    "shared_bias_variance_m2": 2.5e-05,
+    "covariance_floor_m2": 1e-10
+  },
+  "belief": {
+    "length_scale_fraction": 0.1,
+    "local_blend": 1.0,
+    "observation_std_m": 0.005,
+    "process_std_m_per_sqrt_frame": 0.003,
+    "global_prior_std_m": 0.1,
+    "local_prior_std_m": 0.02,
+    "degrees_of_freedom": 4.0,
+    "minimum_reliability": 0.02,
+    "maximum_correction_m": 0.1,
+    "minimum_length_scale_m": 0.0001
+  },
+  "tactile": {
+    "source": "released Deform360 per-gripper tactile stream through the candidate update frame",
+    "baseline_rule": "latest timestamped baseline at or before episode recording",
+    "contact_rule": "official union over grippers: more than one positive normalized taxel after the released 0.3 threshold",
+    "future_tactile_read": false,
+    "role": "independent causal contact support only; tactile does not define metric geometry or observation reliability"
+  },
+  "prospective_source_gate_blueprint": {
+    "fresh_object_count": 12,
+    "episode_count_per_object": 1,
+    "cross_fit_folds": 3,
+    "minimum_admitted_object_count": 6,
+    "minimum_object_balanced_identity_improvement": 0.05,
+    "minimum_object_balanced_chamfer_improvement": 0.05,
+    "minimum_joint_object_win_count": 8,
+    "maximum_object_regression": 0.05,
+    "maximum_false_safe_rate": 0.1,
+    "minimum_regret_upper_bound_coverage": 0.8,
+    "required_source_group_upper_regret_m": -5e-06,
+    "advance_action": "freeze a disjoint fresh-object target protocol without changing method, event, update, or gate settings",
+    "fail_action": "stop V12 without tuning on source outcomes"
+  },
+  "method_contract": {
+    "global_translation_rotation_and_similarity_scale_are_nuisance": true,
+    "pairwise_admission_is_rigid_invariant": true,
+    "proposal_and_validation_camera_panels_are_disjoint": true,
+    "validation_panel_only_admits_or_rejects": true,
+    "metric_covariance_m2_propagated": true,
+    "association_probability_separate_from_prior_reliability": true,
+    "state_innovation_robustified_once": true,
+    "rejection_is_bit_exact_selected_baseline": true,
+    "candidate_is_readout_discrepancy_not_warp_state_injection": true
+  },
+  "information_boundary": {
+    "maximum_observation_frame": 57,
+    "future_object_observation_allowed": false,
+    "future_identity_allowed_before_prediction_seal": false,
+    "future_metric_allowed_before_prediction_seal": false,
+    "v1_sealed_target_allowed": false,
+    "held_v8_target_query_score_barrier_outcome_or_process_access_allowed": false
+  },
+  "forbidden": [
+    "selecting a fresh cohort before the complete hash-only exclusion union exists",
+    "using future tactile, RGB, depth, masks, identities, point clouds, or metrics",
+    "using the state innovation to define association probability or prior perception reliability",
+    "counting dense pixels, cameras, or pairwise distances as independent evidence",
+    "using validation-panel geometry to form the state update",
+    "weakening exact fallback or nuisance limits after source outcomes",
+    "opening, inspecting, modifying, or rerunning held-v8 artifacts or processes"
+  ]
+}
