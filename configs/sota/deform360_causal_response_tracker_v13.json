@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-causal-response-tracker-v13-source",
+  "status": "locked-before-source-tracker-outcomes",
+  "config_sha256": "f716bcf90bc09fe44727335eb98226353c5e0ef3e5b920ed83ef5943621918c3",
+  "purpose": "Test whether the six admitted V13 adaptive carriers support a causal TAPNext++ metric provider that agrees across disjoint camera panels and beats exact persistence on withheld prefix identities before any state or readout update is constructed.",
+  "claim_boundary": "Post-open prefix-only provider competence on eight previously examined source cases. This protocol cannot establish a Bayesian-PhysTwin gain, future prediction, transfer, calibration, confirmation, or state of the art.",
+  "implementation_commit": "d4f43b24117b68ebd611fd97cc1d1feb68b30d14",
+  "parent_v13_source_result_sha256": "63a9ffde07de4e0378605b8574a8d4a8acfe6a382c65df2be185c47f6276239c",
+  "implementation_file_sha256": {
+    "scripts/remote/evaluate_deform360_causal_response_tracker_v13_source.py": "d8a09288e1d834d4db6911b45dd2fd2336aae6dc724e3dc38f1ccc8e8077c1ae",
+    "scripts/remote/run_deform360_causal_response_tracker_v13_source.py": "4e36249b1e1a02c17c828e94c298d35846e5bf805dcffb5c82857548bd8912c6",
+    "src/bayesian_phystwin/deform360_causal_response_tracker.py": "7dc60a617067705769e35937db59c634b2860ca611815b90308e82b75b3d0b9a"
+  },
+  "minimum_complete_camera_count": 8,
+  "depth_scale_to_m": 0.001,
+  "prefix": {
+    "frame_count": 58,
+    "update_frame": 57,
+    "frame_range_half_open": [
+      0,
+      58
+    ]
+  },
+  "tracker_runtime": {
+    "input_resolution": 512,
+    "support_points_per_query": 64,
+    "support_radius_model_px": 32.0
+  },
+  "multiview": {
+    "visibility_threshold": 0.5,
+    "maximum_reprojection_error_px": 3.0,
+    "maximum_depth_residual_m": 0.03,
+    "minimum_proposal_view_count": 2,
+    "mask_patch_radius_px": 2,
+    "minimum_object_mask_fraction": 0.2,
+    "pixel_standard_deviation_px": 1.5,
+    "shared_bias_standard_deviation_m": 0.005,
+    "maximum_effective_samples_per_group": 3.0,
+    "camera_cluster_translation_tolerance_m": 1e-7,
+    "camera_cluster_rotation_tolerance": 1e-7,
+    "covariance_eigenvalue_floor_m2": 1e-12,
+    "two_view_covariance_inflation": 4.0,
+    "assignment_uncertainty_mode": "covariance-only-assignment-uncertainty-v1"
+  },
+  "arm_settings": {
+    "strict_3plus3": {
+      "minimum_claim_view_count": 3
+    },
+    "inflated_2plus2": {
+      "minimum_claim_view_count": 2
+    }
+  },
+  "cross_panel": {
+    "maximum_disagreement_m": 0.015,
+    "disagreement_scale_m": 0.005
+  },
+  "source_gate": {
+    "locked_case_count": 8,
+    "required_provider_prediction_count": 6,
+    "minimum_pooled_supported_fraction": 0.5,
+    "minimum_case_supported_fraction": 0.5,
+    "minimum_case_support_pass_count": 5,
+    "minimum_scored_case_count": 5,
+    "maximum_object_balanced_rmse_m": 0.015,
+    "maximum_object_balanced_late_rmse_m": 0.015,
+    "minimum_relative_gain_over_persistence": 0.1,
+    "minimum_provider_case_wins": 4,
+    "maximum_mean_cross_panel_disagreement_m": 0.01,
+    "pass_action": "Freeze a separate prefix-event and baseline-relative bias-aware update protocol before constructing or scoring any state or readout update.",
+    "fail_action": "Stop the V13 TAPNext++ carrier without changing cameras, identities, support thresholds, covariance inflation, shared-bias scale, tracker, cross-panel rule, or source gate."
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "arm": "abstained_insufficient_2plus2",
+      "adaptive_query_result_sha256": "3f94a9d2a08bd404262713fcc7d67a7d9509660680be644dea93920e6e0d52a6",
+      "adaptive_query_report_sha256": "79d9d5de30a3933a917f129bbc08e33edd17e9f9273330787da141d1f1400d53"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "arm": "strict_3plus3",
+      "adaptive_query_result_sha256": "74934a4ede92817aa34221bbda203ee97b59b72660335027749e3675f9d2e234",
+      "adaptive_query_report_sha256": "5da098963bb3bc752f21fe14bb4bca0fc580ae15c9adde63e672289c672e4674"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "arm": "inflated_2plus2",
+      "adaptive_query_result_sha256": "395355eacda1aace95e9c0953b1c770bae891e3ccd6fcad3061d82e92f25051f",
+      "adaptive_query_report_sha256": "33e974dbf047c08d1b4336036652293ca870c517fccc812e9b0fae76934b3ad5"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "arm": "abstained_insufficient_2plus2",
+      "adaptive_query_result_sha256": "362acfdd371691aaffb5346b2b3eab4e4e8c36f6916dfd3ff02ad843704aa626",
+      "adaptive_query_report_sha256": "d007ca1c76ed38104ba862ad788124f8b08e6482bb09238b843dc3490bdfdc11"
+    },
+    {
+      "case": "059-shoe-ep0000",
+      "arm": "inflated_2plus2",
+      "adaptive_query_result_sha256": "25346e64ee90eb3df184624016f63dc9cd068f7723495d2ab13085c6791ad21d",
+      "adaptive_query_report_sha256": "5b3e0f1155476d76b74fb8f147179f579f1bd89888e3ce581696c3454f99756b"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "arm": "strict_3plus3",
+      "adaptive_query_result_sha256": "69f216ceea06eb6e35c3725ac6bbb126b78bf82033d1ac7778d86e39d9eb2413",
+      "adaptive_query_report_sha256": "e1b5c8f2507724768ce4a3806be795edb42d412ddc66ed0ffc3642fd7e330f3d"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "arm": "inflated_2plus2",
+      "adaptive_query_result_sha256": "d727bb66711a76d67d02e7c15e0d75a509551ad44b643f421a386639918e6407",
+      "adaptive_query_report_sha256": "d8824e4016f65162dc2b8c7cd8661c89aaeba4a9f2bbbf77a47e869aa7973389"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "arm": "inflated_2plus2",
+      "adaptive_query_result_sha256": "7e7a3ab0ad87741b55835edcb07de2aab0b0c02fe334c6b8d0e6aeb16465873b",
+      "adaptive_query_report_sha256": "f623098e669d46c439e8b419ebf303ea9452f487819a47cccf1fd69d1f330fe3"
+    }
+  ],
+  "information_boundary": {
+    "adaptive_query_selection_object_frames": [
+      0
+    ],
+    "tracker_rgb_depth_mask_frame_range_half_open": [
+      0,
+      58
+    ],
+    "proposal_and_validation_camera_panels_disjoint": true,
+    "proposal_panel_supplies_candidate_observation": true,
+    "validation_panel_only_corroborates_or_rejects": true,
+    "physical_innovation_available_to_prior_reliability": false,
+    "identity_target_available_before_prediction_barrier": false,
+    "tactile_event_used": false,
+    "state_or_readout_update_allowed": false,
+    "future_prediction_metric_allowed": false,
+    "v1_sealed_target_allowed": false,
+    "held_v8_access_allowed": false
+  },
+  "forbidden": [
+    "changing the six admitted or two abstained V13 source dispositions",
+    "using the PhysTwin innovation or manual identity residual as perception reliability",
+    "combining proposal and validation cameras as independent evidence",
+    "opening any prefix identity target before all eight tracker dispositions and six predictions are sealed",
+    "constructing or scoring a state or readout update under this protocol",
+    "weakening the arm-specific view support, fourfold two-view inflation, shared-bias nuisance, cross-panel rule, or source gate after tracker outcomes",
+    "reading any future prediction metric or object observation after frame 57",
+    "selecting a fresh Deform360 object without the independent held-v8 all-attempt exclusion scope",
+    "opening, inspecting, modifying, or rerunning held-v8 artifacts or processes"
+  ]
+}
