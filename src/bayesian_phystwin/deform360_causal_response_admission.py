@@ -179,6 +179,7 @@ class CausalResponseAdmission:
     selected_entity_ids: np.ndarray
     spatial_group_assignments: np.ndarray
     physical_prefix_sha256: str
+    action_conditioning_prefix_sha256: str
     proposal_observation_sha256: str
     validation_observation_sha256: str
     artifact_sha256: str
@@ -224,6 +225,7 @@ class CausalResponseAdmission:
         )
         for digest in (
             self.physical_prefix_sha256,
+            self.action_conditioning_prefix_sha256,
             self.proposal_observation_sha256,
             self.validation_observation_sha256,
             self.artifact_sha256,
@@ -255,6 +257,9 @@ class CausalResponseAdmission:
             "selected_entity_ids": self.selected_entity_ids.tolist(),
             "spatial_group_assignments": self.spatial_group_assignments.tolist(),
             "physical_prefix_sha256": self.physical_prefix_sha256,
+            "action_conditioning_prefix_sha256": (
+                self.action_conditioning_prefix_sha256
+            ),
             "proposal_observation_sha256": self.proposal_observation_sha256,
             "validation_observation_sha256": self.validation_observation_sha256,
             "information_boundary": {
@@ -533,16 +538,28 @@ def evaluate_causal_response_admission(
     validation_camera_ids: tuple[str, ...],
     tactile_contact_probability: float,
     actuator_displacement_m: float,
+    action_conditioning_positions_m: np.ndarray | None = None,
     config: CausalResponseAdmissionConfig | None = None,
 ) -> CausalResponseAdmission:
     """Certify one prefix response without constructing or scoring a future."""
 
     cfg = config or CausalResponseAdmissionConfig()
     physical = np.asarray(physical_positions_m, dtype=np.float64)
+    action_conditioning = (
+        physical
+        if action_conditioning_positions_m is None
+        else np.asarray(action_conditioning_positions_m, dtype=np.float64)
+    )
     support = np.asarray(action_support, dtype=np.float64)
     _require(
         physical.ndim == 3 and physical.shape[2] == 3 and np.all(np.isfinite(physical)),
         "physical prefix is invalid",
+    )
+    _require(
+        action_conditioning.shape == physical.shape
+        and np.all(np.isfinite(action_conditioning))
+        and np.array_equal(action_conditioning[0], physical[0]),
+        "action-conditioning trajectory differs in shape or frame-zero identity",
     )
     _require(
         support.shape == (physical.shape[1],)
@@ -601,8 +618,10 @@ def evaluate_causal_response_admission(
             selected_local,
             support[selected_entities],
         )
-        physical_endpoints = physical[frames][:, selected_entities]
-        physical_displacement = physical_endpoints[1] - physical_endpoints[0]
+        baseline_endpoints = physical[frames][:, selected_entities]
+        baseline_displacement = baseline_endpoints[1] - baseline_endpoints[0]
+        action_endpoints = action_conditioning[frames][:, selected_entities]
+        physical_displacement = action_endpoints[1] - action_endpoints[0]
         proposal_displacement = (
             proposal.point_world_m[1, selected_local]
             - proposal.point_world_m[0, selected_local]
@@ -621,29 +640,29 @@ def evaluate_causal_response_admission(
             weights,
         )
         proposal_residual = _weighted_center(
-            proposal_displacement - physical_displacement,
+            proposal_displacement - baseline_displacement,
             weights,
         )
         validation_residual = _weighted_center(
-            validation_displacement - physical_displacement,
+            validation_displacement - baseline_displacement,
             weights,
         )
         proposal_pairwise = _pairwise_residual(
             proposal.point_world_m[:, selected_local],
-            physical_endpoints,
+            baseline_endpoints,
         )
         validation_pairwise = _pairwise_residual(
             validation.point_world_m[:, selected_local],
-            physical_endpoints,
+            baseline_endpoints,
         )
         pair_weights = _pairwise_weights(weights)
         pair_i, pair_j = np.triu_indices(len(selected_entities), k=1)
         physical_birth_distance = np.linalg.norm(
-            physical_endpoints[0, pair_i] - physical_endpoints[0, pair_j],
+            baseline_endpoints[0, pair_i] - baseline_endpoints[0, pair_j],
             axis=1,
         )
         physical_update_distance = np.linalg.norm(
-            physical_endpoints[1, pair_i] - physical_endpoints[1, pair_j],
+            baseline_endpoints[1, pair_i] - baseline_endpoints[1, pair_j],
             axis=1,
         )
         similarity_modes = np.column_stack(
@@ -801,6 +820,9 @@ def evaluate_causal_response_admission(
         "selected_entity_ids": selected_entities.tolist(),
         "spatial_group_assignments": assignments.tolist(),
         "physical_prefix_sha256": array_sha256(physical[: update + 1]),
+        "action_conditioning_prefix_sha256": array_sha256(
+            action_conditioning[: update + 1]
+        ),
         "proposal_observation_sha256": direct_depth_observation_sha256(proposal),
         "validation_observation_sha256": direct_depth_observation_sha256(validation),
     }
@@ -820,6 +842,7 @@ def evaluate_causal_response_admission(
         selected_entity_ids=selected_entities,
         spatial_group_assignments=assignments,
         physical_prefix_sha256=payload["physical_prefix_sha256"],
+        action_conditioning_prefix_sha256=payload["action_conditioning_prefix_sha256"],
         proposal_observation_sha256=payload["proposal_observation_sha256"],
         validation_observation_sha256=payload["validation_observation_sha256"],
         artifact_sha256=digest,

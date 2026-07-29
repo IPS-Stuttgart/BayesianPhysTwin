@@ -2,7 +2,7 @@
   "schema_version": 1,
   "protocol_id": "deform360-causal-response-depth-v12",
   "status": "method-locked-awaiting-complete-hash-only-cohort-exclusion",
-  "config_sha256": "94305e11133012a18ed806f21bb95c970b066352f27d6290003493ea66c2e53e",
+  "config_sha256": "8c13a30b190f9cf8ddf8f0464b0602f0eb4c0fdb2dcca4291d244a9a01b5d43b",
   "purpose": "Test whether an event-triggered, tactile-supported, disjoint-camera direct-depth observation can safely improve a selected physical-or-persistence deformable-object forecast.",
   "claim_boundary": "Method lock only. No fresh source cohort, prediction outcome, calibration result, target result, or state-of-the-art claim exists under this artifact.",
   "parent_evidence": {
@@ -32,14 +32,27 @@
     "endpoint_lag_frames": 6,
     "first_candidate_update_frame": 8,
     "last_candidate_update_frame": 57,
+    "baseline_selection_rule": "proposal-panel pairwise deformation loss selects the physical backbone only with a 5% relative margin; persistence is the default",
+    "baseline_selection_uses_common_supported_identities": true,
+    "physical_action_conditioning_is_separate_from_selected_baseline": true,
     "selection_rule": "earliest prefix endpoint whose complete causal-response admission artifact passes",
     "selection_uses_future_observation": false,
     "selection_uses_future_metric": false,
     "no_passing_event_policy": "bit-exact selected-baseline fallback"
   },
+  "event": {
+    "endpoint_lag_frames": 6,
+    "first_candidate_update_frame": 8,
+    "last_candidate_update_frame": 57,
+    "baseline_selection_minimum_relative_margin": 0.05
+  },
+  "prefix": {
+    "prefix_frame_count": 58,
+    "minimum_camera_count": 6
+  },
   "query_provider": {
     "query_count": 16,
-    "graph_basis_rank": 16,
+    "graph_basis_rank": 8,
     "action_support_threshold": 0.1,
     "selection_cues": [
       "frame-zero association probability",
@@ -48,6 +61,20 @@
     ],
     "predicted_displacement_used_for_query_selection": false,
     "state_innovation_used_for_prior_reliability": false
+  },
+  "query": {
+    "prefix_frame_count": 58,
+    "query_count": 16,
+    "graph_basis_rank": 8,
+    "action_support_threshold": 0.1,
+    "minimum_camera_support_per_panel": 3,
+    "association_support_probability": 0.5,
+    "association_search_radius_px": 12,
+    "association_depth_scale_m": 0.03,
+    "association_minimum_candidate_count": 1,
+    "visibility_weight": 0.5,
+    "mode_information_weight": 1.0,
+    "spatial_diversity_weight": 1.0
   },
   "camera_panels": {
     "full_panel": [
@@ -167,6 +194,7 @@
     "metric_covariance_m2_propagated": true,
     "association_probability_separate_from_prior_reliability": true,
     "state_innovation_robustified_once": true,
+    "prediction_baseline_separate_from_physical_action_conditioning": true,
     "rejection_is_bit_exact_selected_baseline": true,
     "candidate_is_readout_discrepancy_not_warp_state_injection": true
   },

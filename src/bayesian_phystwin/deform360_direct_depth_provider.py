@@ -276,16 +276,41 @@ def build_direct_depth_endpoint_observations(
 ) -> DirectDepthEndpointObservations:
     """Associate and fuse sparse depth endpoints without an RGB carrier."""
 
+    return build_direct_depth_observations_for_entities(
+        physical_positions_m,
+        schedule.entity_ids,
+        np.asarray(
+            [
+                schedule.config.query_birth_frame,
+                schedule.config.query_update_frame,
+            ],
+            dtype=np.int64,
+        ),
+        intrinsics,
+        camera_to_world,
+        depths_m,
+        object_masks,
+        config=config,
+    )
+
+
+def build_direct_depth_observations_for_entities(
+    physical_positions_m: np.ndarray,
+    entity_ids: np.ndarray,
+    endpoint_frames: np.ndarray,
+    intrinsics: np.ndarray,
+    camera_to_world: np.ndarray,
+    depths_m: np.ndarray,
+    object_masks: np.ndarray,
+    *,
+    config: DirectDepthEndpointConfig | None = None,
+) -> DirectDepthEndpointObservations:
+    """Associate specified graph identities at two causal depth endpoints."""
+
     cfg = config or DirectDepthEndpointConfig()
     physical = np.asarray(physical_positions_m, dtype=np.float64)
-    entities = np.asarray(schedule.entity_ids, dtype=np.int64)
-    frames = np.asarray(
-        [
-            schedule.config.query_birth_frame,
-            schedule.config.query_update_frame,
-        ],
-        dtype=np.int64,
-    )
+    entities = np.asarray(entity_ids, dtype=np.int64)
+    frames = np.asarray(endpoint_frames, dtype=np.int64)
     matrices = np.asarray(intrinsics, dtype=np.float64)
     poses = np.asarray(camera_to_world, dtype=np.float64)
     depths = np.asarray(depths_m)
@@ -463,4 +488,5 @@ __all__ = [
     "DirectDepthEndpointObservations",
     "build_direct_depth_birth_anchored_measurements",
     "build_direct_depth_endpoint_observations",
+    "build_direct_depth_observations_for_entities",
 ]

@@ -27,11 +27,17 @@ evidence:
 2. require released tactile contact and measured actuator displacement;
 3. build direct metric endpoint observations independently in two disjoint
    six-camera panels;
-4. use one panel to propose a sparse state/discrepancy update;
-5. use the other panel only to test current-prefix transfer;
-6. remove per-endpoint Sim(3) nuisance before state inference;
-7. admit only nonrigid pairwise response that transfers across panels; and
-8. otherwise return the selected physical-or-persistence baseline byte for
+4. compare the physical and persistence backbones on common proposal-panel
+   identities using rigid-invariant pairwise deformation;
+5. select the physical backbone only when it beats persistence by the locked
+   5% relative margin, with persistence as the conservative default;
+6. use the physical rollout separately as action-conditioning evidence even
+   when persistence remains the prediction baseline;
+7. use the proposal panel to form a sparse discrepancy update;
+8. use the validation panel only to test current-prefix transfer;
+9. remove per-endpoint Sim(3) nuisance before state inference;
+10. admit only nonrigid pairwise response that transfers across panels; and
+11. otherwise return the selected physical-or-persistence baseline byte for
    byte.
 
 The update therefore cannot pass because an action was merely commanded. It
@@ -47,17 +53,24 @@ innovation changes neither quantity. Association remains a separate event in
 the existing robust mixture likelihood, where the innovation magnitude is
 processed once to obtain posterior inlier probabilities.
 
+The physical rollout has two distinct roles that are kept separate in code and
+provenance. It is one candidate prediction backbone, and it is the
+action-conditioned support model. Persistence can win the former comparison
+without erasing the latter signal. This prevents a static baseline from
+falsely implying that no commanded physical response was possible.
+
 The two camera panels are unknown-correlation groups. Their pixels and cameras
 are not multiplied as independent precision. Direct-depth views are fused
 conservatively, effective evidence is capped, and a shared 5 mm bias variance
-is retained. The validation panel never forms the update.
+is retained. The proposal panel selects the baseline and forms a candidate;
+the validation panel never does either.
 
 Pairwise distance changes remove rigid frame errors. A two-dimensional
-nuisance span formed by physical pair distances at both endpoints removes a
-time-varying global metric scale. The accepted proposal is then aligned to the
-physical graph separately at birth and update using a bounded weighted Sim(3)
-fit. This is deliberately conservative: global pose and scale changes are not
-claimed as observed deformation.
+nuisance span formed by selected-baseline pair distances at both endpoints
+removes a time-varying global metric scale. The accepted proposal is then
+aligned to the selected graph trajectory separately at birth and update using
+a bounded weighted Sim(3) fit. This is deliberately conservative: global pose
+and scale changes are not claimed as observed deformation.
 
 ## Candidate Belief
 
@@ -94,13 +107,26 @@ existing V1 and held-v8 cohorts remain unavailable under this method lock.
 
 The code now provides:
 
+- a typed prefix-custody artifact that rejects future-length camera, tactile,
+  or actuator carriers;
+- a deterministic frame-zero query schedule with disjoint camera panels;
+- a sequential earliest-event scan;
+- a proposal-only physical-versus-persistence selector with a conservative
+  persistence default;
 - a typed, checksummed causal-response admission artifact;
+- separate hashes for the selected prediction baseline and physical
+  action-conditioning trajectory;
 - disjoint-panel and causal-support enforcement;
 - translation, rotation, and scale nuisance controls;
 - metric covariance and residual-independent reliability;
 - a robust recursive RBF candidate;
-- physical-prefix and observation hash binding; and
-- executable bit-exact fallback.
+- selected-baseline and observation hash binding;
+- a checksummed prediction-only seal that contains no hidden outcome; and
+- a 12-object source-lock schema that refuses an incomplete exclusion union.
+
+The tested pipeline can now schedule queries, scan the permitted prefix, select
+the conservative backbone, construct or reject an update, and seal either the
+candidate or a bit-exact fallback without reading a future identity or metric.
 
 The remaining critical-path input is the held-v8 all-attempt hash-only
 exclusion manifest. No GPU run or object selection is justified before it is

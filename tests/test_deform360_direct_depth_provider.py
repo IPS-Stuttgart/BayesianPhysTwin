@@ -7,6 +7,7 @@ from bayesian_phystwin.deform360_direct_depth_provider import (
     DirectDepthEndpointObservations,
     build_direct_depth_birth_anchored_measurements,
     build_direct_depth_endpoint_observations,
+    build_direct_depth_observations_for_entities,
 )
 from bayesian_phystwin.deform360_dynamic_query import CameraPanel
 from bayesian_phystwin.deform360_sentinel_assimilation import (
@@ -132,6 +133,52 @@ def test_direct_depth_builds_metric_endpoint_beliefs() -> None:
         (observations.association_probability > 0.0)
         & (observations.association_probability <= 1.0)
     )
+
+
+def test_generic_entity_interface_is_behavior_identical_to_schedule_wrapper() -> None:
+    physical, intrinsics, poses, depths, masks = _inputs()
+    schedule = _schedule()
+    config = DirectDepthEndpointConfig(search_radius_px=3)
+
+    wrapped = build_direct_depth_endpoint_observations(
+        physical,
+        schedule,
+        intrinsics,
+        poses,
+        depths,
+        masks,
+        config=config,
+    )
+    generic = build_direct_depth_observations_for_entities(
+        physical,
+        schedule.entity_ids,
+        np.asarray(
+            [
+                schedule.config.query_birth_frame,
+                schedule.config.query_update_frame,
+            ]
+        ),
+        intrinsics,
+        poses,
+        depths,
+        masks,
+        config=config,
+    )
+
+    for name in (
+        "endpoint_frames",
+        "entity_ids",
+        "point_world_m",
+        "covariance_m2",
+        "accepted_support",
+        "association_probability",
+        "support_count",
+        "maximum_view_scatter_m",
+    ):
+        np.testing.assert_array_equal(
+            getattr(generic, name),
+            getattr(wrapped, name),
+        )
 
 
 def test_duplicate_correlated_cameras_do_not_shrink_covariance() -> None:

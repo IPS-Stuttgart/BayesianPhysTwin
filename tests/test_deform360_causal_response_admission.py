@@ -78,6 +78,7 @@ def _evaluate(
     *,
     tactile: float = 1.0,
     physical: np.ndarray | None = None,
+    action_conditioning: np.ndarray | None = None,
     config: CausalResponseAdmissionConfig | None = None,
 ):
     state = _physical() if physical is None else physical
@@ -91,6 +92,7 @@ def _evaluate(
         validation_camera_ids=("camera-3", "camera-4", "camera-5"),
         tactile_contact_probability=tactile,
         actuator_displacement_m=0.01,
+        action_conditioning_positions_m=action_conditioning,
         config=config,
     )
 
@@ -190,6 +192,24 @@ def test_tactile_contact_is_a_required_independent_causal_signal() -> None:
 
     assert not result.admitted
     assert result.reason == "insufficient-tactile-contact"
+
+
+def test_persistence_baseline_can_use_separate_physical_action_support() -> None:
+    action_conditioning = _physical()
+    persistence = np.repeat(action_conditioning[:1], 2, axis=0)
+    proposal = _observation(action_conditioning, 0.5)
+    validation = _observation(action_conditioning, 0.5)
+
+    result = _evaluate(
+        proposal,
+        validation,
+        physical=persistence,
+        action_conditioning=action_conditioning,
+    )
+
+    assert result.admitted
+    assert result.metrics.physical_centered_rms_m > 0.0
+    assert result.physical_prefix_sha256 != result.action_conditioning_prefix_sha256
 
 
 def test_dense_support_does_not_inflate_effective_evidence_without_bound() -> None:

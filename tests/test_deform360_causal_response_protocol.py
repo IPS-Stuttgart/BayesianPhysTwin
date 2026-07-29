@@ -8,6 +8,15 @@ from pathlib import Path
 from bayesian_phystwin.deform360_causal_response_admission import (
     CausalResponseAdmissionConfig,
 )
+from bayesian_phystwin.deform360_causal_response_event import (
+    CausalResponseEventConfig,
+)
+from bayesian_phystwin.deform360_causal_response_prefix import (
+    CausalResponsePrefixConfig,
+)
+from bayesian_phystwin.deform360_causal_response_query import (
+    CausalResponseQueryConfig,
+)
 from bayesian_phystwin.deform360_causal_response_update import (
     CausalResponseMeasurementConfig,
 )
@@ -38,6 +47,9 @@ def test_v12_method_lock_matches_the_executable_defaults() -> None:
         == "method-locked-awaiting-complete-hash-only-cohort-exclusion"
     )
     assert payload["config_sha256"] == _canonical_sha256(payload)
+    assert payload["prefix"] == asdict(CausalResponsePrefixConfig())
+    assert payload["event"] == asdict(CausalResponseEventConfig())
+    assert payload["query"] == asdict(CausalResponseQueryConfig())
     assert payload["admission"] == asdict(CausalResponseAdmissionConfig())
     assert payload["measurement"] == asdict(CausalResponseMeasurementConfig())
     assert payload["belief"] == asdict(
