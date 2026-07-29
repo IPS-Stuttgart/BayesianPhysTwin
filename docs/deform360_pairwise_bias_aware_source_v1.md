@@ -2,8 +2,9 @@
 
 ## Status
 
-Implementation-locked source-development candidate. No real combined-method
-outcome has been computed yet.
+Completed source-development negative result. The combined pairwise
+bias-aware candidate failed its frozen advancement gates. No fresh-object
+evaluation is justified.
 
 This route may use only the 27 already-open Deform360 development episodes.
 It must not inspect held-v8, the failed selective-virtual-sensing target cohort,
@@ -126,3 +127,35 @@ python -m bayesian_phystwin.cli.deform360_pairwise_bias_aware_source \
   --bundle-root /path/to/open27-transfer-v1 \
   --output /new/path/to/source-v1-result
 ```
+
+## Frozen Source Result
+
+The independently staged bundle contained all 27 cases and 189 bound files.
+Its transfer manifest has canonical SHA-256
+`02babb4e041fce354a168a76c055a043032dbbf5eb5320e2c8a0e409bb2d83bb`.
+
+| Arm | Identity RMSE | Hidden Chamfer |
+| --- | ---: | ---: |
+| Selected raw baseline | 8.807 mm | 7.888 mm |
+| Pairwise-consensus RBF | **8.304 mm** | **7.532 mm** |
+| Bias-aware v4 | 8.683 mm | 7.783 mm |
+| Pairwise bias-aware v1 | 8.707 mm | 7.816 mm |
+
+The candidate improves over the selected raw baseline by 1.14% identity RMSE
+and 0.92% Chamfer, but it is 4.85% and 3.77% worse than the stronger
+pairwise-consensus RBF source arm. Only two of five object means improve
+jointly, the clustered intervals do not exclude zero, and the worst object
+regresses by 14.93% identity RMSE and 16.54% Chamfer.
+
+All target-free acceptance and exact-fallback checks pass. The failure is
+therefore empirical rather than a custody or implementation failure.
+
+## Decision
+
+This composition is closed on the opened source cohort. Its thresholds must
+not be tuned on these five objects, and it does not authorize a fresh-object
+evaluation. The simpler pairwise-consensus RBF remains the stronger source
+candidate, while common-mode camera bias remains unresolved.
+
+Compact evidence is archived under
+`results/sota/deform360_pairwise_bias_aware_source_v1/`.
