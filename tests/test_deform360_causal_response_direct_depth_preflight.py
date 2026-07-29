@@ -11,6 +11,8 @@ from bayesian_phystwin.deform360_causal_response_adaptive_query import (
 from bayesian_phystwin.deform360_causal_response_direct_depth_preflight import (
     AdaptiveDirectDepthSourcePreflightConfigV14,
     evaluate_adaptive_direct_depth_source_preflight_v14,
+    load_adaptive_direct_depth_source_preflight_v14,
+    write_adaptive_direct_depth_source_preflight_v14,
 )
 from bayesian_phystwin.deform360_causal_response_preflight import (
     REGISTERED_CAMERA_IDS,
@@ -166,3 +168,29 @@ def test_v14_preflight_does_not_claim_uncreated_future_camera_assets() -> None:
 
     assert not result.admitted
     assert "insufficient-complete-camera-count" in result.rejection_reasons
+
+
+def test_v14_camera_completeness_is_separate_from_projected_support() -> None:
+    records = list(_records())
+    record = records[0]
+    records[0] = CausalResponseSourceCameraRecord(
+        camera_id=record.camera_id,
+        depth_frame_count=record.depth_frame_count,
+        mask_frame_count=record.mask_frame_count,
+        calibration_valid=record.calibration_valid,
+        frame_zero_projected_support_count=0,
+    )
+
+    result = _evaluate(camera_records=records)
+
+    assert result.admitted
+    assert len(result.complete_camera_ids) == 8
+
+
+def test_v14_preflight_file_round_trip(tmp_path) -> None:
+    expected = _evaluate()
+    output = tmp_path / "preflight.json"
+
+    write_adaptive_direct_depth_source_preflight_v14(output, expected)
+
+    assert load_adaptive_direct_depth_source_preflight_v14(output) == expected

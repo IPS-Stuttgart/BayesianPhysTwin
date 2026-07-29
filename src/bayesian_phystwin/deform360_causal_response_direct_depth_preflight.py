@@ -173,7 +173,9 @@ class AdaptiveDirectDepthSourcePreflightV14:
             "schema_version": 1,
             "artifact_kind": "Deform360AdaptiveDirectDepthSourcePreflightV14",
             "contract": CONTRACT,
-            "config": asdict(self.config),
+            "config": json.loads(
+                json.dumps(asdict(self.config), allow_nan=False)
+            ),
             "object_hash": self.object_hash,
             "case_hash": self.case_hash,
             "category": self.category,
@@ -269,7 +271,6 @@ def evaluate_adaptive_direct_depth_source_preflight_v14(
             record.depth_frame_count == cfg.prefix_frame_count
             and record.mask_frame_count == cfg.prefix_frame_count
             and record.calibration_valid
-            and record.frame_zero_projected_support_count > 0
             and camera_roles.issubset(sources)
         ):
             complete.append(camera)
@@ -351,6 +352,52 @@ def write_adaptive_direct_depth_source_preflight_v14(
     )
 
 
+def load_adaptive_direct_depth_source_preflight_v14(
+    path: str | Path,
+) -> AdaptiveDirectDepthSourcePreflightV14:
+    """Load and validate one immutable V14 source disposition."""
+
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    _require(
+        payload.get("artifact_kind")
+        == "Deform360AdaptiveDirectDepthSourcePreflightV14"
+        and payload.get("contract") == CONTRACT,
+        "V14 source preflight kind or contract changed",
+    )
+    config_values = dict(payload["config"])
+    config_values["registered_camera_ids"] = tuple(
+        config_values["registered_camera_ids"]
+    )
+    artifact = AdaptiveDirectDepthSourcePreflightV14(
+        config=AdaptiveDirectDepthSourcePreflightConfigV14(**config_values),
+        object_hash=payload["object_hash"],
+        case_hash=payload["case_hash"],
+        category=payload["category"],
+        bimanual_value=payload["bimanual_value"],
+        episode_frame_count=payload["episode_frame_count"],
+        robot_frame_count=payload["robot_frame_count"],
+        tactile_frame_count=payload["tactile_frame_count"],
+        physical_node_count=payload["physical_node_count"],
+        camera_records=tuple(
+            CausalResponseSourceCameraRecord(**record)
+            for record in payload["camera_records"]
+        ),
+        complete_camera_ids=tuple(payload["complete_camera_ids"]),
+        carrier_artifact_sha256=payload["carrier_artifact_sha256"],
+        carrier_arm=payload["carrier_arm"],
+        source_sha256=dict(payload["source_sha256"]),
+        admitted=payload["admitted"],
+        rejection_reasons=tuple(payload["rejection_reasons"]),
+        artifact_sha256=payload["artifact_sha256"],
+    )
+    _require(
+        artifact.descriptor() == payload,
+        "V14 source preflight descriptor changed",
+    )
+    validate_adaptive_direct_depth_source_preflight_v14(artifact)
+    return artifact
+
+
 __all__ = [
     "BASE_SOURCE_ROLES",
     "CASE_HASH_NAMESPACE",
@@ -359,6 +406,7 @@ __all__ = [
     "AdaptiveDirectDepthSourcePreflightV14",
     "deform360_v14_case_hash",
     "evaluate_adaptive_direct_depth_source_preflight_v14",
+    "load_adaptive_direct_depth_source_preflight_v14",
     "validate_adaptive_direct_depth_source_preflight_v14",
     "write_adaptive_direct_depth_source_preflight_v14",
 ]
