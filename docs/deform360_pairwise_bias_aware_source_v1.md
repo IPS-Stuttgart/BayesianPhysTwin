@@ -137,9 +137,10 @@ Its transfer manifest has canonical SHA-256
 | Arm | Identity RMSE | Hidden Chamfer |
 | --- | ---: | ---: |
 | Selected raw baseline | 8.807 mm | 7.888 mm |
-| Pairwise-consensus RBF | **8.304 mm** | **7.532 mm** |
+| Single-state pairwise RBF control | 8.304 mm | 7.532 mm |
 | Bias-aware v4 | 8.683 mm | 7.783 mm |
 | Pairwise bias-aware v1 | 8.707 mm | 7.816 mm |
+| Exact dual-backbone pairwise RBF parity audit | **7.441 mm** | **6.795 mm** |
 
 The candidate improves over the selected raw baseline by 1.14% identity RMSE
 and 0.92% Chamfer, but it is 4.85% and 3.77% worse than the stronger
@@ -149,6 +150,30 @@ regresses by 14.93% identity RMSE and 16.54% Chamfer.
 
 All target-free acceptance and exact-fallback checks pass. The failure is
 therefore empirical rather than a custody or implementation failure.
+
+## Comparator Parity Audit
+
+The registered source evaluator mislabeled its single-state RBF control as the
+earlier strong pairwise-consensus arm. The control receives the already-spliced
+selected baseline and keeps one recursive discrepancy state. The original
+source arm keeps separate physical and persistence RBF states, then selects
+the backbone and matching state causally at each update.
+
+A post-open parity audit replayed the exact dual-backbone implementation from
+the transferred `prediction_m` and `persistence_m` arrays. It reproduced the
+previous episode means exactly:
+
+- hidden identity RMSE: `7.541936414096939` mm;
+- hidden symmetric Chamfer: `6.874515361417309` mm.
+
+Its object-balanced means are 7.441 mm and 6.795 mm. The pairwise bias-aware
+candidate is therefore 17.01% worse in identity RMSE and 15.01% worse in
+Chamfer than the actual strong source comparator. Correcting the comparator
+does not rescue the candidate or authorize a new outcome opening; it makes the
+negative decision stronger.
+
+The compact parity record is
+`results/sota/deform360_pairwise_bias_aware_source_v1/comparator_parity_audit.json`.
 
 ## Decision
 
