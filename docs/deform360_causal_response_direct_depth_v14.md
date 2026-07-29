@@ -187,6 +187,17 @@ therefore validates the official filename without rewriting the successful
 manifest, geometry result, or runtime sidecar. It changes no reconstruction
 byte, method threshold, queue disposition, or advancement gate.
 
+A later two-GPU operator invocation first selected system Python, which lacks
+OpenCV, and then selected the exact Deform360 virtual environment. Both ranks
+stopped before the parent builder materialized prefix inputs. Loading gsplat
+from the correct interpreter relinked the same JIT sources and changed only
+the compiled extension checksum. The relinked binary was then stable across
+serial and concurrent imports. The second runtime-only amendment at
+`configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry_runtime_v2.json`
+binds the exact interpreter and relinked extension for ranks 4 through 14.
+Rank 3 remains bound to the first runtime amendment; no existing artifact is
+rewritten, and the two failed invocations are not case attempts.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a

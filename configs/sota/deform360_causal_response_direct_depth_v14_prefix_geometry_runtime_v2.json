@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalDirectDepthPrefixGeometryRuntimeV14V2",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-geometry-runtime-v2",
+  "status": "locked_after_interpreter_relink_before_geometry",
+  "parent_geometry_protocol": {
+    "path": "configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry.json",
+    "config_sha256": "3c4aa7d6dfe85e381c92804fe80ce81e45bf454838222d349e5ff0a313600ef6",
+    "file_sha256": "b94d3c1ea722f9be47b0ec34f7cd21e0bcb35bc535953557332f0062b5a75479",
+    "geometry_builder_sha256": "d71afb7e832c299d4f5c51b686d59d74dd3e6eb43f0877e4b5a95a3d3b3898f2"
+  },
+  "parent_runtime_amendment": {
+    "path": "configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry_runtime.json",
+    "config_sha256": "0f5c973c1034a8a2a668a9ba3c7597e9ec058f0ea25aeefa06d8d4a2f836bedd",
+    "file_sha256": "095fbb190eb85814991d62959dd5dc1acbc89747c4d66a063ca0dee9558f8e4b",
+    "runtime_wrapper_sha256": "d76f54cda1829559968cc1de24d9989b5a321f434f2e2e8cb4df155011eeeecd"
+  },
+  "trigger": {
+    "preflight_code_revision": "2196c59bd5e99ea19779b8b2714865f52e8c3ca5",
+    "affected_queue_ranks": [
+      4,
+      5
+    ],
+    "first_operator_invocation_failure": "system Python lacked OpenCV before the parent builder loaded",
+    "failure_type": "ValueError",
+    "failure_message": "gsplat CUDA extension changed",
+    "failure_stage": "runtime validation before prefix input materialization and official reconstruction",
+    "geometry_artifact_created": false,
+    "result_artifact_created": false,
+    "candidates_remain_prelock_unattempted": true,
+    "failed_invocation_logs_are_preserved": true,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_access": false
+  },
+  "runtime_amendment": {
+    "reason": "The exact Deform360 virtual environment relinked the pinned gsplat 1.4.0 JIT extension from unchanged source, compiler, CUDA, Torch, architecture, and backend contracts.",
+    "extension_path": "/home/florianpfaff/.cache/torch_extensions/py310_cu121/gsplat_cuda/gsplat_cuda.so",
+    "parent_rebuilt_extension_sha256": "99733266b0b679eef3e21ee748582266584d38c72921330f8118c3f5f4eddf63",
+    "interpreter_relinked_extension_sha256": "c9ef20c1ac070cd3d1b4b1dc58ceb58b2293968a672958a1e360a7bd0e075b65",
+    "interpreter_relinked_extension_bytes": 10152280,
+    "required_python_executable": "/home/florianpfaff/.venvs/deform360-processing-v1/bin/python",
+    "serial_and_concurrent_import_sha256_stable": true,
+    "python_version": "3.10.12",
+    "torch_version": "2.4.0+cu121",
+    "torch_cuda_version": "12.1",
+    "gsplat_version": "1.4.0",
+    "nvcc_version_line": "Cuda compilation tools, release 12.6, V12.6.85",
+    "cuda_architecture": "8.9",
+    "backend_probe": "CameraModelType.PINHOLE",
+    "deform360_source_hashes_changed": false,
+    "gsplat_package_or_version_changed": false,
+    "semantic_runtime_contract_changed": false
+  },
+  "application_policy": {
+    "applies_to_queue_ranks": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "rank_3_remains_bound_to_parent_runtime": true,
+    "ranks_4_and_5_runtime_failures_are_not_case_attempts": true,
+    "parent_geometry_protocol_unchanged": true,
+    "parent_geometry_builder_unchanged": true,
+    "every_later_geometry_result_requires_runtime_v2_application_sidecar": true,
+    "no_method_threshold_or_advancement_gate_changed": true
+  },
+  "implementation_file_sha256": {
+    "runtime_wrapper_v2": "022476e0afce1fcc70208f3899ed8fc2277f39a254282b629d98641991eadf6b"
+  },
+  "information_boundary": {
+    "future_object_observation_read": false,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  },
+  "config_sha256": "1529ddcbd1d7f5dcae366264124c723299ee253cf1da1457171b5aef375bf174"
+}
