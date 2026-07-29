@@ -14,6 +14,9 @@ from bayesian_phystwin.deform360_causal_response_event import (
 from bayesian_phystwin.deform360_causal_response_prefix import (
     CausalResponsePrefixConfig,
 )
+from bayesian_phystwin.deform360_causal_response_preflight import (
+    CausalResponseSourcePreflightConfig,
+)
 from bayesian_phystwin.deform360_causal_response_query import (
     CausalResponseQueryConfig,
 )
@@ -48,6 +51,9 @@ def test_v12_method_lock_matches_the_executable_defaults() -> None:
     )
     assert payload["config_sha256"] == _canonical_sha256(payload)
     assert payload["prefix"] == asdict(CausalResponsePrefixConfig())
+    assert payload["source_preflight"] == json.loads(
+        json.dumps(asdict(CausalResponseSourcePreflightConfig()))
+    )
     assert payload["event"] == asdict(CausalResponseEventConfig())
     assert payload["query"] == asdict(CausalResponseQueryConfig())
     assert payload["admission"] == asdict(CausalResponseAdmissionConfig())
@@ -89,9 +95,21 @@ def test_v12_preserves_the_information_and_exact_fallback_boundaries() -> None:
     assert contract["association_probability_separate_from_prior_reliability"] is True
     assert contract["rejection_is_bit_exact_selected_baseline"] is True
     assert contract["candidate_is_readout_discrepancy_not_warp_state_injection"] is True
+    assert contract["source_lock_requires_accepted_hash_only_preflights"] is True
     assert set(panels["proposal_panel_indices"]).isdisjoint(
         panels["validation_panel_indices"]
     )
     assert sorted(
         panels["proposal_panel_indices"] + panels["validation_panel_indices"]
     ) == list(range(len(panels["full_panel"])))
+
+
+def test_v12_synthetic_control_gate_is_fixed_before_source_selection() -> None:
+    payload = json.loads(CONFIG.read_text(encoding="utf-8"))
+    gate = payload["synthetic_control_gate"]
+
+    assert gate["trial_count_per_arm"] == 12
+    assert gate["required_positive_detection_count"] == 12
+    assert gate["maximum_placebo_admission_count"] == 0
+    assert gate["minimum_positive_future_improvement_fraction"] == 0.10
+    assert gate["real_data_evidence"] is False

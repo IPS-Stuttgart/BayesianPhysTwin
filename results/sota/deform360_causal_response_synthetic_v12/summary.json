@@ -1,0 +1,271 @@
+{
+  "artifact_kind": "Deform360CausalResponseSyntheticControls",
+  "artifact_sha256": "ed15430d4ba1bff9866d0ab9e9a858a37fc799469a5b736e2b95f0b6246a761a",
+  "config": {
+    "birth_frame": 2,
+    "frame_count": 14,
+    "node_count": 12,
+    "observation_standard_deviation_m": 0.001,
+    "trial_count": 12,
+    "update_frame": 8
+  },
+  "contract": "deform360-causal-response-synthetic-controls-v12",
+  "information_boundary": {
+    "held_v8_artifact_or_process_access": false,
+    "real_identity_or_metric_read": false,
+    "real_object_observation_read": false,
+    "synthetic_future_instantiated_and_scored_after_prediction": true,
+    "synthetic_mechanism_defined_before_prediction": true
+  },
+  "mean_positive_baseline_rmse_m": 0.001688263990227858,
+  "mean_positive_candidate_rmse_m": 0.0014974256287063215,
+  "placebo_admission_count": 0,
+  "placebo_exact_fallback_count": 12,
+  "placebo_false_admission_rate": 0.0,
+  "positive_detection_count": 12,
+  "positive_detection_rate": 1.0,
+  "positive_improvement_fraction": 0.11303822306591982,
+  "schema_version": 1,
+  "trials": [
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0016562549528227836,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0013228183085685595,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 0
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0016828074273506552,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001367211709246233,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 1
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0017077099396707,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001419303662546374,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 2
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.001726204173984455,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0014727705337134523,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 3
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.001734772535272279,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0015211654013969412,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 4
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0017322099008626397,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0015593670459051728,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 5
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0017198265680101273,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0015881227555595203,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 6
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0017007835055320119,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.00159688143575003,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 7
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.001678906044200138,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001582975886420457,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 8
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0016575116515841406,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001550602960143467,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 9
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0016387270478007109,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.001515103883555597,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 10
+    },
+    {
+      "admission_reason": "causal-cross-panel-response",
+      "admitted": true,
+      "baseline_future_rmse_m": 0.0016234541356436576,
+      "candidate_applied": true,
+      "candidate_future_rmse_m": 0.0014727839616700555,
+      "control_kind": "positive-nonrigid",
+      "exact_baseline_fallback": false,
+      "trial_index": 11
+    },
+    {
+      "admission_reason": "insufficient-nonrigid-update-headroom",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-rigid",
+      "exact_baseline_fallback": true,
+      "trial_index": 0
+    },
+    {
+      "admission_reason": "insufficient-observed-response",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 1
+    },
+    {
+      "admission_reason": "insufficient-nonrigid-update-headroom",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-rigid",
+      "exact_baseline_fallback": true,
+      "trial_index": 2
+    },
+    {
+      "admission_reason": "insufficient-observed-response",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 3
+    },
+    {
+      "admission_reason": "insufficient-nonrigid-update-headroom",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-rigid",
+      "exact_baseline_fallback": true,
+      "trial_index": 4
+    },
+    {
+      "admission_reason": "insufficient-observed-response",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 5
+    },
+    {
+      "admission_reason": "insufficient-nonrigid-update-headroom",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-rigid",
+      "exact_baseline_fallback": true,
+      "trial_index": 6
+    },
+    {
+      "admission_reason": "insufficient-observed-response",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 7
+    },
+    {
+      "admission_reason": "insufficient-nonrigid-update-headroom",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-rigid",
+      "exact_baseline_fallback": true,
+      "trial_index": 8
+    },
+    {
+      "admission_reason": "insufficient-observed-response",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 9
+    },
+    {
+      "admission_reason": "insufficient-nonrigid-update-headroom",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-rigid",
+      "exact_baseline_fallback": true,
+      "trial_index": 10
+    },
+    {
+      "admission_reason": "insufficient-observed-response",
+      "admitted": false,
+      "baseline_future_rmse_m": null,
+      "candidate_applied": false,
+      "candidate_future_rmse_m": null,
+      "control_kind": "placebo-cross-panel",
+      "exact_baseline_fallback": true,
+      "trial_index": 11
+    }
+  ]
+}

@@ -88,11 +88,36 @@ An admitted innovation enters `robust_mixture_likelihood` once. Rejection at
 the event, nuisance, support, or later regret gate leaves the selected baseline
 bit-identical.
 
+## Synthetic Controls
+
+Before any fresh object is selected, the executable method is checked on 12
+known persistent nonrigid perturbations and 12 placebos. The placebo arm
+alternates rigid common-mode translations, which the nuisance model should
+remove, and incompatible proposal/validation deformations, which the
+cross-panel gate should reject.
+
+The registered control gate requires all 12 positive perturbations to produce
+an update, zero placebo admissions, exact fallback for every placebo, and at
+least 10% mean improvement on the synthetic continuation. These controls test
+implementation power and specificity only. They are not real-data evidence
+and cannot authorize a source or target claim.
+
 ## Prospective Evaluation
 
 After the complete exclusion union exists, select 12 fresh physical objects
-using metadata only and one episode per object. Seal every V12 candidate and
-fallback before opening disjoint hidden identities or future geometry.
+using metadata only and one episode per object. Before locking the final panel,
+each selected case must pass a hash-only source preflight. The preflight checks
+the released `bimanual` enum, 76-frame episode/robot/tactile contracts, all
+registered depth/mask/calibration streams, frame-zero projected support, and
+the physical backend's 128-node minimum. It retains no plaintext object or
+episode identity and reads no future object value or metric.
+
+The source lock must bind all twelve accepted preflight digests. A malformed
+metadata enum, a 54-point carrier that the backend cannot simulate, a missing
+camera stream, or an incomplete source-checksum set is therefore rejected
+before prediction rather than counted as a model forecast or discovered
+mid-campaign. Seal every admitted V12 candidate and fallback before opening
+disjoint hidden identities or future geometry.
 
 The source result must improve object-balanced hidden-identity RMSE and
 Chamfer distance by at least 5%, jointly win on at least 8 of 12 objects, keep
@@ -109,6 +134,8 @@ The code now provides:
 
 - a typed prefix-custody artifact that rejects future-length camera, tactile,
   or actuator carriers;
+- a hash-only source preflight covering metadata, stream, camera-panel, and
+  physical-backend admissibility;
 - a deterministic frame-zero query schedule with disjoint camera panels;
 - a sequential earliest-event scan;
 - a proposal-only physical-versus-persistence selector with a conservative
@@ -120,9 +147,12 @@ The code now provides:
 - translation, rotation, and scale nuisance controls;
 - metric covariance and residual-independent reliability;
 - a robust recursive RBF candidate;
+- sealed synthetic positive and placebo controls for update power and
+  specificity;
 - selected-baseline and observation hash binding;
 - a checksummed prediction-only seal that contains no hidden outcome; and
-- a 12-object source-lock schema that refuses an incomplete exclusion union.
+- a 12-object source-lock schema that refuses either an incomplete exclusion
+  union or a case without an accepted preflight.
 
 The tested pipeline can now schedule queries, scan the permitted prefix, select
 the conservative backbone, construct or reject an update, and seal either the

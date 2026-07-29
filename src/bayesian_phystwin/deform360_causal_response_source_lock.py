@@ -10,6 +10,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from .deform360_causal_response_preflight import (
+    CausalResponseSourcePreflight,
+    CausalResponseSourcePreflightConfig,
+    validate_causal_response_source_preflight,
+)
+
 SOURCE_LOCK_CONTRACT = "deform360-causal-response-source-lock-v12"
 OBJECT_HASH_NAMESPACE = b"deform360-fresh-object-exclusion-v1\0"
 REQUIRED_EXCLUSION_SCOPES = frozenset(
@@ -66,6 +72,7 @@ class CausalResponseSourceCase:
     case_hash: str
     object_hash: str
     metadata_sha256: str
+    source_preflight_sha256: str
     fold: int
 
     def __post_init__(self) -> None:
@@ -77,6 +84,7 @@ class CausalResponseSourceCase:
                     self.case_hash,
                     self.object_hash,
                     self.metadata_sha256,
+                    self.source_preflight_sha256,
                 )
             ),
             "source case digest is invalid",
@@ -170,6 +178,7 @@ class CausalResponseSourceLock:
                 "target_cohort_read": False,
                 "held_v8_object_ids_or_outcomes_read": False,
                 "held_v8_hash_only_exclusion_used": True,
+                "accepted_source_preflight_required": True,
             },
             "artifact_sha256": self.artifact_sha256,
         }
@@ -184,6 +193,7 @@ def build_causal_response_source_lock(
     exclusion_manifest_sha256: Mapping[str, str],
     excluded_object_hashes: Iterable[str],
     selection_metadata_sha256: str,
+    source_preflights: Iterable[CausalResponseSourcePreflight],
 ) -> CausalResponseSourceLock:
     """Build a source lock only after the complete exclusion union exists."""
 
@@ -193,6 +203,30 @@ def build_causal_response_source_lock(
             key=lambda case: (case.fold, case.object_hash, case.case_hash),
         )
     )
+    _require(
+        len({case.case_hash for case in ordered_cases}) == len(ordered_cases)
+        and len({case.object_hash for case in ordered_cases}) == len(ordered_cases),
+        "source cases or physical objects are duplicated",
+    )
+    preflights = tuple(source_preflights)
+    for preflight in preflights:
+        validate_causal_response_source_preflight(preflight)
+    _require(
+        len(preflights) == len(ordered_cases)
+        and len({preflight.case_hash for preflight in preflights}) == len(preflights),
+        "source preflight set does not match the source panel",
+    )
+    preflight_by_case = {preflight.case_hash: preflight for preflight in preflights}
+    for case in ordered_cases:
+        preflight = preflight_by_case.get(case.case_hash)
+        _require(
+            preflight is not None
+            and preflight.admitted
+            and preflight.config == CausalResponseSourcePreflightConfig()
+            and preflight.object_hash == case.object_hash
+            and preflight.artifact_sha256 == case.source_preflight_sha256,
+            "source case lacks a matching accepted V12 preflight",
+        )
     provisional = CausalResponseSourceLock(
         protocol_id=protocol_id,
         repository_revision=repository_revision,

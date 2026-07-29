@@ -2,7 +2,7 @@
   "schema_version": 1,
   "protocol_id": "deform360-causal-response-depth-v12",
   "status": "method-locked-awaiting-complete-hash-only-cohort-exclusion",
-  "config_sha256": "8c13a30b190f9cf8ddf8f0464b0602f0eb4c0fdb2dcca4291d244a9a01b5d43b",
+  "config_sha256": "29d83083f3304c27e1ce5200dae09fffb9a8a6ef048cb1a6feeba4d93ca6986f",
   "purpose": "Test whether an event-triggered, tactile-supported, disjoint-camera direct-depth observation can safely improve a selected physical-or-persistence deformable-object forecast.",
   "claim_boundary": "Method lock only. No fresh source cohort, prediction outcome, calibration result, target result, or state-of-the-art claim exists under this artifact.",
   "parent_evidence": {
@@ -17,7 +17,8 @@
       "one validated composite manifest covering every held-v8 object and attempt disposition",
       "Prob4D exclusion manifest with canonical digest 181796725382bcbe377b824dfac90243c6d3b0c9f9754fbeeb87cb6343d486ff",
       "MolmoMotion-Field exclusion manifest with content digest d25cc3044080459cef47851d292410def8a592aa95478dabeb1db9fa513e925a",
-      "all Bayesian-PhysTwin opened, reserved, selected, and technically dispositioned objects through V11"
+      "all Bayesian-PhysTwin opened, reserved, selected, and technically dispositioned objects through V11",
+      "one accepted V12 source-preflight artifact per selected case"
     ],
     "missing_at_method_lock": [
       "independently supplied held-v8 all-attempt hash-only exclusion manifest"
@@ -49,6 +50,43 @@
   "prefix": {
     "prefix_frame_count": 58,
     "minimum_camera_count": 6
+  },
+  "source_preflight": {
+    "required_frame_count": 76,
+    "prefix_frame_count": 58,
+    "minimum_physical_node_count": 128,
+    "maximum_physical_node_count": 10000,
+    "registered_camera_ids": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-006_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "proposal_camera_ids": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-010_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-024_cam1"
+    ],
+    "validation_camera_ids": [
+      "brics-odroid-006_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-015_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "require_full_registered_camera_panel": true
   },
   "query_provider": {
     "query_count": 16,
@@ -186,6 +224,18 @@
     "advance_action": "freeze a disjoint fresh-object target protocol without changing method, event, update, or gate settings",
     "fail_action": "stop V12 without tuning on source outcomes"
   },
+  "synthetic_control_gate": {
+    "trial_count_per_arm": 12,
+    "positive_control": "persistent nonrigid graph response",
+    "placebo_controls": [
+      "rigid common-mode translation",
+      "cross-panel inconsistent nonrigid response"
+    ],
+    "required_positive_detection_count": 12,
+    "maximum_placebo_admission_count": 0,
+    "minimum_positive_future_improvement_fraction": 0.1,
+    "real_data_evidence": false
+  },
   "method_contract": {
     "global_translation_rotation_and_similarity_scale_are_nuisance": true,
     "pairwise_admission_is_rigid_invariant": true,
@@ -195,6 +245,7 @@
     "association_probability_separate_from_prior_reliability": true,
     "state_innovation_robustified_once": true,
     "prediction_baseline_separate_from_physical_action_conditioning": true,
+    "source_lock_requires_accepted_hash_only_preflights": true,
     "rejection_is_bit_exact_selected_baseline": true,
     "candidate_is_readout_discrepancy_not_warp_state_injection": true
   },
