@@ -91,6 +91,10 @@ from .prob4d_causal_lineage import (
     validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
 )
+from .claim_bearing_prob4d import (
+    build_claim_bearing_gauge_aware_batch_from_artifacts,
+    build_claim_bearing_gauge_aware_batch_from_observation_belief,
+)
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
     ReliabilityConfig,
@@ -164,6 +168,8 @@ __all__ = [
     "apply_group_regret_bound",
     "apply_regret_guard",
     "binary_calibration_metrics",
+    "build_claim_bearing_gauge_aware_batch_from_artifacts",
+    "build_claim_bearing_gauge_aware_batch_from_observation_belief",
     "build_gauge_aware_batch_from_artifacts",
     "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
