@@ -18,6 +18,10 @@ from .bias_aware_belief import (
     update_bias_aware_state,
 )
 from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
+from .claim_bearing_prob4d import (
+    build_claim_bearing_gauge_aware_batch_from_artifacts,
+    build_claim_bearing_gauge_aware_batch_from_observation_belief,
+)
 from .complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
     CompleteBeliefSelectionV1,
@@ -90,10 +94,6 @@ from .prob4d_causal_lineage import (
     is_prob4d_causal_observation_belief,
     validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
-)
-from .claim_bearing_prob4d import (
-    build_claim_bearing_gauge_aware_batch_from_artifacts,
-    build_claim_bearing_gauge_aware_batch_from_observation_belief,
 )
 from .pseudo_measurements import (
     PseudoMeasurementBatch,
