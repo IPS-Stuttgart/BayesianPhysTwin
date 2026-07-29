@@ -254,6 +254,10 @@ def validate_claim_bearing_prob4d_observation_belief(
         belief,
         require_claim_bearing_provider_v2=True,
     )
+    if result.get("strict_causal_stream_contract") is not True:
+        raise ValueError(
+            "claim-bearing Prob4D observation requires a strict causal stream contract"
+        )
     if (
         result.get("stream_contract_version")
         != PROB4D_CAUSAL_STREAM_CONTRACT_VERSION
