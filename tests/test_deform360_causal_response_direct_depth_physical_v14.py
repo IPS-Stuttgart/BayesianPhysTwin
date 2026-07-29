@@ -16,8 +16,18 @@ from bayesian_phystwin.deform360_causal_response_direct_depth_physical import (
     PRELOCK_PROTOCOL_KIND,
     build_v14_prediction_only_bundle,
     load_v14_physical_prelock_protocol,
+    v14_physical_case_record,
     validate_v14_physical_artifacts,
     write_v14_physical_artifacts,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+LOCKED_PROTOCOL = (
+    ROOT / "configs/sota/"
+    "deform360_causal_response_direct_depth_v14_physical_prelock.json"
+)
+STAGING_QUEUE = (
+    ROOT / "configs/sota/deform360_causal_response_direct_depth_v14_staging_queue.json"
 )
 
 
@@ -235,6 +245,19 @@ def test_prelock_protocol_and_hash_only_prediction_bundle(tmp_path: Path) -> Non
     assert summary["frame_count"] == PHYSICAL_FRAME_COUNT
 
 
+def test_locked_prelock_protocol_binds_all_twelve_geometry_cases() -> None:
+    protocol = load_v14_physical_prelock_protocol(LOCKED_PROTOCOL)
+    records = [
+        v14_physical_case_record(protocol, STAGING_QUEUE, queue_rank=rank)
+        for rank in range(3, 15)
+    ]
+    assert [record["queue_rank"] for record in records] == list(range(3, 15))
+    assert len({record["object_hash"] for record in records}) == 12
+    assert len({record["case_hash"] for record in records}) == 12
+    assert min(record["physical_node_count"] for record in records) == 353
+    assert max(record["physical_node_count"] for record in records) == 2547
+
+
 def test_physical_fallback_is_exact_and_validated(tmp_path: Path) -> None:
     protocol_path = tmp_path / "protocol.json"
     _protocol(protocol_path)
@@ -311,13 +334,12 @@ def test_physical_archive_rejects_nonorthonormal_basis(tmp_path: Path) -> None:
 
 
 def test_v14_runners_do_not_require_an_existing_source_lock() -> None:
-    root = Path(__file__).resolve().parents[1]
     for relative in (
         "scripts/remote/"
         "build_deform360_causal_response_direct_depth_v14_automatic_twin.py",
         "scripts/remote/run_deform360_causal_response_direct_depth_v14_physical.py",
     ):
-        source = (root / relative).read_text(encoding="utf-8")
+        source = (ROOT / relative).read_text(encoding="utf-8")
         assert "dynamic_provider_cohort" not in source
         assert "source-lock" not in source
         assert "--cohort-lock" not in source
