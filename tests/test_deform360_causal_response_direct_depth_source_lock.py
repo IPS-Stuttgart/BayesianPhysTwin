@@ -20,6 +20,10 @@ from bayesian_phystwin.deform360_causal_response_direct_depth_source_lock import
     validate_adaptive_direct_depth_source_lock_v14,
     write_adaptive_direct_depth_source_lock_v14,
 )
+from bayesian_phystwin.deform360_causal_response_direct_depth_synthetic import (
+    run_adaptive_direct_depth_synthetic_v14,
+    write_adaptive_direct_depth_synthetic_v14,
+)
 from bayesian_phystwin.deform360_causal_response_preflight import (
     REGISTERED_CAMERA_IDS,
     CausalResponseSourceCameraRecord,
@@ -132,11 +136,17 @@ def test_v14_source_lock_binds_exclusion_preflights_and_folds(
     exclusion = (
         root / "configs" / "sota" / "deform360_fresh_object_exclusion_v14.json"
     )
+    synthetic = tmp_path / "synthetic.json"
+    write_adaptive_direct_depth_synthetic_v14(
+        synthetic,
+        run_adaptive_direct_depth_synthetic_v14(),
+    )
     lock = build_adaptive_direct_depth_source_lock_v14(
         cases,
         repository_revision="a" * 40,
         method_config_sha256="b" * 64,
         exclusion_manifest_path=exclusion,
+        synthetic_control_result_path=synthetic,
         selection_metadata_sha256="c" * 64,
         source_preflights=preflights,
     )
@@ -152,11 +162,16 @@ def test_v14_source_lock_binds_exclusion_preflights_and_folds(
     ] is False
 
 
-def test_v14_source_lock_rejects_an_excluded_object() -> None:
+def test_v14_source_lock_rejects_an_excluded_object(tmp_path: Path) -> None:
     cases, preflights = _panel()
     root = Path(__file__).resolve().parents[1]
     exclusion = (
         root / "configs" / "sota" / "deform360_fresh_object_exclusion_v14.json"
+    )
+    synthetic = tmp_path / "synthetic.json"
+    write_adaptive_direct_depth_synthetic_v14(
+        synthetic,
+        run_adaptive_direct_depth_synthetic_v14(),
     )
     excluded = json.loads(exclusion.read_text())["object_hashes"][0]
     replaced = list(cases)
@@ -170,6 +185,7 @@ def test_v14_source_lock_rejects_an_excluded_object() -> None:
             repository_revision="a" * 40,
             method_config_sha256="b" * 64,
             exclusion_manifest_path=exclusion,
+            synthetic_control_result_path=synthetic,
             selection_metadata_sha256="c" * 64,
             source_preflights=preflights,
         )

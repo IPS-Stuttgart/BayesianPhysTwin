@@ -19,6 +19,9 @@ from .deform360_causal_response_direct_depth_preflight import (
     AdaptiveDirectDepthSourcePreflightV14,
     validate_adaptive_direct_depth_source_preflight_v14,
 )
+from .deform360_causal_response_direct_depth_synthetic import (
+    validate_adaptive_direct_depth_synthetic_v14,
+)
 from .deform360_object_exclusion import (
     file_sha256,
     load_object_exclusion_manifest,
@@ -99,6 +102,8 @@ class AdaptiveDirectDepthSourceLockV14:
     method_config_sha256: str
     exclusion_manifest_sha256: str
     exclusion_manifest_file_sha256: str
+    synthetic_control_result_sha256: str
+    synthetic_control_file_sha256: str
     excluded_object_hashes: tuple[str, ...]
     cases: tuple[AdaptiveDirectDepthSourceCaseV14, ...]
     selection_metadata_sha256: str
@@ -120,6 +125,8 @@ class AdaptiveDirectDepthSourceLockV14:
                     self.method_config_sha256,
                     self.exclusion_manifest_sha256,
                     self.exclusion_manifest_file_sha256,
+                    self.synthetic_control_result_sha256,
+                    self.synthetic_control_file_sha256,
                     self.selection_metadata_sha256,
                     self.artifact_sha256,
                 )
@@ -162,6 +169,10 @@ class AdaptiveDirectDepthSourceLockV14:
             "exclusion_manifest_file_sha256": (
                 self.exclusion_manifest_file_sha256
             ),
+            "synthetic_control_result_sha256": (
+                self.synthetic_control_result_sha256
+            ),
+            "synthetic_control_file_sha256": self.synthetic_control_file_sha256,
             "excluded_object_count": len(self.excluded_object_hashes),
             "excluded_object_hashes": list(self.excluded_object_hashes),
             "selection_metadata_sha256": self.selection_metadata_sha256,
@@ -184,6 +195,7 @@ class AdaptiveDirectDepthSourceLockV14:
                 "held_v8_object_ids_or_outcomes_read": False,
                 "held_v8_hash_only_exclusion_used": True,
                 "accepted_v14_source_preflight_required": True,
+                "passed_v14_synthetic_controls_required": True,
             },
             "artifact_sha256": self.artifact_sha256,
         }
@@ -195,6 +207,7 @@ def build_adaptive_direct_depth_source_lock_v14(
     repository_revision: str,
     method_config_sha256: str,
     exclusion_manifest_path: str | Path,
+    synthetic_control_result_path: str | Path,
     selection_metadata_sha256: str,
     source_preflights: Iterable[AdaptiveDirectDepthSourcePreflightV14],
 ) -> AdaptiveDirectDepthSourceLockV14:
@@ -206,6 +219,8 @@ def build_adaptive_direct_depth_source_lock_v14(
         exclusion["owner"] == EXCLUSION_OWNER,
         "V14 exclusion manifest owner changed",
     )
+    synthetic_path = Path(synthetic_control_result_path)
+    synthetic = validate_adaptive_direct_depth_synthetic_v14(synthetic_path)
     ordered_cases = tuple(
         sorted(cases, key=lambda case: (case.fold, case.object_hash, case.case_hash))
     )
@@ -242,6 +257,8 @@ def build_adaptive_direct_depth_source_lock_v14(
         method_config_sha256=method_config_sha256,
         exclusion_manifest_sha256=exclusion["exclusion_sha256"],
         exclusion_manifest_file_sha256=file_sha256(exclusion_path),
+        synthetic_control_result_sha256=synthetic.artifact_sha256,
+        synthetic_control_file_sha256=file_sha256(synthetic_path),
         excluded_object_hashes=tuple(exclusion["object_hashes"]),
         cases=ordered_cases,
         selection_metadata_sha256=selection_metadata_sha256,
@@ -299,6 +316,10 @@ def validate_adaptive_direct_depth_source_lock_v14(
         exclusion_manifest_file_sha256=payload[
             "exclusion_manifest_file_sha256"
         ],
+        synthetic_control_result_sha256=payload[
+            "synthetic_control_result_sha256"
+        ],
+        synthetic_control_file_sha256=payload["synthetic_control_file_sha256"],
         excluded_object_hashes=tuple(payload["excluded_object_hashes"]),
         cases=tuple(
             AdaptiveDirectDepthSourceCaseV14(**record)
