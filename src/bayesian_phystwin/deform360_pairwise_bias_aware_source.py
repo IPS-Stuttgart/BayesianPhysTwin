@@ -446,9 +446,18 @@ def evaluate_pairwise_bias_aware_source(
     output_dir: str | Path,
     *,
     config: PairwiseBiasAwareDevelopmentConfig | None = None,
+    transfer_manifest_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Evaluate the frozen composition on exactly the already-open 27 cases."""
 
+    if transfer_manifest_sha256 is not None and (
+        len(transfer_manifest_sha256) != 64
+        or any(
+            character not in "0123456789abcdef"
+            for character in transfer_manifest_sha256
+        )
+    ):
+        raise ValueError("invalid transfer-manifest SHA-256")
     cfg = config or PairwiseBiasAwareDevelopmentConfig()
     source = Path(source_root).resolve()
     measurement = Path(measurement_root).resolve()
@@ -584,6 +593,7 @@ def evaluate_pairwise_bias_aware_source(
             "uncertainty": str(uncertainty),
             "selected_baseline": str(selected_baseline),
         },
+        "transfer_manifest_sha256": transfer_manifest_sha256,
         "claim_boundary": (
             "The 27 cases and five objects were already outcome-open. This result "
             "can stop or lock a candidate for a genuinely fresh protocol; it "

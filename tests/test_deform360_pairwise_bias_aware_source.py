@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 import bayesian_phystwin.deform360_pairwise_bias_aware_source as source
 from bayesian_phystwin.deform360_online_belief_evaluation import PRIMARY_METRICS
@@ -65,6 +66,7 @@ def test_source_evaluator_applies_frozen_object_level_gates(
         tmp_path / "uncertainty",
         tmp_path / "baseline",
         tmp_path / "output",
+        transfer_manifest_sha256="a" * 64,
     )
 
     assert result["larger_preregistered_run_justified"] is True
@@ -72,5 +74,18 @@ def test_source_evaluator_applies_frozen_object_level_gates(
     assert result["object_level_gates"]["joint_object_win_count"] == 5
     assert result["candidate_update_count"] == 5
     assert result["exact_fallback_count"] == 0
+    assert result["transfer_manifest_sha256"] == "a" * 64
     assert (tmp_path / "output" / "summary.json").is_file()
     assert len(result["artifacts"]) == 5
+
+
+def test_source_evaluator_rejects_invalid_transfer_digest(tmp_path) -> None:
+    with pytest.raises(ValueError, match="transfer-manifest"):
+        source.evaluate_pairwise_bias_aware_source(
+            tmp_path / "source",
+            tmp_path / "measurement",
+            tmp_path / "uncertainty",
+            tmp_path / "baseline",
+            tmp_path / "output",
+            transfer_manifest_sha256="not-a-digest",
+        )

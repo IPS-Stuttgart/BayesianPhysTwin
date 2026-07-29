@@ -9,6 +9,9 @@ from collections.abc import Sequence
 from bayesian_phystwin.deform360_pairwise_bias_aware_source import (
     evaluate_pairwise_bias_aware_source,
 )
+from bayesian_phystwin.deform360_pairwise_bias_aware_transfer import (
+    validate_open27_transfer_bundle,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -18,22 +21,26 @@ def build_parser() -> argparse.ArgumentParser:
             "Deform360 27-case source panel."
         )
     )
-    parser.add_argument("--source-root", required=True)
-    parser.add_argument("--measurement-root", required=True)
-    parser.add_argument("--uncertainty-root", required=True)
-    parser.add_argument("--selected-baseline-root", required=True)
+    parser.add_argument(
+        "--bundle-root",
+        required=True,
+        help="Complete open-27 bundle validated before source outcomes are scored.",
+    )
     parser.add_argument("--output", required=True)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    transfer = validate_open27_transfer_bundle(args.bundle_root)
+    roots = transfer["roots"]
     result = evaluate_pairwise_bias_aware_source(
-        args.source_root,
-        args.measurement_root,
-        args.uncertainty_root,
-        args.selected_baseline_root,
+        roots["source"],
+        roots["measurement"],
+        roots["uncertainty"],
+        roots["selected_baseline"],
         args.output,
+        transfer_manifest_sha256=transfer["manifest_sha256"],
     )
     print(
         json.dumps(
