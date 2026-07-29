@@ -76,6 +76,12 @@ prospective calibration gate. The target-free support gate passed, the fresh
 accuracy gate failed, and reserved targets remained unopened. This is a
 negative prospective result, not a target evaluation.
 
+The
+[Deform360 causal direct-depth V14 result](deform360_causal_response_direct_depth_v14_result.md)
+records a separate fresh-source, outcome-blind failure. All 12 predictions
+sealed, but only 1 object admitted an event against 6 required and no update
+was applied. Future source identities and metrics therefore remain unopened.
+
 ## PhysTwin experiment families
 
 | Area | Primary document | Status and purpose |

@@ -2,10 +2,15 @@
 
 ## Status
 
-V14 is implementation-locked before selecting a fresh source cohort. It is a
-prospective source-development study, not a result, confirmation, or
-state-of-the-art claim. Only a complete pass of the frozen source gates may
-authorize a separately preregistered evaluation on independent fresh objects.
+V14 is closed after its outcome-blind fresh-source event gate failed. All
+twelve predictions or exact fallbacks were sealed, but only one object
+admitted an event against the frozen minimum of six, and no update was
+applied. Source outcomes remain unopened because they cannot rescue the
+conjunctive gate. See the
+[frozen source result](deform360_causal_response_direct_depth_v14_result.md).
+
+The text below records the prospectively locked protocol. V14 is not a
+confirmation or state-of-the-art result.
 
 ## Why This Is Not Another Tracker Arm
 
