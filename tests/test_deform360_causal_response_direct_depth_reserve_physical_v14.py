@@ -12,6 +12,9 @@ import pytest
 from bayesian_phystwin import (
     deform360_causal_response_direct_depth_physical as physical_module,
 )
+from bayesian_phystwin.deform360_causal_response_direct_depth_admission_v14 import (
+    load_v14_admission_prelock_protocol,
+)
 from bayesian_phystwin.deform360_causal_response_direct_depth_assets import (
     canonical_sha256,
 )
@@ -79,6 +82,11 @@ RESERVE_PHYSICAL_RUNTIME_PATH = (
     ROOT
     / "configs/sota/"
     "deform360_causal_response_direct_depth_v14_reserve_physical_runtime_v1.json"
+)
+RESERVE_ADMISSION_PRELOCK_PATH = (
+    ROOT
+    / "configs/sota/"
+    "deform360_causal_response_direct_depth_v14_reserve_admission_prelock_v1.json"
 )
 AUTOMATIC_TWIN = (
     ROOT
@@ -420,6 +428,22 @@ def test_locked_reserve_physical_ledgers_cover_the_fixed_batch() -> None:
     assert min(row["physical_node_count"] for row in prelock["geometry_cases"]) >= 128
     assert all(row["staged_frame_count"] == 81 for row in runtime["action_cases"])
     assert len({row["object_hash"] for row in prelock["geometry_cases"]}) == 7
+
+    admission = load_v14_admission_prelock_protocol(
+        RESERVE_ADMISSION_PRELOCK_PATH
+    )
+    assert (
+        admission["parent_artifacts"]["physical_prelock"][
+            "config_or_queue_sha256"
+        ]
+        == prelock["config_sha256"]
+    )
+    assert (
+        admission["parent_artifacts"]["physical_runtime_v2"][
+            "config_or_queue_sha256"
+        ]
+        == runtime["config_sha256"]
+    )
 
 
 def test_automatic_twin_dispatches_reserve_without_changing_baseline(

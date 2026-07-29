@@ -1,0 +1,61 @@
+{
+  "admission_contract": {
+    "camera_completeness": "A camera is complete when its exact 58-frame depth and mask streams and registered calibration are present.",
+    "plaintext_policy": "Plaintext source identity may locate public source files but is replaced by object and case hashes in every sealed carrier, preflight, and admission artifact.",
+    "projected_support": "Frame-zero projected support is recorded but is not reinterpreted as stream completeness; geometric support is judged only by the frozen adaptive-carrier schedule.",
+    "replacement_policy": "A pre-lock rejection may advance to the next immutable queue rank. A selected prediction, retained failure, or outcome disposition may not be replaced.",
+    "selection_inputs": "Frame-zero physical prediction, graph basis, action support, frame-zero depth and masks, calibration, metadata enum, source stream counts, and checksums."
+  },
+  "artifact_kind": "Deform360CausalResponseDirectDepthAdmissionPrelockProtocolV14",
+  "config_sha256": "9b4532cff75dc33226188a1f3dffb73e7b797dadf99bee25441e3582eb0ca8a2",
+  "contract": "deform360-causal-response-direct-depth-admission-prelock-v14",
+  "implementation": {
+    "file_sha256": {
+      "admission_module": "4c66e545176d6f91277706bd12d42d2bf0ff82dfc005fe679898e372996c2e98",
+      "admission_runner": "bb21e0abac54805d2c6c470bdb909147c9e3469efd4ecf2e97f6a97b9e881f05",
+      "preflight_module": "fdd3ee092f97d87470283ea7ee7280d307dc9425fc1c507968bab0955f73fb10"
+    },
+    "parent_commit": "538c55c939dd2a6e43857f5b7f65a133a8ce471d"
+  },
+  "information_boundary": {
+    "frame_zero_object_observation_read": true,
+    "future_identity_or_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "prefix_object_response_read": false,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false
+  },
+  "numerical_contract": {
+    "camera_completeness_excludes_projected_support": true,
+    "camera_prefix_frame_count": 58,
+    "depth_scale_to_m": 0.001,
+    "minimum_complete_camera_count": 8,
+    "physical_robot_tactile_frame_count": 76
+  },
+  "parent_artifacts": {
+    "method_protocol": {
+      "config_or_queue_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "physical_prelock": {
+      "config_or_queue_sha256": "cf11aed78360da67524e668141ff5a4e7350fe48e2033aa09ed0d1a9ee9d7fe9",
+      "file_sha256": "f643866001f9fb75e3cd4ddf60e4ab6f162a30f397a51b8c46a78df3359f443e"
+    },
+    "physical_runtime_v2": {
+      "config_or_queue_sha256": "7270035ebb4414bb9b39fe9b1c7c797ce615ef62a6f2b744adbb48a44b1e2581",
+      "file_sha256": "ea308b42767eb6cda64b6c12e0a8cca855c99cdcb18e3bcc96c577bc80841d82"
+    },
+    "prefix_assets": {
+      "config_or_queue_sha256": "9fb919d9dae7b4257ad41499eec4d79882e95084d07c6d0c60b0b4f1b3528efc",
+      "file_sha256": "c17432287b585011ec86703124466f1724ca19f2a30f879b11083f5c5496f536"
+    },
+    "staging_queue": {
+      "config_or_queue_sha256": "e56dd42c07ce4aff0e3e0e2913e00a1e80d0727beef1884b1de93198f32bec75",
+      "file_sha256": "225ff37dd8ec2ff1ae12340ebfa3dc27fb6b045edee95d3b675832a72fa43d74"
+    }
+  },
+  "protocol_id": "deform360-causal-response-direct-depth-v14-admission-prelock",
+  "schema_version": 1,
+  "status": "locked_before_first_source_admission"
+}
