@@ -10,11 +10,13 @@ import pytest
 from bayesian_phystwin.deform360_fresh_source_download import (
     DATASET_REVISION,
     build_fresh_download_manifest,
+    download_fresh_causal_episode_sources_from_index,
     download_fresh_episode_sources_from_index,
     download_fresh_source_queue,
     download_fresh_source_queue_by_object,
     fresh_source_download_plan,
     select_episode_camera_source_files,
+    select_episode_causal_source_files,
     validate_fresh_download_root,
 )
 
@@ -127,6 +129,9 @@ def test_queue_download_inventories_without_deserializing_payload(
     assert calls[0]["revision"] == DATASET_REVISION
     assert calls[0]["max_workers"] == 3
     assert manifest["object_count"] == 12
+    assert "queue_candidate_count" not in manifest
+    assert "selected_candidate_ranks" not in manifest
+    assert "queue_rank" not in manifest["objects"][0]
     assert manifest["information_boundary"]["episode_payload_deserialized"] is False
     assert manifest["information_boundary"]["target_metrics_opened"] is False
     assert manifest["manifest_sha256"] == _canonical_sha256(
@@ -259,3 +264,89 @@ def test_indexed_episode_download_is_camera_only(tmp_path: Path) -> None:
         hub_download=lambda **_: pytest.fail("completed source file was requested again"),
     )
     assert resumed["manifest_sha256"] == manifest["manifest_sha256"]
+
+
+def test_causal_source_selection_keeps_exact_tactile_and_preceding_baseline() -> None:
+    prefix = "raw/001-source-object"
+    camera = "brics-odroid-001_cam0"
+    sensor = "brics-odroid_tactilel_left"
+    paths = [
+        f"{prefix}/metadata.json",
+        f"{prefix}/calibration_refined/intrinsics.npy",
+        f"{prefix}/calibration_refined/extrinsics.npy",
+        f"{prefix}/{camera}/{camera}_100.mp4",
+        f"{prefix}/{camera}/{camera}_100.txt",
+        f"{prefix}/{camera}/{camera}_200.mp4",
+        f"{prefix}/{camera}/{camera}_200.txt",
+        f"{prefix}/{sensor}/{sensor}_100.npy",
+        f"{prefix}/{sensor}/{sensor}_100.txt",
+        f"{prefix}/{sensor}/{sensor}_200.npy",
+        f"{prefix}/{sensor}/{sensor}_200.txt",
+        f"{prefix}/{sensor}/median_050.npy",
+        f"{prefix}/{sensor}/median_150.npy",
+        f"{prefix}/{sensor}/median_250.npy",
+    ]
+
+    selected = select_episode_causal_source_files(
+        paths,
+        object_id="001-source-object",
+        episode_id=1,
+        required_camera_ids=(camera,),
+    )
+
+    assert f"{prefix}/{camera}/{camera}_200.mp4" in selected
+    assert f"{prefix}/{sensor}/{sensor}_200.npy" in selected
+    assert f"{prefix}/{sensor}/median_150.npy" in selected
+    assert f"{prefix}/{sensor}/median_050.npy" not in selected
+    assert f"{prefix}/{sensor}/median_250.npy" not in selected
+
+
+def test_ranked_causal_download_includes_tactile_without_downloading_whole_queue(
+    tmp_path: Path,
+) -> None:
+    queue = _queue(tmp_path)
+    plan = fresh_source_download_plan(queue)
+    output = tmp_path / "download"
+    camera = "brics-odroid-001_cam0"
+    sensor = "brics-odroid_tactilel_left"
+
+    def list_object_files(object_id: str) -> list[str]:
+        prefix = f"raw/{object_id}"
+        return [
+            f"{prefix}/metadata.json",
+            f"{prefix}/calibration_refined/intrinsics.npy",
+            f"{prefix}/calibration_refined/extrinsics.npy",
+            f"{prefix}/{camera}/{camera}_100.mp4",
+            f"{prefix}/{camera}/{camera}_100.txt",
+            f"{prefix}/{sensor}/{sensor}_100.npy",
+            f"{prefix}/{sensor}/{sensor}_100.txt",
+            f"{prefix}/{sensor}/median_050.npy",
+        ]
+
+    def hub_download(**kwargs: object) -> str:
+        path = output / str(kwargs["filename"])
+        if path.name == "metadata.json":
+            _write_metadata(path)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"source bytes")
+        return str(path)
+
+    manifest = download_fresh_causal_episode_sources_from_index(
+        queue,
+        output,
+        candidate_ranks=(1,),
+        required_camera_ids=(camera,),
+        max_workers=2,
+        object_delay_seconds=0.0,
+        list_object_files=list_object_files,
+        hub_download=hub_download,
+    )
+
+    assert manifest["object_count"] == 1
+    assert manifest["queue_candidate_count"] == len(plan.candidates)
+    assert manifest["selected_candidate_ranks"] == [1]
+    assert manifest["download_scope"] == "ranked_queued_episode_causal_source"
+    assert manifest["tactile_included"] is True
+    assert manifest["objects"][0]["queue_rank"] == 1
+    assert list(output.rglob("*tactile*"))

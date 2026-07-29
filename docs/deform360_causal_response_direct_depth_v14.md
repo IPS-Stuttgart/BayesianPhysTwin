@@ -92,6 +92,31 @@ The preflight retains hashes rather than plaintext object or episode identity.
 A rejected preflight is not a selected source case. Once selected, a case is
 never silently replaced after any prediction or outcome disposition.
 
+The metadata-only staging queue was sealed before episode media were listed or
+downloaded. After applying the 138-object exclusion, the public catalog
+contained 54 fresh objects. One malformed metadata record was rejected
+hash-only for an invalid `bimanual` enum, leaving 53 ordered candidates. The
+first twelve queue positions contain four sheet, four compact, and four complex
+objects; all remaining candidates are immutable preflight reserves.
+
+The queue is
+`configs/sota/deform360_causal_response_direct_depth_v14_staging_queue.json`,
+with internal digest
+`e56dd42c07ce4aff0e3e0e2913e00a1e80d0727beef1884b1de93198f32bec75`
+and file SHA-256
+`225ff37dd8ec2ff1ae12340ebfa3dc27fb6b045edee95d3b675832a72fa43d74`.
+The source panel is the first twelve accepted outcome-blind V14 preflights in
+this order. Predictions, metrics, and outcomes cannot trigger replacement.
+
+For each attempted rank, the indexed downloader admits only the exact episode
+recordings for the twelve registered cameras, refined calibration, metadata,
+and exact-stem tactile arrays and timestamps. It selects the latest tactile
+baseline recorded no later than the episode, falling back to the earliest
+available baseline only when no preceding baseline exists. Audio and unrelated
+episodes remain unstaged. Robot motion is recovered from the registered camera
+panel by the pinned official Deform360 robot stage; it is not inferred from
+future object motion.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a
