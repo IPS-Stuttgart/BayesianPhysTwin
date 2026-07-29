@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-causal-response-adaptive-query-v13-source",
+  "status": "locked-before-v13-source-query-dispositions",
+  "config_sha256": "2cff14d209a314c618b1381800cb179ce0d8632c9f66338fb79ee75b6571862f",
+  "purpose": "Determine whether one frozen adaptive complete-camera carrier can supply sixteen action-supported identities using strict three-plus-three support or a declared covariance-inflated two-plus-two fallback before tactile staging or state updating.",
+  "claim_boundary": "Post-open development on eight previously examined source cases, using frame zero only. This protocol cannot establish prediction accuracy, transfer, calibration, confirmation, or state of the art.",
+  "implementation_commit": "bdde57f790fdc6c41255d6968e1387e97c381062",
+  "parent_v12_result_commit": "cf2b532e01a3c92d1761f5bdea36a7c026e2c3b8",
+  "implementation_file_sha256": {
+    "scripts/remote/evaluate_deform360_causal_response_adaptive_query_v13_source.py": "d29ddebfbaa730aab3201530f18cc05c0fb483b7890cd1af69c161ed95b91ac8",
+    "scripts/remote/run_deform360_causal_response_adaptive_query_v13_source.py": "6160b38b8cd5ee999a76cbe8d4a48596d29e51eae67c1ca2bedf3fd782de1a4f",
+    "src/bayesian_phystwin/deform360_causal_response_adaptive_query.py": "e3a6e376bd280e98d8ed7eaa4a25c8c4df75d5b0ad7460de34bbf71c3b1990b5",
+    "src/bayesian_phystwin/deform360_causal_response_query.py": "c8bfa52baad1a1e9c29c0df61f341b59b4b4b375a684cecb6f4f6a0524dca3c7"
+  },
+  "depth_scale_to_m": 0.001,
+  "query": {
+    "prefix_frame_count": 58,
+    "query_count": 16,
+    "graph_basis_rank": 8,
+    "selected_camera_count": 8,
+    "panel_camera_count": 4,
+    "strict_minimum_support_per_panel": 3,
+    "fallback_minimum_support_per_panel": 2,
+    "fallback_covariance_inflation": 4.0,
+    "shared_bias_std_m": 0.005,
+    "action_support_threshold": 0.1,
+    "association_support_probability": 0.5,
+    "association_search_radius_px": 12,
+    "association_depth_scale_m": 0.03,
+    "association_minimum_candidate_count": 1,
+    "visibility_weight": 0.5,
+    "mode_information_weight": 1.0,
+    "spatial_diversity_weight": 1.0
+  },
+  "source_feasibility_gate": {
+    "locked_case_count": 8,
+    "minimum_admitted_case_count": 6,
+    "minimum_strict_admitted_case_count": 2,
+    "maximum_technical_failure_count": 0,
+    "pass_action": "Freeze a separate source-only tactile-event, tracker-competence, bias-aware update, and exact-fallback study without changing the V13 carrier.",
+    "fail_action": "Stop V13 without changing the panel objective, support ladder, covariance inflation, shared-bias scale, query budget, or source gate."
+  },
+  "cases": [
+    {
+      "case": "028-ziplog-cloth-ep0000",
+      "physical_archive_sha256": "0e059ca96be64406dc6b2a30a5f7b276ca3a9a1f54f97a80078e96e5af7ea717"
+    },
+    {
+      "case": "029-foam-cloth-ep0000",
+      "physical_archive_sha256": "89eae3e6a3bcb9c5912f1f68926ed6996b7847f634880c24e4976545978c19bf"
+    },
+    {
+      "case": "030-foam-flat-cloth-ep0000",
+      "physical_archive_sha256": "4f221933a8dfe4a27e2a70de889e7b0c2a4247b9026daca6b738aafd34fa24e9"
+    },
+    {
+      "case": "058-roll-napkin-ep0000",
+      "physical_archive_sha256": "19055cebe30b4fbc303507888fc3e824e43b7c28e9b7aa2908e613fc78a6519b"
+    },
+    {
+      "case": "059-shoe-ep0000",
+      "physical_archive_sha256": "11d7151c522025008e6821d780325431b7a100367d5965597ea32a2ceec82215"
+    },
+    {
+      "case": "061-cup-ep0000",
+      "physical_archive_sha256": "143ffa5323b303e5b9cadf537511727b1fa923b6b824a433a9bbb8899942bcee"
+    },
+    {
+      "case": "147-baking-mold-ep0000",
+      "physical_archive_sha256": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a"
+    },
+    {
+      "case": "152-slime-ep0000",
+      "physical_archive_sha256": "420f74615af97dc5a8f681bbc99cb3688dfd108d887fea975eb3b9cfc4cbee37"
+    }
+  ],
+  "information_boundary": {
+    "source_cases_previously_opened_by_v10_v11_v12": true,
+    "maximum_object_observation_frame": 0,
+    "known_physical_action_support_used": true,
+    "complete_camera_panel_selected_target_free": true,
+    "tactile_read": false,
+    "tracker_read": false,
+    "future_identity_read": false,
+    "future_object_observation_read": false,
+    "future_metric_read": false,
+    "state_update_constructed": false,
+    "v1_sealed_target_allowed": false,
+    "held_v8_artifact_or_process_access_allowed": false
+  },
+  "forbidden": [
+    "changing V13 panel selection, support ladder, covariance inflation, shared-bias scale, query count, or source gate after any source disposition",
+    "reading tactile, tracker output, future identities, future object observations, or future metrics",
+    "constructing or scoring a state update under this feasibility protocol",
+    "replacing a technical failure or abstained source case",
+    "selecting a fresh Deform360 object without the independent held-v8 all-attempt exclusion scope",
+    "opening, inspecting, modifying, or rerunning held-v8 artifacts or processes"
+  ]
+}
