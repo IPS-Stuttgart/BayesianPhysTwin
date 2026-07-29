@@ -191,10 +191,10 @@ class NuisanceAwareInformationState:
     ) -> NuisanceAwareInformationState:
         """Return the information state after one observation block.
 
-        Reliability is an expected-information weight. For correlated rows it is
-        applied after covariance whitening, which preserves a positive
-        semidefinite information contribution without pretending that dependent
-        rows are independent.
+        Reliability is an expected-information weight in observation-row
+        coordinates. The Jacobians are weighted before covariance whitening, so
+        correlated blocks remain positive semidefinite and row permutations do
+        not change the resulting information state.
         """
 
         state_jacobian_array = _finite_matrix(
@@ -230,12 +230,12 @@ class NuisanceAwareInformationState:
         )
         reliability_array = _reliability_vector(reliability, row_count)
 
-        cholesky = np.linalg.cholesky(covariance)
-        state_whitened = np.linalg.solve(cholesky, state_jacobian_array)
-        nuisance_whitened = np.linalg.solve(cholesky, nuisance_jacobian_array)
         scale = np.sqrt(reliability_array)[:, None]
-        state_whitened *= scale
-        nuisance_whitened *= scale
+        state_weighted = state_jacobian_array * scale
+        nuisance_weighted = nuisance_jacobian_array * scale
+        cholesky = np.linalg.cholesky(covariance)
+        state_whitened = np.linalg.solve(cholesky, state_weighted)
+        nuisance_whitened = np.linalg.solve(cholesky, nuisance_weighted)
 
         state_increment = state_whitened.T @ state_whitened
         nuisance_increment = nuisance_whitened.T @ nuisance_whitened
