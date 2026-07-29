@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "protocol_id": "deform360-event-conditioned-belief-v15",
+  "status": "implementation_prelock_before_any_v15_source_selection",
+  "scope": {
+    "new_event_conditioned_population": true,
+    "unconditional_deform360_claim": false,
+    "v12_rerun_authorized": false,
+    "v13_rerun_authorized": false,
+    "v14_rerun_authorized": false,
+    "source_or_target_outcome_opened": false
+  },
+  "closed_parent_results": {
+    "v12": {
+      "revision": "cf2b532e01a3c92d1761f5bdea36a7c026e2c3b8",
+      "result_canonical_sha256": "03ae0a299f24a84fcc8e4ae5d808d9bbc935e4f14d9df30017f1bf463c990bfa",
+      "decision": "closed_after_2_of_8_query_feasibility_admissions"
+    },
+    "v13": {
+      "revision": "95afc4232a0121ae84709046ae9ba0f9dab9d86e",
+      "decision": "closed_after_fixed_identity_tracker_support_failure"
+    },
+    "v14": {
+      "revision": "51cbdf0333264d8071e65e4f462c19a29faefc27",
+      "decision": "closed_after_1_of_12_outcome_blind_event_admissions"
+    }
+  },
+  "held_v8_exclusion_provenance": {
+    "path": "configs/sota/deform360_held_v8_all_attempts_exclusion_v1.json",
+    "canonical_sha256": "36effc81b8c0c1dba07892c20d32cbb4ca250cc6fde7b3aed678e5cd57f6a40b",
+    "file_sha256": "3b081d480e15464fa5506e7d163823f9bc7c594b50c5f4b8522037c2e10982e4",
+    "scope_count": 10,
+    "authorizes_only_a_new_protocol": true
+  },
+  "event_selector": {
+    "contract": "deform360-event-conditioned-window-v15",
+    "lag_frames": 6,
+    "first_candidate_frame": 8,
+    "forecast_horizon_frames": 18,
+    "last_candidate_frame": null,
+    "minimum_camera_support_per_cluster": 2,
+    "minimum_supported_cluster_count": 3,
+    "minimum_tactile_contact_probability": 0.5,
+    "minimum_actuator_displacement_m": 0.001,
+    "minimum_panel_nonrigid_rms_m": 0.001,
+    "minimum_panel_signal_to_noise": 2.0,
+    "minimum_cross_panel_cosine": 0.6,
+    "maximum_panel_rms_ratio": 3.0,
+    "maximum_cross_panel_reduced_nis": 9.0,
+    "temporal_variance_inflation": 2.0,
+    "shared_bias_variance_m2": 0.000025,
+    "variance_floor_m2": 1e-10
+  },
+  "population_selection": {
+    "sequential_rule": "earliest admitted nonrigid response",
+    "model_independent": true,
+    "proposal_and_validation_camera_panels_disjoint": true,
+    "gripper_excluded_cluster_pairwise_shape_signatures": true,
+    "physical_prediction_used": false,
+    "candidate_update_used": false,
+    "future_object_observation_used": false,
+    "future_identity_or_metric_used": false,
+    "no_event_is_explicit_abstention": true
+  },
+  "remaining_before_source_lock": [
+    "build a current all-study hash-only fresh-object exclusion union",
+    "freeze and hash the cluster-level signature preprocessor",
+    "freeze camera-panel assignment",
+    "run production-path synthetic positive and placebo controls",
+    "freeze outcome-blind source preflight and immutable source ordering",
+    "lock automatic current-material-identity competence gate",
+    "bind exact implementation and runtime digests"
+  ],
+  "claim_boundary": {
+    "implementation_evidence_only": true,
+    "real_data_evidence": false,
+    "state_of_the_art_claim_permitted": false,
+    "event_conditioned_results_must_report_population_shift": true,
+    "all_baselines_must_use_identical_selected_events": true
+  }
+}
