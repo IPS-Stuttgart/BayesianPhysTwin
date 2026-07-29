@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthPhysicalRuntimeV14V2",
+  "contract": "deform360-causal-response-direct-depth-physical-runtime-v14-v2",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-physical-runtime-v2",
+  "status": "locked_before_first_physical_carrier_execution",
+  "config_sha256": "f6310608f29d33820256c04c7b392af39a32ecb4ea0e482e289d7ac5c30ceb9d",
+  "parent_physical_prelock": {
+    "config_sha256": "a96f5b62471b26693b11fc98a819df2ef288a71f4f664b04e158646ab8e1fc02",
+    "file_sha256": "92cb2f2e21f0b72a58b2ec33489a8739d1cdc95d6e135283df1dac304dc552cb"
+  },
+  "trigger": {
+    "prefix_geometry_robot_frame_count": 58,
+    "required_physical_frame_count": 76,
+    "physical_carrier_executed_before_fix": false,
+    "method_or_gate_changed": false,
+    "reason": "The first physical smoke was blocked before launch by unrelated GPU use. Static preflight then found that the physical runner referenced the lawful 58-frame prefix-geometry robot archive even though the frozen rollout requires the full staged 76-frame known action."
+  },
+  "action_contract": {
+    "known_action_source": "exact_action_only_staged_window_robot",
+    "accepted_staged_frame_counts": [
+      76,
+      81
+    ],
+    "physical_frame_count": 76,
+    "object_observation_source": "frame_zero_only",
+    "tail_policy": "When the staged archive has 81 frames, use frames [0,76) and retain the final five frames only for the pre-existing point-cloud tail policy."
+  },
+  "action_cases": [
+    {
+      "queue_rank": 3,
+      "object_hash": "fca9448e749ce711cb20fde68b8aa5fd3322378942e80ebd6241ffc8f640e021",
+      "case_hash": "a5b48d16145620001fb35269a26c3907d1bd100d4394fdc3afa266025bcb4274",
+      "window_stage_artifact_sha256": "6fef0e0d1755529be5be2ab27b8279684bd0c6ee9b1b4b807503a87df80257ee",
+      "window_stage_file_sha256": "6ef39d7f5182a6cb5f0a1a7c56a9bc8a780378bcdb2f41e94a74ac2f3b8edf6b",
+      "known_action_file_sha256": "2f906f95c0f50f64fca61b4a401ff3869b8d1e5f0c970d10d0774af2d425c71c",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 4,
+      "object_hash": "eb00054f66ee8e36e85b679bc12955da1838db37512439e331b4c7bc3d845534",
+      "case_hash": "c190469a4c8166a3743438a7350f053c45f0eadf2b3121301c301ff75f1b6763",
+      "window_stage_artifact_sha256": "2bbbd32c9684d5db301143ee42be446fa3e84d3d42d0aa53f133099b44ce3d41",
+      "window_stage_file_sha256": "525537fd62c756d1e0d3f9e0357daad6c8af06e1efeb3221b78b2ef15f2a74a4",
+      "known_action_file_sha256": "c69643dc88750e07f196d0576e6ff15a94c340948b929803cf3f2ced9293b116",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 5,
+      "object_hash": "fb08a99eb18beb4588c6538d70ab263c263996565b0b4bb859660362361eb062",
+      "case_hash": "6b90353e356f95ee6ee7ab00d8f0c965a612137ff821edb2d4f1b14967572e89",
+      "window_stage_artifact_sha256": "6e175aabd57b5d31d7abc8fc7bb63f7828f90acacca8052df72a3ef915dc49eb",
+      "window_stage_file_sha256": "5b12d412d039ae8ce8a00b4aac5ab3e7bd644ad4b3961bcc64011967e9ab326e",
+      "known_action_file_sha256": "30698c33dc042a43703bd6fc5dd9cbb24b4c475426f1711578a12edd368e98e6",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 6,
+      "object_hash": "692b98ed8176d05f29d62a3532c766a65046cf7db4b0b321f6ae5139f9d3df9b",
+      "case_hash": "63a06fc10ea49f4de7b3fd589b6d0d5df0e8076301700dc7963935cd3bddf99f",
+      "window_stage_artifact_sha256": "cb922e06bb0f02391f78ee52fa78e00bc45a41d71600604ffe457a55ab07c00d",
+      "window_stage_file_sha256": "950ed3fc67942c504ae7c9fbaa342e8e27dcb014e6ce0dd22730f8486e7c35d0",
+      "known_action_file_sha256": "0cb7e3d05a2872e28d0def1dd68d28d77e02e49c5cc3469c11a7b210ba433ddb",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 7,
+      "object_hash": "774999d13dfd452ad9af34b5cee81ace3fbaa8064c6e0ce7a024fe4b6742c28a",
+      "case_hash": "c21b90d2fcbab58ce15e576a9a8d3eaa00c7c7f477b56e610a3c76c5c1bc6e59",
+      "window_stage_artifact_sha256": "80c8845481a120dd66c5b79c470379794233a4b5d7924228b5fd7d372e9348da",
+      "window_stage_file_sha256": "356b7ac5da7ceb94d61ab8dc7dcfd1981516a267d45216e62e9ff575bc44b7b6",
+      "known_action_file_sha256": "cc845994aa0d704dce03df413e24575441513d7fcb2a3bd9321ac90b99462763",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 8,
+      "object_hash": "d94854daa342f46d82c8dd3ebacda6ef96acc6ce0692ab63fdf6323772830807",
+      "case_hash": "cdd489742e15a2f22a4f7bda2cc2b080e7e81d309c9239a9302f7038e9dcd6bb",
+      "window_stage_artifact_sha256": "e62f9bf7b901a9ac62864f8f2eaca0cf867aa95da378b413db4980a6001b164d",
+      "window_stage_file_sha256": "1f51a7364be77f5e4143898a452eecb6f7b4848b8e8190232f854dc58dd1e9c6",
+      "known_action_file_sha256": "0e28b24045b24d40f9ed6c7b009dc73359cc24080249690a59256b342e10ffef",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 9,
+      "object_hash": "76bb6a4a07a59ad7ef7ec2351165047562d19db1aef2a715e5d2589ff76cc274",
+      "case_hash": "eb26a08b2badd3273590aaf37a790be3e2c662166b5123207baf6874f8e23f4b",
+      "window_stage_artifact_sha256": "1ca8a4b96af81323fd01e2295a2df800da432b9d1edd2e6100d8c44d9c29bf67",
+      "window_stage_file_sha256": "b253da2900a7a6e86aeb75357a0c349af9b5d5cb082104b1b83e5db3b50c9ec6",
+      "known_action_file_sha256": "a7c73f583f0d7e5ddcb8438141d0812378cd5abfea38df93f0e2608e3625a485",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 10,
+      "object_hash": "0e555a17d05cc2a1c2790dd6d89b9bfd5abb054eb5bb0cf51e63b99024d80d20",
+      "case_hash": "ecf082b51ef6c84e7f33c22fff770099a4946fa2b0a9113e4a85db3365f32bdf",
+      "window_stage_artifact_sha256": "c60ceb3e7bd5a6a6b55db3a424a5c1fb5ba79f19a565e7195d8b6945ffdb57a7",
+      "window_stage_file_sha256": "20eec7bb576581096a6ef43454ba844bd3bd59fe11d1adea0c8b29dabd4e50fe",
+      "known_action_file_sha256": "cd1808e9203f9f21379fd4f623219ca55cfb3fc81286d74e595344d869dc3261",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 11,
+      "object_hash": "ce98844909f770d633a1b29f04463a50ce4d8c4d49cbd063ac6a8f7c31b6ce1a",
+      "case_hash": "6c36c8bd772ec202d56c67deb6f6b692f75a00a72f3c316027da6c522a831951",
+      "window_stage_artifact_sha256": "9bef6c11c0a12697bff97161f4bc43fcace126c309482c3194c45e5b13f8d60c",
+      "window_stage_file_sha256": "05f7bb42153a2c6bc0d9330cf20570ecf450d7f865c5bdb1984f90ae3cfc1db2",
+      "known_action_file_sha256": "4371764cc4b1fe90f614bca10d4f471f5e1e893b04a36e2de5b4991be2c55997",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 12,
+      "object_hash": "ea56db678178f96e80c780b015502a82590bc950689168c8a77c7a9a98618c1d",
+      "case_hash": "3918364ae78c6c055a9855c8d88c5914ea5c272c11a9f853ca7b6d6354704e16",
+      "window_stage_artifact_sha256": "badfa066875ff6205b2eda80146830f69b8e7fb86b1b57a976341df96e806bd0",
+      "window_stage_file_sha256": "bc83721a82544e4a92d52d96fd815e2d3e2ec9a199150b7bf3073829f6f891e1",
+      "known_action_file_sha256": "64ab9c3cbfdabe52178d5f56a4b9f0c2c10bf884bec4af56846444745079162e",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 13,
+      "object_hash": "a0e6c8af13a6d4bd8d574b5eb27839f0d794d48c3164e08e45284b40b0e40335",
+      "case_hash": "2a9dce7e202a421ce248eda823a05a62d99f6cb778e616910e8375c2abae3c05",
+      "window_stage_artifact_sha256": "cf62f479c2fb768e5dd51925cbe63722beed92e007f0e0d2289eb9f22263d3c5",
+      "window_stage_file_sha256": "2f549858cc288ef19e21c7ad1da13af1321440e85e730a56156791c878737a09",
+      "known_action_file_sha256": "311ee2b6ebc267b0d1799cf3db94de4499a6cfdca5524c766d51894de5368e5d",
+      "staged_frame_count": 81
+    },
+    {
+      "queue_rank": 14,
+      "object_hash": "356eb8c02219c59fd50d5088799e97fde91e39d695e2270d4abf3354c6e5cd40",
+      "case_hash": "e4368707dd2d038803db01e4f23a8cc71a7d36c1ba364307cbca51961dd19b8b",
+      "window_stage_artifact_sha256": "20488b870c8f771f262478e50bf3773fe0e3e18cd44487ebc91f75f7df36b833",
+      "window_stage_file_sha256": "40386becc67d1bece94bd4ac99e87949de2992a20dac0ac5d348c4bd32314d27",
+      "known_action_file_sha256": "972312fb18aeed513bf2d93726f40766941f291564cac217f884203e0b646988",
+      "staged_frame_count": 81
+    }
+  ],
+  "implementation": {
+    "parent_commit": "8fb2e4e22974b64f149ef9122a15093017af362f",
+    "file_sha256": {
+      "physical_runner": "3194deff6995904e9916b00e830bc3b7ee1f43db234efadec6d110d61ebf42f7",
+      "runtime_module": "9d8ec5d3977001b06e3b76b56a45af0d60b2d46576c225e2fbd57b7d5716b2b0"
+    }
+  },
+  "information_boundary": {
+    "known_future_robot_action_read": true,
+    "future_object_observation_read": false,
+    "future_tactile_read": false,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}
