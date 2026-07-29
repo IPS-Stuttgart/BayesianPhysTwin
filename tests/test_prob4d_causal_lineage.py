@@ -648,9 +648,7 @@ def test_claim_bearing_requires_every_alignment_calibrated() -> None:
 def test_claim_bearing_rejects_recorded_covariance_fallback() -> None:
     belief = _attested_belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["covariance_calibration"]["covariance_fallback_counts"] = {
-        "pointwise": 1
-    }
+    metadata["covariance_calibration"]["covariance_fallback_counts"] = {"pointwise": 1}
 
     with pytest.raises(ValueError, match="fallback use"):
         validate_claim_bearing_prob4d_observation_belief(
