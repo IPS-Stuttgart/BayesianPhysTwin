@@ -1,0 +1,129 @@
+{
+  "artifact_kind": "Deform360CausalResponseDirectDepthReserveGeometryProtocolV14V1",
+  "config_sha256": "f7024e67c5c488a97570b661b3b4f0f706f9eb61b27e9e9f9cacff5eec013e91",
+  "contract": "deform360-causal-response-direct-depth-reserve-geometry-v14-v1",
+  "geometry": {
+    "cube_half_extent_m": 0.5,
+    "depth_scale_to_m": 0.001,
+    "first_frame_iterations": 500,
+    "maximum_object_observation_frame": 57,
+    "maximum_physical_node_count": 10000,
+    "minimum_physical_node_count": 128,
+    "minimum_visual_hull_points": 512,
+    "prefix_frame_count": 58,
+    "projected_support_role": "recorded target-free diagnostic, not an additional admission gate",
+    "seed_crop_half_extent_m": 0.5,
+    "seed_point_count": 10000,
+    "seed_rng": 0,
+    "support_depth_tolerance_m": 0.03,
+    "voxel_resolution": 120,
+    "warm_start_iterations": 250
+  },
+  "implementation_file_sha256": {
+    "geometry_builder": "d71afb7e832c299d4f5c51b686d59d74dd3e6eb43f0877e4b5a95a3d3b3898f2",
+    "geometry_module": "5e13d871ba36b364622b12d778cd55a426cb96a37862dcbcfe5ecb4b6d4854bb",
+    "reserve_module": "3f632cc1662e8b427cedd89d4053bca757d18235e1ab0c34c5085f7281988372",
+    "reserve_wrapper": "7a4ced7299bbe2697fced2a22fd20d09145de5cdfd10aac3bdf7ab77acad0118"
+  },
+  "information_boundary": {
+    "future_identity_or_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "maximum_object_observation_frame": 57,
+    "source_outcome_read": false,
+    "target_object_or_outcome_read": false
+  },
+  "mask_inputs": [
+    {
+      "artifact_sha256": "40068e2386aaf9202e739f437f2902395b563f84fdc6c46713dbd125a8b06ac1",
+      "file_sha256": "48c39a4c43fe07c0f7d4b2a55bfc8a6a81fc315bc00f6c2e5e2fc666e95ca1cd",
+      "queue_rank": 15,
+      "successful_camera_count": 12
+    },
+    {
+      "artifact_sha256": "c3cb104b80e24479b56c02f9a9ae5ada6ec8fedd6aed7ff4075bc03baee3634e",
+      "file_sha256": "a4b60d36c7e3edfd2e08c234276ff0be9ed0c66784c5bcb692081ff698330da1",
+      "queue_rank": 16,
+      "successful_camera_count": 12
+    },
+    {
+      "artifact_sha256": "f944a6e8bc09b999beb81746beaaaf1e22ff6e42fd42befcc6b30660ee42ccaf",
+      "file_sha256": "aea0c4a8ead623ff829b6a09c33314ef9be2bb063a1020558b3976e1d381e897",
+      "queue_rank": 17,
+      "successful_camera_count": 12
+    },
+    {
+      "artifact_sha256": "3c952ed82238af43ce68ca4845b7b9c7355d0b05c7298bc1140d04af66f02807",
+      "file_sha256": "b7c2dce3b3858f73d59fc65169fb25c9668d78378801fc7926f5c14cad660b01",
+      "queue_rank": 18,
+      "successful_camera_count": 12
+    },
+    {
+      "artifact_sha256": "0016065c9df2b63d5563a6a891ced55aa75a5937d1d64a347d690322c8dad5a7",
+      "file_sha256": "a3869dc0a12a2d7926b6e8c3d3dc727e61424d17f550917ab3a3ae1dedaac617",
+      "queue_rank": 19,
+      "successful_camera_count": 12
+    },
+    {
+      "artifact_sha256": "3366acac5dbaba752548cf41c1dae7c6be96efb65fc60e285a64b1ab4b8c676a",
+      "file_sha256": "b5f8f22ac2d19129f4523b2e5b5785945371dd0c75fc4298b4c0d24cebf42456",
+      "queue_rank": 21,
+      "successful_camera_count": 12
+    },
+    {
+      "artifact_sha256": "a699328ce45ec3be8d6fcfe425600da156fec8787143e9bc4a9b8567e5cde8c3",
+      "file_sha256": "129c770219dcdb54ee6421c8ab9c7efc6a0b204520e8da556058868fef37c371",
+      "queue_rank": 22,
+      "successful_camera_count": 11
+    }
+  ],
+  "parent_artifacts": {
+    "parent_geometry_protocol": {
+      "config_sha256": "3c4aa7d6dfe85e381c92804fe80ce81e45bf454838222d349e5ff0a313600ef6",
+      "file_sha256": "b94d3c1ea722f9be47b0ec34f7cd21e0bcb35bc535953557332f0062b5a75479"
+    },
+    "prefix_assets": {
+      "config_sha256": "9fb919d9dae7b4257ad41499eec4d79882e95084d07c6d0c60b0b4f1b3528efc",
+      "file_sha256": "c17432287b585011ec86703124466f1724ca19f2a30f879b11083f5c5496f536"
+    },
+    "reserve_batch": {
+      "config_sha256": "ee77222b813a590c80b27a386dd791893a60f6ff4172358e228c35d7b6fde0be",
+      "file_sha256": "f25d6bdb6167df84dd837ecad5893eb4cd43d146d5740945079cae18b594928d"
+    },
+    "staging_queue": {
+      "file_sha256": "225ff37dd8ec2ff1ae12340ebfa3dc27fb6b045edee95d3b675832a72fa43d74",
+      "queue_sha256": "e56dd42c07ce4aff0e3e0e2913e00a1e80d0727beef1884b1de93198f32bec75"
+    }
+  },
+  "protocol_id": "deform360-causal-response-direct-depth-v14-reserve-geometry-v1",
+  "runtime": {
+    "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "deform360_source_sha256": {
+      "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+      "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d",
+      "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+      "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467"
+    },
+    "gsplat_extension_path": "/home/florianpfaff/.cache/torch_extensions/py310_cu121/gsplat_cuda/gsplat_cuda.so",
+    "gsplat_extension_sha256": "c9ef20c1ac070cd3d1b4b1dc58ceb58b2293968a672958a1e360a7bd0e075b65",
+    "gsplat_version": "1.4.0",
+    "nvcc_path": "/usr/local/cuda/bin/nvcc",
+    "nvcc_version_line": "Cuda compilation tools, release 12.6, V12.6.85",
+    "python_version": "3.10.12",
+    "required_backend_probe": "CameraModelType.PINHOLE",
+    "required_path_prefix": "/usr/local/cuda/bin",
+    "torch_cuda_version": "12.1",
+    "torch_version": "2.4.0+cu121"
+  },
+  "schema_version": 1,
+  "status": "locked_after_reserve_prefix_masks_before_geometry",
+  "technical_dispositions": [
+    {
+      "artifact_sha256": "c2a5895071e3f1c610aa15cf5778e201f7e5a3d20a1ffe7c890f020ab8f329df",
+      "file_sha256": "d1556345accd2a0bf3284554fb3106e635be812ba0f57b84140fa4edc1e5788e",
+      "queue_rank": 20,
+      "stage": "source_preparation",
+      "status": "technical_preflight_failure"
+    }
+  ]
+}
