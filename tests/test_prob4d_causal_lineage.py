@@ -575,3 +575,103 @@ def test_claim_bearing_adapter_rejects_malformed_validation_summary(
 
     with pytest.raises(ValueError, match="provider attestation must be a mapping"):
         _adapt_claim_bearing(_attested_belief())
+
+
+def test_claim_bearing_calibration_metadata_must_be_mapping() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"] = "not-a-mapping"
+
+    with pytest.raises(ValueError, match="metadata must be a mapping"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_calibration_id_must_be_sha256() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["gauge_artifact_id"] = "invalid"
+
+    with pytest.raises(ValueError, match="lowercase SHA-256"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_alignment_count_must_be_nonnegative_integer() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["alignment_count"] = -1
+
+    with pytest.raises(ValueError, match="non-negative integer"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_requires_calibrated_status() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["status"] = "partially_calibrated"
+
+    with pytest.raises(ValueError, match="calibrated covariance metadata"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_rejects_uncalibrated_permission() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"][
+        "uncalibrated_exploratory_covariance_allowed"
+    ] = True
+
+    with pytest.raises(ValueError, match="uncalibrated covariance"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_requires_every_alignment_calibrated() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["gauge_calibrated_alignment_count"] = 0
+
+    with pytest.raises(ValueError, match="uncalibrated gauge alignments"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_rejects_recorded_covariance_fallback() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["covariance_fallback_counts"] = {
+        "pointwise": 1
+    }
+
+    with pytest.raises(ValueError, match="fallback use"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_rejects_nonjoint_validation_summary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "bayesian_phystwin.prob4d_causal_lineage."
+        "validate_prob4d_causal_observation_belief",
+        lambda *_args, **_kwargs: {
+            "strict_causal_stream_contract": True,
+            "stream_contract_version": 2,
+            "stream_contract_version_inferred": False,
+            "covariance_semantics": "legacy",
+            "cross_window_covariance_preserved": False,
+        },
+    )
+
+    with pytest.raises(ValueError, match="full joint cross-window"):
+        validate_claim_bearing_prob4d_observation_belief(_attested_belief())
