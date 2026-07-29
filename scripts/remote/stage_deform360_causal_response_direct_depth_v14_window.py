@@ -95,6 +95,15 @@ def _require_clean_repository(repository: Path) -> str:
     return revision
 
 
+def _resolve_required_executable(path: Path, *, name: str) -> Path:
+    expanded = path.expanduser()
+    _require(expanded.is_absolute(), f"{name} path must be absolute")
+    resolved = expanded.resolve()
+    _require(resolved.is_file(), f"{name} executable is unavailable")
+    _require(os.access(resolved, os.X_OK), f"{name} path is not executable")
+    return resolved
+
+
 def _trim_timestamps(
     source: Path,
     destination: Path,
@@ -222,12 +231,13 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--candidate-rank", type=int, required=True)
     parser.add_argument("--deform360-repo", type=Path, required=True)
-    parser.add_argument("--ffmpeg", type=Path, default=Path("ffmpeg"))
+    parser.add_argument("--ffmpeg", type=Path, required=True)
     return parser
 
 
 def main() -> int:
     args = _parser().parse_args()
+    ffmpeg = _resolve_required_executable(args.ffmpeg, name="ffmpeg")
     repository = args.repo.resolve()
     code_revision = _require_clean_repository(repository)
     protocol_path = args.protocol.resolve()
@@ -295,12 +305,6 @@ def main() -> int:
     )
     _require(not scratch.exists(), f"V14 stage scratch exists: {scratch}")
     scratch.mkdir(parents=True)
-    ffmpeg = args.ffmpeg
-    if not ffmpeg.is_absolute():
-        resolved_ffmpeg = shutil.which(str(ffmpeg))
-        _require(resolved_ffmpeg is not None, "ffmpeg executable is unavailable")
-        ffmpeg = Path(resolved_ffmpeg)
-    _require(ffmpeg.is_file(), "ffmpeg executable is unavailable")
 
     base: dict[str, Any] = {
         "schema_version": 1,
