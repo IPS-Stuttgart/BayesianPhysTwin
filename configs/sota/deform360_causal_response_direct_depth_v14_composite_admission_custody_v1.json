@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthCompositeAdmissionCustodyV14V1",
+  "contract": "deform360-causal-response-direct-depth-composite-admission-custody-v14-v1",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-composite-admission-custody-v1",
+  "status": "locked_after_twelfth_admission_before_source_finalization",
+  "config_sha256": "3d22892f7d5cd06ff5ff7f205b3b5d44c63b14d9a2b986f2a0927d64c02792de",
+  "purpose": "Bind the original and reserve admission prelocks to disjoint queue-rank scopes before the standard twelve-case source lock is finalized.",
+  "parent_artifacts": {
+    "method_protocol": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14.json",
+      "semantic_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "original_admission_prelock": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_admission_prelock.json",
+      "semantic_sha256": "ccb5ac22ed87695c0d21562902d15ffe60e30218012a601c4bbbc9f593aa99cf",
+      "file_sha256": "0f992f8407fca4426d732668079a3f87e9fa05cae2eab4f6e7e25e773b807e51"
+    },
+    "original_method_hash_runtime": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_method_hash_runtime_v2.json",
+      "semantic_sha256": "4d85b1df7412f37163f4b7d9695dc814e32b992c3bc12d21a38b2db4ea530fca",
+      "file_sha256": "f9dfb1f18bffad1bae8f387e332d4ea519f854b9af16e124a7b5c0e9e64a0f84"
+    },
+    "reserve_admission_prelock": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_reserve_admission_prelock_v1.json",
+      "semantic_sha256": "9b4532cff75dc33226188a1f3dffb73e7b797dadf99bee25441e3582eb0ca8a2",
+      "file_sha256": "dc3342600c43647dc2c583206765bdac89759d745a49baff7b7b8432cd563e31"
+    },
+    "reserve_admission_runtime": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_reserve_admission_runtime_v2.json",
+      "semantic_sha256": "5a1770fc4464e81c8e8a3f60f9abfc9637df0cbd82f2a6810be93187e360a27a",
+      "file_sha256": "561c2ef3aff7bde00e0a760b80831d6f14218b4c9d967a219c1597cb904a7c5a"
+    }
+  },
+  "rank_contract": {
+    "technical_window_disposition_ranks": [
+      1,
+      2
+    ],
+    "original_admission_rank_range_inclusive": [
+      3,
+      14
+    ],
+    "reserve_admission_rank_range_inclusive": [
+      15,
+      18
+    ],
+    "final_queue_rank": 18,
+    "required_selected_source_count": 12,
+    "original_admission_prelock_config_sha256": "ccb5ac22ed87695c0d21562902d15ffe60e30218012a601c4bbbc9f593aa99cf",
+    "reserve_admission_prelock_config_sha256": "9b4532cff75dc33226188a1f3dffb73e7b797dadf99bee25441e3582eb0ca8a2",
+    "original_repository_revision": "ac416f49f3d5f464348c843c0f918b052ee54874",
+    "reserve_repository_revision": "08e8869a07d8356f51d4fe7240ea0d4939d7cf24",
+    "prepared_but_unselected_reserve_ranks": [
+      19,
+      20,
+      21,
+      22
+    ]
+  },
+  "selection_boundary": {
+    "rule": "first twelve admitted cases in immutable queue order",
+    "rank_18_is_twelfth_admission": true,
+    "reserve_execution_stopped_after_rank_18": true,
+    "rank_20_geometry_failure_is_outside_selected_prefix": true
+  },
+  "information_boundary": {
+    "admission_dispositions_read": true,
+    "prefix_or_future_object_response_read": false,
+    "identity_or_metric_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthReserveSourceFinalizerProtocolV14V1",
+  "contract": "deform360-causal-response-direct-depth-reserve-source-finalizer-v14-v1",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-reserve-source-finalizer-v1",
+  "status": "locked_after_twelfth_admission_before_source_finalization",
+  "config_sha256": "2296bf5a9fb35ad2ab79c3a31b4c6e787df000c541f3737888c5dbf99d3fa4b3",
+  "purpose": "Finalize the standard twelve-case source lock while validating the original and reserve admission reports against their disjoint prelock scopes.",
+  "parent_artifacts": {
+    "admission_prelock": {
+      "semantic_sha256": "3d22892f7d5cd06ff5ff7f205b3b5d44c63b14d9a2b986f2a0927d64c02792de",
+      "file_sha256": "3ec37c3d65aa9e449ee0616bfdc68331a92b5aa672f60f12b6989f6ebddc64f5"
+    },
+    "exclusion_manifest": {
+      "semantic_sha256": "03c7b42fbdd0a8d9427a1ca8ee7fa8564c7691aa8e63402efefc7d7db16777a6",
+      "file_sha256": "8ea6d4da5352872afc0a2f5bec180104779f6189810249c9808f85779d12e4dc"
+    },
+    "method_protocol": {
+      "semantic_sha256": "4bb4133a1bbc6b3cab00f5f9e4e86add1f8c4e86fc7faebc39922a0d8a2af68b",
+      "file_sha256": "e0c8b62c4ba6ef0651d5e8a0f9461740a27eaa017bf160c6366779b9a78ca08a"
+    },
+    "staging_queue": {
+      "semantic_sha256": "e56dd42c07ce4aff0e3e0e2913e00a1e80d0727beef1884b1de93198f32bec75",
+      "file_sha256": "225ff37dd8ec2ff1ae12340ebfa3dc27fb6b045edee95d3b675832a72fa43d74"
+    },
+    "synthetic_control": {
+      "semantic_sha256": "d1dd2ae10150e74939c643835dc073c60fcab7730f26c53761da7d7010f87f04",
+      "file_sha256": "4e9b3820f71ea7f93234deee3169d8466dc2302df2e054fca87ae0a4038f66bb"
+    }
+  },
+  "parent_finalizer": {
+    "path": "configs/sota/deform360_causal_response_direct_depth_v14_source_finalizer.json",
+    "semantic_sha256": "75ef7482715b64d47c28680fb7ca904fa9f474798ed7d4f871894b4c82ffe57a",
+    "file_sha256": "0b57a5e103e5be63ea6709352009f74d68bf807b514e6e6f8e5948210cea72de"
+  },
+  "selection_contract": {
+    "rule": "Select the first twelve admitted hash-only preflights in immutable queue order.",
+    "required_selected_count": 12,
+    "required_cross_fit_folds": 3,
+    "objects_per_fold": 4,
+    "queue_prefix_must_be_contiguous": true,
+    "stop_exactly_at_twelfth_admission": true,
+    "mixed_admission_prelocks_are_rank_scoped": true
+  },
+  "implementation": {
+    "parent_commit": "08e8869a07d8356f51d4fe7240ea0d4939d7cf24",
+    "file_sha256": {
+      "admission_module": "4c66e545176d6f91277706bd12d42d2bf0ff82dfc005fe679898e372996c2e98",
+      "finalizer_runner": "e6e8fee6af86e74b96aaa891c5429a8c7c19fa7f04fbb6fb7baadca422789366",
+      "runtime_module": "1062f1b8ca0ddd70f67d250f133aa6d8a5897bf504f36e649f911c66a3783911",
+      "runtime_wrapper": "f93a224074de5eb060dd03fa0338a00e05fbe72f3d9bd74a2f4c83b79a0ceaec",
+      "selection_module": "c9807c97d8848b52cb586f26c319e06f7acd4e2619a9ab9ae2b3a9d96c1090a5",
+      "source_lock_module": "a8e1b277eeffd6b40c00780a7cb5fe59089eb339dba2cea405640801285d69fd"
+    }
+  },
+  "trigger": {
+    "admitted_source_count": 12,
+    "final_queue_rank": 18,
+    "source_lock_artifact_created": false,
+    "source_prediction_started": false,
+    "source_outcome_read": false
+  },
+  "information_boundary": {
+    "admission_dispositions_read": true,
+    "prefix_or_future_object_response_read": false,
+    "identity_or_metric_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}
