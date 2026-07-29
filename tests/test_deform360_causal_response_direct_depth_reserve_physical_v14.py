@@ -70,6 +70,16 @@ RESERVE_GEOMETRY_RUNTIME_V2_PATH = (
     / "configs/sota/"
     "deform360_causal_response_direct_depth_v14_reserve_geometry_runtime_v2.json"
 )
+RESERVE_PHYSICAL_PRELOCK_PATH = (
+    ROOT
+    / "configs/sota/"
+    "deform360_causal_response_direct_depth_v14_reserve_physical_prelock_v1.json"
+)
+RESERVE_PHYSICAL_RUNTIME_PATH = (
+    ROOT
+    / "configs/sota/"
+    "deform360_causal_response_direct_depth_v14_reserve_physical_runtime_v1.json"
+)
 AUTOMATIC_TWIN = (
     ROOT
     / "scripts/remote/"
@@ -381,6 +391,35 @@ def test_reserve_prelock_and_action_are_hash_bound(
             known_action_path=action_path,
             staged_frame_count=81,
         )
+
+
+def test_locked_reserve_physical_ledgers_cover_the_fixed_batch() -> None:
+    prelock = load_v14_reserve_physical_prelock(RESERVE_PHYSICAL_PRELOCK_PATH)
+    runtime = load_v14_reserve_physical_runtime(
+        RESERVE_PHYSICAL_RUNTIME_PATH,
+        parent_prelock_path=RESERVE_PHYSICAL_PRELOCK_PATH,
+    )
+    assert tuple(row["queue_rank"] for row in prelock["geometry_cases"]) == (
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        22,
+    )
+    assert tuple(row["queue_rank"] for row in runtime["action_cases"]) == (
+        15,
+        16,
+        17,
+        18,
+        19,
+        21,
+        22,
+    )
+    assert min(row["physical_node_count"] for row in prelock["geometry_cases"]) >= 128
+    assert all(row["staged_frame_count"] == 81 for row in runtime["action_cases"])
+    assert len({row["object_hash"] for row in prelock["geometry_cases"]}) == 7
 
 
 def test_automatic_twin_dispatches_reserve_without_changing_baseline(
