@@ -7,6 +7,7 @@ import pytest
 from bayesian_phystwin.deform360_causal_response_direct_depth_selection_v14 import (
     V14SelectionDisposition,
     build_v14_selection_ledger,
+    load_v14_source_finalizer_protocol,
     validate_v14_selection_ledger,
     write_v14_selection_ledger,
 )
@@ -57,6 +58,20 @@ def test_v14_selection_ledger_round_trip(tmp_path: Path) -> None:
     assert validate_v14_selection_ledger(output) == ledger
     assert ledger.dispositions[-1].queue_rank == 14
     assert sum(item.selected for item in ledger.dispositions) == 12
+
+
+def test_v14_source_finalizer_lock_is_self_consistent() -> None:
+    root = Path(__file__).resolve().parents[1]
+    protocol = load_v14_source_finalizer_protocol(
+        root
+        / "configs/sota/"
+        "deform360_causal_response_direct_depth_v14_source_finalizer.json"
+    )
+
+    assert protocol["config_sha256"] == (
+        "75ef7482715b64d47c28680fb7ca904fa9f474798ed7d4f871894b4c82ffe57a"
+    )
+    assert protocol["selection_contract"]["required_selected_count"] == 12
 
 
 def test_v14_selection_rejects_a_queue_gap(tmp_path: Path) -> None:
