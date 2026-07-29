@@ -3,15 +3,23 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
+from bayesian_phystwin import (
+    deform360_causal_response_direct_depth_physical as physical_module,
+)
 from bayesian_phystwin.deform360_causal_response_direct_depth_assets import (
     canonical_sha256,
 )
 from bayesian_phystwin.deform360_causal_response_direct_depth_cohort import (
     validate_v14_staging_queue,
+)
+from bayesian_phystwin.deform360_causal_response_direct_depth_physical import (
+    load_v14_physical_prelock_protocol,
 )
 from bayesian_phystwin.deform360_causal_response_direct_depth_preflight import (
     deform360_v14_case_hash,
@@ -66,6 +74,11 @@ AUTOMATIC_TWIN = (
     ROOT
     / "scripts/remote/"
     "build_deform360_causal_response_direct_depth_v14_automatic_twin.py"
+)
+ADMISSION_RUNNER = (
+    ROOT
+    / "scripts/remote/"
+    "run_deform360_causal_response_direct_depth_v14_admission.py"
 )
 
 
@@ -283,7 +296,10 @@ def _reserve_runtime(
     return payload
 
 
-def test_reserve_prelock_and_action_are_hash_bound(tmp_path: Path) -> None:
+def test_reserve_prelock_and_action_are_hash_bound(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     prelock_path = tmp_path / "prelock.json"
     prelock = _reserve_prelock(prelock_path)
     record = v14_reserve_physical_case_record(
@@ -329,6 +345,30 @@ def test_reserve_prelock_and_action_are_hash_bound(tmp_path: Path) -> None:
         staged_frame_count=81,
     )
     assert action_record["known_action_file_sha256"] == file_sha256(action_path)
+
+    spec = importlib.util.spec_from_file_location(
+        "_v14_reserve_admission_test",
+        ADMISSION_RUNNER,
+    )
+    assert spec is not None and spec.loader is not None
+    monkeypatch.setitem(sys.modules, "h5py", ModuleType("h5py"))
+    monkeypatch.setattr(
+        physical_module,
+        "load_v14_physical_prelock_protocol",
+        load_v14_physical_prelock_protocol,
+    )
+    admission = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(admission)
+    (
+        dispatched_prelock,
+        dispatched_runtime,
+        case_builder,
+        action_validator,
+    ) = admission._load_physical_stack(prelock_path, runtime_path)
+    assert dispatched_prelock == prelock
+    assert dispatched_runtime == runtime
+    assert case_builder.__name__ == "v14_reserve_physical_case_record"
+    assert action_validator.__name__ == "validate_v14_reserve_physical_action"
 
     action_path.write_bytes(b"mutated action")
     with pytest.raises(ValueError, match="action differs"):

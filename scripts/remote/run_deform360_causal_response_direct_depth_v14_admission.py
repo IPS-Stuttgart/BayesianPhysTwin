@@ -15,6 +15,9 @@ from typing import Any
 import h5py
 import numpy as np
 
+from bayesian_phystwin import (
+    deform360_causal_response_direct_depth_physical as physical_module,
+)
 from bayesian_phystwin.deform360_causal_response_adaptive_query import (
     AdaptiveCausalResponseQueryConfig,
     build_adaptive_causal_response_query_schedule,
@@ -45,6 +48,13 @@ from bayesian_phystwin.deform360_causal_response_direct_depth_preflight import (
     AdaptiveDirectDepthSourcePreflightConfigV14,
     evaluate_adaptive_direct_depth_source_preflight_v14,
     write_adaptive_direct_depth_source_preflight_v14,
+)
+from bayesian_phystwin.deform360_causal_response_direct_depth_reserve_physical_v14 import (
+    RESERVE_PHYSICAL_PRELOCK_KIND,
+    load_v14_reserve_physical_prelock,
+    load_v14_reserve_physical_runtime,
+    v14_reserve_physical_case_record,
+    validate_v14_reserve_physical_action,
 )
 from bayesian_phystwin.deform360_causal_response_preflight import (
     REGISTERED_CAMERA_IDS,
@@ -79,6 +89,47 @@ def _canonical_config_sha256(payload: Mapping[str, Any]) -> str:
             allow_nan=False,
         ).encode("utf-8")
     ).hexdigest()
+
+
+def _load_physical_stack(
+    prelock_path: Path,
+    runtime_path: Path,
+) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    Any,
+    Any,
+]:
+    """Load the original or reserve physical custody without changing the gate."""
+
+    payload = _read_json(prelock_path)
+    if payload.get("artifact_kind") == RESERVE_PHYSICAL_PRELOCK_KIND:
+        prelock = load_v14_reserve_physical_prelock(prelock_path)
+        runtime = load_v14_reserve_physical_runtime(
+            runtime_path,
+            parent_prelock_path=prelock_path,
+        )
+        physical_module.load_v14_physical_prelock_protocol = (
+            load_v14_reserve_physical_prelock
+        )
+        return (
+            prelock,
+            runtime,
+            v14_reserve_physical_case_record,
+            validate_v14_reserve_physical_action,
+        )
+    physical_module.load_v14_physical_prelock_protocol = (
+        load_v14_physical_prelock_protocol
+    )
+    return (
+        load_v14_physical_prelock_protocol(prelock_path),
+        load_v14_physical_runtime_v2(
+            runtime_path,
+            parent_prelock_path=prelock_path,
+        ),
+        v14_physical_case_record,
+        validate_v14_physical_action_v2,
+    )
 
 
 def _git_output(repository: Path, *arguments: str) -> str:
@@ -297,11 +348,15 @@ def main() -> int:
     assets_path = args.prefix_assets.resolve()
     assets = _read_json(assets_path)
     physical_prelock_path = args.physical_prelock.resolve()
-    physical_prelock = load_v14_physical_prelock_protocol(physical_prelock_path)
     physical_runtime_path = args.physical_runtime_v2.resolve()
-    physical_runtime = load_v14_physical_runtime_v2(
+    (
+        physical_prelock,
+        physical_runtime,
+        physical_case_record_builder,
+        physical_action_validator,
+    ) = _load_physical_stack(
+        physical_prelock_path,
         physical_runtime_path,
-        parent_prelock_path=physical_prelock_path,
     )
     queue_path = args.queue.resolve()
     queue = validate_v14_staging_queue(queue_path)
@@ -325,7 +380,7 @@ def main() -> int:
     rank = int(args.queue_rank)
     _require(1 <= rank <= len(queue["candidates"]), "V14 queue rank is invalid")
     candidate = queue["candidates"][rank - 1]
-    case_record = v14_physical_case_record(
+    case_record = physical_case_record_builder(
         physical_prelock,
         queue,
         queue_rank=rank,
@@ -405,7 +460,7 @@ def main() -> int:
         processed_episode=processed,
         stage_result=stage,
     )
-    validate_v14_physical_action_v2(
+    physical_action_validator(
         physical_runtime,
         queue_rank=rank,
         object_hash=case_record["object_hash"],
