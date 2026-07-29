@@ -1,0 +1,96 @@
+{
+  "admitted_case_count": 2,
+  "artifact_kind": "Deform360CausalResponseQueryFeasibilityV12SourceResult",
+  "case_count": 8,
+  "cases": [
+    {
+      "admitted": false,
+      "case": "028-ziplog-cloth-ep0000",
+      "eligible_entity_count": 0,
+      "result_sha256": "b740ee8e486e6aee68e627f4afed827acab7b486bb596be2c51a038eb3b0d424",
+      "selected_entity_count": 0,
+      "status": "abstained"
+    },
+    {
+      "admitted": true,
+      "case": "029-foam-cloth-ep0000",
+      "eligible_entity_count": 64,
+      "result_sha256": "769aa6cd72bcc0f9215e30d26b2521b168ed42cb9c23b731d07452c9e57aee4f",
+      "selected_entity_count": 16,
+      "status": "admitted"
+    },
+    {
+      "admitted": false,
+      "case": "030-foam-flat-cloth-ep0000",
+      "eligible_entity_count": 0,
+      "result_sha256": "9a6697ef10da62fb59e0efb680c1d9fedcfe8d291570502643e06ae1bc1e6432",
+      "selected_entity_count": 0,
+      "status": "abstained"
+    },
+    {
+      "admitted": false,
+      "case": "058-roll-napkin-ep0000",
+      "eligible_entity_count": null,
+      "result_sha256": null,
+      "selected_entity_count": null,
+      "status": "technical_failure"
+    },
+    {
+      "admitted": false,
+      "case": "059-shoe-ep0000",
+      "eligible_entity_count": null,
+      "result_sha256": null,
+      "selected_entity_count": null,
+      "status": "technical_failure"
+    },
+    {
+      "admitted": true,
+      "case": "061-cup-ep0000",
+      "eligible_entity_count": 291,
+      "result_sha256": "2233464fd66025dc9f6e688b46a717707e94dea27c57837c3a00dfc3de6aa555",
+      "selected_entity_count": 16,
+      "status": "admitted"
+    },
+    {
+      "admitted": false,
+      "case": "147-baking-mold-ep0000",
+      "eligible_entity_count": null,
+      "result_sha256": null,
+      "selected_entity_count": null,
+      "status": "technical_failure"
+    },
+    {
+      "admitted": false,
+      "case": "152-slime-ep0000",
+      "eligible_entity_count": null,
+      "result_sha256": null,
+      "selected_entity_count": null,
+      "status": "technical_failure"
+    }
+  ],
+  "gate": {
+    "fail_action": "Stop V12 without weakening query count, panel support, association, action support, or source gate settings.",
+    "locked_case_count": 8,
+    "maximum_technical_failure_count": 0,
+    "minimum_admitted_case_count": 6,
+    "pass_action": "Stage released tactile streams and run the separately frozen V12 prefix event/admission path without changing the query method.",
+    "passed": false
+  },
+  "information_boundary": {
+    "future_identity_read": false,
+    "future_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "maximum_object_observation_frame": 0,
+    "state_update_constructed": false,
+    "tactile_read": false,
+    "v1_sealed_target_read": false
+  },
+  "protocol_file_sha256": "5cdc4589b702f9adaf3e1501e7518b5aec44652ab75ff642c3c5f7f2129dc172",
+  "protocol_id": "deform360-causal-response-query-feasibility-v12-source",
+  "repository_revision": "995b769a4b4f8c7b4dcf447196bfd0b38ab2d417",
+  "result_sha256": "03ae0a299f24a84fcc8e4ae5d808d9bbc935e4f14d9df30017f1bf463c990bfa",
+  "schema_version": 1,
+  "status": "failed",
+  "technical_failure_count": 4
+}
