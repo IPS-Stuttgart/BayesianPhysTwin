@@ -1,0 +1,111 @@
+{
+  "accepted": false,
+  "artifact_kind": "PhysTwinCrossProviderGuardedFieldPrediction",
+  "case_id": "single_lift_cloth",
+  "claim_boundary": "Post-open one-case source capacity smoke with manual disjoint prefix validation; not deployable, independent, confirmatory, or state-of-the-art evidence.",
+  "diagnostics": {
+    "config": {
+      "apply_frame_start": 88,
+      "bias_history_frames": 5,
+      "maximum_correction_m": 0.01,
+      "maximum_reprojection_error_px": 3.0,
+      "minimum_camera_count": 2,
+      "minimum_dense_support_fraction": 0.1,
+      "minimum_provider_count": 3,
+      "minimum_quality_probability": 0.1,
+      "minimum_validation_improvement_fraction": 0.05,
+      "minimum_validation_improvement_m": 0.00025,
+      "projection_ridge": 1e-05,
+      "robust_iterations": 4,
+      "robust_scale_m": 0.01,
+      "source_frame_end_exclusive": 88,
+      "source_frame_start": 68,
+      "validation_frame_end_exclusive": 121
+    },
+    "dense_fit": {
+      "effective_weight_sum": 3.9999999999999996,
+      "field_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": true,
+        "maximum_node_norm_after": 0.009999999999999998,
+        "maximum_node_norm_before": 0.06588881028974303,
+        "radial_scale": 0.15177083872095212
+      },
+      "information_mass": 4.0,
+      "prior_reliability_sum_before_normalization": 1186.8188574929181,
+      "robust_downweighted_fraction": 0.5598941098610192,
+      "selected_count": 1511,
+      "weighted_vector_rmse_m": 0.03510846137363269
+    },
+    "dense_support_fraction": 0.19389195431797768,
+    "dense_support_passed": true,
+    "information_boundary": {
+      "dense_block_information_mass": 4,
+      "dense_rows_treated_as_independent_samples": false,
+      "future_object_observation_read": false,
+      "future_scoring_identity_read": false,
+      "rejection_is_bit_exact_baseline": true,
+      "state_innovation_used_in_prior_reliability": false
+    },
+    "provider_endpoint_count": 3,
+    "provider_support_passed": true,
+    "relative_provider_bias": {
+      "absolute_gauge_used": false,
+      "bias_m": [
+        0.001125633716583252,
+        -0.0022962242364883423,
+        0.0009161084890365601
+      ],
+      "estimate_available": true,
+      "identity_count": 3,
+      "radial_rmse_m": 0.0015502909804891937,
+      "row_count": 15
+    },
+    "sparse_fit": {
+      "effective_weight_sum": 3.0,
+      "field_limit": {
+        "declared_maximum_node_norm": 0.01,
+        "limit_applied": true,
+        "maximum_node_norm_after": 0.01,
+        "maximum_node_norm_before": 0.0617854167946789,
+        "radial_scale": 0.16185049027396417
+      },
+      "information_mass": 3.0,
+      "prior_reliability_sum_before_normalization": 3.0,
+      "robust_downweighted_fraction": 0.0,
+      "selected_count": 3,
+      "weighted_vector_rmse_m": 0.02217512438319427
+    },
+    "validation": {
+      "baseline_vector_rmse_m": 0.04681152789352812,
+      "dense_gain_over_baseline_fraction": -0.020591973706177047,
+      "dense_gain_over_baseline_m": -0.0009639417515295012,
+      "dense_gain_over_sparse_fraction": -0.0531579120203487,
+      "dense_gain_over_sparse_m": -0.002411456233805266,
+      "dense_vector_rmse_m": 0.04777546964505762,
+      "passed": false,
+      "sparse_vector_rmse_m": 0.04536401341125235
+    }
+  },
+  "implementation": {
+    "repository_commit": null,
+    "runner_sha256": "1282a53e210e87253ddde6debce0e3c5436fdd265aa67c27f88f037b788c820b"
+  },
+  "information_boundary": {
+    "future_manual_identity_read": false,
+    "future_object_observation_read": false,
+    "future_score_artifact_read": false,
+    "held_v8_accessed": false,
+    "prefix_validation_read": true
+  },
+  "outcomes": null,
+  "output": {
+    "prediction_path": "/home/florianpfaff/bpt-cross-provider-field-v1-artifacts/prediction/prediction.npz",
+    "prediction_sha256": "1a02614d558700d790acf507014ef96d0a5f7e0d92b4723dafb00f4eb608b57d"
+  },
+  "protocol_id": "phystwin-cross-provider-guarded-field-v1",
+  "protocol_sha256": "6ac6da132a8b5526456d6c24eb0fd2a8291bec0178d27b77bc3fca5b2ef2fb88",
+  "result_sha256": "51ac60e6fb505377205bfff66c01b0c92b953d4f1ce9bbf9dcf6f42cbb6017e3",
+  "schema_version": 1,
+  "selection_reason": "prefix-disjoint-validation-regret-guard"
+}

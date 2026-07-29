@@ -1,0 +1,80 @@
+{
+  "artifact_kind": "PhysTwinCrossProviderGuardedFieldStaging",
+  "association": {
+    "future_distance_m": [
+      0.003546921846842421,
+      0.0038175285741840373,
+      0.0030141665895327165
+    ],
+    "future_node_ids": [
+      6732,
+      5289,
+      1821
+    ],
+    "maximum_distance_m": 0.005,
+    "provider_distance_m": [
+      0.0015976037175754179,
+      0.003482868378231501,
+      0.0020121836521823206,
+      0.0015423707761189362
+    ],
+    "provider_node_ids": [
+      4821,
+      3860,
+      2849,
+      1496
+    ],
+    "reference_frame": 0,
+    "validation_distance_m": [
+      0.0029667618239995752,
+      0.0011684932119505106
+    ],
+    "validation_node_ids": [
+      6284,
+      2606
+    ]
+  },
+  "case_id": "single_lift_cloth",
+  "identity_boundary": {
+    "future_identity_ids": [
+      0,
+      2,
+      7
+    ],
+    "provider_identity_ids": [
+      3,
+      4,
+      6,
+      8
+    ],
+    "sets_are_pairwise_disjoint": true,
+    "validation_identity_ids": [
+      1,
+      5
+    ],
+    "validation_selection_rule": "top two non-provider identities by finite availability on frames [88,121), ties by identity id; values and future availability are not used"
+  },
+  "information_boundary": {
+    "future_outcomes_used_for_identity_selection": false,
+    "future_score_artifact_is_for_post_seal_score_only": true,
+    "held_v8_accessed": false
+  },
+  "outputs": {
+    "future_score": {
+      "path": "/home/florianpfaff/bpt-cross-provider-field-v1-artifacts/staging/future_score.npz",
+      "sha256": "3f4c381a9a3fc467f24ef62d0c5f04ce2b2c6f5ec6ae24c4c3c137ac7def7c3f"
+    },
+    "prefix_validation": {
+      "path": "/home/florianpfaff/bpt-cross-provider-field-v1-artifacts/staging/prefix_validation.npz",
+      "sha256": "76a93092156853aedac98f8f51bb9c839cb6307075dfa82e58fb1416691e5eea"
+    }
+  },
+  "protocol_id": "phystwin-cross-provider-guarded-field-v1",
+  "result_sha256": "20e381128578eb1b0485f614c89c9e69affe7e4abe97fc5f9b9826a692b483a0",
+  "schema_version": 1,
+  "source_inputs": {
+    "baseline_sha256": "5e41ce3bfea780add79c20841084422ad7cad5e6e2443f3c2d2fca9729b8dd72",
+    "final_data_sha256": "0ca33031250c5efa8d25500b27488973770c47191d7707fc3499924e462f464b",
+    "manual_tracks_sha256": "dca0398d8660cc17d58f12142e144b930c5db67e13892820f43cf89edaabdf1e"
+  }
+}
