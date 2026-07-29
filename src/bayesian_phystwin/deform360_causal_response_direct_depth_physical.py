@@ -174,6 +174,23 @@ def load_v14_physical_prelock_protocol(path: str | Path) -> dict[str, Any]:
         ),
         "V14 physical pre-lock parent binding changed",
     )
+    implementation = payload.get("implementation")
+    _require(
+        isinstance(implementation, Mapping)
+        and isinstance(implementation.get("parent_commit"), str)
+        and len(implementation["parent_commit"]) == 40
+        and all(
+            character in "0123456789abcdef"
+            for character in implementation["parent_commit"]
+        )
+        and isinstance(implementation.get("file_sha256"), Mapping)
+        and set(implementation["file_sha256"])
+        == {"artifact_module", "automatic_twin", "physical_runner"}
+        and all(
+            _valid_digest(value) for value in implementation["file_sha256"].values()
+        ),
+        "V14 physical pre-lock implementation binding changed",
+    )
     numerical = payload.get("numerical_contract")
     _require(
         isinstance(numerical, Mapping)

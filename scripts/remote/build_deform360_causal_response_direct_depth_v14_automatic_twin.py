@@ -112,6 +112,11 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     args = _parse_args()
     protocol = load_v14_physical_prelock_protocol(args.prelock_protocol)
+    _require(
+        file_sha256(Path(__file__).resolve())
+        == protocol["implementation"]["file_sha256"]["automatic_twin"],
+        "V14 automatic-twin implementation changed",
+    )
     queue = validate_v14_staging_queue(args.queue)
     _require(
         file_sha256(args.queue)

@@ -102,6 +102,14 @@ def _protocol(path: Path) -> dict[str, object]:
         "method_protocol_id": ("deform360-causal-response-direct-depth-v14-source"),
         "status": "locked_after_geometry_before_physical_carrier_execution",
         "config_sha256": "0" * 64,
+        "implementation": {
+            "parent_commit": "1" * 40,
+            "file_sha256": {
+                "artifact_module": _digest("artifact-module"),
+                "automatic_twin": _digest("automatic-twin"),
+                "physical_runner": _digest("physical-runner"),
+            },
+        },
         "parent_artifacts": parents,
         "numerical_contract": {
             "canonical_node_count": 384,

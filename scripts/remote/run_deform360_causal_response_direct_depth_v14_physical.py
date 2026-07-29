@@ -285,6 +285,24 @@ def main() -> int:
     code_revision = helpers._require_clean_repository(repo)
     prelock_path = args.prelock_protocol.resolve()
     protocol = load_v14_physical_prelock_protocol(prelock_path)
+    implementation_files = {
+        "artifact_module": (
+            repo / "src/bayesian_phystwin/"
+            "deform360_causal_response_direct_depth_physical.py"
+        ),
+        "automatic_twin": (
+            repo / "scripts/remote/"
+            "build_deform360_causal_response_direct_depth_v14_automatic_twin.py"
+        ),
+        "physical_runner": Path(__file__).resolve(),
+    }
+    _require(
+        all(
+            file_sha256(path) == protocol["implementation"]["file_sha256"][name]
+            for name, path in implementation_files.items()
+        ),
+        "V14 physical implementation differs from the pre-lock protocol",
+    )
     queue_path = args.queue.resolve()
     queue = validate_v14_staging_queue(queue_path)
     _verify_parent_file(
