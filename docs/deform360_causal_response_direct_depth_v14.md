@@ -117,6 +117,14 @@ episodes remain unstaged. Robot motion is recovered from the registered camera
 panel by the pinned official Deform360 robot stage; it is not inferred from
 future object motion.
 
+Before any object response is used, the pinned action-only selector chooses an
+81-frame processing window from the complete released robot trajectory. The
+same half-open frame interval is then applied to RGB, robot, and synchronized
+tactile streams. The last five processing frames are reserved for the official
+point-cloud tail policy, leaving the registered 76-frame predictive episode.
+Full known action is permitted for window selection; object RGB and tactile
+values are not.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a
