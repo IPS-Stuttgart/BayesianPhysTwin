@@ -198,6 +198,11 @@ binds the exact interpreter and relinked extension for ranks 4 through 14.
 Rank 3 remains bound to the first runtime amendment; no existing artifact is
 rewritten, and the two failed invocations are not case attempts.
 
+The first runtime-v2 smoke completed successfully with twelve cameras and 856
+physical nodes. A second non-mutating validation amendment binds its manifest,
+result, runtime-v2 sidecar, official `splat_0.ply` output, and the complete
+runtime-amendment chain before the remaining ranks are permitted to run.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a
