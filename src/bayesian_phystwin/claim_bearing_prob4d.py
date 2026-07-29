@@ -131,9 +131,7 @@ def build_claim_bearing_gauge_aware_batch_from_artifacts(
 ) -> ObservationBeliefGaugeAdapterResult:
     """Require claim-bearing Prob4D semantics before using a bound linearization."""
 
-    validation = validate_claim_bearing_prob4d_observation_belief(
-        observation_belief
-    )
+    validation = validate_claim_bearing_prob4d_observation_belief(observation_belief)
     adapted = build_gauge_aware_batch_from_artifacts(
         observation_belief,
         linearization,
