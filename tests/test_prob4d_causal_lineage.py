@@ -42,7 +42,9 @@ def _metadata() -> dict[str, object]:
             "motioncrafter_windowing_model": ("motioncrafter_sliding_window_v1"),
             "source_product": ("independently_decoded_overlap_windows"),
             "causal_frame_stop_exclusive": 6,
-            "admissibility_rule": ("source_frame_max < causal_frame_stop_exclusive"),
+            "admissibility_rule": (
+                "source_frame_max < causal_frame_stop_exclusive"
+            ),
             "future_prediction_payloads_opened": 0,
             "source_artifact_sha256": "c" * 64,
             "selected_windows": [
@@ -179,8 +181,60 @@ def _belief() -> ObservationBeliefV1:
 def _attested_belief() -> ObservationBeliefV1:
     belief = _belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["prob4d_provider_attestation"] = _provider_attestation()
-    return replace(belief, metadata=metadata)
+    metadata.update(
+        {
+            "prob4d_causal_stream_contract_version": 2,
+            "metric_anchor_covariance_in_joint_factor": True,
+            "factor_definition": "one shared joint gauge latent vector",
+            "factor_group_semantics": (
+                "all rows use one factor group; each window contributes its block "
+                "of the same joint gauge covariance root"
+            ),
+            "joint_cross_window_gauge_covariance_represented": True,
+            "gauge_posterior": {
+                "model": "sequential_joint_spanning_tree_v1",
+                "window_count": 2,
+                "full_dimension": 14,
+                "exported_factor_rank": 7,
+                "retained_covariance_trace_fraction": 1.0,
+                "minimum_retained_gauge_trace": 0.999,
+                "max_gauge_rank": 64,
+                "cross_window_covariance_preserved": True,
+                "parent_window_ids": [None, "window-0"],
+                "fixed_lag_boundary_covariance_is_approximate": False,
+            },
+            "covariance_calibration": {
+                "status": "calibrated",
+                "gauge_artifact_id": "5" * 64,
+                "point_artifact_id": "6" * 64,
+                "uncalibrated_exploratory_covariance_allowed": False,
+                "pointwise_covariance_fallback_allowed": False,
+                "alignment_count": 1,
+                "gauge_calibrated_alignment_count": 1,
+                "covariance_fallback_counts": {},
+            },
+            "prob4d_provider_attestation": _provider_attestation(),
+        }
+    )
+    metadata["metric_gauge_anchor"].update(
+        {
+            "schema_name": "prob4d.metric-gauge-anchor",
+            "schema_version": 1,
+            "case_id": belief.case_id,
+            "coordinate_frame": "phystwin-world",
+            "world_frame_id": "phystwin-world",
+            "metric_units": "m",
+            "source_kind": "prefix_registration",
+        }
+    )
+    return replace(
+        belief,
+        factor_names=tuple(
+            f"joint_gauge_latent_{index:04d}" for index in range(7)
+        ),
+        factor_group_ids=np.zeros(4, dtype=np.int64),
+        metadata=metadata,
+    )
 
 
 def _adapt(belief: ObservationBeliefV1):
@@ -214,6 +268,9 @@ def test_claim_bearing_provider_v2_attestation_is_independently_validated() -> N
 
     assert validation["provider_attestation_present"] is True
     assert validation["provider_attestation_validated"] is True
+    assert validation["stream_contract_version"] == 2
+    assert validation["stream_contract_version_inferred"] is False
+    assert validation["claim_bearing_provider_v2_validated"] is True
     assert provider["claim_bearing"] is True
     assert provider["provider_api_version"] == 2
     assert provider["runtime_revision_independently_verified"] is True
@@ -231,9 +288,9 @@ def test_strict_provider_v2_validation_rejects_frozen_provider_v1_artifact() -> 
 def test_provider_manifest_payload_tampering_is_rejected_before_adaptation() -> None:
     belief = _attested_belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["prob4d_provider_attestation"]["provider_manifest"]["provider_version"] = (
-        "999"
-    )
+    metadata["prob4d_provider_attestation"]["provider_manifest"][
+        "provider_version"
+    ] = "999"
 
     with pytest.raises(ValueError, match="manifest ID does not match"):
         _adapt(replace(belief, metadata=metadata))
@@ -249,7 +306,9 @@ def test_rehashed_provider_capability_removal_is_rejected() -> None:
     attestation["provider_manifest_id"] = manifest["manifest_id"]
 
     with pytest.raises(ValueError, match="required claim-bearing capabilities"):
-        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
+        validate_prob4d_causal_observation_belief(
+            replace(belief, metadata=metadata)
+        )
 
 
 def test_prob4d_causal_lineage_rejects_changed_cutoff() -> None:
@@ -353,7 +412,9 @@ def test_prob4d_causal_lineage_rejects_nonmapping_attestation() -> None:
     metadata["prob4d_provider_attestation"] = "not-a-mapping"
 
     with pytest.raises(ValueError, match="attestation must be a mapping"):
-        validate_prob4d_causal_observation_belief(replace(belief, metadata=metadata))
+        validate_prob4d_causal_observation_belief(
+            replace(belief, metadata=metadata)
+        )
 
 
 def test_claim_bearing_entry_rejects_non_strict_stream(
