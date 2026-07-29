@@ -92,8 +92,8 @@ class CausalResponseQueryConfig:
         _require(self.query_count >= 1, "query count must be positive")
         _require(self.graph_basis_rank >= 1, "graph rank must be positive")
         _require(
-            self.minimum_camera_support_per_panel >= 3,
-            "each panel must retain at least three cameras",
+            self.minimum_camera_support_per_panel >= 2,
+            "each panel must retain at least two cameras",
         )
         _require(
             np.isfinite(self.action_support_threshold)
