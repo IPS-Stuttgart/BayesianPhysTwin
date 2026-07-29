@@ -177,6 +177,16 @@ setting, method threshold, source ordering, or advancement gate. Every later
 geometry result must carry a checksummed runtime-application sidecar; the
 parent geometry protocol and builder remain unchanged.
 
+The first completed geometry smoke then exposed a validation-only filename
+assumption: official Deform360 writes the frame-zero splat as `splat_0.ply`,
+while the original post-run validator looked for `splat_000000.ply`. The
+manifest already bound the hash of the actual official file, and all other
+fixed outputs matched. The separate validation amendment at
+`configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry_validation.json`
+therefore validates the official filename without rewriting the successful
+manifest, geometry result, or runtime sidecar. It changes no reconstruction
+byte, method threshold, queue disposition, or advancement gate.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a

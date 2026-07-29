@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalDirectDepthPrefixGeometryValidationV14",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-geometry-validation",
+  "status": "locked_after_independent_smoke_validation_before_source_lock",
+  "parent_geometry_protocol": {
+    "path": "configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry.json",
+    "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-geometry",
+    "config_sha256": "3c4aa7d6dfe85e381c92804fe80ce81e45bf454838222d349e5ff0a313600ef6",
+    "file_sha256": "b94d3c1ea722f9be47b0ec34f7cd21e0bcb35bc535953557332f0062b5a75479"
+  },
+  "parent_runtime_amendment": {
+    "path": "configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry_runtime.json",
+    "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-geometry-runtime",
+    "config_sha256": "0f5c973c1034a8a2a668a9ba3c7597e9ec058f0ea25aeefa06d8d4a2f836bedd",
+    "file_sha256": "095fbb190eb85814991d62959dd5dc1acbc89747c4d66a063ca0dee9558f8e4b"
+  },
+  "trigger": {
+    "queue_rank": 3,
+    "failure_message": "V14 prefix geometry fixed outputs changed",
+    "geometry_manifest_artifact_sha256": "18c8148d6f6023486a63373db76fd48a0b535e77ed70438b187e254106ed0a28",
+    "geometry_manifest_file_sha256": "f16c3cecb29dee8eeeadeeb56062118e641206b3c20b79db6e2199ff4cd149b6",
+    "geometry_result_artifact_sha256": "6bbfa560806087d04cf05a392213169dd26e600ff8136cb5fd15b90f8e1de761",
+    "geometry_result_file_sha256": "5839d50f9f042950346dfc33d432ad120bec26cfdea94bb16f82bdf720139534",
+    "runtime_application_artifact_sha256": "7ce90250da99f5892ff35aef47cccc45fa71703c11042db11c832552ededff10",
+    "runtime_application_file_sha256": "a5d061789667a9e17ef7654c7ad9d430f9a83d167c32cc1f5cb446aaf67f3496",
+    "actual_splat_filename": "splat_0.ply",
+    "incorrect_validator_filename": "splat_000000.ply",
+    "manifest_or_output_bytes_changed": false,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_access": false
+  },
+  "validation_policy": {
+    "canonical_frame_zero_splat_filename": "splat_0.ply",
+    "applies_to_queue_ranks": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "existing_manifest_is_not_rewritten": true,
+    "existing_result_is_not_rewritten": true,
+    "existing_runtime_sidecar_is_not_rewritten": true,
+    "method_or_gate_changed": false
+  },
+  "implementation_file_sha256": {
+    "validation_module": "3d1d36a4489588260a2d3f97646760338f2d3f730aca116f0b1e77ed38e8eadf"
+  },
+  "information_boundary": {
+    "maximum_object_observation_frame": 57,
+    "future_object_observation_read": false,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  },
+  "config_sha256": "f7ec211463bd7b63f980a3eead6dfb91c8bdb2ca360e3ec5b61a0be558857158"
+}
