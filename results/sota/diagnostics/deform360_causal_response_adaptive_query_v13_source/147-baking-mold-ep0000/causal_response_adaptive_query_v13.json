@@ -1,0 +1,314 @@
+{
+  "archive": {
+    "array_sha256": {
+      "association_candidate_count": "2db835cc80f793e6efeb0f4db32b77fa09fa9b7a4758bd1a2c20dfdebd9159b3",
+      "association_covariance_px2": "748e84739e95ba9540a82de108b42cccb14b3c3bdf36f10d1a72ac0f8cd4bacb",
+      "association_entropy": "8a14469c1e6d0ef6a3121065c280e7ac919fe43017d71d0d2cb6eadfa8b08faf",
+      "association_probability": "52e2ef61b2a97711e3a5193bb2df45cd33b586512234cde1253e252b8a8af694",
+      "association_query_points_xy": "ec9d0fc731b7fc89521d149fcda176b07af25442f0f9bb99548cddf10101130f",
+      "association_valid": "73c9ea02f7add3b9571ee1bbb3961b34aee7b147f166b6113477bf8850e28f01",
+      "entity_ids": "73430f892bef9d57c1b8b60a983200aa223095740e2d0545e7ad23f90c722074",
+      "proposal_complete_camera_indices": "09515be092de7cf4274aca04b75e97e06fbd0a9760d58de45edf62cfdeb52c72",
+      "query_points_world_m": "b7c7b427a89f798b9c4e120106e048c3709706b106342179ea1ffbb1855898da",
+      "selected_action_support": "a260ff2df7211b20a0b8b038ebf69db3d8c385520124026856f97c45dec6b653",
+      "selected_complete_camera_indices": "05a210a8154b503d0641387248164e8f511291cf34c9ff5af981e4c8ab0f6199",
+      "selected_total_score": "f53362e82f737b49036c9ced1a2fbfb7d7c47df32c0e348621c5ee93394f37a1",
+      "validation_complete_camera_indices": "58486b19fc4a9ede00d676ee32be20cfdad8f5be69a13e3256c68eca4fdd9b76"
+    },
+    "file_sha256": "2697aac299056ef1371e4557e086e565cf47001c1d9e8368b8da0e81fefd3e7a",
+    "filename": "causal_response_adaptive_query_v13.npz"
+  },
+  "artifact_kind": "Deform360CausalResponseAdaptiveQueryV13",
+  "case": "147-baking-mold-ep0000",
+  "contract": "deform360-causal-response-adaptive-query-v13",
+  "information_boundary": {
+    "complete_causal_camera_certificate_used": true,
+    "future_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "identity_target_read": false,
+    "known_action_support_used": true,
+    "object_observation_frames_used_for_selection": [
+      0
+    ],
+    "physical_frames_used_for_selection": [
+      0
+    ],
+    "proposal_and_validation_panels_disjoint": true,
+    "shared_bias_nuisance_declared": true,
+    "state_innovation_read": false,
+    "state_update_constructed": false,
+    "tactile_read": false,
+    "tracker_output_read": false,
+    "two_view_fallback_requires_covariance_inflation": true
+  },
+  "inputs_sha256": {
+    "camera_certificate": "2765f8248c76988c8d48aaade786d6c81fe2d08513fe2846f5063b4f65d55ff7",
+    "physical_archive": "7f0eff7a3411384477ff63a88dcfc9aa2ce909ffa10550fbabef281674ebba3a",
+    "physical_manifest": "6492a602f16b417bb85666e5cfb0ceba9a849e659241462fb33ee856597575ee",
+    "protocol": "1704ae0cb6675b0ff6ec44682fd023d98327c668a267325830c372f058c3b281"
+  },
+  "repository_revision": "ade5de6bac49551b994b7e6a0989a4da805a67bb",
+  "result_sha256": "d727bb66711a76d67d02e7c15e0d75a509551ad44b643f421a386639918e6407",
+  "schedule": {
+    "admitted": true,
+    "arm": "inflated_2plus2",
+    "artifact_kind": "Deform360CausalResponseAdaptiveQueryScheduleV13",
+    "artifact_sha256": "ff7e004c441a03b4ca7d676b60be31e59c4990c061d3d3fa548d439f41333b2f",
+    "available_camera_ids": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-013_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-021_cam1",
+      "brics-odroid-024_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "config": {
+      "action_support_threshold": 0.1,
+      "association_depth_scale_m": 0.03,
+      "association_minimum_candidate_count": 1,
+      "association_search_radius_px": 12,
+      "association_support_probability": 0.5,
+      "fallback_covariance_inflation": 4.0,
+      "fallback_minimum_support_per_panel": 2,
+      "graph_basis_rank": 8,
+      "mode_information_weight": 1.0,
+      "panel_camera_count": 4,
+      "prefix_frame_count": 58,
+      "query_count": 16,
+      "selected_camera_count": 8,
+      "shared_bias_std_m": 0.005,
+      "spatial_diversity_weight": 1.0,
+      "strict_minimum_support_per_panel": 3,
+      "visibility_weight": 0.5
+    },
+    "contract": "deform360-causal-response-adaptive-query-v13",
+    "covariance_inflation": 4.0,
+    "information_boundary": {
+      "complete_causal_camera_certificate_used": true,
+      "future_metric_read": false,
+      "future_object_observation_read": false,
+      "identity_target_read": false,
+      "known_action_support_used": true,
+      "object_observation_frames_used_for_selection": [
+        0
+      ],
+      "physical_frames_used_for_selection": [
+        0
+      ],
+      "proposal_and_validation_panels_disjoint": true,
+      "shared_bias_nuisance_declared": true,
+      "state_innovation_read": false,
+      "state_update_constructed": false,
+      "tracker_output_read": false,
+      "two_view_fallback_requires_covariance_inflation": true
+    },
+    "input_array_sha256": {
+      "action_support": "b121ddbc9d4d14cdf7d9b04b048babb1a6e42dd2cdc8d7007a271e84bb759368",
+      "camera_to_world": "81a6c575b1298d28b33570ea871842beef42527bbf0741401a01fbfd8c1994f8",
+      "frame_zero_depths_m": "b400f7c9f64f187dffaa427986185b01e5d8d5ffe574a44130ab0a35eaf6dd2b",
+      "frame_zero_object_masks": "35c054cbc608fec40417c18397cb4ee12e2f9dab3a70fc7e659b4fe38e608e08",
+      "graph_basis": "6048baa19b6547a86963527498256ec87359d5a129a08447a75cbf3c1e0e4251",
+      "intrinsics": "fb349b9001a148b054cde307cd60f3625bf94298b91cba6bcb8c9fd7b6d61df5",
+      "physical_frame_zero_m": "3f37639a377300bc519318c20b9a02e6041e2cba063245ec82e2bac7a7002b10"
+    },
+    "output_array_sha256": {
+      "association_candidate_count": "2db835cc80f793e6efeb0f4db32b77fa09fa9b7a4758bd1a2c20dfdebd9159b3",
+      "association_covariance_px2": "748e84739e95ba9540a82de108b42cccb14b3c3bdf36f10d1a72ac0f8cd4bacb",
+      "association_entropy": "8a14469c1e6d0ef6a3121065c280e7ac919fe43017d71d0d2cb6eadfa8b08faf",
+      "association_probability": "52e2ef61b2a97711e3a5193bb2df45cd33b586512234cde1253e252b8a8af694",
+      "association_query_points_xy": "ec9d0fc731b7fc89521d149fcda176b07af25442f0f9bb99548cddf10101130f",
+      "association_valid": "73c9ea02f7add3b9571ee1bbb3961b34aee7b147f166b6113477bf8850e28f01",
+      "entity_ids": "73430f892bef9d57c1b8b60a983200aa223095740e2d0545e7ad23f90c722074",
+      "proposal_complete_camera_indices": "09515be092de7cf4274aca04b75e97e06fbd0a9760d58de45edf62cfdeb52c72",
+      "query_points_world_m": "b7c7b427a89f798b9c4e120106e048c3709706b106342179ea1ffbb1855898da",
+      "selected_action_support": "a260ff2df7211b20a0b8b038ebf69db3d8c385520124026856f97c45dec6b653",
+      "selected_complete_camera_indices": "05a210a8154b503d0641387248164e8f511291cf34c9ff5af981e4c8ab0f6199",
+      "selected_total_score": "f53362e82f737b49036c9ced1a2fbfb7d7c47df32c0e348621c5ee93394f37a1",
+      "validation_complete_camera_indices": "58486b19fc4a9ede00d676ee32be20cfdad8f5be69a13e3256c68eca4fdd9b76"
+    },
+    "panel_score": {
+      "association_probability_mass": 1419.0775345055608,
+      "fallback_eligible_count": 116,
+      "strict_eligible_count": 0,
+      "supported_incidence_count": 1528
+    },
+    "proposal_complete_camera_indices": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "query_schedule": {
+      "admitted": true,
+      "artifact_kind": "Deform360CausalResponseQuerySchedule",
+      "artifact_sha256": "fef4f229f51c2a19acebda6a8b957161ff9ed6bd9e806dce41c91ec1d12412ef",
+      "camera_ids": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-014_cam1",
+        "brics-odroid-013_cam0",
+        "brics-odroid-015_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-027_cam0"
+      ],
+      "config": {
+        "action_support_threshold": 0.1,
+        "association_depth_scale_m": 0.03,
+        "association_minimum_candidate_count": 1,
+        "association_search_radius_px": 12,
+        "association_support_probability": 0.5,
+        "graph_basis_rank": 8,
+        "minimum_camera_support_per_panel": 2,
+        "mode_information_weight": 1.0,
+        "prefix_frame_count": 58,
+        "query_count": 16,
+        "spatial_diversity_weight": 1.0,
+        "visibility_weight": 0.5
+      },
+      "contract": "deform360-causal-response-query-v12",
+      "eligible_entity_count": 116,
+      "information_boundary": {
+        "action_support_weighted_graph_modes_used": true,
+        "future_identity_or_metric_read": false,
+        "future_object_observation_read": false,
+        "known_action_support_used": true,
+        "object_observation_frames_used_for_selection": [
+          0
+        ],
+        "physical_frames_used_for_selection": [
+          0
+        ],
+        "predicted_displacement_used": false,
+        "proposal_and_validation_panels_disjoint": true,
+        "state_innovation_read": false,
+        "tracker_output_read": false
+      },
+      "input_array_sha256": {
+        "action_support": "b121ddbc9d4d14cdf7d9b04b048babb1a6e42dd2cdc8d7007a271e84bb759368",
+        "camera_to_world": "66735845c8ed96841f10e308d167ba8a763d58f8da103a20ea32f2b01c8246c9",
+        "frame_zero_depths_m": "c06515eef005c7eb3e554ad767c6f80076e012421104c6025dd362ba57a848b4",
+        "frame_zero_object_masks": "7b531b2edb5e523d1b30d63227da4596ba1b682f47d7578ea0d491c7a30cbac1",
+        "graph_basis": "6048baa19b6547a86963527498256ec87359d5a129a08447a75cbf3c1e0e4251",
+        "intrinsics": "a01c8c7324262f570fcf002723cb3f65edd366a6133e4371019aeb39dbc2012f",
+        "physical_frame_zero_m": "3f37639a377300bc519318c20b9a02e6041e2cba063245ec82e2bac7a7002b10"
+      },
+      "output_array_sha256": {
+        "association_candidate_count": "2db835cc80f793e6efeb0f4db32b77fa09fa9b7a4758bd1a2c20dfdebd9159b3",
+        "association_covariance_px2": "748e84739e95ba9540a82de108b42cccb14b3c3bdf36f10d1a72ac0f8cd4bacb",
+        "association_entropy": "8a14469c1e6d0ef6a3121065c280e7ac919fe43017d71d0d2cb6eadfa8b08faf",
+        "association_probability": "52e2ef61b2a97711e3a5193bb2df45cd33b586512234cde1253e252b8a8af694",
+        "association_query_points_xy": "ec9d0fc731b7fc89521d149fcda176b07af25442f0f9bb99548cddf10101130f",
+        "association_valid": "73c9ea02f7add3b9571ee1bbb3961b34aee7b147f166b6113477bf8850e28f01",
+        "entity_ids": "73430f892bef9d57c1b8b60a983200aa223095740e2d0545e7ad23f90c722074",
+        "query_points_world_m": "b7c7b427a89f798b9c4e120106e048c3709706b106342179ea1ffbb1855898da",
+        "selected_action_support": "a260ff2df7211b20a0b8b038ebf69db3d8c385520124026856f97c45dec6b653",
+        "selected_total_score": "f53362e82f737b49036c9ced1a2fbfb7d7c47df32c0e348621c5ee93394f37a1"
+      },
+      "proposal_camera_ids": [
+        "brics-odroid-001_cam0",
+        "brics-odroid-007_cam0",
+        "brics-odroid-008_cam0",
+        "brics-odroid-014_cam1"
+      ],
+      "proposal_camera_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "schema_version": 1,
+      "selected_action_support": [
+        0.23899021744728088,
+        0.1346733719110489,
+        0.19162708520889282,
+        0.22547218203544617,
+        0.23425327241420746,
+        0.2080238312482834,
+        0.22815227508544922,
+        0.23370803892612457,
+        0.23337425291538239,
+        0.227415531873703,
+        0.2348155975341797,
+        0.23434865474700928,
+        0.23215673863887787,
+        0.23199589550495148,
+        0.22274482250213623,
+        0.23072561621665955
+      ],
+      "selected_entity_ids": [
+        413,
+        701,
+        549,
+        429,
+        407,
+        516,
+        425,
+        440,
+        409,
+        432,
+        444,
+        411,
+        410,
+        412,
+        443,
+        431
+      ],
+      "selected_total_score": [
+        2.25,
+        1.7373848134748933,
+        1.490947905927921,
+        1.3974039567094225,
+        1.3812172204858104,
+        1.3324189287822392,
+        1.327519549859932,
+        1.320730193827454,
+        1.3177599924223118,
+        1.298920846443101,
+        1.295441002778248,
+        1.2917447721265114,
+        1.2946095063206393,
+        1.2909881665798242,
+        1.2865374453339453,
+        1.2815072050999678
+      ],
+      "validation_camera_ids": [
+        "brics-odroid-013_cam0",
+        "brics-odroid-015_cam1",
+        "brics-odroid-019_cam1",
+        "brics-odroid-027_cam0"
+      ],
+      "validation_camera_indices": [
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "schema_version": 1,
+    "selected_camera_ids": [
+      "brics-odroid-001_cam0",
+      "brics-odroid-007_cam0",
+      "brics-odroid-008_cam0",
+      "brics-odroid-014_cam1",
+      "brics-odroid-013_cam0",
+      "brics-odroid-015_cam1",
+      "brics-odroid-019_cam1",
+      "brics-odroid-027_cam0"
+    ],
+    "shared_bias_variance_m2": 2.5e-05,
+    "validation_complete_camera_indices": [
+      3,
+      5,
+      6,
+      9
+    ]
+  },
+  "schema_version": 1,
+  "status": "admitted"
+}

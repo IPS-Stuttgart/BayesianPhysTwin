@@ -1,0 +1,115 @@
+{
+  "admitted_case_count": 6,
+  "artifact_kind": "Deform360CausalResponseAdaptiveQueryV13SourceFeasibilityResult",
+  "case_count": 8,
+  "cases": [
+    {
+      "admitted": false,
+      "arm": "abstained_insufficient_2plus2",
+      "case": "028-ziplog-cloth-ep0000",
+      "fallback_eligible_entity_count": 0,
+      "result_sha256": "3f94a9d2a08bd404262713fcc7d67a7d9509660680be644dea93920e6e0d52a6",
+      "selected_entity_count": 0,
+      "status": "abstained",
+      "strict_eligible_entity_count": 0
+    },
+    {
+      "admitted": true,
+      "arm": "strict_3plus3",
+      "case": "029-foam-cloth-ep0000",
+      "fallback_eligible_entity_count": 75,
+      "result_sha256": "74934a4ede92817aa34221bbda203ee97b59b72660335027749e3675f9d2e234",
+      "selected_entity_count": 16,
+      "status": "admitted",
+      "strict_eligible_entity_count": 67
+    },
+    {
+      "admitted": true,
+      "arm": "inflated_2plus2",
+      "case": "030-foam-flat-cloth-ep0000",
+      "fallback_eligible_entity_count": 45,
+      "result_sha256": "395355eacda1aace95e9c0953b1c770bae891e3ccd6fcad3061d82e92f25051f",
+      "selected_entity_count": 16,
+      "status": "admitted",
+      "strict_eligible_entity_count": 0
+    },
+    {
+      "admitted": false,
+      "arm": "abstained_insufficient_2plus2",
+      "case": "058-roll-napkin-ep0000",
+      "fallback_eligible_entity_count": 0,
+      "result_sha256": "362acfdd371691aaffb5346b2b3eab4e4e8c36f6916dfd3ff02ad843704aa626",
+      "selected_entity_count": 0,
+      "status": "abstained",
+      "strict_eligible_entity_count": 0
+    },
+    {
+      "admitted": true,
+      "arm": "inflated_2plus2",
+      "case": "059-shoe-ep0000",
+      "fallback_eligible_entity_count": 203,
+      "result_sha256": "25346e64ee90eb3df184624016f63dc9cd068f7723495d2ab13085c6791ad21d",
+      "selected_entity_count": 16,
+      "status": "admitted",
+      "strict_eligible_entity_count": 0
+    },
+    {
+      "admitted": true,
+      "arm": "strict_3plus3",
+      "case": "061-cup-ep0000",
+      "fallback_eligible_entity_count": 388,
+      "result_sha256": "69f216ceea06eb6e35c3725ac6bbb126b78bf82033d1ac7778d86e39d9eb2413",
+      "selected_entity_count": 16,
+      "status": "admitted",
+      "strict_eligible_entity_count": 291
+    },
+    {
+      "admitted": true,
+      "arm": "inflated_2plus2",
+      "case": "147-baking-mold-ep0000",
+      "fallback_eligible_entity_count": 116,
+      "result_sha256": "d727bb66711a76d67d02e7c15e0d75a509551ad44b643f421a386639918e6407",
+      "selected_entity_count": 16,
+      "status": "admitted",
+      "strict_eligible_entity_count": 0
+    },
+    {
+      "admitted": true,
+      "arm": "inflated_2plus2",
+      "case": "152-slime-ep0000",
+      "fallback_eligible_entity_count": 379,
+      "result_sha256": "7e7a3ab0ad87741b55835edcb07de2aab0b0c02fe334c6b8d0e6aeb16465873b",
+      "selected_entity_count": 16,
+      "status": "admitted",
+      "strict_eligible_entity_count": 0
+    }
+  ],
+  "fallback_admitted_case_count": 4,
+  "gate": {
+    "fail_action": "Stop V13 without changing the panel objective, support ladder, covariance inflation, shared-bias scale, query budget, or source gate.",
+    "locked_case_count": 8,
+    "maximum_technical_failure_count": 0,
+    "minimum_admitted_case_count": 6,
+    "minimum_strict_admitted_case_count": 2,
+    "pass_action": "Freeze a separate source-only tactile-event, tracker-competence, bias-aware update, and exact-fallback study without changing the V13 carrier.",
+    "passed": true
+  },
+  "information_boundary": {
+    "future_identity_read": false,
+    "future_metric_read": false,
+    "future_object_observation_read": false,
+    "held_v8_artifact_or_process_access": false,
+    "maximum_object_observation_frame": 0,
+    "state_update_constructed": false,
+    "tactile_read": false,
+    "v1_sealed_target_read": false
+  },
+  "protocol_file_sha256": "1704ae0cb6675b0ff6ec44682fd023d98327c668a267325830c372f058c3b281",
+  "protocol_id": "deform360-causal-response-adaptive-query-v13-source",
+  "repository_revision": "ade5de6bac49551b994b7e6a0989a4da805a67bb",
+  "result_sha256": "63a9ffde07de4e0378605b8574a8d4a8acfe6a382c65df2be185c47f6276239c",
+  "schema_version": 1,
+  "status": "passed",
+  "strict_admitted_case_count": 2,
+  "technical_failure_count": 0
+}
