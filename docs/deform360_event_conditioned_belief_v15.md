@@ -47,15 +47,22 @@ time order and stops at the earliest frame that passes a fixed event rule
 while leaving a fixed future horizon.
 
 The selector consumes two disjoint camera panels. Each panel supplies a small
-set of gripper-excluded, cluster-level pairwise shape signatures. Pairwise
-distances remove global translation and rotation, so actuator or camera
-motion alone cannot define a deformable response event. Dense pixels do not
-accumulate as independent evidence: camera support is a threshold, and
-uncertainty is carried once per predeclared spatial cluster.
+set of gripper-excluded pairwise shape components produced by
+`deform360_event_shape_signature_v15.py`. Each camera unprojects a
+deterministic subsample of its current metric depth, removes a dilated gripper
+neighbourhood, and computes fixed pairwise-distance quantiles. The panel uses
+the component-wise median and retains a depth floor plus robust between-camera
+scatter without dividing by camera count.
+
+Pairwise distances remove global translation and rotation, so actuator or
+camera motion alone cannot define a deformable response event. Dense pixels
+do not accumulate as independent evidence: camera support is a threshold, the
+component vector has fixed dimension, and duplicating an identical camera
+does not reduce the panel covariance.
 
 At a candidate branch frame, both panels must independently show:
 
-1. sufficient camera support for enough spatial clusters;
+1. sufficient camera support for enough spatial components;
 2. no gripper overlap at either endpoint;
 3. a nonrigid change above the metric floor;
 4. signal above the registered covariance floor;
@@ -124,7 +131,7 @@ Before any V15 source selection:
 
 1. build a new hash-only exclusion union containing every prior opened,
    reserved, selected, or technically dispositioned physical object;
-2. freeze the cluster-signature preprocessor and camera-panel assignment;
+2. freeze the component-signature preprocessor and camera-panel assignment;
 3. pass synthetic deformable-response positives and rigid-motion,
    gripper-overlap, panel-disagreement, missing-contact, and coherent-bias
    placebos;
@@ -170,7 +177,9 @@ The focused unit tests establish:
 - rejection of rigid-only shape signatures;
 - rejection of cross-panel disagreement and gripper overlap;
 - tactile support without tactile metric leakage; and
-- no confidence increase from duplicating an identical camera count.
+- no confidence increase from duplicating an identical camera count;
+- rigid-transform invariance of the automatic metric shape carrier;
+- frame-local carrier construction without temporal lookahead; and
+- an end-to-end synthetic shape-change event through the production selector.
 
 These are software and information-boundary tests, not real-data evidence.
-

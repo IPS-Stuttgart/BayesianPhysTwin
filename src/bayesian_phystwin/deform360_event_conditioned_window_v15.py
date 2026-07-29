@@ -47,8 +47,8 @@ class EventConditionedWindowConfig:
     first_candidate_frame: int = 8
     forecast_horizon_frames: int = 18
     last_candidate_frame: int | None = None
-    minimum_camera_support_per_cluster: int = 2
-    minimum_supported_cluster_count: int = 3
+    minimum_camera_support_per_component: int = 2
+    minimum_supported_component_count: int = 3
     minimum_tactile_contact_probability: float = 0.5
     minimum_actuator_displacement_m: float = 0.001
     minimum_panel_nonrigid_rms_m: float = 0.001
@@ -76,12 +76,12 @@ class EventConditionedWindowConfig:
             "last candidate frame is invalid",
         )
         _require(
-            self.minimum_camera_support_per_cluster >= 2,
-            "cluster support must contain at least two cameras per panel",
+            self.minimum_camera_support_per_component >= 2,
+            "component support must contain at least two cameras per panel",
         )
         _require(
-            self.minimum_supported_cluster_count >= 2,
-            "too few independent spatial clusters",
+            self.minimum_supported_component_count >= 2,
+            "too few independent spatial components",
         )
         probabilities = (
             self.minimum_tactile_contact_probability,
@@ -113,22 +113,22 @@ class EventConditionedWindowConfig:
 
 @dataclass(frozen=True)
 class EventPanelEvidence:
-    """Cluster-level, gripper-excluded shape evidence from one camera panel."""
+    """Component-level, gripper-excluded shape evidence from one camera panel."""
 
-    cluster_signature_m: np.ndarray
+    component_signature_m: np.ndarray
     variance_m2: np.ndarray
     available: np.ndarray
     camera_support: np.ndarray
     gripper_clear: np.ndarray
-    cluster_ids: np.ndarray
+    component_ids: np.ndarray
 
     def __post_init__(self) -> None:
-        signature = _readonly(self.cluster_signature_m, dtype=np.float64)
+        signature = _readonly(self.component_signature_m, dtype=np.float64)
         variance = _readonly(self.variance_m2, dtype=np.float64)
         available = _readonly(self.available, dtype=bool)
         camera_support = _readonly(self.camera_support, dtype=np.int64)
         gripper_clear = _readonly(self.gripper_clear, dtype=bool)
-        cluster_ids = _readonly(self.cluster_ids, dtype=np.int64)
+        component_ids = _readonly(self.component_ids, dtype=np.int64)
         _require(
             signature.ndim == 2
             and variance.shape == signature.shape
@@ -138,24 +138,24 @@ class EventPanelEvidence:
             "event panel arrays must share shape (T, C)",
         )
         _require(
-            cluster_ids.shape == (signature.shape[1],)
-            and len(np.unique(cluster_ids)) == len(cluster_ids),
-            "event cluster identities are invalid",
+            component_ids.shape == (signature.shape[1],)
+            and len(np.unique(component_ids)) == len(component_ids),
+            "event component identities are invalid",
         )
-        object.__setattr__(self, "cluster_signature_m", signature)
+        object.__setattr__(self, "component_signature_m", signature)
         object.__setattr__(self, "variance_m2", variance)
         object.__setattr__(self, "available", available)
         object.__setattr__(self, "camera_support", camera_support)
         object.__setattr__(self, "gripper_clear", gripper_clear)
-        object.__setattr__(self, "cluster_ids", cluster_ids)
+        object.__setattr__(self, "component_ids", component_ids)
 
     @property
     def frame_count(self) -> int:
-        return int(self.cluster_signature_m.shape[0])
+        return int(self.component_signature_m.shape[0])
 
     @property
-    def cluster_count(self) -> int:
-        return int(self.cluster_signature_m.shape[1])
+    def component_count(self) -> int:
+        return int(self.component_signature_m.shape[1])
 
 
 @dataclass(frozen=True)
@@ -166,7 +166,7 @@ class EventConditionedAttempt:
     branch_frame: int
     admitted: bool
     reason: str
-    supported_cluster_count: int
+    supported_component_count: int
     tactile_contact_probability: float
     actuator_displacement_m: float
     proposal_nonrigid_rms_m: float
@@ -184,8 +184,8 @@ class EventConditionedAttempt:
         )
         _require(bool(self.reason.strip()), "event attempt reason is empty")
         _require(
-            self.supported_cluster_count >= 0,
-            "supported cluster count is negative",
+            self.supported_component_count >= 0,
+            "supported component count is negative",
         )
         numeric = (
             self.tactile_contact_probability,
@@ -322,7 +322,7 @@ class EventConditionedWindow:
                 "proposal_and_validation_camera_panels_disjoint": True,
                 "shape_signature_is_rigid_motion_invariant": True,
                 "gripper_pixels_excluded_upstream": True,
-                "cluster_level_evidence_avoids_dense_pixel_accumulation": True,
+                "component_level_evidence_avoids_dense_pixel_accumulation": True,
                 "tactile_and_measured_actuation_are_causal_support_only": True,
                 "no_event_is_an_explicit_abstention": True,
             },
@@ -335,12 +335,12 @@ def _panel_prefix_sha256(
     stop_frame_exclusive: int,
 ) -> str:
     components = (
-        array_sha256(panel.cluster_signature_m[:stop_frame_exclusive]),
+        array_sha256(panel.component_signature_m[:stop_frame_exclusive]),
         array_sha256(panel.variance_m2[:stop_frame_exclusive]),
         array_sha256(panel.available[:stop_frame_exclusive]),
         array_sha256(panel.camera_support[:stop_frame_exclusive]),
         array_sha256(panel.gripper_clear[:stop_frame_exclusive]),
-        array_sha256(panel.cluster_ids),
+        array_sha256(panel.component_ids),
     )
     return hashlib.sha256("".join(components).encode("ascii")).hexdigest()
 
@@ -375,8 +375,8 @@ def _attempt_event(
 ) -> EventConditionedAttempt:
     birth_frame = branch_frame - config.lag_frames
     endpoint = np.asarray([birth_frame, branch_frame], dtype=np.int64)
-    proposal_signature = proposal.cluster_signature_m[endpoint]
-    validation_signature = validation.cluster_signature_m[endpoint]
+    proposal_signature = proposal.component_signature_m[endpoint]
+    validation_signature = validation.component_signature_m[endpoint]
     proposal_variance = proposal.variance_m2[endpoint]
     validation_variance = validation.variance_m2[endpoint]
     supported = (
@@ -386,12 +386,12 @@ def _attempt_event(
         & np.all(validation.gripper_clear[endpoint], axis=0)
         & np.all(
             proposal.camera_support[endpoint]
-            >= config.minimum_camera_support_per_cluster,
+            >= config.minimum_camera_support_per_component,
             axis=0,
         )
         & np.all(
             validation.camera_support[endpoint]
-            >= config.minimum_camera_support_per_cluster,
+            >= config.minimum_camera_support_per_component,
             axis=0,
         )
         & np.all(np.isfinite(proposal_signature), axis=0)
@@ -484,8 +484,8 @@ def _attempt_event(
 
     checks = (
         (
-            supported_count >= config.minimum_supported_cluster_count,
-            "insufficient-independent-cluster-support",
+            supported_count >= config.minimum_supported_component_count,
+            "insufficient-shape-component-support",
         ),
         (valid_tactile, "invalid-tactile-prefix"),
         (
@@ -525,7 +525,7 @@ def _attempt_event(
         branch_frame=branch_frame,
         admitted=reason == "admitted",
         reason=reason,
-        supported_cluster_count=supported_count,
+        supported_component_count=supported_count,
         tactile_contact_probability=tactile_probability,
         actuator_displacement_m=actuator_displacement,
         proposal_nonrigid_rms_m=proposal_rms,
@@ -552,9 +552,9 @@ def select_event_conditioned_window(
     cfg = config or EventConditionedWindowConfig()
     _require(
         proposal.frame_count == validation.frame_count
-        and proposal.cluster_count == validation.cluster_count
-        and np.array_equal(proposal.cluster_ids, validation.cluster_ids),
-        "event camera panels do not share a cluster contract",
+        and proposal.component_count == validation.component_count
+        and np.array_equal(proposal.component_ids, validation.component_ids),
+        "event camera panels do not share a component contract",
     )
     frame_count = proposal.frame_count
     tactile = np.asarray(tactile_contact_probability, dtype=np.float64)
@@ -631,7 +631,7 @@ def select_event_conditioned_window(
             "proposal_and_validation_camera_panels_disjoint": True,
             "shape_signature_is_rigid_motion_invariant": True,
             "gripper_pixels_excluded_upstream": True,
-            "cluster_level_evidence_avoids_dense_pixel_accumulation": True,
+            "component_level_evidence_avoids_dense_pixel_accumulation": True,
             "tactile_and_measured_actuation_are_causal_support_only": True,
             "no_event_is_an_explicit_abstention": True,
         },

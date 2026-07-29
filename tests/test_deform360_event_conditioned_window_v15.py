@@ -13,6 +13,9 @@ from bayesian_phystwin.deform360_event_conditioned_window_v15 import (
     EventPanelEvidence,
     select_event_conditioned_window,
 )
+from bayesian_phystwin.deform360_event_shape_signature_v15 import (
+    EventShapeSignatureConfig,
+)
 
 
 def _config() -> EventConditionedWindowConfig:
@@ -29,9 +32,9 @@ def _panel(
     camera_support: int = 3,
     gripper_clear: np.ndarray | None = None,
 ) -> EventPanelEvidence:
-    frame_count, cluster_count = signature_m.shape
+    frame_count, component_count = signature_m.shape
     return EventPanelEvidence(
-        cluster_signature_m=signature_m,
+        component_signature_m=signature_m,
         variance_m2=np.full_like(signature_m, 1e-8),
         available=np.ones_like(signature_m, dtype=bool),
         camera_support=np.full_like(
@@ -44,7 +47,7 @@ def _panel(
             if gripper_clear is None
             else gripper_clear
         ),
-        cluster_ids=np.arange(cluster_count, dtype=np.int64),
+        component_ids=np.arange(component_count, dtype=np.int64),
     )
 
 
@@ -103,8 +106,8 @@ def test_selects_earliest_causal_event_and_reserves_fixed_future() -> None:
 def test_future_values_after_selected_branch_cannot_change_the_artifact() -> None:
     original = _scene()
     proposal, validation, tactile, actuator = original
-    modified_proposal = proposal.cluster_signature_m.copy()
-    modified_validation = validation.cluster_signature_m.copy()
+    modified_proposal = proposal.component_signature_m.copy()
+    modified_validation = validation.component_signature_m.copy()
     modified_tactile = tactile.copy()
     modified_actuator = actuator.copy()
     modified_proposal[11:] = np.nan
@@ -128,8 +131,8 @@ def test_future_values_after_selected_branch_cannot_change_the_artifact() -> Non
 def test_no_event_is_an_abstention_and_reserved_tail_is_not_read() -> None:
     original = _scene(event_frame=None)
     proposal, validation, tactile, actuator = original
-    modified_proposal = proposal.cluster_signature_m.copy()
-    modified_validation = validation.cluster_signature_m.copy()
+    modified_proposal = proposal.component_signature_m.copy()
+    modified_validation = validation.component_signature_m.copy()
     modified_tactile = tactile.copy()
     modified_actuator = actuator.copy()
     modified_proposal[30:] = np.nan
@@ -166,7 +169,7 @@ def test_rigid_motion_does_not_trigger_a_pairwise_shape_event() -> None:
 
 def test_cross_panel_direction_disagreement_rejects_the_event() -> None:
     proposal, validation, tactile, actuator = _scene()
-    disagreeing = validation.cluster_signature_m.copy()
+    disagreeing = validation.component_signature_m.copy()
     base = disagreeing[9].copy()
     disagreeing[10:] = 2.0 * base - disagreeing[10:]
 
@@ -186,22 +189,22 @@ def test_cross_panel_direction_disagreement_rejects_the_event() -> None:
     )
 
 
-def test_gripper_overlapping_clusters_cannot_form_an_event() -> None:
+def test_gripper_overlapping_components_cannot_form_an_event() -> None:
     proposal, validation, tactile, actuator = _scene()
     blocked = np.ones_like(proposal.gripper_clear)
     blocked[:, :2] = False
 
     result = _select(
         (
-            _panel(proposal.cluster_signature_m, gripper_clear=blocked),
-            _panel(validation.cluster_signature_m, gripper_clear=blocked),
+            _panel(proposal.component_signature_m, gripper_clear=blocked),
+            _panel(validation.component_signature_m, gripper_clear=blocked),
             tactile,
             actuator,
         )
     )
 
     assert not result.admitted
-    assert result.attempts[0].reason == "insufficient-independent-cluster-support"
+    assert result.attempts[0].reason == "insufficient-shape-component-support"
 
 
 def test_duplicated_camera_count_does_not_increase_event_confidence() -> None:
@@ -209,8 +212,8 @@ def test_duplicated_camera_count_does_not_increase_event_confidence() -> None:
     ordinary = _select((proposal, validation, tactile, actuator))
     duplicated = _select(
         (
-            _panel(proposal.cluster_signature_m, camera_support=100),
-            _panel(validation.cluster_signature_m, camera_support=100),
+            _panel(proposal.component_signature_m, camera_support=100),
+            _panel(validation.component_signature_m, camera_support=100),
             tactile,
             actuator,
         )
@@ -246,18 +249,18 @@ def test_tactile_is_causal_support_but_not_metric_evidence() -> None:
     )
 
 
-def test_panel_cluster_contract_must_match() -> None:
+def test_panel_component_contract_must_match() -> None:
     proposal, validation, tactile, actuator = _scene()
     mismatched = EventPanelEvidence(
-        cluster_signature_m=validation.cluster_signature_m,
+        component_signature_m=validation.component_signature_m,
         variance_m2=validation.variance_m2,
         available=validation.available,
         camera_support=validation.camera_support,
         gripper_clear=validation.gripper_clear,
-        cluster_ids=np.asarray([0, 1, 2, 9]),
+        component_ids=np.asarray([0, 1, 2, 9]),
     )
 
-    with pytest.raises(ValueError, match="cluster contract"):
+    with pytest.raises(ValueError, match="component contract"):
         select_event_conditioned_window(
             "fresh-object-token",
             proposal,
@@ -281,6 +284,18 @@ def test_prelock_binds_closed_arms_and_exact_selector_defaults() -> None:
     selector = dict(prelock["event_selector"])
     assert selector.pop("contract") == "deform360-event-conditioned-window-v15"
     assert selector == asdict(EventConditionedWindowConfig())
+    provider = dict(prelock["shape_signature_provider"])
+    assert provider.pop("contract") == "deform360-event-shape-signature-v15"
+    for implementation_note in (
+        "panel_aggregation",
+        "temporal_processing",
+        "tracker_or_material_identity_used",
+        "physical_prediction_used",
+    ):
+        provider.pop(implementation_note)
+    assert provider == json.loads(
+        json.dumps(asdict(EventShapeSignatureConfig()))
+    )
     assert prelock["status"] == (
         "implementation_prelock_before_any_v15_source_selection"
     )
