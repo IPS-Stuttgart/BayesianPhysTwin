@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalResponseDirectDepthCompositePhysicalCustodyV14V1",
+  "contract": "deform360-causal-response-direct-depth-composite-physical-custody-v14-v1",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-composite-physical-custody-v1",
+  "status": "locked_after_source_selection_before_prefix_scan",
+  "config_sha256": "5b4d1f724dffb4e4f6bef55b1007c98698f9724f2f73b46ca37156e3d10ea797",
+  "purpose": "Bind each selected V14 source case to the physical prelock under which its frame-zero Warp carrier was sealed.",
+  "parent_artifacts": {
+    "original_physical_prelock": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_physical_prelock.json",
+      "semantic_sha256": "a96f5b62471b26693b11fc98a819df2ef288a71f4f664b04e158646ab8e1fc02",
+      "file_sha256": "92cb2f2e21f0b72a58b2ec33489a8739d1cdc95d6e135283df1dac304dc552cb"
+    },
+    "original_physical_runtime": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_physical_runtime_v2.json",
+      "semantic_sha256": "f6310608f29d33820256c04c7b392af39a32ecb4ea0e482e289d7ac5c30ceb9d",
+      "file_sha256": "239bb23c413c5844c7c68758e70e4795b0b02952dda06edec65f08b811102eae"
+    },
+    "reserve_physical_prelock": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_reserve_physical_prelock_v1.json",
+      "semantic_sha256": "cf11aed78360da67524e668141ff5a4e7350fe48e2033aa09ed0d1a9ee9d7fe9",
+      "file_sha256": "f643866001f9fb75e3cd4ddf60e4ab6f162a30f397a51b8c46a78df3359f443e"
+    },
+    "reserve_physical_runtime": {
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_reserve_physical_runtime_v1.json",
+      "semantic_sha256": "7270035ebb4414bb9b39fe9b1c7c797ce615ef62a6f2b744adbb48a44b1e2581",
+      "file_sha256": "ea308b42767eb6cda64b6c12e0a8cca855c99cdcb18e3bcc96c577bc80841d82"
+    }
+  },
+  "rank_contract": {
+    "original_selected_ranks": [
+      3,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      14
+    ],
+    "reserve_selected_ranks": [
+      15,
+      16,
+      17,
+      18
+    ],
+    "original_physical_prelock_config_sha256": "a96f5b62471b26693b11fc98a819df2ef288a71f4f664b04e158646ab8e1fc02",
+    "reserve_physical_prelock_config_sha256": "cf11aed78360da67524e668141ff5a4e7350fe48e2033aa09ed0d1a9ee9d7fe9",
+    "original_repository_revision": "ac416f49f3d5f464348c843c0f918b052ee54874",
+    "reserve_repository_revision": "45ff13ca258fc3544ed08cb90b2f02ec203333c7",
+    "selected_source_count": 12
+  },
+  "information_boundary": {
+    "frame_zero_object_observation_read": true,
+    "prefix_object_response_read": false,
+    "future_object_observation_read": false,
+    "identity_or_metric_outcome_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  }
+}
