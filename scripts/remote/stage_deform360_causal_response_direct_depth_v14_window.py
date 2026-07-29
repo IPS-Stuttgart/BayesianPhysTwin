@@ -295,6 +295,12 @@ def main() -> int:
     )
     _require(not scratch.exists(), f"V14 stage scratch exists: {scratch}")
     scratch.mkdir(parents=True)
+    ffmpeg = args.ffmpeg
+    if not ffmpeg.is_absolute():
+        resolved_ffmpeg = shutil.which(str(ffmpeg))
+        _require(resolved_ffmpeg is not None, "ffmpeg executable is unavailable")
+        ffmpeg = Path(resolved_ffmpeg)
+    _require(ffmpeg.is_file(), "ffmpeg executable is unavailable")
 
     base: dict[str, Any] = {
         "schema_version": 1,
@@ -312,6 +318,8 @@ def main() -> int:
         "deform360_revision": DEFORM360_REVISION,
         "preparation_artifact_sha256": preparation["artifact_sha256"],
         "preparation_file_sha256": file_sha256(preparation_path),
+        "ffmpeg_path": str(ffmpeg),
+        "ffmpeg_sha256": file_sha256(ffmpeg),
         "window_selection": selection,
     }
     try:
@@ -342,7 +350,7 @@ def main() -> int:
             output_camera.mkdir()
             output_video = output_camera / "undistorted.mp4"
             trim_video_exact_30hz(
-                args.ffmpeg,
+                ffmpeg,
                 source_camera / "undistorted.mp4",
                 output_video,
                 start,
