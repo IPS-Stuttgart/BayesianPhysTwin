@@ -46,3 +46,13 @@ def test_stage_accepts_pinned_executable(tmp_path: Path) -> None:
 
     assert resolved == executable.resolve()
     assert os.access(resolved, os.X_OK)
+
+
+def test_stage_rejects_nonfunctional_executable(tmp_path: Path) -> None:
+    module = _load_script()
+    executable = tmp_path / "broken-ffmpeg"
+    executable.write_text("#!/bin/sh\nexit 127\n", encoding="utf-8")
+    executable.chmod(executable.stat().st_mode | 0o111)
+
+    with pytest.raises(ValueError, match="executable cannot run"):
+        module._resolve_required_executable(executable, name="ffmpeg")

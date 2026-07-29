@@ -101,6 +101,15 @@ def _resolve_required_executable(path: Path, *, name: str) -> Path:
     resolved = expanded.resolve()
     _require(resolved.is_file(), f"{name} executable is unavailable")
     _require(os.access(resolved, os.X_OK), f"{name} path is not executable")
+    try:
+        subprocess.run(
+            [str(resolved), "-version"],
+            check=True,
+            capture_output=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ValueError(f"{name} executable cannot run") from error
     return resolved
 
 
