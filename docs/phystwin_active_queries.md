@@ -69,8 +69,11 @@ Lambda_x^marg = Lambda_xx - Lambda_xb Lambda_bb^-1 Lambda_bx.
 This distinguishes a physically informative observation from one that can be
 explained by camera, gauge, or shared spatial bias. Candidate covariance is
 handled with Cholesky whitening; no explicit covariance inverse is formed.
-Reliability weights are applied after whitening so zero reliability gives exact
-information fallback.
+Reliability weights are applied to the observation-row Jacobians before
+whitening. The resulting information contribution is positive semidefinite,
+zero reliability gives exact information fallback, and permutations of rows
+inside a correlated observation block cannot change the update or candidate
+ranking.
 
 ```python
 import numpy as np
@@ -128,7 +131,6 @@ plan = plan_physics_guided_queries(
     contact_position_m=contact_position_m,
     config=PhysicsGuidedQueryConfig(query_count=8),
 )
-
 node_ids, queries_txy, replaced_ids = plan.camera_queries_txy(camera_index=0)
 ```
 
