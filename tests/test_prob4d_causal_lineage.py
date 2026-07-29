@@ -8,10 +8,15 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
+from bayesian_phystwin.claim_bearing_prob4d import (
+    build_claim_bearing_gauge_aware_batch_from_artifacts,
+    build_claim_bearing_gauge_aware_batch_from_observation_belief,
+)
 from bayesian_phystwin.observation_belief import ObservationBeliefV1
 from bayesian_phystwin.observation_belief_gauge_adapter import (
     build_gauge_aware_batch_from_observation_belief,
 )
+from bayesian_phystwin.physical_linearization import PhysicalLinearizationV1
 from bayesian_phystwin.prob4d_causal_lineage import (
     validate_claim_bearing_prob4d_observation_belief,
     validate_prob4d_causal_observation_belief,
@@ -179,8 +184,65 @@ def _belief() -> ObservationBeliefV1:
 def _attested_belief() -> ObservationBeliefV1:
     belief = _belief()
     metadata = deepcopy(dict(belief.metadata))
-    metadata["prob4d_provider_attestation"] = _provider_attestation()
-    return replace(belief, metadata=metadata)
+    metadata.update(
+        {
+            "prob4d_causal_stream_contract_version": 2,
+            "metric_anchor_covariance_in_joint_factor": True,
+            "factor_definition": "one shared joint gauge latent vector",
+            "factor_group_semantics": (
+                "all rows use one factor group; each window contributes its block "
+                "of the same joint gauge covariance root"
+            ),
+            "joint_cross_window_gauge_covariance_represented": True,
+            "gauge_posterior": {
+                "model": "sequential_joint_spanning_tree_v1",
+                "window_count": 2,
+                "full_dimension": 14,
+                "exported_factor_rank": 7,
+                "retained_covariance_trace_fraction": 1.0,
+                "minimum_retained_gauge_trace": 0.999,
+                "max_gauge_rank": 64,
+                "cross_window_covariance_preserved": True,
+                "parent_window_ids": [None, "window-0"],
+                "fixed_lag_boundary_covariance_is_approximate": False,
+            },
+            "covariance_calibration": {
+                "status": "calibrated",
+                "gauge_artifact_id": "5" * 64,
+                "point_artifact_id": "6" * 64,
+                "uncalibrated_exploratory_covariance_allowed": False,
+                "pointwise_covariance_fallback_allowed": False,
+                "alignment_count": 1,
+                "gauge_calibrated_alignment_count": 1,
+                "covariance_fallback_counts": {},
+            },
+            "prob4d_provider_attestation": _provider_attestation(),
+        }
+    )
+    metadata["metric_gauge_anchor"].update(
+        {
+            "schema_name": "prob4d.metric-gauge-anchor",
+            "schema_version": 1,
+            "case_id": belief.case_id,
+            "coordinate_frame": "phystwin-world",
+            "world_frame_id": "phystwin-world",
+            "metric_units": "m",
+            "source_kind": "prefix_registration",
+        }
+    )
+    return replace(
+        belief,
+        factor_names=tuple(f"joint_gauge_latent_{index:04d}" for index in range(7)),
+        factor_group_ids=np.zeros(4, dtype=np.int64),
+        metadata=metadata,
+    )
+
+
+def _state_design(belief: ObservationBeliefV1) -> np.ndarray:
+    state = np.zeros((belief.observation_count, 3, 2), dtype=np.float64)
+    state[:, 0, 0] = 1.0
+    state[:, 1, 1] = 1.0
+    return state
 
 
 def _adapt(belief: ObservationBeliefV1):
@@ -192,6 +254,18 @@ def _adapt(belief: ObservationBeliefV1):
         state_jacobian=state,
         query_state_jacobian=state[:1],
         physical_response_scale_m=0.05,
+    )
+
+
+def _adapt_claim_bearing(belief: ObservationBeliefV1):
+    state = _state_design(belief)
+    return build_claim_bearing_gauge_aware_batch_from_observation_belief(
+        belief,
+        physical_prediction_xyz_m=np.zeros_like(belief.mean_xyz_m),
+        state_jacobian=state,
+        query_state_jacobian=state[:2],
+        physical_response_scale_m=0.05,
+        state_prior_covariance_m2=np.eye(2) * 1e-3,
     )
 
 
@@ -214,6 +288,9 @@ def test_claim_bearing_provider_v2_attestation_is_independently_validated() -> N
 
     assert validation["provider_attestation_present"] is True
     assert validation["provider_attestation_validated"] is True
+    assert validation["stream_contract_version"] == 2
+    assert validation["stream_contract_version_inferred"] is False
+    assert validation["claim_bearing_provider_v2_validated"] is True
     assert provider["claim_bearing"] is True
     assert provider["provider_api_version"] == 2
     assert provider["runtime_revision_independently_verified"] is True
@@ -370,3 +447,229 @@ def test_claim_bearing_entry_rejects_non_strict_stream(
 
     with pytest.raises(ValueError, match="strict causal stream contract"):
         validate_claim_bearing_prob4d_observation_belief(_belief())
+
+
+def test_claim_bearing_entry_rejects_inferred_stream_v2() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    del metadata["prob4d_causal_stream_contract_version"]
+
+    with pytest.raises(ValueError, match="explicit causal stream contract version 2"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_entry_rejects_attested_legacy_stream_v1() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["prob4d_causal_stream_contract_version"] = 1
+    legacy = replace(
+        belief,
+        factor_names=tuple(f"gauge_latent_{index}" for index in range(7)),
+        factor_group_ids=belief.window_indices,
+        metadata=metadata,
+    )
+
+    with pytest.raises(ValueError, match="explicit causal stream contract version 2"):
+        validate_claim_bearing_prob4d_observation_belief(legacy)
+
+
+def test_claim_bearing_entry_rejects_calibration_identity_drift() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["gauge_artifact_id"] = "7" * 64
+
+    with pytest.raises(ValueError, match="differs from its provider attestation"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_entry_rejects_pointwise_fallback_permission() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["pointwise_covariance_fallback_allowed"] = True
+
+    with pytest.raises(ValueError, match="pointwise covariance fallback"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_adapter_records_validated_admission() -> None:
+    adapted = _adapt_claim_bearing(_attested_belief())
+    metadata = adapted.batch.metadata
+
+    assert metadata["prob4d_claim_bearing_provider_v2_validated"] is True
+    assert metadata["prob4d_claim_bearing_stream_contract_version"] == 2
+    assert (
+        metadata["prob4d_claim_bearing_provider_manifest_id"]
+        == (_provider_manifest()["manifest_id"])
+    )
+    assert metadata["prob4d_claim_bearing_calibration_artifact_ids"] == {
+        "gauge_artifact_id": "5" * 64,
+        "point_artifact_id": "6" * 64,
+    }
+
+
+def test_claim_bearing_adapter_validates_before_innovation_shape() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["point_artifact_id"] = "8" * 64
+    invalid = replace(belief, metadata=metadata)
+    state = _state_design(invalid)
+
+    with pytest.raises(ValueError, match="differs from its provider attestation"):
+        build_claim_bearing_gauge_aware_batch_from_observation_belief(
+            invalid,
+            physical_prediction_xyz_m=np.zeros((1, 3)),
+            state_jacobian=state,
+            query_state_jacobian=state[:2],
+            physical_response_scale_m=0.05,
+        )
+
+
+def test_claim_bearing_artifact_adapter_preserves_linearization_binding() -> None:
+    belief = _attested_belief()
+    state = _state_design(belief)
+    linearization = PhysicalLinearizationV1(
+        observation_artifact_id=belief.artifact_id,
+        baseline_belief_id="8" * 64,
+        action_prefix_id="9" * 64,
+        simulator_revision="simulator-revision",
+        frame_ids=belief.frame_ids,
+        entity_ids=belief.entity_ids,
+        view_indices=belief.view_indices,
+        window_indices=belief.window_indices,
+        state_jacobian=state,
+        query_state_jacobian=state[:2],
+        physical_response_m=np.asarray([[0.01, 0.0, 0.0], [0.0, 0.01, 0.0]]),
+    )
+
+    adapted = build_claim_bearing_gauge_aware_batch_from_artifacts(
+        belief,
+        linearization,
+        physical_prediction_xyz_m=np.zeros_like(belief.mean_xyz_m),
+        state_prior_covariance_m2=np.eye(2) * 1e-3,
+    )
+
+    assert adapted.batch.metadata["prob4d_claim_bearing_provider_v2_validated"]
+    assert adapted.batch.metadata["row_alignment_verified"] is True
+    assert adapted.batch.metadata["linearization_artifact_id"] == (
+        linearization.artifact_id
+    )
+
+
+def test_claim_bearing_adapter_rejects_malformed_validation_summary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "bayesian_phystwin.claim_bearing_prob4d."
+        "validate_claim_bearing_prob4d_observation_belief",
+        lambda _belief: {
+            "provider_attestation": "not-a-mapping",
+            "claim_bearing_covariance_calibration": {},
+        },
+    )
+
+    with pytest.raises(ValueError, match="provider attestation must be a mapping"):
+        _adapt_claim_bearing(_attested_belief())
+
+
+def test_claim_bearing_calibration_metadata_must_be_mapping() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"] = "not-a-mapping"
+
+    with pytest.raises(ValueError, match="metadata must be a mapping"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_calibration_id_must_be_sha256() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["gauge_artifact_id"] = "invalid"
+
+    with pytest.raises(ValueError, match="lowercase SHA-256"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_alignment_count_must_be_nonnegative_integer() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["alignment_count"] = -1
+
+    with pytest.raises(ValueError, match="non-negative integer"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_requires_calibrated_status() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["status"] = "partially_calibrated"
+
+    with pytest.raises(ValueError, match="calibrated covariance metadata"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_rejects_uncalibrated_permission() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"][
+        "uncalibrated_exploratory_covariance_allowed"
+    ] = True
+
+    with pytest.raises(ValueError, match="uncalibrated covariance"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_requires_every_alignment_calibrated() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["gauge_calibrated_alignment_count"] = 0
+
+    with pytest.raises(ValueError, match="uncalibrated gauge alignments"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_rejects_recorded_covariance_fallback() -> None:
+    belief = _attested_belief()
+    metadata = deepcopy(dict(belief.metadata))
+    metadata["covariance_calibration"]["covariance_fallback_counts"] = {"pointwise": 1}
+
+    with pytest.raises(ValueError, match="fallback use"):
+        validate_claim_bearing_prob4d_observation_belief(
+            replace(belief, metadata=metadata)
+        )
+
+
+def test_claim_bearing_rejects_nonjoint_validation_summary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "bayesian_phystwin.prob4d_causal_lineage."
+        "validate_prob4d_causal_observation_belief",
+        lambda *_args, **_kwargs: {
+            "strict_causal_stream_contract": True,
+            "stream_contract_version": 2,
+            "stream_contract_version_inferred": False,
+            "covariance_semantics": "legacy",
+            "cross_window_covariance_preserved": False,
+        },
+    )
+
+    with pytest.raises(ValueError, match="full joint cross-window"):
+        validate_claim_bearing_prob4d_observation_belief(_attested_belief())

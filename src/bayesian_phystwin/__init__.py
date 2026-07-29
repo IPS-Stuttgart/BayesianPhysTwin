@@ -18,6 +18,10 @@ from .bias_aware_belief import (
     update_bias_aware_state,
 )
 from .calibration import BinaryCalibrationMetrics, binary_calibration_metrics
+from .claim_bearing_prob4d import (
+    build_claim_bearing_gauge_aware_batch_from_artifacts,
+    build_claim_bearing_gauge_aware_batch_from_observation_belief,
+)
 from .complete_belief_selection import (
     CompleteBeliefGuardDecisionV1,
     CompleteBeliefSelectionV1,
@@ -164,6 +168,8 @@ __all__ = [
     "apply_group_regret_bound",
     "apply_regret_guard",
     "binary_calibration_metrics",
+    "build_claim_bearing_gauge_aware_batch_from_artifacts",
+    "build_claim_bearing_gauge_aware_batch_from_observation_belief",
     "build_gauge_aware_batch_from_artifacts",
     "build_gauge_aware_batch_from_observation_belief",
     "build_physical_response_basis",
