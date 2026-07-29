@@ -142,6 +142,28 @@ remain ordered preflight candidates rather than selected source cases; the
 source panel is still the first twelve accepted outcome-blind preflights in
 the immutable queue.
 
+The prefix mask stage is now complete for ranks 3 through 14. All twelve
+candidate artifacts are ready for geometry, with 140 of 144 camera streams
+successful. Failed camera streams remain explicit dispositions and are not
+silently substituted.
+
+Prefix geometry has its own immutable child lock at
+`configs/sota/deform360_causal_response_direct_depth_v14_prefix_geometry.json`.
+It binds the exact twelve mask artifacts, official Deform360 source files,
+CUDA/gsplat runtime, reconstruction settings, and deterministic frame-zero
+point seeding. Reconstruction consumes only frames 0 through 57. It records
+58-frame RGB, mask, rendered-depth, and gripper-mask counts per retained
+camera, validates calibration, and writes a hash-only frame-zero geometry
+manifest.
+
+The physical point-count contract is enforced before source locking:
+`start_obj_pcd.ply` must contain between 128 and 10,000 finite nodes. A
+geometry or backend-admissibility failure is a pre-lock technical failure, not
+a model prediction. The number of seeded nodes supported by frame-zero metric
+depth is recorded as a target-free diagnostic but is not an additional
+admission threshold. No tracker, future point-cloud trajectory, hidden
+identity, or outcome is available to this stage.
+
 ## Advancement Gate
 
 The source study must seal twelve predictions or exact fallbacks without a

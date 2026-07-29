@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "Deform360CausalDirectDepthPrefixGeometryProtocolV14",
+  "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-geometry",
+  "status": "locked_after_prefix_masks_before_geometry_reconstruction",
+  "parent_prefix_assets": {
+    "protocol_id": "deform360-causal-response-direct-depth-v14-prefix-assets",
+    "config_sha256": "9fb919d9dae7b4257ad41499eec4d79882e95084d07c6d0c60b0b4f1b3528efc",
+    "file_sha256": "c17432287b585011ec86703124466f1724ca19f2a30f879b11083f5c5496f536"
+  },
+  "mask_inputs": [
+    {
+      "queue_rank": 3,
+      "artifact_sha256": "b145275bcc78a7f24e30bed21fe12b0700c3c799bc99325eb28e97895ce220ab",
+      "file_sha256": "004b8b3c737fe67333f14f7f7b1cbd17ad37fa6dbd464a22ca7c940dd5a84fe9",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 4,
+      "artifact_sha256": "e9ded506e1dba6021139ecc4d82f5890325c287c57b97837174b2fc17e52d933",
+      "file_sha256": "f73e46eb89a6d8042db3ab57387206af3c8971fe9ce381f613e6535d13f22356",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 5,
+      "artifact_sha256": "3cc78aab51be78348f4ac286938c5e9dba7fdcf3e60aea679999153721f97f41",
+      "file_sha256": "2a4d76b8632537f32a86efe3135819feb6f73359cd0a841e36c40106b7ce0696",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 6,
+      "artifact_sha256": "af57534bf59104a74aec94ed5b570999a0f494b809de7625c884d5e97651fcd1",
+      "file_sha256": "b25a37f1f7a402ebe6cc11847b47cb9b88666407ea5fcab1410f9d50bf04dc68",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 7,
+      "artifact_sha256": "fc7da6e285a21d8ac94dd1219a7ec3288e5ece5ddb41f9392d69edb92afc4514",
+      "file_sha256": "bf09283bf27f4c970d7dc8c7c24b68eca350d7fbaf65772b4d48db5ca08d489e",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 8,
+      "artifact_sha256": "b1cdf4180cf04b08abb25c8e33101b6b7ea8b159a7403464ae9af6350a3da393",
+      "file_sha256": "f3b29567454f1329716babc8f1c1ec8272eaa9f089efa1e13789414d4e895be0",
+      "successful_camera_count": 11
+    },
+    {
+      "queue_rank": 9,
+      "artifact_sha256": "ce678d749428cf6f24c008d7934ed1c44d9f06a9205c2fa85cfecf67b42ed439",
+      "file_sha256": "3d2299388a05202ef33d800db6456a753d3b7b75e6398ebab33b99671bc4452c",
+      "successful_camera_count": 11
+    },
+    {
+      "queue_rank": 10,
+      "artifact_sha256": "2b3773c9eb8b78168035d6645263c1428ec80649288cb2b60d65dff453d6e556",
+      "file_sha256": "6e3ae16b85340a2033bf0579b605c8c144cf131476d9b66599eb88724c9207d1",
+      "successful_camera_count": 11
+    },
+    {
+      "queue_rank": 11,
+      "artifact_sha256": "9228cbf19d3877ff09c104a7f81b13e8bc5d0f05049556f0840410cda5079d41",
+      "file_sha256": "47abb2db4e63db871a539b31cfd23cd3da42f59acf71dbb0ec480136aa884006",
+      "successful_camera_count": 11
+    },
+    {
+      "queue_rank": 12,
+      "artifact_sha256": "66a0df306eb250684c59d72bd7fe08ac3c6cdf05a07865e932e93082b0209ad8",
+      "file_sha256": "a117f84f6259db51c0f1b4cda2f0fbf4e2680f00402e217431f81370f1383376",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 13,
+      "artifact_sha256": "67b1db5c83b095d134eb2640e14d9730216865ad32957f0d80ad879fe8fa0767",
+      "file_sha256": "4ee8e29eb7a1d4063e901e7c188efd230a180bb657521e6429abb90384643f91",
+      "successful_camera_count": 12
+    },
+    {
+      "queue_rank": 14,
+      "artifact_sha256": "66dc2730d610cb8dc08a53e0f7ec861d0fbf32ca37f4f993c61e227d0e343b13",
+      "file_sha256": "b044d675f3cdca771afa3b232146ef37c18bddfd2c2e672a4cea9cabc1f94039",
+      "successful_camera_count": 12
+    }
+  ],
+  "geometry": {
+    "prefix_frame_count": 58,
+    "maximum_object_observation_frame": 57,
+    "minimum_visual_hull_points": 512,
+    "voxel_resolution": 120,
+    "cube_half_extent_m": 0.5,
+    "first_frame_iterations": 500,
+    "warm_start_iterations": 250,
+    "seed_point_count": 10000,
+    "seed_crop_half_extent_m": 0.5,
+    "seed_rng": 0,
+    "minimum_physical_node_count": 128,
+    "maximum_physical_node_count": 10000,
+    "support_depth_tolerance_m": 0.03,
+    "projected_support_role": "recorded target-free diagnostic, not an additional admission gate"
+  },
+  "runtime": {
+    "deform360_revision": "0fe36f0b7a7a917ba62b5f8cee707299a9a4a317",
+    "deform360_source_sha256": {
+      "reconstruct_stage": "53a1e8b73e56a1c68a0c4344b279c2817ed4b3ed93e8f5ea792def26d5099c7c",
+      "urdf_render": "c4d6a10e980ed4952f974d2e8a991c6fb819a3e6fdc6c121d3ce6925c94c2467",
+      "depth_stage": "34befb732107b805f1e1924699f1e26fc2ca5d3041561b920d8c23d8e85feef0",
+      "pcd_stage": "87553e1ea3dac5a90e46114c76aaf65901b43a064025626ae6871523065c864d"
+    },
+    "python_version": "3.10.12",
+    "required_path_prefix": "/usr/local/cuda/bin",
+    "nvcc_path": "/usr/local/cuda/bin/nvcc",
+    "nvcc_version_line": "Cuda compilation tools, release 12.6, V12.6.85",
+    "torch_version": "2.4.0+cu121",
+    "torch_cuda_version": "12.1",
+    "gsplat_version": "1.4.0",
+    "gsplat_extension_path": "/home/florianpfaff/.cache/torch_extensions/py310_cu121/gsplat_cuda/gsplat_cuda.so",
+    "gsplat_extension_sha256": "58c95816cdf011dbbd13a71f1d98312c9e661ef34c95592cc00ff93c72cab89b",
+    "required_backend_probe": "CameraModelType.PINHOLE"
+  },
+  "implementation_file_sha256": {
+    "geometry_module": "5e13d871ba36b364622b12d778cd55a426cb96a37862dcbcfe5ecb4b6d4854bb",
+    "geometry_builder": "d71afb7e832c299d4f5c51b686d59d74dd3e6eb43f0877e4b5a95a3d3b3898f2"
+  },
+  "failure_accounting": {
+    "technical_prelock_failure_is_not_a_model_prediction": true,
+    "failed_rank_is_preserved": true,
+    "next_candidate_comes_only_from_the_immutable_queue": true,
+    "no_replacement_after_source_lock_or_prediction": true
+  },
+  "information_boundary": {
+    "maximum_object_observation_frame": 57,
+    "future_object_observation_read": false,
+    "future_identity_or_metric_read": false,
+    "target_object_or_outcome_read": false,
+    "held_v8_artifact_or_process_access": false
+  },
+  "config_sha256": "3c4aa7d6dfe85e381c92804fe80ce81e45bf454838222d349e5ff0a313600ef6"
+}
