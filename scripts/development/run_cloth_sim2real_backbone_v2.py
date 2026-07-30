@@ -63,6 +63,16 @@ def _config_path(benchmark_root: Path, simulator: str) -> Path:
     return benchmark_root / f"bcm/conf/envs/{simulator}.yaml"
 
 
+def _stabilization_steps(simulator: str, trajectory_dt_s: float) -> int:
+    _require(simulator in SIMULATORS, f"unsupported simulator {simulator}")
+    _require(
+        np.isfinite(trajectory_dt_s) and trajectory_dt_s > 0.0,
+        "trajectory_dt_s must be positive and finite",
+    )
+    settling_time_s = 10.0 if simulator == "sofa" else 1.0
+    return int(settling_time_s / trajectory_dt_s)
+
+
 def _initialize_environment(
     environment: Any,
     simulator: str,
@@ -176,7 +186,7 @@ def _simulate(args: argparse.Namespace) -> int:
         target=None,
     )
     dt_s = float(environment.trajectory_dt)
-    stabilization_steps = int(1.0 / dt_s)
+    stabilization_steps = _stabilization_steps(simulator, dt_s)
     trajectory, pretrajectory_steps = generate_full_trajectory(
         dt_s,
         cloth_sample,
@@ -236,6 +246,8 @@ def _simulate(args: argparse.Namespace) -> int:
             "node_count": int(vertices[0].shape[0]),
             "face_count": int(len(faces)),
             "dt_s": dt_s,
+            "stabilization_steps": stabilization_steps,
+            "settling_time_s": stabilization_steps * dt_s,
             "npz_sha256": _sha256(output),
             "point_cloud_coordinates_read": False,
             "prefix_observations_read": False,

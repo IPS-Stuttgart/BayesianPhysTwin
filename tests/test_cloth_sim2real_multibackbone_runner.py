@@ -70,6 +70,22 @@ def test_default_simulator_preserves_mujoco_v1_behavior() -> None:
     assert args.simulator == "mujoco3"
 
 
+@pytest.mark.parametrize(
+    ("simulator", "trajectory_dt_s", "expected"),
+    [
+        ("mujoco3", 0.01, 100),
+        ("sofa", 0.001, 10_000),
+    ],
+)
+def test_stabilization_matches_the_official_backend_contract(
+    simulator: str,
+    trajectory_dt_s: float,
+    expected: int,
+) -> None:
+    runner = _runner()
+    assert runner._stabilization_steps(simulator, trajectory_dt_s) == expected
+
+
 def test_sofa_uses_scene_initialization_and_topology_faces() -> None:
     runner = _runner()
     environment = _FakeEnvironment()
