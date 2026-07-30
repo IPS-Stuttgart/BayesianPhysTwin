@@ -1,0 +1,42 @@
+{
+  "artifact_kind": "Deform360EventConditionedSourceFeasibilityV15",
+  "artifact_sha256": "12e3cdbc7e9fe461ad6a87a0662819b2544101ff0a5912441de04d916a8c356b",
+  "contract": "deform360-event-conditioned-source-feasibility-v15",
+  "counts": {
+    "excluded_public_object_count": 189,
+    "exclusion_union_object_count": 191,
+    "public_catalog_object_count": 190,
+    "remaining_metadata_admissible_object_count": 0,
+    "remaining_public_object_count": 1,
+    "required_fresh_source_object_count": 12
+  },
+  "decision": "do_not_create_a_deform360_v15_source_lock",
+  "information_boundary": {
+    "hash_only_set_comparison": true,
+    "held_v8_artifact_or_process_access": false,
+    "media_downloaded": false,
+    "object_ids_emitted": false,
+    "source_or_target_outcome_read": false,
+    "target_artifact_read": false
+  },
+  "inputs": {
+    "exclusion_union": {
+      "canonical_sha256": "b27847a5788ed17b8acd47de33b1a2af48c2afa284a88c7940faca47ec4cf136",
+      "file_sha256": "5b5f4b7f9db28d62d3413ec5129ebcb4a127092b1c7522040224b270b0b68995",
+      "path": "configs/sota/deform360_event_conditioned_v15_exclusion_v2.json"
+    },
+    "public_catalog": {
+      "canonical_sha256": "0e01a6eef92b5e3e8a6a02c75bc0bc4eeb0472a22ed042699cd8c4b411115a28",
+      "file_sha256": "88e9f733fc8e5c24e281e3bb81fb72914cd3ba0f160c7193085594a41989e74c",
+      "path": "results/sota/deform360_fresh_source_lock_v1/public_object_catalog_2026-07-26.json"
+    },
+    "v14_reserved_queue": {
+      "canonical_sha256": "e56dd42c07ce4aff0e3e0e2913e00a1e80d0727beef1884b1de93198f32bec75",
+      "file_sha256": "225ff37dd8ec2ff1ae12340ebfa3dc27fb6b045edee95d3b675832a72fa43d74",
+      "path": "configs/sota/deform360_causal_response_direct_depth_v14_staging_queue.json"
+    }
+  },
+  "next_authorized_step": "port the frozen event-conditioned method to a genuinely fresh dataset or newly collected data",
+  "schema_version": 1,
+  "status": "source_selection_blocked_before_download"
+}

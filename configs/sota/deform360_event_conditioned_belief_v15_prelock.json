@@ -32,6 +32,27 @@
     "scope_count": 10,
     "authorizes_only_a_new_protocol": true
   },
+  "fresh_object_exclusion": {
+    "path": "configs/sota/deform360_event_conditioned_v15_exclusion_v2.json",
+    "canonical_sha256": "b27847a5788ed17b8acd47de33b1a2af48c2afa284a88c7940faca47ec4cf136",
+    "file_sha256": "5b5f4b7f9db28d62d3413ec5129ebcb4a127092b1c7522040224b270b0b68995",
+    "unique_object_hash_count": 191,
+    "composition": [
+      "the 138-object V14 preselection union, already covering the supplied Prob4D, MolmoMotion, and held-v8 hashes",
+      "all 53 objects reserved by the immutable V14 staging queue, including its 12 selected source objects"
+    ]
+  },
+  "deform360_source_feasibility": {
+    "path": "results/sota/diagnostics/deform360_event_conditioned_v15_source_feasibility.json",
+    "artifact_sha256": "12e3cdbc7e9fe461ad6a87a0662819b2544101ff0a5912441de04d916a8c356b",
+    "status": "source_selection_blocked_before_download",
+    "public_catalog_object_count": 190,
+    "excluded_public_object_count": 189,
+    "remaining_public_object_count": 1,
+    "remaining_metadata_admissible_object_count": 0,
+    "required_fresh_source_object_count": 12,
+    "source_lock_authorized": false
+  },
   "event_selector": {
     "contract": "deform360-event-conditioned-window-v15",
     "lag_frames": 6,
@@ -84,8 +105,8 @@
     "future_identity_or_metric_used": false,
     "no_event_is_explicit_abstention": true
   },
-  "remaining_before_source_lock": [
-    "build a current all-study hash-only fresh-object exclusion union",
+  "remaining_before_external_source_lock": [
+    "identify a genuinely fresh external dataset or collect new data",
     "freeze and hash the component-level signature preprocessor",
     "freeze camera-panel assignment",
     "run production-path synthetic positive and placebo controls",

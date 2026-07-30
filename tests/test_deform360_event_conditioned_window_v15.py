@@ -8,6 +8,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from bayesian_phystwin.deform360_causal_response_preflight import (
+    deform360_object_hash,
+)
 from bayesian_phystwin.deform360_event_conditioned_window_v15 import (
     EventConditionedWindowConfig,
     EventPanelEvidence,
@@ -15,6 +18,10 @@ from bayesian_phystwin.deform360_event_conditioned_window_v15 import (
 )
 from bayesian_phystwin.deform360_event_shape_signature_v15 import (
     EventShapeSignatureConfig,
+)
+from bayesian_phystwin.deform360_object_exclusion import (
+    file_sha256,
+    load_object_exclusion_manifest,
 )
 
 
@@ -315,3 +322,78 @@ def test_prelock_binds_closed_arms_and_exact_selector_defaults() -> None:
     ]
     exclusion_payload = json.loads(exclusion_path.read_text(encoding="utf-8"))
     assert exclusion_payload["exclusion_sha256"] == exclusion["canonical_sha256"]
+    fresh = prelock["fresh_object_exclusion"]
+    fresh_path = root / fresh["path"]
+    fresh_payload = load_object_exclusion_manifest(fresh_path)
+    assert file_sha256(fresh_path) == fresh["file_sha256"]
+    assert fresh_payload["exclusion_sha256"] == fresh["canonical_sha256"]
+    assert (
+        len(fresh_payload["object_hashes"])
+        == fresh["unique_object_hash_count"]
+        == 191
+    )
+    prior = load_object_exclusion_manifest(
+        root / "configs" / "sota" / "deform360_fresh_object_exclusion_v14.json"
+    )
+    reserved = load_object_exclusion_manifest(
+        root
+        / "configs"
+        / "sota"
+        / "deform360_v14_reserved_queue_exclusion_v1.json"
+    )
+    assert len(prior["object_hashes"]) == 138
+    assert len(reserved["object_hashes"]) == 53
+    assert not set(prior["object_hashes"]).intersection(reserved["object_hashes"])
+    assert set(fresh_payload["object_hashes"]) == set(
+        prior["object_hashes"]
+    ).union(reserved["object_hashes"])
+
+    feasibility_path = root / prelock["deform360_source_feasibility"]["path"]
+    feasibility = json.loads(feasibility_path.read_text(encoding="utf-8"))
+    canonical = dict(feasibility)
+    digest = canonical.pop("artifact_sha256")
+    assert digest == hashlib.sha256(
+        b"deform360-event-conditioned-source-feasibility-v15\0"
+        + json.dumps(
+            canonical,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    catalog = json.loads(
+        (
+            root
+            / "results"
+            / "sota"
+            / "deform360_fresh_source_lock_v1"
+            / "public_object_catalog_2026-07-26.json"
+        ).read_text(encoding="utf-8")
+    )
+    public_hashes = {
+        deform360_object_hash(str(row["object_id"])) for row in catalog["objects"]
+    }
+    remaining = public_hashes.difference(fresh_payload["object_hashes"])
+    queue = json.loads(
+        (
+            root
+            / "configs"
+            / "sota"
+            / "deform360_causal_response_direct_depth_v14_staging_queue.json"
+        ).read_text(encoding="utf-8")
+    )
+    rejected = {
+        row["object_hash"]
+        for row in queue["metadata_dispositions"]["rejected_hash_only"]
+    }
+    assert len(public_hashes) == 190
+    assert len(remaining) == 1
+    assert remaining == rejected
+    assert feasibility["counts"] == {
+        "excluded_public_object_count": 189,
+        "exclusion_union_object_count": 191,
+        "public_catalog_object_count": 190,
+        "remaining_metadata_admissible_object_count": 0,
+        "remaining_public_object_count": 1,
+        "required_fresh_source_object_count": 12,
+    }

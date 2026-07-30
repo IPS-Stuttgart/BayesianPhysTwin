@@ -39,6 +39,34 @@ must receive the same branch frames and the same causal evidence. Event
 prevalence, abstentions, and technical failures remain first-class results.
 V15 results must not be substituted for unconditional Deform360 performance.
 
+## Freshness Boundary
+
+The current hash-only exclusion union contains 191 physical objects. It merges
+the 138-object V14 preselection union with all 53 objects reserved by V14's
+immutable staging queue, including the twelve source objects selected from
+that queue. The V14 preselection union already contains every supplied
+Prob4D, MolmoMotion, and held-v8 object hash; each of those manifests is a
+subset.
+
+The V15 exclusion has canonical digest
+`b27847a5788ed17b8acd47de33b1a2af48c2afa284a88c7940faca47ec4cf136`
+and file SHA-256
+`5b5f4b7f9db28d62d3413ec5129ebcb4a127092b1c7522040224b270b0b68995`.
+It contains no plaintext object or episode identity.
+
+This audit blocks a new Deform360 source run. The bound public catalog contains
+190 objects. Of those, 189 are in the conservative exclusion union. The sole
+remaining public object is the hash-only metadata rejection from the V14
+queue, leaving zero admissible fresh objects against the required twelve.
+This decision was reached before media download and without source or target
+outcomes:
+
+> Do not create a Deform360 V15 source lock. Port the frozen event-conditioned
+> method to a genuinely fresh dataset or newly collected data.
+
+The machine-readable feasibility decision is
+`results/sota/diagnostics/deform360_event_conditioned_v15_source_feasibility.json`.
+
 ## Stage A: Model-Independent Event Selection
 
 The implementation is
