@@ -1,0 +1,56 @@
+{
+  "accepted": true,
+  "artifact_kind": "ClothSim2RealPredictionResult",
+  "authorized_split": "source",
+  "case_id": "linen_rag_0/quasi_static",
+  "claim_boundary": "causal online continuation from a real prefix; not an identical-information open-loop benchmark comparison",
+  "future_frame_count": 314,
+  "future_outcomes_read_only_after_prediction_seal": true,
+  "horizons": [
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.05452825659363995,
+      "name": "early",
+      "physical_symmetric_l1_chamfer_m": 0.06626948008638012,
+      "raw_90_coordinate_coverage": 0.6987206823027718,
+      "relative_improvement": 0.17717391893577356
+    },
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.06837187277413291,
+      "name": "middle",
+      "physical_symmetric_l1_chamfer_m": 0.06662725761904698,
+      "raw_90_coordinate_coverage": 0.6915343915343916,
+      "relative_improvement": -0.026184706041198304
+    },
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.059262830717883505,
+      "name": "late",
+      "physical_symmetric_l1_chamfer_m": 0.052985812667454536,
+      "raw_90_coordinate_coverage": 0.8256713228728153,
+      "relative_improvement": -0.11846601447493699
+    }
+  ],
+  "method_id": "cloth-sim2real-guarded-readout-v1",
+  "metrics": {
+    "candidate_directed_l1_chamfer_m": 0.06511239009409549,
+    "candidate_symmetric_l1_chamfer_m": 0.06072563050406381,
+    "candidate_symmetric_l2_hausdorff_m": 0.18940753012730635,
+    "directed_relative_improvement": 0.004131508770150386,
+    "hausdorff_relative_improvement": -0.09040313974922125,
+    "mean_90_interval_width_m": 0.04974894800107343,
+    "mean_energy_score_m": 0.045914655758601854,
+    "mean_readout_correction_m": 0.029318775820713072,
+    "physical_directed_l1_chamfer_m": 0.06538251854286987,
+    "physical_symmetric_l1_chamfer_m": 0.06198943304613095,
+    "physical_symmetric_l2_hausdorff_m": 0.1737041312728315,
+    "raw_90_coordinate_coverage": 0.7383649692091558,
+    "released_window_candidate_directed_l1_chamfer_m": 0.06511239009409549,
+    "released_window_cutoff_frame_exclusive": 420,
+    "released_window_directed_relative_improvement": 0.004131508770150386,
+    "released_window_physical_directed_l1_chamfer_m": 0.06538251854286987,
+    "symmetric_frame_wins": 150,
+    "symmetric_relative_improvement": 0.020387386687770688
+  },
+  "prediction_seal_sha256": "e17407e098652048497398bd0f00263cd9d977e150b8997476de5a338ad5e158",
+  "schema_version": 1,
+  "selected_name": "graph_l0.01_s1"
+}

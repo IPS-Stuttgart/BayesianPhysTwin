@@ -92,6 +92,36 @@ def _case_descriptor(
     return case
 
 
+def _authorization(
+    split: str,
+    artifact_path: Path | None,
+) -> tuple[str | None, str | None]:
+    if split == "source":
+        _require(
+            artifact_path is None,
+            "source predictions do not accept an authorization artifact",
+        )
+        return None, None
+    _require(
+        artifact_path is not None and artifact_path.is_file(),
+        f"{split} predictions require an authorization artifact",
+    )
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if split == "calibration":
+        _require(
+            payload.get("artifact_kind") == "ClothSim2RealSourceGate"
+            and payload.get("calibration_authorized") is True,
+            "source gate does not authorize calibration",
+        )
+    else:
+        _require(
+            payload.get("artifact_kind") == "ClothSim2RealCalibrationGate"
+            and payload.get("target_authorized") is True,
+            "calibration gate does not authorize target",
+        )
+    return str(artifact_path.resolve()), _sha256(artifact_path)
+
+
 def _cloud_dir(dataset_root: Path, case: dict[str, Any]) -> Path:
     root = dataset_root
     if (root / "Benchmarking_cloth").is_dir():
@@ -229,6 +259,14 @@ def _seal(args: argparse.Namespace) -> int:
     manifest_path = args.manifest.resolve()
     manifest = _load_manifest(manifest_path)
     case = _case_descriptor(manifest, args.case_id, args.authorized_split)
+    authorization_path, authorization_sha256 = _authorization(
+        args.authorized_split,
+        (
+            None
+            if args.authorization_artifact is None
+            else args.authorization_artifact.resolve()
+        ),
+    )
     baseline_path = args.baseline.resolve()
     _require(baseline_path.is_file(), "physical baseline does not exist")
     with np.load(baseline_path, allow_pickle=False) as baseline:
@@ -286,6 +324,8 @@ def _seal(args: argparse.Namespace) -> int:
         "method_id": METHOD_ID,
         "case_id": args.case_id,
         "authorized_split": args.authorized_split,
+        "authorization_artifact": authorization_path,
+        "authorization_artifact_sha256": authorization_sha256,
         "manifest_sha256": _sha256(manifest_path),
         "baseline_sha256": _sha256(baseline_path),
         "fit_frames": [0, fit_stop - 1],
@@ -356,6 +396,36 @@ def _score(args: argparse.Namespace) -> int:
     )
     manifest = _load_manifest(args.manifest.resolve())
     case = _case_descriptor(manifest, seal["case_id"], seal["authorized_split"])
+    calibration_std_multiplier = 1.0
+    calibration_artifact_sha256 = None
+    if seal["authorized_split"] == "target":
+        _require(
+            args.calibration_artifact is not None
+            and args.calibration_artifact.is_file(),
+            "target scoring requires the calibration artifact",
+        )
+        calibration = json.loads(
+            args.calibration_artifact.read_text(encoding="utf-8")
+        )
+        calibration_artifact_sha256 = _sha256(args.calibration_artifact)
+        _require(
+            calibration.get("artifact_kind") == "ClothSim2RealCalibrationGate"
+            and calibration.get("target_authorized") is True,
+            "calibration artifact does not authorize target scoring",
+        )
+        _require(
+            calibration_artifact_sha256
+            == seal["authorization_artifact_sha256"],
+            "target seal and calibration artifact differ",
+        )
+        calibration_std_multiplier = float(
+            calibration["uncertainty_std_multiplier"]
+        )
+        _require(
+            np.isfinite(calibration_std_multiplier)
+            and calibration_std_multiplier >= 1.0,
+            "calibration uncertainty multiplier is invalid",
+        )
     branch = int(case["branch_frame"])
     cloud_dir = _cloud_dir(args.dataset_root.resolve(), case)
     observed_future = _load_clouds(
@@ -434,8 +504,10 @@ def _score(args: argparse.Namespace) -> int:
     )
     config = ClothReadoutBeliefConfig(**seal["config"])
     coverage_values: list[float] = []
+    raw_coverage_values: list[float] = []
     interval_widths: list[float] = []
     energy_scores: list[float] = []
+    standardized_absolute_residuals: list[np.ndarray] = []
     for horizon, (prediction, observation) in enumerate(
         zip(candidate, observed_future, strict=True),
         start=1,
@@ -446,14 +518,24 @@ def _score(args: argparse.Namespace) -> int:
             candidate_count=config.candidate_count,
             sensor_std_m=config.sensor_std_m,
         )
-        total_variance = (
+        raw_total_variance = (
             variance
             + horizon * config.forecast_process_std_m_per_sqrt_frame**2
             + association.variance_m2[:, None]
         )
+        total_variance = (
+            calibration_std_multiplier**2 * raw_total_variance
+        )
         residual = association.observed_points_m - prediction
+        standardized_absolute_residuals.append(
+            np.abs(residual) / np.sqrt(raw_total_variance)
+        )
         half_width = 1.6448536269514722 * np.sqrt(total_variance)
+        raw_half_width = 1.6448536269514722 * np.sqrt(raw_total_variance)
         coverage_values.append(float(np.mean(np.abs(residual) <= half_width)))
+        raw_coverage_values.append(
+            float(np.mean(np.abs(residual) <= raw_half_width))
+        )
         interval_widths.append(float(np.mean(2.0 * half_width)))
         energy_scores.append(
             _normal_energy_score(
@@ -464,6 +546,17 @@ def _score(args: argparse.Namespace) -> int:
             )
         )
     horizon_indices = np.array_split(np.arange(len(physical_symmetric)), 3)
+    standardized_q90 = float(
+        np.quantile(
+            np.concatenate(
+                [
+                    values.reshape(-1)
+                    for values in standardized_absolute_residuals
+                ]
+            ),
+            0.90,
+        )
+    )
     trial_id, task = seal["case_id"].split("/", maxsplit=1)
     absolute_future_frames = np.arange(branch + 1, int(case["frame_count"]))
     if task == "dynamic":
@@ -489,6 +582,8 @@ def _score(args: argparse.Namespace) -> int:
         "method_id": METHOD_ID,
         "case_id": seal["case_id"],
         "authorized_split": seal["authorized_split"],
+        "calibration_artifact_sha256": calibration_artifact_sha256,
+        "uncertainty_std_multiplier": calibration_std_multiplier,
         "prediction_seal_sha256": _sha256(seal_path),
         "selected_name": seal["selected_name"],
         "accepted": seal["accepted"],
@@ -540,7 +635,13 @@ def _score(args: argparse.Namespace) -> int:
                 physical_hausdorff,
                 candidate_hausdorff,
             ),
-            "raw_90_coordinate_coverage": float(np.mean(coverage_values)),
+            "raw_90_coordinate_coverage": float(
+                np.mean(raw_coverage_values)
+            ),
+            "reported_90_coordinate_coverage": float(
+                np.mean(coverage_values)
+            ),
+            "trial_coordinate_abs_standardized_q90": standardized_q90,
             "mean_90_interval_width_m": float(np.mean(interval_widths)),
             "mean_energy_score_m": float(np.mean(energy_scores)),
             "mean_readout_correction_m": float(
@@ -560,8 +661,11 @@ def _score(args: argparse.Namespace) -> int:
                     physical_symmetric[indices],
                     candidate_symmetric[indices],
                 ),
-                "raw_90_coordinate_coverage": float(
+                "reported_90_coordinate_coverage": float(
                     np.mean(np.asarray(coverage_values)[indices])
+                ),
+                "raw_90_coordinate_coverage": float(
+                    np.mean(np.asarray(raw_coverage_values)[indices])
                 ),
             }
             for name, indices in zip(
@@ -645,6 +749,92 @@ def _aggregate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _aggregate_calibration(args: argparse.Namespace) -> int:
+    source_gate_path = args.source_gate.resolve()
+    source_gate = json.loads(source_gate_path.read_text(encoding="utf-8"))
+    _require(
+        source_gate.get("artifact_kind") == "ClothSim2RealSourceGate"
+        and source_gate.get("calibration_authorized") is True,
+        "source gate does not authorize calibration aggregation",
+    )
+    result_paths = tuple(sorted(args.results_root.glob("*/result.json")))
+    _require(
+        len(result_paths) == 6,
+        "calibration aggregate requires exactly six cases",
+    )
+    results = [
+        json.loads(path.read_text(encoding="utf-8")) for path in result_paths
+    ]
+    _require(
+        {result["authorized_split"] for result in results} == {"calibration"},
+        "calibration aggregate contains another split",
+    )
+    dynamic = [
+        result for result in results if result["case_id"].endswith("/dynamic")
+    ]
+    _require(len(dynamic) == 3, "calibration dynamic case count changed")
+    dynamic_improvements = np.asarray(
+        [
+            result["metrics"]["symmetric_relative_improvement"]
+            for result in dynamic
+        ],
+        dtype=np.float64,
+    )
+    calibration_accuracy_gate = bool(
+        np.mean(dynamic_improvements) >= 0.05
+        and np.sum(dynamic_improvements > 0.0) >= 2
+        and np.min(dynamic_improvements) >= -0.05
+    )
+    standard_normal_90 = 1.6448536269514722
+    trial_scale_requirements = {
+        result["case_id"]: max(
+            1.0,
+            float(
+                result["metrics"]["trial_coordinate_abs_standardized_q90"]
+                / standard_normal_90
+            ),
+        )
+        for result in results
+    }
+    uncertainty_std_multiplier = float(
+        max(trial_scale_requirements.values())
+    )
+    payload = {
+        "schema_version": 1,
+        "artifact_kind": "ClothSim2RealCalibrationGate",
+        "method_id": METHOD_ID,
+        "source_gate_sha256": _sha256(source_gate_path),
+        "result_sha256s": {
+            path.parent.name: _sha256(path) for path in result_paths
+        },
+        "case_metrics": {
+            result["case_id"]: result["metrics"] for result in results
+        },
+        "dynamic_object_balanced_relative_improvement": float(
+            np.mean(dynamic_improvements)
+        ),
+        "dynamic_win_count": int(np.sum(dynamic_improvements > 0.0)),
+        "worst_dynamic_relative_improvement": float(
+            np.min(dynamic_improvements)
+        ),
+        "calibration_accuracy_gate_passed": calibration_accuracy_gate,
+        "trial_uncertainty_std_requirements": trial_scale_requirements,
+        "uncertainty_std_multiplier": uncertainty_std_multiplier,
+        "uncertainty_rule": (
+            "maximum over six calibration-trial 90th percentiles of absolute "
+            "coordinate residual divided by raw predictive standard deviation"
+        ),
+        "formal_90_split_conformal_claim": False,
+        "finite_session_resolution": (
+            "with six calibration sessions the maximum finite order statistic "
+            "corresponds to rank 6/7, not formal 90% coverage"
+        ),
+        "target_authorized": calibration_accuracy_gate,
+    }
+    _write_json_once(args.output.resolve(), payload)
+    return 0
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -665,6 +855,7 @@ def _parser() -> argparse.ArgumentParser:
         choices=("source", "calibration", "target"),
         required=True,
     )
+    seal.add_argument("--authorization-artifact", type=Path)
     seal.add_argument("--output-dir", type=Path, required=True)
     seal.set_defaults(function=_seal)
 
@@ -672,12 +863,27 @@ def _parser() -> argparse.ArgumentParser:
     score.add_argument("--manifest", type=Path, required=True)
     score.add_argument("--dataset-root", type=Path, required=True)
     score.add_argument("--output-dir", type=Path, required=True)
+    score.add_argument("--calibration-artifact", type=Path)
     score.set_defaults(function=_score)
 
     aggregate = subparsers.add_parser("aggregate-source")
     aggregate.add_argument("--results-root", type=Path, required=True)
     aggregate.add_argument("--output", type=Path, required=True)
     aggregate.set_defaults(function=_aggregate)
+
+    aggregate_calibration = subparsers.add_parser("aggregate-calibration")
+    aggregate_calibration.add_argument(
+        "--results-root",
+        type=Path,
+        required=True,
+    )
+    aggregate_calibration.add_argument(
+        "--source-gate",
+        type=Path,
+        required=True,
+    )
+    aggregate_calibration.add_argument("--output", type=Path, required=True)
+    aggregate_calibration.set_defaults(function=_aggregate_calibration)
     return parser
 
 
