@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "protocol_id": "cloth-sim2real-multibackbone-exploratory-v2",
+  "status": "pre_outcome_exploratory_lock",
+  "benchmark": {
+    "repository": "https://github.com/dblanm/benchmarking_cloth",
+    "commit": "178a9b9722191c51cf0dcbc3cf0dc03701b09eb3"
+  },
+  "physical_backbones": [
+    "mujoco3",
+    "sofa"
+  ],
+  "sofa_runtime": {
+    "release": "23.06.00",
+    "official_archive_sha256": "de1ab962978f1b77db97d9925e6fef6b2bc924aff6aa04956a59d9e1bd0e3720"
+  },
+  "online_update": {
+    "source": "frozen Cloth Sim2Real guarded readout v1",
+    "retuning_permitted": false,
+    "future_observations_in_prediction": false,
+    "rejected_update": "exact physical fallback"
+  },
+  "smoke_case": "chequered_rag_0/dynamic",
+  "continuation_scope": [
+    "chequered_rag_0/dynamic",
+    "cotton_rag_0/dynamic",
+    "linen_rag_0/dynamic"
+  ],
+  "metrics": [
+    "directed_l1_chamfer_m",
+    "symmetric_l1_chamfer_m",
+    "late_horizon_symmetric_l1_chamfer_m"
+  ],
+  "evidence_boundary": {
+    "real_repeats_already_opened": true,
+    "exploratory_only": true,
+    "independent_confirmation_claim": false,
+    "identical_information_sota_claim": false
+  }
+}
