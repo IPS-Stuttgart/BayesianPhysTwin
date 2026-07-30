@@ -12,9 +12,14 @@ from bayesian_phystwin.rgbench_libuipc import (
     PositionTrajectory,
     libuipc_vector_values,
     load_rgbbench_position_trajectory,
+    summarize_independent_replays,
     transform_vertices_wxyz,
+    triangle_mesh_area_m2,
 )
 from scripts.held.run_rgbbench_libuipc_competence_v3 import SOURCE_DIGEST_KEYS
+from scripts.held.run_rgbbench_libuipc_ensemble_v4 import (
+    SOURCE_DIGEST_KEYS as ENSEMBLE_SOURCE_DIGEST_KEYS,
+)
 
 
 def _trajectory(offset: float = 0.0) -> PositionTrajectory:
@@ -68,6 +73,13 @@ def test_transform_vertices_uses_wxyz_pose() -> None:
     np.testing.assert_allclose(transformed, [[1.0, 3.0, 3.0]], atol=1e-12)
 
 
+def test_triangle_mesh_area_uses_metric_geometry() -> None:
+    vertices = np.asarray([[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 3.0, 0.0]])
+    assert triangle_mesh_area_m2(vertices, np.asarray([[0, 1, 2]])) == pytest.approx(
+        3.0
+    )
+
+
 def test_libuipc_vector_values_adds_binding_column_dimension() -> None:
     converted = libuipc_vector_values(
         np.asarray([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
@@ -116,6 +128,32 @@ def test_physical_parameters_reject_nonphysical_values() -> None:
         )
 
 
+def test_replay_ensemble_summary_preserves_metric_variance() -> None:
+    replay_a = np.asarray([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
+    replay_b = replay_a + 0.002
+    replay_c = replay_a - 0.001
+    summary = summarize_independent_replays([replay_a, replay_b, replay_c])
+    np.testing.assert_allclose(
+        summary.mean_vertices_m,
+        replay_a + (0.001 / 3.0),
+    )
+    np.testing.assert_allclose(
+        summary.variance_m2,
+        np.full_like(replay_a, 7e-6 / 3.0),
+    )
+    assert summary.maximum_pairwise_rmse_m == pytest.approx(0.003)
+    assert summary.maximum_pairwise_coordinate_difference_m == pytest.approx(
+        0.003
+    )
+
+
+def test_replay_ensemble_summary_rejects_contract_drift() -> None:
+    with pytest.raises(ValueError, match="contracts"):
+        summarize_independent_replays(
+            [np.zeros((2, 3)), np.zeros((3, 3))]
+        )
+
+
 def test_competence_protocol_exposes_every_runner_source_digest() -> None:
     root = Path(__file__).resolve().parents[1]
     payload = json.loads(
@@ -125,3 +163,14 @@ def test_competence_protocol_exposes_every_runner_source_digest() -> None:
     )
     case = payload["competence_case"]
     assert set(SOURCE_DIGEST_KEYS.values()) <= set(case)
+
+
+def test_ensemble_protocol_exposes_every_runner_source_digest() -> None:
+    root = Path(__file__).resolve().parents[1]
+    payload = json.loads(
+        (
+            root / "configs" / "sota" / "rgbbench_libuipc_ensemble_v4.json"
+        ).read_text(encoding="utf-8")
+    )
+    case = payload["qualification_case"]
+    assert set(ENSEMBLE_SOURCE_DIGEST_KEYS.values()) <= set(case)

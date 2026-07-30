@@ -134,6 +134,29 @@ def transform_vertices_wxyz(
     return transformed
 
 
+def triangle_mesh_area_m2(
+    vertices_m: np.ndarray,
+    triangles: np.ndarray,
+) -> float:
+    """Return total triangle area for a metric surface mesh."""
+
+    vertices = np.asarray(vertices_m, dtype=np.float64)
+    faces = np.asarray(triangles, dtype=np.int64)
+    _require(vertices.ndim == 2 and vertices.shape[1] == 3, "invalid vertices")
+    _require(faces.ndim == 2 and faces.shape[1] == 3, "invalid triangles")
+    _require(
+        len(faces) >= 1
+        and np.min(faces) >= 0
+        and np.max(faces) < len(vertices),
+        "triangle index is out of bounds",
+    )
+    edges_a = vertices[faces[:, 1]] - vertices[faces[:, 0]]
+    edges_b = vertices[faces[:, 2]] - vertices[faces[:, 0]]
+    area = float(0.5 * np.linalg.norm(np.cross(edges_a, edges_b), axis=1).sum())
+    _require(math.isfinite(area) and area > 0.0, "mesh area must be positive")
+    return area
+
+
 @dataclass(frozen=True)
 class FlingPinController:
     """Match RGBench's fixed-point fling preparation and playback semantics."""
@@ -229,6 +252,79 @@ class LibuIPCClothParameters:
             and self.friction_coefficient >= 0.0,
             "friction_coefficient must be nonnegative",
         )
+
+
+@dataclass(frozen=True)
+class ReplayEnsembleSummary:
+    """Target-free numerical spread of independent simulator replays."""
+
+    mean_vertices_m: np.ndarray
+    variance_m2: np.ndarray
+    maximum_pairwise_rmse_m: float
+    maximum_pairwise_coordinate_difference_m: float
+
+    def __post_init__(self) -> None:
+        mean = _readonly_float_array(self.mean_vertices_m, shape_tail=(3,))
+        variance = _readonly_float_array(self.variance_m2, shape_tail=(3,))
+        _require(mean.ndim == 2, "mean_vertices_m must have shape (N, 3)")
+        _require(variance.shape == mean.shape, "variance shape changed")
+        _require(np.all(variance >= 0.0), "replay variance must be nonnegative")
+        _require(
+            math.isfinite(self.maximum_pairwise_rmse_m)
+            and self.maximum_pairwise_rmse_m >= 0.0,
+            "maximum pairwise RMSE is invalid",
+        )
+        _require(
+            math.isfinite(self.maximum_pairwise_coordinate_difference_m)
+            and self.maximum_pairwise_coordinate_difference_m >= 0.0,
+            "maximum pairwise coordinate difference is invalid",
+        )
+        object.__setattr__(self, "mean_vertices_m", mean)
+        object.__setattr__(self, "variance_m2", variance)
+
+
+def summarize_independent_replays(
+    replay_vertices_m: list[np.ndarray] | tuple[np.ndarray, ...],
+) -> ReplayEnsembleSummary:
+    """Summarize replay spread without consulting an observed outcome."""
+
+    _require(len(replay_vertices_m) >= 2, "at least two replays are required")
+    arrays = [
+        np.asarray(replay, dtype=np.float64) for replay in replay_vertices_m
+    ]
+    reference_shape = arrays[0].shape
+    _require(
+        len(reference_shape) == 2 and reference_shape[1] == 3,
+        "replay vertices must have shape (N, 3)",
+    )
+    _require(
+        all(array.shape == reference_shape for array in arrays),
+        "replay vertex contracts differ",
+    )
+    _require(
+        all(np.all(np.isfinite(array)) for array in arrays),
+        "replay vertices must be finite",
+    )
+    maximum_rmse = 0.0
+    maximum_coordinate = 0.0
+    for left_index, left in enumerate(arrays[:-1]):
+        for right in arrays[left_index + 1 :]:
+            difference = left - right
+            maximum_rmse = max(
+                maximum_rmse,
+                float(np.sqrt(np.mean(np.square(difference)))),
+            )
+            maximum_coordinate = max(
+                maximum_coordinate,
+                float(np.max(np.abs(difference))),
+            )
+    stacked = np.stack(arrays)
+    return ReplayEnsembleSummary(
+        mean_vertices_m=np.mean(stacked, axis=0),
+        variance_m2=np.var(stacked, axis=0, ddof=1),
+        maximum_pairwise_rmse_m=maximum_rmse,
+        maximum_pairwise_coordinate_difference_m=maximum_coordinate,
+    )
 
 
 def _load_uipc() -> Any:

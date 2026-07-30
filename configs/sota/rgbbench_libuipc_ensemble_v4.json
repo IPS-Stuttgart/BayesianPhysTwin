@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchLibuIPCEnsembleQualificationProtocol",
+  "protocol_id": "rgbbench-libuipc-ensemble-v4",
+  "predecessor": {
+    "protocol_id": "rgbbench-libuipc-competence-v3",
+    "result_commit": "bcff26fd14960d9beb46cf70b1a4fb5ad7cbdb3a",
+    "status": "source_competence_gate_failed",
+    "reason": "independent CUDA replays had 0.0211515 mm RMSE and were not byte-identical"
+  },
+  "upstream": {
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "dataset_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+    "rgbbench_main_config_sha256": "73a93d3c02672319f2d7dfb36fdbaddfac8972b55eccf1a088aa0cdf7530a8e5",
+    "rgbbench_cloth_config_sha256": "f6783d00dc8af64b76bbeabba881fb21a65ca7d1c4f7cb5efb7aa97bd822e7b3",
+    "libuipc_tag": "v0.0.7",
+    "libuipc_commit": "3ebb4445efd7ff47ac3b8a01b1533431b7266b77",
+    "pyuipc_version": "0.0.7"
+  },
+  "qualification_case": {
+    "split": "source",
+    "garment": "green_tshirt",
+    "action": "fling",
+    "sample": "01",
+    "data_subfolder": "green_tshirt/green_tshirt_fling_2025-07-19-19-21-02",
+    "mesh_relative_path": "Green_Tshirt/green_tshirt_10k.obj",
+    "mesh_sha256": "27e2debb86e01fdf6f94950a07f071c372d2ca8ed59f3c5a20f3ba810ac83ab5",
+    "mesh_surface_area_m2": 1.0473844792068663,
+    "source_mass_kg": 0.255,
+    "left_trajectory_relative_path": "joints/left_arm_joint_states_and_end_pose.csv",
+    "left_trajectory_sha256": "0709af638bd565dcd51f44a01df5c96ba26f8ca8db476ad8c6b4c3917dfeee19",
+    "right_trajectory_relative_path": "joints/right_arm_joint_states_and_end_pose.csv",
+    "right_trajectory_sha256": "083818aa727f4f048553e209cb94ec861c3d8443f90f1b65b926872e0e7c70cb",
+    "pin_indices": [
+      185,
+      76
+    ],
+    "initial_pose_xyz_wxyz": [
+      0.1,
+      0.0,
+      0.01,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "left_base_translation_m": [
+      0.0,
+      0.25,
+      0.0
+    ],
+    "right_base_translation_m": [
+      0.0,
+      -0.25,
+      0.0
+    ],
+    "prepare_time_s": 5.0,
+    "wait_time_s": 5.0,
+    "full_horizon_duration_s": 16.355
+  },
+  "physics": {
+    "timestep_s": 0.01,
+    "youngs_modulus_pa": 230000.0,
+    "poisson_ratio": 0.35,
+    "volume_density_kg_m3": 220.0,
+    "thickness_m": 0.001106652745101429,
+    "bending_stiffness": 1000.0,
+    "friction_coefficient": 0.047,
+    "contact_distance_m": 0.003,
+    "contact_resistance": 1000000000.0,
+    "constraint_strength_ratio": 100.0
+  },
+  "qualification_gate": {
+    "independent_replays": 3,
+    "require_exclusive_gpu_observation": true,
+    "maximum_pairwise_endpoint_rmse_m": 0.0001,
+    "maximum_pairwise_coordinate_difference_m": 0.001,
+    "maximum_pin_target_error_m": 0.02,
+    "minimum_mean_vertex_displacement_m": 0.02,
+    "all_vertices_finite": true,
+    "vertex_count_preserved": true
+  },
+  "threshold_basis": {
+    "published_garment_dynamics_error_m": 0.02899,
+    "public_pybullet_error_m": 0.04565,
+    "replay_rmse_fraction_of_published_error": 0.00345,
+    "purpose": "keep backend replay noise negligible relative to the benchmark scale without assuming a deterministic Dirac rollout"
+  },
+  "information_boundary": {
+    "allowed": [
+      "released source mesh",
+      "released source material metadata",
+      "released source actuator trajectories",
+      "frozen action timing and pin identities",
+      "target-free simulator replay differences"
+    ],
+    "forbidden": [
+      "all segmented point-cloud filenames",
+      "all segmented point-cloud coordinates",
+      "all source accuracy outcomes",
+      "all calibration-garment outcomes",
+      "all target-garment outcomes"
+    ],
+    "passed_gate_action": "freeze a separate one-case source accuracy protocol",
+    "failed_gate_action": "close the full-horizon LibuIPC arm without an accuracy run"
+  }
+}
