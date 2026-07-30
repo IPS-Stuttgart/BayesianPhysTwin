@@ -1,0 +1,84 @@
+{
+  "artifact_kind": "RGBenchOnlineBeliefRuntimeGateResult",
+  "calibration_opened": false,
+  "direct_runtime_amendment": {
+    "brown_replay_1": {
+      "baseline_written": false,
+      "exit_code": 139,
+      "log_sha256": "78174e66d261f0a6f4508d715fe433d33731cf8ecba454739f588fa219856f48",
+      "stage": "scene-construction",
+      "status": "native-segmentation-fault"
+    },
+    "green_gui_direct_parity": {
+      "direct_npz_sha256": "c62d7ffdb07f09bcd996d83084c64caa70b0d1cb547db0d3a0ea0681114a7d38",
+      "faces_byte_identical": true,
+      "gui_npz_sha256": "c62d7ffdb07f09bcd996d83084c64caa70b0d1cb547db0d3a0ea0681114a7d38",
+      "maximum_absolute_vertex_difference_m": 0.0,
+      "target_times_byte_identical": true,
+      "vertices_byte_identical": true
+    },
+    "implementation_commit": "fc7e412",
+    "runtime_gate_passed": false
+  },
+  "gui_runtime_failures": {
+    "formal_parallel_failures": [
+      {
+        "case_id": "brown_coat/fling/01",
+        "log_sha256": "07c412b2e2390e196c9bc6449148befe7c6d742ab373d3da9b6880fdcfc8dc29"
+      },
+      {
+        "case_id": "brown_coat/fling/02",
+        "log_sha256": "75fb1d16d980440c21d3f705547b324c352c36ca9845ac49c60287406e512e23"
+      },
+      {
+        "case_id": "brown_coat/fling/03",
+        "log_sha256": "aef1c29ee0ae9f38a6bc83734bea515c2c88251b974efc27502e3a5403a10805"
+      },
+      {
+        "case_id": "brown_coat/fold/01",
+        "log_sha256": "aa85925ab88f1e5495ee697efcf6ab9745efb6a0708fdbca3425a3de2a4b2c1f"
+      }
+    ],
+    "serial_reproduction": {
+      "baseline_written": false,
+      "case_id": "brown_coat/fling/01",
+      "exit_code": 139,
+      "log_sha256": "1e777cee2ce5c317bad5c51bca3b099dab92d9c0db20b92cb3f51d44b595621d"
+    }
+  },
+  "initial_method_commit": "062b900",
+  "outcome_accounting": {
+    "operator_cancelled_before_baseline": 4,
+    "ordinary_sealed_source_predictions": 1,
+    "retained_technical_failure_predictions": 0,
+    "source_cases_in_lock": 27,
+    "source_gate_produced": false
+  },
+  "post_open_source_lead": {
+    "admissible_under_frozen_gate": false,
+    "case_id": "green_tshirt/grasp/01",
+    "linear_residual_full_hybrid_m": 0.022295637677252,
+    "linear_residual_future_improvement": 0.32102045208292054,
+    "linear_residual_future_m": 0.02733481632178795,
+    "published_garment_dynamics_cell_m": 0.0226,
+    "scale": 1.0,
+    "validation_improvement": -0.03332081975084337,
+    "validation_win_fraction": 0.0
+  },
+  "schema_version": 1,
+  "sealed_source_smoke": {
+    "accepted": true,
+    "candidate_full_m": 0.0316497881730582,
+    "candidate_future_m": 0.03996291949112631,
+    "case_id": "green_tshirt/grasp/01",
+    "full_relative_improvement": 0.00687434157462131,
+    "future_relative_improvement": 0.007346356744907159,
+    "physical_full_m": 0.03186886564107063,
+    "physical_future_m": 0.0402586740729431,
+    "prediction_seal_sha256": "197ae97d9f80dd19a4f8f57554ff654dcbdbeaa7f605b4b837a313794bf40f82",
+    "published_garment_dynamics_cell_m": 0.0226,
+    "result_sha256": "4678d4d58ac5cd7a6958212eb7411bac2523ce046388477cd80e150393f5b2b3"
+  },
+  "status": "predictions_incomplete",
+  "target_opened": false
+}
