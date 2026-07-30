@@ -170,6 +170,63 @@ def test_self_intersection_gate_rejects_every_candidate(tmp_path: Path) -> None:
         )
 
 
+def test_over_budget_candidate_skips_expensive_geometry_checks(
+    tmp_path: Path,
+) -> None:
+    source_vertices, source_faces = _grid_mesh(12, 12)
+    valid_vertices, valid_faces = _grid_mesh(8, 16)
+    source = tmp_path / "source.obj"
+    parameters = tmp_path / "cloth.yaml"
+    write_obj_triangles(source, source_vertices, source_faces)
+    _write_parameters(parameters)
+    remesh_calls = 0
+    intersection_calls = 0
+
+    def remesher(
+        _vertices: np.ndarray,
+        _faces: np.ndarray,
+        _target_edge_length_m: float,
+        _config: RGBenchIsotropicMeshConfig,
+    ) -> tuple[np.ndarray, np.ndarray, str]:
+        nonlocal remesh_calls
+        remesh_calls += 1
+        if remesh_calls == 1:
+            return source_vertices, source_faces, "test"
+        return valid_vertices, valid_faces, "test"
+
+    def intersection_counter(
+        _vertices: np.ndarray,
+        _faces: np.ndarray,
+    ) -> int:
+        nonlocal intersection_calls
+        intersection_calls += 1
+        return 0
+
+    artifact = build_isotropic_mesh_artifact(
+        garment="synthetic",
+        source_mesh=source,
+        source_mesh_relative_path="source.obj",
+        cloth_parameters=parameters,
+        cloth_parameters_relative_path="cloth.yaml",
+        source_fling_pin_indices=(0, len(source_vertices) - 1),
+        derived_mesh=tmp_path / "derived.obj",
+        derived_mesh_relative_path="meshes/synthetic.obj",
+        config=RGBenchIsotropicMeshConfig(
+            identity_max_vertices=128,
+            target_edge_lengths_um=(1_000, 2_000),
+        ),
+        remesher=remesher,
+        self_intersection_counter=intersection_counter,
+    )
+    assert remesh_calls == 2
+    assert intersection_calls == 1
+    assert artifact.attempts[0].geometry_checked is False
+    assert artifact.attempts[0].rejection_reasons == (
+        "above_physical_vertex_maximum",
+    )
+    assert artifact.attempts[1].geometry_checked is True
+
+
 def test_artifact_digest_rejects_tampering(tmp_path: Path) -> None:
     vertices, faces = _grid_mesh(8, 16)
     source = tmp_path / "source.obj"

@@ -102,16 +102,17 @@ class MeshAdmissionAttempt:
     target_edge_length_um: int | None
     vertex_count: int
     face_count: int
-    connected_component_count: int
-    edge_manifold: bool
-    vertex_manifold: bool
-    orientable: bool
-    degenerate_face_count: int
-    duplicate_face_count: int
-    self_intersection_face_count: int
-    source_mean_distance_m: float
-    source_p99_distance_m: float
-    source_max_distance_m: float
+    geometry_checked: bool
+    connected_component_count: int | None
+    edge_manifold: bool | None
+    vertex_manifold: bool | None
+    orientable: bool | None
+    degenerate_face_count: int | None
+    duplicate_face_count: int | None
+    self_intersection_face_count: int | None
+    source_mean_distance_m: float | None
+    source_p99_distance_m: float | None
+    source_max_distance_m: float | None
     maximum_pin_snap_distance_m: float
     accepted: bool
     rejection_reasons: tuple[str, ...]
@@ -126,25 +127,55 @@ class MeshAdmissionAttempt:
             self.vertex_count >= 1 and self.face_count >= 1,
             "candidate mesh is empty",
         )
-        _require(
-            self.connected_component_count >= 1,
-            "candidate has no connected component",
-        )
-        _require(
-            self.degenerate_face_count >= 0
-            and self.duplicate_face_count >= 0
-            and self.self_intersection_face_count >= 0,
-            "candidate contains an invalid face count",
-        )
-        for value in (
+        geometry_values = (
+            self.connected_component_count,
+            self.edge_manifold,
+            self.vertex_manifold,
+            self.orientable,
+            self.degenerate_face_count,
+            self.duplicate_face_count,
+            self.self_intersection_face_count,
             self.source_mean_distance_m,
             self.source_p99_distance_m,
             self.source_max_distance_m,
-            self.maximum_pin_snap_distance_m,
-        ):
-            _require(math.isfinite(value) and value >= 0.0, "invalid distance")
+        )
         _require(
-            self.accepted == (len(self.rejection_reasons) == 0),
+            self.geometry_checked == all(value is not None for value in geometry_values),
+            "geometry-check flag and values disagree",
+        )
+        if self.geometry_checked:
+            assert self.connected_component_count is not None
+            assert self.degenerate_face_count is not None
+            assert self.duplicate_face_count is not None
+            assert self.self_intersection_face_count is not None
+            _require(
+                self.connected_component_count >= 1,
+                "candidate has no connected component",
+            )
+            _require(
+                self.degenerate_face_count >= 0
+                and self.duplicate_face_count >= 0
+                and self.self_intersection_face_count >= 0,
+                "candidate contains an invalid face count",
+            )
+            for value in (
+                self.source_mean_distance_m,
+                self.source_p99_distance_m,
+                self.source_max_distance_m,
+            ):
+                assert value is not None
+                _require(
+                    math.isfinite(value) and value >= 0.0,
+                    "invalid geometry distance",
+                )
+        _require(
+            math.isfinite(self.maximum_pin_snap_distance_m)
+            and self.maximum_pin_snap_distance_m >= 0.0,
+            "invalid pin-snap distance",
+        )
+        _require(
+            self.accepted
+            == (self.geometry_checked and len(self.rejection_reasons) == 0),
             "acceptance and rejection reasons disagree",
         )
 
@@ -627,6 +658,32 @@ def _candidate_attempt(
     config: RGBenchIsotropicMeshConfig,
     self_intersection_counter: Callable[[np.ndarray, np.ndarray], int],
 ) -> MeshAdmissionAttempt:
+    count_reasons: list[str] = []
+    if len(derived_vertices) < config.physical_min_vertices:
+        count_reasons.append("below_physical_vertex_minimum")
+    if len(derived_vertices) > config.identity_max_vertices:
+        count_reasons.append("above_physical_vertex_maximum")
+    if count_reasons:
+        return MeshAdmissionAttempt(
+            mode=mode,
+            target_edge_length_um=target_edge_length_um,
+            vertex_count=len(derived_vertices),
+            face_count=len(derived_faces),
+            geometry_checked=False,
+            connected_component_count=None,
+            edge_manifold=None,
+            vertex_manifold=None,
+            orientable=None,
+            degenerate_face_count=None,
+            duplicate_face_count=None,
+            self_intersection_face_count=None,
+            source_mean_distance_m=None,
+            source_p99_distance_m=None,
+            source_max_distance_m=None,
+            maximum_pin_snap_distance_m=maximum_pin_snap_distance_m,
+            accepted=False,
+            rejection_reasons=tuple(count_reasons),
+        )
     topology = _mesh_topology(derived_vertices, derived_faces)
     face_points = derived_vertices[derived_faces]
     double_areas = np.linalg.norm(
@@ -650,10 +707,6 @@ def _candidate_attempt(
         derived_vertices,
     )
     reasons: list[str] = []
-    if len(derived_vertices) < config.physical_min_vertices:
-        reasons.append("below_physical_vertex_minimum")
-    if len(derived_vertices) > config.identity_max_vertices:
-        reasons.append("above_physical_vertex_maximum")
     if topology.connected_component_count != 1:
         reasons.append("multiple_connected_components")
     if not topology.edge_manifold:
@@ -679,6 +732,7 @@ def _candidate_attempt(
         target_edge_length_um=target_edge_length_um,
         vertex_count=len(derived_vertices),
         face_count=len(derived_faces),
+        geometry_checked=True,
         connected_component_count=topology.connected_component_count,
         edge_manifold=topology.edge_manifold,
         vertex_manifold=topology.vertex_manifold,
