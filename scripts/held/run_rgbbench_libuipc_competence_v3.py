@@ -27,6 +27,11 @@ from bayesian_phystwin.rgbench_online_belief import (
 
 PROTOCOL_ID = "rgbbench-libuipc-competence-v3"
 ARTIFACT_KIND = "RGBenchLibuIPCCompetenceProtocol"
+SOURCE_DIGEST_KEYS = {
+    "mesh": "mesh_sha256",
+    "left": "left_trajectory_sha256",
+    "right": "right_trajectory_sha256",
+}
 
 
 def _require(condition: bool, message: str) -> None:
@@ -114,7 +119,7 @@ def _verify_source(
     for name, path in paths.items():
         _require(path.is_file(), f"missing frozen source {name}: {path}")
         _require(
-            sha256_file(path) == case[f"{name}_sha256"],
+            sha256_file(path) == case[SOURCE_DIGEST_KEYS[name]],
             f"frozen source {name} changed",
         )
     _require(

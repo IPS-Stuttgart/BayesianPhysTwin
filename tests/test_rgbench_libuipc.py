@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +13,7 @@ from bayesian_phystwin.rgbench_libuipc import (
     load_rgbbench_position_trajectory,
     transform_vertices_wxyz,
 )
+from scripts.held.run_rgbbench_libuipc_competence_v3 import SOURCE_DIGEST_KEYS
 
 
 def _trajectory(offset: float = 0.0) -> PositionTrajectory:
@@ -102,3 +104,14 @@ def test_physical_parameters_reject_nonphysical_values() -> None:
             contact_resistance=1e9,
             constraint_strength_ratio=100.0,
         )
+
+
+def test_competence_protocol_exposes_every_runner_source_digest() -> None:
+    root = Path(__file__).resolve().parents[1]
+    payload = json.loads(
+        (
+            root / "configs" / "sota" / "rgbbench_libuipc_competence_v3.json"
+        ).read_text(encoding="utf-8")
+    )
+    case = payload["competence_case"]
+    assert set(SOURCE_DIGEST_KEYS.values()) <= set(case)
