@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "protocol_id": "cloth-sim2real-online-belief-v1",
+  "status": "pre_outcome_dataset_lock",
+  "dataset": {
+    "name": "Dataset for Benchmarking the Sim-to-Real Gap in Cloth Manipulation",
+    "doi": "10.5281/zenodo.13823986",
+    "url": "https://zenodo.org/records/13823986",
+    "archive_name": "Benchmarking_cloth.zip",
+    "archive_size_bytes": 3762021195,
+    "archive_md5": "ebf71c60850708982fc5f98f8f1e4aab",
+    "archive_sha256": "268d07d94396f6f4ca277b6da0e8acf43512747fea6d40327eb33166da972c7f",
+    "dataset_manifest_artifact_sha256": "721d85ee4411901d88917640b987e9baf125ec9776c3ac901fec32dd4660a433",
+    "dataset_manifest_file_sha256": "18f23c9a508939f20502a960130f5de00ce0161ef037592933c0ec3ac0ce58e0",
+    "license": "CC-BY-4.0"
+  },
+  "split": {
+    "source_repeat": 0,
+    "calibration_repeat": 1,
+    "target_repeat": 2,
+    "cloths": [
+      "chequered_rag",
+      "cotton_rag",
+      "linen_rag"
+    ],
+    "tasks": [
+      "dynamic",
+      "quasi_static"
+    ],
+    "target_future_open_before_prediction_seal": false
+  },
+  "information_boundary": {
+    "branch_fraction": 0.25,
+    "prefix_fit_fraction": 0.6,
+    "dynamic_frames": 130,
+    "dynamic_fit_stop_frame": 19,
+    "dynamic_branch_frame": 32,
+    "quasi_static_frames": 420,
+    "quasi_static_fit_stop_frame": 63,
+    "quasi_static_branch_frame": 105,
+    "fit_uses_only_frames_before_fit_stop": true,
+    "admission_uses_only_fit_stop_through_branch": true,
+    "future_starts_after_branch": true,
+    "future_point_clouds_may_not_form_predictions": true,
+    "future_point_clouds_may_only_be_opened_after_prediction_seal": true
+  },
+  "physical_baseline": {
+    "primary": "released MuJoCo 3.1.x cloth model and released cloth/task parameters",
+    "unchanged_fallback_required": true,
+    "reported_external_comparators": [
+      "MuJoCo",
+      "Bullet",
+      "Flex",
+      "SOFA"
+    ],
+    "simulator_trajectory_may_not_be_refit_on_calibration_or_target_repeats": true
+  },
+  "candidate_ladder": [
+    "unchanged_physical_baseline",
+    "prefix_global_translation_readout",
+    "prefix_graph_smoothed_readout",
+    "bias_aware_guarded_graph_readout"
+  ],
+  "method_constraints": {
+    "observation_association_uses_only_same_frame_geometry": true,
+    "association_spread_enters_covariance": true,
+    "innovation_is_robustified_once": true,
+    "shared_sensor_bias_is_not_counted_as_independent_point_evidence": true,
+    "candidate_must_beat_baseline_on_disjoint_prefix_validation": true,
+    "failed_admission_is_bit_exact_fallback": true,
+    "readout_correction_is_not_claimed_as_a_physical_state": true
+  },
+  "metrics": {
+    "primary": "future_symmetric_l1_chamfer_m",
+    "secondary": [
+      "future_hausdorff_m",
+      "early_middle_late_chamfer_m",
+      "predictive_coverage",
+      "interval_width",
+      "energy_score",
+      "readout_correction_energy"
+    ],
+    "replication_unit": "trial",
+    "primary_task": "dynamic",
+    "secondary_task": "quasi_static"
+  },
+  "advancement_gates": {
+    "source": {
+      "dynamic_mean_relative_improvement_at_least": 0.05,
+      "dynamic_joint_nonregression_cloths_at_least": 3,
+      "no_future_used_for_admission": true
+    },
+    "calibration": {
+      "dynamic_mean_relative_improvement_at_least": 0.05,
+      "dynamic_wins_at_least": 2,
+      "maximum_single_cloth_relative_regression": 0.05,
+      "calibration_parameters_frozen_before_target_prefix": true
+    },
+    "target_authorized_only_if_source_and_calibration_pass": true
+  },
+  "claim_boundary": {
+    "new_task": "causal online continuation from an allowed real-observation prefix",
+    "not_claimed": [
+      "open-loop superiority with identical information to the published benchmark",
+      "material-parameter identification",
+      "physical-state correction when only readout correction is used",
+      "formal iid point-level conformal coverage"
+    ]
+  }
+}
