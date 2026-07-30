@@ -21,21 +21,27 @@ diff --git a/Library/EXPORTER.cpp b/Library/EXPORTER.cpp
 diff --git a/CMake/suitesparse.cmake b/CMake/suitesparse.cmake
 --- a/CMake/suitesparse.cmake
 +++ b/CMake/suitesparse.cmake
-@@ -42,9 +42,10 @@
+@@ -42,9 +42,16 @@
 -if (NOT APPLE)
 -    include(mkl)
 -endif()
-+find_package(BLAS REQUIRED)
-+find_package(LAPACK REQUIRED)
++set(SYSTEM_BLAS_LIBRARY "" CACHE FILEPATH "Absolute path to the BLAS library")
++set(SYSTEM_LAPACK_LIBRARY "" CACHE FILEPATH "Absolute path to the LAPACK library")
++if(NOT EXISTS "${SYSTEM_BLAS_LIBRARY}")
++    message(FATAL_ERROR "SYSTEM_BLAS_LIBRARY must name an existing library")
++endif()
++if(NOT EXISTS "${SYSTEM_LAPACK_LIBRARY}")
++    message(FATAL_ERROR "SYSTEM_LAPACK_LIBRARY must name an existing library")
++endif()
  if(NOT TARGET blas)
      add_library(blas INTERFACE IMPORTED GLOBAL)
-+    target_link_libraries(blas INTERFACE BLAS::BLAS)
++    target_link_libraries(blas INTERFACE "${SYSTEM_BLAS_LIBRARY}")
  endif()
  if(NOT TARGET lapack)
      add_library(lapack INTERFACE IMPORTED GLOBAL)
-+    target_link_libraries(lapack INTERFACE LAPACK::LAPACK)
++    target_link_libraries(lapack INTERFACE "${SYSTEM_LAPACK_LIBRARY}")
  endif()
-@@ -70,8 +71,3 @@
+@@ -70,8 +77,3 @@
  cmake_policy(SET CMP0079 NEW)
 -if (NOT APPLE)
 -    target_link_libraries(cholmod PUBLIC mkl::mkl)
@@ -43,5 +49,5 @@ diff --git a/CMake/suitesparse.cmake b/CMake/suitesparse.cmake
 -    find_package(LAPACK)
 -    target_link_libraries(cholmod PUBLIC LAPACK::LAPACK)
 -endif()
-+target_link_libraries(cholmod PUBLIC BLAS::BLAS LAPACK::LAPACK)
++target_link_libraries(cholmod PUBLIC blas lapack)
  add_library(SuiteSparse_SuiteSparse INTERFACE)

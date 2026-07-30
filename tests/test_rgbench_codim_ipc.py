@@ -138,8 +138,9 @@ def test_cholmod_build_patch_uses_bound_system_libraries_and_marker() -> None:
     ).read_text(encoding="utf-8")
     assert "JGSL_OUTPUT_DIRECTORY" in patch
     assert 'm.attr("linear_solver_backend") = "CHOLMOD"' in patch
-    assert "find_package(BLAS REQUIRED)" in patch
-    assert "find_package(LAPACK REQUIRED)" in patch
+    assert "SYSTEM_BLAS_LIBRARY" in patch
+    assert "SYSTEM_LAPACK_LIBRARY" in patch
+    assert "target_link_libraries(cholmod PUBLIC blas lapack)" in patch
     assert "include(mkl)" in patch
     assert patch.count("-    include(mkl)") == 1
 
