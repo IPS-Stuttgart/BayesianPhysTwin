@@ -1,5 +1,18 @@
 import numpy as np
 import pytest
+from test_grouped_conformal import (
+    test_additive_bounds_are_clipped_to_nonnegative_losses,
+    test_future_prediction_validation_fails_closed,
+    test_group_quantile_rejects_empty_or_nonfinite_scores,
+    test_group_quantile_rejects_invalid_coverage,
+    test_group_score_validation_fails_closed,
+    test_group_scores_weight_each_independent_unit_once,
+    test_impossible_group_rank_returns_infinite_bounds,
+    test_invalid_score_is_rejected,
+    test_nine_groups_are_required_for_a_finite_ninety_percent_bound,
+    test_result_contract_rejects_invalid_values,
+    test_scaled_bounds_cover_all_registered_future_endpoints_together,
+)
 
 from bayesian_phystwin.grouped_likelihood import (
     GroupedStudentTLikelihoodConfig,
@@ -8,6 +21,20 @@ from bayesian_phystwin.grouped_likelihood import (
     grouped_student_t_mixture_likelihood,
 )
 from bayesian_phystwin.observation_belief import ObservationBeliefV1
+
+_GROUPED_CONFORMAL_STABLE_TESTS = (
+    test_additive_bounds_are_clipped_to_nonnegative_losses,
+    test_future_prediction_validation_fails_closed,
+    test_group_quantile_rejects_empty_or_nonfinite_scores,
+    test_group_quantile_rejects_invalid_coverage,
+    test_group_score_validation_fails_closed,
+    test_group_scores_weight_each_independent_unit_once,
+    test_impossible_group_rank_returns_infinite_bounds,
+    test_invalid_score_is_rejected,
+    test_nine_groups_are_required_for_a_finite_ninety_percent_bound,
+    test_result_contract_rejects_invalid_values,
+    test_scaled_bounds_cover_all_registered_future_endpoints_together,
+)
 
 
 def _belief() -> ObservationBeliefV1:
