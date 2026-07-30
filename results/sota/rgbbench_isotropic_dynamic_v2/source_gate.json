@@ -1,0 +1,980 @@
+{
+  "artifact_kind": "RGBenchDynamicSourceGateV2",
+  "calibration_authorized": false,
+  "candidate_object_action_balanced_real_to_sim_l1_m": 0.0452176053592902,
+  "candidate_sota_cell_count": 1,
+  "cells": [
+    {
+      "action": "fling",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.09691652976691133,
+      "garment": "white_cakeskirt",
+      "physical_real_to_sim_l1_m": 0.08988577544589425,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0406,
+      "relative_improvement": -0.07821876471710654,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.027687091251094132,
+      "garment": "white_cakeskirt",
+      "physical_real_to_sim_l1_m": 0.025916970941857576,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0179,
+      "relative_improvement": -0.0682996602190767,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.05223119971989867,
+      "garment": "white_cakeskirt",
+      "physical_real_to_sim_l1_m": 0.051937600225823166,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0269,
+      "relative_improvement": -0.005652927605413791,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.051272233520849746,
+      "garment": "brown_coat",
+      "physical_real_to_sim_l1_m": 0.05908271677406706,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0379,
+      "relative_improvement": 0.13219573641281065,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_beats_published_garment_dynamics": true,
+      "candidate_real_to_sim_l1_m": 0.02725754401758257,
+      "garment": "brown_coat",
+      "physical_real_to_sim_l1_m": 0.027233502148217886,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0279,
+      "relative_improvement": -0.000882804908227957,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.04689907026987868,
+      "garment": "brown_coat",
+      "physical_real_to_sim_l1_m": 0.045978622617505537,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.032,
+      "relative_improvement": -0.020019034933480204,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.04778022006088465,
+      "garment": "green_tshirt",
+      "physical_real_to_sim_l1_m": 0.052341643672559744,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+      "relative_improvement": 0.08714712209288976,
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.022648057355982895,
+      "garment": "green_tshirt",
+      "physical_real_to_sim_l1_m": 0.022710113891546133,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0132,
+      "relative_improvement": 0.002732550609811695,
+      "selected_shrinkage": 0.0
+    },
+    {
+      "action": "grasp",
+      "candidate_beats_published_garment_dynamics": false,
+      "candidate_real_to_sim_l1_m": 0.03426650227052915,
+      "garment": "green_tshirt",
+      "physical_real_to_sim_l1_m": 0.03552800624765968,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0226,
+      "relative_improvement": 0.03550731128385863,
+      "selected_shrinkage": 1.0
+    }
+  ],
+  "claim_boundary": "cross-fitted source online continuation; not an equal-information open-loop SOTA comparison",
+  "cross_fit": {
+    "held_out_unit": "garment",
+    "selection_scope": "action-specific",
+    "selections": {
+      "brown_coat/fling": 1.0,
+      "brown_coat/fold": 1.0,
+      "brown_coat/grasp": 1.0,
+      "green_tshirt/fling": 1.0,
+      "green_tshirt/fold": 0.0,
+      "green_tshirt/grasp": 1.0,
+      "white_cakeskirt/fling": 1.0,
+      "white_cakeskirt/fold": 1.0,
+      "white_cakeskirt/grasp": 1.0
+    },
+    "training_garment_count": 2
+  },
+  "deployment_shrinkages_by_action": {
+    "fling": 1.0,
+    "fold": 0.0,
+    "grasp": 1.0
+  },
+  "garment_relative_improvements": {
+    "brown_coat": 0.037097965523700836,
+    "green_tshirt": 0.041795661328853366,
+    "white_cakeskirt": -0.05072378418053234
+  },
+  "gates": {
+    "aggregate_below_published_garment_dynamics": false,
+    "all_three_source_garments_nonregressing": false,
+    "at_least_six_of_nine_cells_beat_published_garment_dynamics": false,
+    "at_least_six_of_nine_cells_improve": false,
+    "object_action_balanced_improvement_at_least_5pct": false
+  },
+  "improved_cell_count": 4,
+  "method_id": "rgbbench-isotropic-dynamic-v2",
+  "object_action_balanced_relative_improvement": 0.00938994755734062,
+  "published_garment_dynamics_object_action_balanced_real_to_sim_l1_m": 0.028988888888888883,
+  "result_sha256s": {
+    "brown_coat/fling/01/bank_result.json": "bd7799abc3bcad1cb41f5b117984cbefc784e6ef43acb51f5c9145e5ba6d3254",
+    "brown_coat/fling/02/bank_result.json": "3a729b8179d546335f2731461da978f0c4883c3f0d4b71b770efbba48a7cc255",
+    "brown_coat/fling/03/bank_result.json": "82ce1146091b80857819ed88037c6ed0c92a0fd53279ffcd29260912dd2014d7",
+    "brown_coat/fold/01/bank_result.json": "d235508a835f9ffd27cbf4c344cefb03706f23e897ff76737743f01feb920a32",
+    "brown_coat/fold/02/bank_result.json": "dde2ecf0f4c3729ef981561b67db64c96c6dd203644a568f812414dae2dff9da",
+    "brown_coat/fold/03/bank_result.json": "eb81c3f467a594fd9333c64ede416a20028c6d31ac828687b633a8f6634d9aa6",
+    "brown_coat/grasp/01/bank_result.json": "83a92feca5631b8135fa40a887a41e1beefc90051a8ceb46a734aabead67a436",
+    "brown_coat/grasp/02/bank_result.json": "2b52573f205e944bb13c93a0cbf08fd37ea17a94b3f1a5ef59b3d81e61af1e23",
+    "brown_coat/grasp/03/bank_result.json": "0619253fba18729c441067e47b92931f60c0e3f914031d3b8ec40f04a60a9dca",
+    "green_tshirt/fling/01/bank_result.json": "3c0bf8e45b9431133f435cf260c5de375ad5d815bb8cb3892dc0bc6d7428ffc1",
+    "green_tshirt/fling/02/bank_result.json": "150d216a1daf137dc6043d7db639d7263b9f2edcbe75fdb11fdc72cdfa99360b",
+    "green_tshirt/fling/03/bank_result.json": "081a3c30e81b680de1b462bb5bd1fcf28d1a170ded3c187e196de1f947e37e52",
+    "green_tshirt/fold/01/bank_result.json": "0ec151cfbc9f2648b6356b3288a55cb40df6ccec1d09f1efc518466c618c1450",
+    "green_tshirt/fold/02/bank_result.json": "f71fc3351134e62255eb4701b094df7f61b335bd1fae4021f29702ad61c03f32",
+    "green_tshirt/fold/03/bank_result.json": "00db89142661648fd876b18e9da666b3ebfb41efa9883593d39281bda0fbdf6c",
+    "green_tshirt/grasp/01/bank_result.json": "2ad4a5a3ecf9e4846c5cd81a4838f09a811e2b6b510ca286b456b36bdb0bc946",
+    "green_tshirt/grasp/02/bank_result.json": "6f16fa31d55c3632b64ec86e07b2f679976c0d900dd3a34ddafd8cc58cc1ef39",
+    "green_tshirt/grasp/03/bank_result.json": "3094360a25d6a5c9d7d31bd0084de610276fc0ae26b92c0c64d3a8b0b1959009",
+    "white_cakeskirt/fling/01/bank_result.json": "a7a8bfb81afcd82325d667e16f5be334225a264fcb003b13f6c5d731fde7320a",
+    "white_cakeskirt/fling/02/bank_result.json": "580f044f6db630bcda6cf263fecdbaf8984b2ae6cd06d40c353eb3643836fdee",
+    "white_cakeskirt/fling/03/bank_result.json": "9d786ad256f3c273a9def8e57c483fefef2c22bc8e9af37240d4cc1be6668916",
+    "white_cakeskirt/fold/01/bank_result.json": "65118d116328f0b656130ef40a957e421b61f5b48cc6abb0487af397aefbc014",
+    "white_cakeskirt/fold/02/bank_result.json": "70e070523edc7af6f499da88f386dca3bc99249b273d1ee96921a799b69438fc",
+    "white_cakeskirt/fold/03/bank_result.json": "a4c7c970f0e289e511e1fd6da991576f7d219296261eda99a99c9c02031902bf",
+    "white_cakeskirt/grasp/01/bank_result.json": "d0ad569d57202dfdfe2416ed457abd1316043d01945000e39893afcda4e122c3",
+    "white_cakeskirt/grasp/02/bank_result.json": "5393dd2d320414811afdc985e68b4cfaaab8ed1eda75c2d9d5c242eabcdeb446",
+    "white_cakeskirt/grasp/03/bank_result.json": "b4438620375e05a5ed791d20c97bdb8045d904dda8f09be70cc6f819b72433a5"
+  },
+  "schema_version": 1,
+  "selected_cases": [
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.051545386016780534,
+      "candidate_real_to_sim_l1_m": 0.056345121426704545,
+      "case_id": "brown_coat/fling/01",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.05689839304133965,
+          "relative_improvement_vs_physical": 0.13300747499523077
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.059595205233483474,
+          "relative_improvement_vs_physical": 0.06004567597171183
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.03747343389744858,
+          "relative_improvement_vs_physical": 0.26525217816403834
+        }
+      ],
+      "mean_coordinate_nees": 6.710133920449584,
+      "physical_real_to_sim_l1_m": 0.06273462679552855,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0379,
+      "raw_90_coordinate_coverage": 0.6899712129463939,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.0471850617737501,
+      "candidate_real_to_sim_l1_m": 0.050186715923426856,
+      "case_id": "brown_coat/fling/02",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.04992858208675337,
+          "relative_improvement_vs_physical": 0.1101004177702088
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.05190682227608509,
+          "relative_improvement_vs_physical": 0.1319040870459973
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.03971978095841183,
+          "relative_improvement_vs_physical": 0.28615425279573947
+        }
+      ],
+      "mean_coordinate_nees": 6.319942024569744,
+      "physical_real_to_sim_l1_m": 0.05768334618572622,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0379,
+      "raw_90_coordinate_coverage": 0.7147704383758224,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.04226185920079066,
+      "candidate_real_to_sim_l1_m": 0.04728486321241782,
+      "case_id": "brown_coat/fling/03",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.05028911309878752,
+          "relative_improvement_vs_physical": 0.1266783457547294
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.0415384856266098,
+          "relative_improvement_vs_physical": 0.2361563808102854
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.033740665489671993,
+          "relative_improvement_vs_physical": 0.3657937753822453
+        }
+      ],
+      "mean_coordinate_nees": 10.83587980540243,
+      "physical_real_to_sim_l1_m": 0.0568301773409464,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0379,
+      "raw_90_coordinate_coverage": 0.6784810290723308,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.03171310749706039,
+      "candidate_real_to_sim_l1_m": 0.02669761567682604,
+      "case_id": "brown_coat/fold/01",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.01890219954686846,
+          "relative_improvement_vs_physical": 0.03442068178724484
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.05246574340374953,
+          "relative_improvement_vs_physical": 0.0024725936648412306
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.023771379540563208,
+          "relative_improvement_vs_physical": -0.04541278964648988
+        }
+      ],
+      "mean_coordinate_nees": 4.21634879309902,
+      "physical_real_to_sim_l1_m": 0.026640425154438367,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0279,
+      "raw_90_coordinate_coverage": 0.7743501301036507,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.03269867805373891,
+      "candidate_real_to_sim_l1_m": 0.026494525691876252,
+      "case_id": "brown_coat/fold/02",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.020822293595757053,
+          "relative_improvement_vs_physical": 0.010601779143216594
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.056513166656995704,
+          "relative_improvement_vs_physical": 0.005298743027047399
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.022739971318127633,
+          "relative_improvement_vs_physical": 0.01301148167047762
+        }
+      ],
+      "mean_coordinate_nees": 8.861700313383276,
+      "physical_real_to_sim_l1_m": 0.02669324811600943,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0279,
+      "raw_90_coordinate_coverage": 0.6956803040043897,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.03583738348396307,
+      "candidate_real_to_sim_l1_m": 0.028580490684045414,
+      "case_id": "brown_coat/fold/03",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.03543326200261311,
+          "relative_improvement_vs_physical": -0.013705995313320903
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.053568697452733904,
+          "relative_improvement_vs_physical": -0.004399329398717425
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.01851019099654221,
+          "relative_improvement_vs_physical": -0.01002074285715245
+        }
+      ],
+      "mean_coordinate_nees": 10.531876044753984,
+      "physical_real_to_sim_l1_m": 0.028366833174205852,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0279,
+      "raw_90_coordinate_coverage": 0.6618256005947596,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.06426174799242529,
+      "candidate_real_to_sim_l1_m": 0.05161424349812031,
+      "case_id": "brown_coat/grasp/01",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.02653217385082744,
+          "relative_improvement_vs_physical": -0.05334998844988568
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.08129081927974657,
+          "relative_improvement_vs_physical": -0.11140304298780862
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.08754981370348638,
+          "relative_improvement_vs_physical": -0.10749555829481561
+        }
+      ],
+      "mean_coordinate_nees": 12.38925572408673,
+      "physical_real_to_sim_l1_m": 0.04723107612343164,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.032,
+      "raw_90_coordinate_coverage": 0.6377459517582447,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.05487042032702722,
+      "candidate_real_to_sim_l1_m": 0.04434500589086793,
+      "case_id": "brown_coat/grasp/02",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.024113979234814995,
+          "relative_improvement_vs_physical": 0.031185476521066006
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.07492155138155106,
+          "relative_improvement_vs_physical": 0.019272904011145994
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.0655757303647156,
+          "relative_improvement_vs_physical": 0.060714524883079
+        }
+      ],
+      "mean_coordinate_nees": 11.24817760609292,
+      "physical_real_to_sim_l1_m": 0.04596683030843715,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.032,
+      "raw_90_coordinate_coverage": 0.655340108904776,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.05598009611555142,
+      "candidate_real_to_sim_l1_m": 0.0447379614206478,
+      "case_id": "brown_coat/grasp/03",
+      "garment": "brown_coat",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.015551268021499077,
+          "relative_improvement_vs_physical": 0.0
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.07355334204878103,
+          "relative_improvement_vs_physical": 0.0
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.0813751874053545,
+          "relative_improvement_vs_physical": 0.0
+        }
+      ],
+      "mean_coordinate_nees": 30.552002006223713,
+      "physical_real_to_sim_l1_m": 0.0447379614206478,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.032,
+      "raw_90_coordinate_coverage": 0.5457986015161719,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.054956750470180005,
+      "candidate_real_to_sim_l1_m": 0.04964315282920389,
+      "case_id": "green_tshirt/fling/01",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.03423934503249514,
+          "relative_improvement_vs_physical": 0.18226322226639385
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.08188360335878273,
+          "relative_improvement_vs_physical": 0.21888783244946994
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.04771239511077583,
+          "relative_improvement_vs_physical": 0.1467064298551501
+        }
+      ],
+      "mean_coordinate_nees": 14.474350789196313,
+      "physical_real_to_sim_l1_m": 0.05939356004993469,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+      "raw_90_coordinate_coverage": 0.5636594019260011,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.04916450261397322,
+      "candidate_real_to_sim_l1_m": 0.04344197796115506,
+      "case_id": "green_tshirt/fling/02",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.025932174933878283,
+          "relative_improvement_vs_physical": 0.2311036168879785
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.08709523175185946,
+          "relative_improvement_vs_physical": 0.0743285977605426
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.03446610115618191,
+          "relative_improvement_vs_physical": -0.09608129714963402
+        }
+      ],
+      "mean_coordinate_nees": 10.979818917050483,
+      "physical_real_to_sim_l1_m": 0.046383611609503224,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+      "raw_90_coordinate_coverage": 0.6632877175198513,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.05885206501961079,
+      "candidate_real_to_sim_l1_m": 0.05025552939229501,
+      "case_id": "green_tshirt/fling/03",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.05638551210108574,
+          "relative_improvement_vs_physical": 0.23445168412611028
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.05258796779630454,
+          "relative_improvement_vs_physical": -0.012636271920617176
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.06758271516144207,
+          "relative_improvement_vs_physical": -0.22696168019772153
+        }
+      ],
+      "mean_coordinate_nees": 17.335072567230792,
+      "physical_real_to_sim_l1_m": 0.05124775935824129,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+      "raw_90_coordinate_coverage": 0.5893724004215641,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.030456242913499323,
+      "candidate_real_to_sim_l1_m": 0.02444505619884412,
+      "case_id": "green_tshirt/fold/01",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.009652746023731316,
+          "relative_improvement_vs_physical": 0.02408975259092623
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.06062146980036184,
+          "relative_improvement_vs_physical": -0.0035903926188828603
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.018754080417131176,
+          "relative_improvement_vs_physical": 0.0033732410671701942
+        }
+      ],
+      "mean_coordinate_nees": 12.536218990277092,
+      "physical_real_to_sim_l1_m": 0.024464050119407225,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0132,
+      "raw_90_coordinate_coverage": 0.6807592981439915,
+      "sample": "01",
+      "selected_shrinkage": 0.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.030246465886711715,
+      "candidate_real_to_sim_l1_m": 0.024011966081037003,
+      "case_id": "green_tshirt/fold/02",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.0354554426036764,
+          "relative_improvement_vs_physical": 0.013326035335074081
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.03890328317178761,
+          "relative_improvement_vs_physical": -0.0031693496728947487
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.016380671884671127,
+          "relative_improvement_vs_physical": -0.007063854666740524
+        }
+      ],
+      "mean_coordinate_nees": 14.35778256195833,
+      "physical_real_to_sim_l1_m": 0.02406868471338696,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0132,
+      "raw_90_coordinate_coverage": 0.6050261868558878,
+      "sample": "02",
+      "selected_shrinkage": 0.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.023513856595493515,
+      "candidate_real_to_sim_l1_m": 0.019487149788067565,
+      "case_id": "green_tshirt/fold/03",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.010261132655222192,
+          "relative_improvement_vs_physical": 0.035413121221289506
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.041821348434217614,
+          "relative_improvement_vs_physical": 0.005384885903112765
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.017448135117350185,
+          "relative_improvement_vs_physical": -0.012515210303999207
+        }
+      ],
+      "mean_coordinate_nees": 6.976256289604733,
+      "physical_real_to_sim_l1_m": 0.01959760684184421,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0132,
+      "raw_90_coordinate_coverage": 0.7586893652544647,
+      "sample": "03",
+      "selected_shrinkage": 0.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.03889299749734653,
+      "candidate_real_to_sim_l1_m": 0.030857253362850952,
+      "case_id": "green_tshirt/grasp/01",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.024920988254113468,
+          "relative_improvement_vs_physical": 0.029808907176181048
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.04826559512592744,
+          "relative_improvement_vs_physical": 0.030760165267974853
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.04425897771444074,
+          "relative_improvement_vs_physical": 0.040577545324510196
+        }
+      ],
+      "mean_coordinate_nees": 9.14427899867754,
+      "physical_real_to_sim_l1_m": 0.03186886564107063,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0226,
+      "raw_90_coordinate_coverage": 0.6792143943233654,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.034138664272444295,
+      "candidate_real_to_sim_l1_m": 0.02744008976889549,
+      "case_id": "green_tshirt/grasp/02",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.011701681535366434,
+          "relative_improvement_vs_physical": 0.1881323609768969
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.044517684676967345,
+          "relative_improvement_vs_physical": 0.024282425157588824
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.04619662660499911,
+          "relative_improvement_vs_physical": 0.08851821903590114
+        }
+      ],
+      "mean_coordinate_nees": 8.873838553899551,
+      "physical_real_to_sim_l1_m": 0.029453634997986082,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0226,
+      "raw_90_coordinate_coverage": 0.7049769105141634,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.05752254770629837,
+      "candidate_real_to_sim_l1_m": 0.04450216367984101,
+      "case_id": "green_tshirt/grasp/03",
+      "garment": "green_tshirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.03381889060201778,
+          "relative_improvement_vs_physical": 0.028730524128913887
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.06448826043832466,
+          "relative_improvement_vs_physical": 0.01420872724797453
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.07722344921658776,
+          "relative_improvement_vs_physical": 0.01495399884592693
+        }
+      ],
+      "mean_coordinate_nees": 14.531077039411889,
+      "physical_real_to_sim_l1_m": 0.045261518103922316,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0226,
+      "raw_90_coordinate_coverage": 0.6016273019091062,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.15032935659931668,
+      "candidate_real_to_sim_l1_m": 0.12742473951053868,
+      "case_id": "white_cakeskirt/fling/01",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.1909997368607171,
+          "relative_improvement_vs_physical": -0.4078536148402279
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.18306792368953262,
+          "relative_improvement_vs_physical": -0.21495874137384657
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.07692040924770029,
+          "relative_improvement_vs_physical": -0.3163463402264435
+        }
+      ],
+      "mean_coordinate_nees": 60.59153706654906,
+      "physical_real_to_sim_l1_m": 0.10291528009900855,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0406,
+      "raw_90_coordinate_coverage": 0.4063920689517486,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.0839889937668908,
+      "candidate_real_to_sim_l1_m": 0.07182428297350744,
+      "case_id": "white_cakeskirt/fling/02",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.07541752272675331,
+          "relative_improvement_vs_physical": 0.1293728325312022
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.09929790558168482,
+          "relative_improvement_vs_physical": -0.05654180765758921
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.07725155299223425,
+          "relative_improvement_vs_physical": -0.021161688671919025
+        }
+      ],
+      "mean_coordinate_nees": 26.884660884083985,
+      "physical_real_to_sim_l1_m": 0.07283414757213046,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0406,
+      "raw_90_coordinate_coverage": 0.484145318890429,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fling",
+      "candidate_future_real_to_sim_l1_m": 0.10603697079116399,
+      "candidate_real_to_sim_l1_m": 0.09150056681668782,
+      "case_id": "white_cakeskirt/fling/03",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.14516698111880774,
+          "relative_improvement_vs_physical": 0.15001491418071283
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.08044715851115014,
+          "relative_improvement_vs_physical": 0.018047895607910376
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.09249677274353407,
+          "relative_improvement_vs_physical": -0.22303884723641998
+        }
+      ],
+      "mean_coordinate_nees": 123.72080176081711,
+      "physical_real_to_sim_l1_m": 0.09390789866654375,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0406,
+      "raw_90_coordinate_coverage": 0.3914129746564677,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.02880813053985835,
+      "candidate_real_to_sim_l1_m": 0.024334581807829676,
+      "case_id": "white_cakeskirt/fold/01",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.01631585631140476,
+          "relative_improvement_vs_physical": 0.027642008101074002
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.04687652517485329,
+          "relative_improvement_vs_physical": -0.07158741812949955
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.023232010133317004,
+          "relative_improvement_vs_physical": -0.10288124814794969
+        }
+      ],
+      "mean_coordinate_nees": 3.6030890923179184,
+      "physical_real_to_sim_l1_m": 0.02318340573756173,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0179,
+      "raw_90_coordinate_coverage": 0.8073942878655646,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.03534098980581423,
+      "candidate_real_to_sim_l1_m": 0.02915074616300639,
+      "case_id": "white_cakeskirt/fold/02",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.049983762324513056,
+          "relative_improvement_vs_physical": -0.08238843846690107
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.0329423407499933,
+          "relative_improvement_vs_physical": -0.09473492868130265
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.02065640425648654,
+          "relative_improvement_vs_physical": -0.14410441961639553
+        }
+      ],
+      "mean_coordinate_nees": 8.467673197515547,
+      "physical_real_to_sim_l1_m": 0.026868158544453527,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0179,
+      "raw_90_coordinate_coverage": 0.7022447926376854,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "fold",
+      "candidate_future_real_to_sim_l1_m": 0.0354522766627221,
+      "candidate_real_to_sim_l1_m": 0.029575945782446343,
+      "case_id": "white_cakeskirt/fold/03",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.03518611261593416,
+          "relative_improvement_vs_physical": -0.05287840824163857
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.047196158313646326,
+          "relative_improvement_vs_physical": -0.07000266281610264
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.024027791867943387,
+          "relative_improvement_vs_physical": -0.1453235273953921
+        }
+      ],
+      "mean_coordinate_nees": 4.359528278954176,
+      "physical_real_to_sim_l1_m": 0.02769934854355747,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0179,
+      "raw_90_coordinate_coverage": 0.7909078366445916,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.04741110258088846,
+      "candidate_real_to_sim_l1_m": 0.038645129656277866,
+      "case_id": "white_cakeskirt/grasp/01",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.016620802084320863,
+          "relative_improvement_vs_physical": 0.05113755581462475
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.0477736898198624,
+          "relative_improvement_vs_physical": -0.023962968978316193
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.07783881583848212,
+          "relative_improvement_vs_physical": 0.06865778141738825
+        }
+      ],
+      "mean_coordinate_nees": 7.0665239817449645,
+      "physical_real_to_sim_l1_m": 0.04002411931170685,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0269,
+      "raw_90_coordinate_coverage": 0.7176179047521263,
+      "sample": "01",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.08344576951788257,
+      "candidate_real_to_sim_l1_m": 0.06642294551733277,
+      "case_id": "white_cakeskirt/grasp/02",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.049528039968675386,
+          "relative_improvement_vs_physical": -0.053515479631391936
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.13029601520637088,
+          "relative_improvement_vs_physical": -0.02090738446587915
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.07051325337860144,
+          "relative_improvement_vs_physical": 0.00034867910156047624
+        }
+      ],
+      "mean_coordinate_nees": 25.477761840560575,
+      "physical_real_to_sim_l1_m": 0.06513303458006996,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0269,
+      "raw_90_coordinate_coverage": 0.5598625442784537,
+      "sample": "02",
+      "selected_shrinkage": 1.0
+    },
+    {
+      "action": "grasp",
+      "candidate_future_real_to_sim_l1_m": 0.06563141890801187,
+      "candidate_real_to_sim_l1_m": 0.051625523986085345,
+      "case_id": "white_cakeskirt/grasp/03",
+      "garment": "white_cakeskirt",
+      "horizons": [
+        {
+          "name": "early",
+          "real_to_sim_l1_m": 0.02158308589005186,
+          "relative_improvement_vs_physical": 0.047135091939081296
+        },
+        {
+          "name": "middle",
+          "real_to_sim_l1_m": 0.08873985440838782,
+          "relative_improvement_vs_physical": -0.05283966378676423
+        },
+        {
+          "name": "late",
+          "real_to_sim_l1_m": 0.08657131642559597,
+          "relative_improvement_vs_physical": -0.007354641394144567
+        }
+      ],
+      "mean_coordinate_nees": 18.135585372936198,
+      "physical_real_to_sim_l1_m": 0.0506556467856927,
+      "published_garment_dynamics_real_to_sim_l1_m": 0.0269,
+      "raw_90_coordinate_coverage": 0.5891741778080911,
+      "sample": "03",
+      "selected_shrinkage": 1.0
+    }
+  ],
+  "source_gate_passed": false,
+  "target_authorized": false
+}

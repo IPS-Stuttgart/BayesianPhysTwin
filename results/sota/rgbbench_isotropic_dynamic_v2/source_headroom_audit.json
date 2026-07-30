@@ -1,0 +1,143 @@
+{
+  "arm_aggregates": [
+    {
+      "cells_beating_published_garment_dynamics": 1,
+      "improved_cell_count": 5,
+      "object_action_balanced_relative_improvement": -0.012717297883333173,
+      "shrinkage": 0.0
+    },
+    {
+      "cells_beating_published_garment_dynamics": 1,
+      "improved_cell_count": 5,
+      "object_action_balanced_relative_improvement": -0.01260254012105346,
+      "shrinkage": 0.1
+    },
+    {
+      "cells_beating_published_garment_dynamics": 1,
+      "improved_cell_count": 5,
+      "object_action_balanced_relative_improvement": -0.011867080443918128,
+      "shrinkage": 0.25
+    },
+    {
+      "cells_beating_published_garment_dynamics": 1,
+      "improved_cell_count": 4,
+      "object_action_balanced_relative_improvement": -0.007812416384217796,
+      "shrinkage": 0.5
+    },
+    {
+      "cells_beating_published_garment_dynamics": 1,
+      "improved_cell_count": 4,
+      "object_action_balanced_relative_improvement": -8.744757119589088e-05,
+      "shrinkage": 0.75
+    },
+    {
+      "cells_beating_published_garment_dynamics": 1,
+      "improved_cell_count": 4,
+      "object_action_balanced_relative_improvement": 0.010286590755246593,
+      "shrinkage": 1.0
+    }
+  ],
+  "artifact_kind": "RGBenchDynamicSourceHeadroomAuditV2",
+  "calibration_or_target_outcomes_read": false,
+  "interpretation": "Post-open source-only model-family diagnostic. Even per-cell oracle selection with exact physical fallback cannot meet the frozen 5% source gate or close the published GarmentDynamics gap.",
+  "method_id": "rgbbench-isotropic-dynamic-v2",
+  "physical_inclusive_cell_oracle": {
+    "cells": [
+      {
+        "action": "fling",
+        "beats_published_garment_dynamics": false,
+        "garment": "white_cakeskirt",
+        "oracle_real_to_sim_l1_m": 0.08988577544589425,
+        "physical_real_to_sim_l1_m": 0.08988577544589425,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0406,
+        "relative_improvement": 0.0,
+        "selected_arm": "physical"
+      },
+      {
+        "action": "fold",
+        "beats_published_garment_dynamics": false,
+        "garment": "white_cakeskirt",
+        "oracle_real_to_sim_l1_m": 0.025916970941857576,
+        "physical_real_to_sim_l1_m": 0.025916970941857576,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0179,
+        "relative_improvement": 0.0,
+        "selected_arm": "physical"
+      },
+      {
+        "action": "grasp",
+        "beats_published_garment_dynamics": false,
+        "garment": "white_cakeskirt",
+        "oracle_real_to_sim_l1_m": 0.051937600225823166,
+        "physical_real_to_sim_l1_m": 0.051937600225823166,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0269,
+        "relative_improvement": 0.0,
+        "selected_arm": "physical"
+      },
+      {
+        "action": "fling",
+        "beats_published_garment_dynamics": false,
+        "garment": "brown_coat",
+        "oracle_real_to_sim_l1_m": 0.051272233520849746,
+        "physical_real_to_sim_l1_m": 0.05908271677406705,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0379,
+        "relative_improvement": 0.13219573641281043,
+        "selected_arm": "1"
+      },
+      {
+        "action": "fold",
+        "beats_published_garment_dynamics": true,
+        "garment": "brown_coat",
+        "oracle_real_to_sim_l1_m": 0.02708985726003744,
+        "physical_real_to_sim_l1_m": 0.027233502148217886,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0279,
+        "relative_improvement": 0.005274565401051222,
+        "selected_arm": "0"
+      },
+      {
+        "action": "grasp",
+        "beats_published_garment_dynamics": false,
+        "garment": "brown_coat",
+        "oracle_real_to_sim_l1_m": 0.045978622617505537,
+        "physical_real_to_sim_l1_m": 0.045978622617505537,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.032,
+        "relative_improvement": 0.0,
+        "selected_arm": "physical"
+      },
+      {
+        "action": "fling",
+        "beats_published_garment_dynamics": false,
+        "garment": "green_tshirt",
+        "oracle_real_to_sim_l1_m": 0.047656709174016376,
+        "physical_real_to_sim_l1_m": 0.05234164367255973,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0419,
+        "relative_improvement": 0.08950682802113541,
+        "selected_arm": "0"
+      },
+      {
+        "action": "fold",
+        "beats_published_garment_dynamics": false,
+        "garment": "green_tshirt",
+        "oracle_real_to_sim_l1_m": 0.022464791533682152,
+        "physical_real_to_sim_l1_m": 0.02271011389154613,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0132,
+        "relative_improvement": 0.010802339390966191,
+        "selected_arm": "1"
+      },
+      {
+        "action": "grasp",
+        "beats_published_garment_dynamics": false,
+        "garment": "green_tshirt",
+        "oracle_real_to_sim_l1_m": 0.03426650227052915,
+        "physical_real_to_sim_l1_m": 0.03552800624765968,
+        "published_garment_dynamics_real_to_sim_l1_m": 0.0226,
+        "relative_improvement": 0.03550731128385863,
+        "selected_arm": "1"
+      }
+    ],
+    "cells_beating_published_garmentdynamics": 1,
+    "improved_cell_count": 5,
+    "object_action_balanced_relative_improvement": 0.030365197834424658
+  },
+  "schema_version": 1,
+  "source_gate_file_sha256": "37beb8e29c588c89228ef223477ba470a91384d6264ac3d9cf7842580a070357"
+}
