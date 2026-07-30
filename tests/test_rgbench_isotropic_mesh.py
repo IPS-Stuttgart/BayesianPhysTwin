@@ -227,6 +227,55 @@ def test_over_budget_candidate_skips_expensive_geometry_checks(
     assert artifact.attempts[1].geometry_checked is True
 
 
+def test_clean_source_identity_fallback_survives_failed_remesh(
+    tmp_path: Path,
+) -> None:
+    source_vertices, source_faces = _grid_mesh(12, 12)
+    remesh_vertices, remesh_faces = _grid_mesh(8, 16)
+    source = tmp_path / "source.obj"
+    derived = tmp_path / "derived.obj"
+    parameters = tmp_path / "cloth.yaml"
+    write_obj_triangles(source, source_vertices, source_faces)
+    _write_parameters(parameters)
+
+    def remesher(
+        _vertices: np.ndarray,
+        _faces: np.ndarray,
+        _target_edge_length_m: float,
+        _config: RGBenchIsotropicMeshConfig,
+    ) -> tuple[np.ndarray, np.ndarray, str]:
+        return remesh_vertices, remesh_faces, "test"
+
+    def intersection_counter(
+        vertices: np.ndarray,
+        _faces: np.ndarray,
+    ) -> int:
+        return 0 if len(vertices) == len(source_vertices) else 2
+
+    artifact = build_isotropic_mesh_artifact(
+        garment="synthetic",
+        source_mesh=source,
+        source_mesh_relative_path="source.obj",
+        cloth_parameters=parameters,
+        cloth_parameters_relative_path="cloth.yaml",
+        source_fling_pin_indices=(0, len(source_vertices) - 1),
+        derived_mesh=derived,
+        derived_mesh_relative_path="meshes/synthetic.obj",
+        config=RGBenchIsotropicMeshConfig(
+            identity_max_vertices=128,
+            source_fallback_max_vertices=144,
+            target_edge_lengths_um=(1_000,),
+        ),
+        remesher=remesher,
+        self_intersection_counter=intersection_counter,
+    )
+    assert artifact.mode == "source_identity_fallback"
+    assert artifact.selected_target_edge_length_um is None
+    assert artifact.attempts[0].rejection_reasons == ("self_intersections",)
+    assert artifact.attempts[1].accepted
+    assert sha256_file(derived) == sha256_file(source)
+
+
 def test_artifact_digest_rejects_tampering(tmp_path: Path) -> None:
     vertices, faces = _grid_mesh(8, 16)
     source = tmp_path / "source.obj"
@@ -246,7 +295,7 @@ def test_artifact_digest_rejects_tampering(tmp_path: Path) -> None:
         self_intersection_counter=lambda _vertices, _faces: 0,
     )
     payload = artifact.descriptor()
-    payload["derived_vertex_count"] += 1
+    payload["source_face_count"] += 1
     path = tmp_path / "tampered.json"
     path.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="artifact digest changed"):
@@ -300,6 +349,9 @@ def test_registered_protocol_matches_runtime_mesh_config() -> None:
     registered = payload["mesh_admission"]
     runtime = asdict(RGBenchIsotropicMeshConfig())
     assert registered["identity_max_vertices"] == runtime["identity_max_vertices"]
+    assert registered["source_fallback_max_vertices"] == runtime[
+        "source_fallback_max_vertices"
+    ]
     assert registered["physical_min_vertices"] == runtime["physical_min_vertices"]
     assert registered["remesh_iterations"] == runtime["remesh_iterations"]
     assert registered["maximum_surface_distance_um"] == runtime[

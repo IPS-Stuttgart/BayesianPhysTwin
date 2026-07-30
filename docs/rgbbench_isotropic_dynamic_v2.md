@@ -35,6 +35,13 @@ PyMeshLab 2025.7.post1 using five iterations of explicit isotropic remeshing.
 Candidate target edge lengths form a fixed 8.00--20.00 mm grid in 0.25 mm
 increments. The first candidate satisfying every gate is selected.
 
+If every remeshed candidate fails a geometry gate, a clean released source OBJ
+may be retained as a fallback only when it has at most 21,000 vertices. This
+exception was added after the target-free pleated-skirt audit: the original
+20,279-node mesh had zero self-intersections and produced two byte-identical
+physical replays, while all under-12k isotropic candidates introduced
+self-intersections. The fallback does not bypass the full physical gate.
+
 The gates require:
 
 - 128--12,000 vertices;

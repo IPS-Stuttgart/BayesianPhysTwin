@@ -52,6 +52,7 @@ class RGBenchIsotropicMeshConfig:
     """Frozen, outcome-blind physical-backend admission settings."""
 
     identity_max_vertices: int = 12_000
+    source_fallback_max_vertices: int = 21_000
     physical_min_vertices: int = 128
     remesh_iterations: int = 5
     target_edge_lengths_um: tuple[int, ...] = tuple(range(8_000, 20_001, 250))
@@ -63,7 +64,10 @@ class RGBenchIsotropicMeshConfig:
 
     def __post_init__(self) -> None:
         _require(
-            self.identity_max_vertices >= self.physical_min_vertices >= 128,
+            self.source_fallback_max_vertices
+            >= self.identity_max_vertices
+            >= self.physical_min_vertices
+            >= 128,
             "invalid physical vertex limits",
         )
         _require(self.remesh_iterations >= 1, "remesh_iterations must be positive")
@@ -118,10 +122,15 @@ class MeshAdmissionAttempt:
     rejection_reasons: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        _require(self.mode in {"identity", "isotropic_remesh"}, "unknown mode")
         _require(
-            (self.mode == "identity") == (self.target_edge_length_um is None),
-            "identity candidates cannot have a target edge length",
+            self.mode
+            in {"identity", "isotropic_remesh", "source_identity_fallback"},
+            "unknown mode",
+        )
+        _require(
+            (self.mode == "isotropic_remesh")
+            == (self.target_edge_length_um is not None),
+            "target edge length and candidate mode disagree",
         )
         _require(
             self.vertex_count >= 1 and self.face_count >= 1,
@@ -210,10 +219,14 @@ class RGBenchIsotropicMeshArtifact:
 
     def __post_init__(self) -> None:
         _require(bool(self.garment), "garment is empty")
-        _require(self.mode in {"identity", "isotropic_remesh"}, "unknown mode")
         _require(
-            (self.mode == "identity")
-            == (self.selected_target_edge_length_um is None),
+            self.mode
+            in {"identity", "isotropic_remesh", "source_identity_fallback"},
+            "unknown mode",
+        )
+        _require(
+            (self.mode == "isotropic_remesh")
+            == (self.selected_target_edge_length_um is not None),
             "selected edge length and mode disagree",
         )
         for path in (
@@ -233,6 +246,15 @@ class RGBenchIsotropicMeshArtifact:
             self.source_vertex_count >= self.config.physical_min_vertices
             and self.derived_vertex_count >= self.config.physical_min_vertices,
             "mesh violates the physical minimum",
+        )
+        maximum_vertices = (
+            self.config.source_fallback_max_vertices
+            if self.mode == "source_identity_fallback"
+            else self.config.identity_max_vertices
+        )
+        _require(
+            self.derived_vertex_count <= maximum_vertices,
+            "mesh violates the mode-specific physical maximum",
         )
         _require(
             self.source_face_count >= 1 and self.derived_face_count >= 1,
@@ -655,13 +677,14 @@ def _candidate_attempt(
     derived_vertices: np.ndarray,
     derived_faces: np.ndarray,
     maximum_pin_snap_distance_m: float,
+    maximum_vertices: int,
     config: RGBenchIsotropicMeshConfig,
     self_intersection_counter: Callable[[np.ndarray, np.ndarray], int],
 ) -> MeshAdmissionAttempt:
     count_reasons: list[str] = []
     if len(derived_vertices) < config.physical_min_vertices:
         count_reasons.append("below_physical_vertex_minimum")
-    if len(derived_vertices) > config.identity_max_vertices:
+    if len(derived_vertices) > maximum_vertices:
         count_reasons.append("above_physical_vertex_maximum")
     if count_reasons:
         return MeshAdmissionAttempt(
@@ -800,6 +823,7 @@ def build_isotropic_mesh_artifact(
             derived_vertices=source_vertices,
             derived_faces=source_faces,
             maximum_pin_snap_distance_m=0.0,
+            maximum_vertices=cfg.identity_max_vertices,
             config=cfg,
             self_intersection_counter=self_intersection_counter,
         )
@@ -818,6 +842,7 @@ def build_isotropic_mesh_artifact(
                 edge_um * 1e-6,
                 cfg,
             )
+            pymeshlab_version = version
             _validate_mesh_arrays(vertices, faces)
             vertices, pins, snap_distance = _snap_pin_positions(
                 vertices,
@@ -830,6 +855,7 @@ def build_isotropic_mesh_artifact(
                 derived_vertices=vertices,
                 derived_faces=faces,
                 maximum_pin_snap_distance_m=snap_distance,
+                maximum_vertices=cfg.identity_max_vertices,
                 config=cfg,
                 self_intersection_counter=self_intersection_counter,
             )
@@ -839,8 +865,30 @@ def build_isotropic_mesh_artifact(
                 selected_faces = faces
                 selected_pins = pins
                 selected_edge = edge_um
-                pymeshlab_version = version
                 break
+
+    if (
+        selected_vertices is None
+        and len(source_vertices) <= cfg.source_fallback_max_vertices
+    ):
+        fallback_attempt = _candidate_attempt(
+            mode="source_identity_fallback",
+            target_edge_length_um=None,
+            source_vertices=source_vertices,
+            derived_vertices=source_vertices,
+            derived_faces=source_faces,
+            maximum_pin_snap_distance_m=0.0,
+            maximum_vertices=cfg.source_fallback_max_vertices,
+            config=cfg,
+            self_intersection_counter=self_intersection_counter,
+        )
+        attempts.append(fallback_attempt)
+        if fallback_attempt.accepted:
+            mode = "source_identity_fallback"
+            selected_vertices = source_vertices
+            selected_faces = source_faces
+            selected_pins = source_fling_pin_indices
+            selected_edge = None
 
     _require(
         selected_vertices is not None
@@ -848,7 +896,7 @@ def build_isotropic_mesh_artifact(
         and selected_pins is not None,
         f"{garment} has no admissible mesh candidate",
     )
-    if mode == "identity":
+    if mode in {"identity", "source_identity_fallback"}:
         derived_path.parent.mkdir(parents=True, exist_ok=True)
         temporary = derived_path.with_suffix(derived_path.suffix + ".tmp")
         shutil.copyfile(source_path, temporary)
