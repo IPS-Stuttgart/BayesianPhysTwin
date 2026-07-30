@@ -61,6 +61,29 @@ The candidate equals PyBullet throughout the observed prefix. An admitted
 correction is applied only after the branch point. Thus the full-window score
 does not reward fitting the prefix itself.
 
+## Pre-outcome runtime amendment
+
+The upstream fixed-point PyBullet wrapper requests a GUI connection
+unconditionally, even when `active_run.visualization.vis_sim=false`. Four
+independent brown-coat source simulations crashed in native PyBullet before
+writing a physical baseline, and a serial repeat of one failed case also
+segfaulted. No brown-coat point coordinates or outcomes had been read.
+
+The amended operator maps only the wrapper's `p.GUI` connection request to
+`p.DIRECT` during environment initialization. It leaves the upstream commit,
+mesh, physics parameters, timestep, controls, simulation loop, and belief
+method unchanged. Every baseline artifact records the effective connection
+mode. The amendment is admitted only if:
+
+1. the previously successful green-shirt smoke has identical faces, target
+   times, and node-array shape, with a maximum GUI-versus-DIRECT vertex
+   difference no larger than `1e-9` metres;
+2. the previously failing brown-coat smoke completes in DIRECT mode; and
+3. a second DIRECT replay of that brown case is byte-identical.
+
+These are physical-only runtime checks. They do not read any new source,
+calibration, or target point coordinates.
+
 ## Metrics and gates
 
 The primary score is the RGBench paper metric: mean real-to-simulation

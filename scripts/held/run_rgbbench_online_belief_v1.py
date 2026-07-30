@@ -31,6 +31,7 @@ from bayesian_phystwin.cloth_sim2real_belief import (
 )
 from bayesian_phystwin.rgbench_online_belief import (
     evaluation_pcd_paths,
+    force_pybullet_direct_connection,
     load_obj_triangles,
     load_rgbbench_world_cloud,
     real_to_sim_l1_chamfer_m,
@@ -199,7 +200,16 @@ def _simulate(args: argparse.Namespace) -> int:
     paths = _case_pcd_paths(dataset, case)
     config = _compose_rgbbench_config(benchmark, dataset, case)
     get_env = importlib.import_module("rgbench.envs").get_env
-    environment = get_env(config)
+    pybullet = importlib.import_module("pybullet")
+    with force_pybullet_direct_connection(pybullet):
+        environment = get_env(config)
+    connection_info = pybullet.getConnectionInfo(
+        physicsClientId=environment.physics_client
+    )
+    _require(
+        connection_info["connectionMethod"] == pybullet.DIRECT,
+        "PyBullet connection was not forced to DIRECT",
+    )
     try:
         master_start = float(environment.get_master_start_time())
         _require(
@@ -275,6 +285,8 @@ def _simulate(args: argparse.Namespace) -> int:
             "dataset_revision": manifest["dataset_revision"],
             "simulator": SIMULATOR,
             "mode": MODE,
+            "pybullet_connection_mode": "DIRECT",
+            "upstream_gui_request_overridden": True,
             "node_count": node_count,
             "face_count": len(faces),
             "evaluation_frame_count": len(vertices),

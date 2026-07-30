@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -12,6 +15,27 @@ import numpy as np
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+@contextmanager
+def force_pybullet_direct_connection(pybullet_module: Any) -> Iterator[None]:
+    """Map PyBullet GUI connection requests to DIRECT for one initialization."""
+
+    original_connect = pybullet_module.connect
+
+    def direct_connect(connection_mode: int, *args: object, **kwargs: object) -> int:
+        mode = (
+            pybullet_module.DIRECT
+            if connection_mode == pybullet_module.GUI
+            else connection_mode
+        )
+        return int(original_connect(mode, *args, **kwargs))
+
+    pybullet_module.connect = direct_connect
+    try:
+        yield
+    finally:
+        pybullet_module.connect = original_connect
 
 
 _PCD_NUMPY_TYPES = {

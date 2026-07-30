@@ -8,6 +8,7 @@ import pytest
 
 from bayesian_phystwin.rgbench_online_belief import (
     evaluation_pcd_paths,
+    force_pybullet_direct_connection,
     load_binary_pcd_xyz,
     load_obj_triangles,
     load_rgbbench_world_cloud,
@@ -24,6 +25,30 @@ from bayesian_phystwin.rgbench_protocol import (
     garment_hash,
     garment_split,
 )
+
+
+def test_pybullet_gui_request_is_temporarily_mapped_to_direct() -> None:
+    calls: list[tuple[int, tuple[object, ...], dict[str, object]]] = []
+
+    class FakePyBullet:
+        GUI = 1
+        DIRECT = 2
+
+        @staticmethod
+        def connect(
+            connection_mode: int,
+            *args: object,
+            **kwargs: object,
+        ) -> int:
+            calls.append((connection_mode, args, kwargs))
+            return 17
+
+    module = FakePyBullet()
+    original_connect = module.connect
+    with force_pybullet_direct_connection(module):
+        assert module.connect(module.GUI, "option", key="value") == 17
+    assert module.connect is original_connect
+    assert calls == [(module.DIRECT, ("option",), {"key": "value"})]
 
 
 def _write_binary_pcd(path: Path, points: np.ndarray) -> None:
