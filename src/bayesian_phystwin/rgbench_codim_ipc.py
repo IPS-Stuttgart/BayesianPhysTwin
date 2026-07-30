@@ -201,14 +201,16 @@ def run_codim_ipc_fling(
     mesh_path = destination / "metric_cloth.obj"
     write_obj_triangles(mesh_path, vertices, faces)
 
-    jgsl, drivers = _load_runtime(
-        module_root=Path(module_root).resolve(),
-        python_root=Path(python_root).resolve(),
-    )
     old_cwd = Path.cwd()
     old_stdout = sys.stdout
+    old_argv = sys.argv
     try:
         os.chdir(destination)
+        sys.argv = ["codim_ipc_rgbbench"]
+        jgsl, drivers = _load_runtime(
+            module_root=Path(module_root).resolve(),
+            python_root=Path(python_root).resolve(),
+        )
         simulation = drivers.FEMDiscreteShellBase("double", 3)
         simulation.output_folder = str(destination / "simulator_output") + "/"
         Path(simulation.output_folder).mkdir(parents=True, exist_ok=True)
@@ -253,6 +255,7 @@ def run_codim_ipc_fling(
         final = _node_array(jgsl.FEM.Node_Positions(simulation.X))
         total_iterations = int(simulation.PNIterCount)
     finally:
+        sys.argv = old_argv
         sys.stdout = old_stdout
         os.chdir(old_cwd)
     _require(final.shape == vertices.shape, "Codim-IPC changed the vertex contract")
