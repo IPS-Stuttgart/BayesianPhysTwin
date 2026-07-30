@@ -1,0 +1,97 @@
+diff --git a/Library/FEM/BOUNDARY_CONDITION.h b/Library/FEM/BOUNDARY_CONDITION.h
+--- a/Library/FEM/BOUNDARY_CONDITION.h
++++ b/Library/FEM/BOUNDARY_CONDITION.h
+@@ -197,0 +198,84 @@
++//#####################################################################
++// Exact node-index Dirichlet controls for external trajectories
++//#####################################################################
++template <class T, int dim>
++void Init_Dirichlet_Nodes(
++    MESH_NODE<T, dim>& X,
++    const std::vector<int>& nodeIds,
++    VECTOR_STORAGE<T, dim + 1>& DBC)
++{
++    if (DBC.size != 0) {
++        throw std::runtime_error("Init_Dirichlet_Nodes requires an empty DBC");
++    }
++    std::vector<bool> seen(X.size, false);
++    for (const int nodeId : nodeIds) {
++        if (nodeId < 0 || static_cast<std::size_t>(nodeId) >= X.size) {
++            throw std::out_of_range("Dirichlet node index is out of bounds");
++        }
++        if (seen[nodeId]) {
++            throw std::runtime_error("Dirichlet node indices must be unique");
++        }
++        seen[nodeId] = true;
++        const VECTOR<T, dim>& x = std::get<0>(X.Get_Unchecked(nodeId));
++        if constexpr (dim == 3) {
++            DBC.Append(VECTOR<T, dim + 1>(nodeId, x[0], x[1], x[2]));
++        }
++        else {
++            DBC.Append(VECTOR<T, dim + 1>(nodeId, x[0], x[1]));
++        }
++    }
++}
++
++template <class T, int dim>
++void Set_Dirichlet_Targets(
++    const std::vector<VECTOR<T, dim>>& targets,
++    VECTOR_STORAGE<T, dim + 1>& DBC)
++{
++    if (targets.size() != DBC.size) {
++        throw std::runtime_error("Dirichlet target count changed");
++    }
++    for (std::size_t i = 0; i < targets.size(); ++i) {
++        VECTOR<T, dim + 1>& dbcI = std::get<0>(DBC.Get_Unchecked(i));
++        for (int d = 0; d < dim; ++d) {
++            if (!std::isfinite(targets[i][d])) {
++                throw std::runtime_error("Dirichlet targets must be finite");
++            }
++            dbcI[d + 1] = targets[i][d];
++        }
++    }
++}
++
++template <class T, int dim>
++std::vector<VECTOR<T, dim>> Node_Positions(MESH_NODE<T, dim>& X)
++{
++    std::vector<VECTOR<T, dim>> positions;
++    positions.reserve(X.size);
++    for (std::size_t i = 0; i < X.size; ++i) {
++        positions.emplace_back(std::get<0>(X.Get_Unchecked(i)));
++    }
++    return positions;
++}
++
++template <class T, int dim>
++T Dirichlet_Max_Error(
++    MESH_NODE<T, dim>& X,
++    VECTOR_STORAGE<T, dim + 1>& DBC)
++{
++    T maximumError2 = 0;
++    DBC.Each([&](int id, auto data) {
++        auto &[dbcI] = data;
++        const int nodeId = dbcI[0];
++        if (nodeId < 0 || static_cast<std::size_t>(nodeId) >= X.size) {
++            throw std::out_of_range("Dirichlet node index is out of bounds");
++        }
++        const VECTOR<T, dim>& x = std::get<0>(X.Get_Unchecked(nodeId));
++        T error2 = 0;
++        for (int d = 0; d < dim; ++d) {
++            const T difference = x[d] - dbcI[d + 1];
++            error2 += difference * difference;
++        }
++        maximumError2 = std::max(maximumError2, error2);
++    });
++    return std::sqrt(maximumError2);
++}
++
+@@ -282,0 +367,8 @@ void Export_Boundary_Condition(py::module& m) {
++    m.def("Init_Dirichlet_Nodes", &Init_Dirichlet_Nodes<double, 3>);
++
++    m.def("Set_Dirichlet_Targets", &Set_Dirichlet_Targets<double, 3>);
++
++    m.def("Node_Positions", &Node_Positions<double, 3>);
++
++    m.def("Dirichlet_Max_Error", &Dirichlet_Max_Error<double, 3>);
++

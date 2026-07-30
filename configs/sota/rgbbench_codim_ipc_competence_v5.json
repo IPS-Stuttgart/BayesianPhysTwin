@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchCodimIPCCompetenceProtocol",
+  "protocol_id": "rgbbench-codim-ipc-competence-v5",
+  "predecessor": {
+    "protocol_id": "rgbbench-libuipc-ensemble-v4",
+    "result_commit": "d07d64605d0ba4cea98286e7027493d345c6c9fb",
+    "status": "target_free_full_horizon_gate_failed",
+    "reason": "three isolated CUDA replays diverged by 17.956 mm endpoint RMSE and missed moving pin targets by as much as 41.177 mm"
+  },
+  "upstream": {
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "dataset_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+    "rgbbench_main_config_sha256": "73a93d3c02672319f2d7dfb36fdbaddfac8972b55eccf1a088aa0cdf7530a8e5",
+    "rgbbench_cloth_config_sha256": "f6783d00dc8af64b76bbeabba881fb21a65ca7d1c4f7cb5efb7aa97bd822e7b3",
+    "codim_ipc_repository": "https://github.com/ipc-sim/Codim-IPC",
+    "codim_ipc_commit": "9c6cbe3a5bef09a967ca8d420056adfafdf1fc9a",
+    "codim_patch_relative_path": "third_party/patches/codim_ipc_rgbbench_v5.patch",
+    "codim_patch_sha256": "fc1751ab455cebe85530a211cbe054c983749312cbb9ebddd67cf97721860c6f",
+    "codim_patched_boundary_condition_sha256": "f76b92e223abd9411ed0a8853a7866bd9c1c5f972ecb25335ac8a85792164f79",
+    "linear_solver": "EIGEN",
+    "execution_backend": "single-thread CPU",
+    "omp_num_threads": 1
+  },
+  "competence_case": {
+    "split": "source",
+    "garment": "green_tshirt",
+    "action": "fling",
+    "sample": "01",
+    "data_subfolder": "green_tshirt/green_tshirt_fling_2025-07-19-19-21-02",
+    "mesh_relative_path": "Green_Tshirt/green_tshirt_10k.obj",
+    "mesh_sha256": "27e2debb86e01fdf6f94950a07f071c372d2ca8ed59f3c5a20f3ba810ac83ab5",
+    "mesh_surface_area_m2": 1.0473844792068663,
+    "source_mass_kg": 0.255,
+    "left_trajectory_relative_path": "joints/left_arm_joint_states_and_end_pose.csv",
+    "left_trajectory_sha256": "0709af638bd565dcd51f44a01df5c96ba26f8ca8db476ad8c6b4c3917dfeee19",
+    "right_trajectory_relative_path": "joints/right_arm_joint_states_and_end_pose.csv",
+    "right_trajectory_sha256": "083818aa727f4f048553e209cb94ec861c3d8443f90f1b65b926872e0e7c70cb",
+    "pin_indices": [
+      185,
+      76
+    ],
+    "initial_pose_xyz_wxyz": [
+      0.1,
+      0.0,
+      0.01,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "left_base_translation_m": [
+      0.0,
+      0.25,
+      0.0
+    ],
+    "right_base_translation_m": [
+      0.0,
+      -0.25,
+      0.0
+    ],
+    "prepare_time_s": 5.0,
+    "wait_time_s": 5.0,
+    "smoke_duration_s": 0.1
+  },
+  "physics": {
+    "timestep_s": 0.01,
+    "youngs_modulus_pa": 230000.0,
+    "poisson_ratio": 0.35,
+    "volume_density_kg_m3": 220.0,
+    "thickness_m": 0.001106652745101429,
+    "bending_stiffness_multiplier": 1.0,
+    "newton_tolerance": 1e-06,
+    "contact_thickness_m": 0.001,
+    "collision_enabled": false
+  },
+  "competence_gate": {
+    "independent_replays": 2,
+    "require_byte_identical_final_vertices": true,
+    "maximum_pin_target_error_m": 1e-10,
+    "minimum_mean_vertex_displacement_m": 1e-05,
+    "all_vertices_finite": true,
+    "vertex_count_preserved": true
+  },
+  "threshold_basis": {
+    "maximum_pin_target_error_m": "A projected Dirichlet control should be numerically exact; 0.1 nm permits floating-point roundoff but not a soft attachment.",
+    "minimum_mean_vertex_displacement_m": "The gate rejects an exact but inert no-op replay before any outcome can be examined.",
+    "purpose": "qualify exact deterministic moving controls before a longer source-only replay or any RGBench point-cloud scoring"
+  },
+  "information_boundary": {
+    "allowed": [
+      "released source mesh",
+      "released source material metadata",
+      "released source actuator trajectories",
+      "frozen action timing and pin identities",
+      "target-free simulator replay equality",
+      "target-free pin-target error",
+      "target-free displacement magnitude"
+    ],
+    "forbidden": [
+      "all segmented point-cloud filenames",
+      "all segmented point-cloud coordinates",
+      "all source accuracy outcomes",
+      "all calibration-garment outcomes",
+      "all target-garment outcomes"
+    ],
+    "passed_gate_action": "freeze a separate target-free longer-horizon Codim-IPC qualification before any source accuracy run",
+    "failed_gate_action": "close the Codim-IPC backend without inspecting any RGBench point-cloud outcome"
+  }
+}
