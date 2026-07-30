@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "Pre-outcome implementation lock for an already-open source case.",
+  "question": "Can the public PGND plush checkpoint replace the PhysTwin future dynamics while retaining PhysTwin's prefix state and physical-prior-supported known action?",
+  "claim_boundary": "This is a single already-open source competence smoke. It cannot establish confirmation, benchmark superiority, or a state-of-the-art claim.",
+  "source_case": "single_lift_sloth",
+  "frozen_method": {
+    "upstream_repository": "https://github.com/kywind/pgnd",
+    "upstream_commit": "ae050d1342faa0bceb2a10f4b0ab2e11682351cb",
+    "checkpoint": "public sloth 100000.pt",
+    "checkpoint_sha256": "1ce7f86a40058c2680784ac40f633a67e00e9ce8af8a6111acc3362d71d3b052",
+    "config_sha256": "01e33f8152b25ac80998f0ddaadd182f88ca96b18432bc288edc4723a943a915",
+    "state": "Deterministic 1000-particle FPS subset of the unchanged PhysTwin trajectory at the last 10 Hz frame fully inside the released training prefix. Sampled surface nodes are retained as a separate leading block for the official CD readout.",
+    "history": "Two 10 Hz PhysTwin state-history frames and finite-difference velocities, all before the released test boundary.",
+    "coordinate_transform": "PGND's released plush metric axis transform and current-state-only translation; no scale, yaw, or outcome-selected alignment.",
+    "action": "Released future controller trajectory is treated as known action. At each PGND step, the action point nearest the unchanged PhysTwin physical prior is selected; no future object observation participates.",
+    "rollout": "Raw public PGND neural grid velocity plus the released Warp 1.1 state transition. No blend, residual cap, trust coefficient, or outcome-selected hyperparameter.",
+    "full_rate_readout": "Linear interpolation between 10 Hz PGND states to the released 30 Hz metric frames. Endpoint persistence uses the exact last allowed prefix frame, not PGND's earlier cadence frame.",
+    "determinism": "Both the adapter and PGND checkouts must be clean and commit-bound. Two complete replays must then be bit-exact before outcomes may be evaluated."
+  },
+  "comparators": [
+    "unchanged full PhysTwin trajectory",
+    "equal-support 1000-particle PhysTwin trajectory",
+    "endpoint persistence"
+  ],
+  "metrics": [
+    "released one-way visible-point L1 Chamfer distance",
+    "released frame-zero manual-track identity error",
+    "early/middle/late horizon breakdown"
+  ],
+  "advancement_gate": {
+    "required": "At least 2% improvement in both aggregate CD and aggregate manual-track error versus the unchanged full PhysTwin trajectory.",
+    "on_pass": "Freeze a wider already-open sloth/source panel before running it.",
+    "on_fail": "Close raw PGND replacement without a wider run."
+  },
+  "prohibited": [
+    "future object observations in prediction",
+    "future manual tracks in prediction",
+    "yaw, scale, blend, cap, or contact-rule tuning after outcome access",
+    "held-v8 access",
+    "PokeFlex access",
+    "a SOTA claim from this smoke"
+  ]
+}
