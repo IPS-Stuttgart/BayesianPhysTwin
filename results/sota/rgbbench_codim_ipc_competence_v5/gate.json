@@ -1,0 +1,38 @@
+{
+  "artifact_kind": "RGBenchCodimIPCCompetenceGate",
+  "checks": {
+    "all_vertices_finite": true,
+    "both_complete": true,
+    "byte_identical_final_vertices": true,
+    "nontrivial_cloth_motion": true,
+    "pin_tracking_within_limit": true,
+    "value_identical_final_vertices": true,
+    "vertex_count_preserved": true
+  },
+  "competence_gate_passed": true,
+  "failed_gate_action": "close the Codim-IPC backend without inspecting any RGBench point-cloud outcome",
+  "future_object_outcomes_read": false,
+  "implementation_commit": "f2cea05c12bff7dc4696c8d60d1ee8bcda1801c8",
+  "maximum_pin_target_error_m": 0.0,
+  "minimum_mean_vertex_displacement_m": 0.0489664819751761,
+  "passed_gate_action": "freeze a separate target-free longer-horizon Codim-IPC qualification before any source accuracy run",
+  "point_cloud_coordinates_read": false,
+  "point_cloud_filenames_read": false,
+  "protocol_id": "rgbbench-codim-ipc-competence-v5",
+  "protocol_sha256": "2c769ffb4b92299d2e01c3400f43686a35e246cd1e3d176d522064be115c9660",
+  "replay_metadata_sha256s": [
+    "e789c86f8e5214f7f792bd334967ec40d5b7009d2dd04d57e1828b1f5fefeb30",
+    "383d45691986ce658d172025a8ecabfb187e8312404cfcbdf61f3a9d138fad36"
+  ],
+  "replay_return_codes": [
+    0,
+    0
+  ],
+  "replay_sha256s": [
+    "0ae68b631ea1c394075fe553ad84c165e53e4c4569d637ebbe4cfe41c0dbe623",
+    "0ae68b631ea1c394075fe553ad84c165e53e4c4569d637ebbe4cfe41c0dbe623"
+  ],
+  "schema_version": 1,
+  "source_accuracy_outcomes_read": false,
+  "status": "passed"
+}
