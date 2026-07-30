@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchARCSimFullHorizonProtocol",
+  "protocol_id": "rgbbench-arcsim-dirichlet-full-horizon-v12",
+  "result_artifact_prefix": "RGBenchARCSimFullHorizonQualification",
+  "predecessor": {
+    "protocol_id": "rgbbench-arcsim-dirichlet-competence-v11",
+    "result_commit": "507c9deeba6cf3ce0f2f4d9ff2e81aabfa374c76",
+    "status": "target_free_short_gate_passed",
+    "gate_sha256": "5857d5a1347e18b15e3bda54bac6d1fbe3274d959f549a76b41b84290634d6af",
+    "reason": "two isolated 9865-node replays were byte-identical, had zero pin-target error, and completed all ten target-free steps"
+  },
+  "upstream": {
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "dataset_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+    "rgbbench_main_config_sha256": "73a93d3c02672319f2d7dfb36fdbaddfac8972b55eccf1a088aa0cdf7530a8e5",
+    "rgbbench_cloth_config_sha256": "f6783d00dc8af64b76bbeabba881fb21a65ca7d1c4f7cb5efb7aa97bd822e7b3",
+    "arcsim_project_page": "https://graphics.berkeley.edu/resources/ARCSim/",
+    "arcsim_release": "0.2.1 with the bound opt-in pre-relaxation Dirichlet-handle patch",
+    "arcsim_archive_name": "arcsim-0.2.1.tar.gz",
+    "arcsim_archive_sha256": "053239c4fbc566228d3f46e8afd3428dc2ffa1c2d18d348af7b1094cd8f5a26e",
+    "implementation_artifact_sha256s": {
+      "src/bayesian_phystwin/rgbench_arcsim.py": "7e304112db41fecff185b1e2db3049053184c1c55c967a3309fab2af05c09986",
+      "scripts/held/run_rgbbench_arcsim_competence_v8.py": "3991355d1cb62a0871be288c44eadd4795cf5eec0d8db83744931c26fc8b4b2e",
+      "scripts/held/run_rgbbench_arcsim_full_horizon_v12.py": "6703f02548cb5d2ac3b79b2523e5dfaf466acc0df0c683c5626a057ab30f95a7",
+      "third_party/patches/arcsim_rgbbench_compat_v8.patch": "71e82de87ff564c41d51918a9497879f85a460ed3ff2edeac5050a20b27e1f1b",
+      "third_party/patches/arcsim_rgbbench_dirichlet_v11.patch": "5176f3ee3ec4ab1e164aa5f927269b96b878980c9d369638c495b1c9cbb42f0d"
+    },
+    "arcsim_source_sha256s": {
+      "Makefile": "ee5b12cb40833e19f1e1832be2eb11d16db1c0ca4f6dc8188d25f870c2b71587",
+      "dependencies/Makefile": "2ef37e40154d022b967e7ee3d6b98e976b52cb0508757e61824473ee6e6f6deb",
+      "src/taucs.cpp": "75646b1803a2b0d2a9cfdaed0c5fcf9923e0c71eea3b9312d604ae559d91c4f2",
+      "src/io.cpp": "ac1a8cf7e612684697530aaacfaff47e686e03c018dcb4a416dfe964046beb86",
+      "src/sparse.hpp": "7b96b3de4b51d26fad3e09e93468c1ebef4bcecf178521f3f6088d5695acd40e",
+      "src/conf.cpp": "445846c5d01c0f20c2b7ddf3aebd5b35d9ef9c0e88fabf52b9191e0082a0fe33",
+      "src/handle.cpp": "162a3348dd44198081e131deb1f2f2a077ab4fa62360d71ab9b44022bf0f30c8",
+      "src/handle.hpp": "3892760c521b643d819db49ea46c7661ed619e5e1cd12c9848873e327deef236",
+      "src/simulation.cpp": "9af0d1f501c8e04eb59d53d3b6f1af0000aefc4436eaa22a62b006e9833377e8",
+      "dependencies/lib/libjson.a": "f6e53e1fb94fb63fc3c68b6e60561ba698e0fa7feaacc59a496a589e2f405e4b",
+      "dependencies/lib/libalglib.a": "d8cf9540f94aa2bb496991f88549433387d14a2040b87b101c28b4ecc633af09"
+    },
+    "arcsim_executable_relative_path": "bin/arcsim",
+    "arcsim_executable_sha256": "04723de854ed50d39b9b06762bb109fc706c74d6e86029fefb767adff47db31a",
+    "build_environment": {
+      "boost_development_package": "libboost1.74-dev_1.74.0-14ubuntu3_amd64.deb",
+      "boost_include": "/home/florianpfaff/source-only/arcsim-deps-v1/root/usr/include",
+      "boost_lib": "/home/florianpfaff/source-only/arcsim-deps-v1/root/usr/lib",
+      "eigen_include": "/home/florianpfaff/source-only/arcsim-deps-v1/root/usr/include/eigen3",
+      "target": "bin/arcsim"
+    },
+    "execution_backend": "single-thread CPU",
+    "omp_num_threads": 1,
+    "omp_proc_bind": "false"
+  },
+  "qualification_case": {
+    "split": "source",
+    "garment": "green_tshirt",
+    "action": "fling",
+    "sample": "01",
+    "data_subfolder": "green_tshirt/green_tshirt_fling_2025-07-19-19-21-02",
+    "mesh_relative_path": "Green_Tshirt/green_tshirt_10k.obj",
+    "mesh_sha256": "27e2debb86e01fdf6f94950a07f071c372d2ca8ed59f3c5a20f3ba810ac83ab5",
+    "mesh_surface_area_m2": 1.0473844792068663,
+    "source_mass_kg": 0.255,
+    "expected_vertex_count": 9865,
+    "expected_face_count": 19555,
+    "left_trajectory_relative_path": "joints/left_arm_joint_states_and_end_pose.csv",
+    "left_trajectory_sha256": "0709af638bd565dcd51f44a01df5c96ba26f8ca8db476ad8c6b4c3917dfeee19",
+    "right_trajectory_relative_path": "joints/right_arm_joint_states_and_end_pose.csv",
+    "right_trajectory_sha256": "083818aa727f4f048553e209cb94ec861c3d8443f90f1b65b926872e0e7c70cb",
+    "pin_indices": [
+      185,
+      76
+    ],
+    "initial_pose_xyz_wxyz": [
+      0.1,
+      0.0,
+      0.01,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "left_base_translation_m": [
+      0.0,
+      0.25,
+      0.0
+    ],
+    "right_base_translation_m": [
+      0.0,
+      -0.25,
+      0.0
+    ],
+    "prepare_time_s": 5.0,
+    "wait_time_s": 5.0,
+    "recorded_horizon_duration_s": 16.355,
+    "full_horizon_duration_s": 16.36
+  },
+  "physics": {
+    "timestep_s": 0.01,
+    "youngs_modulus_pa": 230000.0,
+    "poisson_ratio": 0.35,
+    "volume_density_kg_m3": 220.0,
+    "thickness_m": 0.001106652745101429,
+    "damping_s": 0.0,
+    "handle_stiffness": 100000000.0,
+    "gravity_m_s2": [
+      0.0,
+      0.0,
+      -9.81
+    ],
+    "collision_enabled": false,
+    "remeshing_enabled": false,
+    "plasticity_enabled": false,
+    "kinematic_handles": true
+  },
+  "qualification_gate": {
+    "independent_replays": 2,
+    "require_byte_identical_final_vertices": true,
+    "expected_step_count": 1636,
+    "expected_vertex_count": 9865,
+    "maximum_pin_target_error_m": 1e-05,
+    "minimum_mean_vertex_displacement_m": 0.02,
+    "maximum_replay_elapsed_s": 18000.0,
+    "all_vertices_finite": true,
+    "vertex_count_preserved": true
+  },
+  "threshold_basis": {
+    "full_horizon_rounding": "the released 16.355 s horizon is rounded up to the next 0.01 s solver step; the actuator interpolator clamps the final 0.005 s to the released terminal pose",
+    "maximum_pin_target_error_m": "the unchanged 0.01 mm competence limit verifies exact measured moving boundaries over the full action",
+    "minimum_mean_vertex_displacement_m": "20 mm rejects a deterministic but inert or nearly frozen full-horizon replay",
+    "maximum_replay_elapsed_s": "the 27.27 s ten-step gate projects to about 74 minutes under strict linear scaling; five hours permits nonlinear runtime growth without making an unusable backend pass",
+    "purpose": "require deterministic, finite, exactly controlled full-action dynamics before any point-cloud accuracy outcome is read"
+  },
+  "information_boundary": {
+    "allowed": [
+      "released source mesh",
+      "released source material metadata",
+      "released source actuator trajectories",
+      "frozen action timing and pin identities",
+      "target-free simulator replay equality",
+      "target-free pin-target error",
+      "target-free displacement magnitude",
+      "target-free replay wall time"
+    ],
+    "forbidden": [
+      "all segmented point-cloud filenames",
+      "all segmented point-cloud coordinates",
+      "all source accuracy outcomes",
+      "all calibration-garment outcomes",
+      "all target-garment outcomes"
+    ],
+    "passed_gate_action": "freeze a separate one-case source accuracy protocol before reading any RGBench point-cloud coordinate",
+    "failed_gate_action": "close the full-horizon ARCSim Dirichlet arm without inspecting any RGBench point-cloud outcome"
+  }
+}

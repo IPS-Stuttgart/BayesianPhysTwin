@@ -26,6 +26,18 @@ from scripts.held.run_rgbbench_arcsim_competence_v8 import (
     _load_protocol,
     _parameters,
 )
+from scripts.held.run_rgbbench_arcsim_full_horizon_v12 import (
+    ARTIFACT_KIND as FULL_HORIZON_ARTIFACT_KIND,
+)
+from scripts.held.run_rgbbench_arcsim_full_horizon_v12 import (
+    PROTOCOL_ID as FULL_HORIZON_PROTOCOL_ID,
+)
+from scripts.held.run_rgbbench_arcsim_full_horizon_v12 import (
+    _competence_shape,
+)
+from scripts.held.run_rgbbench_arcsim_full_horizon_v12 import (
+    _load_protocol as _load_full_horizon_protocol,
+)
 
 
 def _parameters_for_test(**changes: object) -> ARCSimClothParameters:
@@ -355,3 +367,47 @@ def test_v11_changes_only_dirichlet_reference_initialization() -> None:
         "implementation_artifact_sha256s"
     ].items():
         assert sha256_file(root / relative_path) == expected_sha256
+
+
+def test_v12_binds_full_horizon_without_changing_v11_mechanics() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v11 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_competence_v11.json"
+    )
+    v12 = _load_full_horizon_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_full_horizon_v12.json"
+    )
+    assert v12["protocol_id"] == FULL_HORIZON_PROTOCOL_ID
+    assert v12["artifact_kind"] == FULL_HORIZON_ARTIFACT_KIND
+    assert v12["predecessor"]["protocol_id"] == v11["protocol_id"]
+    assert v12["predecessor"]["status"] == "target_free_short_gate_passed"
+    assert v12["physics"] == v11["physics"]
+
+    expected_case = {
+        key: value
+        for key, value in v11["competence_case"].items()
+        if key != "smoke_duration_s"
+    }
+    expected_case.update(
+        {
+            "recorded_horizon_duration_s": 16.355,
+            "full_horizon_duration_s": 16.36,
+        }
+    )
+    assert v12["qualification_case"] == expected_case
+    assert v12["qualification_gate"] == {
+        **v11["competence_gate"],
+        "expected_step_count": 1636,
+        "minimum_mean_vertex_displacement_m": 0.02,
+        "maximum_replay_elapsed_s": 18000.0,
+    }
+
+    mapped = _competence_shape(v12)
+    assert mapped["competence_case"] == v12["qualification_case"]
+    assert mapped["competence_gate"] == v12["qualification_gate"]
+    assert "competence_case" not in v12
+    for relative_path, expected_sha256 in v12["upstream"][
+        "implementation_artifact_sha256s"
+    ].items():
+        assert sha256_file(root / relative_path) == expected_sha256
+    assert v12["information_boundary"]["forbidden"]
