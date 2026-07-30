@@ -1,0 +1,44 @@
+{
+  "artifact_kind": "RGBenchCodimIPCCompetenceGate",
+  "checks": {
+    "all_vertices_finite": true,
+    "both_complete": true,
+    "byte_identical_final_vertices": true,
+    "nontrivial_cloth_motion": true,
+    "pin_tracking_within_limit": true,
+    "runtime_within_limit": true,
+    "value_identical_final_vertices": true,
+    "vertex_count_preserved": true
+  },
+  "competence_gate_passed": true,
+  "failed_gate_action": "close the Codim-IPC CHOLMOD backend without inspecting any RGBench point-cloud outcome",
+  "future_object_outcomes_read": false,
+  "implementation_commit": "e546e6691b99c49d7ddf4918b374bd920f9dc2ed",
+  "maximum_pin_target_error_m": 0.0,
+  "maximum_replay_elapsed_s": 83.73591721709818,
+  "minimum_mean_vertex_displacement_m": 0.04896648197283338,
+  "passed_gate_action": "freeze a separate target-free full-horizon Codim-IPC CHOLMOD qualification before any source accuracy run",
+  "point_cloud_coordinates_read": false,
+  "point_cloud_filenames_read": false,
+  "protocol_id": "rgbbench-codim-ipc-cholmod-v6",
+  "protocol_sha256": "5b6501c3c9819a61b872789e7344e5c724374fd77150410c0e1a7bb0ecc8a660",
+  "replay_elapsed_seconds": [
+    83.54146689688787,
+    83.73591721709818
+  ],
+  "replay_metadata_sha256s": [
+    "fd691c6061a1fdded47e10b0dbb42993f5d8b6e87083289b09a6328d70810be8",
+    "cbf6d213225749e565bf28d949899402b5b4e5da1e4f89a312d9cb143a633edf"
+  ],
+  "replay_return_codes": [
+    0,
+    0
+  ],
+  "replay_sha256s": [
+    "f45e45f5132708193c3f5244272bf5969c2ce2b7d2cba95d2c14658e1e70b8fe",
+    "f45e45f5132708193c3f5244272bf5969c2ce2b7d2cba95d2c14658e1e70b8fe"
+  ],
+  "schema_version": 1,
+  "source_accuracy_outcomes_read": false,
+  "status": "passed"
+}
