@@ -251,8 +251,10 @@ def run_libuipc_fling(
 ) -> np.ndarray:
     """Run a deterministic, fixed-point LibuIPC cloth rollout."""
 
-    vertices = np.asarray(vertices_m, dtype=np.float64)
-    faces = np.asarray(triangles, dtype=np.int32)
+    # pyuipc requests writable contiguous buffers even though it does not mutate
+    # the caller's source artifacts.
+    vertices = np.array(vertices_m, dtype=np.float64, order="C", copy=True)
+    faces = np.array(triangles, dtype=np.int32, order="C", copy=True)
     _require(vertices.ndim == 2 and vertices.shape[1] == 3, "invalid vertices")
     _require(faces.ndim == 2 and faces.shape[1] == 3, "invalid triangles")
     _require(
