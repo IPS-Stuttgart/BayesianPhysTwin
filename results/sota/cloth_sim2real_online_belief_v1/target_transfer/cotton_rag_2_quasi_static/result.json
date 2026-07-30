@@ -1,0 +1,63 @@
+{
+  "accepted": true,
+  "artifact_kind": "ClothSim2RealPredictionResult",
+  "authorized_split": "target",
+  "calibration_artifact_sha256": "332a278d3d47d4d5a05fa8723f1e4bb3b41c690ab88a381905f46cad79d0c2b8",
+  "case_id": "cotton_rag_2/quasi_static",
+  "claim_boundary": "causal online continuation from a real prefix; not an identical-information open-loop benchmark comparison",
+  "future_frame_count": 314,
+  "future_outcomes_read_only_after_prediction_seal": true,
+  "horizons": [
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.06548395962275096,
+      "name": "early",
+      "physical_symmetric_l1_chamfer_m": 0.07710728890526747,
+      "raw_90_coordinate_coverage": 0.5882018479033405,
+      "relative_improvement": 0.15074228970489043,
+      "reported_90_coordinate_coverage": 0.9696122561794205
+    },
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.06003603346535645,
+      "name": "middle",
+      "physical_symmetric_l1_chamfer_m": 0.058441791908460265,
+      "raw_90_coordinate_coverage": 0.6971175866698255,
+      "relative_improvement": -0.02727913544118069,
+      "reported_90_coordinate_coverage": 0.9916054647397932
+    },
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.06034126550212671,
+      "name": "late",
+      "physical_symmetric_l1_chamfer_m": 0.039727372874937945,
+      "raw_90_coordinate_coverage": 0.7845308712846026,
+      "relative_improvement": -0.5188838610617785,
+      "reported_90_coordinate_coverage": 0.9750924862865161
+    }
+  ],
+  "method_id": "cloth-sim2real-guarded-readout-v1",
+  "metrics": {
+    "candidate_directed_l1_chamfer_m": 0.0631023427630138,
+    "candidate_symmetric_l1_chamfer_m": 0.06195888817347916,
+    "candidate_symmetric_l2_hausdorff_m": 0.18339380144252979,
+    "directed_relative_improvement": -0.11454903971770303,
+    "hausdorff_relative_improvement": -0.0763370546279692,
+    "mean_90_interval_width_m": 0.2503170617806055,
+    "mean_energy_score_m": 0.04941920714817607,
+    "mean_readout_correction_m": 0.041225290043022056,
+    "physical_directed_l1_chamfer_m": 0.05661692802588263,
+    "physical_symmetric_l1_chamfer_m": 0.05848503268928331,
+    "physical_symmetric_l2_hausdorff_m": 0.17038696257272215,
+    "raw_90_coordinate_coverage": 0.6896488893114048,
+    "released_window_candidate_directed_l1_chamfer_m": 0.0631023427630138,
+    "released_window_cutoff_frame_exclusive": 420,
+    "released_window_directed_relative_improvement": -0.11454903971770303,
+    "released_window_physical_directed_l1_chamfer_m": 0.05661692802588263,
+    "reported_90_coordinate_coverage": 0.9787817811156532,
+    "symmetric_frame_wins": 145,
+    "symmetric_relative_improvement": -0.05939734192595212,
+    "trial_coordinate_abs_standardized_q90": 4.00658539559869
+  },
+  "prediction_seal_sha256": "6aca1cc489b0f539f114b6533647b06fd7be4595584a0b85072ab8b1d11adb4f",
+  "schema_version": 1,
+  "selected_name": "graph_l0.1_s1",
+  "uncertainty_std_multiplier": 5.052049810952072
+}

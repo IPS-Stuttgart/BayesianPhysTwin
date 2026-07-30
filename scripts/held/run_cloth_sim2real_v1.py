@@ -835,6 +835,203 @@ def _aggregate_calibration(args: argparse.Namespace) -> int:
     return 0
 
 
+def _target_task_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
+    _require(len(results) == 3, "target task requires exactly three cloths")
+
+    def mean_metric(name: str) -> float:
+        return float(np.mean([result["metrics"][name] for result in results]))
+
+    horizon_names = ("early", "middle", "late")
+    horizons = []
+    for name in horizon_names:
+        rows = [
+            next(
+                horizon
+                for horizon in result["horizons"]
+                if horizon["name"] == name
+            )
+            for result in results
+        ]
+        horizons.append(
+            {
+                "name": name,
+                "physical_symmetric_l1_chamfer_m": float(
+                    np.mean(
+                        [
+                            row["physical_symmetric_l1_chamfer_m"]
+                            for row in rows
+                        ]
+                    )
+                ),
+                "candidate_symmetric_l1_chamfer_m": float(
+                    np.mean(
+                        [
+                            row["candidate_symmetric_l1_chamfer_m"]
+                            for row in rows
+                        ]
+                    )
+                ),
+                "object_balanced_relative_improvement": float(
+                    np.mean([row["relative_improvement"] for row in rows])
+                ),
+                "raw_90_coordinate_coverage": float(
+                    np.mean(
+                        [row["raw_90_coordinate_coverage"] for row in rows]
+                    )
+                ),
+                "reported_90_coordinate_coverage": float(
+                    np.mean(
+                        [
+                            row["reported_90_coordinate_coverage"]
+                            for row in rows
+                        ]
+                    )
+                ),
+            }
+        )
+
+    symmetric_improvements = np.asarray(
+        [
+            result["metrics"]["symmetric_relative_improvement"]
+            for result in results
+        ],
+        dtype=np.float64,
+    )
+    return {
+        "case_count": len(results),
+        "accepted_case_count": int(
+            np.sum([bool(result["accepted"]) for result in results])
+        ),
+        "symmetric_win_count": int(np.sum(symmetric_improvements > 0.0)),
+        "physical_symmetric_l1_chamfer_m": mean_metric(
+            "physical_symmetric_l1_chamfer_m"
+        ),
+        "candidate_symmetric_l1_chamfer_m": mean_metric(
+            "candidate_symmetric_l1_chamfer_m"
+        ),
+        "object_balanced_symmetric_relative_improvement": float(
+            np.mean(symmetric_improvements)
+        ),
+        "object_balanced_directed_relative_improvement": mean_metric(
+            "directed_relative_improvement"
+        ),
+        "object_balanced_released_window_directed_relative_improvement": (
+            mean_metric("released_window_directed_relative_improvement")
+        ),
+        "object_balanced_hausdorff_relative_improvement": mean_metric(
+            "hausdorff_relative_improvement"
+        ),
+        "raw_90_coordinate_coverage": mean_metric(
+            "raw_90_coordinate_coverage"
+        ),
+        "reported_90_coordinate_coverage": mean_metric(
+            "reported_90_coordinate_coverage"
+        ),
+        "mean_90_interval_width_m": mean_metric("mean_90_interval_width_m"),
+        "mean_energy_score_m": mean_metric("mean_energy_score_m"),
+        "mean_readout_correction_m": mean_metric(
+            "mean_readout_correction_m"
+        ),
+        "horizons": horizons,
+    }
+
+
+def _aggregate_target(args: argparse.Namespace) -> int:
+    calibration_path = args.calibration_gate.resolve()
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    calibration_sha256 = _sha256(calibration_path)
+    _require(
+        calibration.get("artifact_kind") == "ClothSim2RealCalibrationGate"
+        and calibration.get("target_authorized") is True,
+        "calibration gate does not authorize target aggregation",
+    )
+    target_lock_path = args.target_lock.resolve()
+    target_lock = json.loads(target_lock_path.read_text(encoding="utf-8"))
+    _require(
+        target_lock.get("protocol_id") == "cloth-sim2real-online-belief-v1"
+        and target_lock.get("method_id") == METHOD_ID
+        and target_lock.get("status") == "pre_target_prefix_lock",
+        "target lock identity changed",
+    )
+    _require(
+        target_lock["calibration_evidence"]["calibration_gate_sha256"]
+        == calibration_sha256
+        and target_lock["calibration_evidence"]["target_authorized"] is True,
+        "target lock and calibration gate differ",
+    )
+    _require(
+        target_lock["target_scope"]["case_count"] == 6,
+        "target lock case count changed",
+    )
+
+    result_paths = tuple(sorted(args.results_root.glob("*/result.json")))
+    _require(len(result_paths) == 6, "target aggregate requires exactly six cases")
+    results = [
+        json.loads(path.read_text(encoding="utf-8")) for path in result_paths
+    ]
+    _require(
+        {result["artifact_kind"] for result in results}
+        == {"ClothSim2RealPredictionResult"}
+        and {result["method_id"] for result in results} == {METHOD_ID}
+        and {result["authorized_split"] for result in results} == {"target"},
+        "target aggregate contains an incompatible result",
+    )
+    _require(
+        all(
+            result["calibration_artifact_sha256"] == calibration_sha256
+            and result["future_outcomes_read_only_after_prediction_seal"]
+            is True
+            for result in results
+        ),
+        "target result violates its calibration or outcome boundary",
+    )
+    dynamic = [
+        result for result in results if result["case_id"].endswith("/dynamic")
+    ]
+    quasi_static = [
+        result
+        for result in results
+        if result["case_id"].endswith("/quasi_static")
+    ]
+    _require(
+        len(dynamic) == len(quasi_static) == 3,
+        "target task counts changed",
+    )
+    payload = {
+        "schema_version": 1,
+        "artifact_kind": "ClothSim2RealTargetResult",
+        "method_id": METHOD_ID,
+        "calibration_gate_sha256": calibration_sha256,
+        "target_lock_sha256": _sha256(target_lock_path),
+        "result_sha256s": {
+            path.parent.name: _sha256(path) for path in result_paths
+        },
+        "prediction_seal_sha256s": {
+            result["case_id"]: result["prediction_seal_sha256"]
+            for result in results
+        },
+        "case_metrics": {
+            result["case_id"]: result["metrics"] for result in results
+        },
+        "case_horizons": {
+            result["case_id"]: result["horizons"] for result in results
+        },
+        "dynamic_primary": _target_task_summary(dynamic),
+        "quasi_static_secondary": _target_task_summary(quasi_static),
+        "uncertainty_std_multiplier": float(
+            calibration["uncertainty_std_multiplier"]
+        ),
+        "formal_90_split_conformal_claim": False,
+        "target_outcomes_opened_only_after_all_case_prediction_seals": True,
+        "claim_boundary": (
+            "independent repeat-2 evidence for causal online continuation; "
+            "not an identical-information open-loop SOTA comparison"
+        ),
+    }
+    _write_json_once(args.output.resolve(), payload)
+    return 0
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -884,6 +1081,25 @@ def _parser() -> argparse.ArgumentParser:
     )
     aggregate_calibration.add_argument("--output", type=Path, required=True)
     aggregate_calibration.set_defaults(function=_aggregate_calibration)
+
+    aggregate_target = subparsers.add_parser("aggregate-target")
+    aggregate_target.add_argument(
+        "--results-root",
+        type=Path,
+        required=True,
+    )
+    aggregate_target.add_argument(
+        "--calibration-gate",
+        type=Path,
+        required=True,
+    )
+    aggregate_target.add_argument(
+        "--target-lock",
+        type=Path,
+        required=True,
+    )
+    aggregate_target.add_argument("--output", type=Path, required=True)
+    aggregate_target.set_defaults(function=_aggregate_target)
     return parser
 
 
