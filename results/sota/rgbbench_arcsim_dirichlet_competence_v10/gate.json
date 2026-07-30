@@ -1,0 +1,45 @@
+{
+  "artifact_kind": "RGBenchARCSimCompetenceGate",
+  "checks": {
+    "all_vertices_finite": true,
+    "both_complete": true,
+    "byte_identical_final_vertices": true,
+    "expected_step_count": true,
+    "nontrivial_cloth_motion": true,
+    "pin_tracking_within_limit": false,
+    "runtime_within_limit": true,
+    "value_identical_final_vertices": true,
+    "vertex_count_preserved": true
+  },
+  "competence_gate_passed": false,
+  "failed_gate_action": "close the ARCSim Dirichlet backend without inspecting any RGBench point-cloud outcome",
+  "future_object_outcomes_read": false,
+  "implementation_commit": "e0120684aa2af253e1a5a9fcf9ffae2372a0f8b1",
+  "maximum_pin_target_error_m": 0.021758495525595768,
+  "maximum_replay_elapsed_s": 27.16965470975265,
+  "minimum_mean_vertex_displacement_m": 0.056178822861017795,
+  "passed_gate_action": "freeze a separate target-free full-horizon ARCSim Dirichlet qualification before any source accuracy run",
+  "point_cloud_coordinates_read": false,
+  "point_cloud_filenames_read": false,
+  "protocol_id": "rgbbench-arcsim-dirichlet-competence-v10",
+  "protocol_sha256": "449a8d11baf9ba804da264747436510f6e749dddd3b8d4c88ee063ba07187240",
+  "replay_elapsed_seconds": [
+    27.501390088815242,
+    27.491922112181783
+  ],
+  "replay_metadata_sha256s": [
+    "7dac0e96640f13722ca712a3dc07a9827334f34f4aa2e5edef9c2a86717ed8dc",
+    "b131fc310a81029ada79383ee85e7e755634dc00f92a71fc6d9d9c375c751257"
+  ],
+  "replay_return_codes": [
+    0,
+    0
+  ],
+  "replay_sha256s": [
+    "7b9aad20ce071b2a875cf0d2b3d71f9ae5d405b78c273bf2990007d1132cc424",
+    "7b9aad20ce071b2a875cf0d2b3d71f9ae5d405b78c273bf2990007d1132cc424"
+  ],
+  "schema_version": 1,
+  "source_accuracy_outcomes_read": false,
+  "status": "gate_failed"
+}
