@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchEndpointPersistenceSourceDiagnosticV1",
+  "method_id": "rgbbench-endpoint-cloud-persistence-source-diagnostic-v1",
+  "authorized_split": "source",
+  "case_count": 27,
+  "cell_count": 9,
+  "definition": {
+    "observed_prefix": "Use the frozen remeshed PyBullet prediction through the registered branch frame.",
+    "future": "Repeat the real point cloud at the final permitted prefix frame for every future frame.",
+    "metric": "Mean one-sided real-to-prediction L1 Chamfer distance in metres.",
+    "aggregation": "Average samples within each garment/action cell, then balance the nine cells equally."
+  },
+  "provenance": {
+    "analysis_code_commit": "c174867fcdaf5dae1b6b451b2349affb3d8567df",
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "dataset_manifest_artifact_sha256": "3789947cbb9c7c58ccc39b8186b4e30e2a258e615bc2e02c05842bcdafe160e8",
+    "source_gate_file_sha256": "37beb8e29c588c89228ef223477ba470a91384d6264ac3d9cf7842580a070357"
+  },
+  "summary": {
+    "physical_object_action_balanced_full_m": 0.045623883551681226,
+    "persistence_object_action_balanced_full_m": 0.13664341449011524,
+    "ratio_of_balanced_means_relative_improvement": -1.9949974410953004,
+    "mean_cell_relative_improvement": -2.158128324548327,
+    "physical_object_action_balanced_future_m": 0.05344641689707119,
+    "persistence_object_action_balanced_future_m": 0.17713967028905,
+    "future_ratio_of_balanced_means_relative_improvement": -2.314341364177719,
+    "mean_cell_future_relative_improvement": -2.4094964405716777,
+    "improved_cells": 0,
+    "published_garment_dynamics_cells_beaten": 0
+  },
+  "cells": [
+    {
+      "garment": "white_cakeskirt",
+      "action": "fling",
+      "physical_full_m": 0.08988577544589425,
+      "persistence_full_m": 0.13337726042578327,
+      "relative_improvement": -0.4838528094589141
+    },
+    {
+      "garment": "white_cakeskirt",
+      "action": "fold",
+      "physical_full_m": 0.025916970941857576,
+      "persistence_full_m": 0.059671740228635695,
+      "relative_improvement": -1.302419536700641
+    },
+    {
+      "garment": "white_cakeskirt",
+      "action": "grasp",
+      "physical_full_m": 0.051937600225823166,
+      "persistence_full_m": 0.255810141633823,
+      "relative_improvement": -3.9253361826801387
+    },
+    {
+      "garment": "brown_coat",
+      "action": "fling",
+      "physical_full_m": 0.05908271677406706,
+      "persistence_full_m": 0.12190399267391866,
+      "relative_improvement": -1.0632766962981886
+    },
+    {
+      "garment": "brown_coat",
+      "action": "fold",
+      "physical_full_m": 0.027233502148217886,
+      "persistence_full_m": 0.06687306453794888,
+      "relative_improvement": -1.4555440638516972
+    },
+    {
+      "garment": "brown_coat",
+      "action": "grasp",
+      "physical_full_m": 0.045978622617505537,
+      "persistence_full_m": 0.15242138114147066,
+      "relative_improvement": -2.3150488741139226
+    },
+    {
+      "garment": "green_tshirt",
+      "action": "fling",
+      "physical_full_m": 0.052341643672559744,
+      "persistence_full_m": 0.15076507852911483,
+      "relative_improvement": -1.8804039757000188
+    },
+    {
+      "garment": "green_tshirt",
+      "action": "fold",
+      "physical_full_m": 0.022710113891546133,
+      "persistence_full_m": 0.05436988730109027,
+      "relative_improvement": -1.3940825466898925
+    },
+    {
+      "garment": "green_tshirt",
+      "action": "grasp",
+      "physical_full_m": 0.03552800624765968,
+      "persistence_full_m": 0.2345981839392519,
+      "relative_improvement": -5.6031902354415255
+    }
+  ],
+  "information_boundary": {
+    "post_open_source_only": true,
+    "calibration_coordinates_read": false,
+    "target_coordinates_read": false,
+    "protocol_authorization": "diagnostic only; cannot authorize calibration or target evaluation"
+  },
+  "decision": "Close exact endpoint-cloud persistence. Dynamic physical rollout is essential on RGBench and this source diagnostic does not authorize a new method."
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchPlainMuJoCoSourceSmokeV1",
+  "method_id": "rgbbench-plain-mujoco-source-smoke-v1",
+  "authorized_split": "source",
+  "case_id": "green_tshirt/grasp/01",
+  "provenance": {
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "upstream_environment": "mujoco",
+    "upstream_mode": "fixed_point",
+    "upstream_robot": "piper",
+    "upstream_output_relative_path": "outputs/green_tshirt/grasp/mujoco/fixed_point/piper/sample_01/2026-07-30_08-53-38",
+    "metrics_csv_sha256": "e0b48b0a9f7bbf862e349a4d22f39ff2bc3a1dae65329e6be6f85ead932cdb08",
+    "hydra_config_sha256": "2417a033c01300a6a8bd73ac0968dbe88bc54a7c859d0ccf5b082209a5238575",
+    "hydra_overrides_sha256": "43f0c210ef0d48c118c3f08b789271f75afbc3949d0af24eeff8af01f3118324",
+    "run_log_sha256": "9136f5543c1a86c215eafbb6a7c7b3a43a719315d132461bf2d86cfede365552",
+    "mujoco_version": "3.1.4",
+    "flex_young_value_pa": 230000.0,
+    "timestep_s": 0.002
+  },
+  "result": {
+    "official_evaluation_window_s": [
+      3.8,
+      6.9
+    ],
+    "mean_real_to_sim_l1_m": 0.24495757091790438,
+    "std_real_to_sim_l1_m": 0.23070780369614977,
+    "same_case_remeshed_pybullet_full_real_to_sim_l1_m": 0.03186886564107063,
+    "published_garment_dynamics_cell_mean_real_to_sim_l1_m": 0.0226,
+    "unstable_vertex_warning_count": 65,
+    "minimum_unstable_vertices": 6,
+    "maximum_unstable_vertices": 647,
+    "mean_unstable_vertices": 444.67692307692306
+  },
+  "information_boundary": {
+    "post_open_source_only": true,
+    "calibration_coordinates_read": false,
+    "target_coordinates_read": false,
+    "single_case_competence_smoke": true
+  },
+  "decision": "Reject the public plain-MuJoCo wrapper as a candidate RGBench backbone. Do not build a Bayesian assimilation study around this configuration."
+}

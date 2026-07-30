@@ -60,9 +60,11 @@ Close v2 as a valid negative source result. Do not weaken the source gate,
 inspect calibration or target outcomes, or add a larger temporal-shrinkage
 grid.
 
-The next executable public-data experiment may test a different physical
-backbone on the already-open source cohort. RGBench's published
-GarmentDynamics trajectories are not released, so they cannot be assimilated
-directly. The repository does release a separate plain MuJoCo Flex wrapper;
-its source performance should be established before any new discrepancy
-model is considered.
+Two post-open source-only controls now close the immediately available public
+alternatives; see `docs/rgbbench_public_backbone_source_diagnostics.md`.
+Exact endpoint-cloud persistence regresses in all nine garment/action cells,
+and the released plain-MuJoCo Flex wrapper fails a one-case competence smoke.
+RGBench's published GarmentDynamics trajectories are not released, so they
+cannot be assimilated directly. A further RGBench method is justified only by
+a substantially stronger public dynamics backbone, not by another correction
+layer around either failed alternative.
