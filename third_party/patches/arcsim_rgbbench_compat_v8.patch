@@ -1,0 +1,315 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,16 +1,19 @@
+ CC := gcc
+ CXX := g++
++EIGEN_INCLUDE ?= /usr/include/eigen3
++BOOST_INCLUDE ?= /usr/include
++BOOST_LIB ?= /usr/lib
+ 
+-# # uncomment to disable OpenGL functionality
+-# NO_OPENGL := true
++# Override with NO_OPENGL= to build the interactive viewer.
++NO_OPENGL ?= true
+ 
+-CXXFLAGS := -Idependencies/include -I/opt/local/include
++CXXFLAGS := -Idependencies/include -I$(EIGEN_INCLUDE) -I$(BOOST_INCLUDE) -I/opt/local/include
+ ifdef NO_OPENGL
+ 	CXXFLAGS := $(CXXFLAGS) -DNO_OPENGL
+ endif
+ CXXFLAGS_DEBUG := -Wall -g -Wno-sign-compare
+ CXXFLAGS_RELEASE := -O3 -Wreturn-type -fopenmp
+-LDFLAGS := -Ldependencies/lib -L/opt/local/lib -lpng -lz -ltaucs -llapack -lblas -lboost_filesystem-mt -lboost_system-mt -lboost_thread-mt -ljson -lgomp -lalglib
++LDFLAGS := -Ldependencies/lib -L$(BOOST_LIB) -L/opt/local/lib -lpng -lz -lboost_filesystem -lboost_thread -ljson -lgomp -lalglib -pthread
+ ifndef NO_OPENGL
+ 	LDFLAGS := $(LDFLAGS) -lglut -lGLU -lGL
+ endif
+--- a/dependencies/Makefile
++++ b/dependencies/Makefile
+@@ -9,10 +9,11 @@
+ 	cp alglib/cpp/src/libalglib.a lib/
+ 
+ lib/libjson.a:
+-	cd jsoncpp && scons platform=linux-gcc
++	cd jsoncpp && g++ -O3 -Iinclude -c src/lib_json/json_reader.cpp src/lib_json/json_value.cpp src/lib_json/json_writer.cpp
++	cd jsoncpp && ar rcs libjson.a json_reader.o json_value.o json_writer.o
+ 	mkdir -p include/json/ lib/
+ 	cp jsoncpp/include/json/*.h include/json/
+-	cp jsoncpp/libs/linux-gcc-*/libjson_linux-gcc-*_libmt.a lib/libjson.a
++	cp jsoncpp/libjson.a lib/libjson.a
+ 
+ lib/libtaucs.a:
+ 	cd taucs && ./configure module=\!METIS && $(MAKE)
+--- a/src/io.cpp
++++ b/src/io.cpp
+@@ -34,6 +34,7 @@
+ #include <cfloat>
+ #include <json/json.h>
+ #include <fstream>
++#include <iomanip>
+ #include <png.h>
+ #include <sstream>
+ using namespace std;
+@@ -209,6 +210,7 @@
+ 
+ void save_obj (const Mesh &mesh, const string &filename) {
+     fstream file(filename.c_str(), ios::out);
++    file << setprecision(17);
+     for (int v = 0; v < mesh.verts.size(); v++) {
+         const Vert *vert = mesh.verts[v];
+         file << "vt " << vert->u[0] << " " << vert->u[1] << endl;
+--- a/src/sparse.hpp
++++ b/src/sparse.hpp
+@@ -115,7 +115,7 @@
+                  << "} -> " << aij;
+         }
+     }
+-    file << "}]" << file;
++    file << "}]";
+ }
+ 
+ #endif
+--- a/src/taucs.cpp
++++ b/src/taucs.cpp
+@@ -5,153 +5,117 @@
+   research, and not-for-profit purposes, without fee and without a
+   signed licensing agreement, is hereby granted, provided that the
+   above copyright notice, this paragraph and the following two
+-  paragraphs appear in all copies, modifications, and
+-  distributions. Contact The Office of Technology Licensing, UC
+-  Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620,
+-  (510) 643-7201, for commercial licensing opportunities.
+-
+-  IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT,
+-  INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING
+-  LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS
+-  DOCUMENTATION, EVEN IF REGENTS HAS BEEN ADVISED OF THE POSSIBILITY
+-  OF SUCH DAMAGE.
+-
+-  REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+-  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+-  FOR A PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING
+-  DOCUMENTATION, IF ANY, PROVIDED HEREUNDER IS PROVIDED "AS
+-  IS". REGENTS HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT,
+-  UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
++  paragraphs appear in all copies, modifications, and distributions.
+ */
+ 
+ #include "taucs.hpp"
+-#include "timer.hpp"
++
++#include <Eigen/Sparse>
++#include <Eigen/SparseCholesky>
++
+ #include <cstdlib>
+ #include <iostream>
++#include <vector>
++
+ using namespace std;
+ 
+-extern "C" {
+-#include "taucs.h"
+-int taucs_linsolve (taucs_ccs_matrix* A, // input matrix
+-                    void** factorization, // an approximate inverse
+-                    int nrhs, // number of right-hand sides
+-                    void* X, // unknowns
+-                    void* B, // right-hand sides
+-                    char* options[], // options (what to do and how)
+-                    void* arguments[]); // option arguments
+-}
++namespace {
+ 
+-ostream &operator<< (ostream &out, taucs_ccs_matrix *A) {
+-    out << "n: " << A->n << endl;
+-    out << "m: " << A->m << endl;
+-    out << "flags: " << A->flags << endl;
+-    out << "colptr: ";
+-    for (int i = 0; i <= A->n; i++)
+-        out << (i==0?"":", ") << A->colptr[i];
+-    out << endl;
+-    out << "rowind: ";
+-    for (int j = 0; j <= A->colptr[A->n]; j++)
+-        out << (j==0?"":", ") << A->rowind[j];
+-    out << endl;
+-    out << "values.d: ";
+-    for (int j = 0; j <= A->colptr[A->n]; j++)
+-        out << (j==0?"":", ") << A->values.d[j];
+-    out << endl;
+-    return out;
+-}
++Eigen::VectorXd solve_symmetric(
++    int n,
++    const vector<Eigen::Triplet<double>>& triplets,
++    const Eigen::VectorXd& b)
++{
++    Eigen::SparseMatrix<double> A(n, n);
++    A.setFromTriplets(triplets.begin(), triplets.end());
++    A.makeCompressed();
++
++    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>, Eigen::Upper> solver;
++    solver.compute(A);
++    if (solver.info() != Eigen::Success) {
++        cerr << "Error: Eigen sparse factorization failed" << endl;
++        exit(EXIT_FAILURE);
++    }
+ 
+-taucs_ccs_matrix *sparse_to_taucs (const SpMat<double> &As) {
+-    // assumption: A is square and symmetric
+-    int n = As.n;
+-    int nnz = 0;
+-    for (int i = 0; i < n; i++) {
+-        for (int k = 0; k < As.rows[i].indices.size(); k++) {
+-            int j = As.rows[i].indices[k];
+-            if (j < i)
+-                continue;
+-            nnz++;
+-        }
++    Eigen::VectorXd x = solver.solve(b);
++    if (solver.info() != Eigen::Success || !x.allFinite()) {
++        cerr << "Error: Eigen sparse solve failed" << endl;
++        exit(EXIT_FAILURE);
+     }
+-    taucs_ccs_matrix *At = taucs_ccs_create(n,n, nnz, TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER);
+-    int pos = 0;
+-    for (int i = 0; i < n; i++) {
+-        At->colptr[i] = pos;
+-        for (int k = 0; k < As.rows[i].indices.size(); k++) {
+-            int j = As.rows[i].indices[k];
++    return x;
++}
++
++} // namespace
++
++vector<double> taucs_linear_solve(
++    const SpMat<double>& A,
++    const vector<double>& b)
++{
++    vector<Eigen::Triplet<double>> triplets;
++    for (int i = 0; i < A.n; ++i) {
++        const SpVec<double>& row = A.rows[i];
++        for (size_t jj = 0; jj < row.indices.size(); ++jj) {
++            const int j = row.indices[jj];
+             if (j < i)
+                 continue;
+-            At->rowind[pos] = j;
+-            At->values.d[pos] = As.rows[i].entries[k];
+-            pos++;
++            const double value = row.entries[jj];
++            triplets.push_back(Eigen::Triplet<double>(i, j, value));
++            if (i != j)
++                triplets.push_back(Eigen::Triplet<double>(j, i, value));
+         }
+     }
+-    At->colptr[n] = pos;
+-    return At;
++
++    Eigen::VectorXd rhs(A.n);
++    for (int i = 0; i < A.n; ++i)
++        rhs[i] = b[i];
++    const Eigen::VectorXd solution = solve_symmetric(A.n, triplets, rhs);
++
++    vector<double> x(A.n);
++    for (int i = 0; i < A.n; ++i)
++        x[i] = solution[i];
++    return x;
+ }
+ 
+-template <int m> taucs_ccs_matrix *sparse_to_taucs (const SpMat< Mat<m,m> > &As) {
+-    // assumption: A is square and symmetric
+-    int n = As.n;
+-    int nnz = 0;
+-    for (int i = 0; i < n; i++) {
+-        for (int jj = 0; jj < As.rows[i].indices.size(); jj++) {
+-            int j = As.rows[i].indices[jj];
++template <int m>
++vector<Vec<m>> taucs_linear_solve(
++    const SpMat<Mat<m, m>>& A,
++    const vector<Vec<m>>& b)
++{
++    const int n = A.n * m;
++    vector<Eigen::Triplet<double>> triplets;
++    for (int i = 0; i < A.n; ++i) {
++        const SpVec<Mat<m, m>>& row = A.rows[i];
++        for (size_t jj = 0; jj < row.indices.size(); ++jj) {
++            const int j = row.indices[jj];
+             if (j < i)
+                 continue;
+-            nnz += (j==i) ? m*(m+1)/2 : m*m;
+-        }
+-    }
+-    taucs_ccs_matrix *At = taucs_ccs_create
+-        (n*m,n*m, nnz, TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER);
+-    int pos = 0;
+-    for (int i = 0; i < n; i++) {
+-        for (int k = 0; k < m; k++) {
+-            At->colptr[i*m+k] = pos;
+-            for (int jj = 0; jj < As.rows[i].indices.size(); jj++) {
+-                int j = As.rows[i].indices[jj];
+-                if (j < i)
+-                    continue;
+-                const Mat<m,m> &Aij = As.rows[i].entries[jj];
+-                for (int l = (i==j) ? k : 0; l < m; l++) {
+-                    At->rowind[pos] = j*m+l;
+-                    At->values.d[pos] = Aij(k,l);
+-                    pos++;
++            const Mat<m, m>& block = row.entries[jj];
++            for (int k = 0; k < m; ++k) {
++                for (int l = (i == j ? k : 0); l < m; ++l) {
++                    const int r = i * m + k;
++                    const int c = j * m + l;
++                    const double value = block(k, l);
++                    triplets.push_back(Eigen::Triplet<double>(r, c, value));
++                    if (r != c)
++                        triplets.push_back(Eigen::Triplet<double>(c, r, value));
+                 }
+             }
+         }
+     }
+-    At->colptr[n*m] = pos;
+-    return At;
+-}
+ 
+-vector<double> taucs_linear_solve (const SpMat<double> &A, const vector<double> &b) {
+-    // taucs_logfile("stdout");
+-    taucs_ccs_matrix *Ataucs = sparse_to_taucs(A);
+-    vector<double> x(b.size());
+-    char *options[] = {(char*)"taucs.factor.LLT=true", NULL};
+-    int retval = taucs_linsolve(Ataucs, NULL, 1, &x[0], (double*)&b[0], options, NULL);
+-    if (retval != TAUCS_SUCCESS) {
+-        cerr << "Error: TAUCS failed with return value " << retval << endl;
+-        exit(EXIT_FAILURE);
+-    }
+-    taucs_ccs_free(Ataucs);
+-    return x;
+-}
+-
+-template <int m> vector< Vec<m> > taucs_linear_solve
+-    (const SpMat< Mat<m,m> > &A, const vector< Vec<m> > &b) {
+-    // taucs_logfile("stdout");
+-    taucs_ccs_matrix *Ataucs = sparse_to_taucs(A);
+-    vector< Vec<m> > x(b.size());
+-    char *options[] = {(char*)"taucs.factor.LLT=true", NULL};
+-    int retval = taucs_linsolve(Ataucs, NULL, 1, &x[0], (double*)&b[0], options, NULL);
+-    if (retval != TAUCS_SUCCESS) {
+-        cerr << "Error: TAUCS failed with return value " << retval << endl;
+-        exit(EXIT_FAILURE);
+-    }
+-    taucs_ccs_free(Ataucs);
++    Eigen::VectorXd rhs(n);
++    for (int i = 0; i < A.n; ++i)
++        for (int k = 0; k < m; ++k)
++            rhs[i * m + k] = b[i][k];
++    const Eigen::VectorXd solution = solve_symmetric(n, triplets, rhs);
++
++    vector<Vec<m>> x(A.n);
++    for (int i = 0; i < A.n; ++i)
++        for (int k = 0; k < m; ++k)
++            x[i][k] = solution[i * m + k];
+     return x;
+ }
+ 
+-template vector<Vec3> taucs_linear_solve (const SpMat<Mat3x3> &A,
+-                                          const vector<Vec3> &b);
++template vector<Vec3> taucs_linear_solve(
++    const SpMat<Mat3x3>& A,
++    const vector<Vec3>& b);
