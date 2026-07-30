@@ -30,6 +30,8 @@ Physical baseline generation:
 - uses official benchmark commit
   `178a9b9722191c51cf0dcbc3cf0dc03701b09eb3`;
 - reads the released simulator parameters and prescribed gripper trajectory;
+- preserves the benchmark's backend-specific settling contract (ten seconds
+  for SOFA and one second for MuJoCo);
 - reads no real point cloud, prefix observation, or future outcome;
 - records the simulator and runtime provenance in a sidecar;
 - preserves `mujoco3` as the default and makes SOFA opt-in.

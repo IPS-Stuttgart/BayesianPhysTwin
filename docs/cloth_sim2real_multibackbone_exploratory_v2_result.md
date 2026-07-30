@@ -9,25 +9,39 @@ fallback:
 
 | Opened source case | SOFA directed CD | Guarded directed CD | Gain | Decision |
 | --- | ---: | ---: | ---: | --- |
-| Chequered rag | 91.63 mm | 76.50 mm | 16.52% | admitted |
-| Cotton rag | 93.88 mm | 76.91 mm | 18.08% | admitted |
-| Linen rag | 91.04 mm | 91.04 mm | 0.00% | exact fallback |
-| Object-balanced | 92.19 mm | 81.48 mm | **11.61%** | 2/3 admitted |
+| Chequered rag | 82.67 mm | 70.40 mm | 14.85% | admitted |
+| Cotton rag | 115.48 mm | 95.50 mm | 17.30% | admitted |
+| Linen rag | 85.73 mm | 85.73 mm | 0.00% | exact fallback |
+| Object-balanced | 94.63 mm | 83.88 mm | **11.36%** | 2/3 admitted |
 
-The object-balanced symmetric L1 Chamfer improvement was 9.40%. On the
+The object-balanced symmetric L1 Chamfer improvement was 7.55%. On the
 benchmark's released dynamic comparison windows, directed CD improved from
-94.67 mm to 81.92 mm, or 13.46%. Late-horizon symmetric CD improved 8.14%.
+104.53 mm to 89.87 mm, or 14.03%. Late-horizon symmetric CD improved 4.29%.
 
 This is positive evidence for **backbone compositionality**: the update was
 frozen on MuJoCo and still helped two independently generated SOFA rollouts.
 It is not evidence that this SOFA execution is state of the art.
 
-## Parity failure
+## Corrected parity audit
 
-The benchmark reports mean dynamic SOFA directed CD of approximately 67 mm,
-75 mm, and 61 mm for chequered, cotton, and linen cloth. The reproduced
-source-repeat physical values over the corresponding released windows were
-99.64 mm, 93.10 mm, and 91.26 mm.
+The initial adapter incorrectly reused MuJoCo's one-second settling interval
+for SOFA. The official benchmark runs ten seconds of SOFA settling. After
+matching that backend-specific contract, the benchmark's full pre-contact
+window was scored over all three real repeats:
+
+| Cloth | Reproduced SOFA CD | Published SOFA CD | Absolute difference / published SD |
+| --- | ---: | ---: | ---: |
+| Chequered | 76.63 mm | 68 +/- 24 mm | 0.36 |
+| Cotton/towel | 111.61 mm | 78 +/- 29 mm | 1.16 |
+| Linen | 66.11 mm | 61 +/- 24 mm | 0.21 |
+
+The earlier note also compared the post-prefix online continuation window
+against the paper's full pre-contact benchmark window and transposed the
+published towel and chequered values. Those comparisons were invalid. The
+corrected single-rollout reproduction does not equal the paper's 20-seed
+means, but every cloth lies within approximately 1.2 reported standard
+deviations. The physical baseline is therefore in the published regime,
+although exact runtime parity is not established.
 
 The runtime used:
 
@@ -35,24 +49,23 @@ The runtime used:
 - official SOFA v23.06 archive SHA-256
   `de1ab962978f1b77db97d9925e6fef6b2bc924aff6aa04956a59d9e1bd0e3720`;
 - SOFA commit `c58927d2920fb7a1b0826c462d9c02bb2f0fa819`;
-- adapter commit `c6558b5`, file SHA-256
-  `a040b703f0026d6502eed0ceba188ab57bf417dfdda39cf50fe5ec8a818cd8a7`.
+- adapter commit `b7e684c`, file SHA-256
+  `da8ffe782d084da31aa36f3a700624fcaed43ce10aaa7f0cf2a63f20d0bcfded`.
 
-The official binary may differ from the authors' source-built Docker runtime,
-and the published table aggregates repeated seeds. Until the authors'
-container or released simulator trajectories reproduce the reference metric,
-the physical-prior difference is a runtime-parity issue rather than a method
-comparison.
+The official binary may still differ from the authors' source-built runtime,
+and the published table aggregates 20 random seeds and three real repeats.
+That residual uncertainty remains part of the claim boundary.
 
 ## Gate decision
 
 The preregistered exploratory advancement rule required guarded improvement
 on all three dynamic cloths and a physical baseline in the published regime.
-Both conditions failed:
+The method condition failed:
 
 - guarded improvement occurred on 2/3 cloths;
 - linen used exact fallback;
-- paper-level SOFA parity was not reproduced.
+- object-balanced and late-horizon metrics remained positive;
+- the corrected physical baseline was in the paper's reported regime.
 
 Therefore this branch does **not** authorize a larger preregistered
 evaluation. The useful result is narrower: guarded Bayesian readout updates

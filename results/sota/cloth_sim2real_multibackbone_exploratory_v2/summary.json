@@ -2,9 +2,9 @@
   "schema_version": 1,
   "artifact_kind": "ClothSim2RealMultibackboneExploratoryResult",
   "protocol_id": "cloth-sim2real-multibackbone-exploratory-v2",
-  "implementation_commit": "c6558b5",
+  "implementation_commit": "b7e684c",
   "benchmark_commit": "178a9b9722191c51cf0dcbc3cf0dc03701b09eb3",
-  "adapter_sha256": "a040b703f0026d6502eed0ceba188ab57bf417dfdda39cf50fe5ec8a818cd8a7",
+  "adapter_sha256": "da8ffe782d084da31aa36f3a700624fcaed43ce10aaa7f0cf2a63f20d0bcfded",
   "sofa": {
     "release": "23.06.00",
     "commit": "c58927d2920fb7a1b0826c462d9c02bb2f0fa819",
@@ -20,43 +20,52 @@
     "chequered_rag_0/dynamic": {
       "accepted": true,
       "selected_name": "graph_l0.01_s1",
-      "physical_directed_l1_chamfer_m": 0.0916348893280648,
-      "candidate_directed_l1_chamfer_m": 0.07649524900975434,
-      "directed_relative_improvement": 0.1652169869939885,
-      "released_window_physical_directed_l1_chamfer_m": 0.0996415676662289,
-      "released_window_candidate_directed_l1_chamfer_m": 0.07960242165671176,
-      "released_window_directed_relative_improvement": 0.2011123116473099,
-      "physical_symmetric_l1_chamfer_m": 0.10495667085293725,
-      "candidate_symmetric_l1_chamfer_m": 0.09203748132060936,
-      "symmetric_relative_improvement": 0.1230906947346867,
-      "late_symmetric_relative_improvement": 0.08759433674492176
+      "baseline_sha256": "0d31df884c2401ef5fcdbeda87ad03036a624ff3803ff21cf9568512c2724bc1",
+      "prediction_seal_sha256": "27b854d053dab89007f84e09680ca6356a63d992649b1bf589c1ecb9d581f00a",
+      "result_sha256": "6455850f6a48d0ba42c2ffb4f111e48afb8ce22f7bf052375868986194b1dc08",
+      "physical_directed_l1_chamfer_m": 0.08266920179804489,
+      "candidate_directed_l1_chamfer_m": 0.07039624949050342,
+      "directed_relative_improvement": 0.1484585799863344,
+      "released_window_physical_directed_l1_chamfer_m": 0.09379144754615852,
+      "released_window_candidate_directed_l1_chamfer_m": 0.07730951903658945,
+      "released_window_directed_relative_improvement": 0.17572954614500066,
+      "physical_symmetric_l1_chamfer_m": 0.09558743569568103,
+      "candidate_symmetric_l1_chamfer_m": 0.08567532179913344,
+      "symmetric_relative_improvement": 0.10369682819094027,
+      "late_symmetric_relative_improvement": 0.0794697387133239
     },
     "cotton_rag_0/dynamic": {
       "accepted": true,
       "selected_name": "graph_l1_s1",
-      "physical_directed_l1_chamfer_m": 0.09387919278606337,
-      "candidate_directed_l1_chamfer_m": 0.07690826739607375,
-      "directed_relative_improvement": 0.1807740872747364,
-      "released_window_physical_directed_l1_chamfer_m": 0.09310125037304252,
-      "released_window_candidate_directed_l1_chamfer_m": 0.07490439204061466,
-      "released_window_directed_relative_improvement": 0.19545235170865935,
-      "physical_symmetric_l1_chamfer_m": 0.10628596108217753,
-      "candidate_symmetric_l1_chamfer_m": 0.09030858255428444,
-      "symmetric_relative_improvement": 0.15032444892265498,
-      "late_symmetric_relative_improvement": 0.1368498541557646
+      "baseline_sha256": "8790922e8b72783ae8a542599ad9425f9df98bc9d952c1c89c1d8e98d54239ed",
+      "prediction_seal_sha256": "993c3f1115c72f9cb1770adac946a6dccc6086bca16c948cb92b6e053ccf322b",
+      "result_sha256": "8e13652fc62bcbf9c843fd8bbd843e9653a34b450a8ada7223b5dd0728a027ef",
+      "physical_directed_l1_chamfer_m": 0.11547649486512332,
+      "candidate_directed_l1_chamfer_m": 0.09550273236998338,
+      "directed_relative_improvement": 0.17296820897161205,
+      "released_window_physical_directed_l1_chamfer_m": 0.13903285441092805,
+      "released_window_candidate_directed_l1_chamfer_m": 0.11152705133752264,
+      "released_window_directed_relative_improvement": 0.19783671413455095,
+      "physical_symmetric_l1_chamfer_m": 0.1327699380239962,
+      "candidate_symmetric_l1_chamfer_m": 0.11852909699208007,
+      "symmetric_relative_improvement": 0.10725952910622212,
+      "late_symmetric_relative_improvement": 0.05556889660920661
     },
     "linen_rag_0/dynamic": {
       "accepted": false,
       "selected_name": "baseline",
       "exact_fallback": true,
-      "physical_directed_l1_chamfer_m": 0.09104108786090682,
-      "candidate_directed_l1_chamfer_m": 0.09104108786090682,
+      "baseline_sha256": "727fbaf3057631b07ef58cf805724b5194079a048d48a5738943060c0236d5c0",
+      "prediction_seal_sha256": "caf2e76f8d446c3862675ac51a782225b5a1aa456c65bdd999e64dd091753ffc",
+      "result_sha256": "927f4b83bb78faf86a7dbad372b52f47cef66525373484323d5897b1f13e2f7d",
+      "physical_directed_l1_chamfer_m": 0.08573271613332088,
+      "candidate_directed_l1_chamfer_m": 0.08573271613332088,
       "directed_relative_improvement": 0.0,
-      "released_window_physical_directed_l1_chamfer_m": 0.09126091574194038,
-      "released_window_candidate_directed_l1_chamfer_m": 0.09126091574194038,
+      "released_window_physical_directed_l1_chamfer_m": 0.08076290139162735,
+      "released_window_candidate_directed_l1_chamfer_m": 0.08076290139162735,
       "released_window_directed_relative_improvement": 0.0,
-      "physical_symmetric_l1_chamfer_m": 0.09625873247151936,
-      "candidate_symmetric_l1_chamfer_m": 0.09625873247151936,
+      "physical_symmetric_l1_chamfer_m": 0.09138454908406553,
+      "candidate_symmetric_l1_chamfer_m": 0.09138454908406553,
       "symmetric_relative_improvement": 0.0,
       "late_symmetric_relative_improvement": 0.0
     }
@@ -64,16 +73,37 @@
   "object_balanced": {
     "accepted_case_count": 2,
     "joint_nonregression_count": 3,
-    "physical_directed_l1_chamfer_m": 0.09218505665834499,
-    "candidate_directed_l1_chamfer_m": 0.0814815347555783,
-    "ratio_of_means_directed_relative_improvement": 0.11610907766142553,
-    "physical_symmetric_l1_chamfer_m": 0.10250045480221137,
-    "candidate_symmetric_l1_chamfer_m": 0.09286826544880439,
-    "ratio_of_means_symmetric_relative_improvement": 0.09397216209424253,
-    "released_window_physical_directed_l1_chamfer_m": 0.09466791126040393,
-    "released_window_candidate_directed_l1_chamfer_m": 0.08192257647975561,
-    "released_window_ratio_of_means_relative_improvement": 0.13463204808215956,
-    "late_symmetric_ratio_of_means_relative_improvement": 0.08142940439565338
+    "physical_directed_l1_chamfer_m": 0.09462613759882971,
+    "candidate_directed_l1_chamfer_m": 0.08387723266460256,
+    "ratio_of_means_directed_relative_improvement": 0.11359340248882864,
+    "physical_symmetric_l1_chamfer_m": 0.10658064093458092,
+    "candidate_symmetric_l1_chamfer_m": 0.09852965595842635,
+    "ratio_of_means_symmetric_relative_improvement": 0.07553890561698026,
+    "released_window_physical_directed_l1_chamfer_m": 0.10452906778290465,
+    "released_window_candidate_directed_l1_chamfer_m": 0.08986649058857982,
+    "released_window_ratio_of_means_relative_improvement": 0.14027272514069852,
+    "late_symmetric_ratio_of_means_relative_improvement": 0.04288107725594293
+  },
+  "official_full_window_parity_audit": {
+    "comparison": "The benchmark's full pre-contact window over all three real repeats, not the online continuation window.",
+    "chequered": {
+      "reproduced_mean_m": 0.07663296238037641,
+      "published_mean_m": 0.068,
+      "published_std_m": 0.024,
+      "absolute_standardized_difference": 0.35970676584901684
+    },
+    "cotton_towel": {
+      "reproduced_mean_m": 0.11161350577505687,
+      "published_mean_m": 0.078,
+      "published_std_m": 0.029,
+      "absolute_standardized_difference": 1.1590864060364436
+    },
+    "linen": {
+      "reproduced_mean_m": 0.06611065831520696,
+      "published_mean_m": 0.061,
+      "published_std_m": 0.024,
+      "absolute_standardized_difference": 0.21294409646695675
+    }
   },
   "gates": {
     "finite_topology_consistent_rollouts": true,
@@ -81,8 +111,9 @@
     "positive_object_balanced_directed_and_symmetric": true,
     "late_horizon_nonregression": true,
     "exact_fallback_on_rejection": true,
-    "published_sofa_parity": false,
+    "published_sofa_full_window_regime": true,
+    "exact_published_mean_reproduction": false,
     "fresh_preregistered_evaluation_authorized": false
   },
-  "claim_boundary": "Exploratory evidence that the frozen guarded update composes with an independently generated SOFA prior on two of three opened source cloths. The official binary rollout did not reproduce the paper-level SOFA baseline and the 3/3 advancement gate failed; this is not independent confirmation or a state-of-the-art claim."
+  "claim_boundary": "Exploratory evidence that the frozen guarded update composes with an independently generated SOFA prior on two of three opened source cloths. The corrected official-window audit lies within 1.2 published standard deviations for every cloth, but the 3/3 advancement gate failed; this is not independent confirmation or a state-of-the-art claim."
 }
