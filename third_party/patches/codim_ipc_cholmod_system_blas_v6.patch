@@ -18,9 +18,9 @@ diff --git a/Library/EXPORTER.cpp b/Library/EXPORTER.cpp
 +#else
 +    m.attr("linear_solver_backend") = "EIGEN";
 +#endif
-diff --git a/cmake/suitesparse.cmake b/cmake/suitesparse.cmake
---- a/cmake/suitesparse.cmake
-+++ b/cmake/suitesparse.cmake
+diff --git a/CMake/suitesparse.cmake b/CMake/suitesparse.cmake
+--- a/CMake/suitesparse.cmake
++++ b/CMake/suitesparse.cmake
 @@ -42,9 +42,10 @@
 -if (NOT APPLE)
 -    include(mkl)
