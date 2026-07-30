@@ -22,6 +22,7 @@ from scripts.held.run_rgbbench_arcsim_competence_v8 import (
     ARTIFACT_KIND,
     PROTOCOL_ID,
     SOURCE_DIGEST_KEYS,
+    SUPPORTED_PROTOCOLS,
     _load_protocol,
     _parameters,
 )
@@ -197,10 +198,13 @@ def test_arcsim_protocol_binds_source_build_and_information_boundary() -> None:
     assert protocol["protocol_id"] == PROTOCOL_ID
     assert protocol["artifact_kind"] == ARTIFACT_KIND
     assert set(SOURCE_DIGEST_KEYS.values()) <= set(case)
-    for relative_path, expected_sha256 in upstream[
-        "implementation_artifact_sha256s"
-    ].items():
-        assert sha256_file(root / relative_path) == expected_sha256
+    patch_path = root / "third_party" / "patches" / "arcsim_rgbbench_compat_v8.patch"
+    assert (
+        sha256_file(patch_path)
+        == upstream["implementation_artifact_sha256s"][
+            "third_party/patches/arcsim_rgbbench_compat_v8.patch"
+        ]
+    )
     assert upstream["arcsim_archive_sha256"] == (
         "053239c4fbc566228d3f46e8afd3428dc2ffa1c2d18d348af7b1094cd8f5a26e"
     )
@@ -219,3 +223,32 @@ def test_protocol_parameters_preserve_frozen_mechanics() -> None:
     assert parameters.timestep_s == 0.01
     assert parameters.handle_stiffness == 1e8
     assert parameters.gravity_m_s2 == (0.0, 0.0, -9.81)
+
+
+def test_v9_changes_only_provenance_paths_and_predecessor() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v8 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_competence_v8.json"
+    )
+    v9 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_competence_v9.json"
+    )
+    assert set(SUPPORTED_PROTOCOLS) == {
+        "rgbbench-arcsim-competence-v8",
+        "rgbbench-arcsim-competence-v9",
+    }
+    assert v9["predecessor"]["protocol_id"] == v8["protocol_id"]
+    assert v9["predecessor"]["status"] == "technical_failure_before_simulation"
+    assert v9["competence_case"] == v8["competence_case"]
+    assert v9["physics"] == v8["physics"]
+    assert v9["competence_gate"] == v8["competence_gate"]
+    assert v9["threshold_basis"] == v8["threshold_basis"]
+    assert v9["information_boundary"] == v8["information_boundary"]
+    assert set(v9["upstream"]["arcsim_source_sha256s"]) >= {
+        "dependencies/lib/libjson.a",
+        "dependencies/lib/libalglib.a",
+    }
+    for relative_path, expected_sha256 in v9["upstream"][
+        "implementation_artifact_sha256s"
+    ].items():
+        assert sha256_file(root / relative_path) == expected_sha256

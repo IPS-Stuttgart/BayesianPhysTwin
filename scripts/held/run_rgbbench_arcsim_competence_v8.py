@@ -32,6 +32,10 @@ from bayesian_phystwin.rgbench_online_belief import (
 
 PROTOCOL_ID = "rgbbench-arcsim-competence-v8"
 ARTIFACT_KIND = "RGBenchARCSimCompetenceProtocol"
+SUPPORTED_PROTOCOLS = {
+    "rgbbench-arcsim-competence-v8": ARTIFACT_KIND,
+    "rgbbench-arcsim-competence-v9": ARTIFACT_KIND,
+}
 SOURCE_DIGEST_KEYS = {
     "mesh": "mesh_sha256",
     "left": "left_trajectory_sha256",
@@ -69,10 +73,10 @@ def _parse_args() -> argparse.Namespace:
 
 def _load_protocol(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
+    protocol_id = payload.get("protocol_id")
     _require(
         isinstance(payload, dict)
-        and payload.get("protocol_id") == PROTOCOL_ID
-        and payload.get("artifact_kind") == ARTIFACT_KIND,
+        and SUPPORTED_PROTOCOLS.get(protocol_id) == payload.get("artifact_kind"),
         "ARCSim competence protocol identity changed",
     )
     gate = payload.get("competence_gate")
