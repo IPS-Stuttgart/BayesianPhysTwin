@@ -1,13 +1,5 @@
 import numpy as np
 import pytest
-
-from bayesian_phystwin.grouped_likelihood import (
-    GroupedStudentTLikelihoodConfig,
-    GroupedStudentTLikelihoodResult,
-    _covariance_statistics,
-    grouped_student_t_mixture_likelihood,
-)
-from bayesian_phystwin.observation_belief import ObservationBeliefV1
 from test_grouped_conformal import (
     test_additive_bounds_are_clipped_to_nonnegative_losses,
     test_future_prediction_validation_fails_closed,
@@ -21,6 +13,14 @@ from test_grouped_conformal import (
     test_result_contract_rejects_invalid_values,
     test_scaled_bounds_cover_all_registered_future_endpoints_together,
 )
+
+from bayesian_phystwin.grouped_likelihood import (
+    GroupedStudentTLikelihoodConfig,
+    GroupedStudentTLikelihoodResult,
+    _covariance_statistics,
+    grouped_student_t_mixture_likelihood,
+)
+from bayesian_phystwin.observation_belief import ObservationBeliefV1
 
 _GROUPED_CONFORMAL_STABLE_TESTS = (
     test_additive_bounds_are_clipped_to_nonnegative_losses,
