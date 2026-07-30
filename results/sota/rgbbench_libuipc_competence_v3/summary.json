@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchLibuIPCCompetenceResult",
+  "protocol_id": "rgbbench-libuipc-competence-v3",
+  "status": "source_competence_gate_failed",
+  "preoutcome_commit": "1173c306075cd5cebe72cf56ec2a6588c2c8adb5",
+  "final_runtime_commit": "4be6aeaa8a0521b3250e5ece6170fbaa9a31aab5",
+  "runtime_amendments": [
+    {
+      "commit": "01a32a789beb02547ba814214b86be1f86c77b5c",
+      "reason": "correct protocol-to-runner source digest key mapping",
+      "simulation_started": false
+    },
+    {
+      "commit": "b2811ae17827247c08fb412dae88ebd8bff04c7a",
+      "reason": "copy read-only source arrays at the pyuipc buffer boundary",
+      "simulation_started": false
+    },
+    {
+      "commit": "4be6aeaa8a0521b3250e5ece6170fbaa9a31aab5",
+      "reason": "match pyuipc vector and geometry-slot bindings and latch callback failures",
+      "simulation_started": true
+    }
+  ],
+  "final_gate": {
+    "remote_root": "/home/florianpfaff/results/rgbbench-libuipc-competence-v3-4be6aea",
+    "gate_file_sha256": "7ce7e883d2bf6c67ce99bec1aa9fb74495df1720a8faf9588a8b13e838279846",
+    "protocol_sha256": "f10b666be3e4ae4f6f4256efbebfb26557622ed8059b0f2285695ea765815398",
+    "replay_1_metadata_sha256": "371f11424af40aafbb57697064ed3f371c4f059be151c4772fe0c74a17e1f1de",
+    "replay_2_metadata_sha256": "20f1582aa409cf377121b9a68386848a9ef47356c3523867aaf2abad1596d920",
+    "replay_1_vertices_sha256": "7805cfac45acbdbdff89b8e4ea68c70a1ed036d2ec06716afd5ae798d9dad374",
+    "replay_2_vertices_sha256": "9a27dba90e5e247c0c26cab8a608639e4055dc9dd2642b000d864bffdc39c149",
+    "both_complete": true,
+    "all_vertices_finite": true,
+    "vertex_count_preserved": true,
+    "byte_identical_final_vertices": false,
+    "competence_gate_passed": false
+  },
+  "replay_difference": {
+    "vertex_count": 9865,
+    "face_count": 19555,
+    "different_scalar_count": 29595,
+    "mean_absolute_m": 1.3851371538080273e-05,
+    "rmse_m": 2.115152924223717e-05,
+    "maximum_absolute_m": 0.0002871107195486387
+  },
+  "execution_environment": {
+    "cuda_visible_devices": "0",
+    "unrelated_concurrent_gpu_work_observed_during_final_replays": true,
+    "effect_on_replay_difference_identified": false,
+    "rerun_used_to_override_frozen_failure": false
+  },
+  "information_boundary": {
+    "segmented_point_cloud_filenames_read": false,
+    "segmented_point_cloud_coordinates_read": false,
+    "calibration_outcomes_read": false,
+    "target_outcomes_read": false,
+    "source_accuracy_outcomes_read": false
+  },
+  "decision": {
+    "v3_accuracy_run_authorized": false,
+    "v3_arm_closed": true,
+    "successor_requirement": "treat independent-replay spread as simulator uncertainty and retain exact failure/fallback accounting"
+  }
+}
