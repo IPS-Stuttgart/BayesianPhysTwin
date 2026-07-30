@@ -36,6 +36,7 @@ SUPPORTED_PROTOCOLS = {
     "rgbbench-arcsim-competence-v8": ARTIFACT_KIND,
     "rgbbench-arcsim-competence-v9": ARTIFACT_KIND,
     "rgbbench-arcsim-dirichlet-competence-v10": ARTIFACT_KIND,
+    "rgbbench-arcsim-dirichlet-competence-v11": ARTIFACT_KIND,
 }
 SOURCE_DIGEST_KEYS = {
     "mesh": "mesh_sha256",

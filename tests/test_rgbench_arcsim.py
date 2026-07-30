@@ -265,6 +265,7 @@ def test_v9_changes_only_provenance_paths_and_predecessor() -> None:
         "rgbbench-arcsim-competence-v8",
         "rgbbench-arcsim-competence-v9",
         "rgbbench-arcsim-dirichlet-competence-v10",
+        "rgbbench-arcsim-dirichlet-competence-v11",
     }
     assert v9["predecessor"]["protocol_id"] == v8["protocol_id"]
     assert v9["predecessor"]["status"] == "technical_failure_before_simulation"
@@ -320,7 +321,37 @@ def test_v10_changes_only_the_control_semantics_and_provenance() -> None:
         "selection_evidence": "v9 target-free pin error only; no point-cloud "
         "filename, coordinate, or accuracy outcome was read",
     }
-    for relative_path, expected_sha256 in v10["upstream"][
+    assert all(
+        len(expected_sha256) == 64
+        for expected_sha256 in v10["upstream"][
+            "implementation_artifact_sha256s"
+        ].values()
+    )
+
+
+def test_v11_changes_only_dirichlet_reference_initialization() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v10 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_competence_v10.json"
+    )
+    v11 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_competence_v11.json"
+    )
+    assert v11["predecessor"]["protocol_id"] == v10["protocol_id"]
+    assert (
+        v11["predecessor"]["status"] == "control_reference_initialized_after_relaxation"
+    )
+    assert v11["competence_case"] == v10["competence_case"]
+    assert v11["physics"] == v10["physics"]
+    assert v11["competence_gate"] == v10["competence_gate"]
+    assert (
+        v11["information_boundary"]["forbidden"]
+        == v10["information_boundary"]["forbidden"]
+    )
+    assert v11["method_change"]["changed"].startswith(
+        "initialize and enforce the two declared Dirichlet handles before"
+    )
+    for relative_path, expected_sha256 in v11["upstream"][
         "implementation_artifact_sha256s"
     ].items():
         assert sha256_file(root / relative_path) == expected_sha256
