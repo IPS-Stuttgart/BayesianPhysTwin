@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "ClothSim2RealMultibackboneExploratoryResult",
+  "protocol_id": "cloth-sim2real-multibackbone-exploratory-v2",
+  "implementation_commit": "c6558b5",
+  "benchmark_commit": "178a9b9722191c51cf0dcbc3cf0dc03701b09eb3",
+  "adapter_sha256": "a040b703f0026d6502eed0ceba188ab57bf417dfdda39cf50fe5ec8a818cd8a7",
+  "sofa": {
+    "release": "23.06.00",
+    "commit": "c58927d2920fb7a1b0826c462d9c02bb2f0fa819",
+    "official_archive_sha256": "de1ab962978f1b77db97d9925e6fef6b2bc924aff6aa04956a59d9e1bd0e3720"
+  },
+  "scope": {
+    "split": "previously_opened_source_repeat",
+    "task": "dynamic",
+    "case_count": 3,
+    "exploratory_only": true
+  },
+  "cases": {
+    "chequered_rag_0/dynamic": {
+      "accepted": true,
+      "selected_name": "graph_l0.01_s1",
+      "physical_directed_l1_chamfer_m": 0.0916348893280648,
+      "candidate_directed_l1_chamfer_m": 0.07649524900975434,
+      "directed_relative_improvement": 0.1652169869939885,
+      "released_window_physical_directed_l1_chamfer_m": 0.0996415676662289,
+      "released_window_candidate_directed_l1_chamfer_m": 0.07960242165671176,
+      "released_window_directed_relative_improvement": 0.2011123116473099,
+      "physical_symmetric_l1_chamfer_m": 0.10495667085293725,
+      "candidate_symmetric_l1_chamfer_m": 0.09203748132060936,
+      "symmetric_relative_improvement": 0.1230906947346867,
+      "late_symmetric_relative_improvement": 0.08759433674492176
+    },
+    "cotton_rag_0/dynamic": {
+      "accepted": true,
+      "selected_name": "graph_l1_s1",
+      "physical_directed_l1_chamfer_m": 0.09387919278606337,
+      "candidate_directed_l1_chamfer_m": 0.07690826739607375,
+      "directed_relative_improvement": 0.1807740872747364,
+      "released_window_physical_directed_l1_chamfer_m": 0.09310125037304252,
+      "released_window_candidate_directed_l1_chamfer_m": 0.07490439204061466,
+      "released_window_directed_relative_improvement": 0.19545235170865935,
+      "physical_symmetric_l1_chamfer_m": 0.10628596108217753,
+      "candidate_symmetric_l1_chamfer_m": 0.09030858255428444,
+      "symmetric_relative_improvement": 0.15032444892265498,
+      "late_symmetric_relative_improvement": 0.1368498541557646
+    },
+    "linen_rag_0/dynamic": {
+      "accepted": false,
+      "selected_name": "baseline",
+      "exact_fallback": true,
+      "physical_directed_l1_chamfer_m": 0.09104108786090682,
+      "candidate_directed_l1_chamfer_m": 0.09104108786090682,
+      "directed_relative_improvement": 0.0,
+      "released_window_physical_directed_l1_chamfer_m": 0.09126091574194038,
+      "released_window_candidate_directed_l1_chamfer_m": 0.09126091574194038,
+      "released_window_directed_relative_improvement": 0.0,
+      "physical_symmetric_l1_chamfer_m": 0.09625873247151936,
+      "candidate_symmetric_l1_chamfer_m": 0.09625873247151936,
+      "symmetric_relative_improvement": 0.0,
+      "late_symmetric_relative_improvement": 0.0
+    }
+  },
+  "object_balanced": {
+    "accepted_case_count": 2,
+    "joint_nonregression_count": 3,
+    "physical_directed_l1_chamfer_m": 0.09218505665834499,
+    "candidate_directed_l1_chamfer_m": 0.0814815347555783,
+    "ratio_of_means_directed_relative_improvement": 0.11610907766142553,
+    "physical_symmetric_l1_chamfer_m": 0.10250045480221137,
+    "candidate_symmetric_l1_chamfer_m": 0.09286826544880439,
+    "ratio_of_means_symmetric_relative_improvement": 0.09397216209424253,
+    "released_window_physical_directed_l1_chamfer_m": 0.09466791126040393,
+    "released_window_candidate_directed_l1_chamfer_m": 0.08192257647975561,
+    "released_window_ratio_of_means_relative_improvement": 0.13463204808215956,
+    "late_symmetric_ratio_of_means_relative_improvement": 0.08142940439565338
+  },
+  "gates": {
+    "finite_topology_consistent_rollouts": true,
+    "guarded_improvement_all_three_cloths": false,
+    "positive_object_balanced_directed_and_symmetric": true,
+    "late_horizon_nonregression": true,
+    "exact_fallback_on_rejection": true,
+    "published_sofa_parity": false,
+    "fresh_preregistered_evaluation_authorized": false
+  },
+  "claim_boundary": "Exploratory evidence that the frozen guarded update composes with an independently generated SOFA prior on two of three opened source cloths. The official binary rollout did not reproduce the paper-level SOFA baseline and the 3/3 advancement gate failed; this is not independent confirmation or a state-of-the-art claim."
+}
