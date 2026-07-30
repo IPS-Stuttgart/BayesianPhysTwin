@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "protocol_id": "cloth-sim2real-online-belief-v1",
+  "method_id": "cloth-sim2real-guarded-readout-v1",
+  "status": "pre_calibration_outcome_lock",
+  "implementation_commit": "6ffdcb6b452288fa0d597fa657cb97cc9bbc67df",
+  "source_evidence": {
+    "source_gate_file": "results/sota/cloth_sim2real_online_belief_v1/source_gate.json",
+    "source_gate_sha256": "51d33e4753285d1c5124e040c12b505d3b52ffa41ed80a761f45788e03b6217e",
+    "source_gate_passed": true,
+    "dynamic_object_balanced_relative_improvement": 0.07214421490994209,
+    "dynamic_nonregressing_cloth_count": 3
+  },
+  "calibration_scope": {
+    "repeat_index": 1,
+    "case_count": 6,
+    "dynamic_case_count": 3,
+    "quasi_static_case_count": 3,
+    "prediction_must_be_sealed_before_future_open": true,
+    "source_gate_artifact_required_by_runner": true,
+    "candidate_bank_and_hyperparameters_unchanged": true
+  },
+  "accuracy_gate": {
+    "primary_task": "dynamic",
+    "object_balanced_relative_improvement_at_least": 0.05,
+    "cloth_wins_at_least": 2,
+    "maximum_single_cloth_relative_regression": 0.05
+  },
+  "uncertainty_calibration": {
+    "raw_trial_score": "90th percentile of absolute coordinate residual divided by raw predictive standard deviation",
+    "standard_deviation_multiplier": "maximum required multiplier over all six calibration trials",
+    "target_multiplier_at_least": 1.0,
+    "formal_90_split_conformal_claim": false,
+    "resolution_note": "With six independent trial scores, the maximum finite order statistic has rank 6/7 and cannot establish formal 90% split-conformal coverage.",
+    "target_reports_raw_and_scaled_coverage": true
+  },
+  "target_boundary": {
+    "target_repeat": 2,
+    "target_prefix_may_be_processed_only_if_accuracy_gate_passes": true,
+    "target_future_may_be_opened_only_after_each_prediction_seal": true,
+    "target_runner_requires_exact_calibration_artifact_hash": true
+  },
+  "claim_boundary": {
+    "allowed": "calibration transfer evidence for causal online continuation",
+    "not_allowed": [
+      "target confirmation",
+      "formal 90% finite-sample coverage",
+      "identical-information open-loop SOTA",
+      "physical-state correction"
+    ]
+  }
+}
