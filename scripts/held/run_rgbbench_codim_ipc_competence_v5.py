@@ -104,6 +104,31 @@ def _verify_source(
 ) -> dict[str, Path]:
     upstream = protocol["upstream"]
     case = protocol["competence_case"]
+    implementation_root = Path(__file__).resolve().parents[2]
+    for relative_path, expected_sha256 in upstream.get(
+        "implementation_artifact_sha256s", {}
+    ).items():
+        artifact_path = implementation_root / relative_path
+        _require(
+            artifact_path.is_file(),
+            f"missing implementation artifact: {artifact_path}",
+        )
+        _require(
+            sha256_file(artifact_path) == expected_sha256,
+            f"implementation artifact changed: {relative_path}",
+        )
+    for absolute_path, expected_sha256 in upstream.get(
+        "runtime_dependency_sha256s", {}
+    ).items():
+        dependency_path = Path(absolute_path)
+        _require(
+            dependency_path.is_file(),
+            f"missing runtime dependency: {dependency_path}",
+        )
+        _require(
+            sha256_file(dependency_path) == expected_sha256,
+            f"runtime dependency changed: {dependency_path}",
+        )
     _require(
         _git_head(rgbbench_root) == upstream["rgbbench_commit"],
         "RGBench checkout commit changed",

@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchCodimIPCCholmodProtocol",
+  "protocol_id": "rgbbench-codim-ipc-cholmod-v6",
+  "predecessor": {
+    "protocol_id": "rgbbench-codim-ipc-competence-v5",
+    "result_commit": "17b26b5404600b0ed64024f2e1c3280dc3c6da0c",
+    "status": "target_free_short_gate_passed",
+    "reason": "two 9865-node Eigen replays were byte-identical with zero pin error, but each 0.1 s replay required approximately 115 s"
+  },
+  "upstream": {
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "dataset_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+    "rgbbench_main_config_sha256": "73a93d3c02672319f2d7dfb36fdbaddfac8972b55eccf1a088aa0cdf7530a8e5",
+    "rgbbench_cloth_config_sha256": "f6783d00dc8af64b76bbeabba881fb21a65ca7d1c4f7cb5efb7aa97bd822e7b3",
+    "codim_ipc_repository": "https://github.com/ipc-sim/Codim-IPC",
+    "codim_ipc_commit": "9c6cbe3a5bef09a967ca8d420056adfafdf1fc9a",
+    "implementation_artifact_sha256s": {
+      "third_party/patches/codim_ipc_rgbbench_controls_v6.patch": "a5e2c05848ca1f597b0117ba6dc7b842f2c453aa22b169157e6d0483ed3b9cf0",
+      "third_party/patches/codim_ipc_cholmod_system_blas_v6.patch": "797cfdf1c5525140683cf2ec79ce088c6476cb16c06da24b028e0cf90991d8e8"
+    },
+    "codim_patched_boundary_condition_sha256": "f76b92e223abd9411ed0a8853a7866bd9c1c5f972ecb25335ac8a85792164f79",
+    "codim_source_sha256s": {
+      "CMakeLists.txt": "2249cf9b07a4061852b38791d249ff5f54bcc9e255a50746443d52889cc73f5d",
+      "Library/EXPORTER.cpp": "38e1df0d13690ba49cef85841b41b1e6e70d82e2d97e964d3d7eb70d2526e050",
+      "CMake/suitesparse.cmake": "d9ac701c11a136f87ad6ac24d05b85347e475e953cd325f8324503f17b2f8abc",
+      "build-rgbench-cholmod-system3/CMakeCache.txt": "81369c9b0c4a384f45797554814d4d9c917130de5aa636b41e248cb14c665385"
+    },
+    "codim_runtime_module_relative_directory": "build-cholmod-system3",
+    "codim_runtime_module_sha256": "ff79e65d9d6e898aa3987d12a08be79cf3873a9b004506db1e10ea74d930d8ac",
+    "runtime_dependency_sha256s": {
+      "/lib/x86_64-linux-gnu/libblas.so.3": "bd8a282c845e100cbb28dd31f9cf19757d508bf7a07a7f62bbe8c04cafb81646",
+      "/lib/x86_64-linux-gnu/liblapack.so.3": "86b2c20720e2aafb6b84d20d252cd39c5b22a6f7452f8bb920a06d8c8439124c"
+    },
+    "linear_solver": "CHOLMOD",
+    "expected_linear_solver_backend": "CHOLMOD",
+    "execution_backend": "single-thread CPU",
+    "omp_num_threads": 1,
+    "omp_proc_bind": "false"
+  },
+  "competence_case": {
+    "split": "source",
+    "garment": "green_tshirt",
+    "action": "fling",
+    "sample": "01",
+    "data_subfolder": "green_tshirt/green_tshirt_fling_2025-07-19-19-21-02",
+    "mesh_relative_path": "Green_Tshirt/green_tshirt_10k.obj",
+    "mesh_sha256": "27e2debb86e01fdf6f94950a07f071c372d2ca8ed59f3c5a20f3ba810ac83ab5",
+    "mesh_surface_area_m2": 1.0473844792068663,
+    "source_mass_kg": 0.255,
+    "left_trajectory_relative_path": "joints/left_arm_joint_states_and_end_pose.csv",
+    "left_trajectory_sha256": "0709af638bd565dcd51f44a01df5c96ba26f8ca8db476ad8c6b4c3917dfeee19",
+    "right_trajectory_relative_path": "joints/right_arm_joint_states_and_end_pose.csv",
+    "right_trajectory_sha256": "083818aa727f4f048553e209cb94ec861c3d8443f90f1b65b926872e0e7c70cb",
+    "pin_indices": [
+      185,
+      76
+    ],
+    "initial_pose_xyz_wxyz": [
+      0.1,
+      0.0,
+      0.01,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "left_base_translation_m": [
+      0.0,
+      0.25,
+      0.0
+    ],
+    "right_base_translation_m": [
+      0.0,
+      -0.25,
+      0.0
+    ],
+    "prepare_time_s": 5.0,
+    "wait_time_s": 5.0,
+    "smoke_duration_s": 0.1
+  },
+  "physics": {
+    "timestep_s": 0.01,
+    "youngs_modulus_pa": 230000.0,
+    "poisson_ratio": 0.35,
+    "volume_density_kg_m3": 220.0,
+    "thickness_m": 0.001106652745101429,
+    "bending_stiffness_multiplier": 1.0,
+    "newton_tolerance": 1e-06,
+    "contact_thickness_m": 0.001,
+    "collision_enabled": false
+  },
+  "competence_gate": {
+    "independent_replays": 2,
+    "require_byte_identical_final_vertices": true,
+    "maximum_pin_target_error_m": 1e-10,
+    "minimum_mean_vertex_displacement_m": 1e-05,
+    "maximum_replay_elapsed_s": 90.0,
+    "all_vertices_finite": true,
+    "vertex_count_preserved": true
+  },
+  "runtime_threshold_basis": {
+    "eigen_control_elapsed_s": [
+      115.82,
+      115.34
+    ],
+    "required_maximum_s": 90.0,
+    "reason": "the candidate must reduce the measured Eigen wall time by at least 21.9 percent before a full-horizon qualification is computationally justified"
+  },
+  "information_boundary": {
+    "allowed": [
+      "released source mesh",
+      "released source material metadata",
+      "released source actuator trajectories",
+      "frozen action timing and pin identities",
+      "target-free simulator replay equality",
+      "target-free pin-target error",
+      "target-free displacement magnitude",
+      "target-free replay wall time"
+    ],
+    "forbidden": [
+      "all segmented point-cloud filenames",
+      "all segmented point-cloud coordinates",
+      "all source accuracy outcomes",
+      "all calibration-garment outcomes",
+      "all target-garment outcomes"
+    ],
+    "passed_gate_action": "freeze a separate target-free full-horizon Codim-IPC CHOLMOD qualification before any source accuracy run",
+    "failed_gate_action": "close the Codim-IPC CHOLMOD backend without inspecting any RGBench point-cloud outcome"
+  }
+}

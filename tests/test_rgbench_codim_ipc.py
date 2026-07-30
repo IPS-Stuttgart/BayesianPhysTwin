@@ -16,6 +16,7 @@ from bayesian_phystwin.rgbench_codim_ipc import (
 from bayesian_phystwin.rgbench_online_belief import sha256_file
 from scripts.held.run_rgbbench_codim_ipc_competence_v5 import (
     SOURCE_DIGEST_KEYS,
+    _load_protocol,
 )
 
 
@@ -156,4 +157,36 @@ def test_codim_protocol_binds_patch_and_every_source_digest() -> None:
     patch_path = root / payload["upstream"]["codim_patch_relative_path"]
     assert sha256_file(patch_path) == payload["upstream"]["codim_patch_sha256"]
     assert payload["competence_gate"]["require_byte_identical_final_vertices"]
+    assert payload["information_boundary"]["forbidden"]
+
+
+def test_cholmod_protocol_binds_reproducible_build_and_runtime() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v5_path = (
+        root / "configs" / "sota" / "rgbbench_codim_ipc_competence_v5.json"
+    )
+    v6_path = (
+        root / "configs" / "sota" / "rgbbench_codim_ipc_cholmod_v6.json"
+    )
+    assert _load_protocol(v5_path)["protocol_id"] == (
+        "rgbbench-codim-ipc-competence-v5"
+    )
+    payload = _load_protocol(v6_path)
+    upstream = payload["upstream"]
+    assert payload["protocol_id"] == "rgbbench-codim-ipc-cholmod-v6"
+    assert upstream["expected_linear_solver_backend"] == "CHOLMOD"
+    assert upstream["omp_num_threads"] == 1
+    assert upstream["codim_runtime_module_relative_directory"] == (
+        "build-cholmod-system3"
+    )
+    assert len(upstream["codim_runtime_module_sha256"]) == 64
+    assert set(upstream["runtime_dependency_sha256s"]) == {
+        "/lib/x86_64-linux-gnu/libblas.so.3",
+        "/lib/x86_64-linux-gnu/liblapack.so.3",
+    }
+    for relative_path, expected_sha256 in upstream[
+        "implementation_artifact_sha256s"
+    ].items():
+        assert sha256_file(root / relative_path) == expected_sha256
+    assert payload["competence_gate"]["maximum_replay_elapsed_s"] == 90.0
     assert payload["information_boundary"]["forbidden"]
