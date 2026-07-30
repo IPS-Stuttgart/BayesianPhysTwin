@@ -1,0 +1,133 @@
+{
+  "claim_boundary": "Already-open single-case source competence result. It is not an independent benchmark, confirmation, or SOTA claim.",
+  "evaluation": {
+    "gate": {
+      "candidate_to_full_physical_ratio": {
+        "chamfer_distance_m": 1.3069794870384857,
+        "track_error_m": 1.6852643414651787
+      },
+      "next_step": "Close raw PGND replacement without a wider run.",
+      "passed": false,
+      "required_relative_improvement": 0.02
+    },
+    "horizons": {
+      "early": {
+        "endpoint_persistence": {
+          "chamfer_distance_m": 0.018374176011753562,
+          "track_error_m": 0.02711283352144763
+        },
+        "equal_support_physical": {
+          "chamfer_distance_m": 0.017733647437523068,
+          "track_error_m": 0.02303319360435218
+        },
+        "full_physical": {
+          "chamfer_distance_m": 0.013499381151659485,
+          "track_error_m": 0.024212241717796845
+        },
+        "pgnd_candidate": {
+          "chamfer_distance_m": 0.018876266166859595,
+          "track_error_m": 0.027487884443790828
+        }
+      },
+      "late": {
+        "endpoint_persistence": {
+          "chamfer_distance_m": 0.034894918508352815,
+          "track_error_m": 0.0728838616581064
+        },
+        "equal_support_physical": {
+          "chamfer_distance_m": 0.02773040153591852,
+          "track_error_m": 0.032724579037389484
+        },
+        "full_physical": {
+          "chamfer_distance_m": 0.023919603435326262,
+          "track_error_m": 0.03353655589308697
+        },
+        "pgnd_candidate": {
+          "chamfer_distance_m": 0.02959867506277861,
+          "track_error_m": 0.07092377984478047
+        }
+      },
+      "middle": {
+        "endpoint_persistence": {
+          "chamfer_distance_m": 0.02364535585200225,
+          "track_error_m": 0.047365598411763896
+        },
+        "equal_support_physical": {
+          "chamfer_distance_m": 0.02159058059595717,
+          "track_error_m": 0.029083393475646795
+        },
+        "full_physical": {
+          "chamfer_distance_m": 0.017508782915623706,
+          "track_error_m": 0.029931896139317293
+        },
+        "pgnd_candidate": {
+          "chamfer_distance_m": 0.02345150771108336,
+          "track_error_m": 0.04787391086244386
+        }
+      }
+    },
+    "metric_contract": {
+      "chamfer_distance_m": "Released PhysTwin one-way visible-observation to predicted-surface L1 nearest-neighbor distance.",
+      "track_error_m": "Released PhysTwin frame-zero nearest-particle manual identity readout and future Euclidean error."
+    },
+    "metrics": {
+      "endpoint_persistence": {
+        "chamfer_distance_m": 0.025917533743739393,
+        "frame_count": 26,
+        "frame_end_exclusive": 85,
+        "frame_start": 59,
+        "track_error_m": 0.049967223415400525
+      },
+      "equal_support_physical": {
+        "chamfer_distance_m": 0.02252915456488714,
+        "frame_count": 26,
+        "frame_end_exclusive": 85,
+        "frame_start": 59,
+        "track_error_m": 0.028482203902005534
+      },
+      "full_physical": {
+        "chamfer_distance_m": 0.018494251014300987,
+        "frame_count": 26,
+        "frame_end_exclusive": 85,
+        "frame_start": 59,
+        "track_error_m": 0.029419769309000508
+      },
+      "pgnd_candidate": {
+        "chamfer_distance_m": 0.0241716067038321,
+        "frame_count": 26,
+        "frame_end_exclusive": 85,
+        "frame_start": 59,
+        "track_error_m": 0.049580088150590215
+      }
+    }
+  },
+  "evaluation_implementation": {
+    "checkout": "/home/florianpfaff/bpt-pgnd-source-v1-32b1a2a",
+    "clean": true,
+    "commit": "32b1a2af5a03a23eea453e1c5316cf2d3e9ff097"
+  },
+  "outcome_inputs": {
+    "final_data": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-data/extracted/data/different_types/single_lift_sloth/final_data.pkl",
+      "sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2"
+    },
+    "gt_track": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-data/extracted/data/different_types/single_lift_sloth/gt_track_3d.pkl",
+      "sha256": "7992122985dc4b4d1bce45bcfd28d62bc913f132bd76faba0f6d12a8f10a1255"
+    },
+    "physical_trajectory": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_sloth/inference.pkl",
+      "sha256": "f1164dd76e8fbbfa06fc39eef8f9d16c66a985f31d77fa153504c69457931006"
+    },
+    "split": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-data/extracted/data/different_types/single_lift_sloth/split.json",
+      "sha256": "023d7fc38af55d3e1eda0cab7d523333e9c7260775287c0946b05503dacb39fd"
+    }
+  },
+  "prediction_seal": {
+    "path": "/home/florianpfaff/bpt-pgnd-source-v1-output-32b1a2a/prediction_seal.json",
+    "sha256": "5dd77f354370a489a1d8a73886c5483c8af8c9536f0196b87811a63d9701f75c"
+  },
+  "schema_version": 1,
+  "status": "source_smoke_evaluated"
+}

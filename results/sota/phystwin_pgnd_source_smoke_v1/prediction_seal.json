@@ -1,0 +1,29 @@
+{
+  "claim_boundary": "PGND prediction used only the sealed physical-prior/action carrier. Future object observations and manual tracks were not loaded.",
+  "device": "cuda:0",
+  "implementation": {
+    "checkout": "/home/florianpfaff/bpt-pgnd-source-v1-32b1a2a",
+    "clean": true,
+    "commit": "32b1a2af5a03a23eea453e1c5316cf2d3e9ff097"
+  },
+  "input": {
+    "path": "/home/florianpfaff/bpt-pgnd-source-v1-output-32b1a2a/prediction_input.npz",
+    "sha256": "6f5df1dfeff0725afc62020a034ff9cfa6856e2205b3f952ccb55f7a0011f90f"
+  },
+  "output": {
+    "path": "/home/florianpfaff/bpt-pgnd-source-v1-output-32b1a2a/prediction.npz",
+    "sha256": "997d839584770931031482573e23d1c4412f0fa346c5d2480ad36aa0c96fdcfe"
+  },
+  "pgnd": {
+    "checkout": "/home/florianpfaff/pgnd-source-audit-v1/PGND",
+    "checkpoint": "/home/florianpfaff/pgnd-source-audit-v1/downloads/checkpoints/sloth/sloth/train/ckpt/100000.pt",
+    "checkpoint_sha256": "1ce7f86a40058c2680784ac40f633a67e00e9ce8af8a6111acc3362d71d3b052",
+    "clean": true,
+    "commit": "ae050d1342faa0bceb2a10f4b0ab2e11682351cb",
+    "config": "/home/florianpfaff/pgnd-source-audit-v1/downloads/checkpoints/sloth/sloth/train/hydra.yaml",
+    "config_sha256": "01e33f8152b25ac80998f0ddaadd182f88ca96b18432bc288edc4723a943a915"
+  },
+  "replay_max_abs_position_m": 0.0,
+  "schema_version": 1,
+  "status": "prediction_sealed"
+}

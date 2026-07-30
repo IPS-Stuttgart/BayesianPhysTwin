@@ -1,0 +1,47 @@
+{
+  "claim_boundary": "Prediction carrier contains only an unchanged physical trajectory, known controller actions, and the released split. It contains no future object observations or manual tracks.",
+  "inputs": {
+    "final_data": {
+      "fields_read": [
+        "controller_points",
+        "object_points shape only",
+        "surface_points shape only"
+      ],
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-data/extracted/data/different_types/single_lift_sloth/final_data.pkl",
+      "sha256": "b084b0cc640ca2832d8c378517b02ce8767e681c14805a4110edab14df8b75e2"
+    },
+    "physical_trajectory": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-sota-render-20260715/code/experiments_optimization/single_lift_sloth/inference.pkl",
+      "sha256": "f1164dd76e8fbbfa06fc39eef8f9d16c66a985f31d77fa153504c69457931006"
+    },
+    "split": {
+      "path": "/home/florianpfaff/matphys-loo-sota-v1/phystwin-data/extracted/data/different_types/single_lift_sloth/split.json",
+      "sha256": "023d7fc38af55d3e1eda0cab7d523333e9c7260775287c0946b05503dacb39fd"
+    }
+  },
+  "output": {
+    "path": "/home/florianpfaff/bpt-pgnd-source-v1-output-32b1a2a/prediction_input.npz",
+    "sha256": "6f5df1dfeff0725afc62020a034ff9cfa6856e2205b3f952ccb55f7a0011f90f"
+  },
+  "schema_version": 1,
+  "selection": {
+    "history_frames": [
+      51,
+      54
+    ],
+    "initialization_frame": 57,
+    "prediction_frames": [
+      60,
+      63,
+      66,
+      69,
+      72,
+      75,
+      78,
+      81,
+      84
+    ],
+    "test_end_exclusive": 85,
+    "train_end_exclusive": 59
+  }
+}
