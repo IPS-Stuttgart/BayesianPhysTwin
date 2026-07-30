@@ -33,6 +33,9 @@ from bayesian_phystwin.rgbench_online_belief import (
 SUPPORTED_PROTOCOLS = {
     "rgbbench-codim-ipc-competence-v5": "RGBenchCodimIPCCompetenceProtocol",
     "rgbbench-codim-ipc-cholmod-v6": "RGBenchCodimIPCCholmodProtocol",
+    "rgbbench-codim-ipc-full-horizon-v7": (
+        "RGBenchCodimIPCFullHorizonProtocol"
+    ),
 }
 SOURCE_DIGEST_KEYS = {
     "mesh": "mesh_sha256",
@@ -73,11 +76,45 @@ def _load_protocol(path: Path) -> dict[str, Any]:
         and SUPPORTED_PROTOCOLS.get(protocol_id) == payload.get("artifact_kind"),
         "competence protocol identity changed",
     )
+    gate = _gate_spec(payload)
     _require(
-        int(payload["competence_gate"]["independent_replays"]) == 2,
-        "competence protocol must require two replays",
+        int(gate["independent_replays"]) == 2,
+        "Codim-IPC protocol must require two replays",
     )
     return payload
+
+
+def _case_spec(protocol: dict[str, Any]) -> dict[str, Any]:
+    case = protocol.get("qualification_case", protocol.get("competence_case"))
+    _require(isinstance(case, dict), "case specification is missing")
+    return case
+
+
+def _gate_spec(protocol: dict[str, Any]) -> dict[str, Any]:
+    gate = protocol.get("qualification_gate", protocol.get("competence_gate"))
+    _require(isinstance(gate, dict), "gate specification is missing")
+    return gate
+
+
+def _duration_s(protocol: dict[str, Any]) -> float:
+    case = _case_spec(protocol)
+    values = [
+        case[key]
+        for key in ("smoke_duration_s", "full_horizon_duration_s")
+        if key in case
+    ]
+    _require(len(values) == 1, "case must bind exactly one simulation duration")
+    duration = float(values[0])
+    _require(math.isfinite(duration) and duration > 0.0, "invalid duration")
+    return duration
+
+
+def _artifact_prefix(protocol: dict[str, Any]) -> str:
+    prefix = protocol.get(
+        "result_artifact_prefix", "RGBenchCodimIPCCompetence"
+    )
+    _require(isinstance(prefix, str) and prefix, "invalid result artifact prefix")
+    return prefix
 
 
 def _git_head(path: Path) -> str:
@@ -103,7 +140,7 @@ def _verify_source(
     codim_root: Path,
 ) -> dict[str, Path]:
     upstream = protocol["upstream"]
-    case = protocol["competence_case"]
+    case = _case_spec(protocol)
     implementation_root = Path(__file__).resolve().parents[2]
     for relative_path, expected_sha256 in upstream.get(
         "implementation_artifact_sha256s", {}
@@ -212,7 +249,7 @@ def _load_case(
     protocol: dict[str, Any],
     paths: dict[str, Path],
 ) -> tuple[np.ndarray, np.ndarray, FlingPinController]:
-    case = protocol["competence_case"]
+    case = _case_spec(protocol)
     vertices, triangles = load_obj_triangles(paths["mesh"])
     area = triangle_mesh_area_m2(vertices, triangles)
     _require(
@@ -280,7 +317,7 @@ def _single(args: argparse.Namespace) -> int:
         codim_root=codim_root,
     )
     vertices, triangles, controller = _load_case(protocol, paths)
-    case = protocol["competence_case"]
+    duration_s = _duration_s(protocol)
     output = args.output.resolve()
     _require(output.suffix == ".npy", "single replay output must be .npy")
     _require(not output.exists(), f"refusing to overwrite {output}")
@@ -290,7 +327,7 @@ def _single(args: argparse.Namespace) -> int:
         triangles=triangles,
         controller=controller,
         parameters=_parameters(protocol),
-        duration_s=float(case["smoke_duration_s"]),
+        duration_s=duration_s,
         workspace=output.with_suffix(".workspace"),
         module_root=paths["module_root"],
         python_root=codim_root / "Python",
@@ -304,7 +341,7 @@ def _single(args: argparse.Namespace) -> int:
         output.with_suffix(".json"),
         {
             "schema_version": 1,
-            "artifact_kind": "RGBenchCodimIPCCompetenceReplay",
+            "artifact_kind": f"{_artifact_prefix(protocol)}Replay",
             "protocol_id": protocol["protocol_id"],
             "protocol_sha256": sha256_file(protocol_path),
             "implementation_commit": _git_head(Path(__file__).resolve().parents[2]),
@@ -318,7 +355,7 @@ def _single(args: argparse.Namespace) -> int:
                 protocol["upstream"]["linear_solver"],
             ),
             "replay_index": int(args.replay_index),
-            "duration_s": float(case["smoke_duration_s"]),
+            "duration_s": duration_s,
             "step_count": rollout.step_count,
             "total_newton_iterations": rollout.total_newton_iterations,
             "vertex_count": int(len(rollout.final_vertices_m)),
@@ -402,7 +439,7 @@ def _gate(args: argparse.Namespace) -> int:
             output_root / "gate.json",
             {
                 "schema_version": 1,
-                "artifact_kind": "RGBenchCodimIPCCompetenceGate",
+                "artifact_kind": f"{_artifact_prefix(protocol)}Gate",
                 "protocol_id": protocol["protocol_id"],
                 "protocol_sha256": sha256_file(protocol_path),
                 "status": "technical_failure",
@@ -431,7 +468,7 @@ def _gate(args: argparse.Namespace) -> int:
     minimum_motion = min(
         float(item["mean_vertex_displacement_m"]) for item in metadata
     )
-    gate = protocol["competence_gate"]
+    gate = _gate_spec(protocol)
     checks = {
         "both_complete": complete,
         "all_vertices_finite": finite,
@@ -445,6 +482,11 @@ def _gate(args: argparse.Namespace) -> int:
             minimum_motion >= float(gate["minimum_mean_vertex_displacement_m"])
         ),
     }
+    if "expected_step_count" in gate:
+        checks["expected_step_count"] = all(
+            int(item["step_count"]) == int(gate["expected_step_count"])
+            for item in metadata
+        )
     if "maximum_replay_elapsed_s" in gate:
         checks["runtime_within_limit"] = max(elapsed_seconds) <= float(
             gate["maximum_replay_elapsed_s"]
@@ -454,7 +496,7 @@ def _gate(args: argparse.Namespace) -> int:
         output_root / "gate.json",
         {
             "schema_version": 1,
-            "artifact_kind": "RGBenchCodimIPCCompetenceGate",
+            "artifact_kind": f"{_artifact_prefix(protocol)}Gate",
             "protocol_id": protocol["protocol_id"],
             "protocol_sha256": sha256_file(protocol_path),
             "implementation_commit": _git_head(Path(__file__).resolve().parents[2]),

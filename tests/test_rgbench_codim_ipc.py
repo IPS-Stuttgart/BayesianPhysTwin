@@ -16,6 +16,9 @@ from bayesian_phystwin.rgbench_codim_ipc import (
 from bayesian_phystwin.rgbench_online_belief import sha256_file
 from scripts.held.run_rgbbench_codim_ipc_competence_v5 import (
     SOURCE_DIGEST_KEYS,
+    _artifact_prefix,
+    _duration_s,
+    _gate_spec,
     _load_protocol,
 )
 
@@ -190,3 +193,28 @@ def test_cholmod_protocol_binds_reproducible_build_and_runtime() -> None:
         assert sha256_file(root / relative_path) == expected_sha256
     assert payload["competence_gate"]["maximum_replay_elapsed_s"] == 90.0
     assert payload["information_boundary"]["forbidden"]
+
+
+def test_full_horizon_protocol_preserves_prior_schemas_and_binds_steps() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v5 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_codim_ipc_competence_v5.json"
+    )
+    v6 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_codim_ipc_cholmod_v6.json"
+    )
+    v7 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_codim_ipc_full_horizon_v7.json"
+    )
+    assert _duration_s(v5) == 0.1
+    assert _duration_s(v6) == 0.1
+    assert _artifact_prefix(v5) == "RGBenchCodimIPCCompetence"
+    assert _artifact_prefix(v6) == "RGBenchCodimIPCCompetence"
+    assert _duration_s(v7) == 16.36
+    assert _artifact_prefix(v7) == (
+        "RGBenchCodimIPCFullHorizonQualification"
+    )
+    assert _gate_spec(v7)["expected_step_count"] == 1636
+    assert _gate_spec(v7)["maximum_replay_elapsed_s"] == 18000.0
+    assert v7["qualification_case"]["recorded_horizon_duration_s"] == 16.355
+    assert v7["information_boundary"]["forbidden"]
