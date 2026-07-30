@@ -240,6 +240,18 @@ def _load_uipc() -> Any:
         ) from error
 
 
+def libuipc_vector_values(values: np.ndarray) -> np.ndarray:
+    """Convert ``(..., 3)`` vectors to pyuipc's ``(..., 3, 1)`` layout."""
+
+    array = np.asarray(values, dtype=np.float64)
+    _require(
+        array.ndim >= 1 and array.shape[-1] == 3,
+        "LibuIPC vector values must end with dimension 3",
+    )
+    _require(np.all(np.isfinite(array)), "LibuIPC vector values must be finite")
+    return np.ascontiguousarray(array[..., np.newaxis])
+
+
 def run_libuipc_fling(
     *,
     vertices_m: np.ndarray,
@@ -318,19 +330,27 @@ def run_libuipc_fling(
     default_contact.apply_to(mesh)
 
     cloth = scene.objects().create("rgbbench_cloth")
-    cloth_slot = cloth.geometries().create(mesh)
+    cloth_slot, _ = cloth.geometries().create(mesh)
     pin_indices = np.asarray(controller.pin_indices, dtype=np.int64)
+    animation_errors: list[str] = []
+    animation_calls = 0
 
     def animate(info: Any) -> None:
-        geometry = info.geo_slots()[0].geometry()
-        constrained = geometry.vertices().find(uipc.builtin.is_constrained)
-        aims = geometry.vertices().find(uipc.builtin.aim_position)
-        constrained_view = uipc.view(constrained)
-        aim_view = uipc.view(aims)
-        constrained_view[pin_indices] = 1
-        aim_view[pin_indices] = controller.targets_at(
-            float(info.dt()) * float(info.frame())
-        )
+        nonlocal animation_calls
+        try:
+            geometry = info.geo_slots()[0].geometry()
+            constrained = geometry.vertices().find(uipc.builtin.is_constrained)
+            aims = geometry.vertices().find(uipc.builtin.aim_position)
+            constrained_view = uipc.view(constrained)
+            aim_view = uipc.view(aims)
+            constrained_view[pin_indices] = 1
+            aim_view[pin_indices] = libuipc_vector_values(
+                controller.targets_at(float(info.dt()) * float(info.frame()))
+            )
+            animation_calls += 1
+        except Exception as error:
+            animation_errors.append(f"{type(error).__name__}: {error}")
+            raise
 
     scene.animator().insert(cloth, animate)
     ground_object = scene.objects().create("ground")
@@ -342,11 +362,20 @@ def run_libuipc_fling(
     world = uipc.World(engine)
     world.init(scene)
     _require(bool(world.is_valid()), "LibuIPC world initialization failed")
+    _require(not animation_errors, f"LibuIPC animation failed: {animation_errors}")
     step_count = int(math.ceil(duration_s / parameters.timestep_s))
     for _ in range(step_count):
         world.advance()
+        _require(
+            not animation_errors,
+            f"LibuIPC animation failed: {animation_errors}",
+        )
         _require(bool(world.is_valid()), "LibuIPC world became invalid")
         world.retrieve()
+    _require(
+        animation_calls >= step_count,
+        "LibuIPC did not invoke the position-constraint animation",
+    )
 
     final_geometry = cloth_slot.geometry()
     final = np.asarray(final_geometry.positions().view(), dtype=np.float64).reshape(

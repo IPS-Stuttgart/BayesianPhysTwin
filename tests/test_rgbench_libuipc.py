@@ -10,6 +10,7 @@ from bayesian_phystwin.rgbench_libuipc import (
     FlingPinController,
     LibuIPCClothParameters,
     PositionTrajectory,
+    libuipc_vector_values,
     load_rgbbench_position_trajectory,
     transform_vertices_wxyz,
 )
@@ -65,6 +66,15 @@ def test_transform_vertices_uses_wxyz_pose() -> None:
         (1.0, 2.0, 3.0, half, 0.0, 0.0, half),
     )
     np.testing.assert_allclose(transformed, [[1.0, 3.0, 3.0]], atol=1e-12)
+
+
+def test_libuipc_vector_values_adds_binding_column_dimension() -> None:
+    converted = libuipc_vector_values(
+        np.asarray([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    )
+    assert converted.shape == (2, 3, 1)
+    np.testing.assert_allclose(converted[..., 0], [[1, 2, 3], [4, 5, 6]])
+    assert converted.flags.c_contiguous
 
 
 def test_fling_controller_matches_prepare_wait_and_playback_phases() -> None:
