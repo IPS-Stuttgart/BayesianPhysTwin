@@ -1,0 +1,63 @@
+{
+  "accepted": true,
+  "artifact_kind": "ClothSim2RealPredictionResult",
+  "authorized_split": "calibration",
+  "calibration_artifact_sha256": null,
+  "case_id": "chequered_rag_1/quasi_static",
+  "claim_boundary": "causal online continuation from a real prefix; not an identical-information open-loop benchmark comparison",
+  "future_frame_count": 314,
+  "future_outcomes_read_only_after_prediction_seal": true,
+  "horizons": [
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.0492058807756765,
+      "name": "early",
+      "physical_symmetric_l1_chamfer_m": 0.05131953911957306,
+      "raw_90_coordinate_coverage": 0.7162046908315566,
+      "relative_improvement": 0.041186230043332835,
+      "reported_90_coordinate_coverage": 0.7162046908315566
+    },
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.0567164225198191,
+      "name": "middle",
+      "physical_symmetric_l1_chamfer_m": 0.047077704145339176,
+      "raw_90_coordinate_coverage": 0.725088841506752,
+      "relative_improvement": -0.2047406208408781,
+      "reported_90_coordinate_coverage": 0.725088841506752
+    },
+    {
+      "candidate_symmetric_l1_chamfer_m": 0.06371329355365354,
+      "name": "late",
+      "physical_symmetric_l1_chamfer_m": 0.044545007228262073,
+      "raw_90_coordinate_coverage": 0.7672295573414976,
+      "relative_improvement": -0.43031278965041764,
+      "reported_90_coordinate_coverage": 0.7672295573414976
+    }
+  ],
+  "method_id": "cloth-sim2real-guarded-readout-v1",
+  "metrics": {
+    "candidate_directed_l1_chamfer_m": 0.06143359930101979,
+    "candidate_symmetric_l1_chamfer_m": 0.05652237062295225,
+    "candidate_symmetric_l2_hausdorff_m": 0.18877560228406715,
+    "directed_relative_improvement": -0.20410284163603318,
+    "hausdorff_relative_improvement": -0.09104038569998597,
+    "mean_90_interval_width_m": 0.04954415900269302,
+    "mean_energy_score_m": 0.04184104166057307,
+    "mean_readout_correction_m": 0.037301753188123773,
+    "physical_directed_l1_chamfer_m": 0.05102022616070651,
+    "physical_symmetric_l1_chamfer_m": 0.04765729711641733,
+    "physical_symmetric_l2_hausdorff_m": 0.1730234781024656,
+    "raw_90_coordinate_coverage": 0.7360754613345163,
+    "released_window_candidate_directed_l1_chamfer_m": 0.06143359930101979,
+    "released_window_cutoff_frame_exclusive": 420,
+    "released_window_directed_relative_improvement": -0.20410284163603318,
+    "released_window_physical_directed_l1_chamfer_m": 0.05102022616070651,
+    "reported_90_coordinate_coverage": 0.7360754613345163,
+    "symmetric_frame_wins": 49,
+    "symmetric_relative_improvement": -0.18601712734314962,
+    "trial_coordinate_abs_standardized_q90": 3.8049716061803136
+  },
+  "prediction_seal_sha256": "5416bd899940329802fc60b7e33290748b9086fa4b57d319aff3f15fc51927c1",
+  "schema_version": 1,
+  "selected_name": "graph_l0.01_s1",
+  "uncertainty_std_multiplier": 1.0
+}
