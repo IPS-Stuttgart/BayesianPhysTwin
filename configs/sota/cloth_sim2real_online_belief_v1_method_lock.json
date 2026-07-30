@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "protocol_id": "cloth-sim2real-online-belief-v1",
+  "method_id": "cloth-sim2real-guarded-readout-v1",
+  "status": "post_development_smoke_pre_source_transfer_lock",
+  "physical_baseline": {
+    "upstream_repository": "https://github.com/dblanm/benchmarking_cloth",
+    "upstream_commit": "178a9b9722191c51cf0dcbc3cf0dc03701b09eb3",
+    "sim_utils_commit": "6e423f059628ca8b4575e49c39aecce5d0baef17",
+    "mujoco_version": "3.1.0",
+    "simulator_cadence_hz": 100,
+    "observed_frame_alignment": "floor(linspace(0, simulator_frame_count - 1, observed_frame_count))",
+    "independent_replay_array_equality": true,
+    "development_baseline_npz_sha256": "6c2b658856023915876c5f5502666f243d7685dbd0aecdf480eb297140122d9d"
+  },
+  "development_scope": {
+    "case_id": "chequered_rag_0/dynamic",
+    "purpose": "method smoke and finite candidate-bank selection",
+    "fit_frames": [
+      0,
+      18
+    ],
+    "validation_frames": [
+      19,
+      32
+    ],
+    "future_frames": [
+      33,
+      129
+    ],
+    "prediction_seal_sha256": "8aba6c72022ed14b515abb40f7a2d81b5b3328b6859e0605d46bbf2cc35eed0d",
+    "result_sha256": "0aa646e4425145195ac951fadc27bdc7915e3b67233d868b01d08f2eeeb55a0c",
+    "selected_arm": "graph_l1_s1",
+    "validation_symmetric_l1_improvement": 0.35897183958681894,
+    "future_symmetric_l1_improvement": 0.09583059928265786,
+    "future_directed_benchmark_l1_improvement": 0.09046219187232693,
+    "future_hausdorff_improvement": 0.11588001351369201,
+    "raw_90_coordinate_coverage": 0.5642919423501052,
+    "calibration_or_target_case_opened": false
+  },
+  "association": {
+    "candidate_count": 4,
+    "distance": "euclidean",
+    "candidate_weight": "local_scale_softmax",
+    "sensor_std_m": 0.003,
+    "assignment_mixture_spread_enters_variance": true,
+    "prior_reliability_source": "residual_independent_source_confidence_only",
+    "state_innovation_used_in_prior_reliability": false
+  },
+  "robust_fit": {
+    "temporal_location": "coordinate_median",
+    "innovation_model": "existing_gaussian_broad_gaussian_mixture",
+    "outlier_variance_multiplier": 100.0,
+    "model_discrepancy_std_m": 0.003,
+    "effective_fit_frame_cap": 4.0,
+    "shared_bias_std_floor_m": 0.005,
+    "dense_points_or_duplicate_rows_may_not_reduce_shared_bias_floor": true
+  },
+  "candidate_bank": {
+    "arms": [
+      "baseline",
+      "global_translation",
+      "graph_smoothed_readout"
+    ],
+    "graph_prior_strengths": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "correction_scales": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "maximum_per_vertex_correction_m": 0.1,
+    "selection_metric": "mean_symmetric_l1_chamfer_m_on_disjoint_prefix_validation"
+  },
+  "admission": {
+    "minimum_validation_relative_improvement": 0.02,
+    "minimum_validation_frame_win_fraction": 0.6,
+    "maximum_validation_worst_frame_ratio": 1.0,
+    "failure_action": "exact_physical_fallback"
+  },
+  "uncertainty": {
+    "graph_covariance_probes": 64,
+    "graph_covariance_seed": 20260730,
+    "forecast_process_std_m_per_sqrt_frame": 0.001,
+    "source_intervals_are_raw_and_not_claimed_calibrated": true,
+    "calibration_scale_may_only_be_fit_after_source_gate_passes": true
+  },
+  "source_transfer": {
+    "method_or_hyperparameter_changes_after_this_lock": false,
+    "remaining_unopened_source_cases": [
+      "chequered_rag_0/quasi_static",
+      "cotton_rag_0/dynamic",
+      "cotton_rag_0/quasi_static",
+      "linen_rag_0/dynamic",
+      "linen_rag_0/quasi_static"
+    ],
+    "primary_gate": {
+      "dynamic_object_balanced_relative_improvement_at_least": 0.05,
+      "dynamic_nonregressing_cloths": 3
+    }
+  },
+  "metric_clarification": {
+    "protocol_primary": "mean of both directed nearest-neighbor L1 distances",
+    "published_benchmark_companion": "simulator-to-observation directed nearest-neighbor L1 distance",
+    "both_reported_in_metres": true
+  },
+  "claim_boundary": {
+    "allowed": "causal online continuation from a real prefix",
+    "not_allowed": [
+      "identical-information open-loop SOTA",
+      "physical-state correction",
+      "calibrated uncertainty before the calibration split",
+      "target evaluation before source and calibration gates pass"
+    ]
+  }
+}

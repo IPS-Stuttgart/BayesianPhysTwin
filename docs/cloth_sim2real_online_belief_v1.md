@@ -65,17 +65,43 @@ The candidate ladder is:
 3. graph-smoothed prefix discrepancy at readout;
 4. bias-aware, baseline-relative guarded graph discrepancy.
 
-The graph candidate associates observed points to the current simulated mesh
-using same-frame geometry. Assignment-mixture spread and metric sensor noise
-enter the observation covariance. A shared sensor component is retained and is
-not divided by point count. The innovation is robustified once. A candidate is
-admitted only if it improves the disjoint prefix-validation interval under a
-source-calibrated regret rule; otherwise the output is byte-identical to the
-physical baseline.
+The graph candidate associates each physical vertex with a four-candidate
+local mixture in the same-frame observed cloud. Candidate geometry determines
+the association distribution, but it does not determine prior perception
+reliability. Assignment-mixture spread and metric sensor noise enter the
+observation covariance. A 5 mm shared sensor component is retained and is not
+divided by the number of dense points or duplicate rows. The state innovation
+is processed by the existing Gaussian/broad-Gaussian robust mixture and is not
+also reused as prior reliability.
+
+Candidate selection uses only the disjoint prefix-validation interval. An arm
+must improve its mean symmetric L1 Chamfer by at least 2%, win at least 60% of
+validation frames, and not worsen the worst validation frame. Otherwise the
+output is exactly the physical baseline.
 
 The correction remains an observation/readout belief. It is not called a
 physical state correction, and safety or contact claims may not be based on
 corrected readout coordinates alone.
+
+## Development smoke and method lock
+
+`chequered_rag_0/dynamic` was declared as the source development smoke. The
+production runner independently reproduced the released MuJoCo rollout
+bit-for-bit. It then selected `graph_l1_s1` from the finite locked bank using
+frames 19--32, sealed frames 33--129, and only afterward opened that source
+future.
+
+The selected arm improved held-out prefix Chamfer by 35.90% and untouched
+future symmetric L1 Chamfer by 9.58%. The directed L1 metric used by the
+published benchmark improved by 9.05%, and symmetric Hausdorff distance
+improved by 11.59%. Raw nominal 90% coordinate coverage was only 56.43%, so
+the smoke supports the mean update but explicitly does not establish
+calibration.
+
+The method and finite candidate bank are frozen in
+`configs/sota/cloth_sim2real_online_belief_v1_method_lock.json` before the
+remaining five source cases are read. No calibration or target point cloud was
+opened.
 
 ## Gates
 
@@ -92,10 +118,12 @@ evaluator.
 
 ## Metrics and claims
 
-The primary metric is future symmetric L1 Chamfer distance in metres, matching
-the benchmark's geometry convention. Secondary reports include Hausdorff
-distance, early/middle/late Chamfer, predictive coverage, interval width,
-energy score, and correction energy. The trial is the replication unit.
+The protocol primary metric is the mean of the two directed nearest-neighbour
+L1 distances. The published benchmark's simulator-to-observation directed L1
+distance is reported alongside it for direct comparison. Secondary reports
+include Hausdorff distance, early/middle/late Chamfer, predictive coverage,
+interval width, energy score, and correction energy. The trial is the
+replication unit.
 
 A positive result would establish a guarded online sim-to-real update on this
 benchmark. It would not by itself establish better open-loop dynamics,
