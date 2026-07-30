@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "RGBenchIsotropicDynamicProtocol",
+  "protocol_id": "rgbbench-isotropic-dynamic-v2",
+  "predecessor": {
+    "branch": "phystwin-rgbench-online-belief-v1",
+    "result_commit": "94fe5d0012e66b93d73bf9474df2b28f2a83d153",
+    "status": "predictions_incomplete",
+    "reason": "the released dense brown-coat mesh crashes the frozen PyBullet backend"
+  },
+  "dataset": {
+    "rgbbench_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68",
+    "revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+    "manifest_artifact_sha256": "3789947cbb9c7c58ccc39b8186b4e30e2a258e615bc2e02c05842bcdafe160e8",
+    "manifest_file_sha256": "7b1db95731c02291031ffb416e456e86cee9d95f164f9198db250ede2612a416",
+    "primary_samples": [
+      "01",
+      "02",
+      "03"
+    ]
+  },
+  "mesh_admission": {
+    "identity_max_vertices": 12000,
+    "physical_min_vertices": 128,
+    "remesh_iterations": 5,
+    "target_edge_lengths_um": {
+      "start": 8000,
+      "stop_inclusive": 20000,
+      "step": 250
+    },
+    "maximum_surface_distance_um": 3000,
+    "maximum_source_mean_distance_um": 5000,
+    "maximum_source_p99_distance_um": 10000,
+    "maximum_source_distance_um": 15000,
+    "feature_angle_degrees": 30.0,
+    "required_geometry": {
+      "connected_components": 1,
+      "edge_manifold": true,
+      "vertex_manifold": true,
+      "orientable": true,
+      "degenerate_faces": 0,
+      "duplicate_faces": 0,
+      "self_intersection_faces": 0
+    },
+    "selection": "identity when admissible; otherwise the smallest target edge length passing every gate",
+    "contact_lineage": "snap two derived vertices to the exact released fling-pin coordinates and bind the new raw OBJ indices"
+  },
+  "physical_preflight": {
+    "cases": "sample 01 for all 7 garments x 3 actions",
+    "replays_per_case": 2,
+    "required_case_count": 21,
+    "required_replay_count": 42,
+    "gate": "every rollout completes and each replay pair is byte-identical",
+    "object_point_cloud_coordinates_read": false,
+    "known_future_actuator_trajectory_read": true
+  },
+  "development": {
+    "source_garments": [
+      "white_cakeskirt",
+      "brown_coat",
+      "green_tshirt"
+    ],
+    "candidate_family": "action-conditioned graph-discrepancy continuation",
+    "temporal_bank": {
+      "slope_shrinkages": [
+        0.0,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "maximum_correction_m": 0.1,
+      "exact_physical_fallback": true
+    },
+    "selection": "leave-one-garment-out source cross-fitting; action-specific settings are selected on the other two garments",
+    "source_gate": {
+      "minimum_object_action_balanced_improvement_vs_physical": 0.05,
+      "all_source_garments_nonregressing": true,
+      "minimum_improved_source_cells": 6,
+      "source_cell_count": 9,
+      "candidate_aggregate_below_published_garmentdynamics": true,
+      "minimum_cells_beating_published_garmentdynamics": 6
+    }
+  },
+  "calibration_gate": {
+    "minimum_object_action_balanced_improvement_vs_physical": 0.05,
+    "all_calibration_garments_nonregressing": true,
+    "minimum_improved_calibration_cells": 4,
+    "calibration_cell_count": 6,
+    "no_hyperparameter_reselection": true
+  },
+  "target_policy": {
+    "target_garments": [
+      "blue_dress",
+      "beige_hoodie"
+    ],
+    "target_outcomes_open_only_after_source_and_calibration_gates": true,
+    "failed_gate_action": "exact physical fallback; target remains unopened"
+  },
+  "claim_boundary": {
+    "online_prefix": "the candidate observes an early real point-cloud prefix",
+    "published_baseline": "GarmentDynamics is reported as an open-loop published RGBench reference with less information",
+    "sota_language": "report the information asymmetry; do not call a lower number an equal-information SOTA comparison"
+  }
+}
