@@ -72,7 +72,7 @@ def group_max_nonconformity_scores(
     if not targets:
         raise ValueError("at least one calibration group is required")
 
-    group_scores = np.empty(len(targets), dtype=np.float64)
+    group_scores: np.ndarray = np.empty(len(targets), dtype=np.float64)
     pairs = zip(targets, predictions, strict=True)
     for index, (target, prediction) in enumerate(pairs):
         point_scores = _point_nonconformity(
