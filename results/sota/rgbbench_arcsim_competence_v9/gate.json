@@ -1,0 +1,45 @@
+{
+  "artifact_kind": "RGBenchARCSimCompetenceGate",
+  "checks": {
+    "all_vertices_finite": true,
+    "both_complete": true,
+    "byte_identical_final_vertices": true,
+    "expected_step_count": true,
+    "nontrivial_cloth_motion": true,
+    "pin_tracking_within_limit": false,
+    "runtime_within_limit": true,
+    "value_identical_final_vertices": true,
+    "vertex_count_preserved": true
+  },
+  "competence_gate_passed": false,
+  "failed_gate_action": "close the ARCSim backend without inspecting any RGBench point-cloud outcome",
+  "future_object_outcomes_read": false,
+  "implementation_commit": "703f824254c4b84e0482f69947bf6acfb2cce06d",
+  "maximum_pin_target_error_m": 0.0217584958220242,
+  "maximum_replay_elapsed_s": 27.21955448202789,
+  "minimum_mean_vertex_displacement_m": 0.05621096540745844,
+  "passed_gate_action": "freeze a separate target-free full-horizon ARCSim qualification before any source accuracy run",
+  "point_cloud_coordinates_read": false,
+  "point_cloud_filenames_read": false,
+  "protocol_id": "rgbbench-arcsim-competence-v9",
+  "protocol_sha256": "593a6ea0db7674f79b977d69be5cc77cb5bf1457aedc97a2bbfbe4e89db178b6",
+  "replay_elapsed_seconds": [
+    27.454258574638516,
+    27.550362595822662
+  ],
+  "replay_metadata_sha256s": [
+    "42cbf74bb73f31e975619c005dba17aa731be91468126e3a7e5b83c4b30c9e41",
+    "1702c5a5d7739fb3379b301111dd9e728e14611d91bcfa3c256cf1776929a558"
+  ],
+  "replay_return_codes": [
+    0,
+    0
+  ],
+  "replay_sha256s": [
+    "5abc2f75e03e8528c758a542e1b417d8e1fb2c1499443dbe3c4e6765f7fd1ecc",
+    "5abc2f75e03e8528c758a542e1b417d8e1fb2c1499443dbe3c4e6765f7fd1ecc"
+  ],
+  "schema_version": 1,
+  "source_accuracy_outcomes_read": false,
+  "status": "gate_failed"
+}
