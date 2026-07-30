@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "protocol_id": "cloth-sim2real-online-belief-v1",
+  "method_id": "cloth-sim2real-guarded-readout-v1",
+  "status": "pre_target_prefix_lock",
+  "campaign_commit": "6b4fa481e08cfb534a35c6871fb16ef98bc631bc",
+  "calibration_evidence": {
+    "calibration_gate_file": "results/sota/cloth_sim2real_online_belief_v1/calibration_gate.json",
+    "calibration_gate_sha256": "332a278d3d47d4d5a05fa8723f1e4bb3b41c690ab88a381905f46cad79d0c2b8",
+    "target_authorized": true,
+    "dynamic_object_balanced_relative_improvement": 0.064479466601164,
+    "dynamic_win_count": 2,
+    "worst_dynamic_relative_improvement": 0.0,
+    "uncertainty_std_multiplier": 5.052049810952072
+  },
+  "target_scope": {
+    "repeat_index": 2,
+    "case_count": 6,
+    "primary_task": "dynamic",
+    "secondary_task": "quasi_static",
+    "candidate_bank_and_hyperparameters_unchanged": true,
+    "prefix_fit_and_validation_boundaries_unchanged": true,
+    "prediction_seal_required_before_future_open": true,
+    "calibration_artifact_hash_required_for_seal_and_score": true,
+    "failed_admission_is_exact_physical_fallback": true
+  },
+  "primary_report": {
+    "metrics": [
+      "future_symmetric_l1_chamfer_m",
+      "future_directed_benchmark_l1_chamfer_m",
+      "future_symmetric_l2_hausdorff_m",
+      "early_middle_late_chamfer",
+      "raw_90_coordinate_coverage",
+      "scaled_90_coordinate_coverage",
+      "interval_width",
+      "energy_score"
+    ],
+    "replication_unit": "cloth trial",
+    "object_balanced_aggregation": true,
+    "no_target_tuned_threshold": true
+  },
+  "claim_boundary": {
+    "allowed": "independent repeat-2 confirmation of causal online continuation",
+    "not_allowed": [
+      "identical-information open-loop SOTA",
+      "formal 90% finite-sample coverage",
+      "physical-state correction",
+      "positive quasi-static claim unless independently supported"
+    ]
+  }
+}
