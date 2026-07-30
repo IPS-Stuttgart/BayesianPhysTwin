@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -9,6 +10,7 @@ import pytest
 from bayesian_phystwin.rgbench_codim_ipc import (
     CodimIPCClothParameters,
     CodimIPCRollout,
+    _load_runtime,
     write_obj_triangles,
 )
 from bayesian_phystwin.rgbench_online_belief import sha256_file
@@ -90,6 +92,56 @@ def test_codim_patch_binds_exact_node_and_target_operations() -> None:
         "Dirichlet_Max_Error",
     ):
         assert symbol in patch
+
+
+def test_codim_runtime_rejects_wrong_compiled_solver(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module_root = tmp_path / "module"
+    python_root = tmp_path / "python"
+    module_root.mkdir()
+    python_root.mkdir()
+    fem = SimpleNamespace(
+        Init_Dirichlet_Nodes=object(),
+        Set_Dirichlet_Targets=object(),
+        Node_Positions=object(),
+        Dirichlet_Max_Error=object(),
+    )
+    jgsl = SimpleNamespace(FEM=fem, linear_solver_backend="CHOLMOD")
+    drivers = SimpleNamespace()
+    monkeypatch.setattr(
+        "bayesian_phystwin.rgbench_codim_ipc.importlib.import_module",
+        lambda name: jgsl if name == "JGSL" else drivers,
+    )
+    loaded, _ = _load_runtime(
+        module_root=module_root,
+        python_root=python_root,
+        expected_linear_solver_backend="CHOLMOD",
+    )
+    assert loaded is jgsl
+    with pytest.raises(RuntimeError, match="linear solver changed"):
+        _load_runtime(
+            module_root=module_root,
+            python_root=python_root,
+            expected_linear_solver_backend="EIGEN",
+        )
+
+
+def test_cholmod_build_patch_uses_bound_system_libraries_and_marker() -> None:
+    root = Path(__file__).resolve().parents[1]
+    patch = (
+        root
+        / "third_party"
+        / "patches"
+        / "codim_ipc_cholmod_system_blas_v6.patch"
+    ).read_text(encoding="utf-8")
+    assert "JGSL_OUTPUT_DIRECTORY" in patch
+    assert 'm.attr("linear_solver_backend") = "CHOLMOD"' in patch
+    assert "find_package(BLAS REQUIRED)" in patch
+    assert "find_package(LAPACK REQUIRED)" in patch
+    assert "include(mkl)" in patch
+    assert patch.count("-    include(mkl)") == 1
 
 
 def test_codim_protocol_binds_patch_and_every_source_digest() -> None:

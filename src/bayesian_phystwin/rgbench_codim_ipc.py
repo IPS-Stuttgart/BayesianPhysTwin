@@ -119,6 +119,7 @@ def _load_runtime(
     *,
     module_root: Path,
     python_root: Path,
+    expected_linear_solver_backend: str | None,
 ) -> tuple[Any, Any]:
     for root in (module_root, python_root):
         _require(root.is_dir(), f"Codim-IPC runtime path does not exist: {root}")
@@ -139,6 +140,13 @@ def _load_runtime(
     missing = [name for name in required if not hasattr(jgsl.FEM, name)]
     if missing:
         raise RuntimeError(f"Codim-IPC RGBench patch is missing: {missing}")
+    if expected_linear_solver_backend is not None:
+        actual_backend = getattr(jgsl, "linear_solver_backend", None)
+        if actual_backend != expected_linear_solver_backend:
+            raise RuntimeError(
+                "Codim-IPC linear solver changed: "
+                f"expected {expected_linear_solver_backend}, got {actual_backend}"
+            )
     return jgsl, drivers
 
 
@@ -170,6 +178,7 @@ def run_codim_ipc_fling(
     workspace: str | Path,
     module_root: str | Path,
     python_root: str | Path,
+    expected_linear_solver_backend: str | None = None,
 ) -> CodimIPCRollout:
     """Run a single-thread-compatible Codim-IPC replay with exact moving pins."""
 
@@ -210,6 +219,7 @@ def run_codim_ipc_fling(
         jgsl, drivers = _load_runtime(
             module_root=Path(module_root).resolve(),
             python_root=Path(python_root).resolve(),
+            expected_linear_solver_backend=expected_linear_solver_backend,
         )
         simulation = drivers.FEMDiscreteShellBase("double", 3)
         simulation.output_folder = str(destination / "simulator_output") + "/"

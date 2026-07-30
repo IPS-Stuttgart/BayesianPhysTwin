@@ -1,0 +1,47 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,4 +20,5 @@
+ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -mfma -mbmi2 -mavx2 -fPIC -Wno-unused-variable -Wno-sign-compare -Wno-reorder")
+-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
+-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
++set(JGSL_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build" CACHE PATH "JGSL module output directory")
++set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${JGSL_OUTPUT_DIRECTORY}")
++set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${JGSL_OUTPUT_DIRECTORY}")
+ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
+diff --git a/Library/EXPORTER.cpp b/Library/EXPORTER.cpp
+--- a/Library/EXPORTER.cpp
++++ b/Library/EXPORTER.cpp
+@@ -15,0 +16,5 @@ PYBIND11_MODULE(JGSL, m) {
++#ifdef CHOLMOD_DIRECT_SOLVER
++    m.attr("linear_solver_backend") = "CHOLMOD";
++#else
++    m.attr("linear_solver_backend") = "EIGEN";
++#endif
+diff --git a/cmake/suitesparse.cmake b/cmake/suitesparse.cmake
+--- a/cmake/suitesparse.cmake
++++ b/cmake/suitesparse.cmake
+@@ -42,9 +42,10 @@
+-if (NOT APPLE)
+-    include(mkl)
+-endif()
++find_package(BLAS REQUIRED)
++find_package(LAPACK REQUIRED)
+ if(NOT TARGET blas)
+     add_library(blas INTERFACE IMPORTED GLOBAL)
++    target_link_libraries(blas INTERFACE BLAS::BLAS)
+ endif()
+ if(NOT TARGET lapack)
+     add_library(lapack INTERFACE IMPORTED GLOBAL)
++    target_link_libraries(lapack INTERFACE LAPACK::LAPACK)
+ endif()
+@@ -70,8 +71,3 @@
+ cmake_policy(SET CMP0079 NEW)
+-if (NOT APPLE)
+-    target_link_libraries(cholmod PUBLIC mkl::mkl)
+-else()
+-    find_package(LAPACK)
+-    target_link_libraries(cholmod PUBLIC LAPACK::LAPACK)
+-endif()
++target_link_libraries(cholmod PUBLIC BLAS::BLAS LAPACK::LAPACK)
+ add_library(SuiteSparse_SuiteSparse INTERFACE)

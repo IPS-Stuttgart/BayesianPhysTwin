@@ -9,6 +9,7 @@ import math
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -29,8 +30,10 @@ from bayesian_phystwin.rgbench_online_belief import (
     sha256_file,
 )
 
-PROTOCOL_ID = "rgbbench-codim-ipc-competence-v5"
-ARTIFACT_KIND = "RGBenchCodimIPCCompetenceProtocol"
+SUPPORTED_PROTOCOLS = {
+    "rgbbench-codim-ipc-competence-v5": "RGBenchCodimIPCCompetenceProtocol",
+    "rgbbench-codim-ipc-cholmod-v6": "RGBenchCodimIPCCholmodProtocol",
+}
 SOURCE_DIGEST_KEYS = {
     "mesh": "mesh_sha256",
     "left": "left_trajectory_sha256",
@@ -64,10 +67,10 @@ def _parse_args() -> argparse.Namespace:
 
 def _load_protocol(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
+    protocol_id = payload.get("protocol_id")
     _require(
         isinstance(payload, dict)
-        and payload.get("artifact_kind") == ARTIFACT_KIND
-        and payload.get("protocol_id") == PROTOCOL_ID,
+        and SUPPORTED_PROTOCOLS.get(protocol_id) == payload.get("artifact_kind"),
         "competence protocol identity changed",
     )
     _require(
@@ -127,8 +130,26 @@ def _verify_source(
         == upstream["codim_patched_boundary_condition_sha256"],
         "Codim-IPC boundary patch changed",
     )
-    build_module = list((codim_root / "build").glob("JGSL*.so"))
+    for relative_path, expected_sha256 in upstream.get(
+        "codim_source_sha256s", {}
+    ).items():
+        source_path = codim_root / relative_path
+        _require(source_path.is_file(), f"missing Codim-IPC source: {source_path}")
+        _require(
+            sha256_file(source_path) == expected_sha256,
+            f"Codim-IPC source changed: {relative_path}",
+        )
+    module_root = codim_root / upstream.get(
+        "codim_runtime_module_relative_directory", "build"
+    )
+    build_module = list(module_root.glob("JGSL*.so"))
     _require(len(build_module) == 1, "Codim-IPC runtime module is missing or ambiguous")
+    expected_module_sha256 = upstream.get("codim_runtime_module_sha256")
+    if expected_module_sha256 is not None:
+        _require(
+            sha256_file(build_module[0]) == expected_module_sha256,
+            "Codim-IPC runtime module changed",
+        )
     capture = dataset_root / case["data_subfolder"]
     paths = {
         "mesh": dataset_root / "meshes" / case["mesh_relative_path"],
@@ -141,6 +162,7 @@ def _verify_source(
             sha256_file(path) == case[SOURCE_DIGEST_KEYS[name]],
             f"frozen source {name} changed",
         )
+    paths["module_root"] = module_root
     return paths
 
 
@@ -245,8 +267,11 @@ def _single(args: argparse.Namespace) -> int:
         parameters=_parameters(protocol),
         duration_s=float(case["smoke_duration_s"]),
         workspace=output.with_suffix(".workspace"),
-        module_root=codim_root / "build",
+        module_root=paths["module_root"],
         python_root=codim_root / "Python",
+        expected_linear_solver_backend=protocol["upstream"].get(
+            "expected_linear_solver_backend"
+        ),
     )
     np.save(output, rollout.final_vertices_m, allow_pickle=False)
     displacement = np.linalg.norm(rollout.final_vertices_m - vertices, axis=1)
@@ -255,11 +280,18 @@ def _single(args: argparse.Namespace) -> int:
         {
             "schema_version": 1,
             "artifact_kind": "RGBenchCodimIPCCompetenceReplay",
-            "protocol_id": PROTOCOL_ID,
+            "protocol_id": protocol["protocol_id"],
             "protocol_sha256": sha256_file(protocol_path),
             "implementation_commit": _git_head(Path(__file__).resolve().parents[2]),
             "rgbbench_commit": _git_head(rgbbench_root),
             "codim_ipc_commit": _git_head(codim_root),
+            "codim_runtime_module_sha256": sha256_file(
+                next(paths["module_root"].glob("JGSL*.so"))
+            ),
+            "linear_solver_backend": protocol["upstream"].get(
+                "expected_linear_solver_backend",
+                protocol["upstream"]["linear_solver"],
+            ),
             "replay_index": int(args.replay_index),
             "duration_s": float(case["smoke_duration_s"]),
             "step_count": rollout.step_count,
@@ -295,13 +327,16 @@ def _gate(args: argparse.Namespace) -> int:
     environment = os.environ.copy()
     environment.update(
         {
-            "OMP_NUM_THREADS": "1",
-            "OMP_PROC_BIND": "false",
+            "OMP_NUM_THREADS": str(protocol["upstream"]["omp_num_threads"]),
+            "OMP_PROC_BIND": str(
+                protocol["upstream"].get("omp_proc_bind", "false")
+            ),
             "OPENBLAS_NUM_THREADS": "1",
             "MKL_NUM_THREADS": "1",
         }
     )
     return_codes: list[int] = []
+    elapsed_seconds: list[float] = []
     for index, output in enumerate(outputs, start=1):
         command = [
             sys.executable,
@@ -323,6 +358,7 @@ def _gate(args: argparse.Namespace) -> int:
         with (output_root / f"replay_{index}.log").open(
             "x", encoding="utf-8"
         ) as log:
+            started = time.monotonic()
             completed = subprocess.run(
                 command,
                 env=environment,
@@ -331,6 +367,7 @@ def _gate(args: argparse.Namespace) -> int:
                 text=True,
                 check=False,
             )
+            elapsed_seconds.append(float(time.monotonic() - started))
         return_codes.append(int(completed.returncode))
         if completed.returncode != 0:
             break
@@ -341,11 +378,12 @@ def _gate(args: argparse.Namespace) -> int:
             {
                 "schema_version": 1,
                 "artifact_kind": "RGBenchCodimIPCCompetenceGate",
-                "protocol_id": PROTOCOL_ID,
+                "protocol_id": protocol["protocol_id"],
                 "protocol_sha256": sha256_file(protocol_path),
                 "status": "technical_failure",
                 "competence_gate_passed": False,
                 "replay_return_codes": return_codes,
+                "replay_elapsed_seconds": elapsed_seconds,
                 "point_cloud_filenames_read": False,
                 "point_cloud_coordinates_read": False,
                 "source_accuracy_outcomes_read": False,
@@ -382,19 +420,25 @@ def _gate(args: argparse.Namespace) -> int:
             minimum_motion >= float(gate["minimum_mean_vertex_displacement_m"])
         ),
     }
+    if "maximum_replay_elapsed_s" in gate:
+        checks["runtime_within_limit"] = max(elapsed_seconds) <= float(
+            gate["maximum_replay_elapsed_s"]
+        )
     passed = all(checks.values())
     _write_json_once(
         output_root / "gate.json",
         {
             "schema_version": 1,
             "artifact_kind": "RGBenchCodimIPCCompetenceGate",
-            "protocol_id": PROTOCOL_ID,
+            "protocol_id": protocol["protocol_id"],
             "protocol_sha256": sha256_file(protocol_path),
             "implementation_commit": _git_head(Path(__file__).resolve().parents[2]),
             "status": "passed" if passed else "gate_failed",
             "competence_gate_passed": passed,
             "checks": checks,
             "replay_return_codes": return_codes,
+            "replay_elapsed_seconds": elapsed_seconds,
+            "maximum_replay_elapsed_s": max(elapsed_seconds),
             "maximum_pin_target_error_m": maximum_pin_error,
             "minimum_mean_vertex_displacement_m": minimum_motion,
             "replay_sha256s": [sha256_file(path) for path in outputs],
