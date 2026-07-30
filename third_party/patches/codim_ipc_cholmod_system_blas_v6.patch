@@ -12,12 +12,18 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 diff --git a/Library/EXPORTER.cpp b/Library/EXPORTER.cpp
 --- a/Library/EXPORTER.cpp
 +++ b/Library/EXPORTER.cpp
-@@ -15,0 +16,5 @@ PYBIND11_MODULE(JGSL, m) {
+@@ -17,2 +17,7 @@ PYBIND11_MODULE(JGSL, m) {
+ PYBIND11_MODULE(JGSL, m) {
 +#ifdef CHOLMOD_DIRECT_SOLVER
 +    m.attr("linear_solver_backend") = "CHOLMOD";
 +#else
 +    m.attr("linear_solver_backend") = "EIGEN";
 +#endif
+     m.def("Kokkos_Initialize", &Kokkos_Initialize);
+@@ -40 +45 @@ PYBIND11_MODULE(JGSL, m) {
+-}
+\ No newline at end of file
++}
 diff --git a/CMake/suitesparse.cmake b/CMake/suitesparse.cmake
 --- a/CMake/suitesparse.cmake
 +++ b/CMake/suitesparse.cmake

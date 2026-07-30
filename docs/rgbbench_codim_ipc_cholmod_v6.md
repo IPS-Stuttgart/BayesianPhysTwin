@@ -28,6 +28,11 @@ environment. The bound patch
 The patch does not change the shell energy, time integrator, collision model,
 Dirichlet projection, Newton solve criteria, or RGBench material parameters.
 The gate verifies the marker and the exact module SHA-256 before simulation.
+V6 also binds
+`third_party/patches/codim_ipc_rgbbench_controls_v6.patch`, a context-rich
+reproduction of the exact-node control interface used by the successful v5
+runtime. The historical v5 patch artifact remains unchanged because its digest
+is part of the archived v5 protocol.
 
 ## Qualification sequence
 
