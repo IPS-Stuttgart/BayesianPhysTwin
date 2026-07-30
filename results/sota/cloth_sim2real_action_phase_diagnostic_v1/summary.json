@@ -1,0 +1,383 @@
+{
+  "aggregate": {
+    "directed_phase_beats_persistence_count": 8,
+    "directed_translation_beats_persistence_count": 8,
+    "evaluated_case_count": 8,
+    "mean_action_phase_directed_relative_improvement": 0.10944743613722774,
+    "mean_action_phase_symmetric_relative_improvement": 0.09681733950006417,
+    "mean_persistent_directed_relative_improvement": 0.0562507767174924,
+    "mean_persistent_symmetric_relative_improvement": 0.079250100771736,
+    "ratio_of_means_action_phase_vs_persistent_directed_improvement": 0.055413678216470794,
+    "ratio_of_means_action_phase_vs_persistent_symmetric_improvement": 0.018527257536306498,
+    "ratio_of_means_translation_vs_persistent_directed_improvement": 0.3598423056386451,
+    "ratio_of_means_translation_vs_persistent_symmetric_improvement": 0.2743399956851323,
+    "symmetric_phase_beats_persistence_count": 7,
+    "symmetric_translation_beats_persistence_count": 8,
+    "target_action_phase_directed_l1_chamfer_m": 0.0694932999687384,
+    "target_mean_action_phase_directed_relative_improvement": 0.10341726651978926,
+    "target_mean_persistent_directed_relative_improvement": 0.05183991603886847,
+    "target_persistent_directed_l1_chamfer_m": 0.07339606092854796,
+    "target_physical_directed_l1_chamfer_m": 0.07712616220198044,
+    "target_ratio_of_means_action_phase_vs_persistent_directed_improvement": 0.053173983868275244,
+    "target_ratio_of_means_translation_vs_persistent_directed_improvement": 0.36488104905041724,
+    "target_repeat_evaluated_cloth_count": 3,
+    "target_translation_delta_directed_l1_chamfer_m": 0.04661522922077104
+  },
+  "artifact_kind": "ClothSim2RealActionPhaseDiagnostic",
+  "cases": {
+    "chequered_rag_0/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.050872770901029984,
+      "action_phase_directed_relative_improvement": 0.1504393947389788,
+      "action_phase_symmetric_l1_chamfer_m": 0.06073502369186232,
+      "action_phase_symmetric_relative_improvement": 0.11724116487267006,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.06594250654639391,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.023679816606297085,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.17863617480371685,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.06391478575009871,
+          "translation_delta_directed_relative_improvement": 0.3022801172831332
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.16446534772973115,
+          "name": "middle",
+          "persistent_directed_relative_improvement": 0.1444677349277772,
+          "translation_delta_directed_relative_improvement": 0.4346541332960719
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.08014727755884753,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.045915313776194455,
+          "translation_delta_directed_relative_improvement": 0.11857513761249994
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.054464282185598456,
+      "persistent_directed_relative_improvement": 0.09046219187232693,
+      "persistent_symmetric_l1_chamfer_m": 0.06220810009350264,
+      "persistent_symmetric_relative_improvement": 0.09583059928265786,
+      "physical_directed_l1_chamfer_m": 0.05988127343239945,
+      "physical_symmetric_l1_chamfer_m": 0.06880137731286694,
+      "prediction_seal_sha256": "8aba6c72022ed14b515abb40f7a2d81b5b3328b6859e0605d46bbf2cc35eed0d",
+      "profile_correlation": 0.9659493571931891,
+      "training_repeat_count": 2,
+      "translation_delta_directed_l1_chamfer_m": 0.041303959957502905,
+      "translation_delta_symmetric_l1_chamfer_m": 0.05179649437103108,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.24163216148243716,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.16736736384525921
+    },
+    "chequered_rag_1/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.05887498056362396,
+      "action_phase_directed_relative_improvement": 0.1155468995705493,
+      "action_phase_symmetric_l1_chamfer_m": 0.06764401207763791,
+      "action_phase_symmetric_relative_improvement": 0.09769809711075927,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.06106260524900492,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.023725096201536757,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.16187217124953368,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.05753349542773695,
+          "translation_delta_directed_relative_improvement": 0.35196167685569935
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.10720892298106573,
+          "name": "middle",
+          "persistent_directed_relative_improvement": 0.07050371957647625,
+          "translation_delta_directed_relative_improvement": 0.4213013760029855
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.05970595438485045,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.041156551486553415,
+          "translation_delta_directed_relative_improvement": 0.22053242835119338
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.06270384041870813,
+      "persistent_directed_relative_improvement": 0.05802761145325726,
+      "persistent_symmetric_l1_chamfer_m": 0.06928787354304661,
+      "persistent_symmetric_relative_improvement": 0.07577066727968775,
+      "physical_directed_l1_chamfer_m": 0.0665665375982479,
+      "physical_symmetric_l1_chamfer_m": 0.07496826933539266,
+      "prediction_seal_sha256": "4be9e8be04c8966c035c84d7f401876d5f2acdc2489eac49007d1176e5a1d06a",
+      "profile_correlation": 0.9698234026148018,
+      "training_repeat_count": 2,
+      "translation_delta_directed_l1_chamfer_m": 0.04371668318907568,
+      "translation_delta_symmetric_l1_chamfer_m": 0.05316290621626913,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.3028069270214509,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.23272423444716467
+    },
+    "chequered_rag_2/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.054777081157224135,
+      "action_phase_directed_relative_improvement": 0.14680331693924367,
+      "action_phase_symmetric_l1_chamfer_m": 0.06434639474468176,
+      "action_phase_symmetric_relative_improvement": 0.11913129913040288,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.06510053003477287,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.021601872804365735,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.17953722715830495,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.04162627612989411,
+          "translation_delta_directed_relative_improvement": 0.33814304788853344
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.17850037132477084,
+          "name": "middle",
+          "persistent_directed_relative_improvement": 0.1598851091256148,
+          "translation_delta_directed_relative_improvement": 0.4827349226030592
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.06041120449920203,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.05335614970214126,
+          "translation_delta_directed_relative_improvement": 0.21334503536999114
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.05859141321286825,
+      "persistent_directed_relative_improvement": 0.08739205607583633,
+      "persistent_symmetric_l1_chamfer_m": 0.06576708699260977,
+      "persistent_symmetric_relative_improvement": 0.09968276064221837,
+      "physical_directed_l1_chamfer_m": 0.06420217312697106,
+      "physical_symmetric_l1_chamfer_m": 0.0730487922674046,
+      "prediction_seal_sha256": "819c76e46182fc1cc45c478fad84cc3226a34412fe20c8e2b156e07361aa0a65",
+      "profile_correlation": 0.9909459437333736,
+      "training_repeat_count": 2,
+      "translation_delta_directed_l1_chamfer_m": 0.04132679155178645,
+      "translation_delta_symmetric_l1_chamfer_m": 0.05167514553702005,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.2946612944521028,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.21427042157383722
+    },
+    "cotton_rag_0/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.08000285750920202,
+      "action_phase_directed_relative_improvement": 0.1014551227709399,
+      "action_phase_symmetric_l1_chamfer_m": 0.09202083161870082,
+      "action_phase_symmetric_relative_improvement": 0.10085653326383881,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.044389088483909996,
+      "action_phase_vs_persistent_symmetric_relative_improvement": -0.00174910719289908,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.15497075305304311,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.10498835080478983,
+          "translation_delta_directed_relative_improvement": 0.4519119079360244
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.09140243600877018,
+          "name": "middle",
+          "persistent_directed_relative_improvement": 0.004849312500428645,
+          "translation_delta_directed_relative_improvement": 0.45423578483918203
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.06649199790226928,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.08597029245056689,
+          "translation_delta_directed_relative_improvement": 0.4067847611407078
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.08371907074844549,
+      "persistent_directed_relative_improvement": 0.05971680900597278,
+      "persistent_symmetric_l1_chamfer_m": 0.09186015835498128,
+      "persistent_symmetric_relative_improvement": 0.10242648555411181,
+      "physical_directed_l1_chamfer_m": 0.08903601760650562,
+      "physical_symmetric_l1_chamfer_m": 0.10234276844910092,
+      "prediction_seal_sha256": "994c28a9ff4d124f54254bd59e878a657c42945832e908c514cf7feb7cbe296a",
+      "profile_correlation": 0.9440887024026786,
+      "training_repeat_count": 2,
+      "translation_delta_directed_l1_chamfer_m": 0.05002173520013706,
+      "translation_delta_symmetric_l1_chamfer_m": 0.06434365071808458,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.40250489221936486,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.29954779231451834
+    },
+    "cotton_rag_1/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.07242702970668569,
+      "action_phase_directed_relative_improvement": 0.12817629513256848,
+      "action_phase_symmetric_l1_chamfer_m": 0.08528601326588489,
+      "action_phase_symmetric_relative_improvement": 0.120824975463995,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.05993230738525267,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.0035782925056357814,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.18184918493170898,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.11749117462694907,
+          "translation_delta_directed_relative_improvement": 0.4734646351376247
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.13489048865421246,
+          "name": "middle",
+          "persistent_directed_relative_improvement": 0.021157204027547113,
+          "translation_delta_directed_relative_improvement": 0.5193227846298188
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.07420510260936387,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.08986188522685697,
+          "translation_delta_directed_relative_improvement": 0.39733972379385224
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.0770444833661221,
+      "persistent_directed_relative_improvement": 0.07259475916835187,
+      "persistent_symmetric_l1_chamfer_m": 0.08559228750681074,
+      "persistent_symmetric_relative_improvement": 0.1176677325238043,
+      "physical_directed_l1_chamfer_m": 0.08307531591802594,
+      "physical_symmetric_l1_chamfer_m": 0.09700686539735998,
+      "prediction_seal_sha256": "8a95f6c7cde930ed4e36d61b35235841d6c5e930ec3983d6e58a9b2a67e25856",
+      "profile_correlation": 0.984710287271742,
+      "training_repeat_count": 2,
+      "translation_delta_directed_l1_chamfer_m": 0.04447001165202663,
+      "translation_delta_symmetric_l1_chamfer_m": 0.05999093405863839,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.42280083259561546,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.29910818128485234
+    },
+    "cotton_rag_2/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.07142741294979348,
+      "action_phase_directed_relative_improvement": 0.11807632283566723,
+      "action_phase_symmetric_l1_chamfer_m": 0.08544322391812033,
+      "action_phase_symmetric_relative_improvement": 0.11106883818604009,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.06553822122708677,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.0045865785869027885,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.16102174047137569,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.01111981349641084,
+          "translation_delta_directed_relative_improvement": 0.3649599416038534
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.13214502646382628,
+          "name": "middle",
+          "persistent_directed_relative_improvement": 0.05912718568061506,
+          "translation_delta_directed_relative_improvement": 0.5236327625725397
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.06919035523073011,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.08774014147234675,
+          "translation_delta_directed_relative_improvement": 0.3958608438497398
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.07643695501766616,
+      "persistent_directed_relative_improvement": 0.05622284699281202,
+      "persistent_symmetric_l1_chamfer_m": 0.08583692170517895,
+      "persistent_symmetric_relative_improvement": 0.10697289920802373,
+      "physical_directed_l1_chamfer_m": 0.08099046980965008,
+      "physical_symmetric_l1_chamfer_m": 0.0961190557700376,
+      "prediction_seal_sha256": "d0a8a1a9a463aa2e8dd58687d1b91ff47e83c5df6d25a7c9b64c7edc165d7035",
+      "profile_correlation": 0.9054139572961943,
+      "training_repeat_count": 2,
+      "translation_delta_directed_l1_chamfer_m": 0.04558471039995431,
+      "translation_delta_symmetric_l1_chamfer_m": 0.06210682893920598,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.40362995373875443,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.2764555426099492
+    },
+    "linen_rag_0/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.09532360684692263,
+      "action_phase_directed_relative_improvement": 0.0697099773254178,
+      "action_phase_symmetric_l1_chamfer_m": 0.093173689516497,
+      "action_phase_symmetric_relative_improvement": 0.06500758459317815,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.05680222702525363,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.04769898037476073,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.08263497684772338,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.06959335912279326,
+          "translation_delta_directed_relative_improvement": 0.42962072921880234
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.04710257634254297,
+          "name": "middle",
+          "persistent_directed_relative_improvement": -0.09973341179065827,
+          "translation_delta_directed_relative_improvement": 0.26945931742893087
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.08202393454951533,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.08402625344099296,
+          "translation_delta_directed_relative_improvement": 0.4328260346912979
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.10106428320571838,
+      "persistent_directed_relative_improvement": 0.013685094123424908,
+      "persistent_symmetric_l1_chamfer_m": 0.09784058569333866,
+      "persistent_symmetric_relative_improvement": 0.018175559893056612,
+      "physical_directed_l1_chamfer_m": 0.10246654755349029,
+      "physical_symmetric_l1_chamfer_m": 0.09965181319247009,
+      "prediction_seal_sha256": "518ce5e2d6a37b1c7b2fe109444ebe6161c9ba16c5e02d66f5f23175c8ef968d",
+      "profile_correlation": 0.9689816710172954,
+      "training_repeat_count": 1,
+      "translation_delta_directed_l1_chamfer_m": 0.06421426163421458,
+      "translation_delta_symmetric_l1_chamfer_m": 0.06550536566079244,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.3646196302257924,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.3304888232567859
+    },
+    "linen_rag_1/dynamic": {
+      "evaluated": false,
+      "exact_fallback": true,
+      "prediction_seal_sha256": "2b08f30ba61d9521bb9241d9cbd2daf47186c240199fe66a6d2fde024b479edf",
+      "reason": "held-prefix-correction-rejected"
+    },
+    "linen_rag_2/dynamic": {
+      "action_phase_directed_l1_chamfer_m": 0.08227540579919759,
+      "action_phase_directed_relative_improvement": 0.045372159784456856,
+      "action_phase_symmetric_l1_chamfer_m": 0.08189971050206941,
+      "action_phase_symmetric_relative_improvement": 0.04271022337962911,
+      "action_phase_vs_persistent_directed_relative_improvement": 0.03387053824600944,
+      "action_phase_vs_persistent_symmetric_relative_improvement": 0.025684942895944064,
+      "evaluated": true,
+      "horizons": [
+        {
+          "action_phase_directed_relative_improvement": 0.04523026497655144,
+          "name": "early",
+          "persistent_directed_relative_improvement": 0.020561367696607574,
+          "translation_delta_directed_relative_improvement": 0.4152650666423638
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.037217431831998306,
+          "name": "middle",
+          "persistent_directed_relative_improvement": -0.0565845492543572,
+          "translation_delta_directed_relative_improvement": 0.32200965716464347
+        },
+        {
+          "action_phase_directed_relative_improvement": 0.05354648659000236,
+          "name": "late",
+          "persistent_directed_relative_improvement": 0.0716654567081791,
+          "translation_delta_directed_relative_improvement": 0.42217199843429837
+        }
+      ],
+      "persistent_directed_l1_chamfer_m": 0.0851598145551095,
+      "persistent_directed_relative_improvement": 0.011904845047957061,
+      "persistent_symmetric_l1_chamfer_m": 0.08405875481951276,
+      "persistent_symmetric_relative_improvement": 0.01747410179032752,
+      "physical_directed_l1_chamfer_m": 0.08618584366932021,
+      "physical_symmetric_l1_chamfer_m": 0.08555372939551208,
+      "prediction_seal_sha256": "b8b07ac8ada39857e54b282d508264577ae2b840eec7759aece87c704011e447",
+      "profile_correlation": 0.955934391754103,
+      "training_repeat_count": 1,
+      "translation_delta_directed_l1_chamfer_m": 0.05293418571057235,
+      "translation_delta_symmetric_l1_chamfer_m": 0.05762022775241212,
+      "translation_delta_vs_persistent_directed_relative_improvement": 0.378413562933289,
+      "translation_delta_vs_persistent_symmetric_relative_improvement": 0.31452437195707067
+    }
+  },
+  "claim_boundary": "Post-open leave-one-repeat-out mechanism diagnostic. Future outcomes from disjoint opened repeats train the scalar and translation profiles. No independent confirmation or SOTA claim is permitted.",
+  "configuration": {
+    "maximum_absolute_scale": 1.5,
+    "maximum_total_node_correction_m": 0.1,
+    "profile_coordinate": "normalized future horizon",
+    "smoothing_window_frames": 9,
+    "training_policy": "leave-one-repeat-out, rejected profiles omitted",
+    "translation_statistic": "coordinatewise node median"
+  },
+  "manifest_sha256": "18f23c9a508939f20502a960130f5de00ce0161ef037592933c0ec3ac0ce58e0",
+  "method_id": "cloth-sim2real-action-phase-diagnostic-v1",
+  "schema_version": 1
+}
