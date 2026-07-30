@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import sys
+import types
 from dataclasses import asdict
 from pathlib import Path
 
@@ -9,6 +11,7 @@ import pytest
 
 from bayesian_phystwin.rgbench_isotropic_mesh import (
     RGBenchIsotropicMeshConfig,
+    _source_distances,
     build_isotropic_mesh_artifact,
     build_isotropic_mesh_manifest,
     load_isotropic_mesh_artifact,
@@ -377,3 +380,66 @@ def test_registered_protocol_matches_runtime_mesh_config() -> None:
             edge_grid["step"],
         )
     ) == runtime["target_edge_lengths_um"]
+
+
+def test_distortion_uses_point_to_triangle_surface_distance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeMesh:
+        def __init__(
+            self,
+            *,
+            vertex_matrix: np.ndarray,
+            face_matrix: np.ndarray | None = None,
+        ) -> None:
+            self.vertices = vertex_matrix
+            self.faces = face_matrix
+            self.scalar = np.empty(0)
+
+        def vertex_scalar_array(self) -> np.ndarray:
+            return self.scalar
+
+    class FakeMeshSet:
+        def __init__(self) -> None:
+            self.meshes: list[FakeMesh] = []
+            self.current = 0
+
+        def add_mesh(self, mesh: FakeMesh, _name: str) -> None:
+            self.meshes.append(mesh)
+            self.current = len(self.meshes) - 1
+
+        def current_mesh_id(self) -> int:
+            return self.current
+
+        def compute_scalar_by_distance_from_another_mesh_per_vertex(
+            self,
+            *,
+            measuremesh: int,
+            refmesh: int,
+            signeddist: bool,
+            maxdist: object,
+        ) -> None:
+            assert refmesh == 1
+            assert signeddist is False
+            assert maxdist == 100.0
+            self.meshes[measuremesh].scalar = np.asarray([0.001, 0.002])
+
+        def set_current_mesh(self, index: int) -> None:
+            self.current = index
+
+        def current_mesh(self) -> FakeMesh:
+            return self.meshes[self.current]
+
+    fake = types.SimpleNamespace(
+        Mesh=FakeMesh,
+        MeshSet=FakeMeshSet,
+        PercentageValue=float,
+    )
+    monkeypatch.setitem(sys.modules, "pymeshlab", fake)
+    source = np.asarray([[0.0, 0.0, 0.0], [100.0, 0.0, 0.0]])
+    derived = np.asarray([[0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]])
+    faces = np.asarray([[0, 1, 2]], dtype=np.int64)
+    mean, p99, maximum = _source_distances(source, derived, faces)
+    assert mean == pytest.approx(0.0015)
+    assert p99 == pytest.approx(0.00199)
+    assert maximum == pytest.approx(0.002)

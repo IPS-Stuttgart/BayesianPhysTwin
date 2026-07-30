@@ -51,7 +51,7 @@ def _canonical_sha256(payload: dict[str, Any], salt: bytes) -> str:
 class RGBenchIsotropicMeshConfig:
     """Frozen, outcome-blind physical-backend admission settings."""
 
-    identity_max_vertices: int = 12_000
+    identity_max_vertices: int = 13_000
     source_fallback_max_vertices: int = 21_000
     physical_min_vertices: int = 128
     remesh_iterations: int = 5
@@ -592,15 +592,49 @@ def _remesh_isotropic(
 def _source_distances(
     source_vertices: np.ndarray,
     derived_vertices: np.ndarray,
+    derived_faces: np.ndarray,
 ) -> tuple[float, float, float]:
     if np.array_equal(source_vertices, derived_vertices):
         return 0.0, 0.0, 0.0
     try:
-        from scipy.spatial import cKDTree
-    except (ImportError, OSError, ValueError):
+        import pymeshlab
+    except (ImportError, OSError):
+        pymeshlab = None
+    if pymeshlab is not None:
+        mesh_set = pymeshlab.MeshSet()
+        mesh_set.add_mesh(
+            pymeshlab.Mesh(vertex_matrix=source_vertices),
+            "source_points",
+        )
+        source_id = mesh_set.current_mesh_id()
+        mesh_set.add_mesh(
+            pymeshlab.Mesh(
+                vertex_matrix=derived_vertices,
+                face_matrix=derived_faces,
+            ),
+            "derived_surface",
+        )
+        derived_id = mesh_set.current_mesh_id()
+        mesh_set.compute_scalar_by_distance_from_another_mesh_per_vertex(
+            measuremesh=source_id,
+            refmesh=derived_id,
+            signeddist=False,
+            maxdist=pymeshlab.PercentageValue(100.0),
+        )
+        mesh_set.set_current_mesh(source_id)
+        distances = np.asarray(
+            mesh_set.current_mesh().vertex_scalar_array(),
+            dtype=np.float64,
+        )
+        _require(
+            distances.shape == (len(source_vertices),)
+            and np.all(np.isfinite(distances)),
+            "PyMeshLab returned invalid source-to-surface distances",
+        )
+    else:
         _require(
             len(source_vertices) * len(derived_vertices) <= 5_000_000,
-            "large mesh-distance validation requires a working scipy",
+            "large mesh-distance validation requires PyMeshLab",
         )
         distances = np.empty(len(source_vertices), dtype=np.float64)
         for start in range(0, len(source_vertices), 256):
@@ -612,15 +646,6 @@ def _source_distances(
             distances[start:stop] = np.sqrt(
                 np.min(np.sum(difference * difference, axis=2), axis=1)
             )
-    else:
-        distances = np.asarray(
-            cKDTree(derived_vertices).query(
-                source_vertices,
-                k=1,
-                workers=-1,
-            )[0],
-            dtype=np.float64,
-        )
     return (
         float(np.mean(distances)),
         float(np.quantile(distances, 0.99)),
@@ -728,6 +753,7 @@ def _candidate_attempt(
     mean_distance, p99_distance, max_distance = _source_distances(
         source_vertices,
         derived_vertices,
+        derived_faces,
     )
     reasons: list[str] = []
     if topology.connected_component_count != 1:

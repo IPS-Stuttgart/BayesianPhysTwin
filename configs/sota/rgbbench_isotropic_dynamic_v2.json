@@ -20,7 +20,7 @@
     ]
   },
   "mesh_admission": {
-    "identity_max_vertices": 12000,
+    "identity_max_vertices": 13000,
     "source_fallback_max_vertices": 21000,
     "physical_min_vertices": 128,
     "remesh_iterations": 5,
@@ -43,7 +43,7 @@
       "duplicate_faces": 0,
       "self_intersection_faces": 0
     },
-    "selection": "identity when admissible; otherwise the smallest target edge length passing every gate",
+    "selection": "identity when admissible; otherwise the smallest target edge length passing every gate using source-vertex to derived-triangle surface distance",
     "contact_lineage": "snap two derived vertices to the exact released fling-pin coordinates and bind the new raw OBJ indices"
   },
   "physical_preflight": {

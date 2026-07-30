@@ -29,7 +29,7 @@ The frozen static v1 method remains a predecessor and control.
 
 ## Target-Free Mesh Selection
 
-For an original mesh with at most 12,000 vertices, v2 retains the exact source
+For an original mesh with at most 13,000 vertices, v2 retains the exact source
 OBJ if it passes all geometry gates. Larger or invalid meshes are remeshed with
 PyMeshLab 2025.7.post1 using five iterations of explicit isotropic remeshing.
 Candidate target edge lengths form a fixed 8.00--20.00 mm grid in 0.25 mm
@@ -44,14 +44,21 @@ self-intersections. The fallback does not bypass the full physical gate.
 
 The gates require:
 
-- 128--12,000 vertices;
+- 128--13,000 vertices;
 - one connected component;
 - edge- and vertex-manifold topology;
 - orientability;
 - no degenerate or duplicate triangles;
 - no selected self-intersection faces;
-- source-to-derived nearest-surface mean, 99th percentile, and maximum
+- source-vertex to derived-triangle surface mean, 99th percentile, and maximum
   distances no larger than 5, 10, and 15 mm.
+
+The surface metric is computed against triangles, not only against derived
+vertices. This distinction was locked after a target-free cake-skirt audit:
+nearest-vertex distance incorrectly reported 10.5 mm at the 99th percentile
+for a 12,986-node candidate whose true point-to-triangle value was 2.54 mm.
+The 13,000-node cap is the smallest round cap admitting that first clean
+candidate; it remains subject to deterministic PyBullet preflight.
 
 For fling actions, two derived vertices are snapped to the exact released
 source-pin coordinates. Their indices are recomputed from the no-UV raw OBJ and
