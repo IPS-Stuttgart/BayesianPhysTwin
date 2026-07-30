@@ -91,6 +91,28 @@ and adds a slope term with frozen shrinkages
 leave-one-garment-out source cross-fitting. Unsupported or rejected updates
 fall back exactly to the physical trajectory.
 
+Concretely, the frozen candidate family is
+
+```text
+c(t_branch + h) = c_static + alpha * h * dc_prefix,
+alpha in {0, 0.1, 0.25, 0.5, 0.75, 1}.
+```
+
+The existing robust likelihood and disjoint prefix-validation block admit and
+select `c_static`. The temporal field `dc_prefix` is then estimated from the
+complete permitted prefix using metric point-association variance, a shared
+bias floor, one robust innovation update, and the same selected spatial graph
+model. The total correction remains capped at 100 mm per node. Its covariance
+includes both the static graph posterior and the slope uncertainty propagated
+quadratically with elapsed time.
+
+All six trajectories are sealed before any future point cloud is read. For
+each held-out source garment and action, `alpha` is selected solely from the
+other two source garments. Source reporting therefore uses out-of-garment
+predictions even though all 27 source outcomes form the development cohort.
+If the static prefix gate rejects a case, every temporal arm is the
+byte-equivalent physical trajectory.
+
 Calibration opens only if the cross-fitted source result achieves at least 5%
 object/action-balanced improvement over the physical baseline, does not regress
 any source garment, improves at least six of nine garment/action cells, beats

@@ -72,9 +72,13 @@
         1.0
       ],
       "maximum_correction_m": 0.1,
-      "exact_physical_fallback": true
+      "exact_physical_fallback": true,
+      "static_component": "existing robust graph-smoothed correction selected on disjoint prefix validation",
+      "slope_component": "robust metric residual slope fitted on the complete allowed prefix using the selected spatial model",
+      "candidate_formula": "c(t_branch+h) = c_static + alpha * h * dc_prefix",
+      "uncertainty": "static metric graph covariance plus alpha^2 * h^2 * slope covariance"
     },
-    "selection": "leave-one-garment-out source cross-fitting; action-specific settings are selected on the other two garments",
+    "selection": "seal every shrinkage arm before future scoring; leave-one-garment-out source cross-fitting selects action-specific alpha on the other two garments",
     "source_gate": {
       "minimum_object_action_balanced_improvement_vs_physical": 0.05,
       "all_source_garments_nonregressing": true,
