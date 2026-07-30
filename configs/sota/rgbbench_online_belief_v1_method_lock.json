@@ -1,0 +1,52 @@
+{
+  "artifact_kind": "RGBenchOnlineBeliefMethodLock",
+  "baseline": {
+    "mode": "fixed_point",
+    "simulator": "pybullet",
+    "upstream_commit": "eddae2f28f388b4706d65d626f67bc9e34b14c68"
+  },
+  "belief": {
+    "candidate_count": 4,
+    "correction_scales": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "covariance_probes": 16,
+    "covariance_seed": 20260730,
+    "graph_prior_strengths": [
+      0.1,
+      1.0,
+      10.0
+    ],
+    "maximum_correction_m": 0.1,
+    "maximum_validation_worst_ratio": 1.0,
+    "minimum_validation_improvement": 0.02,
+    "minimum_validation_win_fraction": 0.6,
+    "validation_metric": "real_to_sim_l1_chamfer"
+  },
+  "calibration_gate": {
+    "aggregate_beats_published_garment_dynamics": true,
+    "at_least_four_of_six_cells_beat_published_garment_dynamics": true,
+    "at_least_four_of_six_cells_improve": true,
+    "both_garments_nonregressing": true,
+    "mean_relative_improvement_at_least": 0.03
+  },
+  "claim_boundary": "Causal online continuation after a real prefix. The published GarmentDynamics comparator is open-loop and has less information, so identical-information SOTA is not claimed.",
+  "dataset_lock_artifact_sha256": "3789947cbb9c7c58ccc39b8186b4e30e2a258e615bc2e02c05842bcdafe160e8",
+  "dataset_revision": "136c00dc5f96b6b3d20427e93875a1c00d7a7cc9",
+  "fallback": "Rejected per-case updates are bit-exact PyBullet predictions.",
+  "method_id": "rgbbench-guarded-online-readout-v1",
+  "primary_metric": "mean real-to-simulation Manhattan Chamfer over the full published evaluation window",
+  "schema_version": 1,
+  "source_gate": {
+    "aggregate_beats_published_garment_dynamics": true,
+    "all_three_garments_nonregressing": true,
+    "at_least_six_of_nine_cells_beat_published_garment_dynamics": true,
+    "at_least_six_of_nine_cells_improve": true,
+    "mean_relative_improvement_at_least": 0.05
+  },
+  "status": "locked-before-point-coordinate-access",
+  "target_opening_rule": "Target prediction and scoring require a passing source gate and then a passing calibration gate."
+}

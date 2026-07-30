@@ -603,10 +603,16 @@ def fit_guarded_readout_correction(
     faces: np.ndarray,
     *,
     config: ClothReadoutBeliefConfig | None = None,
+    validation_metric: str = "symmetric_l1_chamfer",
 ) -> GuardedReadoutCorrection:
     """Fit on one prefix block and admit only on a disjoint prefix block."""
 
     cfg = config or ClothReadoutBeliefConfig()
+    _require(
+        validation_metric
+        in {"symmetric_l1_chamfer", "real_to_sim_l1_chamfer"},
+        "unknown validation metric",
+    )
     validation = np.asarray(physical_validation_m, dtype=np.float64)
     _require(
         validation.ndim == 3 and validation.shape[2] == 3,
@@ -634,9 +640,17 @@ def fit_guarded_readout_correction(
         faces,
         cfg,
     )
+    def validation_score(
+        physical: np.ndarray,
+        observed: np.ndarray,
+    ) -> float:
+        if validation_metric == "symmetric_l1_chamfer":
+            return symmetric_l1_chamfer_m(physical, observed)
+        return directed_l1_chamfer_m(observed, physical)
+
     baseline_frame_scores = np.asarray(
         [
-            symmetric_l1_chamfer_m(physical, observed)
+            validation_score(physical, observed)
             for physical, observed in zip(
                 validation,
                 observed_validation_clouds_m,
@@ -650,7 +664,7 @@ def fit_guarded_readout_correction(
     for name, correction in candidates.items():
         frame_scores = np.asarray(
             [
-                symmetric_l1_chamfer_m(physical + correction, observed)
+                validation_score(physical + correction, observed)
                 for physical, observed in zip(
                     validation,
                     observed_validation_clouds_m,
@@ -692,6 +706,7 @@ def fit_guarded_readout_correction(
             "selected_validation_worst_ratio": float(worst_ratio),
             "selected_validation_win_fraction": best.win_fraction,
             "candidate_count": len(candidates),
+            "validation_metric": validation_metric,
         }
     )
     if not accepted:
