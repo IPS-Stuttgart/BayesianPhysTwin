@@ -1,0 +1,143 @@
+diff --git a/src/conf.cpp b/src/conf.cpp
+--- a/src/conf.cpp
++++ b/src/conf.cpp
+@@ -378,7 +378,9 @@ void parse_node_handle (vector<Handle*> &hans, const Json::Value &json,
+                         const vector<Cloth> &cloths,
+                         const vector<Motion> &motions) {
+     int c, l, m;
++    bool kinematic;
+     vector<int> ns;
++    parse(kinematic, json["kinematic"], false);
+     parse(c, json["cloth"], 0);
+     parse(l, json["label"], -1);
+     if (l == -1)
+@@ -393,6 +395,7 @@ void parse_node_handle (vector<Handle*> &hans, const Json::Value &json,
+             han->node = mesh.nodes[n];
+             han->node->preserve = true;
+             han->motion = motion;
++            han->kinematic = kinematic;
+             hans.push_back(han);
+         }
+     }
+@@ -402,6 +405,7 @@ void parse_node_handle (vector<Handle*> &hans, const Json::Value &json,
+             han->node = mesh.nodes[ns[i]];
+             han->node->preserve = true;
+             han->motion = motion;
++            han->kinematic = kinematic;
+             hans.push_back(han);
+         }
+     }
+diff --git a/src/handle.cpp b/src/handle.cpp
+--- a/src/handle.cpp
++++ b/src/handle.cpp
+@@ -39,20 +39,39 @@ Transformation normalize (const Transformation &T) {
+     return T1;
+ }
+ 
+-vector<Constraint*> NodeHandle::get_constraints (double t) {
+-    double s = strength(t);
+-    if (!s)
+-        return vector<Constraint*>();
++Vec3 NodeHandle::target (double t) {
+     if (!activated) {
+         // handle just got started, fill in its original position
+         x0 = motion ? inverse(normalize(motion->pos(t))).apply(node->x) : node->x;
+         activated = true;
+     }
+-    Vec3 x = motion ? normalize(motion->pos(t)).apply(x0) : x0;
++    return motion ? normalize(motion->pos(t)).apply(x0) : x0;
++}
++
++vector<Constraint*> NodeHandle::get_constraints (double t) {
++    double s = strength(t);
++    if (!s)
++        return vector<Constraint*>();
+     vector<Constraint*> cons;
+-    add_position_constraints(node, x, s*::magic.handle_stiffness, cons);
++    add_position_constraints(node, target(t), s*::magic.handle_stiffness, cons);
+     return cons;
+ }
+ 
++void NodeHandle::apply_kinematic (double t, double dt) {
++    if (!kinematic || !active(t))
++        return;
++    Vec3 x = target(t);
++    if (dt > 0) {
++        double previous_time = t - dt;
++        if (previous_time < start_time)
++            previous_time = start_time;
++        node->v = (x - target(previous_time))/dt;
++    } else {
++        node->v = Vec3(0);
++    }
++    node->x = x;
++    node->acceleration = Vec3(0);
++}
++
+ vector<Constraint*> CircleHandle::get_constraints (double t) {
+     double s = strength(t);
+     if (!s)
+diff --git a/src/handle.hpp b/src/handle.hpp
+--- a/src/handle.hpp
++++ b/src/handle.hpp
+@@ -45,10 +45,13 @@ struct NodeHandle: public Handle {
+     Node *node;
+     const Motion *motion;
+     bool activated;
++    bool kinematic;
+     Vec3 x0;
+-    NodeHandle (): activated(false) {}
++    NodeHandle (): activated(false), kinematic(false) {}
++    Vec3 target (double t);
+     std::vector<Constraint*> get_constraints (double t);
+     std::vector<Node*> get_nodes () {return std::vector<Node*>(1, node);}
++    void apply_kinematic (double t, double dt);
+ };
+ 
+ struct CircleHandle: public Handle {
+diff --git a/src/simulation.cpp b/src/simulation.cpp
+--- a/src/simulation.cpp
++++ b/src/simulation.cpp
+@@ -61,5 +61,6 @@ void remeshing_step (Simulation &sim, bool initializing=false);
+ 
+ void validate_handles (const Simulation &sim);
++void apply_kinematic_handles (Simulation &sim, double t, double dt);
+ 
+ void prepare (Simulation &sim) {
+     sim.cloth_meshes.resize(sim.cloths.size());
+@@ -94,6 +95,7 @@ void relax_initial_state (Simulation &sim) {
+     ::magic.preserve_creases = false;
+     if (::magic.fixed_high_res_mesh)
+         sim.enabled[remeshing] = false;
++    apply_kinematic_handles(sim, sim.time, 0);
+ }
+ 
+ void validate_handles (const Simulation &sim) {
+@@ -109,6 +111,20 @@ void validate_handles (const Simulation &sim) {
+     }
+ }
+ 
++void apply_kinematic_handles (Simulation &sim, double t, double dt) {
++    bool changed = false;
++    for (int h = 0; h < sim.handles.size(); h++) {
++        NodeHandle *handle = dynamic_cast<NodeHandle*>(sim.handles[h]);
++        if (!handle || !handle->kinematic)
++            continue;
++        handle->apply_kinematic(t, dt);
++        changed = true;
++    }
++    if (changed)
++        for (int c = 0; c < sim.cloth_meshes.size(); c++)
++            compute_ws_data(*sim.cloth_meshes[c]);
++}
++
+ vector<Constraint*> get_constraints (Simulation &sim, bool include_proximity);
+ void delete_constraints (const vector<Constraint*> &cons);
+ void update_obstacles (Simulation &sim, bool update_positions=true);
+@@ -132,6 +147,7 @@ void advance_step (Simulation &sim) {
+     strainlimiting_step(sim, cons);
+     collision_step(sim);
++    apply_kinematic_handles(sim, sim.time, sim.step_time);
+     if (sim.step % sim.frame_steps == 0) {
+         remeshing_step(sim);
+         sim.frame++;

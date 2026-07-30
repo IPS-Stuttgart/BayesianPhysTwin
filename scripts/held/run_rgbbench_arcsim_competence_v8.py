@@ -35,6 +35,7 @@ ARTIFACT_KIND = "RGBenchARCSimCompetenceProtocol"
 SUPPORTED_PROTOCOLS = {
     "rgbbench-arcsim-competence-v8": ARTIFACT_KIND,
     "rgbbench-arcsim-competence-v9": ARTIFACT_KIND,
+    "rgbbench-arcsim-dirichlet-competence-v10": ARTIFACT_KIND,
 }
 SOURCE_DIGEST_KEYS = {
     "mesh": "mesh_sha256",
@@ -195,6 +196,7 @@ def _parameters(protocol: dict[str, Any]) -> ARCSimClothParameters:
         damping_s=float(physics["damping_s"]),
         handle_stiffness=float(physics["handle_stiffness"]),
         gravity_m_s2=tuple(float(value) for value in physics["gravity_m_s2"]),
+        kinematic_handles=bool(physics.get("kinematic_handles", False)),
     )
 
 

@@ -147,6 +147,33 @@ def test_scene_binds_fixed_topology_and_two_known_pin_trajectories(
     } <= set(payload["disable"])
 
 
+def test_scene_adds_kinematic_handle_flag_only_when_requested(
+    tmp_path: Path,
+) -> None:
+    mesh = tmp_path / "mesh.obj"
+    mesh.write_text(
+        "v 0 0 0\nv 0.5 0 0\nv 1 0 0\nf 1 2 3\n",
+        encoding="ascii",
+    )
+    material = tmp_path / "material.json"
+    material.write_text("{}\n", encoding="ascii")
+    destination = tmp_path / "scene.json"
+    write_arcsim_scene(
+        destination,
+        mesh_path=mesh,
+        material_path=material,
+        controller=_controller(),
+        parameters=_parameters_for_test(kinematic_handles=True),
+        duration_s=0.1,
+        initial_pose_xyz_wxyz=(0.1, 0.0, 0.01, 1.0, 0.0, 0.0, 0.0),
+    )
+    payload = json.loads(destination.read_text(encoding="ascii"))
+    assert payload["handles"] == [
+        {"kinematic": True, "motion": 0, "nodes": [0]},
+        {"kinematic": True, "motion": 1, "nodes": [2]},
+    ]
+
+
 def test_scene_rejects_nonidentity_rotation(tmp_path: Path) -> None:
     mesh = tmp_path / "mesh.obj"
     mesh.write_text("v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n", encoding="ascii")
@@ -223,6 +250,7 @@ def test_protocol_parameters_preserve_frozen_mechanics() -> None:
     assert parameters.timestep_s == 0.01
     assert parameters.handle_stiffness == 1e8
     assert parameters.gravity_m_s2 == (0.0, 0.0, -9.81)
+    assert not parameters.kinematic_handles
 
 
 def test_v9_changes_only_provenance_paths_and_predecessor() -> None:
@@ -236,6 +264,7 @@ def test_v9_changes_only_provenance_paths_and_predecessor() -> None:
     assert set(SUPPORTED_PROTOCOLS) == {
         "rgbbench-arcsim-competence-v8",
         "rgbbench-arcsim-competence-v9",
+        "rgbbench-arcsim-dirichlet-competence-v10",
     }
     assert v9["predecessor"]["protocol_id"] == v8["protocol_id"]
     assert v9["predecessor"]["status"] == "technical_failure_before_simulation"
@@ -248,7 +277,50 @@ def test_v9_changes_only_provenance_paths_and_predecessor() -> None:
         "dependencies/lib/libjson.a",
         "dependencies/lib/libalglib.a",
     }
-    for relative_path, expected_sha256 in v9["upstream"][
+    assert all(
+        len(expected_sha256) == 64
+        for expected_sha256 in v9["upstream"][
+            "implementation_artifact_sha256s"
+        ].values()
+    )
+
+
+def test_v10_changes_only_the_control_semantics_and_provenance() -> None:
+    root = Path(__file__).resolve().parents[1]
+    v9 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_competence_v9.json"
+    )
+    v10 = _load_protocol(
+        root / "configs" / "sota" / "rgbbench_arcsim_dirichlet_competence_v10.json"
+    )
+    assert v10["predecessor"]["protocol_id"] == v9["protocol_id"]
+    assert v10["predecessor"]["status"] == "control_contract_failed"
+    assert v10["competence_case"] == v9["competence_case"]
+    assert v10["competence_gate"] == v9["competence_gate"]
+    assert v10["physics"] == {
+        **v9["physics"],
+        "kinematic_handles": True,
+    }
+    assert (
+        v10["information_boundary"]["forbidden"]
+        == v9["information_boundary"]["forbidden"]
+    )
+    assert v10["method_change"] == {
+        "changed": "enforce the two known actuator nodes as time-varying "
+        "Dirichlet boundary conditions after every ARCSim substep",
+        "unchanged": [
+            "source case",
+            "mesh and material parameters",
+            "timestep and horizon",
+            "native ARCSim penalty forces during each implicit solve",
+            "disabled collision, remeshing, strain limiting, and plasticity",
+            "competence thresholds",
+            "information boundary",
+        ],
+        "selection_evidence": "v9 target-free pin error only; no point-cloud "
+        "filename, coordinate, or accuracy outcome was read",
+    }
+    for relative_path, expected_sha256 in v10["upstream"][
         "implementation_artifact_sha256s"
     ].items():
         assert sha256_file(root / relative_path) == expected_sha256

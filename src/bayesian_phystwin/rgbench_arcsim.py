@@ -32,6 +32,7 @@ class ARCSimClothParameters:
     damping_s: float
     handle_stiffness: float
     gravity_m_s2: tuple[float, float, float]
+    kinematic_handles: bool = False
 
     def __post_init__(self) -> None:
         positive = {
@@ -54,6 +55,10 @@ class ARCSimClothParameters:
         gravity = np.asarray(self.gravity_m_s2, dtype=np.float64)
         _require(
             gravity.shape == (3,) and np.all(np.isfinite(gravity)), "invalid gravity"
+        )
+        _require(
+            isinstance(self.kinematic_handles, bool),
+            "kinematic_handles must be boolean",
         )
 
     @property
@@ -198,6 +203,14 @@ def write_arcsim_scene(
         ),
         "v8 ARCSim adapter supports the frozen identity rotation only",
     )
+    handles: list[dict[str, object]] = [
+        {"nodes": [int(controller.pin_indices[0])], "motion": 0},
+        {"nodes": [int(controller.pin_indices[1])], "motion": 1},
+    ]
+    if parameters.kinematic_handles:
+        for handle in handles:
+            handle["kinematic"] = True
+
     payload = {
         "frame_time": float(parameters.timestep_s),
         "frame_steps": 1,
@@ -228,10 +241,7 @@ def write_arcsim_scene(
                 step_count=step_count,
             ),
         ],
-        "handles": [
-            {"nodes": [int(controller.pin_indices[0])], "motion": 0},
-            {"nodes": [int(controller.pin_indices[1])], "motion": 1},
-        ],
+        "handles": handles,
         "gravity": [float(value) for value in parameters.gravity_m_s2],
         "disable": [
             "proximity",
