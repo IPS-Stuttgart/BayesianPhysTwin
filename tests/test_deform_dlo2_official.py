@@ -154,6 +154,35 @@ def test_official_authorization_rejects_post_source_weight_change() -> None:
         )
 
 
+def test_official_authorization_accepts_frozen_parameter_mean() -> None:
+    protocol = load_deform_dlo2_official_protocol(PROTOCOL)
+    alltrain_protocol = load_deform_dlo2_alltrain_protocol(ALLTRAIN_PROTOCOL)
+    alltrain_result, final_method, method_spec = _authorization_artifacts()
+    parameter_mean = {
+        "path": "/tmp/final_parameter_mean.pt",
+        "sha256": "d" * 64,
+        "size_bytes": 100,
+    }
+    final_method["operator"] = "parameter_mean"
+    final_method["parameter_mean_checkpoint"] = parameter_mean
+    method_spec["operator"] = "parameter_mean"
+
+    selected = validate_deform_dlo2_official_authorization(
+        protocol,
+        alltrain_protocol,
+        alltrain_result,
+        final_method,
+        method_spec,
+        alltrain_protocol_sha256=sha256_file(ALLTRAIN_PROTOCOL),
+        alltrain_result_sha256="a" * 64,
+        final_method_sha256="c" * 64,
+        method_spec_sha256="b" * 64,
+    )
+
+    assert selected["operator"] == "parameter_mean"
+    assert selected["parameter_mean_checkpoint"] == parameter_mean
+
+
 def _record(name: str, model: float, persistence: float = 0.02):
     return {
         "name": name,
