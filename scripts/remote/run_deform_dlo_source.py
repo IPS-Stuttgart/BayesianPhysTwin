@@ -81,7 +81,13 @@ def _dlo2_stage_authorization(
         authorization,
         protocol_sha256=sha256_file(protocol_path),
     )
-    for label in ("parent_longrun_result", "parent_posterior_result"):
+    parent_labels = (
+        ("parent_deep_ensemble_result",)
+        if authorization.get("contract")
+        == "deform-dlo2-deep-seed-authorization-v1"
+        else ("parent_longrun_result", "parent_posterior_result")
+    )
+    for label in parent_labels:
         identity = authorization[label]
         if not isinstance(identity, dict):
             raise ValueError(f"DLO2 {label} identity is invalid")

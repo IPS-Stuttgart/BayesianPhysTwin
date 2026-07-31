@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo2-deep-ensemble-v1",
+  "claim_boundary": "Fresh DLO2 source confirmation of the frozen DLO1 two-seed operator bank. Official DEFORM evaluation remains unopened.",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff"
+  },
+  "parents": {
+    "dlo1_ensemble_protocol": {
+      "repository_path": "configs/sota/deform_dlo1_deep_ensemble_eval_v1.json",
+      "sha256": "8a64e2e81c598fc9fa375a9bed63ae51bd0077527ece1241e4e7d1443c5e9072"
+    },
+    "seed42_source_protocol": {
+      "repository_path": "configs/sota/deform_dlo2_deep_seed42_v1.json",
+      "sha256": "65add68d89c5c67b13a0b66b664b131039c8b91d154f7b13e60d792c2a85d9a8"
+    },
+    "seed43_source_protocol": {
+      "repository_path": "configs/sota/deform_dlo2_deep_seed43_v1.json",
+      "sha256": "f5d8e11cc8bf09d5be10e66b12d9a077d6b6805bc51a93c03744be1b0d5a959f"
+    }
+  },
+  "evaluation": {
+    "dlo_type": "DLO2",
+    "frame_count": 500,
+    "node_count": 12,
+    "cublas_workspace_config": ":4096:8",
+    "source_replay_tolerance_m": 0.000001,
+    "official_eval_read": false
+  },
+  "policy": {
+    "member_checkpoint_selection": "minimum-validation-l1-tie-earliest-v1",
+    "comparison_baseline": "lower-validation-error-single-member-v1",
+    "fallback": "comparison-baseline-exact",
+    "operators": [
+      {
+        "name": "equal_weight_predictive_mean",
+        "weighting": "uniform"
+      },
+      {
+        "name": "validation_softmax_predictive_mean",
+        "weighting": "validation-softmax",
+        "temperature_m": 0.001
+      }
+    ],
+    "validation_improvement_min": 0.01,
+    "source_transfer_improvement_min": 0.01,
+    "source_transfer_minimum_case_wins": 5,
+    "candidate_published_reference_l1_m": 0.0097,
+    "candidate_published_error_multiplier_max": 1.1,
+    "candidate_minimum_persistence_wins": 6,
+    "coordinate_variance_floor_m2": 0.000025,
+    "coordinate_interval_nominal_coverage": 0.9,
+    "alltrain_authorization": {
+      "dlo_type": "DLO2",
+      "seeds": [42, 43],
+      "same_operator_and_weights": true,
+      "same_total_update_budget": true,
+      "no_source_retuning": true,
+      "official_eval_remains_closed_until_alltrain_refit": true
+    }
+  }
+}

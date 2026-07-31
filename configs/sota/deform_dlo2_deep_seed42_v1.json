@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "contract": "deform-dlo-source-reproduction-v1",
+  "claim_boundary": "Fresh DLO2 seed-42 source reproduction for the preregistered two-seed ensemble. Official evaluation remains unopened.",
+  "model_initialization": "official-deform-dlo-initialization-v1",
+  "upstream": {
+    "repository": "https://github.com/roahmlab/DEFORM",
+    "commit": "b73b8b8ecc033caefa693fab7898741d4e6dbeff",
+    "code_vendored": false,
+    "license_status": "No explicit upstream license file observed at the locked commit; import from a separately obtained checkout only.",
+    "dense_solver_compatibility_shim": "sksparse-import-only-stub-v1"
+  },
+  "data": {
+    "development_partition": "train",
+    "official_eval_metrics_opened": false,
+    "forbid_eval_reads_during_source_stage": true,
+    "dlo_types": ["DLO2"],
+    "expected_train_trajectories_per_dlo": 56,
+    "expected_frames_per_trajectory": 500,
+    "expected_coordinate_count": 3,
+    "expected_node_count": {
+      "DLO2": 12
+    }
+  },
+  "source_split": {
+    "contract": "sha256-name-partition-v1",
+    "seed": "deform-dlo2-fresh-v1-20260731",
+    "fit_count": 40,
+    "validation_count": 8,
+    "source_test_count": 8
+  },
+  "training": {
+    "random_seed": 42,
+    "unroll_horizon_frames": 50,
+    "batch_size": 32,
+    "total_updates": 6400,
+    "checkpoint_updates": [0, 280, 640, 1280, 2560, 4000, 5200, 6040, 6400],
+    "optimizer": "official-sgd-parameter-groups-v1",
+    "cublas_workspace_config": ":4096:8",
+    "known_action_nodes": [0, 1, -2, -1],
+    "window_sampling": "frozen-uniform-fit-trajectory-and-start-v1",
+    "checkpoint_selection": "minimum-validation-l1-tie-earliest-v1"
+  },
+  "source_gate": {
+    "published_reference_l1_m": {
+      "DLO2": 0.0097
+    },
+    "published_error_multiplier_max": 1.1,
+    "minimum_persistence_wins": 6,
+    "required_source_test_count": 8,
+    "advance_only_if_all_gates_pass": true
+  },
+  "authorization": {
+    "required_parent_deep_ensemble": {
+      "protocol_path": "configs/sota/deform_dlo1_deep_ensemble_eval_v1.json",
+      "protocol_sha256": "8a64e2e81c598fc9fa375a9bed63ae51bd0077527ece1241e4e7d1443c5e9072",
+      "result_contract": "deform-dlo-deep-ensemble-result-v1",
+      "selection_contract": "deform-dlo-deep-ensemble-v1",
+      "exact_fallback": false,
+      "fresh_dlo2_deep_ensemble_authorized": true
+    },
+    "parent_result_must_be_supplied_before_preflight": true
+  },
+  "deep_ensemble_role": {
+    "seed": 42,
+    "peer_seed": 43,
+    "operator_bank": "copy-dlo1-exactly",
+    "no_dlo1_retuning": true
+  },
+  "future_stage": {
+    "official_eval_allowed_before_source_gate": false,
+    "identical_information_sota_only": true,
+    "online_prefix_assimilation_must_be_reported_separately": true
+  }
+}

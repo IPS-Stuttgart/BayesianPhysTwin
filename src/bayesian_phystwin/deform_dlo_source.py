@@ -231,6 +231,77 @@ def validate_deform_dlo2_stage_authorization(
 ) -> dict[str, object]:
     """Require the registered two-parent wrapper for every DLO2 source run."""
 
+    contract = authorization.get("contract")
+    if contract == "deform-dlo2-deep-seed-authorization-v1":
+        protocol_identity = authorization.get("protocol")
+        parent = authorization.get("parent_deep_ensemble_result")
+        source_authorization = protocol.get("authorization")
+        required = (
+            source_authorization.get("required_parent_deep_ensemble")
+            if isinstance(source_authorization, Mapping)
+            else None
+        )
+        role = protocol.get("deep_ensemble_role")
+        selected_spec = parent.get("selected_spec") if isinstance(parent, Mapping) else None
+        weights = (
+            selected_spec.get("weights") if isinstance(selected_spec, Mapping) else None
+        )
+        normalized_weights = (
+            {int(seed): float(weight) for seed, weight in weights.items()}
+            if isinstance(weights, Mapping)
+            else {}
+        )
+        if (
+            protocol.get("dlo_types") != ("DLO2",)
+            or authorization.get("official_eval_read") is not False
+            or authorization.get("source_test_opened") is not False
+            or not isinstance(protocol_identity, Mapping)
+            or protocol_identity.get("sha256") != protocol_sha256
+            or not isinstance(required, Mapping)
+            or not isinstance(role, Mapping)
+            or not isinstance(parent, Mapping)
+            or len(str(parent.get("sha256", ""))) != 64
+            or parent.get("contract") != required.get("result_contract")
+            or parent.get("selection_contract")
+            != required.get("selection_contract")
+            or parent.get("fresh_dlo2_deep_ensemble_authorized")
+            is not required.get("fresh_dlo2_deep_ensemble_authorized")
+            or not str(parent.get("selected_arm", ""))
+            or not isinstance(selected_spec, Mapping)
+            or selected_spec.get("operator") != "predictive_mean"
+            or set(normalized_weights) != {42, 43}
+            or not math.isclose(sum(normalized_weights.values()), 1.0, abs_tol=1e-12)
+            or any(
+                not math.isfinite(weight) or weight < 0.0
+                for weight in normalized_weights.values()
+            )
+            or not math.isfinite(
+                float(parent.get("source_transfer_relative_improvement", math.nan))
+            )
+            or float(parent.get("source_transfer_relative_improvement", -math.inf))
+            < 0.01
+            or int(parent.get("source_transfer_wins", -1)) < 5
+            or not math.isfinite(
+                float(parent.get("validation_fitted_variance_scale", math.nan))
+            )
+            or float(parent.get("validation_fitted_variance_scale", math.nan))
+            < 1.0
+            or int(role.get("seed", -1)) not in (42, 43)
+            or int(role.get("peer_seed", -1)) not in (42, 43)
+            or int(role.get("seed", -1)) == int(role.get("peer_seed", -1))
+            or role.get("operator_bank") != "copy-dlo1-exactly"
+            or role.get("no_dlo1_retuning") is not True
+        ):
+            raise ValueError("DLO2 deep-seed stage authorization differs")
+        return {
+            "contract": str(contract),
+            "protocol_sha256": protocol_sha256,
+            "seed": int(role["seed"]),
+            "peer_seed": int(role["peer_seed"]),
+            "selected_arm": str(parent["selected_arm"]),
+            "parent_deep_ensemble_result_sha256": str(parent.get("sha256", "")),
+        }
+
     protocol_identity = authorization.get("protocol")
     longrun = authorization.get("parent_longrun_result")
     posterior = authorization.get("parent_posterior_result")
